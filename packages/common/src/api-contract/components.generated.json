@@ -8603,6 +8603,92 @@
     "additionalProperties": false,
     "description": "A project-scoped inference profile stored as a MongoDB document."
   },
+  "InferenceProfileUsage": {
+    "type": "object",
+    "properties": {
+      "interactions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/InferenceProfileUsageEntry"
+        }
+      },
+      "total": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "defaults": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Project default slots directly referencing this profile."
+      }
+    },
+    "required": [
+      "interactions",
+      "total",
+      "defaults"
+    ],
+    "description": "Persisted direct assignments; runtime overrides and inherited usage are not enumerated."
+  },
+  "InferenceProfileUsageEntry": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "stored",
+          "system",
+          "app"
+        ]
+      },
+      "version": {
+        "type": "number"
+      },
+      "status": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "kind"
+    ]
+  },
+  "InferenceProfileUsageQuery": {
+    "type": "object",
+    "properties": {
+      "search": {
+        "type": "string",
+        "maxLength": 200
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "stored",
+          "system",
+          "app"
+        ]
+      },
+      "offset": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      }
+    }
+  },
   "InferenceProfileRecordArray": {
     "type": "array",
     "items": {

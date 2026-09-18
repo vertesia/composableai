@@ -4,6 +4,8 @@ import type {
     DeleteByIdResult,
     InferenceProfile,
     InferenceProfileRecord,
+    InferenceProfileUsage,
+    InferenceProfileUsageQuery,
     ProjectConfiguration,
     ProjectInferenceProfiles,
     UpdateInferenceProfilePayload,
@@ -29,6 +31,9 @@ export default class InferenceProfilesApi extends ApiTopic {
     }
     retrieve(id: string): Promise<InferenceProfileRecord> {
         return this.get(`/${encodeURIComponent(id)}`);
+    }
+    usage(id: string, query: InferenceProfileUsageQuery = {}): Promise<InferenceProfileUsage> {
+        return this.get(`/${encodeURIComponent(id)}/usage`, { query });
     }
     create(payload: CreateInferenceProfilePayload): Promise<InferenceProfileRecord> {
         return this.post('/', { payload });
