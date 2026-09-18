@@ -1,6 +1,11 @@
 import type { AIModel, ModelSearchPayload } from '@llumiverse/common';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    EmbeddingBatchCapabilityRequest,
+    EmbeddingBatchCapabilityResponse,
+    EmbeddingBatchCreateRequest,
+    EmbeddingBatchJobRequest,
+    EmbeddingBatchJobResponse,
     EmbeddingsApiRequest,
     EmbeddingsApiResult,
     EnableEnvironmentModelPayload,
@@ -82,6 +87,29 @@ export default class EnvironmentsApi extends ApiTopic {
         return this.post(`/${id}/embeddings`, {
             payload,
         });
+    }
+
+    embeddingBatchCapability(
+        id: string,
+        payload: EmbeddingBatchCapabilityRequest,
+    ): Promise<EmbeddingBatchCapabilityResponse> {
+        return this.post(`/${id}/embedding-batches/capability`, { payload });
+    }
+
+    createEmbeddingBatch(id: string, payload: EmbeddingBatchCreateRequest): Promise<EmbeddingBatchJobResponse> {
+        return this.post(`/${id}/embedding-batches`, { payload });
+    }
+
+    getEmbeddingBatch(id: string, payload: EmbeddingBatchJobRequest): Promise<EmbeddingBatchJobResponse> {
+        return this.post(`/${id}/embedding-batches/get`, { payload });
+    }
+
+    cancelEmbeddingBatch(id: string, payload: EmbeddingBatchJobRequest): Promise<EmbeddingBatchJobResponse> {
+        return this.post(`/${id}/embedding-batches/cancel`, { payload });
+    }
+
+    deleteEmbeddingBatch(id: string, payload: EmbeddingBatchJobRequest): Promise<EmbeddingBatchJobResponse> {
+        return this.post(`/${id}/embedding-batches/delete`, { payload });
     }
 
     /**
