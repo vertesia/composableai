@@ -35,6 +35,37 @@ describe('generated artifact and canonical component', () => {
         expect(GeneratedIntakePolicySchema).toEqual(bundleCanonicalComponent('ContentTypeIntakePolicy'));
     });
 
+<<<<<<< HEAD
+=======
+    it('describes the same shape as the component the OpenAPI document publishes', () => {
+        // The artifact re-roots `#/components/schemas/X` to `#/$defs/X` so AJV and Monaco can compile
+        // it standalone. Undoing that is what makes the two directly comparable.
+        const { $defs, ...body } = GeneratedIntakePolicySchema as { $defs: Record<string, unknown> };
+        const rerooted = JSON.parse(JSON.stringify(body).replaceAll('#/$defs/', '#/components/schemas/'));
+        expect(rerooted).toEqual(withoutDiscriminatorHints(published.ContentTypeIntakePolicy));
+
+        // ...and every definition it carries is the published component of that name, so the bundle
+        // cannot describe a private variant of a shared type.
+        for (const [name, definition] of Object.entries($defs)) {
+            const asComponent = JSON.parse(JSON.stringify(definition).replaceAll('#/$defs/', '#/components/schemas/'));
+            expect(asComponent, `$defs.${name} disagrees with the published component`).toEqual(
+                withoutDiscriminatorHints(published[name]),
+            );
+        }
+    });
+
+    it('preserves optional-ID anyOf semantics in the bundled option schema', () => {
+        const bundled = ($defsOf(GeneratedIntakePolicySchema) as Record<string, Record<string, unknown>>).ModelOptions;
+        const component = published.ModelOptions as { anyOf: unknown[]; discriminator?: unknown; required?: string[] };
+        expect(bundled.discriminator).toBeUndefined();
+        expect(component.discriminator).toBeUndefined();
+        expect(bundled.required ?? []).not.toContain('_option_id');
+        expect(component.required ?? []).not.toContain('_option_id');
+        expect((bundled.anyOf as unknown[]).length).toBe(component.anyOf.length);
+        expect(bundled.oneOf).toBeUndefined();
+    });
+
+>>>>>>> 3e538757 (fix: publish optional model option family IDs (#2251))
     it('registers the component the alias claims, under the id the alias name requires', () => {
         expect(Object.keys(ApiSchemaComponents)).toContain('ContentTypeIntakePolicy');
         assertType<Equals<ContentTypeIntakePolicy, (typeof ContentTypeIntakePolicySchema)['_zod']['output']>>(true);
@@ -263,8 +294,8 @@ describe('runtime tightenings — recorded as operation 25 of the 1.5 runbook', 
 
     it('validates model_options against the union instead of accepting any object', () => {
         // Same class: `model_options` was `{type: object, additionalProperties: true}` in the
-        // hand-written schema and `$ref: ModelOptions` in the published component. It now has to name
-        // a driver through `_option_id`, which is the discriminator generated clients already use.
+        // hand-written schema and `$ref: ModelOptions` in the published component. The family hint
+        // is optional, but known field types and supplied IDs remain validated.
         expect(ApiSchemaComponents.ContentTypeIntakePolicy).toBeDefined();
         expect(
             validate({
@@ -272,11 +303,11 @@ describe('runtime tightenings — recorded as operation 25 of the 1.5 runbook', 
             }),
             errors(),
         ).toBe(true);
-        expect(validate({ extraction: { config: { model_options: { temperature: 0.5 } } } })).toBe(false);
+        expect(validate({ extraction: { config: { model_options: { temperature: 0.5 } } } })).toBe(true);
         expect(validate({ extraction: { config: { model_options: { _option_id: 'not-a-driver' } } } })).toBe(false);
-        // The empty object is rejected for the same reason, which is why nothing may PUT it on the
-        // wire — see `normalizeModelOptions`, which drops an options bag with no options in it.
-        expect(validate({ extraction: { config: { model_options: {} } } })).toBe(false);
+        expect(validate({ extraction: { config: { model_options: {} } } })).toBe(true);
+        expect(validate({ extraction: { config: { model_options: { temperature: 'hot' } } } })).toBe(false);
+        expect(validate({ extraction: { config: { model_options: { unknown_option: true } } } })).toBe(false);
     });
 
     it('constrains the two config enums that were unconstrained strings', () => {

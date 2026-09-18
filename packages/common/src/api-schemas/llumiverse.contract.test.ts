@@ -60,6 +60,7 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
         }
     });
 
+<<<<<<< HEAD
     it('publishes a discriminator whose mapping covers every member', () => {
         const union = ApiSchemaComponents.ModelOptions as JsonObject & {
             oneOf: { $ref: string }[];
@@ -67,11 +68,31 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
         };
         expect(union.discriminator.propertyName).toBe('_option_id');
         expect(union.oneOf.map((member) => member.$ref)).toEqual(
+=======
+    it('publishes every optional-ID family as anyOf, without a required discriminator', () => {
+        const union = ApiSchemaComponents.ModelOptions as JsonObject & { anyOf: { $ref: string }[] };
+        expect(union.discriminator).toBeUndefined();
+        expect(union.oneOf).toBeUndefined();
+        expect(union.required ?? []).not.toContain('_option_id');
+        expect(union.anyOf.map((member) => member.$ref)).toEqual(
+>>>>>>> 3e538757 (fix: publish optional model option family IDs (#2251))
             UNION_MEMBERS.map((name) => `#/components/schemas/${name}`),
         );
-        // A mapping short of the `oneOf` is the failure that matters: a generated Java or Go client
-        // reads the mapping to pick the concrete subtype and falls back to a loose map without it.
-        expect(new Set(Object.values(union.discriminator.mapping))).toEqual(new Set(union.oneOf.map((m) => m.$ref)));
+        for (const name of UNION_MEMBERS) {
+            expect((ApiSchemaComponents[name] as JsonObject).required ?? [], name).not.toContain('_option_id');
+        }
+    });
+
+    it.each([
+        {},
+        { temperature: 0.2, max_tokens: 1024 },
+        { cache_enabled: true, cache_ttl: '1h', thinking_budget_tokens: 1024 },
+        { extra_body: { provider_extension: true } },
+    ] satisfies ModelOptions[])('accepts untagged options through the run request contract: %j', (model_options) => {
+        const payload = { interaction: 'Chat', config: { model: 'claude-sonnet-4-6', model_options } };
+        expect(validateApiRequest('RunCreatePayload', payload).valid).toBe(true);
+        expect(payload.config.model_options).not.toHaveProperty('_option_id');
+        expect(compile('ModelOptions')(model_options)).toBe(true);
     });
 
     it('enforces the closure it documents — an undeclared option is rejected, not ignored', () => {
