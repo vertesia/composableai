@@ -1,4 +1,5 @@
 import type { JSONSchema, ModelOptions } from '@llumiverse/common';
+import { ModelOptionsSchema } from '@llumiverse/common/schemas';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import type { JsonObject } from './adapter.js';
@@ -19,36 +20,12 @@ function compile(name: string) {
     return ajv.compile({ $ref: `vertesia://openapi${apiComponentRef(name as never)}` });
 }
 
-const UNION_MEMBERS = [
-    'TextFallbackOptions',
-    'AzureFoundryChatOptions',
-    'ImagenOptions',
-    'VertexAIClaudeOptions',
-    'VertexAIGeminiOptions',
-    'VertexAIGeminiOmniVideoOptions',
-    'VertexAIGrokOptions',
-    'NovaCanvasOptions',
-    'BedrockConverseOptions',
-    'BedrockNovaOptions',
-    'BedrockMistralOptions',
-    'BedrockAI21Options',
-    'BedrockCohereCommandOptions',
-    'BedrockClaudeOptions',
-    'BedrockPalmyraOptions',
-    'BedrockGptOssOptions',
-    'TwelvelabsPegasusOptions',
-    'BedrockMantleResponsesOptions',
-    'BedrockMantleChatCompletionsOptions',
-    'BedrockMantleClaudeOptions',
-    'OpenAiThinkingOptions',
-    'OpenAiTextOptions',
-    'OpenRouterTextOptions',
-    'OpenAiDalleOptions',
-    'OpenAiGptImageOptions',
-    'XAIGrokImageOptions',
-    'GroqOptions',
-    'MistralTextOptions',
-];
+// Follow the canonical union; do not maintain a second provider membership list here.
+const UNION_MEMBERS = ModelOptionsSchema.options.map((schema) => {
+    const id = schema.meta()?.id;
+    if (!id) throw new Error('Model option schemas must declare a component id');
+    return id;
+});
 
 describe('the ModelOptions closure is published whole and enforced closed', () => {
     it('hoists every union member and enum into its own component', () => {
@@ -66,6 +43,9 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
             discriminator: { propertyName: string; mapping: Record<string, string> };
         };
         expect(union.discriminator.propertyName).toBe('_option_id');
+        expect(Object.keys(union.discriminator.mapping)).toEqual(
+            ModelOptionsSchema.options.map((schema) => schema.shape._option_id.value),
+        );
         expect(union.oneOf.map((member) => member.$ref)).toEqual(
             UNION_MEMBERS.map((name) => `#/components/schemas/${name}`),
         );
@@ -104,6 +84,48 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
             JSON.stringify(validate.errors),
         ).toBe(true);
         expect(validate({ _option_id: 'openai-text', extra_body: ['not-an-object'] })).toBe(false);
+    });
+
+    it('accepts Anthropic options through the run request contract', () => {
+        const payload = {
+            interaction: 'Chat',
+            config: {
+                model: 'claude-sonnet-4-6',
+                model_options: {
+                    _option_id: 'anthropic-claude',
+                    effort: 'high',
+                    cache_enabled: true,
+                    cache_ttl: '1h',
+                },
+            },
+        };
+        expect(validateApiRequest('RunCreatePayload', payload).valid).toBe(true);
+        expect(
+            validateApiRequest('RunCreatePayload', {
+                ...payload,
+                config: { ...payload.config, model_options: { ...payload.config.model_options, cache_ttl: '2h' } },
+            }).valid,
+        ).toBe(false);
+    });
+
+    it.each([
+        { _option_id: 'bedrock-nova', top_k: 12 },
+        { _option_id: 'bedrock-mistral', top_k: 12 },
+        { _option_id: 'bedrock-ai21', presence_penalty: 0.4, frequency_penalty: 0.2 },
+        { _option_id: 'bedrock-cohere-command', top_k: 12, presence_penalty: 0.4, frequency_penalty: 0.2 },
+        { _option_id: 'bedrock-mantle-responses', effort: 'max', reasoning_effort: 'max' },
+        { _option_id: 'vertexai-imagen', person_generation: 'allow_adult', mask_class: [0, 42] },
+        { _option_id: 'vertexai-imagen', person_generation: 'allow_adults' },
+        { _option_id: 'bedrock-nova-canvas', taskType: 'OUTPAINTING', outPaintingMode: 'DEFAULT' },
+    ] satisfies ModelOptions[])('accepts restored provider options: %j', (model_options) => {
+        const payload = { interaction: 'Chat', config: { model: 'model', model_options } };
+        expect(validateApiRequest('RunCreatePayload', payload).valid).toBe(true);
+        expect(
+            validateApiRequest('RunCreatePayload', {
+                ...payload,
+                config: { ...payload.config, model_options: { ...model_options, unknown_option: true } },
+            }).valid,
+        ).toBe(false);
     });
 
     it('accepts Gemini Omni task and resolution options through the run request contract', () => {
