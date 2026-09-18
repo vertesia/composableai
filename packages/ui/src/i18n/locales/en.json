@@ -675,6 +675,7 @@
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "Manage MCP connections",
     "mcpConnections.managedByApp": "Managed by app",
+    "mcpConnections.noAuthentication": "No authentication",
     "mcpConnections.settings": "Settings",
     "mcpConnections.subtitle": "Manage the MCP servers available to this conversation.",
     "mcpConnections.title": "MCP",

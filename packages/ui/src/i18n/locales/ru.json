@@ -371,6 +371,7 @@
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "Управление подключениями MCP",
     "mcpConnections.managedByApp": "Управляется приложением",
+    "mcpConnections.noAuthentication": "Без аутентификации",
     "mcpConnections.settings": "Настройки",
     "mcpConnections.subtitle": "Управляйте серверами MCP, доступными для этого разговора.",
     "mcpConnections.title": "MCP",

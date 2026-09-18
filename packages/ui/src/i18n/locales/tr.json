@@ -365,6 +365,7 @@
     "mcpConnections.label": "MCP",
     "mcpConnections.manage": "MCP bağlantılarını yönet",
     "mcpConnections.managedByApp": "Uygulama tarafından yönetiliyor",
+    "mcpConnections.noAuthentication": "Kimlik doğrulama yok",
     "mcpConnections.settings": "Ayarlar",
     "mcpConnections.subtitle": "Bu konuşma için kullanılabilen MCP sunucularını yönetin.",
     "mcpConnections.title": "MCP",
