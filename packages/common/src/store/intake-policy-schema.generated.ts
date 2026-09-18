@@ -1072,6 +1072,11 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 'CUSTOMIZATION_INSTRUCT',
             ],
         },
+        InferenceProfileId: {
+            type: 'string',
+            pattern: '^[a-fA-F0-9]{24}$',
+            description: 'MongoDB ObjectId of the inference profile.',
+        },
         IntakePageRanges: {
             type: 'array',
             items: {
@@ -1104,6 +1109,22 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             properties: {
                 id: {
                     type: 'string',
+                },
+                inference_profile: {
+                    anyOf: [
+                        {
+                            $ref: '#/$defs/InferenceProfileId',
+                        },
+                        {
+                            type: 'null',
+                        },
+                    ],
+                    description: 'Select a project inference profile. Null bypasses profile defaults.',
+                },
+                inherit_model_config: {
+                    type: 'boolean',
+                    description:
+                        'Treat supplied model settings as inherited fallback: an applicable profile replaces them.',
                 },
                 environment: {
                     type: 'string',

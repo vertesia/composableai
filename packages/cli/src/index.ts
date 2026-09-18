@@ -7,6 +7,7 @@ import { registerEnvsCommand } from './envs/index.js';
 import { registerEventsCommand } from './events/index.js';
 import { registerExportCommand } from './export/index.js';
 import { registerIamCommand } from './iam/index.js';
+import { registerInferenceProfilesCommand } from './inference-profiles/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
 import { getVersion, upgrade } from './package.js';
@@ -135,6 +136,7 @@ authGit
     });
 
 registerEnvsCommand(program);
+registerInferenceProfilesCommand(program);
 program
     .command('interactions [interaction]')
     .description('List the interactions available in the current project')
@@ -166,6 +168,7 @@ program
         '--config-mode [config-mode]',
         'The configuration mode to use.Possible values are: "run_and_interaction_config", "run_config_only", "interaction_config_only". Optional. If not specified, "run_and_interaction_config" is used.',
     )
+    .option('--inference-profile <id>', 'Use this inference profile for this run only')
     .option('-m, --model [model]', 'The model to use. Optional.')
     .option('-e, --env [environmentId]', 'The environment Id to use. Optional.')
     .option('-S, --no-stream', 'When used, the output will be printed only when the execution is complete')
@@ -192,6 +195,7 @@ program
     .option('-t, --tags [tags]', 'A comma separated list of tags to filter the run history')
     .option('--status [status]', 'A status to filter on')
     .option('-e, --env [environmentId]', 'Filter by environment')
+    .option('--inference-profile <id>', 'Use this inference profile for this run only')
     .option('-m, --model [model]', 'Filter by model')
     .option('-q, --query [query]', 'A lucene query')
     .option('-l, --limit [limit]', 'The maximum number of runs to return in a page', '100')

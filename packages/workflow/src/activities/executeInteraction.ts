@@ -416,6 +416,8 @@ export async function executeInteractionFromActivity(
     const rateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
     const slot = await client.interactions.requestSlot({
         interaction: interactionName,
+        inference_profile: config.inference_profile,
+        inherit_model_config: config.inherit_model_config,
         environment_id: config.environment,
         model_id: config.model,
         rate_limit_id: rateLimitId,

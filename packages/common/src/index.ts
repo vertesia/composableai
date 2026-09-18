@@ -33,6 +33,23 @@ export * from './embeddings.js';
 export * from './environment.js';
 export * from './facets.js';
 export * from './group.js';
+export type {
+    CreateInferenceProfilePayload,
+    InferenceProfile,
+    InferenceProfileId,
+    InferenceProfileName,
+    InferenceProfileRecord,
+    InferenceProfileRecordArray,
+    InferenceProfileSnapshot,
+    InferenceProfileUsage,
+    InferenceProfileUsageEntry,
+    InferenceProfileUsageQuery,
+    InteractionConfigurationRecord,
+    InteractionConfigurationResult,
+    ProjectInferenceProfiles,
+    UpdateInferenceProfilePayload,
+    UpdateInteractionConfigurationPayload,
+} from './inference-profile.js';
 export * from './integrations.js';
 export * from './interaction.js';
 export * from './json.js';
