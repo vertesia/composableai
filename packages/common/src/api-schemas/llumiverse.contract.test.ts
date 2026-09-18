@@ -115,6 +115,26 @@ describe('the ModelOptions closure is published whole and enforced closed', () =
         ).toBe(false);
     });
 
+    it.each([
+        { _option_id: 'bedrock-nova', top_k: 12 },
+        { _option_id: 'bedrock-mistral', top_k: 12 },
+        { _option_id: 'bedrock-ai21', presence_penalty: 0.4, frequency_penalty: 0.2 },
+        { _option_id: 'bedrock-cohere-command', top_k: 12, presence_penalty: 0.4, frequency_penalty: 0.2 },
+        { _option_id: 'bedrock-mantle-responses', effort: 'max', reasoning_effort: 'max' },
+        { _option_id: 'vertexai-imagen', person_generation: 'allow_adult', mask_class: [0, 42] },
+        { _option_id: 'vertexai-imagen', person_generation: 'allow_adults' },
+        { _option_id: 'bedrock-nova-canvas', taskType: 'OUTPAINTING', outPaintingMode: 'DEFAULT' },
+    ] satisfies ModelOptions[])('accepts restored provider options: %j', (model_options) => {
+        const payload = { interaction: 'Chat', config: { model: 'model', model_options } };
+        expect(validateApiRequest('RunCreatePayload', payload).valid).toBe(true);
+        expect(
+            validateApiRequest('RunCreatePayload', {
+                ...payload,
+                config: { ...payload.config, model_options: { ...model_options, unknown_option: true } },
+            }).valid,
+        ).toBe(false);
+    });
+
     it('accepts Gemini Omni task and resolution options through the run request contract', () => {
         const result = validateApiRequest('RunCreatePayload', {
             interaction: 'GenerateVideo',

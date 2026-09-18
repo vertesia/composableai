@@ -355,6 +355,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 top_p: {
                     type: 'number',
                 },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
+                    type: 'number',
+                },
                 stop_sequence: {
                     type: 'array',
                     items: {
@@ -440,6 +446,15 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'number',
                 },
                 top_p: {
+                    type: 'number',
+                },
+                top_k: {
+                    type: 'number',
+                },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
                     type: 'number',
                 },
                 stop_sequence: {
@@ -639,11 +654,11 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 effort: {
                     type: 'string',
-                    enum: ['none', 'low', 'medium', 'high', 'xhigh'],
+                    enum: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
                 },
                 reasoning_effort: {
                     type: 'string',
-                    enum: ['none', 'low', 'medium', 'high', 'xhigh'],
+                    enum: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
                 },
                 verbosity: {
                     type: 'string',
@@ -674,6 +689,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'number',
                 },
                 top_p: {
+                    type: 'number',
+                },
+                top_k: {
                     type: 'number',
                 },
                 stop_sequence: {
@@ -709,6 +727,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'number',
                 },
                 top_p: {
+                    type: 'number',
+                },
+                top_k: {
                     type: 'number',
                 },
                 stop_sequence: {
@@ -987,7 +1008,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 person_generation: {
                     type: 'string',
-                    enum: ['dont_allow', 'allow_adults', 'allow_all'],
+                    enum: ['dont_allow', 'allow_adults', 'allow_all', 'allow_adult'],
                 },
                 safety_setting: {
                     type: 'string',

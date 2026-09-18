@@ -2513,7 +2513,8 @@
         "enum": [
           "dont_allow",
           "allow_adults",
-          "allow_all"
+          "allow_all",
+          "allow_adult"
         ]
       },
       "safety_setting": {
@@ -3002,6 +3003,9 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3036,6 +3040,9 @@
         "type": "number"
       },
       "top_p": {
+        "type": "number"
+      },
+      "top_k": {
         "type": "number"
       },
       "stop_sequence": {
@@ -3074,6 +3081,12 @@
       "top_p": {
         "type": "number"
       },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3108,6 +3121,15 @@
         "type": "number"
       },
       "top_p": {
+        "type": "number"
+      },
+      "top_k": {
+        "type": "number"
+      },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
         "type": "number"
       },
       "stop_sequence": {
@@ -3331,7 +3353,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "reasoning_effort": {
@@ -3341,7 +3364,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "verbosity": {
