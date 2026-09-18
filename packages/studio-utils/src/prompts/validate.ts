@@ -72,7 +72,8 @@ function validateHandlebarsPrompt(content: string, inputSchema?: JSONSchema): Pr
     const declaredVars = new Set<string>(inputSchema?.properties ? Object.keys(inputSchema.properties) : []);
 
     for (const used of usedVars) {
-        if (!declaredVars.has(used)) {
+        // The execution request injects _model for both template languages.
+        if (!declaredVars.has(used) && used !== '_model') {
             issues.push({
                 type: 'undeclared_template_variable',
                 severity: 'error',

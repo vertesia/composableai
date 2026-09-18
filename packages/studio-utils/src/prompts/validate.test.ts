@@ -284,3 +284,26 @@ describe('validatePrompt — jst', () => {
         expect(findIssue(r.issues, 'jst_unsafe_construct')).toBeDefined();
     });
 });
+
+describe('Handlebars runtime values', () => {
+    it('accepts the bare time helper with an empty schema', () => {
+        const result = validatePrompt({
+            content: '{{_now}}',
+            contentType: TemplateType.handlebars,
+            inputSchema: schema({}),
+        });
+        expect(result.error_count).toBe(0);
+    });
+
+    it.each(['{{this._now}}', '{{_now.foo}}'])('requires a declaration for explicit data path %s', (content) => {
+        const result = validatePrompt({ content, contentType: TemplateType.handlebars, inputSchema: schema({}) });
+        expect(findIssue(result.issues, 'undeclared_template_variable', '_now')).toBeDefined();
+    });
+
+    it('accepts the runtime model without accepting ordinary undeclared variables', () => {
+        const result = validatePrompt({ content: '{{_model}} {{customer}}', contentType: TemplateType.handlebars });
+        expect(findIssue(result.issues, 'undeclared_template_variable', '_model')).toBeUndefined();
+        expect(findIssue(result.issues, 'undeclared_template_variable', 'customer')).toBeDefined();
+        expect(validatePrompt({ content: '{{_model}}', contentType: TemplateType.handlebars }).error_count).toBe(0);
+    });
+});
