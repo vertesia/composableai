@@ -144,9 +144,9 @@ test('early sync failure without PR falls back to the commit author', async () =
     assert.match(result.message, /Install failed/);
 });
 
-test('unresolvable bot author fails visibly rather than dispatching to the bot', async () => {
+test('unresolvable bot author skips notification instead of dispatching to the bot', async () => {
     const inputs = { source_repository: 'vertesia/composableai', source_sha: sha, reason: 'Sync failed' };
-    await assert.rejects(notification({ ...context, inputs }, async (path) => path.includes('/pulls?') ? [] : { author: pr.user }), /Cannot resolve/);
+    assert.equal(await notification({ ...context, inputs }, async (path) => path.includes('/pulls?') ? [] : { author: pr.user }), null);
 });
 
 test('reject unexpected source repository', async () => {
@@ -242,4 +242,39 @@ test('sync app aliases resolve through source backports instead of notifying a b
         throw new Error(path);
     });
     assert.equal(result.login, user.login);
+});
+
+for (const [repository, upstream] of [
+    ['vertesia/studio', 'composableai'],
+    ['vertesia/composableai', 'llumiverse'],
+]) {
+    for (const author of [null, { login: 'github-actions[bot]', type: 'Bot' }, { login: 'app/release' }]) {
+        test(`${repository} skips sync notifications without a human source author: ${author?.login}`, async () => {
+            const sourceApi = async (path) => {
+                if (path === `repos/vertesia/${upstream}/commits/${sha}/pulls?per_page=100`) return [];
+                if (path === `repos/vertesia/${upstream}/commits/${sha}`) return { author };
+                throw new Error(path);
+            };
+            const inputs = { source_repository: `vertesia/${upstream}`, source_sha: sha, reason: 'Sync failed' };
+            assert.equal(await notification({ ...context, repo: repository, inputs }, sourceApi), null);
+
+            const syncBranch = `sync-${upstream}-main-aaaaaaa`;
+            const syncPr = { ...pr, user: { login: 'vertesia-submodule-sync[bot]', type: 'Bot' },
+                head: { sha, ref: syncBranch, repo: { full_name: repository } } };
+            const api = async (path) => {
+                if (path.startsWith(`repos/${repository}/pulls?`)) return [syncPr];
+                if (path === `repos/${repository}/contents/${upstream}?ref=${sha}`) return { sha };
+                return sourceApi(path);
+            };
+            assert.equal(await notification({ ...context, repo: repository,
+                inputs: { branch: syncBranch, sha, reason: 'Sync failed' } }, api), null);
+        });
+    }
+}
+
+test('sync notification still fails on source API errors', async () => {
+    const inputs = { source_repository: 'vertesia/composableai', source_sha: sha, reason: 'Sync failed' };
+    await assert.rejects(notification({ ...context, inputs }, async () => {
+        throw new Error('GitHub API unavailable');
+    }), /GitHub API unavailable/);
 });
