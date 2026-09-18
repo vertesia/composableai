@@ -6,6 +6,14 @@ export { updateDocumentFromInteractionRun } from './advanced/updateDocumentFromI
 export { chunkDocument } from './chunkDocument.js';
 export { createPdfDocumentFromSource } from './createDocumentFromOther.js';
 export { detectDocumentLanguage } from './detectDocumentLanguage.js';
+export {
+    applyEmbeddingBatch,
+    cancelEmbeddingBatchJob,
+    createEmbeddingBatchJob,
+    getEmbeddingBatchJob,
+    prepareEmbeddingBatch,
+    updateEmbeddingBatch,
+} from './embeddingBatch.js';
 export { executeInteraction } from './executeInteraction.js';
 export { executeRemoteActivity } from './executeRemoteActivity.js';
 export { extractDocumentText } from './extractDocumentText.js';
