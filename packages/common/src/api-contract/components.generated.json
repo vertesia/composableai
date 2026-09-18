@@ -42758,6 +42758,61 @@
     ],
     "additionalProperties": false
   },
+  "EmbeddingsStatusResponse": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string"
+      },
+      "embeddingRunsInProgress": {
+        "type": "number"
+      },
+      "latestBatchRun": {
+        "$ref": "#/components/schemas/EmbeddingBatchRunSummary"
+      },
+      "totalIndexableObjects": {
+        "type": "number"
+      },
+      "embeddingsModels": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "objectsWithEmbeddings": {
+        "type": "number"
+      },
+      "vectorIndex": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "READY",
+              "PENDING",
+              "DELETING",
+              "ABSENT"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "status",
+      "vectorIndex"
+    ],
+    "additionalProperties": false
+  },
   "EmbeddingBatchRunSummary": {
     "type": "object",
     "properties": {
@@ -42822,61 +42877,6 @@
     ],
     "additionalProperties": false,
     "description": "Latest batch run for this embedding type, without provider payloads or input content."
-  },
-  "EmbeddingsStatusResponse": {
-    "type": "object",
-    "properties": {
-      "status": {
-        "type": "string"
-      },
-      "embeddingRunsInProgress": {
-        "type": "number"
-      },
-      "latestBatchRun": {
-        "$ref": "#/components/schemas/EmbeddingBatchRunSummary"
-      },
-      "totalIndexableObjects": {
-        "type": "number"
-      },
-      "embeddingsModels": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "objectsWithEmbeddings": {
-        "type": "number"
-      },
-      "vectorIndex": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "READY",
-              "PENDING",
-              "DELETING",
-              "ABSENT"
-            ]
-          },
-          "name": {
-            "type": "string"
-          },
-          "type": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "status"
-        ],
-        "additionalProperties": false
-      }
-    },
-    "required": [
-      "status",
-      "vectorIndex"
-    ],
-    "additionalProperties": false
   },
   "RecalculateEmbeddingsQuery": {
     "type": "object",
