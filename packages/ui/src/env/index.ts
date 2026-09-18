@@ -28,6 +28,8 @@ export interface EnvProps {
         /** Appgen app-gateway endpoint (serves live development previews and app bundles). */
         gateway?: string;
     };
+    /** Public OAuth client for independently hosted apps; ignored inside Studio or a gateway session. */
+    oauth?: { clientId: string; redirectUri: string; scopes?: string[] };
     firebase?: {
         apiKey: string;
         authDomain: string;
@@ -52,9 +54,8 @@ export interface EnvProps {
     /**
      * Optional host-provided Vertesia auth token bootstrap.
      *
-     * Published generated apps use this to ask their same-origin app gateway for
-     * the token backing the gateway session cookie, allowing UserSession to
-     * initialize without redirecting through Central Auth.
+     * Embedded apps use this to obtain a scoped token from their trusted host.
+     * Standalone generated apps use the gateway cookie session instead.
      */
     authTokenProvider?: () => Promise<string | undefined>;
     logger?: {
@@ -81,6 +82,8 @@ export type VertesiaRuntimeConfig =
           authMode: 'central';
           /** Broker selected by the serving gateway. Overrides build-time configuration. */
           authUrl?: string;
+          /** The serving gateway owns this standalone app's OAuth session. */
+          gatewaySession?: boolean;
       };
 
 declare global {
@@ -247,6 +250,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get defaultAuthSelection() {
         return this._props?.defaultAuthSelection;
+    }
+
+    get oauth() {
+        return this._props?.oauth;
     }
 
     get authTokenProvider() {

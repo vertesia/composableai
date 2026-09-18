@@ -14,6 +14,8 @@ import {
 } from './auth/composable';
 import { buildCentralAuthRedirectUrl, redirectToCentralAuth, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
+import { usesGatewaySession } from './auth/gateway';
+import { getAppOAuthToken, usesAppOAuth } from './auth/oauth';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
 
@@ -129,6 +131,28 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                 project_id: selectedProject,
             },
         });
+
+        if (usesGatewaySession() || usesAppOAuth()) {
+            let cancelled = false;
+            session.setSession = setSession;
+            const initialize = usesGatewaySession()
+                ? session.loginGatewaySession()
+                : getAppOAuthToken().then((token) => session.login(token, { loadOnboardingStatus: false }));
+            void initialize
+                .then(() => {
+                    if (!cancelled) setSession(session.clone());
+                })
+                .catch((error: unknown) => {
+                    if (cancelled) return;
+                    session.isLoading = false;
+                    session.authError = error instanceof Error ? error : new Error(String(error));
+                    setSession(session.clone());
+                });
+            return () => {
+                cancelled = true;
+                hasInitiatedAuthRef.current = false;
+            };
+        }
 
         if (Env.isLocalDev && Env.devAuthToken) {
             session.setSession = setSession;

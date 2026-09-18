@@ -1,5 +1,7 @@
 import { Env } from '@vertesia/ui/env';
 import { generateAuthState } from './authState';
+import { gatewayLoginUrl, usesGatewaySession } from './gateway';
+import { getAppOAuthToken, usesAppOAuth } from './oauth';
 
 declare global {
     interface Window {
@@ -145,6 +147,14 @@ export function clearCentralAuthRoundTripMarker(): void {
  * into producing different `redirect_uri` / `state` / `sts` values for the same page load.
  */
 export function redirectToCentralAuth(selection: AuthSelection = {}): void {
+    if (usesAppOAuth()) {
+        void getAppOAuthToken().catch((error: unknown) => Env.logger.error('Application OAuth sign-in failed', error));
+        return;
+    }
+    if (usesGatewaySession()) {
+        window.location.replace(gatewayLoginUrl());
+        return;
+    }
     const url = buildCentralAuthRedirectUrl(
         centralAuthUrl(),
         Env.endpoints.sts ?? 'https://sts.vertesia.io',
@@ -177,6 +187,7 @@ export function redirectToCentralAuth(selection: AuthSelection = {}): void {
  * chunks that the navigation is about to discard.
  */
 export function isCentralAuthRedirectPending(): boolean {
+    if (usesGatewaySession() || usesAppOAuth()) return false;
     if (!shouldRedirectToCentralAuth()) return false;
     if (Env.authTokenProvider) return false;
     if (Env.isLocalDev && Env.devAuthToken) return false;

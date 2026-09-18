@@ -7,6 +7,8 @@ import { createContext, useContext } from 'react';
 import { getComposableToken } from './auth/composable';
 import { authReturnUrl, centralAuthUrl, mountRootUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
+import { gatewayFetch, loadGatewaySession, logoutGatewaySession, usesGatewaySession } from './auth/gateway';
+import { clearAppOAuth, getAppOAuthToken, usesAppOAuth } from './auth/oauth';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
 
@@ -31,9 +33,14 @@ class UserSession {
             this.client = client;
         } else {
             this.client = new VertesiaClient({
-                serverUrl: Env.endpoints.studio,
-                storeUrl: Env.endpoints.zeno,
+                serverUrl: usesGatewaySession()
+                    ? `${window.location.origin}/__appgen/session/studio`
+                    : Env.endpoints.studio,
+                storeUrl: usesGatewaySession()
+                    ? `${window.location.origin}/__appgen/session/store`
+                    : Env.endpoints.zeno,
                 tokenServerUrl: Env.endpoints.sts,
+                fetch: usesGatewaySession() ? gatewayFetch : undefined,
             });
         }
 
@@ -73,6 +80,9 @@ class UserSession {
     }
 
     get rawAuthToken() {
+        if (usesAppOAuth()) return getAppOAuthToken();
+        if (usesGatewaySession())
+            return Promise.reject(new Error('Gateway session credentials are not available to application JavaScript'));
         return getComposableToken().then((res) => {
             const token = res?.rawToken;
             if (!token) {
@@ -89,6 +99,17 @@ class UserSession {
      * stale — STS recomputes the `apps` claim from ACEs on every issuance.
      */
     async refreshAuthToken(): Promise<AuthTokenPayload> {
+        if (usesGatewaySession()) {
+            const payload = await this.loginGatewaySession();
+            this.setSession?.(this.clone());
+            return payload;
+        }
+        if (usesAppOAuth()) {
+            clearAppOAuth();
+            this.authToken = jwtDecode<AuthTokenPayload>(await getAppOAuthToken());
+            this.setSession?.(this.clone());
+            return this.authToken;
+        }
         const res = await getComposableToken(undefined, undefined, undefined, true);
         const token = res?.rawToken;
         if (!token) {
@@ -133,12 +154,47 @@ class UserSession {
         return Promise.resolve();
     }
 
+    async loginGatewaySession() {
+        this.authToken = await loadGatewaySession();
+        this.client.withAuthCallback(undefined);
+        this.authError = undefined;
+        this.isLoading = false;
+        Env.onLogin?.(this.authToken);
+        return this.authToken;
+    }
+
     isLoggedIn() {
         return !!this.authToken;
     }
 
     logout() {
         console.log('Logging out');
+        if (usesGatewaySession()) {
+            void logoutGatewaySession()
+                .then(() => {
+                    this.authToken = undefined;
+                    this.authError = undefined;
+                    this.isLoading = false;
+                    Env.onLogout?.();
+                    this.setSession?.(this.clone());
+                })
+                .catch((error: unknown) => {
+                    this.authError = error instanceof Error ? error : new Error(String(error));
+                    this.setSession?.(this.clone());
+                });
+            return;
+        }
+
+        if (usesAppOAuth()) {
+            clearAppOAuth();
+            this.client.withAuthCallback(undefined);
+            this.authToken = undefined;
+            this.authError = undefined;
+            this.isLoading = false;
+            Env.onLogout?.();
+            this.setSession?.(this.clone());
+            return;
+        }
 
         if (shouldRedirectToCentralAuth()) {
             // Redirect to central auth for logout

@@ -732,3 +732,34 @@ Explicit `?a=...&p=...` URL selections take precedence over this entire configur
 Without a URL selection, configured IDs take precedence over the last workspace stored in the browser.
 A project-only default does not inherit an unrelated stored account. An account-only default can
 restore the last project for that account. These settings select a workspace; they do not grant access.
+
+
+### Standalone authentication
+
+`pnpm dev` uses the configured central-auth service with a localhost callback. Explicit
+`VITE_AUTH_MODE=firebase` deployments retain their configured Firebase sign-in.
+
+Independent Vercel deployments publish `/.well-known/oauth-client/vertesia-app` through
+`api/oauth-client.js`. The standalone UI uses this CIMD with OAuth authorization code + PKCE,
+asks the user for consent, and returns to `/app`. There is no client secret or manual client
+registration. Keep the CIMD rewrite before the catch-all API rewrite in `vercel.json`.
+The metadata endpoint must be publicly reachable by the authorization server (Vercel deployment
+protection must not block it). Configure `APP_OAUTH_SCOPES` in Vercel with the space-separated
+permissions the app needs, plus `openid profile`; the default permits sign-in only. The user
+must hold and consent to each requested permission.
+
+Gateway-hosted builds use the gateway's CIMD and HttpOnly cookie session instead. The SDK
+loads user information and calls the platform APIs through same-origin gateway routes; it
+does not read the gateway's access or refresh token. Embedded apps retain host-provided auth.
+Existing applications must upgrade their SDK, adopt the standalone template auth configuration
+and Vercel metadata route, and rebuild to receive these changes.
+
+To use a registered client instead, set `VITE_OAUTH_CLIENT_ID` and optionally
+`VITE_OAUTH_REDIRECT_URI` and `VITE_OAUTH_SCOPES` (space-separated). Register the exact callback
+(`/app` on Vercel, `/` on localhost by default). The authorization server decides whether to show
+consent; a client ID alone does not grant permission to skip it. Trusted first-party client IDs
+or CIMDs with a valid operator-issued attestation can use the server's existing no-consent flow.
+
+For an operator-attested CIMD, set `APP_OAUTH_SOFTWARE_STATEMENT` to the signed statement
+issued for this exact metadata URL and STS. The app republishes it unchanged; it never signs or
+self-declares trust. Expired or invalid attestations are handled by the authorization server.

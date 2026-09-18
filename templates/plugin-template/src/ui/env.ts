@@ -37,6 +37,20 @@ Env.init(
             sts: requiredEnv('VITE_VERTESIA_STS_URL'),
             auth: import.meta.env.VITE_AUTH_SERVER_URL?.trim() || undefined,
         },
+        // Vercel serves this metadata document; localhost keeps the development broker flow.
+        // Gateway and embedded sessions take precedence over this independent-host configuration.
+        oauth:
+            import.meta.env.VITE_OAUTH_CLIENT_ID || (import.meta.env.PROD && window.location.protocol === 'https:')
+                ? {
+                      clientId:
+                          import.meta.env.VITE_OAUTH_CLIENT_ID ||
+                          `${window.location.origin}/.well-known/oauth-client/vertesia-app`,
+                      redirectUri:
+                          import.meta.env.VITE_OAUTH_REDIRECT_URI ||
+                          `${window.location.origin}${import.meta.env.DEV ? '/' : '/app'}`,
+                      scopes: import.meta.env.VITE_OAUTH_SCOPES?.split(/\s+/).filter(Boolean),
+                  }
+                : undefined,
         authTokenProvider: requestIframeHostAuthToken,
     },
     import.meta.env,
