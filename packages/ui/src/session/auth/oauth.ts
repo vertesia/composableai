@@ -104,12 +104,14 @@ async function acquireToken(): Promise<string> {
     if (metadata.issuer.replace(/\/+$/, '') !== issuer) throw new Error('OAuth issuer mismatch');
     const authorize = httpsUrl(metadata.authorization_endpoint);
     const tokenEndpoint = httpsUrl(metadata.token_endpoint);
+    const resource = new URL(metadata.issuer).toString();
     if (transaction && code) {
         const response = await fetch(tokenEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 grant_type: 'authorization_code',
+                resource,
                 code,
                 client_id: clientId,
                 redirect_uri: redirectUri,
@@ -156,6 +158,7 @@ async function acquireToken(): Promise<string> {
     authorize.searchParams.set('client_id', clientId);
     authorize.searchParams.set('redirect_uri', redirectUri);
     authorize.searchParams.set('response_type', 'code');
+    authorize.searchParams.set('resource', resource);
     authorize.searchParams.set('state', next.state);
     authorize.searchParams.set('code_challenge_method', 'S256');
     authorize.searchParams.set('code_challenge', base64url(new Uint8Array(digest)));

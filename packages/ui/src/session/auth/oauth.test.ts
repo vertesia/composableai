@@ -90,6 +90,7 @@ it('uses CIMD and PKCE, exchanges the callback once and restores the app deep li
     await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
     const authorize = new URL(replace.mock.calls[0][0]);
     expect(authorize.searchParams.get('client_id')).toBe(clientId);
+    expect(authorize.searchParams.get('resource')).toBe(`${issuer}/`);
     expect(authorize.searchParams.get('redirect_uri')).toBe(`${origin}/app`);
     expect(authorize.searchParams.get('scope')).toBe('openid profile content:read');
     expect(authorize.searchParams.get('project_id')).toBe('p');
@@ -106,6 +107,7 @@ it('uses CIMD and PKCE, exchanges the callback once and restores the app deep li
     const body = exchange.init?.body as URLSearchParams;
     expect(body.get('code_verifier')).toBe(txn.verifier);
     expect(body.get('grant_type')).toBe('authorization_code');
+    expect(body.get('resource')).toBe(authorize.searchParams.get('resource'));
     expect(body.has('client_secret')).toBe(false);
     expect(storage.has('vertesia.oauth.transaction')).toBe(false);
     expect(browser.location.href).toBe(`${origin}/app/report?a=a&p=p#chart`);
