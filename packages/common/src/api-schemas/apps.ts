@@ -116,7 +116,8 @@ export const AppUIConfigSchema = z
 export const ToolCollectionAuthTypeSchema = z.enum(['none', 'oauth', 'api_key', 'other']).meta({
     id: 'ToolCollectionAuthType',
     description:
-        "Authentication type for tool collections.\n- 'none': connect directly without credentials\n" +
+        "Authentication type for tool collections.\n- 'none': connect directly without credentials for MCP collections; " +
+        'does not disable authentication for Vertesia SDK collections\n' +
         "- 'oauth': the runtime resolves a per-user or per-project " +
         "OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 " +
         'bearer token (`Authorization: Bearer <key>`)\n' +
