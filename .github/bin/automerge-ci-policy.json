@@ -1,0 +1,24 @@
+{
+    "main.yaml": {
+        "jobs": [
+            {
+                "name": "^Unit tests$",
+                "steps": [
+                    "Build workspace",
+                    "Typecheck and run package tests"
+                ]
+            },
+            {
+                "name": "^Template smoke test \\(Plugin\\)$",
+                "example": "Template smoke test (Plugin)"
+            }
+        ]
+    },
+    "lint.yaml": {
+        "jobs": [
+            {
+                "name": "^Check codebase$"
+            }
+        ]
+    }
+}
