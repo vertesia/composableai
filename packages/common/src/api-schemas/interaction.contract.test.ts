@@ -305,3 +305,21 @@ describe('background inference telemetry contract', () => {
         expect(validateApiRequest('LlmCallType', 'background').valid).toBe(true);
     });
 });
+
+describe('AgentRunnerOptions MCP access contract', () => {
+    it.each([
+        {},
+        { allowed_mcp_servers: [] },
+        { allowed_mcp_servers: [{ app_install_id: 'install', collection_id: 'jira' }] },
+    ])('accepts a saved policy: %j', (options) => {
+        expect(validateApiRequest('AgentRunnerOptions', options).valid).toBe(true);
+    });
+    it.each([
+        { allowed_mcp_servers: null },
+        { allowed_mcp_servers: [{ collection_id: 'jira' }] },
+        { allowed_mcp_servers: [{ app_install_id: '', collection_id: 'jira' }] },
+        { allowed_mcp_servers: [{ app_install_id: 'install', collection_id: 'jira', url: 'https://other' }] },
+    ])('rejects ambiguous or malformed policies: %j', (options) => {
+        expect(validateApiRequest('AgentRunnerOptions', options).valid).toBe(false);
+    });
+});

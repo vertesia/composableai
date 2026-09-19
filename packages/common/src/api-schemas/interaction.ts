@@ -780,6 +780,18 @@ export const AgentRunnerOptionsSchema = z
                     'Array of default tool names available to this agent. For interactions: defines default tools. For execution payloads: you can use + and - to add or remove from default, if no sign, then list replaces default.',
             })
             .optional(),
+        allowed_mcp_servers: z
+            .array(
+                z.strictObject({
+                    app_install_id: z.string().min(1),
+                    collection_id: z.string().min(1),
+                }),
+            )
+            .meta({
+                description:
+                    'Administrative MCP allowlist. Omitted inherits project access; an empty array blocks all MCP servers. Entries approve all tools from that installed collection, subject to user authorization. Runtime selections cannot expand this policy.',
+            })
+            .optional(),
         search_scope: AgentSearchScopeSchema.meta({
             description:
                 "On which scope should the search be applied by the search_tool. Only supports 'collection' scope or undefined for now.",
