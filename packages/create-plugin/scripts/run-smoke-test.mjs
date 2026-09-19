@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 /**
  * Smoke test for create-plugin: scaffolds a project from the local plugin
@@ -46,6 +47,8 @@ try {
         console.error(`smoke test: expected ${projectPath}/package.json to exist`);
         exitCode = 1;
     } else {
+        const generatedEnv = readFileSync(join(projectPath, '.env.app'), 'utf8');
+        assert.match(generatedEnv, /^VITE_AUTH_SERVER_URL=https:\/\/auth\.dev1\.vertesia\.io\/$/m);
         const generatedPackage = JSON.parse(readFileSync(join(projectPath, 'package.json'), 'utf8'));
         const internalDependencies = Object.entries({
             ...generatedPackage.dependencies,

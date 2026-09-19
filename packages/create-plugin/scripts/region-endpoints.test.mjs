@@ -13,7 +13,7 @@ for (const [region, devMode, authUrl, stsUrl] of [
     ['us1', false, 'https://auth.us1.vertesia.io/', 'https://sts.vertesia.io'],
     ['eu1', false, 'https://auth.eu1.vertesia.io/', 'https://sts.eu1.vertesia.io'],
     ['dev1', false, 'https://auth.dev1.vertesia.io/', 'https://sts.dev1.vertesia.io'],
-    ['dev2', false, 'https://internal-auth.vertesia.app/', 'https://sts.dev2.vertesia.io'],
+    ['dev2', false, 'https://auth.vertesia.io/', 'https://sts.dev2.vertesia.io'],
     ['eu1', true, 'https://auth.dev1.vertesia.io/', 'https://sts.dev1.vertesia.io'],
 ]) {
     test(`scaffolding ${region} (dev=${devMode}) configures the matching auth broker`, async () => {

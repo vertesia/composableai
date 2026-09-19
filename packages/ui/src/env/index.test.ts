@@ -81,6 +81,27 @@ describe('VertesiaEnvironment runtime configuration', () => {
         expect(window.AUTH_MODE).toBeUndefined();
     });
 
+    it('uses the gateway broker ahead of an app build endpoint', () => {
+        vi.stubGlobal('window', {
+            __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central', authUrl: 'https://auth.dev1.vertesia.io/' },
+        });
+        const env = new VertesiaEnvironment().init({
+            ...baseProps,
+            endpoints: { ...baseProps.endpoints, auth: 'https://internal-auth.vertesia.app/' },
+        });
+        expect(env.endpoints.auth).toBe('https://auth.dev1.vertesia.io/');
+        expect(window.AUTH_MODE).toBe('central');
+    });
+
+    it('preserves the app broker with an older central runtime contract', () => {
+        vi.stubGlobal('window', { __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central' } });
+        const env = new VertesiaEnvironment().init({
+            ...baseProps,
+            endpoints: { ...baseProps.endpoints, auth: 'https://auth.dev1.vertesia.io/' },
+        });
+        expect(env.endpoints.auth).toBe('https://auth.dev1.vertesia.io/');
+    });
+
     it('accepts injected Central Auth mode without Firebase configuration', () => {
         vi.stubGlobal('window', {
             __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central' },

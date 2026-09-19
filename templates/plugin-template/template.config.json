@@ -171,7 +171,7 @@
         "us1": "https://auth.us1.vertesia.io/",
         "eu1": "https://auth.eu1.vertesia.io/",
         "dev1": "https://auth.dev1.vertesia.io/",
-        "dev2": "https://internal-auth.vertesia.app/"
+        "dev2": "https://auth.vertesia.io/"
       }
     },
     "STS_URL": {

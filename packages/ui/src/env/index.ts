@@ -1,3 +1,13 @@
+import { isTrustedAuthBrokerUrl } from '../session/auth/vertesiaHosts.js';
+
+export {
+    FIRST_PARTY_HOST_PATTERNS,
+    GATEWAY_HOST_PATTERNS,
+    isLoopbackHostname,
+    isTrustedAuthBrokerUrl,
+    normalizeHostname,
+} from '../session/auth/vertesiaHosts.js';
+
 // hook to initialize the environment and auth session
 // the main app must call this hook before rendering the page.
 
@@ -18,8 +28,8 @@ export interface EnvProps {
         /**
          * Central Auth broker that issues the sign-in redirect and hosts `/logout`.
          *
-         * Optional: when unset the session falls back to the long-standing broker, so an app that
-         * does not set it keeps its current behaviour exactly. Set it to move one environment at a
+         * Optional: when unset the session falls back to the first-party broker, so an app that
+         * does not set it uses auth.vertesia.io. Set it to move one environment at a
          * time onto a different broker.
          */
         auth?: string;
@@ -28,6 +38,9 @@ export interface EnvProps {
         /** Appgen app-gateway endpoint (serves live development previews and app bundles). */
         gateway?: string;
     };
+    /** Public OAuth client for independently hosted apps; ignored inside Studio or a gateway session. */
+    allowLegacyIframeAuth?: boolean;
+    oauth?: { clientId: string; redirectUri: string; scopes?: string[]; offlineAccess?: boolean };
     firebase?: {
         apiKey: string;
         authDomain: string;
@@ -52,9 +65,8 @@ export interface EnvProps {
     /**
      * Optional host-provided Vertesia auth token bootstrap.
      *
-     * Published generated apps use this to ask their same-origin app gateway for
-     * the token backing the gateway session cookie, allowing UserSession to
-     * initialize without redirecting through Central Auth.
+     * Embedded apps use this to obtain a scoped token from their trusted host.
+     * Standalone generated apps use the gateway cookie session instead.
      */
     authTokenProvider?: () => Promise<string | undefined>;
     logger?: {
@@ -70,6 +82,7 @@ export interface EnvProps {
 export type VertesiaRuntimeConfig =
     | {
           authMode: 'firebase';
+          allowLegacyIframeAuth?: boolean;
           firebase: {
               apiKey: string;
               authDomain: string;
@@ -79,6 +92,12 @@ export type VertesiaRuntimeConfig =
       }
     | {
           authMode: 'central';
+          allowLegacyIframeAuth?: boolean;
+          oauth?: EnvProps['oauth'];
+          /** Broker selected by the serving gateway. Overrides build-time configuration. */
+          authUrl?: string;
+          /** The serving gateway owns this standalone app's OAuth session. */
+          gatewaySession?: boolean;
       };
 
 declare global {
@@ -141,6 +160,16 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         const runtimeConfig = injectedRuntimeConfig() ?? buildRuntimeConfig(buildEnv);
         const runtimeFirebase = runtimeConfig?.authMode === 'firebase' ? runtimeConfig.firebase : undefined;
         this._props = props && runtimeFirebase && !props.firebase ? { ...props, firebase: runtimeFirebase } : props;
+        const authUrl = runtimeConfig?.authMode === 'central' ? runtimeConfig.authUrl?.trim() : undefined;
+        if (this._props && authUrl && isTrustedAuthBrokerUrl(authUrl, { allowLoopback: this._props.isLocalDev })) {
+            this._props = { ...this._props, endpoints: { ...this._props.endpoints, auth: authUrl } };
+        }
+        if (this._props && runtimeConfig?.authMode === 'central' && runtimeConfig.oauth) {
+            this._props = { ...this._props, oauth: runtimeConfig.oauth };
+        }
+        if (this._props && runtimeConfig?.allowLegacyIframeAuth !== undefined) {
+            this._props = { ...this._props, allowLegacyIframeAuth: runtimeConfig.allowLegacyIframeAuth };
+        }
         const tenantId =
             typeof buildEnv?.VITE_FIREBASE_TENANT_ID === 'string' ? buildEnv.VITE_FIREBASE_TENANT_ID.trim() : '';
         if (this._props?.firebase && tenantId && !this._props.firebase.tenantId) {
@@ -241,6 +270,14 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get defaultAuthSelection() {
         return this._props?.defaultAuthSelection;
+    }
+
+    get allowLegacyIframeAuth() {
+        return this._props?.allowLegacyIframeAuth ?? this._props?.isLocalDev === true;
+    }
+
+    get oauth() {
+        return this._props?.oauth;
     }
 
     get authTokenProvider() {
