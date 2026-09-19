@@ -8,7 +8,7 @@ import { getComposableToken } from './auth/composable';
 import { authReturnUrl, centralAuthUrl, mountRootUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { gatewayFetch, loadGatewaySession, logoutGatewaySession, usesGatewaySession } from './auth/gateway';
-import { clearAppOAuth, getAppOAuthToken, usesAppOAuth } from './auth/oauth';
+import { getAppOAuthToken, revokeAppOAuthSession, usesAppOAuth } from './auth/oauth';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
 
@@ -105,8 +105,7 @@ class UserSession {
             return payload;
         }
         if (usesAppOAuth()) {
-            clearAppOAuth();
-            this.authToken = jwtDecode<AuthTokenPayload>(await getAppOAuthToken());
+            this.authToken = jwtDecode<AuthTokenPayload>(await getAppOAuthToken(true));
             this.setSession?.(this.clone());
             return this.authToken;
         }
@@ -186,7 +185,14 @@ class UserSession {
         }
 
         if (usesAppOAuth()) {
-            clearAppOAuth();
+            void revokeAppOAuthSession()
+                .catch(() => undefined)
+                .finally(() => {
+                    const logoutUrl = new URL(centralAuthUrl());
+                    logoutUrl.pathname = '/logout';
+                    logoutUrl.searchParams.set('redirect_uri', authReturnUrl().toString());
+                    location.replace(logoutUrl.toString());
+                });
             this.client.withAuthCallback(undefined);
             this.authToken = undefined;
             this.authError = undefined;

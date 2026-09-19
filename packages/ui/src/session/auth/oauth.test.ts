@@ -52,6 +52,7 @@ beforeEach(() => {
     };
     browser.parent = browser;
     vi.stubGlobal('window', browser);
+    vi.stubGlobal('document', { cookie: '' });
     vi.stubGlobal('sessionStorage', {
         getItem: (key: string) => storage.get(key) ?? null,
         setItem: (key: string, value: string) => storage.set(key, value),
@@ -172,4 +173,60 @@ it('supports a registered client ID without fetching a CIMD', async () => {
     expect(authorize.searchParams.get('scope')).toBe('openid content:read');
     expect(authorize.searchParams.has('consent_required')).toBe(false);
     expect(requests).toHaveLength(1);
+});
+
+it('prefers an STS fragment token over OAuth', async () => {
+    const oauth = await setup();
+    Object.assign(browser.location, { hash: `#token=${jwt()}&state=state` });
+    expect(oauth.usesAppOAuth()).toBe(false);
+});
+it('uses the refresh grant when offline access was explicitly enabled', async () => {
+    const oauth = await setup();
+    const { Env } = await import('../../env');
+    Env.init({
+        name: 'test',
+        version: '1',
+        type: 'production',
+        isLocalDev: false,
+        isDocker: false,
+        endpoints: { studio: issuer, zeno: issuer, sts: issuer },
+        oauth: { clientId, redirectUri: `${origin}/app`, offlineAccess: true },
+    });
+    storage.set(
+        'vertesia.oauth.access',
+        JSON.stringify({ token: jwt(), refreshToken: 'refresh-credential', clientId, issuer }),
+    );
+    expect(await oauth.getAppOAuthToken(true)).toBeTruthy();
+    const exchange = requests.find((request) => request.url.endsWith('/oauth/token'));
+    if (!(exchange?.init?.body instanceof URLSearchParams)) throw new Error('Expected refresh request');
+    expect(exchange.init.body.get('grant_type')).toBe('refresh_token');
+    expect(exchange.init.body.get('refresh_token')).toBe('refresh-credential');
+    expect(replace).not.toHaveBeenCalled();
+});
+
+it('starts a fresh authorization when the refresh endpoint is unreachable', async () => {
+    const oauth = await setup();
+    const { Env } = await import('../../env');
+    Env.init({
+        name: 'test',
+        version: '1',
+        type: 'production',
+        isLocalDev: false,
+        isDocker: false,
+        endpoints: { studio: issuer, zeno: issuer, sts: issuer },
+        oauth: { clientId, redirectUri: `${origin}/app`, offlineAccess: true },
+    });
+    storage.set('vertesia.oauth.access', JSON.stringify({ token: jwt(), refreshToken: 'refresh', clientId, issuer }));
+    const original = fetch;
+    vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+            if (String(input).endsWith('/oauth/token')) throw new TypeError('Network unavailable');
+            return original(input, init);
+        }),
+    );
+    void oauth.getAppOAuthToken(true);
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledOnce());
+    expect(storage.has('vertesia.oauth.access')).toBe(false);
+    expect(new URL(replace.mock.calls[0][0]).searchParams.get('client_id')).toBe(clientId);
 });

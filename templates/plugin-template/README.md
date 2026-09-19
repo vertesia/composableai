@@ -763,3 +763,7 @@ or CIMDs with a valid operator-issued attestation can use the server's existing 
 For an operator-attested CIMD, set `APP_OAUTH_SOFTWARE_STATEMENT` to the signed statement
 issued for this exact metadata URL and STS. The app republishes it unchanged; it never signs or
 self-declares trust. Expired or invalid attestations are handled by the authorization server.
+
+### Iframe permissions
+
+Declare `oauth_scopes` in the app manifest when embedding the app in a host that supports app-scoped sessions, for example `"oauth_scopes": ["content:read"]`. This is a request, not a grant: the host issues a short-lived token limited to the installed app, current project, declared scopes, and the user's permissions. It does not include a refresh token. Request a new token through the iframe authentication protocol before expiry. Hosts may temporarily enable legacy authentication for manifests without this field; migrate manifests before that compatibility option is disabled.

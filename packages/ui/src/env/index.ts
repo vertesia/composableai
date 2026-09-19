@@ -1,3 +1,13 @@
+import { isTrustedAuthBrokerUrl } from '../session/auth/vertesiaHosts.js';
+
+export {
+    FIRST_PARTY_HOST_PATTERNS,
+    GATEWAY_HOST_PATTERNS,
+    isLoopbackHostname,
+    isTrustedAuthBrokerUrl,
+    normalizeHostname,
+} from '../session/auth/vertesiaHosts.js';
+
 // hook to initialize the environment and auth session
 // the main app must call this hook before rendering the page.
 
@@ -29,7 +39,8 @@ export interface EnvProps {
         gateway?: string;
     };
     /** Public OAuth client for independently hosted apps; ignored inside Studio or a gateway session. */
-    oauth?: { clientId: string; redirectUri: string; scopes?: string[] };
+    allowLegacyIframeAuth?: boolean;
+    oauth?: { clientId: string; redirectUri: string; scopes?: string[]; offlineAccess?: boolean };
     firebase?: {
         apiKey: string;
         authDomain: string;
@@ -71,6 +82,7 @@ export interface EnvProps {
 export type VertesiaRuntimeConfig =
     | {
           authMode: 'firebase';
+          allowLegacyIframeAuth?: boolean;
           firebase: {
               apiKey: string;
               authDomain: string;
@@ -80,6 +92,8 @@ export type VertesiaRuntimeConfig =
       }
     | {
           authMode: 'central';
+          allowLegacyIframeAuth?: boolean;
+          oauth?: EnvProps['oauth'];
           /** Broker selected by the serving gateway. Overrides build-time configuration. */
           authUrl?: string;
           /** The serving gateway owns this standalone app's OAuth session. */
@@ -147,8 +161,14 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         const runtimeFirebase = runtimeConfig?.authMode === 'firebase' ? runtimeConfig.firebase : undefined;
         this._props = props && runtimeFirebase && !props.firebase ? { ...props, firebase: runtimeFirebase } : props;
         const authUrl = runtimeConfig?.authMode === 'central' ? runtimeConfig.authUrl?.trim() : undefined;
-        if (this._props && authUrl) {
+        if (this._props && authUrl && isTrustedAuthBrokerUrl(authUrl, { allowLoopback: this._props.isLocalDev })) {
             this._props = { ...this._props, endpoints: { ...this._props.endpoints, auth: authUrl } };
+        }
+        if (this._props && runtimeConfig?.authMode === 'central' && runtimeConfig.oauth) {
+            this._props = { ...this._props, oauth: runtimeConfig.oauth };
+        }
+        if (this._props && runtimeConfig?.allowLegacyIframeAuth !== undefined) {
+            this._props = { ...this._props, allowLegacyIframeAuth: runtimeConfig.allowLegacyIframeAuth };
         }
         const tenantId =
             typeof buildEnv?.VITE_FIREBASE_TENANT_ID === 'string' ? buildEnv.VITE_FIREBASE_TENANT_ID.trim() : '';
@@ -250,6 +270,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get defaultAuthSelection() {
         return this._props?.defaultAuthSelection;
+    }
+
+    get allowLegacyIframeAuth() {
+        return this._props?.allowLegacyIframeAuth === true;
     }
 
     get oauth() {

@@ -331,6 +331,7 @@ export const AppDashboardDefinitionSchema = z
 
 export const AppManifestDataSchema = z
     .strictObject({
+        oauth_scopes: z.array(z.string()).optional(),
         name: z.string().meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
         }),
@@ -511,6 +512,7 @@ export const CompositeAppMessageOverridesSchema = z
 
 export const AppManifestSchema = z
     .strictObject({
+        oauth_scopes: z.array(z.string()).optional(),
         edit_revision: EditRevisionSchema,
         name: z.string().meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',

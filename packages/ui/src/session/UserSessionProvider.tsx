@@ -132,28 +132,6 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             },
         });
 
-        if (usesGatewaySession() || usesAppOAuth()) {
-            let cancelled = false;
-            session.setSession = setSession;
-            const initialize = usesGatewaySession()
-                ? session.loginGatewaySession()
-                : getAppOAuthToken().then((token) => session.login(token, { loadOnboardingStatus: false }));
-            void initialize
-                .then(() => {
-                    if (!cancelled) setSession(session.clone());
-                })
-                .catch((error: unknown) => {
-                    if (cancelled) return;
-                    session.isLoading = false;
-                    session.authError = error instanceof Error ? error : new Error(String(error));
-                    setSession(session.clone());
-                });
-            return () => {
-                cancelled = true;
-                hasInitiatedAuthRef.current = false;
-            };
-        }
-
         if (Env.isLocalDev && Env.devAuthToken) {
             session.setSession = setSession;
             getComposableToken(selectedAccount, selectedProject, Env.devAuthToken)
@@ -177,6 +155,28 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             return;
         }
 
+        if (usesGatewaySession() || usesAppOAuth()) {
+            let cancelled = false;
+            session.setSession = setSession;
+            const initialize = usesGatewaySession()
+                ? session.loginGatewaySession()
+                : getAppOAuthToken().then((token) => session.login(token, { loadOnboardingStatus }));
+            void initialize
+                .then(() => {
+                    if (!cancelled) setSession(session.clone());
+                })
+                .catch((error: unknown) => {
+                    if (cancelled || surfaceAuthError(error)) return;
+                    session.isLoading = false;
+                    session.authError = error instanceof Error ? error : new Error(String(error));
+                    setSession(session.clone());
+                });
+            return () => {
+                cancelled = true;
+                hasInitiatedAuthRef.current = false;
+            };
+        }
+
         if (token && state) {
             session.setSession = setSession;
             const validationError = verifyState(state);
@@ -187,7 +187,10 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         state: state,
                     },
                 });
+                clearState();
+                clearAuthHash();
                 redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
+                return;
             } else {
                 clearState();
             }

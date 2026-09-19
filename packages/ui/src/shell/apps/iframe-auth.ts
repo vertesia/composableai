@@ -19,6 +19,8 @@ export interface IframeAuthResponse {
     type: typeof IFRAME_AUTH_RESPONSE;
     requestId: string;
     token?: string;
+    /** Unix epoch milliseconds. */
+    expiresAt?: number;
 }
 
 export interface IframeAppContextRequest {
