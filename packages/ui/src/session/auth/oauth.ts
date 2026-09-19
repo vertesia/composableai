@@ -2,19 +2,23 @@ import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
 import { markCentralAuthRoundTripStarted } from './authRoundTrip';
+import { verifyAuthState } from './authState';
 import { usesGatewaySession } from './gateway';
 
 const TRANSACTION_KEY = 'vertesia.oauth.transaction';
 const TOKEN_KEY = 'vertesia.oauth.access';
 const MAX_TRANSACTION_AGE = 10 * 60_000;
 let pending: Promise<string> | undefined;
+// Long-lived credentials never enter browser storage. A reload resumes via the broker when access expires.
+let refreshSession: { token: string; clientId: string; issuer: string; tokenEndpoint: string } | undefined;
 
 export class OAuthLoginError extends Error {}
 
 function hasVertesiaFragmentToken(): boolean {
     try {
-        const token = new URLSearchParams(window.location.hash.slice(1)).get('token');
-        if (!token) return false;
+        const fragment = new URLSearchParams(window.location.hash.slice(1));
+        const token = fragment.get('token');
+        if (!token || verifyAuthState(fragment.get('state'))) return false;
         return jwtDecode<AuthTokenPayload>(token).iss.replace(/\/+$/, '') === Env.endpoints.sts.replace(/\/+$/, '');
     } catch {
         return false;
@@ -57,6 +61,7 @@ interface Transaction {
 }
 
 export function clearAppOAuth(): void {
+    refreshSession = undefined;
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(TRANSACTION_KEY);
 }
@@ -110,7 +115,6 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 clientId: string;
                 issuer: string;
                 refreshToken?: string;
-                tokenEndpoint?: string;
             };
             const claims = jwtDecode<AuthTokenPayload>(cached.token);
             if (
@@ -120,7 +124,12 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 (!current.searchParams.get('p') || claims.project?.id === current.searchParams.get('p')) &&
                 (!current.searchParams.get('a') || claims.account?.id === current.searchParams.get('a'))
             )
-                refreshCredential = cached.refreshToken;
+                refreshCredential =
+                    refreshSession?.clientId === clientId && refreshSession.issuer === issuer
+                        ? refreshSession.token
+                        : undefined;
+            // Discard credentials persisted by older SDK versions rather than loading them into the new session.
+            if (cached.refreshToken) sessionStorage.removeItem(TOKEN_KEY);
             if (
                 cached.clientId === clientId &&
                 cached.issuer === issuer &&
@@ -164,7 +173,9 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 if (
                     claims.iss.replace(/\/+$/, '') !== issuer ||
                     claims.client_id !== clientId ||
-                    claims.exp <= Date.now() / 1000
+                    claims.exp <= Date.now() / 1000 ||
+                    (!!current.searchParams.get('a') && claims.account?.id !== current.searchParams.get('a')) ||
+                    (!!current.searchParams.get('p') && claims.project?.id !== current.searchParams.get('p'))
                 )
                     throw new OAuthLoginError('Invalid OAuth refresh identity');
                 sessionStorage.setItem(
@@ -173,15 +184,20 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                         token: grant.access_token,
                         clientId,
                         issuer,
-                        refreshToken: grant.refresh_token ?? refreshCredential,
-                        tokenEndpoint: tokenEndpoint.toString(),
                     }),
                 );
+                refreshSession = {
+                    token: grant.refresh_token ?? refreshCredential,
+                    clientId,
+                    issuer,
+                    tokenEndpoint: tokenEndpoint.toString(),
+                };
                 return grant.access_token;
             }
         } catch {
             // A failed or invalid refresh starts a fresh authorization transaction.
         }
+        refreshSession = undefined;
         sessionStorage.removeItem(TOKEN_KEY);
     }
     if (transaction && code) {
@@ -214,10 +230,12 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 token: grant.access_token,
                 clientId,
                 issuer,
-                refreshToken: config.offlineAccess ? grant.refresh_token : undefined,
-                tokenEndpoint: tokenEndpoint.toString(),
             }),
         );
+        refreshSession =
+            config.offlineAccess && grant.refresh_token
+                ? { token: grant.refresh_token, clientId, issuer, tokenEndpoint: tokenEndpoint.toString() }
+                : undefined;
         const target = new URL(transaction.target);
         if (target.origin !== window.location.origin) throw new Error('Invalid OAuth return target');
         if (claims.account?.id) target.searchParams.set('a', claims.account.id);
@@ -285,11 +303,9 @@ export function isAppOAuthLoginPending(): boolean {
 export const startAppOAuthLogin = getAppOAuthToken;
 
 export async function revokeAppOAuthSession(): Promise<void> {
-    const raw = sessionStorage.getItem(TOKEN_KEY);
+    const cached = refreshSession;
     clearAppOAuth();
-    if (!raw) return;
-    const cached = JSON.parse(raw) as { refreshToken?: string; tokenEndpoint?: string; clientId: string };
-    if (!cached.refreshToken || !cached.tokenEndpoint) return;
+    if (!cached) return;
     const revoke = httpsUrl(cached.tokenEndpoint);
     revoke.pathname = revoke.pathname.replace(/\/token$/, '/revoke');
     await fetch(revoke, {
@@ -297,7 +313,7 @@ export async function revokeAppOAuthSession(): Promise<void> {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
             client_id: cached.clientId,
-            token: cached.refreshToken,
+            token: cached.token,
             token_type_hint: 'refresh_token',
         }),
     });

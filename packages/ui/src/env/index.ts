@@ -273,7 +273,7 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     }
 
     get allowLegacyIframeAuth() {
-        return this._props?.allowLegacyIframeAuth === true;
+        return this._props?.allowLegacyIframeAuth ?? this._props?.isLocalDev === true;
     }
 
     get oauth() {

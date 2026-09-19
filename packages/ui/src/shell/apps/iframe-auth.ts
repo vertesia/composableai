@@ -180,7 +180,14 @@ export function requestIframeHostAuthToken(timeoutMs = 5000): Promise<string | u
             if (event.source !== window.parent || event.origin !== parentOrigin || !isIframeAuthResponse(event.data)) {
                 return;
             }
-            if (event.data.requestId === requestId && event.data.token) finish(event.data.token);
+            if (event.data.requestId === requestId) {
+                const expires = event.data.expiresAt;
+                finish(
+                    expires !== undefined && (!Number.isFinite(expires) || expires <= Date.now())
+                        ? undefined
+                        : event.data.token,
+                );
+            }
         };
         const request = { type: IFRAME_AUTH_REQUEST, requestId } satisfies IframeAuthRequest;
         const sendRequest = () => {

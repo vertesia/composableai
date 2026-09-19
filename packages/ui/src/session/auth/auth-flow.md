@@ -1104,3 +1104,16 @@ flowchart TB
         LO6 --> LO7
         LO7 --> LO8 --> LO9
     end
+## OAuth credential lifetime
+
+The short-lived access token and the ten-minute PKCE transaction are stored in tab-scoped
+sessionStorage. The state and verifier must survive the authorization redirect; the transaction is
+consumed once on return. Refresh credentials are held only in module memory, never browser storage.
+Reloading retains a valid access token; after it expires, a fresh broker round-trip is required.
+Logout revokes the in-memory refresh credential and clears both stored records. This does not make
+arbitrary scripts running on the application origin trusted: they share that origin's privileges.
+
+Embedded applications reacquire scoped credentials through the parent message protocol. A response
+without a token is a denial, and an already-expired `expiresAt` is rejected. JWT expiry governs the
+session cache; app-scoped tokens use a 60-second renewal window and are never exchanged for a broader
+session token just because their lifetime is shorter than a normal session's.

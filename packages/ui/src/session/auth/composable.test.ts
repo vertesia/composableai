@@ -85,6 +85,24 @@ describe('getComposableToken', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it('uses a short-lived scoped iframe token directly, including a forced host refresh', async () => {
+        const token = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 120,
+            client_id: 'vertesia-app:analytics',
+            account: { id: 'account-id' },
+            project: { id: 'project-id' },
+            apps: ['analytics'],
+        });
+        const provider = vi.fn(async () => token);
+        const fetcher = vi.fn();
+        vi.stubGlobal('fetch', fetcher);
+        const { getComposableToken } = await importComposableAuth(provider);
+        expect((await getComposableToken('account-id', 'project-id', undefined, true, true)).rawToken).toBe(token);
+        expect(provider).toHaveBeenCalledOnce();
+        expect(fetcher).not.toHaveBeenCalled();
+    });
+
     it('falls back to the cached credential when the injected provider is unavailable', async () => {
         const expiringToken = makeJwt({
             iss: 'https://sts.dev1.vertesia.io',
