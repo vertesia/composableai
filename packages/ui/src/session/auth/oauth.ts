@@ -4,6 +4,7 @@ import { jwtDecode } from 'jwt-decode';
 import { markCentralAuthRoundTripStarted } from './authRoundTrip';
 import { verifyAuthState } from './authState';
 import { usesGatewaySession } from './gateway';
+import { isStsTokenIssuer } from './tokenIssuer';
 
 const TRANSACTION_KEY = 'vertesia.oauth.transaction';
 const TOKEN_KEY = 'vertesia.oauth.access';
@@ -19,7 +20,7 @@ function hasVertesiaFragmentToken(): boolean {
         const fragment = new URLSearchParams(window.location.hash.slice(1));
         const token = fragment.get('token');
         if (!token || verifyAuthState(fragment.get('state'))) return false;
-        return jwtDecode<AuthTokenPayload>(token).iss.replace(/\/+$/, '') === Env.endpoints.sts.replace(/\/+$/, '');
+        return isStsTokenIssuer(jwtDecode<AuthTokenPayload>(token).iss, Env.endpoints.sts);
     } catch {
         return false;
     }

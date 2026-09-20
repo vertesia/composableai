@@ -242,3 +242,15 @@ it('does not let a forged fragment suppress OAuth without a matching state', asy
     Object.assign(browser.location, { hash: `#token=${jwt()}&state=forged` });
     expect(oauth.usesAppOAuth()).toBe(true);
 });
+
+it('routes a state-bound regional legacy token through branch STS without starting OAuth', async () => {
+    const oauth = await setup();
+    const { Env } = await import('../../env');
+    Env.endpoints.sts = 'https://token-server-dev-example.api.dev1.vertesia.io';
+    storage.set('auth_state', 'state');
+    storage.set('auth_state_expiry', String(Date.now() + 60000));
+    Object.assign(browser.location, { hash: `#token=${jwt()}&state=state` });
+    expect(oauth.usesAppOAuth()).toBe(false);
+    storage.delete('auth_state');
+    expect(oauth.usesAppOAuth()).toBe(true);
+});

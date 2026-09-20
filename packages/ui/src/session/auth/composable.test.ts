@@ -38,7 +38,7 @@ describe('getComposableToken', () => {
         vi.clearAllMocks();
     });
 
-    it('uses an authorization-bearing STS-issued Vertesia token directly instead of exchanging it', async () => {
+    it.each([false, true])('uses an authorization-bearing STS token directly (branch=%s)', async (branch) => {
         const token = makeJwt({
             iss: 'https://sts.dev1.vertesia.io',
             exp: Math.floor(Date.now() / 1000) + 3600,
@@ -51,6 +51,10 @@ describe('getComposableToken', () => {
         vi.stubGlobal('fetch', fetchMock);
 
         const { getComposableToken } = await importComposableAuth();
+        if (branch) {
+            const { Env } = await import('@vertesia/ui/env');
+            Env.endpoints.sts = 'https://token-server-dev-example.api.dev1.vertesia.io';
+        }
         const result = await getComposableToken('account-id', 'project-id', token, false, true);
 
         expect(result.rawToken).toBe(token);

@@ -18,6 +18,7 @@ import {
     shouldRedirectToCentralAuth,
 } from './domainRouting';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
+import { isStsTokenIssuer } from './tokenIssuer';
 
 let AUTH_TOKEN_RAW: string | undefined;
 let AUTH_TOKEN: AuthTokenPayload | undefined;
@@ -150,10 +151,6 @@ export function resolveAuthSelection(currentUrl: URL): { accountId?: string; pro
     return { accountId, projectId };
 }
 
-function normalizeIssuer(value: string | undefined): string | undefined {
-    return value?.replace(/\/+$/, '');
-}
-
 function decodeToken(token: string): AuthTokenPayload {
     return jwtDecode(token) as AuthTokenPayload;
 }
@@ -162,7 +159,7 @@ function isVertesiaIssuedToken(token: string | undefined): token is string {
     if (!token) return false;
     try {
         const decoded = decodeToken(token) as AuthTokenPayload & { iss?: string };
-        return normalizeIssuer(decoded.iss) === normalizeIssuer(Env.endpoints.sts);
+        return isStsTokenIssuer(decoded.iss, Env.endpoints.sts);
     } catch {
         return false;
     }
