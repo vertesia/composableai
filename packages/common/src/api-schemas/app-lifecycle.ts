@@ -405,6 +405,10 @@ export const StartAppScaffoldRequestSchema = z
         title: z.string().optional(),
         description: z.string().optional(),
         modules: z.array(AppScaffoldModuleSchema).optional(),
+        oauth_scopes: z
+            .array(z.string())
+            .optional()
+            .meta({ description: 'App permissions declared in generated source. Defaults to sign-in only.' }),
         appgen_package_spec: z
             .string()
             .regex(APPGEN_PACKAGE_SPEC_PATTERN)

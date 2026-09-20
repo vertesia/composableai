@@ -129,6 +129,44 @@
           "devOnly": true
         }
       ]
+    },
+    {
+      "type": "select",
+      "name": "OAUTH_SCOPES",
+      "message": "App permissions",
+      "initial": 0,
+      "choices": [
+        {
+          "title": "Sign-in only",
+          "description": "Identity and session renewal; no project data access.",
+          "value": [
+            "openid",
+            "profile",
+            "offline_access"
+          ]
+        },
+        {
+          "title": "Browse content",
+          "description": "Read content in the selected project.",
+          "value": [
+            "openid",
+            "profile",
+            "offline_access",
+            "content:read"
+          ]
+        },
+        {
+          "title": "Edit content",
+          "description": "Read and write content in the selected project.",
+          "value": [
+            "openid",
+            "profile",
+            "offline_access",
+            "content:read",
+            "content:write"
+          ]
+        }
+      ]
     }
   ],
   "derived": {
@@ -190,6 +228,7 @@
     "index.html",
     "src/constants.ts",
     "src/tool-server/config.ts",
+    "src/app-permissions.ts",
     "src/modules/content-app/resources/processes/review-workflow.ts",
     "src/ui/env.ts",
     "src/modules/app/branding/index.ts",

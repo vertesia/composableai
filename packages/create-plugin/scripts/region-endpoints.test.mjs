@@ -60,3 +60,20 @@ test('development marker must be a file, matching the Vertesia CLI', () => {
         rmSync(directory, { recursive: true, force: true });
     }
 });
+
+for (const preset of [0, 1, 2]) {
+    test(`permission preset ${preset} survives default prompt resolution`, async () => {
+        const config = JSON.parse(readFileSync(new URL('template.config.json', templateRoot), 'utf8'));
+        const prompt = config.prompts.find((item) => item.name === 'OAUTH_SCOPES');
+        assert.equal(prompt.initial, 0);
+        prompt.initial = preset;
+        const answers = await promptUser('example-app', config, true, false);
+        assert.deepEqual(answers.OAUTH_SCOPES, [
+            'openid',
+            'profile',
+            'offline_access',
+            ...(preset > 0 ? ['content:read'] : []),
+            ...(preset === 2 ? ['content:write'] : []),
+        ]);
+    });
+}

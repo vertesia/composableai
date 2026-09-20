@@ -18019,6 +18019,13 @@
           "$ref": "#/components/schemas/AppScaffoldModule"
         }
       },
+      "oauth_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "App permissions declared in generated source. Defaults to sign-in only."
+      },
       "appgen_package_spec": {
         "type": "string",
         "pattern": "^(?:latest|dev|dev-[0-9]+\\.[0-9]+|snapshot-[0-9a-f]{7}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?)$",
@@ -22046,6 +22053,13 @@
   "AppPackage": {
     "type": "object",
     "properties": {
+      "oauth_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "OAuth scopes requested by the app. Users must consent to project permissions."
+      },
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app"

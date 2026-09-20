@@ -767,3 +767,14 @@ self-declares trust. Expired or invalid attestations are handled by the authoriz
 ### Iframe permissions
 
 Declare `oauth_scopes` in the app manifest when embedding the app in a host that supports app-scoped sessions, for example `"oauth_scopes": ["content:read"]`. This is a request, not a grant: the host issues a short-lived token limited to the installed app, current project, declared scopes, and the user's permissions. It does not include a refresh token. Request a new token through the iframe authentication protocol before expiry. Hosts may temporarily enable legacy authentication for manifests without this field; migrate manifests before that compatibility option is disabled.
+
+### App permission presets
+
+Creation defaults to **Sign-in only** (`openid`, `profile`, `offline_access`), with no project data access.
+Choose **Browse content** to add `content:read`, or **Edit content** to add `content:read` and `content:write`.
+Users still approve access, and tokens remain limited to their own permissions in the selected project.
+
+Edit `src/app-permissions.ts` to change the requested scopes, then rebuild and publish the app.
+The UI, Vercel CIMD, and server package share this definition; managed gateway deployments read it
+from the published version manifest. Existing app versions keep their previous permissions.
+Vercel environment overrides (`APP_OAUTH_SCOPES` and `VITE_OAUTH_SCOPES`) must match if used.

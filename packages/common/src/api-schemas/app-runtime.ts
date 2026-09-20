@@ -913,6 +913,10 @@ export const AppEventSubscriptionDefinitionSchema = z
 
 export const AppPackageSchema = z
     .strictObject({
+        oauth_scopes: z
+            .array(z.string())
+            .meta({ description: 'OAuth scopes requested by the app. Users must consent to project permissions.' })
+            .optional(),
         ui: AppUIConfigSchema.meta({ description: 'The UI configuration of the app' }).optional(),
         tools: z
             .array(AgentToolDefinitionSchema)
