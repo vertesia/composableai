@@ -9040,27 +9040,14 @@
         },
         "description": "Array of default tool names available to this agent. For interactions: defines default tools. For execution payloads: you can use + and - to add or remove from default, if no sign, then list replaces default."
       },
-      "allowed_mcp_servers": {
+      "allowed_tools": {
         "type": "array",
         "items": {
-          "type": "object",
-          "properties": {
-            "app_install_id": {
-              "type": "string",
-              "minLength": 1
-            },
-            "collection_id": {
-              "type": "string",
-              "minLength": 1
-            }
-          },
-          "required": [
-            "app_install_id",
-            "collection_id"
-          ],
-          "additionalProperties": false
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^+\\-]"
         },
-        "description": "Administrative MCP allowlist. Omitted inherits project access; an empty array blocks all MCP servers. Entries approve all tools from that installed collection, subject to user authorization. Runtime selections cannot expand this policy."
+        "description": "Administrative tool allowlist, independent of first-turn tool_names. Omitted inherits access; an empty array denies all tools. Exact tool names apply to builtins, skills, interactions, HTTP and MCP tools. Runtime selection and skill grants cannot expand this policy."
       },
       "search_scope": {
         "$ref": "#/components/schemas/AgentSearchScope",

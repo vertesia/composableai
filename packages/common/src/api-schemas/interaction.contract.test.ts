@@ -306,20 +306,17 @@ describe('background inference telemetry contract', () => {
     });
 });
 
-describe('AgentRunnerOptions MCP access contract', () => {
-    it.each([
-        {},
-        { allowed_mcp_servers: [] },
-        { allowed_mcp_servers: [{ app_install_id: 'install', collection_id: 'jira' }] },
-    ])('accepts a saved policy: %j', (options) => {
-        expect(validateApiRequest('AgentRunnerOptions', options).valid).toBe(true);
-    });
-    it.each([
-        { allowed_mcp_servers: null },
-        { allowed_mcp_servers: [{ collection_id: 'jira' }] },
-        { allowed_mcp_servers: [{ app_install_id: '', collection_id: 'jira' }] },
-        { allowed_mcp_servers: [{ app_install_id: 'install', collection_id: 'jira', url: 'https://other' }] },
-    ])('rejects ambiguous or malformed policies: %j', (options) => {
-        expect(validateApiRequest('AgentRunnerOptions', options).valid).toBe(false);
-    });
+describe('AgentRunnerOptions tool access contract', () => {
+    it.each([{}, { allowed_tools: [] }, { allowed_tools: ['discover_tools', 'search_documents', 'learn_web_search'] }])(
+        'accepts a saved policy: %j',
+        (options) => {
+            expect(validateApiRequest('AgentRunnerOptions', options).valid).toBe(true);
+        },
+    );
+    it.each([null, [''], ['+search_documents'], ['-search_documents'], [{ app_install_id: 'install' }]])(
+        'rejects malformed policy %j',
+        (allowed_tools) => {
+            expect(validateApiRequest('AgentRunnerOptions', { allowed_tools }).valid).toBe(false);
+        },
+    );
 });
