@@ -1,5 +1,6 @@
 import { useUserSession } from '@vertesia/ui/session';
 import type { ComponentType, ReactNode } from 'react';
+import { LOADING_INDICATOR_STYLES } from '../boot/loading.js';
 
 export interface AuthLoadingScreenProps {
     loadingIcon?: ReactNode;
@@ -81,10 +82,9 @@ function LoadingIcon() {
 /** Shared logo motion for full-screen and in-content loading states. */
 export function LoadingAnimation({ loadingIcon }: AuthLoadingScreenProps) {
     return (
-        <div className="animate-[var(--vertesia-loading-animation,spin_4s_linear_infinite)] motion-reduce:animate-none">
-            <div className="animate-[var(--vertesia-loading-pulse-animation,pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite)] motion-reduce:animate-none rounded-full bg-transparent">
-                {loadingIcon || <LoadingIcon />}
-            </div>
+        <div className="vertesia-loading-motion">
+            <style>{LOADING_INDICATOR_STYLES}</style>
+            {loadingIcon || <LoadingIcon />}
         </div>
     );
 }
