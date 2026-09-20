@@ -9045,7 +9045,7 @@
         "items": {
           "type": "string",
           "minLength": 1,
-          "pattern": "^[^+\\-]"
+          "pattern": "^[^+-]"
         },
         "description": "Administrative tool allowlist, independent of first-turn tool_names. Omitted inherits access; an empty array denies all tools. Exact tool names apply to builtins, skills, interactions, HTTP and MCP tools. Runtime selection and skill grants cannot expand this policy."
       },
