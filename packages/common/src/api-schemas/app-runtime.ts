@@ -256,11 +256,18 @@ export const InCodeProcessDefinitionSchema: z.ZodType<InCodeProcessDefinition> =
     })
     .meta({ id: 'InCodeProcessDefinition' });
 
+const appOAuthApprovalSchema = z.strictObject({
+    scopes: z.array(z.string()),
+    approved_by: z.string(),
+    approved_at: z.string(),
+});
+
 export const AppInstallationSchema = z
     .strictObject({
         id: z.string(),
         project: z.string(),
         manifest: z.string(),
+        oauth_approval: appOAuthApprovalSchema.optional(),
         settings: z.looseObject({}).optional(),
         tool_allowlist: z
             .array(z.string())
@@ -632,6 +639,7 @@ export const AppInstallationWithManifestSchema = z
     .strictObject({
         id: z.string(),
         project: z.string(),
+        oauth_approval: appOAuthApprovalSchema.optional(),
         settings: z.looseObject({}).optional(),
         tool_allowlist: z
             .array(z.string())
@@ -677,6 +685,7 @@ export const AppInstallationListEntrySchema = z
     .strictObject({
         id: z.string(),
         project: z.string(),
+        oauth_approval: appOAuthApprovalSchema.optional(),
         settings: z.looseObject({}).optional(),
         tool_allowlist: z
             .array(z.string())

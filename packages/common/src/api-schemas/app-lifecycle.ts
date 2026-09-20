@@ -40,6 +40,13 @@ export const UpdateAppInstallationToolAllowlistPayloadSchema = z
     })
     .meta({ id: 'UpdateAppInstallationToolAllowlistPayload' });
 
+export const UpdateAppInstallationOAuthApprovalPayloadSchema = z
+    .strictObject({ approved_scopes: z.array(z.string().min(1)).max(200) })
+    .meta({
+        id: 'UpdateAppInstallationOAuthApprovalPayload',
+        description: 'Approve OAuth scopes for this project installation. An empty list revokes project approval.',
+    });
+
 export const ValidateUrlResponseSchema = z
     .strictObject({
         valid: z.boolean(),
