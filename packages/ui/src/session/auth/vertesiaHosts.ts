@@ -64,10 +64,7 @@ export function normalizeHostname(hostname: string): string {
     return hostname.toLowerCase().replace(/\.$/, '');
 }
 
-export const AUTH_BROKER_HOST_PATTERNS: readonly RegExp[] = [
-    new RegExp(`^auth\\.${REGION}vertesia\\.io$`),
-    /^auth-server-dev-[a-z0-9]+(?:-[a-z0-9]+)*\.api\.dev1\.vertesia\.io$/,
-];
+export const AUTH_BROKER_HOST_PATTERNS: readonly RegExp[] = [new RegExp(`^auth\\.${REGION}vertesia\\.io$`)];
 
 export function isTrustedAuthBrokerUrl(value: string, options: { allowLoopback?: boolean } = {}): boolean {
     try {
