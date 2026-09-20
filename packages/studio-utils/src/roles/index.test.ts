@@ -170,12 +170,29 @@ describe('getDelegablePermissionsForRole', () => {
         expect(getDelegablePermissionsForRole(SystemRoles.reader)).toContain(Permission.content_read);
     });
 
-    it('qualifies ABAC verbs with their role domain', () => {
+    it('returns the declared delegation permissions of a content role', () => {
         expect(getDelegablePermissionsForRole(ContentRoleNames.content_manager).sort()).toEqual([
             Permission.content_delete,
             Permission.content_read,
             Permission.content_write,
         ]);
+    });
+
+    it('maps agent-run roles to the run RBAC permissions, never to the `agent_runs:*` verb keys', () => {
+        expect(getDelegablePermissionsForRole(AgentRunRoleNames.agent_run_reader)).toEqual([Permission.workflow_read]);
+        expect(getDelegablePermissionsForRole(AgentRunRoleNames.agent_run_operator).sort()).toEqual([
+            Permission.workflow_read,
+            Permission.workflow_run,
+        ]);
+    });
+
+    it('only ever returns known Permission values for ABAC roles', () => {
+        const known = new Set<string>(Object.values(Permission));
+        for (const role of listRoles().filter((r) => r instanceof AbacRole)) {
+            for (const permission of getDelegablePermissionsForRole(role.name)) {
+                expect(known.has(permission), `${role.name} -> ${permission}`).toBe(true);
+            }
+        }
     });
 });
 

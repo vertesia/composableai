@@ -1,4 +1,4 @@
-import type { AbacScope, RoleDomain } from '@vertesia/common';
+import { type AbacScope, Permission, type RoleDomain } from '@vertesia/common';
 import { AbacRole, type Role, type RolePartition } from './classes.js';
 
 const AgentRunRoleDomain: RoleDomain = 'agent_runs';
@@ -13,13 +13,20 @@ export enum AgentRunRoleNames {
 
 class AgentRunReaderRole extends AbacRole {
     constructor() {
-        super(AgentRunRoleNames.agent_run_reader, ['read'], AgentRunRoleDomain, APPLICABLE_SCOPES);
+        // Delegating run reads requires the RBAC the run read endpoints check (`workflow:read`), not
+        // `agent_run:read`, which is the auditor-only "see every private run" capability.
+        super(AgentRunRoleNames.agent_run_reader, ['read'], AgentRunRoleDomain, APPLICABLE_SCOPES, [
+            Permission.workflow_read,
+        ]);
     }
 }
 
 class AgentRunOperatorRole extends AbacRole {
     constructor() {
-        super(AgentRunRoleNames.agent_run_operator, ['read', 'control'], AgentRunRoleDomain, APPLICABLE_SCOPES);
+        super(AgentRunRoleNames.agent_run_operator, ['read', 'control'], AgentRunRoleDomain, APPLICABLE_SCOPES, [
+            Permission.workflow_read,
+            Permission.workflow_run,
+        ]);
     }
 }
 

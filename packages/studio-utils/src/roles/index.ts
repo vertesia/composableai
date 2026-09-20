@@ -86,7 +86,7 @@ export function getPermissionsForRoles(roleNames: Iterable<string>): string[] {
 export function getDelegablePermissionsForRole(roleName: string): string[] {
     const role = getRoleByName(roleName);
     if (role instanceof AbacRole) {
-        return [...role.permissions].map((permission) => `${role.domain}:${permission}`);
+        return [...role.delegationPermissions];
     }
     return [...role.permissions];
 }
