@@ -94,6 +94,34 @@
         "./errors": {
             "types": "./lib/errors.d.ts",
             "default": "./lib/errors.js"
+        },
+        "./utils/activity-info": {
+            "types": "./lib/utils/activity-info.d.ts",
+            "default": "./lib/utils/activity-info.js"
+        },
+        "./utils/tokens": {
+            "types": "./lib/utils/tokens.d.ts",
+            "default": "./lib/utils/tokens.js"
+        },
+        "./utils/blobs": {
+            "types": "./lib/utils/blobs.d.ts",
+            "default": "./lib/utils/blobs.js"
+        },
+        "./utils/storage": {
+            "types": "./lib/utils/storage.d.ts",
+            "default": "./lib/utils/storage.js"
+        },
+        "./utils/text-preview-utils": {
+            "types": "./lib/utils/text-preview-utils.d.ts",
+            "default": "./lib/utils/text-preview-utils.js"
+        },
+        "./result-types": {
+            "types": "./lib/result-types.d.ts",
+            "default": "./lib/result-types.js"
+        },
+        "./activities/executeInteraction": {
+            "types": "./lib/activities/executeInteraction.d.ts",
+            "default": "./lib/activities/executeInteraction.js"
         }
     },
     "repository": {
