@@ -37,6 +37,16 @@ function createSession(onboardingProgress: () => Promise<Record<string, boolean>
 }
 
 describe('UserSession.fetchOnboardingStatus', () => {
+    it.each(['token', 'oauth'] as const)(
+        'does not load Studio onboarding for a default %s login',
+        async (authMethod) => {
+            const onboardingProgress = vi.fn(async () => ({ project_created: true }));
+            const { session } = createSession(onboardingProgress);
+            await session.login(encodeToken(projectToken), { authMethod });
+            expect(onboardingProgress).not.toHaveBeenCalled();
+            expect(session.onboardingComplete).toBeUndefined();
+        },
+    );
     it('skips onboarding before authentication without publishing a status', async () => {
         const onboardingProgress = vi.fn(async () => ({ project_created: true }));
         const { session, setSession } = createSession(onboardingProgress);
@@ -52,12 +62,12 @@ describe('UserSession.fetchOnboardingStatus', () => {
         const onboardingProgress = vi.fn(async () => ({ project_created: true }));
         const { session, setSession } = createSession(onboardingProgress);
 
-        await session.login(encodeToken({ ...projectToken, project: undefined }));
+        await session.login(encodeToken({ ...projectToken, project: undefined }), { loadOnboardingStatus: true });
         expect(onboardingProgress).not.toHaveBeenCalled();
         expect(session.onboardingComplete).toBeUndefined();
         expect(setSession).not.toHaveBeenCalled();
 
-        await session.login(encodeToken(projectToken));
+        await session.login(encodeToken(projectToken), { loadOnboardingStatus: true });
         expect(onboardingProgress).toHaveBeenCalledOnce();
         expect(session.onboardingComplete).toBe(true);
         expect(setSession).toHaveBeenCalledOnce();

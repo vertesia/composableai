@@ -65,7 +65,7 @@ interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
     loadOnboardingStatus?: boolean;
 }
-export function UserSessionProvider({ children, loadOnboardingStatus = true }: UserSessionProviderProps) {
+export function UserSessionProvider({ children, loadOnboardingStatus = false }: UserSessionProviderProps) {
     const hashParams = new URLSearchParams(location.hash.substring(1));
     const token = hashParams.get('token');
     const state = hashParams.get('state');

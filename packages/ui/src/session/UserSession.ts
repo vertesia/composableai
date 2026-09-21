@@ -15,6 +15,7 @@ import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constant
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
 export interface UserSessionLoginOptions {
+    /** Studio-only onboarding; custom apps leave this disabled. */
     loadOnboardingStatus?: boolean;
     authMethod?: 'token' | 'oauth';
 }
@@ -150,7 +151,7 @@ class UserSession {
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
-        if (options.loadOnboardingStatus ?? true) {
+        if (options.loadOnboardingStatus) {
             await this.fetchOnboardingStatus();
         }
 

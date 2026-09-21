@@ -88,7 +88,7 @@ it.each(
         return <span>{session.user?.name}</span>;
     }
     const view = render(
-        <UserSessionProvider loadOnboardingStatus={false}>
+        <UserSessionProvider>
             <Probe />
         </UserSessionProvider>,
     );
