@@ -30,6 +30,7 @@ it.each(
     ),
 )('keeps the $method session API callback on $path', async ({ path, method }) => {
     const issuer = 'https://sts.dev1.vertesia.io';
+    const clientId = 'https://api.dev1.vertesia.io/.well-known/oauth-client/vertesia-studio';
     const claims: AuthTokenPayload = {
         sub: 'user',
         user_id: 'user',
@@ -53,7 +54,7 @@ it.each(
         isDocker: false,
         endpoints: { studio: 'https://api.dev1.vertesia.io', zeno: 'https://api.dev1.vertesia.io', sts: issuer },
         oauth: {
-            clientId: 'https://api.dev1.vertesia.io/.well-known/oauth-client/vertesia-studio',
+            clientId,
             redirectUri: `${window.location.origin}/oauth/callback`,
         },
     });
@@ -65,12 +66,13 @@ it.each(
         url.hash = `token=${token}&state=${state}`;
         vi.mocked(getComposableToken).mockResolvedValue({ rawToken: token, token: claims, error: false });
     } else {
+        // Seed only synthetic credentials and public fixture metadata, never runtime auth configuration.
         sessionStorage.setItem(
             'vertesia.oauth.access',
             JSON.stringify({
                 token,
                 issuer,
-                clientId: Env.oauth?.clientId,
+                clientId,
             }),
         );
         vi.mocked(getComposableToken).mockRejectedValue(new Error('OAuth must not use the legacy exchange'));
