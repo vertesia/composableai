@@ -30,7 +30,8 @@
         "codegen:dev": "node codegen/dist/codegen.js --context codegen/dev-codegen-context.json",
         "test:codegen": "node --test codegen/test/*.test.mjs",
         "seed:content": "node src/modules/content-app/scripts/seed-content-app.ts",
-        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.ts"
+        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.ts",
+        "build:sandbox": "node src/modules/service/scripts/build-server-esbuild.mjs --sandbox"
     },
     "vertesia-build": {
         "libDir": "./lib",
