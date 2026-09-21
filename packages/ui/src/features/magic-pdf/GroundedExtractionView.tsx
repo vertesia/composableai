@@ -853,7 +853,7 @@ function ArrayTable({
                                                 className={cn(
                                                     'text-start rounded px-1 w-full',
                                                     isSelected
-                                                        ? 'bg-info ring-1 ring-primary'
+                                                        ? 'bg-info/15 ring-1 ring-primary'
                                                         : citation
                                                           ? 'hover:bg-muted cursor-pointer'
                                                           : 'text-muted cursor-default',
@@ -909,7 +909,7 @@ function LeafRow({
             onClick={() => citation && onSelect(path)}
             className={cn(
                 'flex items-center gap-2 w-full text-start text-sm rounded px-1.5 py-0.5',
-                isSelected ? 'bg-info ring-1 ring-primary' : citation ? 'hover:bg-muted' : '',
+                isSelected ? 'bg-info/15 ring-1 ring-primary' : citation ? 'hover:bg-muted' : '',
                 !citation && 'cursor-default',
             )}
         >
