@@ -605,11 +605,19 @@ export abstract class ClientBase {
             try {
                 res = await fetch(req);
             } catch (err: unknown) {
+                // An abort is the caller's own doing — their `signal` or our `timeoutMs` — so it is
+                // not a connection failure to log, and retrying cannot help: the signal stays
+                // aborted, so each further attempt rejects at once. Still thrown, wrapping the
+                // original, so callers that care can tell the difference.
+                const aborted = isAbortError(err);
                 if (
+                    aborted ||
                     !retryPolicy ||
                     !this.shouldRetryConnectionError(retryPolicy, normalizedMethod, attempt, replayableBody)
                 ) {
-                    console.error(`Failed to connect to ${url}`, err);
+                    if (!aborted) {
+                        console.error(`Failed to connect to ${url}`, err);
+                    }
                     this.throwError(new ConnectionError(req, toError(err)));
                 }
                 await this.waitBeforeRetry(retryPolicy, attempt);

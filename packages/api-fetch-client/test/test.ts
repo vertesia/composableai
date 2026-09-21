@@ -452,4 +452,74 @@ describe('Test requests', () => {
         assert.equal(attempts, 2);
         assert.equal(payload.attempts, 2);
     });
+
+    it('does not report a caller abort as a connection failure', async () => {
+        const errors: unknown[][] = [];
+        const original = console.error;
+        console.error = (...args: unknown[]) => {
+            errors.push(args);
+        };
+
+        try {
+            const abortClient = new FetchClient('http://example.test', async () => {
+                throw new DOMException('signal is aborted without reason', 'AbortError');
+            });
+
+            await assert.rejects(abortClient.get('/cancelled'));
+            assert.deepEqual(errors, [], 'an aborted request must not log to console.error');
+        } finally {
+            console.error = original;
+        }
+    });
+    it('still reports a genuine connection failure', async () => {
+        const errors: unknown[][] = [];
+        const original = console.error;
+        console.error = (...args: unknown[]) => {
+            errors.push(args);
+        };
+
+        try {
+            const brokenClient = new FetchClient('http://example.test', async () => {
+                throw new TypeError('connection reset');
+            });
+
+            await assert.rejects(brokenClient.get('/unreachable'));
+            assert.equal(errors.length, 1, 'a connection failure must still be reported');
+        } finally {
+            console.error = original;
+        }
+    });
+    it('does not spend retry attempts on an aborted request', async () => {
+        let attempts = 0;
+        const abortRetryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            throw new DOMException('signal is aborted without reason', 'AbortError');
+        }).withRetryPolicy({
+            attempts: 3,
+            baseDelayMs: 0,
+            jitter: false,
+        });
+
+        await assert.rejects(abortRetryClient.get('/cancelled'));
+        assert.equal(attempts, 1);
+    });
+    it('treats a timeout abort the same way', async () => {
+        // `timeoutMs` aborts through the same signal, surfacing as TimeoutError in some runtimes.
+        const errors: unknown[][] = [];
+        const original = console.error;
+        console.error = (...args: unknown[]) => {
+            errors.push(args);
+        };
+
+        try {
+            const timeoutClient = new FetchClient('http://example.test', async () => {
+                throw new DOMException('signal timed out', 'TimeoutError');
+            });
+
+            await assert.rejects(timeoutClient.get('/slow'));
+            assert.deepEqual(errors, []);
+        } finally {
+            console.error = original;
+        }
+    });
 });

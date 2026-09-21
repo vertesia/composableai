@@ -118,6 +118,16 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
     ContentSearchAgent: SystemInteractionCategory.analysis,
     ContentSearchReranker: SystemInteractionCategory.analysis,
     StudioAssistant: SystemInteractionCategory.agent,
+    // App development runs as an orchestrator plus five specialist sub-agents. Categorising them
+    // lets `defaults.system.agent` apply: an in-code sub-agent is launched without an environment
+    // or model of its own, so without a category it resolves to the project BASE default rather
+    // than the agent default, and a task started on a chosen model ran its sub-agents on another.
+    AppDevelopmentOrchestrator: SystemInteractionCategory.agent,
+    AppSolutionArchitect: SystemInteractionCategory.agent,
+    AppDesigner: SystemInteractionCategory.agent,
+    AppDeveloper: SystemInteractionCategory.agent,
+    AppReviewer: SystemInteractionCategory.agent,
+    AppTester: SystemInteractionCategory.agent,
 };
 
 /**
