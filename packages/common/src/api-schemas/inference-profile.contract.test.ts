@@ -14,10 +14,10 @@ describe('inference profile wire contract', () => {
         });
     });
 
-    it('requires an environment and a discriminated provider parameter object', () => {
+    it('requires an environment and accepts tagged or untagged provider options', () => {
         expect(InferenceProfileSchema.safeParse({ model: 'model' }).success).toBe(false);
         expect(InferenceProfileSchema.safeParse({ environment, model_options: { temperature: 0.2 } }).success).toBe(
-            false,
+            true,
         );
         expect(
             InferenceProfileSchema.safeParse({
