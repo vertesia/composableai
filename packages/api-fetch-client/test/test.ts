@@ -503,23 +503,25 @@ describe('Test requests', () => {
         await assert.rejects(abortRetryClient.get('/cancelled'));
         assert.equal(attempts, 1);
     });
-    it('treats a timeout abort the same way', async () => {
-        // `timeoutMs` aborts through the same signal, surfacing as TimeoutError in some runtimes.
-        const errors: unknown[][] = [];
-        const original = console.error;
-        console.error = (...args: unknown[]) => {
-            errors.push(args);
-        };
-
-        try {
-            const timeoutClient = new FetchClient('http://example.test', async () => {
-                throw new DOMException('signal timed out', 'TimeoutError');
+    it('still retries a timeout, which is transient and gets a fresh deadline per attempt', async () => {
+        // A timeout is NOT a caller abort. `createRequestInit()` mints a new timeout signal per
+        // attempt, so retrying one is meaningful — treating it as terminal made a slow environment
+        // fail on the first timeout instead of recovering.
+        let attempts = 0;
+        const timeoutClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            if (attempts === 1) {
+                throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+            }
+            return new Response(JSON.stringify({ attempts }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' },
             });
+        }).withRetryPolicy({ attempts: 2, baseDelayMs: 0, jitter: false });
 
-            await assert.rejects(timeoutClient.get('/slow'));
-            assert.deepEqual(errors, []);
-        } finally {
-            console.error = original;
-        }
+        const payload = (await timeoutClient.get('/slow')) as { attempts: number };
+
+        assert.equal(attempts, 2);
+        assert.equal(payload.attempts, 2);
     });
 });
