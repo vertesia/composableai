@@ -455,7 +455,7 @@ importers:
     devDependencies:
       '@hono/node-server':
         specifier: ^2.1.1
-        version: 2.1.1(hono@4.13.7)
+        version: 2.1.1(hono@4.12.34)
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -861,8 +861,8 @@ importers:
         specifier: workspace:*
         version: link:../ui
       lucide-react:
-        specifier: ^1.45.0
-        version: 1.45.0(react@19.2.8)
+        specifier: ^1.46.0
+        version: 1.47.0(react@19.2.8)
     devDependencies:
       '@tailwindcss/vite':
         specifier: ^4.3.3
@@ -1058,8 +1058,8 @@ importers:
         specifier: ^4.18.1
         version: 4.18.1
       lucide-react:
-        specifier: ^1.45.0
-        version: 1.45.0(react@19.2.8)
+        specifier: ^1.46.0
+        version: 1.47.0(react@19.2.8)
       mermaid:
         specifier: ^11.17.2
         version: 11.17.2
@@ -1348,8 +1348,8 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       lucide-react:
-        specifier: ^1.45.0
-        version: 1.45.0(react@19.2.8)
+        specifier: ^1.46.0
+        version: 1.47.0(react@19.2.8)
       react-vega:
         specifier: ^8.0.0
         version: 8.0.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vega-embed@7.2.0(vega-lite@6.4.3(vega@6.4.0))(vega@6.4.0))
@@ -5201,6 +5201,10 @@ packages:
     resolution: {integrity: sha512-EQfezRg0NCZGNlhlDR3Evrw1FVL2G3LhU7EgPoxufQKruNBSYA8MiRPHeWbU+36o+Fhel0wMwM+sLEiBAlNLJA==}
     engines: {node: '>=10.0.0'}
 
+  hono@4.12.34:
+    resolution: {integrity: sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA==}
+    engines: {node: '>=16.9.0'}
+
   hono@4.13.7:
     resolution: {integrity: sha512-c8/gF9ac8Y78/agExVocyLevgR+JlpNB444Py0FSX8pJoPdYUfUzRcXtYEYGwt6l19qIlVZPN5Mfsw9jFShmQQ==}
     engines: {node: '>=16.9.0'}
@@ -5671,8 +5675,8 @@ packages:
     resolution: {integrity: sha512-4pfM1Ff0x50o0tQwb5ucw/RzNyD0/YJME6IVcStalZuMWxdt3sR3huStTtxz4PUmvZfRguvDejasvQ2kifR11g==}
     engines: {node: 20 || >=22}
 
-  lucide-react@1.45.0:
-    resolution: {integrity: sha512-yH1ubCAduho9UR7oJhRXIQXogksRILBiTuZC4/bQIGeB9JOkxMlSuEHyyZpo1Z3S0yWJO2KTSUZbjiNvVxeOUw==}
+  lucide-react@1.47.0:
+    resolution: {integrity: sha512-o8C23aXpNQypRY73W7fW02EyvWJinEMXgKeGjFoKym0zj3Q73hD97A1IQps1g8C14HTGsOpZL0Am+xjfgFZAbg==}
     peerDependencies:
       react: 19.2.8
 
@@ -8098,6 +8102,10 @@ snapshots:
   '@hono/node-server@2.0.10(hono@4.13.7)':
     dependencies:
       hono: 4.13.7
+
+  '@hono/node-server@2.1.1(hono@4.12.34)':
+    dependencies:
+      hono: 4.12.34
 
   '@hono/node-server@2.1.1(hono@4.13.7)':
     dependencies:
@@ -11156,6 +11164,8 @@ snapshots:
 
   heap-js@2.7.1: {}
 
+  hono@4.12.34: {}
+
   hono@4.13.7: {}
 
   html-encoding-sniffer@6.0.0(@noble/hashes@1.8.0):
@@ -11600,7 +11610,7 @@ snapshots:
 
   lru-cache@11.5.2: {}
 
-  lucide-react@1.45.0(react@19.2.8):
+  lucide-react@1.47.0(react@19.2.8):
     dependencies:
       react: 19.2.8
 
