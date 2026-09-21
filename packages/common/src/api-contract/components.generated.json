@@ -126,6 +126,29 @@
       "$ref": "#/components/schemas/DelegationGrant"
     }
   },
+  "AccountApiVersionPolicy": {
+    "type": "object",
+    "properties": {
+      "default_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      },
+      "override_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      }
+    }
+  },
   "Account": {
     "type": "object",
     "properties": {
