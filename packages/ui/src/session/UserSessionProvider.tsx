@@ -222,6 +222,13 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
 
         const startFirebaseOrCentralAuth = () => {
             if (cancelled) return;
+            // A missing/expired host token must not upgrade an embedded app to a full user session.
+            if (window.parent !== window && !Env.allowLegacyIframeAuth) {
+                session.isLoading = false;
+                session.authError = new Error('Embedded authentication requires a valid token from the host.');
+                setSession(session.clone());
+                return;
+            }
 
             // If the current host is not in the Firebase allowlist, central auth owns sign-in.
             if (!session.isLoggedIn()) {

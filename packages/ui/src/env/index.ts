@@ -38,8 +38,9 @@ export interface EnvProps {
         /** Appgen app-gateway endpoint (serves live development previews and app bundles). */
         gateway?: string;
     };
-    /** Public OAuth client for independently hosted apps; ignored inside Studio or a gateway session. */
+    /** Explicitly allow legacy Firebase/central sign-in in an iframe when host authentication is unavailable. */
     allowLegacyIframeAuth?: boolean;
+    /** Public OAuth client for independently hosted apps; ignored inside Studio or a gateway session. */
     oauth?: { clientId: string; redirectUri: string; scopes?: string[]; offlineAccess?: boolean };
     firebase?: {
         apiKey: string;
@@ -273,7 +274,7 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
     }
 
     get allowLegacyIframeAuth() {
-        return this._props?.allowLegacyIframeAuth ?? this._props?.isLocalDev === true;
+        return this._props?.allowLegacyIframeAuth ?? false;
     }
 
     get oauth() {
