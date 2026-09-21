@@ -71,7 +71,7 @@ export function SelectContentTypeModal({
                 <div className="mb-4 mt-4">
                     <div className="block text-sm font-medium mb-2">
                         {t('store.contentType')}{' '}
-                        {allowNone && <span className="text-gray-500 font-normal">{t('store.optional')}</span>}
+                        {allowNone && <span className="text-muted font-normal">{t('store.optional')}</span>}
                     </div>
                     {allowNone ? (
                         <SelectBox

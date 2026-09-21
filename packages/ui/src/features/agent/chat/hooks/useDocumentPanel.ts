@@ -8,8 +8,8 @@ export interface UseDocumentPanelResult {
     isDocPanelOpen: boolean;
     docRefreshKey: number;
     closeDocPanel: () => void;
-    closeDocument: (docId: string) => void;
-    selectDocument: (docId: string) => void;
+    /** Select a document to display, or `null` to go back to the document list. */
+    selectDocument: (docId: string | null) => void;
     openDocInPanel: (docId: string) => void;
     updateDocumentTitle: (docId: string, title: string) => void;
 }
@@ -137,23 +137,7 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
         setIsDocPanelOpen(false);
     }, []);
 
-    const closeDocument = useCallback((docId: string) => {
-        setOpenDocuments((prev) => {
-            const next = prev.filter((d) => d.id !== docId);
-            if (next.length === 0) {
-                setIsDocPanelOpen(false);
-                setActiveDocumentId(null);
-            } else {
-                setActiveDocumentId((current) => {
-                    if (current === docId) return next[0].id;
-                    return current;
-                });
-            }
-            return next;
-        });
-    }, []);
-
-    const selectDocument = useCallback((docId: string) => {
+    const selectDocument = useCallback((docId: string | null) => {
         setActiveDocumentId(docId);
     }, []);
 
@@ -176,7 +160,6 @@ export function useDocumentPanel(messages: AgentMessage[]): UseDocumentPanelResu
         isDocPanelOpen,
         docRefreshKey,
         closeDocPanel,
-        closeDocument,
         selectDocument,
         openDocInPanel,
         updateDocumentTitle,

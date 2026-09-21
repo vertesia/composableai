@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/converters",
-    "version": "1.5.0-dev.20260826.064249Z",
+    "version": "1.5.0",
     "description": "Image and content converters",
     "type": "module",
     "main": "./lib/index.js",
@@ -31,7 +31,7 @@
         "vitest": "^4.1.10"
     },
     "dependencies": {
-        "sharp": "^0.35.3",
+        "sharp": "^0.35.4",
         "tmp": "^0.2.7"
     },
     "repository": {
@@ -50,5 +50,5 @@
         "mutool",
         "typescript"
     ],
-    "gitHead": "c0d6426380b6f66657db83017c90de208ee4956a"
+    "gitHead": "3485742020066ab1fd3292487cf3a9577b5e4d91"
 }

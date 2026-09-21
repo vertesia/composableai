@@ -71,10 +71,10 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
                 </div>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-[280px] mx-2 my-1 p-0">
-                <div className="divide-y divide-gray-200 dark:divide-slate-700">
+                <div className="divide-y divide-border">
                     <div className="py-2 ps-2">
                         <p className="px-4 dark:text-white mb-1">{user?.name ?? 'Unknown'}</p>
-                        <p className="px-4 text-xs text-gray-500">{user?.email ?? ''}</p>
+                        <p className="px-4 text-xs text-muted">{user?.email ?? ''}</p>
                     </div>
                     <div className="w-full p-1">
                         <InfoList />

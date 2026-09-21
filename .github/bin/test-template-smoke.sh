@@ -4,8 +4,9 @@ set -e
 # Script to smoke-test published packages by bootstrapping a template and building it.
 # Tests against the real npm registry (no verdaccio).
 #
-# Usage: test-template-smoke.sh --release-type <snapshot|release> [--template <name>] [--wait]
-#   --release-type: Determines npm tag (dev for snapshot, latest for release) and template branch
+# Usage: test-template-smoke.sh --release-type <snapshot|release> [--template <name>] [--package-version <version>] [--wait]
+#   --release-type: Determines the track tag and template branch
+#   --package-version: Exact published create-plugin/package cohort to test
 #   --template: Template name to test (default: "Vertesia Plugin")
 #   --wait: Wait for npm propagation before testing (default: false)
 #
@@ -40,11 +41,14 @@ wait_for_npm() {
 
   local package="@vertesia/create-plugin"
   for i in $(seq 1 5); do
-    echo "Attempt $i/5: Checking ${package}@${NPM_TAG}..."
-    VERSION=$(npm view "${package}@${NPM_TAG}" version 2>/dev/null || true)
+    echo "Attempt $i/5: Checking ${package}@${PACKAGE_SPEC}..."
+    VERSION=$(npm view "${package}@${PACKAGE_SPEC}" version 2>/dev/null || true)
     if [ -n "$VERSION" ]; then
-      echo "Found ${package}@${NPM_TAG} = ${VERSION}"
+      echo "Found ${package}@${PACKAGE_SPEC} = ${VERSION}"
       return 0
+    fi
+    if [ "$i" -eq 5 ]; then
+      break
     fi
     DELAY=$((30 * i))
     echo "Not yet available. Waiting ${DELAY}s..."
@@ -62,6 +66,7 @@ wait_for_npm() {
 RELEASE_TYPE=""
 TEMPLATE_NAME="Vertesia Plugin"
 TEMPLATE_BRANCH=""
+PACKAGE_VERSION=""
 WAIT_FOR_NPM=false
 
 while [[ $# -gt 0 ]]; do
@@ -78,13 +83,17 @@ while [[ $# -gt 0 ]]; do
       TEMPLATE_BRANCH="$2"
       shift 2
       ;;
+    --package-version)
+      PACKAGE_VERSION="$2"
+      shift 2
+      ;;
     --wait)
       WAIT_FOR_NPM=true
       shift
       ;;
     *)
       echo "Error: Unknown argument '$1'"
-      echo "Usage: $0 --release-type <snapshot|release> [--template <name>] [--branch <ref>] [--wait]"
+      echo "Usage: $0 --release-type <snapshot|release> [--template <name>] [--branch <ref>] [--package-version <version>] [--wait]"
       exit 1
       ;;
   esac

@@ -98,6 +98,7 @@ describe('gate 1 — the schema is the single source of truth for the converted 
             validateApiResponse('ProjectIntegrationConfigResponse', {
                 integration: SupportedIntegrations.ask_user_webhook,
                 enabled: false,
+                webhook_secret: null,
             }).valid,
         ).toBe(true);
         expect(
@@ -105,6 +106,7 @@ describe('gate 1 — the schema is the single source of truth for the converted 
                 integration: SupportedIntegrations.ask_user_webhook,
                 enabled: true,
                 webhook_url: 'https://example.test/hooks/ask-user',
+                webhook_secret: null,
             }).valid,
         ).toBe(true);
     });
@@ -240,6 +242,21 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         expect(SYSTEM_INTERACTION_CATEGORIES.ContentSearchReranker).toBe(SystemInteractionCategory.analysis);
     });
 
+    it('uses the agent model default for every app development agent', () => {
+        // Each is launched in-code without an environment or model of its own, so an uncategorised
+        // one silently resolves to the project BASE default instead of the agent default.
+        for (const endpoint of [
+            'AppDevelopmentOrchestrator',
+            'AppSolutionArchitect',
+            'AppDesigner',
+            'AppDeveloper',
+            'AppReviewer',
+            'AppTester',
+        ]) {
+            expect(SYSTEM_INTERACTION_CATEGORIES[endpoint]).toBe(SystemInteractionCategory.agent);
+        }
+    });
+
     it('publishes the property-mapping map without the propertyNames z.record adds', () => {
         // `Record<string, ProjectSearchPropertyMapping>` is inline in the interface and has no
         // TypeScript name, so it never becomes a canonical alias — it stays canonical AND derived,
@@ -249,6 +266,21 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
             type: 'object',
             additionalProperties: { $ref: '#/components/schemas/ProjectSearchPropertyMapping' },
         });
+    });
+
+    it('accepts explicit nested paths through the project configuration contract', () => {
+        expect(ApiSchemaComponents.ProjectSearchPropertyType.enum).toContain('nested');
+        expect(
+            validateApiRequest('UpdateProjectConfigurationPayload', {
+                indexing: {
+                    property_mappings: {
+                        line_items: { type: 'nested' },
+                        'line_items.sku': { type: 'keyword' },
+                        'line_items.quantity': { type: 'long' },
+                    },
+                },
+            }).valid,
+        ).toBe(true);
     });
 
     it('publishes geo_point as an explicit project property mapping type', () => {
@@ -393,6 +425,23 @@ describe('gate 4 — AJV validates the same canonical objects that are published
 });
 
 describe('gate 5 — runtime enforcement uses the published components', () => {
+    it('accepts decrypted integration credentials only on the response contract', () => {
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.exa,
+                enabled: true,
+                api_key: 'agent-runtime-secret',
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ProjectIntegrationConfigResponse', {
+                integration: SupportedIntegrations.ask_user_webhook,
+                enabled: true,
+                webhook_secret: 'agent-runtime-secret',
+            }).valid,
+        ).toBe(true);
+    });
+
     it('checks the shared count response the same way for every service that returns it', () => {
         // Four slots across three resources and two servers, so this component had to move as a unit.
         expect(validateApiResponse('CountResult', { count: 0 }).valid).toBe(true);

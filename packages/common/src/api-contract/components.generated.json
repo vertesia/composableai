@@ -1,4 +1,18 @@
 {
+  "AccountApiVersionPolicy": {
+    "type": "object",
+    "properties": {
+      "default_api_version": {
+        "type": "number",
+        "enum": [
+          20250925,
+          20260210,
+          20260319,
+          20260803
+        ]
+      }
+    }
+  },
   "AccountType": {
     "type": "string",
     "enum": [
@@ -1225,6 +1239,7 @@
     "enum": [
       "owner",
       "admin",
+      "app_admin",
       "manager",
       "developer",
       "application",
@@ -1270,6 +1285,10 @@
       },
       "enabled": {
         "type": "boolean"
+      },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
       },
       "created_by": {
         "type": "string"
@@ -1357,6 +1376,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1441,6 +1464,10 @@
       "enabled": {
         "type": "boolean"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "created_by": {
         "type": "string"
       },
@@ -1519,6 +1546,10 @@
         "type": "string",
         "format": "date-time"
       },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+      },
       "properties": {
         "type": "object",
         "additionalProperties": true,
@@ -1553,6 +1584,10 @@
       },
       "enabled": {
         "type": "boolean"
+      },
+      "scim_provisioning": {
+        "type": "boolean",
+        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
       },
       "properties": {
         "type": "object",
@@ -2178,7 +2213,7 @@
       "type"
     ],
     "additionalProperties": false,
-    "description": "Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full reindex. Existing Elasticsearch fields cannot change type in place."
+    "description": "Explicit search mapping for one content-object property.\n\nChanging a mapping requires a full reindex. Existing Elasticsearch fields cannot change type in place. A `nested` mapping accepts no scalar options; declare its searchable child fields as separate mappings below its path."
   },
   "ProjectSearchPropertyType": {
     "type": "string",
@@ -2189,9 +2224,10 @@
       "long",
       "double",
       "date",
-      "geo_point"
+      "geo_point",
+      "nested"
     ],
-    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are relative to the object's `properties` field."
+    "description": "Elasticsearch field types that may be explicitly assigned to content-object properties. Declare nested object-array paths with type `nested` and their children as separate dotted paths. Paths are relative to the object's `properties` field."
   },
   "ProjectIndexingConfiguration": {
     "type": "object",
@@ -2397,9 +2433,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "AzureFoundryChatOptions": {
@@ -2445,9 +2478,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ImagenOptions": {
@@ -2468,7 +2498,8 @@
         "enum": [
           "dont_allow",
           "allow_adults",
-          "allow_all"
+          "allow_all",
+          "allow_adult"
         ]
       },
       "safety_setting": {
@@ -2548,9 +2579,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ImagenTaskType": {
@@ -2628,9 +2656,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "VertexAIGeminiOptions": {
@@ -2744,9 +2769,6 @@
         "type": "number"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ThinkingLevel": {
@@ -2771,7 +2793,9 @@
         "enum": [
           "text_to_video",
           "image_to_video",
-          "reference_to_video"
+          "reference_to_video",
+          "edit",
+          "extend"
         ]
       },
       "aspect_ratio": {
@@ -2785,11 +2809,17 @@
         "type": "integer",
         "minimum": 3,
         "maximum": 10
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "360p",
+          "720p",
+          "1080p",
+          "4k"
+        ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "VertexAIGrokOptions": {
@@ -2815,9 +2845,6 @@
         }
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "NovaCanvasOptions": {
@@ -2889,7 +2916,6 @@
       }
     },
     "required": [
-      "_option_id",
       "taskType"
     ],
     "additionalProperties": false
@@ -2925,9 +2951,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockNovaOptions": {
@@ -2946,6 +2969,9 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -2961,9 +2987,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMistralOptions": {
@@ -2982,6 +3005,9 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -2997,9 +3023,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockAI21Options": {
@@ -3018,6 +3041,12 @@
       "top_p": {
         "type": "number"
       },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3033,9 +3062,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockCohereCommandOptions": {
@@ -3054,6 +3080,15 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3069,9 +3104,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockClaudeOptions": {
@@ -3131,9 +3163,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockPalmyraOptions": {
@@ -3176,9 +3205,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockGptOssOptions": {
@@ -3223,9 +3249,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "TwelvelabsPegasusOptions": {
@@ -3247,9 +3270,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMantleResponsesOptions": {
@@ -3275,7 +3295,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "reasoning_effort": {
@@ -3285,7 +3306,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "verbosity": {
@@ -3308,9 +3330,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMantleChatCompletionsOptions": {
@@ -3355,9 +3374,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMantleClaudeOptions": {
@@ -3412,9 +3428,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiThinkingOptions": {
@@ -3454,11 +3467,13 @@
         "type": "string",
         "minLength": 1,
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
+      },
+      "extra_body": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ReasoningEffort": {
@@ -3522,11 +3537,13 @@
         "type": "string",
         "minLength": 1,
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
+      },
+      "extra_body": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiDalleOptions": {
@@ -3571,9 +3588,6 @@
         "type": "number"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiGptImageOptions": {
@@ -3618,9 +3632,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "XAIGrokImageOptions": {
@@ -3676,9 +3687,6 @@
         "maximum": 10
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "GroqOptions": {
@@ -3719,7 +3727,6 @@
       }
     },
     "required": [
-      "_option_id",
       "reasoning_format"
     ],
     "additionalProperties": false
@@ -3787,13 +3794,64 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
+    "additionalProperties": false
+  },
+  "AnthropicClaudeOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "anthropic-claude"
+      },
+      "max_tokens": {
+        "type": "number"
+      },
+      "temperature": {
+        "type": "number"
+      },
+      "top_p": {
+        "type": "number"
+      },
+      "top_k": {
+        "type": "number"
+      },
+      "stop_sequence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "effort": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "thinking_budget_tokens": {
+        "type": "number"
+      },
+      "include_thoughts": {
+        "type": "boolean"
+      },
+      "cache_enabled": {
+        "type": "boolean"
+      },
+      "cache_ttl": {
+        "type": "string",
+        "enum": [
+          "5m",
+          "1h"
+        ]
+      }
+    },
     "additionalProperties": false
   },
   "ModelOptions": {
-    "oneOf": [
+    "anyOf": [
       {
         "$ref": "#/components/schemas/TextFallbackOptions"
       },
@@ -3874,44 +3932,12 @@
       },
       {
         "$ref": "#/components/schemas/MistralTextOptions"
+      },
+      {
+        "$ref": "#/components/schemas/AnthropicClaudeOptions"
       }
     ],
-    "discriminator": {
-      "propertyName": "_option_id",
-      "mapping": {
-        "text-fallback": "#/components/schemas/TextFallbackOptions",
-        "azure-foundry-chat": "#/components/schemas/AzureFoundryChatOptions",
-        "vertexai-imagen": "#/components/schemas/ImagenOptions",
-        "vertexai-claude": "#/components/schemas/VertexAIClaudeOptions",
-        "vertexai-gemini": "#/components/schemas/VertexAIGeminiOptions",
-        "vertexai-gemini-omni-video": "#/components/schemas/VertexAIGeminiOmniVideoOptions",
-        "vertexai-grok": "#/components/schemas/VertexAIGrokOptions",
-        "bedrock-nova-canvas": "#/components/schemas/NovaCanvasOptions",
-        "bedrock-converse": "#/components/schemas/BedrockConverseOptions",
-        "bedrock-nova": "#/components/schemas/BedrockNovaOptions",
-        "bedrock-mistral": "#/components/schemas/BedrockMistralOptions",
-        "bedrock-ai21": "#/components/schemas/BedrockAI21Options",
-        "bedrock-cohere-command": "#/components/schemas/BedrockCohereCommandOptions",
-        "bedrock-claude": "#/components/schemas/BedrockClaudeOptions",
-        "bedrock-palmyra": "#/components/schemas/BedrockPalmyraOptions",
-        "bedrock-gpt-oss": "#/components/schemas/BedrockGptOssOptions",
-        "bedrock-twelvelabs-pegasus": "#/components/schemas/TwelvelabsPegasusOptions",
-        "bedrock-mantle-responses": "#/components/schemas/BedrockMantleResponsesOptions",
-        "bedrock-mantle-chat-completions": "#/components/schemas/BedrockMantleChatCompletionsOptions",
-        "bedrock-mantle-claude": "#/components/schemas/BedrockMantleClaudeOptions",
-        "openai-thinking": "#/components/schemas/OpenAiThinkingOptions",
-        "openai-text": "#/components/schemas/OpenAiTextOptions",
-        "openai-dalle": "#/components/schemas/OpenAiDalleOptions",
-        "openai-gpt-image": "#/components/schemas/OpenAiGptImageOptions",
-        "xai-grok-image": "#/components/schemas/XAIGrokImageOptions",
-        "groq-deepseek-thinking": "#/components/schemas/GroqOptions",
-        "mistral-text": "#/components/schemas/MistralTextOptions"
-      }
-    },
-    "type": "object",
-    "required": [
-      "_option_id"
-    ]
+    "type": "object"
   },
   "HttpTimeoutOptions": {
     "type": "object",
@@ -4875,11 +4901,12 @@
   "ToolCollectionAuthType": {
     "type": "string",
     "enum": [
+      "none",
       "oauth",
       "api_key",
       "other"
     ],
-    "description": "Authentication type for tool collections.\n- 'oauth': the runtime resolves a per-user or per-project OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 bearer token (`Authorization: Bearer <key>`)"
+    "description": "Authentication type for tool collections.\n- 'none': connect directly without credentials for MCP collections; does not disable authentication for Vertesia SDK collections\n- 'oauth': the runtime resolves a per-user or per-project OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 bearer token (`Authorization: Bearer <key>`)\n- 'other' or omitted: use the legacy provider connection-details flow for MCP collections"
   },
   "MCPOAuthConfig": {
     "type": "object",
@@ -7332,6 +7359,14 @@
     ],
     "additionalProperties": false
   },
+  "SupportedEmbeddingTypes": {
+    "type": "string",
+    "enum": [
+      "text",
+      "image",
+      "properties"
+    ]
+  },
   "EmbeddingsApiInput": {
     "oneOf": [
       {
@@ -7371,8 +7406,13 @@
           "$ref": "#/components/schemas/EmbeddingsApiInput"
         }
       },
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes",
+        "description": "Logical project embedding type. This distinguishes properties embeddings from text inputs when the server resolves an omitted model from project settings."
+      },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Explicit model override intended for validating a configuration before it is saved. Normal callers should omit this field and provide embedding_type so the project model is resolved."
       },
       "task_type": {
         "$ref": "#/components/schemas/EmbeddingTaskType"
@@ -10015,7 +10055,8 @@
       "resume_tools",
       "resume_user",
       "checkpoint",
-      "nested_interaction"
+      "nested_interaction",
+      "background"
     ],
     "description": "Types of LLM calls in a conversation"
   },
@@ -10840,6 +10881,10 @@
   "ExecutionRunWorkflow": {
     "type": "object",
     "properties": {
+      "agent_run_id": {
+        "type": "string",
+        "description": "Root agent run owning this inference, including inference performed by child workstreams."
+      },
       "rate_limit_id": {
         "type": "string",
         "description": "Stable identifier pairing an interaction rate-limit admission with its completion feedback."
@@ -13453,6 +13498,13 @@
       },
       "message": {
         "type": "string"
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ToolResult"
+        },
+        "description": "Tool results owed to the model, delivered with this message."
       }
     },
     "required": [
@@ -13478,6 +13530,10 @@
       },
       "prompt_cache_diagnostic": {
         "$ref": "#/components/schemas/PromptCacheDiagnostic"
+      },
+      "service_tier": {
+        "type": "string",
+        "description": "Processing tier actually used by the provider"
       },
       "tool_use": {
         "type": "array",
@@ -13545,6 +13601,10 @@
           },
           "workflow_id": {
             "type": "string"
+          },
+          "agent_run_id": {
+            "type": "string",
+            "description": "Root agent run owning this inference, including inference performed by child workstreams."
           }
         },
         "required": [
@@ -17172,6 +17232,11 @@
           "$ref": "#/components/schemas/AppScaffoldModule"
         }
       },
+      "appgen_package_spec": {
+        "type": "string",
+        "pattern": "^(?:latest|dev|dev-[0-9]+\\.[0-9]+|snapshot-[0-9a-f]{7}|[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?)$",
+        "description": "Optional Vertesia SDK version or package track for this scaffold. Overrides the deployment default."
+      },
       "create_version": {
         "type": "boolean",
         "description": "Start an initial app version build after the source has been pushed. Defaults to true."
@@ -19084,6 +19149,17 @@
       "webhook_secret_hint": {
         "type": "string"
       },
+      "webhook_secret": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "events": {
         "type": "array",
         "items": {
@@ -19102,7 +19178,8 @@
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "webhook_secret"
     ],
     "additionalProperties": false,
     "description": "Configuration for ask_user webhook notifications. Sends webhooks when agents call ask_user and when users respond."
@@ -19122,6 +19199,17 @@
       "api_key_hint": {
         "type": "string"
       },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "email_domain": {
         "type": "string",
         "description": "Domain for email (both sending and receiving). Must be verified in Resend."
@@ -19135,6 +19223,17 @@
       },
       "webhook_secret_hint": {
         "type": "string"
+      },
+      "webhook_secret": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "allowed_sender_domains": {
         "type": "array",
@@ -19155,7 +19254,9 @@
     "required": [
       "integration",
       "enabled",
-      "email_domain"
+      "api_key",
+      "email_domain",
+      "webhook_secret"
     ],
     "additionalProperties": false
   },
@@ -19173,11 +19274,23 @@
       },
       "api_key_hint": {
         "type": "string"
+      },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -19195,11 +19308,23 @@
       },
       "api_key_hint": {
         "type": "string"
+      },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -19218,13 +19343,25 @@
       "api_key_hint": {
         "type": "string"
       },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "url": {
         "type": "string"
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -19274,13 +19411,25 @@
       "api_key_hint": {
         "type": "string"
       },
+      "api_key": {
+        "anyOf": [
+          {
+            "type": "string",
+            "description": "Decrypted credential returned only to authenticated agent principals for runtime use. Human and service-account callers receive null; presence and hint fields report configuration status."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "url": {
         "type": "string"
       }
     },
     "required": [
       "integration",
-      "enabled"
+      "enabled",
+      "api_key"
     ],
     "additionalProperties": false
   },
@@ -19979,6 +20128,10 @@
       "hideFromDashboard": {
         "type": "boolean",
         "description": "When true, this item is excluded from the Composite App dashboard cards"
+      },
+      "openInAppPortal": {
+        "type": "boolean",
+        "description": "When true, this item navigates to the App Portal form of the URL (`/apps/<appName><route>`) instead of the Composite App form (`/app/<appName><route>`), so the app is opened standalone rather than inside the Composite App shell."
       },
       "permissions": {
         "$ref": "#/components/schemas/CompositeAppNavItemPermissions",
@@ -23741,6 +23894,9 @@
     "properties": {
       "bucket": {
         "type": "string"
+      },
+      "location": {
+        "type": "string"
       }
     },
     "required": [
@@ -24924,10 +25080,18 @@
       "type": {
         "type": "string",
         "const": "workflow",
-        "description": "The type fo the step. If not set defaults to \"activity\""
+        "description": "Identifies this step as a child workflow"
       },
       "name": {
         "type": "string"
+      },
+      "title": {
+        "type": "string",
+        "description": "Title of the child workflow to be displayed in the UI workflow builder"
+      },
+      "description": {
+        "type": "string",
+        "description": "Description of the child workflow displayed in the UI workflow builder"
       },
       "vars": {
         "type": "object",
@@ -27795,14 +27959,6 @@
       "path"
     ],
     "additionalProperties": false
-  },
-  "SupportedEmbeddingTypes": {
-    "type": "string",
-    "enum": [
-      "text",
-      "image",
-      "properties"
-    ]
   },
   "StartContentObjectExportRequest": {
     "type": "object",
@@ -33983,7 +34139,8 @@
               "resume_tools",
               "resume_user",
               "checkpoint",
-              "nested_interaction"
+              "nested_interaction",
+              "background"
             ]
           },
           "attemptNumber": {
@@ -38446,6 +38603,11 @@
   "ImportDataPayload": {
     "type": "object",
     "properties": {
+      "import_id": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{24}$",
+        "description": "Optional client-generated Mongo ObjectId for idempotent retries. Generate once before submitting, then reuse with identical input. New IDs must be less than 24 hours old; existing jobs are returned without executing again. Poll GET /data/:storeId/import/:importId after a timeout."
+      },
       "tables": {
         "$ref": "#/components/schemas/ImportTableDataMap",
         "description": "Map of table name to data specification"
@@ -38665,6 +38827,7 @@
           "project",
           "project_tag",
           "provider",
+          "service_tier",
           "interaction",
           "workflow"
         ],
@@ -38691,6 +38854,10 @@
       "provider": {
         "type": "string",
         "description": "Filter by provider"
+      },
+      "service_tier": {
+        "type": "string",
+        "description": "Filter by resolved processing tier"
       },
       "project_id": {
         "type": "string",
@@ -38877,6 +39044,10 @@
       "provider_account_id": {
         "type": "string"
       },
+      "service_tier": {
+        "type": "string",
+        "description": "Processing tier this price applies to"
+      },
       "input_price_per_m_tokens": {
         "type": "number"
       },
@@ -38986,6 +39157,10 @@
       "provider_account_id": {
         "type": "string"
       },
+      "service_tier": {
+        "type": "string",
+        "description": "Processing tier this price applies to"
+      },
       "list_price_date": {
         "type": "string"
       },
@@ -39040,6 +39215,9 @@
         "type": "string"
       },
       "provider": {
+        "type": "string"
+      },
+      "service_tier": {
         "type": "string"
       },
       "cost": {
@@ -39135,6 +39313,53 @@
           "$ref": "#/components/schemas/ModelPricing"
         }
       },
+      "pricing_coverage": {
+        "type": "object",
+        "properties": {
+          "priced_calls": {
+            "type": "number"
+          },
+          "unpriced_calls": {
+            "type": "number"
+          },
+          "assumed_default_calls": {
+            "type": "number"
+          },
+          "unpriced": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "service_tier": {
+                  "type": "string"
+                },
+                "calls": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "model",
+                "service_tier",
+                "calls"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "priced_calls",
+          "unpriced_calls",
+          "assumed_default_calls",
+          "unpriced"
+        ],
+        "additionalProperties": false
+      },
       "query_range": {
         "type": "object",
         "properties": {
@@ -39182,6 +39407,53 @@
         "items": {
           "$ref": "#/components/schemas/ModelPricing"
         }
+      },
+      "pricing_coverage": {
+        "type": "object",
+        "properties": {
+          "priced_calls": {
+            "type": "number"
+          },
+          "unpriced_calls": {
+            "type": "number"
+          },
+          "assumed_default_calls": {
+            "type": "number"
+          },
+          "unpriced": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "type": "string"
+                },
+                "provider": {
+                  "type": "string"
+                },
+                "service_tier": {
+                  "type": "string"
+                },
+                "calls": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "model",
+                "service_tier",
+                "calls"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "priced_calls",
+          "unpriced_calls",
+          "assumed_default_calls",
+          "unpriced"
+        ],
+        "additionalProperties": false
       },
       "query_range": {
         "type": "object",
@@ -39244,13 +39516,25 @@
       },
       "aws_pricing": {
         "type": "number"
+      },
+      "xai_pricing": {
+        "type": "number"
+      },
+      "openrouter_pricing": {
+        "type": "number"
+      },
+      "openai_costs": {
+        "type": "number"
       }
     },
     "required": [
       "date",
       "gcp_list",
       "gcp_effective",
-      "aws_pricing"
+      "aws_pricing",
+      "xai_pricing",
+      "openrouter_pricing",
+      "openai_costs"
     ],
     "additionalProperties": false
   },
@@ -40518,6 +40802,71 @@
     ],
     "additionalProperties": false
   },
+  "EmbeddingBatchRunSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "model": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "applied": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "skipped": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "stale": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "id",
+      "state",
+      "model",
+      "created_at",
+      "applied",
+      "skipped",
+      "failed",
+      "stale"
+    ],
+    "additionalProperties": false,
+    "description": "Latest batch run for this embedding type, without provider payloads or input content."
+  },
   "EmbeddingsStatusResponse": {
     "type": "object",
     "properties": {
@@ -40526,6 +40875,9 @@
       },
       "embeddingRunsInProgress": {
         "type": "number"
+      },
+      "latestBatchRun": {
+        "$ref": "#/components/schemas/EmbeddingBatchRunSummary"
       },
       "totalIndexableObjects": {
         "type": "number"
@@ -40570,6 +40922,21 @@
     ],
     "additionalProperties": false
   },
+  "RecalculateEmbeddingsQuery": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "sync",
+        "description": "Force synchronous per-object recalculation. When omitted, batch inference is used when supported."
+      },
+      "force": {
+        "type": "boolean",
+        "description": "Recalculate all eligible objects, including current embeddings. Token limits still apply; existing renditions are reused."
+      }
+    },
+    "additionalProperties": false
+  },
   "ProjectConfigurationEmbeddingEnablePayload": {
     "type": "object",
     "properties": {
@@ -40587,6 +40954,530 @@
       "environment"
     ],
     "additionalProperties": false
+  },
+  "EmbeddingBatchProviderState": {
+    "type": "string",
+    "enum": [
+      "pending",
+      "running",
+      "succeeded",
+      "failed",
+      "cancelled",
+      "paused"
+    ]
+  },
+  "EmbeddingBatchCapabilityRequest": {
+    "type": "object",
+    "properties": {
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      }
+    },
+    "required": [
+      "embedding_type"
+    ]
+  },
+  "EmbeddingBatchCapabilityResponse": {
+    "type": "object",
+    "properties": {
+      "eligible": {
+        "type": "boolean"
+      },
+      "reason": {
+        "type": "string"
+      },
+      "environment": {
+        "type": "string"
+      },
+      "provider": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "dimensions": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "max_tokens": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "location": {
+        "type": "string"
+      },
+      "input_format": {
+        "type": "string"
+      },
+      "max_rows": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "artifact_uri": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "eligible"
+    ]
+  },
+  "EmbeddingBatchCreateRequest": {
+    "type": "object",
+    "properties": {
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      },
+      "model": {
+        "type": "string"
+      },
+      "dimensions": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "input_uri": {
+        "type": "string"
+      },
+      "output_uri": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "embedding_type",
+      "model",
+      "dimensions",
+      "display_name",
+      "input_uri",
+      "output_uri"
+    ]
+  },
+  "EmbeddingBatchJobRequest": {
+    "type": "object",
+    "properties": {
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      },
+      "model": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "include_output_artifacts": {
+        "type": "boolean",
+        "description": "On get, resolve terminal result artifacts for application. Omit for lightweight status polling."
+      }
+    },
+    "required": [
+      "embedding_type",
+      "model",
+      "name"
+    ]
+  },
+  "EmbeddingBatchJobResponse": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "paused"
+        ]
+      },
+      "model": {
+        "type": "string"
+      },
+      "input_uri": {
+        "type": "string"
+      },
+      "output_uri": {
+        "type": "string"
+      },
+      "output_artifacts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Terminal job result artifacts in application storage, including partial results. Never provider file IDs."
+      },
+      "error_message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "state"
+    ]
+  },
+  "EmbeddingBatchRunState": {
+    "type": "string",
+    "enum": [
+      "preparing",
+      "submitted",
+      "running",
+      "applying",
+      "completed",
+      "completed_with_errors",
+      "cancelled",
+      "stale",
+      "failed"
+    ]
+  },
+  "EmbeddingBatchSubjob": {
+    "type": "object",
+    "properties": {
+      "index": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "input_uri": {
+        "type": "string"
+      },
+      "output_uri": {
+        "type": "string"
+      },
+      "row_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "provider_name": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "paused"
+        ]
+      }
+    },
+    "required": [
+      "index",
+      "display_name",
+      "input_uri",
+      "output_uri",
+      "row_count"
+    ]
+  },
+  "EmbeddingBatchPrepareRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      },
+      "capability": {
+        "$ref": "#/components/schemas/EmbeddingBatchCapabilityResponse"
+      }
+    },
+    "required": [
+      "run_id",
+      "embedding_type",
+      "capability"
+    ]
+  },
+  "EmbeddingBatchPrepareResponse": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "row_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "subjobs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "display_name": {
+              "type": "string"
+            },
+            "input_uri": {
+              "type": "string"
+            },
+            "output_uri": {
+              "type": "string"
+            },
+            "row_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "provider_name": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "succeeded",
+                "failed",
+                "cancelled",
+                "paused"
+              ]
+            }
+          },
+          "required": [
+            "index",
+            "display_name",
+            "input_uri",
+            "output_uri",
+            "row_count"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "run_id",
+      "row_count",
+      "subjobs"
+    ]
+  },
+  "EmbeddingBatchRenditionPageRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ]
+  },
+  "EmbeddingBatchRenditionPageResponse": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "running",
+          "page_completed",
+          "completed"
+        ]
+      },
+      "page_index": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_scanned": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_ready": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_generated": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "running": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "status",
+      "page_index",
+      "page_scanned",
+      "page_ready",
+      "page_generated",
+      "page_failed",
+      "running"
+    ]
+  },
+  "EmbeddingBatchUpdateRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "subjobs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "display_name": {
+              "type": "string"
+            },
+            "input_uri": {
+              "type": "string"
+            },
+            "output_uri": {
+              "type": "string"
+            },
+            "row_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "provider_name": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "succeeded",
+                "failed",
+                "cancelled",
+                "paused"
+              ]
+            }
+          },
+          "required": [
+            "index",
+            "display_name",
+            "input_uri",
+            "output_uri",
+            "row_count"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "error_code": {
+        "type": "string"
+      },
+      "error_message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id",
+      "state"
+    ]
+  },
+  "EmbeddingBatchApplyRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ]
+  },
+  "EmbeddingBatchApplyResponse": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "succeeded": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "stale": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "applied": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failure_counts": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "required": [
+      "state",
+      "succeeded",
+      "failed",
+      "stale",
+      "applied"
+    ]
   },
   "GenericCommandResponse": {
     "type": "object",

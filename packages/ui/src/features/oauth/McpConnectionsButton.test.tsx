@@ -47,8 +47,23 @@ describe('MCP connection controls', () => {
                 manifest: {
                     name: 'mcp-app',
                     title: 'MCP App',
-                    oauth_providers: {},
                     tool_collections: [
+                        {
+                            type: 'mcp',
+                            id: 'service-account',
+                            name: 'Service Account',
+                            namespace: 'service_account',
+                            url: 'https://service-account-mcp.example.com',
+                            oauth_provider: 'service-account',
+                        },
+                        {
+                            type: 'mcp',
+                            id: 'service-calendar',
+                            name: 'Service Calendar',
+                            namespace: 'service_calendar',
+                            url: 'https://service-calendar-mcp.example.com',
+                            oauth_provider: 'service-account',
+                        },
                         {
                             type: 'mcp',
                             id: 'jira',
@@ -86,11 +101,23 @@ describe('MCP connection controls', () => {
                             auth: 'api_key',
                         },
                     ],
+                    oauth_providers: {
+                        'service-account': {
+                            display_name: 'Service Account OAuth',
+                            grant_type: 'client_credentials',
+                        },
+                    },
                 },
-                oauth_collection_ids: ['jira', 'miro', 'linear', 'github'],
+                oauth_collection_ids: ['jira', 'miro', 'linear', 'github', 'service-account', 'service-calendar'],
             },
         ]);
         mocks.getStatus.mockResolvedValue([
+            {
+                authenticated: true,
+                collection_id: 'service-account',
+                collection_name: 'Service Account',
+                mcp_server_url: 'https://service-account-mcp.example.com',
+            },
             {
                 authenticated: true,
                 collection_id: 'jira',
@@ -124,7 +151,9 @@ describe('MCP connection controls', () => {
         ]);
         const onChange = vi.fn();
 
-        renderWithProviders(<McpConnectionsInlineList disabledCollections={['linear']} onChange={onChange} />);
+        renderWithProviders(
+            <McpConnectionsInlineList disabledCollections={['linear', 'service-calendar']} onChange={onChange} />,
+        );
 
         await screen.findByText('Jira');
         await waitFor(() => expect(mocks.getStatus).toHaveBeenCalledTimes(1));
@@ -133,17 +162,82 @@ describe('MCP connection controls', () => {
         expect(screen.getByText('Linear')).not.toBeNull();
         expect(screen.getByText('GitHub')).not.toBeNull();
         expect(screen.getByText('API Key Tools')).not.toBeNull();
+        expect(screen.getByText('Service Account')).not.toBeNull();
+        expect(screen.getByText('Service Calendar')).not.toBeNull();
+        expect(screen.queryByText('Service Account OAuth')).toBeNull();
         const apiKeyBadge = screen.getByText('API key');
         expect(apiKeyBadge.className).toContain('w-32');
+        const managedByAppBadges = screen.getAllByText('Managed by app');
+        expect(managedByAppBadges).toHaveLength(2);
+        expect(managedByAppBadges[0].className).toContain('w-32');
         expect(screen.queryByText('Connected')).toBeNull();
         expect(screen.getAllByRole('button', { name: 'Disconnect' })).toHaveLength(3);
         const connectButton = screen.getByRole('button', { name: 'Connect' });
         const disconnectButton = screen.getAllByRole('button', { name: 'Disconnect' })[0];
         expect(connectButton.className).toContain('w-32');
         expect(disconnectButton.className).toContain('w-32');
-        expect(screen.getAllByText('Enabled')).toHaveLength(4);
-        expect(screen.getByText('Disabled')).not.toBeNull();
+        expect(screen.getAllByText('Enabled')).toHaveLength(5);
+        expect(screen.getAllByText('Disabled')).toHaveLength(2);
+
+        fireEvent.click(screen.getByRole('switch', { name: 'Activate Service Calendar for this conversation' }));
+        expect(onChange).toHaveBeenCalledWith(['linear']);
     });
+
+    it.each([{ oauthIds: [] }, { oauthIds: ['anonymous'] }])(
+        'shows anonymous servers without status requests, including stale OAuth ids %j',
+        async ({ oauthIds }) => {
+            mocks.getInstalledApps.mockResolvedValue([
+                {
+                    id: 'anonymous-app',
+                    manifest: {
+                        name: 'anonymous-app',
+                        tool_collections: [
+                            {
+                                type: 'mcp',
+                                id: 'anonymous',
+                                name: 'Anonymous MCP',
+                                namespace: 'anonymous',
+                                url: 'https://anonymous.example.com/mcp',
+                                auth: 'none',
+                                oauth_app: 'stale-oauth-app',
+                            },
+                        ],
+                    },
+                    oauth_collection_ids: oauthIds,
+                },
+            ]);
+            const onChange = vi.fn();
+            const { rerender } = renderWithProviders(
+                <McpConnectionsInlineList disabledCollections={['other']} onChange={onChange} />,
+            );
+
+            expect(await screen.findByText('Anonymous MCP')).not.toBeNull();
+            expect(screen.getAllByText('No authentication')).toHaveLength(1);
+            expect(screen.queryByRole('button', { name: /connect/i })).toBeNull();
+            expect(mocks.getStatus).not.toHaveBeenCalled();
+            expect(mocks.getCollectionStatus).not.toHaveBeenCalled();
+
+            fireEvent.click(screen.getByRole('switch', { name: 'Deactivate Anonymous MCP for this conversation' }));
+            expect(onChange).toHaveBeenLastCalledWith(['other', 'anonymous']);
+            rerender(<McpConnectionsInlineList disabledCollections={['other', 'anonymous']} onChange={onChange} />);
+            fireEvent.click(screen.getByRole('switch', { name: 'Activate Anonymous MCP for this conversation' }));
+            expect(onChange).toHaveBeenLastCalledWith(['other']);
+            rerender(<McpConnectionsInlineList onChange={onChange} readOnly />);
+            expect(screen.getByRole('switch')).toHaveProperty('disabled', true);
+
+            rerender(<McpConnectionsActionMenu onChange={onChange} />);
+            fireEvent.pointerDown(await screen.findByRole('button', { name: /settings/i }));
+            const menuItem = await screen.findByText('MCP');
+            expect(screen.getByText('1')).not.toBeNull();
+            fireEvent.click(menuItem);
+            expect(await screen.findByText('Anonymous MCP')).not.toBeNull();
+            expect(screen.getByText('No authentication')).not.toBeNull();
+            expect(screen.queryByRole('button', { name: /connect/i })).toBeNull();
+            fireEvent.click(screen.getByRole('switch', { name: 'Deactivate Anonymous MCP for this conversation' }));
+            expect(onChange).toHaveBeenLastCalledWith(['anonymous']);
+            expect(mocks.getStatus).not.toHaveBeenCalled();
+        },
+    );
 
     it('renders MCP rows before connection statuses finish loading', async () => {
         const statusRequest =
@@ -207,8 +301,29 @@ describe('MCP connection controls', () => {
                 manifest: {
                     name: 'jira-app',
                     title: 'Jira',
-                    oauth_providers: {},
+                    oauth_providers: {
+                        'service-account': {
+                            display_name: 'Service Account OAuth',
+                            grant_type: 'client_credentials',
+                        },
+                    },
                     tool_collections: [
+                        {
+                            type: 'mcp',
+                            id: 'service-account',
+                            name: 'Service Account',
+                            namespace: 'service_account',
+                            url: 'https://service-account-mcp.example.com',
+                            oauth_provider: 'service-account',
+                        },
+                        {
+                            type: 'mcp',
+                            id: 'service-calendar',
+                            name: 'Service Calendar',
+                            namespace: 'service_calendar',
+                            url: 'https://service-calendar-mcp.example.com',
+                            oauth_provider: 'service-account',
+                        },
                         {
                             type: 'mcp',
                             id: 'jira',
@@ -225,10 +340,16 @@ describe('MCP connection controls', () => {
                         },
                     ],
                 },
-                oauth_collection_ids: ['jira', 'github'],
+                oauth_collection_ids: ['jira', 'github', 'service-account', 'service-calendar'],
             },
         ]);
         mocks.getStatus.mockResolvedValue([
+            {
+                authenticated: true,
+                collection_id: 'service-account',
+                collection_name: 'Service Account',
+                mcp_server_url: 'https://service-account-mcp.example.com',
+            },
             {
                 authenticated: true,
                 collection_id: 'jira',
@@ -254,12 +375,18 @@ describe('MCP connection controls', () => {
 
         const menuItem = await screen.findByText('MCP');
         expect(menuItem).not.toBeNull();
-        expect(screen.getByText('1')).not.toBeNull();
+        expect(screen.getByText('3')).not.toBeNull();
 
         fireEvent.click(menuItem);
 
         await waitFor(() => {
             expect(screen.getByText('Manage the MCP servers available to this conversation.')).not.toBeNull();
         });
+        expect(screen.getByText('Service Account')).not.toBeNull();
+        expect(screen.getByText('Service Calendar')).not.toBeNull();
+        expect(screen.queryByText('Service Account OAuth')).toBeNull();
+        expect(screen.getAllByText('Managed by app')).toHaveLength(2);
+        expect(screen.getAllByRole('button', { name: 'Disconnect' })).toHaveLength(1);
+        expect(screen.getAllByRole('button', { name: 'Connect' })).toHaveLength(1);
     });
 });

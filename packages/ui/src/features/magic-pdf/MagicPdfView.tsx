@@ -144,7 +144,7 @@ function MagicPdfViewImpl({ object, onClose }: _MagicPdfViewProps) {
                     <div className="flex items-center gap-x-2">
                         <DownloadPopover object={object} />
                     </div>
-                    <span className="text-xs text-muted-foreground">{t('pdf.pageOf', { pageNumber, totalPages })}</span>
+                    <span className="text-xs text-muted">{t('pdf.pageOf', { pageNumber, totalPages })}</span>
                     <div className="flex items-center gap-x-2">
                         {!!onClose && (
                             <Button variant="ghost" size="xs" onClick={onClose} title={t('pdf.close')}>

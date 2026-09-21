@@ -25,7 +25,7 @@ interface MetadataRowProps {
 function MetadataRow({ label, children }: MetadataRowProps) {
     return (
         <div className="flex flex-col gap-0.5">
-            <span className="text-xs uppercase tracking-wide text-muted-foreground">{label}</span>
+            <span className="text-xs uppercase tracking-wide text-muted">{label}</span>
             <span className="text-sm wrap-break-word">{children}</span>
         </div>
     );
@@ -51,7 +51,7 @@ function Preview({ object, t }: PreviewProps) {
         return <AudioPanel object={object} className="h-full w-full" />;
     }
     return (
-        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground p-6 text-center">
+        <div className="flex h-full w-full items-center justify-center text-sm text-muted p-6 text-center">
             {t('objects.detail.previewUnsupported')}
         </div>
     );

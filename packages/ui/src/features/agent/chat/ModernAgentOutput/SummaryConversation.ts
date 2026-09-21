@@ -133,7 +133,22 @@ export function isSummaryAssistantProseMessage(message: AgentMessage): boolean {
 
     if (message.type === AgentMessageType.ANSWER) return true;
 
-    if (isToolPreambleMessage(message)) return false;
+    if (isToolPreambleMessage(message)) {
+        // Text accompanying ask_user can be the draft the question asks the user to review.
+        // Keep it visible for both persisted messages and reconstructed streaming messages.
+        return (
+            message.details?.display_role === 'tool_preamble' &&
+            (message.details.tool === 'ask_user' ||
+                (Array.isArray(message.details.tools) &&
+                    message.details.tools.some((tool: unknown) => {
+                        if (typeof tool === 'string') return tool === 'ask_user';
+                        if (!tool || typeof tool !== 'object') return false;
+                        return (
+                            ('name' in tool && tool.name === 'ask_user') || ('tool' in tool && tool.tool === 'ask_user')
+                        );
+                    })))
+        );
+    }
 
     // Streamed thoughts without tool metadata are model-visible prose. They remain
     // in the conversation unless buildSummaryDisplayMessages classifies them as

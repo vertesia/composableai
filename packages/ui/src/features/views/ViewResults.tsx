@@ -258,9 +258,9 @@ function ViewMedia({
     return (
         <div className={`flex items-center justify-center bg-muted ${className ?? ''}`} aria-hidden="true">
             {fallback === 'placeholder' ? (
-                <ImageIcon className="size-10 text-muted-foreground" />
+                <ImageIcon className="size-10 text-muted" />
             ) : (
-                <FileText className="size-10 text-muted-foreground" />
+                <FileText className="size-10 text-muted" />
             )}
         </div>
     );
@@ -379,7 +379,7 @@ function ListResults({
                             )}
                         </div>
                         {display.description && (
-                            <p className="line-clamp-3 text-sm text-muted-foreground">
+                            <p className="line-clamp-3 text-sm text-muted">
                                 <ViewField hit={hit} field={display.description} />
                             </p>
                         )}

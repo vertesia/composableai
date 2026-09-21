@@ -1,6 +1,6 @@
 {
     "name": "plugin-template",
-    "version": "1.5.0-dev.20260826.064249Z",
+    "version": "1.5.0",
     "description": "A unified template for building custom UI plugins and tool servers for Vertesia",
     "type": "module",
     "main": "lib/tool-server/server.js",
@@ -29,8 +29,8 @@
         "test": "echo \"(no tests in template scaffold)\"",
         "codegen:dev": "node codegen/dist/codegen.js --context codegen/dev-codegen-context.json",
         "test:codegen": "node --test codegen/test/*.test.mjs",
-        "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs",
-        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.mjs"
+        "seed:content": "node src/modules/content-app/scripts/seed-content-app.ts",
+        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.ts"
     },
     "vertesia-build": {
         "libDir": "./lib",
@@ -100,7 +100,7 @@
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
-        "hono": "^4.13.1",
+        "hono": "^4.13.5",
         "html-parse-stringify": "^4.0.1",
         "lucide-react": "^1.31.0",
         "react-vega": "^8.0.0",

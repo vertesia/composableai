@@ -456,8 +456,8 @@ export default function MessageInput({
         >
             {/* Drag overlay */}
             {isDragOver && canDropFiles && (
-                <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 rounded-lg z-10 pointer-events-none">
-                    <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2">
+                <div className="absolute inset-0 flex items-center justify-center bg-info/80 dark:bg-info/40 rounded-lg z-10 pointer-events-none">
+                    <div className="text-info font-medium flex items-center gap-2">
                         <UploadIcon className="size-5" />
                         {t('agent.dropFilesToUpload')}
                     </div>

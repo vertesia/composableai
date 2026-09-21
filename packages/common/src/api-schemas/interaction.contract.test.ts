@@ -14,7 +14,9 @@ import {
     InteractionUpdatePayloadSchema,
     PromptSegmentDefSchema,
     ResolvedCatalogInteractionSchema,
+    RunClonePayloadSchema,
 } from './interaction.js';
+import { validateApiRequest } from './registry.js';
 
 describe('conversation state contract', () => {
     it('publishes the tool catalog storage scope used to resolve tool references', () => {
@@ -226,5 +228,57 @@ describe('interaction contracts', () => {
                 template: { ...populatedPrompt, edit_revision: 3 },
             }).success,
         ).toBe(true);
+    });
+});
+
+describe('user message payload contract', () => {
+    const base = {
+        run: { id: 'run-1', account: 'acc-1', project: 'proj-1' },
+        environment: 'env-1',
+        options: { model: 'model-1' },
+        tools: [],
+        message: 'Search the other collection instead.',
+    };
+
+    it('accepts tool results owed to the model alongside the message', () => {
+        // A stop or an approval denial can leave results undelivered. They have to travel with
+        // the message that resumes the conversation: the payload is strict, so before `results`
+        // existed here the server rejected them and the work was silently dropped.
+        const result = validateApiRequest('UserMessagePayload', {
+            ...base,
+            results: [{ tool_use_id: 'search-1', content: 'found 3 docs', is_error: false }],
+        });
+
+        expect(result.valid).toBe(true);
+    });
+
+    it('still accepts a message with no owed results', () => {
+        expect(validateApiRequest('UserMessagePayload', base).valid).toBe(true);
+    });
+
+    it('stays closed to undeclared fields', () => {
+        expect(validateApiRequest('UserMessagePayload', { ...base, unsupported: true }).valid).toBe(false);
+    });
+});
+
+describe('inference workflow attribution', () => {
+    it('keeps required clone workflow identifiers free of execution deprecation metadata', () => {
+        const workflow = RunClonePayloadSchema.shape.workflow.shape;
+        expect(workflow.run_id.meta()?.deprecated).toBeUndefined();
+        expect(workflow.workflow_id.meta()?.deprecated).toBeUndefined();
+    });
+    it('accepts root agent attribution on execution and clone requests', () => {
+        const workflow = { run_id: 'child-run', workflow_id: 'workstream:parent:child', agent_run_id: 'root-agent' };
+        expect(validateApiRequest('ExecutionRunWorkflow', workflow).valid).toBe(true);
+        expect(validateApiRequest('RunClonePayload', { source_run_id: 'source', workflow }).valid).toBe(true);
+        expect(
+            validateApiRequest('ExecutionRunWorkflow', { run_id: 'legacy', workflow_id: 'AgentRun:legacy' }).valid,
+        ).toBe(true);
+    });
+});
+
+describe('background inference telemetry contract', () => {
+    it('accepts the background call type in the generated runtime contract', () => {
+        expect(validateApiRequest('LlmCallType', 'background').valid).toBe(true);
     });
 });

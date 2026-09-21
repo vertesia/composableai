@@ -29,6 +29,18 @@ jobs:
       group: renovate-automerge-${{ github.event.workflow_run.head_branch }}
       cancel-in-progress: false
     steps:
+      # workflow_run is privileged: execute policy only from the trusted workflow commit.
+      - name: Checkout trusted CI policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: .github/bin
+      - name: Set up Node.js for CI policy
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
       - name: Check automerge eligibility
         id: eligibility
         env:
@@ -175,34 +187,9 @@ jobs:
             "lint.yaml"
           )
 
-          for workflow in "${required_workflows[@]}"; do
-            runs_json="$(gh api --method GET \
-              "repos/${REPO}/actions/workflows/${workflow}/runs" \
-              -f branch="$HEAD_BRANCH" -f event=pull_request -f head_sha="$HEAD_SHA" -f per_page=20)"
-            run_json="$(jq -c --arg sha "$HEAD_SHA" --argjson pr "$pr_number" \
-              '[.workflow_runs[] | select(.head_sha == $sha and any(.pull_requests[]?; .number == $pr))] | sort_by(.id) | last // empty' \
-              <<< "$runs_json")"
-
-            if [[ -z "$run_json" ]]; then
-              echo "Waiting for $workflow to run for $HEAD_SHA."
-              exit 0
-            fi
-
-            status="$(jq -r '.status' <<< "$run_json")"
-            conclusion="$(jq -r '.conclusion // ""' <<< "$run_json")"
-            url="$(jq -r '.html_url' <<< "$run_json")"
-
-            if [[ "$status" != "completed" ]]; then
-              echo "Waiting for $workflow to complete for $HEAD_SHA: $url"
-              exit 0
-            fi
-            if [[ "$conclusion" != "success" ]]; then
-              echo "Not merging PR #$pr_number: $workflow concluded '$conclusion': $url"
-              exit 0
-            fi
-
-            echo "$workflow passed for $HEAD_SHA: $url"
-          done
+          if ! node .github/bin/automerge-ci.mjs "$pr_number" "${required_workflows[@]}"; then
+            exit 0
+          fi
 
           {
             echo "should_merge=true"
@@ -355,13 +342,31 @@ jobs:
           steps.eligibility.outputs.should_repair_lock == 'true' ||
           steps.merge.outputs.should_repair_lock == 'true'
 
+      - name: Resolve pnpm store directory
+        id: pnpm-store
+        if: |
+          steps.eligibility.outputs.should_repair_lock == 'true' ||
+          steps.merge.outputs.should_repair_lock == 'true'
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+
+      - name: Restore pnpm store cache
+        id: pnpm-cache
+        if: |
+          steps.eligibility.outputs.should_repair_lock == 'true' ||
+          steps.merge.outputs.should_repair_lock == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
+
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         if: |
           steps.eligibility.outputs.should_repair_lock == 'true' ||
           steps.merge.outputs.should_repair_lock == 'true'
         with:
           node-version: 24
-          cache: pnpm
 
       - name: Repair pnpm lock conflict
         if: |
@@ -381,3 +386,21 @@ jobs:
             exit 0
           fi
           exit "$status"
+
+      - name: Resolve updated pnpm cache key
+        id: updated-pnpm-cache
+        if: |
+          steps.eligibility.outputs.should_repair_lock == 'true' ||
+          steps.merge.outputs.should_repair_lock == 'true'
+        shell: bash
+        env:
+          CACHE_KEY: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
+        run: echo "key=${CACHE_KEY}" >> "${GITHUB_OUTPUT}"
+
+      - name: Save pnpm store cache
+        if: >-
+          steps.updated-pnpm-cache.outputs.key != steps.pnpm-cache.outputs.cache-matched-key
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ steps.updated-pnpm-cache.outputs.key }}

@@ -23,7 +23,7 @@ export function SearchBar({ value, onChange, placeholder, resultCount, totalCoun
                 autoComplete="off"
             />
             {hasQuery && !noResults && (
-                <p className="mt-1.5 text-xs text-muted-foreground">
+                <p className="mt-1.5 text-xs text-muted">
                     Showing {resultCount} of {totalCount} resources
                 </p>
             )}

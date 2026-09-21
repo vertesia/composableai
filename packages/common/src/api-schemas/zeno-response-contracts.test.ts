@@ -186,6 +186,30 @@ describe('Zeno read-side response contracts', () => {
         ).toBe(true);
     });
 
+    it('accepts display metadata on child-workflow steps', () => {
+        expect(
+            validateApiResponse('DSLWorkflowDefinitionResponse', {
+                id: 'workflow-1',
+                name: 'Parent workflow',
+                edit_revision: 1,
+                created_by: 'user-1',
+                updated_by: 'user-1',
+                created_at: timestamp,
+                updated_at: timestamp,
+                vars: {},
+                spec_format: 'steps',
+                steps: [
+                    {
+                        type: 'workflow',
+                        name: 'childWorkflow',
+                        title: 'Review documents',
+                        description: 'Runs the review child workflow',
+                    },
+                ],
+            }).valid,
+        ).toBe(true);
+    });
+
     it('accepts explicit file, embedding, facet, and data-table wire objects', () => {
         expect(
             validateApiResponse('FileMetadataResponse', {

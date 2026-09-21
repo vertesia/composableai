@@ -32,6 +32,8 @@ export enum LlmCallType {
     Checkpoint = 'checkpoint',
     /** Nested interaction call from within tools */
     NestedInteraction = 'nested_interaction',
+    /** Background inference attributed to an agent, such as topic generation */
+    Background = 'background',
 }
 
 /**

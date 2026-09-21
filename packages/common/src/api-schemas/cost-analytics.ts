@@ -19,6 +19,9 @@ export const PricingSyncDayResultSchema = z
         gcp_list: z.number(),
         gcp_effective: z.number(),
         aws_pricing: z.number(),
+        xai_pricing: z.number(),
+        openrouter_pricing: z.number(),
+        openai_costs: z.number(),
     })
     .meta({ id: 'PricingSyncDayResult' });
 
@@ -34,13 +37,24 @@ export const CostAnalyticsQuerySchema = z
         from: timeBoundarySchema.meta({ description: 'Start time (ISO string or epoch ms)' }).optional(),
         to: timeBoundarySchema.meta({ description: 'End time (ISO string or epoch ms)' }).optional(),
         group_by: z
-            .enum(['model', 'environment', 'account', 'project', 'project_tag', 'provider', 'interaction', 'workflow'])
+            .enum([
+                'model',
+                'environment',
+                'account',
+                'project',
+                'project_tag',
+                'provider',
+                'service_tier',
+                'interaction',
+                'workflow',
+            ])
             .meta({ description: 'Group results by this dimension' })
             .optional(),
         resolution: z.enum(['hour', 'day', 'week', 'month']).meta({ description: 'Time series resolution' }).optional(),
         model: z.string().meta({ description: 'Filter by model pattern' }).optional(),
         environment_id: z.string().meta({ description: 'Filter by environment ID' }).optional(),
         provider: z.string().meta({ description: 'Filter by provider' }).optional(),
+        service_tier: z.string().meta({ description: 'Filter by resolved processing tier' }).optional(),
         project_id: z.string().meta({ description: 'Filter by project ID (optional, for org scope)' }).optional(),
         workflow_id: z.string().meta({ description: 'Filter by workflow / agent run ID' }).optional(),
         workflow_run_id: z.string().meta({ description: 'Filter by Temporal workflow run ID' }).optional(),
@@ -126,6 +140,7 @@ export const ModelPricingSchema = z
         model: z.string(),
         provider: z.string().optional(),
         provider_account_id: z.string().optional(),
+        service_tier: z.string().meta({ description: 'Processing tier this price applies to' }).optional(),
         input_price_per_m_tokens: z.number(),
         cached_input_price_per_m_tokens: z.number().optional(),
         cache_write_input_price_per_m_tokens: z.number().optional(),
@@ -163,6 +178,7 @@ export const ModelPriceComparisonSchema = z
         model: z.string(),
         provider: z.string().optional(),
         provider_account_id: z.string().optional(),
+        service_tier: z.string().meta({ description: 'Processing tier this price applies to' }).optional(),
         list_price_date: z.string().optional(),
         effective_from: z.string().optional(),
         effective_to: z.string().optional(),
@@ -183,6 +199,7 @@ export const CostByDimensionSchema = z
         dimension: z.string(),
         label: z.string().optional(),
         provider: z.string().optional(),
+        service_tier: z.string().optional(),
         cost: z.number(),
         input_tokens: z.number(),
         cached_input_tokens: z.number().optional(),
@@ -192,6 +209,20 @@ export const CostByDimensionSchema = z
         periods: z.array(CostTimeSeriesPointSchema).optional(),
     })
     .meta({ id: 'CostByDimension' });
+
+const PricingCoverageSchema = z.strictObject({
+    priced_calls: z.number(),
+    unpriced_calls: z.number(),
+    assumed_default_calls: z.number(),
+    unpriced: z.array(
+        z.strictObject({
+            model: z.string(),
+            provider: z.string().optional(),
+            service_tier: z.string(),
+            calls: z.number(),
+        }),
+    ),
+});
 
 export const ModelPriceComparisonResponseSchema = z
     .strictObject({
@@ -210,6 +241,7 @@ export const CostAnalyticsResponseSchema = z
         by_dimension: z.array(CostByDimensionSchema),
         time_series: z.array(CostTimeSeriesPointSchema),
         pricing: z.array(ModelPricingSchema),
+        pricing_coverage: PricingCoverageSchema.optional(),
         query_range: z.strictObject({
             from: z.string(),
             to: z.string(),
@@ -223,6 +255,7 @@ export const CostRunPriceResponseSchema = z
         summary: CostSummarySchema,
         by_model: z.array(CostByDimensionSchema),
         pricing: z.array(ModelPricingSchema).optional(),
+        pricing_coverage: PricingCoverageSchema.optional(),
         query_range: z
             .strictObject({
                 from: z.string(),

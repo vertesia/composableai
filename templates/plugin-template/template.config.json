@@ -45,8 +45,8 @@
       },
       "resources": "src/modules/content-app/resources",
       "packageScripts": {
-        "seed:content": "node src/modules/content-app/scripts/seed-content-app.mjs",
-        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.mjs"
+        "seed:content": "node src/modules/content-app/scripts/seed-content-app.ts",
+        "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.ts"
       }
     },
     "service": {

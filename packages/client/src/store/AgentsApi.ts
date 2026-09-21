@@ -64,6 +64,14 @@ export interface AgentRunStreamMessagesOptions {
     onHistoryError?: (error: unknown) => void;
 }
 
+/**
+ * `#` and `?` are URL delimiters, not path content: either one truncates the path before the
+ * request is built. Nothing else is escaped — `%` keeps its existing rejection at upload.
+ */
+export function escapeArtifactPathDelimiters(path: string): string {
+    return path.replace(/#/g, '%23').replace(/\?/g, '%3F');
+}
+
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/agents');
@@ -795,7 +803,7 @@ export class AgentsApi extends ApiTopic {
 
     /** Read a text artifact together with its conditional-write generation token. */
     getArtifactContent(id: string, path: string): Promise<AgentArtifactContentResponse> {
-        return this.get(`/${id}/artifact-content/${path}`);
+        return this.get(`/${id}/artifact-content/${escapeArtifactPathDelimiters(path)}`);
     }
 
     /** Conditionally replace the text content of an agent artifact. */
@@ -804,7 +812,7 @@ export class AgentsApi extends ApiTopic {
         path: string,
         payload: UpdateAgentArtifactContentPayload,
     ): Promise<UpdateAgentArtifactContentResponse> {
-        return this.put(`/${id}/artifact-content/${path}`, { payload });
+        return this.put(`/${id}/artifact-content/${escapeArtifactPathDelimiters(path)}`, { payload });
     }
 
     /**
@@ -819,7 +827,7 @@ export class AgentsApi extends ApiTopic {
         const query: Record<string, string> = { url: '1' };
         if (disposition) query.disposition = disposition;
         if (fileName) query.filename = fileName;
-        return this.get(`/${id}/artifacts/${path}`, { query });
+        return this.get(`/${id}/artifacts/${escapeArtifactPathDelimiters(path)}`, { query });
     }
 
     /**
@@ -840,7 +848,7 @@ export class AgentsApi extends ApiTopic {
         const mimeType = contentType || 'application/octet-stream';
 
         // 1. Get signed upload URL from the agents API
-        const result = (await this.put(`/${id}/artifacts/${path}`, {
+        const result = (await this.put(`/${id}/artifacts/${escapeArtifactPathDelimiters(path)}`, {
             headers: { 'Content-Type': mimeType },
         })) as AgentArtifactUrlResponse;
 
