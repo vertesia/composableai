@@ -659,7 +659,7 @@ function PageWithOverlay({
                             'absolute cursor-pointer border rounded-[1px] transition-colors',
                             citation.misaligned && 'border-dashed',
                             isSelected
-                                ? 'border-2 border-info bg-info z-10'
+                                ? 'border-2 border-info bg-info/20 z-10'
                                 : citation.verified
                                   ? 'border-success/70 hover:bg-success/20'
                                   : citation.reviewed
