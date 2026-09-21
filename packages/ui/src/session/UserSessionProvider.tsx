@@ -160,7 +160,9 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             session.setSession = setSession;
             const initialize = usesGatewaySession()
                 ? session.loginGatewaySession()
-                : getAppOAuthToken().then((token) => session.login(token, { loadOnboardingStatus }));
+                : getAppOAuthToken().then((token) =>
+                      session.login(token, { loadOnboardingStatus, authMethod: 'oauth' }),
+                  );
             void initialize
                 .then(() => {
                     if (!cancelled) setSession(session.clone());

@@ -8,7 +8,7 @@ import { getComposableToken } from './auth/composable';
 import { authReturnUrl, centralAuthUrl, mountRootUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
 import { gatewayFetch, loadGatewaySession, logoutGatewaySession, usesGatewaySession } from './auth/gateway';
-import { getAppOAuthToken, revokeAppOAuthSession, usesAppOAuth } from './auth/oauth';
+import { getAppOAuthToken, revokeAppOAuthSession } from './auth/oauth';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
 
@@ -16,9 +16,11 @@ export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
 export interface UserSessionLoginOptions {
     loadOnboardingStatus?: boolean;
+    authMethod?: 'token' | 'oauth';
 }
 
 class UserSession {
+    private authMethod: 'token' | 'oauth' = 'token';
     isLoading = true;
     client: VertesiaClient;
     authError?: Error;
@@ -80,7 +82,7 @@ class UserSession {
     }
 
     get rawAuthToken() {
-        if (usesAppOAuth()) return getAppOAuthToken();
+        if (this.authMethod === 'oauth') return getAppOAuthToken();
         if (usesGatewaySession())
             return Promise.reject(new Error('Gateway session credentials are not available to application JavaScript'));
         return getComposableToken().then((res) => {
@@ -104,7 +106,7 @@ class UserSession {
             this.setSession?.(this.clone());
             return payload;
         }
-        if (usesAppOAuth()) {
+        if (this.authMethod === 'oauth') {
             this.authToken = jwtDecode<AuthTokenPayload>(await getAppOAuthToken(true));
             this.setSession?.(this.clone());
             return this.authToken;
@@ -129,6 +131,8 @@ class UserSession {
     }
 
     async login(token: string, options: UserSessionLoginOptions = {}) {
+        // Bind credential lookup to the completed login, not the transient URL hash/state.
+        this.authMethod = options.authMethod ?? 'token';
         this.authError = undefined;
         this.isLoading = false;
         this.client.withAuthCallback(() => this.authCallback);
@@ -184,7 +188,7 @@ class UserSession {
             return;
         }
 
-        if (usesAppOAuth()) {
+        if (this.authMethod === 'oauth') {
             void revokeAppOAuthSession()
                 .catch(() => undefined)
                 .finally(() => {
@@ -342,6 +346,7 @@ class UserSession {
         session.isLoading = this.isLoading;
         session.authError = this.authError;
         session.authToken = this.authToken;
+        session.authMethod = this.authMethod;
         session.setSession = this.setSession;
         session.lastSelectedAccount = this.lastSelectedAccount;
         session.switchAccount = this.switchAccount;

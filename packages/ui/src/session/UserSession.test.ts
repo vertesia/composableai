@@ -1,7 +1,11 @@
 import type { VertesiaClient } from '@vertesia/client';
 import { type AuthTokenPayload, PrincipalType } from '@vertesia/common';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as composable from './auth/composable';
+import * as oauth from './auth/oauth';
 import { UserSession } from './UserSession';
+
+afterEach(() => vi.restoreAllMocks());
 
 const projectToken: AuthTokenPayload = {
     sub: 'test-user',
@@ -100,5 +104,36 @@ describe('UserSession.signOut', () => {
         signOutClone();
         expect(cloneLogout).toHaveBeenCalledOnce();
         expect(logout).toHaveBeenCalledOnce();
+    });
+});
+
+describe('UserSession credential provider', () => {
+    it('keeps the accepted token session after the fragment state is consumed', async () => {
+        const rawToken = encodeToken(projectToken);
+        vi.spyOn(composable, 'getComposableToken').mockResolvedValue({ rawToken, token: projectToken, error: false });
+        const acquireOAuth = vi.spyOn(oauth, 'getAppOAuthToken').mockResolvedValue('oauth-token');
+        // OAuth is configured again after the one-time fragment nonce is cleared.
+        vi.spyOn(oauth, 'usesAppOAuth').mockReturnValue(true);
+        const { session } = createSession(async () => ({}));
+        await session.login(rawToken, { loadOnboardingStatus: false });
+
+        await expect(session.authCallback).resolves.toBe(`Bearer ${rawToken}`);
+        await expect(session.clone().authCallback).resolves.toBe(`Bearer ${rawToken}`);
+        await session.refreshAuthToken();
+        expect(acquireOAuth).not.toHaveBeenCalled();
+    });
+
+    it('retains OAuth acquisition and refresh for OAuth logins and cloned sessions', async () => {
+        const rawToken = encodeToken({ ...projectToken, type: PrincipalType.OAuthAccess });
+        const acquireOAuth = vi.spyOn(oauth, 'getAppOAuthToken').mockResolvedValue(rawToken);
+        const acquireLegacy = vi.spyOn(composable, 'getComposableToken');
+        const { session } = createSession(async () => ({}));
+        await session.login(rawToken, { loadOnboardingStatus: false, authMethod: 'oauth' });
+
+        await expect(session.authCallback).resolves.toBe(`Bearer ${rawToken}`);
+        await expect(session.clone().authCallback).resolves.toBe(`Bearer ${rawToken}`);
+        await session.refreshAuthToken();
+        expect(acquireOAuth).toHaveBeenCalledWith(true);
+        expect(acquireLegacy).not.toHaveBeenCalled();
     });
 });
