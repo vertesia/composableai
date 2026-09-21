@@ -281,6 +281,17 @@ function isAbortError(err: unknown): boolean {
 }
 
 /**
+ * True only for a CALLER abort — `controller.abort()` on the signal they supplied, which surfaces as
+ * `AbortError`. Our own `timeoutMs` surfaces as `TimeoutError` and is deliberately excluded: a
+ * timeout is a transient failure, and `createRequestInit()` mints a fresh timeout signal per attempt,
+ * so retrying one is both meaningful and intended. A caller's signal stays aborted across attempts,
+ * so retrying that can only burn the budget.
+ */
+function isCallerAbortError(err: unknown): boolean {
+    return typeof err === 'object' && err !== null && 'name' in err && (err as { name: unknown }).name === 'AbortError';
+}
+
+/**
  * Browser + Node safe `AbortSignal.timeout(ms)`, with a fallback for runtimes that lack it.
  */
 function timeoutSignal(ms: number): AbortSignal {
@@ -605,11 +616,11 @@ export abstract class ClientBase {
             try {
                 res = await fetch(req);
             } catch (err: unknown) {
-                // An abort is the caller's own doing — their `signal` or our `timeoutMs` — so it is
-                // not a connection failure to log, and retrying cannot help: the signal stays
-                // aborted, so each further attempt rejects at once. Still thrown, wrapping the
-                // original, so callers that care can tell the difference.
-                const aborted = isAbortError(err);
+                // A caller abort is their own doing, so it is not a connection failure to log, and
+                // retrying cannot help: their signal stays aborted, so each further attempt rejects at
+                // once. A TIMEOUT is not included — it is transient, and each attempt gets a fresh
+                // timeout signal, so it retries as before. Still thrown, wrapping the original.
+                const aborted = isCallerAbortError(err);
                 if (
                     aborted ||
                     !retryPolicy ||
