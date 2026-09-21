@@ -77,7 +77,12 @@ import {
     RoleDefinitionArraySchema,
     SystemRoleDefinitionArraySchema,
 } from './access-control.js';
-import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
+import {
+    AccountApiVersionPolicySchema,
+    AccountSchema,
+    StripeBillingStatusResponseSchema,
+    UpdateAccountPayloadSchema,
+} from './account.js';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
 import * as AgentCommunicationSchemas from './agent-communication.js';
 import * as AgentRunSchemas from './agent-runs.js';
@@ -838,6 +843,7 @@ import * as WorkflowRunSchemas from './workflow-runs.js';
  * group approaches the proven-safe size.
  */
 const IAM_AND_ACCOUNT_SCHEMAS = {
+    AccountApiVersionPolicy: AccountApiVersionPolicySchema,
     Account: AccountSchema,
     UpdateAccountPayload: UpdateAccountPayloadSchema,
     StripeBillingStatusResponse: StripeBillingStatusResponseSchema,
