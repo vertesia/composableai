@@ -1003,7 +1003,16 @@ export const ListAgentRunsQuerySchema = z
     .object({
         id: z.string().meta({ description: 'Filter by agent run ID' }).optional(),
         status: z.array(AgentRunStatusSchema).meta({ description: 'Filter by status (single or multiple)' }).optional(),
-        interaction: z.string().meta({ description: 'Filter by interaction ID or code' }).optional(),
+        interaction: z
+            .union([z.string(), z.array(z.string())])
+            .meta({
+                description:
+                    "Filter by interaction ID or code. Accepts a list: one agent's runs are stored " +
+                    'under several designators — a bare id from a schedule or an API start, ' +
+                    '`Endpoint@version` from the Run action — so a caller that means "this agent" ' +
+                    'supplies every designator that denotes it. A single value still matches exactly.',
+            })
+            .optional(),
         started_by: z.string().meta({ description: 'Filter by user who started the run' }).optional(),
         since: z
             .string()

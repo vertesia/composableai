@@ -33288,8 +33288,18 @@
         "description": "Filter by status (single or multiple)"
       },
       "interaction": {
-        "type": "string",
-        "description": "Filter by interaction ID or code"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Filter by interaction ID or code. Accepts a list: one agent's runs are stored under several designators — a bare id from a schedule or an API start, `Endpoint@version` from the Run action — so a caller that means \"this agent\" supplies every designator that denotes it. A single value still matches exactly."
       },
       "started_by": {
         "type": "string",

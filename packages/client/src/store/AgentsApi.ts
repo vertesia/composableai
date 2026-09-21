@@ -151,7 +151,12 @@ export class AgentsApi extends ApiTopic {
         if (query?.status) {
             params.status = Array.isArray(query.status) ? query.status.join(',') : query.status;
         }
-        if (query?.interaction) params.interaction = query.interaction;
+        if (query?.interaction?.length) {
+            // Same wire shape as `status` above: a list is comma-joined into one value, which the
+            // server splits back apart. A plain string goes through untouched, so a caller written
+            // against the previous signature sends exactly what it sent before.
+            params.interaction = Array.isArray(query.interaction) ? query.interaction.join(',') : query.interaction;
+        }
         if (query?.started_by) params.started_by = query.started_by;
         if (query?.since) params.since = query.since;
         if (query?.until) params.until = query.until;
