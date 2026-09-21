@@ -1,9 +1,11 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { Env } from '@vertesia/ui/env';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { vertesiaBranding } from '../../boot/branding';
+import { BrandingContext } from '../BrandedLoadingIndicator';
 import { TerminalLogin } from './TerminalLogin';
 
-const mocks = vi.hoisted(() => ({ exchange: vi.fn(), token: vi.fn() }));
+const mocks = vi.hoisted(() => ({ exchange: vi.fn(), token: vi.fn(), projects: vi.fn() }));
 const account = { id: 'account-a', name: 'Account A' };
 const project = { id: 'project-a', name: 'Project A', account: account.id };
 const session = {
@@ -11,7 +13,7 @@ const session = {
     account,
     project,
     accounts: [account],
-    client: { projects: { list: async () => [project] } },
+    client: { projects: { list: mocks.projects } },
     get rawAuthToken() {
         return mocks.token();
     },
@@ -21,7 +23,10 @@ vi.mock('@vertesia/ui/session', () => ({
     fetchComposableTokenFromVertesiaToken: mocks.exchange,
 }));
 vi.mock('@vertesia/ui/router', () => ({ useLocation: () => window.location }));
-vi.mock('@vertesia/ui/i18n', () => ({ useUITranslation: () => ({ t: (key: string) => key }) }));
+vi.mock('@vertesia/ui/i18n', async (original) => ({
+    ...(await original<typeof import('@vertesia/ui/i18n')>()),
+    useUITranslation: () => ({ t: (key: string) => key }),
+}));
 vi.mock('@vertesia/ui/core', async (original) => ({
     ...(await original<typeof import('@vertesia/ui/core')>()),
     useToast: () => vi.fn(),
@@ -43,6 +48,7 @@ beforeEach(() => {
     history.replaceState({}, '', '/cli?redirect_uri=http%3A%2F%2Flocalhost%3A49369&code=1716&profile=custom');
     mocks.exchange.mockReset().mockResolvedValue('cli-token');
     mocks.token.mockReset();
+    mocks.projects.mockReset().mockResolvedValue([project]);
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}')));
 });
 afterEach(() => {
@@ -76,4 +82,30 @@ it('does not send a credential to the CLI when the exchange fails', async () => 
     fireEvent.click(await screen.findByRole('button', { name: 'login.terminal.authorizeClient' }));
     await waitFor(() => expect(mocks.exchange).toHaveBeenCalledOnce());
     expect(fetch).not.toHaveBeenCalled();
+});
+
+it('uses the shared full-screen branded loader while projects load', () => {
+    mocks.projects.mockReturnValue(new Promise(() => {}));
+    render(
+        <BrandingContext.Provider value={vertesiaBranding}>
+            <TerminalLogin />
+        </BrandingContext.Provider>,
+    );
+    const status = screen.getByRole('status');
+    expect(status.style.position).toBe('fixed');
+    expect(status.style.inset).toBe('0px');
+    expect(status.querySelector('.vertesia-loading-motion')).not.toBeNull();
+    expect(status.querySelector('img.vertesia-loading-icon')).not.toBeNull();
+});
+
+it('uses the shared sign-in page shell for the authorization form', async () => {
+    render(
+        <BrandingContext.Provider value={vertesiaBranding}>
+            <TerminalLogin />
+        </BrandingContext.Provider>,
+    );
+    await screen.findByRole('button', { name: 'login.terminal.authorizeClient' });
+    expect(screen.getByText('auth.privacyPolicy')).toBeTruthy();
+    expect(screen.getAllByAltText('Vertesia')).toHaveLength(2);
+    expect(screen.queryByRole('status')).toBeNull();
 });
