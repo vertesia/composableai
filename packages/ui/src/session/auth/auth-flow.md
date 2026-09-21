@@ -191,8 +191,8 @@ The diagrams below use the default hostname; redirects use the selected broker.
 ┌──────────────────────┐    │ - Microsoft          │    ┌──────────────────────┐
 │ Build redirect URL:  │    └──────────┬───────────┘    │ Redirect to SSO      │
 │                      │               │                │ provider (Okta,      │
-│ auth.vertesia.io     │               ▼                │ Azure AD, etc.)      │
-│ .vertesia.app        │    ┌──────────────────────┐    └──────────┬───────────┘
+│ auth.vertesia.io      │               ▼                │ Azure AD, etc.)      │
+│                      │    ┌──────────────────────┐    └──────────┬───────────┘
 │ ?sts=...             │    │ Firebase OAuth       │               │
 │ &redirect_uri=...    │    │ redirect & return    │               ▼
 │ &state=...           │    └──────────┬───────────┘    ┌──────────────────────┐
@@ -484,8 +484,8 @@ The diagrams below use the default hostname; redirects use the selected broker.
                 │ Redirect to Central  │         │ getFirebaseAuth()    │
                 │ Auth for logout:     │         │   .signOut()         │
                 │                      │         │                      │
-                │ auth.vertesia.io     │         │ (Triggers            │
-                │  .vertesia.app       │         │  onAuthStateChanged  │
+                │ auth.vertesia.io      │         │ (Triggers            │
+                │                      │         │  onAuthStateChanged  │
                 │  /logout             │         │  with anonymous user)│
                 │                      │         └──────────┬───────────┘
                 │ (Central auth        │                    │

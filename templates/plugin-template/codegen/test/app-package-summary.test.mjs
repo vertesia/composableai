@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { GET } from '../../api/oauth-client.js';
-import { appOAuthScopes } from '../../src/app-permissions.ts';
+import { appOAuthPermissions, appOAuthScopes } from '../../src/app-permissions.ts';
 import { summarizeAppPackage } from '../../src/modules/service/scripts/app-package-summary.mjs';
 
 test('summarizes lifecycle and event hooks by registered name', () => {
@@ -45,4 +45,17 @@ test('standalone metadata uses the shared permissions and declares session renew
         if (previous === undefined) delete process.env.APP_OAUTH_SCOPES;
         else process.env.APP_OAUTH_SCOPES = previous;
     }
+});
+
+test('browser session renewal follows the effective app OAuth permissions', () => {
+    assert.deepEqual(appOAuthPermissions(), { scopes: appOAuthScopes, offlineAccess: true });
+    assert.deepEqual(appOAuthPermissions('openid profile content:read'), {
+        scopes: ['openid', 'profile', 'content:read'],
+        offlineAccess: false,
+    });
+    assert.deepEqual(appOAuthPermissions('  openid\t offline_access  '), {
+        scopes: ['openid', 'offline_access'],
+        offlineAccess: true,
+    });
+    assert.deepEqual(appOAuthPermissions(''), { scopes: [], offlineAccess: false });
 });

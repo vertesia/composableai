@@ -11,7 +11,9 @@ const TOKEN_KEY = 'vertesia.oauth.access';
 const MAX_TRANSACTION_AGE = 10 * 60_000;
 let pending: Promise<string> | undefined;
 // Long-lived credentials never enter browser storage. A reload resumes via the broker when access expires.
-let refreshSession: { token: string; clientId: string; issuer: string; tokenEndpoint: string } | undefined;
+let refreshSession:
+    | { token: string; clientId: string; issuer: string; tokenEndpoint: string; revocationEndpoint?: string }
+    | undefined;
 
 export class OAuthLoginError extends Error {}
 
@@ -145,10 +147,17 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     }
     const discovery = await fetch(`${issuer}/.well-known/oauth-authorization-server`);
     if (!discovery.ok) throw new Error(`OAuth discovery failed (${discovery.status})`);
-    const metadata: { issuer: string; authorization_endpoint: string; token_endpoint: string } = await discovery.json();
+    const metadata: {
+        issuer: string;
+        authorization_endpoint: string;
+        token_endpoint: string;
+        revocation_endpoint?: string;
+    } = await discovery.json();
     if (metadata.issuer.replace(/\/+$/, '') !== issuer) throw new Error('OAuth issuer mismatch');
     const authorize = httpsUrl(metadata.authorization_endpoint);
     const tokenEndpoint = httpsUrl(metadata.token_endpoint);
+    const revocationEndpoint =
+        metadata.revocation_endpoint === undefined ? undefined : httpsUrl(metadata.revocation_endpoint).toString();
     const resource = new URL(metadata.issuer).toString();
     if (refreshCredential) {
         try {
@@ -192,6 +201,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                     clientId,
                     issuer,
                     tokenEndpoint: tokenEndpoint.toString(),
+                    revocationEndpoint,
                 };
                 return grant.access_token;
             }
@@ -235,7 +245,13 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         );
         refreshSession =
             config.offlineAccess && grant.refresh_token
-                ? { token: grant.refresh_token, clientId, issuer, tokenEndpoint: tokenEndpoint.toString() }
+                ? {
+                      token: grant.refresh_token,
+                      clientId,
+                      issuer,
+                      tokenEndpoint: tokenEndpoint.toString(),
+                      revocationEndpoint,
+                  }
                 : undefined;
         const target = new URL(transaction.target);
         if (target.origin !== window.location.origin) throw new Error('Invalid OAuth return target');
@@ -307,8 +323,8 @@ export async function revokeAppOAuthSession(): Promise<void> {
     const cached = refreshSession;
     clearAppOAuth();
     if (!cached) return;
-    const revoke = httpsUrl(cached.tokenEndpoint);
-    revoke.pathname = revoke.pathname.replace(/\/token$/, '/revoke');
+    const revoke = httpsUrl(cached.revocationEndpoint ?? cached.tokenEndpoint);
+    if (cached.revocationEndpoint === undefined) revoke.pathname = revoke.pathname.replace(/\/token$/, '/revoke');
     await fetch(revoke, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

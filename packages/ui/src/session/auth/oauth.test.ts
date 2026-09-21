@@ -12,6 +12,8 @@ let browser: {
     history: { state: null; replaceState: ReturnType<typeof vi.fn> };
 };
 let requests: { url: string; init?: RequestInit }[];
+let revocationEndpoint: string | undefined;
+let tokenEndpoint: string;
 function jwt(): string {
     return `e30.${btoa(
         JSON.stringify({
@@ -40,6 +42,8 @@ async function setup(offlineAccess = false) {
 }
 beforeEach(() => {
     storage.clear();
+    revocationEndpoint = undefined;
+    tokenEndpoint = `${issuer}/oauth/token`;
     requests = [];
     browser = {
         location: { href: `${origin}/app/report?a=a&p=p#chart`, origin, replace },
@@ -67,14 +71,15 @@ beforeEach(() => {
                 return Response.json({
                     issuer,
                     authorization_endpoint: 'https://preview.cloud.dev1.vertesia.io/oauth/authorize',
-                    token_endpoint: `${issuer}/oauth/token`,
+                    token_endpoint: tokenEndpoint,
+                    revocation_endpoint: revocationEndpoint,
                 });
             if (url === clientId)
                 return Response.json({
                     redirect_uris: [`${origin}/app`],
                     scope: 'openid profile content:read offline_access',
                 });
-            if (url === `${issuer}/oauth/token`)
+            if (url === tokenEndpoint)
                 return Response.json({
                     access_token: jwt(),
                     token_type: 'Bearer',
@@ -212,6 +217,7 @@ it('keeps refresh credentials only in memory and revokes the latest one on logou
         vi.fn(async () => new Response(null, { status: 200 })),
     );
     await oauth.revokeAppOAuthSession();
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe(`${issuer}/oauth/revoke`);
     const body = vi.mocked(fetch).mock.calls[0][1]?.body as URLSearchParams;
     expect(body.get('token')).toBe('refresh-credential');
     expect(storage.has('vertesia.oauth.access')).toBe(false);
@@ -253,4 +259,32 @@ it('routes a state-bound regional legacy token through branch STS without starti
     expect(oauth.usesAppOAuth()).toBe(false);
     storage.delete('auth_state');
     expect(oauth.usesAppOAuth()).toBe(true);
+});
+
+it.each([false, true])('uses the discovered revocation endpoint after refresh=%s', async (refresh) => {
+    tokenEndpoint = `${issuer}/custom/exchange`;
+    revocationEndpoint = `${issuer}/sessions/invalidate`;
+    const oauth = await loginOffline();
+    if (refresh) {
+        revocationEndpoint = `${issuer}/sessions/invalidate-v2`;
+        await oauth.getAppOAuthToken(true);
+    }
+    vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => new Response(null, { status: 200 })),
+    );
+    await oauth.revokeAppOAuthSession();
+    expect(String(vi.mocked(fetch).mock.calls[0][0])).toBe(revocationEndpoint);
+    const body = vi.mocked(fetch).mock.calls[0][1]?.body as URLSearchParams;
+    expect(body.get('token')).toBe('refresh-credential');
+    expect(body.get('client_id')).toBe(clientId);
+    expect(storage.has('vertesia.oauth.access')).toBe(false);
+});
+
+it('rejects an insecure discovered revocation endpoint', async () => {
+    revocationEndpoint = 'http://insecure.example/revoke';
+    const oauth = await setup(true);
+    await expect(oauth.getAppOAuthToken()).rejects.toThrow();
+    expect(replace).not.toHaveBeenCalled();
+    expect(requests.some(({ url }) => url === tokenEndpoint)).toBe(false);
 });
