@@ -150,6 +150,5 @@ export type StripeBillingStatusResponseFromSchema = z.infer<typeof StripeBilling
 export const AccountApiVersionPolicySchema = z
     .strictObject({
         default_api_version: z.enum(ApiVersions).optional(),
-        override_api_version: z.enum(ApiVersions).optional(),
     })
     .meta({ id: 'AccountApiVersionPolicy' });
