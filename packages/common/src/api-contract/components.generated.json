@@ -6250,6 +6250,10 @@
       "request_id": {
         "type": "string"
       },
+      "user_code": {
+        "type": "string",
+        "description": "User-visible device code to compare with the terminal before approving. Never the secret device_code."
+      },
       "client_id": {
         "type": "string"
       },

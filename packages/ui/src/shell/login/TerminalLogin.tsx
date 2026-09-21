@@ -13,12 +13,7 @@ import {
 import { Env } from '@vertesia/ui/env';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useLocation } from '@vertesia/ui/router';
-import {
-    fetchComposableTokenFromFirebaseToken,
-    fetchComposableTokenFromVertesiaToken,
-    getCurrentVertesiaToken,
-    useUserSession,
-} from '@vertesia/ui/session';
+import { fetchComposableTokenFromVertesiaToken, useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
 
 interface ProfileData {
@@ -31,6 +26,7 @@ interface LoginResult extends Required<ProfileData> {
     token: string;
     studio_server_url: string;
     zeno_server_url: string;
+    oauth_server_url: string;
 }
 
 interface ClientInfo extends ProfileData {
@@ -92,6 +88,7 @@ function getClientInfo(location: Location): ClientInfo | null {
 }
 
 export function TerminalLogin() {
+    const session = useUserSession();
     const [payload, setPayload] = useState<LoginResult | undefined>();
     const [error, setError] = useState<Error>();
     const location = useLocation();
@@ -132,15 +129,20 @@ export function TerminalLogin() {
         // expire in 1 day
         let payload: LoginResult | undefined;
         try {
-            const vertesiaToken = getCurrentVertesiaToken();
-            const token = vertesiaToken
-                ? await fetchComposableTokenFromVertesiaToken(vertesiaToken, data.account, data.project, 24 * 3600)
-                : await fetchComposableTokenFromFirebaseToken(data.account, data.project, 24 * 3600);
+            // Resolve the active session through the shared provider (OAuth, Firebase or central auth).
+            // Exchange it server-side for the selected project rather than handing the browser's token to the CLI.
+            const token = await fetchComposableTokenFromVertesiaToken(
+                await session.rawAuthToken,
+                data.account,
+                data.project,
+                24 * 3600,
+            );
             if (token) {
                 payload = {
                     ...data,
                     studio_server_url: Env.endpoints.studio,
                     zeno_server_url: Env.endpoints.zeno,
+                    oauth_server_url: Env.endpoints.sts,
                     token,
                 } as LoginResult;
                 await fetch(clientInfo.redirect, {

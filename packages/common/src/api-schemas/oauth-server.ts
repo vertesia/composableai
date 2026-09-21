@@ -104,6 +104,10 @@ export const OAuthAuthorizationRequestGeneratedAppSchema = z
 export const OAuthAuthorizationRequestSchema = z
     .strictObject({
         request_id: z.string(),
+        user_code: z.string().optional().meta({
+            description:
+                'User-visible device code to compare with the terminal before approving. Never the secret device_code.',
+        }),
         client_id: z.string(),
         client_name: z.string(),
         client_metadata: OAuthClientDisplayMetadataSchema.optional(),
