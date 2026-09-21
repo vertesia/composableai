@@ -2742,9 +2742,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "AzureFoundryChatOptions": {
@@ -2790,9 +2787,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ImagenOptions": {
@@ -2813,7 +2807,8 @@
         "enum": [
           "dont_allow",
           "allow_adults",
-          "allow_all"
+          "allow_all",
+          "allow_adult"
         ]
       },
       "safety_setting": {
@@ -2893,9 +2888,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ImagenTaskType": {
@@ -2973,9 +2965,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "VertexAIGeminiOptions": {
@@ -3089,9 +3078,6 @@
         "type": "number"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ThinkingLevel": {
@@ -3143,9 +3129,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "VertexAIGrokOptions": {
@@ -3171,9 +3154,6 @@
         }
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "NovaCanvasOptions": {
@@ -3245,7 +3225,6 @@
       }
     },
     "required": [
-      "_option_id",
       "taskType"
     ],
     "additionalProperties": false
@@ -3281,9 +3260,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockNovaOptions": {
@@ -3302,6 +3278,9 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3317,9 +3296,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMistralOptions": {
@@ -3338,6 +3314,9 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3353,9 +3332,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockAI21Options": {
@@ -3374,6 +3350,12 @@
       "top_p": {
         "type": "number"
       },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3389,9 +3371,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockCohereCommandOptions": {
@@ -3410,6 +3389,15 @@
       "top_p": {
         "type": "number"
       },
+      "top_k": {
+        "type": "number"
+      },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3425,9 +3413,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockClaudeOptions": {
@@ -3487,9 +3472,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockPalmyraOptions": {
@@ -3532,9 +3514,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockGptOssOptions": {
@@ -3579,9 +3558,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "TwelvelabsPegasusOptions": {
@@ -3603,9 +3579,6 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMantleResponsesOptions": {
@@ -3631,7 +3604,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "reasoning_effort": {
@@ -3641,7 +3615,8 @@
           "low",
           "medium",
           "high",
-          "xhigh"
+          "xhigh",
+          "max"
         ]
       },
       "verbosity": {
@@ -3664,9 +3639,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMantleChatCompletionsOptions": {
@@ -3711,9 +3683,6 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "BedrockMantleClaudeOptions": {
@@ -3768,9 +3737,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiThinkingOptions": {
@@ -3826,9 +3792,6 @@
         "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "ReasoningEffort": {
@@ -3908,9 +3871,6 @@
         "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenRouterTextOptions": {
@@ -4036,9 +3996,6 @@
         }
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiDalleOptions": {
@@ -4083,9 +4040,6 @@
         "type": "number"
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "OpenAiGptImageOptions": {
@@ -4130,9 +4084,6 @@
         ]
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "XAIGrokImageOptions": {
@@ -4188,9 +4139,6 @@
         "maximum": 10
       }
     },
-    "required": [
-      "_option_id"
-    ],
     "additionalProperties": false
   },
   "GroqOptions": {
@@ -4231,7 +4179,6 @@
       }
     },
     "required": [
-      "_option_id",
       "reasoning_format"
     ],
     "additionalProperties": false
@@ -4299,13 +4246,64 @@
         "type": "boolean"
       }
     },
-    "required": [
-      "_option_id"
-    ],
+    "additionalProperties": false
+  },
+  "AnthropicClaudeOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "anthropic-claude"
+      },
+      "max_tokens": {
+        "type": "number"
+      },
+      "temperature": {
+        "type": "number"
+      },
+      "top_p": {
+        "type": "number"
+      },
+      "top_k": {
+        "type": "number"
+      },
+      "stop_sequence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "effort": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "thinking_budget_tokens": {
+        "type": "number"
+      },
+      "include_thoughts": {
+        "type": "boolean"
+      },
+      "cache_enabled": {
+        "type": "boolean"
+      },
+      "cache_ttl": {
+        "type": "string",
+        "enum": [
+          "5m",
+          "1h"
+        ]
+      }
+    },
     "additionalProperties": false
   },
   "ModelOptions": {
-    "oneOf": [
+    "anyOf": [
       {
         "$ref": "#/components/schemas/TextFallbackOptions"
       },
@@ -4389,45 +4387,12 @@
       },
       {
         "$ref": "#/components/schemas/MistralTextOptions"
+      },
+      {
+        "$ref": "#/components/schemas/AnthropicClaudeOptions"
       }
     ],
-    "discriminator": {
-      "propertyName": "_option_id",
-      "mapping": {
-        "text-fallback": "#/components/schemas/TextFallbackOptions",
-        "azure-foundry-chat": "#/components/schemas/AzureFoundryChatOptions",
-        "vertexai-imagen": "#/components/schemas/ImagenOptions",
-        "vertexai-claude": "#/components/schemas/VertexAIClaudeOptions",
-        "vertexai-gemini": "#/components/schemas/VertexAIGeminiOptions",
-        "vertexai-gemini-omni-video": "#/components/schemas/VertexAIGeminiOmniVideoOptions",
-        "vertexai-grok": "#/components/schemas/VertexAIGrokOptions",
-        "bedrock-nova-canvas": "#/components/schemas/NovaCanvasOptions",
-        "bedrock-converse": "#/components/schemas/BedrockConverseOptions",
-        "bedrock-nova": "#/components/schemas/BedrockNovaOptions",
-        "bedrock-mistral": "#/components/schemas/BedrockMistralOptions",
-        "bedrock-ai21": "#/components/schemas/BedrockAI21Options",
-        "bedrock-cohere-command": "#/components/schemas/BedrockCohereCommandOptions",
-        "bedrock-claude": "#/components/schemas/BedrockClaudeOptions",
-        "bedrock-palmyra": "#/components/schemas/BedrockPalmyraOptions",
-        "bedrock-gpt-oss": "#/components/schemas/BedrockGptOssOptions",
-        "bedrock-twelvelabs-pegasus": "#/components/schemas/TwelvelabsPegasusOptions",
-        "bedrock-mantle-responses": "#/components/schemas/BedrockMantleResponsesOptions",
-        "bedrock-mantle-chat-completions": "#/components/schemas/BedrockMantleChatCompletionsOptions",
-        "bedrock-mantle-claude": "#/components/schemas/BedrockMantleClaudeOptions",
-        "openai-thinking": "#/components/schemas/OpenAiThinkingOptions",
-        "openai-text": "#/components/schemas/OpenAiTextOptions",
-        "openrouter-text": "#/components/schemas/OpenRouterTextOptions",
-        "openai-dalle": "#/components/schemas/OpenAiDalleOptions",
-        "openai-gpt-image": "#/components/schemas/OpenAiGptImageOptions",
-        "xai-grok-image": "#/components/schemas/XAIGrokImageOptions",
-        "groq-deepseek-thinking": "#/components/schemas/GroqOptions",
-        "mistral-text": "#/components/schemas/MistralTextOptions"
-      }
-    },
-    "type": "object",
-    "required": [
-      "_option_id"
-    ]
+    "type": "object"
   },
   "HttpTimeoutOptions": {
     "type": "object",
@@ -5464,11 +5429,12 @@
   "ToolCollectionAuthType": {
     "type": "string",
     "enum": [
+      "none",
       "oauth",
       "api_key",
       "other"
     ],
-    "description": "Authentication type for tool collections.\n- 'oauth': the runtime resolves a per-user or per-project OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 bearer token (`Authorization: Bearer <key>`)"
+    "description": "Authentication type for tool collections.\n- 'none': connect directly without credentials for MCP collections; does not disable authentication for Vertesia SDK collections\n- 'oauth': the runtime resolves a per-user or per-project OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 bearer token (`Authorization: Bearer <key>`)\n- 'other' or omitted: use the legacy provider connection-details flow for MCP collections"
   },
   "MCPOAuthConfig": {
     "type": "object",
@@ -24858,6 +24824,9 @@
     "properties": {
       "bucket": {
         "type": "string"
+      },
+      "location": {
+        "type": "string"
       }
     },
     "required": [
@@ -43311,6 +43280,9 @@
       "embeddingRunsInProgress": {
         "type": "number"
       },
+      "latestBatchRun": {
+        "$ref": "#/components/schemas/EmbeddingBatchRunSummary"
+      },
       "totalIndexableObjects": {
         "type": "number"
       },
@@ -43354,6 +43326,86 @@
     ],
     "additionalProperties": false
   },
+  "EmbeddingBatchRunSummary": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "model": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "applied": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "skipped": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "stale": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "id",
+      "state",
+      "model",
+      "created_at",
+      "applied",
+      "skipped",
+      "failed",
+      "stale"
+    ],
+    "additionalProperties": false,
+    "description": "Latest batch run for this embedding type, without provider payloads or input content."
+  },
+  "RecalculateEmbeddingsQuery": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "sync",
+        "description": "Force synchronous per-object recalculation. When omitted, batch inference is used when supported."
+      },
+      "force": {
+        "type": "boolean",
+        "description": "Recalculate all eligible objects, including current embeddings. Token limits still apply; existing renditions are reused."
+      }
+    },
+    "additionalProperties": false
+  },
   "ProjectConfigurationEmbeddingEnablePayload": {
     "type": "object",
     "properties": {
@@ -43371,6 +43423,530 @@
       "environment"
     ],
     "additionalProperties": false
+  },
+  "EmbeddingBatchProviderState": {
+    "type": "string",
+    "enum": [
+      "pending",
+      "running",
+      "succeeded",
+      "failed",
+      "cancelled",
+      "paused"
+    ]
+  },
+  "EmbeddingBatchCapabilityRequest": {
+    "type": "object",
+    "properties": {
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      }
+    },
+    "required": [
+      "embedding_type"
+    ]
+  },
+  "EmbeddingBatchCapabilityResponse": {
+    "type": "object",
+    "properties": {
+      "eligible": {
+        "type": "boolean"
+      },
+      "reason": {
+        "type": "string"
+      },
+      "environment": {
+        "type": "string"
+      },
+      "provider": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "dimensions": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "max_tokens": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "location": {
+        "type": "string"
+      },
+      "input_format": {
+        "type": "string"
+      },
+      "max_rows": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "artifact_uri": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "eligible"
+    ]
+  },
+  "EmbeddingBatchCreateRequest": {
+    "type": "object",
+    "properties": {
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      },
+      "model": {
+        "type": "string"
+      },
+      "dimensions": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "input_uri": {
+        "type": "string"
+      },
+      "output_uri": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "embedding_type",
+      "model",
+      "dimensions",
+      "display_name",
+      "input_uri",
+      "output_uri"
+    ]
+  },
+  "EmbeddingBatchJobRequest": {
+    "type": "object",
+    "properties": {
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      },
+      "model": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "include_output_artifacts": {
+        "type": "boolean",
+        "description": "On get, resolve terminal result artifacts for application. Omit for lightweight status polling."
+      }
+    },
+    "required": [
+      "embedding_type",
+      "model",
+      "name"
+    ]
+  },
+  "EmbeddingBatchJobResponse": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "paused"
+        ]
+      },
+      "model": {
+        "type": "string"
+      },
+      "input_uri": {
+        "type": "string"
+      },
+      "output_uri": {
+        "type": "string"
+      },
+      "output_artifacts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Terminal job result artifacts in application storage, including partial results. Never provider file IDs."
+      },
+      "error_message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "state"
+    ]
+  },
+  "EmbeddingBatchRunState": {
+    "type": "string",
+    "enum": [
+      "preparing",
+      "submitted",
+      "running",
+      "applying",
+      "completed",
+      "completed_with_errors",
+      "cancelled",
+      "stale",
+      "failed"
+    ]
+  },
+  "EmbeddingBatchSubjob": {
+    "type": "object",
+    "properties": {
+      "index": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "input_uri": {
+        "type": "string"
+      },
+      "output_uri": {
+        "type": "string"
+      },
+      "row_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "provider_name": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "paused"
+        ]
+      }
+    },
+    "required": [
+      "index",
+      "display_name",
+      "input_uri",
+      "output_uri",
+      "row_count"
+    ]
+  },
+  "EmbeddingBatchPrepareRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "embedding_type": {
+        "$ref": "#/components/schemas/SupportedEmbeddingTypes"
+      },
+      "capability": {
+        "$ref": "#/components/schemas/EmbeddingBatchCapabilityResponse"
+      }
+    },
+    "required": [
+      "run_id",
+      "embedding_type",
+      "capability"
+    ]
+  },
+  "EmbeddingBatchPrepareResponse": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "row_count": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "subjobs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "display_name": {
+              "type": "string"
+            },
+            "input_uri": {
+              "type": "string"
+            },
+            "output_uri": {
+              "type": "string"
+            },
+            "row_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "provider_name": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "succeeded",
+                "failed",
+                "cancelled",
+                "paused"
+              ]
+            }
+          },
+          "required": [
+            "index",
+            "display_name",
+            "input_uri",
+            "output_uri",
+            "row_count"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "run_id",
+      "row_count",
+      "subjobs"
+    ]
+  },
+  "EmbeddingBatchRenditionPageRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ]
+  },
+  "EmbeddingBatchRenditionPageResponse": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "running",
+          "page_completed",
+          "completed"
+        ]
+      },
+      "page_index": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_scanned": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_ready": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_generated": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "page_failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "running": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "status",
+      "page_index",
+      "page_scanned",
+      "page_ready",
+      "page_generated",
+      "page_failed",
+      "running"
+    ]
+  },
+  "EmbeddingBatchUpdateRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "subjobs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "display_name": {
+              "type": "string"
+            },
+            "input_uri": {
+              "type": "string"
+            },
+            "output_uri": {
+              "type": "string"
+            },
+            "row_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "provider_name": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "running",
+                "succeeded",
+                "failed",
+                "cancelled",
+                "paused"
+              ]
+            }
+          },
+          "required": [
+            "index",
+            "display_name",
+            "input_uri",
+            "output_uri",
+            "row_count"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "error_code": {
+        "type": "string"
+      },
+      "error_message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id",
+      "state"
+    ]
+  },
+  "EmbeddingBatchApplyRequest": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "run_id"
+    ]
+  },
+  "EmbeddingBatchApplyResponse": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "enum": [
+          "preparing",
+          "submitted",
+          "running",
+          "applying",
+          "completed",
+          "completed_with_errors",
+          "cancelled",
+          "stale",
+          "failed"
+        ]
+      },
+      "succeeded": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failed": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "stale": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "applied": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "failure_counts": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "required": [
+      "state",
+      "succeeded",
+      "failed",
+      "stale",
+      "applied"
+    ]
   },
   "GenericCommandResponse": {
     "type": "object",

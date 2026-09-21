@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/ui",
-    "version": "1.6.0-dev.20260912.110338Z",
+    "version": "1.6.0-dev.20260918.061604Z",
     "description": "Vertesia UI components and and hooks",
     "type": "module",
     "main": "./lib/index.js",
@@ -78,7 +78,7 @@
         "jwt-decode": "^4.0.0",
         "katex": "^0.18.7",
         "lodash-es": "^4.18.1",
-        "lucide-react": "^1.42.0",
+        "lucide-react": "^1.45.0",
         "mermaid": "^11.17.2",
         "monaco-editor": "^0.56.0",
         "motion": "^13.2.0",
@@ -88,7 +88,7 @@
         "react-date-picker": "^12.1.0",
         "react-dom": "catalog:",
         "react-error-boundary": "^6.1.5",
-        "react-i18next": "^17.0.13",
+        "react-i18next": "^17.0.14",
         "react-markdown": "^10.1.0",
         "react-pdf": "^10.5.0",
         "react-remove-scroll": "^2.7.2",
@@ -103,7 +103,7 @@
         "remark-github-blockquote-alert": "^2.1.0",
         "remark-math": "^6.0.0",
         "remark-supersub": "^1.0.0",
-        "tailwind-merge": "^3.6.0",
+        "tailwind-merge": "^3.7.0",
         "ts-md5": "^2.0.1",
         "unist-util-visit": "^5.1.0",
         "vega": "^6.4.0",
@@ -200,5 +200,5 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/ui"
     },
-    "gitHead": "504e8df031c3950ec324c865385caf460b1c1cd7"
+    "gitHead": "ea552337206e77c256478b76e19b4235e70bf769"
 }

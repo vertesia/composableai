@@ -370,6 +370,22 @@ import {
     WorkflowExecutionStatusSchema,
 } from './document-processing.js';
 import {
+    EmbeddingBatchApplyRequestSchema,
+    EmbeddingBatchApplyResponseSchema,
+    EmbeddingBatchCapabilityRequestSchema,
+    EmbeddingBatchCapabilityResponseSchema,
+    EmbeddingBatchCreateRequestSchema,
+    EmbeddingBatchJobRequestSchema,
+    EmbeddingBatchJobResponseSchema,
+    EmbeddingBatchPrepareRequestSchema,
+    EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchProviderStateSchema,
+    EmbeddingBatchRenditionPageRequestSchema,
+    EmbeddingBatchRenditionPageResponseSchema,
+    EmbeddingBatchRunStateSchema,
+    EmbeddingBatchRunSummarySchema,
+    EmbeddingBatchSubjobSchema,
+    EmbeddingBatchUpdateRequestSchema,
     EmbeddingsApiAudioInputSchema,
     EmbeddingsApiImageInputSchema,
     EmbeddingsApiInputSchema,
@@ -379,6 +395,7 @@ import {
     EmbeddingsApiVideoInputSchema,
     EmbeddingsStatusResponseSchema,
     ProjectConfigurationEmbeddingEnablePayloadSchema,
+    RecalculateEmbeddingsQuerySchema,
 } from './embeddings.js';
 import { emitJsonSchema } from './emit-json-schema.js';
 import {
@@ -1540,7 +1557,24 @@ const INDEXING_SCHEMAS = {
 
 const EMBEDDING_ADMIN_SCHEMAS = {
     EmbeddingsStatusResponse: EmbeddingsStatusResponseSchema,
+    RecalculateEmbeddingsQuery: RecalculateEmbeddingsQuerySchema,
     ProjectConfigurationEmbeddingEnablePayload: ProjectConfigurationEmbeddingEnablePayloadSchema,
+    EmbeddingBatchProviderState: EmbeddingBatchProviderStateSchema,
+    EmbeddingBatchCapabilityRequest: EmbeddingBatchCapabilityRequestSchema,
+    EmbeddingBatchCapabilityResponse: EmbeddingBatchCapabilityResponseSchema,
+    EmbeddingBatchCreateRequest: EmbeddingBatchCreateRequestSchema,
+    EmbeddingBatchJobRequest: EmbeddingBatchJobRequestSchema,
+    EmbeddingBatchJobResponse: EmbeddingBatchJobResponseSchema,
+    EmbeddingBatchRunState: EmbeddingBatchRunStateSchema,
+    EmbeddingBatchRunSummary: EmbeddingBatchRunSummarySchema,
+    EmbeddingBatchSubjob: EmbeddingBatchSubjobSchema,
+    EmbeddingBatchPrepareRequest: EmbeddingBatchPrepareRequestSchema,
+    EmbeddingBatchPrepareResponse: EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchRenditionPageRequest: EmbeddingBatchRenditionPageRequestSchema,
+    EmbeddingBatchRenditionPageResponse: EmbeddingBatchRenditionPageResponseSchema,
+    EmbeddingBatchUpdateRequest: EmbeddingBatchUpdateRequestSchema,
+    EmbeddingBatchApplyRequest: EmbeddingBatchApplyRequestSchema,
+    EmbeddingBatchApplyResponse: EmbeddingBatchApplyResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const COMMAND_SCHEMAS = {
@@ -2679,34 +2713,12 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     //
     // `JSONSchema` is deliberately absent: it is OPEN by design and by long-standing publication —
     // a JSON Schema carries keywords the type never enumerated. `JSONSchemaProperties` is a map.
-    'TextFallbackOptions',
-    'AzureFoundryChatOptions',
-    'ImagenOptions',
-    'VertexAIClaudeOptions',
-    'VertexAIGeminiOptions',
-    'VertexAIGeminiOmniVideoOptions',
-    'VertexAIGrokOptions',
-    'NovaCanvasOptions',
-    'BedrockConverseOptions',
-    'BedrockNovaOptions',
-    'BedrockMistralOptions',
-    'BedrockAI21Options',
-    'BedrockCohereCommandOptions',
-    'BedrockClaudeOptions',
-    'BedrockPalmyraOptions',
-    'BedrockGptOssOptions',
-    'TwelvelabsPegasusOptions',
-    'BedrockMantleResponsesOptions',
-    'BedrockMantleChatCompletionsOptions',
-    'BedrockMantleClaudeOptions',
-    'OpenAiThinkingOptions',
-    'OpenAiTextOptions',
-    'OpenRouterTextOptions',
-    'OpenAiDalleOptions',
-    'OpenAiGptImageOptions',
-    'XAIGrokImageOptions',
-    'GroqOptions',
-    'MistralTextOptions',
+    // Derive membership so new provider schemas inherit this enforcement check automatically.
+    ...ModelOptionsSchema.options.map((schema) => {
+        const id = schema.meta()?.id;
+        if (!id) throw new Error('Model option schemas must declare a component id');
+        return id;
+    }),
     // The app-manifest leaves. Every object among them is published closed today, the nested `git`
     // block included, and it is spelled `strictObject` so the emission carries it directly. The five
     // enums take no `additionalProperties` at all.
@@ -2874,6 +2886,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DriftAnalysisResult',
     'DriftAnalysisProgress',
     'EmbeddingsStatusResponse',
+    'EmbeddingBatchRunSummary',
+    'RecalculateEmbeddingsQuery',
     'ProjectConfigurationEmbeddingEnablePayload',
     'GenericCommandResponse',
     'DriftAnalysisStatusResponse',

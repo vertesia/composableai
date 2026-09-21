@@ -358,7 +358,11 @@ jobs:
           echo "PR created: ${new_pr_url}"
 
           # We intentionally avoid exposing commit email addresses in public workflow logs.
-          author_login=$(gh api repos/vertesia/llumiverse/commits/${TARGET_LLUMIVERSE_SHA} --jq '.author.login // empty')
+          author_login=$(gh api repos/vertesia/llumiverse/commits/${TARGET_LLUMIVERSE_SHA} --jq '.author | select(.type == "User") | .login // empty')
+          # Automated release commits have no human assignee or notification recipient.
+          if [[ "$author_login" == *"[bot]" || "$author_login" == app/* ]]; then
+            author_login=""
+          fi
           echo "author_login=${author_login}" >> $GITHUB_OUTPUT
 
       - name: Clean up superseded PRs

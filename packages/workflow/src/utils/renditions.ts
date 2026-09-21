@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
-import type { ImageRenditionFormat } from '@vertesia/common';
+import { getRenditionPagePath, getRenditionsPath, type ImageRenditionFormat } from '@vertesia/common';
 import pLimit from 'p-limit';
 import { imageResizer } from '../conversion/image.js';
 
@@ -20,28 +20,11 @@ export interface ImageRenditionParams {
  * @param pageNumber
  * @returns
  */
-export function getRenditionsPath(contentEtag: string, params: ImageRenditionParams) {
-    const path = `renditions/${contentEtag}/${params.max_hw}`;
-    return path;
-}
+export { getRenditionPagePath, getRenditionsPath };
 
 /**
  * Get a specific page path for a rendition
  */
-export function getRenditionPagePath(
-    contentEtag: string,
-    params: ImageRenditionParams,
-    pageNumber: number | string = 0,
-) {
-    //if number, pad to 4 char
-    if (typeof pageNumber === 'number') {
-        pageNumber = String(pageNumber).padStart(4, '0');
-    }
-    const path = getRenditionsPath(contentEtag, params);
-    const pagePath = `${path}/${pageNumber}.${params.format}`;
-    return pagePath;
-}
-
 /**
  * Upload Rendition page to the cloud
  */
