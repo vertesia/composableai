@@ -193,7 +193,7 @@ export function AgentRunnerFacetsNav({
                     <div className="flex justify-end">
                         {!selectionCount && (
                             <div className="flex items-center justify-between px-2 py-1">
-                                <div className="text-sm text-muted-foreground">
+                                <div className="text-sm text-muted">
                                     {search.initialized ? `${search.totalCount} runs` : 'Loading runs...'}
                                 </div>
                             </div>

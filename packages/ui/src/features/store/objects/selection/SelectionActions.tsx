@@ -110,7 +110,7 @@ export function UploadObjectsButton({
 function optionLayout(option: ObjectsActionSpec) {
     return {
         label: option.name,
-        className: clsx('flex-1 px-2 py-2 hover:bg-accent nowrap', option.destructive ? 'text-destructive' : ''),
+        className: clsx('flex-1 px-2 py-2 hover:bg-muted nowrap', option.destructive ? 'text-destructive' : ''),
     };
 }
 

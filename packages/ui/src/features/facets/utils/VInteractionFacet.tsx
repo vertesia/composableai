@@ -1,16 +1,23 @@
-import { type FacetBucket, InteractionStatus } from '@vertesia/common';
+import type { FacetBucket } from '@vertesia/common';
 import { Badge, type FilterGroup } from '@vertesia/ui/core';
+import {
+    type InteractionDisplayRef,
+    InteractionStatusBadge,
+    resolveInteractionName,
+    splitInteractionType,
+} from '../../utils/interaction.js';
 
-export interface EnrichedFacetBucket extends FacetBucket {
-    name?: string;
-    status?: string;
-    version?: number;
-}
+export interface EnrichedFacetBucket extends FacetBucket, InteractionDisplayRef {}
 
 interface InteractionFacetProps {
     buckets: EnrichedFacetBucket[];
     name: string;
     placeholder?: string;
+}
+
+/** The name this facet displays for a bucket — the same one the runs table shows for the run. */
+function bucketName(bucket: EnrichedFacetBucket | undefined, interactionId: string): string {
+    return resolveInteractionName(bucket, interactionId) ?? interactionId;
 }
 
 export function VInteractionFacet({ buckets, name, placeholder }: InteractionFacetProps): FilterGroup {
@@ -26,38 +33,20 @@ export function VInteractionFacet({ buckets, name, placeholder }: InteractionFac
         type: 'select',
         labelRenderer: (interactionId: string) => {
             const bucket = buckets.find((b) => b._id === interactionId);
-            const displayName = bucket?.name || interactionId;
-
-            // Determine badge variant based on status
-            let badgeVariant: 'success' | 'info' | 'destructive' | 'default' = 'success';
-            if (bucket?.status) {
-                switch (bucket.status) {
-                    case InteractionStatus.published:
-                        badgeVariant = 'success';
-                        break;
-                    case InteractionStatus.archived:
-                        badgeVariant = 'destructive';
-                        break;
-                    case InteractionStatus.code:
-                        badgeVariant = 'info';
-                        break;
-                }
-            }
-
-            const badgeText =
-                bucket?.version && bucket?.status
-                    ? `v${bucket.version} ${bucket.status !== InteractionStatus.unknown ? bucket.status : ''}`
-                    : bucket?.status || (bucket?.version ? `v${bucket.version}` : '');
+            // Same split as the runs table: the `sys`/`app`/`tmp` namespace becomes its own badge
+            // instead of staying glued to the name.
+            const { type, label } = splitInteractionType(bucketName(bucket, interactionId));
 
             return (
                 <div className="w-full flex items-center justify-between">
                     <div className="flex flex-row flex-wrap items-center gap-2 min-w-0 flex-1">
-                        <span className="text-sm truncate">{displayName}</span>
-                        {badgeText && (
-                            <Badge variant={badgeVariant} className="text-xs w-fit">
-                                {badgeText}
+                        <span className="text-sm truncate">{label}</span>
+                        {type && (
+                            <Badge variant="secondary" className="text-xs w-fit">
+                                {type}
                             </Badge>
                         )}
+                        {bucket && <InteractionStatusBadge interaction={bucket} className="text-xs w-fit" />}
                     </div>
                     {(bucket?.count ?? 0) > 0 && <span className="ms-2 text-xs shrink-0">({bucket?.count})</span>}
                 </div>
@@ -65,8 +54,7 @@ export function VInteractionFacet({ buckets, name, placeholder }: InteractionFac
         },
         filterBy: (optionValue: string, searchText: string) => {
             const bucket = buckets.find((b) => b._id === optionValue);
-            const searchName = bucket?.name || optionValue;
-            return searchName.toLowerCase().includes(searchText.toLowerCase());
+            return bucketName(bucket, optionValue).toLowerCase().includes(searchText.toLowerCase());
         },
     };
 

@@ -120,8 +120,8 @@ interface ObjectFormProps {
 }
 function CompositeField({ object }: ObjectFormProps) {
     return (
-        <div className="flex flex-col gap-4 my-4 py-2 ps-4 border-s-4 border-s-solid border-s-slate-100 dark:border-s-slate-600">
-            {!object.isListItem && <div className="text-gray-900 dark:text-gray-200 font-semibold">{object.title}</div>}
+        <div className="flex flex-col gap-4 my-4 py-2 ps-4 border-s-4 border-s-solid border-s-border">
+            {!object.isListItem && <div className="text-foreground font-semibold">{object.title}</div>}
             {object.properties.map(renderProperty)}
         </div>
     );
@@ -150,8 +150,8 @@ function ListField({ object }: ListFieldProps) {
     };
 
     return (
-        <div className="flex flex-col gap-4 my-4 py-2 ps-4 border-s-4 border-s-solid border-s-slate-100 darK:border-s-slate-600">
-            {!object.isListItem && <div className="text-gray-900 dark:text-gray-200 font-semibold">{object.title}</div>}
+        <div className="flex flex-col gap-4 my-4 py-2 ps-4 border-s-4 border-s-solid border-s-border darK:border-s-border">
+            {!object.isListItem && <div className="text-foreground font-semibold">{object.title}</div>}
             {object.items.map((item, index) => {
                 const rowId = rowIds[index];
                 return (

@@ -27,5 +27,10 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    /* Module `scripts/` holds Node scripts run with `node <path>`, not browser sources. They are
+       type-checked by tsconfig.scripts.json, which supplies the node types they need. */
+    "src/modules/*/scripts/**"
   ]
 }

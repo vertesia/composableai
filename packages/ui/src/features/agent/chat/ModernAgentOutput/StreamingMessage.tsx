@@ -273,7 +273,7 @@ function StreamingMessageComponent({
             {/* Card wrapper matching MessageItem structure */}
             <div
                 className={cn(
-                    'border-s-4 bg-white dark:bg-gray-900 mb-4 border-s-purple-500 w-full max-w-full overflow-hidden',
+                    'border-s-4 bg-white dark:bg-muted mb-4 border-s-done w-full max-w-full overflow-hidden',
                     cardClassName,
                 )}
                 data-workstream-id={workstreamId}
@@ -283,9 +283,9 @@ function StreamingMessageComponent({
                     <div className="flex items-center gap-1.5">
                         <div className={cn('animate-fadeIn', iconClassName)}>
                             {isTyping ? (
-                                <span className="size-2 rounded-full bg-blue-500 animate-pulse inline-block" />
+                                <span className="size-2 rounded-full bg-primary animate-pulse inline-block" />
                             ) : (
-                                <Bot className="size-4 text-purple-600 dark:text-purple-400" />
+                                <Bot className="size-4 text-done" />
                             )}
                         </div>
                         <span className={cn('text-xs font-medium text-muted', senderClassName)}>Agent</span>
@@ -299,7 +299,7 @@ function StreamingMessageComponent({
                             variant="ghost"
                             size="xs"
                             onClick={copyToClipboard}
-                            className="size-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            className="size-6 p-0 hover:bg-muted"
                             title={t('agent.copyMessage')}
                         >
                             <CopyIcon className="size-3" />

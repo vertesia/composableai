@@ -29,7 +29,7 @@ export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSel
     };
 
     if (error) {
-        return <span className="text-red-600">Error: failed to fetch projects: {errorMessage(error)}</span>;
+        return <span className="text-destructive">Error: failed to fetch projects: {errorMessage(error)}</span>;
     }
     return (
         <SelectProject

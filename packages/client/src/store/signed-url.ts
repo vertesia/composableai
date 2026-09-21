@@ -20,6 +20,7 @@ const DEFAULT_RETRYABLE_STATUSES: ReadonlySet<number> = new Set([429, 500, 502, 
 const DEFAULT_ATTEMPTS = 4;
 const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_DELAY_MS = 8_000;
+const MAX_RETRY_AFTER_MS = 60_000;
 
 export interface SignedUrlFetchOptions {
     method?: string;
@@ -29,7 +30,7 @@ export interface SignedUrlFetchOptions {
     attempts?: number;
     /** Base delay for exponential backoff, in milliseconds. Defaults to 500. */
     baseDelayMs?: number;
-    /** Upper bound for a single backoff delay, in milliseconds. Defaults to 8000. */
+    /** Upper bound for exponential backoff, in milliseconds. Defaults to 8000. Retry-After takes precedence. */
     maxDelayMs?: number;
     /** HTTP statuses to retry on. Defaults to 429, 500, 502, 503, 504. */
     retryableStatuses?: ReadonlySet<number>;
@@ -58,7 +59,7 @@ function retryAfterMs(res: Response): number | undefined {
 function backoffMs(attempt: number, baseDelayMs: number, maxDelayMs: number, res?: Response): number {
     const retryAfter = res ? retryAfterMs(res) : undefined;
     if (retryAfter !== undefined) {
-        return Math.min(maxDelayMs, retryAfter);
+        return retryAfter;
     }
     // Exponential backoff with full jitter.
     const capped = Math.min(maxDelayMs, baseDelayMs * 2 ** attempt);
@@ -141,7 +142,8 @@ async function toReplayableBody(body: BodyInit | null | undefined): Promise<Body
 /**
  * `fetch()` a cloud-storage signed URL, retrying transient failures (connection
  * errors and retryable HTTP statuses) with exponential backoff. Honors a
- * `Retry-After` response header when present.
+ * `Retry-After` response header up to 60 seconds. Longer delays return the response
+ * without retrying so the caller can schedule recovery outside this request.
  *
  * The returned `Response` is only guaranteed to be retried while it carries a
  * retryable status; a non-retryable error response (e.g. 403, 404) is returned
@@ -167,6 +169,9 @@ export async function fetchSignedUrl(url: string, options: SignedUrlFetchOptions
             if (res.ok || !retryableStatuses.has(res.status) || isLastAttempt) {
                 return res;
             }
+            // Do not retry earlier than requested or park the caller beyond the retry budget.
+            // Returning the response also avoids overflowing JavaScript's timer range.
+            if ((retryAfterMs(res) ?? 0) > MAX_RETRY_AFTER_MS) return res;
             // Retryable status: drain the body so the connection can be reused, then back off.
             await res.body?.cancel().catch(() => undefined);
             await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs, res));

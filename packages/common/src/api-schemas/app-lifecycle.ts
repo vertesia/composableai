@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { APPGEN_PACKAGE_SPEC_PATTERN } from '../appgen.js';
 import { AppAccessControlSchema, AppAvailableInSchema, MCPToolAnnotationsSchema } from './apps.js';
 import { EventCategorySchema } from './audit-trail.js';
 
@@ -404,6 +405,14 @@ export const StartAppScaffoldRequestSchema = z
         title: z.string().optional(),
         description: z.string().optional(),
         modules: z.array(AppScaffoldModuleSchema).optional(),
+        appgen_package_spec: z
+            .string()
+            .regex(APPGEN_PACKAGE_SPEC_PATTERN)
+            .meta({
+                description:
+                    'Optional Vertesia SDK version or package track for this scaffold. Overrides the deployment default.',
+            })
+            .optional(),
         create_version: z
             .boolean()
             .meta({

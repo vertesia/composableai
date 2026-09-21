@@ -5,6 +5,7 @@ import {
     type RequestError,
 } from '@vertesia/api-fetch-client';
 import { APP_VERSION_HEADER, type BulkOperationPayload, type BulkOperationResponse } from '@vertesia/common';
+import { warnUnknownOptions } from '../unknown-options.js';
 import { AgentsApi } from './AgentsApi.js';
 import { CollectionsApi } from './CollectionsApi.js';
 import { CostApi } from './CostApi.js';
@@ -39,6 +40,18 @@ export interface ZenoClientProps {
     fetch?: FETCH_FN | Promise<FETCH_FN>;
 }
 
+/** Exhaustive in both directions — see the same table in `../client.ts`. */
+const KNOWN_STORE_OPTIONS: Record<keyof Required<ZenoClientProps>, true> = {
+    serverUrl: true,
+    tokenServerUrl: true,
+    apikey: true,
+    onRequest: true,
+    onResponse: true,
+    retryPolicy: true,
+    timeout: true,
+    fetch: true,
+};
+
 function ensureDefined(serverUrl: string | undefined) {
     if (!serverUrl) {
         throw new Error('zeno client serverUrl is required');
@@ -48,6 +61,7 @@ function ensureDefined(serverUrl: string | undefined) {
 
 export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     constructor(opts: ZenoClientProps = {}) {
+        warnUnknownOptions('ZenoClient', opts, KNOWN_STORE_OPTIONS);
         super(ensureDefined(opts.serverUrl), opts.fetch);
         if (opts.apikey) {
             this.withApiKey(opts.apikey);

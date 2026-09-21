@@ -32,7 +32,7 @@ export const TextCombobox = ({
                 }
             }}
         >
-            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-primary shrink-0 transition">
+            <PopoverTrigger className="rounded-none p-1 h-8 bg-muted hover:bg-muted/50 text-muted hover:text-info shrink-0 transition">
                 <div className="flex gap-1.5 items-center">{filterValue || 'Enter text...'}</div>
             </PopoverTrigger>
             <PopoverContent className="w-[300px] p-3">

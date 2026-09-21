@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fetch-client';
 import type {
     ACECreatePayload,
     ACEUpdatePayload,
@@ -53,8 +53,8 @@ export class RolesApi extends ApiTopic {
      * suited for client-side permission gating (button visibility, route guards).
      * ABAC roles are excluded and must be consumed via the JWT `content_security` claim.
      */
-    listSystem(): Promise<SystemRoleDefinition[]> {
-        return this.get('/system');
+    listSystem(options?: IRequestParams): Promise<SystemRoleDefinition[]> {
+        return this.get('/system', options);
     }
 }
 

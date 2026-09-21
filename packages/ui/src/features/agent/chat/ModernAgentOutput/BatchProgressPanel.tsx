@@ -83,7 +83,7 @@ function BatchProgressPanelComponent({
         if (overallStatus === 'error' || overallStatus === 'warning') {
             return <AlertCircle className="size-4 text-destructive" />;
         }
-        return <Layers className="size-4 text-purple-600" />;
+        return <Layers className="size-4 text-done" />;
     };
 
     // Border color based on status
@@ -91,14 +91,14 @@ function BatchProgressPanelComponent({
         if (overallStatus === 'completed') return 'border-s-success';
         if (overallStatus === 'error') return 'border-s-destructive';
         if (overallStatus === 'warning') return 'border-s-attention';
-        return 'border-s-blue-500';
+        return 'border-s-info';
     };
 
     // Progress bar color
     const getProgressColor = () => {
         if (hasErrors) return 'bg-attention';
         if (isComplete) return 'bg-success';
-        return 'bg-blue-500';
+        return 'bg-primary';
     };
 
     const copyToClipboard = () => {
@@ -118,7 +118,7 @@ function BatchProgressPanelComponent({
     return (
         <div
             className={cn(
-                'border-s-4 shadow-md overflow-hidden bg-white dark:bg-gray-900 mb-5',
+                'border-s-4 shadow-md overflow-hidden bg-white dark:bg-muted mb-5',
                 getBorderColor(),
                 className,
             )}
@@ -130,7 +130,7 @@ function BatchProgressPanelComponent({
                 tabIndex={0}
                 aria-expanded={isExpanded}
                 className={cn(
-                    'flex items-center justify-between px-4 py-2 border-b border-gray-100/80 dark:border-gray-800/80 bg-blue-50/50 dark:bg-blue-900/10 cursor-pointer',
+                    'flex items-center justify-between px-4 py-2 border-b border-border/80 bg-info/50 dark:bg-info/10 cursor-pointer',
                     headerClassName,
                 )}
                 onClick={() => setIsExpanded(!isExpanded)}
@@ -139,7 +139,7 @@ function BatchProgressPanelComponent({
                 <div className="flex items-center gap-2">
                     {renderStatusIndicator()}
                     <span className={cn('text-xs font-medium text-muted', senderClassName)}>{t('agent.batch')}</span>
-                    <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">{tool_name}</span>
+                    <span className="text-xs text-info font-medium">{tool_name}</span>
                     <span className="text-xs text-muted">
                         {completed}/{total}
                     </span>
@@ -169,9 +169,9 @@ function BatchProgressPanelComponent({
             </div>
 
             {/* Progress bar */}
-            <div className={cn('px-4 py-2 bg-gray-50/50 dark:bg-gray-800/30', progressBarClassName)}>
+            <div className={cn('px-4 py-2 bg-muted/50 dark:bg-muted/30', progressBarClassName)}>
                 <div className="flex items-center gap-3">
-                    <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div
                             className={`h-full ${getProgressColor()} transition-all duration-300 ease-out`}
                             style={{ width: `${progress}%` }}
@@ -191,7 +191,7 @@ function BatchProgressPanelComponent({
                             </span>
                         )}
                         {isRunning && completed < total && (
-                            <span className="text-blue-500 flex items-center gap-1">
+                            <span className="text-info flex items-center gap-1">
                                 <Loader2 className="size-3 animate-spin" />
                                 {total - completed}
                             </span>
@@ -207,7 +207,7 @@ function BatchProgressPanelComponent({
                         <div
                             key={item.id}
                             className={cn(
-                                'flex items-center gap-2 px-4 py-1.5 text-xs border-b border-gray-100 dark:border-gray-800 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                                'flex items-center gap-2 px-4 py-1.5 text-xs border-b border-border last:border-b-0 hover:bg-muted',
                                 itemClassName,
                             )}
                         >
@@ -215,9 +215,9 @@ function BatchProgressPanelComponent({
                             <div className="w-4 flex-shrink-0">
                                 {item.status === 'success' && <CheckCircle className="size-3 text-success" />}
                                 {item.status === 'error' && <AlertCircle className="size-3 text-destructive" />}
-                                {item.status === 'running' && <Loader2 className="size-3 text-blue-500 animate-spin" />}
+                                {item.status === 'running' && <Loader2 className="size-3 text-info animate-spin" />}
                                 {item.status === 'pending' && (
-                                    <div className="size-3 rounded-full border border-gray-300 dark:border-gray-600" />
+                                    <div className="size-3 rounded-full border border-border" />
                                 )}
                             </div>
 

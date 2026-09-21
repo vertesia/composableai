@@ -1,7 +1,8 @@
+import { AuthRefreshLockError, withProfileAuthLock } from './auth-lock.js';
 import type { OnResultCallback } from './commands.js';
 import type { Profile } from './index.js';
-import { config, shouldRefreshProfileToken } from './index.js';
-import { readAuthBundle, readProfileAccessToken } from './keyring.js';
+import { config } from './index.js';
+import { readAuthBundle, readUsableProfileToken, type StoredAuthBundle, selectUsableProfileToken } from './keyring.js';
 import { canUseOAuthProfile, refreshOAuthSession } from './oauth.js';
 import type { ConfigResult } from './server/index.js';
 
@@ -9,13 +10,20 @@ export async function ensureProfileAccessToken(
     profile: Profile,
     onResult?: OnResultCallback,
 ): Promise<string | undefined> {
-    const token = await readProfileAccessToken(profile);
-    if (token && !(await shouldRefreshProfileToken(profile, 30))) {
-        return token;
-    }
-
-    const result = await refreshProfileAccessToken(profile, onResult);
-    return result?.token;
+    const currentBundle = await readAuthBundle(profile.name);
+    const currentToken = selectUsableProfileToken(profile, currentBundle, 30);
+    if (currentToken) return currentToken;
+    if (!currentBundle?.refreshToken || !canUseOAuthProfile(profile)) return undefined;
+    return withProfileAuthLock(profile.name, async () => {
+        // Re-read under the lock: another process may have refreshed while we waited.
+        const bundle = await readAuthBundle(profile.name);
+        const token = selectUsableProfileToken(profile, bundle, 30);
+        if (token) {
+            return token;
+        }
+        const result = await refreshProfileAccessTokenUnlocked(profile, bundle, onResult);
+        return result?.token;
+    });
 }
 
 /**
@@ -52,16 +60,21 @@ async function resolveProfileToken(profile: Profile): Promise<string | undefined
         if (token) {
             return token;
         }
-    } catch (error) {
-        // A refresh failure is often transient (network, STS hiccup). Report it and fall back to
-        // the stored token so a long-running command can recover on the next request.
+    } catch (error: unknown) {
+        // A proactive refresh may fail while the old token is still usable. Never
+        // hide the refresh error behind a subsequent request with an expired JWT.
+        const token = await readUsableProfileToken(profile, 5).catch(() => undefined);
+        if (!token) {
+            throw error;
+        }
         console.warn(
             `Failed to refresh the access token for profile "${profile.name}": ${
                 error instanceof Error ? error.message : String(error)
             }`,
         );
+        return token;
     }
-    return readProfileAccessToken(profile);
+    return undefined;
 }
 
 export async function refreshProfileAccessToken(
@@ -71,7 +84,24 @@ export async function refreshProfileAccessToken(
         projectId?: string;
     } = {},
 ): Promise<ConfigResult | undefined> {
-    const bundle = await readAuthBundle(profile.name);
+    if (!(await canRefreshProfile(profile))) return undefined;
+    return withProfileAuthLock(profile.name, async () => {
+        const bundle = await readAuthBundle(profile.name);
+        return refreshProfileAccessTokenUnlocked(profile, bundle, onResult, options);
+    });
+}
+
+async function canRefreshProfile(profile: Profile): Promise<boolean> {
+    return canUseOAuthProfile(profile) && Boolean((await readAuthBundle(profile.name))?.refreshToken);
+}
+
+/** Caller must hold the profile lock until the rotated credentials have been persisted. */
+async function refreshProfileAccessTokenUnlocked(
+    profile: Profile,
+    bundle: StoredAuthBundle | undefined,
+    onResult?: OnResultCallback,
+    options: { projectId?: string } = {},
+): Promise<ConfigResult | undefined> {
     if (!bundle?.refreshToken || !canUseOAuthProfile(profile)) {
         return undefined;
     }
@@ -79,7 +109,7 @@ export async function refreshProfileAccessToken(
     const result = await refreshOAuthSession(profile, bundle.refreshToken, bundle, options);
     const updater = config.updateProfile(profile.name);
     updater.onResultCallback = onResult;
-    await updater.persistConfigResult(result);
+    await updater.persistConfigResult(result, { requireKeyring: true, previousBundle: bundle });
     return result;
 }
 
@@ -103,6 +133,8 @@ export async function refreshProfileAuthentication(
             return refreshed;
         }
     } catch (error) {
+        // Without coordination we cannot safely start another credential writer.
+        if (error instanceof AuthRefreshLockError) throw error;
         if (options.projectId) {
             throw error;
         }

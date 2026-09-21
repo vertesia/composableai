@@ -34,7 +34,7 @@ export function ToolCollection() {
         return <div className="p-6 text-destructive">Failed to load tool collection &ldquo;{collection}&rdquo;.</div>;
     if (!data)
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );
@@ -58,7 +58,7 @@ export function ToolCollection() {
                             </span>
                             <span className="font-semibold text-card-foreground">{tool.name}</span>
                         </div>
-                        <div className="text-sm text-muted-foreground">{tool.description || 'No description'}</div>
+                        <div className="text-sm text-muted">{tool.description || 'No description'}</div>
                         {tool.input_schema && (
                             <pre className="mt-3 whitespace-pre-wrap wrap-break-word rounded-lg border border-border bg-muted-background p-4 font-mono text-sm text-foreground">
                                 {JSON.stringify(tool.input_schema, null, 2)}

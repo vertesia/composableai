@@ -1553,7 +1553,7 @@ function ModernAgentConversationInner({
         showInput,
         showSlidingPanel,
         setShowSlidingPanel,
-    } = useAgentPlans(messages, interactive, isModal);
+    } = useAgentPlans(messages, interactive);
 
     const {
         openDocuments,
@@ -1561,7 +1561,6 @@ function ModernAgentConversationInner({
         isDocPanelOpen,
         docRefreshKey,
         closeDocPanel: handleCloseDocPanel,
-        closeDocument: handleCloseDocument,
         selectDocument,
         openDocInPanel,
         updateDocumentTitle,
@@ -1938,9 +1937,10 @@ function ModernAgentConversationInner({
     // Unified right panel state
     // ────────────────────────────────────────────
     type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
-    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>(
-        conversationContent || conversationTab ? 'conversation' : 'plan',
+    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab | undefined>(
+        conversationContent || conversationTab ? 'conversation' : undefined,
     );
+    const defaultRightPanelTab = plans.length > 0 || panelWorkstreams.length === 0 ? 'plan' : 'workstreams';
     const [selectedArtifactPath, setSelectedArtifactPath] = useState<string | null>(null);
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
@@ -2971,7 +2971,7 @@ function ModernAgentConversationInner({
                     ref={conversationLayoutRef}
                     className={cn(
                         'flex flex-col lg:flex-row gap-2 w-full h-full relative overflow-hidden',
-                        canUploadFiles && isDragOver && 'ring-2 ring-blue-400 ring-inset',
+                        canUploadFiles && isDragOver && 'ring-2 ring-info ring-inset',
                         className,
                     )}
                     onDragEnter={canUploadFiles ? handleDragEnter : undefined}
@@ -2981,8 +2981,8 @@ function ModernAgentConversationInner({
                 >
                     {/* Drag overlay for full-panel file drop */}
                     {canUploadFiles && isDragOver && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-blue-100/80 dark:bg-blue-900/40 z-50 pointer-events-none rounded-lg">
-                            <div className="text-blue-600 dark:text-blue-400 font-medium flex items-center gap-2 text-lg">
+                        <div className="absolute inset-0 flex items-center justify-center bg-info/80 dark:bg-info/40 z-50 pointer-events-none rounded-lg">
+                            <div className="text-info font-medium flex items-center gap-2 text-lg">
                                 <UploadIcon className="size-6" />
                                 Drop files to upload
                             </div>
@@ -3062,7 +3062,6 @@ function ModernAgentConversationInner({
                                     openDocuments={openDocuments}
                                     activeDocumentId={activeDocumentId}
                                     onSelectDocument={selectDocument}
-                                    onCloseDocument={handleCloseDocument}
                                     onUpdateDocumentTitle={updateDocumentTitle}
                                     docRefreshKey={docRefreshKey}
                                     runId={agentRunId}
@@ -3083,8 +3082,8 @@ function ModernAgentConversationInner({
                                     conversationContent={conversationTab ? conversationAreaJsx : conversationContent}
                                     // Panel control
                                     onClose={handleCloseRightPanel}
-                                    defaultTab={rightPanelTab}
-                                    activeTab={rightPanelTab}
+                                    defaultTab={rightPanelTab ?? defaultRightPanelTab}
+                                    activeTab={rightPanelTab ?? defaultRightPanelTab}
                                     onTabChange={setRightPanelTab}
                                 />
                             </div>

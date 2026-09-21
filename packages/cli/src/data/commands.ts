@@ -58,7 +58,7 @@ export async function importData(
         },
     };
 
-    const job = await client.data.importData(storeId, payload);
+    const job = await client.data.import(storeId, payload);
 
     if (options.json) {
         console.log(JSON.stringify(job, null, 2));
@@ -66,7 +66,7 @@ export async function importData(
     }
 
     console.log(
-        `Import completed for ${tableName}. Job: ${job.id}. Status: ${job.status}. Rows imported: ${job.rows_imported ?? 0}.`,
+        `Import status for ${tableName}: ${job.status}. Job: ${job.id}. Rows imported: ${job.rows_imported ?? 0}.`,
     );
     if (source.uploadedUri) {
         console.log(`Source uploaded to: ${source.uploadedUri}`);

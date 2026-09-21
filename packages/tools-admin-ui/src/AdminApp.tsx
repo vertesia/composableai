@@ -58,7 +58,7 @@ export function AdminApp({ baseUrl = '/api' }: AdminAppProps) {
 
     if (isLoading) {
         return (
-            <div className="flex h-64 items-center justify-center text-muted-foreground">
+            <div className="flex h-64 items-center justify-center text-muted">
                 <Spinner />
             </div>
         );

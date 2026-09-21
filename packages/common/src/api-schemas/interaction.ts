@@ -304,6 +304,9 @@ export const TemplateTypeSchema = z.enum(TemplateType).meta({ id: 'TemplateType'
 
 export const ExecutionRunWorkflowSchema = z
     .strictObject({
+        agent_run_id: z.string().optional().meta({
+            description: 'Root agent run owning this inference, including inference performed by child workstreams.',
+        }),
         rate_limit_id: z
             .string()
             .meta({
@@ -2453,7 +2456,23 @@ export const ToolResultsPayloadSchema = z
     .meta({ id: 'ToolResultsPayload' });
 
 export const UserMessagePayloadSchema = z
-    .strictObject({ ...resumeConversationFields, message: z.string() })
+    .strictObject({
+        ...resumeConversationFields,
+        message: z.string(),
+        /**
+         * Tool results still owed to the model when the user message is sent.
+         *
+         * A conversation can be interrupted — the user stops the run, or a tool approval is
+         * denied — while a tool batch has already produced results, or while `tool_use` blocks
+         * are outstanding. Providers require a `tool_result` for every `tool_use` before the
+         * next turn, so those results have to travel with the message that resumes the
+         * conversation rather than in a separate turn of their own.
+         */
+        results: z
+            .array(ToolResultSchema)
+            .optional()
+            .meta({ description: 'Tool results owed to the model, delivered with this message.' }),
+    })
     .meta({ id: 'UserMessagePayload' });
 
 export const ExecutionResponseSchema = z
@@ -2461,6 +2480,7 @@ export const ExecutionResponseSchema = z
         result: z.array(CompletionResultSchema),
         token_usage: ExecutionTokenUsageSchema.optional(),
         prompt_cache_diagnostic: PromptCacheDiagnosticSchema.optional(),
+        service_tier: z.string().meta({ description: 'Processing tier actually used by the provider' }).optional(),
         tool_use: z.array(ToolUseSchema).optional(),
         finish_reason: z.string().optional(),
         error: z
@@ -2527,6 +2547,10 @@ export const ComputeRunFacetsResponseSchema = z
 export const RunClonePayloadSchema = z
     .strictObject({
         source_run_id: z.string(),
-        workflow: z.strictObject({ run_id: z.string(), workflow_id: z.string() }),
+        workflow: z.strictObject({
+            run_id: z.string(),
+            workflow_id: z.string(),
+            agent_run_id: ExecutionRunWorkflowSchema.shape.agent_run_id,
+        }),
     })
     .meta({ id: 'RunClonePayload' });

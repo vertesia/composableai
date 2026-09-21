@@ -688,6 +688,12 @@ export interface CompositeAppMenuNavItem {
     description?: string | null;
     /** When true, this item is excluded from the Composite App dashboard cards */
     hideFromDashboard?: boolean;
+    /**
+     * When true, this item navigates to the App Portal form of the URL
+     * (`/apps/<appName><route>`) instead of the Composite App form (`/app/<appName><route>`),
+     * so the app is opened standalone rather than inside the Composite App shell.
+     */
+    openInAppPortal?: boolean;
     /** Optional access control settings for this nav item */
     permissions?: CompositeAppNavItemPermissions;
     /** Ordered child nav-items */

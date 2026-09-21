@@ -355,7 +355,7 @@ export function SignInCallout({ icon: Icon, title, meta }: SignInCalloutProps) {
 /** Horizontal rule with a centered label. */
 export function SignInOrDivider({ children }: { children: ReactNode }) {
     return (
-        <div className="flex items-center gap-3 my-2 text-muted-foreground text-[10.5px] uppercase tracking-widest">
+        <div className="flex items-center gap-3 my-2 text-muted text-[10.5px] uppercase tracking-widest">
             <div className="flex-1 h-px bg-border" />
             <span>{children}</span>
             <div className="flex-1 h-px bg-border" />
@@ -393,7 +393,7 @@ export function SignInEmailField({
                 id="vt-login-email"
                 name="vt-login-email"
                 type="email"
-                className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
+                className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
                 placeholder={placeholder}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}

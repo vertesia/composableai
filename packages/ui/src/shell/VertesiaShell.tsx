@@ -49,7 +49,7 @@ export function VertesiaShell({
                                 />
                             </>
                         )}
-                        <UserPermissionProvider>{children}</UserPermissionProvider>
+                        <UserPermissionProvider loadingIcon={loadingIcon}>{children}</UserPermissionProvider>
                     </LanguageBoundI18nProvider>
                 </LanguageProvider>
             </ThemeProvider>

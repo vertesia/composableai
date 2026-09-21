@@ -4,9 +4,10 @@ set -eo pipefail
 # Script to test template integration using a local verdaccio registry.
 # Publishes all built packages to verdaccio, bootstraps a template, and builds it.
 #
-# Usage: test-template-integration.sh --release-type <snapshot|release> [--template <name>]
-#   --release-type: Determines npm tag (dev for snapshot, latest for release) and template ref
+# Usage: test-template-integration.sh --release-type <snapshot|release> [--template <name>] [--branch <ref>] [--cli-only]
+#   --release-type: Determines the package track and template ref
 #   --template: Template name to test (default: "Vertesia Plugin")
+#   --cli-only: Install and smoke test the CLI instead of bootstrapping templates
 #
 # Prerequisites:
 #   - All packages must be built (run `pnpm build` first)
@@ -100,7 +101,8 @@ packages:
   '**':
     access: $all
     proxy: npmjs
-max_body_size: 20mb
+# Native CLI packages contain one executable each.
+max_body_size: 400mb
 server:
   keepAliveTimeout: 180
 listen: 0.0.0.0:4873
@@ -135,18 +137,29 @@ publish_to_verdaccio() {
   # Set auth token for verdaccio
   npm set "//${VERDACCIO_URL#http://}/:_authToken" "test-token"
 
-  local count=0
+  local count=0 pkg_name pkg_version package_os package_cpu
   while IFS= read -r pkg_dir; do
     cd "$pkg_dir"
     pkg_name=$(npm pkg get name | tr -d '"')
     pkg_version=$(npm pkg get version | tr -d '"')
+    package_os=$(node -p "require('./package.json').os?.[0] || ''")
+    package_cpu=$(node -p "require('./package.json').cpu?.[0] || ''")
     echo "  Publishing ${pkg_name}@${pkg_version}..."
     # @vertesia/* and @llumiverse/* are local-only scopes in the verdaccio config
     # (no npmjs proxy), so publishing always targets local storage and never
     # conflicts with an already-published upstream version. Surface the real
     # error on failure instead of discarding it.
     local output
-    if ! output=$(pnpm publish --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1); then
+    local -a publish_command
+    publish_command=(env ACTIONS_ID_TOKEN_REQUEST_URL= ACTIONS_ID_TOKEN_REQUEST_TOKEN= pnpm)
+    if [ -n "$package_os" ] && [ -n "$package_cpu" ]; then
+      publish_command+=("--config.os=${package_os}" "--config.cpu=${package_cpu}")
+    fi
+    publish_command+=(publish)
+    if ! output=$(
+      "${publish_command[@]}" \
+        --access public --tag "${NPM_TAG}" --no-git-checks --registry "${VERDACCIO_URL}" 2>&1
+    ); then
       echo "ERROR: failed to publish ${pkg_name}@${pkg_version} to verdaccio:" >&2
       printf '%s\n' "$output" >&2
       cd "${SCRIPT_DIR}/../.."
@@ -167,23 +180,34 @@ align_template_versions_for_verdaccio() {
 const fs = require('fs');
 const pkgPath = 'packages/create-plugin/package.json';
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+const llumiverse = JSON.parse(fs.readFileSync('llumiverse/common/package.json', 'utf8'));
 pkg.templateVersions = {
   ...(pkg.templateVersions || {}),
   '@vertesia': pkg.version,
+  '@llumiverse': llumiverse.version,
 };
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
 console.log(`  @vertesia template version: ${pkg.version}`);
+console.log(`  @llumiverse template version: ${llumiverse.version}`);
 NODE
 }
 
 workspace_package_dirs() {
   local repo_root
+  local -a workspace_filters
   repo_root="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+  if [ "$CLI_ONLY" = "true" ]; then
+    workspace_filters=(--filter "@vertesia/cli...")
+  else
+    workspace_filters=(--filter "./llumiverse/common" --filter "./libraries/jst" --filter "./packages/**")
+  fi
 
   # Use pnpm workspace filtering so pnpm-workspace.yaml exclusions are authoritative.
   # Keep this in sync with publish-all-packages.sh so Verdaccio tests expose the
-  # same package graph as a snapshot publish.
-  pnpm -r --filter "./llumiverse/common" --filter "./libraries/jst" --filter "./packages/**" exec pwd | while IFS= read -r pkg_dir; do
+  # same package graph as a snapshot publish. CLI-only tests only need the CLI's
+  # dependency closure, while still excluding internal workspace-only libraries.
+  pnpm -r "${workspace_filters[@]}" exec pwd | while IFS= read -r pkg_dir; do
     case "$pkg_dir" in
       "${repo_root}"/llumiverse/common|"${repo_root}"/libraries/jst|"${repo_root}"/packages/*)
         [ -f "${pkg_dir}/package.json" ] && printf '%s\n' "$pkg_dir"
@@ -198,6 +222,8 @@ workspace_package_dirs() {
 
 RELEASE_TYPE=""
 TEMPLATE_NAME="Vertesia Plugin"
+TEMPLATE_BRANCH="${GITHUB_REF_NAME:-main}"
+CLI_ONLY=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -209,15 +235,24 @@ while [[ $# -gt 0 ]]; do
       TEMPLATE_NAME="$2"
       shift 2
       ;;
+    --branch)
+      TEMPLATE_BRANCH="$2"
+      shift 2
+      ;;
+    --cli-only)
+      CLI_ONLY=true
+      shift
+      ;;
     *)
       echo "Error: Unknown argument '$1'"
-      echo "Usage: $0 --release-type <snapshot|release> [--template <name>]"
+      echo "Usage: $0 --release-type <snapshot|release> [--template <name>] [--branch <ref>] [--cli-only]"
       exit 1
       ;;
   esac
 done
 
 validate_release_type
+PACKAGE_VERSION="$(node -e "console.log(require(process.argv[1]).version)" "${SCRIPT_DIR}/../../packages/create-plugin/package.json")"
 derive_tag_and_branch
 
 # =============================================================================
@@ -235,6 +270,15 @@ publish_to_verdaccio
 # templates may cascade through `pnpm run …` even when bootstrapped with npm.
 export npm_config_registry="${VERDACCIO_URL}"
 export pnpm_config_registry="${VERDACCIO_URL}"
+
+if [ "$CLI_ONLY" = "true" ]; then
+  CLI_PACKAGE_SPEC="@vertesia/cli@${PACKAGE_VERSION}" \
+    CLI_REGISTRY_URL="${VERDACCIO_URL}" \
+    CLI_VERSION="${PACKAGE_VERSION}" \
+    node packages/cli/scripts/smoke-native-package.mjs
+  echo "CLI Verdaccio smoke test passed!"
+  exit 0
+fi
 
 # Use local templates so integration tests don't need a git tag on GitHub
 TEMPLATES_PATH="$(cd "${SCRIPT_DIR}/../.." && pwd)/templates"

@@ -91,7 +91,7 @@ export function Modal({
                                 <Button
                                     variant="outline"
                                     title="Close"
-                                    className="data-[state=open]:bg-accent opacity-70 hover:opacity-100 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background focus:ring-offset-2 data-[state=open]:text-muted-foreground transition-opacity disabled:pointer-events-none"
+                                    className="data-[state=open]:bg-muted opacity-70 hover:opacity-100 rounded-sm focus:outline-none focus:ring-2 focus:ring-ring ring-offset-background focus:ring-offset-2 data-[state=open]:text-muted transition-opacity disabled:pointer-events-none"
                                 >
                                     <X className="size-4" />
                                 </Button>
@@ -133,9 +133,7 @@ export const ModalTitle = ({
         >
             {children}
             {description && (
-                <DialogDescription className="text-sm !font-normal text-muted-foreground pb-2">
-                    {description}
-                </DialogDescription>
+                <DialogDescription className="text-sm !font-normal text-muted pb-2">{description}</DialogDescription>
             )}
         </DialogTitle>
     );

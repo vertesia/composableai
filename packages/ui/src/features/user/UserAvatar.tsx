@@ -13,7 +13,7 @@ export function UserAvatar({ user }: { user: AuthTokenPayload | UserRef }) {
                 .map((n) => n[0])
                 .join('');
             return (
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary">
                     <span className="text-sm font-medium leading-none text-white">{initials}</span>
                 </span>
             );
@@ -26,10 +26,10 @@ export function UserAvatar({ user }: { user: AuthTokenPayload | UserRef }) {
         <div className="flex items-center">
             <div className="w-9 h-9">{userPicture()}</div>
             <div className="ms-3">
-                <p className="text-sm font-medium text-gray-700 dark:text-slate-50 group-hover:text-gray-900">
+                <p className="text-sm font-medium text-foreground group-hover:text-foreground">
                     {user.name ?? 'Deleted User'}
                 </p>
-                <p className="text-xs font-medium text-gray-500 dark:text-slate-300 group-hover:text-gray-700">
+                <p className="text-xs font-medium text-muted dark:text-foreground group-hover:text-foreground">
                     {user.email ?? 'Deleted User'}
                 </p>
             </div>

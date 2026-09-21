@@ -15,7 +15,7 @@ export function PropertiesView({ className, properties }: PropertiesViewProps) {
                             <span>{property.name}</span>
                             {property.description && (
                                 <VTooltip description={property.description} placement="top">
-                                    <Info className="size-3 ms-2 text-muted-foreground" />
+                                    <Info className="size-3 ms-2 text-muted" />
                                 </VTooltip>
                             )}
                         </td>

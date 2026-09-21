@@ -367,7 +367,7 @@ export function PdfPageSlider({
                             </Button>
                             <Center
                                 className={clsx(
-                                    'text-muted-foreground font-semibold',
+                                    'text-muted font-semibold',
                                     compact ? 'text-xs pt-0.5' : 'text-sm pt-1',
                                 )}
                             >
@@ -426,7 +426,7 @@ function PageNavigator({ currentPage, totalPages, onChange }: PageNavigatorProps
     };
 
     return (
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1 text-xs text-muted">
             <span>{t('pdf.page')}</span>
             <input
                 ref={inputRef}
@@ -457,7 +457,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
             <Button variant="ghost" size="xs" onClick={onZoomOut} isDisabled={!canZoomOut} title={t('pdf.zoomOut')}>
                 <Minus />
             </Button>
-            <span className="text-xs text-muted-foreground min-w-[32px] text-center">{zoom}%</span>
+            <span className="text-xs text-muted min-w-[32px] text-center">{zoom}%</span>
             <Button variant="ghost" size="xs" onClick={onZoomIn} isDisabled={!canZoomIn} title={t('pdf.zoomIn')}>
                 <Plus />
             </Button>
@@ -466,7 +466,7 @@ function ZoomControls({ zoom, onZoomIn, onZoomOut, onFitToView, canZoomIn, canZo
                 size="xs"
                 onClick={onFitToView}
                 title={t('pdf.fitToWidth')}
-                className={zoom === DEFAULT_ZOOM ? 'text-muted-foreground/40' : undefined}
+                className={zoom === DEFAULT_ZOOM ? 'text-muted/40' : undefined}
             >
                 <Maximize />
             </Button>

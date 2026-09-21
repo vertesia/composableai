@@ -255,7 +255,7 @@ export class DataApi extends ApiTopic {
      *
      * @example
      * ```typescript
-     * const job = await client.data.importData(storeId, {
+     * const job = await client.data.import(storeId, {
      *   mode: 'append',
      *   message: 'Monthly data import',
      *   tables: {
@@ -271,8 +271,14 @@ export class DataApi extends ApiTopic {
      *   }
      * });
      * ```
+     *
+     * Do not rename this method. 1.5 renamed it to `importData` (composableai#1645) on the theory
+     * that the token sequence `import(` confused Vite/Rollup import analysis; it does not on the
+     * current toolchain. Applications built against the 1.4 SDK call this through the client the
+     * platform serves them rather than one they bundle themselves, so a rename would break them
+     * the moment 1.5 is deployed, not at their next upgrade.
      */
-    importData(id: string, payload: ImportDataPayload): Promise<ImportJob> {
+    import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
         return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
     }
 

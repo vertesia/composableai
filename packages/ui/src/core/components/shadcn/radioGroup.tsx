@@ -8,7 +8,7 @@ function RadioGroupItem({ className, ...props }: React.ComponentProps<typeof Rad
         <RadioGroupPrimitive.Item
             data-slot="radio-group-item"
             className={cn(
-                'border-input dark:bg-input/30 data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary data-checked:border-primary aria-invalid:aria-checked:border-primary aria-invalid:border-destructive focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 dark:aria-invalid:border-destructive/50 flex size-4 rounded-full focus-visible:ring-3 aria-invalid:ring-3 group/radio-group-item peer relative aspect-square shrink-0 border outline-none after:absolute after:-inset-x-3 after:-inset-y-2 disabled:cursor-not-allowed disabled:opacity-50',
+                'border-input dark:bg-input/30 data-checked:bg-primary data-checked:text-primary-foreground data-checked:border-primary aria-invalid:aria-checked:border-primary aria-invalid:border-destructive focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 dark:aria-invalid:border-destructive/50 flex size-4 rounded-full focus-visible:ring-3 aria-invalid:ring-3 group/radio-group-item peer relative aspect-square shrink-0 border outline-none after:absolute after:-inset-x-3 after:-inset-y-2 disabled:cursor-not-allowed disabled:opacity-50',
                 className,
             )}
             {...props}
@@ -37,7 +37,7 @@ export abstract class RadioGroupAdapter<T> {
         return undefined;
     }
     selectedClassName(_item: T): string {
-        return 'border-accent-foreground';
+        return 'border-muted';
     }
 }
 
@@ -72,7 +72,7 @@ function RadioGroup<T = RadioGroupOption>({ onSelect, selected, options, adapter
                         key={getId(option)}
                         value={getId(option)}
                         className={cn(
-                            'relative block w-full cursor-pointer rounded-lg border border-border bg-accent px-6 py-4 shadow-2xs text-start',
+                            'relative block w-full cursor-pointer rounded-lg border border-border bg-muted px-6 py-4 shadow-2xs text-start',
                             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                             'sm:flex sm:justify-between',
                             isSelected && getSelectedClass(option),
@@ -80,10 +80,8 @@ function RadioGroup<T = RadioGroupOption>({ onSelect, selected, options, adapter
                     >
                         <span className="flex items-center">
                             <span className="flex flex-col text-sm">
-                                <span className="font-medium text-text">{getLabel(option)}</span>
-                                {getDescription(option) && (
-                                    <span className="text-muted-foreground">{getDescription(option)}</span>
-                                )}
+                                <span className="font-medium text-foreground">{getLabel(option)}</span>
+                                {getDescription(option) && <span className="text-muted">{getDescription(option)}</span>}
                             </span>
                         </span>
                     </RadioGroupPrimitive.Item>
