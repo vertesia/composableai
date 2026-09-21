@@ -43,6 +43,8 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      - name: Test automerge CI policy
+        run: node --test .github/bin/automerge-ci.test.mjs
       - name: Test automation notifications
         run: node --test .github/bin/automation-notification.test.mjs .github/bin/submodule-sync-policy.test.mjs
       - name: Locate pnpm store

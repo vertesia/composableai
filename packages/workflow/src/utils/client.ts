@@ -4,7 +4,7 @@
 
 import { Context } from '@temporalio/activity';
 import type { FETCH_FN } from '@vertesia/api-fetch-client';
-import { decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
+import { decodeEndpoints, decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
 import type { WorkflowExecutionBaseParams } from '@vertesia/common';
 import { type Dispatcher, EnvHttpProxyAgent } from 'undici';
 import { WorkflowParamNotFoundError } from '../errors.js';
@@ -66,6 +66,12 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
     }
 
     const token = decodeJWT(payload.auth_token);
+    // Normalize the token's endpoints claim (string | object) the same way the main client does.
+    // Only decode when the claim is actually present: decodeEndpoints(undefined) returns the
+    // PRODUCTION endpoint map (token: https://sts.vertesia.io), which would mask the tokenServerUrl
+    // fallback below and mint against prod for a non-prod token. An empty map preserves the fallback
+    // to `token.iss`.
+    const tokenEndpoints = token.endpoints ? decodeEndpoints(token.endpoints) : {};
 
     let requestSequence = 0;
     let requestPrefix: string | undefined;
@@ -85,7 +91,11 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
     return {
         serverUrl: payload.config.studio_url,
         storeUrl: payload.config.store_url,
-        tokenServerUrl: token.iss,
+        // Prefer the token's own endpoints.token (the mint host that issued it) and fall back to the
+        // issuer only for legacy tokens without an endpoints claim — same resolution the main client
+        // and tools-sdk use. This keeps `iss` as the stable identity (WIF/JWKS) while letting a branch
+        // STS on its own host be the mint endpoint.
+        tokenServerUrl: tokenEndpoints.token || token.iss,
         apikey: payload.auth_token,
         timeout: parseWorkflowFetchTimeoutMs(),
         fetch: createWorkflowFetch(activitySignal),
