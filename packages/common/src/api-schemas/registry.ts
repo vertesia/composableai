@@ -2475,7 +2475,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'QuotaStandingWindow',
     'QuotaStandingAdmissionClass',
     'QuotaTierResponse',
-    // The IAM closure. PrincipalContext is composed into PrincipalIdentity rather than hoisted,
+    // The IAM closure. AbacPrincipalContext is composed into PrincipalIdentity rather than hoisted,
     // so it has no component of its own to list.
     'User',
     'UpdateUserPayload',

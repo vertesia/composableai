@@ -552,6 +552,16 @@
   "PrincipalIdentity": {
     "type": "object",
     "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "user",
+          "apikey"
+        ]
+      },
+      "id": {
+        "type": "string"
+      },
       "clearance": {
         "type": "number"
       },
@@ -573,20 +583,18 @@
       "properties": {
         "type": "object",
         "additionalProperties": true
-      },
-      "id": {
-        "type": "string"
       }
     },
     "required": [
+      "kind",
+      "id",
       "clearance",
       "compartments",
       "tags",
-      "properties",
-      "id"
+      "properties"
     ],
     "additionalProperties": false,
-    "description": "Response shape of the `/iam/users/identity` endpoint: the current principal's  {@link  PrincipalContext }  plus its id. Distinct from `PrincipalContext` itself because the id is identity metadata, not a merged BLP field — adding it to `PrincipalContext` would unintentionally expose `$principal.id` to PrincipalSet rule evaluation."
+    "description": "Response shape of the `/iam/users/identity` endpoint: the current principal's full ABAC context — its `kind` (always `user` here), `id`, and the merged BLP attributes a rule can reference through `$principal.*`."
   },
   "SignupData": {
     "type": "object",
@@ -2408,6 +2416,15 @@
       "max_tokens": {
         "type": "number"
       },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
+      },
       "temperature": {
         "type": "number"
       },
@@ -2433,6 +2450,9 @@
         "type": "boolean"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "AzureFoundryChatOptions": {
@@ -2478,6 +2498,9 @@
         "type": "boolean"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ImagenOptions": {
@@ -2498,8 +2521,7 @@
         "enum": [
           "dont_allow",
           "allow_adults",
-          "allow_all",
-          "allow_adult"
+          "allow_all"
         ]
       },
       "safety_setting": {
@@ -2579,6 +2601,9 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ImagenTaskType": {
@@ -2656,6 +2681,9 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "VertexAIGeminiOptions": {
@@ -2769,6 +2797,9 @@
         "type": "number"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ThinkingLevel": {
@@ -2820,6 +2851,9 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "VertexAIGrokOptions": {
@@ -2845,6 +2879,9 @@
         }
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "NovaCanvasOptions": {
@@ -2916,6 +2953,7 @@
       }
     },
     "required": [
+      "_option_id",
       "taskType"
     ],
     "additionalProperties": false
@@ -2951,6 +2989,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockNovaOptions": {
@@ -2969,9 +3010,6 @@
       "top_p": {
         "type": "number"
       },
-      "top_k": {
-        "type": "number"
-      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -2987,6 +3025,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockMistralOptions": {
@@ -3005,9 +3046,6 @@
       "top_p": {
         "type": "number"
       },
-      "top_k": {
-        "type": "number"
-      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3023,6 +3061,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockAI21Options": {
@@ -3041,12 +3082,6 @@
       "top_p": {
         "type": "number"
       },
-      "presence_penalty": {
-        "type": "number"
-      },
-      "frequency_penalty": {
-        "type": "number"
-      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3062,6 +3097,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockCohereCommandOptions": {
@@ -3080,15 +3118,6 @@
       "top_p": {
         "type": "number"
       },
-      "top_k": {
-        "type": "number"
-      },
-      "presence_penalty": {
-        "type": "number"
-      },
-      "frequency_penalty": {
-        "type": "number"
-      },
       "stop_sequence": {
         "type": "array",
         "items": {
@@ -3104,6 +3133,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockClaudeOptions": {
@@ -3163,6 +3195,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockPalmyraOptions": {
@@ -3205,6 +3240,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockGptOssOptions": {
@@ -3249,6 +3287,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "TwelvelabsPegasusOptions": {
@@ -3270,6 +3311,9 @@
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockMantleResponsesOptions": {
@@ -3295,8 +3339,7 @@
           "low",
           "medium",
           "high",
-          "xhigh",
-          "max"
+          "xhigh"
         ]
       },
       "reasoning_effort": {
@@ -3306,8 +3349,7 @@
           "low",
           "medium",
           "high",
-          "xhigh",
-          "max"
+          "xhigh"
         ]
       },
       "verbosity": {
@@ -3330,6 +3372,9 @@
         "type": "boolean"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockMantleChatCompletionsOptions": {
@@ -3374,6 +3419,9 @@
         "type": "boolean"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "BedrockMantleClaudeOptions": {
@@ -3428,6 +3476,9 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "OpenAiThinkingOptions": {
@@ -3439,6 +3490,15 @@
       },
       "max_tokens": {
         "type": "number"
+      },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
       },
       "stop_sequence": {
         "type": "array",
@@ -3474,6 +3534,9 @@
         "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ReasoningEffort": {
@@ -3497,6 +3560,15 @@
       },
       "max_tokens": {
         "type": "number"
+      },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
       },
       "effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
@@ -3544,6 +3616,137 @@
         "description": "Additional provider-specific fields merged into the OpenAI-compatible request body."
       }
     },
+    "required": [
+      "_option_id"
+    ],
+    "additionalProperties": false
+  },
+  "OpenRouterTextOptions": {
+    "type": "object",
+    "properties": {
+      "max_tokens": {
+        "type": "number"
+      },
+      "tool_choice": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "none",
+          "any",
+          "required"
+        ]
+      },
+      "effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
+      },
+      "reasoning_effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
+      },
+      "temperature": {
+        "type": "number"
+      },
+      "top_p": {
+        "type": "number"
+      },
+      "presence_penalty": {
+        "type": "number"
+      },
+      "frequency_penalty": {
+        "type": "number"
+      },
+      "stop_sequence": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "image_detail": {
+        "type": "string",
+        "enum": [
+          "low",
+          "high",
+          "auto"
+        ]
+      },
+      "include_thoughts": {
+        "type": "boolean"
+      },
+      "service_tier": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
+      },
+      "_option_id": {
+        "type": "string",
+        "const": "openrouter-text"
+      },
+      "provider_sort": {
+        "type": "string",
+        "enum": [
+          "price",
+          "throughput",
+          "latency",
+          "exacto"
+        ]
+      },
+      "provider_order": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "provider_only": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "provider_ignore": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "provider_allow_fallbacks": {
+        "type": "boolean"
+      },
+      "provider_require_parameters": {
+        "type": "boolean"
+      },
+      "provider_data_collection": {
+        "type": "string",
+        "enum": [
+          "allow",
+          "deny"
+        ]
+      },
+      "provider_zdr": {
+        "type": "boolean"
+      },
+      "provider_quantizations": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "int4",
+            "int8",
+            "fp4",
+            "mxfp4",
+            "nvfp4",
+            "fp6",
+            "fp8",
+            "mxfp8",
+            "fp16",
+            "bf16",
+            "fp32",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "OpenAiDalleOptions": {
@@ -3588,6 +3791,9 @@
         "type": "number"
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "OpenAiGptImageOptions": {
@@ -3632,6 +3838,9 @@
         ]
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "XAIGrokImageOptions": {
@@ -3687,6 +3896,9 @@
         "maximum": 10
       }
     },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "GroqOptions": {
@@ -3727,6 +3939,7 @@
       }
     },
     "required": [
+      "_option_id",
       "reasoning_format"
     ],
     "additionalProperties": false
@@ -3794,64 +4007,13 @@
         "type": "boolean"
       }
     },
-    "additionalProperties": false
-  },
-  "AnthropicClaudeOptions": {
-    "type": "object",
-    "properties": {
-      "_option_id": {
-        "type": "string",
-        "const": "anthropic-claude"
-      },
-      "max_tokens": {
-        "type": "number"
-      },
-      "temperature": {
-        "type": "number"
-      },
-      "top_p": {
-        "type": "number"
-      },
-      "top_k": {
-        "type": "number"
-      },
-      "stop_sequence": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "effort": {
-        "type": "string",
-        "enum": [
-          "low",
-          "medium",
-          "high",
-          "xhigh",
-          "max"
-        ]
-      },
-      "thinking_budget_tokens": {
-        "type": "number"
-      },
-      "include_thoughts": {
-        "type": "boolean"
-      },
-      "cache_enabled": {
-        "type": "boolean"
-      },
-      "cache_ttl": {
-        "type": "string",
-        "enum": [
-          "5m",
-          "1h"
-        ]
-      }
-    },
+    "required": [
+      "_option_id"
+    ],
     "additionalProperties": false
   },
   "ModelOptions": {
-    "anyOf": [
+    "oneOf": [
       {
         "$ref": "#/components/schemas/TextFallbackOptions"
       },
@@ -3919,6 +4081,9 @@
         "$ref": "#/components/schemas/OpenAiTextOptions"
       },
       {
+        "$ref": "#/components/schemas/OpenRouterTextOptions"
+      },
+      {
         "$ref": "#/components/schemas/OpenAiDalleOptions"
       },
       {
@@ -3932,12 +4097,45 @@
       },
       {
         "$ref": "#/components/schemas/MistralTextOptions"
-      },
-      {
-        "$ref": "#/components/schemas/AnthropicClaudeOptions"
       }
     ],
-    "type": "object"
+    "discriminator": {
+      "propertyName": "_option_id",
+      "mapping": {
+        "text-fallback": "#/components/schemas/TextFallbackOptions",
+        "azure-foundry-chat": "#/components/schemas/AzureFoundryChatOptions",
+        "vertexai-imagen": "#/components/schemas/ImagenOptions",
+        "vertexai-claude": "#/components/schemas/VertexAIClaudeOptions",
+        "vertexai-gemini": "#/components/schemas/VertexAIGeminiOptions",
+        "vertexai-gemini-omni-video": "#/components/schemas/VertexAIGeminiOmniVideoOptions",
+        "vertexai-grok": "#/components/schemas/VertexAIGrokOptions",
+        "bedrock-nova-canvas": "#/components/schemas/NovaCanvasOptions",
+        "bedrock-converse": "#/components/schemas/BedrockConverseOptions",
+        "bedrock-nova": "#/components/schemas/BedrockNovaOptions",
+        "bedrock-mistral": "#/components/schemas/BedrockMistralOptions",
+        "bedrock-ai21": "#/components/schemas/BedrockAI21Options",
+        "bedrock-cohere-command": "#/components/schemas/BedrockCohereCommandOptions",
+        "bedrock-claude": "#/components/schemas/BedrockClaudeOptions",
+        "bedrock-palmyra": "#/components/schemas/BedrockPalmyraOptions",
+        "bedrock-gpt-oss": "#/components/schemas/BedrockGptOssOptions",
+        "bedrock-twelvelabs-pegasus": "#/components/schemas/TwelvelabsPegasusOptions",
+        "bedrock-mantle-responses": "#/components/schemas/BedrockMantleResponsesOptions",
+        "bedrock-mantle-chat-completions": "#/components/schemas/BedrockMantleChatCompletionsOptions",
+        "bedrock-mantle-claude": "#/components/schemas/BedrockMantleClaudeOptions",
+        "openai-thinking": "#/components/schemas/OpenAiThinkingOptions",
+        "openai-text": "#/components/schemas/OpenAiTextOptions",
+        "openrouter-text": "#/components/schemas/OpenRouterTextOptions",
+        "openai-dalle": "#/components/schemas/OpenAiDalleOptions",
+        "openai-gpt-image": "#/components/schemas/OpenAiGptImageOptions",
+        "xai-grok-image": "#/components/schemas/XAIGrokImageOptions",
+        "groq-deepseek-thinking": "#/components/schemas/GroqOptions",
+        "mistral-text": "#/components/schemas/MistralTextOptions"
+      }
+    },
+    "type": "object",
+    "required": [
+      "_option_id"
+    ]
   },
   "HttpTimeoutOptions": {
     "type": "object",
@@ -6546,6 +6744,7 @@
       "watsonx",
       "xai",
       "anthropic",
+      "openrouter",
       "virtual_lb",
       "virtual_mediator",
       "test"
