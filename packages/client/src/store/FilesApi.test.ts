@@ -2,6 +2,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ZenoClient } from './client.js';
 
 describe('FilesApi', () => {
+    it('retrieves a durable audio result through the authenticated file API', async () => {
+        const bytes = new Uint8Array([82, 73, 70, 70, 1, 2, 3]);
+        const sign = vi.fn(async () => Response.json({ url: 'https://signed.example/speech.wav' }));
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => new Response(bytes, { headers: { 'content-type': 'audio/wav' } })),
+        );
+        const client = new ZenoClient({ serverUrl: 'https://store.test', apikey: 'test-token', fetch: sign });
+        const stream = await client.files.downloadFile('gs://bucket/runs/run-1/media/speech.wav');
+        expect(new Uint8Array(await new Response(stream).arrayBuffer())).toEqual(bytes);
+        expect(sign).toHaveBeenCalledOnce();
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
         vi.unstubAllGlobals();

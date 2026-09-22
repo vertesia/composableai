@@ -3052,6 +3052,30 @@
         "x-deprecated-message": "Use service_tier=\"flex\" instead.",
         "description": "Deprecated: Use service_tier=\"flex\" instead."
       },
+      "speech_voice": {
+        "type": "string"
+      },
+      "speech_language": {
+        "type": "string"
+      },
+      "transcription_language_codes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "transcription_diarization": {
+        "type": "boolean"
+      },
+      "transcription_word_timestamps": {
+        "type": "boolean"
+      },
+      "transcription_vocabulary": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
       "image_aspect_ratio": {
         "type": "string",
         "enum": [
@@ -4108,6 +4132,76 @@
     },
     "additionalProperties": false
   },
+  "OpenAiTranscriptionOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-transcription"
+      },
+      "language": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "OpenAiSpeechOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-speech"
+      },
+      "voice": {
+        "type": "string",
+        "minLength": 1
+      },
+      "response_format": {
+        "type": "string",
+        "enum": [
+          "mp3",
+          "wav",
+          "opus",
+          "aac",
+          "flac",
+          "pcm"
+        ]
+      },
+      "speed": {
+        "type": "number",
+        "minimum": 0.25,
+        "maximum": 4
+      },
+      "instructions": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "OpenAiAudioOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-audio"
+      },
+      "voice": {
+        "type": "string",
+        "minLength": 1
+      },
+      "response_format": {
+        "type": "string",
+        "enum": [
+          "wav",
+          "mp3",
+          "flac",
+          "opus",
+          "pcm16"
+        ]
+      }
+    },
+    "additionalProperties": false
+  },
   "XAIGrokImageOptions": {
     "type": "object",
     "properties": {
@@ -4400,6 +4494,15 @@
       },
       {
         "$ref": "#/components/schemas/OpenAiGptImageOptions"
+      },
+      {
+        "$ref": "#/components/schemas/OpenAiTranscriptionOptions"
+      },
+      {
+        "$ref": "#/components/schemas/OpenAiSpeechOptions"
+      },
+      {
+        "$ref": "#/components/schemas/OpenAiAudioOptions"
       },
       {
         "$ref": "#/components/schemas/XAIGrokImageOptions"
@@ -8214,6 +8317,55 @@
       "value"
     ]
   },
+  "AudioResult": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "audio"
+      },
+      "value": {
+        "type": "string",
+        "pattern": "^(?:gs|s3):\\/\\/[^/]+\\/.+|^artifact:.+"
+      },
+      "mime_type": {
+        "type": "string",
+        "format": "starts_with",
+        "pattern": "^audio\\/.*"
+      },
+      "container": {
+        "type": "string"
+      },
+      "codec": {
+        "type": "string"
+      },
+      "sample_rate": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "channels": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "sample_encoding": {
+        "type": "string"
+      },
+      "byte_order": {
+        "type": "string",
+        "enum": [
+          "little",
+          "big"
+        ]
+      }
+    },
+    "required": [
+      "type",
+      "value",
+      "mime_type"
+    ]
+  },
   "CompletionResult": {
     "oneOf": [
       {
@@ -8230,6 +8382,9 @@
       },
       {
         "$ref": "#/components/schemas/VideoResult"
+      },
+      {
+        "$ref": "#/components/schemas/AudioResult"
       }
     ],
     "discriminator": {
@@ -8239,7 +8394,8 @@
         "thoughts": "#/components/schemas/ThoughtsResult",
         "json": "#/components/schemas/JsonResult",
         "image": "#/components/schemas/ImageResult",
-        "video": "#/components/schemas/VideoResult"
+        "video": "#/components/schemas/VideoResult",
+        "audio": "#/components/schemas/AudioResult"
       }
     },
     "type": "object",
