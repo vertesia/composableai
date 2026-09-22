@@ -138,11 +138,8 @@ export default class ProjectsApi extends ApiTopic {
     }
 
     /**
-     * Export selected sections of the project's composite app configuration.
-     *
-     * The result is normalized against the published contract rather than copied from storage, and
-     * resolves the project-scoped values the sections reference — app names, and the users and groups
-     * named by permission gates — so an import into another project can remap them.
+     * Export selected sections of the project's composite app configuration, normalized against the
+     * published contract and with project-scoped references resolved for remapping.
      */
     exportCompositeAppConfiguration(
         projectId: string,

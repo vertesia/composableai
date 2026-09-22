@@ -1036,13 +1036,8 @@ export const CompositeAppConfigPayloadSchema = z
     })
     .meta({ id: 'CompositeAppConfigPayload' });
 
-// ============================================================================
-// CompositeApp configuration export
-// ============================================================================
-// The export is a normalization pass against the published contract, not a dump of the stored
-// document: stored configs predate fields the contract now publishes and carry fields it never
-// did, so replaying one verbatim would be rejected on import. What was dropped is reported in
-// `normalization` rather than discarded silently.
+// CompositeApp configuration export. Normalized against the published contract rather than dumped
+// from storage, so it stays importable; what was dropped is reported in `normalization`.
 
 export const CompositeAppExportSectionSchema = z.enum(['card', 'branding', 'header', 'sidebar']).meta({
     id: 'CompositeAppExportSection',

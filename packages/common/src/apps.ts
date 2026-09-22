@@ -136,12 +136,7 @@ import type {
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
 
-/**
- * Format discriminator for an exported composite app configuration.
- *
- * Lives here rather than beside its schema so consumers can import it from the package root without
- * pulling the runtime schema modules into a browser or SDK bundle.
- */
+/** Format discriminator for an exported composite app configuration. */
 export const COMPOSITE_APP_EXPORT_FORMAT = 'vertesia.composite-app.v1';
 
 // The app-manifest closure is declared once, as the Zod schemas in `./api-schemas/apps.ts`, and
@@ -762,12 +757,8 @@ export type CompositeAppConfig = z.infer<typeof CompositeAppConfigSchema>;
 export type CompositeAppConfigPayload = z.infer<typeof CompositeAppConfigPayloadSchema>;
 
 /**
- * A portable composite app configuration.
- *
- * Sections are the top-level structure rather than a filter applied afterwards, so a file exported
- * with two sections cannot silently import four. `references` resolves the project-scoped values an
- * import has to remap, and `normalization` records what the export had to drop to make a stored
- * document valid against the published contract.
+ * A portable composite app configuration. `references` holds the project-scoped values an import
+ * must remap; `normalization` records what the export dropped to satisfy the published contract.
  */
 export type CompositeAppExport = z.infer<typeof CompositeAppExportSchema>;
 
