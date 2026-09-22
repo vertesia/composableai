@@ -355,8 +355,8 @@ importers:
   llumiverse/common:
     dependencies:
       zod:
-        specifier: ^4.5.4
-        version: 4.5.4
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -458,7 +458,7 @@ importers:
     devDependencies:
       '@hono/node-server':
         specifier: ^2.1.1
-        version: 2.1.1(hono@4.12.34)
+        version: 2.1.1(hono@4.13.7)
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -5204,10 +5204,6 @@ packages:
     resolution: {integrity: sha512-EQfezRg0NCZGNlhlDR3Evrw1FVL2G3LhU7EgPoxufQKruNBSYA8MiRPHeWbU+36o+Fhel0wMwM+sLEiBAlNLJA==}
     engines: {node: '>=10.0.0'}
 
-  hono@4.12.34:
-    resolution: {integrity: sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA==}
-    engines: {node: '>=16.9.0'}
-
   hono@4.13.7:
     resolution: {integrity: sha512-c8/gF9ac8Y78/agExVocyLevgR+JlpNB444Py0FSX8pJoPdYUfUzRcXtYEYGwt6l19qIlVZPN5Mfsw9jFShmQQ==}
     engines: {node: '>=16.9.0'}
@@ -8105,10 +8101,6 @@ snapshots:
   '@hono/node-server@2.0.10(hono@4.13.7)':
     dependencies:
       hono: 4.13.7
-
-  '@hono/node-server@2.1.1(hono@4.12.34)':
-    dependencies:
-      hono: 4.12.34
 
   '@hono/node-server@2.1.1(hono@4.13.7)':
     dependencies:
@@ -11166,8 +11158,6 @@ snapshots:
       space-separated-tokens: 2.0.2
 
   heap-js@2.7.1: {}
-
-  hono@4.12.34: {}
 
   hono@4.13.7: {}
 
