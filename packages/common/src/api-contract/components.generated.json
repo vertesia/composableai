@@ -137,15 +137,6 @@
           20260319,
           20260803
         ]
-      },
-      "override_api_version": {
-        "type": "number",
-        "enum": [
-          20250925,
-          20260210,
-          20260319,
-          20260803
-        ]
       }
     }
   },
@@ -696,6 +687,16 @@
   "PrincipalIdentity": {
     "type": "object",
     "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "user",
+          "apikey"
+        ]
+      },
+      "id": {
+        "type": "string"
+      },
       "clearance": {
         "type": "number"
       },
@@ -717,20 +718,18 @@
       "properties": {
         "type": "object",
         "additionalProperties": true
-      },
-      "id": {
-        "type": "string"
       }
     },
     "required": [
+      "kind",
+      "id",
       "clearance",
       "compartments",
       "tags",
-      "properties",
-      "id"
+      "properties"
     ],
     "additionalProperties": false,
-    "description": "Response shape of the `/iam/users/identity` endpoint: the current principal's  {@link  PrincipalContext }  plus its id. Distinct from `PrincipalContext` itself because the id is identity metadata, not a merged BLP field — adding it to `PrincipalContext` would unintentionally expose `$principal.id` to PrincipalSet rule evaluation."
+    "description": "Response shape of the `/iam/users/identity` endpoint: the current principal's full ABAC context — its `kind` (always `user` here), `id`, and the merged BLP attributes a rule can reference through `$principal.*`."
   },
   "SignupData": {
     "type": "object",
