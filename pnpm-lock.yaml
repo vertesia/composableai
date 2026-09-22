@@ -15,9 +15,6 @@ catalogs:
     typescript-legacy:
       specifier: npm:typescript@6.0.3
       version: 6.0.3
-    zod:
-      specifier: 4.6.5
-      version: 4.6.5
 
 overrides:
   vitest@>=2.1.0 <4.1.11: 4.1.11
@@ -254,7 +251,7 @@ importers:
   llumiverse/common:
     dependencies:
       zod:
-        specifier: 'catalog:'
+        specifier: ^4.6.5
         version: 4.6.5
     devDependencies:
       '@types/node':
@@ -352,7 +349,7 @@ importers:
         specifier: ^5.2.3
         version: 5.2.3
       zod:
-        specifier: 'catalog:'
+        specifier: ^4.6.5
         version: 4.6.5
     devDependencies:
       '@hono/node-server':
@@ -525,7 +522,7 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.20.0)
       zod:
-        specifier: 'catalog:'
+        specifier: ^4.6.5
         version: 4.6.5
     devDependencies:
       '@types/node':
@@ -815,7 +812,7 @@ importers:
         specifier: ^6.2.8
         version: 6.2.8
       zod:
-        specifier: 'catalog:'
+        specifier: ^4.6.5
         version: 4.6.5
     devDependencies:
       '@types/node':
