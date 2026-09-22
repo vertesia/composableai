@@ -32,6 +32,9 @@ minimumReleaseAgeExclude:
   # Renovate security update: dompurify@3.4.13
   - dompurify@3.4.13
 catalog:
+  # Keep this synchronized with Studio and Llumiverse: each repository generates schemas from
+  # its own local workspace and lockfile, so an override in another repository cannot control it.
+  zod: "4.6.5"
   vitest: "5.0.1"
   typescript: "7.0.2"
   typescript-legacy: "npm:typescript@6.0.3"
