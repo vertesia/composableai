@@ -352,8 +352,8 @@ importers:
         specifier: ^5.2.3
         version: 5.2.3
       zod:
-        specifier: 4.5.4
-        version: 4.5.4
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@hono/node-server':
         specifier: ^2.1.0
@@ -525,8 +525,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.20.0)
       zod:
-        specifier: 4.5.4
-        version: 4.5.4
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -815,8 +815,8 @@ importers:
         specifier: ^6.2.8
         version: 6.2.8
       zod:
-        specifier: 4.5.4
-        version: 4.5.4
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -7436,9 +7436,6 @@ packages:
   yoctocolors@2.1.2:
     resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
     engines: {node: '>=18'}
-
-  zod@4.5.4:
-    resolution: {integrity: sha512-sC95tT5iHHH9gtpj6A81kh+NEaRAUFN+qlUPDUbRfOMvNf5QCBqsb3WgvnpVtK5Y+4UfA6KqufotuTvMGiTlsA==}
 
   zod@4.6.5:
     resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
@@ -14077,8 +14074,6 @@ snapshots:
   yocto-queue@1.2.2: {}
 
   yoctocolors@2.1.2: {}
-
-  zod@4.5.4: {}
 
   zod@4.6.5: {}
 
