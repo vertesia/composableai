@@ -179,3 +179,29 @@ function statusEnumOf(component: 'ListOAuthGrantsQuery' | 'BulkRevokeOAuthGrants
     }
     return status.enum as string[];
 }
+
+describe('registered MCP callback contract', () => {
+    it('permits default Studio authorization and registered HTTPS callbacks', () => {
+        expect(validateApiRequest('McpOAuthAuthorizeQuery', {}).valid).toBe(true);
+        expect(
+            validateApiRequest('McpOAuthAuthorizeQuery', { redirect_uri: 'https://app.example/callback?flow=mcp' })
+                .valid,
+        ).toBe(true);
+        expect(validateApiRequest('AppInstallationPayload', { app_id: 'app', oauth_redirect_uris: [] }).valid).toBe(
+            true,
+        );
+    });
+    it.each([
+        'http://app.example/callback',
+        'https://user:secret@app.example/callback',
+        'https://app.example/callback#fragment',
+        'https://*.example/callback',
+        '/callback',
+        'javascript:alert(1)',
+    ])('rejects unsafe callback %s in both registration and authorization', (redirect_uri) => {
+        expect(validateApiRequest('McpOAuthAuthorizeQuery', { redirect_uri }).valid).toBe(false);
+        expect(
+            validateApiRequest('AppInstallationPayload', { app_id: 'app', oauth_redirect_uris: [redirect_uri] }).valid,
+        ).toBe(false);
+    });
+});

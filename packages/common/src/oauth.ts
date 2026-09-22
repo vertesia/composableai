@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import type {
     CreateOAuthProviderPayloadSchema,
+    McpOAuthAuthorizeQuerySchema,
     OAuthProviderAccessTokenResponseSchema,
     OAuthProviderAuthorizeResponseSchema,
     OAuthProviderAuthStatusSchema,
@@ -58,3 +59,5 @@ export type OAuthProviderAuthorizeResponse = z.infer<typeof OAuthProviderAuthori
 export type OAuthProviderAccessTokenResponse = z.infer<typeof OAuthProviderAccessTokenResponseSchema>;
 
 export type OAuthProviderExchangePayload = z.infer<typeof OAuthProviderExchangePayloadSchema>;
+
+export type McpOAuthAuthorizeQuery = z.infer<typeof McpOAuthAuthorizeQuerySchema>;

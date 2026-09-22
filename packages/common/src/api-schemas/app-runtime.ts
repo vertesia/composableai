@@ -33,6 +33,7 @@ import { EventPrioritySchema, EventSubscriptionFilterSchema } from './events.js'
 import { StringValueMapSchema } from './files.js';
 import { RemoteActivityDefinitionSchema } from './integrations.js';
 import { CatalogInteractionRefSchema } from './interaction.js';
+import { McpOAuthRedirectUrisSchema } from './oauth.js';
 import { ProcessDefinitionBodySchema } from './process.js';
 import { RenderingTemplateDefinitionRefSchema } from './project.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
@@ -262,6 +263,7 @@ export const AppInstallationSchema = z
         project: z.string(),
         manifest: z.string(),
         settings: z.looseObject({}).optional(),
+        oauth_redirect_uris: McpOAuthRedirectUrisSchema.optional(),
         tool_allowlist: z
             .array(z.string())
             .meta({
@@ -631,6 +633,7 @@ export const AppInstallationWithManifestSchema = z
         id: z.string(),
         project: z.string(),
         settings: z.looseObject({}).optional(),
+        oauth_redirect_uris: McpOAuthRedirectUrisSchema.optional(),
         tool_allowlist: z
             .array(z.string())
             .meta({
@@ -676,6 +679,7 @@ export const AppInstallationListEntrySchema = z
         id: z.string(),
         project: z.string(),
         settings: z.looseObject({}).optional(),
+        oauth_redirect_uris: McpOAuthRedirectUrisSchema.optional(),
         tool_allowlist: z
             .array(z.string())
             .meta({

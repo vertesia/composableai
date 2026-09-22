@@ -1,5 +1,6 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    McpOAuthAuthorizeQuery,
     McpOAuthConnectResponse,
     McpOAuthDisconnectResponse,
     McpOAuthTokenRequest,
@@ -27,8 +28,12 @@ export default class RemoteMcpConnectionsApi extends ApiTopic {
         return this.get(`/metadata/${appInstallId}/${collectionId}`);
     }
 
-    authorize(appInstallId: string, collectionId: string): Promise<OAuthAuthorizeResponse> {
-        return this.get(`/authorize/${appInstallId}/${collectionId}`);
+    authorize(
+        appInstallId: string,
+        collectionId: string,
+        query?: McpOAuthAuthorizeQuery,
+    ): Promise<OAuthAuthorizeResponse> {
+        return this.get(`/authorize/${appInstallId}/${collectionId}`, { query });
     }
 
     exchange(code: string, state: string): Promise<McpOAuthConnectResponse> {

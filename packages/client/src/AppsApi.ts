@@ -425,6 +425,9 @@ export default class AppsApi extends ApiTopic {
                 // clear an override). The server uses `'access_control' in payload` to distinguish
                 // "leave unchanged" from "clear", so only spread the key when it was supplied.
                 ...('access_control' in settingsPayload ? { access_control: settingsPayload.access_control } : {}),
+                ...('oauth_redirect_uris' in settingsPayload
+                    ? { oauth_redirect_uris: settingsPayload.oauth_redirect_uris }
+                    : {}),
             } satisfies AppInstallationPayload,
         });
     }
