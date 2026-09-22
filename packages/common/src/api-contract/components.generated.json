@@ -9550,6 +9550,10 @@
   "InteractionUpdatePayload": {
     "type": "object",
     "properties": {
+      "clear_allowed_tools": {
+        "type": "boolean",
+        "description": "Explicitly remove the agent tool allowlist and inherit access. Requires project administration permission. Cannot be combined with allowed_tools. Omitting allowed_tools preserves the saved policy."
+      },
       "expected_edit_revision": {
         "type": "integer",
         "minimum": 1,

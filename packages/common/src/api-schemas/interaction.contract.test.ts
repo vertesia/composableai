@@ -320,3 +320,12 @@ describe('AgentRunnerOptions tool access contract', () => {
         },
     );
 });
+
+describe('explicit tool policy reset contract', () => {
+    it('accepts a reset independently of runner options', () => {
+        expect(validateApiRequest('InteractionUpdatePayload', { clear_allowed_tools: true }).valid).toBe(true);
+    });
+    it('rejects nonboolean reset flags', () => {
+        expect(validateApiRequest('InteractionUpdatePayload', { clear_allowed_tools: 'true' }).valid).toBe(false);
+    });
+});

@@ -1225,6 +1225,13 @@ export const PromptSegmentRef_PromptTemplateRefSchema = z
 
 export const InteractionUpdatePayloadSchema = z
     .strictObject({
+        clear_allowed_tools: z
+            .boolean()
+            .meta({
+                description:
+                    'Explicitly remove the agent tool allowlist and inherit access. Requires project administration permission. Cannot be combined with allowed_tools. Omitting allowed_tools preserves the saved policy.',
+            })
+            .optional(),
         expected_edit_revision: ExpectedEditRevisionSchema,
         status: InteractionStatusSchema.optional(),
         parent: z.string().optional(),
