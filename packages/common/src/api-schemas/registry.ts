@@ -2486,7 +2486,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'QuotaStandingWindow',
     'QuotaStandingAdmissionClass',
     'QuotaTierResponse',
-    // The IAM closure. PrincipalContext is composed into PrincipalIdentity rather than hoisted,
+    // The IAM closure. AbacPrincipalContext is composed into PrincipalIdentity rather than hoisted,
     // so it has no component of its own to list.
     'User',
     'UpdateUserPayload',
@@ -3426,13 +3426,25 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
  * divergence. Note that `.refine()` is silently DROPPED rather than rejected, so refinements must
  * not be used to express contract rules — they would be invisible to both the spec and AJV.
  */
-function emitRawSchemas(): Record<string, unknown> {
-    return Object.fromEntries(
-        Object.entries(API_SCHEMAS).map(([name, schema]) => [
-            name,
-            z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' }),
-        ]),
+function emitSchema(name: string, schema: z.ZodType): unknown {
+    const emitted = z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' }) as Record<string, unknown>;
+    const rootRef = emitted.$ref;
+    const defs = emitted.$defs;
+    const expectedRef = `#/$defs/${name}`;
+    if (rootRef !== expectedRef || !defs || typeof defs !== 'object' || Array.isArray(defs)) return emitted;
+
+    const root = (defs as Record<string, unknown>)[name];
+    if (!root || typeof root !== 'object' || Array.isArray(root)) return emitted;
+    const remainingDefs = Object.fromEntries(
+        Object.entries(defs as Record<string, unknown>).filter(([id]) => id !== name),
     );
+    return Object.keys(remainingDefs).length === 0
+        ? root
+        : { ...(root as Record<string, unknown>), $defs: remainingDefs };
+}
+
+function emitRawSchemas(): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitSchema(name, schema)]));
 }
 
 /**
