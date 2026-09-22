@@ -58,6 +58,8 @@ function StartWorkflowModal({ objectIds, onClose }: StartWorkflowModalProps) {
         if (!selected || isStarting) return;
         setIsStarting(true);
         try {
+            // `objectIds` rather than the newer `input` shape: it is what the workflow rules API
+            // already sends, so it is the form DSL workflows are known to read.
             await client.store.workflows.execute(`${DSL_WORKFLOW_ENDPOINT_PREFIX}${selected.id}`, { objectIds });
             toast({
                 title: t('store.actions.workflowStarted'),
@@ -79,7 +81,7 @@ function StartWorkflowModal({ objectIds, onClose }: StartWorkflowModalProps) {
     };
 
     return (
-        <Modal isOpen onClose={onClose} size="lg">
+        <Modal isOpen onClose={onClose} size="md">
             <ModalTitle>{t('store.actions.startWorkflow')}</ModalTitle>
             <ModalBody>
                 <div className="pb-2">{t('store.actions.chooseWorkflow')}</div>
@@ -139,8 +141,8 @@ function StartWorkflowList({ workflows, isLoading, error, selected, onChange }: 
                 onChange={onChange}
                 optionLayout={(workflow) => ({
                     label: (
-                        <div>
-                            <div>{workflow.name}</div>
+                        <div className="w-full">
+                            <div className="text-start">{workflow.name.replace(/(?<=[a-z])(?=[A-Z])/g, ' ')}</div>
                             {workflow.description && <div className="text-xs text-muted">{workflow.description}</div>}
                         </div>
                     ),

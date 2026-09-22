@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { type DocumentSelection, useDocumentSelection } from '../DocumentSelectionProvider.js';
 import { DocumentUploadModal } from '../upload/DocumentUploadModal.js';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
-import { StartWorkflowButton } from './actions/StartWorkflowButton';
 import { ObjectsActionContextProvider } from './ObjectsActionContext';
 import { useObjectsActionContext } from './ObjectsActionHooks';
 import type { ObjectsActionSpec } from './ObjectsActionSpec';
@@ -17,8 +16,10 @@ interface SelectionActionsProps {
     allowMutations?: boolean;
     allowDelete?: boolean;
     /**
-     * Opt-in: shows the "Start Workflow" action. Defaults to `false` so it never leaks to read-only
-     * surfaces — callers must pass a permission-gated value (e.g. `canRunWorkflow(perms)`).
+     * Opt-in: shows the "Start Workflow" entry in the actions menu. Defaults to `false` so it never
+     * leaks to read-only surfaces — callers must pass a permission-gated value (e.g.
+     * `canRunWorkflow(perms)`). Running a workflow is its own permission, so this is deliberately
+     * separate from `allowMutations`.
      */
     allowWorkflowRun?: boolean;
 }
@@ -52,7 +53,6 @@ export function SelectionActions({
                         </Button>
                     </div>
                 )}
-                {allowWorkflowRun && <StartWorkflowButton />}
                 <SelectionActionsPopover
                     selection={selection}
                     allowMutations={allowMutations}
