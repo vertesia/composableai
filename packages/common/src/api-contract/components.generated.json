@@ -9069,6 +9069,15 @@
         },
         "description": "Array of default tool names available to this agent. For interactions: defines default tools. For execution payloads: you can use + and - to add or remove from default, if no sign, then list replaces default."
       },
+      "allowed_tools": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^+-]"
+        },
+        "description": "Administrative tool allowlist, independent of first-turn tool_names. Omitted inherits access; an empty array denies all tools. Exact tool names apply to builtins, skills, interactions, HTTP and MCP tools. Runtime selection and skill grants cannot expand this policy."
+      },
       "search_scope": {
         "$ref": "#/components/schemas/AgentSearchScope",
         "description": "On which scope should the search be applied by the search_tool. Only supports 'collection' scope or undefined for now."
@@ -9719,6 +9728,10 @@
   "InteractionUpdatePayload": {
     "type": "object",
     "properties": {
+      "clear_allowed_tools": {
+        "type": "boolean",
+        "description": "Explicitly remove the agent tool allowlist and inherit access. Requires project administration permission. Cannot be combined with allowed_tools. Omitting allowed_tools preserves the saved policy."
+      },
       "expected_edit_revision": {
         "type": "integer",
         "minimum": 1,

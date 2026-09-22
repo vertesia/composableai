@@ -780,6 +780,18 @@ export const AgentRunnerOptionsSchema = z
                     'Array of default tool names available to this agent. For interactions: defines default tools. For execution payloads: you can use + and - to add or remove from default, if no sign, then list replaces default.',
             })
             .optional(),
+        allowed_tools: z
+            .array(
+                z
+                    .string()
+                    .min(1)
+                    .regex(/^[^+-]/),
+            )
+            .meta({
+                description:
+                    'Administrative tool allowlist, independent of first-turn tool_names. Omitted inherits access; an empty array denies all tools. Exact tool names apply to builtins, skills, interactions, HTTP and MCP tools. Runtime selection and skill grants cannot expand this policy.',
+            })
+            .optional(),
         search_scope: AgentSearchScopeSchema.meta({
             description:
                 "On which scope should the search be applied by the search_tool. Only supports 'collection' scope or undefined for now.",
@@ -1213,6 +1225,13 @@ export const PromptSegmentRef_PromptTemplateRefSchema = z
 
 export const InteractionUpdatePayloadSchema = z
     .strictObject({
+        clear_allowed_tools: z
+            .boolean()
+            .meta({
+                description:
+                    'Explicitly remove the agent tool allowlist and inherit access. Requires project administration permission. Cannot be combined with allowed_tools. Omitting allowed_tools preserves the saved policy.',
+            })
+            .optional(),
         expected_edit_revision: ExpectedEditRevisionSchema,
         status: InteractionStatusSchema.optional(),
         parent: z.string().optional(),

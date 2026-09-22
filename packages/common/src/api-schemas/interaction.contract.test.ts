@@ -305,3 +305,27 @@ describe('background inference telemetry contract', () => {
         expect(validateApiRequest('LlmCallType', 'background').valid).toBe(true);
     });
 });
+
+describe('AgentRunnerOptions tool access contract', () => {
+    it.each([{}, { allowed_tools: [] }, { allowed_tools: ['discover_tools', 'search_documents', 'learn_web_search'] }])(
+        'accepts a saved policy: %j',
+        (options) => {
+            expect(validateApiRequest('AgentRunnerOptions', options).valid).toBe(true);
+        },
+    );
+    it.each([null, [''], ['+search_documents'], ['-search_documents'], [{ app_install_id: 'install' }]])(
+        'rejects malformed policy %j',
+        (allowed_tools) => {
+            expect(validateApiRequest('AgentRunnerOptions', { allowed_tools }).valid).toBe(false);
+        },
+    );
+});
+
+describe('explicit tool policy reset contract', () => {
+    it('accepts a reset independently of runner options', () => {
+        expect(validateApiRequest('InteractionUpdatePayload', { clear_allowed_tools: true }).valid).toBe(true);
+    });
+    it('rejects nonboolean reset flags', () => {
+        expect(validateApiRequest('InteractionUpdatePayload', { clear_allowed_tools: 'true' }).valid).toBe(false);
+    });
+});
