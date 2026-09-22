@@ -33163,6 +33163,13 @@
         "type": "string",
         "description": "Filter by interaction ID or code"
       },
+      "interactions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Filter by one or more stored interaction references"
+      },
       "started_by": {
         "type": "string",
         "description": "Filter by user who started the run"
