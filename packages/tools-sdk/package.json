@@ -37,13 +37,8 @@
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
-<<<<<<< HEAD
         "jose": "^6.2.12",
-        "zod": "^4.5.4"
-=======
-        "jose": "^6.2.8",
         "zod": "catalog:"
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
     },
     "repository": {
         "type": "git",

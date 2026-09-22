@@ -3458,12 +3458,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
  * divergence. Note that `.refine()` is silently DROPPED rather than rejected, so refinements must
  * not be used to express contract rules — they would be invisible to both the spec and AJV.
  */
-<<<<<<< HEAD
-function emitRawSchemas(): Record<string, unknown> {
-    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitJsonSchema(schema)]));
-=======
 function emitSchema(name: string, schema: z.ZodType): unknown {
-    const emitted = z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' }) as Record<string, unknown>;
+    const emitted = emitJsonSchema(schema) as Record<string, unknown>;
     const rootRef = emitted.$ref;
     const defs = emitted.$defs;
     const expectedRef = `#/$defs/${name}`;
@@ -3481,7 +3477,6 @@ function emitSchema(name: string, schema: z.ZodType): unknown {
 
 function emitRawSchemas(): Record<string, unknown> {
     return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitSchema(name, schema)]));
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
 }
 
 /**

@@ -32,13 +32,10 @@ minimumReleaseAgeExclude:
   # Renovate security update: dompurify@3.4.13
   - dompurify@3.4.13
 catalog:
-<<<<<<< HEAD
-  vitest: "5.0.1"
-=======
   # Keep this synchronized with Studio and Llumiverse: each repository generates schemas from
   # its own local workspace and lockfile, so an override in another repository cannot control it.
   zod: "4.6.5"
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
+  vitest: "5.0.1"
   typescript: "7.0.2"
   typescript-legacy: "npm:typescript@6.0.3"
   react: "19.3.0"

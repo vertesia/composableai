@@ -116,15 +116,12 @@ catalogs:
     typescript-legacy:
       specifier: npm:typescript@6.0.3
       version: 6.0.3
-<<<<<<< HEAD
     vitest:
       specifier: 5.0.1
       version: 5.0.1
-=======
     zod:
       specifier: 4.6.5
       version: 4.6.5
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
 
 overrides:
   react: 19.3.0
@@ -358,13 +355,8 @@ importers:
   llumiverse/common:
     dependencies:
       zod:
-<<<<<<< HEAD
-        specifier: ^4.5.4
-        version: 4.6.4
-=======
         specifier: 'catalog:'
         version: 4.6.5
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -461,13 +453,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.2
       zod:
-<<<<<<< HEAD
-        specifier: ^4.5.4
-        version: 4.6.4
-=======
         specifier: 'catalog:'
         version: 4.6.5
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
     devDependencies:
       '@hono/node-server':
         specifier: ^2.1.1
@@ -639,13 +626,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.20.0)
       zod:
-<<<<<<< HEAD
-        specifier: ^4.5.4
-        version: 4.6.4
-=======
         specifier: 'catalog:'
         version: 4.6.5
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -934,13 +916,8 @@ importers:
         specifier: ^6.2.12
         version: 6.2.12
       zod:
-<<<<<<< HEAD
-        specifier: ^4.5.4
-        version: 4.6.4
-=======
         specifier: 'catalog:'
         version: 4.6.5
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -7352,13 +7329,8 @@ packages:
     resolution: {integrity: sha512-xYqdZFUK/VYazNl/oCDYN+3WloWQwMfZxBoiNt6qNyk+xfOdi598muWE42rNZFp1kNOiqW936q5RhUdnpqElSg==}
     engines: {node: '>=18'}
 
-<<<<<<< HEAD
-  zod@4.6.4:
-    resolution: {integrity: sha512-AXSD6hvGdvRjajG/l1cC+d6IrhH+sjmPKtYeQdJIK8MFJl3LyClzS+o/YsVC+zQZPupAaeH5skwwm8YqYH7BqA==}
-=======
   zod@4.6.5:
     resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -13764,10 +13736,6 @@ snapshots:
 
   yoctocolors@2.2.0: {}
 
-<<<<<<< HEAD
-  zod@4.6.4: {}
-=======
   zod@4.6.5: {}
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
 
   zwitch@2.0.4: {}

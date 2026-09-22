@@ -47,11 +47,7 @@
         "@llumiverse/common": "workspace:*",
         "ajv": "^8.20.0",
         "ajv-formats": "^3.0.1",
-<<<<<<< HEAD
-        "zod": "^4.5.4"
-=======
         "zod": "catalog:"
->>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
     },
     "repository": {
         "type": "git",
