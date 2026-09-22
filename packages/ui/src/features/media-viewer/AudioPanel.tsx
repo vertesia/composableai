@@ -154,7 +154,9 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
         }
         return () => {
             cancelled = true;
-            if (generatedUrl) URL.revokeObjectURL(generatedUrl);
+            if (generatedUrl) {
+                URL.revokeObjectURL(generatedUrl);
+            }
         };
     }, [url, source, object, audio, audioRendition, isOriginalWebSupported, client]);
 
