@@ -8,7 +8,7 @@ export * from './analytics.js';
  */
 export type { UserGroupArrayFromSchema } from './api-schemas/group.js';
 export type {
-    PrincipalContextFromSchema,
+    AbacPrincipalContextFromSchema,
     UserArrayFromSchema,
     UserRefArrayFromSchema,
 } from './api-schemas/user.js';
