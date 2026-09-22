@@ -47,8 +47,13 @@
         "ajv": "^8.20.0",
         "es-module-lexer": "^3.0.2",
         "esbuild": "^0.28.2",
+<<<<<<< HEAD
         "js-yaml": "^5.4.1",
         "zod": "^4.5.4"
+=======
+        "js-yaml": "^5.2.3",
+        "zod": "catalog:"
+>>>>>>> cf9cd68e (chore(deps): align Zod catalog and generated schemas (#2279))
     },
     "peerDependencies": {
         "@hono/node-server": "^2.1.1",
