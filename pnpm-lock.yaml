@@ -355,8 +355,8 @@ importers:
   llumiverse/common:
     dependencies:
       zod:
-        specifier: 'catalog:'
-        version: 4.6.5
+        specifier: ^4.5.4
+        version: 4.5.4
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
