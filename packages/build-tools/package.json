@@ -48,7 +48,7 @@
         "es-module-lexer": "^2.3.1",
         "esbuild": "^0.28.2",
         "js-yaml": "^5.2.3",
-        "zod": "^4.6.5"
+        "zod": "4.5.4"
     },
     "peerDependencies": {
         "@hono/node-server": "^2.1.0",
