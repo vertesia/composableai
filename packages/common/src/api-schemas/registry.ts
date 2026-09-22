@@ -77,7 +77,12 @@ import {
     RoleDefinitionArraySchema,
     SystemRoleDefinitionArraySchema,
 } from './access-control.js';
-import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
+import {
+    AccountApiVersionPolicySchema,
+    AccountSchema,
+    StripeBillingStatusResponseSchema,
+    UpdateAccountPayloadSchema,
+} from './account.js';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
 import * as AgentCommunicationSchemas from './agent-communication.js';
 import * as AgentRunSchemas from './agent-runs.js';
@@ -833,6 +838,7 @@ import * as WorkflowRunSchemas from './workflow-runs.js';
  * group approaches the proven-safe size.
  */
 const IAM_AND_ACCOUNT_SCHEMAS = {
+    AccountApiVersionPolicy: AccountApiVersionPolicySchema,
     Account: AccountSchema,
     UpdateAccountPayload: UpdateAccountPayloadSchema,
     StripeBillingStatusResponse: StripeBillingStatusResponseSchema,
@@ -1216,7 +1222,7 @@ const AGENT_CONVERSATION_SCHEMAS = {
     ConversationState: ConversationStateSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const EXECUTION_RUN_SCHEMAS = {
+const EXECUTION_RUN_SCHEMAS: Record<string, z.ZodType> = {
     // A run: what was executed, by whom, and how it ended.
     ExecutionRunStatus: ExecutionRunStatusSchema,
     RunSourceTypes: RunSourceTypesSchema,
@@ -2515,7 +2521,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'QuotaStandingWindow',
     'QuotaStandingAdmissionClass',
     'QuotaTierResponse',
-    // The IAM closure. PrincipalContext is composed into PrincipalIdentity rather than hoisted,
+    // The IAM closure. AbacPrincipalContext is composed into PrincipalIdentity rather than hoisted,
     // so it has no component of its own to list.
     'User',
     'UpdateUserPayload',
@@ -3452,8 +3458,25 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
  * divergence. Note that `.refine()` is silently DROPPED rather than rejected, so refinements must
  * not be used to express contract rules — they would be invisible to both the spec and AJV.
  */
+function emitSchema(name: string, schema: z.ZodType): unknown {
+    const emitted = emitJsonSchema(schema) as Record<string, unknown>;
+    const rootRef = emitted.$ref;
+    const defs = emitted.$defs;
+    const expectedRef = `#/$defs/${name}`;
+    if (rootRef !== expectedRef || !defs || typeof defs !== 'object' || Array.isArray(defs)) return emitted;
+
+    const root = (defs as Record<string, unknown>)[name];
+    if (!root || typeof root !== 'object' || Array.isArray(root)) return emitted;
+    const remainingDefs = Object.fromEntries(
+        Object.entries(defs as Record<string, unknown>).filter(([id]) => id !== name),
+    );
+    return Object.keys(remainingDefs).length === 0
+        ? root
+        : { ...(root as Record<string, unknown>), $defs: remainingDefs };
+}
+
 function emitRawSchemas(): Record<string, unknown> {
-    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitJsonSchema(schema)]));
+    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitSchema(name, schema)]));
 }
 
 /**

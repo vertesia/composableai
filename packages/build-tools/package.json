@@ -48,11 +48,11 @@
         "es-module-lexer": "^3.0.2",
         "esbuild": "^0.28.2",
         "js-yaml": "^5.4.1",
-        "zod": "^4.5.4"
+        "zod": "catalog:"
     },
     "peerDependencies": {
         "@hono/node-server": "^2.1.1",
-        "vite": "^8.2.2"
+        "vite": "^8.3.0"
     },
     "peerDependenciesMeta": {
         "@hono/node-server": {

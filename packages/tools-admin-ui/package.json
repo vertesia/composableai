@@ -23,8 +23,8 @@
         "dev": "vite dev"
     },
     "peerDependencies": {
-        "react": "^19.2.8",
-        "react-dom": "^19.2.8"
+        "react": "^19.3.0",
+        "react-dom": "^19.3.0"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.3.3",
@@ -41,7 +41,7 @@
     "dependencies": {
         "@vertesia/common": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "lucide-react": "^1.42.0"
+        "lucide-react": "^1.46.0"
     },
     "repository": {
         "type": "git",
