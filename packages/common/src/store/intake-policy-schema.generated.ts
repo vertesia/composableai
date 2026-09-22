@@ -1292,6 +1292,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/OpenAiSpeechOptions',
                 },
                 {
+                    $ref: '#/$defs/OpenAiAudioOptions',
+                },
+                {
                     $ref: '#/$defs/XAIGrokImageOptions',
                 },
                 {
@@ -1366,6 +1369,24 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
             },
             required: ['taskType'],
+            additionalProperties: false,
+        },
+        OpenAiAudioOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'openai-audio',
+                },
+                voice: {
+                    type: 'string',
+                    minLength: 1,
+                },
+                response_format: {
+                    type: 'string',
+                    enum: ['wav', 'mp3', 'flac', 'opus', 'pcm16'],
+                },
+            },
             additionalProperties: false,
         },
         OpenAiDalleOptions: {

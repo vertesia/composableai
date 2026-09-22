@@ -3740,6 +3740,30 @@
     ],
     "additionalProperties": false
   },
+  "OpenAiAudioOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-audio"
+      },
+      "voice": {
+        "type": "string",
+        "minLength": 1
+      },
+      "response_format": {
+        "type": "string",
+        "enum": [
+          "wav",
+          "mp3",
+          "flac",
+          "opus",
+          "pcm16"
+        ]
+      }
+    },
+    "additionalProperties": false
+  },
   "XAIGrokImageOptions": {
     "type": "object",
     "properties": {
@@ -3988,6 +4012,9 @@
       },
       {
         "$ref": "#/components/schemas/OpenAiSpeechOptions"
+      },
+      {
+        "$ref": "#/components/schemas/OpenAiAudioOptions"
       },
       {
         "$ref": "#/components/schemas/XAIGrokImageOptions"
