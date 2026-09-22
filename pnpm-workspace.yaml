@@ -32,7 +32,7 @@ minimumReleaseAgeExclude:
   # Renovate security update: dompurify@3.4.13
   - dompurify@3.4.13
 catalog:
-  vitest: "5.0.0"
+  vitest: "5.0.1"
   typescript: "7.0.2"
   typescript-legacy: "npm:typescript@6.0.3"
   react: "19.3.0"
