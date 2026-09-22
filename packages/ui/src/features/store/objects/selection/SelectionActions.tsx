@@ -57,6 +57,7 @@ export function SelectionActions({
                     selection={selection}
                     allowMutations={allowMutations}
                     allowDelete={allowDelete}
+                    allowWorkflowRun={allowWorkflowRun}
                 >
                     {(actions) =>
                         actions.length > 0 ? (
@@ -123,7 +124,9 @@ function SelectionActionsPopover({
     children,
     allowMutations = true,
     allowDelete = true,
-}: SelectionActionsPopoverProps & Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete'>>) {
+    allowWorkflowRun = false,
+}: SelectionActionsPopoverProps &
+    Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>) {
     const context = useObjectsActionContext();
     const executeAction = (action: ObjectsActionSpec) => {
         context.run(action.id);
@@ -131,6 +134,7 @@ function SelectionActionsPopover({
     const actions = getAvailableActions(context.actions, selection, {
         allowMutations,
         allowDelete,
+        allowWorkflowRun,
     });
     const trigger = children(actions);
 
@@ -169,7 +173,7 @@ function PopoverBody({ executeAction, actions }: PopoverBodyProps) {
 function getAvailableActions(
     actions: ObjectsActionSpec[],
     selection: DocumentSelection,
-    permissions: Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete'>>,
+    permissions: Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>,
 ): ObjectsActionSpec[] {
     if (!selection?.hasSelection()) {
         return [ExportPropertiesAction];
@@ -181,6 +185,9 @@ function getAvailableActions(
         }
         if (action.id === 'delete' || action.id === 'deleteFromCollections') {
             return permissions.allowDelete;
+        }
+        if (action.id === 'startWorkflow') {
+            return permissions.allowWorkflowRun;
         }
         if (action.id === 'changeType' || action.id === 'addToCollection' || action.id === 'removeFromCollection') {
             return permissions.allowMutations;
