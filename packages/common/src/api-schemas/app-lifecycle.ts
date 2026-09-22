@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { APPGEN_PACKAGE_SPEC_PATTERN } from '../appgen.js';
 import { AppAccessControlSchema, AppAvailableInSchema, MCPToolAnnotationsSchema } from './apps.js';
 import { EventCategorySchema } from './audit-trail.js';
+import { McpOAuthRedirectUrisSchema } from './oauth.js';
 
 // The app lifecycle contracts: versions, builds, scaffolds, git repositories, development tasks,
 // installations and inspection. `./apps.js` holds the manifest itself and the tool-collection
@@ -839,6 +840,7 @@ export const UpsertAppVersionRequestSchema = z
 export const AppInstallationPayloadSchema = z
     .strictObject({
         app_id: z.string(),
+        oauth_redirect_uris: McpOAuthRedirectUrisSchema.optional(),
         settings: z.looseObject({}).optional(),
         access_control: z
             .union([AppAccessControlSchema, z.null()])

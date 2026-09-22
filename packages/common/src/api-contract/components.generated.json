@@ -6062,6 +6062,19 @@
     ],
     "additionalProperties": false
   },
+  "McpOAuthAuthorizeQuery": {
+    "type": "object",
+    "properties": {
+      "redirect_uri": {
+        "type": "string",
+        "maxLength": 2048,
+        "pattern": "^https:\\/\\/[^\\s/@?#*\\\\]+(?:[/?][^\\s#*\\\\]*)?$",
+        "format": "uri",
+        "description": "An exact HTTPS callback URL without credentials, fragments, or wildcards."
+      }
+    },
+    "additionalProperties": false
+  },
   "OAuthClientType": {
     "type": "string",
     "enum": [
@@ -18978,6 +18991,18 @@
       "app_id": {
         "type": "string"
       },
+      "oauth_redirect_uris": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^https:\\/\\/[^\\s/@?#*\\\\]+(?:[/?][^\\s#*\\\\]*)?$",
+          "format": "uri",
+          "description": "An exact HTTPS callback URL without credentials, fragments, or wildcards."
+        },
+        "description": "Project-admin registered MCP OAuth callbacks for this installation. Exact matches only. An empty array disables external callbacks."
+      },
       "settings": {
         "type": "object",
         "additionalProperties": true
@@ -23232,6 +23257,18 @@
         "type": "object",
         "additionalProperties": true
       },
+      "oauth_redirect_uris": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^https:\\/\\/[^\\s/@?#*\\\\]+(?:[/?][^\\s#*\\\\]*)?$",
+          "format": "uri",
+          "description": "An exact HTTPS callback URL without credentials, fragments, or wildcards."
+        },
+        "description": "Project-admin registered MCP OAuth callbacks for this installation. Exact matches only. An empty array disables external callbacks."
+      },
       "tool_allowlist": {
         "type": "array",
         "items": {
@@ -23297,6 +23334,18 @@
       "settings": {
         "type": "object",
         "additionalProperties": true
+      },
+      "oauth_redirect_uris": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^https:\\/\\/[^\\s/@?#*\\\\]+(?:[/?][^\\s#*\\\\]*)?$",
+          "format": "uri",
+          "description": "An exact HTTPS callback URL without credentials, fragments, or wildcards."
+        },
+        "description": "Project-admin registered MCP OAuth callbacks for this installation. Exact matches only. An empty array disables external callbacks."
       },
       "tool_allowlist": {
         "type": "array",
@@ -23367,6 +23416,18 @@
       "settings": {
         "type": "object",
         "additionalProperties": true
+      },
+      "oauth_redirect_uris": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^https:\\/\\/[^\\s/@?#*\\\\]+(?:[/?][^\\s#*\\\\]*)?$",
+          "format": "uri",
+          "description": "An exact HTTPS callback URL without credentials, fragments, or wildcards."
+        },
+        "description": "Project-admin registered MCP OAuth callbacks for this installation. Exact matches only. An empty array disables external callbacks."
       },
       "tool_allowlist": {
         "type": "array",

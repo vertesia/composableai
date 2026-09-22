@@ -164,3 +164,21 @@ export const OAuthProviderExchangePayloadSchema = z
         state: z.string(),
     })
     .meta({ id: 'OAuthProviderExchangePayload' });
+
+/** Exact production web callback; no userinfo, fragments, wildcards, or whitespace. */
+export const McpOAuthRedirectUriSchema = z
+    .string()
+    .max(2048)
+    .regex(/^https:\/\/[^\s/@?#*\\]+(?:[/?][^\s#*\\]*)?$/)
+    .meta({ format: 'uri', description: 'An exact HTTPS callback URL without credentials, fragments, or wildcards.' });
+
+export const McpOAuthRedirectUrisSchema = z.array(McpOAuthRedirectUriSchema).max(20).meta({
+    description:
+        'Project-admin registered MCP OAuth callbacks for this installation. Exact matches only. An empty array disables external callbacks.',
+});
+
+export const McpOAuthAuthorizeQuerySchema = z
+    .strictObject({
+        redirect_uri: McpOAuthRedirectUriSchema.optional(),
+    })
+    .meta({ id: 'McpOAuthAuthorizeQuery' });
