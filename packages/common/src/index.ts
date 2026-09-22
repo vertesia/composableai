@@ -1,5 +1,6 @@
 export type {
     AudioResult,
+    OpenAiAudioOptions,
     OpenAiSpeechOptions,
     OpenAiTranscriptionOptions,
     VertexAIGeminiOmniVideoOptions,

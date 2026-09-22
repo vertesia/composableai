@@ -142,7 +142,9 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
             } catch (error) {
                 console.error('Failed to get audio URL', error);
             } finally {
-                setIsLoading(false);
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
         };
 
