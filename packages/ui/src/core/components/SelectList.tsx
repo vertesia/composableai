@@ -88,6 +88,7 @@ export function SelectList<T>({
                         onSelect={onSelect}
                         layout={layout}
                         noCheck={noCheck}
+                        isSelected={isSelected}
                     />
                 );
             })}
@@ -99,17 +100,19 @@ interface SelectListOptionProps<T> {
     onSelect: (value: T) => void;
     layout: OptionLayout;
     noCheck?: boolean;
+    isSelected: boolean;
 }
 
-function SelectListOption<T>({ option, onSelect, layout, noCheck }: SelectListOptionProps<T>) {
+function SelectListOption<T>({ option, onSelect, layout, noCheck, isSelected }: SelectListOptionProps<T>) {
     return (
         <Button
             variant="unstyled"
             size="none"
             className={clsx(
-                'group !flex w-full items-center cursor-pointer gap-x-2 hover:bg-muted',
+                'group flex! w-full items-center cursor-pointer gap-x-2 hover:bg-muted',
                 layout.reverse && 'flex-row-reverse',
                 layout.className,
+                isSelected && 'bg-muted',
             )}
             onClick={() => onSelect(option)}
         >
