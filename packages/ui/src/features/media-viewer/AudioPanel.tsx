@@ -50,7 +50,7 @@ export function pcm16LeToWav(pcm: ArrayBuffer, format: PcmFormat): Blob {
     const bytesPerSample = 2;
     const blockAlign = format.channels * bytesPerSample;
     const bytesPerSecond = format.sampleRate * blockAlign;
-    const wav = new ArrayBuffer(headerSize + pcm.byteLength);
+    const wav = new ArrayBuffer(headerSize);
     const view = new DataView(wav);
     const writeAscii = (offset: number, value: string) => {
         for (let index = 0; index < value.length; index++) view.setUint8(offset + index, value.charCodeAt(index));
@@ -69,9 +69,8 @@ export function pcm16LeToWav(pcm: ArrayBuffer, format: PcmFormat): Blob {
     view.setUint16(34, 16, true);
     writeAscii(36, 'data');
     view.setUint32(40, pcm.byteLength, true);
-    new Uint8Array(wav, headerSize).set(new Uint8Array(pcm));
 
-    return new Blob([wav], { type: 'audio/wav' });
+    return new Blob([wav, pcm], { type: 'audio/wav' });
 }
 
 /**
@@ -93,24 +92,23 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
 
     useEffect(() => {
         let generatedUrl: string | undefined;
-        let cancelled = false;
+        const controller = new AbortController();
+        const { signal } = controller;
         setAudioUrl(undefined);
 
         const setPlayableUrl = async (downloadUrl: string) => {
+            signal.throwIfAborted();
             const format = pcmFormat(audio);
             if (!format) {
-                if (!cancelled) setAudioUrl(downloadUrl);
+                if (!signal.aborted) setAudioUrl(downloadUrl);
                 return;
             }
 
-            const response = await fetch(downloadUrl);
+            const response = await fetch(downloadUrl, { signal });
             if (!response.ok) throw new Error(`Failed to fetch PCM audio: ${response.status}`);
-            generatedUrl = URL.createObjectURL(pcm16LeToWav(await response.arrayBuffer(), format));
-            if (cancelled) {
-                URL.revokeObjectURL(generatedUrl);
-                generatedUrl = undefined;
-                return;
-            }
+            const pcm = await response.arrayBuffer();
+            signal.throwIfAborted();
+            generatedUrl = URL.createObjectURL(pcm16LeToWav(pcm, format));
             setAudioUrl(generatedUrl);
         };
 
@@ -140,9 +138,9 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
                     await setPlayableUrl(downloadUrl.url);
                 }
             } catch (error) {
-                console.error('Failed to get audio URL', error);
+                if (!signal.aborted) console.error('Failed to get audio URL', error);
             } finally {
-                if (!cancelled) {
+                if (!signal.aborted) {
                     setIsLoading(false);
                 }
             }
@@ -155,7 +153,7 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
             setIsLoading(false);
         }
         return () => {
-            cancelled = true;
+            controller.abort();
             if (generatedUrl) {
                 URL.revokeObjectURL(generatedUrl);
             }
