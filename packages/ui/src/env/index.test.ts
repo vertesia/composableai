@@ -240,3 +240,24 @@ describe('fixed Firebase tenant', () => {
         expect(env.firebase).toBeUndefined();
     });
 });
+
+afterEach(() => vi.unstubAllGlobals());
+
+it('uses injected branch OAuth identity and API endpoints over build-time preview settings', () => {
+    const origin = 'https://app-gateway-dev-auth-test.api.dev1.vertesia.io';
+    const oauth = {
+        clientId: `${origin}/tenants/05948c_98b1eb/apps/test-app/.well-known/oauth-client/vertesia-app`,
+        redirectUri: `${origin}/tenants/05948c_98b1eb/apps/test-app/app/`,
+    };
+    const endpoints = {
+        studio: 'https://studio-server-dev-auth-test.api.dev1.vertesia.io',
+        zeno: 'https://zeno-server-dev-auth-test.api.dev1.vertesia.io',
+        sts: 'https://token-server-dev-auth-test.api.dev1.vertesia.io',
+    };
+    vi.stubGlobal('window', { __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central', oauth, endpoints } });
+    const env = new VertesiaEnvironment().init(baseProps);
+    expect(env.oauth).toEqual(oauth);
+    expect(env.endpoints).toMatchObject(endpoints);
+    expect(window.AUTH_MODE).toBe('central');
+    expect(env.firebase).toBeUndefined();
+});

@@ -95,6 +95,8 @@ export type VertesiaRuntimeConfig =
           authMode: 'central';
           allowLegacyIframeAuth?: boolean;
           oauth?: EnvProps['oauth'];
+          /** Deployment-injected API endpoints for dev branch path-served apps. */
+          endpoints?: Pick<EnvProps['endpoints'], 'studio' | 'zeno' | 'sts'>;
           /** Broker selected by the serving gateway. Overrides build-time configuration. */
           authUrl?: string;
           /** The serving gateway owns this standalone app's OAuth session. */
@@ -166,7 +168,11 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
             this._props = { ...this._props, endpoints: { ...this._props.endpoints, auth: authUrl } };
         }
         if (this._props && runtimeConfig?.authMode === 'central' && runtimeConfig.oauth) {
-            this._props = { ...this._props, oauth: runtimeConfig.oauth };
+            this._props = {
+                ...this._props,
+                oauth: runtimeConfig.oauth,
+                endpoints: { ...this._props.endpoints, ...runtimeConfig.endpoints },
+            };
         }
         if (this._props && runtimeConfig?.allowLegacyIframeAuth !== undefined) {
             this._props = { ...this._props, allowLegacyIframeAuth: runtimeConfig.allowLegacyIframeAuth };
