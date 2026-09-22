@@ -2729,6 +2729,30 @@
         "x-deprecated-message": "Use service_tier=\"flex\" instead.",
         "description": "Deprecated: Use service_tier=\"flex\" instead."
       },
+      "speech_voice": {
+        "type": "string"
+      },
+      "speech_language": {
+        "type": "string"
+      },
+      "transcription_language_codes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "transcription_diarization": {
+        "type": "boolean"
+      },
+      "transcription_word_timestamps": {
+        "type": "boolean"
+      },
+      "transcription_vocabulary": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
       "image_aspect_ratio": {
         "type": "string",
         "enum": [
@@ -3642,6 +3666,52 @@
     },
     "additionalProperties": false
   },
+  "OpenAiTranscriptionOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-transcription"
+      },
+      "language": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "OpenAiSpeechOptions": {
+    "type": "object",
+    "properties": {
+      "_option_id": {
+        "type": "string",
+        "const": "openai-speech"
+      },
+      "voice": {
+        "type": "string",
+        "minLength": 1
+      },
+      "response_format": {
+        "type": "string",
+        "enum": [
+          "mp3",
+          "wav",
+          "opus",
+          "aac",
+          "flac",
+          "pcm"
+        ]
+      },
+      "speed": {
+        "type": "number",
+        "minimum": 0.25,
+        "maximum": 4
+      },
+      "instructions": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
   "XAIGrokImageOptions": {
     "type": "object",
     "properties": {
@@ -3931,6 +4001,12 @@
       },
       {
         "$ref": "#/components/schemas/OpenAiGptImageOptions"
+      },
+      {
+        "$ref": "#/components/schemas/OpenAiTranscriptionOptions"
+      },
+      {
+        "$ref": "#/components/schemas/OpenAiSpeechOptions"
       },
       {
         "$ref": "#/components/schemas/XAIGrokImageOptions"
@@ -4636,13 +4712,9 @@
         "description": "Project defaults and caps for browser_use agent workstreams."
       },
       "pdf_template_object_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Object ID of a content object containing a custom LaTeX template (.latex file) to use as the branded PDF template. When set, \"Export as Branded PDF\" uses this template instead of the built-in Vertesia default template. `null` clears it."
       }
@@ -4827,13 +4899,9 @@
         "description": "Project defaults and caps for browser_use agent workstreams."
       },
       "pdf_template_object_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Object ID of a content object containing a custom LaTeX template (.latex file) to use as the branded PDF template. When set, \"Export as Branded PDF\" uses this template instead of the built-in Vertesia default template. `null` clears it."
       }
@@ -7707,6 +7775,56 @@
     ],
     "additionalProperties": false
   },
+  "AudioResult": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "audio"
+      },
+      "value": {
+        "type": "string",
+        "pattern": "^(?:gs|s3):\\/\\/[^/]+\\/.+|^artifact:.+"
+      },
+      "mime_type": {
+        "type": "string",
+        "format": "starts_with",
+        "pattern": "^audio\\/.*"
+      },
+      "container": {
+        "type": "string"
+      },
+      "codec": {
+        "type": "string"
+      },
+      "sample_rate": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "channels": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991
+      },
+      "sample_encoding": {
+        "type": "string"
+      },
+      "byte_order": {
+        "type": "string",
+        "enum": [
+          "little",
+          "big"
+        ]
+      }
+    },
+    "required": [
+      "type",
+      "value",
+      "mime_type"
+    ],
+    "additionalProperties": false
+  },
   "VideoResult": {
     "type": "object",
     "properties": {
@@ -7756,6 +7874,9 @@
       },
       {
         "$ref": "#/components/schemas/VideoResult"
+      },
+      {
+        "$ref": "#/components/schemas/AudioResult"
       }
     ],
     "discriminator": {
@@ -7765,7 +7886,8 @@
         "thoughts": "#/components/schemas/ThoughtsResult",
         "json": "#/components/schemas/JsonResult",
         "image": "#/components/schemas/ImageResult",
-        "video": "#/components/schemas/VideoResult"
+        "video": "#/components/schemas/VideoResult",
+        "audio": "#/components/schemas/AudioResult"
       }
     },
     "type": "object",
@@ -13210,13 +13332,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13245,13 +13363,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13280,13 +13394,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13315,13 +13425,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13350,13 +13456,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -14278,13 +14380,9 @@
         "description": "Whether a key is stored for this collection."
       },
       "hint": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Last few characters of the stored key, for display only. Null when unset."
       }
@@ -14354,113 +14452,69 @@
     "type": "object",
     "properties": {
       "time": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "action": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "resource_type": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "event_category": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "provider": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.pipeline": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.verdict": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.workflow_type": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.rule_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "model": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       }
     },
@@ -14620,13 +14674,9 @@
         "$ref": "#/components/schemas/EventCategory"
       },
       "source": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "root_event_id": {
@@ -14672,33 +14722,21 @@
         "type": "boolean"
       },
       "principal_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "principal_type": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "effective_principal_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "roles": {
@@ -14708,63 +14746,39 @@
         }
       },
       "account_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "tenant_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "account_name": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_name": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "provider": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Provider type for billable/provider-backed events, e.g. vertexai, bedrock."
       },
@@ -16890,33 +16904,21 @@
         "type": "string"
       },
       "account_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "tenant_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       }
     },
@@ -24094,13 +24096,9 @@
         "$ref": "#/components/schemas/DurableTaskStatus"
       },
       "assignee": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "fields": {
@@ -27268,13 +27266,9 @@
         "$ref": "#/components/schemas/StringArrayMap"
       },
       "sensitivity": {
-        "anyOf": [
-          {
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "number",
+          "null"
         ]
       },
       "compartments": {
@@ -35388,19 +35382,11 @@
         ]
       },
       "value": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "boolean"
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "boolean",
+          "number",
+          "null"
         ]
       },
       "members": {
