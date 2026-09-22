@@ -1222,7 +1222,7 @@ const AGENT_CONVERSATION_SCHEMAS = {
     ConversationState: ConversationStateSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const EXECUTION_RUN_SCHEMAS = {
+const EXECUTION_RUN_SCHEMAS: Record<string, z.ZodType> = {
     // A run: what was executed, by whom, and how it ended.
     ExecutionRunStatus: ExecutionRunStatusSchema,
     RunSourceTypes: RunSourceTypesSchema,
