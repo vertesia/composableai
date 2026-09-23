@@ -31570,6 +31570,10 @@
           "type": "string"
         },
         "description": "List of property names from the collection's properties that should be shared with (injected into) member objects. These properties will be propagated to all members of this collection and merged as arrays."
+      },
+      "user_permissions": {
+        "$ref": "#/components/schemas/ContentObjectUserPermissions",
+        "description": "Computed per-request permissions for the current user on this collection. Not stored — computed on the fly from the collection's security field (same semantics as a content object's user_permissions)."
       }
     },
     "required": [
