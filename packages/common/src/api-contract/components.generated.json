@@ -8453,6 +8453,7 @@
       },
       "mime_type": {
         "type": "string",
+        "format": "starts_with",
         "pattern": "^audio\\/.*"
       },
       "container": {
