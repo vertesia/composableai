@@ -15,6 +15,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import SignInAuthPending from './SignInAuthPending';
 import SignInEmailStep, { type TenantInfo } from './SignInEmailStep';
+import SignInPasswordStep from './SignInPasswordStep';
 import SignInProvidersStep from './SignInProvidersStep';
 import SignInRecoveryStep, { type SignInRecoveryKind } from './SignInRecoveryStep';
 import SignInRestrictedEnvStep from './SignInRestrictedEnvStep';
@@ -79,6 +80,7 @@ type Mode =
     | 'email'
     | 'providers'
     | 'tenant'
+    | 'password'
     | 'blocked'
     | 'returning'
     | 'pending'
@@ -185,8 +187,15 @@ function SigninScreenImpl({
     const onProceedFromEmail = useCallback((e: string, t: TenantInfo | undefined) => {
         setEmail(e);
         setTenant(t);
-        setMode(t ? 'tenant' : 'providers');
+        // A password tenant has no identity provider to pick; ask for its password directly.
+        setMode(t?.provider === 'password' ? 'password' : t ? 'tenant' : 'providers');
     }, []);
+
+    const onContinueWithPassword = useCallback(() => {
+        if (!storedSession) return;
+        setEmail(storedSession.email);
+        setMode('password');
+    }, [storedSession]);
 
     const onBack = useCallback(() => {
         setMode('email');
@@ -336,6 +345,14 @@ function SigninScreenImpl({
         );
     } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
         content = <SignupForm onSignup={onSignup} goBack={startOver} />;
+    } else if (mode === 'password' && email) {
+        content = (
+            <SignInPasswordStep
+                email={email}
+                tenantName={tenant?.label || tenant?.name || storedSession?.tenantName || undefined}
+                onBack={onBack}
+            />
+        );
     } else if (mode === 'tenant' && tenant) {
         content = (
             <SignInTenantStep
@@ -349,7 +366,12 @@ function SigninScreenImpl({
         content = <SignInProvidersStep email={email} onBack={onBack} onProviderClicked={onProviderClicked} />;
     } else if (mode === 'returning' && storedSession) {
         content = (
-            <SignInReturningStep session={storedSession} onNotYou={onNotYou} onProviderClicked={onProviderClicked} />
+            <SignInReturningStep
+                session={storedSession}
+                onNotYou={onNotYou}
+                onProviderClicked={onProviderClicked}
+                onContinueWithPassword={onContinueWithPassword}
+            />
         );
     } else {
         content = <SignInEmailStep initialEmail={email} onProceed={onProceedFromEmail} />;

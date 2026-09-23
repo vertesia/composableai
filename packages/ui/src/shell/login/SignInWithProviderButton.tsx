@@ -1,9 +1,9 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { SignInProviderButton } from './SignInPrimitives';
-import { type ProviderId, providerLabel, startSignIn, startSignInWithoutTenant } from './signInUtils';
+import { providerLabel, type RedirectProviderId, startSignIn, startSignInWithoutTenant } from './signInUtils';
 
 interface SignInWithProviderButtonProps {
-    provider: ProviderId;
+    provider: RedirectProviderId;
     /** Email for the tenant-aware flow. Omit for a no-tenant sign-in (e.g. SignInModal). */
     email?: string;
     redirectTo?: string;
