@@ -68,8 +68,8 @@ export interface SignInFlowController<M extends string = never> {
      * resolved tenant, otherwise the provider list.
      */
     onProceedFromEmail: (email: string, tenant?: TenantInfo) => void;
-    /** The remembered identity signs in with a password: show the password step for it. */
-    onContinueWithPassword: () => void;
+    /** The address signs in with a password, not a redirect: show the password step for it. */
+    onPasswordRequired: (email: string) => void;
     /** Back to the email step, dropping the resolved tenant. */
     onBack: () => void;
     /** "Not you?" — forget the remembered identity and sign out. */
@@ -102,11 +102,10 @@ export function useSignInFlow<M extends string = never>(options: SignInFlowOptio
         setMode(t?.provider === 'password' ? 'password' : t ? 'tenant' : 'providers');
     }, []);
 
-    const onContinueWithPassword = useCallback(() => {
-        if (!storedSession) return;
-        setEmail(storedSession.email);
+    const onPasswordRequired = useCallback((e: string) => {
+        setEmail(e);
         setMode('password');
-    }, [storedSession]);
+    }, []);
 
     const onBack = useCallback(() => {
         setMode('email');
@@ -157,7 +156,7 @@ export function useSignInFlow<M extends string = never>(options: SignInFlowOptio
         setStoredSession,
         pendingProvider,
         onProceedFromEmail,
-        onContinueWithPassword,
+        onPasswordRequired,
         onBack,
         onNotYou,
         onProviderClicked,
@@ -208,6 +207,7 @@ export function SignInFlowSteps({ flow, redirectTo }: SignInFlowStepsProps) {
                 tenant={tenant}
                 onBack={flow.onBack}
                 onProviderClicked={() => flow.onProviderClicked((tenant.provider ?? 'oidc') as ProviderId)}
+                onPasswordRequired={flow.onPasswordRequired}
                 redirectTo={redirectTo}
             />
         );
@@ -218,6 +218,7 @@ export function SignInFlowSteps({ flow, redirectTo }: SignInFlowStepsProps) {
                 email={email}
                 onBack={flow.onBack}
                 onProviderClicked={flow.onProviderClicked}
+                onPasswordRequired={flow.onPasswordRequired}
                 redirectTo={redirectTo}
             />
         );
@@ -228,7 +229,7 @@ export function SignInFlowSteps({ flow, redirectTo }: SignInFlowStepsProps) {
                 session={storedSession}
                 onNotYou={flow.onNotYou}
                 onProviderClicked={flow.onProviderClicked}
-                onContinueWithPassword={flow.onContinueWithPassword}
+                onPasswordRequired={flow.onPasswordRequired}
                 redirectTo={redirectTo}
             />
         );

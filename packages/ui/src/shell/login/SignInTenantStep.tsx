@@ -15,6 +15,8 @@ interface SignInTenantStepProps {
     tenant: TenantInfo;
     onBack: () => void;
     onProviderClicked: () => void;
+    /** The tenant re-resolved as a password tenant, so the parent shows the password step. */
+    onPasswordRequired: (email: string) => void;
     redirectTo?: string;
 }
 
@@ -32,6 +34,7 @@ export default function SignInTenantStep({
     tenant,
     onBack,
     onProviderClicked,
+    onPasswordRequired,
     redirectTo,
 }: SignInTenantStepProps) {
     const { t } = useUITranslation();
@@ -68,6 +71,7 @@ export default function SignInTenantStep({
                     redirectTo={redirectTo}
                     variant="filled"
                     onClick={onProviderClicked}
+                    onPasswordRequired={() => onPasswordRequired(email)}
                 />
                 <SignInStepButton variant="ghost" onClick={onBack}>
                     {t('auth.tenant.notPartOf', { name: tenantName })}

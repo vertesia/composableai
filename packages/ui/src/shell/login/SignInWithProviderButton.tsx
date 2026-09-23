@@ -10,6 +10,8 @@ interface SignInWithProviderButtonProps {
     variant?: 'outline' | 'filled';
     /** Fired on click, before the redirect. */
     onClick?: () => void;
+    /** Fired instead of a redirect when the email resolves to a password tenant. */
+    onPasswordRequired?: () => void;
 }
 
 // "Continue with <provider>" button that owns its sign-in redirect.
@@ -19,6 +21,7 @@ export default function SignInWithProviderButton({
     redirectTo,
     variant = 'outline',
     onClick,
+    onPasswordRequired,
 }: SignInWithProviderButtonProps) {
     const { t } = useUITranslation();
     const label =
@@ -26,15 +29,16 @@ export default function SignInWithProviderButton({
             ? t('auth.continueWithSignIn')
             : t('auth.continueWithProvider', { provider: providerLabel(provider) });
 
-    const signIn = () => {
+    const signIn = async () => {
         onClick?.();
-        if (email) {
-            void startSignIn(provider, email, redirectTo);
-        } else {
+        if (!email) {
             // OIDC needs a resolved tenant; the no-email path is only hit by no-tenant buttons.
             startSignInWithoutTenant(provider, redirectTo);
+            return;
         }
+        const result = await startSignIn(provider, email, redirectTo);
+        if (!result.ok && result.reason === 'password-required') onPasswordRequired?.();
     };
 
-    return <SignInProviderButton provider={provider} label={label} onClick={signIn} variant={variant} />;
+    return <SignInProviderButton provider={provider} label={label} onClick={() => void signIn()} variant={variant} />;
 }
