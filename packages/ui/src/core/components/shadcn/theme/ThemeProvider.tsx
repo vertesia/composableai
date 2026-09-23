@@ -32,18 +32,30 @@ export function ThemeProvider({
 
     useEffect(() => {
         const root = window.document.documentElement;
-
-        root.classList.remove('light', 'dark');
-
-        if (theme === 'system') {
-            const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-
-            root.classList.add(systemTheme);
+        if (theme !== 'system') {
+            root.classList.remove('light', 'dark');
+            root.classList.add(theme);
             return;
         }
-
-        root.classList.add(theme);
+        const media = window.matchMedia('(prefers-color-scheme: dark)');
+        const applyTheme = () => {
+            root.classList.remove('light', 'dark');
+            root.classList.add(media.matches ? 'dark' : 'light');
+        };
+        applyTheme();
+        media.addEventListener('change', applyTheme);
+        return () => media.removeEventListener('change', applyTheme);
     }, [theme]);
+
+    useEffect(() => {
+        const syncStoredTheme = (event: StorageEvent) => {
+            if (event.storageArea !== localStorage || (event.key !== storageKey && event.key !== null)) return;
+            const value = event.newValue;
+            setThemeState(value === 'dark' || value === 'light' || value === 'system' ? value : defaultTheme);
+        };
+        window.addEventListener('storage', syncStoredTheme);
+        return () => window.removeEventListener('storage', syncStoredTheme);
+    }, [defaultTheme, storageKey]);
 
     const setTheme = useCallback(
         (nextTheme: Theme, options?: { persist?: boolean }) => {

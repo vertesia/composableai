@@ -14,6 +14,8 @@ import {
 } from './auth/composable';
 import { buildCentralAuthRedirectUrl, redirectToCentralAuth, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
+import { usesGatewaySession } from './auth/gateway';
+import { getAppOAuthToken, usesAppOAuth } from './auth/oauth';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
 
@@ -63,7 +65,7 @@ interface UserSessionProviderProps {
     children: ReactNode | ReactNode[];
     loadOnboardingStatus?: boolean;
 }
-export function UserSessionProvider({ children, loadOnboardingStatus = true }: UserSessionProviderProps) {
+export function UserSessionProvider({ children, loadOnboardingStatus = false }: UserSessionProviderProps) {
     const hashParams = new URLSearchParams(location.hash.substring(1));
     const token = hashParams.get('token');
     const state = hashParams.get('state');
@@ -153,6 +155,30 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
             return;
         }
 
+        if (usesGatewaySession() || usesAppOAuth()) {
+            let cancelled = false;
+            session.setSession = setSession;
+            const initialize = usesGatewaySession()
+                ? session.loginGatewaySession()
+                : getAppOAuthToken().then((token) =>
+                      session.login(token, { loadOnboardingStatus, authMethod: 'oauth' }),
+                  );
+            void initialize
+                .then(() => {
+                    if (!cancelled) setSession(session.clone());
+                })
+                .catch((error: unknown) => {
+                    if (cancelled || surfaceAuthError(error)) return;
+                    session.isLoading = false;
+                    session.authError = error instanceof Error ? error : new Error(String(error));
+                    setSession(session.clone());
+                });
+            return () => {
+                cancelled = true;
+                hasInitiatedAuthRef.current = false;
+            };
+        }
+
         if (token && state) {
             session.setSession = setSession;
             const validationError = verifyState(state);
@@ -163,7 +189,10 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
                         state: state,
                     },
                 });
+                clearState();
+                clearAuthHash();
                 redirectToCentralAuth({ accountId: selectedAccount, projectId: selectedProject });
+                return;
             } else {
                 clearState();
             }
@@ -193,6 +222,13 @@ export function UserSessionProvider({ children, loadOnboardingStatus = true }: U
 
         const startFirebaseOrCentralAuth = () => {
             if (cancelled) return;
+            // A missing/expired host token must not upgrade an embedded app to a full user session.
+            if (window.parent !== window && !Env.allowLegacyIframeAuth) {
+                session.isLoading = false;
+                session.authError = new Error('Embedded authentication requires a valid token from the host.');
+                setSession(session.clone());
+                return;
+            }
 
             // If the current host is not in the Firebase allowlist, central auth owns sign-in.
             if (!session.isLoggedIn()) {

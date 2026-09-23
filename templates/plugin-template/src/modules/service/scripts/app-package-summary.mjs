@@ -12,6 +12,7 @@ function hookNames(hooks) {
 export function summarizeAppPackage(pkg) {
     const tools = names(pkg.tools, (tool) => tool.name);
     return {
+        oauth_scopes: pkg.oauth_scopes ?? [],
         ui: Boolean(pkg.ui),
         settings: Boolean(pkg.settings_schema),
         tools: tools.filter((name) => !name.startsWith('learn_')),

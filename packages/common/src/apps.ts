@@ -51,6 +51,7 @@ import type {
     StartAppDevelopmentTaskRequestSchema,
     StartAppScaffoldRequestSchema,
     StartAppScaffoldResponseSchema,
+    UpdateAppInstallationOAuthApprovalPayloadSchema,
     UpdateAppInstallationToolAllowlistPayloadSchema,
     UpsertAppVersionRequestSchema,
     ValidateUrlRequestSchema,
@@ -752,3 +753,5 @@ export type ValidateUrlResponse = z.infer<typeof ValidateUrlResponseSchema>;
  * already deleted. Deriving the type is what keeps the two from drifting again.
  */
 export type AppDeleteSummary = z.infer<typeof AppDeleteSummarySchema>;
+
+export type UpdateAppInstallationOAuthApprovalPayload = z.infer<typeof UpdateAppInstallationOAuthApprovalPayloadSchema>;

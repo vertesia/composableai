@@ -1,7 +1,7 @@
 /** Developer-only visual fixtures. Mount outside the authenticated application tree. */
 import { I18nProvider, useUITranslation } from '@vertesia/ui/i18n';
 import type { ReactNode } from 'react';
-import type { AppBranding } from '../boot/branding.js';
+import { type AppBranding, vertesiaBranding } from '../boot/branding.js';
 import {
     AppBrandingProvider,
     BrandedAuthLoadingScreen,
@@ -216,11 +216,7 @@ export function AuthScreenPreview({
 export async function mountAuthScreenPreview(
     container: HTMLElement,
     screen: string,
-    branding: AppBranding = {
-        name: 'Vertesia',
-        logo: { light: '/logo-light.png', dark: '/logo-dark.png' },
-        loadingIcon: { light: '/icon.svg' },
-    },
+    branding: AppBranding = vertesiaBranding,
     screens: AuthScreens = {},
 ): Promise<void> {
     if (screen === 'boot') return;
