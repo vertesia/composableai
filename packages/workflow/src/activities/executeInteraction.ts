@@ -293,13 +293,10 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             throw rateLimitFailure;
         }
         const executionError = toExecutionError(error);
-<<<<<<< HEAD
         if (isRenditionPending(executionError)) {
             log.debug(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
-=======
-        if (executionError.statusCode === 429) {
+        } else if (executionError.statusCode === 429) {
             log.warn(`Resource exhausted while executing interaction ${interactionName}`, { error: executionError });
->>>>>>> b254f6c5 (fix: stop agent stream polling on 404 and trim workflow activity log noise (#2290))
         } else {
             log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
         }
@@ -452,15 +449,7 @@ export async function executeInteractionFromActivity(
             workflow,
         })
         .catch((error: unknown) => {
-<<<<<<< HEAD
-            if (isRenditionPending(toExecutionError(error))) {
-                log.debug(`Interaction ${interactionName} is waiting for a rendition`, { error });
-            } else {
-                log.error(`Error executing interaction ${interactionName}`, { error });
-            }
-=======
             // Logged once by the caller's catch (executeInteraction) — do not log here as well.
->>>>>>> b254f6c5 (fix: stop agent stream polling on 404 and trim workflow activity log noise (#2290))
             const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
             throw rateLimitFailure ?? error;
         });
