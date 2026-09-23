@@ -1222,7 +1222,55 @@ const AGENT_CONVERSATION_SCHEMAS = {
     ConversationState: ConversationStateSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const EXECUTION_RUN_SCHEMAS: Record<string, z.ZodType> = {
+// Reference schema types by name to keep declaration output bounded without erasing payload types.
+type ExecutionRunSchemaMap = {
+    ExecutionRunStatus: typeof ExecutionRunStatusSchema;
+    RunSourceTypes: typeof RunSourceTypesSchema;
+    RunSource: typeof RunSourceSchema;
+    ExecutionRunDocRef: typeof ExecutionRunDocRefSchema;
+    ExecutionRunWorkflow: typeof ExecutionRunWorkflowSchema;
+    ExecutionRunInteraction: typeof ExecutionRunInteractionSchema;
+    ExecutionRun: typeof ExecutionRunSchema;
+    ExecutionRunRef: typeof ExecutionRunRefSchema;
+    ExecutionRunRefArray: typeof ExecutionRunRefArraySchema;
+    UpdateExecutionRunPayload: typeof UpdateExecutionRunPayloadSchema;
+    RunCreatePayload: typeof RunCreatePayloadSchema;
+    SortOrder: typeof SortOrderSchema;
+    SortOption: typeof SortOptionSchema;
+    RunSearchQuery: typeof RunSearchQuerySchema;
+    RunListQuery: typeof RunListQuerySchema;
+    RunSearchPayload: typeof RunSearchPayloadSchema;
+    InteractionExecutionPayload: typeof InteractionExecutionPayloadSchema;
+    NamedInteractionExecutionPayload: typeof NamedInteractionExecutionPayloadSchema;
+    InteractionExecutionResult: typeof InteractionExecutionResultSchema;
+    FindRunResult: typeof FindRunResultSchema;
+    FindRunResultArray: typeof FindRunResultArraySchema;
+    PopulatedExecutionRunResult: typeof PopulatedExecutionRunResultSchema;
+    LegacyExecutionRunResult: typeof LegacyExecutionRunResultSchema;
+    LegacyPopulatedExecutionRunResult: typeof LegacyPopulatedExecutionRunResultSchema;
+    InteractionExecutionConfiguration: typeof InteractionExecutionConfigurationSchema;
+    InteractionExecutionError: typeof InteractionExecutionErrorSchema;
+    ResultStorageOptions: typeof ResultStorageOptionsSchema;
+    ExecuteInteractionByEndpointQuery: typeof ExecuteInteractionByEndpointQuerySchema;
+    ExecuteInteractionByEndpointHeaders: typeof ExecuteInteractionByEndpointHeadersSchema;
+    AsyncCompletionMode: typeof AsyncCompletionModeSchema;
+    AsyncCompletionOptions: typeof AsyncCompletionOptionsSchema;
+    AsyncExecutionPayload: typeof AsyncExecutionPayloadSchema;
+    AsyncInteractionExecutionPayload: typeof AsyncInteractionExecutionPayloadSchema;
+    AsyncConversationExecutionPayload: typeof AsyncConversationExecutionPayloadSchema;
+    AsyncExecutionResult: typeof AsyncExecutionResultSchema;
+    RateLimitRequestPayload: typeof RateLimitRequestPayloadSchema;
+    RateLimitRequestResponse: typeof RateLimitRequestResponseSchema;
+    ComputeRunFacetPayload: typeof ComputeRunFacetPayloadSchema;
+    ComputeRunFacetsResponse: typeof ComputeRunFacetsResponseSchema;
+    RunSearchMetaResponse: typeof RunSearchMetaResponseSchema;
+    ToolResultsPayload: typeof ToolResultsPayloadSchema;
+    UserMessagePayload: typeof UserMessagePayloadSchema;
+    ExecutionResponse: typeof ExecutionResponseSchema;
+    RunClonePayload: typeof RunClonePayloadSchema;
+};
+
+const EXECUTION_RUN_SCHEMAS: ExecutionRunSchemaMap = {
     // A run: what was executed, by whom, and how it ended.
     ExecutionRunStatus: ExecutionRunStatusSchema,
     RunSourceTypes: RunSourceTypesSchema,
