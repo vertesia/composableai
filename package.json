@@ -26,7 +26,7 @@
         "typecheck:test": "pnpm exec turbo run typecheck:test ${TURBO_CACHE_OPTS:---cache=local:rw,remote:r}"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.13",
+        "@biomejs/biome": "2.5.14",
         "rimraf": "^6.1.3",
         "turbo": "^2.10.13",
         "typescript": "catalog:",
