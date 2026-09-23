@@ -1245,7 +1245,7 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2
       i18next-cli:
-        specifier: ^1.73.3
+        specifier: ^1.74.0
         version: 1.74.1(@types/node@24.13.6)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@7.0.2)
       jsdom:
         specifier: ^30.0.1
