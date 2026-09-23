@@ -1,4 +1,11 @@
-export type { VertexAIGeminiOmniVideoOptions, VideoResult } from '@llumiverse/common';
+export type {
+    AudioResult,
+    OpenAiAudioOptions,
+    OpenAiSpeechOptions,
+    OpenAiTranscriptionOptions,
+    VertexAIGeminiOmniVideoOptions,
+    VideoResult,
+} from '@llumiverse/common';
 export * from './access-control.js';
 export * from './analytics.js';
 /**
@@ -8,7 +15,7 @@ export * from './analytics.js';
  */
 export type { UserGroupArrayFromSchema } from './api-schemas/group.js';
 export type {
-    PrincipalContextFromSchema,
+    AbacPrincipalContextFromSchema,
     UserArrayFromSchema,
     UserRefArrayFromSchema,
 } from './api-schemas/user.js';

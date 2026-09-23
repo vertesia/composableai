@@ -1286,6 +1286,15 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/OpenAiGptImageOptions',
                 },
                 {
+                    $ref: '#/$defs/OpenAiTranscriptionOptions',
+                },
+                {
+                    $ref: '#/$defs/OpenAiSpeechOptions',
+                },
+                {
+                    $ref: '#/$defs/OpenAiAudioOptions',
+                },
+                {
                     $ref: '#/$defs/XAIGrokImageOptions',
                 },
                 {
@@ -1362,6 +1371,24 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             required: ['taskType'],
             additionalProperties: false,
         },
+        OpenAiAudioOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'openai-audio',
+                },
+                voice: {
+                    type: 'string',
+                    minLength: 1,
+                },
+                response_format: {
+                    type: 'string',
+                    enum: ['wav', 'mp3', 'flac', 'opus', 'pcm16'],
+                },
+            },
+            additionalProperties: false,
+        },
         OpenAiDalleOptions: {
             type: 'object',
             properties: {
@@ -1413,6 +1440,32 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 output_format: {
                     type: 'string',
                     enum: ['png', 'webp', 'jpeg'],
+                },
+            },
+            additionalProperties: false,
+        },
+        OpenAiSpeechOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'openai-speech',
+                },
+                voice: {
+                    type: 'string',
+                    minLength: 1,
+                },
+                response_format: {
+                    type: 'string',
+                    enum: ['mp3', 'wav', 'opus', 'aac', 'flac', 'pcm'],
+                },
+                speed: {
+                    type: 'number',
+                    minimum: 0.25,
+                    maximum: 4,
+                },
+                instructions: {
+                    type: 'string',
                 },
             },
             additionalProperties: false,
@@ -1519,6 +1572,19 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'object',
                     additionalProperties: true,
                     description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
+                },
+            },
+            additionalProperties: false,
+        },
+        OpenAiTranscriptionOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'openai-transcription',
+                },
+                language: {
+                    type: 'string',
                 },
             },
             additionalProperties: false,
@@ -1841,6 +1907,30 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     deprecated: true,
                     'x-deprecated-message': 'Use service_tier="flex" instead.',
                     description: 'Deprecated: Use service_tier="flex" instead.',
+                },
+                speech_voice: {
+                    type: 'string',
+                },
+                speech_language: {
+                    type: 'string',
+                },
+                transcription_language_codes: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                transcription_diarization: {
+                    type: 'boolean',
+                },
+                transcription_word_timestamps: {
+                    type: 'boolean',
+                },
+                transcription_vocabulary: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
                 },
                 image_aspect_ratio: {
                     type: 'string',

@@ -6,6 +6,8 @@ import type { z } from 'zod';
 import type {
     AgentTokenRequestSchema,
     ApiKeyTokenRequestSchema,
+    AppSessionTokenRequestSchema,
+    AppSessionTokenResponseSchema,
     EnvironmentTokenRequestSchema,
     IssueTokenForbiddenResponseSchema,
     IssueTokenRequestSchema,
@@ -74,3 +76,6 @@ export interface ValidateTokenResponse {
 }
 
 export type IssueTokenUnavailableResponse = z.infer<typeof IssueTokenUnavailableResponseSchema>;
+
+export type AppSessionTokenRequest = z.infer<typeof AppSessionTokenRequestSchema>;
+export type AppSessionTokenResponse = z.infer<typeof AppSessionTokenResponseSchema>;

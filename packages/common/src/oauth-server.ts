@@ -6,6 +6,7 @@ import type {
     CreateOAuthClientPayloadSchema,
     ListOAuthGrantsQuerySchema,
     OAuthAuthorizationDecisionResponseSchema,
+    OAuthAuthorizationRequestGeneratedAppSchema,
     OAuthAuthorizationRequestSchema,
     OAuthAuthorizationRequestStatusSchema,
     OAuthAuthorizationServerMetadataSchema,
@@ -28,6 +29,9 @@ import type {
     OAuthGrantSortOrderSchema,
     OAuthGrantStatusSchema,
     OAuthGrantTypeSchema,
+    OAuthLoginDecisionResponseSchema,
+    OAuthLoginPayloadSchema,
+    OAuthLoginUserNotFoundResponseSchema,
     OAuthProjectBindingModeSchema,
     OAuthRegistrationSourceSchema,
     OAuthResponseTypeSchema,
@@ -92,3 +96,10 @@ export type OAuthAuthorizationDecisionResponse = z.infer<typeof OAuthAuthorizati
 export type OAuthDeviceAuthorizationRequest = z.infer<typeof OAuthDeviceAuthorizationRequestSchema>;
 export type OAuthDeviceAuthorizationResponse = z.infer<typeof OAuthDeviceAuthorizationResponseSchema>;
 export type OAuthTokenResponse = z.infer<typeof OAuthTokenResponseSchema>;
+
+export type OAuthAuthorizationRequestGeneratedApp = z.infer<typeof OAuthAuthorizationRequestGeneratedAppSchema>;
+
+export type OAuthLoginPayload = z.infer<typeof OAuthLoginPayloadSchema>;
+export type OAuthLoginDecisionResponse = z.infer<typeof OAuthLoginDecisionResponseSchema>;
+
+export type OAuthLoginUserNotFoundResponse = z.infer<typeof OAuthLoginUserNotFoundResponseSchema>;

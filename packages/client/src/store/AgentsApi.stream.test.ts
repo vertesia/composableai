@@ -72,7 +72,16 @@ function createHarness(): Harness {
             }
             const since = Number(url.searchParams.get('since') ?? 0);
             pollSince.push(since);
-            return Response.json({ messages: pollResponse(since) });
+            try {
+                return Response.json({ messages: pollResponse(since) });
+            } catch (err) {
+                // A thrown error carrying `status` models an HTTP error response (e.g. 404).
+                const status = (err as { status?: unknown }).status;
+                if (typeof status === 'number') {
+                    return Response.json({ error: (err as Error).message }, { status });
+                }
+                throw err;
+            }
         }
         if (url.pathname.endsWith(`/${AGENT_RUN_ID}`)) {
             return Response.json({ id: AGENT_RUN_ID, status: runStatus });
@@ -335,6 +344,29 @@ describe('AgentsApi.streamMessages reconnection', () => {
 
         abort.abort();
         await settle();
+    });
+
+    it('stops the polling fallback when the run no longer exists (404)', async () => {
+        const harness = createHarness();
+        harness.setHistory([{ t: AgentMessageType.UPDATE, m: 'history', ts: 1000 }]);
+        harness.setPollResponse(() => {
+            throw Object.assign(new Error('Not Found: Agent run not found'), { status: 404 });
+        });
+
+        const abort = new AbortController();
+        const done = harness.client.agents.streamMessages(AGENT_RUN_ID, undefined, undefined, abort.signal);
+        await settle();
+
+        for (let i = 0; i < 11; i++) {
+            await failCurrentConnection();
+        }
+        await settle(6000);
+
+        await expect(done).resolves.toBeNull();
+        expect(warnings.some((line) => line.includes('the run no longer exists (404)'))).toBe(true);
+        // A single 404 ends the loop: no retry warning, no further poll after the exit.
+        expect(warnings.filter((line) => line.includes('GET /updates failed while polling'))).toEqual([]);
+        expect(harness.pollSince).toHaveLength(1);
     });
 
     it('closes the stream when polling observes a terminal run status', async () => {

@@ -77,7 +77,7 @@ describe('centralAuthUrl', () => {
     it('falls back to the default broker when no auth endpoint is configured', () => {
         initEnv(undefined);
         expect(centralAuthUrl()).toBe(DEFAULT_CENTRAL_AUTH_URL);
-        expect(DEFAULT_CENTRAL_AUTH_URL).toBe('https://internal-auth.vertesia.app/');
+        expect(DEFAULT_CENTRAL_AUTH_URL).toBe('https://auth.vertesia.io/');
     });
 
     it('uses the configured auth endpoint when one is set', () => {

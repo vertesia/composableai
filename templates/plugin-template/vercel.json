@@ -15,6 +15,10 @@
   ],
   "rewrites": [
     {
+      "source": "/.well-known/oauth-client/vertesia-app",
+      "destination": "/api/oauth-client"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api"
     },
