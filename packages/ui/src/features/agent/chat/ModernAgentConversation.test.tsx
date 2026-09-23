@@ -61,6 +61,8 @@ vi.mock('./ModernAgentOutput/Header', () => ({
 vi.mock('./ModernAgentOutput/MessageInput', () => ({
     default: (props: {
         onSend: (message: string) => void;
+        value?: string;
+        onValueChange?: (value: string) => void;
         activeTaskCount?: number;
         activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
         onSelectWorkstream?: (workstreamId: string) => void;
@@ -81,6 +83,11 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
         return (
             <div>
                 {props.approvalModeSlot}
+                <textarea
+                    aria-label="composer draft"
+                    value={props.value}
+                    onChange={(event) => props.onValueChange?.(event.target.value)}
+                />
                 <button type="button" onClick={() => props.onSend('follow up')}>
                     composer send
                 </button>
@@ -1703,6 +1710,80 @@ describe('ModernAgentConversation send handling', () => {
                     _messageId: expect.any(String),
                 }),
             }),
+        );
+    });
+
+    it('restores the composer draft after an option response without sending it as part of that response', async () => {
+        const requestMessage = {
+            ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+            details: {
+                request_id: 'ask-user-1',
+                ux: {
+                    options: [
+                        { id: 'red', label: 'Red' },
+                        { id: 'blue', label: 'Blue' },
+                    ],
+                },
+            },
+        };
+        mockStreamState({ messages: [], isCompleted: false, agentRunStatus: 'RUNNING' });
+
+        const view = renderConversation({ hideMessageInput: false });
+        fireEvent.change(screen.getByRole('textbox', { name: 'composer draft' }), {
+            target: { value: 'My pending message' },
+        });
+
+        mockStreamState({ messages: [requestMessage], isCompleted: false, agentRunStatus: 'RUNNING' });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                title="Agent"
+                hideHeader
+                hideMessageInput={false}
+                showRightPanel={false}
+            />,
+        );
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: 'Blue' }));
+            await Promise.resolve();
+        });
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith(
+                'agent-run-1',
+                'UserInput',
+                expect.objectContaining({ message: 'blue' }),
+            );
+        });
+
+        mockStreamState({
+            messages: [
+                requestMessage,
+                {
+                    ...createMessage(AgentMessageType.QUESTION, 'blue'),
+                    details: { request_input_response: { request_id: 'ask-user-1' } },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                title="Agent"
+                hideHeader
+                hideMessageInput={false}
+                showRightPanel={false}
+            />,
+        );
+
+        expect((screen.getByRole('textbox', { name: 'composer draft' }) as HTMLTextAreaElement).value).toBe(
+            'My pending message',
+        );
+        expect(mocks.sendSignal).not.toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({ message: 'My pending message' }),
         );
     });
 
