@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import SignInAuthPending from './SignInAuthPending';
 import SignInEmailStep, { type TenantInfo } from './SignInEmailStep';
+import SignInPasswordStep from './SignInPasswordStep';
 import SignInProvidersStep from './SignInProvidersStep';
 import SignInReturningStep from './SignInReturningStep';
 import SignInTenantStep from './SignInTenantStep';
@@ -28,7 +29,7 @@ import {
 } from './signInUtils';
 
 /** The modes every host shares. Hosts may add their own; see the `M` parameter below. */
-export type SignInCoreMode = 'email' | 'providers' | 'tenant' | 'returning' | 'pending';
+export type SignInCoreMode = 'email' | 'providers' | 'tenant' | 'password' | 'returning' | 'pending';
 
 export interface SignInFlowOptions {
     /**
@@ -62,8 +63,13 @@ export interface SignInFlowController<M extends string = never> {
     storedSession: LastSuccessfulLogin | null;
     setStoredSession: (session: LastSuccessfulLogin | null) => void;
     pendingProvider: ProviderId | null;
-    /** Email accepted: go to the tenant step when one resolved, otherwise the provider list. */
+    /**
+     * Email accepted: go to the password step for a password tenant, the tenant step for any other
+     * resolved tenant, otherwise the provider list.
+     */
     onProceedFromEmail: (email: string, tenant?: TenantInfo) => void;
+    /** The remembered identity signs in with a password: show the password step for it. */
+    onContinueWithPassword: () => void;
     /** Back to the email step, dropping the resolved tenant. */
     onBack: () => void;
     /** "Not you?" — forget the remembered identity and sign out. */
@@ -92,8 +98,15 @@ export function useSignInFlow<M extends string = never>(options: SignInFlowOptio
     const onProceedFromEmail = useCallback((e: string, t: TenantInfo | undefined) => {
         setEmail(e);
         setTenant(t);
-        setMode(t ? 'tenant' : 'providers');
+        // A password tenant has no identity provider to pick; ask for its password directly.
+        setMode(t?.provider === 'password' ? 'password' : t ? 'tenant' : 'providers');
     }, []);
+
+    const onContinueWithPassword = useCallback(() => {
+        if (!storedSession) return;
+        setEmail(storedSession.email);
+        setMode('password');
+    }, [storedSession]);
 
     const onBack = useCallback(() => {
         setMode('email');
@@ -144,6 +157,7 @@ export function useSignInFlow<M extends string = never>(options: SignInFlowOptio
         setStoredSession,
         pendingProvider,
         onProceedFromEmail,
+        onContinueWithPassword,
         onBack,
         onNotYou,
         onProviderClicked,
@@ -178,6 +192,15 @@ export function SignInFlowSteps({ flow, redirectTo }: SignInFlowStepsProps) {
     if (mode === 'pending' && pendingProvider) {
         return <SignInAuthPending provider={pendingProvider} />;
     }
+    if (mode === 'password' && email) {
+        return (
+            <SignInPasswordStep
+                email={email}
+                tenantName={tenant?.label || tenant?.name || storedSession?.tenantName || undefined}
+                onBack={flow.onBack}
+            />
+        );
+    }
     if (mode === 'tenant' && tenant) {
         return (
             <SignInTenantStep
@@ -205,6 +228,7 @@ export function SignInFlowSteps({ flow, redirectTo }: SignInFlowStepsProps) {
                 session={storedSession}
                 onNotYou={flow.onNotYou}
                 onProviderClicked={flow.onProviderClicked}
+                onContinueWithPassword={flow.onContinueWithPassword}
                 redirectTo={redirectTo}
             />
         );

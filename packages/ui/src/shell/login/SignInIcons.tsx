@@ -1,4 +1,4 @@
-import { LockKeyhole } from 'lucide-react';
+import { KeyRound, LockKeyhole } from 'lucide-react';
 import type { ComponentType, SVGProps } from 'react';
 import type { ProviderId } from './signInUtils';
 
@@ -58,6 +58,7 @@ export const PROVIDER_ICONS: Record<ProviderId, ComponentType<{ className?: stri
     github: GithubIcon,
     microsoft: MicrosoftIcon,
     oidc: OidcIcon,
+    password: KeyRound,
 };
 
 export function providerIcon(provider: ProviderId | string | undefined): ComponentType<{ className?: string }> {

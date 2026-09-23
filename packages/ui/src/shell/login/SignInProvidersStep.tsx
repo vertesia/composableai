@@ -1,6 +1,6 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { SignInEmailRow, SignInProviderButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
-import { type ProviderId, providerLabel, startSignIn } from './signInUtils';
+import { type ProviderId, providerLabel, type RedirectProviderId, startSignIn } from './signInUtils';
 
 interface SignInProvidersStepProps {
     email: string;
@@ -9,7 +9,7 @@ interface SignInProvidersStepProps {
     redirectTo?: string;
 }
 
-const PROVIDERS: ProviderId[] = ['google', 'github', 'microsoft'];
+const PROVIDERS: RedirectProviderId[] = ['google', 'github', 'microsoft'];
 
 export default function SignInProvidersStep({
     email,
@@ -19,7 +19,7 @@ export default function SignInProvidersStep({
 }: SignInProvidersStepProps) {
     const { t } = useUITranslation();
 
-    const pick = async (provider: ProviderId) => {
+    const pick = async (provider: RedirectProviderId) => {
         onProviderClicked(provider);
         await startSignIn(provider, email, redirectTo);
     };

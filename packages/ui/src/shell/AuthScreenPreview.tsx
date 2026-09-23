@@ -91,6 +91,7 @@ export function AuthScreenPreview({
         storedSession: { ...identity, lastProvider: 'oidc', tenantName: branding.name },
         pendingProvider: 'oidc',
         setMode: noop,
+        onContinueWithPassword: noop,
         setEmail: noop,
         setTenant: noop,
         setStoredSession: noop,

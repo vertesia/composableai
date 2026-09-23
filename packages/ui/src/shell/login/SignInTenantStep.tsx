@@ -8,7 +8,7 @@ import {
     SignInStepLayout,
 } from './SignInPrimitives';
 import SignInWithProviderButton from './SignInWithProviderButton';
-import { type ProviderId, providerLabel } from './signInUtils';
+import { providerLabel, type RedirectProviderId } from './signInUtils';
 
 interface SignInTenantStepProps {
     email: string;
@@ -37,7 +37,7 @@ export default function SignInTenantStep({
     const { t } = useUITranslation();
     const tenantName = tenant.label || tenant.name || t('auth.blocked.tenantFallback');
     // Brands keep their identity; anything else routes through OIDC.
-    const provider: ProviderId =
+    const provider: RedirectProviderId =
         tenant.provider === 'google' || tenant.provider === 'github' || tenant.provider === 'microsoft'
             ? tenant.provider
             : 'oidc';
