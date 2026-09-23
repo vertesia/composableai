@@ -122,7 +122,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "axe-core": "^4.13.0",
         "culori": "^4.0.2",
-        "i18next-cli": "^1.73.3",
+        "i18next-cli": "^1.74.0",
         "jsdom": "^30.0.1",
         "rolldown": "catalog:",
         "tailwindcss": "^4.3.3",
