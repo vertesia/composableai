@@ -256,11 +256,18 @@ export const InCodeProcessDefinitionSchema: z.ZodType<InCodeProcessDefinition> =
     })
     .meta({ id: 'InCodeProcessDefinition' });
 
+const appOAuthApprovalSchema = z.strictObject({
+    scopes: z.array(z.string()),
+    approved_by: z.string(),
+    approved_at: z.string(),
+});
+
 export const AppInstallationSchema = z
     .strictObject({
         id: z.string(),
         project: z.string(),
         manifest: z.string(),
+        oauth_approval: appOAuthApprovalSchema.optional(),
         settings: z.looseObject({}).optional(),
         tool_allowlist: z
             .array(z.string())
@@ -331,6 +338,7 @@ export const AppDashboardDefinitionSchema = z
 
 export const AppManifestDataSchema = z
     .strictObject({
+        oauth_scopes: z.array(z.string()).optional(),
         name: z.string().meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
         }),
@@ -511,6 +519,7 @@ export const CompositeAppMessageOverridesSchema = z
 
 export const AppManifestSchema = z
     .strictObject({
+        oauth_scopes: z.array(z.string()).optional(),
         edit_revision: EditRevisionSchema,
         name: z.string().meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
@@ -630,6 +639,7 @@ export const AppInstallationWithManifestSchema = z
     .strictObject({
         id: z.string(),
         project: z.string(),
+        oauth_approval: appOAuthApprovalSchema.optional(),
         settings: z.looseObject({}).optional(),
         tool_allowlist: z
             .array(z.string())
@@ -675,6 +685,7 @@ export const AppInstallationListEntrySchema = z
     .strictObject({
         id: z.string(),
         project: z.string(),
+        oauth_approval: appOAuthApprovalSchema.optional(),
         settings: z.looseObject({}).optional(),
         tool_allowlist: z
             .array(z.string())
@@ -911,6 +922,10 @@ export const AppEventSubscriptionDefinitionSchema = z
 
 export const AppPackageSchema = z
     .strictObject({
+        oauth_scopes: z
+            .array(z.string())
+            .meta({ description: 'OAuth scopes requested by the app. Users must consent to project permissions.' })
+            .optional(),
         ui: AppUIConfigSchema.meta({ description: 'The UI configuration of the app' }).optional(),
         tools: z
             .array(AgentToolDefinitionSchema)

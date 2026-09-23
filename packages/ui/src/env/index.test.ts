@@ -81,6 +81,27 @@ describe('VertesiaEnvironment runtime configuration', () => {
         expect(window.AUTH_MODE).toBeUndefined();
     });
 
+    it('uses the gateway broker ahead of an app build endpoint', () => {
+        vi.stubGlobal('window', {
+            __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central', authUrl: 'https://auth.dev1.vertesia.io/' },
+        });
+        const env = new VertesiaEnvironment().init({
+            ...baseProps,
+            endpoints: { ...baseProps.endpoints, auth: 'https://internal-auth.vertesia.app/' },
+        });
+        expect(env.endpoints.auth).toBe('https://auth.dev1.vertesia.io/');
+        expect(window.AUTH_MODE).toBe('central');
+    });
+
+    it('preserves the app broker with an older central runtime contract', () => {
+        vi.stubGlobal('window', { __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central' } });
+        const env = new VertesiaEnvironment().init({
+            ...baseProps,
+            endpoints: { ...baseProps.endpoints, auth: 'https://auth.dev1.vertesia.io/' },
+        });
+        expect(env.endpoints.auth).toBe('https://auth.dev1.vertesia.io/');
+    });
+
     it('accepts injected Central Auth mode without Firebase configuration', () => {
         vi.stubGlobal('window', {
             __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central' },
@@ -218,4 +239,25 @@ describe('fixed Firebase tenant', () => {
         const env = new VertesiaEnvironment().init(baseProps, { VITE_FIREBASE_TENANT_ID: 'tenant' });
         expect(env.firebase).toBeUndefined();
     });
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+it('uses injected branch OAuth identity and API endpoints over build-time preview settings', () => {
+    const origin = 'https://app-gateway-dev-auth-test.api.dev1.vertesia.io';
+    const oauth = {
+        clientId: `${origin}/tenants/05948c_98b1eb/apps/test-app/.well-known/oauth-client/vertesia-app`,
+        redirectUri: `${origin}/tenants/05948c_98b1eb/apps/test-app/app/`,
+    };
+    const endpoints = {
+        studio: 'https://studio-server-dev-auth-test.api.dev1.vertesia.io',
+        zeno: 'https://zeno-server-dev-auth-test.api.dev1.vertesia.io',
+        sts: 'https://token-server-dev-auth-test.api.dev1.vertesia.io',
+    };
+    vi.stubGlobal('window', { __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central', oauth, endpoints } });
+    const env = new VertesiaEnvironment().init(baseProps);
+    expect(env.oauth).toEqual(oauth);
+    expect(env.endpoints).toMatchObject(endpoints);
+    expect(window.AUTH_MODE).toBe('central');
+    expect(env.firebase).toBeUndefined();
 });

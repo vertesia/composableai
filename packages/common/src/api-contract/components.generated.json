@@ -5203,6 +5203,25 @@
         "type": "string",
         "description": "Primary language for full-text search analysis. ISO 639-1 code (e.g., 'en', 'fr', 'ja', 'de'). Determines which Elasticsearch analyzer is used for the text field. Defaults to 'en' (English/standard analyzer).\n\nChanging this value requires a full reindex to take effect."
       },
+      "oauth_clients": {
+        "type": "object",
+        "properties": {
+          "external_clients": {
+            "type": "string",
+            "enum": [
+              "allow_all",
+              "allowlist"
+            ]
+          },
+          "allowed_origins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "browser_use": {
         "$ref": "#/components/schemas/BrowserUseProjectConfiguration",
         "description": "Project defaults and caps for browser_use agent workstreams."
@@ -5393,6 +5412,25 @@
       "main_language": {
         "type": "string",
         "description": "Primary language for full-text search analysis. ISO 639-1 code (e.g., 'en', 'fr', 'ja', 'de'). Determines which Elasticsearch analyzer is used for the text field. Defaults to 'en' (English/standard analyzer).\n\nChanging this value requires a full reindex to take effect."
+      },
+      "oauth_clients": {
+        "type": "object",
+        "properties": {
+          "external_clients": {
+            "type": "string",
+            "enum": [
+              "allow_all",
+              "allowlist"
+            ]
+          },
+          "allowed_origins": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
       },
       "browser_use": {
         "$ref": "#/components/schemas/BrowserUseProjectConfiguration",
@@ -6271,6 +6309,9 @@
         "type": "string",
         "const": "S256"
       },
+      "account_id": {
+        "type": "string"
+      },
       "project_id": {
         "type": "string"
       }
@@ -6312,6 +6353,9 @@
         "type": "string",
         "const": "S256"
       },
+      "account_id": {
+        "type": "string"
+      },
       "project_id": {
         "type": "string"
       }
@@ -6325,11 +6369,34 @@
     ],
     "additionalProperties": false
   },
+  "OAuthAuthorizationRequestGeneratedApp": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {
+        "type": "string"
+      },
+      "app_name": {
+        "type": "string"
+      },
+      "version_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "tenant_id",
+      "app_name"
+    ],
+    "additionalProperties": false
+  },
   "OAuthAuthorizationRequest": {
     "type": "object",
     "properties": {
       "request_id": {
         "type": "string"
+      },
+      "user_code": {
+        "type": "string",
+        "description": "User-visible device code to compare with the terminal before approving. Never the secret device_code."
       },
       "client_id": {
         "type": "string"
@@ -6364,8 +6431,14 @@
           "type": "string"
         }
       },
+      "requested_account_id": {
+        "type": "string"
+      },
       "requested_project_id": {
         "type": "string"
+      },
+      "generated_app": {
+        "$ref": "#/components/schemas/OAuthAuthorizationRequestGeneratedApp"
       },
       "project_binding_mode": {
         "$ref": "#/components/schemas/OAuthProjectBindingMode"
@@ -6407,6 +6480,54 @@
       "created_at",
       "expires_at"
     ],
+    "additionalProperties": false
+  },
+  "OAuthLoginPayload": {
+    "type": "object",
+    "properties": {
+      "id_token": {
+        "type": "string",
+        "minLength": 1
+      },
+      "account_id": {
+        "type": "string"
+      },
+      "project_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id_token"
+    ],
+    "additionalProperties": false
+  },
+  "OAuthLoginUserNotFoundResponse": {
+    "type": "object",
+    "properties": {
+      "error": {
+        "type": "string",
+        "const": "user_not_found"
+      },
+      "ensure_user_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "error",
+      "ensure_user_url"
+    ],
+    "additionalProperties": false
+  },
+  "OAuthLoginDecisionResponse": {
+    "type": "object",
+    "properties": {
+      "redirect_url": {
+        "type": "string"
+      },
+      "consent_url": {
+        "type": "string"
+      }
+    },
     "additionalProperties": false
   },
   "ApproveOAuthAuthorizationRequestPayload": {
@@ -17275,6 +17396,24 @@
     },
     "additionalProperties": false
   },
+  "UpdateAppInstallationOAuthApprovalPayload": {
+    "type": "object",
+    "properties": {
+      "approved_scopes": {
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "required": [
+      "approved_scopes"
+    ],
+    "additionalProperties": false,
+    "description": "Approve OAuth scopes for this project installation. An empty list revokes project approval."
+  },
   "UpdateAppInstallationToolAllowlistPayload": {
     "type": "object",
     "properties": {
@@ -18085,6 +18224,13 @@
         "items": {
           "$ref": "#/components/schemas/AppScaffoldModule"
         }
+      },
+      "oauth_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "App permissions declared in generated source. Defaults to sign-in only."
       },
       "appgen_package_spec": {
         "type": "string",
@@ -21649,6 +21795,12 @@
   "AppManifestData": {
     "type": "object",
     "properties": {
+      "oauth_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
       "name": {
         "type": "string",
         "description": "The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app)."
@@ -21779,6 +21931,12 @@
   "UpdateAppPayload": {
     "type": "object",
     "properties": {
+      "oauth_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
       "name": {
         "type": "string",
         "description": "The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app)."
@@ -21915,6 +22073,12 @@
   "AppManifest": {
     "type": "object",
     "properties": {
+      "oauth_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
       "edit_revision": {
         "type": "integer",
         "minimum": 1,
@@ -23116,6 +23280,13 @@
   "AppPackage": {
     "type": "object",
     "properties": {
+      "oauth_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "OAuth scopes requested by the app. Users must consent to project permissions."
+      },
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app"
@@ -23234,6 +23405,29 @@
       "manifest": {
         "type": "string"
       },
+      "oauth_approval": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "approved_by": {
+            "type": "string"
+          },
+          "approved_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scopes",
+          "approved_by",
+          "approved_at"
+        ],
+        "additionalProperties": false
+      },
       "settings": {
         "type": "object",
         "additionalProperties": true
@@ -23299,6 +23493,29 @@
       },
       "project": {
         "type": "string"
+      },
+      "oauth_approval": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "approved_by": {
+            "type": "string"
+          },
+          "approved_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scopes",
+          "approved_by",
+          "approved_at"
+        ],
+        "additionalProperties": false
       },
       "settings": {
         "type": "object",
@@ -23369,6 +23586,29 @@
       },
       "project": {
         "type": "string"
+      },
+      "oauth_approval": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "approved_by": {
+            "type": "string"
+          },
+          "approved_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "scopes",
+          "approved_by",
+          "approved_at"
+        ],
+        "additionalProperties": false
       },
       "settings": {
         "type": "object",
@@ -23660,6 +23900,53 @@
       "account_id",
       "project_id",
       "type"
+    ],
+    "additionalProperties": false
+  },
+  "AppSessionTokenRequest": {
+    "type": "object",
+    "properties": {
+      "app_name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "ttl_seconds": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 900
+      }
+    },
+    "required": [
+      "app_name"
+    ],
+    "additionalProperties": false
+  },
+  "AppSessionTokenResponse": {
+    "type": "object",
+    "properties": {
+      "token": {
+        "type": "string"
+      },
+      "token_type": {
+        "type": "string",
+        "const": "Bearer"
+      },
+      "expires_in": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "token",
+      "token_type",
+      "expires_in"
     ],
     "additionalProperties": false
   },
