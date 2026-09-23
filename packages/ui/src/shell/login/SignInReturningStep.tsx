@@ -21,8 +21,8 @@ interface SignInReturningStepProps {
     session: LastSuccessfulLogin;
     onNotYou: () => void;
     onProviderClicked: (provider: ProviderId) => void;
-    /** A password user has no provider to redirect to; the parent shows the password step instead. */
-    onContinueWithPassword: () => void;
+    /** The address signs in with a password, so the parent shows the password step instead. */
+    onPasswordRequired: (email: string) => void;
     redirectTo?: string;
 }
 
@@ -30,7 +30,7 @@ export default function SignInReturningStep({
     session,
     onNotYou,
     onProviderClicked,
-    onContinueWithPassword,
+    onPasswordRequired,
     redirectTo,
 }: SignInReturningStepProps) {
     const { t } = useUITranslation();
@@ -49,11 +49,13 @@ export default function SignInReturningStep({
 
     const continueWithLastProvider = async () => {
         if (lastProvider === 'password') {
-            onContinueWithPassword();
+            onPasswordRequired(session.email);
             return;
         }
         onProviderClicked(lastProvider);
-        await startSignIn(lastProvider, session.email, redirectTo);
+        // The stored provider can be stale: the address may now resolve to a password tenant.
+        const result = await startSignIn(lastProvider, session.email, redirectTo);
+        if (!result.ok && result.reason === 'password-required') onPasswordRequired(session.email);
     };
 
     return (

@@ -191,11 +191,10 @@ function SigninScreenImpl({
         setMode(t?.provider === 'password' ? 'password' : t ? 'tenant' : 'providers');
     }, []);
 
-    const onContinueWithPassword = useCallback(() => {
-        if (!storedSession) return;
-        setEmail(storedSession.email);
+    const onPasswordRequired = useCallback((e: string) => {
+        setEmail(e);
         setMode('password');
-    }, [storedSession]);
+    }, []);
 
     const onBack = useCallback(() => {
         setMode('email');
@@ -360,17 +359,25 @@ function SigninScreenImpl({
                 tenant={tenant}
                 onBack={onBack}
                 onProviderClicked={() => onProviderClicked((tenant.provider ?? 'oidc') as ProviderId)}
+                onPasswordRequired={onPasswordRequired}
             />
         );
     } else if (mode === 'providers') {
-        content = <SignInProvidersStep email={email} onBack={onBack} onProviderClicked={onProviderClicked} />;
+        content = (
+            <SignInProvidersStep
+                email={email}
+                onBack={onBack}
+                onProviderClicked={onProviderClicked}
+                onPasswordRequired={onPasswordRequired}
+            />
+        );
     } else if (mode === 'returning' && storedSession) {
         content = (
             <SignInReturningStep
                 session={storedSession}
                 onNotYou={onNotYou}
                 onProviderClicked={onProviderClicked}
-                onContinueWithPassword={onContinueWithPassword}
+                onPasswordRequired={onPasswordRequired}
             />
         );
     } else {

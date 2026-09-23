@@ -6,6 +6,8 @@ interface SignInProvidersStepProps {
     email: string;
     onBack: () => void;
     onProviderClicked: (provider: ProviderId) => void;
+    /** The address resolved to a password tenant on retry, so the parent shows the password step. */
+    onPasswordRequired: (email: string) => void;
     redirectTo?: string;
 }
 
@@ -15,13 +17,15 @@ export default function SignInProvidersStep({
     email,
     onBack,
     onProviderClicked,
+    onPasswordRequired,
     redirectTo,
 }: SignInProvidersStepProps) {
     const { t } = useUITranslation();
 
     const pick = async (provider: RedirectProviderId) => {
         onProviderClicked(provider);
-        await startSignIn(provider, email, redirectTo);
+        const result = await startSignIn(provider, email, redirectTo);
+        if (!result.ok && result.reason === 'password-required') onPasswordRequired(email);
     };
 
     return (
