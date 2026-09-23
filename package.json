@@ -28,10 +28,10 @@
     "devDependencies": {
         "@biomejs/biome": "2.5.13",
         "rimraf": "^6.1.3",
-        "turbo": "^2.10.12",
+        "turbo": "^2.10.13",
         "typescript": "catalog:",
         "vite": "catalog:"
     },
-    "packageManager": "pnpm@12.3.4",
+    "packageManager": "pnpm@12.4.2",
     "gitHead": "ea552337206e77c256478b76e19b4235e70bf769"
 }

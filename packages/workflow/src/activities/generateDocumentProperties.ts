@@ -158,7 +158,7 @@ export async function generateDocumentProperties(
     const type = doc.type ? await client.types.catalog.resolve(doc.type) : undefined;
 
     if (!type?.object_schema) {
-        log.info(`Object ${objectId} has no schema`);
+        log.debug(`Object ${objectId} has no schema`);
         return { document: objectId, status: 'skipped', message: 'no schema defined on type' };
     }
 
@@ -225,7 +225,7 @@ export async function generateDocumentProperties(
     const imageRef = needsVisualEvidence && !evidenceProvided ? getImageRef() : undefined;
 
     if (!content && !imageRef && !scopedImages) {
-        log.warn(`Object ${objectId} has no text or supported vision source`);
+        log.info(`Object ${objectId} has no text or supported vision source`);
         return { status: 'failed', error: 'no-source' };
     }
 
@@ -240,7 +240,7 @@ export async function generateDocumentProperties(
     // Strip properties marked x-extract:false so constrained decoding cannot invent them.
     const extractionSchema = schemaForExtraction(type.object_schema);
 
-    log.info(
+    log.debug(
         `Extracting information from object ${objectId} with type ${type.name}`,
         payload.debug_mode ? { params } : undefined,
     );
@@ -285,7 +285,7 @@ export async function generateDocumentProperties(
         throw error;
     }
 
-    log.info(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
+    log.debug(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
     const extracted = infoRes.result.object<JSONObject>() ?? {};
     const existing =
         doc.properties && typeof doc.properties === 'object' && !Array.isArray(doc.properties)
