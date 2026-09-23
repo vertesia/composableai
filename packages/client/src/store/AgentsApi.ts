@@ -435,6 +435,15 @@ export class AgentsApi extends ApiTopic {
             );
         };
 
+        // A 404 while polling means the run itself is gone (deleted, or never persisted): nothing
+        // will ever arrive, so stop instead of polling the missing resource every 5s forever.
+        const isRunGone = (error: unknown): boolean =>
+            typeof error === 'object' && error !== null && (error as { status?: unknown }).status === 404;
+        const exitBecauseRunGone = () => {
+            console.warn(`Agent stream ${id}: the run no longer exists (404); stopping the polling fallback.`);
+            exit(null);
+        };
+
         const pollTick = async () => {
             if (isClosed || !isPolling) return;
             let polledMessages = false;
@@ -456,6 +465,10 @@ export class AgentsApi extends ApiTopic {
                     }
                 }
             } catch (err) {
+                if (isRunGone(err)) {
+                    exitBecauseRunGone();
+                    return;
+                }
                 warnPollFailure('GET /updates', err);
             }
             if (isClosed || !isPolling) return;
@@ -468,6 +481,10 @@ export class AgentsApi extends ApiTopic {
                 }
                 if (polledMessages) consecutivePollFailures = 0;
             } catch (err) {
+                if (isRunGone(err)) {
+                    exitBecauseRunGone();
+                    return;
+                }
                 warnPollFailure('run status check', err);
             }
             if (isClosed || !isPolling) return;
