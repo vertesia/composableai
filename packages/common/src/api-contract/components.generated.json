@@ -9205,6 +9205,9 @@
   "InteractionForkPayload": {
     "type": "object",
     "properties": {
+      "newName": {
+        "type": "string"
+      },
       "keepTags": {
         "type": "boolean"
       },
@@ -13647,6 +13650,9 @@
   "PromptTemplateForkPayload": {
     "type": "object",
     "properties": {
+      "newName": {
+        "type": "string"
+      },
       "keepTags": {
         "type": "boolean"
       },
