@@ -95,6 +95,6 @@ export async function detectDocumentLanguage(payload: DSLActivityExecutionPayloa
     // workflows anyway for consistency with the other intake writes.
     await client.objects.update(objectId, { metadata: { ...doc.metadata, languages } }, { suppressWorkflows: true });
 
-    log.info(`detectDocumentLanguage: set languages for ${objectId}`, { languages, runId: res.id });
+    log.debug(`detectDocumentLanguage: set languages for ${objectId}`, { languages, runId: res.id });
     return { status: 'completed', languages };
 }
