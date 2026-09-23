@@ -100,11 +100,11 @@
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
         "dotenv": "^17.4.2",
-        "hono": "^4.13.7",
+        "hono": "^4.13.8",
         "html-parse-stringify": "^4.0.1",
         "lucide-react": "^1.46.0",
         "react-vega": "^8.0.0",
-        "use-sync-external-store": "^1.6.0",
+        "use-sync-external-store": "^1.7.0",
         "vega": "^6.4.0",
         "vega-embed": "^7.2.0",
         "vega-lite": "^6.4.3"

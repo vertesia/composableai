@@ -1586,6 +1586,9 @@ function ModernAgentConversationInner({
     const conversationRef = useRef<HTMLDivElement | null>(null);
     const conversationLayoutRef = useRef<HTMLDivElement | null>(null);
     const [isSending, setIsSending] = useState(false);
+    // Request-input overlays replace the composer while the user chooses a response. Keep the
+    // ordinary composer draft here so that temporary unmount does not discard it.
+    const [composerValue, setComposerValue] = useState('');
     const [isCompactingContext, setIsCompactingContext] = useState(false);
     const [internalViewMode, setInternalViewMode] = useState<AgentConversationViewMode>('sliding');
     const viewMode = controlledViewMode ?? internalViewMode;
@@ -2908,6 +2911,8 @@ function ModernAgentConversationInner({
                                     {composerContext}
                                     <MessageInput
                                         onSend={handleSendMessage}
+                                        value={composerValue}
+                                        onValueChange={setComposerValue}
                                         onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
                                         approvalModeSlot={
                                             interactive && toolApprovalMode ? (

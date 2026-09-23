@@ -1,4 +1,10 @@
-import { AUDIO_RENDITION_NAME, type AudioMetadata, ContentNature, type ContentObject } from '@vertesia/common';
+import {
+    AUDIO_RENDITION_NAME,
+    type AudioMetadata,
+    type AudioResult,
+    ContentNature,
+    type ContentObject,
+} from '@vertesia/common';
 import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -12,15 +18,66 @@ interface AudioPanelProps {
     source?: string;
     /** ContentObject — uses the audio rendition or falls back to the original if web-supported. */
     object?: ContentObject;
+    /** Audio result metadata used to make raw PCM playable in browser media controls. */
+    audio?: AudioResult;
     /** Extra classes for the wrapper. */
     className?: string;
+}
+
+export interface PcmFormat {
+    sampleRate: number;
+    channels: number;
+}
+
+function pcmFormat(audio?: AudioResult): PcmFormat | undefined {
+    if (
+        audio?.container !== 'raw' ||
+        audio.codec !== 'pcm' ||
+        audio.sample_encoding !== 'int16' ||
+        audio.byte_order !== 'little' ||
+        !audio.sample_rate ||
+        !audio.channels
+    ) {
+        return undefined;
+    }
+
+    return { sampleRate: audio.sample_rate, channels: audio.channels };
+}
+
+/** Wrap provider PCM16-LE bytes in a WAV header so browser media controls can decode them. */
+export function pcm16LeToWav(pcm: ArrayBuffer, format: PcmFormat): Blob {
+    const headerSize = 44;
+    const bytesPerSample = 2;
+    const blockAlign = format.channels * bytesPerSample;
+    const bytesPerSecond = format.sampleRate * blockAlign;
+    const wav = new ArrayBuffer(headerSize);
+    const view = new DataView(wav);
+    const writeAscii = (offset: number, value: string) => {
+        for (let index = 0; index < value.length; index++) view.setUint8(offset + index, value.charCodeAt(index));
+    };
+
+    writeAscii(0, 'RIFF');
+    view.setUint32(4, 36 + pcm.byteLength, true);
+    writeAscii(8, 'WAVE');
+    writeAscii(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, format.channels, true);
+    view.setUint32(24, format.sampleRate, true);
+    view.setUint32(28, bytesPerSecond, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, 16, true);
+    writeAscii(36, 'data');
+    view.setUint32(40, pcm.byteLength, true);
+
+    return new Blob([wav, pcm], { type: 'audio/wav' });
 }
 
 /**
  * Renders an audio player from a direct URL, a storage source path, or a Vertesia ContentObject.
  * Resolution priority: `url` > `source` > `object`. Duration is shown only in object mode.
  */
-export function AudioPanel({ url, source, object, className }: AudioPanelProps) {
+export function AudioPanel({ url, source, object, audio, className }: AudioPanelProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const [audioUrl, setAudioUrl] = useState<string | undefined>(url);
@@ -34,19 +91,37 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
         !!object && object.metadata?.type === ContentNature.Audio && !audioRendition && !isOriginalWebSupported;
 
     useEffect(() => {
-        if (url) {
-            setAudioUrl(url);
-            setIsLoading(false);
-            return;
-        }
-
+        let generatedUrl: string | undefined;
+        const controller = new AbortController();
+        const { signal } = controller;
         setAudioUrl(undefined);
+
+        const setPlayableUrl = async (downloadUrl: string) => {
+            signal.throwIfAborted();
+            const format = pcmFormat(audio);
+            if (!format) {
+                if (!signal.aborted) setAudioUrl(downloadUrl);
+                return;
+            }
+
+            const response = await fetch(downloadUrl, { signal });
+            if (!response.ok) throw new Error(`Failed to fetch PCM audio: ${response.status}`);
+            const pcm = await response.arrayBuffer();
+            signal.throwIfAborted();
+            generatedUrl = URL.createObjectURL(pcm16LeToWav(pcm, format));
+            setAudioUrl(generatedUrl);
+        };
 
         const load = async () => {
             try {
+                if (url) {
+                    await setPlayableUrl(url);
+                    return;
+                }
+
                 if (source) {
                     const downloadUrl = await client.files.getDownloadUrl(source);
-                    setAudioUrl(downloadUrl.url);
+                    await setPlayableUrl(downloadUrl.url);
                     return;
                 }
 
@@ -60,22 +135,30 @@ export function AudioPanel({ url, source, object, className }: AudioPanelProps) 
                     downloadUrl = await client.files.getDownloadUrl(object.content.source);
                 }
                 if (downloadUrl) {
-                    setAudioUrl(downloadUrl.url);
+                    await setPlayableUrl(downloadUrl.url);
                 }
             } catch (error) {
-                console.error('Failed to get audio URL', error);
+                if (!signal.aborted) console.error('Failed to get audio URL', error);
             } finally {
-                setIsLoading(false);
+                if (!signal.aborted) {
+                    setIsLoading(false);
+                }
             }
         };
 
-        if (source || object) {
+        if (url || source || object) {
             setIsLoading(true);
             void load();
         } else {
             setIsLoading(false);
         }
-    }, [url, source, object, audioRendition, isOriginalWebSupported, client]);
+        return () => {
+            controller.abort();
+            if (generatedUrl) {
+                URL.revokeObjectURL(generatedUrl);
+            }
+        };
+    }, [url, source, object, audio, audioRendition, isOriginalWebSupported, client]);
 
     if (showsObjectFallbackEmpty) {
         return (
