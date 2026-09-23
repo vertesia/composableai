@@ -211,7 +211,7 @@ async function generateRenditionWithDimensions(
     // Calculate scaled dimensions
     const dimensions = calculateScaledDimensions(metadata.width, metadata.height, maxResolution);
 
-    log.info(
+    log.debug(
         `Video rendition dimensions: ${metadata.width}x${metadata.height} -> ${dimensions.width}x${dimensions.height}`,
     );
 
@@ -244,7 +244,7 @@ async function generateRenditionWithDimensions(
         outputFile,
     ];
 
-    log.info(`Generating ${maxResolution}p video rendition`, { command: 'ffmpeg', args: command });
+    log.debug(`Generating ${maxResolution}p video rendition`, { command: 'ffmpeg', args: command });
 
     try {
         const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
@@ -257,7 +257,7 @@ async function generateRenditionWithDimensions(
         // Verify output file was created
         try {
             await fs.promises.access(outputFile, fs.constants.F_OK);
-            log.info(`Generated ${maxResolution}p video rendition: ${outputFile}`);
+            log.debug(`Generated ${maxResolution}p video rendition: ${outputFile}`);
             return {
                 file: outputFile,
                 width: dimensions.width,
@@ -292,7 +292,7 @@ async function generateAudioRendition(videoPath: string, outputDir: string): Pro
         outputFile,
     ];
 
-    log.info('Generating audio-only rendition', { command: 'ffmpeg', args: command });
+    log.debug('Generating audio-only rendition', { command: 'ffmpeg', args: command });
 
     try {
         const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
@@ -305,7 +305,7 @@ async function generateAudioRendition(videoPath: string, outputDir: string): Pro
         // Verify output file was created
         try {
             await fs.promises.access(outputFile, fs.constants.F_OK);
-            log.info(`Generated audio rendition: ${outputFile}`);
+            log.debug(`Generated audio rendition: ${outputFile}`);
             return outputFile;
         } catch {
             log.warn('Audio rendition not generated');
@@ -351,7 +351,7 @@ async function generateScreenshot(
         outputFile,
     ];
 
-    log.info(`Generating ${name} at ${timestamp}s`, { command: 'ffmpeg', args: command });
+    log.debug(`Generating ${name} at ${timestamp}s`, { command: 'ffmpeg', args: command });
 
     try {
         const { stderr } = await execActivityFile('ffmpeg', command);
@@ -364,7 +364,7 @@ async function generateScreenshot(
         // Verify output file was created
         try {
             await fs.promises.access(outputFile, fs.constants.F_OK);
-            log.info(`Generated ${name}: ${outputFile}`);
+            log.debug(`Generated ${name}: ${outputFile}`);
             return {
                 file: outputFile,
                 width: dimensions.width,
@@ -396,7 +396,7 @@ async function uploadFile(
     const source = new NodeStreamSource(fileStream, fileName, mimeType, storagePath);
 
     const result = await client.files.uploadFile(source);
-    log.info(`Uploaded file to ${storagePath}`, { result });
+    log.debug(`Uploaded file to ${storagePath}`, { result });
 
     return result;
 }
@@ -446,7 +446,7 @@ export async function prepareVideo(
     const skipTranscode = params.skipTranscode ?? false;
     const videoPreset = resolveVideoPreset(params.videoPreset ?? 'medium', Context.current().info.attempt);
 
-    log.info(`Preparing video for ${objectId}`, {
+    log.debug(`Preparing video for ${objectId}`, {
         maxResolution,
         thumbnailSize,
         posterSize,
@@ -487,7 +487,7 @@ export async function prepareVideo(
         if (!shouldTranscodeVideo(skipTranscode)) {
             log.info('Skipping video rendition transcode by configuration');
         } else {
-            log.info('Generating video rendition');
+            log.debug('Generating video rendition');
             renditionResult = await generateRenditionWithDimensions(
                 videoFile,
                 tempOutputDir,
@@ -498,7 +498,7 @@ export async function prepareVideo(
         }
 
         // Step 3 & 4: Generate thumbnail and poster in parallel
-        log.info('Generating thumbnail and poster');
+        log.debug('Generating thumbnail and poster');
         const thumbnailTimestamp = Math.max(metadata.duration * THUMBNAIL_TIMESTAMP_RATIO, MIN_SCREENSHOT_TIMESTAMP);
         const posterTimestamp = Math.max(
             Math.min(metadata.duration * POSTER_TIMESTAMP_RATIO, POSTER_TIMESTAMP_MAX),
@@ -513,7 +513,7 @@ export async function prepareVideo(
         // Step 5: Generate audio rendition (if video has audio and requested)
         let audioFile: string | null = null;
         if (generateAudio && metadata.hasAudio) {
-            log.info('Generating audio rendition');
+            log.debug('Generating audio rendition');
             audioFile = await generateAudioRendition(videoFile, tempOutputDir);
         } else if (generateAudio && !metadata.hasAudio) {
             log.info('Skipping audio rendition - video has no audio track');
