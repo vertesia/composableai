@@ -90,7 +90,7 @@
         "react-error-boundary": "^6.1.5",
         "react-i18next": "^17.0.14",
         "react-markdown": "^10.1.0",
-        "react-pdf": "^10.5.0",
+        "react-pdf": "^11.0.0",
         "react-remove-scroll": "^2.7.2",
         "react-remove-scroll-bar": "^2.3.8",
         "react-resizable-panels": "^4.12.4",
