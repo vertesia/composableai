@@ -97,13 +97,14 @@ function createPromptTemplate(overrides: Partial<PromptTemplate>): PromptTemplat
         role: PromptRole.user,
         status: PromptStatus.draft,
         version: 1,
+        edit_revision: 1,
         content: '',
         content_type: TemplateType.jst,
         project: 'project-1',
         created_by: 'user-1',
         updated_by: 'user-1',
-        created_at: new Date('2026-01-01T00:00:00.000Z'),
-        updated_at: new Date('2026-01-01T00:00:00.000Z'),
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
         ...overrides,
     };
 }

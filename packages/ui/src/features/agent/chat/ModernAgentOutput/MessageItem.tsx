@@ -27,7 +27,7 @@ import type React from 'react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import dayjs from '../../../../core/utils/dayjs.js';
 import { useDownloadFile } from '../../../store/objects/components/useDownloadFile.js';
-import { AgentRunFeedback, agentMessageFeedbackId } from '../AgentRunFeedback';
+import { AgentRunFeedback, agentMessageFeedbackId, isAgentMessageRatable } from '../AgentRunFeedback';
 import { PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
 import { DocumentEditingActionCard, parseMarkdownEditingAction } from '../DocumentEditingActionCard.js';
@@ -683,7 +683,7 @@ function MessageItemComponent({
                         )
                     )}
 
-                    {feedbackAgentRunId && message.type === AgentMessageType.ANSWER && (
+                    {feedbackAgentRunId && isAgentMessageRatable(message) && (
                         <AgentRunFeedback
                             agentRunId={feedbackAgentRunId}
                             messageId={agentMessageFeedbackId(message)}

@@ -170,7 +170,12 @@ export const AgentRunFeedbackCountsSchema = z
         last_rating: AgentRunFeedbackRatingSchema.optional(),
         last_reason_code: AgentRunFeedbackReasonCodeSchema.optional(),
     })
-    .meta({ id: 'AgentRunFeedbackCounts', description: 'Ratings over the retained feedback entries.' });
+    .meta({
+        id: 'AgentRunFeedbackCounts',
+        description:
+            'Ratings over the retained feedback entries, one vote per rater: a user who rated the run and ' +
+            'one of its answers counts once, by their latest rating.',
+    });
 
 export const AgentRunFeedbackResponseSchema = z
     .strictObject({

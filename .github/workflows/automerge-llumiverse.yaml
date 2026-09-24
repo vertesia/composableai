@@ -29,7 +29,21 @@ jobs:
     concurrency:
       group: automerge-llumiverse-${{ github.event.workflow_run.head_branch }}
       cancel-in-progress: false
+    outputs:
+      attention_reason: ${{ steps.eligibility.outputs.attention_reason || steps.repair.outputs.attention_reason }}
     steps:
+      # workflow_run is privileged: execute policy only from the trusted workflow commit.
+      - name: Checkout trusted CI policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+          sparse-checkout: .github/bin
+      - name: Set up Node.js for CI policy
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
       - name: Check automerge eligibility
         id: eligibility
         env:
@@ -122,6 +136,7 @@ jobs:
           fi
           if ! jq -e '.[0].files | all(.changeType == "MODIFIED")' <<< "$prs_json" >/dev/null; then
             echo "Skipping PR #$pr_number: PR includes non-modified file changes."
+            echo "attention_reason=Submodule sync no longer qualifies for automatic merging. Review the changes and merge manually." >> "$GITHUB_OUTPUT"
             jq -r '.[0].files[] | select(.changeType != "MODIFIED") | "- \(.changeType) \(.path)"' <<< "$prs_json"
             exit 0
           fi
@@ -133,6 +148,7 @@ jobs:
           disallowed_files="$(gh pr diff "$pr_url" --repo "$REPO" --name-only | grep -vE '^(llumiverse|pnpm-lock\.yaml|packages/common/src/api-contract/components\.generated\.json|packages/common/src/store/(intake|editing)-policy-schema\.generated\.ts)$' || true)"
           if [[ -n "$disallowed_files" ]]; then
             echo "Skipping PR #$pr_number: PR changes files outside the llumiverse submodule, lockfile, and generated schemas."
+            echo "attention_reason=Submodule sync no longer qualifies for automatic merging. Review the changes and merge manually." >> "$GITHUB_OUTPUT"
             echo "$disallowed_files"
             exit 0
           fi
@@ -151,6 +167,7 @@ jobs:
             ))
           ' <<< "$prs_json" >/dev/null; then
             echo "Skipping PR #$pr_number: PR contains commits not authored by the sync workflow."
+            echo "attention_reason=Submodule sync no longer qualifies for automatic merging. Review the changes and merge manually." >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -171,34 +188,9 @@ jobs:
             "lint.yaml"
           )
 
-          for workflow in "${required_workflows[@]}"; do
-            runs_json="$(gh api --method GET \
-              "repos/${REPO}/actions/workflows/${workflow}/runs" \
-              -f branch="$HEAD_BRANCH" -f event=pull_request -f head_sha="$HEAD_SHA" -f per_page=20)"
-            run_json="$(jq -c --arg sha "$HEAD_SHA" --argjson pr "$pr_number" \
-              '[.workflow_runs[] | select(.head_sha == $sha and any(.pull_requests[]?; .number == $pr))] | sort_by(.id) | last // empty' \
-              <<< "$runs_json")"
-
-            if [[ -z "$run_json" ]]; then
-              echo "Waiting for $workflow to run for $HEAD_SHA."
-              exit 0
-            fi
-
-            status="$(jq -r '.status' <<< "$run_json")"
-            conclusion="$(jq -r '.conclusion // ""' <<< "$run_json")"
-            url="$(jq -r '.html_url' <<< "$run_json")"
-
-            if [[ "$status" != "completed" ]]; then
-              echo "Waiting for $workflow to complete for $HEAD_SHA: $url"
-              exit 0
-            fi
-            if [[ "$conclusion" != "success" ]]; then
-              echo "Not merging PR #$pr_number: $workflow concluded '$conclusion': $url"
-              exit 0
-            fi
-
-            echo "$workflow passed for $HEAD_SHA: $url"
-          done
+          if ! node .github/bin/automerge-ci.mjs "$pr_number" "${required_workflows[@]}"; then
+            exit 0
+          fi
 
           {
             echo "should_merge=true"
@@ -346,7 +338,7 @@ jobs:
           steps.merge.outputs.should_repair_lock == 'true'
         run: git submodule update --init --recursive --depth=1
 
-      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
         if: |
           steps.eligibility.outputs.should_repair_lock == 'true' ||
           steps.merge.outputs.should_repair_lock == 'true'
@@ -378,6 +370,7 @@ jobs:
           node-version: 24
 
       - name: Repair pnpm lock conflict
+        id: repair
         if: |
           steps.eligibility.outputs.should_repair_lock == 'true' ||
           steps.merge.outputs.should_repair_lock == 'true'
@@ -392,6 +385,7 @@ jobs:
           set -e
           if [[ "$status" == "2" ]]; then
             echo "PR conflict is not pnpm-lock.yaml-only; leaving it for manual resolution."
+            echo "attention_reason=Submodule sync has conflicts beyond the lockfile and requires manual resolution." >> "$GITHUB_OUTPUT"
             exit 0
           fi
           exit "$status"
@@ -413,3 +407,14 @@ jobs:
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: ${{ steps.updated-pnpm-cache.outputs.key }}
+
+  notify-failure:
+    needs: approve-and-merge
+    if: >-
+      always() && (needs.approve-and-merge.result == 'failure' ||
+      needs.approve-and-merge.outputs.attention_reason != '')
+    uses: ./.github/workflows/notify-automation.yaml # zizmor: ignore[self-repository] actionlint does not yet support $/ workflow references.
+    with:
+      branch: ${{ github.event.workflow_run.head_branch }}
+      sha: ${{ github.event.workflow_run.head_sha }}
+      reason: ${{ needs.approve-and-merge.outputs.attention_reason || 'Automatic merge or conflict repair failed. Review the workflow run and merge the PR manually once resolved.' }}

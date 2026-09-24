@@ -51,7 +51,7 @@ program
     .option('--env <environment_name>', 'The Vertesia Execution Environment Name', 'GCP Vertex AI')
     .option('--sts-url <sts_url>', 'The Vertesia STS issuer URL to trust', process.env.VERTESIA_STS_URL)
     .action((options) => {
-        void configureVertexAiEnvironment(
+        return configureVertexAiEnvironment(
             vertesia,
             options.env,
             options.region,
@@ -62,4 +62,4 @@ program
         );
     });
 
-program.parseAsync(process.argv);
+await program.parseAsync(process.argv);

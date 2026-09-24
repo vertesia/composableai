@@ -23,11 +23,11 @@ export default defineConfig({
         alias: [
             ...Object.entries(SUBPATH_INDEX_FILES).map(([sub, file]) => ({
                 find: `@vertesia/ui/${sub}`,
-                replacement: resolve(__dirname, file),
+                replacement: resolve(import.meta.dirname, file),
             })),
             {
                 find: '@vertesia/rich-text',
-                replacement: resolve(__dirname, '../rich-text/src/index.ts'),
+                replacement: resolve(import.meta.dirname, '../rich-text/src/index.ts'),
             },
         ],
     },

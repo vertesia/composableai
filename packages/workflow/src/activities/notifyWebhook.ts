@@ -254,7 +254,8 @@ async function createRequestBody(
     params: NotifyWebhookParams,
     api_version: number | undefined,
 ): Promise<string> {
-    if (api_version === undefined || Number(api_version) < ApiVersions.COMPLETION_RESULT_V1) {
+    // Like request payload validation, an omitted version selects the current API format.
+    if (api_version !== undefined && Number(api_version) < ApiVersions.COMPLETION_RESULT_V1) {
         return createOldRequestBody(payload, params);
     } else {
         return createLatestRequestBody(payload, params, api_version);

@@ -286,10 +286,20 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         // normalized by executeInteractionFromActivity.
         const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
         if (rateLimitFailure) {
+            // Rate-limit/backoff: Temporal retries the activity, so this is not a service failure.
+            log.warn(`Rate limited while executing interaction ${interactionName}; retrying`, {
+                error: rateLimitFailure,
+            });
             throw rateLimitFailure;
         }
         const executionError = toExecutionError(error);
-        log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
+        if (isRenditionPending(executionError)) {
+            log.debug(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
+        } else if (executionError.statusCode === 429) {
+            log.warn(`Resource exhausted while executing interaction ${interactionName}`, { error: executionError });
+        } else {
+            log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
+        }
         if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
             throw new ResourceExhaustedError(executionError.statusCode, 'Resource exhausted - rate limit exceeded');
         } else if (executionError.message.includes('Failed to validate merged prompt schema')) {
@@ -412,6 +422,8 @@ export async function executeInteractionFromActivity(
     const rateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
     const slot = await client.interactions.requestSlot({
         interaction: interactionName,
+        inference_profile: config.inference_profile,
+        inherit_model_config: config.inherit_model_config,
         environment_id: config.environment,
         model_id: config.model,
         rate_limit_id: rateLimitId,
@@ -439,7 +451,7 @@ export async function executeInteractionFromActivity(
             workflow,
         })
         .catch((error: unknown) => {
-            log.error(`Error executing interaction ${interactionName}`, { error });
+            // Logged once by the caller's catch (executeInteraction) — do not log here as well.
             const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
             throw rateLimitFailure ?? error;
         });
@@ -482,6 +494,10 @@ interface ExecutionError extends Error {
     code?: number;
     retryable?: boolean;
     errorCode?: unknown;
+}
+
+function isRenditionPending(error: ExecutionError): boolean {
+    return (error.statusCode ?? error.status ?? error.code) === 412 && error.retryable !== false;
 }
 
 function toExecutionError(error: unknown): ExecutionError {

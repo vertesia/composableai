@@ -1,3 +1,4 @@
+import { InferenceProfileIdSchema } from './inference-profile.js';
 // Runtime schemas for the process API domain.
 
 import { JSONObjectSchema, JSONSchemaSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
@@ -178,6 +179,10 @@ export const ProcessDefinitionRevisionInfoSchema = z
 
 export const ProcessRunConfigSchema = z
     .strictObject({
+        inference_profile: InferenceProfileIdSchema.nullable().optional().meta({
+            description:
+                'Run-level inference profile ID for process LLM nodes and the supervisor. Explicit model settings retain precedence.',
+        }),
         environment: z
             .string()
             .meta({ description: 'Execution environment id used by Process LLM nodes and the supervisor.' })

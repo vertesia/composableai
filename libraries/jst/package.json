@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/jst",
-    "version": "1.6.0-dev.20260912.110338Z",
+    "version": "1.6.0-dev.20260923.085325Z",
     "type": "module",
     "description": "Javascript text template",
     "license": "Apache-2.0",
@@ -39,7 +39,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     },
     "dependencies": {
         "@types/node": "catalog:",
