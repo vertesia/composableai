@@ -66,3 +66,64 @@ describe('PayloadBuilder', () => {
         consoleWarn.mockRestore();
     });
 });
+
+it('sends only a runtime profile or defaults without stale model overrides', () => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    store.snapshot.setModel('old-model');
+    store.snapshot.setModelOptions({ temperature: 0.3 });
+    expect(store.snapshot.inferenceConfig).toEqual({});
+    store.snapshot.setInferenceProfile('0123456789abcdef01234567');
+    expect(store.snapshot.inferenceConfig).toEqual({ inference_profile: '0123456789abcdef01234567' });
+    expect(store.snapshot.clone().inference_profile).toBe('0123456789abcdef01234567');
+    store.snapshot.setInferenceProfile(null);
+    expect(store.snapshot.inferenceConfig).toEqual({
+        inference_profile: null,
+        environment: undefined,
+        model: 'old-model',
+        model_options: { temperature: 0.3 },
+    });
+    store.snapshot.reset();
+    expect(store.snapshot.inferenceConfig).toEqual({});
+});
+
+it.each(['0123456789abcdef01234567', null, undefined])('restores runtime profile selection %s', async (profile) => {
+    const client = {
+        interactions: {
+            catalog: {
+                resolve: vi.fn().mockResolvedValue({
+                    id: 'sys:GeneralAgent',
+                    name: 'GeneralAgent',
+                    type: 'sys',
+                    tags: [],
+                    prompts: [],
+                }),
+            },
+        },
+    } as unknown as VertesiaClient;
+    const store = new PayloadBuilderStore(client);
+    await store.snapshot.restoreConversation({
+        type: 'ExecuteConversationWorkflow',
+        tool_names: [],
+        interaction: 'sys:GeneralAgent',
+        interactive: true,
+        config: { inference_profile: profile },
+    });
+    expect(store.snapshot.inference_profile).toBe(profile);
+});
+
+it('validates profile availability across builder snapshots without blocking ad hoc or defaults', () => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    const profile = '0123456789abcdef01234567';
+    store.snapshot.setInferenceProfile(profile);
+    expect(store.snapshot.inferenceProfileError).toContain('Wait for inference profiles');
+    store.snapshot.setAvailableInferenceProfiles([]);
+    expect(store.snapshot.inferenceProfileError).toContain('unavailable');
+    store.snapshot.setAvailableInferenceProfiles([profile]);
+    store.snapshot.setModel('manual-model');
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+    store.snapshot.setAvailableInferenceProfiles(undefined);
+    store.snapshot.setInferenceProfile(null);
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+    store.snapshot.setInferenceProfile(undefined);
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+});
