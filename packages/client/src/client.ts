@@ -11,6 +11,8 @@ import CommandsApi from './CommandsApi.js';
 import DelegationGrantsApi from './DelegationGrantsApi.js';
 import EnvironmentsApi from './EnvironmentsApi.js';
 import { IamApi } from './IamApi.js';
+import InferenceProfilesApi from './InferenceProfilesApi.js';
+import InteractionConfigurationsApi from './InteractionConfigurationsApi.js';
 import InteractionsApi from './InteractionsApi.js';
 import InternalSecretsApi from './InternalSecretsApi.js';
 import OAuthClientsApi from './OAuthClientsApi.js';
@@ -445,6 +447,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     }
 
     projects = new ProjectsApi(this);
+    interactionConfigurations = new InteractionConfigurationsApi(this);
+    inferenceProfiles = new InferenceProfilesApi(this);
     environments = new EnvironmentsApi(this);
     interactions = new InteractionsApi(this);
     skills = new SkillsApi(this);
