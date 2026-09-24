@@ -489,6 +489,7 @@ export const InteractionPublishPayloadSchema = z
 
 export const InteractionForkPayloadSchema = z
     .strictObject({
+        newName: z.string().optional(),
         keepTags: z.boolean().optional(),
         forkPrompts: z.boolean().optional(),
         targetProject: z.string().optional(),

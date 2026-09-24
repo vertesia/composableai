@@ -83,6 +83,7 @@ const oauthAuthorizeQueryFields = {
     state: z.string().optional(),
     code_challenge: z.string(),
     code_challenge_method: z.literal('S256'),
+    account_id: z.string().optional(),
     project_id: z.string().optional(),
 };
 
@@ -92,9 +93,21 @@ export const CreateOAuthAuthorizationRequestPayloadSchema = z
     .strictObject(oauthAuthorizeQueryFields)
     .meta({ id: 'CreateOAuthAuthorizationRequestPayload' });
 
+export const OAuthAuthorizationRequestGeneratedAppSchema = z
+    .strictObject({
+        tenant_id: z.string(),
+        app_name: z.string(),
+        version_id: z.string().optional(),
+    })
+    .meta({ id: 'OAuthAuthorizationRequestGeneratedApp' });
+
 export const OAuthAuthorizationRequestSchema = z
     .strictObject({
         request_id: z.string(),
+        user_code: z.string().optional().meta({
+            description:
+                'User-visible device code to compare with the terminal before approving. Never the secret device_code.',
+        }),
         client_id: z.string(),
         client_name: z.string(),
         client_metadata: OAuthClientDisplayMetadataSchema.optional(),
@@ -104,7 +117,9 @@ export const OAuthAuthorizationRequestSchema = z
         resource: z.string().optional(),
         requested_scopes: z.array(z.string()),
         optional_scopes: z.array(z.string()).optional(),
+        requested_account_id: z.string().optional(),
         requested_project_id: z.string().optional(),
+        generated_app: OAuthAuthorizationRequestGeneratedAppSchema.optional(),
         project_binding_mode: OAuthProjectBindingModeSchema,
         fixed_project_id: z.string().optional(),
         restrict_to_owner_account: z.boolean().optional().meta({
@@ -370,3 +385,24 @@ export const OAuthGrantRevokeResponseSchema = z
         revoked_consents: z.number(),
     })
     .meta({ id: 'OAuthGrantRevokeResponse' });
+
+export const OAuthLoginPayloadSchema = z
+    .strictObject({
+        id_token: z.string().min(1),
+        account_id: z.string().optional(),
+        project_id: z.string().optional(),
+    })
+    .meta({ id: 'OAuthLoginPayload' });
+export const OAuthLoginDecisionResponseSchema = z
+    .strictObject({
+        redirect_url: z.string().optional(),
+        consent_url: z.string().optional(),
+    })
+    .meta({ id: 'OAuthLoginDecisionResponse' });
+
+export const OAuthLoginUserNotFoundResponseSchema = z
+    .strictObject({
+        error: z.literal('user_not_found'),
+        ensure_user_url: z.string(),
+    })
+    .meta({ id: 'OAuthLoginUserNotFoundResponse' });

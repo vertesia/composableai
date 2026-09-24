@@ -11,31 +11,31 @@ catalogs:
       version: 7.0.2
 
 overrides:
-  '@types/node': ^24.13.3
+  '@types/node': ^24.13.5
   minimatch@>=3.0.0 <4.0.0: legacy-v3
   minimatch@>=9.0.0 <10.0.0: legacy-v9
   ajv@>=7.0.0 <8.18.0: ^8.20.0
   flatted@<3.4.2: ^3.4.4
-  yaml@>=2.0.0 <2.8.3: ^2.9.0
+  yaml@>=2.0.0 <2.8.3: ^2.9.1
   picomatch@<2.3.2: ^4.0.7
   picomatch@>=4.0.0 <4.0.4: ^4.0.7
   fast-xml-parser@<5.7.0: ^5.11.1
   fast-xml-builder@<=1.1.6: ^1.3.1
-  fast-uri@<4.1.2: 4.1.4
+  fast-uri@<4.1.2: 4.1.5
 
 importers:
 
   .:
     dependencies:
       '@aws-sdk/client-iam':
-        specifier: ^3.1129.0
-        version: 3.1131.0
+        specifier: ^3.1134.0
+        version: 3.1136.0
       '@vertesia/client':
-        specifier: 1.4.1
-        version: 1.4.1
+        specifier: 1.5.0
+        version: 1.5.0
       '@vertesia/common':
-        specifier: 1.4.1
-        version: 1.4.1
+        specifier: 1.5.0
+        version: 1.5.0
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -64,8 +64,8 @@ importers:
 
 packages:
 
-  '@aws-sdk/client-iam@3.1131.0':
-    resolution: {integrity: sha512-lRAK3tX7V+3BU9occfb66Ira4Zy5/ZeuyHm/b0YBqH0Gjx56PNi/vHgtkSlYpHIVZnhsxOGduqs4ZYmo0apmuA==}
+  '@aws-sdk/client-iam@3.1136.0':
+    resolution: {integrity: sha512-++tfxAzmxxySbJN5GdezE/mFTDEYY9LtWnaKz6BKYDrne1B1bz0IS+kPyN5HkBwnfijMS94UsjY5XojTDhOI0Q==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.978.0':
@@ -185,8 +185,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@llumiverse/common@1.4.1':
-    resolution: {integrity: sha512-B6jr+x4LBamcV6zZeL98qQDkBmKU9QuwWoGWa/8u8/a0iCF1Fgkf3/L/Pq8aGO8b40X3LW/uOqocugaQ99G4WA==}
+  '@llumiverse/common@1.5.0':
+    resolution: {integrity: sha512-ssnaqAu9UcGHAL0kaFpS5fjojI2+nJ+pQaobhKR2GVJyMZ/vEWn1ydss9Nf7i/EjxpgY20CRvkA6xMIM5LcEgA==}
 
   '@smithy/core@3.33.3':
     resolution: {integrity: sha512-CsOeKq/9kA3y6VJHt+/+VTCtBaxJ4OTFpgrjIUhPpDIKxBci1k2bJaQASF2h/ELWrulGp+t97DZ0mevfAD8idg==}
@@ -218,8 +218,8 @@ packages:
   '@types/bun@1.4.2':
     resolution: {integrity: sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ==}
 
-  '@types/node@24.13.3':
-    resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
+  '@types/node@24.13.6':
+    resolution: {integrity: sha512-SGrw/h3KPFshy3OE6ZL53LMBG5vGQQ8/gIpiqz/kRZhPJ7HgwCEs8LBuNtWLa8dvGZVpSF7+Bf+c11HUrCb/yg==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -341,18 +341,26 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@vertesia/api-fetch-client@1.4.1':
-    resolution: {integrity: sha512-VpMFZCm+L95E1lhYn7wOujbxUYVc9GSh6ne/bHN/kAZmeSRm2/zQa7tmfm20Ev8Q3EjfOLkYrKqEe/Sw0fL4Mg==}
+  '@vertesia/api-fetch-client@1.5.0':
+    resolution: {integrity: sha512-JYAJiO5pl2DwSxp2ckKp8lQqRAAmbKFb5Ruji42i+ivb87MXqlxqOosqjl2LSRcTpv7i1DMDdurhoDBfEzAzew==}
 
-  '@vertesia/client@1.4.1':
-    resolution: {integrity: sha512-dyUfFbfLkSDpi+QXg6Oh4iBdG9BQtxmM/mD3QWZ9T3hA7RV1821aSvfVt0P7ZVYuHmd7urzPvu2ebxvsH3uyQQ==}
+  '@vertesia/client@1.5.0':
+    resolution: {integrity: sha512-/GPb3/br9LKxanRR8ZJ4vmFQULz7PoxA/IU+L0dX2OZbixOrkviiqysjgGPYnvS82BP2q9l0FwGi7ez2oeQNdg==}
 
-  '@vertesia/common@1.4.1':
-    resolution: {integrity: sha512-SONmOy4vTU422368irfe2LOXDJiU7VINiayQy9dQQN/xyrY/JdSGV6G/PHrCYGdBgpXJ4ihPDy8gciYIzRILhw==}
+  '@vertesia/common@1.5.0':
+    resolution: {integrity: sha512-EYGPXtvV8ICu2/iV18mnRQkXTvfugaPxRkBGChuVaqMaBtmBLvXsMJy4424zMCLJiC/OAFOceMCeIKdUX6TiZQ==}
 
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
+
+  ajv-formats@3.0.1:
+    resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
+    peerDependencies:
+      ajv: ^8.20.0
+    peerDependenciesMeta:
+      ajv:
+        optional: true
 
   ajv@8.20.0:
     resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
@@ -396,13 +404,13 @@ packages:
   ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
 
-  eventsource-parser@3.1.0:
-    resolution: {integrity: sha512-kJezFj9YFAMLeORyi7aCLxLbD5/qWMQnoMVlVPyHIll7lgRJCc3JVln9Vgl9nwQi0YkMnhdGTMNn7CkRRAptMg==}
-    engines: {node: '>=18.0.0'}
+  eventsource-parser@4.1.1:
+    resolution: {integrity: sha512-zaWNqeSLeyzEAAt2Q6aDBRDRk/VnPmsKqvToyGvv6aahvLv71A4Jw7jG93Hckf11zXurbqgsffvpSgKPoeU1Qw==}
+    engines: {node: '>=22.12'}
 
-  eventsource@4.1.0:
-    resolution: {integrity: sha512-2GuF51iuHX6A9xdTccMTsNb7VO0lHZihApxhvQzJB5A03DvHDd2FQepodbMaztPBmBcE/ox7o2gqaxGhYB9LhQ==}
-    engines: {node: '>=20.0.0'}
+  eventsource@5.1.1:
+    resolution: {integrity: sha512-onrlI7l612Ee3xnBqZNTq4djf6Fho/0yIpO/rYjRG/FzjMyPJquNx9SS3QyjglnVFxwxrube1XmX41zB+0Rdgw==}
+    engines: {node: '>=22.12.0'}
 
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
@@ -410,8 +418,8 @@ packages:
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
-  fast-uri@4.1.4:
-    resolution: {integrity: sha512-dODXrIxlS9JSdgAnhIUKOosKV1oMtU2VtVw87QRaHzyl5jxO290Ii5tEZfCfzfWNHi3jKWwBSdQj0qIyshdZdQ==}
+  fast-uri@4.1.5:
+    resolution: {integrity: sha512-vZeoMRB4epNr7QfdHxel7te/RcX16CxyXI07JCCTFWZA2s4v1azGNESRj+2EoaHSaWFL/Z3GmKT2jF6A202jLg==}
 
   fetch-blob@3.2.0:
     resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
@@ -491,9 +499,12 @@ packages:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
     engines: {node: '>= 8'}
 
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
+
 snapshots:
 
-  '@aws-sdk/client-iam@3.1131.0':
+  '@aws-sdk/client-iam@3.1136.0':
     dependencies:
       '@aws-sdk/core': 3.978.0
       '@aws-sdk/credential-provider-node': 3.972.83
@@ -673,7 +684,9 @@ snapshots:
   '@biomejs/cli-win32-x64@2.5.13':
     optional: true
 
-  '@llumiverse/common@1.4.1': {}
+  '@llumiverse/common@1.5.0':
+    dependencies:
+      zod: 4.6.5
 
   '@smithy/core@3.33.3':
     dependencies:
@@ -714,7 +727,7 @@ snapshots:
     dependencies:
       bun-types: 1.4.2
 
-  '@types/node@24.13.3':
+  '@types/node@24.13.6':
     dependencies:
       undici-types: 7.18.2
 
@@ -778,28 +791,34 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@vertesia/api-fetch-client@1.4.1':
+  '@vertesia/api-fetch-client@1.5.0':
     dependencies:
-      eventsource-parser: 3.1.0
+      eventsource-parser: 4.1.1
 
-  '@vertesia/client@1.4.1':
+  '@vertesia/client@1.5.0':
     dependencies:
-      '@llumiverse/common': 1.4.1
-      '@vertesia/api-fetch-client': 1.4.1
-      '@vertesia/common': 1.4.1
-      eventsource: 4.1.0
+      '@llumiverse/common': 1.5.0
+      '@vertesia/api-fetch-client': 1.5.0
+      '@vertesia/common': 1.5.0
+      eventsource: 5.1.1
 
-  '@vertesia/common@1.4.1':
+  '@vertesia/common@1.5.0':
     dependencies:
-      '@llumiverse/common': 1.4.1
+      '@llumiverse/common': 1.5.0
       ajv: 8.20.0
+      ajv-formats: 3.0.1(ajv@8.20.0)
+      zod: 4.6.5
 
   agent-base@7.1.4: {}
+
+  ajv-formats@3.0.1(ajv@8.20.0):
+    optionalDependencies:
+      ajv: 8.20.0
 
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 4.1.4
+      fast-uri: 4.1.5
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -813,7 +832,7 @@ snapshots:
 
   bun-types@1.4.2:
     dependencies:
-      '@types/node': 24.13.3
+      '@types/node': 24.13.6
 
   commander@15.0.0: {}
 
@@ -829,17 +848,17 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  eventsource-parser@3.1.0: {}
+  eventsource-parser@4.1.1: {}
 
-  eventsource@4.1.0:
+  eventsource@5.1.1:
     dependencies:
-      eventsource-parser: 3.1.0
+      eventsource-parser: 4.1.1
 
   extend@3.0.2: {}
 
   fast-deep-equal@3.1.3: {}
 
-  fast-uri@4.1.4: {}
+  fast-uri@4.1.5: {}
 
   fetch-blob@3.2.0:
     dependencies:
@@ -947,3 +966,5 @@ snapshots:
   undici-types@7.18.2: {}
 
   web-streams-polyfill@3.3.3: {}
+
+  zod@4.6.5: {}

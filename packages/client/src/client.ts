@@ -1,4 +1,5 @@
 import { AbstractFetchClient, type FETCH_FN, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
+import type { AppSessionTokenRequest, AppSessionTokenResponse } from '@vertesia/common';
 import { APP_VERSION_HEADER, type AuthTokenPayload, type AuthTokenResponse } from '@vertesia/common';
 import AccountApi from './AccountApi.js';
 import AccountsApi from './AccountsApi.js';
@@ -414,6 +415,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      *
      * @returns AuthTokenResponse
      */
+    async mintAppSessionToken(request: AppSessionTokenRequest): Promise<AppSessionTokenResponse> {
+        return this.post<AppSessionTokenResponse>(`${this.tokenServerUrl}/token/app-session`, { payload: request });
+    }
+
     async getAuthToken(token?: string): Promise<AuthTokenResponse> {
         // Route through the base client (absolute URL) so the call benefits from the
         // retry policy. The default retry methods exclude POST as non-idempotent, but

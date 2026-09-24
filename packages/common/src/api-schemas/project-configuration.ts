@@ -465,6 +465,12 @@ export const ProjectConfigurationSchema = z
                     "'de'). Determines which Elasticsearch analyzer is used for the text field. Defaults to 'en' " +
                     '(English/standard analyzer).\n\nChanging this value requires a full reindex to take effect.',
             }),
+        oauth_clients: z
+            .strictObject({
+                external_clients: z.enum(['allow_all', 'allowlist']).optional(),
+                allowed_origins: z.array(z.string()).optional(),
+            })
+            .optional(),
         browser_use: BrowserUseProjectConfigurationSchema.optional().meta({
             description: 'Project defaults and caps for browser_use agent workstreams.',
         }),

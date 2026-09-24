@@ -39,6 +39,7 @@ import type {
     StartAppDevelopmentTaskRequest,
     StartAppScaffoldRequest,
     StartAppScaffoldResponse,
+    UpdateAppInstallationOAuthApprovalPayload,
     UpdateAppInstallationToolAllowlistPayload,
     UpdateAppPayload,
     UpsertAppVersionRequest,
@@ -426,6 +427,16 @@ export default class AppsApi extends ApiTopic {
                 // "leave unchanged" from "clear", so only spread the key when it was supplied.
                 ...('access_control' in settingsPayload ? { access_control: settingsPayload.access_control } : {}),
             } satisfies AppInstallationPayload,
+        });
+    }
+
+    /**
+     * Set project-admin approval for an installation's OAuth scopes.
+     * Pass an empty list to revoke approval.
+     */
+    updateOAuthApproval(installId: string, approved_scopes: string[]): Promise<AppInstallationWithManifest> {
+        return this.put(`/installations/${installId}/oauth-approval`, {
+            payload: { approved_scopes } satisfies UpdateAppInstallationOAuthApprovalPayload,
         });
     }
 
