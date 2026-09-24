@@ -3820,6 +3820,14 @@
       "reasoning_effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
       },
+      "reasoning_context": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "current_turn",
+          "all_turns"
+        ]
+      },
       "image_detail": {
         "type": "string",
         "enum": [
