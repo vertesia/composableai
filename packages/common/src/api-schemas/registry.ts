@@ -1298,6 +1298,12 @@ const EXECUTION_RUN_SCHEMAS: ExecutionRunSchemaMap = {
     RunSearchQuery: RunSearchQuerySchema,
     RunListQuery: RunListQuerySchema,
     RunSearchPayload: RunSearchPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+// Split out of EXECUTION_RUN_SCHEMAS rather than grown in place: one literal covering both halves
+// infers a type too large for tsc to serialize into the declaration file (TS7056). The split is
+// purely structural — `mergeComponentGroups` and `ApiSchemaMap` see the same component set.
+const INTERACTION_EXECUTION_SCHEMAS = {
     // Executing an interaction, synchronously or as a workflow.
     InteractionExecutionPayload: InteractionExecutionPayloadSchema,
     NamedInteractionExecutionPayload: NamedInteractionExecutionPayloadSchema,
@@ -2394,6 +2400,7 @@ const API_SCHEMA_GROUPS = [
     INTERACTION_AUTHORING_SCHEMAS,
     AGENT_CONVERSATION_SCHEMAS,
     EXECUTION_RUN_SCHEMAS,
+    INTERACTION_EXECUTION_SCHEMAS,
     PROMPT_AUTHORING_SCHEMAS,
     PROJECT_TOOL_SCHEMAS,
     REMOTE_MCP_SCHEMAS,
@@ -2457,6 +2464,7 @@ type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
     typeof INTERACTION_AUTHORING_SCHEMAS &
     typeof AGENT_CONVERSATION_SCHEMAS &
     typeof EXECUTION_RUN_SCHEMAS &
+    typeof INTERACTION_EXECUTION_SCHEMAS &
     typeof PROMPT_AUTHORING_SCHEMAS &
     typeof PROJECT_TOOL_SCHEMAS &
     typeof REMOTE_MCP_SCHEMAS &
