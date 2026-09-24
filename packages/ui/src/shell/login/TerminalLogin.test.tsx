@@ -106,6 +106,6 @@ it('uses the shared sign-in page shell for the authorization form', async () => 
     );
     await screen.findByRole('button', { name: 'login.terminal.authorizeClient' });
     expect(screen.getByText('auth.privacyPolicy')).toBeTruthy();
-    expect(screen.getAllByAltText('Vertesia')).toHaveLength(2);
+    expect(screen.getAllByAltText('N-able')).toHaveLength(2);
     expect(screen.queryByRole('status')).toBeNull();
 });

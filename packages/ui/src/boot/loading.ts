@@ -2,8 +2,8 @@
 export const LOADING_ICON_SIZE = 40;
 export const LOADING_INDICATOR_STYLES = `
 @keyframes vertesia-loading-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    0%, 100% { opacity: .5; transform: scale(.92); }
+    50% { opacity: 1; transform: scale(1); }
 }
 .vertesia-loading-motion {
     animation: var(--vertesia-loading-animation, vertesia-loading-spin 2s linear infinite);
@@ -19,7 +19,7 @@ export const LOADING_INDICATOR_STYLES = `
     padding: 0;
     object-fit: contain;
     flex: none;
-    border-radius: 100% !important;
+    border-radius: 0 !important;
 }
 @media (prefers-reduced-motion: reduce) {
     .vertesia-loading-motion { animation: none !important; }
