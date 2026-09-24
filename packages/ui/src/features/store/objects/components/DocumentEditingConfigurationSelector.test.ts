@@ -32,3 +32,23 @@ describe('document editing configuration', () => {
         });
     });
 });
+
+it('retains the stable profile ID with its display configuration', () => {
+    const project = { configuration: { embeddings: {} } } satisfies Pick<Project, 'configuration'>;
+    const profile = {
+        id: '507f1f77bcf86cd799439011',
+        name: 'Editing',
+        project: 'project',
+        environment: 'env',
+        model: 'model',
+        model_options: { _option_id: 'text-fallback' as const, temperature: 0.3 },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    };
+    expect(getDocumentEditingProjectDefault(project, profile)).toEqual({
+        inference_profile: profile.id,
+        environment: 'env',
+        model: 'model',
+        model_options: profile.model_options,
+    });
+});

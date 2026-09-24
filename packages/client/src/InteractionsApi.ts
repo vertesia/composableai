@@ -344,6 +344,8 @@ export default class InteractionsApi extends ApiTopic {
     resolve(
         nameOrId: string,
         options?: {
+            inference_profile?: string;
+            inherit_model_config?: boolean;
             environment?: string;
             model?: string;
             hasImage?: boolean;

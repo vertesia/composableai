@@ -3,6 +3,12 @@ import { ProcessRunConfigSchema, RecordProcessRunPayloadSchema } from './process
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 
 describe('ProcessRunConfigSchema', () => {
+    it('accepts stable profile IDs and null but rejects profile names', () => {
+        const inference_profile = '0123456789abcdef01234567';
+        expect(ProcessRunConfigSchema.parse({ inference_profile })).toEqual({ inference_profile });
+        expect(ProcessRunConfigSchema.parse({ inference_profile: null })).toEqual({ inference_profile: null });
+        expect(() => ProcessRunConfigSchema.parse({ inference_profile: 'Fast' })).toThrow();
+    });
     it('accepts validated LLM execution configuration and retains a strict Process boundary', () => {
         expect(
             ProcessRunConfigSchema.parse({

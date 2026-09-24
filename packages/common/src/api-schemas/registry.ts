@@ -467,6 +467,23 @@ import {
     ReindexAgentRunsResponseSchema,
     StartProjectReindexPayloadSchema,
 } from './indexing.js';
+import {
+    CreateInferenceProfilePayloadSchema,
+    InferenceProfileIdSchema,
+    InferenceProfileNameSchema,
+    InferenceProfileRecordArraySchema,
+    InferenceProfileRecordSchema,
+    InferenceProfileSchema,
+    InferenceProfileSnapshotSchema,
+    InferenceProfileUsageEntrySchema,
+    InferenceProfileUsageQuerySchema,
+    InferenceProfileUsageSchema,
+    InteractionConfigurationRecordSchema,
+    InteractionConfigurationResultSchema,
+    ProjectInferenceProfilesSchema,
+    UpdateInferenceProfilePayloadSchema,
+    UpdateInteractionConfigurationPayloadSchema,
+} from './inference-profile.js';
 import * as IntegrationSchemas from './integrations.js';
 import {
     AgentResourceActionSchema,
@@ -1115,6 +1132,21 @@ const LLM_COMPLETION_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const INTERACTION_SCHEMAS = {
+    UpdateInteractionConfigurationPayload: UpdateInteractionConfigurationPayloadSchema,
+    InteractionConfigurationRecord: InteractionConfigurationRecordSchema,
+    InteractionConfigurationResult: InteractionConfigurationResultSchema,
+    CreateInferenceProfilePayload: CreateInferenceProfilePayloadSchema,
+    UpdateInferenceProfilePayload: UpdateInferenceProfilePayloadSchema,
+    InferenceProfileRecord: InferenceProfileRecordSchema,
+    InferenceProfileUsage: InferenceProfileUsageSchema,
+    InferenceProfileUsageEntry: InferenceProfileUsageEntrySchema,
+    InferenceProfileUsageQuery: InferenceProfileUsageQuerySchema,
+    InferenceProfileRecordArray: InferenceProfileRecordArraySchema,
+    InferenceProfileId: InferenceProfileIdSchema,
+    InferenceProfileName: InferenceProfileNameSchema,
+    InferenceProfile: InferenceProfileSchema,
+    InferenceProfileSnapshot: InferenceProfileSnapshotSchema,
+    ProjectInferenceProfiles: ProjectInferenceProfilesSchema,
     // The interaction definition and the prompt tree under it.
     InteractionStatus: InteractionStatusSchema,
     InteractionVisibility: InteractionVisibilitySchema,
@@ -1249,6 +1281,30 @@ type ExecutionRunSchemaMap = {
     RunSearchQuery: typeof RunSearchQuerySchema;
     RunListQuery: typeof RunListQuerySchema;
     RunSearchPayload: typeof RunSearchPayloadSchema;
+};
+
+const EXECUTION_RUN_SCHEMAS: ExecutionRunSchemaMap = {
+    // A run: what was executed, by whom, and how it ended.
+    ExecutionRunStatus: ExecutionRunStatusSchema,
+    RunSourceTypes: RunSourceTypesSchema,
+    RunSource: RunSourceSchema,
+    ExecutionRunDocRef: ExecutionRunDocRefSchema,
+    ExecutionRunWorkflow: ExecutionRunWorkflowSchema,
+    ExecutionRunInteraction: ExecutionRunInteractionSchema,
+    ExecutionRun: ExecutionRunSchema,
+    ExecutionRunRef: ExecutionRunRefSchema,
+    ExecutionRunRefArray: ExecutionRunRefArraySchema,
+    UpdateExecutionRunPayload: UpdateExecutionRunPayloadSchema,
+    RunCreatePayload: RunCreatePayloadSchema,
+    // Listing and searching runs.
+    SortOrder: SortOrderSchema,
+    SortOption: SortOptionSchema,
+    RunSearchQuery: RunSearchQuerySchema,
+    RunListQuery: RunListQuerySchema,
+    RunSearchPayload: RunSearchPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const EXECUTION_REQUEST_SCHEMAS: {
     InteractionExecutionPayload: typeof InteractionExecutionPayloadSchema;
     NamedInteractionExecutionPayload: typeof NamedInteractionExecutionPayloadSchema;
     InteractionExecutionResult: typeof InteractionExecutionResultSchema;
@@ -1277,27 +1333,7 @@ type ExecutionRunSchemaMap = {
     UserMessagePayload: typeof UserMessagePayloadSchema;
     ExecutionResponse: typeof ExecutionResponseSchema;
     RunClonePayload: typeof RunClonePayloadSchema;
-};
-
-const EXECUTION_RUN_SCHEMAS: ExecutionRunSchemaMap = {
-    // A run: what was executed, by whom, and how it ended.
-    ExecutionRunStatus: ExecutionRunStatusSchema,
-    RunSourceTypes: RunSourceTypesSchema,
-    RunSource: RunSourceSchema,
-    ExecutionRunDocRef: ExecutionRunDocRefSchema,
-    ExecutionRunWorkflow: ExecutionRunWorkflowSchema,
-    ExecutionRunInteraction: ExecutionRunInteractionSchema,
-    ExecutionRun: ExecutionRunSchema,
-    ExecutionRunRef: ExecutionRunRefSchema,
-    ExecutionRunRefArray: ExecutionRunRefArraySchema,
-    UpdateExecutionRunPayload: UpdateExecutionRunPayloadSchema,
-    RunCreatePayload: RunCreatePayloadSchema,
-    // Listing and searching runs.
-    SortOrder: SortOrderSchema,
-    SortOption: SortOptionSchema,
-    RunSearchQuery: RunSearchQuerySchema,
-    RunListQuery: RunListQuerySchema,
-    RunSearchPayload: RunSearchPayloadSchema,
+} = {
     // Executing an interaction, synchronously or as a workflow.
     InteractionExecutionPayload: InteractionExecutionPayloadSchema,
     NamedInteractionExecutionPayload: NamedInteractionExecutionPayloadSchema,
@@ -2394,6 +2430,7 @@ const API_SCHEMA_GROUPS = [
     INTERACTION_AUTHORING_SCHEMAS,
     AGENT_CONVERSATION_SCHEMAS,
     EXECUTION_RUN_SCHEMAS,
+    EXECUTION_REQUEST_SCHEMAS,
     PROMPT_AUTHORING_SCHEMAS,
     PROJECT_TOOL_SCHEMAS,
     REMOTE_MCP_SCHEMAS,
@@ -2457,6 +2494,7 @@ type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
     typeof INTERACTION_AUTHORING_SCHEMAS &
     typeof AGENT_CONVERSATION_SCHEMAS &
     typeof EXECUTION_RUN_SCHEMAS &
+    typeof EXECUTION_REQUEST_SCHEMAS &
     typeof PROMPT_AUTHORING_SCHEMAS &
     typeof PROJECT_TOOL_SCHEMAS &
     typeof REMOTE_MCP_SCHEMAS &
@@ -2519,6 +2557,15 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'UpdateInteractionConfigurationPayload',
+    'InteractionConfigurationRecord',
+    'InteractionConfigurationResult',
+    'CreateInferenceProfilePayload',
+    'UpdateInferenceProfilePayload',
+    'InferenceProfileRecord',
+    'InferenceProfile',
+    'InferenceProfileSnapshot',
+    'ProjectInferenceProfiles',
     'AccountApiKey',
     'AccountApiKeyWithValue',
     'CreateAccountApiKeyPayload',
