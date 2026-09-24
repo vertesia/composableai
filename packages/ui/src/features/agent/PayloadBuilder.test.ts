@@ -110,3 +110,20 @@ it.each(['0123456789abcdef01234567', null, undefined])('restores runtime profile
     });
     expect(store.snapshot.inference_profile).toBe(profile);
 });
+
+it('validates profile availability across builder snapshots without blocking ad hoc or defaults', () => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    const profile = '0123456789abcdef01234567';
+    store.snapshot.setInferenceProfile(profile);
+    expect(store.snapshot.inferenceProfileError).toContain('Wait for inference profiles');
+    store.snapshot.setAvailableInferenceProfiles([]);
+    expect(store.snapshot.inferenceProfileError).toContain('unavailable');
+    store.snapshot.setAvailableInferenceProfiles([profile]);
+    store.snapshot.setModel('manual-model');
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+    store.snapshot.setAvailableInferenceProfiles(undefined);
+    store.snapshot.setInferenceProfile(null);
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+    store.snapshot.setInferenceProfile(undefined);
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+});

@@ -87,6 +87,7 @@ export class PayloadBuilder {
     _interaction: InCodeInteraction | undefined;
     _environment: ExecutionEnvironmentRef | undefined;
     _inference_profile: string | null | undefined;
+    private _availableInferenceProfiles: readonly string[] | undefined;
     _model: string = '';
     _model_options: InCodeInteraction['model_options'] | undefined;
     _tool_names: string[] = [];
@@ -124,6 +125,7 @@ export class PayloadBuilder {
         builder._data = this._data;
         builder._environment = this._environment;
         builder._inference_profile = this._inference_profile;
+        builder._availableInferenceProfiles = this._availableInferenceProfiles;
         builder._model = this._model;
         builder._model_options = this._model_options ? ({ ...this._model_options } as ModelOptions) : undefined;
         builder._tool_names = [...this._tool_names];
@@ -383,6 +385,21 @@ export class PayloadBuilder {
     setInferenceProfile(profile: string | null | undefined) {
         this._inference_profile = profile;
         this.onStateChanged();
+    }
+
+    setAvailableInferenceProfiles(ids: readonly string[] | undefined) {
+        this._availableInferenceProfiles = ids;
+        this.onStateChanged();
+    }
+
+    get inferenceProfileError(): string | undefined {
+        if (!this._inference_profile) return undefined;
+        if (!this._availableInferenceProfiles)
+            return 'Wait for inference profiles to load, or choose another configuration.';
+        if (!this._availableInferenceProfiles.includes(this._inference_profile)) {
+            return 'This inference profile is unavailable. Choose the default, Ad hoc, or another profile.';
+        }
+        return undefined;
     }
 
     get inferenceConfig() {
