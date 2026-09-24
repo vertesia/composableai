@@ -1576,6 +1576,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 reasoning_effort: {
                     $ref: '#/$defs/ReasoningEffort',
                 },
+                reasoning_context: {
+                    type: 'string',
+                    enum: ['auto', 'current_turn', 'all_turns'],
+                },
                 image_detail: {
                     type: 'string',
                     enum: ['low', 'high', 'auto'],
