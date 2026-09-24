@@ -1,40 +1,3 @@
-/* Public Google Fonts delivery; system sans is the offline fallback. */
-@font-face {
-    font-family: "Manrope";
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url(https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk79FO_F.ttf) format("truetype");
-}
-@font-face {
-    font-family: "Manrope";
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url(https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk7PFO_F.ttf) format("truetype");
-}
-@font-face {
-    font-family: "Manrope";
-    font-style: normal;
-    font-weight: 600;
-    font-display: swap;
-    src: url(https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk4jE-_F.ttf) format("truetype");
-}
-@font-face {
-    font-family: "Manrope";
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url(https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk4aE-_F.ttf) format("truetype");
-}
-@font-face {
-    font-family: "Manrope";
-    font-style: normal;
-    font-weight: 800;
-    font-display: swap;
-    src: url(https://fonts.gstatic.com/s/manrope/v20/xn7_YHE41ni1AdIRqAuZuw1Bx9mbZk59E-_F.ttf) format("truetype");
-}
-
 @layer base {
     * {
         @apply border-border;
@@ -47,7 +10,6 @@
 
     body {
         @apply bg-background text-foreground selection:bg-info selection:text-info;
-        font-family: var(--font-sans);
         min-height: 100%;
         margin: 0;
         padding: 0;
@@ -144,24 +106,4 @@ input.text-base:-webkit-autofill::first-line {
 input.text-lg:-webkit-autofill::first-line {
     font-size: var(--text-lg);
     line-height: var(--text-lg--line-height);
-}
-
-@keyframes nable-loading {
-    0%,
-    100% {
-        opacity: 0.5;
-        transform: scale(0.92);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-.nable-spinner {
-    animation: nable-loading 1.6s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-    .nable-spinner {
-        animation: none;
-    }
 }

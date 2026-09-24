@@ -1,4 +1,3 @@
-import { Spinner } from '@vertesia/ui/core';
 import { useUserSession } from '@vertesia/ui/session';
 import type { ComponentType, ReactNode } from 'react';
 import { LOADING_INDICATOR_STYLES } from '../boot/loading.js';
@@ -46,7 +45,38 @@ export function DefaultAuthLoadingScreen({
 }
 
 function LoadingIcon() {
-    return <Spinner size="2xl" />;
+    const stopColor1 = 'currentColor';
+    const stopColor2 = 'currentColor';
+    // const stopColor1 = "#4F46E5";
+    // const stopColor2 = "#4F46E5";
+    return (
+        <svg
+            width="32"
+            height="32"
+            className="w-8 h-8 text-info"
+            viewBox="0 0 50 50"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Loading"
+        >
+            <title>Loading</title>
+            <defs>
+                <linearGradient id="spinner-gradient" x1="1" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={stopColor1} stopOpacity="1" />
+                    <stop offset="100%" stopColor={stopColor2} stopOpacity="0" />
+                </linearGradient>
+            </defs>
+            <circle
+                cx="25"
+                cy="25"
+                r="20"
+                stroke="url(#spinner-gradient)"
+                strokeWidth="5"
+                fill="none"
+                strokeLinecap="round"
+            />
+        </svg>
+    );
 }
 
 /** Shared logo motion for full-screen and in-content loading states. */

@@ -104,7 +104,7 @@ describe('boot screen runtime', () => {
         runRuntime({ dark: true });
 
         expect(document.documentElement.classList.contains('dark')).toBe(true);
-        expect(document.documentElement.style.backgroundColor).toBe('rgb(20, 6, 40)');
+        expect(document.documentElement.style.backgroundColor).toBe('rgb(10, 10, 10)');
         expect(document.documentElement.style.colorScheme).toBe('dark');
     });
 
@@ -113,7 +113,7 @@ describe('boot screen runtime', () => {
         runRuntime({ dark: true });
 
         expect(document.documentElement.classList.contains('light')).toBe(true);
-        expect(document.documentElement.style.backgroundColor).toBe('rgb(250, 249, 252)');
+        expect(document.documentElement.style.backgroundColor).toBe('rgb(255, 255, 255)');
         expect(document.documentElement.style.colorScheme).toBe('light');
     });
 

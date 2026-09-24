@@ -109,19 +109,8 @@ ${brand.boot?.styles ?? ''}`,
 
 /** Platform defaults shared by boot markup and Firebase/OAuth React screens. */
 export const vertesiaBranding = {
-    name: 'N-able',
-    logo: { light: '/logo-light.svg', dark: '/logo-dark.svg', alt: 'N-able' },
-    loadingIcon: {
-        light: '/icon.svg',
-        dark: '/icon-dark.svg',
-        animation: 'nable-loading 1.6s ease-in-out infinite',
-        keyframes:
-            '@keyframes nable-loading { 0%, 100% { opacity: .5; transform: scale(.92); } 50% { opacity: 1; transform: scale(1); } }',
-    },
+    name: 'Vertesia',
+    logo: { light: '/logo-light.png', dark: '/logo-dark.png', alt: 'Vertesia' },
+    loadingIcon: { light: '/icon.svg' },
     favicon: '/icon.svg',
-    colors: {
-        light: { accent: '#6420ad', button: '#38dbff', buttonText: '#140628' },
-        dark: { accent: '#d7a3ff', button: '#38dbff', buttonText: '#140628' },
-    },
-    copy: { welcome: 'Welcome to N-able' },
 } satisfies AppBranding;

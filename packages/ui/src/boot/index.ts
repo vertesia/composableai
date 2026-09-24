@@ -27,25 +27,25 @@ const DEFAULT_LOADING_LABEL = 'Loading';
 export const BOOT_SCREEN_STYLES = `
 ${LOADING_INDICATOR_STYLES}
   .vboot {
-    --vb-bg: #faf9fc;
-    --vb-fg: #140628;
+    --vb-bg: #ffffff;
+    --vb-fg: #0a0a0a;
     --vb-muted: #636363;
     --vb-muted-bg: #f5f5f5;
     --vb-border: #e5e5e5;
-    --vb-primary: #38dbff;
-    --vb-primary-fg: #140628;
+    --vb-primary: #0048bd;
+    --vb-primary-fg: #ffffff;
     --vb-glow: rgba(50, 49, 189, 0.12);
-    font-family: Manrope, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
     color: var(--vb-fg);
   }
   .vboot.vboot-dark {
-    --vb-bg: #140628;
-    --vb-fg: #f7f4fc;
+    --vb-bg: #0a0a0a;
+    --vb-fg: #fafafa;
     --vb-muted: #a1a1a1;
-    --vb-muted-bg: #291b3a;
+    --vb-muted-bg: #262626;
     --vb-border: rgba(255, 255, 255, 0.1);
-    --vb-primary: #38dbff;
-    --vb-primary-fg: #140628;
+    --vb-primary: #2b69d1;
+    --vb-primary-fg: #fafafa;
     --vb-glow: rgba(79, 70, 229, 0.2);
   }
   .vboot-overlay {
@@ -128,9 +128,7 @@ export function renderDefaultBootContent(options: BootScreenOptions = {}): strin
     const { iconSrc, loadingLabel } = normalizedOptions(options);
     const icon = (src: string, className = '') =>
         `<img class="vboot-spinner vertesia-loading-icon vertesia-loading-motion ${className}" width="${LOADING_ICON_SIZE}" height="${LOADING_ICON_SIZE}" src="${escapeMarkup(src)}" alt="${escapeMarkup(loadingLabel)}" />`;
-    const darkIconSrc =
-        options.darkIconSrc ?? (iconSrc === DEFAULT_ICON_SRC ? vertesiaBranding.loadingIcon.dark : undefined);
-    return `<div class="vboot-overlay" role="status" aria-live="polite">${darkIconSrc ? icon(iconSrc, 'vboot-icon-light') + icon(darkIconSrc, 'vboot-icon-dark') : icon(iconSrc)}
+    return `<div class="vboot-overlay" role="status" aria-live="polite">${options.darkIconSrc ? icon(iconSrc, 'vboot-icon-light') + icon(options.darkIconSrc, 'vboot-icon-dark') : icon(iconSrc)}
 <div id="loading-slow-notice" class="vboot-slow" style="display: none;">
 <p>${escapeMarkup(options.slowLoadingLabel ?? 'Still loading — this is taking longer than usual.')}</p>
 <div id="loading-slow-reload" style="display: none;"><button type="button" class="vboot-btn" data-boot-reload>${escapeMarkup(options.reloadLabel ?? 'Reload page')}</button></div></div></div>`;
@@ -179,7 +177,7 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
     const dark = applyTheme();
     const root = document.documentElement;
     const background = window.getComputedStyle(root).getPropertyValue('--vertesia-boot-background').trim()
-      || (dark ? '#140628' : '#faf9fc');
+      || (dark ? '#0a0a0a' : '#ffffff');
     root.style.backgroundColor = background;
     root.style.colorScheme = dark ? 'dark' : 'light';
     if (document.body) document.body.style.backgroundColor = background;
