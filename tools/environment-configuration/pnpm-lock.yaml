@@ -28,8 +28,8 @@ importers:
   .:
     dependencies:
       '@aws-sdk/client-iam':
-        specifier: ^3.1129.0
-        version: 3.1131.0
+        specifier: ^3.1134.0
+        version: 3.1136.0
       '@vertesia/client':
         specifier: 1.5.0
         version: 1.5.0
@@ -64,8 +64,8 @@ importers:
 
 packages:
 
-  '@aws-sdk/client-iam@3.1131.0':
-    resolution: {integrity: sha512-lRAK3tX7V+3BU9occfb66Ira4Zy5/ZeuyHm/b0YBqH0Gjx56PNi/vHgtkSlYpHIVZnhsxOGduqs4ZYmo0apmuA==}
+  '@aws-sdk/client-iam@3.1136.0':
+    resolution: {integrity: sha512-++tfxAzmxxySbJN5GdezE/mFTDEYY9LtWnaKz6BKYDrne1B1bz0IS+kPyN5HkBwnfijMS94UsjY5XojTDhOI0Q==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.978.0':
@@ -504,7 +504,7 @@ packages:
 
 snapshots:
 
-  '@aws-sdk/client-iam@3.1131.0':
+  '@aws-sdk/client-iam@3.1136.0':
     dependencies:
       '@aws-sdk/core': 3.978.0
       '@aws-sdk/credential-provider-node': 3.972.83

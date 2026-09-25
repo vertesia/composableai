@@ -22,7 +22,7 @@
         "typescript": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-iam": "^3.1129.0",
+        "@aws-sdk/client-iam": "^3.1134.0",
         "@vertesia/client": "1.5.0",
         "@vertesia/common": "1.5.0",
         "commander": "^15.0.0",

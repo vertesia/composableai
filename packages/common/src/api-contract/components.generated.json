@@ -3818,6 +3818,14 @@
       "reasoning_effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
       },
+      "reasoning_context": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "current_turn",
+          "all_turns"
+        ]
+      },
       "image_detail": {
         "type": "string",
         "enum": [
@@ -4572,6 +4580,21 @@
       "id": {
         "type": "string"
       },
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Select a project inference profile. Null bypasses profile defaults."
+      },
+      "inherit_model_config": {
+        "type": "boolean",
+        "description": "Treat supplied model settings as inherited fallback: an applicable profile replaces them."
+      },
       "environment": {
         "type": "string"
       },
@@ -4614,6 +4637,11 @@
       }
     },
     "additionalProperties": false
+  },
+  "InferenceProfileId": {
+    "type": "string",
+    "pattern": "^[a-fA-F0-9]{24}$",
+    "description": "MongoDB ObjectId of the inference profile."
   },
   "RunDataStorageLevel": {
     "type": "string",
@@ -5118,6 +5146,49 @@
     },
     "additionalProperties": false
   },
+  "ProjectInferenceProfiles": {
+    "type": "object",
+    "properties": {
+      "default_profile": {
+        "$ref": "#/components/schemas/InferenceProfileId"
+      },
+      "modality": {
+        "type": "object",
+        "properties": {
+          "image": {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          "video": {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          }
+        },
+        "additionalProperties": false
+      },
+      "system": {
+        "type": "object",
+        "properties": {
+          "content_type": {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          "intake": {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          "agent": {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          "non_applicable": {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "additionalProperties": false,
+    "description": "Project defaults reference profile MongoDB IDs. Profile definitions are managed through the inference profiles API."
+  },
   "AgentProjectConfiguration": {
     "type": "object",
     "properties": {
@@ -5156,7 +5227,12 @@
         "type": "string"
       },
       "defaults": {
-        "$ref": "#/components/schemas/ProjectModelDefaults"
+        "deprecated": true,
+        "$ref": "#/components/schemas/ProjectModelDefaults",
+        "description": "Legacy model defaults, replaced by inference profile assignments after migration."
+      },
+      "inference": {
+        "$ref": "#/components/schemas/ProjectInferenceProfiles"
       },
       "default_visibility": {
         "$ref": "#/components/schemas/ResourceVisibility"
@@ -5366,7 +5442,12 @@
         "type": "string"
       },
       "defaults": {
-        "$ref": "#/components/schemas/ProjectModelDefaults"
+        "deprecated": true,
+        "$ref": "#/components/schemas/ProjectModelDefaults",
+        "description": "Legacy model defaults, replaced by inference profile assignments after migration."
+      },
+      "inference": {
+        "$ref": "#/components/schemas/ProjectInferenceProfiles"
       },
       "default_visibility": {
         "$ref": "#/components/schemas/ResourceVisibility"
@@ -8602,6 +8683,358 @@
     ],
     "additionalProperties": false
   },
+  "UpdateInteractionConfigurationPayload": {
+    "type": "object",
+    "properties": {
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "inference_profile"
+    ],
+    "additionalProperties": false
+  },
+  "InteractionConfigurationRecord": {
+    "type": "object",
+    "properties": {
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "id": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "project": {
+        "type": "string"
+      },
+      "interaction": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      }
+    },
+    "required": [
+      "inference_profile",
+      "id",
+      "project",
+      "interaction",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false
+  },
+  "InteractionConfigurationResult": {
+    "type": "object",
+    "properties": {
+      "configuration": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InteractionConfigurationRecord"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "configuration"
+    ],
+    "additionalProperties": false
+  },
+  "InferenceProfileName": {
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 80,
+    "pattern": "\\S",
+    "description": "Editable display name, independent of the stable profile ID."
+  },
+  "CreateInferenceProfilePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "$ref": "#/components/schemas/InferenceProfileName"
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "environment": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions"
+      }
+    },
+    "required": [
+      "name",
+      "environment"
+    ],
+    "additionalProperties": false,
+    "description": "Create a profile in the current project. The server assigns its MongoDB ID."
+  },
+  "UpdateInferenceProfilePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "$ref": "#/components/schemas/InferenceProfileName"
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "environment": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions"
+      }
+    },
+    "required": [
+      "name",
+      "environment"
+    ],
+    "additionalProperties": false,
+    "description": "Replace editable profile fields, preserving its ID and references."
+  },
+  "InferenceProfileRecord": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "$ref": "#/components/schemas/InferenceProfileName"
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "environment": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions"
+      },
+      "id": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "project": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      }
+    },
+    "required": [
+      "name",
+      "environment",
+      "id",
+      "project",
+      "created_at",
+      "updated_at"
+    ],
+    "additionalProperties": false,
+    "description": "A project-scoped inference profile stored as a MongoDB document."
+  },
+  "InferenceProfileUsageEntry": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "stored",
+          "system",
+          "app"
+        ]
+      },
+      "version": {
+        "type": "number"
+      },
+      "status": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "kind"
+    ]
+  },
+  "InferenceProfileUsage": {
+    "type": "object",
+    "properties": {
+      "interactions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/InferenceProfileUsageEntry"
+        }
+      },
+      "total": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "defaults": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Project default slots directly referencing this profile."
+      }
+    },
+    "required": [
+      "interactions",
+      "total",
+      "defaults"
+    ],
+    "description": "Persisted direct assignments; runtime overrides and inherited usage are not enumerated."
+  },
+  "InferenceProfileUsageQuery": {
+    "type": "object",
+    "properties": {
+      "search": {
+        "type": "string",
+        "maxLength": 200
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "stored",
+          "system",
+          "app"
+        ]
+      },
+      "offset": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      }
+    }
+  },
+  "InferenceProfileRecordArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/InferenceProfileRecord"
+    }
+  },
+  "InferenceProfile": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "$ref": "#/components/schemas/InferenceProfileName",
+        "description": "Editable display name."
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "environment": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions"
+      }
+    },
+    "required": [
+      "environment"
+    ],
+    "additionalProperties": false,
+    "description": "A reusable environment, model and inference parameter preset. Credentials remain in the environment."
+  },
+  "InferenceProfileSnapshot": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/InferenceProfileId"
+      },
+      "name": {
+        "$ref": "#/components/schemas/InferenceProfileName"
+      },
+      "revision": {
+        "type": "string"
+      },
+      "source": {
+        "type": "string",
+        "enum": [
+          "request",
+          "binding",
+          "interaction",
+          "project"
+        ]
+      },
+      "profile": {
+        "$ref": "#/components/schemas/InferenceProfile"
+      }
+    },
+    "required": [
+      "name",
+      "revision",
+      "source",
+      "profile"
+    ],
+    "additionalProperties": false,
+    "description": "The selected profile and content revision at execution creation. Effective overrides are recorded in the execution config."
+  },
   "InteractionStatus": {
     "type": "string",
     "enum": [
@@ -9311,6 +9744,16 @@
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
       },
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "store_media_results": {
         "type": "boolean"
       },
@@ -9810,6 +10253,16 @@
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
       },
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "store_media_results": {
         "type": "boolean"
       },
@@ -9919,6 +10372,16 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "store_media_results": {
         "type": "boolean"
@@ -10078,6 +10541,12 @@
       "model": {
         "type": "string"
       },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileId"
+      },
+      "inherit_model_config": {
+        "type": "boolean"
+      },
       "hasImage": {
         "type": "boolean"
       },
@@ -10213,6 +10682,16 @@
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
       },
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "prompts": {
         "type": "array",
         "items": {
@@ -10305,6 +10784,16 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "prompts": {
         "type": "array",
@@ -10407,6 +10896,12 @@
       },
       "model_source": {
         "$ref": "#/components/schemas/ModelSource"
+      },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileSnapshot"
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions"
       }
     },
     "required": [
@@ -11872,6 +12367,9 @@
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
       },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileSnapshot"
+      },
       "error": {
         "$ref": "#/components/schemas/InteractionExecutionError"
       },
@@ -12012,6 +12510,9 @@
       },
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
+      },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileSnapshot"
       },
       "error": {
         "$ref": "#/components/schemas/InteractionExecutionError"
@@ -12792,6 +13293,9 @@
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
       },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileSnapshot"
+      },
       "error": {
         "$ref": "#/components/schemas/InteractionExecutionError"
       },
@@ -12946,6 +13450,9 @@
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
       },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileSnapshot"
+      },
       "error": {
         "$ref": "#/components/schemas/InteractionExecutionError"
       },
@@ -13081,6 +13588,9 @@
       },
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
+      },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileSnapshot"
       },
       "error": {
         "$ref": "#/components/schemas/InteractionExecutionError"
@@ -13235,6 +13745,9 @@
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
       },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileSnapshot"
+      },
       "error": {
         "$ref": "#/components/schemas/InteractionExecutionError"
       },
@@ -13387,6 +13900,9 @@
       },
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
+      },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileSnapshot"
       },
       "error": {
         "$ref": "#/components/schemas/InteractionExecutionError"
@@ -14022,6 +14538,19 @@
       },
       "environment_id": {
         "type": "string"
+      },
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "inherit_model_config": {
+        "type": "boolean"
       },
       "model_id": {
         "type": "string"
@@ -16116,6 +16645,21 @@
     "properties": {
       "id": {
         "type": "string"
+      },
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Select a project inference profile. Null bypasses profile defaults."
+      },
+      "inherit_model_config": {
+        "type": "boolean",
+        "description": "Treat supplied model settings as inherited fallback: an applicable profile replaces them."
       },
       "environment": {
         "type": "string"
@@ -30687,6 +31231,17 @@
   "ProcessRunConfig": {
     "type": "object",
     "properties": {
+      "inference_profile": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InferenceProfileId"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Run-level inference profile ID for process LLM nodes and the supervisor. Explicit model settings retain precedence."
+      },
       "environment": {
         "type": "string",
         "description": "Execution environment id used by Process LLM nodes and the supervisor."

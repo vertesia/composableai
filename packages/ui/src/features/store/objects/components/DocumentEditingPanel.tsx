@@ -440,7 +440,10 @@ export function DocumentEditingWorkspace({
         setIsLoadingConfiguration(true);
         void client.projects
             .retrieve(project.id)
-            .then((fullProject) => {
+            .then(async (fullProject) => {
+                const profile = fullProject.configuration?.inference
+                    ? await client.inferenceProfiles.getDefault(fullProject.configuration, 'agent')
+                    : undefined;
                 if (
                     cancelled ||
                     editingScopeRef.current !== requestScopeKey ||
@@ -449,7 +452,7 @@ export function DocumentEditingWorkspace({
                     return;
                 }
                 configurationSourceRef.current = 'project';
-                setExecutionConfiguration(getDocumentEditingProjectDefault(fullProject));
+                setExecutionConfiguration(getDocumentEditingProjectDefault(fullProject, profile));
             })
             .catch((error: unknown) => {
                 console.warn('Failed to load the default document editing model', error);
@@ -585,11 +588,13 @@ export function DocumentEditingWorkspace({
                         },
                     ],
                     data: { user_prompt: prompt },
-                    config: {
-                        environment: executionConfiguration.environment,
-                        model: executionConfiguration.model,
-                        model_options: executionConfiguration.model_options,
-                    },
+                    config: executionConfiguration.inference_profile
+                        ? { inference_profile: executionConfiguration.inference_profile }
+                        : {
+                              environment: executionConfiguration.environment,
+                              model: executionConfiguration.model,
+                              model_options: executionConfiguration.model_options,
+                          },
                     started_by: startedBy,
                     tags: identity.tags,
                     properties: identity.properties,
