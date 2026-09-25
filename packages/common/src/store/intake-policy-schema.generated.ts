@@ -1111,6 +1111,11 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 model: {
                     type: 'string',
                 },
+                inherit_model_config: {
+                    type: 'boolean',
+                    description:
+                        'Treat environment and model as inherited fallbacks after interaction settings, before project defaults.',
+                },
                 do_validate: {
                     type: 'boolean',
                 },
