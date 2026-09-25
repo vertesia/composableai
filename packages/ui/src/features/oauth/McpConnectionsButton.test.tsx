@@ -183,6 +183,62 @@ describe('MCP connection controls', () => {
         expect(onChange).toHaveBeenCalledWith(['linear']);
     });
 
+    it.each([{ oauthIds: [] }, { oauthIds: ['anonymous'] }])(
+        'shows anonymous servers without status requests, including stale OAuth ids %j',
+        async ({ oauthIds }) => {
+            mocks.getInstalledApps.mockResolvedValue([
+                {
+                    id: 'anonymous-app',
+                    manifest: {
+                        name: 'anonymous-app',
+                        tool_collections: [
+                            {
+                                type: 'mcp',
+                                id: 'anonymous',
+                                name: 'Anonymous MCP',
+                                namespace: 'anonymous',
+                                url: 'https://anonymous.example.com/mcp',
+                                auth: 'none',
+                                oauth_app: 'stale-oauth-app',
+                            },
+                        ],
+                    },
+                    oauth_collection_ids: oauthIds,
+                },
+            ]);
+            const onChange = vi.fn();
+            const { rerender } = renderWithProviders(
+                <McpConnectionsInlineList disabledCollections={['other']} onChange={onChange} />,
+            );
+
+            expect(await screen.findByText('Anonymous MCP')).not.toBeNull();
+            expect(screen.getAllByText('No authentication')).toHaveLength(1);
+            expect(screen.queryByRole('button', { name: /connect/i })).toBeNull();
+            expect(mocks.getStatus).not.toHaveBeenCalled();
+            expect(mocks.getCollectionStatus).not.toHaveBeenCalled();
+
+            fireEvent.click(screen.getByRole('switch', { name: 'Deactivate Anonymous MCP for this conversation' }));
+            expect(onChange).toHaveBeenLastCalledWith(['other', 'anonymous']);
+            rerender(<McpConnectionsInlineList disabledCollections={['other', 'anonymous']} onChange={onChange} />);
+            fireEvent.click(screen.getByRole('switch', { name: 'Activate Anonymous MCP for this conversation' }));
+            expect(onChange).toHaveBeenLastCalledWith(['other']);
+            rerender(<McpConnectionsInlineList onChange={onChange} readOnly />);
+            expect(screen.getByRole('switch')).toHaveProperty('disabled', true);
+
+            rerender(<McpConnectionsActionMenu onChange={onChange} />);
+            fireEvent.pointerDown(await screen.findByRole('button', { name: /settings/i }));
+            const menuItem = await screen.findByText('MCP');
+            expect(screen.getByText('1')).not.toBeNull();
+            fireEvent.click(menuItem);
+            expect(await screen.findByText('Anonymous MCP')).not.toBeNull();
+            expect(screen.getByText('No authentication')).not.toBeNull();
+            expect(screen.queryByRole('button', { name: /connect/i })).toBeNull();
+            fireEvent.click(screen.getByRole('switch', { name: 'Deactivate Anonymous MCP for this conversation' }));
+            expect(onChange).toHaveBeenLastCalledWith(['anonymous']);
+            expect(mocks.getStatus).not.toHaveBeenCalled();
+        },
+    );
+
     it('renders MCP rows before connection statuses finish loading', async () => {
         const statusRequest =
             deferred<

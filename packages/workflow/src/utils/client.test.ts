@@ -130,3 +130,55 @@ describe('workflow API request provenance', () => {
         }
     });
 });
+
+function tokenWithClaims(claims: Record<string, unknown>): string {
+    const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    return `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode(claims)}.signature`;
+}
+
+function payloadWithToken(authToken: string): WorkflowExecutionBaseParams {
+    return { ...payload(), auth_token: authToken };
+}
+
+describe('workflow client token server URL resolution', () => {
+    const resolveTokenServerUrl = (claims: Record<string, unknown>) =>
+        getVertesiaClientOptions(payloadWithToken(tokenWithClaims(claims))).tokenServerUrl;
+
+    it('falls back to the issuer when the endpoints claim is absent (non-production issuer)', () => {
+        // decodeEndpoints(undefined) would return the production map (token: https://sts.vertesia.io);
+        // an absent claim must instead fall back to iss so a dev1 token mints against dev1.
+        expect(resolveTokenServerUrl({ iss: 'https://sts.dev1.vertesia.io', sub: 'test' })).toBe(
+            'https://sts.dev1.vertesia.io',
+        );
+    });
+
+    it('uses the token endpoint from an object endpoints claim', () => {
+        expect(
+            resolveTokenServerUrl({
+                iss: 'https://sts.dev1.vertesia.io',
+                sub: 'test',
+                endpoints: { token: 'https://token-server-dev-feat.api.dev1.vertesia.io' },
+            }),
+        ).toBe('https://token-server-dev-feat.api.dev1.vertesia.io');
+    });
+
+    it('falls back to the issuer when an object endpoints claim omits token', () => {
+        expect(
+            resolveTokenServerUrl({
+                iss: 'https://sts.dev1.vertesia.io',
+                sub: 'test',
+                endpoints: { studio: 'https://studio.example.com' },
+            }),
+        ).toBe('https://sts.dev1.vertesia.io');
+    });
+
+    it('derives the token endpoint from a string (domain) endpoints claim', () => {
+        expect(
+            resolveTokenServerUrl({
+                iss: 'https://sts.dev1.vertesia.io',
+                sub: 'test',
+                endpoints: 'api.us1.vertesia.io',
+            }),
+        ).toBe('https://sts.us1.vertesia.io');
+    });
+});

@@ -114,3 +114,33 @@ export const InteractionConfigurationResultSchema = z
         configuration: InteractionConfigurationRecordSchema.nullable(),
     })
     .meta({ id: 'InteractionConfigurationResult' });
+
+export const InferenceProfileUsageQuerySchema = z
+    .strictObject({
+        search: z.string().max(200).optional(),
+        kind: z.enum(['stored', 'system', 'app']).optional(),
+        offset: z.coerce.number().int().min(0).optional(),
+        limit: z.coerce.number().int().min(1).max(100).optional(),
+    })
+    .meta({ id: 'InferenceProfileUsageQuery' });
+
+export const InferenceProfileUsageEntrySchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string(),
+        kind: z.enum(['stored', 'system', 'app']),
+        version: z.number().optional(),
+        status: z.string().optional(),
+    })
+    .meta({ id: 'InferenceProfileUsageEntry' });
+
+export const InferenceProfileUsageSchema = z
+    .strictObject({
+        interactions: z.array(InferenceProfileUsageEntrySchema),
+        total: z.number().int().nonnegative(),
+        defaults: z.array(z.string()).meta({ description: 'Project default slots directly referencing this profile.' }),
+    })
+    .meta({
+        id: 'InferenceProfileUsage',
+        description: 'Persisted direct assignments; runtime overrides and inherited usage are not enumerated.',
+    });

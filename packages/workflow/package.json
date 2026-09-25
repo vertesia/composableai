@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "1.6.0-dev.20260912.110338Z",
+    "version": "1.6.0-dev.20260923.085325Z",
     "type": "module",
     "description": "Vertesia workflow DSL",
     "main": "./lib/index.js",
@@ -23,9 +23,9 @@
     "license": "Apache-2.0",
     "devDependencies": {
         "@smithy/types": "^4.18.0",
-        "@temporalio/proto": "^1.23.0",
-        "@temporalio/testing": "^1.23.0",
-        "@temporalio/worker": "^1.23.0",
+        "@temporalio/proto": "^1.24.0",
+        "@temporalio/testing": "^1.24.0",
+        "@temporalio/worker": "^1.24.0",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/node": "catalog:",
         "@types/papaparse": "^5.5.2",
@@ -35,12 +35,12 @@
         "vitest": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.1125.0",
-        "@aws-sdk/client-textract": "^3.1125.0",
-        "@aws-sdk/credential-providers": "^3.1125.0",
+        "@aws-sdk/client-s3": "^3.1134.0",
+        "@aws-sdk/client-textract": "^3.1134.0",
+        "@aws-sdk/credential-providers": "^3.1134.0",
         "@llumiverse/common": "workspace:*",
-        "@temporalio/activity": "^1.23.0",
-        "@temporalio/workflow": "^1.23.0",
+        "@temporalio/activity": "^1.24.0",
+        "@temporalio/workflow": "^1.24.0",
         "@vertesia/api-fetch-client": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
@@ -57,7 +57,7 @@
         "tmp": "^0.2.7",
         "tmp-promise": "^3.0.3",
         "undici": "^7.29.1",
-        "yaml": "^2.9.0"
+        "yaml": "^2.9.1"
     },
     "exports": {
         ".": {
@@ -94,6 +94,34 @@
         "./errors": {
             "types": "./lib/errors.d.ts",
             "default": "./lib/errors.js"
+        },
+        "./utils/activity-info": {
+            "types": "./lib/utils/activity-info.d.ts",
+            "default": "./lib/utils/activity-info.js"
+        },
+        "./utils/tokens": {
+            "types": "./lib/utils/tokens.d.ts",
+            "default": "./lib/utils/tokens.js"
+        },
+        "./utils/blobs": {
+            "types": "./lib/utils/blobs.d.ts",
+            "default": "./lib/utils/blobs.js"
+        },
+        "./utils/storage": {
+            "types": "./lib/utils/storage.d.ts",
+            "default": "./lib/utils/storage.js"
+        },
+        "./utils/text-preview-utils": {
+            "types": "./lib/utils/text-preview-utils.d.ts",
+            "default": "./lib/utils/text-preview-utils.js"
+        },
+        "./result-types": {
+            "types": "./lib/result-types.d.ts",
+            "default": "./lib/result-types.js"
+        },
+        "./activities/executeInteraction": {
+            "types": "./lib/activities/executeInteraction.d.ts",
+            "default": "./lib/activities/executeInteraction.js"
         }
     },
     "repository": {
@@ -111,5 +139,5 @@
         "agents",
         "typescript"
     ],
-    "gitHead": "504e8df031c3950ec324c865385caf460b1c1cd7"
+    "gitHead": "8732631fd8099bdcab4f5375da2309f3cff34e19"
 }

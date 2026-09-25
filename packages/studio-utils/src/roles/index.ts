@@ -1,8 +1,10 @@
 import type { AbacScope, RoleDomain } from '@vertesia/common';
+import { agentRunPartition } from './agent-runs.js';
 import { AbacRole, type Role, type RolePartition, SystemRole } from './classes.js';
 import { contentPartition } from './content.js';
 import { systemPartition } from './system.js';
 
+export { AgentRunRoleNames } from './agent-runs.js';
 export { AbacRole, Role, type RolePartition, SystemRole } from './classes.js';
 export { ContentRoleNames } from './content.js';
 
@@ -11,7 +13,7 @@ export { ContentRoleNames } from './content.js';
  * match wins. The `system` partition is registered first so domain-specific
  * partitions (added later) cannot shadow built-in system roles.
  */
-const partitions: RolePartition[] = [systemPartition, contentPartition];
+const partitions: RolePartition[] = [systemPartition, contentPartition, agentRunPartition];
 
 /** Look up a role by its name across all registered partitions. */
 export function getRoleByName(name: string): Role {
@@ -75,16 +77,16 @@ export function getPermissionsForRoles(roleNames: Iterable<string>): string[] {
 }
 
 /**
- * Return the platform permission keys a caller must hold to delegate a role.
+ * Return the platform `Permission` keys a caller must hold to delegate a role.
  *
  * System roles already contain complete `domain:verb` Permission values. ABAC roles store bare
- * verbs for content-security token generation, so map them back to their domain-qualified keys at
- * an authorization boundary.
+ * scope verbs (`read`, `control`, ...) for token generation, which are not Permission values, so
+ * they declare the Permissions that gate their delegation separately (`AbacRole.delegationPermissions`).
  */
 export function getDelegablePermissionsForRole(roleName: string): string[] {
     const role = getRoleByName(roleName);
     if (role instanceof AbacRole) {
-        return [...role.permissions].map((permission) => `${role.domain}:${permission}`);
+        return [...role.delegationPermissions];
     }
     return [...role.permissions];
 }

@@ -7,6 +7,9 @@ import type {
     InferenceProfileRecordSchema,
     InferenceProfileSchema,
     InferenceProfileSnapshotSchema,
+    InferenceProfileUsageEntrySchema,
+    InferenceProfileUsageQuerySchema,
+    InferenceProfileUsageSchema,
     InteractionConfigurationRecordSchema,
     InteractionConfigurationResultSchema,
     ProjectInferenceProfilesSchema,
@@ -28,3 +31,7 @@ export type InferenceProfileRecordArray = z.infer<typeof InferenceProfileRecordA
 export type UpdateInteractionConfigurationPayload = z.infer<typeof UpdateInteractionConfigurationPayloadSchema>;
 export type InteractionConfigurationRecord = z.infer<typeof InteractionConfigurationRecordSchema>;
 export type InteractionConfigurationResult = z.infer<typeof InteractionConfigurationResultSchema>;
+
+export type InferenceProfileUsage = z.infer<typeof InferenceProfileUsageSchema>;
+export type InferenceProfileUsageEntry = z.infer<typeof InferenceProfileUsageEntrySchema>;
+export type InferenceProfileUsageQuery = z.infer<typeof InferenceProfileUsageQuerySchema>;

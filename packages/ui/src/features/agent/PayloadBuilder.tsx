@@ -86,6 +86,8 @@ export class PayloadBuilder {
     _preserveRunValues: boolean = false;
     _interaction: InCodeInteraction | undefined;
     _environment: ExecutionEnvironmentRef | undefined;
+    _inference_profile: string | null | undefined;
+    private _availableInferenceProfiles: readonly string[] | undefined;
     _model: string = '';
     _model_options: InCodeInteraction['model_options'] | undefined;
     _tool_names: string[] = [];
@@ -122,6 +124,8 @@ export class PayloadBuilder {
         builder._interaction = this._interaction;
         builder._data = this._data;
         builder._environment = this._environment;
+        builder._inference_profile = this._inference_profile;
+        builder._availableInferenceProfiles = this._availableInferenceProfiles;
         builder._model = this._model;
         builder._model_options = this._model_options ? ({ ...this._model_options } as ModelOptions) : undefined;
         builder._tool_names = [...this._tool_names];
@@ -298,6 +302,12 @@ export class PayloadBuilder {
             this.interactionParamsSchema = context.interactionParamsSchema;
         }
 
+        this._inference_profile =
+            context.config?.inference_profile !== undefined
+                ? context.config.inference_profile
+                : context.config?.environment || context.config?.model
+                  ? null
+                  : undefined;
         this._tool_names = context.tool_names || [];
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
@@ -366,6 +376,42 @@ export class PayloadBuilder {
 
             this.onStateChanged();
         }
+    }
+
+    get inference_profile() {
+        return this._inference_profile;
+    }
+
+    setInferenceProfile(profile: string | null | undefined) {
+        this._inference_profile = profile;
+        this.onStateChanged();
+    }
+
+    setAvailableInferenceProfiles(ids: readonly string[] | undefined) {
+        this._availableInferenceProfiles = ids;
+        this.onStateChanged();
+    }
+
+    get inferenceProfileError(): string | undefined {
+        if (!this._inference_profile) return undefined;
+        if (!this._availableInferenceProfiles)
+            return 'Wait for inference profiles to load, or choose another configuration.';
+        if (!this._availableInferenceProfiles.includes(this._inference_profile)) {
+            return 'This inference profile is unavailable. Choose the default, Ad hoc, or another profile.';
+        }
+        return undefined;
+    }
+
+    get inferenceConfig() {
+        if (this._inference_profile === null) {
+            return {
+                inference_profile: null,
+                environment: this.environment?.id,
+                model: this.model || undefined,
+                model_options: this.model_options,
+            };
+        }
+        return this._inference_profile ? { inference_profile: this._inference_profile } : {};
     }
 
     get model() {
@@ -537,6 +583,7 @@ export class PayloadBuilder {
         this._collection = undefined;
         this._disabled_mcp_collections = undefined;
         this._preserveRunValues = false;
+        this._inference_profile = undefined;
         this._model = '';
         this._model_options = undefined;
         this._environment = undefined;

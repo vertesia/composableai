@@ -19,6 +19,21 @@ class AdminRole extends OrgMemberRole {
     }
 }
 
+/**
+ * Full `admin` rights minus Studio UI access. For an account administrator who operates the
+ * platform through a custom admin UI and must not reach Vertesia Studio itself.
+ *
+ * Keep in lockstep with `AdminRole`: `studio_access` is the only intended difference, so a new
+ * permission added to the central enum reaches both roles automatically.
+ */
+class AppAdminRole extends AdminRole {
+    constructor() {
+        super();
+        this.name = SystemRoles.app_admin;
+        this.permissions.delete(Permission.studio_access);
+    }
+}
+
 class ManagerRole extends OrgMemberRole {
     constructor() {
         super(SystemRoles.manager, Object.values(Permission));
@@ -189,6 +204,7 @@ class ContentSuperAdmin extends DeveloperRole {
 const systemRoles: Record<SystemRoles, Role> = {
     [SystemRoles.owner]: new OwnerRole(),
     [SystemRoles.admin]: new AdminRole(),
+    [SystemRoles.app_admin]: new AppAdminRole(),
     [SystemRoles.manager]: new ManagerRole(),
     [SystemRoles.developer]: new DeveloperRole(),
     [SystemRoles.application]: new ApplicationRole(),
