@@ -11,17 +11,9 @@ import {
     useUserSession,
     useUXTracking,
 } from '@vertesia/ui/session';
-<<<<<<< HEAD
 import { type ComponentType, type ReactNode, useCallback, useEffect } from 'react';
 import { type SignInFlowController, SignInFlowSteps, useSignInFlow } from './SignInFlow';
 import { SignInPageShell } from './SignInPageShell';
-=======
-import { useCallback, useEffect, useState } from 'react';
-import SignInAuthPending from './SignInAuthPending';
-import SignInEmailStep, { type TenantInfo } from './SignInEmailStep';
-import SignInPasswordStep from './SignInPasswordStep';
-import SignInProvidersStep from './SignInProvidersStep';
->>>>>>> 87041d5e (feat(ui): email and password sign-in for password tenants (#2291))
 import SignInRecoveryStep, { type SignInRecoveryKind } from './SignInRecoveryStep';
 import SignInRestrictedEnvStep from './SignInRestrictedEnvStep';
 import SignInTenantBlockedStep from './SignInTenantBlockedStep';
@@ -88,19 +80,11 @@ function matchesPathPrefix(pathname: string, prefix?: string | string[]) {
     });
 }
 
-<<<<<<< HEAD
 /**
  * The modes this screen adds on top of {@link SignInCoreMode}: every one is entered from an
  * `authError` the session surfaced, which is why they stay here rather than in the shared flow.
  */
 export type SignInRecoveryMode =
-=======
-type Mode =
-    | 'email'
-    | 'providers'
-    | 'tenant'
-    | 'password'
->>>>>>> 87041d5e (feat(ui): email and password sign-in for password tenants (#2291))
     | 'blocked'
     | 'signup'
     | 'restricted'
@@ -184,65 +168,7 @@ function SigninScreenImpl({
             if (pending) setEmail(pending.email);
             setMode('blocked');
         }
-<<<<<<< HEAD
     }, [authError, setEmail, setMode]);
-=======
-    }, [authError]);
-
-    // On successful login, finalize the last-successful-login entry with the user's name.
-    useEffect(() => {
-        if (!user) return;
-        const pending = readPendingSignin();
-        if (!pending) return;
-        writeLastSuccessfulLogin({
-            email: pending.email,
-            lastProvider: pending.provider,
-            tenantName: pending.tenantName,
-            name: user.name || undefined,
-        });
-        clearPendingSignin();
-    }, [user]);
-
-    const onProceedFromEmail = useCallback((e: string, t: TenantInfo | undefined) => {
-        setEmail(e);
-        setTenant(t);
-        // A password tenant has no identity provider to pick; ask for its password directly.
-        setMode(t?.provider === 'password' ? 'password' : t ? 'tenant' : 'providers');
-    }, []);
-
-    const onPasswordRequired = useCallback((e: string) => {
-        setEmail(e);
-        setMode('password');
-    }, []);
-
-    const onBack = useCallback(() => {
-        setMode('email');
-        setTenant(undefined);
-    }, []);
-
-    const onNotYou = useCallback(() => {
-        clearLastSuccessfulLogin();
-        clearPendingSignin();
-        setStoredSession(null);
-        setEmail('');
-        setTenant(undefined);
-        setMode('email');
-        void signOut();
-    }, [signOut]);
-
-    const onProviderClicked = useCallback(
-        (provider: ProviderId) => {
-            // Tenant context comes from a resolved tenant or stored tenantName, not the provider.
-            const hasTenant = !!tenant || !!storedSession?.tenantName;
-            // Only the pre-existing enterprise_signin event; non-tenant sign-ins emit nothing.
-            if (hasTenant) trackEvent('enterprise_signin', { provider });
-            setPendingProvider(provider);
-            setMode('pending');
-            // The redirect itself happens in the calling step's startSignIn(); this just shows the pending screen.
-        },
-        [trackEvent, storedSession?.tenantName, tenant],
-    );
->>>>>>> 87041d5e (feat(ui): email and password sign-in for password tenants (#2291))
 
     // "Use a different email" out of the blocked/signup screen. The user reached it
     // as a valid Firebase user with no Vertesia account, so a partial reset isn't
@@ -356,45 +282,6 @@ function SigninScreenImpl({
         );
     } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
         content = <SignupForm onSignup={onSignup} goBack={startOver} />;
-<<<<<<< HEAD
-=======
-    } else if (mode === 'password' && email) {
-        content = (
-            <SignInPasswordStep
-                email={email}
-                tenantName={tenant?.label || tenant?.name || storedSession?.tenantName || undefined}
-                onBack={onBack}
-            />
-        );
-    } else if (mode === 'tenant' && tenant) {
-        content = (
-            <SignInTenantStep
-                email={email}
-                tenant={tenant}
-                onBack={onBack}
-                onProviderClicked={() => onProviderClicked((tenant.provider ?? 'oidc') as ProviderId)}
-                onPasswordRequired={onPasswordRequired}
-            />
-        );
-    } else if (mode === 'providers') {
-        content = (
-            <SignInProvidersStep
-                email={email}
-                onBack={onBack}
-                onProviderClicked={onProviderClicked}
-                onPasswordRequired={onPasswordRequired}
-            />
-        );
-    } else if (mode === 'returning' && storedSession) {
-        content = (
-            <SignInReturningStep
-                session={storedSession}
-                onNotYou={onNotYou}
-                onProviderClicked={onProviderClicked}
-                onPasswordRequired={onPasswordRequired}
-            />
-        );
->>>>>>> 87041d5e (feat(ui): email and password sign-in for password tenants (#2291))
     } else {
         // Every remaining mode is a core one; an unmatched recovery mode falls through to the
         // email step, exactly as it did when this chain owned all twelve branches.

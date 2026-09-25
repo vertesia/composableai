@@ -214,10 +214,6 @@ export async function startSignIn(
     return { ok: true };
 }
 
-<<<<<<< HEAD
-/** Starts sign-in without email discovery, preserving an explicitly configured tenant. */
-export function startSignInWithoutTenant(provider: ProviderId, redirectTo?: string): void {
-=======
 export type PasswordSignInFailure = 'not-password-tenant' | 'invalid-credentials' | 'too-many-attempts' | 'failed';
 
 // Firebase reports an unknown user, a wrong password and a disabled user with distinct codes on
@@ -263,16 +259,15 @@ export async function signInWithPassword(
     }
 }
 
-/** Starts a provider sign-in directly, skipping email/tenant resolution and clearing any tenant routing. */
+/** Starts sign-in without email discovery, preserving an explicitly configured tenant. */
 export function startSignInWithoutTenant(provider: RedirectProviderId, redirectTo?: string): void {
->>>>>>> 87041d5e (feat(ui): email and password sign-in for password tenants (#2291))
     const auth = getFirebaseAuth();
     localStorage.removeItem('tenantName');
     auth.tenantId = Env.firebase?.tenantId ?? null;
     void signInWithRedirect(
         auth,
         buildFirebaseProvider(
-            Env.firebase?.tenantId ? ((Env.firebase.providerType as ProviderId) ?? 'oidc') : provider,
+            Env.firebase?.tenantId ? ((Env.firebase.providerType as RedirectProviderId) ?? 'oidc') : provider,
             undefined,
             redirectTo,
         ),
