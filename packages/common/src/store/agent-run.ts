@@ -263,6 +263,8 @@ export interface RecordProcessRunPayload<TData = Record<string, unknown>, TSourc
         RecordRunWorkflowPayload {
     run_kind: 'process';
     run_type?: ProcessRunType;
+    schedule_id?: string;
+    type?: AgentRunType;
 }
 
 export type RecordRunPayload<TData = Record<string, unknown>, TSource = RunSource> =
