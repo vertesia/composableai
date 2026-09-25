@@ -12,6 +12,7 @@
 export * from './account.js';
 export * from './adapter.js';
 export * from './agent-communication.js';
+export * from './agent-run-settings.js';
 export * from './agent-runs.js';
 export * from './analytics.js';
 export * from './apikey.js';

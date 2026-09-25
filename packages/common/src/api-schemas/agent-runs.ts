@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH, AGENT_RUN_FEEDBACK_ID_MAX_LENGTH } from '../store/agent-run-values.js';
 import type { AgentMessageType, FileProcessingStatus } from '../store/workflow.js';
 import { type AgentEvent, AgentEventType, LlmCallType, TelemetryToolType } from '../workflow-analytics.js';
+import { AgentRunSettingsSchema, AgentRunSettingsSnapshotSchema } from './agent-run-settings.js';
 import * as AppLifecycleSchemas from './app-lifecycle.js';
 import {
     AgentRunStatusSchema,
@@ -816,6 +817,8 @@ export const AgentRunSchema = z
         config: InteractionExecutionConfigurationSchema.meta({
             description: 'Execution configuration (environment, model, model_options, etc.)',
         }).optional(),
+        settings: AgentRunSettingsSchema.optional(),
+        settings_snapshot: AgentRunSettingsSnapshotSchema.optional(),
         interactive: z.boolean().meta({ description: 'Whether the agent accepts user input' }).optional(),
         tool_approval_mode: AgentToolApprovalModeSchema.meta({
             description: 'How side-effecting tool actions are approved for interactive runs.',
@@ -970,6 +973,7 @@ export const CreateAgentRunPayloadSchema = z
         config: InteractionExecutionConfigurationSchema.meta({
             description: 'Execution configuration (environment, model, model_options, etc.)',
         }).optional(),
+        settings: AgentRunSettingsSchema.optional(),
         interactive: z.boolean().meta({ description: 'Whether the agent accepts user input' }).optional(),
         tool_approval_mode: AgentToolApprovalModeSchema.meta({
             description: 'How side-effecting tool actions are approved for interactive runs.',

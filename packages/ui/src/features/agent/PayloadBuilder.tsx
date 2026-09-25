@@ -1,5 +1,6 @@
 import type { AsyncExecutionResult, VertesiaClient } from '@vertesia/client';
 import {
+    type AgentRunSettings,
     AgentSearchScope,
     type ConversationVisibility,
     type ExecutionEnvironmentRef,
@@ -87,6 +88,7 @@ export class PayloadBuilder {
     _interaction: InCodeInteraction | undefined;
     _environment: ExecutionEnvironmentRef | undefined;
     _inference_profile: string | null | undefined;
+    private _runSettings: AgentRunSettings | undefined;
     private _availableInferenceProfiles: readonly string[] | undefined;
     _model: string = '';
     _model_options: InCodeInteraction['model_options'] | undefined;
@@ -125,6 +127,7 @@ export class PayloadBuilder {
         builder._data = this._data;
         builder._environment = this._environment;
         builder._inference_profile = this._inference_profile;
+        builder._runSettings = this._runSettings ? structuredClone(this._runSettings) : undefined;
         builder._availableInferenceProfiles = this._availableInferenceProfiles;
         builder._model = this._model;
         builder._model_options = this._model_options ? ({ ...this._model_options } as ModelOptions) : undefined;
@@ -271,7 +274,7 @@ export class PayloadBuilder {
         return this._collection ? AgentSearchScope.Collection : undefined;
     }
 
-    async restoreConversation(context: WorkflowInteractionVars) {
+    async restoreConversation(context: WorkflowInteractionVars & { settings?: AgentRunSettings }) {
         // Handle version-specific interaction resolution
         let interactionRef = context.interaction;
         if (context.version) {
@@ -309,6 +312,7 @@ export class PayloadBuilder {
                   ? null
                   : undefined;
         this._tool_names = context.tool_names || [];
+        this._runSettings = context.settings ? structuredClone(context.settings) : undefined;
         this._interactive = context.interactive;
         this._debug_mode = context.debug_mode ?? false;
         this._non_blocking_subagents = context.non_blocking_subagents ?? true;
@@ -382,6 +386,23 @@ export class PayloadBuilder {
         return this._inference_profile;
     }
 
+    get runSettings() {
+        return this._runSettings ? structuredClone(this._runSettings) : undefined;
+    }
+
+    setRunSettings(settings: AgentRunSettings | undefined) {
+        this._runSettings = settings ? structuredClone(settings) : undefined;
+        this.onStateChanged();
+    }
+
+    /** Main-agent inference and per-operation overrides occupy separate launch fields. */
+    get inferencePayload() {
+        return {
+            config: this.inferenceConfig,
+            ...(this._runSettings ? { settings: this.runSettings } : {}),
+        };
+    }
+
     setInferenceProfile(profile: string | null | undefined) {
         this._inference_profile = profile;
         this.onStateChanged();
@@ -393,10 +414,15 @@ export class PayloadBuilder {
     }
 
     get inferenceProfileError(): string | undefined {
-        if (!this._inference_profile) return undefined;
+        const profiles = [
+            this._inference_profile,
+            ...Object.values(this._runSettings?.tools ?? {}).map((tool) => tool?.analysis.inference_profile),
+            ...Object.values(this._runSettings?.subagents ?? {}).map((agent) => agent.inference_profile),
+        ].filter((profile): profile is string => !!profile);
+        if (!profiles.length) return undefined;
         if (!this._availableInferenceProfiles)
             return 'Wait for inference profiles to load, or choose another configuration.';
-        if (!this._availableInferenceProfiles.includes(this._inference_profile)) {
+        if (profiles.some((profile) => !this._availableInferenceProfiles?.includes(profile))) {
             return 'This inference profile is unavailable. Choose the default, Ad hoc, or another profile.';
         }
         return undefined;
@@ -584,6 +610,7 @@ export class PayloadBuilder {
         this._disabled_mcp_collections = undefined;
         this._preserveRunValues = false;
         this._inference_profile = undefined;
+        this._runSettings = undefined;
         this._model = '';
         this._model_options = undefined;
         this._environment = undefined;

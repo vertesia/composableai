@@ -87,6 +87,7 @@ it('sends only a runtime profile or defaults without stale model overrides', () 
 });
 
 it.each(['0123456789abcdef01234567', null, undefined])('restores runtime profile selection %s', async (profile) => {
+    const analysisProfile = 'aaaaaaaaaaaaaaaaaaaaaaaa';
     const client = {
         interactions: {
             catalog: {
@@ -107,8 +108,42 @@ it.each(['0123456789abcdef01234567', null, undefined])('restores runtime profile
         interaction: 'sys:GeneralAgent',
         interactive: true,
         config: { inference_profile: profile },
+        settings: { tools: { fetch_document: { analysis: { inference_profile: analysisProfile } } } },
     });
     expect(store.snapshot.inference_profile).toBe(profile);
+    expect(store.snapshot.inferencePayload.settings?.tools?.fetch_document?.analysis.inference_profile).toBe(
+        analysisProfile,
+    );
+    await store.snapshot.restoreConversation({
+        type: 'ExecuteConversationWorkflow',
+        tool_names: [],
+        interaction: 'sys:GeneralAgent',
+        interactive: true,
+        config: {},
+    });
+    expect(store.snapshot.inferencePayload).toEqual({ config: {} });
+});
+
+it('preserves independent run settings across profile changes and validates their availability', () => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    const profile = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+    const settings = { subagents: { 'sys:ResearchAgent': { inference_profile: profile } } };
+    store.snapshot.setRunSettings(settings);
+    settings.subagents['sys:ResearchAgent'].inference_profile = 'bbbbbbbbbbbbbbbbbbbbbbbb';
+    store.snapshot.setInferenceProfile(null);
+    expect(store.snapshot.inferenceProfileError).toContain('Wait for inference profiles');
+    store.snapshot.setAvailableInferenceProfiles([]);
+    expect(store.snapshot.inferenceProfileError).toContain('unavailable');
+    store.snapshot.setAvailableInferenceProfiles([profile]);
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+    expect(store.snapshot.runSettings?.subagents?.['sys:ResearchAgent'].inference_profile).toBe(profile);
+    store.snapshot.setInferenceProfile(undefined);
+    expect(store.snapshot.inferencePayload).toEqual({
+        config: {},
+        settings: { subagents: { 'sys:ResearchAgent': { inference_profile: profile } } },
+    });
+    store.snapshot.setRunSettings(undefined);
+    expect(store.snapshot.inferencePayload).toEqual({ config: {} });
 });
 
 it('validates profile availability across builder snapshots without blocking ad hoc or defaults', () => {

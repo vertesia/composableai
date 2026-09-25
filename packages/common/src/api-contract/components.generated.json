@@ -8972,34 +8972,73 @@
       "$ref": "#/components/schemas/InferenceProfileRecord"
     }
   },
-  "InferenceProfile": {
+  "AgentRunInferenceSettings": {
     "type": "object",
     "properties": {
-      "name": {
-        "$ref": "#/components/schemas/InferenceProfileName",
-        "description": "Editable display name."
-      },
-      "description": {
-        "type": "string",
-        "maxLength": 1000
-      },
-      "environment": {
-        "type": "string",
-        "pattern": "^[a-fA-F0-9]{24}$"
-      },
-      "model": {
-        "type": "string",
-        "minLength": 1
-      },
-      "model_options": {
-        "$ref": "#/components/schemas/ModelOptions"
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileId"
       }
     },
     "required": [
-      "environment"
+      "inference_profile"
     ],
     "additionalProperties": false,
-    "description": "A reusable environment, model and inference parameter preset. Credentials remain in the environment."
+    "description": "An explicit inference profile pinned for this run."
+  },
+  "AgentRunAnalysisSettings": {
+    "type": "object",
+    "properties": {
+      "analysis": {
+        "$ref": "#/components/schemas/AgentRunInferenceSettings"
+      }
+    },
+    "required": [
+      "analysis"
+    ],
+    "additionalProperties": false
+  },
+  "AgentRunToolSettings": {
+    "type": "object",
+    "properties": {
+      "web_fetch_serper": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSettings"
+      },
+      "web_fetch_exa": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSettings"
+      },
+      "web_fetch_linkup": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSettings"
+      },
+      "fetch_document": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSettings"
+      },
+      "search_documents": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSettings"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Settings for builtin analysis tools. MCP tools are not supported."
+  },
+  "AgentRunSettings": {
+    "type": "object",
+    "properties": {
+      "tools": {
+        "$ref": "#/components/schemas/AgentRunToolSettings"
+      },
+      "subagents": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string",
+          "pattern": "^(?:[a-fA-F0-9]{24}|sys:[A-Za-z0-9_]+|app:[A-Za-z0-9_-]+:[A-Za-z0-9_]+)$"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/AgentRunInferenceSettings"
+        },
+        "description": "Up to 32 named agents, keyed by stable interaction ID (ObjectId, sys: or app: ID). Inherited by descendants."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Per-run tool and named-subagent inference settings, separate from model-generated arguments."
   },
   "InferenceProfileSnapshot": {
     "type": "object",
@@ -9034,6 +9073,109 @@
     ],
     "additionalProperties": false,
     "description": "The selected profile and content revision at execution creation. Effective overrides are recorded in the execution config."
+  },
+  "InferenceProfile": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "$ref": "#/components/schemas/InferenceProfileName",
+        "description": "Editable display name."
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "environment": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions"
+      }
+    },
+    "required": [
+      "environment"
+    ],
+    "additionalProperties": false,
+    "description": "A reusable environment, model and inference parameter preset. Credentials remain in the environment."
+  },
+  "AgentRunInferenceSnapshot": {
+    "type": "object",
+    "properties": {
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileSnapshot"
+      },
+      "environment": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions"
+      }
+    },
+    "required": [
+      "inference_profile",
+      "environment",
+      "model"
+    ],
+    "additionalProperties": false,
+    "description": "Profile provenance and effective inference configuration resolved before launch. Reused on retries and restarts."
+  },
+  "AgentRunAnalysisSnapshot": {
+    "type": "object",
+    "properties": {
+      "analysis": {
+        "$ref": "#/components/schemas/AgentRunInferenceSnapshot"
+      }
+    },
+    "required": [
+      "analysis"
+    ],
+    "additionalProperties": false
+  },
+  "AgentRunToolSettingsSnapshot": {
+    "type": "object",
+    "properties": {
+      "web_fetch_serper": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSnapshot"
+      },
+      "web_fetch_exa": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSnapshot"
+      },
+      "web_fetch_linkup": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSnapshot"
+      },
+      "fetch_document": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSnapshot"
+      },
+      "search_documents": {
+        "$ref": "#/components/schemas/AgentRunAnalysisSnapshot"
+      }
+    },
+    "additionalProperties": false
+  },
+  "AgentRunSettingsSnapshot": {
+    "type": "object",
+    "properties": {
+      "tools": {
+        "$ref": "#/components/schemas/AgentRunToolSettingsSnapshot"
+      },
+      "subagents": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/AgentRunInferenceSnapshot"
+        }
+      }
+    },
+    "additionalProperties": false,
+    "description": "Server-resolved run settings. Subagent keys are canonical interaction IDs. Profile edits do not affect this snapshot."
   },
   "InteractionStatus": {
     "type": "string",
@@ -11858,6 +12000,9 @@
         "$ref": "#/components/schemas/ExecutionRunDocRef",
         "description": "A reference to the run that started the conversation"
       },
+      "settings_snapshot": {
+        "$ref": "#/components/schemas/AgentRunSettingsSnapshot"
+      },
       "environment": {
         "type": "string",
         "description": "The execution environment with provider info for LLM calls."
@@ -14014,6 +14159,13 @@
       },
       "data": {
         "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping."
+      },
+      "settings": {
+        "$ref": "#/components/schemas/AgentRunSettings"
+      },
+      "settings_snapshot": {
+        "$ref": "#/components/schemas/AgentRunSettingsSnapshot",
+        "description": "Server-resolved settings carried by the workflow. Public launch requests resolve their own snapshot."
       },
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
@@ -34436,6 +34588,12 @@
         "$ref": "#/components/schemas/InteractionExecutionConfiguration",
         "description": "Execution configuration (environment, model, model_options, etc.)"
       },
+      "settings": {
+        "$ref": "#/components/schemas/AgentRunSettings"
+      },
+      "settings_snapshot": {
+        "$ref": "#/components/schemas/AgentRunSettingsSnapshot"
+      },
       "interactive": {
         "type": "boolean",
         "description": "Whether the agent accepts user input"
@@ -34727,6 +34885,9 @@
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration",
         "description": "Execution configuration (environment, model, model_options, etc.)"
+      },
+      "settings": {
+        "$ref": "#/components/schemas/AgentRunSettings"
       },
       "interactive": {
         "type": "boolean",

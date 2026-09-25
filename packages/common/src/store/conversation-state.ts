@@ -1,5 +1,6 @@
 import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
 import type { z } from 'zod';
+import type { AgentRunSettingsSnapshot } from '../agent-run-settings.js';
 import type {
     ExternalizedToolInputRefSchema,
     ExternalizedToolInputRefsSchema,
@@ -40,6 +41,8 @@ export type ExternalizedToolInputRefs = z.infer<typeof ExternalizedToolInputRefs
  * {@link ConversationCatalogState} (persisted as catalog.json).
  */
 export interface ConversationState {
+    /** Immutable per-run settings for tools and named child agents. */
+    settings_snapshot?: AgentRunSettingsSnapshot;
     /**
      * A reference to the run that started the conversation
      */

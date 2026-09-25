@@ -85,6 +85,16 @@ import {
 } from './account.js';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
 import * as AgentCommunicationSchemas from './agent-communication.js';
+import {
+    AgentRunAnalysisSettingsSchema,
+    AgentRunAnalysisSnapshotSchema,
+    AgentRunInferenceSettingsSchema,
+    AgentRunInferenceSnapshotSchema,
+    AgentRunSettingsSchema,
+    AgentRunSettingsSnapshotSchema,
+    AgentRunToolSettingsSchema,
+    AgentRunToolSettingsSnapshotSchema,
+} from './agent-run-settings.js';
 import * as AgentRunSchemas from './agent-runs.js';
 import {
     AnalyticsAxisSchema,
@@ -1144,6 +1154,14 @@ const INTERACTION_SCHEMAS = {
     InferenceProfileRecordArray: InferenceProfileRecordArraySchema,
     InferenceProfileId: InferenceProfileIdSchema,
     InferenceProfileName: InferenceProfileNameSchema,
+    AgentRunInferenceSettings: AgentRunInferenceSettingsSchema,
+    AgentRunAnalysisSettings: AgentRunAnalysisSettingsSchema,
+    AgentRunToolSettings: AgentRunToolSettingsSchema,
+    AgentRunSettings: AgentRunSettingsSchema,
+    AgentRunInferenceSnapshot: AgentRunInferenceSnapshotSchema,
+    AgentRunAnalysisSnapshot: AgentRunAnalysisSnapshotSchema,
+    AgentRunToolSettingsSnapshot: AgentRunToolSettingsSnapshotSchema,
+    AgentRunSettingsSnapshot: AgentRunSettingsSnapshotSchema,
     InferenceProfile: InferenceProfileSchema,
     InferenceProfileSnapshot: InferenceProfileSnapshotSchema,
     ProjectInferenceProfiles: ProjectInferenceProfilesSchema,
@@ -2557,6 +2575,15 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'AgentRunInferenceSettings',
+    'AgentRunAnalysisSettings',
+    'AgentRunToolSettings',
+    'AgentRunSettings',
+    'AgentRunInferenceSnapshot',
+    'AgentRunAnalysisSnapshot',
+    'AgentRunToolSettingsSnapshot',
+    'AgentRunSettingsSnapshot',
+
     'UpdateInteractionConfigurationPayload',
     'InteractionConfigurationRecord',
     'InteractionConfigurationResult',
