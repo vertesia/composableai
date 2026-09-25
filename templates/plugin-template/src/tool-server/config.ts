@@ -38,8 +38,10 @@ export const ServerConfig = {
     uiConfig: {
         isolation: 'iframe',
         src: '/app/',
+        // Where this app's UI can be shown: the standalone App Portal, the Composite App shell, or both.
         available_in: ['app_portal', 'composite_app'],
-        navigation: uiNavItems, // optional navigation configuration for the Composite App sidebar
+        // Sidebar entries contributed to the Composite App shell. Keep in sync with the app's routes.
+        navigation: uiNavItems,
     },
     settings: settingsSchema, // change this to point to your settings JSON schema
 } satisfies ToolServerConfig;
