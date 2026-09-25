@@ -1,27 +1,31 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { SignInEmailRow, SignInProviderButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
-import { type ProviderId, providerLabel, startSignIn } from './signInUtils';
+import { type ProviderId, providerLabel, type RedirectProviderId, startSignIn } from './signInUtils';
 
 interface SignInProvidersStepProps {
     email: string;
     onBack: () => void;
     onProviderClicked: (provider: ProviderId) => void;
+    /** The address resolved to a password tenant on retry, so the parent shows the password step. */
+    onPasswordRequired: (email: string) => void;
     redirectTo?: string;
 }
 
-const PROVIDERS: ProviderId[] = ['google', 'github', 'microsoft'];
+const PROVIDERS: RedirectProviderId[] = ['google', 'github', 'microsoft'];
 
 export default function SignInProvidersStep({
     email,
     onBack,
     onProviderClicked,
+    onPasswordRequired,
     redirectTo,
 }: SignInProvidersStepProps) {
     const { t } = useUITranslation();
 
-    const pick = async (provider: ProviderId) => {
+    const pick = async (provider: RedirectProviderId) => {
         onProviderClicked(provider);
-        await startSignIn(provider, email, redirectTo);
+        const result = await startSignIn(provider, email, redirectTo);
+        if (!result.ok && result.reason === 'password-required') onPasswordRequired(email);
     };
 
     return (
