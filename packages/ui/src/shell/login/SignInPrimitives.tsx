@@ -363,6 +363,11 @@ export function SignInOrDivider({ children }: { children: ReactNode }) {
     );
 }
 
+const SIGNIN_INPUT_CLASS =
+    'h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted ' +
+    'outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 ' +
+    'aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15';
+
 interface SignInEmailFieldProps {
     inputRef?: Ref<HTMLInputElement>;
     label: ReactNode;
@@ -393,7 +398,7 @@ export function SignInEmailField({
                 id="vt-login-email"
                 name="vt-login-email"
                 type="email"
-                className="h-[42px] px-3.5 rounded-md border border-border bg-background text-sm text-foreground placeholder:text-muted outline-none transition focus:border-info focus:ring-4 focus:ring-info/15 aria-[invalid=true]:border-destructive aria-[invalid=true]:ring-destructive/15"
+                className={SIGNIN_INPUT_CLASS}
                 placeholder={placeholder}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
@@ -408,6 +413,53 @@ export function SignInEmailField({
             />
             {error && (
                 <div role="alert" className="text-xs text-destructive">
+                    {error}
+                </div>
+            )}
+        </div>
+    );
+}
+
+interface SignInPasswordFieldProps {
+    inputRef?: Ref<HTMLInputElement>;
+    label: ReactNode;
+    value: string;
+    onChange: (value: string) => void;
+    invalid?: boolean;
+    error?: ReactNode;
+}
+
+/**
+ * Labeled password input with an inline error. Unlike the email field it leaves password managers
+ * enabled: a password account's credential is issued once and is expected to be stored in one.
+ */
+export function SignInPasswordField({
+    inputRef,
+    label,
+    value,
+    onChange,
+    invalid = false,
+    error,
+}: SignInPasswordFieldProps) {
+    return (
+        <div className="flex flex-col gap-1.5">
+            <label htmlFor="vt-login-password" className="text-xs font-medium text-foreground/80">
+                {label}
+            </label>
+            <input
+                ref={inputRef}
+                id="vt-login-password"
+                name="vt-login-password"
+                type="password"
+                className={SIGNIN_INPUT_CLASS}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                aria-invalid={invalid}
+                aria-describedby={error ? 'vt-login-password-error' : undefined}
+                autoComplete="current-password"
+            />
+            {error && (
+                <div id="vt-login-password-error" role="alert" className="text-xs text-destructive">
                     {error}
                 </div>
             )}

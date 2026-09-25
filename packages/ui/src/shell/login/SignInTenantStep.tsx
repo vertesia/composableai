@@ -8,13 +8,15 @@ import {
     SignInStepLayout,
 } from './SignInPrimitives';
 import SignInWithProviderButton from './SignInWithProviderButton';
-import { type ProviderId, providerLabel } from './signInUtils';
+import { providerLabel, type RedirectProviderId } from './signInUtils';
 
 interface SignInTenantStepProps {
     email: string;
     tenant: TenantInfo;
     onBack: () => void;
     onProviderClicked: () => void;
+    /** The tenant re-resolved as a password tenant, so the parent shows the password step. */
+    onPasswordRequired: (email: string) => void;
     redirectTo?: string;
 }
 
@@ -32,12 +34,13 @@ export default function SignInTenantStep({
     tenant,
     onBack,
     onProviderClicked,
+    onPasswordRequired,
     redirectTo,
 }: SignInTenantStepProps) {
     const { t } = useUITranslation();
     const tenantName = tenant.label || tenant.name || t('auth.blocked.tenantFallback');
     // Brands keep their identity; anything else routes through OIDC.
-    const provider: ProviderId =
+    const provider: RedirectProviderId =
         tenant.provider === 'google' || tenant.provider === 'github' || tenant.provider === 'microsoft'
             ? tenant.provider
             : 'oidc';
@@ -68,6 +71,7 @@ export default function SignInTenantStep({
                     redirectTo={redirectTo}
                     variant="filled"
                     onClick={onProviderClicked}
+                    onPasswordRequired={() => onPasswordRequired(email)}
                 />
                 <SignInStepButton variant="ghost" onClick={onBack}>
                     {t('auth.tenant.notPartOf', { name: tenantName })}
