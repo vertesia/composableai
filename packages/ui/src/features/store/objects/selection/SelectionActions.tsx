@@ -186,7 +186,7 @@ function getAvailableActions(
         if (action.id === 'delete' || action.id === 'deleteFromCollections') {
             return permissions.allowDelete;
         }
-        if (action.id === 'startWorkflow') {
+        if (action.id === 'runIntake') {
             return permissions.allowWorkflowRun;
         }
         if (action.id === 'changeType' || action.id === 'addToCollection' || action.id === 'removeFromCollection') {
