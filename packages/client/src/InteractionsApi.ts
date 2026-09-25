@@ -30,6 +30,7 @@ import type {
     RateLimitRequestPayload,
     RateLimitRequestResponse,
     ResolvedInteractionExecutionInfo,
+    ResolveInteractionQuery,
 } from '@vertesia/common';
 import type { VertesiaClient } from './client.js';
 import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from './execute.js';
@@ -339,15 +340,7 @@ export default class InteractionsApi extends ApiTopic {
      * @param options Optional environment and/or model to resolve with
      * @returns ResolvedInteractionExecutionInfo with the resolved environment and model
      */
-    resolve(
-        nameOrId: string,
-        options?: {
-            environment?: string;
-            model?: string;
-            hasImage?: boolean;
-            hasVideo?: boolean;
-        },
-    ): Promise<ResolvedInteractionExecutionInfo> {
+    resolve(nameOrId: string, options?: ResolveInteractionQuery): Promise<ResolvedInteractionExecutionInfo> {
         return this.get(`/resolve/${encodeURIComponent(nameOrId)}`, {
             query: options,
         });
