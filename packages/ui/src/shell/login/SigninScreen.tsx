@@ -152,7 +152,14 @@ function SigninScreenImpl({
     useEffect(() => {
         if (!authError) return;
         if (authError instanceof UserNotFoundError) {
-            setMode('signup');
+            // Self-serve signup is for sign-ins outside a tenant. A tenant user without an invite has
+            // no signup form to show, so say an invite is needed rather than restarting the sign-in.
+            if (localStorage.getItem('tenantName')) {
+                setEmail(authError.email);
+                setMode('blocked');
+            } else {
+                setMode('signup');
+            }
         } else if (authError instanceof RestrictedEnvironmentError) {
             setMode('restricted');
         } else if (authError instanceof RequestedScopeUnavailableError) {
