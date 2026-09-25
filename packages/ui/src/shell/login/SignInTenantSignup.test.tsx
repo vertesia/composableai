@@ -65,6 +65,17 @@ describe('first sign-in without an invite', () => {
         expect(screen.queryByText('signup-form')).toBeNull();
     });
 
+    it('treats a tenant with no label or name as a tenant', async () => {
+        // A tenant with neither a label nor a name stores an empty tenantName.
+        localStorage.setItem('tenantName', '');
+        session.state.authError = new session.UserNotFoundError('User not found - signup required', EMAIL);
+
+        render(<SigninScreen />);
+
+        expect(await screen.findByText('auth.blocked.title')).toBeTruthy();
+        expect(screen.queryByText('signup-form')).toBeNull();
+    });
+
     it('opens self-serve signup outside a tenant', async () => {
         session.state.authError = new session.UserNotFoundError('User not found - signup required', EMAIL);
 
