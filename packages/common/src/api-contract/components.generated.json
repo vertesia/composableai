@@ -20325,6 +20325,312 @@
     },
     "additionalProperties": false
   },
+  "CompositeAppExportSection": {
+    "type": "string",
+    "enum": [
+      "card",
+      "branding",
+      "header",
+      "sidebar"
+    ],
+    "description": "One independently exportable section of a composite app configuration. These mirror the four panels of the composite app settings page, each of which is already saved on its own:\n- 'card': the App Portal card overrides\n- 'branding': logo, message banner, switcher visibility and theme\n- 'header': the header menu\n- 'sidebar': the sidebar menu, configured app list, home override and sidebar display options"
+  },
+  "CompositeAppExportRequest": {
+    "type": "object",
+    "properties": {
+      "sections": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CompositeAppExportSection"
+        },
+        "description": "Which sections to export. At least one is required."
+      }
+    },
+    "required": [
+      "sections"
+    ],
+    "additionalProperties": false,
+    "description": "Selects which sections of the composite app configuration to export."
+  },
+  "CompositeAppExportBranding": {
+    "type": "object",
+    "properties": {
+      "logo": {
+        "$ref": "#/components/schemas/CompositeAppLogoOverrides"
+      },
+      "message": {
+        "$ref": "#/components/schemas/CompositeAppMessageOverrides"
+      },
+      "switchers": {
+        "$ref": "#/components/schemas/CompositeAppSwitchersOverrides"
+      },
+      "theme": {
+        "$ref": "#/components/schemas/CompositeAppThemeOverrides"
+      }
+    },
+    "additionalProperties": false,
+    "description": "The 'branding' section: the fields the UI overrides panel saves together."
+  },
+  "CompositeAppExportSidebar": {
+    "type": "object",
+    "properties": {
+      "menu": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CompositeAppMenuSection"
+        }
+      },
+      "apps": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CompositeAppEntry"
+        }
+      },
+      "homePlugin": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/CompositeAppHomePlugin"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "sidebar": {
+        "$ref": "#/components/schemas/CompositeAppSidebarOverrides"
+      }
+    },
+    "additionalProperties": false,
+    "description": "The 'sidebar' section: the fields the sidebar menu editor saves together."
+  },
+  "CompositeAppExportSections": {
+    "type": "object",
+    "properties": {
+      "card": {
+        "$ref": "#/components/schemas/CompositeAppCardOverrides"
+      },
+      "branding": {
+        "$ref": "#/components/schemas/CompositeAppExportBranding"
+      },
+      "header": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CompositeAppHeaderItem"
+        }
+      },
+      "sidebar": {
+        "$ref": "#/components/schemas/CompositeAppExportSidebar"
+      }
+    },
+    "additionalProperties": false,
+    "description": "The exported sections. Only the requested sections are present, so a file exported with two sections cannot silently import four."
+  },
+  "CompositeAppExportAppRef": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "description": "The app name as referenced by the exported configuration."
+      },
+      "title": {
+        "type": "string",
+        "description": "Manifest title, when the manifest was found."
+      },
+      "manifest_found": {
+        "type": "boolean",
+        "description": "Whether an app manifest with this name exists on the platform at all."
+      },
+      "installed": {
+        "type": "boolean",
+        "description": "Whether that app is installed in the source project."
+      },
+      "manifest_visibility": {
+        "type": "string",
+        "enum": [
+          "public",
+          "private",
+          "vertesia"
+        ],
+        "description": "Manifest visibility. A private manifest belongs to one account and cannot be referenced from a project in another account."
+      },
+      "manifest_account": {
+        "type": "string",
+        "description": "The account owning the manifest, when it is account-scoped."
+      },
+      "used_by": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Where this reference appears, as locator strings: \"apps[]\", \"homePlugin\", or \"menu:<navItemId>\"."
+      }
+    },
+    "required": [
+      "name",
+      "manifest_found",
+      "installed",
+      "used_by"
+    ],
+    "additionalProperties": false,
+    "description": "A resolved app reference. Carried alongside the sections so an import wizard can tell a name that is merely uninstalled from one that names no manifest at all."
+  },
+  "CompositeAppExportPrincipalRef": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The user or group id as stored in the configuration."
+      },
+      "label": {
+        "type": "string",
+        "description": "Human-readable identity — email for a user, name for a group — resolved in the source project so an import wizard can present something a person can act on. A label is a display aid for matching, never an identity: it must not be used to grant access without explicit confirmation."
+      },
+      "found": {
+        "type": "boolean",
+        "description": "Whether the principal still resolves in the source project."
+      },
+      "used_by": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Where this reference appears: \"menu:<navItemId>\" or \"header:<itemId>\"."
+      }
+    },
+    "required": [
+      "id",
+      "found",
+      "used_by"
+    ],
+    "additionalProperties": false,
+    "description": "A resolved user or group reference taken from a nav-item or header-item permission gate."
+  },
+  "CompositeAppExportReferences": {
+    "type": "object",
+    "properties": {
+      "apps": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CompositeAppExportAppRef"
+        },
+        "description": "Every distinct app name referenced."
+      },
+      "users": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CompositeAppExportPrincipalRef"
+        },
+        "description": "Every distinct user id referenced by a permission gate."
+      },
+      "groups": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CompositeAppExportPrincipalRef"
+        },
+        "description": "Every distinct group id referenced by a permission gate."
+      },
+      "roles": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Every distinct role name referenced. Roles are portable as-is — the same names exist in every project — and are listed for confirmation rather than remapping."
+      }
+    },
+    "required": [
+      "apps",
+      "users",
+      "groups",
+      "roles"
+    ],
+    "additionalProperties": false,
+    "description": "Project-scoped values the exported sections point at, resolved against the source project. An import into another project has to remap these rather than copy them."
+  },
+  "CompositeAppExportNormalization": {
+    "type": "object",
+    "properties": {
+      "dropped_fields": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Fields present in the stored document that the published contract does not accept, dropped from this export. Reported rather than discarded silently."
+      },
+      "notes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Human-readable notes about what normalization changed."
+      }
+    },
+    "required": [
+      "dropped_fields",
+      "notes"
+    ],
+    "additionalProperties": false,
+    "description": "What the export changed to make the stored configuration valid against the published contract."
+  },
+  "CompositeAppExportSource": {
+    "type": "object",
+    "properties": {
+      "project_id": {
+        "type": "string",
+        "description": "The project the configuration was exported from."
+      },
+      "project_name": {
+        "type": "string",
+        "description": "Its display name at export time."
+      },
+      "account_id": {
+        "type": "string",
+        "description": "The account owning that project. An import into a project in a different account cannot reference private manifests or carry principal ids across."
+      }
+    },
+    "required": [
+      "project_id"
+    ],
+    "additionalProperties": false,
+    "description": "Where an exported configuration came from."
+  },
+  "CompositeAppExport": {
+    "type": "object",
+    "properties": {
+      "format": {
+        "type": "string",
+        "const": "vertesia.composite-app.v1",
+        "description": "Format discriminator and version. Importers must reject a format they do not know."
+      },
+      "exported_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the export was produced."
+      },
+      "source": {
+        "$ref": "#/components/schemas/CompositeAppExportSource"
+      },
+      "sections": {
+        "$ref": "#/components/schemas/CompositeAppExportSections"
+      },
+      "references": {
+        "$ref": "#/components/schemas/CompositeAppExportReferences"
+      },
+      "normalization": {
+        "$ref": "#/components/schemas/CompositeAppExportNormalization"
+      }
+    },
+    "required": [
+      "format",
+      "exported_at",
+      "source",
+      "sections",
+      "references",
+      "normalization"
+    ],
+    "additionalProperties": false,
+    "description": "A portable composite app configuration. Sections are the top-level structure so selectivity is structural rather than a filter applied afterwards, and `references` resolves the project-scoped values an import has to remap."
+  },
   "MCPOAuthConfigMap": {
     "type": "object",
     "additionalProperties": {

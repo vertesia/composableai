@@ -2,6 +2,8 @@ import { ApiTopic, type ClientBase, type ServerError } from '@vertesia/api-fetch
 import type {
     CompositeAppConfig,
     CompositeAppConfigPayload,
+    CompositeAppExport,
+    CompositeAppExportRequest,
     CountResult,
     DeleteByIdResult,
     ICreateProjectPayload,
@@ -131,6 +133,19 @@ export default class ProjectsApi extends ApiTopic {
         payload: CompositeAppConfigPayload,
     ): Promise<CompositeAppConfig> {
         return this.put(`/${encodeURIComponent(projectId)}/composite-app`, {
+            payload,
+        });
+    }
+
+    /**
+     * Export selected sections of the project's composite app configuration, normalized against the
+     * published contract and with project-scoped references resolved for remapping.
+     */
+    exportCompositeAppConfiguration(
+        projectId: string,
+        payload: CompositeAppExportRequest,
+    ): Promise<CompositeAppExport> {
+        return this.post(`/${encodeURIComponent(projectId)}/composite-app/export`, {
             payload,
         });
     }
