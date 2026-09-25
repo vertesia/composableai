@@ -342,21 +342,7 @@ export default class InteractionsApi extends ApiTopic {
      * @param options Optional environment and/or model to resolve with
      * @returns ResolvedInteractionExecutionInfo with the resolved environment and model
      */
-<<<<<<< HEAD
-    resolve(
-        nameOrId: string,
-        options?: {
-            inference_profile?: string;
-            inherit_model_config?: boolean;
-            environment?: string;
-            model?: string;
-            hasImage?: boolean;
-            hasVideo?: boolean;
-        },
-    ): Promise<ResolvedInteractionExecutionInfo> {
-=======
     resolve(nameOrId: string, options?: ResolveInteractionQuery): Promise<ResolvedInteractionExecutionInfo> {
->>>>>>> 3ebdadd7 (fix: distinguish inherited model settings from explicit overrides (#2319))
         return this.get(`/resolve/${encodeURIComponent(nameOrId)}`, {
             query: options,
         });

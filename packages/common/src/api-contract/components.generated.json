@@ -4601,10 +4601,6 @@
       "model": {
         "type": "string"
       },
-      "inherit_model_config": {
-        "type": "boolean",
-        "description": "Treat environment and model as inherited fallbacks after interaction settings, before project defaults."
-      },
       "do_validate": {
         "type": "boolean"
       },
@@ -10545,17 +10541,12 @@
       "model": {
         "type": "string"
       },
-<<<<<<< HEAD
       "inference_profile": {
         "$ref": "#/components/schemas/InferenceProfileId"
       },
       "inherit_model_config": {
-        "type": "boolean"
-=======
-      "inherit_model_config": {
         "type": "boolean",
-        "description": "Treat environment and model as inherited fallbacks after interaction settings, before project defaults."
->>>>>>> 3ebdadd7 (fix: distinguish inherited model settings from explicit overrides (#2319))
+        "description": "Treat supplied model settings as inherited fallback: an applicable profile replaces them."
       },
       "hasImage": {
         "type": "boolean"
@@ -16676,10 +16667,6 @@
       },
       "model": {
         "type": "string"
-      },
-      "inherit_model_config": {
-        "type": "boolean",
-        "description": "Treat environment and model as inherited fallbacks after interaction settings, before project defaults."
       },
       "do_validate": {
         "type": "boolean"
