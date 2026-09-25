@@ -2435,8 +2435,12 @@ export const ResolveInteractionQuerySchema = z
     .strictObject({
         environment: z.string().optional(),
         model: z.string().optional(),
+<<<<<<< HEAD
         inference_profile: InferenceProfileIdSchema.optional(),
         inherit_model_config: z.boolean().optional(),
+=======
+        inherit_model_config: InteractionExecutionConfigurationSchema.shape.inherit_model_config,
+>>>>>>> 3ebdadd7 (fix: distinguish inherited model settings from explicit overrides (#2319))
         hasImage: z.boolean().optional(),
         hasVideo: z.boolean().optional(),
     })
