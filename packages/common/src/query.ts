@@ -1,17 +1,7 @@
-import type { z } from 'zod';
-import type {
-    ComplexCollectionSearchQuerySchema,
-    ComplexSearchQuerySchema,
-    dynamicScalingTypesSchema,
-    EmbeddingSearchConfigSchema,
-    scoreAggregationTypesSchema,
-    VectorSearchQuerySchema,
-} from './api-schemas/content.js';
-import type { InteractionSearchQuerySchema, RunSearchQuerySchema } from './api-schemas/interaction.js';
-import type { PromptSearchQuerySchema } from './api-schemas/prompt.js';
 import type { ExecutionRunStatus } from './interaction.js';
+import type * as Wire from './wire-types.generated.js';
 
-export type EmbeddingSearchConfig = z.infer<typeof EmbeddingSearchConfigSchema>;
+export type EmbeddingSearchConfig = Wire.EmbeddingSearchConfig;
 
 export interface RunListingQueryOptions {
     project?: string;
@@ -44,10 +34,10 @@ export interface RunListingFilters {
     workflow_ids?: string[];
 }
 
-export type scoreAggregationTypes = z.infer<typeof scoreAggregationTypesSchema>;
-export type dynamicScalingTypes = z.infer<typeof dynamicScalingTypesSchema>;
+export type scoreAggregationTypes = Wire.scoreAggregationTypes;
+export type dynamicScalingTypes = Wire.dynamicScalingTypes;
 
-export type VectorSearchQuery = z.infer<typeof VectorSearchQuerySchema>;
+export type VectorSearchQuery = Wire.VectorSearchQuery;
 
 export interface SimpleSearchQuery {
     name?: string;
@@ -75,12 +65,12 @@ export interface ObjectTypeSearchQuery extends SimpleSearchQuery {
     chunkable?: boolean;
 }
 
-export type PromptSearchQuery = z.infer<typeof PromptSearchQuerySchema>;
+export type PromptSearchQuery = Wire.PromptSearchQuery;
 
-export type InteractionSearchQuery = z.infer<typeof InteractionSearchQuerySchema>;
+export type InteractionSearchQuery = Wire.InteractionSearchQuery;
 
-export type RunSearchQuery = z.infer<typeof RunSearchQuerySchema>;
+export type RunSearchQuery = Wire.RunSearchQuery;
 
-export type ComplexSearchQuery = z.infer<typeof ComplexSearchQuerySchema>;
+export type ComplexSearchQuery = Wire.ComplexSearchQuery;
 
-export type ComplexCollectionSearchQuery = z.infer<typeof ComplexCollectionSearchQuerySchema>;
+export type ComplexCollectionSearchQuery = Wire.ComplexCollectionSearchQuery;

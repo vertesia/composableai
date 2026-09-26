@@ -1,5 +1,4 @@
-import type { z } from 'zod';
-import type { ContentQueryPayloadSchema, ContentQueryResultSchema } from './api-schemas/content-query.js';
+import type * as Wire from './wire-types.generated.js';
 
-export type ContentQueryPayload = z.infer<typeof ContentQueryPayloadSchema>;
-export type ContentQueryResult = z.infer<typeof ContentQueryResultSchema>;
+export type ContentQueryPayload = Wire.ContentQueryPayload;
+export type ContentQueryResult = Wire.ContentQueryResult;

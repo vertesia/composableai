@@ -1,23 +1,6 @@
 import type { ProviderParams } from '@llumiverse/common';
 import { ProviderList, Providers } from '@llumiverse/common';
-import type { z } from 'zod';
-import type {
-    EnableEnvironmentModelPayloadSchema,
-    ExecutionEnvironmentConfigUpdatePayloadSchema,
-    ExecutionEnvironmentCreatePayloadSchema,
-    ExecutionEnvironmentRefSchema,
-    ExecutionEnvironmentSchema,
-    ExecutionEnvironmentSettingsSchema,
-    ExecutionEnvironmentUpdatePayloadSchema,
-    ListEnvironmentsQuerySchema,
-    LoadBalancingEnvConfigSchema,
-    LoadBalancingEnvEntryConfigSchema,
-    MediatorEnvConfigSchema,
-    MigrateInteractionsPayloadSchema,
-    MigrateInteractionsResultSchema,
-    SupportedProvidersSchema,
-    VirtualEnvEntrySchema,
-} from './api-schemas/environment.js';
+import type * as Wire from './wire-types.generated.js';
 
 // Virtual providers from studio
 export enum CustomProviders {
@@ -34,7 +17,7 @@ export const SupportedProviders = {
     ...CustomProviders,
 } as const;
 
-export type SupportedProviders = z.infer<typeof SupportedProvidersSchema>;
+export type SupportedProviders = Wire.SupportedProviders;
 
 export interface SupportedProviderParams extends Omit<ProviderParams, 'id'> {
     id: SupportedProviders;
@@ -76,36 +59,36 @@ export const SupportedProvidersList: Record<SupportedProviders, SupportedProvide
 // `LoadBalancingEnvEntryConfig` no longer `extends VirtualEnvEntry` — a mapped or extended type over
 // a canonical alias is opaque to the scanner and would publish as an empty object. It restates
 // `model`, which is what the component has always listed anyway.
-export type VirtualEnvEntry = z.infer<typeof VirtualEnvEntrySchema>;
+export type VirtualEnvEntry = Wire.VirtualEnvEntry;
 
-export type ListEnvironmentsQuery = z.infer<typeof ListEnvironmentsQuerySchema>;
+export type ListEnvironmentsQuery = Wire.ListEnvironmentsQuery;
 
-export type LoadBalancingEnvConfig = z.infer<typeof LoadBalancingEnvConfigSchema>;
+export type LoadBalancingEnvConfig = Wire.LoadBalancingEnvConfig;
 
-export type LoadBalancingEnvEntryConfig = z.infer<typeof LoadBalancingEnvEntryConfigSchema>;
+export type LoadBalancingEnvEntryConfig = Wire.LoadBalancingEnvEntryConfig;
 
-export type MediatorEnvConfig = z.infer<typeof MediatorEnvConfigSchema>;
+export type MediatorEnvConfig = Wire.MediatorEnvConfig;
 
 // Re-exported, not restated. This file carried a byte-for-byte copy of llumiverse's interface, which
 // published under the same component name — so which of the two the OpenAPI document described
 // depended on which one the scanner reached first. They agreed, so nothing ever failed.
 export type { TextFallbackOptions } from '@llumiverse/common';
 
-export type ExecutionEnvironmentSettings = z.infer<typeof ExecutionEnvironmentSettingsSchema>;
+export type ExecutionEnvironmentSettings = Wire.ExecutionEnvironmentSettings;
 
-export type ExecutionEnvironment = z.infer<typeof ExecutionEnvironmentSchema>;
+export type ExecutionEnvironment = Wire.ExecutionEnvironment;
 
-export type ExecutionEnvironmentRef = z.infer<typeof ExecutionEnvironmentRefSchema>;
+export type ExecutionEnvironmentRef = Wire.ExecutionEnvironmentRef;
 
 // Write payloads have their own named schemas because their fields differ from the read response.
-export type ExecutionEnvironmentCreatePayload = z.infer<typeof ExecutionEnvironmentCreatePayloadSchema>;
+export type ExecutionEnvironmentCreatePayload = Wire.ExecutionEnvironmentCreatePayload;
 
-export type ExecutionEnvironmentUpdatePayload = z.infer<typeof ExecutionEnvironmentUpdatePayloadSchema>;
+export type ExecutionEnvironmentUpdatePayload = Wire.ExecutionEnvironmentUpdatePayload;
 
-export type ExecutionEnvironmentConfigUpdatePayload = z.infer<typeof ExecutionEnvironmentConfigUpdatePayloadSchema>;
+export type ExecutionEnvironmentConfigUpdatePayload = Wire.ExecutionEnvironmentConfigUpdatePayload;
 
-export type EnableEnvironmentModelPayload = z.infer<typeof EnableEnvironmentModelPayloadSchema>;
+export type EnableEnvironmentModelPayload = Wire.EnableEnvironmentModelPayload;
 
-export type MigrateInteractionsPayload = z.infer<typeof MigrateInteractionsPayloadSchema>;
+export type MigrateInteractionsPayload = Wire.MigrateInteractionsPayload;
 
-export type MigrateInteractionsResult = z.infer<typeof MigrateInteractionsResultSchema>;
+export type MigrateInteractionsResult = Wire.MigrateInteractionsResult;

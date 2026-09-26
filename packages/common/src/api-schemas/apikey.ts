@@ -3,6 +3,7 @@ import { z } from 'zod';
 // types from the schemas below, so importing them here would invert the dependency.
 import { ApiKeyTypes } from '../apikey-values.js';
 import { SystemRoles } from '../project-values.js';
+import type * as Wire from '../wire-types.generated.js';
 import { ProjectSchema } from './project.js';
 
 /**
@@ -197,16 +198,16 @@ export const DeleteOperationResultSchema = z
     })
     .meta({ id: 'DeleteOperationResult' });
 
-export type ApiKeyListQueryFromSchema = z.infer<typeof ApiKeyListQuerySchema>;
-export type ApiKeyReadQueryFromSchema = z.infer<typeof ApiKeyReadQuerySchema>;
-export type ProjectRefArrayFromSchema = z.infer<typeof ProjectRefArraySchema>;
-export type ApiKeyFromSchema = z.infer<typeof ApiKeySchema>;
-export type ApiKeyArrayFromSchema = z.infer<typeof ApiKeyArraySchema>;
-export type ApiKeyWithValueFromSchema = z.infer<typeof ApiKeyWithValueSchema>;
-export type ApiKeyReadResponseFromSchema = z.infer<typeof ApiKeyReadResponseSchema>;
-export type CreateApiKeyPayloadFromSchema = z.infer<typeof CreateApiKeyPayloadSchema>;
-export type UpdateApiKeyPayloadFromSchema = z.infer<typeof UpdateApiKeyPayloadSchema>;
-export type AuthTokenResponseFromSchema = z.infer<typeof AuthTokenResponseSchema>;
+export type ApiKeyListQueryFromSchema = Wire.ApiKeyListQueryFromSchema;
+export type ApiKeyReadQueryFromSchema = Wire.ApiKeyReadQueryFromSchema;
+export type ProjectRefArrayFromSchema = Wire.ProjectRefArrayFromSchema;
+export type ApiKeyFromSchema = Wire.ApiKeyFromSchema;
+export type ApiKeyArrayFromSchema = Wire.ApiKeyArrayFromSchema;
+export type ApiKeyWithValueFromSchema = Wire.ApiKeyWithValueFromSchema;
+export type ApiKeyReadResponseFromSchema = Wire.ApiKeyReadResponseFromSchema;
+export type CreateApiKeyPayloadFromSchema = Wire.CreateApiKeyPayloadFromSchema;
+export type UpdateApiKeyPayloadFromSchema = Wire.UpdateApiKeyPayloadFromSchema;
+export type AuthTokenResponseFromSchema = Wire.AuthTokenResponseFromSchema;
 
 /** Project-independent organization credentials, managed only by interactive administrators. */
 export const AccountApiKeySchema = ApiKeySchema.pick({

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { TransientTokenType } from '../transient-tokens-values.js';
+import type * as Wire from '../wire-types.generated.js';
 import { AccountSchema } from './account.js';
 import { ProjectRefSchema, SystemRolesSchema } from './apikey.js';
 import { UserRefSchema } from './user.js';
@@ -116,12 +117,12 @@ export const AccountProjectsResponseSchema = z
     })
     .meta({ id: 'AccountProjectsResponse' });
 
-export type UserInviteTokenDataFromSchema = z.infer<typeof UserInviteTokenDataSchema>;
-export type UserInviteTokenFromSchema = z.infer<typeof UserInviteTokenSchema>;
-export type UserInviteTokenArrayFromSchema = z.infer<typeof UserInviteTokenArraySchema>;
-export type InviteUserRequestPayloadFromSchema = z.infer<typeof InviteUserRequestPayloadSchema>;
-export type InviteUserResponsePayloadFromSchema = z.infer<typeof InviteUserResponsePayloadSchema>;
-export type InviteAcceptanceResponseFromSchema = z.infer<typeof InviteAcceptanceResponseSchema>;
-export type InviteDeclineResponseFromSchema = z.infer<typeof InviteDeclineResponseSchema>;
-export type OnboardingProgressFromSchema = z.infer<typeof OnboardingProgressSchema>;
-export type AccountProjectsResponseFromSchema = z.infer<typeof AccountProjectsResponseSchema>;
+export type UserInviteTokenDataFromSchema = Wire.UserInviteTokenDataFromSchema;
+export type UserInviteTokenFromSchema = Wire.UserInviteTokenFromSchema;
+export type UserInviteTokenArrayFromSchema = Wire.UserInviteTokenArrayFromSchema;
+export type InviteUserRequestPayloadFromSchema = Wire.InviteUserRequestPayloadFromSchema;
+export type InviteUserResponsePayloadFromSchema = Wire.InviteUserResponsePayloadFromSchema;
+export type InviteAcceptanceResponseFromSchema = Wire.InviteAcceptanceResponseFromSchema;
+export type InviteDeclineResponseFromSchema = Wire.InviteDeclineResponseFromSchema;
+export type OnboardingProgressFromSchema = Wire.OnboardingProgressFromSchema;
+export type AccountProjectsResponseFromSchema = Wire.AccountProjectsResponseFromSchema;

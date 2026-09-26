@@ -1,44 +1,8 @@
 import type { HttpTimeoutOptions, ModelOptions } from '@llumiverse/common';
-import type { z } from 'zod';
-import type {
-    AgentMessageDetailsSchema,
-    CompactMessageSchema,
-    ConversationFileSchema,
-} from '../api-schemas/agent-runs.js';
-import type { ConversationActivityStateSchema } from '../api-schemas/app-lifecycle.js';
-import type { WorkflowExecutionStatusSchema } from '../api-schemas/document-processing.js';
-import type { PlanSchema, PlanTaskSchema, WorkflowAncestorSchema } from '../api-schemas/interaction.js';
-import type { WorkflowExecutionStartResultSchema } from '../api-schemas/process.js';
-import type {
-    ActivityTaskSchema,
-    AgentTaskSchema,
-    ChildWorkflowTaskSchema,
-    EventErrorSchema,
-    ExecuteWorkflowPayloadSchema,
-    ListWorkflowInteractionsResponseSchema,
-    ListWorkflowRunsPayloadSchema,
-    ListWorkflowRunsResponseSchema,
-    PendingActivitySchema,
-    SignalEventPropertiesSchema,
-    SignalTaskSchema,
-    TimerTaskSchema,
-    WorkflowActionResponseSchema,
-    WorkflowHistorySchema,
-    WorkflowInteractionVarsSchema,
-    WorkflowQueryResultSchema,
-    WorkflowRunDetailsQuerySchema,
-    WorkflowRunEventSchema,
-    WorkflowRunSchema,
-    WorkflowRunStreamQuerySchema,
-    WorkflowRunUpdatesQuerySchema,
-    WorkflowRunUpdatesResponseSchema,
-    WorkflowRunWithDetailsSchema,
-    WorkflowTaskSchema,
-    WorkflowUpdatePublishResponseSchema,
-} from '../api-schemas/workflow-runs.js';
 import type { AgentResourceReference, InteractionExecutionConfiguration } from '../interaction.js';
 import { normalizeAgentResources } from '../interaction.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
+import type * as Wire from '../wire-types.generated.js';
 import type { WorkflowInput } from './dsl-workflow.js';
 
 export enum ContentEventName {
@@ -59,7 +23,7 @@ export interface Queue {
     queue_full_name?: string; // full name
 }
 
-export type WorkflowAncestor = z.infer<typeof WorkflowAncestorSchema>;
+export type WorkflowAncestor = Wire.WorkflowAncestor;
 
 export interface WorkflowExecutionBaseParams<T = Record<string, unknown>> {
     /** Effective principal for private scheduled runs; server supplied. */
@@ -208,17 +172,17 @@ export function getDocumentIds(payload: WorkflowExecutionPayload<Record<string, 
     return [];
 }
 
-export type ExecuteWorkflowPayload = z.infer<typeof ExecuteWorkflowPayloadSchema>;
+export type ExecuteWorkflowPayload = Wire.ExecuteWorkflowPayload;
 
-export type ConversationActivityState = z.infer<typeof ConversationActivityStateSchema>;
+export type ConversationActivityState = Wire.ConversationActivityState;
 
-export type ListWorkflowRunsPayload = z.infer<typeof ListWorkflowRunsPayloadSchema>;
+export type ListWorkflowRunsPayload = Wire.ListWorkflowRunsPayload;
 
-export type SignalEventProperties = z.infer<typeof SignalEventPropertiesSchema>;
+export type SignalEventProperties = Wire.SignalEventProperties;
 
-export type EventError = z.infer<typeof EventErrorSchema>;
+export type EventError = Wire.EventError;
 
-export type WorkflowRunEvent = z.infer<typeof WorkflowRunEventSchema>;
+export type WorkflowRunEvent = Wire.WorkflowRunEvent;
 
 // Task status enum for processed history
 export enum TaskStatus {
@@ -242,51 +206,51 @@ export enum TaskType {
 }
 
 // Activity-specific task
-export type ActivityTask = z.infer<typeof ActivityTaskSchema>;
+export type ActivityTask = Wire.ActivityTask;
 
 // Child workflow-specific task
-export type ChildWorkflowTask = z.infer<typeof ChildWorkflowTaskSchema>;
+export type ChildWorkflowTask = Wire.ChildWorkflowTask;
 
 // Signal-specific task
-export type SignalTask = z.infer<typeof SignalTaskSchema>;
+export type SignalTask = Wire.SignalTask;
 
 // Timer-specific task
-export type TimerTask = z.infer<typeof TimerTaskSchema>;
+export type TimerTask = Wire.TimerTask;
 
 // Union type for all processed tasks
-export type WorkflowTask = z.infer<typeof WorkflowTaskSchema>;
+export type WorkflowTask = Wire.WorkflowTask;
 
 // History format discriminated union
-export type WorkflowHistory = z.infer<typeof WorkflowHistorySchema>;
+export type WorkflowHistory = Wire.WorkflowHistory;
 
-export type AgentTask = z.infer<typeof AgentTaskSchema>;
+export type AgentTask = Wire.AgentTask;
 
-export type WorkflowRun = z.infer<typeof WorkflowRunSchema>;
+export type WorkflowRun = Wire.WorkflowRun;
 
-export type PendingActivity = z.infer<typeof PendingActivitySchema>;
+export type PendingActivity = Wire.PendingActivity;
 
-export type WorkflowRunWithDetails = z.infer<typeof WorkflowRunWithDetailsSchema>;
-export type ListWorkflowRunsResponse = z.infer<typeof ListWorkflowRunsResponseSchema>;
+export type WorkflowRunWithDetails = Wire.WorkflowRunWithDetails;
+export type ListWorkflowRunsResponse = Wire.ListWorkflowRunsResponse;
 
-export type WorkflowExecutionStartResult = z.infer<typeof WorkflowExecutionStartResultSchema>;
+export type WorkflowExecutionStartResult = Wire.WorkflowExecutionStartResult;
 
-export type ListWorkflowInteractionsResponse = z.infer<typeof ListWorkflowInteractionsResponseSchema>;
+export type ListWorkflowInteractionsResponse = Wire.ListWorkflowInteractionsResponse;
 
-export type WorkflowRunUpdatesResponse = z.infer<typeof WorkflowRunUpdatesResponseSchema>;
+export type WorkflowRunUpdatesResponse = Wire.WorkflowRunUpdatesResponse;
 
-export type WorkflowRunDetailsQuery = z.infer<typeof WorkflowRunDetailsQuerySchema>;
+export type WorkflowRunDetailsQuery = Wire.WorkflowRunDetailsQuery;
 
-export type WorkflowRunUpdatesQuery = z.infer<typeof WorkflowRunUpdatesQuerySchema>;
+export type WorkflowRunUpdatesQuery = Wire.WorkflowRunUpdatesQuery;
 
-export type WorkflowRunStreamQuery = z.infer<typeof WorkflowRunStreamQuerySchema>;
+export type WorkflowRunStreamQuery = Wire.WorkflowRunStreamQuery;
 
-export type WorkflowUpdatePublishResponse = z.infer<typeof WorkflowUpdatePublishResponseSchema>;
+export type WorkflowUpdatePublishResponse = Wire.WorkflowUpdatePublishResponse;
 
-export type WorkflowActionResponse = z.infer<typeof WorkflowActionResponseSchema>;
+export type WorkflowActionResponse = Wire.WorkflowActionResponse;
 
-export type WorkflowQueryResult = z.infer<typeof WorkflowQueryResultSchema>;
+export type WorkflowQueryResult = Wire.WorkflowQueryResult;
 
-export type WorkflowInteractionVars = z.infer<typeof WorkflowInteractionVarsSchema>;
+export type WorkflowInteractionVars = Wire.WorkflowInteractionVars;
 
 export const WorkflowExecutionStatusValues = {
     UNKNOWN: 0,
@@ -313,7 +277,7 @@ export const WorkflowExecutionStatus: typeof WorkflowExecutionStatusValues & Rea
     7: 'TIMED_OUT',
 };
 
-export type WorkflowExecutionStatus = z.infer<typeof WorkflowExecutionStatusSchema>;
+export type WorkflowExecutionStatus = Wire.WorkflowExecutionStatus;
 
 /**
  * Basic response for anything run with an async workflow
@@ -354,7 +318,7 @@ export enum AgentMessageType {
     RESTARTING = 14,
 }
 
-export type AgentMessageDetails = z.infer<typeof AgentMessageDetailsSchema>;
+export type AgentMessageDetails = Wire.AgentMessageDetails;
 
 // ============================================
 // AGENT MESSAGE DETAIL TYPES & TYPE GUARDS
@@ -421,7 +385,7 @@ export interface StreamingChunkDetails {
  * Primary type used throughout the system.
  * ~85% smaller than legacy AgentMessage format.
  */
-export type CompactMessage = z.infer<typeof CompactMessageSchema>;
+export type CompactMessage = Wire.CompactMessage;
 
 /**
  * Legacy message format for backward compatibility.
@@ -652,7 +616,7 @@ export enum FileProcessingStatus {
     ERROR = 'error',
 }
 
-export type ConversationFile = z.infer<typeof ConversationFileSchema>;
+export type ConversationFile = Wire.ConversationFile;
 
 /**
  * Details for file processing SYSTEM messages.
@@ -721,9 +685,9 @@ export interface ConversationFileRemovedRef {
     id: string;
 }
 
-export type PlanTask = z.infer<typeof PlanTaskSchema>;
+export type PlanTask = Wire.PlanTask;
 
-export type Plan = z.infer<typeof PlanSchema>;
+export type Plan = Wire.Plan;
 
 export const LOW_PRIORITY_TASK_QUEUE = 'low_priority';
 
