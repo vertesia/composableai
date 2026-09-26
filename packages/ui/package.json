@@ -193,7 +193,8 @@
         "./boot/vite": {
             "types": "./lib/boot/vite.d.ts",
             "default": "./lib/boot/vite.js"
-        }
+        },
+        "./assets/*": "./src/assets/*"
     },
     "repository": {
         "type": "git",

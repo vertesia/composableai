@@ -223,6 +223,14 @@ first-paint document color. These inputs must be trusted static developer conten
 also reveals the optional slow-notice/reload elements after 10/30 seconds and wires `data-boot-reload`
 buttons. Hosts with their own startup/error controller can continue using `autoStart: false`.
 
+### Default brand assets
+
+The canonical Vertesia artwork is exported as `@vertesia/ui/assets/logo-light.png`,
+`@vertesia/ui/assets/logo-dark.png`, and `@vertesia/ui/assets/icon.svg`. These files ship with
+this package. Hosts can resolve and copy them into their static output at the URLs used by
+`vertesiaBranding` (`/logo-light.png`, `/logo-dark.png`, `/icon.svg`), or import them through
+an asset-aware bundler. The SVG is shared by the default favicon and loading artwork.
+
 ### Shared branding configuration
 
 `defineAppBranding` and `AppBranding` from `@vertesia/ui/boot` define the data-only branding contract.
