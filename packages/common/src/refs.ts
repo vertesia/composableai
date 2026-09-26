@@ -1,5 +1,4 @@
-import type { z } from 'zod';
-import type { ResourceRefSchema } from './api-schemas/agent-runs.js';
+import type * as Wire from './wire-types.generated.js';
 
 export enum ResolvableRefType {
     project = 'Project',
@@ -20,4 +19,4 @@ export interface RefResolutionRequest {
     refs: ResolvableRef[];
 }
 
-export type ResourceRef = z.infer<typeof ResourceRefSchema>;
+export type ResourceRef = Wire.ResourceRef;

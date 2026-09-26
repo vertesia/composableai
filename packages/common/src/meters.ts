@@ -1,9 +1,4 @@
-import type { z } from 'zod';
-import type {
-    StripeBillingDisabledSchema,
-    StripeBillingEnabledSchema,
-    StripeBillingStatusResponseSchema,
-} from './api-schemas/account.js';
+import type * as Wire from './wire-types.generated.js';
 
 interface MeterAdjustment {
     meter: string;
@@ -23,8 +18,8 @@ export interface AdjustMetersMeterWorkflowParams {
  * generated client two unrelated optionals with no way to tell which was populated. Narrowing on
  * `status` now tells TypeScript which fields exist.
  */
-export type StripeBillingStatusResponse = z.infer<typeof StripeBillingStatusResponseSchema>;
+export type StripeBillingStatusResponse = Wire.StripeBillingStatusResponse;
 
-export type StripeBillingEnabled = z.infer<typeof StripeBillingEnabledSchema>;
+export type StripeBillingEnabled = Wire.StripeBillingEnabled;
 
-export type StripeBillingDisabled = z.infer<typeof StripeBillingDisabledSchema>;
+export type StripeBillingDisabled = Wire.StripeBillingDisabled;

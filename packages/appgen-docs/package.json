@@ -10,7 +10,7 @@
     ],
     "license": "Apache-2.0",
     "scripts": {
-        "build": "pnpm run clean && tsc -p tsconfig.json && node ./scripts/generate-docs.mjs",
+        "build": "pnpm run clean && tsc --checkers 1 -p tsconfig.json && node ./scripts/generate-docs.mjs",
         "clean": "rimraf ./lib ./docs ./tsconfig.tsbuildinfo",
         "lint": "biome lint src scripts",
         "test": "node --test ./scripts/*.test.mjs"

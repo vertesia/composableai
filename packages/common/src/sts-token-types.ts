@@ -1,36 +1,17 @@
-/**
- * STS Token Request Types
- * These types define the structure for token requests to the Security Token Service
- */
-import type { z } from 'zod';
-import type {
-    AgentTokenRequestSchema,
-    ApiKeyTokenRequestSchema,
-    AppSessionTokenRequestSchema,
-    AppSessionTokenResponseSchema,
-    EnvironmentTokenRequestSchema,
-    IssueTokenForbiddenResponseSchema,
-    IssueTokenRequestSchema,
-    IssueTokenResponseSchema,
-    IssueTokenUnavailableResponseSchema,
-    ProjectTokenRequestSchema,
-    ServiceAccountTokenRequestSchema,
-    SigningAlgorithmSchema,
-    UserTokenRequestSchema,
-} from './api-schemas/sts.js';
-export type SigningAlgorithm = z.infer<typeof SigningAlgorithmSchema>;
+import type * as Wire from './wire-types.generated.js';
+export type SigningAlgorithm = Wire.SigningAlgorithm;
 
 // API key doesn't need account/project as it's determined from the key
-export type ApiKeyTokenRequest = z.infer<typeof ApiKeyTokenRequestSchema>;
+export type ApiKeyTokenRequest = Wire.ApiKeyTokenRequest;
 
 // User token needs optional account/project for scoping
-export type UserTokenRequest = z.infer<typeof UserTokenRequestSchema>;
+export type UserTokenRequest = Wire.UserTokenRequest;
 
 // Project token requires project_id and account_id
-export type ProjectTokenRequest = z.infer<typeof ProjectTokenRequestSchema>;
+export type ProjectTokenRequest = Wire.ProjectTokenRequest;
 
 // Environment token requires IDs - names fetched from DB
-export type EnvironmentTokenRequest = z.infer<typeof EnvironmentTokenRequestSchema>;
+export type EnvironmentTokenRequest = Wire.EnvironmentTokenRequest;
 
 /**
  * Agent token for a service account to act as agent on behalf of a user.
@@ -41,15 +22,15 @@ export type EnvironmentTokenRequest = z.infer<typeof EnvironmentTokenRequestSche
  * - `workload_id_token`: a workload acts on behalf of a user. It implies that a full verification
  *   will be performed based on the workload identity.
  */
-export type AgentTokenRequest = z.infer<typeof AgentTokenRequestSchema>;
+export type AgentTokenRequest = Wire.AgentTokenRequest;
 
 // Service account token
-export type ServiceAccountTokenRequest = z.infer<typeof ServiceAccountTokenRequestSchema>;
+export type ServiceAccountTokenRequest = Wire.ServiceAccountTokenRequest;
 
 /**
  * @discriminator type
  */
-export type IssueTokenRequest = z.infer<typeof IssueTokenRequestSchema>;
+export type IssueTokenRequest = Wire.IssueTokenRequest;
 
 export interface RefreshTokenRequest {
     token: string;
@@ -66,8 +47,8 @@ export interface TokenResponse {
     expires_in?: number;
 }
 
-export type IssueTokenResponse = z.infer<typeof IssueTokenResponseSchema>;
-export type IssueTokenForbiddenResponse = z.infer<typeof IssueTokenForbiddenResponseSchema>;
+export type IssueTokenResponse = Wire.IssueTokenResponse;
+export type IssueTokenForbiddenResponse = Wire.IssueTokenForbiddenResponse;
 
 export interface ValidateTokenResponse {
     valid: boolean;
@@ -75,7 +56,7 @@ export interface ValidateTokenResponse {
     error?: string;
 }
 
-export type IssueTokenUnavailableResponse = z.infer<typeof IssueTokenUnavailableResponseSchema>;
+export type IssueTokenUnavailableResponse = Wire.IssueTokenUnavailableResponse;
 
-export type AppSessionTokenRequest = z.infer<typeof AppSessionTokenRequestSchema>;
-export type AppSessionTokenResponse = z.infer<typeof AppSessionTokenResponseSchema>;
+export type AppSessionTokenRequest = Wire.AppSessionTokenRequest;
+export type AppSessionTokenResponse = Wire.AppSessionTokenResponse;

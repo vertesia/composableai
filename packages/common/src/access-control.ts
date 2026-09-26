@@ -1,4 +1,3 @@
-import type { z } from 'zod';
 /**
  * @module access-control
  * @description
@@ -6,14 +5,7 @@ import type { z } from 'zod';
  */
 
 import type { AccessControlResourceType } from './access-control-values.js';
-import type {
-    ACECreatePayloadSchema,
-    ACEUpdatePayloadSchema,
-    AccessControlEntrySchema,
-    AceConditionsSchema,
-    PropertyConditionsSchema,
-    PropertyConditionValueSchema,
-} from './api-schemas/access-control.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * The enums live in `./access-control-values.js` so the API schemas can consume them without
@@ -36,8 +28,8 @@ export * from './access-control-values.js';
  * { region: { $in: ["us-east", "eu-west"] } }               // set membership (literal)
  * { security_level: { $lte: "$principal.access_level" } }   // cross-reference (resolved at token time)
  */
-export type PropertyConditionValue = z.infer<typeof PropertyConditionValueSchema>;
-export type PropertyConditions = z.infer<typeof PropertyConditionsSchema>;
+export type PropertyConditionValue = Wire.PropertyConditionValue;
+export type PropertyConditions = Wire.PropertyConditions;
 
 /**
  * The access-control wire types, inferred from the schemas in `./api-schemas/access-control.js` —
@@ -49,10 +41,10 @@ export type PropertyConditions = z.infer<typeof PropertyConditionsSchema>;
  * them into `principal` / `resource` on the way out. They are not part of this contract, and the
  * response mappers drop them rather than serializing the sub-document.
  */
-export type AceConditions = z.infer<typeof AceConditionsSchema>;
-export type AccessControlEntry = z.infer<typeof AccessControlEntrySchema>;
-export type ACECreatePayload = z.infer<typeof ACECreatePayloadSchema>;
-export type ACEUpdatePayload = z.infer<typeof ACEUpdatePayloadSchema>;
+export type AceConditions = Wire.AceConditions;
+export type AccessControlEntry = Wire.AccessControlEntry;
+export type ACECreatePayload = Wire.ACECreatePayload;
+export type ACEUpdatePayload = Wire.ACEUpdatePayload;
 
 /** Human-readable labels for each security level, indexed by numeric value. */
 export const SecurityLevelLabels: readonly string[] = ['Public', 'Internal', 'Confidential', 'Restricted', 'Secret'];

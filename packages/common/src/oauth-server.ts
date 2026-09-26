@@ -1,105 +1,64 @@
-import type { z } from 'zod';
-import type {
-    ApproveOAuthAuthorizationRequestPayloadSchema,
-    BulkRevokeOAuthGrantsPayloadSchema,
-    CreateOAuthAuthorizationRequestPayloadSchema,
-    CreateOAuthClientPayloadSchema,
-    ListOAuthGrantsQuerySchema,
-    OAuthAuthorizationDecisionResponseSchema,
-    OAuthAuthorizationRequestGeneratedAppSchema,
-    OAuthAuthorizationRequestSchema,
-    OAuthAuthorizationRequestStatusSchema,
-    OAuthAuthorizationServerMetadataSchema,
-    OAuthAuthorizeQuerySchema,
-    OAuthClientCreateResponseSchema,
-    OAuthClientDataSchema,
-    OAuthClientDisplayMetadataSchema,
-    OAuthClientRegistrationModeSchema,
-    OAuthClientSchema,
-    OAuthClientScopeMetadataSchema,
-    OAuthClientStatusSchema,
-    OAuthClientTypeSchema,
-    OAuthDeviceAuthorizationRequestSchema,
-    OAuthDeviceAuthorizationResponseSchema,
-    OAuthGrantableScopesResponseSchema,
-    OAuthGrantListResponseSchema,
-    OAuthGrantRevokeResponseSchema,
-    OAuthGrantSchema,
-    OAuthGrantSortFieldSchema,
-    OAuthGrantSortOrderSchema,
-    OAuthGrantStatusSchema,
-    OAuthGrantTypeSchema,
-    OAuthLoginDecisionResponseSchema,
-    OAuthLoginPayloadSchema,
-    OAuthLoginUserNotFoundResponseSchema,
-    OAuthProjectBindingModeSchema,
-    OAuthRegistrationSourceSchema,
-    OAuthResponseTypeSchema,
-    OAuthTokenEndpointAuthMethodSchema,
-    OAuthTokenResponseSchema,
-    RevokeOAuthGrantQuerySchema,
-    UpdateOAuthClientPayloadSchema,
-} from './api-schemas/oauth-server.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * These public OAuth wire types are inferred from `./api-schemas/oauth-server.js` — the same
  * contracts used for runtime parsing and OpenAPI components.
  */
-export type OAuthClientType = z.infer<typeof OAuthClientTypeSchema>;
-export type OAuthClientStatus = z.infer<typeof OAuthClientStatusSchema>;
-export type OAuthRegistrationSource = z.infer<typeof OAuthRegistrationSourceSchema>;
-export type OAuthProjectBindingMode = z.infer<typeof OAuthProjectBindingModeSchema>;
-export type OAuthTokenEndpointAuthMethod = z.infer<typeof OAuthTokenEndpointAuthMethodSchema>;
-export type OAuthGrantType = z.infer<typeof OAuthGrantTypeSchema>;
-export type OAuthResponseType = z.infer<typeof OAuthResponseTypeSchema>;
-export type OAuthAuthorizationRequestStatus = z.infer<typeof OAuthAuthorizationRequestStatusSchema>;
-export type OAuthClientRegistrationMode = z.infer<typeof OAuthClientRegistrationModeSchema>;
-export type OAuthGrantStatus = z.infer<typeof OAuthGrantStatusSchema>;
-export type OAuthGrantSortField = z.infer<typeof OAuthGrantSortFieldSchema>;
-export type OAuthGrantSortOrder = z.infer<typeof OAuthGrantSortOrderSchema>;
+export type OAuthClientType = Wire.OAuthClientType;
+export type OAuthClientStatus = Wire.OAuthClientStatus;
+export type OAuthRegistrationSource = Wire.OAuthRegistrationSource;
+export type OAuthProjectBindingMode = Wire.OAuthProjectBindingMode;
+export type OAuthTokenEndpointAuthMethod = Wire.OAuthTokenEndpointAuthMethod;
+export type OAuthGrantType = Wire.OAuthGrantType;
+export type OAuthResponseType = Wire.OAuthResponseType;
+export type OAuthAuthorizationRequestStatus = Wire.OAuthAuthorizationRequestStatus;
+export type OAuthClientRegistrationMode = Wire.OAuthClientRegistrationMode;
+export type OAuthGrantStatus = Wire.OAuthGrantStatus;
+export type OAuthGrantSortField = Wire.OAuthGrantSortField;
+export type OAuthGrantSortOrder = Wire.OAuthGrantSortOrder;
 
 /** An OAuth client's registration, without the id the server issues for it. */
-export type OAuthClientData = z.infer<typeof OAuthClientDataSchema>;
+export type OAuthClientData = Wire.OAuthClientData;
 
-export type OAuthClient = z.infer<typeof OAuthClientSchema>;
+export type OAuthClient = Wire.OAuthClient;
 
 /** The read shape plus the client secret, which is returned by the create call and never again. */
-export type OAuthClientCreateResponse = z.infer<typeof OAuthClientCreateResponseSchema>;
+export type OAuthClientCreateResponse = Wire.OAuthClientCreateResponse;
 
-export type OAuthClientScopeMetadata = z.infer<typeof OAuthClientScopeMetadataSchema>;
+export type OAuthClientScopeMetadata = Wire.OAuthClientScopeMetadata;
 
-export type OAuthGrant = z.infer<typeof OAuthGrantSchema>;
+export type OAuthGrant = Wire.OAuthGrant;
 
-export type ListOAuthGrantsQuery = z.infer<typeof ListOAuthGrantsQuerySchema>;
+export type ListOAuthGrantsQuery = Wire.ListOAuthGrantsQuery;
 
 /** Whether revoking a grant also withdraws the stored consent behind it. */
-export type RevokeOAuthGrantQuery = z.infer<typeof RevokeOAuthGrantQuerySchema>;
+export type RevokeOAuthGrantQuery = Wire.RevokeOAuthGrantQuery;
 
-export type OAuthGrantListResponse = z.infer<typeof OAuthGrantListResponseSchema>;
+export type OAuthGrantListResponse = Wire.OAuthGrantListResponse;
 
-export type BulkRevokeOAuthGrantsPayload = z.infer<typeof BulkRevokeOAuthGrantsPayloadSchema>;
+export type BulkRevokeOAuthGrantsPayload = Wire.BulkRevokeOAuthGrantsPayload;
 
-export type OAuthGrantRevokeResponse = z.infer<typeof OAuthGrantRevokeResponseSchema>;
+export type OAuthGrantRevokeResponse = Wire.OAuthGrantRevokeResponse;
 
-export type CreateOAuthClientPayload = z.infer<typeof CreateOAuthClientPayloadSchema>;
+export type CreateOAuthClientPayload = Wire.CreateOAuthClientPayload;
 
-export type UpdateOAuthClientPayload = z.infer<typeof UpdateOAuthClientPayloadSchema>;
+export type UpdateOAuthClientPayload = Wire.UpdateOAuthClientPayload;
 
-export type OAuthAuthorizationServerMetadata = z.infer<typeof OAuthAuthorizationServerMetadataSchema>;
-export type OAuthClientDisplayMetadata = z.infer<typeof OAuthClientDisplayMetadataSchema>;
-export type OAuthAuthorizeQuery = z.infer<typeof OAuthAuthorizeQuerySchema>;
-export type CreateOAuthAuthorizationRequestPayload = z.infer<typeof CreateOAuthAuthorizationRequestPayloadSchema>;
-export type OAuthAuthorizationRequest = z.infer<typeof OAuthAuthorizationRequestSchema>;
-export type ApproveOAuthAuthorizationRequestPayload = z.infer<typeof ApproveOAuthAuthorizationRequestPayloadSchema>;
-export type OAuthGrantableScopesResponse = z.infer<typeof OAuthGrantableScopesResponseSchema>;
-export type OAuthAuthorizationDecisionResponse = z.infer<typeof OAuthAuthorizationDecisionResponseSchema>;
-export type OAuthDeviceAuthorizationRequest = z.infer<typeof OAuthDeviceAuthorizationRequestSchema>;
-export type OAuthDeviceAuthorizationResponse = z.infer<typeof OAuthDeviceAuthorizationResponseSchema>;
-export type OAuthTokenResponse = z.infer<typeof OAuthTokenResponseSchema>;
+export type OAuthAuthorizationServerMetadata = Wire.OAuthAuthorizationServerMetadata;
+export type OAuthClientDisplayMetadata = Wire.OAuthClientDisplayMetadata;
+export type OAuthAuthorizeQuery = Wire.OAuthAuthorizeQuery;
+export type CreateOAuthAuthorizationRequestPayload = Wire.CreateOAuthAuthorizationRequestPayload;
+export type OAuthAuthorizationRequest = Wire.OAuthAuthorizationRequest;
+export type ApproveOAuthAuthorizationRequestPayload = Wire.ApproveOAuthAuthorizationRequestPayload;
+export type OAuthGrantableScopesResponse = Wire.OAuthGrantableScopesResponse;
+export type OAuthAuthorizationDecisionResponse = Wire.OAuthAuthorizationDecisionResponse;
+export type OAuthDeviceAuthorizationRequest = Wire.OAuthDeviceAuthorizationRequest;
+export type OAuthDeviceAuthorizationResponse = Wire.OAuthDeviceAuthorizationResponse;
+export type OAuthTokenResponse = Wire.OAuthTokenResponse;
 
-export type OAuthAuthorizationRequestGeneratedApp = z.infer<typeof OAuthAuthorizationRequestGeneratedAppSchema>;
+export type OAuthAuthorizationRequestGeneratedApp = Wire.OAuthAuthorizationRequestGeneratedApp;
 
-export type OAuthLoginPayload = z.infer<typeof OAuthLoginPayloadSchema>;
-export type OAuthLoginDecisionResponse = z.infer<typeof OAuthLoginDecisionResponseSchema>;
+export type OAuthLoginPayload = Wire.OAuthLoginPayload;
+export type OAuthLoginDecisionResponse = Wire.OAuthLoginDecisionResponse;
 
-export type OAuthLoginUserNotFoundResponse = z.infer<typeof OAuthLoginUserNotFoundResponseSchema>;
+export type OAuthLoginUserNotFoundResponse = Wire.OAuthLoginUserNotFoundResponse;

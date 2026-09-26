@@ -1,6 +1,7 @@
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { SupportedIntegrations } from '../integrations.js';
+import type * as Wire from '../wire-types.generated.js';
 import { ProjectConfigurationSchema } from './project-configuration.js';
 
 /**
@@ -103,15 +104,15 @@ export const ProjectToolInfoSchema = z
 
 export const ProjectToolInfoArraySchema = z.array(ProjectToolInfoSchema).meta({ id: 'ProjectToolInfoArray' });
 
-export type ListProjectsQueryFromSchema = z.infer<typeof ListProjectsQuerySchema>;
-export type ProjectTagQueryFromSchema = z.infer<typeof ProjectTagQuerySchema>;
-export type CreateProjectPayloadFromSchema = z.infer<typeof CreateProjectPayloadSchema>;
-export type ProjectPluginsUpdatePayloadFromSchema = z.infer<typeof ProjectPluginsUpdatePayloadSchema>;
-export type CountResultFromSchema = z.infer<typeof CountResultSchema>;
-export type ProjectIntegrationListEntryFromSchema = z.infer<typeof ProjectIntegrationListEntrySchema>;
-export type ProjectIntegrationListResponseFromSchema = z.infer<typeof ProjectIntegrationListResponseSchema>;
-export type ProjectToolInfoFromSchema = z.infer<typeof ProjectToolInfoSchema>;
-export type ProjectToolInfoArrayFromSchema = z.infer<typeof ProjectToolInfoArraySchema>;
+export type ListProjectsQueryFromSchema = Wire.ListProjectsQueryFromSchema;
+export type ProjectTagQueryFromSchema = Wire.ProjectTagQueryFromSchema;
+export type CreateProjectPayloadFromSchema = Wire.CreateProjectPayloadFromSchema;
+export type ProjectPluginsUpdatePayloadFromSchema = Wire.ProjectPluginsUpdatePayloadFromSchema;
+export type CountResultFromSchema = Wire.CountResultFromSchema;
+export type ProjectIntegrationListEntryFromSchema = Wire.ProjectIntegrationListEntryFromSchema;
+export type ProjectIntegrationListResponseFromSchema = Wire.ProjectIntegrationListResponseFromSchema;
+export type ProjectToolInfoFromSchema = Wire.ProjectToolInfoFromSchema;
+export type ProjectToolInfoArrayFromSchema = Wire.ProjectToolInfoArrayFromSchema;
 
 /**
  * The rendering templates an app ships, and the reference form the manifest embeds.

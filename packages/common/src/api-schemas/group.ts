@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type * as Wire from '../wire-types.generated.js';
 
 /**
  * Runtime API schemas for the IAM user-group endpoints.
@@ -162,4 +163,4 @@ export const UserGroupRefSchema = UserGroupSchema.pick({
  * The array components have no public alias of their own — `UserGroup[]` is what the client sees —
  * so this exists only for the gate in `./group.contract.test.ts` to assert that equivalence.
  */
-export type UserGroupArrayFromSchema = z.infer<typeof UserGroupArraySchema>;
+export type UserGroupArrayFromSchema = Wire.UserGroupArrayFromSchema;

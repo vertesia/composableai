@@ -1,11 +1,4 @@
-import type { z } from 'zod';
-import type {
-    CreateUserGroupPayloadSchema,
-    ListUserGroupsQuerySchema,
-    UpdateUserGroupPayloadSchema,
-    UserGroupRefSchema,
-    UserGroupSchema,
-} from './api-schemas/group.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * The user group and its payloads as they cross the wire.
@@ -18,10 +11,10 @@ import type {
  * described the Mongoose document rather than the response a client parses. `IUserGroup` in
  * `@dglabs/server-common` describes what Mongo actually holds and is deliberately independent.
  */
-export type UserGroup = z.infer<typeof UserGroupSchema>;
-export type CreateUserGroupPayload = z.infer<typeof CreateUserGroupPayloadSchema>;
-export type UpdateUserGroupPayload = z.infer<typeof UpdateUserGroupPayloadSchema>;
-export type ListUserGroupsQuery = z.infer<typeof ListUserGroupsQuerySchema>;
+export type UserGroup = Wire.UserGroup;
+export type CreateUserGroupPayload = Wire.CreateUserGroupPayload;
+export type UpdateUserGroupPayload = Wire.UpdateUserGroupPayload;
+export type ListUserGroupsQuery = Wire.ListUserGroupsQuery;
 
 /**
  * The group as it appears in a token payload, read by the servers' authorization layer, the clients
@@ -32,6 +25,6 @@ export type ListUserGroupsQuery = z.infer<typeof ListUserGroupsQuerySchema>;
  * every caller's needs. The previous one selected `description`, which token generation has never
  * emitted, and the security fields, which the resource-reference endpoint has no use for.
  */
-export type UserGroupRef = z.infer<typeof UserGroupRefSchema>;
+export type UserGroupRef = Wire.UserGroupRef;
 
 export const MEMBERS_GROUP_NAME = 'members';

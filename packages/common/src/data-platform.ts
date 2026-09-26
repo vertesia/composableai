@@ -1,93 +1,4 @@
-import type { AppDashboardDefinitionSchema } from './api-schemas/app-runtime.js';
-/**
- * Data Platform Types
- *
- * Types for managing versioned analytical data stores with DuckDB + GCS storage.
- * Supports AI-manageable schemas and multi-table atomic operations.
- */
-
-import type { z } from 'zod';
-import type {
-    CreateDashboardPayloadSchema,
-    CreateDashboardSnapshotPayloadSchema,
-    DashboardArchiveResultSchema,
-    DashboardBulkArchiveResultSchema,
-    DashboardBulkDeleteResultSchema,
-    DashboardDataSourceSchema,
-    DashboardElasticsearchDslSchema,
-    DashboardElasticsearchResultMappingSchema,
-    DashboardItemSchema,
-    DashboardLayoutSchema,
-    DashboardPanelPositionSchema,
-    DashboardPanelSchema,
-    DashboardQuerySchema,
-    DashboardSchema,
-    DashboardSqlDataSourceSchema,
-    DashboardStatusSchema,
-    DashboardStoreElasticsearchDataSourceSchema,
-    DashboardVersionItemSchema,
-    DashboardVersioningPayloadSchema,
-    DashboardVersioningStatusResponseSchema,
-    DashboardVersionSchema,
-    PromoteDashboardVersionPayloadSchema,
-    UpdateDashboardPayloadSchema,
-} from './api-schemas/dashboard.js';
-import type {
-    AlterTableOperationSchema,
-    AlterTablePayloadSchema,
-    BatchQueryPayloadSchema,
-    BatchQueryResultItemSchema,
-    BatchQueryResultSchema,
-    CreateDataStorePayloadSchema,
-    CreateSnapshotPayloadSchema,
-    CreateTablePayloadSchema,
-    CreateTablesPayloadSchema,
-    DataColumnForAISchema,
-    DataColumnSchema,
-    DataColumnTypeSchema,
-    DataColumnUpdateSchema,
-    DataForeignKeyForAISchema,
-    DataForeignKeySchema,
-    DataIndexSchema,
-    DataRelationshipForAISchema,
-    DataRelationshipSchema,
-    DataRelationshipTypeSchema,
-    DataSchemaForAISchema,
-    DataSchemaSchema,
-    DataStoreArchiveResultSchema,
-    DataStoreDownloadInfoSchema,
-    DataStoreFullSchemaResponseSchema,
-    DataStoreItemSchema,
-    DataStoreMutateRowsPayloadSchema,
-    DataStoreMutateRowsResultSchema,
-    DataStoreSchema,
-    DataStoreSchemaResponseSchema,
-    DataStoreStatusSchema,
-    DataStoreTableDetailSchema,
-    DataStoreTableDropResultSchema,
-    DataStoreVersionSchema,
-    DataStoreVersionTableStateSchema,
-    DataTableForAISchema,
-    DataTableSchema,
-    DataTableSemanticTypeSchema,
-    DataTableSummarySchema,
-    GetDataStoreTableQuerySchema,
-    ImportDataFormatSchema,
-    ImportDataPayloadSchema,
-    ImportDataSourceSchema,
-    ImportJobSchema,
-    ImportStatusSchema,
-    ImportTableDataSchema,
-    ListDataStoreVersionsQuerySchema,
-    QueryPayloadSchema,
-    QueryResultColumnSchema,
-    QueryResultSchema,
-    QueryValidationErrorSchema,
-    QueryValidationPayloadSchema,
-    QueryValidationResultSchema,
-    SemanticColumnTypeSchema,
-    UpdateSchemaPayloadSchema,
-} from './api-schemas/data-store.js';
+import type * as Wire from './wire-types.generated.js';
 
 // ============================================================================
 // Column Types
@@ -109,7 +20,7 @@ export const DataColumnType = {
     JSON: 'JSON',
 } as const;
 
-export type DataColumnType = z.infer<typeof DataColumnTypeSchema>;
+export type DataColumnType = Wire.DataColumnType;
 
 /**
  * Semantic types that provide AI agents with context about column meaning.
@@ -127,7 +38,7 @@ export const SemanticColumnType = {
     IDENTIFIER: 'identifier',
 } as const;
 
-export type SemanticColumnType = z.infer<typeof SemanticColumnTypeSchema>;
+export type SemanticColumnType = Wire.SemanticColumnType;
 
 /**
  * Mapping from DataColumnType to DuckDB SQL types.
@@ -152,49 +63,49 @@ export const DATA_COLUMN_TYPE_TO_DUCKDB: Record<DataColumnType, string> = {
 /**
  * Column definition for a data table.
  */
-export type DataColumn = z.infer<typeof DataColumnSchema>;
+export type DataColumn = Wire.DataColumn;
 
 /**
  * Foreign key constraint definition.
  */
-export type DataForeignKey = z.infer<typeof DataForeignKeySchema>;
+export type DataForeignKey = Wire.DataForeignKey;
 
 /**
  * Index definition for a table.
  */
-export type DataIndex = z.infer<typeof DataIndexSchema>;
+export type DataIndex = Wire.DataIndex;
 
 /**
  * Semantic type categorization for tables.
  */
-export type DataTableSemanticType = z.infer<typeof DataTableSemanticTypeSchema>;
+export type DataTableSemanticType = Wire.DataTableSemanticType;
 
 /**
  * Table definition within a data schema.
  */
-export type DataTable = z.infer<typeof DataTableSchema>;
+export type DataTable = Wire.DataTable;
 
 /**
  * Summary view of a data table (for listings).
  */
-export type DataTableSummary = z.infer<typeof DataTableSummarySchema>;
+export type DataTableSummary = Wire.DataTableSummary;
 
 /**
  * Relationship type between tables.
  */
-export type DataRelationshipType = z.infer<typeof DataRelationshipTypeSchema>;
+export type DataRelationshipType = Wire.DataRelationshipType;
 
 /**
  * Semantic relationship between tables for AI understanding.
  */
-export type DataRelationship = z.infer<typeof DataRelationshipSchema>;
+export type DataRelationship = Wire.DataRelationship;
 
 /**
  * Complete schema definition for a data store.
  */
-export type DataSchema = z.infer<typeof DataSchemaSchema>;
+export type DataSchema = Wire.DataSchema;
 
-export type DataStoreFullSchemaResponse = z.infer<typeof DataStoreFullSchemaResponseSchema>;
+export type DataStoreFullSchemaResponse = Wire.DataStoreFullSchemaResponse;
 
 // ============================================================================
 // Data Store Types
@@ -210,17 +121,17 @@ export const DataStoreStatus = {
     ARCHIVED: 'archived',
 } as const;
 
-export type DataStoreStatus = z.infer<typeof DataStoreStatusSchema>;
+export type DataStoreStatus = Wire.DataStoreStatus;
 
 /**
  * Summary view of a data store (for listings).
  */
-export type DataStoreItem = z.infer<typeof DataStoreItemSchema>;
+export type DataStoreItem = Wire.DataStoreItem;
 
 /**
  * Full data store with schema details.
  */
-export type DataStore = z.infer<typeof DataStoreSchema>;
+export type DataStore = Wire.DataStore;
 
 // ============================================================================
 // Version Types
@@ -229,16 +140,16 @@ export type DataStore = z.infer<typeof DataStoreSchema>;
 /**
  * Table state within a version.
  */
-export type DataStoreVersionTableState = z.infer<typeof DataStoreVersionTableStateSchema>;
+export type DataStoreVersionTableState = Wire.DataStoreVersionTableState;
 
 /**
  * A point-in-time version of a data store.
  */
-export type DataStoreVersion = z.infer<typeof DataStoreVersionSchema>;
+export type DataStoreVersion = Wire.DataStoreVersion;
 
-export type ListDataStoreVersionsQuery = z.infer<typeof ListDataStoreVersionsQuerySchema>;
+export type ListDataStoreVersionsQuery = Wire.ListDataStoreVersionsQuery;
 
-export type GetDataStoreTableQuery = z.infer<typeof GetDataStoreTableQuerySchema>;
+export type GetDataStoreTableQuery = Wire.GetDataStoreTableQuery;
 
 // ============================================================================
 // Import Types
@@ -255,12 +166,12 @@ export const ImportStatus = {
     ROLLED_BACK: 'rolled_back',
 } as const;
 
-export type ImportStatus = z.infer<typeof ImportStatusSchema>;
+export type ImportStatus = Wire.ImportStatus;
 
 /**
  * Import job tracking.
  */
-export type ImportJob = z.infer<typeof ImportJobSchema>;
+export type ImportJob = Wire.ImportJob;
 
 // ============================================================================
 // API Payloads
@@ -269,21 +180,21 @@ export type ImportJob = z.infer<typeof ImportJobSchema>;
 /**
  * Payload for creating a new data store.
  */
-export type CreateDataStorePayload = z.infer<typeof CreateDataStorePayloadSchema>;
+export type CreateDataStorePayload = Wire.CreateDataStorePayload;
 
 /**
  * Payload for creating a new table.
  */
-export type CreateTablePayload = z.infer<typeof CreateTablePayloadSchema>;
+export type CreateTablePayload = Wire.CreateTablePayload;
 
 /**
  * Payload for creating multiple tables atomically.
  */
-export type CreateTablesPayload = z.infer<typeof CreateTablesPayloadSchema>;
+export type CreateTablesPayload = Wire.CreateTablesPayload;
 
-export type QueryValidationPayload = z.infer<typeof QueryValidationPayloadSchema>;
+export type QueryValidationPayload = Wire.QueryValidationPayload;
 
-export type BatchQueryPayload = z.infer<typeof BatchQueryPayloadSchema>;
+export type BatchQueryPayload = Wire.BatchQueryPayload;
 
 /**
  * Schema change operation types.
@@ -291,17 +202,17 @@ export type BatchQueryPayload = z.infer<typeof BatchQueryPayloadSchema>;
 /**
  * @discriminator op
  */
-export type AlterTableOperation = z.infer<typeof AlterTableOperationSchema>;
+export type AlterTableOperation = Wire.AlterTableOperation;
 
 /**
  * Payload for altering a table schema.
  */
-export type AlterTablePayload = z.infer<typeof AlterTablePayloadSchema>;
+export type AlterTablePayload = Wire.AlterTablePayload;
 
 /**
  * Payload for AI-driven bulk schema updates.
  */
-export type UpdateSchemaPayload = z.infer<typeof UpdateSchemaPayloadSchema>;
+export type UpdateSchemaPayload = Wire.UpdateSchemaPayload;
 
 /**
  * Data source for import.
@@ -310,83 +221,83 @@ export type UpdateSchemaPayload = z.infer<typeof UpdateSchemaPayloadSchema>;
  * - 'url': data at an HTTPS URL
  * - 'artifact': data from workflow artifact (resolved to GCS by tool)
  */
-export type ImportDataSource = z.infer<typeof ImportDataSourceSchema>;
+export type ImportDataSource = Wire.ImportDataSource;
 
 /**
  * Data format for external sources.
  */
-export type ImportDataFormat = z.infer<typeof ImportDataFormatSchema>;
+export type ImportDataFormat = Wire.ImportDataFormat;
 
 /**
  * Table data specification for import.
  */
-export type ImportTableData = z.infer<typeof ImportTableDataSchema>;
+export type ImportTableData = Wire.ImportTableData;
 
 /**
  * Payload for importing data into tables.
  */
-export type ImportDataPayload = z.infer<typeof ImportDataPayloadSchema>;
+export type ImportDataPayload = Wire.ImportDataPayload;
 
 /**
  * Payload for creating a named snapshot.
  */
-export type CreateSnapshotPayload = z.infer<typeof CreateSnapshotPayloadSchema>;
+export type CreateSnapshotPayload = Wire.CreateSnapshotPayload;
 
 /**
  * Payload for executing a query.
  */
-export type QueryPayload = z.infer<typeof QueryPayloadSchema>;
+export type QueryPayload = Wire.QueryPayload;
 
 /**
  * Payload for mutating data rows with a single SQL statement.
  */
-export type DataStoreMutateRowsPayload = z.infer<typeof DataStoreMutateRowsPayloadSchema>;
+export type DataStoreMutateRowsPayload = Wire.DataStoreMutateRowsPayload;
 
 /**
  * Result from mutating rows in a data store.
  */
-export type DataStoreMutateRowsResult = z.infer<typeof DataStoreMutateRowsResultSchema>;
+export type DataStoreMutateRowsResult = Wire.DataStoreMutateRowsResult;
 
 /**
  * Column metadata in query results.
  */
-export type QueryResultColumn = z.infer<typeof QueryResultColumnSchema>;
+export type QueryResultColumn = Wire.QueryResultColumn;
 
 /**
  * Query execution result.
  */
-export type QueryResult = z.infer<typeof QueryResultSchema>;
+export type QueryResult = Wire.QueryResult;
 
-export type BatchQueryResultItem = z.infer<typeof BatchQueryResultItemSchema>;
+export type BatchQueryResultItem = Wire.BatchQueryResultItem;
 
-export type BatchQueryResult = z.infer<typeof BatchQueryResultSchema>;
+export type BatchQueryResult = Wire.BatchQueryResult;
 
-export type QueryValidationError = z.infer<typeof QueryValidationErrorSchema>;
+export type QueryValidationError = Wire.QueryValidationError;
 
-export type QueryValidationResult = z.infer<typeof QueryValidationResultSchema>;
+export type QueryValidationResult = Wire.QueryValidationResult;
 
-export type DataStoreDownloadInfo = z.infer<typeof DataStoreDownloadInfoSchema>;
+export type DataStoreDownloadInfo = Wire.DataStoreDownloadInfo;
 
-export type DataStoreArchiveResult = z.infer<typeof DataStoreArchiveResultSchema>;
+export type DataStoreArchiveResult = Wire.DataStoreArchiveResult;
 
 /**
  * @discriminator schema_format
  */
-export type DataStoreSchemaResponse = z.infer<typeof DataStoreSchemaResponseSchema>;
+export type DataStoreSchemaResponse = Wire.DataStoreSchemaResponse;
 
-export type DataStoreTableDetail = z.infer<typeof DataStoreTableDetailSchema>;
+export type DataStoreTableDetail = Wire.DataStoreTableDetail;
 
-export type DataStoreTableDropResult = z.infer<typeof DataStoreTableDropResultSchema>;
+export type DataStoreTableDropResult = Wire.DataStoreTableDropResult;
 
-export type DashboardArchiveResult = z.infer<typeof DashboardArchiveResultSchema>;
+export type DashboardArchiveResult = Wire.DashboardArchiveResult;
 
-export type DashboardBulkArchiveResult = z.infer<typeof DashboardBulkArchiveResultSchema>;
+export type DashboardBulkArchiveResult = Wire.DashboardBulkArchiveResult;
 
-export type DashboardBulkDeleteResult = z.infer<typeof DashboardBulkDeleteResultSchema>;
+export type DashboardBulkDeleteResult = Wire.DashboardBulkDeleteResult;
 
-export type DashboardVersioningStatusResponse = z.infer<typeof DashboardVersioningStatusResponseSchema>;
+export type DashboardVersioningStatusResponse = Wire.DashboardVersioningStatusResponse;
 
-export type DashboardVersioningPayload = z.infer<typeof DashboardVersioningPayloadSchema>;
+export type DashboardVersioningPayload = Wire.DashboardVersioningPayload;
 
 // ============================================================================
 // AI Agent Interface
@@ -395,28 +306,28 @@ export type DashboardVersioningPayload = z.infer<typeof DashboardVersioningPaylo
 /**
  * Simplified column representation for AI agents.
  */
-export type DataColumnForAI = z.infer<typeof DataColumnForAISchema>;
+export type DataColumnForAI = Wire.DataColumnForAI;
 
 /**
  * Simplified foreign key representation for AI agents.
  */
-export type DataForeignKeyForAI = z.infer<typeof DataForeignKeyForAISchema>;
+export type DataForeignKeyForAI = Wire.DataForeignKeyForAI;
 
 /**
  * Simplified table representation for AI agents.
  */
-export type DataTableForAI = z.infer<typeof DataTableForAISchema>;
+export type DataTableForAI = Wire.DataTableForAI;
 
 /**
  * Simplified relationship representation for AI agents.
  */
-export type DataRelationshipForAI = z.infer<typeof DataRelationshipForAISchema>;
+export type DataRelationshipForAI = Wire.DataRelationshipForAI;
 
 /**
  * Simplified schema representation optimized for AI agent consumption.
  * Provides semantic context for understanding the data model.
  */
-export type DataSchemaForAI = z.infer<typeof DataSchemaForAISchema>;
+export type DataSchemaForAI = Wire.DataSchemaForAI;
 
 // ============================================================================
 // Utility Types
@@ -454,7 +365,7 @@ export const DashboardStatus = {
     ARCHIVED: 'archived',
 } as const;
 
-export type DashboardStatus = z.infer<typeof DashboardStatusSchema>;
+export type DashboardStatus = Wire.DashboardStatus;
 
 /**
  * Named SQL query that maps to a Vega data source.
@@ -463,14 +374,14 @@ export type DashboardStatus = z.infer<typeof DashboardStatusSchema>;
  * @deprecated Use single `query` field on Dashboard instead. Multiple queries
  * prevent cross-panel interactivity. Use JOINs/CTEs in a single query.
  */
-export type DashboardQuery = z.infer<typeof DashboardQuerySchema>;
+export type DashboardQuery = Wire.DashboardQuery;
 
 /**
  * Panel position within the dashboard grid.
  *
  * @deprecated Use combined Vega-Lite spec with vconcat/hconcat instead.
  */
-export type DashboardPanelPosition = z.infer<typeof DashboardPanelPositionSchema>;
+export type DashboardPanelPosition = Wire.DashboardPanelPosition;
 
 /**
  * Dashboard panel with Vega/Vega-Lite visualization.
@@ -478,14 +389,14 @@ export type DashboardPanelPosition = z.infer<typeof DashboardPanelPositionSchema
  * @deprecated Use combined Vega-Lite spec with vconcat/hconcat instead.
  * Combined specs enable cross-panel interactivity (selections filtering other panels).
  */
-export type DashboardPanel = z.infer<typeof DashboardPanelSchema>;
+export type DashboardPanel = Wire.DashboardPanel;
 
 /**
  * Dashboard layout configuration.
  *
  * @deprecated Layout is now handled within the Vega-Lite spec via vconcat/hconcat.
  */
-export type DashboardLayout = z.infer<typeof DashboardLayoutSchema>;
+export type DashboardLayout = Wire.DashboardLayout;
 
 /**
  * Default layout configuration for dashboards.
@@ -503,27 +414,27 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayout = {
  * Elasticsearch DSL supported by dashboard data sources.
  * Queries execute through Vertesia Store, so project/security filtering remains server-side.
  */
-export type DashboardElasticsearchDsl = z.infer<typeof DashboardElasticsearchDslSchema>;
+export type DashboardElasticsearchDsl = Wire.DashboardElasticsearchDsl;
 
 /**
  * How an Elasticsearch DSL result should be converted into Vega rows.
  */
-export type DashboardElasticsearchResultMapping = z.infer<typeof DashboardElasticsearchResultMappingSchema>;
+export type DashboardElasticsearchResultMapping = Wire.DashboardElasticsearchResultMapping;
 
 /**
  * Dashboard data source backed by a Data Platform SQL query.
  */
-export type DashboardSqlDataSource = z.infer<typeof DashboardSqlDataSourceSchema>;
+export type DashboardSqlDataSource = Wire.DashboardSqlDataSource;
 
 /**
  * Dashboard data source backed by Vertesia Store Elasticsearch DSL.
  */
-export type DashboardStoreElasticsearchDataSource = z.infer<typeof DashboardStoreElasticsearchDataSourceSchema>;
+export type DashboardStoreElasticsearchDataSource = Wire.DashboardStoreElasticsearchDataSource;
 
 /**
  * Data source for a Vega dashboard.
  */
-export type DashboardDataSource = z.infer<typeof DashboardDataSourceSchema>;
+export type DashboardDataSource = Wire.DashboardDataSource;
 
 /**
  * Dashboard definition contributed by an app package.
@@ -531,12 +442,12 @@ export type DashboardDataSource = z.infer<typeof DashboardDataSourceSchema>;
  * App dashboard IDs are local to the app. The platform exposes them as
  * `app:<app_name>:<id>` when listing or retrieving dashboards.
  */
-export type AppDashboardDefinition = z.infer<typeof AppDashboardDefinitionSchema>;
+export type AppDashboardDefinition = Wire.AppDashboardDefinition;
 
 /**
  * Summary view of a dashboard (for listings).
  */
-export type DashboardItem = z.infer<typeof DashboardItemSchema>;
+export type DashboardItem = Wire.DashboardItem;
 
 /**
  * Full dashboard with SQL query and Vega-Lite specification.
@@ -553,18 +464,18 @@ export type DashboardItem = z.infer<typeof DashboardItemSchema>;
  * - `layout` for grid positioning
  * - No cross-panel interactivity
  */
-export type Dashboard = z.infer<typeof DashboardSchema>;
+export type Dashboard = Wire.Dashboard;
 
 /**
  * Payload for creating a new dashboard.
  * Requires a data source and spec (Vega-Lite).
  */
-export type CreateDashboardPayload = z.infer<typeof CreateDashboardPayloadSchema>;
+export type CreateDashboardPayload = Wire.CreateDashboardPayload;
 
 /**
  * Payload for updating a dashboard.
  */
-export type UpdateDashboardPayload = z.infer<typeof UpdateDashboardPayloadSchema>;
+export type UpdateDashboardPayload = Wire.UpdateDashboardPayload;
 
 /**
  * Options for rendering a dashboard.
@@ -586,21 +497,21 @@ export interface RenderDashboardOptions {
  * A point-in-time version of a dashboard.
  * Stores full snapshot inline (no external storage needed for small JSON documents).
  */
-export type DashboardVersion = z.infer<typeof DashboardVersionSchema>;
+export type DashboardVersion = Wire.DashboardVersion;
 
 /**
  * Summary view of a dashboard version (for listings).
  */
-export type DashboardVersionItem = z.infer<typeof DashboardVersionItemSchema>;
+export type DashboardVersionItem = Wire.DashboardVersionItem;
 
 /**
  * Payload for creating a named snapshot.
  */
-export type CreateDashboardSnapshotPayload = z.infer<typeof CreateDashboardSnapshotPayloadSchema>;
+export type CreateDashboardSnapshotPayload = Wire.CreateDashboardSnapshotPayload;
 
 /**
  * Payload for promoting a version to current.
  */
-export type PromoteDashboardVersionPayload = z.infer<typeof PromoteDashboardVersionPayloadSchema>;
+export type PromoteDashboardVersionPayload = Wire.PromoteDashboardVersionPayload;
 
-export type DataColumnUpdate = z.infer<typeof DataColumnUpdateSchema>;
+export type DataColumnUpdate = Wire.DataColumnUpdate;

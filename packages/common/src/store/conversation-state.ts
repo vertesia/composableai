@@ -1,15 +1,7 @@
 import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
-import type { z } from 'zod';
-import type {
-    ExternalizedToolInputRefSchema,
-    ExternalizedToolInputRefsSchema,
-    PendingMcpConnectionSchema,
-    TextArtifactReferenceSchema,
-    ToolReferenceSchema,
-    UsedSkillSchema,
-} from '../api-schemas/interaction.js';
 import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
 import type { ExecutionRunDocRef } from '../runs.js';
+import type * as Wire from '../wire-types.generated.js';
 import type { AgentToolApprovalMode, PendingToolApprovalResults, ToolApprovalGrant } from './agent-approval.js';
 import type { Plan, WorkflowAncestor } from './workflow.js';
 
@@ -17,18 +9,18 @@ import type { Plan, WorkflowAncestor } from './workflow.js';
  * Lightweight tool reference for activity payloads.
  * References tools stored in GCP instead of embedding full tool definitions.
  */
-export type ToolReference = z.infer<typeof ToolReferenceSchema>;
+export type ToolReference = Wire.ToolReference;
 
 /** Reference to text content externalized to agent artifact storage. */
-export type TextArtifactReference = z.infer<typeof TextArtifactReferenceSchema>;
+export type TextArtifactReference = Wire.TextArtifactReference;
 
 /**
  * Sidecar metadata for generated tool input fields that were stored outside
  * model-visible tool_input. Keyed by tool_use.id on ConversationState.
  */
-export type ExternalizedToolInputRef = z.infer<typeof ExternalizedToolInputRefSchema>;
+export type ExternalizedToolInputRef = Wire.ExternalizedToolInputRef;
 
-export type ExternalizedToolInputRefs = z.infer<typeof ExternalizedToolInputRefsSchema>;
+export type ExternalizedToolInputRefs = Wire.ExternalizedToolInputRefs;
 
 /**
  * Conversation state passed between workflow activities: the activity-safe,
@@ -300,7 +292,7 @@ export const CONVERSATION_CATALOG_ARTIFACT_KEY = 'catalog.json';
  * Built at tool-discovery time and stored on the conversation state so the agent can
  * discover it (by description) and ask the user to connect.
  */
-export type PendingMcpConnection = z.infer<typeof PendingMcpConnectionSchema>;
+export type PendingMcpConnection = Wire.PendingMcpConnection;
 
 /** Skill metadata collected at workflow start for upfront sandbox hydration */
 export interface AvailableSkill {
@@ -311,7 +303,7 @@ export interface AvailableSkill {
 }
 
 /** Skill metadata tracked when a skill is used */
-export type UsedSkill = z.infer<typeof UsedSkillSchema>;
+export type UsedSkill = Wire.UsedSkill;
 
 export interface ToolActivationMetadata {
     /** Turn when the tool became active in this conversation. */
