@@ -63,8 +63,9 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
                 <div className={clsx(className, 'flex items-center justify-start', asMenuTrigger && 'cursor-pointer')}>
                     <Avatar
                         size="sm"
-                        color="bg-info text-info"
+                        color="bg-amber-500"
                         shape="circle"
+                        className="text-white"
                         /*src={picture} */
                         name={user?.name}
                     />
