@@ -23,7 +23,7 @@ export enum AgentEventType {
     TurnEvaluation = 'turn_evaluation',
     /** A user rating on an agent run, emitted by the server when it is recorded */
     Feedback = 'feedback',
-    /** Verdict of the LLM LLM evaluation on one turn, emitted by the evaluator workflow */
+    /** LLM evaluation verdict for one turn, emitted by the evaluation workflow */
     TurnLlmEvaluation = 'turn_llm_evaluation',
     /** The stall circuit breaker acted: a corrective was injected, or the loop was stopped */
     StallBreaker = 'stall_breaker',
