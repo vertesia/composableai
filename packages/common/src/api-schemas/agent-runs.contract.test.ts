@@ -96,6 +96,31 @@ describe('agent run evaluation API contracts', () => {
         expectTypeOf<AgentRunEvaluation>().toEqualTypeOf<import('zod').z.infer<typeof AgentRunEvaluationSchema>>();
     });
 
+    it('publishes the LLM evaluation result through the renamed contract', () => {
+        const result = {
+            rev: 1,
+            gate: 'always_on',
+            sample_rate: 1,
+            selected_probability: 1,
+            outcome: 'evaluated',
+            verdict: 'success',
+            prompt_version: 'agent-run-evaluation/2',
+            turns_evaluated: [1],
+            evaluated_at: '2026-09-26T10:00:00.000Z',
+        };
+        expect(validateApiResponse('AgentRunLlmEvaluationResult', result).valid).toBe(true);
+        expect(
+            validateApiResponse('AgentRunEvaluation', {
+                rev: 1,
+                llm_evaluation: result,
+                updated_at: result.evaluated_at,
+                severity: 'none',
+                flags: [],
+                contradicted: false,
+            }).valid,
+        ).toBe(true);
+    });
+
     it('accepts a turn_evaluation event through the ingest payload', () => {
         expect(validateApiRequest('IngestAgentEventsPayload', { events: [turnEvaluation] }).valid).toBe(true);
     });
@@ -110,7 +135,7 @@ describe('agent run evaluation API contracts', () => {
         expect(validateApiRequest('IngestAgentEventsPayload', { events }).valid).toBe(false);
     });
 
-    it('accepts a feedback event and a judgement event', () => {
+    it('accepts a feedback event and a LLM evaluation event', () => {
         const base = {
             timestamp: turnEvaluation.timestamp,
             runId: 'wf-run-1',
@@ -133,14 +158,14 @@ describe('agent run evaluation API contracts', () => {
             },
             {
                 ...base,
-                eventType: 'turn_judgement',
+                eventType: 'turn_llm_evaluation',
                 evaluationRev: 2,
                 workstreamId: 'main',
                 turnSeq: 1,
                 gate: 'signal',
                 sampleRate: 0,
                 selectedProbability: 1,
-                outcome: 'judged',
+                outcome: 'evaluated',
                 verdict: 'failure',
                 score: 0.2,
                 promptVersion: 'v1',
@@ -236,5 +261,36 @@ describe('agent run evaluation API contracts', () => {
         };
         expect(validateApiResponse('AgentRunEvaluation', evaluation).valid).toBe(true);
         expect(validateApiRequest('ListAgentRunsQuery', { evaluation_severity: ['unrated', 'high'] }).valid).toBe(true);
+    });
+});
+
+describe('agent evaluation policy contracts', () => {
+    it.each(['disabled', 'opt_in', 'always_on'])('accepts project policy %s', (evaluation_policy) => {
+        expect(validateApiRequest('UpdateProjectConfigurationPayload', { agent: { evaluation_policy } }).valid).toBe(
+            true,
+        );
+    });
+    it('rejects unsupported policies', () => {
+        expect(
+            validateApiRequest('UpdateProjectConfigurationPayload', { agent: { evaluation_policy: 'sample' } }).valid,
+        ).toBe(false);
+    });
+    it.each([true, false])('accepts per-run evaluate=%s', (evaluate) => {
+        expect(validateApiRequest('CreateAgentRunPayload', { interaction: 'sys:GeneralAgent', evaluate }).valid).toBe(
+            true,
+        );
+        expect(
+            validateApiRequest('RecordAgentRunPayload', {
+                interaction: 'sys:GeneralAgent',
+                workflow_id: 'workflow',
+                first_workflow_run_id: 'run',
+                evaluate,
+            }).valid,
+        ).toBe(true);
+    });
+    it('rejects a non-boolean evaluation request', () => {
+        expect(
+            validateApiRequest('CreateAgentRunPayload', { interaction: 'sys:GeneralAgent', evaluate: 'yes' }).valid,
+        ).toBe(false);
     });
 });

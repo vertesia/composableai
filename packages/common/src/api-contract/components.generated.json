@@ -5192,6 +5192,15 @@
   "AgentProjectConfiguration": {
     "type": "object",
     "properties": {
+      "evaluation_policy": {
+        "type": "string",
+        "enum": [
+          "disabled",
+          "opt_in",
+          "always_on"
+        ],
+        "description": "LLM evaluation policy. Defaults to always_on when omitted. disabled prevents evaluation even when requested; opt_in requires evaluate=true on the run; always_on evaluates every eligible run without sampling. Deterministic diagnostics are unaffected."
+      },
       "checkpoint": {
         "$ref": "#/components/schemas/AgentCheckpointConfiguration",
         "description": "Conversation checkpoint (context compaction) tuning."
@@ -14008,6 +14017,10 @@
       "generate_lessons": {
         "type": "boolean",
         "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
+      },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "app_version": {
         "type": "string",
@@ -33956,7 +33969,7 @@
     ],
     "description": "Why the run was rated the way it was."
   },
-  "AgentRunJudgeResult": {
+  "AgentRunLlmEvaluationResult": {
     "type": "object",
     "properties": {
       "rev": {
@@ -33965,7 +33978,7 @@
         "maximum": 9007199254740991
       },
       "gate": {
-        "$ref": "#/components/schemas/JudgeGateReason"
+        "$ref": "#/components/schemas/EvaluationGateReason"
       },
       "sample_rate": {
         "type": "number"
@@ -33974,10 +33987,10 @@
         "type": "number"
       },
       "outcome": {
-        "$ref": "#/components/schemas/JudgeOutcome"
+        "$ref": "#/components/schemas/EvaluationOutcome"
       },
       "verdict": {
-        "$ref": "#/components/schemas/JudgeVerdict"
+        "$ref": "#/components/schemas/EvaluationVerdict"
       },
       "score": {
         "type": "number"
@@ -33988,7 +34001,7 @@
       "prompt_version": {
         "type": "string"
       },
-      "turns_judged": {
+      "turns_evaluated": {
         "type": "array",
         "items": {
           "type": "integer",
@@ -33996,7 +34009,7 @@
           "maximum": 9007199254740991
         }
       },
-      "judged_at": {
+      "evaluated_at": {
         "type": "string",
         "format": "date-time"
       }
@@ -34008,42 +34021,44 @@
       "selected_probability",
       "outcome",
       "prompt_version",
-      "judged_at"
+      "evaluated_at"
     ],
     "additionalProperties": false,
-    "description": "Latest judge result for a run."
+    "description": "Latest LLM evaluation result for a run."
   },
-  "JudgeGateReason": {
+  "EvaluationGateReason": {
     "type": "string",
     "enum": [
       "signal",
-      "sample"
+      "sample",
+      "opt_in",
+      "always_on"
     ],
-    "description": "Why the judge looked at a run."
+    "description": "Why a run was selected for LLM evaluation."
   },
-  "JudgeOutcome": {
+  "EvaluationOutcome": {
     "type": "string",
     "enum": [
-      "judged",
+      "evaluated",
       "skipped_unarchived",
       "failed"
     ],
-    "description": "What a judge run produced."
+    "description": "Outcome of an LLM evaluation run."
   },
-  "JudgeVerdict": {
+  "EvaluationVerdict": {
     "type": "string",
     "enum": [
       "success",
       "partial",
       "failure"
     ],
-    "description": "The judge's reading of a turn."
+    "description": "LLM evaluation verdict for a turn."
   },
   "AgentRunContradictionReason": {
     "type": "string",
     "enum": [
       "feedback_down_on_clean_run",
-      "judge_failure_on_clean_run"
+      "evaluation_failure_on_clean_run"
     ]
   },
   "AgentRunEvaluation": {
@@ -34061,8 +34076,8 @@
       "feedback_counts": {
         "$ref": "#/components/schemas/AgentRunFeedbackCounts"
       },
-      "judge": {
-        "$ref": "#/components/schemas/AgentRunJudgeResult"
+      "llm_evaluation": {
+        "$ref": "#/components/schemas/AgentRunLlmEvaluationResult"
       },
       "severity": {
         "$ref": "#/components/schemas/EvaluationSeverity"
@@ -34375,6 +34390,10 @@
         },
         "description": "Lessons learned from the conversation (extracted at completion)"
       },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
+      },
       "evaluation": {
         "$ref": "#/components/schemas/AgentRunEvaluation",
         "description": "Evaluation summary of the run."
@@ -34649,6 +34668,10 @@
         },
         "description": "Lessons learned from the conversation (extracted at completion)"
       },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
+      },
       "evaluation": {
         "$ref": "#/components/schemas/AgentRunEvaluation",
         "description": "Evaluation summary of the run."
@@ -34719,6 +34742,10 @@
       "generate_lessons": {
         "type": "boolean",
         "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
+      },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "data": {
         "type": "object",
@@ -35589,7 +35616,7 @@
       },
       "contradicted": {
         "type": "boolean",
-        "description": "Only runs whose feedback or judge contradicts the detectors"
+        "description": "Only runs whose feedback or LLM evaluation contradicts the detectors"
       }
     }
   },
@@ -35626,6 +35653,10 @@
       "generate_lessons": {
         "type": "boolean",
         "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
+      },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "parent_run_id": {
         "type": "string"
@@ -37016,7 +37047,7 @@
           },
           "eventType": {
             "type": "string",
-            "const": "turn_judgement"
+            "const": "turn_llm_evaluation"
           },
           "evaluationRev": {
             "type": "integer",
@@ -37032,7 +37063,7 @@
             "maximum": 9007199254740991
           },
           "gate": {
-            "$ref": "#/components/schemas/JudgeGateReason"
+            "$ref": "#/components/schemas/EvaluationGateReason"
           },
           "sampleRate": {
             "type": "number"
@@ -37041,10 +37072,10 @@
             "type": "number"
           },
           "outcome": {
-            "$ref": "#/components/schemas/JudgeOutcome"
+            "$ref": "#/components/schemas/EvaluationOutcome"
           },
           "verdict": {
-            "$ref": "#/components/schemas/JudgeVerdict"
+            "$ref": "#/components/schemas/EvaluationVerdict"
           },
           "score": {
             "type": "number"
