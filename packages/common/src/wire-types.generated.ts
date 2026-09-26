@@ -31,7 +31,6 @@ import type {
     ToolUse,
     VideoResult,
 } from '@llumiverse/common';
-import type { StringValue } from 'ms';
 import type { AccessControlPrincipalType, AccessControlResourceType, Permission } from './access-control-values.js';
 import type { AccountType, BillingMethod, QuotaTier } from './account-values.js';
 import type { ApiKeyTypes } from './apikey-values.js';
@@ -57,6 +56,7 @@ import type { ResourceVisibility, SystemRoles } from './project-values.js';
 import type { PromptSegmentDefType, PromptStatus, TemplateType } from './prompt.js';
 import type { ActivityTypeDefinition } from './store/activity-catalog.js';
 import type { CollectionStatus } from './store/collections.js';
+import type { DurationString } from './store/duration.js';
 import type { InCodeProcessDefinition } from './store/process.js';
 import type {
     ContentObjectStatus,
@@ -6917,7 +6917,7 @@ export type DocAnalyzerProgressStatus = {
     success: number;
     failed: number;
 };
-export type DurationValue = StringValue | number;
+export type DurationValue = DurationString | number;
 export type WorkflowInputFile = {
     url: string;
     mimetype: string;
