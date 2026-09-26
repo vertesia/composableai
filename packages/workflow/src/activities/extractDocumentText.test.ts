@@ -1,10 +1,11 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
-import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
+import { ContentEventName, type ContentObject, type DSLActivityExecutionPayload } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../errors.js';
-import { type TextExtractionResult, TextExtractionStatus } from '../result-types.js';
+import { TextExtractionStatus } from '../result-types.js';
+import { fetchBlobAsBuffer } from '../utils/blobs.js';
 import { type ExtractDocumentTextParams, extractDocumentText } from './extractDocumentText.js';
 
 vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
@@ -19,29 +20,46 @@ vi.mock('../utils/blobs.js', async (importOriginal) => {
 
 let testEnv: MockActivityEnvironment;
 
-const SOURCE = 'gs://store/blob-1';
-const MIME_TYPE = 'text/plain';
-
 beforeAll(() => {
     testEnv = new MockActivityEnvironment();
 });
 
-async function mockObjectMode(doc: Record<string, unknown>) {
+const retrieve = vi.fn();
+const setObjectText = vi.fn();
+const update = vi.fn();
+
+const SOURCE = 'gs://bucket/doc.txt';
+
+beforeEach(async () => {
+    vi.clearAllMocks();
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const client = {
         objects: {
-            retrieve: vi.fn().mockResolvedValue(doc),
-            update: vi.fn().mockResolvedValue(undefined),
+            retrieve,
+            setObjectText,
+            update,
         },
     } as unknown as VertesiaClient;
     vi.mocked(setupActivity).mockResolvedValue({
         client,
-        inputType: 'objects',
+        inputType: 'objectIds',
         objectId: 'object-1',
         objectIds: ['object-1'],
-        params: {} satisfies ExtractDocumentTextParams,
+        params: {},
     } as unknown as ActivityContext<ExtractDocumentTextParams>);
-    return client;
+    vi.mocked(fetchBlobAsBuffer).mockResolvedValue(Buffer.from('hello world', 'utf8'));
+});
+
+function createDoc(overrides: Partial<ContentObject> = {}): ContentObject {
+    return {
+        id: 'object-1',
+        content: {
+            type: 'text/plain',
+            source: SOURCE,
+            etag: 'etag-1',
+        },
+        ...overrides,
+    } as ContentObject;
 }
 
 function createPayload(): DSLActivityExecutionPayload<ExtractDocumentTextParams> {
@@ -59,60 +77,76 @@ function createPayload(): DSLActivityExecutionPayload<ExtractDocumentTextParams>
     };
 }
 
-beforeEach(() => {
-    vi.clearAllMocks();
-});
-
 describe('extractDocumentText', () => {
+    it('stores extracted text through setObjectText and keeps tokens on the object', async () => {
+        retrieve.mockResolvedValue(createDoc());
+        setObjectText.mockResolvedValue({ text: 'hello world' });
+        update.mockResolvedValue({});
+
+        await expect(testEnv.run(extractDocumentText, createPayload())).resolves.toMatchObject({
+            status: TextExtractionStatus.success,
+            objectId: 'object-1',
+            hasText: true,
+            len: 'hello world'.length,
+        });
+
+        expect(setObjectText).toHaveBeenCalledExactlyOnceWith('object-1', {
+            text: 'hello world',
+            etag: 'etag-1',
+        });
+        // The object update no longer carries text/text_etag — only token counts.
+        expect(update).toHaveBeenCalledExactlyOnceWith('object-1', {
+            tokens: expect.objectContaining({ etag: 'etag-1' }),
+        });
+    });
+
+    it('skips extraction when the text is current for the content etag', async () => {
+        retrieve.mockResolvedValue(createDoc({ text: 'already there', text_etag: 'etag-1' }));
+
+        await expect(testEnv.run(extractDocumentText, createPayload())).resolves.toMatchObject({
+            status: TextExtractionStatus.skipped,
+            message: 'Text already extracted',
+        });
+
+        expect(setObjectText).not.toHaveBeenCalled();
+        expect(update).not.toHaveBeenCalled();
+    });
+
+    it('fails the activity when setObjectText fails', async () => {
+        retrieve.mockResolvedValue(createDoc());
+        setObjectText.mockRejectedValue(new Error('PUT /objects/object-1/text failed'));
+
+        await expect(testEnv.run(extractDocumentText, createPayload())).rejects.toMatchObject({
+            message: expect.stringContaining('PUT /objects/object-1/text failed'),
+        });
+        expect(update).not.toHaveBeenCalled();
+    });
+
     // Regression: a transient blob-download failure used to be caught and returned as
     // `status: error`. Because the activity *resolved*, Temporal never retried it, intake
     // continued, and the object was marked `completed` with no text — permanently text-less
     // but indistinguishable from a healthy document. It must reject so the retry policy applies.
     it('rejects on a transient download failure instead of resolving with status error', async () => {
-        const client = await mockObjectMode({
-            id: 'object-1',
-            content: { type: MIME_TYPE, source: SOURCE, etag: 'etag-1' },
-        });
-        const { fetchBlobAsBuffer } = await import('../utils/blobs.js');
+        retrieve.mockResolvedValue(createDoc());
         vi.mocked(fetchBlobAsBuffer).mockRejectedValue(new Error(`Failed to download blob ${SOURCE}: Bad Gateway`));
 
         await expect(testEnv.run(extractDocumentText, createPayload())).rejects.toThrow(/Bad Gateway/);
 
         // The defining symptom of the old behaviour: the object was still written/completed.
-        expect(client.objects.update).not.toHaveBeenCalled();
+        expect(setObjectText).not.toHaveBeenCalled();
+        expect(update).not.toHaveBeenCalled();
     });
 
     // Not-found/forbidden are classified as non-retryable by fetchBlobAsStream. That
     // classification must survive too — retrying a deleted blob five times helps nobody.
     it('propagates a non-retryable DocumentNotFoundError unchanged', async () => {
-        await mockObjectMode({
-            id: 'object-1',
-            content: { type: MIME_TYPE, source: SOURCE, etag: 'etag-1' },
-        });
-        const { fetchBlobAsBuffer } = await import('../utils/blobs.js');
-        vi.mocked(fetchBlobAsBuffer).mockRejectedValue(
-            new DocumentNotFoundError(`Not found at ${SOURCE}: not found`, []),
-        );
+        retrieve.mockResolvedValue(createDoc());
+        vi.mocked(fetchBlobAsBuffer).mockRejectedValue(new DocumentNotFoundError(`Not found at ${SOURCE}: not found`, []));
 
         await expect(testEnv.run(extractDocumentText, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         });
-    });
-
-    it('extracts and stores text on the happy path', async () => {
-        const client = await mockObjectMode({
-            id: 'object-1',
-            content: { type: MIME_TYPE, source: SOURCE, etag: 'etag-1' },
-        });
-        const { fetchBlobAsBuffer } = await import('../utils/blobs.js');
-        vi.mocked(fetchBlobAsBuffer).mockResolvedValue(Buffer.from('hello world'));
-
-        const result = (await testEnv.run(extractDocumentText, createPayload())) as TextExtractionResult;
-
-        expect(result.status).toBe(TextExtractionStatus.success);
-        expect(client.objects.update).toHaveBeenCalledWith(
-            'object-1',
-            expect.objectContaining({ text: 'hello world', text_etag: 'etag-1' }),
-        );
+        expect(setObjectText).not.toHaveBeenCalled();
+        expect(update).not.toHaveBeenCalled();
     });
 });
