@@ -111,6 +111,34 @@ it.each(['0123456789abcdef01234567', null, undefined])('restores runtime profile
     expect(store.snapshot.inference_profile).toBe(profile);
 });
 
+it('restores a positive per-run budget limit and drops a disabled one', async () => {
+    const client = {
+        interactions: {
+            catalog: {
+                resolve: vi.fn().mockResolvedValue({
+                    id: 'sys:GeneralAgent',
+                    name: 'GeneralAgent',
+                    type: 'sys',
+                    tags: [],
+                    prompts: [],
+                }),
+            },
+        },
+    } as unknown as VertesiaClient;
+    const store = new PayloadBuilderStore(client);
+    const context = {
+        type: 'ExecuteConversationWorkflow',
+        tool_names: [],
+        interaction: 'sys:GeneralAgent',
+        interactive: true,
+        config: {},
+    };
+    await store.snapshot.restoreConversation({ ...context, budget: { limit_tokens: 250_000 } });
+    expect(store.snapshot.budget).toEqual({ limit_tokens: 250_000 });
+    await store.snapshot.restoreConversation({ ...context, budget: { limit_tokens: 0 } });
+    expect(store.snapshot.budget).toBeUndefined();
+});
+
 it('validates profile availability across builder snapshots without blocking ad hoc or defaults', () => {
     const store = new PayloadBuilderStore({} as VertesiaClient);
     const profile = '0123456789abcdef01234567';

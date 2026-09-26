@@ -1771,6 +1771,10 @@ export const ConversationStateSchema = z
                     'Project-configured checkpoint hard cap in tokens (cached from project.configuration.agent_checkpoint_tokens at conversation start). The workflow resolves the effective threshold from these, the per-run checkpoint_tokens override, and the model-based default.',
             })
             .optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Project-configured agent token budget (cached from project.configuration.agent.budget at conversation start). The workflow resolves the effective budget field-wise from this, the interaction's agent_runner_options.budget, and the per-run budget override.",
+        }).optional(),
         user_channels: z
             .array(UserChannelSchema)
             .meta({

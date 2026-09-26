@@ -337,6 +337,8 @@ export class PayloadBuilder {
         this._debug_mode = context.debug_mode ?? false;
         this._non_blocking_subagents = context.non_blocking_subagents ?? true;
         this._checkpoint_tokens = context.checkpoint_tokens;
+        const budgetLimit = context.budget?.limit_tokens;
+        this._budget_tokens = budgetLimit !== undefined && budgetLimit > 0 ? budgetLimit : undefined;
         this._user_channels = context.user_channels;
         this._disabled_mcp_collections = context.disabled_mcp_collections;
         this._model_options = context.config?.model_options as ModelOptions | undefined;

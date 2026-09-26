@@ -166,14 +166,15 @@ export const AgentBudgetConfigurationSchema = z
                     'is left. Each threshold is delivered once per context window (again after a checkpoint). ' +
                     'Values outside (0, limit_tokens) are ignored. Unset means reminders at 25% and 10% remaining.',
             }),
-        output_token_weight: z.number().optional().meta({
+        output_token_weight: z.number().min(0).optional().meta({
             description: 'Weight applied to output tokens, reasoning included, when charging the budget. Default 5.',
         }),
-        input_token_weight: z.number().optional().meta({
+        input_token_weight: z.number().min(0).optional().meta({
             description: 'Weight applied to input tokens not read from the prompt cache. Default 1.',
         }),
         cached_input_token_weight: z
             .number()
+            .min(0)
             .optional()
             .meta({
                 description:

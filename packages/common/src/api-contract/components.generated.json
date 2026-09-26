@@ -5234,14 +5234,17 @@
       },
       "output_token_weight": {
         "type": "number",
+        "minimum": 0,
         "description": "Weight applied to output tokens, reasoning included, when charging the budget. Default 5."
       },
       "input_token_weight": {
         "type": "number",
+        "minimum": 0,
         "description": "Weight applied to input tokens not read from the prompt cache. Default 1."
       },
       "cached_input_token_weight": {
         "type": "number",
+        "minimum": 0,
         "description": "Weight applied to input tokens read from the prompt cache. Default 0, so a long conversation that mostly re-reads cached context is not charged again for it."
       }
     },
@@ -12014,6 +12017,10 @@
       "checkpoint_tokens": {
         "type": "number",
         "description": "Project-configured checkpoint hard cap in tokens (cached from project.configuration.agent_checkpoint_tokens at conversation start). The workflow resolves the effective threshold from these, the per-run checkpoint_tokens override, and the model-based default."
+      },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Project-configured agent token budget (cached from project.configuration.agent.budget at conversation start). The workflow resolves the effective budget field-wise from this, the interaction's agent_runner_options.budget, and the per-run budget override."
       },
       "user_channels": {
         "type": "array",
@@ -38847,6 +38854,9 @@
       },
       "checkpoint_tokens": {
         "type": "number"
+      },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration"
       },
       "version": {
         "type": "number"
