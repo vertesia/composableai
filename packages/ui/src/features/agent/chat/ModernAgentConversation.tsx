@@ -646,6 +646,8 @@ export interface ModernAgentConversationProps {
     fileUploadRef?: React.MutableRefObject<((files: File[]) => void) | null>;
     /** Ref populated with the internal message sender for document or artifact collaboration controls. */
     sendMessageRef?: React.MutableRefObject<SendAgentMessageFn | null>;
+    /** Ref populated with the same-run stream reconnect handler. */
+    reconnectRef?: React.MutableRefObject<(() => void) | null>;
     /** Called for each live message delivered after the conversation stream connects. */
     onMessage?: (message: AgentMessage) => void;
     /** Called when the main agent turn starts or reaches an idle/terminal state. */
@@ -1479,6 +1481,7 @@ function ModernAgentConversationInner({
     // External file upload API
     fileUploadRef,
     sendMessageRef,
+    reconnectRef,
     onMessage,
     onAgentWorkingChange,
     onProcessingFilesChange,
@@ -2381,6 +2384,13 @@ function ModernAgentConversationInner({
             if (sendMessageRef?.current === handleSendMessage) sendMessageRef.current = null;
         };
     }, [handleSendMessage, sendMessageRef]);
+
+    useEffect(() => {
+        if (reconnectRef) reconnectRef.current = reconnectStream;
+        return () => {
+            if (reconnectRef?.current === reconnectStream) reconnectRef.current = null;
+        };
+    }, [reconnectRef, reconnectStream]);
 
     // After the user connects an MCP server requested via request_mcp_connection, flag the
     // conversation for tool re-discovery and resume it with a confirmation message so the agent

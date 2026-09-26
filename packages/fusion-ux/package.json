@@ -22,7 +22,11 @@
     "scripts": {
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "generate:validator": "node ./scripts/generate-template-validator.mjs",
+        "check:validator": "node ./scripts/generate-template-validator.mjs --check",
+        "copy:validator": "node ./scripts/generate-template-validator.mjs --copy-to-lib",
+        "verify:built-validator": "node --disallow-code-generation-from-strings ./scripts/verify-built-validator.mjs",
+        "build": "pnpm run generate:validator && pnpm run clean:lib && tsc -p tsconfig.json && pnpm run copy:validator && pnpm exec rolldown -c rolldown.config.js && pnpm run verify:built-validator",
         "lint": "biome lint src",
         "lint:fix": "biome lint --write src",
         "test": "vitest run",

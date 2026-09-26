@@ -2172,6 +2172,25 @@ describe('ModernAgentConversation send handling', () => {
         });
     });
 
+    it('exposes the same-run reconnect handler and clears it on teardown', async () => {
+        const reconnectRef = { current: null } as React.MutableRefObject<(() => void) | null>;
+        mockStreamState({ messages: [] });
+
+        const { unmount } = renderConversation({ reconnectRef });
+
+        await waitFor(() => {
+            expect(reconnectRef.current).toBeTypeOf('function');
+        });
+
+        act(() => {
+            reconnectRef.current?.();
+        });
+        expect(mocks.reconnect).toHaveBeenCalledOnce();
+
+        unmount();
+        expect(reconnectRef.current).toBeNull();
+    });
+
     it('playback controls slice rendered messages and scroll forward without mutating the live stream', async () => {
         const originalScrollIntoView = Element.prototype.scrollIntoView;
         const scrollIntoView = vi.fn();
