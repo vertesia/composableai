@@ -17,16 +17,19 @@
  * asserts, at compile time, that every generated type is identical to the `z.infer` it
  * replaces, so a schema edit without a regenerate fails `typecheck:test`.
  *
- * A schema this walker cannot express faithfully (an anonymous recursive `z.lazy`, a transform) keeps
- * its `z.infer` alias: the fallback is correctness-preserving, only slower for consumers.
+ * A schema this walker cannot express faithfully (an anonymous recursive `z.lazy`, a transform) is
+ * declared in the generated file as `z.infer` of its schema, so an alias already rewritten to `Wire.X`
+ * keeps resolving: the fallback is correctness-preserving, only slower for consumers.
  *
  * Run through `tsx` and imports `../src`, like `gen-api-components.ts`. Run `pnpm run gen:schemas`
- * after editing any schema.
+ * after editing any schema. `--src <dir>` generates for another source tree and `--no-format` skips
+ * Biome; `gen-wire-types.test.ts` uses both to run the script over fixtures.
  */
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parseArgs } from 'node:util';
 import { z } from 'zod';
 
 type AnySchema = { _zod: { def: { type: string }; optout?: string } };
@@ -52,7 +55,8 @@ interface ZodDef {
     getter: () => AnySchema;
 }
 
-const SRC = fileURLToPath(new URL('../src', import.meta.url));
+const ARGS = parseArgs({ options: { src: { type: 'string' }, 'no-format': { type: 'boolean' } } }).values;
+const SRC = ARGS.src ? resolve(ARGS.src) : fileURLToPath(new URL('../src', import.meta.url));
 const OUTPUT = join(SRC, 'wire-types.generated.ts');
 const TEST_OUTPUT = join(SRC, 'wire-types.generated.test.ts');
 const OUTPUT_MODULE = './wire-types.generated.js';
@@ -762,7 +766,8 @@ async function main() {
     // component never evaluates `z.infer` over the registry. Read from the group literals (every entry is
     // `Name: XSchema` or `Name: Namespace.XSchema`); the registry exports no name -> schema map.
     const components: { name: string; exportName: string; specifier: string; type: string }[] = [];
-    for (const group of readFileSync(join(SRC, REGISTRY), 'utf8').matchAll(
+    const hasRegistry = existsSync(join(SRC, REGISTRY));
+    for (const group of (hasRegistry ? readFileSync(join(SRC, REGISTRY), 'utf8') : '').matchAll(
         // A group may carry an explicit annotation, a named map or an inline `{ ... }`, before its literal.
         /^const \w+_SCHEMAS(?:: (?:\w+|\{\n[\s\S]*?\n\}))? = \{\n([\s\S]*?)\n\}/gm,
     )) {
@@ -793,18 +798,22 @@ async function main() {
     for (const alias of aliases) {
         const schema = alias.schema as AnySchema;
         const primary = primaryName.get(schema) as string;
+        const schemaModule = specifierFor(alias.schemaFile || alias.file);
         let type: string;
         try {
             type = primary === alias.name ? emitRoot(schema) : primary;
         } catch (error) {
             if (!(error instanceof Unsupported)) throw error;
+            // Still declared: a module already pointing at `Wire.X`, and any generated type naming `X`,
+            // keep resolving. The alias's own module is left as written.
+            type = `z.infer<typeof import('${schemaModule}').${alias.schemaExport}>`;
+            usesZod = true;
             fallbacks.push(`${alias.name} (${alias.file}): ${error.message}`);
-            continue;
         }
-        generated.add(alias.name);
         if (alias.doc) body.push(alias.doc);
         body.push(`export type ${alias.name} = ${type};`);
-        const schemaModule = specifierFor(alias.schemaFile || alias.file);
+        if (type.startsWith('z.infer<')) continue;
+        generated.add(alias.name);
         checks.push(
             `    ${alias.name}: Same<W.${alias.name}, z.infer<typeof import('${schemaModule}').${alias.schemaExport}>>;`,
         );
@@ -849,13 +858,6 @@ async function main() {
         );
     }
 
-    // A fallback alias stays `z.infer` in its own module; generated types that reference it import it.
-    for (const alias of aliases) {
-        if (!generated.has(alias.name) && body.some((line) => new RegExp(`\\b${alias.name}\\b`).test(line))) {
-            addImport(specifierFor(alias.file), alias.name);
-        }
-    }
-
     const imports = [...typeImports]
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([file, names]) => `import type { ${[...names].sort().join(', ')} } from '${file}';`);
@@ -874,7 +876,7 @@ async function main() {
             "import { describe, expect, it } from 'vitest';",
             "import type { z } from 'zod';",
             `import type * as W from '${OUTPUT_MODULE}';`,
-            "import type { ApiComponentName } from './api-schemas/registry.js';",
+            ...(hasRegistry ? ["import type { ApiComponentName } from './api-schemas/registry.js';"] : []),
             '',
             '// Identical types, the same test `expectTypeOf().toEqualTypeOf()` uses: a nested `any` or a',
             '// widened member fails it. A schema edited without a regenerate fails `typecheck:test` on the',
@@ -883,19 +885,23 @@ async function main() {
             '',
             'interface Checks {',
             ...checks,
-            '    // A group the registry parse missed would leave its components out of `ApiComponentTypes`.',
-            "    'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;",
+            ...(hasRegistry
+                ? [
+                      '    // A group the registry parse missed would leave its components out of `ApiComponentTypes`.',
+                      "    'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;",
+                  ]
+                : []),
             '}',
             '',
             'const checks: Checks = {',
             ...[...generated].map((name) => `    ${name}: true,`),
             ...components.map((c) => `    'component:${c.name}': true,`),
-            "    'component-names': true,",
+            ...(hasRegistry ? ["    'component-names': true,"] : []),
             '};',
             '',
             "describe('wire-types.generated', () => {",
             "    it('asserts every generated type against its schema', () => {",
-            `        expect(Object.keys(checks)).toHaveLength(${generated.size + components.length + 1});`,
+            `        expect(Object.keys(checks)).toHaveLength(${generated.size + components.length + Number(hasRegistry)});`,
             '    });',
             '});',
             '',
@@ -938,9 +944,12 @@ async function main() {
             stdio: ['ignore', 'ignore', 'inherit'],
         });
     const rewrittenPaths = rewritten.map((file) => join(SRC, file));
-    if (rewrittenPaths.length)
-        biome(['lint', '--only=correctness/noUnusedImports', '--write', '--unsafe'], rewrittenPaths);
-    biome(['check', '--write'], [OUTPUT, TEST_OUTPUT, ...rewrittenPaths]);
+    // Skipped for fixture runs: their temporary tree is outside what Biome is configured to check.
+    if (!ARGS['no-format']) {
+        if (rewrittenPaths.length)
+            biome(['lint', '--only=correctness/noUnusedImports', '--write', '--unsafe'], rewrittenPaths);
+        biome(['check', '--write'], [OUTPUT, TEST_OUTPUT, ...rewrittenPaths]);
+    }
 
     console.log(
         `Wrote ${generated.size} types + ${helpers.length} helpers to ${toSrcRelative(OUTPUT)} ` +
