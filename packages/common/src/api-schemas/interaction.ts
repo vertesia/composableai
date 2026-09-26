@@ -2120,7 +2120,7 @@ export const AsyncInteractionExecutionPayloadSchema = z
 
 export const AgentEvaluateRequestSchema = z.boolean().optional().meta({
     description:
-        'Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on.',
+        'Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on.',
 });
 
 export const ConversationEnrichmentFields = {

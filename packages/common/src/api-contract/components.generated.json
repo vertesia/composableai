@@ -5199,7 +5199,7 @@
           "opt_in",
           "always_on"
         ],
-        "description": "LLM judging policy. Defaults to always_on when omitted. disabled prevents judging even when requested; opt_in requires evaluate=true on the run; always_on judges every eligible run without sampling. Deterministic diagnostics are unaffected."
+        "description": "LLM evaluation policy. Defaults to always_on when omitted. disabled prevents evaluation even when requested; opt_in requires evaluate=true on the run; always_on evaluates every eligible run without sampling. Deterministic diagnostics are unaffected."
       },
       "checkpoint": {
         "$ref": "#/components/schemas/AgentCheckpointConfiguration",
@@ -14020,7 +14020,7 @@
       },
       "evaluate": {
         "type": "boolean",
-        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "app_version": {
         "type": "string",
@@ -34392,7 +34392,7 @@
       },
       "evaluate": {
         "type": "boolean",
-        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "evaluation": {
         "$ref": "#/components/schemas/AgentRunEvaluation",
@@ -34670,7 +34670,7 @@
       },
       "evaluate": {
         "type": "boolean",
-        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "evaluation": {
         "$ref": "#/components/schemas/AgentRunEvaluation",
@@ -34745,7 +34745,7 @@
       },
       "evaluate": {
         "type": "boolean",
-        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "data": {
         "type": "object",
@@ -35656,7 +35656,7 @@
       },
       "evaluate": {
         "type": "boolean",
-        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
+        "description": "Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "parent_run_id": {
         "type": "string"
