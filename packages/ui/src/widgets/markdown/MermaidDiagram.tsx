@@ -85,6 +85,11 @@ let mermaidPromise: Promise<Mermaid> | undefined;
  * Load Mermaid on first render of a diagram, initialized with a browser-focused config close to
  * Mermaid Playground defaults. Mermaid is several hundred KB and most pages never render a diagram,
  * so it is imported dynamically to keep it out of the eager bundle of every consuming app.
+ *
+ * Diagram source is untrusted (documents, agent output), so Mermaid runs with `securityLevel: 'strict'`:
+ * `click` links/callbacks are disabled, and labels plus the serialized SVG are sanitized with DOMPurify.
+ * `securityLevel` is one of Mermaid's `secure` config keys, so a diagram's `%%{init}%%` directive cannot
+ * override it. HTML labels stay on because DOMPurify keeps `<br/>` and inline formatting.
  */
 function loadMermaid(): Promise<Mermaid> {
     if (!mermaidPromise) {
@@ -92,7 +97,7 @@ function loadMermaid(): Promise<Mermaid> {
             mermaid.initialize({
                 startOnLoad: false,
                 theme: 'default',
-                securityLevel: 'loose',
+                securityLevel: 'strict',
                 fontFamily: MERMAID_FONT_FAMILY,
                 suppressErrorRendering: true,
                 flowchart: {
@@ -202,7 +207,7 @@ export function MermaidDiagram({ code, className }: MermaidDiagramProps) {
         <div
             ref={containerRef}
             className={`my-4 w-full overflow-x-auto [&_svg]:mx-auto [&_svg]:w-full [&_svg]:h-auto [&_svg]:max-w-full ${className || ''}`}
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is produced by Mermaid renderer from a known mermaid-source string
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: SVG is produced and DOMPurify-sanitized by Mermaid in strict security mode
             dangerouslySetInnerHTML={{ __html: svg }}
         />
     );
