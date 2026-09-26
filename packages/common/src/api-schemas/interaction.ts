@@ -2304,6 +2304,13 @@ export const AsyncConversationExecutionPayloadSchema = z
                     "Metadata inherited from parent workflow. Used to propagate context (e.g., apiKey, session info) to child workflows/workstreams. When a workstream is spawned, the parent's `data` is preserved here so that child tools can access it via metadata.parent_metadata.",
             })
             .optional(),
+        final_verification: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, a non-interactive free-form run takes one extra turn after its answer to check that the task is complete. Off by default, and never applied to workstreams: their parent reviews the result and can message the workstream to continue.',
+            })
+            .optional(),
         non_blocking_subagents: z
             .boolean()
             .meta({

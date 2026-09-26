@@ -238,3 +238,11 @@ describe('agent run evaluation API contracts', () => {
         expect(validateApiRequest('ListAgentRunsQuery', { evaluation_severity: ['unrated', 'high'] }).valid).toBe(true);
     });
 });
+
+describe('agent run creation contract', () => {
+    it('accepts the final verification opt-in as a boolean only', () => {
+        const payload = { interaction: 'sys:GeneralAgent', final_verification: true };
+        expect(validateApiRequest('CreateAgentRunPayload', payload).valid).toBe(true);
+        expect(validateApiRequest('CreateAgentRunPayload', { ...payload, final_verification: 1 }).valid).toBe(false);
+    });
+});
