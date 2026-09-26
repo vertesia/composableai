@@ -3659,10 +3659,16 @@ interface ZenoRecursiveComponentTypes {
  *
  * `ApiComponentType<'Account'>` is `z.infer<typeof AccountSchema>` — the map is indexed directly
  * rather than dispatched through the groups, which the intersection makes possible.
+ *
+ * It is wrapped in `NoInfer` because `N` always comes from a component-name argument and can never be
+ * recovered from the wire type. Without it, a call whose result has a contextual type — a destructuring
+ * `const { file } = validatedQuery(ctx, 'FileMetadataQuery')`, an `await`, a typed `return` — makes the
+ * checker infer `N` from that context while `N` is still unresolved, which evaluates `z.infer` across
+ * every component in the registry: about 500k types, 1 GB and 2 s of `tsc` in each consuming program.
  */
-export type ApiComponentType<N extends ApiComponentName> = N extends keyof ZenoRecursiveComponentTypes
-    ? ZenoRecursiveComponentTypes[N]
-    : z.infer<ApiSchemaMap[N]>;
+export type ApiComponentType<N extends ApiComponentName> = NoInfer<
+    N extends keyof ZenoRecursiveComponentTypes ? ZenoRecursiveComponentTypes[N] : z.infer<ApiSchemaMap[N]>
+>;
 
 /**
  * Names a published component from inside a handler signature:
