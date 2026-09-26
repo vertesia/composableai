@@ -2436,7 +2436,7 @@ export const ResolveInteractionQuerySchema = z
         environment: z.string().optional(),
         model: z.string().optional(),
         inference_profile: InferenceProfileIdSchema.optional(),
-        inherit_model_config: z.boolean().optional(),
+        inherit_model_config: InteractionExecutionConfigurationSchema.shape.inherit_model_config,
         hasImage: z.boolean().optional(),
         hasVideo: z.boolean().optional(),
     })

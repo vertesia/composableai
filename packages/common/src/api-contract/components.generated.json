@@ -3818,6 +3818,14 @@
       "reasoning_effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
       },
+      "reasoning_context": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "current_turn",
+          "all_turns"
+        ]
+      },
       "image_detail": {
         "type": "string",
         "enum": [
@@ -10537,7 +10545,8 @@
         "$ref": "#/components/schemas/InferenceProfileId"
       },
       "inherit_model_config": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Treat supplied model settings as inherited fallback: an applicable profile replaces them."
       },
       "hasImage": {
         "type": "boolean"

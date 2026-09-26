@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { ContentTypeIntakePolicySchema as GeneratedIntakePolicySchema } from '../store/intake-policy-schema.generated.js';
 import type { ContentObjectTypeRef, ContentTypeIntakePolicy, IntakePageRanges } from '../store/store.js';
 import type { JsonObject } from './adapter.js';
+import { ResolveInteractionQuerySchema } from './interaction.js';
 import { ApiSchemaComponents, bundleCanonicalComponent, validateApiResponse } from './registry.js';
-import { ContentTypeIntakePolicySchema } from './store.js';
+import { ContentTypeIntakePolicySchema, InteractionExecutionConfigurationSchema } from './store.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -374,5 +375,29 @@ describe('the five content-type shapes are composed, not repeated', () => {
                 title: 'Invoice',
             }).valid,
         ).toBe(true);
+    });
+});
+
+describe('inherited execution model configuration', () => {
+    it('retains profile selection alongside inherited settings in resolution queries', () => {
+        const query = {
+            inference_profile: '507f1f77bcf86cd799439011',
+            inherit_model_config: true,
+            environment: 'parent-env',
+            model: 'parent-model',
+        };
+        expect(ResolveInteractionQuerySchema.parse(query)).toEqual(query);
+        const validateQuery = ajv.compile(bundleCanonicalComponent('ResolveInteractionQuery'));
+        expect(validateQuery(query), ajv.errorsText(validateQuery.errors)).toBe(true);
+        expect(validateQuery({ ...query, inherit_model_config: 'true' })).toBe(false);
+    });
+
+    it.each([true, false, undefined])('preserves inherit_model_config=%s in the wire contract', (inherit) => {
+        const config = { environment: 'parent-env', model: 'parent-model', inherit_model_config: inherit };
+        expect(InteractionExecutionConfigurationSchema.parse(config)).toEqual(config);
+        const schema = bundleCanonicalComponent('InteractionExecutionConfiguration');
+        const validateConfig = ajv.compile(schema);
+        expect(validateConfig(config), ajv.errorsText(validateConfig.errors)).toBe(true);
+        expect(validateConfig({ ...config, inherit_model_config: 'true' })).toBe(false);
     });
 });
