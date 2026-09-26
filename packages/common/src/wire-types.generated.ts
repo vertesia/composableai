@@ -3,21 +3,33 @@
 
 import type {
     AIModel,
+    AIModelStatus,
     CompletionResult,
+    EmbeddingOutput,
+    EmbeddingResultItem,
+    EmbeddingsResult,
+    EmbeddingsTokenUsage,
     EmbeddingTaskType,
     ExecutionTokenUsage,
     HttpTimeoutOptions,
+    ImageResult,
     JSONObject,
     JSONSchema,
     JSONValue,
+    JsonResult,
     Modalities,
     ModelOptions,
+    ModelSearchPayload,
+    ModelType,
     PromptCacheDiagnostic,
     PromptCacheMode,
     PromptRole,
+    ReasoningEffort,
     StatelessExecutionOptions,
     TextFallbackOptions,
+    TextResult,
     ToolUse,
+    VideoResult,
 } from '@llumiverse/common';
 import type { StringValue } from 'ms';
 import type { AccessControlPrincipalType, AccessControlResourceType, Permission } from './access-control-values.js';
@@ -43,6 +55,7 @@ import type {
 import type { ConfigModes, RunDataStorageLevel } from './interaction-values.js';
 import type { ResourceVisibility, SystemRoles } from './project-values.js';
 import type { PromptSegmentDefType, PromptStatus, TemplateType } from './prompt.js';
+import type { ActivityTypeDefinition } from './store/activity-catalog.js';
 import type { CollectionStatus } from './store/collections.js';
 import type { InCodeProcessDefinition } from './store/process.js';
 import type {
@@ -804,7 +817,7 @@ export type PromoteAppVersionResponse = {
 };
 export type StartAppBuildRequest = {
     source_ref?: string | undefined;
-    source_ref_type?: 'branch' | 'tag' | 'commit' | undefined;
+    source_ref_type?: Extract_AppVersionGitRefType_branch_tag_commit | undefined;
     trigger?: AppBuildTrigger | undefined;
     target?: AppVersionTarget | undefined;
     title?: string | undefined;
@@ -817,7 +830,7 @@ export type StartAppBuildResponse = {
     version_id?: string | undefined;
     rebuild_version_record_id?: string | undefined;
     source_ref?: string | undefined;
-    source_ref_type?: 'branch' | 'tag' | 'commit' | undefined;
+    source_ref_type?: Extract_AppVersionGitRefType_branch_tag_commit | undefined;
 };
 export type AppBuildProgressStatus = 'queued' | 'resolving' | 'building' | 'completed' | 'failed';
 export type AppBuildProgress = {
@@ -826,7 +839,7 @@ export type AppBuildProgress = {
     app_id?: string | undefined;
     version_id?: string | undefined;
     source_ref?: string | undefined;
-    source_ref_type?: 'branch' | 'tag' | 'commit' | undefined;
+    source_ref_type?: Extract_AppVersionGitRefType_branch_tag_commit | undefined;
     source_commit?: string | undefined;
     file_count?: number | undefined;
     app_url?: string | undefined;
@@ -909,20 +922,12 @@ export type AppManifestData = {
     status: 'beta' | 'stable' | 'deprecated';
     ui?: AppUIConfig | undefined;
     tool_collections?: ToolCollectionObject[] | undefined;
-    oauth_providers?:
-        | {
-              [k: string]: MCPOAuthConfig;
-          }
-        | undefined;
+    oauth_providers?: MCPOAuthConfigMap | undefined;
     interactions?: string | undefined;
     settings_schema?: JSONSchema | undefined;
     capabilities?: AppCapabilities[] | undefined;
     endpoint?: string | undefined;
-    endpoint_overrides?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    endpoint_overrides?: StringValueMap | undefined;
     version?: string | undefined;
     source?: AppSourceConfig | undefined;
     tags?: string[] | undefined;
@@ -946,20 +951,12 @@ export type UpdateAppPayload = {
     status: 'beta' | 'stable' | 'deprecated';
     ui?: AppUIConfig | undefined;
     tool_collections?: ToolCollectionObject[] | undefined;
-    oauth_providers?:
-        | {
-              [k: string]: MCPOAuthConfig;
-          }
-        | undefined;
+    oauth_providers?: MCPOAuthConfigMap | undefined;
     interactions?: string | undefined;
     settings_schema?: JSONSchema | undefined;
     capabilities?: AppCapabilities[] | undefined;
     endpoint?: string | undefined;
-    endpoint_overrides?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    endpoint_overrides?: StringValueMap | undefined;
     version?: string | undefined;
     source?: AppSourceConfig | undefined;
     tags?: string[] | undefined;
@@ -1117,15 +1114,11 @@ export type AppPackage = {
     skills?: AgentToolDefinition[] | undefined;
     interactions?: CatalogInteractionRef[] | undefined;
     types?: InCodeTypeDefinition[] | undefined;
-    processes?: InCodeProcessDefinition[] | undefined;
+    processes?: InCodeProcessDefinitionWire[] | undefined;
     views?: InCodeViewDefinition[] | undefined;
     templates?: RenderingTemplateDefinitionRef[] | undefined;
     dashboards?: AppDashboardDefinition[] | undefined;
-    widgets?:
-        | {
-              [k: string]: AppWidgetInfo;
-          }
-        | undefined;
+    widgets?: AppWidgetInfoMap | undefined;
     activities?: RemoteActivityDefinition[] | undefined;
     settings_schema?: JSONSchema | undefined;
     hooks?: AppPackageHooks | undefined;
@@ -1136,22 +1129,7 @@ export type AppPackage = {
  */
 export type AppInspectionIssue = {
     severity: 'error' | 'warning';
-    capability?:
-        | 'ui'
-        | 'tools'
-        | 'interactions'
-        | 'types'
-        | 'processes'
-        | 'views'
-        | 'templates'
-        | 'dashboards'
-        | 'settings'
-        | 'widgets'
-        | 'activities'
-        | 'hooks'
-        | 'subscriptions'
-        | 'all'
-        | undefined;
+    capability?: AppPackageScopeWire | undefined;
     code: string;
     message: string;
 };
@@ -1160,21 +1138,7 @@ export type AppInspectionIssue = {
  * compared against what its manifest declares.
  */
 export type AppInspectionCapabilityReport = {
-    capability:
-        | 'ui'
-        | 'tools'
-        | 'interactions'
-        | 'types'
-        | 'processes'
-        | 'views'
-        | 'templates'
-        | 'dashboards'
-        | 'settings'
-        | 'widgets'
-        | 'activities'
-        | 'hooks'
-        | 'subscriptions'
-        | 'all';
+    capability: AppPackageScopeWire;
     declared: boolean;
     exposed_ids: string[];
     exposed_count: number;
@@ -1194,22 +1158,7 @@ export type AppInspectionResult = {
     endpoint_reachable: boolean;
     installed: boolean;
     access_control?: string | undefined;
-    capabilities: (
-        | 'ui'
-        | 'tools'
-        | 'interactions'
-        | 'types'
-        | 'processes'
-        | 'views'
-        | 'templates'
-        | 'dashboards'
-        | 'settings'
-        | 'widgets'
-        | 'activities'
-        | 'hooks'
-        | 'subscriptions'
-        | 'all'
-    )[];
+    capabilities: AppPackageScopeWire[];
     package: AppInspectionCapabilityReport[];
     issues: AppInspectionIssue[];
     probe_error?: string | undefined;
@@ -1258,20 +1207,12 @@ export type AppManifest = {
     status: 'beta' | 'stable' | 'deprecated';
     ui?: AppUIConfig | undefined;
     tool_collections?: ToolCollectionObject[] | undefined;
-    oauth_providers?:
-        | {
-              [k: string]: MCPOAuthConfig;
-          }
-        | undefined;
+    oauth_providers?: MCPOAuthConfigMap | undefined;
     interactions?: string | undefined;
     settings_schema?: JSONSchema | undefined;
     capabilities?: AppCapabilities[] | undefined;
     endpoint?: string | undefined;
-    endpoint_overrides?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    endpoint_overrides?: StringValueMap | undefined;
     version?: string | undefined;
     source?: AppManifestSource | undefined;
     tags?: string[] | undefined;
@@ -1584,7 +1525,7 @@ export type CompositeAppMenuSection = {
     id: string;
     label: string;
     hidden?: boolean | undefined;
-    items: CompositeAppMenuNavItem[];
+    items: CompositeAppMenuNavItemWire[];
 };
 export type CompositeAppHomePlugin = {
     appName: string;
@@ -1712,27 +1653,7 @@ export type AuditTrailEvent = {
     replay_of?: string | undefined;
     replay_root_event_id?: string | undefined;
     replayed_by?: string | undefined;
-    action:
-        | (
-              | 'create'
-              | 'update'
-              | 'delete'
-              | 'bulk_create'
-              | 'bulk_change_type'
-              | 'bulk_update'
-              | 'bulk_delete'
-              | 'attach'
-              | 'detach'
-              | 'credentials_fill'
-              | 'credentials_totp_generation'
-              | 'publish'
-              | 'unpublish'
-              | 'inference'
-              | 'embedding'
-              | 'image_generation'
-              | 'document_processed'
-          )
-        | string;
+    action: AuditActionWire;
     resource_type: string;
     resource_id: string;
     timestamp: string;
@@ -1757,30 +1678,7 @@ export type AuditTrailEvent = {
         | undefined;
 };
 export type AuditTrailQuery = {
-    actions?:
-        | (
-              | (
-                    | 'create'
-                    | 'update'
-                    | 'delete'
-                    | 'bulk_create'
-                    | 'bulk_change_type'
-                    | 'bulk_update'
-                    | 'bulk_delete'
-                    | 'attach'
-                    | 'detach'
-                    | 'credentials_fill'
-                    | 'credentials_totp_generation'
-                    | 'publish'
-                    | 'unpublish'
-                    | 'inference'
-                    | 'embedding'
-                    | 'image_generation'
-                    | 'document_processed'
-                )
-              | string
-          )[]
-        | undefined;
+    actions?: AuditActionWire[] | undefined;
     resourceTypes?: string[] | undefined;
     resourceId?: string | undefined;
     principalId?: string | undefined;
@@ -1804,18 +1702,7 @@ export type AuditAggregationDetailField = 'pipeline' | 'verdict' | 'workflow_typ
 export type AuditAggregationOperation = 'count' | 'count_distinct' | 'sum_meter' | 'average_meter';
 export type AuditAggregationDistinctField = 'resource_id' | 'request_id';
 export type AuditAggregationGroup = {
-    dimension:
-        | 'time'
-        | 'action'
-        | 'resource_type'
-        | 'event_category'
-        | 'provider'
-        | 'project_id'
-        | 'details.pipeline'
-        | 'details.verdict'
-        | 'details.workflow_type'
-        | 'details.rule_id'
-        | 'model';
+    dimension: AuditAggregationDimensionWire;
     resolution?: AuditAggregationResolution | undefined;
 };
 export type AuditAggregationMetric = {
@@ -1830,30 +1717,7 @@ export type AuditAggregationDetailFilter = {
     values: string[];
 };
 export type AuditAggregationFilter = {
-    actions?:
-        | (
-              | (
-                    | 'create'
-                    | 'update'
-                    | 'delete'
-                    | 'bulk_create'
-                    | 'bulk_change_type'
-                    | 'bulk_update'
-                    | 'bulk_delete'
-                    | 'attach'
-                    | 'detach'
-                    | 'credentials_fill'
-                    | 'credentials_totp_generation'
-                    | 'publish'
-                    | 'unpublish'
-                    | 'inference'
-                    | 'embedding'
-                    | 'image_generation'
-                    | 'document_processed'
-                )
-              | string
-          )[]
-        | undefined;
+    actions?: AuditActionWire[] | undefined;
     resourceTypes?: string[] | undefined;
     eventCategories?: EventCategory[] | undefined;
     providers?: string[] | undefined;
@@ -1874,22 +1738,8 @@ export type AuditAggregationQuery = {
     limit?: number | undefined;
 };
 export type AuditAggregationRow = {
-    dimensions: {
-        time?: string | null | undefined;
-        action?: string | null | undefined;
-        resource_type?: string | null | undefined;
-        event_category?: string | null | undefined;
-        provider?: string | null | undefined;
-        project_id?: string | null | undefined;
-        'details.pipeline'?: string | null | undefined;
-        'details.verdict'?: string | null | undefined;
-        'details.workflow_type'?: string | null | undefined;
-        'details.rule_id'?: string | null | undefined;
-        model?: string | null | undefined;
-    };
-    metrics: {
-        [k: string]: number;
-    };
+    dimensions: AuditAggregationDimensionMap;
+    metrics: NumberValueMap;
 };
 export type AuditAggregationResponse = {
     rows: AuditAggregationRow[];
@@ -2495,9 +2345,7 @@ export type DataStoreVersion = {
     store_id: string;
     message: string;
     schema_version: string;
-    tables: {
-        [k: string]: DataStoreVersionTableState;
-    };
+    tables: DataStoreVersionTableStateMap;
     created_at: string;
     created_by?: string | undefined;
     gcs_generation: number;
@@ -2638,9 +2486,7 @@ export type ImportTableData = {
  */
 export type ImportDataPayload = {
     import_id?: string | undefined;
-    tables: {
-        [k: string]: ImportTableData;
-    };
+    tables: ImportTableDataMap;
     mode: 'append' | 'replace';
     message: string;
 };
@@ -2678,9 +2524,7 @@ export type DataStoreMutateRowsPayload = {
 export type DataStoreMutateRowsResult = {
     version_id: string;
     affected_tables: string[];
-    row_counts: {
-        [k: string]: number;
-    };
+    row_counts: NumberValueMap;
     execution_time_ms: number;
 };
 /**
@@ -2803,9 +2647,7 @@ export type DataForeignKeyForAI = {
 export type DataTableForAI = {
     description?: string | undefined;
     semantic_type?: DataTableSemanticType | undefined;
-    columns: {
-        [k: string]: DataColumnForAI;
-    };
+    columns: DataColumnForAIMap;
     foreign_keys: DataForeignKeyForAI[];
 };
 /**
@@ -2827,9 +2669,7 @@ export type DataSchemaForAI = {
     name: string;
     version: string;
     description?: string | undefined;
-    tables: {
-        [k: string]: DataTableForAI;
-    };
+    tables: DataTableForAIMap;
     relationships: DataRelationshipForAI[];
 };
 export type DashboardStatus = (typeof DashboardStatusValues)[keyof typeof DashboardStatusValues];
@@ -2845,11 +2685,7 @@ export type DashboardQuery = {
     sql: string;
     description?: string | undefined;
     limit?: number | undefined;
-    parameters?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    parameters?: StringValueMap | undefined;
 };
 /**
  * Panel position within the dashboard grid.
@@ -2932,11 +2768,7 @@ export type DashboardSqlDataSource = {
     kind: 'data_sql';
     query: string;
     queryLimit?: number | undefined;
-    queryParameters?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    queryParameters?: StringValueMap | undefined;
 };
 /**
  * Dashboard data source backed by Vertesia Store Elasticsearch DSL.
@@ -2965,11 +2797,7 @@ export type AppDashboardDefinition = {
     dataSource?: DashboardDataSource | undefined;
     query?: string | undefined;
     queryLimit?: number | undefined;
-    queryParameters?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    queryParameters?: StringValueMap | undefined;
     spec?:
         | {
               [k: string]: unknown;
@@ -3037,11 +2865,7 @@ export type Dashboard = {
     dataSource?: DashboardDataSource | undefined;
     query?: string | undefined;
     queryLimit?: number | undefined;
-    queryParameters?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    queryParameters?: StringValueMap | undefined;
     spec?:
         | {
               [k: string]: unknown;
@@ -3062,11 +2886,7 @@ export type CreateDashboardPayload = {
     dataSource?: DashboardDataSource | undefined;
     query?: string | undefined;
     queryLimit?: number | undefined;
-    queryParameters?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    queryParameters?: StringValueMap | undefined;
     spec: {
         [k: string]: unknown;
     };
@@ -3080,12 +2900,7 @@ export type UpdateDashboardPayload = {
     dataSource?: DashboardDataSource | undefined | undefined;
     query?: string | undefined | undefined;
     queryLimit?: number | undefined | undefined;
-    queryParameters?:
-        | {
-              [k: string]: string;
-          }
-        | undefined
-        | undefined;
+    queryParameters?: StringValueMap | undefined | undefined;
     spec?:
         | {
               [k: string]: unknown;
@@ -3106,11 +2921,7 @@ export type DashboardVersion = {
     dataSource?: DashboardDataSource | undefined;
     query?: string | undefined;
     queryLimit?: number | undefined;
-    queryParameters?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    queryParameters?: StringValueMap | undefined;
     spec?:
         | {
               [k: string]: unknown;
@@ -3349,7 +3160,7 @@ export type EmbeddingsApiAudioInput = {
 };
 export type EmbeddingsApiRequest = {
     inputs: EmbeddingsApiInput[];
-    embedding_type?: 'text' | 'image' | 'properties' | undefined;
+    embedding_type?: SupportedEmbeddingTypesWire | undefined;
     model?: string | undefined;
     task_type?: EmbeddingTaskType | undefined;
     dimensions?: number | undefined;
@@ -3359,7 +3170,7 @@ export type RecalculateEmbeddingsQuery = {
     force?: boolean | undefined;
 };
 export type EmbeddingBatchCapabilityRequest = {
-    embedding_type: 'text' | 'image' | 'properties';
+    embedding_type: SupportedEmbeddingTypesWire;
 };
 export type EmbeddingBatchCapabilityResponse = {
     eligible: boolean;
@@ -3375,7 +3186,7 @@ export type EmbeddingBatchCapabilityResponse = {
     artifact_uri?: string | undefined;
 };
 export type EmbeddingBatchCreateRequest = {
-    embedding_type: 'text' | 'image' | 'properties';
+    embedding_type: SupportedEmbeddingTypesWire;
     model: string;
     dimensions: number;
     display_name: string;
@@ -3383,7 +3194,7 @@ export type EmbeddingBatchCreateRequest = {
     output_uri: string;
 };
 export type EmbeddingBatchJobRequest = {
-    embedding_type: 'text' | 'image' | 'properties';
+    embedding_type: SupportedEmbeddingTypesWire;
     model: string;
     name: string;
     include_output_artifacts?: boolean | undefined;
@@ -3431,7 +3242,7 @@ export type EmbeddingBatchSubjob = {
 };
 export type EmbeddingBatchPrepareRequest = {
     run_id: string;
-    embedding_type: 'text' | 'image' | 'properties';
+    embedding_type: SupportedEmbeddingTypesWire;
     capability: EmbeddingBatchCapabilityResponse;
 };
 export type EmbeddingBatchPrepareResponse = {
@@ -3492,11 +3303,7 @@ export type MediatorEnvConfig = {
 };
 export type ExecutionEnvironmentSettings = {
     bucket_access_principal?: string | undefined;
-    default_headers?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    default_headers?: StringValueMap | undefined;
     [k: string]: unknown;
 };
 export type ExecutionEnvironment = {
@@ -3739,13 +3546,13 @@ export type InferenceProfileUsageQuery = {
     limit?: number | undefined;
 };
 export type GladiaConfigurationInput = {
-    integration: (typeof SupportedIntegrations)['gladia'];
+    integration: SupportedIntegrations_gladia;
     enabled: boolean;
     api_key?: string | undefined;
     url?: string | undefined;
 };
 export type GladiaConfiguration = {
-    integration: (typeof SupportedIntegrations)['gladia'];
+    integration: SupportedIntegrations_gladia;
     enabled: boolean;
     has_api_key?: boolean | undefined;
     api_key_hint?: string | undefined;
@@ -3753,38 +3560,38 @@ export type GladiaConfiguration = {
     url?: string | undefined;
 };
 export type GithubConfigurationInput = {
-    integration: (typeof SupportedIntegrations)['github'];
+    integration: SupportedIntegrations_github;
     enabled: boolean;
     github_app_id?: string | undefined;
     allowed_repositories?: string[] | undefined;
     private_key?: string | undefined;
 };
 export type GithubConfiguration = {
-    integration: (typeof SupportedIntegrations)['github'];
+    integration: SupportedIntegrations_github;
     enabled: boolean;
     github_app_id?: string | undefined;
     allowed_repositories: string[];
     has_github_app_private_key?: boolean | undefined;
 };
 export type AwsConfiguration = {
-    integration: (typeof SupportedIntegrations)['aws'];
+    integration: SupportedIntegrations_aws;
     enabled: boolean;
     s3_role_arn?: string | undefined;
 };
 export type MagicPdfConfiguration = {
-    integration: (typeof SupportedIntegrations)['magic_pdf'];
+    integration: SupportedIntegrations_magic_pdf;
     enabled: boolean;
     default_features?: string[] | undefined;
     default_zones?: string[] | undefined;
 };
 export type SerperConfigurationInput = {
-    integration: (typeof SupportedIntegrations)['serper'];
+    integration: SupportedIntegrations_serper;
     enabled: boolean;
     api_key?: string | undefined;
     url?: string | undefined;
 };
 export type SerperConfiguration = {
-    integration: (typeof SupportedIntegrations)['serper'];
+    integration: SupportedIntegrations_serper;
     enabled: boolean;
     has_api_key?: boolean | undefined;
     api_key_hint?: string | undefined;
@@ -3792,31 +3599,31 @@ export type SerperConfiguration = {
     url?: string | undefined;
 };
 export type ExaConfigurationInput = {
-    integration: (typeof SupportedIntegrations)['exa'];
+    integration: SupportedIntegrations_exa;
     enabled: boolean;
     api_key?: string | undefined;
 };
 export type ExaConfiguration = {
-    integration: (typeof SupportedIntegrations)['exa'];
+    integration: SupportedIntegrations_exa;
     enabled: boolean;
     has_api_key?: boolean | undefined;
     api_key_hint?: string | undefined;
     api_key: string | null;
 };
 export type LinkupConfigurationInput = {
-    integration: (typeof SupportedIntegrations)['linkup'];
+    integration: SupportedIntegrations_linkup;
     enabled: boolean;
     api_key?: string | undefined;
 };
 export type LinkupConfiguration = {
-    integration: (typeof SupportedIntegrations)['linkup'];
+    integration: SupportedIntegrations_linkup;
     enabled: boolean;
     has_api_key?: boolean | undefined;
     api_key_hint?: string | undefined;
     api_key: string | null;
 };
 export type ResendConfigurationInput = {
-    integration: (typeof SupportedIntegrations)['resend'];
+    integration: SupportedIntegrations_resend;
     enabled: boolean;
     api_key?: string | undefined;
     email_domain: string;
@@ -3827,7 +3634,7 @@ export type ResendConfigurationInput = {
     require_email_auth?: boolean | undefined;
 };
 export type ResendConfiguration = {
-    integration: (typeof SupportedIntegrations)['resend'];
+    integration: SupportedIntegrations_resend;
     enabled: boolean;
     has_api_key?: boolean | undefined;
     api_key_hint?: string | undefined;
@@ -3846,34 +3653,26 @@ export type ResendConfiguration = {
  * Sends webhooks when agents call ask_user and when users respond.
  */
 export type AskUserWebhookConfigurationInput = {
-    integration: (typeof SupportedIntegrations)['ask_user_webhook'];
+    integration: SupportedIntegrations_ask_user_webhook;
     enabled: boolean;
     webhook_url: string;
     webhook_secret?: string | undefined;
     events?: ('requested' | 'resolved')[] | undefined;
-    custom_headers?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    custom_headers?: StringValueMap | undefined;
 };
 /**
  * Configuration for ask_user webhook notifications.
  * Sends webhooks when agents call ask_user and when users respond.
  */
 export type AskUserWebhookConfiguration = {
-    integration: (typeof SupportedIntegrations)['ask_user_webhook'];
+    integration: SupportedIntegrations_ask_user_webhook;
     enabled: boolean;
     webhook_url?: string | undefined;
     has_webhook_secret?: boolean | undefined;
     webhook_secret_hint?: string | undefined;
     webhook_secret: string | null;
     events?: ('requested' | 'resolved')[] | undefined;
-    custom_headers?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    custom_headers?: StringValueMap | undefined;
 };
 /**
  * @discriminator integration
@@ -3945,7 +3744,7 @@ export type ResolveInteractionQuery = {
 export type InCodePrompt = {
     role: (typeof PromptRole)[keyof typeof PromptRole];
     content: string;
-    content_type: (typeof TemplateType)[keyof typeof TemplateType];
+    content_type: TemplateTypeWire;
     schema?: JSONSchema | undefined;
     name?: string | undefined;
     externalId?: string | undefined;
@@ -4004,7 +3803,7 @@ export type ResolvedCatalogInteraction = {
 export type InteractionEndpointQuery = {
     limit?: number | undefined;
     offset?: number | undefined;
-    status?: (typeof InteractionStatus)[keyof typeof InteractionStatus] | undefined;
+    status?: InteractionStatusWire | undefined;
     visibility?: InteractionVisibility | undefined;
     version?: number | undefined;
     tags?: string[] | undefined;
@@ -4022,7 +3821,7 @@ export type InteractionEndpoint = {
     name: string;
     endpoint: string;
     description?: string | undefined;
-    status: (typeof InteractionStatus)[keyof typeof InteractionStatus];
+    status: InteractionStatusWire;
     visibility?: InteractionVisibility | undefined;
     version: number;
     tags: string[];
@@ -4043,19 +3842,12 @@ export type InteractionRef = {
     parent?: string | undefined;
     model?: string | undefined;
     description?: string | undefined;
-    status: (typeof InteractionStatus)[keyof typeof InteractionStatus];
+    status: InteractionStatusWire;
     visibility?: InteractionVisibility | undefined;
     version: number;
     tags: string[];
     agent_runner_options?: AgentRunnerOptions | undefined;
-    prompts?:
-        | {
-              id: string;
-              type: (typeof PromptSegmentDefType)[keyof typeof PromptSegmentDefType];
-              template?: PromptTemplateRef | undefined;
-              configuration?: unknown | undefined;
-          }[]
-        | undefined;
+    prompts?: PromptSegmentRef_PromptTemplateRef[] | undefined;
     updated_at: string;
 };
 /** An interaction reduced to the fields a name picker needs. */
@@ -4078,19 +3870,12 @@ export type InteractionRefWithSchema = {
     parent?: string | undefined;
     model?: string | undefined;
     description?: string | undefined;
-    status: (typeof InteractionStatus)[keyof typeof InteractionStatus];
+    status: InteractionStatusWire;
     visibility?: InteractionVisibility | undefined;
     version: number;
     tags: string[];
     agent_runner_options?: AgentRunnerOptions | undefined;
-    prompts?:
-        | {
-              id: string;
-              type: (typeof PromptSegmentDefType)[keyof typeof PromptSegmentDefType];
-              template?: ExportedPromptTemplateRef | undefined;
-              configuration?: unknown | undefined;
-          }[]
-        | undefined;
+    prompts?: PromptSegmentRef_ExportedPromptTemplateRef[] | undefined;
     updated_at: string;
     result_schema?: JSONSchema | undefined;
 };
@@ -4130,19 +3915,14 @@ export type Interaction = {
     store_media_results?: boolean | undefined;
     restriction?: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel] | undefined;
     output_modality?: (typeof Modalities)[keyof typeof Modalities] | undefined;
-    status: (typeof InteractionStatus)[keyof typeof InteractionStatus];
+    status: InteractionStatusWire;
     parent?: string | undefined;
     visibility: InteractionVisibility;
     version: number;
     test_data?: JSONObject | undefined;
     interaction_schema?: JSONSchema | SchemaRef | undefined;
     cache_policy?: CachePolicy | undefined;
-    prompts: {
-        id?: string | undefined;
-        type: (typeof PromptSegmentDefType)[keyof typeof PromptSegmentDefType];
-        template?: string | PromptTemplate | PromptTemplateRef | undefined;
-        configuration?: unknown | undefined;
-    }[];
+    prompts: PromptSegmentDefWire[];
     last_published_at?: string | undefined;
     created_by: string;
     updated_by: string;
@@ -4150,7 +3930,7 @@ export type Interaction = {
     updated_at: string;
 };
 export type InteractionCreatePayload = {
-    status: (typeof InteractionStatus)[keyof typeof InteractionStatus];
+    status: InteractionStatusWire;
     test_data?: JSONObject | undefined;
     interaction_schema?: JSONSchema | SchemaRef | undefined;
     cache_policy?: CachePolicy | undefined;
@@ -4172,7 +3952,7 @@ export type InteractionCreatePayload = {
 };
 export type InteractionUpdatePayload = {
     expected_edit_revision?: number | undefined;
-    status?: (typeof InteractionStatus)[keyof typeof InteractionStatus] | undefined;
+    status?: InteractionStatusWire | undefined;
     parent?: string | undefined;
     visibility?: InteractionVisibility | undefined;
     version?: number | undefined;
@@ -4269,7 +4049,7 @@ export type AgentRunnerOptions = {
     context_triggers?: SkillContextTriggers | undefined;
     skill_priority?: number | undefined;
     tool_names?: string[] | undefined;
-    search_scope?: (typeof AgentSearchScope)['Collection'] | undefined;
+    search_scope?: AgentSearchScopeWire | undefined;
     collection_id?: string | undefined;
     request_template?: string | undefined;
     checkpoint?: AgentCheckpointConfiguration | undefined;
@@ -4318,7 +4098,7 @@ export type AsyncConversationExecutionPayload = {
     interactive?: boolean | undefined;
     user_channels?: UserChannel[] | undefined;
     disable_interaction_tools?: boolean | undefined;
-    search_scope?: (typeof AgentSearchScope)['Collection'] | undefined;
+    search_scope?: AgentSearchScope_Collection | undefined;
     collection_id?: string | undefined;
     disabled_mcp_collections?: string[] | undefined;
     checkpoint_tokens?: number | undefined;
@@ -4370,7 +4150,7 @@ export type AsyncExecutionResult = {
  * Contains info not available in current_state needed to send LlmCallEvent.
  */
 export type StreamingTelemetryContext = {
-    callType: (typeof LlmCallType)[keyof typeof LlmCallType];
+    callType: LlmCallTypeWire;
     attemptNumber?: number | undefined;
     inferenceStartTime: number;
 };
@@ -4397,61 +4177,7 @@ export type AsyncCompletionOptions = {
     streaming?: StreamingOptions | undefined;
     task_token?: string | undefined;
     activity_id?: string | undefined;
-    current_state?:
-        | {
-              run: ExecutionRunDocRef;
-              environment: string;
-              options: StatelessExecutionOptions;
-              tool_use?: ToolUse[] | undefined;
-              tool_approval_mode?: AgentToolApprovalMode | undefined;
-              tool_approval_grants?:
-                  | {
-                        [k: string]: ToolApprovalGrant;
-                    }
-                  | undefined;
-              pending_tool_approval_results?: PendingToolApprovalResults | undefined;
-              latest_user_message?: string | undefined;
-              tool_input_refs?: ExternalizedToolInputRefs | undefined;
-              output: CompletionResult[];
-              token_usage?: ExecutionTokenUsage | undefined;
-              parent?: WorkflowAncestor | undefined;
-              ancestors: WorkflowAncestor[];
-              task_id?: string | undefined;
-              plan?: Plan | undefined;
-              debug?: boolean | undefined;
-              strip_options?: ConversationStripOptions | undefined;
-              conversation_artifacts_base_url?: string | undefined;
-              tool_reference?: ToolReference | undefined;
-              tool_catalog_storage_id?: string | undefined;
-              active_tool_names?: string[] | undefined;
-              pinned_tool_names?: string[] | undefined;
-              used_skills?: UsedSkill[] | undefined;
-              streaming_enabled?: boolean | undefined;
-              checkpoint_threshold?: number | undefined;
-              checkpoint_tokens?: number | undefined;
-              user_channels?: UserChannel[] | undefined;
-              resolvedInteraction?: ResolvedInteractionExecutionInfo | undefined;
-              end_conversation?:
-                  | {
-                        final_result?: string | undefined;
-                        status?: 'success' | 'failure' | undefined;
-                        reason?: string | undefined;
-                    }
-                  | undefined;
-              unlocked_tools?: string[] | undefined;
-              latest_activity_id?: string | undefined;
-              latest_streaming_id?: string | undefined;
-              skill_instructions_delivered?: string[] | undefined;
-              initialization_call_ids?: string[] | undefined;
-              disabled_mcp_collections?: string[] | undefined;
-              pending_mcp_connections?: PendingMcpConnection[] | undefined;
-              active_activity_group_id?: string | undefined;
-              finish_reason?: string | undefined;
-              agent_run_id?: string | undefined;
-              launch_id?: string | undefined;
-              app_version?: string | undefined;
-          }
-        | undefined;
+    current_state?: ConversationStateWire | undefined;
     heartbeat_interval_ms?: number | undefined;
     telemetry?: StreamingTelemetryContext | undefined;
     result_storage?: ResultStorageOptions | undefined;
@@ -4543,7 +4269,7 @@ export type UserMessagePayload = {
     results?: ToolResult[] | undefined;
 };
 export type RunSource = {
-    type: (typeof RunSourceTypes)[keyof typeof RunSourceTypes];
+    type: RunSourceTypesWire;
     label: string;
     principal_type: 'user' | 'oauth_access' | 'group' | 'apikey' | 'service_account' | 'agent' | 'schedule';
     principal_id: string;
@@ -4563,16 +4289,12 @@ export type PromptModalities = {
 };
 export type ExecutionRunRef = {
     id: string;
-    parent?: string | unknown | undefined;
+    parent?: string | ExecutionRunWire | undefined;
     evaluation?:
         | {
               score?: number | undefined;
               selected?: boolean | undefined;
-              scores?:
-                  | {
-                        [k: string]: number;
-                    }
-                  | undefined;
+              scores?: NumberValueMap | undefined;
           }
         | undefined;
     tags?: string[] | undefined;
@@ -4580,7 +4302,7 @@ export type ExecutionRunRef = {
     modelId?: string | undefined;
     result_schema?: JSONSchema | undefined;
     ttl: number;
-    status: (typeof ExecutionRunStatus)[keyof typeof ExecutionRunStatus];
+    status: ExecutionRunStatusWire;
     finish_reason?: string | undefined;
     prompt?: unknown | undefined;
     token_use?: ExecutionTokenUsage | undefined;
@@ -4694,7 +4416,7 @@ export type ResolvedEnvironmentInfo = {
 export type ResolvedRuntimeConfig = {
     environment: ResolvedEnvironmentInfo;
     model?: string | undefined;
-    model_source: (typeof ModelSource)[keyof typeof ModelSource];
+    model_source: ModelSourceWire;
     inference_profile?: InferenceProfileSnapshot | undefined;
     model_options?: ModelOptions | undefined;
 };
@@ -4707,23 +4429,19 @@ export type ResolvedInteractionExecutionInfo = {
     id: string;
     name: string;
     version: number;
-    status: (typeof InteractionStatus)[keyof typeof InteractionStatus];
+    status: InteractionStatusWire;
     tags: string[];
     agent_runner_options?: AgentRunnerOptions | undefined;
     resolved: ResolvedRuntimeConfig;
 };
 export type UpdateExecutionRunPayload = {
     id?: string | undefined;
-    parent?: string | unknown | undefined;
+    parent?: string | ExecutionRunWire | undefined;
     evaluation?:
         | {
               score?: number | undefined;
               selected?: boolean | undefined;
-              scores?:
-                  | {
-                        [k: string]: number;
-                    }
-                  | undefined;
+              scores?: NumberValueMap | undefined;
           }
         | undefined;
     tags?: string[] | undefined;
@@ -4731,7 +4449,7 @@ export type UpdateExecutionRunPayload = {
     modelId?: string | undefined;
     result_schema?: JSONSchema | undefined;
     ttl?: number | undefined;
-    status?: (typeof ExecutionRunStatus)[keyof typeof ExecutionRunStatus] | undefined;
+    status?: ExecutionRunStatusWire | undefined;
     finish_reason?: string | undefined;
     prompt?: unknown | undefined;
     token_use?: ExecutionTokenUsage | undefined;
@@ -5402,7 +5120,7 @@ export type WorkflowEventDeliveryTarget = {
               [k: string]: unknown;
           }
         | undefined;
-    input_type?: WorkflowRuleInputType | undefined;
+    input_type?: WorkflowRuleInputTypeWire | undefined;
     migrated_rule_name?: string | undefined;
 };
 export type WebhookEventDeliveryTarget = {
@@ -5412,11 +5130,7 @@ export type WebhookEventDeliveryTarget = {
     secret_label?: string | undefined;
     signing_mode?: WebhookSigningMode | undefined;
     payload_mode?: WebhookPayloadMode | undefined;
-    headers?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    headers?: StringValueMap | undefined;
     encrypted_headers?: boolean | undefined;
     timeout_ms?: number | undefined;
     result_path?: string | undefined;
@@ -5479,7 +5193,7 @@ export type WorkflowEventDeliveryTargetInput = {
               [k: string]: unknown;
           }
         | undefined;
-    input_type?: WorkflowRuleInputType | undefined;
+    input_type?: WorkflowRuleInputTypeWire | undefined;
     migrated_rule_name?: string | undefined;
 };
 export type WebhookEventDeliveryTargetInput = {
@@ -5490,11 +5204,7 @@ export type WebhookEventDeliveryTargetInput = {
     secret_label?: string | undefined;
     signing_mode?: WebhookSigningMode | undefined;
     payload_mode?: WebhookPayloadMode | undefined;
-    headers?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    headers?: StringValueMap | undefined;
     encrypted_headers?: boolean | undefined;
     timeout_ms?: number | undefined;
     result_path?: string | undefined;
@@ -5593,9 +5303,7 @@ export type EventOutboxQueueSummary = {
     active: number;
     failed: number;
     dropped: number;
-    by_status: {
-        [k: string]: number;
-    };
+    by_status: NumberValueMap;
     oldest_active_at?: string | undefined;
 };
 export type EventDeliveryQueueFailureSummary = {
@@ -5810,7 +5518,7 @@ export type ProjectConfiguration = {
     human_context?: string | undefined;
     defaults?: ProjectModelDefaults | undefined;
     inference?: ProjectInferenceProfiles | undefined;
-    default_visibility?: (typeof ResourceVisibility)[keyof typeof ResourceVisibility] | undefined;
+    default_visibility?: ResourceVisibilityWire | undefined;
     sync_content_properties?: boolean | undefined;
     embeddings: {
         text?: ProjectConfigurationEmbedding | undefined;
@@ -6038,7 +5746,7 @@ export type UpdateProjectConfigurationPayload = {
     human_context?: string | undefined | undefined;
     defaults?: ProjectModelDefaults | undefined | undefined;
     inference?: ProjectInferenceProfiles | undefined | undefined;
-    default_visibility?: (typeof ResourceVisibility)[keyof typeof ResourceVisibility] | undefined | undefined;
+    default_visibility?: ResourceVisibilityWire | undefined | undefined;
     sync_content_properties?: boolean | undefined | undefined;
     embeddings?:
         | {
@@ -6076,8 +5784,8 @@ export type PromptTemplateRef = {
     description?: string | undefined;
     role: (typeof PromptRole)[keyof typeof PromptRole];
     version: number;
-    status: (typeof PromptStatus)[keyof typeof PromptStatus];
-    content_type?: (typeof TemplateType)[keyof typeof TemplateType] | undefined;
+    status: PromptStatusWire;
+    content_type?: TemplateTypeWire | undefined;
     tags?: string[] | undefined;
     created_at: string;
     updated_at: string;
@@ -6085,11 +5793,11 @@ export type PromptTemplateRef = {
 export type PromptTemplate = {
     role: (typeof PromptRole)[keyof typeof PromptRole];
     content: string;
-    content_type: (typeof TemplateType)[keyof typeof TemplateType];
+    content_type: TemplateTypeWire;
     inputSchema?: JSONSchema | undefined;
     id: string;
     name: string;
-    status: (typeof PromptStatus)[keyof typeof PromptStatus];
+    status: PromptStatusWire;
     version: number;
     edit_revision: number;
     parent?: string | undefined;
@@ -6107,11 +5815,11 @@ export type PromptTemplate = {
 export type InteractionPromptTemplateInput = {
     role: (typeof PromptRole)[keyof typeof PromptRole];
     content: string;
-    content_type: (typeof TemplateType)[keyof typeof TemplateType];
+    content_type: TemplateTypeWire;
     inputSchema?: JSONSchema | undefined;
     id: string;
     name: string;
-    status: (typeof PromptStatus)[keyof typeof PromptStatus];
+    status: PromptStatusWire;
     version: number;
     edit_revision?: number | undefined;
     parent?: string | undefined;
@@ -6128,7 +5836,7 @@ export type InteractionPromptTemplateInput = {
 };
 export type InteractionPromptSegmentInput = {
     id?: string | undefined;
-    type: (typeof PromptSegmentDefType)[keyof typeof PromptSegmentDefType];
+    type: PromptSegmentDefTypeWire;
     template?: string | PromptTemplate | InteractionPromptTemplateInput | PromptTemplateRef | undefined;
     configuration?: unknown | undefined;
 };
@@ -6147,16 +5855,16 @@ export type PromptTemplateCreatePayload = {
     last_published_at?: string | undefined;
     role: (typeof PromptRole)[keyof typeof PromptRole];
     content: string;
-    content_type: (typeof TemplateType)[keyof typeof TemplateType];
+    content_type: TemplateTypeWire;
     inputSchema?: JSONSchema | undefined;
 };
 export type PromptTemplateUpdatePayload = {
     role?: (typeof PromptRole)[keyof typeof PromptRole] | undefined;
     content?: string | undefined;
-    content_type?: (typeof TemplateType)[keyof typeof TemplateType] | undefined;
+    content_type?: TemplateTypeWire | undefined;
     inputSchema?: JSONSchema | undefined | undefined;
     name?: string | undefined;
-    status?: (typeof PromptStatus)[keyof typeof PromptStatus] | undefined;
+    status?: PromptStatusWire | undefined;
     version?: number | undefined;
     parent?: string | undefined | undefined;
     description?: string | undefined | undefined;
@@ -6237,7 +5945,7 @@ export type InteractionSearchQuery = {
 };
 export type RunSearchQuery = {
     name?: string | undefined;
-    status?: (typeof ExecutionRunStatus)[keyof typeof ExecutionRunStatus] | undefined;
+    status?: ExecutionRunStatusWire | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
     interaction?: string | undefined;
@@ -6278,11 +5986,7 @@ export type ComplexSearchQuery = {
     from_root?: string | undefined;
     vector?: VectorSearchQuery | undefined;
     full_text?: string | undefined;
-    weights?:
-        | {
-              [k: string]: number;
-          }
-        | undefined;
+    weights?: Record_SearchTypes_number | undefined;
     dynamic_scaling?: dynamicScalingTypes | undefined;
     score_aggregation?: scoreAggregationTypes | undefined;
     match?:
@@ -6294,7 +5998,7 @@ export type ComplexSearchQuery = {
 export type ComplexCollectionSearchQuery = {
     parent?: string | null | undefined;
     dynamic?: boolean | undefined;
-    status?: CollectionStatus | undefined;
+    status?: CollectionStatusWire | undefined;
     limit?: number | undefined;
     offset?: number | undefined;
     name?: string | undefined;
@@ -6379,16 +6083,12 @@ export type ExecutionRunDocRef = {
 };
 export type FindRunResult = {
     id?: string | undefined;
-    parent?: string | unknown | undefined | undefined;
+    parent?: string | ExecutionRunWire | undefined | undefined;
     evaluation?:
         | {
               score?: number | undefined;
               selected?: boolean | undefined;
-              scores?:
-                  | {
-                        [k: string]: number;
-                    }
-                  | undefined;
+              scores?: NumberValueMap | undefined;
           }
         | undefined
         | undefined;
@@ -6403,7 +6103,7 @@ export type FindRunResult = {
     modelId?: string | undefined | undefined;
     result_schema?: JSONSchema | undefined | undefined;
     ttl?: number | undefined;
-    status?: (typeof ExecutionRunStatus)[keyof typeof ExecutionRunStatus] | undefined;
+    status?: ExecutionRunStatusWire | undefined;
     finish_reason?: string | undefined | undefined;
     prompt?: unknown | undefined | undefined;
     token_use?: ExecutionTokenUsage | undefined | undefined;
@@ -6427,16 +6127,12 @@ export type FindRunResult = {
 export type FindRunResultArray = FindRunResult[];
 export type PopulatedExecutionRunResult = {
     id: string;
-    parent?: string | unknown | undefined;
+    parent?: string | ExecutionRunWire | undefined;
     evaluation?:
         | {
               score?: number | undefined;
               selected?: boolean | undefined;
-              scores?:
-                  | {
-                        [k: string]: number;
-                    }
-                  | undefined;
+              scores?: NumberValueMap | undefined;
           }
         | undefined;
     result: CompletionResult[];
@@ -6448,7 +6144,7 @@ export type PopulatedExecutionRunResult = {
     modelId?: string | undefined;
     result_schema?: JSONSchema | undefined;
     ttl: number;
-    status: (typeof ExecutionRunStatus)[keyof typeof ExecutionRunStatus];
+    status: ExecutionRunStatusWire;
     finish_reason?: string | undefined;
     prompt?: unknown | undefined;
     token_use?: ExecutionTokenUsage | undefined;
@@ -6532,7 +6228,7 @@ export type ComputeRunFacetsResponse = {
               _id: string | null;
               count: number;
               name?: string | undefined;
-              status?: (typeof InteractionStatus)[keyof typeof InteractionStatus] | undefined;
+              status?: InteractionStatusWire | undefined;
               version?: number | undefined;
           }[]
         | undefined;
@@ -6541,7 +6237,7 @@ export type ComputeRunFacetsResponse = {
               _id: string | null;
               count: number;
               name?: string | undefined;
-              status?: (typeof InteractionStatus)[keyof typeof InteractionStatus] | undefined;
+              status?: InteractionStatusWire | undefined;
               version?: number | undefined;
           }[]
         | undefined;
@@ -6550,7 +6246,7 @@ export type ComputeRunFacetsResponse = {
               _id: string | null;
               count: number;
               name?: string | undefined;
-              status?: (typeof InteractionStatus)[keyof typeof InteractionStatus] | undefined;
+              status?: InteractionStatusWire | undefined;
               version?: number | undefined;
           }[]
         | undefined;
@@ -6559,7 +6255,7 @@ export type ComputeRunFacetsResponse = {
               _id: string | null;
               count: number;
               name?: string | undefined;
-              status?: (typeof InteractionStatus)[keyof typeof InteractionStatus] | undefined;
+              status?: InteractionStatusWire | undefined;
               version?: number | undefined;
           }[]
         | undefined;
@@ -6568,7 +6264,7 @@ export type ComputeRunFacetsResponse = {
               _id: string | null;
               count: number;
               name?: string | undefined;
-              status?: (typeof InteractionStatus)[keyof typeof InteractionStatus] | undefined;
+              status?: InteractionStatusWire | undefined;
               version?: number | undefined;
           }[]
         | undefined;
@@ -6781,23 +6477,10 @@ export type AgentRunEvaluationRollup = {
     seq: number;
     detector_version: number;
     turns: number;
-    severity: 'none' | 'low' | 'medium' | 'high';
-    flags: (
-        | 'user_stopped_after_failure'
-        | 'mutation_unsuccessful'
-        | 'run_failed'
-        | 'unrecovered_tool'
-        | 'fail_streak'
-        | 'identical_retry'
-        | 'reread'
-        | 'high_gather'
-        | 'overhead'
-        | 'followup_after_answer'
-        | 'approval_denied'
-        | 'circuit_breaker'
-    )[];
+    severity: EvaluationSeverityWire;
+    flags: TurnEvaluationFlagWire[];
     worst_turn_seq?: number | undefined;
-    last_terminal_type?: 'answer' | 'user_stopped' | 'completed' | 'failed' | 'cancelled' | 'interrupted' | undefined;
+    last_terminal_type?: TurnTerminalTypeWire | undefined;
     terminal_error_class?: string | undefined;
     partial?: boolean | undefined;
     totals: {
@@ -6822,11 +6505,11 @@ export type AgentRunEvaluationRollup = {
 };
 export type AgentRunJudgeResult = {
     rev: number;
-    gate: 'signal' | 'sample';
+    gate: JudgeGateReasonWire;
     sample_rate: number;
     selected_probability: number;
-    outcome: 'judged' | 'skipped_unarchived' | 'failed';
-    verdict?: 'success' | 'partial' | 'failure' | undefined;
+    outcome: JudgeOutcomeWire;
+    verdict?: JudgeVerdictWire | undefined;
     score?: number | undefined;
     model?: string | undefined;
     prompt_version: string;
@@ -6839,21 +6522,8 @@ export type AgentRunEvaluation = {
     rollup?: AgentRunEvaluationRollup | undefined;
     feedback_counts?: AgentRunFeedbackCounts | undefined;
     judge?: AgentRunJudgeResult | undefined;
-    severity: 'none' | 'low' | 'medium' | 'high';
-    flags: (
-        | 'user_stopped_after_failure'
-        | 'mutation_unsuccessful'
-        | 'run_failed'
-        | 'unrecovered_tool'
-        | 'fail_streak'
-        | 'identical_retry'
-        | 'reread'
-        | 'high_gather'
-        | 'overhead'
-        | 'followup_after_answer'
-        | 'approval_denied'
-        | 'circuit_breaker'
-    )[];
+    severity: EvaluationSeverityWire;
+    flags: TurnEvaluationFlagWire[];
     contradicted: boolean;
     contradiction_reasons?: AgentRunContradictionReason[] | undefined;
     deployment_env?: string | undefined;
@@ -6892,7 +6562,7 @@ export type AgentRunArtifactQuery = {
 export type PostAgentRunUpdatePayload = {
     timestamp?: number | undefined;
     workflow_run_id?: string | undefined;
-    type?: AgentMessageType | undefined;
+    type?: AgentMessageTypeWire | undefined;
     message?: string | undefined;
     details?: AgentMessageDetails | undefined;
     workstream_id?: string | undefined;
@@ -6921,7 +6591,7 @@ export type UpdateAgentArtifactContentResponse = {
  * Telemetry ingestion payload for an agent run.
  */
 export type IngestAgentEventsPayload = {
-    events: AgentEvent[];
+    events: AgentEventWire[];
 };
 /**
  * Telemetry ingestion response for an agent run.
@@ -6953,22 +6623,7 @@ export type ListAgentRunsQuery = {
     sort?: 'started_at' | 'updated_at' | undefined;
     order?: 'asc' | 'desc' | undefined;
     evaluation_severity?: ListAgentRunsEvaluationSeverity[] | undefined;
-    evaluation_flag?:
-        | (
-              | 'user_stopped_after_failure'
-              | 'mutation_unsuccessful'
-              | 'run_failed'
-              | 'unrecovered_tool'
-              | 'fail_streak'
-              | 'identical_retry'
-              | 'reread'
-              | 'high_gather'
-              | 'overhead'
-              | 'followup_after_answer'
-              | 'approval_denied'
-              | 'circuit_breaker'
-          )[]
-        | undefined;
+    evaluation_flag?: TurnEvaluationFlagWire[] | undefined;
     feedback_rating?: AgentRunFeedbackRating | undefined;
     contradicted?: boolean | undefined;
 };
@@ -7053,7 +6708,7 @@ export type CreateProcessRunWithDefinitionPayload = {
     categories?: string[] | undefined;
     source?: RunSource | undefined;
     started_by?: string | undefined;
-    process_definition: unknown;
+    process_definition: ProcessDefinitionBodyWire;
 };
 export type CreateRunPayload =
     | CreateAgentRunPayloadWire
@@ -7097,7 +6752,7 @@ export type Collection = {
     created_at: string;
     updated_at: string;
     dynamic: boolean;
-    status: CollectionStatus;
+    status: CollectionStatusWire;
     type?: ContentObjectApiTypeRef | undefined;
     skip_head_sync: boolean;
     parents?: string[] | null | undefined;
@@ -7113,11 +6768,7 @@ export type Collection = {
               [k: string]: unknown;
           }
         | undefined;
-    security?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
+    security?: StringArrayMap | undefined;
     sensitivity?: number | undefined;
     compartments?: string[] | undefined;
     shared_properties?: string[] | undefined;
@@ -7128,18 +6779,12 @@ export type CollectionMembersUpdateResult = {
 };
 export type CollectionSecuritySettingsResponse = {
     id: string;
-    security: {
-        [k: string]: string[];
-    };
+    security: StringArrayMap;
 };
 export type CollectionPropagationResponse = {
     id: string;
     message: string;
-    security?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
+    security?: StringArrayMap | undefined;
     shared_properties?: string[] | undefined;
 };
 export type CollectionChildrenUpdateResult = {
@@ -7474,9 +7119,7 @@ export type ProcessAgentExecutionPolicy = {
 export type ProcessScriptLanguage = 'python' | 'javascript' | 'typescript';
 export type ProcessScriptInlineSource = {
     type: 'inline';
-    files: {
-        [k: string]: string;
-    };
+    files: StringValueMap;
 };
 export type ProcessScriptSource = ProcessScriptInlineSource;
 export type ProcessScriptResource = {
@@ -7486,11 +7129,7 @@ export type ProcessScriptResource = {
     packages?: string[] | undefined;
 };
 export type ProcessResourcesDefinition = {
-    scripts?:
-        | {
-              [k: string]: ProcessScriptResource;
-          }
-        | undefined;
+    scripts?: ProcessScriptResourceMap | undefined;
 };
 export type ParallelCollectField =
     | 'status'
@@ -7838,22 +7477,22 @@ export type RenderMarkdownStatusQuery = {
 };
 export type CreateContentObjectQuery = {
     collection_id?: string | undefined;
-    processing_priority?: 'normal' | 'low' | undefined;
+    processing_priority?: ContentObjectProcessingPriorityWire | undefined;
 };
 export type CreateContentObjectHeaders = {
     'x-collection-id'?: string | undefined;
-    'x-processing-priority'?: 'normal' | 'low' | undefined;
+    'x-processing-priority'?: ContentObjectProcessingPriorityWire | undefined;
 };
 export type UpdateContentObjectQuery = {
     create_revision?: boolean | undefined;
     revision_label?: string | undefined;
-    processing_priority?: 'normal' | 'low' | undefined;
+    processing_priority?: ContentObjectProcessingPriorityWire | undefined;
 };
 export type UpdateContentObjectHeaders = {
     'if-match'?: string | undefined;
     'x-create-revision'?: boolean | undefined;
     'x-revision-label'?: string | undefined;
-    'x-processing-priority'?: 'normal' | 'low' | undefined;
+    'x-processing-priority'?: ContentObjectProcessingPriorityWire | undefined;
     'x-suppress-workflows'?: boolean | undefined;
 };
 export type GetObjectRenditionQuery = {
@@ -7883,7 +7522,7 @@ export type ExportContentObjectsFilter = {
     updated_to?: string | undefined;
 };
 export type StartContentObjectExportRequest = {
-    embedding_types?: ('text' | 'image' | 'properties')[] | undefined;
+    embedding_types?: SupportedEmbeddingTypesWire[] | undefined;
     filter?: ExportContentObjectsFilter | undefined;
     all_revisions?: boolean | undefined;
     include?: ExportContentObjectsIncludeOptions | undefined;
@@ -7991,7 +7630,7 @@ export type ContentObjectItemApiResponse = {
     updated_at: string;
     parent?: string | undefined;
     location: string;
-    status: (typeof ContentObjectStatus)[keyof typeof ContentObjectStatus];
+    status: ContentObjectStatusWire;
     type?: ContentObjectApiTypeRef | undefined;
     content?: ContentSource | undefined;
     external_id?: string | undefined;
@@ -8022,11 +7661,7 @@ export type ContentObjectItemApiResponse = {
         | undefined;
     text?: string | undefined;
     text_etag?: string | undefined;
-    embeddings?:
-        | {
-              [k: string]: Embedding;
-          }
-        | undefined;
+    embeddings?: EmbeddingMap | undefined;
     parts?: string[] | undefined;
     parts_etag?: string | undefined;
     transcript?:
@@ -8034,11 +7669,7 @@ export type ContentObjectItemApiResponse = {
               [k: string]: unknown;
           }
         | undefined;
-    security?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
+    security?: StringArrayMap | undefined;
     sensitivity?: number | null | undefined;
     compartments?: string[] | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined;
@@ -8054,7 +7685,7 @@ export type ContentObjectApiResponse = {
     updated_at: string;
     parent?: string | undefined;
     location: string;
-    status: (typeof ContentObjectStatus)[keyof typeof ContentObjectStatus];
+    status: ContentObjectStatusWire;
     type?: ContentObjectApiTypeRef | undefined;
     content?: ContentSource | undefined;
     external_id?: string | undefined;
@@ -8085,11 +7716,7 @@ export type ContentObjectApiResponse = {
         | undefined;
     text?: string | undefined;
     text_etag?: string | undefined;
-    embeddings?:
-        | {
-              [k: string]: Embedding;
-          }
-        | undefined;
+    embeddings?: EmbeddingMap | undefined;
     parts?: string[] | undefined;
     parts_etag?: string | undefined;
     transcript?:
@@ -8097,11 +7724,7 @@ export type ContentObjectApiResponse = {
               [k: string]: unknown;
           }
         | undefined;
-    security?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
+    security?: StringArrayMap | undefined;
     sensitivity?: number | null | undefined;
     compartments?: string[] | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined;
@@ -8117,7 +7740,7 @@ export type ProjectedContentObjectApiResponse = {
     updated_at?: string | undefined;
     parent?: string | undefined | undefined;
     location?: string | undefined;
-    status?: (typeof ContentObjectStatus)[keyof typeof ContentObjectStatus] | undefined;
+    status?: ContentObjectStatusWire | undefined;
     type?: ContentObjectApiTypeRef | undefined | undefined;
     content?: ContentSource | undefined | undefined;
     external_id?: string | undefined | undefined;
@@ -8151,12 +7774,7 @@ export type ProjectedContentObjectApiResponse = {
         | undefined;
     text?: string | undefined | undefined;
     text_etag?: string | undefined | undefined;
-    embeddings?:
-        | {
-              [k: string]: Embedding;
-          }
-        | undefined
-        | undefined;
+    embeddings?: EmbeddingMap | undefined | undefined;
     parts?: string[] | undefined | undefined;
     parts_etag?: string | undefined | undefined;
     transcript?:
@@ -8165,12 +7783,7 @@ export type ProjectedContentObjectApiResponse = {
           }
         | undefined
         | undefined;
-    security?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined
-        | undefined;
+    security?: StringArrayMap | undefined | undefined;
     sensitivity?: number | null | undefined | undefined;
     compartments?: string[] | undefined | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined | undefined;
@@ -8473,7 +8086,7 @@ export type WorkflowRuleItem = {
     created_at: string;
     updated_at: string;
     endpoint: string;
-    input_type: WorkflowRuleInputType;
+    input_type: WorkflowRuleInputTypeWire;
 };
 export type WorkflowRule = {
     id: string;
@@ -8486,7 +8099,7 @@ export type WorkflowRule = {
     created_at: string;
     updated_at: string;
     endpoint: string;
-    input_type: WorkflowRuleInputType;
+    input_type: WorkflowRuleInputTypeWire;
     match?:
         | {
               [k: string]: unknown;
@@ -8519,7 +8132,7 @@ export type CreateWorkflowRulePayload = {
     task_queue?: string | undefined;
     event_subscription_migration_status?: 'migrated' | 'unsupported_match' | 'failed' | undefined;
     event_subscription_migration_error?: string | undefined;
-    input_type?: WorkflowRuleInputType | undefined;
+    input_type?: WorkflowRuleInputTypeWire | undefined;
     description?: string | undefined;
     tags?: string[] | undefined;
     updated_by?: string | undefined;
@@ -8593,17 +8206,11 @@ export type FileMetadataResponse = {
     contentDisposition?: string | undefined;
     etag?: string | undefined;
     generation?: string | undefined;
-    customMetadata?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    customMetadata?: StringValueMap | undefined;
 };
 export type SetFileMetadataPayload = {
     file: string;
-    metadata: {
-        [k: string]: string;
-    };
+    metadata: StringValueMap;
 };
 export type FileMetadataUpdateResult = {
     success: boolean;
@@ -8694,7 +8301,7 @@ export type UpdateWorkflowRulePayload = {
     task_queue?: string | undefined;
     event_subscription_migration_status?: 'migrated' | 'unsupported_match' | 'failed' | undefined;
     event_subscription_migration_error?: string | undefined;
-    input_type?: WorkflowRuleInputType | undefined;
+    input_type?: WorkflowRuleInputTypeWire | undefined;
     description?: string | undefined;
     tags?: string[] | undefined;
     updated_by?: string | undefined;
@@ -8871,21 +8478,12 @@ export type WorkflowRunEvent = {
     result?: unknown | undefined;
 };
 export type ActivityTask = {
-    type: 'activity';
+    type: TaskType_ACTIVITY;
     activityId: string;
     activityName?: string | undefined;
     input?: unknown | undefined;
     scheduled: string | null;
-    status:
-        | 'scheduled'
-        | 'running'
-        | 'completed'
-        | 'failed'
-        | 'canceled'
-        | 'timed_out'
-        | 'terminated'
-        | 'sent'
-        | 'received';
+    status: TaskStatusWire;
     attempts: number;
     started: string | null;
     completed: string | null;
@@ -8894,21 +8492,12 @@ export type ActivityTask = {
     runId?: string | undefined;
 };
 export type ChildWorkflowTask = {
-    type: 'childWorkflow';
+    type: TaskType_CHILD_WORKFLOW;
     activityId: string;
     activityName?: string | undefined;
     input?: unknown | undefined;
     scheduled: string | null;
-    status:
-        | 'scheduled'
-        | 'running'
-        | 'completed'
-        | 'failed'
-        | 'canceled'
-        | 'timed_out'
-        | 'terminated'
-        | 'sent'
-        | 'received';
+    status: TaskStatusWire;
     attempts: number;
     started: string | null;
     completed: string | null;
@@ -8918,21 +8507,12 @@ export type ChildWorkflowTask = {
     workflowType?: string | undefined;
 };
 export type SignalTask = {
-    type: 'signal';
+    type: TaskType_SIGNAL;
     activityId: string;
     activityName?: string | undefined;
     input?: unknown | undefined;
     scheduled: string | null;
-    status:
-        | 'scheduled'
-        | 'running'
-        | 'completed'
-        | 'failed'
-        | 'canceled'
-        | 'timed_out'
-        | 'terminated'
-        | 'sent'
-        | 'received';
+    status: TaskStatusWire;
     attempts: number;
     started: string | null;
     completed: string | null;
@@ -8955,21 +8535,12 @@ export type SignalTask = {
         | undefined;
 };
 export type TimerTask = {
-    type: 'timer';
+    type: TaskType_TIMER;
     activityId: string;
     activityName?: string | undefined;
     input?: unknown | undefined;
     scheduled: string | null;
-    status:
-        | 'scheduled'
-        | 'running'
-        | 'completed'
-        | 'failed'
-        | 'canceled'
-        | 'timed_out'
-        | 'terminated'
-        | 'sent'
-        | 'received';
+    status: TaskStatusWire;
     attempts: number;
     started: string | null;
     completed: string | null;
@@ -9193,7 +8764,7 @@ export type AgentMessageDetails = {
  * ~85% smaller than legacy AgentMessage format.
  */
 export type CompactMessage = {
-    t: AgentMessageType;
+    t: AgentMessageTypeWire;
     m?: string | undefined;
     w?: string | undefined;
     d?: AgentMessageDetails | null | undefined;
@@ -9206,7 +8777,7 @@ export type ConversationFile = {
     name: string;
     content_type: string;
     size: number;
-    status: FileProcessingStatus;
+    status: FileProcessingStatusWire;
     artifact_path?: string | undefined;
     reference?: string | undefined;
     md_path?: string | undefined;
@@ -9628,7 +9199,7 @@ export type AgenticViewSearchConfiguration = {
     interaction?: string | undefined;
     config?: ViewAgenticExecutionConfiguration | undefined;
     instructions?: string | undefined;
-    mode?: 'query' | 'query_and_view' | undefined;
+    mode?: ViewAgenticSearchModeWire | undefined;
     timeout_ms?: number | undefined;
     minimum_confidence?: number | undefined;
     rerank?: AgenticViewRerankConfiguration | undefined;
@@ -9817,7 +9388,7 @@ export type ViewExperience = {
     results?: ViewResultsConfiguration | undefined;
     description: string;
     id: string;
-    version: 1;
+    version: ViewExperienceSchemaVersionWire;
     revision: number;
     created_by: string;
     updated_by: string;
@@ -9834,7 +9405,7 @@ export type CreateViewExperienceRequest = {
     results?: ViewResultsConfiguration | undefined;
     description: string;
     id: string;
-    version?: 1 | undefined;
+    version?: ViewExperienceSchemaVersionWire | undefined;
 };
 /** PUT uses full replacement so omitted optional configuration is removed. */
 export type UpdateViewExperienceRequest = {
@@ -9846,7 +9417,7 @@ export type UpdateViewExperienceRequest = {
     search?: ViewSearchConfiguration | undefined;
     results?: ViewResultsConfiguration | undefined;
     description: string;
-    version: 1;
+    version: ViewExperienceSchemaVersionWire;
     revision: number;
 };
 export type ViewExperienceListQuery = {
@@ -9855,21 +9426,9 @@ export type ViewExperienceListQuery = {
 };
 export type ExecuteViewRequest = {
     query?: string | undefined;
-    key_terms?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
-    navigation?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
-    navigation_queries?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    key_terms?: StringArrayMap | undefined;
+    navigation?: StringArrayMap | undefined;
+    navigation_queries?: StringValueMap | undefined;
     display?: string | undefined;
     sort?: string | undefined;
     offset?: number | undefined;
@@ -9877,21 +9436,9 @@ export type ExecuteViewRequest = {
 };
 export type PreviewViewExperienceRequest = {
     query?: string | undefined;
-    key_terms?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
-    navigation?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
-    navigation_queries?:
-        | {
-              [k: string]: string;
-          }
-        | undefined;
+    key_terms?: StringArrayMap | undefined;
+    navigation?: StringArrayMap | undefined;
+    navigation_queries?: StringValueMap | undefined;
     display?: string | undefined;
     sort?: string | undefined;
     offset?: number | undefined;
@@ -9939,11 +9486,7 @@ export type ViewHit = {
 export type ViewExecutionSearchResult = {
     input?: string | undefined;
     interpretation?: string | undefined;
-    key_terms?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
+    key_terms?: StringArrayMap | undefined;
     plan?: ViewExecutionQueryPlan | undefined;
     rerank?: ViewExecutionRerankResult | undefined;
     requested_mode: 'browse' | 'deterministic' | 'agentic';
@@ -9976,16 +9519,7 @@ export type ViewExecutionResult = {
     search: ViewExecutionSearchResult;
     hits: ViewHit[];
     total: number;
-    navigation: {
-        [k: string]: {
-            id: string;
-            selected: string[];
-            nodes: ViewNavigationNode[];
-            query?: string | undefined;
-            breadcrumbs?: ViewNavigationNode[] | undefined;
-            truncated?: boolean | undefined;
-        };
-    };
+    navigation: ViewNavigationResultMap;
     took: number;
 };
 export type AgentRunWire = {
@@ -10085,7 +9619,7 @@ export type CreateAgentRunPayloadWire = {
     schedule_id?: string | undefined;
     source_type?: AgentRunType | undefined;
     type?: AgentRunType | undefined;
-    search_scope?: (typeof AgentSearchScope)['Collection'] | undefined;
+    search_scope?: AgentSearchScopeWire | undefined;
     user_channels?: UserChannel[] | undefined;
     checkpoint_tokens?: number | undefined;
     checkpoint?: AgentCheckpointConfiguration | undefined;
@@ -10109,12 +9643,8 @@ export type DSLActivitySpecWire = {
               [k: string]: unknown;
           }
         | undefined;
-    import?: unknown[] | undefined;
-    fetch?:
-        | {
-              [k: string]: ActivityFetchSpec;
-          }
-        | undefined;
+    import?: ImportSpecWire | undefined;
+    fetch?: ActivityFetchSpecMap | undefined;
     projection?:
         | {
               [k: string]: unknown;
@@ -10140,12 +9670,8 @@ export type DSLActivityStepWire = {
               [k: string]: unknown;
           }
         | undefined;
-    import?: unknown[] | undefined;
-    fetch?:
-        | {
-              [k: string]: ActivityFetchSpec;
-          }
-        | undefined;
+    import?: ImportSpecWire | undefined;
+    fetch?: ActivityFetchSpecMap | undefined;
     projection?:
         | {
               [k: string]: unknown;
@@ -10166,7 +9692,7 @@ export type ProcessTestRunWire = {
     definition_hash: string;
     status: ProcessTestRunStatus;
     stale: boolean;
-    process_definition_snapshot: unknown;
+    process_definition_snapshot: ProcessDefinitionBodyWire;
     scenarios: ProcessTestScenarioResult[];
     created_by: string;
     created_at: string;
@@ -10174,36 +9700,26 @@ export type ProcessTestRunWire = {
     completed_at?: string | undefined;
 };
 export type ProcessTestTargetWithDefinitionWire = {
-    definition: unknown;
+    definition: ProcessDefinitionBodyWire;
 };
 export type SubmitProcessTestRunPayloadWire = {
-    process: ProcessTestTargetById | ProcessTestTargetWithDefinitionWire;
+    process: ProcessTestTargetWire;
     scenarios: ProcessTestScenario[];
 };
 export type CreateContentObjectPayloadWire = {
     text?: string | undefined;
     text_etag?: string | undefined;
-    embeddings?:
-        | {
-              text?: Embedding | undefined;
-              image?: Embedding | undefined;
-              properties?: Embedding | undefined;
-          }
-        | undefined;
+    embeddings?: ContentEmbeddingMap | undefined;
     parts?: string[] | undefined;
     parts_etag?: string | undefined;
     transcript?: Transcript | undefined;
-    security?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
+    security?: StringArrayMap | undefined;
     sensitivity?: number | undefined;
     compartments?: string[] | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined;
     parent?: string | undefined;
     location?: string | undefined;
-    status?: (typeof ContentObjectStatus)[keyof typeof ContentObjectStatus] | undefined;
+    status?: ContentObjectStatusWire | undefined;
     content?: ContentSource | undefined;
     external_id?: string | undefined;
     properties?:
@@ -10240,27 +9756,17 @@ export type CreateContentObjectPayloadWire = {
 export type UpdateContentObjectPayloadWire = {
     text?: string | undefined;
     text_etag?: string | undefined;
-    embeddings?:
-        | {
-              text?: Embedding | undefined;
-              image?: Embedding | undefined;
-              properties?: Embedding | undefined;
-          }
-        | undefined;
+    embeddings?: ContentEmbeddingMap | undefined;
     parts?: string[] | undefined;
     parts_etag?: string | undefined;
     transcript?: Transcript | undefined;
-    security?:
-        | {
-              [k: string]: string[];
-          }
-        | undefined;
+    security?: StringArrayMap | undefined;
     sensitivity?: number | undefined;
     compartments?: string[] | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined;
     parent?: string | undefined;
     location?: string | undefined;
-    status?: (typeof ContentObjectStatus)[keyof typeof ContentObjectStatus] | undefined;
+    status?: ContentObjectStatusWire | undefined;
     content?: ContentSource | undefined;
     external_id?: string | undefined;
     properties?:
@@ -10294,3 +9800,1950 @@ export type UpdateContentObjectPayloadWire = {
     type?: string | undefined;
     generation_run_info?: GenerationRunMetadata | undefined;
 };
+export type ResourceVisibilityWire = (typeof ResourceVisibility)[keyof typeof ResourceVisibility];
+export type OAuthProviderArray = OAuthProvider[];
+export type OAuthClientArray = OAuthClient[];
+export type ExecutionEnvironmentArray = ExecutionEnvironment[];
+export type RunAnalyticsResultArray = RunAnalyticsResult[];
+export type InteractionStatusWire = (typeof InteractionStatus)[keyof typeof InteractionStatus];
+export type PromptStatusWire = (typeof PromptStatus)[keyof typeof PromptStatus];
+export type PromptSegmentDefTypeWire = (typeof PromptSegmentDefType)[keyof typeof PromptSegmentDefType];
+export type TemplateTypeWire = (typeof TemplateType)[keyof typeof TemplateType];
+export type PromptSegmentDefWire = {
+    id?: string | undefined;
+    type: PromptSegmentDefTypeWire;
+    template?: string | PromptTemplate | PromptTemplateRef | undefined;
+    configuration?: unknown | undefined;
+};
+export type PromptSegmentRef_PromptTemplateRef = {
+    id: string;
+    type: PromptSegmentDefTypeWire;
+    template?: PromptTemplateRef | undefined;
+    configuration?: unknown | undefined;
+};
+export type InteractionArray = Interaction[];
+export type InteractionRefArray = InteractionRef[];
+export type InteractionNameArray = InteractionName[];
+export type PromptSegmentRef_ExportedPromptTemplateRef = {
+    id: string;
+    type: PromptSegmentDefTypeWire;
+    template?: ExportedPromptTemplateRef | undefined;
+    configuration?: unknown | undefined;
+};
+export type InteractionRefWithSchemaArray = InteractionRefWithSchema[];
+export type InteractionTagsArray = InteractionTags[];
+export type InteractionEndpointArray = InteractionEndpoint[];
+export type CatalogInteractionRefArray = CatalogInteractionRef[];
+export type CatalogTagQueryWire = {
+    tag?: string | undefined;
+};
+export type StoredCatalogInteractionsQueryWire = {
+    tag?: string | undefined;
+    status?: string | undefined;
+    published?: boolean | undefined;
+};
+export type ModelSourceWire = (typeof ModelSource)[keyof typeof ModelSource];
+export type NumberValueMap = {
+    [k: string]: number;
+};
+export type GeneratedTestDataRecordArray = GeneratedTestDataRecord[];
+export type GeneratedInteractionDefinitionArray = GeneratedInteractionDefinition[];
+export type AgentSearchScopeWire = (typeof AgentSearchScope)['Collection'];
+export type AgentSearchScope_Collection = (typeof AgentSearchScope)['Collection'];
+export type LlmCallTypeWire = (typeof LlmCallType)[keyof typeof LlmCallType];
+export type ToolApprovalGrantMap = {
+    [k: string]: ToolApprovalGrant;
+};
+export type ConversationStateWire = {
+    run: ExecutionRunDocRef;
+    environment: string;
+    options: StatelessExecutionOptions;
+    tool_use?: ToolUse[] | undefined;
+    tool_approval_mode?: AgentToolApprovalMode | undefined;
+    tool_approval_grants?: ToolApprovalGrantMap | undefined;
+    pending_tool_approval_results?: PendingToolApprovalResults | undefined;
+    latest_user_message?: string | undefined;
+    tool_input_refs?: ExternalizedToolInputRefs | undefined;
+    output: CompletionResult[];
+    token_usage?: ExecutionTokenUsage | undefined;
+    parent?: WorkflowAncestor | undefined;
+    ancestors: WorkflowAncestor[];
+    task_id?: string | undefined;
+    plan?: Plan | undefined;
+    debug?: boolean | undefined;
+    strip_options?: ConversationStripOptions | undefined;
+    conversation_artifacts_base_url?: string | undefined;
+    tool_reference?: ToolReference | undefined;
+    tool_catalog_storage_id?: string | undefined;
+    active_tool_names?: string[] | undefined;
+    pinned_tool_names?: string[] | undefined;
+    used_skills?: UsedSkill[] | undefined;
+    streaming_enabled?: boolean | undefined;
+    checkpoint_threshold?: number | undefined;
+    checkpoint_tokens?: number | undefined;
+    user_channels?: UserChannel[] | undefined;
+    resolvedInteraction?: ResolvedInteractionExecutionInfo | undefined;
+    end_conversation?:
+        | {
+              final_result?: string | undefined;
+              status?: 'success' | 'failure' | undefined;
+              reason?: string | undefined;
+          }
+        | undefined;
+    unlocked_tools?: string[] | undefined;
+    latest_activity_id?: string | undefined;
+    latest_streaming_id?: string | undefined;
+    skill_instructions_delivered?: string[] | undefined;
+    initialization_call_ids?: string[] | undefined;
+    disabled_mcp_collections?: string[] | undefined;
+    pending_mcp_connections?: PendingMcpConnection[] | undefined;
+    active_activity_group_id?: string | undefined;
+    finish_reason?: string | undefined;
+    agent_run_id?: string | undefined;
+    launch_id?: string | undefined;
+    app_version?: string | undefined;
+};
+export type ExecutionRunStatusWire = (typeof ExecutionRunStatus)[keyof typeof ExecutionRunStatus];
+export type RunSourceTypesWire = (typeof RunSourceTypes)[keyof typeof RunSourceTypes];
+export type ExecutionRunWire = unknown;
+export type ExecutionRunRefArray = ExecutionRunRef[];
+export type RunListQuery = {
+    limit?: number | undefined;
+    offset?: number | undefined;
+    interaction?: string[] | undefined;
+    model?: string[] | undefined;
+    environment?: string[] | undefined;
+    status?: ExecutionRunStatusWire[] | undefined;
+    tag?: string[] | undefined;
+    parent?: string[] | undefined;
+    is_root?: boolean | undefined;
+    workflow_run_ids?: string[] | undefined;
+    workflow_ids?: string[] | undefined;
+};
+export type InteractionExecutionResultWire = {
+    id: string;
+    parent?: string | ExecutionRunWire | undefined;
+    evaluation?:
+        | {
+              score?: number | undefined;
+              selected?: boolean | undefined;
+              scores?: NumberValueMap | undefined;
+          }
+        | undefined;
+    result: CompletionResult[];
+    parameters: {
+        [k: string]: unknown;
+    };
+    tags?: string[] | undefined;
+    environment: ExecutionEnvironmentRef;
+    modelId?: string | undefined;
+    result_schema?: JSONSchema | undefined;
+    ttl: number;
+    status: ExecutionRunStatusWire;
+    finish_reason?: string | undefined;
+    prompt?: unknown | undefined;
+    token_use?: ExecutionTokenUsage | undefined;
+    prompt_cache_diagnostics?: PromptCacheDiagnostic[] | undefined;
+    chunks?: number | undefined;
+    execution_time?: number | undefined;
+    created_at: string;
+    updated_at: string;
+    config: InteractionExecutionConfiguration;
+    inference_profile?: InferenceProfileSnapshot | undefined;
+    error?: InteractionExecutionError | undefined;
+    source: RunSource;
+    output_modality?: (typeof Modalities)[keyof typeof Modalities] | undefined;
+    created_by: string;
+    updated_by: string;
+    workflow?: ExecutionRunWorkflow | undefined;
+    account: string;
+    project: string;
+    interaction?: string | undefined;
+    tool_use?: ToolUse[] | undefined;
+    conversation?: unknown | undefined;
+    options?: StatelessExecutionOptions | undefined;
+};
+export type LegacyExecutionRunResult = {
+    id: string;
+    parent?: string | ExecutionRunWire | undefined;
+    evaluation?:
+        | {
+              score?: number | undefined;
+              selected?: boolean | undefined;
+              scores?: NumberValueMap | undefined;
+          }
+        | undefined;
+    result: unknown;
+    parameters: {
+        [k: string]: unknown;
+    };
+    tags?: string[] | undefined;
+    environment: ExecutionEnvironmentRef;
+    modelId?: string | undefined;
+    result_schema?: JSONSchema | undefined;
+    ttl: number;
+    status: ExecutionRunStatusWire;
+    finish_reason?: string | undefined;
+    prompt?: unknown | undefined;
+    token_use?: ExecutionTokenUsage | undefined;
+    prompt_cache_diagnostics?: PromptCacheDiagnostic[] | undefined;
+    chunks?: number | undefined;
+    execution_time?: number | undefined;
+    created_at: string;
+    updated_at: string;
+    config: InteractionExecutionConfiguration;
+    inference_profile?: InferenceProfileSnapshot | undefined;
+    error?: InteractionExecutionError | undefined;
+    source: RunSource;
+    output_modality?: (typeof Modalities)[keyof typeof Modalities] | undefined;
+    created_by: string;
+    updated_by: string;
+    workflow?: ExecutionRunWorkflow | undefined;
+    account: string;
+    project: string;
+    interaction?: string | undefined;
+    tool_use?: ToolUse[] | undefined;
+    conversation?: unknown | undefined;
+    options?: StatelessExecutionOptions | undefined;
+};
+export type LegacyPopulatedExecutionRunResult = {
+    id: string;
+    parent?: string | ExecutionRunWire | undefined;
+    evaluation?:
+        | {
+              score?: number | undefined;
+              selected?: boolean | undefined;
+              scores?: NumberValueMap | undefined;
+          }
+        | undefined;
+    result: unknown;
+    parameters: {
+        [k: string]: unknown;
+    };
+    tags?: string[] | undefined;
+    environment: ExecutionEnvironmentRef;
+    modelId?: string | undefined;
+    result_schema?: JSONSchema | undefined;
+    ttl: number;
+    status: ExecutionRunStatusWire;
+    finish_reason?: string | undefined;
+    prompt?: unknown | undefined;
+    token_use?: ExecutionTokenUsage | undefined;
+    prompt_cache_diagnostics?: PromptCacheDiagnostic[] | undefined;
+    chunks?: number | undefined;
+    execution_time?: number | undefined;
+    created_at: string;
+    updated_at: string;
+    config: InteractionExecutionConfiguration;
+    inference_profile?: InferenceProfileSnapshot | undefined;
+    error?: InteractionExecutionError | undefined;
+    source: RunSource;
+    output_modality?: (typeof Modalities)[keyof typeof Modalities] | undefined;
+    created_by: string;
+    updated_by: string;
+    workflow?: ExecutionRunWorkflow | undefined;
+    account: string;
+    project: string;
+    interaction?: InteractionRef | undefined;
+    tool_use?: ToolUse[] | undefined;
+    conversation?: unknown | undefined;
+    options?: StatelessExecutionOptions | undefined;
+};
+export type ExecuteInteractionByEndpointQueryWire = {
+    tag?: string | undefined;
+};
+export type ExecuteInteractionByEndpointHeadersWire = {
+    'x-interaction-tag'?: string | undefined;
+};
+export type ExecutionResponse = {
+    result: CompletionResult[];
+    token_usage?: ExecutionTokenUsage | undefined;
+    service_tier?: string | undefined;
+    prompt_cache_diagnostic?: PromptCacheDiagnostic | undefined;
+    tool_use?: ToolUse[] | undefined;
+    finish_reason?: string | undefined;
+    error?:
+        | {
+              code: 'validation_error' | 'json_error' | 'content_policy_violation';
+              message: string;
+              data?: CompletionResult[] | undefined;
+          }
+        | undefined;
+    original_response?: unknown | undefined;
+    conversation?: unknown | undefined;
+    prompt: unknown;
+    execution_time?: number | undefined;
+    chunks?: number | undefined;
+};
+export type StringValueMap = {
+    [k: string]: string;
+};
+export type TaskArray = Task[];
+export type ContentObjectTypeItemArray = ContentObjectTypeItem[];
+export type ContentObjectTypeCatalogEntryArray = ContentObjectTypeCatalogEntry[];
+export type StringArrayMap = {
+    [k: string]: string[];
+};
+export type DashboardVersionItemArray = DashboardVersionItem[];
+export type DashboardItemArray = DashboardItem[];
+export type DataTableSummaryArray = DataTableSummary[];
+export type DataStoreVersionTableStateMap = {
+    [k: string]: DataStoreVersionTableState;
+};
+export type DataColumnForAIMap = {
+    [k: string]: DataColumnForAI;
+};
+export type DataStoreItemArray = DataStoreItem[];
+export type ImportTableDataMap = {
+    [k: string]: ImportTableData;
+};
+export type DataTableArray = DataTable[];
+export type DataStoreVersionArray = DataStoreVersion[];
+export type DataTableForAIMap = {
+    [k: string]: DataTableForAI;
+};
+export type PricingSyncPayload = {
+    date?: string | undefined;
+    backfill_from?: string | undefined;
+};
+export type PricingSyncDayResult = {
+    date: string;
+    gcp_list: number;
+    gcp_effective: number;
+    aws_pricing: number;
+    xai_pricing: number;
+    openrouter_pricing: number;
+    openai_costs: number;
+};
+export type PricingSyncResult = {
+    days: PricingSyncDayResult[];
+    total_days: number;
+};
+export type DSLWorkflowDefinitionWire = unknown;
+export type WorkflowSearchAttributeValueWire = (string | number | boolean)[];
+export type ActivityFetchSpecMap = {
+    [k: string]: ActivityFetchSpec;
+};
+export type WorkflowSearchAttributeValueMap = {
+    [k: string]: WorkflowSearchAttributeValueWire;
+};
+export type DSLChildWorkflowStepWire = unknown;
+export type DSLWorkflowDefinitionResponseWire = unknown;
+export type DSLWorkflowSpecWire = unknown;
+export type DSLWorkflowSpecWithActivitiesWire = unknown;
+export type DSLWorkflowSpecWithStepsWire = unknown;
+export type DSLWorkflowStepWire = unknown;
+export type WorkflowDefinitionPayloadWire = unknown;
+export type WorkflowDefinitionPayloadWithActivitiesWire = unknown;
+export type WorkflowDefinitionPayloadWithStepsWire = unknown;
+export type UpdateWorkflowDefinitionPayloadWire = unknown;
+export type UpdateWorkflowDefinitionPayloadWithActivitiesWire = unknown;
+export type UpdateWorkflowDefinitionPayloadWithStepsWire = unknown;
+export type AgentMessageTypeWire = AgentMessageType;
+export type BranchNodeBranchDefinitionWire = unknown;
+export type CreateProcessDefinitionPayloadWire = unknown;
+export type NodeDefinitionWire = unknown;
+export type NodeDefinitionMap = unknown;
+export type ProcessDefinitionWire = unknown;
+export type ProcessDefinitionArray = unknown;
+export type ProcessDefinitionBodyWire = unknown;
+export type UpdateProcessDefinitionPayloadWire = unknown;
+export type ProcessScriptResourceMap = {
+    [k: string]: ProcessScriptResource;
+};
+export type ContentObjectStatusWire = (typeof ContentObjectStatus)[keyof typeof ContentObjectStatus];
+export type ContentObjectTypeArray = ContentObjectType[];
+export type ProjectedContentObjectApiResponseArray = ProjectedContentObjectApiResponse[];
+export type ContentObjectItemApiResponseArray = ContentObjectItemApiResponse[];
+export type ContentObjectProcessingPriorityWire = 'normal' | 'low';
+export type ContentObjectApiResponseArray = ContentObjectApiResponse[];
+export type CostExportCsvResponse = string;
+export type SupportedEmbeddingTypesWire = 'text' | 'image' | 'properties';
+export type Record_SearchTypes_number = {
+    [k: string]: number;
+};
+export type EmbeddingMap = {
+    [k: string]: Embedding;
+};
+export type ContentEmbeddingMap = {
+    text?: Embedding | undefined;
+    image?: Embedding | undefined;
+    properties?: Embedding | undefined;
+};
+export type WorkflowRuleInputTypeWire = WorkflowRuleInputType;
+export type WorkflowRuleItemArray = WorkflowRuleItem[];
+export type CreateEventSubscriptionPayloadWire = unknown;
+export type EventSubscriptionWire = unknown;
+export type EventSubscriptionArray = unknown;
+export type EventSubscriptionMutationResponseWire = unknown;
+export type UpdateEventSubscriptionPayloadWire = unknown;
+export type ServerSentEventsResponse = string;
+export type ImportSpecWire = unknown[];
+export type WorkflowExecutionStartResultArray = WorkflowExecutionStartResult[];
+export type RecordProcessRunPayloadWire = {
+    workflow_id: string;
+    first_workflow_run_id?: string | undefined;
+    run_kind: 'process';
+    run_type?: ProcessRunType | undefined;
+    schedule_id?: string | undefined;
+    type?: AgentRunType | undefined;
+    process_id?: string | undefined;
+    process_version?: number | undefined;
+    process_definition?: ProcessDefinitionBodyWire | undefined;
+    data?:
+        | {
+              [k: string]: unknown;
+          }
+        | undefined;
+    config?: ProcessRunConfig | undefined;
+    visibility?: ConversationVisibility | undefined;
+    tags?: string[] | undefined;
+    categories?: string[] | undefined;
+    source?: RunSource | undefined;
+    started_by?: string | undefined;
+};
+export type ProcessTestSuiteArray = ProcessTestSuite[];
+export type ProcessTestTargetWire = ProcessTestTargetById | ProcessTestTargetWithDefinitionWire;
+export type ProcessTestRunArray = ProcessTestRunWire[];
+export type EventDeliveryTargetWire = unknown;
+export type EventDeliveryTargetInputWire = unknown;
+export type ProcessEventDeliveryTargetWire = unknown;
+export type EventIngestChannelArray = EventIngestChannel[];
+export type CollectionStatusWire = CollectionStatus;
+export type CollectionArray = Collection[];
+export type AgentRunArtifactPathArray = string[];
+export type SignalAgentPayloadWire = {
+    [k: string]: unknown;
+};
+export type FileProcessingStatusWire = FileProcessingStatus;
+export type AutonomousRunResponseWire = {
+    interaction: string;
+    data?:
+        | {
+              [k: string]: unknown;
+          }
+        | undefined;
+    config?: InteractionExecutionConfiguration | undefined;
+    interactive?: boolean | undefined;
+    tool_approval_mode?: AgentToolApprovalMode | undefined;
+    tool_names?: string[] | undefined;
+    initial_skills?: string[] | undefined;
+    initial_tool_calls?: InitialToolCall[] | undefined;
+    excluded_tools?: string[] | undefined;
+    collection_id?: string | undefined;
+    disabled_mcp_collections?: string[] | undefined;
+    content_type?: ContentObjectApiTypeRef | undefined;
+    visibility?: ConversationVisibility | undefined;
+    tags?: string[] | undefined;
+    categories?: string[] | undefined;
+    properties?:
+        | {
+              [k: string]: unknown;
+          }
+        | undefined;
+    source?: RunSource | undefined;
+    schedule_id?: string | undefined;
+    source_type?: AgentRunType | undefined;
+    type?: AgentRunType | undefined;
+    id: string;
+    run_kind: 'agent';
+    parent_run_id?: string | undefined;
+    workstream_id?: string | undefined;
+    run_type: 'autonomous';
+    account: string;
+    project: string;
+    workflow_id?: string | undefined;
+    first_workflow_run_id?: string | undefined;
+    artifacts_path?: string | undefined;
+    status: AgentRunStatus;
+    activity_state?: ConversationActivityState | undefined;
+    started_by: string;
+    started_at: string;
+    completed_at?: string | undefined;
+    title?: string | undefined;
+    event_subscription_id?: string | undefined;
+    event_ref?: EventRef | undefined;
+    archive_state?: AgentRunArchiveState | undefined;
+    created_at: string;
+    updated_at: string;
+    interaction_name?: string | undefined;
+    interactionRef: InteractionRef;
+    environmentRef?: ResourceRef | undefined;
+    topic?: string | undefined;
+    generate_topic?: boolean | undefined;
+    generate_lessons?: boolean | undefined;
+    lessons_learned?: string[] | undefined;
+    evaluation?: AgentRunEvaluation | undefined;
+    feedback?: AgentRunFeedbackEntry[] | undefined;
+    archived_at?: string | undefined;
+    archive_version?: number | undefined;
+    last_archive_error?: string | undefined;
+    forked_from?: string | undefined;
+};
+export type AgentRunResponseWire = unknown;
+export type ListAgentRunsResponseWire = unknown;
+export type ProgrammaticRunResponseWire = unknown;
+export type SupervisedRunResponseWire = unknown;
+export type AgentRunInternalsWire = {
+    id: string;
+    workflow_id?: string | undefined;
+    first_workflow_run_id?: string | undefined;
+    artifacts_path?: string | undefined;
+    status: AgentRunStatus;
+    run_kind?: RunKind | undefined;
+    run_type?: RunType | undefined;
+    interaction?: string | undefined;
+    interaction_name?: string | undefined;
+    config?: InteractionExecutionConfiguration | undefined;
+    interactive?: boolean | undefined;
+    process_id?: string | undefined;
+    process_definition_snapshot?: ProcessDefinitionBodyWire | undefined;
+    process_version?: number | undefined;
+    process_state?: ProcessState | undefined;
+    started_at: string;
+    completed_at?: string | undefined;
+    started_by: string;
+    created_at: string;
+    updated_at: string;
+};
+export type RecordAgentRunPayloadWire = {
+    workflow_id: string;
+    first_workflow_run_id: string;
+    run_kind?: 'agent' | undefined;
+    interaction: string;
+    title?: string | undefined;
+    topic?: string | undefined;
+    generate_topic?: boolean | undefined;
+    generate_lessons?: boolean | undefined;
+    parent_run_id?: string | undefined;
+    workstream_id?: string | undefined;
+    schedule_id?: string | undefined;
+    visibility?: ConversationVisibility | undefined;
+    data?:
+        | {
+              [k: string]: unknown;
+          }
+        | undefined;
+    type?: AgentRunType | undefined;
+};
+export type RecordRunPayloadWire = RecordAgentRunPayloadWire | RecordProcessRunPayloadWire;
+export type UpdateAgentRunStatusPayloadWire = {
+    status?: AgentRunStatus | undefined;
+    activity_state?: ConversationActivityState | undefined;
+    title?: string | undefined;
+    topic?: string | undefined;
+    lessons_learned?: string[] | undefined;
+    properties?:
+        | {
+              [k: string]: unknown;
+          }
+        | undefined;
+    content?: string | undefined;
+    disabled_mcp_collections?: string[] | undefined;
+    tool_approval_mode?: AgentToolApprovalMode | undefined;
+    model?: string | undefined;
+    effort?: ReasoningEffort | null | undefined;
+    archive_state?: AgentRunArchiveState | undefined;
+    archived_at?: string | undefined;
+    archive_version?: number | undefined;
+    last_archive_error?: string | undefined;
+    sequence?: number | undefined;
+    process_state?: ProcessState | undefined;
+    evaluation_rollup?: AgentRunEvaluationRollup | undefined;
+};
+export type TurnTerminalTypeWire = 'answer' | 'user_stopped' | 'completed' | 'failed' | 'cancelled' | 'interrupted';
+export type EvaluationSeverityWire = 'none' | 'low' | 'medium' | 'high';
+export type TurnEvaluationFlagWire =
+    | 'user_stopped_after_failure'
+    | 'mutation_unsuccessful'
+    | 'run_failed'
+    | 'unrecovered_tool'
+    | 'fail_streak'
+    | 'identical_retry'
+    | 'reread'
+    | 'high_gather'
+    | 'overhead'
+    | 'followup_after_answer'
+    | 'approval_denied'
+    | 'circuit_breaker';
+export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'other';
+export type JudgeGateReasonWire = 'signal' | 'sample';
+export type JudgeOutcomeWire = 'judged' | 'skipped_unarchived' | 'failed';
+export type JudgeVerdictWire = 'success' | 'partial' | 'failure';
+export type AgentEventWire = AgentEvent;
+export type WorkflowDefinitionRefArray = WorkflowDefinitionRef[];
+export type ActivityTypeDefinitionWire = ActivityTypeDefinition;
+export type ActivityPropertyDefinitionWire = {
+    name: string;
+    type: ActivityTypeDefinitionWire;
+    optional: boolean;
+    doc?: string | undefined;
+};
+export type ActivityDefinitionWire = {
+    name: string;
+    title: string;
+    doc?: string | undefined;
+    paramsType: string;
+    params: ActivityPropertyDefinitionWire[];
+    returnType?: ActivityTypeDefinitionWire | undefined;
+};
+export type ActivityCatalogWire = {
+    activities: ActivityDefinitionWire[];
+};
+export type TaskType_TIMER = 'timer';
+export type TaskType_SIGNAL = 'signal';
+export type TaskType_CHILD_WORKFLOW = 'childWorkflow';
+export type TaskType_ACTIVITY = 'activity';
+export type TaskStatusWire =
+    | 'scheduled'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'canceled'
+    | 'timed_out'
+    | 'terminated'
+    | 'sent'
+    | 'received';
+export type ViewNavigationNodeWire = ViewNavigationNode;
+export type ViewNavigationResultWire = {
+    id: string;
+    selected: string[];
+    nodes: ViewNavigationNodeWire[];
+    query?: string | undefined;
+    breadcrumbs?: ViewNavigationNodeWire[] | undefined;
+    truncated?: boolean | undefined;
+};
+export type ViewNavigationResultMap = {
+    [k: string]: ViewNavigationResultWire;
+};
+export type PromptTemplateRefArray = PromptTemplateRef[];
+export type AggregatedToolArray = AggregatedTool[];
+export type OAuthAuthStatusArray = OAuthAuthStatus[];
+export type KnownAuditActionWire =
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'bulk_create'
+    | 'bulk_change_type'
+    | 'bulk_update'
+    | 'bulk_delete'
+    | 'attach'
+    | 'detach'
+    | 'credentials_fill'
+    | 'credentials_totp_generation'
+    | 'publish'
+    | 'unpublish'
+    | 'inference'
+    | 'embedding'
+    | 'image_generation'
+    | 'document_processed';
+export type AuditAggregationDimensionMap = {
+    time?: string | null | undefined;
+    action?: string | null | undefined;
+    resource_type?: string | null | undefined;
+    event_category?: string | null | undefined;
+    provider?: string | null | undefined;
+    project_id?: string | null | undefined;
+    'details.pipeline'?: string | null | undefined;
+    'details.verdict'?: string | null | undefined;
+    'details.workflow_type'?: string | null | undefined;
+    'details.rule_id'?: string | null | undefined;
+    model?: string | null | undefined;
+};
+export type AuditAggregationDimensionWire =
+    | 'time'
+    | 'action'
+    | 'resource_type'
+    | 'event_category'
+    | 'provider'
+    | 'project_id'
+    | 'details.pipeline'
+    | 'details.verdict'
+    | 'details.workflow_type'
+    | 'details.rule_id'
+    | 'model';
+export type AuditActionWire = KnownAuditActionWire | string;
+export type ViewExperienceSchemaVersionWire = 1;
+export type ViewAgenticSearchModeWire = 'query' | 'query_and_view';
+export type ViewExperienceArray = ViewExperience[];
+export type Extract_AppVersionGitRefType_branch_tag_commit = 'branch' | 'tag' | 'commit';
+export type AppPackageScopeWire =
+    | 'ui'
+    | 'tools'
+    | 'interactions'
+    | 'types'
+    | 'processes'
+    | 'views'
+    | 'templates'
+    | 'dashboards'
+    | 'settings'
+    | 'widgets'
+    | 'activities'
+    | 'hooks'
+    | 'subscriptions'
+    | 'all';
+export type AppVersionRecordArray = AppVersionRecord[];
+export type AppToolCollectionArray = AppToolCollection[];
+export type SystemPackageQuery = {
+    scope?: AppPackageScopeWire[] | undefined;
+};
+export type InternalSecretDeleteResponse = {
+    deleted: true;
+};
+export type SupportedIntegrations_ask_user_webhook = (typeof SupportedIntegrations)['ask_user_webhook'];
+export type SupportedIntegrations_resend = (typeof SupportedIntegrations)['resend'];
+export type SupportedIntegrations_linkup = (typeof SupportedIntegrations)['linkup'];
+export type SupportedIntegrations_exa = (typeof SupportedIntegrations)['exa'];
+export type SupportedIntegrations_serper = (typeof SupportedIntegrations)['serper'];
+export type SupportedIntegrations_magic_pdf = (typeof SupportedIntegrations)['magic_pdf'];
+export type SupportedIntegrations_aws = (typeof SupportedIntegrations)['aws'];
+export type SupportedIntegrations_github = (typeof SupportedIntegrations)['github'];
+export type SupportedIntegrations_gladia = (typeof SupportedIntegrations)['gladia'];
+export type CompositeAppMenuNavItemWire = CompositeAppMenuNavItem;
+export type MCPOAuthConfigMap = {
+    [k: string]: MCPOAuthConfig;
+};
+export type AppManifestArray = AppManifest[];
+export type AppWidgetInfoMap = {
+    [k: string]: AppWidgetInfo;
+};
+export type ProjectPluginArray = string[];
+export type InCodeTypeDefinitionArray = InCodeTypeDefinition[];
+export type RenderingTemplateDefinitionRefArray = RenderingTemplateDefinitionRef[];
+export type InCodeProcessDefinitionWire = InCodeProcessDefinition;
+export type InCodeViewDefinitionArray = InCodeViewDefinition[];
+export type InCodeProcessDefinitionArray = InCodeProcessDefinitionWire[];
+export type AppInstallationArray = AppInstallation[];
+export type AppInstallationWithManifestArray = AppInstallationWithManifest[];
+export type AppInstallationListEntryArray = AppInstallationListEntry[];
+export type BinaryFileResponse = string;
+/** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
+export interface ApiComponentTypes {
+    AccountApiVersionPolicy: AccountApiVersionPolicy;
+    Account: AccountFromSchema;
+    UpdateAccountPayload: UpdateAccountPayloadFromSchema;
+    StripeBillingStatusResponse: StripeBillingStatusResponseFromSchema;
+    ApiKeyListQuery: ApiKeyListQueryFromSchema;
+    QuotaStandingResponse: QuotaStandingResponseFromSchema;
+    QuotaTierResponse: QuotaTierResponseFromSchema;
+    User: UserFromSchema;
+    UserArray: UserArrayFromSchema;
+    UpdateUserPayload: UpdateUserPayloadFromSchema;
+    DeleteByIdResult: DeleteByIdResultFromSchema;
+    PrincipalIdentity: PrincipalIdentityFromSchema;
+    SignupData: SignupData;
+    SignupPayload: SignupPayload;
+    UserRefArray: UserRefArrayFromSchema;
+    UserGroup: UserGroup;
+    UserGroupArray: UserGroupArrayFromSchema;
+    UserGroupRef: UserGroupRef;
+    CreateUserGroupPayload: CreateUserGroupPayload;
+    ListUserGroupsQuery: ListUserGroupsQuery;
+    UpdateUserGroupPayload: UpdateUserGroupPayload;
+    AccessControlEntry: AccessControlEntry;
+    AccessControlEntryArray: AccessControlEntryArrayFromSchema;
+    ACECreatePayload: ACECreatePayload;
+    ACEUpdatePayload: ACEUpdatePayload;
+    ProjectRefArray: ProjectRefArrayFromSchema;
+    RoleDefinitionArray: RoleDefinitionArrayFromSchema;
+    SystemRoleDefinitionArray: SystemRoleDefinitionArrayFromSchema;
+    ApiKey: ApiKeyFromSchema;
+    ApiKeyArray: ApiKeyArrayFromSchema;
+    ApiKeyWithValue: ApiKeyWithValueFromSchema;
+    AccountApiKey: AccountApiKey;
+    AccountApiKeyWithValue: AccountApiKeyWithValue;
+    AccountApiKeyArray: AccountApiKeyArray;
+    CreateAccountApiKeyPayload: CreateAccountApiKeyPayload;
+    UpdateAccountApiKeyPayload: UpdateAccountApiKeyPayload;
+    ApiKeyReadResponse: ApiKeyReadResponseFromSchema;
+    ApiKeyReadQuery: ApiKeyReadQueryFromSchema;
+    CreateApiKeyPayload: CreateApiKeyPayloadFromSchema;
+    UpdateApiKeyPayload: UpdateApiKeyPayloadFromSchema;
+    AuthTokenResponse: AuthTokenResponseFromSchema;
+    DeleteOperationResult: DeleteOperationResult;
+    InviteUserRequestPayload: InviteUserRequestPayloadFromSchema;
+    InviteUserResponsePayload: InviteUserResponsePayloadFromSchema;
+    InviteAcceptanceResponse: InviteAcceptanceResponseFromSchema;
+    InviteDeclineResponse: InviteDeclineResponseFromSchema;
+    OnboardingProgress: OnboardingProgressFromSchema;
+    AccountProjectsResponse: AccountProjectsResponseFromSchema;
+    TransientToken_UserInviteTokenData_Array: UserInviteTokenArrayFromSchema;
+    ListProjectsQuery: ListProjectsQueryFromSchema;
+    ProjectTagQuery: ProjectTagQueryFromSchema;
+    ICreateProjectPayload: CreateProjectPayloadFromSchema;
+    ProjectPluginsUpdatePayload: ProjectPluginsUpdatePayloadFromSchema;
+    CountResult: CountResultFromSchema;
+    ProjectIntegrationListResponse: ProjectIntegrationListResponseFromSchema;
+    ProjectToolInfo: ProjectToolInfoFromSchema;
+    ProjectToolInfoArray: ProjectToolInfoArrayFromSchema;
+    RenderingTemplateDefinition: RenderingTemplateDefinition;
+    RenderingTemplateDefinitionRef: RenderingTemplateDefinitionRef;
+    ProjectModelDefaults: ProjectModelDefaults;
+    ResourceVisibility: ResourceVisibilityWire;
+    ProjectIndexingConfiguration: ProjectIndexingConfiguration;
+    ProjectConfigurationEmbedding: ProjectConfigurationEmbedding;
+    BrowserUseProjectConfiguration: BrowserUseProjectConfiguration;
+    ProjectIntakeSniffConfiguration: ProjectIntakeSniffConfiguration;
+    JSONSchema: JSONSchema;
+    ModelOptions: ModelOptions;
+    HttpTimeoutOptions: HttpTimeoutOptions;
+    ContentTypeIntakePolicy: ContentTypeIntakePolicy;
+    ProjectIntakeConfiguration: ProjectIntakeConfiguration;
+    ProjectConfiguration: ProjectConfiguration;
+    Project: Project;
+    UpdateProjectPayload: UpdateProjectPayload;
+    UpdateProjectConfigurationPayload: UpdateProjectConfigurationPayload;
+    ToolCollectionObject: ToolCollectionObject;
+    AppUIConfig: AppUIConfig;
+    AppCapabilities: AppCapabilities;
+    AppAccessControl: AppAccessControl;
+    AppSourceConfig: AppSourceConfig;
+    AppManifestSource: AppManifestSource;
+    SuccessResponse: SuccessResponse;
+    OAuthProvider: OAuthProvider;
+    OAuthProviderArray: OAuthProviderArray;
+    CreateOAuthProviderPayload: CreateOAuthProviderPayload;
+    UpdateOAuthProviderPayload: UpdateOAuthProviderPayload;
+    OAuthProviderAuthStatus: OAuthProviderAuthStatus;
+    OAuthProviderAuthorizeResponse: OAuthProviderAuthorizeResponse;
+    OAuthProviderAccessTokenResponse: OAuthProviderAccessTokenResponse;
+    OAuthProviderExchangePayload: OAuthProviderExchangePayload;
+    OAuthClientType: OAuthClientType;
+    OAuthClientStatus: OAuthClientStatus;
+    OAuthRegistrationSource: OAuthRegistrationSource;
+    OAuthProjectBindingMode: OAuthProjectBindingMode;
+    OAuthTokenEndpointAuthMethod: OAuthTokenEndpointAuthMethod;
+    OAuthGrantType: OAuthGrantType;
+    OAuthResponseType: OAuthResponseType;
+    OAuthAuthorizationRequestStatus: OAuthAuthorizationRequestStatus;
+    OAuthClientRegistrationMode: OAuthClientRegistrationMode;
+    OAuthGrantStatus: OAuthGrantStatus;
+    OAuthGrantSortField: OAuthGrantSortField;
+    OAuthGrantSortOrder: OAuthGrantSortOrder;
+    OAuthAuthorizationServerMetadata: OAuthAuthorizationServerMetadata;
+    OAuthClientDisplayMetadata: OAuthClientDisplayMetadata;
+    OAuthAuthorizeQuery: OAuthAuthorizeQuery;
+    CreateOAuthAuthorizationRequestPayload: CreateOAuthAuthorizationRequestPayload;
+    OAuthAuthorizationRequest: OAuthAuthorizationRequest;
+    OAuthAuthorizationRequestGeneratedApp: OAuthAuthorizationRequestGeneratedApp;
+    OAuthLoginPayload: OAuthLoginPayload;
+    OAuthLoginUserNotFoundResponse: OAuthLoginUserNotFoundResponse;
+    OAuthLoginDecisionResponse: OAuthLoginDecisionResponse;
+    ApproveOAuthAuthorizationRequestPayload: ApproveOAuthAuthorizationRequestPayload;
+    OAuthGrantableScopesResponse: OAuthGrantableScopesResponse;
+    OAuthAuthorizationDecisionResponse: OAuthAuthorizationDecisionResponse;
+    OAuthDeviceAuthorizationRequest: OAuthDeviceAuthorizationRequest;
+    OAuthDeviceAuthorizationResponse: OAuthDeviceAuthorizationResponse;
+    OAuthTokenResponse: OAuthTokenResponse;
+    OAuthClient: OAuthClient;
+    OAuthClientArray: OAuthClientArray;
+    OAuthClientCreateResponse: OAuthClientCreateResponse;
+    OAuthClientScopeMetadata: OAuthClientScopeMetadata;
+    CreateOAuthClientPayload: CreateOAuthClientPayload;
+    UpdateOAuthClientPayload: UpdateOAuthClientPayload;
+    OAuthGrant: OAuthGrant;
+    ListOAuthGrantsQuery: ListOAuthGrantsQuery;
+    RevokeOAuthGrantQuery: RevokeOAuthGrantQuery;
+    BulkRevokeOAuthGrantsPayload: BulkRevokeOAuthGrantsPayload;
+    OAuthGrantListResponse: OAuthGrantListResponse;
+    OAuthGrantRevokeResponse: OAuthGrantRevokeResponse;
+    SupportedProviders: SupportedProviders;
+    ExecutionEnvironmentRef: ExecutionEnvironmentRef;
+    ExecutionEnvironment: ExecutionEnvironment;
+    ExecutionEnvironmentArray: ExecutionEnvironmentArray;
+    ExecutionEnvironmentSettings: ExecutionEnvironmentSettings;
+    ExecutionEnvironmentCreatePayload: ExecutionEnvironmentCreatePayload;
+    ExecutionEnvironmentUpdatePayload: ExecutionEnvironmentUpdatePayload;
+    ExecutionEnvironmentConfigUpdatePayload: ExecutionEnvironmentConfigUpdatePayload;
+    EnableEnvironmentModelPayload: EnableEnvironmentModelPayload;
+    ListEnvironmentsQuery: ListEnvironmentsQuery;
+    MigrateInteractionsPayload: MigrateInteractionsPayload;
+    MigrateInteractionsResult: MigrateInteractionsResult;
+    VirtualEnvEntry: VirtualEnvEntry;
+    LoadBalancingEnvConfig: LoadBalancingEnvConfig;
+    LoadBalancingEnvEntryConfig: LoadBalancingEnvEntryConfig;
+    MediatorEnvConfig: MediatorEnvConfig;
+    AIModel: AIModel;
+    AIModelArray: AIModel[];
+    AIModelStatus: (typeof AIModelStatus)[keyof typeof AIModelStatus];
+    ModelType: (typeof ModelType)[keyof typeof ModelType];
+    ModelSearchPayload: ModelSearchPayload;
+    RunAnalyticsQuery: RunAnalyticsQuery;
+    RunAnalyticsResult: RunAnalyticsResult;
+    RunAnalyticsResultArray: RunAnalyticsResultArray;
+    RunAnalyticsGroupBy: RunAnalyticsGroupBy;
+    AnalyticsAxis: AnalyticsAxis;
+    TimeResolution: TimeResolution;
+    EmbeddingsApiRequest: EmbeddingsApiRequest;
+    EmbeddingsApiInput: EmbeddingsApiInput;
+    EmbeddingsApiSource: EmbeddingsApiSource;
+    EmbeddingsApiTextInput: EmbeddingsApiTextInput;
+    EmbeddingsApiImageInput: EmbeddingsApiImageInput;
+    EmbeddingsApiVideoInput: EmbeddingsApiVideoInput;
+    EmbeddingsApiAudioInput: EmbeddingsApiAudioInput;
+    EmbeddingTaskType: EmbeddingTaskType;
+    EmbeddingsResult: EmbeddingsResult;
+    EmbeddingResultItem: EmbeddingResultItem;
+    EmbeddingOutput: EmbeddingOutput;
+    EmbeddingsTokenUsage: EmbeddingsTokenUsage;
+    JSONValue: JSONValue;
+    JSONObject: JSONObject;
+    PromptRole: (typeof PromptRole)[keyof typeof PromptRole];
+    Modalities: (typeof Modalities)[keyof typeof Modalities];
+    DataSource: {
+        name: string;
+        mime_type: string;
+    };
+    PromptSegment: {
+        role: (typeof PromptRole)[keyof typeof PromptRole];
+        content: string;
+        tool_use_id?: string | undefined;
+        thought_signature?: string | undefined;
+        files?:
+            | {
+                  name: string;
+                  mime_type: string;
+              }[]
+            | undefined;
+    };
+    ToolDefinition: {
+        name: string;
+        description?: string | undefined;
+        input_schema: {
+            [k: string]: unknown;
+        };
+    };
+    ToolUse: ToolUse;
+    TextResult: TextResult;
+    JsonResult: JsonResult;
+    ImageResult: ImageResult;
+    VideoResult: VideoResult;
+    CompletionResult: CompletionResult;
+    ExecutionTokenUsage: ExecutionTokenUsage;
+    StatelessExecutionOptions: StatelessExecutionOptions;
+    UpdateInteractionConfigurationPayload: UpdateInteractionConfigurationPayload;
+    InteractionConfigurationRecord: InteractionConfigurationRecord;
+    InteractionConfigurationResult: InteractionConfigurationResult;
+    CreateInferenceProfilePayload: CreateInferenceProfilePayload;
+    UpdateInferenceProfilePayload: UpdateInferenceProfilePayload;
+    InferenceProfileRecord: InferenceProfileRecord;
+    InferenceProfileUsage: InferenceProfileUsage;
+    InferenceProfileUsageEntry: InferenceProfileUsageEntry;
+    InferenceProfileUsageQuery: InferenceProfileUsageQuery;
+    InferenceProfileRecordArray: InferenceProfileRecordArray;
+    InferenceProfileId: InferenceProfileId;
+    InferenceProfileName: InferenceProfileName;
+    InferenceProfile: InferenceProfile;
+    InferenceProfileSnapshot: InferenceProfileSnapshot;
+    ProjectInferenceProfiles: ProjectInferenceProfiles;
+    InteractionStatus: InteractionStatusWire;
+    InteractionVisibility: InteractionVisibility;
+    PromptModalities: PromptModalities;
+    PromptStatus: PromptStatusWire;
+    PromptSegmentDefType: PromptSegmentDefTypeWire;
+    TemplateType: TemplateTypeWire;
+    SchemaRef: SchemaRef;
+    CachePolicy: CachePolicy;
+    PromptTemplate: PromptTemplate;
+    InteractionPromptTemplateInput: InteractionPromptTemplateInput;
+    PromptTemplateCreatePayload: PromptTemplateCreatePayload;
+    PromptTemplateUpdatePayload: PromptTemplateUpdatePayload;
+    PromptTemplateRef: PromptTemplateRef;
+    PromptSegmentDef: PromptSegmentDefWire;
+    InteractionPromptSegmentInput: InteractionPromptSegmentInput;
+    PromptSegmentRef_PromptTemplateRef: PromptSegmentRef_PromptTemplateRef;
+    InCodePrompt: InCodePrompt;
+    Interaction: Interaction;
+    InteractionArray: InteractionArray;
+    InteractionRef: InteractionRef;
+    InteractionRefArray: InteractionRefArray;
+    InteractionName: InteractionName;
+    InteractionNameArray: InteractionNameArray;
+    ExportedPromptTemplateRef: ExportedPromptTemplateRef;
+    PromptSegmentRef_ExportedPromptTemplateRef: PromptSegmentRef_ExportedPromptTemplateRef;
+    InteractionRefWithSchema: InteractionRefWithSchema;
+    InteractionRefWithSchemaArray: InteractionRefWithSchemaArray;
+    InteractionTags: InteractionTags;
+    InteractionTagsArray: InteractionTagsArray;
+    InteractionEndpoint: InteractionEndpoint;
+    InteractionEndpointArray: InteractionEndpointArray;
+    InteractionEndpointQuery: InteractionEndpointQuery;
+    InteractionCreatePayload: InteractionCreatePayload;
+    InteractionUpdatePayload: InteractionUpdatePayload;
+    InteractionPublishPayload: InteractionPublishPayload;
+    InteractionForkPayload: InteractionForkPayload;
+    InteractionsExportPayload: InteractionsExportPayload;
+    InteractionSearchQuery: InteractionSearchQuery;
+    ResolveInteractionQuery: ResolveInteractionQuery;
+    CatalogInteractionRef: CatalogInteractionRef;
+    CatalogInteractionRefArray: CatalogInteractionRefArray;
+    InCodeInteraction: InCodeInteraction;
+    ResolvedCatalogInteraction: ResolvedCatalogInteraction;
+    CatalogTagQuery: CatalogTagQueryWire;
+    StoredCatalogInteractionsQuery: StoredCatalogInteractionsQueryWire;
+    ModelSource: ModelSourceWire;
+    ResolvedEnvironmentInfo: ResolvedEnvironmentInfo;
+    ResolvedInteractionExecutionInfo: ResolvedInteractionExecutionInfo;
+    FacetSpec: FacetSpec;
+    NumberValueMap: NumberValueMap;
+    ComputeInteractionFacetPayload: ComputeInteractionFacetPayload;
+    ComputedFacetResponse: ComputedFacetResponse;
+    ImprovePromptPayloadConfig: ImprovePromptPayloadConfig;
+    ImprovePromptPayload: ImprovePromptPayload;
+    PromptImprovementResponse: PromptImprovementResponse;
+    GenerateTestDataPayload: GenerateTestDataPayload;
+    GeneratedTestDataRecord: GeneratedTestDataRecord;
+    GeneratedTestDataRecordArray: GeneratedTestDataRecordArray;
+    GenerateInteractionPayload: GenerateInteractionPayload;
+    GeneratedInteractionDefinition: GeneratedInteractionDefinition;
+    GeneratedInteractionDefinitionArray: GeneratedInteractionDefinitionArray;
+    GeneratedInteractionPromptTemplate: GeneratedInteractionPromptTemplate;
+    GeneratedInteractionPromptSegment: GeneratedInteractionPromptSegment;
+    AgentRunnerOptions: AgentRunnerOptions;
+    AgentSearchScope: AgentSearchScopeWire;
+    AgentSearchScope_Collection: AgentSearchScope_Collection;
+    SkillContextTriggers: SkillContextTriggers;
+    InitialToolCall: InitialToolCall;
+    ConversationVisibility: ConversationVisibility;
+    ConversationStripOptions: ConversationStripOptions;
+    StreamingOptions: StreamingOptions;
+    StreamingTelemetryContext: StreamingTelemetryContext;
+    ResolvedRuntimeConfig: ResolvedRuntimeConfig;
+    LlmCallType: LlmCallTypeWire;
+    InteractiveChannel: InteractiveChannel;
+    EmailChannel: EmailChannel;
+    UserChannel: UserChannel;
+    ToolReference: ToolReference;
+    ToolResult: ToolResult;
+    ToolResultMeta: ToolResultMeta;
+    ExternalizedToolInputRef: ExternalizedToolInputRef;
+    ExternalizedToolInputRefs: ExternalizedToolInputRefs;
+    ToolApprovalGrant: ToolApprovalGrant;
+    ToolApprovalGrantMap: ToolApprovalGrantMap;
+    AgentToolApprovalMode: AgentToolApprovalMode;
+    PendingToolApprovalResults: PendingToolApprovalResults;
+    AgentResourceAction: AgentResourceAction;
+    AgentResourceType: AgentResourceType;
+    AgentResourceReference: AgentResourceReference;
+    PendingMcpConnection: PendingMcpConnection;
+    UsedSkill: UsedSkill;
+    PlanTask: PlanTask;
+    Plan: Plan;
+    WorkflowAncestor: WorkflowAncestor;
+    TextArtifactReference: TextArtifactReference;
+    ConversationState: ConversationStateWire;
+    ExecutionRunStatus: ExecutionRunStatusWire;
+    RunSourceTypes: RunSourceTypesWire;
+    RunSource: RunSource;
+    ExecutionRunDocRef: ExecutionRunDocRef;
+    ExecutionRunWorkflow: ExecutionRunWorkflow;
+    ExecutionRunInteraction: InteractionRef;
+    ExecutionRun: ExecutionRunWire;
+    ExecutionRunRef: ExecutionRunRef;
+    ExecutionRunRefArray: ExecutionRunRefArray;
+    UpdateExecutionRunPayload: UpdateExecutionRunPayload;
+    RunCreatePayload: RunCreatePayload;
+    SortOrder: SortOrder;
+    SortOption: SortOption;
+    RunSearchQuery: RunSearchQuery;
+    RunListQuery: RunListQuery;
+    RunSearchPayload: RunSearchPayload;
+    InteractionExecutionPayload: InteractionExecutionPayload;
+    NamedInteractionExecutionPayload: NamedInteractionExecutionPayload;
+    InteractionExecutionResult: InteractionExecutionResultWire;
+    FindRunResult: FindRunResult;
+    FindRunResultArray: FindRunResultArray;
+    PopulatedExecutionRunResult: PopulatedExecutionRunResult;
+    LegacyExecutionRunResult: LegacyExecutionRunResult;
+    LegacyPopulatedExecutionRunResult: LegacyPopulatedExecutionRunResult;
+    InteractionExecutionConfiguration: InteractionExecutionConfiguration;
+    InteractionExecutionError: InteractionExecutionError;
+    ResultStorageOptions: ResultStorageOptions;
+    ExecuteInteractionByEndpointQuery: ExecuteInteractionByEndpointQueryWire;
+    ExecuteInteractionByEndpointHeaders: ExecuteInteractionByEndpointHeadersWire;
+    AsyncCompletionMode: AsyncCompletionMode;
+    AsyncCompletionOptions: AsyncCompletionOptions;
+    AsyncExecutionPayload: AsyncExecutionPayload;
+    AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayload;
+    AsyncConversationExecutionPayload: AsyncConversationExecutionPayload;
+    AsyncExecutionResult: AsyncExecutionResult;
+    RateLimitRequestPayload: RateLimitRequestPayload;
+    RateLimitRequestResponse: RateLimitRequestResponse;
+    ComputeRunFacetPayload: ComputeRunFacetPayload;
+    ComputeRunFacetsResponse: ComputeRunFacetsResponse;
+    RunSearchMetaResponse: RunSearchMetaResponse;
+    ToolResultsPayload: ToolResultsPayload;
+    UserMessagePayload: UserMessagePayload;
+    ExecutionResponse: ExecutionResponse;
+    RunClonePayload: RunClonePayload;
+    StringValueMap: StringValueMap;
+    CopyFilePayload: CopyFilePayload;
+    CopyFileResponse: CopyFileResponse;
+    DeleteFileResult: DeleteFileResult;
+    FileBucketResponse: FileBucketResponse;
+    FileListResponse: FileListResponse;
+    FileMetadataResponse: FileMetadataResponse;
+    FileMetadataUpdateResult: FileMetadataUpdateResult;
+    GetFileUrlPayload: GetFileUrlPayload;
+    GetFileUrlResponse: GetFileUrlResponse;
+    GetUploadUrlPayload: GetUploadUrlPayload;
+    BulkUploadUrlsPayload: BulkUploadUrlsPayload;
+    BulkUploadUrlsResponse: BulkUploadUrlsResponse;
+    SetFileMetadataPayload: SetFileMetadataPayload;
+    FileMetadataQuery: FileMetadataQuery;
+    FileListQuery: FileListQuery;
+    FileDeleteQuery: FileDeleteQuery;
+    BucketReadAccessQuery: EnsureBucketReadAccessPayload;
+    BucketReadAccessStatusResponse: BucketReadAccessStatusResponse;
+    EnsureBucketReadAccessPayload: EnsureBucketReadAccessPayload;
+    EnsureBucketReadAccessResponse: EnsureBucketReadAccessResponse;
+    BucketCreateAccessQuery: EnsureBucketCreateAccessPayload;
+    BucketCreateAccessStatusResponse: BucketCreateAccessStatusResponse;
+    EnsureBucketCreateAccessPayload: EnsureBucketCreateAccessPayload;
+    EnsureBucketCreateAccessResponse: EnsureBucketCreateAccessResponse;
+    TaskFieldType: TaskFieldType;
+    DurableTaskStatus: DurableTaskStatus;
+    TaskSource: TaskSource;
+    TaskField: TaskField;
+    Task: Task;
+    TaskArray: TaskArray;
+    CreateTaskPayload: CreateTaskPayload;
+    UpdateTaskPayload: UpdateTaskPayload;
+    CompleteTaskPayload: CompleteTaskPayload;
+    ListTasksQuery: ListTasksQuery;
+    ColumnLayout: ColumnLayout;
+    ContentTypeEditingPolicy: ContentTypeEditingPolicy;
+    ContentObjectTypeStatus: ContentObjectTypeStatus;
+    ContentObjectTypeItem: ContentObjectTypeItem;
+    ContentObjectTypeItemArray: ContentObjectTypeItemArray;
+    ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntry;
+    ContentObjectTypeCatalogEntryArray: ContentObjectTypeCatalogEntryArray;
+    InCodeTypeDefinition: InCodeTypeDefinition;
+    CreateContentObjectTypePayload: CreateContentObjectTypePayload;
+    UpdateContentObjectTypePayload: UpdateContentObjectTypePayload;
+    ContentObjectType: ContentObjectType;
+    ContentObjectTypeCatalogQuery: ContentObjectTypeCatalogQuery;
+    ContentObjectTypeListQuery: ContentObjectTypeListQuery;
+    DeleteCountResult: DeleteCountResult;
+    MigrationListResponse: MigrationListResponse;
+    RunMigrationPayload: RunMigrationPayload;
+    RunMigrationResponse: RunMigrationResponse;
+    DashboardElasticsearchResultMapping: DashboardElasticsearchResultMapping;
+    DashboardElasticsearchDsl: DashboardElasticsearchDsl;
+    DashboardSqlDataSource: DashboardSqlDataSource;
+    DashboardVersioningStatusResponse: DashboardVersioningStatusResponse;
+    DashboardVersioningPayload: DashboardVersioningPayload;
+    PromoteDashboardVersionPayload: PromoteDashboardVersionPayload;
+    DashboardVersionItem: DashboardVersionItem;
+    DashboardStatus: DashboardStatus;
+    DashboardLayout: DashboardLayout;
+    DashboardPanelPosition: DashboardPanelPosition;
+    DashboardQuery: DashboardQuery;
+    DashboardBulkDeleteResult: DashboardBulkDeleteResult;
+    DashboardArchiveResult: DashboardArchiveResult;
+    CreateDashboardSnapshotPayload: CreateDashboardSnapshotPayload;
+    DashboardBulkArchiveResult: DashboardBulkArchiveResult;
+    StringArrayMap: StringArrayMap;
+    DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSource;
+    DashboardVersionItemArray: DashboardVersionItemArray;
+    DashboardItem: DashboardItem;
+    DashboardPanel: DashboardPanel;
+    DashboardDataSource: DashboardDataSource;
+    DashboardItemArray: DashboardItemArray;
+    DashboardVersion: DashboardVersion;
+    Dashboard: Dashboard;
+    CreateDashboardPayload: CreateDashboardPayload;
+    UpdateDashboardPayload: UpdateDashboardPayload;
+    QueryValidationError: QueryValidationError;
+    QueryValidationPayload: QueryValidationPayload;
+    ListDataStoreVersionsQuery: ListDataStoreVersionsQuery;
+    GetDataStoreTableQuery: GetDataStoreTableQuery;
+    DataTableSemanticType: DataTableSemanticType;
+    DataIndex: DataIndex;
+    DataForeignKey: DataForeignKey;
+    SemanticColumnType: SemanticColumnType;
+    DataColumnType: DataColumnType;
+    DataColumnUpdate: DataColumnUpdate;
+    DataRelationshipType: DataRelationshipType;
+    QueryResultColumn: QueryResultColumn;
+    BatchQueryPayload: BatchQueryPayload;
+    QueryResult: QueryResult;
+    QueryPayload: QueryPayload;
+    DataStoreMutateRowsResult: DataStoreMutateRowsResult;
+    DataStoreMutateRowsPayload: DataStoreMutateRowsPayload;
+    DataTableSummary: DataTableSummary;
+    DataStoreVersionTableState: DataStoreVersionTableState;
+    DataStoreStatus: DataStoreStatus;
+    ImportDataFormat: ImportDataFormat;
+    ImportDataSource: ImportDataSource;
+    DataRelationshipForAI: DataRelationshipForAI;
+    DataForeignKeyForAI: DataForeignKeyForAI;
+    DataColumnForAI: DataColumnForAI;
+    ImportStatus: ImportStatus;
+    DataStoreTableDropResult: DataStoreTableDropResult;
+    DataStoreArchiveResult: DataStoreArchiveResult;
+    CreateSnapshotPayload: CreateSnapshotPayload;
+    DataStoreDownloadInfo: DataStoreDownloadInfo;
+    CreateDataStorePayload: CreateDataStorePayload;
+    QueryValidationResult: QueryValidationResult;
+    DataColumn: DataColumn;
+    AlterTableOperation: AlterTableOperation;
+    DataRelationship: DataRelationship;
+    CreateTablePayload: CreateTablePayload;
+    BatchQueryResultItem: BatchQueryResultItem;
+    DataTableSummaryArray: DataTableSummaryArray;
+    DataStoreVersionTableStateMap: DataStoreVersionTableStateMap;
+    DataStoreItem: DataStoreItem;
+    ImportTableData: ImportTableData;
+    DataStoreTableDetail: DataStoreTableDetail;
+    DataColumnForAIMap: DataColumnForAIMap;
+    ImportJob: ImportJob;
+    CreateTablesPayload: CreateTablesPayload;
+    DataTable: DataTable;
+    AlterTablePayload: AlterTablePayload;
+    UpdateSchemaPayload: UpdateSchemaPayload;
+    BatchQueryResult: BatchQueryResult;
+    DataStoreVersion: DataStoreVersion;
+    DataStoreItemArray: DataStoreItemArray;
+    ImportTableDataMap: ImportTableDataMap;
+    DataTableForAI: DataTableForAI;
+    DataStoreFullSchemaResponse: DataStoreFullSchemaResponse;
+    DataTableArray: DataTableArray;
+    DataSchema: DataSchema;
+    DataStoreVersionArray: DataStoreVersionArray;
+    ImportDataPayload: ImportDataPayload;
+    DataTableForAIMap: DataTableForAIMap;
+    DataStore: DataStore;
+    DataSchemaForAI: DataSchemaForAI;
+    DataStoreSchemaResponse: DataStoreSchemaResponse;
+    CostAnalyticsQuery: CostAnalyticsQuery;
+    CostRunPriceQuery: CostRunPriceQuery;
+    CostModelPricesQuery: CostModelPricesQuery;
+    CostExportQuery: CostExportQuery;
+    ModelPricing: ModelPricing;
+    CostTimeSeriesPoint: CostTimeSeriesPoint;
+    CostSummary: CostSummary;
+    ModelPriceComparison: ModelPriceComparison;
+    CostByDimension: CostByDimension;
+    ModelPriceComparisonResponse: ModelPriceComparisonResponse;
+    CostAnalyticsResponse: CostAnalyticsResponse;
+    CostRunPriceResponse: CostRunPriceResponse;
+    PricingSyncPayload: PricingSyncPayload;
+    PricingSyncDayResult: PricingSyncDayResult;
+    PricingSyncResult: PricingSyncResult;
+    BulkObjectDeleteResult: BulkObjectDeleteResult;
+    BulkObjectUpdateResult: BulkObjectUpdateResult;
+    BulkObjectCreateResult: BulkObjectCreateResult;
+    BulkOperationResult: BulkOperationResult;
+    BulkOperationPayload: BulkOperationPayload;
+    BulkOperationResponse: BulkOperationResponse;
+    GroundedAssistantResponse: GroundedAssistantResponse;
+    GroundedExtractionRequest: GroundedExtractionRequest;
+    GroundedVerificationBreakdown: GroundedVerificationBreakdown;
+    GroundedExtractionVerdict: GroundedExtractionVerdict;
+    DocProcessorOutputFormat: DocProcessorOutputFormat;
+    DocAnalyzerProgressStatus: DocAnalyzerProgressStatus;
+    DocumentProcessingPhase: DocumentProcessingPhase;
+    WorkflowExecutionStatus: WorkflowExecutionStatus;
+    DocumentPrepOptions: DocumentPrepOptions;
+    MarkdownRenditionFormat: MarkdownRenditionFormat;
+    RenderMarkdownStatusQuery: RenderMarkdownStatusQuery;
+    RenderMarkdownStartResponse: RenderMarkdownStartResponse;
+    PdfRenderingMetadata: PdfRenderingMetadata;
+    GroundedExtractionResultResponse: GroundedExtractionResultResponse;
+    DocAnalyzerProgress: DocAnalyzerProgress;
+    RenderMarkdownStatusResponse: RenderMarkdownStatusResponse;
+    RenderMarkdownPayload: RenderMarkdownPayload;
+    DocAnalyzeRunStatusResponse: DocAnalyzeRunStatusResponse;
+    StartProjectReindexPayload: StartProjectReindexPayload;
+    ReindexAgentRunsResponse: ReindexAgentRunsResponse;
+    ReindexAgentRunsPayload: ReindexAgentRunsPayload;
+    IndexingStatusResponse: IndexingStatusResponse;
+    DriftAnalysisResult: DriftAnalysisResult;
+    DriftAnalysisProgress: DriftAnalysisProgress;
+    DriftAnalysisStatusResponse: DriftAnalysisStatusResponse;
+    EmbeddingsStatusResponse: EmbeddingsStatusResponse;
+    RecalculateEmbeddingsQuery: RecalculateEmbeddingsQuery;
+    ProjectConfigurationEmbeddingEnablePayload: ProjectConfigurationEmbeddingEnablePayload;
+    EmbeddingBatchProviderState: EmbeddingBatchProviderState;
+    EmbeddingBatchCapabilityRequest: EmbeddingBatchCapabilityRequest;
+    EmbeddingBatchCapabilityResponse: EmbeddingBatchCapabilityResponse;
+    EmbeddingBatchCreateRequest: EmbeddingBatchCreateRequest;
+    EmbeddingBatchJobRequest: EmbeddingBatchJobRequest;
+    EmbeddingBatchJobResponse: EmbeddingBatchJobResponse;
+    EmbeddingBatchRunState: EmbeddingBatchRunState;
+    EmbeddingBatchRunSummary: EmbeddingBatchRunSummary;
+    EmbeddingBatchSubjob: EmbeddingBatchSubjob;
+    EmbeddingBatchPrepareRequest: EmbeddingBatchPrepareRequest;
+    EmbeddingBatchPrepareResponse: EmbeddingBatchPrepareResponse;
+    EmbeddingBatchRenditionPageRequest: EmbeddingBatchRenditionPageRequest;
+    EmbeddingBatchRenditionPageResponse: EmbeddingBatchRenditionPageResponse;
+    EmbeddingBatchUpdateRequest: EmbeddingBatchUpdateRequest;
+    EmbeddingBatchApplyRequest: EmbeddingBatchApplyRequest;
+    EmbeddingBatchApplyResponse: EmbeddingBatchApplyResponse;
+    GenericCommandResponse: GenericCommandResponse;
+    DurationValue: DurationValue;
+    JsonLogicRule: JsonLogicRule;
+    DSLWorkflowDefinition: DSLWorkflowDefinitionWire;
+    ActivityFetchSpec: ActivityFetchSpec;
+    WorkflowSearchAttributeValue: WorkflowSearchAttributeValueWire;
+    DSLRetryPolicy: DSLRetryPolicy;
+    ActivityFetchSpecMap: ActivityFetchSpecMap;
+    WorkflowSearchAttributeValueMap: WorkflowSearchAttributeValueMap;
+    DSLActivityOptions: DSLActivityOptions;
+    DSLActivitySpec: DSLActivitySpecWire;
+    WorkflowSearchAttributes: WorkflowSearchAttributeValueMap;
+    DSLActivityStep: DSLActivityStepWire;
+    DSLChildWorkflowStep: DSLChildWorkflowStepWire;
+    DSLWorkflowDefinitionResponse: DSLWorkflowDefinitionResponseWire;
+    DSLWorkflowSpec: DSLWorkflowSpecWire;
+    DSLWorkflowSpecWithActivities: DSLWorkflowSpecWithActivitiesWire;
+    DSLWorkflowSpecWithSteps: DSLWorkflowSpecWithStepsWire;
+    DSLWorkflowStep: DSLWorkflowStepWire;
+    WorkflowDefinitionPayload: WorkflowDefinitionPayloadWire;
+    WorkflowDefinitionPayloadWithActivities: WorkflowDefinitionPayloadWithActivitiesWire;
+    WorkflowDefinitionPayloadWithSteps: WorkflowDefinitionPayloadWithStepsWire;
+    UpdateWorkflowDefinitionPayload: UpdateWorkflowDefinitionPayloadWire;
+    UpdateWorkflowDefinitionPayloadWithActivities: UpdateWorkflowDefinitionPayloadWithActivitiesWire;
+    UpdateWorkflowDefinitionPayloadWithSteps: UpdateWorkflowDefinitionPayloadWithStepsWire;
+    AgentMessageType: AgentMessageTypeWire;
+    ConversationFile: ConversationFile;
+    AgentMessageDetails: AgentMessageDetails;
+    CompactMessage: CompactMessage;
+    ProcessDefinitionMetadata: ProcessDefinitionMetadata;
+    BranchJoinPolicy: BranchJoinPolicy;
+    ParallelFailurePolicy: ParallelFailurePolicy;
+    ParallelCollectField: ParallelCollectField;
+    ParallelCollectMode: ParallelCollectMode;
+    HumanTaskDefinition: HumanTaskDefinition;
+    TransitionTrigger: TransitionTrigger;
+    ProcessNodeReturnsDefinition: ProcessNodeReturnsDefinition;
+    ProcessNodeRunType: ProcessNodeRunType;
+    ProcessNodeType: ProcessNodeType;
+    ProcessContextDefinition: ProcessContextDefinition;
+    ProcessDefinitionFormatVersion: ProcessDefinitionFormatVersion;
+    ProcessDefinitionStatus: ProcessDefinitionStatus;
+    RevertProcessDefinitionPayload: RevertProcessDefinitionPayload;
+    RetryProcessNodePayload: RetryProcessNodePayload;
+    PublishProcessDefinitionPayload: PublishProcessDefinitionPayload;
+    ProcessDefinitionRevisionInfo: ProcessDefinitionRevisionInfo;
+    NodeHistoryEntry: NodeHistoryEntry;
+    BranchDefinition: BranchDefinition;
+    ParallelCollectDefinition: ParallelCollectDefinition;
+    TransitionDefinition: TransitionDefinition;
+    BranchNodeBranchDefinition: BranchNodeBranchDefinitionWire;
+    CreateProcessDefinitionPayload: CreateProcessDefinitionPayloadWire;
+    NodeDefinition: NodeDefinitionWire;
+    NodeDefinitionMap: NodeDefinitionMap;
+    ProcessDefinition: ProcessDefinitionWire;
+    ProcessDefinitionArray: ProcessDefinitionArray;
+    ProcessDefinitionBody: ProcessDefinitionBodyWire;
+    UpdateProcessDefinitionPayload: UpdateProcessDefinitionPayloadWire;
+    ListProcessDefinitionsQuery: ListProcessDefinitionsQuery;
+    ProcessScriptInlineSource: ProcessScriptInlineSource;
+    ProcessScriptLanguage: ProcessScriptLanguage;
+    ProcessScriptSource: ProcessScriptInlineSource;
+    ProcessScriptResource: ProcessScriptResource;
+    ProcessScriptResourceMap: ProcessScriptResourceMap;
+    ProcessResourcesDefinition: ProcessResourcesDefinition;
+    GenerationRunMetadata: GenerationRunMetadata;
+    ContentObjectUserPermissions: ContentObjectUserPermissions;
+    ContentSource: ContentSource;
+    ContentObjectStatus: ContentObjectStatusWire;
+    InheritedPropertyMetadata: InheritedPropertyMetadata;
+    TranscriptSegment: TranscriptSegment;
+    ContentObjectTypeArray: ContentObjectTypeArray;
+    ContentObjectTextResponse: ContentObjectTextResponse;
+    DeleteContentObjectResult: DeleteContentObjectResult;
+    Transcript: Transcript;
+    CreateContentObjectPayload: CreateContentObjectPayloadWire;
+    UpdateContentObjectPayload: UpdateContentObjectPayloadWire;
+    ContentObjectApiTypeRef: ContentObjectApiTypeRef;
+    ContentObjectApiResponse: ContentObjectApiResponse;
+    ProjectedContentObjectApiResponse: ProjectedContentObjectApiResponse;
+    ProjectedContentObjectApiResponseArray: ProjectedContentObjectApiResponseArray;
+    ContentObjectItemApiResponse: ContentObjectItemApiResponse;
+    ContentObjectItemApiResponseArray: ContentObjectItemApiResponseArray;
+    ContentObjectProcessingPriority: ContentObjectProcessingPriorityWire;
+    ContentObjectApiResponseArray: ContentObjectApiResponseArray;
+    CreateContentObjectHeaders: CreateContentObjectHeaders;
+    CreateContentObjectQuery: CreateContentObjectQuery;
+    UpdateContentObjectHeaders: UpdateContentObjectHeaders;
+    UpdateContentObjectQuery: UpdateContentObjectQuery;
+    RevisionInfo: RevisionInfo;
+    StartContentObjectExportResponse: StartContentObjectExportResponse;
+    ExportContentObjectsIncludeOptions: ExportContentObjectsIncludeOptions;
+    ExportContentObjectsFilter: ExportContentObjectsFilter;
+    ContentObjectApiRevision: ContentObjectApiRevision;
+    ContentObjectExportArtifactFile: ContentObjectExportArtifactFile;
+    GetRenditionResponse: GetRenditionResponse;
+    ContentObjectExportResult: ContentObjectExportResult;
+    ContentObjectExportProgress: ContentObjectExportProgress;
+    ExportPropertiesResponse: ExportPropertiesResponse;
+    DeleteContentObjectExportResponse: DeleteContentObjectExportResponse;
+    StartContentObjectExportRequest: StartContentObjectExportRequest;
+    ContentObjectExportArtifact: ContentObjectExportArtifact;
+    ContentObjectExportStatusResponse: ContentObjectExportStatusResponse;
+    ListContentObjectExportsResponse: ListContentObjectExportsResponse;
+    ExportPropertiesPayload: ExportPropertiesPayload;
+    CostExportCsvResponse: CostExportCsvResponse;
+    GetObjectRenditionQuery: GetObjectRenditionQuery;
+    scoreAggregationTypes: scoreAggregationTypes;
+    dynamicScalingTypes: dynamicScalingTypes;
+    Embedding: Embedding;
+    SupportedEmbeddingTypes: SupportedEmbeddingTypesWire;
+    SetObjectEmbeddingsResponse: SetObjectEmbeddingsResponse;
+    Record_SearchTypes_number: Record_SearchTypes_number;
+    EmbeddingSearchConfig: EmbeddingSearchConfig;
+    EmbeddingMap: EmbeddingMap;
+    FindPayload: FindPayload;
+    ContentEmbeddingMap: ContentEmbeddingMap;
+    VectorSearchQuery: VectorSearchQuery;
+    ComplexSearchQuery: ComplexSearchQuery;
+    ComputeObjectFacetPayload: ComputeObjectFacetPayload;
+    ComplexSearchPayload: ComplexSearchPayload;
+    ObjectSearchResponse: ObjectSearchResponse;
+    EventPriority: EventPriority;
+    WorkflowRuleInputType: WorkflowRuleInputTypeWire;
+    WorkflowRuleItem: WorkflowRuleItem;
+    WorkflowRule: WorkflowRule;
+    CreateWorkflowRulePayload: CreateWorkflowRulePayload;
+    UpdateWorkflowRulePayload: UpdateWorkflowRulePayload;
+    ListEventDeliveriesPayload: ListEventDeliveriesPayload;
+    WorkflowRuleItemArray: WorkflowRuleItemArray;
+    EventSubscriptionFilter: EventSubscriptionFilter;
+    ListEventDeliveriesResponse: ListEventDeliveriesResponse;
+    CreateEventSubscriptionPayload: CreateEventSubscriptionPayloadWire;
+    EventSubscription: EventSubscriptionWire;
+    EventSubscriptionArray: EventSubscriptionArray;
+    EventSubscriptionMutationResponse: EventSubscriptionMutationResponseWire;
+    UpdateEventSubscriptionPayload: UpdateEventSubscriptionPayloadWire;
+    ServerSentEventsResponse: ServerSentEventsResponse;
+    StreamEventDeliveriesQuery: StreamEventDeliveriesQuery;
+    ProcessRunType: ProcessRunType;
+    ProcessRunConfig: ProcessRunConfig;
+    ProcessHistoryRef: ProcessHistoryRef;
+    ProcessHistoryResponse: ProcessHistoryResponse;
+    ProcessContextResponse: ProcessContextResponse;
+    WorkflowExecutionStartResult: WorkflowExecutionStartResult;
+    ImportSpec: ImportSpecWire;
+    AnswerProcessTaskPayload: AnswerProcessTaskPayload;
+    AdvanceProcessPayload: AdvanceProcessPayload;
+    ProcessState: ProcessState;
+    WorkflowExecutionStartResultArray: WorkflowExecutionStartResultArray;
+    RecordProcessRunPayload: RecordProcessRunPayloadWire;
+    ProcessTestRunStatus: ProcessTestRunStatus;
+    ProcessTestVirtualActor: ProcessTestVirtualActor;
+    ProcessTestFixtureResult: ProcessTestFixtureResult;
+    ProcessTestFixtureError: ProcessTestFixtureError;
+    ProcessTestFixtureResponse: ProcessTestFixtureResponse;
+    ProcessTestNodeFixture: ProcessTestNodeFixture;
+    ProcessTestHumanAction: ProcessTestHumanAction;
+    ProcessTestAssertions: ProcessTestAssertions;
+    ProcessTestScenario: ProcessTestScenario;
+    ProcessTestSuite: ProcessTestSuite;
+    ProcessTestSuiteArray: ProcessTestSuiteArray;
+    CreateProcessTestSuitePayload: CreateProcessTestSuitePayload;
+    UpdateProcessTestSuitePayload: UpdateProcessTestSuitePayload;
+    StartProcessTestRunPayload: StartProcessTestRunPayload;
+    ProcessTestStoredSubject: ProcessTestStoredSubject;
+    ProcessTestResolvedSubject: ProcessTestResolvedSubject;
+    ProcessTestInlineSubject: ProcessTestInlineSubject;
+    ProcessTestSubject: ProcessTestSubject;
+    ProcessTestTargetById: ProcessTestTargetById;
+    ProcessTestTargetWithDefinition: ProcessTestTargetWithDefinitionWire;
+    ProcessTestTarget: ProcessTestTargetWire;
+    SubmitProcessTestRunPayload: SubmitProcessTestRunPayloadWire;
+    ProcessTestAssertionResult: ProcessTestAssertionResult;
+    ProcessTestActorDecision: ProcessTestActorDecision;
+    ProcessTestCoverage: ProcessTestCoverage;
+    ProcessTestChildTrace: ProcessTestChildTrace;
+    ProcessTestScenarioResult: ProcessTestScenarioResult;
+    ProcessTestRun: ProcessTestRunWire;
+    ProcessTestRunArray: ProcessTestRunArray;
+    ListProcessTestRunsQuery: ListProcessTestRunsQuery;
+    UpdateProcessTestScenarioPayload: UpdateProcessTestScenarioPayload;
+    AgentDeliveryMatchMode: AgentDeliveryMatchMode;
+    WebhookPayloadMode: WebhookPayloadMode;
+    WebhookSigningMode: WebhookSigningMode;
+    SemanticConditionOnError: SemanticConditionOnError;
+    SemanticConditionMode: SemanticConditionMode;
+    AgentSemanticEvaluator: AgentSemanticEvaluator;
+    InteractionSemanticEvaluator: InteractionSemanticEvaluator;
+    SemanticEvaluationStatus: SemanticEvaluationStatus;
+    EventDeliveryIntentStatus: EventDeliveryIntentStatus;
+    EventOutboxStatus: EventOutboxStatus;
+    EventDeliverySortField: EventDeliverySortField;
+    WebhookEventDeliveryTarget: WebhookEventDeliveryTarget;
+    AppEventDeliveryTarget: AppEventDeliveryTarget;
+    WorkflowEventDeliveryTarget: WorkflowEventDeliveryTarget;
+    EventDeliveryQueueFailureSummary: EventDeliveryQueueFailureSummary;
+    EventOutboxQueueSummary: EventOutboxQueueSummary;
+    EventDeliveryQueueSortField: EventDeliveryQueueSortField;
+    AgentEventDeliveryTarget: AgentEventDeliveryTarget;
+    WebhookEventDeliveryTargetInput: WebhookEventDeliveryTargetInput;
+    AppEventDeliveryTargetInput: AppEventDeliveryTargetInput;
+    WorkflowEventDeliveryTargetInput: WorkflowEventDeliveryTargetInput;
+    SemanticEvaluator: SemanticEvaluator;
+    SemanticEvaluationRecord: SemanticEvaluationRecord;
+    EventDeliveryQueueSubscriptionSummary: EventDeliveryQueueSubscriptionSummary;
+    EventDeliveryQueueSummaryPayload: EventDeliveryQueueSummaryPayload;
+    CancelEventDeliveryIntentsPayload: CancelEventDeliveryIntentsPayload;
+    CancelEventDeliveryIntentsResponse: CancelEventDeliveryIntentsResponse;
+    EventSemanticCondition: EventSemanticCondition;
+    EventDeliveryIntentSummary: EventDeliveryIntentSummary;
+    EventDeliveryQueueSummaryResponse: EventDeliveryQueueSummaryResponse;
+    EventDeliverySummary: EventDeliverySummary;
+    EventDeliveryTarget: EventDeliveryTargetWire;
+    EventDeliveryTargetInput: EventDeliveryTargetInputWire;
+    ProcessEventDeliveryTarget: ProcessEventDeliveryTargetWire;
+    EventIngestSignatureEncoding: EventIngestSignatureEncoding;
+    EventIngestSignatureAlgorithm: EventIngestSignatureAlgorithm;
+    EventIngestResourceRule: EventIngestResourceRule;
+    EventIngestSignatureConfig: EventIngestSignatureConfig;
+    EventIngestTransform: EventIngestTransform;
+    EventIngestChannel: EventIngestChannel;
+    EventIngestChannelMutationResponse: EventIngestChannelMutationResponse;
+    CreateEventIngestChannelPayload: CreateEventIngestChannelPayload;
+    UpdateEventIngestChannelPayload: UpdateEventIngestChannelPayload;
+    EventIngestChannelArray: EventIngestChannelArray;
+    CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
+    CollectionMembersUpdateResult: CollectionMembersUpdateResult;
+    CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;
+    CollectionChildrenUpdateResult: CollectionChildrenUpdateResult;
+    CollectionChildrenUpdatePayload: CollectionChildrenUpdatePayload;
+    CollectionStatus: CollectionStatusWire;
+    CollectionPropagationResponse: CollectionPropagationResponse;
+    CreateCollectionPayload: CreateCollectionPayload;
+    UpdateCollectionPayload: UpdateCollectionPayload;
+    ComplexCollectionSearchQuery: ComplexCollectionSearchQuery;
+    Collection: Collection;
+    ComputeCollectionFacetPayload: ComputeCollectionFacetPayload;
+    CollectionArray: CollectionArray;
+    CollectionMembersQuery: CollectionMembersQuery;
+    UpdateAgentArtifactContentResponse: UpdateAgentArtifactContentResponse;
+    UpdateAgentArtifactContentPayload: UpdateAgentArtifactContentPayload;
+    AgentArtifactContentResponse: AgentArtifactContentResponse;
+    AgentArtifactUrlResponse: AgentArtifactUrlResponse;
+    AgentRunArtifactPathArray: AgentRunArtifactPathArray;
+    AgentRunArtifactUploadHeaders: AgentRunArtifactUploadHeaders;
+    AgentRunArtifactQuery: AgentRunArtifactQuery;
+    AgentRunArtifactsQuery: AgentRunArtifactsQuery;
+    TerminateAgentRunResponse: TerminateAgentRunResponse;
+    SignalAgentPayload: SignalAgentPayloadWire;
+    PostAgentRunUpdateResponse: PostAgentRunUpdateResponse;
+    FileProcessingStatus: FileProcessingStatusWire;
+    AgentRunArchiveState: AgentRunArchiveState;
+    ResourceRef: ResourceRef;
+    SignalAgentResponse: SignalAgentResponse;
+    AutonomousRunResponse: AutonomousRunResponseWire;
+    AgentRun: AgentRunWire;
+    CreateAgentRunPayload: CreateAgentRunPayloadWire;
+    CreateProcessRunByIdPayload: CreateProcessRunByIdPayload;
+    CreateProcessRunWithDefinitionPayload: CreateProcessRunWithDefinitionPayload;
+    CreateRunPayload: CreateRunPayload;
+    SearchAgentRunsResponse: SearchAgentRunsResponse;
+    AgentRunUpdatesResponse: AgentRunUpdatesResponse;
+    PostAgentRunUpdatePayload: PostAgentRunUpdatePayload;
+    AgentRunResponse: AgentRunResponseWire;
+    ListAgentRunsResponse: ListAgentRunsResponseWire;
+    ProgrammaticRunResponse: ProgrammaticRunResponseWire;
+    SupervisedRunResponse: SupervisedRunResponseWire;
+    AgentRunInternals: AgentRunInternalsWire;
+    AgentRunDetailsQuery: AgentRunDetailsQuery;
+    ListAgentRunsQuery: ListAgentRunsQuery;
+    RecordAgentRunPayload: RecordAgentRunPayloadWire;
+    RecordRunPayload: RecordRunPayloadWire;
+    AgentRunUpdatesQuery: AgentRunUpdatesQuery;
+    SearchAgentRunsQuery: SearchAgentRunsQuery;
+    StreamAgentRunQuery: StreamAgentRunQuery;
+    UpdateAgentRunStatusPayload: UpdateAgentRunStatusPayloadWire;
+    AgentRunFeedbackRating: AgentRunFeedbackRating;
+    AgentRunFeedbackReasonCode: AgentRunFeedbackReasonCode;
+    AgentRunFeedbackPayload: AgentRunFeedbackPayload;
+    AgentRunFeedbackStatus: AgentRunFeedbackStatus;
+    AgentRunFeedbackCounts: AgentRunFeedbackCounts;
+    AgentRunFeedbackResponse: AgentRunFeedbackResponse;
+    AgentRunFeedbackEntry: AgentRunFeedbackEntry;
+    AgentRunEvaluationRollup: AgentRunEvaluationRollup;
+    AgentRunJudgeResult: AgentRunJudgeResult;
+    AgentRunContradictionReason: AgentRunContradictionReason;
+    AgentRunEvaluation: AgentRunEvaluation;
+    TurnTerminalType: TurnTerminalTypeWire;
+    EvaluationSeverity: EvaluationSeverityWire;
+    TurnEvaluationFlag: TurnEvaluationFlagWire;
+    ToolErrorClass: ToolErrorClassWire;
+    JudgeGateReason: JudgeGateReasonWire;
+    JudgeOutcome: JudgeOutcomeWire;
+    JudgeVerdict: JudgeVerdictWire;
+    ListAgentRunsEvaluationSeverity: ListAgentRunsEvaluationSeverity;
+    AgentEvent: AgentEventWire;
+    IngestAgentEventsPayload: IngestAgentEventsPayload;
+    IngestAgentEventsResponse: IngestAgentEventsResponse;
+    WorkflowQueryResult: WorkflowQueryResult;
+    WorkflowUpdatePublishResponse: WorkflowUpdatePublishResponse;
+    ListWorkflowRunsPayload: ListWorkflowRunsPayload;
+    WorkflowDefinitionRef: WorkflowDefinitionRef;
+    WorkflowRun: WorkflowRun;
+    EventError: EventError;
+    SignalEventProperties: SignalEventProperties;
+    WorkflowInputFile: WorkflowInputFile;
+    WorkflowActionResponse: WorkflowActionResponse;
+    WorkflowDefinitionRefArray: WorkflowDefinitionRefArray;
+    ListWorkflowRunsResponse: ListWorkflowRunsResponse;
+    WorkflowRunEvent: WorkflowRunEvent;
+    WorkflowInput: WorkflowInput;
+    WorkflowRunUpdatesResponse: WorkflowRunUpdatesResponse;
+    ExecuteWorkflowPayload: ExecuteWorkflowPayload;
+    WorkflowHistory: WorkflowHistory;
+    WorkflowRunWithDetails: WorkflowRunWithDetails;
+    BindRunWorkflowPayload: BindRunWorkflowPayload;
+    WorkflowRunDetailsQuery: WorkflowRunDetailsQuery;
+    WorkflowRunUpdatesQuery: WorkflowRunUpdatesQuery;
+    WorkflowRunStreamQuery: WorkflowRunStreamQuery;
+    ActivityTypeDefinition: ActivityTypeDefinitionWire;
+    ActivityPropertyDefinition: ActivityPropertyDefinitionWire;
+    ActivityDefinition: ActivityDefinitionWire;
+    ActivityCatalog: ActivityCatalogWire;
+    WorkflowInteractionVars: WorkflowInteractionVars;
+    ListWorkflowInteractionsResponse: ListWorkflowInteractionsResponse;
+    RestartAgentRunPayload: RestartAgentRunPayload;
+    TaskType_TIMER: TaskType_TIMER;
+    TaskType_SIGNAL: TaskType_SIGNAL;
+    TaskType_CHILD_WORKFLOW: TaskType_CHILD_WORKFLOW;
+    TaskType_ACTIVITY: TaskType_ACTIVITY;
+    PendingActivity: PendingActivity;
+    AgentTask: AgentTask;
+    TaskStatus: TaskStatusWire;
+    TimerTask: TimerTask;
+    SignalTask: SignalTask;
+    ChildWorkflowTask: ChildWorkflowTask;
+    ActivityTask: ActivityTask;
+    WorkflowTask: WorkflowTask;
+    ViewNavigationNode: ViewNavigationNodeWire;
+    ViewHitAnnotation: ViewHitAnnotation;
+    ViewExecutionWarning: ViewExecutionWarning;
+    ViewQueryPlanningFailureCode: ViewQueryPlanningFailureCode;
+    ExecuteViewRequest: ExecuteViewRequest;
+    ViewNavigationResult: ViewNavigationResultWire;
+    ViewExecutionQueryPlan: ViewExecutionQueryPlan;
+    ViewRerankFailureCode: ViewRerankFailureCode;
+    ViewExecutionRerankResult: ViewExecutionRerankResult;
+    ViewExecutionSearchConfiguration: ViewExecutionSearchConfiguration;
+    ViewNavigationResultMap: ViewNavigationResultMap;
+    ViewExecutionSearchResult: ViewExecutionSearchResult;
+    ViewHit: ViewHit;
+    ViewExecutionDefinition: ViewExecutionDefinition;
+    ViewExperienceConfiguration: ViewExperienceConfiguration;
+    ViewExecutionResult: ViewExecutionResult;
+    PreviewViewExperienceRequest: PreviewViewExperienceRequest;
+    RenderPromptPayload: RenderPromptPayload;
+    RenderPromptResponse: RenderPromptResponse;
+    PromptTemplateInteractionVersion: PromptTemplateInteractionVersion;
+    PromptTemplateForkPayload: PromptTemplateForkPayload;
+    PromptSearchQuery: PromptSearchQuery;
+    PromptTemplateInteractionUsage: PromptTemplateInteractionUsage;
+    ComputePromptFacetPayload: ComputePromptFacetPayload;
+    PromptTemplateInteractionsResponse: PromptTemplateInteractionsResponse;
+    PromptTemplateRefArray: PromptTemplateRefArray;
+    ToolSource: ToolSource;
+    ToolRuntimeContext: ToolRuntimeContext;
+    ProcessToolCompatibilityReason: ProcessToolCompatibilityReason;
+    ProcessToolCompatibility: ProcessToolCompatibility;
+    ValidateToolNamesPayload: ValidateToolNamesPayload;
+    ToolValidationResult: ToolValidationResult;
+    AggregatedTool: AggregatedTool;
+    ValidateToolNamesResponse: ValidateToolNamesResponse;
+    AggregatedToolArray: AggregatedToolArray;
+    ListProjectToolsQuery: ListProjectToolsQuery;
+    InspectProjectToolQuery: InspectProjectToolQuery;
+    ToolInspection: ToolInspection;
+    MCPToolAnnotations: MCPToolAnnotations;
+    McpOAuthTokenResponse: McpOAuthTokenResponse;
+    McpOAuthTokenRequest: McpOAuthTokenRequest;
+    OAuthAuthStatus: OAuthAuthStatus;
+    OAuthMetadataResponse: OAuthMetadataResponse;
+    McpOAuthDisconnectResponse: McpOAuthDisconnectResponse;
+    McpOAuthConnectResponse: McpOAuthConnectResponse;
+    OAuthAuthorizeResponse: OAuthAuthorizeResponse;
+    OAuthAuthStatusArray: OAuthAuthStatusArray;
+    SetMcpApiKeyRequest: SetMcpApiKeyRequest;
+    McpApiKeyStatus: McpApiKeyStatus;
+    AuditMeter: AuditMeter;
+    KnownAuditAction: KnownAuditActionWire;
+    EventCategory: EventCategory;
+    AuditAggregationDimensionMap: AuditAggregationDimensionMap;
+    AuditAggregationDistinctField: AuditAggregationDistinctField;
+    AuditAggregationOperation: AuditAggregationOperation;
+    AuditAggregationResolution: AuditAggregationResolution;
+    AuditAggregationDimension: AuditAggregationDimensionWire;
+    AuditAggregationDetailField: AuditAggregationDetailField;
+    AuditAction: AuditActionWire;
+    AuditAggregationRow: AuditAggregationRow;
+    AuditAggregationMetric: AuditAggregationMetric;
+    AuditAggregationGroup: AuditAggregationGroup;
+    AuditAggregationDetailFilter: AuditAggregationDetailFilter;
+    AuditTrailEvent: AuditTrailEvent;
+    AuditAggregationResponse: AuditAggregationResponse;
+    AuditAggregationFilter: AuditAggregationFilter;
+    AuditTrailResponse: AuditTrailResponse;
+    AuditAggregationQuery: AuditAggregationQuery;
+    AuditTrailQuery: AuditTrailQuery;
+    ViewExperienceSchemaVersion: ViewExperienceSchemaVersionWire;
+    ViewSortClause: ViewSortClause;
+    ViewResultMedia: ViewResultMedia;
+    ViewResultFieldFormat: ViewResultFieldFormat;
+    ViewBoardColumn: ViewBoardColumn;
+    ViewTableColumn: ViewTableColumn;
+    ViewAgenticSearchMode: ViewAgenticSearchModeWire;
+    AgenticViewRerankConfiguration: AgenticViewRerankConfiguration;
+    ViewAgenticExecutionConfiguration: ViewAgenticExecutionConfiguration;
+    AgenticViewSearchConfiguration: AgenticViewSearchConfiguration;
+    ViewSearchFieldType: ViewSearchFieldType;
+    ViewSearchFieldDefinition: ViewSearchFieldDefinition;
+    ViewRangeDefinition: ViewRangeDefinition;
+    ViewHierarchyLevel: ViewHierarchyLevel;
+    ViewTermsNavigation: ViewTermsNavigation;
+    ViewCollectionNavigation: ViewCollectionNavigation;
+    ViewLocationNavigation: ViewLocationNavigation;
+    ViewElasticsearchQuery: ViewElasticsearchQuery;
+    ViewExperienceLayout: ViewExperienceLayout;
+    ViewSortOption: ViewSortOption;
+    ViewResultField: ViewResultField;
+    ViewTableDisplay: ViewTableDisplay;
+    ViewListDisplay: ViewListDisplay;
+    ViewKeyTermDefinition: ViewKeyTermDefinition;
+    ViewRangeNavigation: ViewRangeNavigation;
+    ViewHierarchyNavigation: ViewHierarchyNavigation;
+    ViewExperienceScope: ViewExperienceScope;
+    ViewBoardCardConfiguration: ViewBoardCardConfiguration;
+    ViewSearchConfiguration: ViewSearchConfiguration;
+    ViewNavigationItem: ViewNavigationItem;
+    ViewBoardDisplay: ViewBoardDisplay;
+    ViewCardsDisplay: ViewCardsDisplay;
+    ViewGalleryDisplay: ViewGalleryDisplay;
+    ViewDisplayConfiguration: ViewDisplayConfiguration;
+    ViewSelectionMode: ViewSelectionMode;
+    ViewSelectionConfiguration: ViewSelectionConfiguration;
+    ViewActionPlacement: ViewActionPlacement;
+    ViewActionSelectionRequirement: ViewActionSelectionRequirement;
+    ViewActionConfiguration: ViewActionConfiguration;
+    ViewActionsConfiguration: ViewActionsConfiguration;
+    ViewUploadDropParameters: ViewUploadDropParameters;
+    ViewDropConfiguration: ViewDropConfiguration;
+    ViewResultsConfiguration: ViewResultsConfiguration;
+    CreateViewExperienceRequest: CreateViewExperienceRequest;
+    ViewExperience: ViewExperience;
+    UpdateViewExperienceRequest: UpdateViewExperienceRequest;
+    ViewExperienceArray: ViewExperienceArray;
+    ViewExperienceListQuery: ViewExperienceListQuery;
+    UpdateAppInstallationOAuthApprovalPayload: UpdateAppInstallationOAuthApprovalPayload;
+    UpdateAppInstallationToolAllowlistPayload: UpdateAppInstallationToolAllowlistPayload;
+    ValidateUrlResponse: ValidateUrlResponse;
+    ValidateUrlRequest: ValidateUrlRequest;
+    AppVersionUrls: AppVersionUrls;
+    AppVersionGitRefType: AppVersionGitRefType;
+    AppVersionTarget: AppVersionTarget;
+    AppVersionState: AppVersionState;
+    AppVersionKind: AppVersionKind;
+    StartAppScaffoldResponse: StartAppScaffoldResponse;
+    AppScaffoldModule: AppScaffoldModule;
+    AppBuildTrigger: AppBuildTrigger;
+    Extract_AppVersionGitRefType_branch_tag_commit: Extract_AppVersionGitRefType_branch_tag_commit;
+    StartAppBuildResponse: StartAppBuildResponse;
+    AgentToolApprovalClass: AgentToolApprovalClass;
+    AppDevelopmentTask: AppDevelopmentTask;
+    AppInstallationProviderBinding: AppInstallationProviderBinding;
+    AppInstallationOAuthBinding: AppInstallationOAuthBinding;
+    OAuthClientCredentials: OAuthClientCredentials;
+    AppPackageScope: AppPackageScopeWire;
+    AppInspectionCapabilityReport: AppInspectionCapabilityReport;
+    AppScaffoldProgressStatus: AppScaffoldProgressStatus;
+    AppRepoTreeEntry: AppRepoTreeEntry;
+    AppRepoRef: AppRepoRef;
+    AppRepoCommit: AppRepoCommit;
+    AgentRunType: AgentRunType;
+    EventRef: EventRef;
+    InCodeTypeRef: InCodeTypeRef;
+    StoredTypeRef: StoredTypeRef;
+    ConversationActivityState: ConversationActivityState;
+    AgentRunStatus: AgentRunStatus;
+    RunKind: RunKind;
+    RunType: RunType;
+    AppBuildProgressStatus: AppBuildProgressStatus;
+    DeleteAppVersionResponse: DeleteAppVersionResponse;
+    AppDeleteSummary: AppDeleteSummary;
+    AppRepoBranch: AppRepoBranch;
+    AppRepoDocumentCommit: AppRepoDocumentCommit;
+    AppVersionGitSource: AppVersionGitSource;
+    StartAppScaffoldRequest: StartAppScaffoldRequest;
+    StartAppDevelopmentTaskRequest: StartAppDevelopmentTaskRequest;
+    StartAppBuildRequest: StartAppBuildRequest;
+    AgentToolDefinition: AgentToolDefinition;
+    AppDevelopmentTaskList: AppDevelopmentTaskList;
+    OAuthClientCredentialsMap: AppOAuthCollectionParams;
+    AppOAuthCollectionParams: AppOAuthCollectionParams;
+    McpApiKeyCredential: McpApiKeyCredential;
+    AppApiKeyCollectionParams: AppApiKeyCollectionParams;
+    AppInspectionIssue: AppInspectionIssue;
+    AppScaffoldProgress: AppScaffoldProgress;
+    AppRepoTree: AppRepoTree;
+    AppRepoRefs: AppRepoRefs;
+    AppRepoCommits: AppRepoCommits;
+    ContentObjectTypeRef: ContentObjectApiTypeRef;
+    AppBuildProgress: AppBuildProgress;
+    AppVersionStorage: AppVersionStorage;
+    AppToolCollection: AppToolCollection;
+    AppOAuthProviderParams: AppOAuthCollectionParams;
+    AppInspectionResult: AppInspectionResult;
+    AppVersionRecord: AppVersionRecord;
+    AgentRunSearchHit: AgentRunSearchHit;
+    UpsertAppVersionRequest: UpsertAppVersionRequest;
+    AppInstallationPayload: AppInstallationPayload;
+    AppDevelopmentTaskDetails: AppDevelopmentTaskDetails;
+    AppVersionRecordArray: AppVersionRecordArray;
+    AppToolCollectionArray: AppToolCollectionArray;
+    AppInstallationKind: AppInstallationKind;
+    AppInstallationsQuery: AppInstallationsQuery;
+    AppListScope: AppListScope;
+    AppsQuery: AppsQuery;
+    AppInstallationProjectsQuery: AppInstallationProjectsQuery;
+    SystemPackageQuery: SystemPackageQuery;
+    WebsiteCredentialTotpAlgorithm: WebsiteCredentialTotpAlgorithm;
+    WebsiteCredentialTotpMetadata: WebsiteCredentialTotpMetadata;
+    WebsiteCredentialSecretInput: WebsiteCredentialSecretInput;
+    WebsiteCredentialCapability: WebsiteCredentialCapability;
+    WebsiteCredentialWebsite: WebsiteCredentialWebsite;
+    SecretKind: SecretKind;
+    WebsiteCredentialRecord: WebsiteCredentialRecord;
+    WebsiteCredentialFillResponse: WebsiteCredentialFillResponse;
+    WebsiteCredentialFillRequest: WebsiteCredentialFillRequest;
+    DeleteSecretResponse: DeleteSecretResponse;
+    WebsiteCredentialMetadata: WebsiteCredentialMetadata;
+    WebsiteCredentialMetadataUpdate: WebsiteCredentialMetadataUpdate;
+    SecretRecord: SecretRecord;
+    CreateSecretRequest: CreateSecretRequest;
+    UpdateSecretRequest: UpdateSecretRequest;
+    ListSecretsResponse: ListSecretsResponse;
+    SecretProjectQuery: SecretProjectQuery;
+    ListSecretsQuery: ListSecretsQuery;
+    SecretLookupQuery: SecretLookupQuery;
+    EventWebhookSigningSecretRequest: EventWebhookSigningSecretRequest;
+    EventWebhookSigningSecretResponse: EventWebhookSigningSecretResponse;
+    SignEventWebhookRequest: SignEventWebhookRequest;
+    SignEventWebhookResponse: SignEventWebhookResponse;
+    EventIngestSigningSecretRequest: EventIngestSigningSecretRequest;
+    EventIngestSigningSecretResponse: EventIngestSigningSecretResponse;
+    VerifyEventIngestSignatureRequest: VerifyEventIngestSignatureRequest;
+    VerifyEventIngestSignatureResponse: VerifyEventIngestSignatureResponse;
+    GithubInstallationTokenRequest: GithubInstallationTokenRequest;
+    GithubInstallationTokenResponse: GithubInstallationTokenResponse;
+    InternalSecretDeleteResponse: InternalSecretDeleteResponse;
+    SupportedIntegrations_ask_user_webhook: SupportedIntegrations_ask_user_webhook;
+    SupportedIntegrations_resend: SupportedIntegrations_resend;
+    SupportedIntegrations_linkup: SupportedIntegrations_linkup;
+    SupportedIntegrations_exa: SupportedIntegrations_exa;
+    SupportedIntegrations_serper: SupportedIntegrations_serper;
+    SupportedIntegrations_magic_pdf: SupportedIntegrations_magic_pdf;
+    SupportedIntegrations_aws: SupportedIntegrations_aws;
+    SupportedIntegrations_github: SupportedIntegrations_github;
+    SupportedIntegrations_gladia: SupportedIntegrations_gladia;
+    AskUserWebhookConfiguration: AskUserWebhookConfiguration;
+    ResendConfiguration: ResendConfiguration;
+    LinkupConfiguration: LinkupConfiguration;
+    ExaConfiguration: ExaConfiguration;
+    SerperConfiguration: SerperConfiguration;
+    GithubConfiguration: GithubConfiguration;
+    GladiaConfiguration: GladiaConfiguration;
+    RemoteActivityDefinition: RemoteActivityDefinition;
+    AskUserWebhookConfigurationInput: AskUserWebhookConfigurationInput;
+    ResendConfigurationInput: ResendConfigurationInput;
+    LinkupConfigurationInput: LinkupConfigurationInput;
+    ExaConfigurationInput: ExaConfigurationInput;
+    SerperConfigurationInput: SerperConfigurationInput;
+    MagicPdfConfiguration: MagicPdfConfiguration;
+    AwsConfiguration: AwsConfiguration;
+    GithubConfigurationInput: GithubConfigurationInput;
+    GladiaConfigurationInput: GladiaConfigurationInput;
+    ProjectIntegrationConfigResponse: ProjectIntegrationConfigResponse;
+    ProjectIntegrationConfigRequest: ProjectIntegrationConfigRequest;
+    CompositeAppNavItemPermissions: CompositeAppNavItemPermissions;
+    CompositeAppEntry: CompositeAppEntry;
+    CompositeAppHomePlugin: CompositeAppHomePlugin;
+    CompositeAppThemeOverrides: CompositeAppThemeOverrides;
+    CompositeAppHeaderItemTarget: CompositeAppHeaderItemTarget;
+    CompositeAppHeaderItemKind: CompositeAppHeaderItemKind;
+    CompositeAppUserMenuOverrides: CompositeAppUserMenuOverrides;
+    CompositeAppHeaderOverrides: CompositeAppHeaderOverrides;
+    CompositeAppSidebarOverrides: CompositeAppSidebarOverrides;
+    CompositeAppSwitchersOverrides: CompositeAppSwitchersOverrides;
+    CompositeAppMessageStyle: CompositeAppMessageStyle;
+    CompositeAppLogoOverrides: CompositeAppLogoOverrides;
+    CompositeAppCardOverrides: CompositeAppCardOverrides;
+    CompositeAppMenuNavItem: CompositeAppMenuNavItemWire;
+    CompositeAppHeaderItem: CompositeAppHeaderItem;
+    CompositeAppMessageOverrides: CompositeAppMessageOverrides;
+    CompositeAppMenuSection: CompositeAppMenuSection;
+    CompositeAppConfig: CompositeAppConfig;
+    CompositeAppConfigPayload: CompositeAppConfigPayload;
+    MCPOAuthConfigMap: MCPOAuthConfigMap;
+    AppWidgetInfo: AppWidgetInfo;
+    AppDashboardDefinition: AppDashboardDefinition;
+    AppManifestData: AppManifestData;
+    UpdateAppPayload: UpdateAppPayload;
+    AppManifest: AppManifest;
+    AppManifestArray: AppManifestArray;
+    AppWidgetInfoMap: AppWidgetInfoMap;
+    PromoteAppVersionResponse: PromoteAppVersionResponse;
+    AppPackage: AppPackage;
+    ProjectPluginArray: ProjectPluginArray;
+    InCodeViewDefinition: InCodeViewDefinition;
+    InCodeTypeDefinitionArray: InCodeTypeDefinitionArray;
+    RenderingTemplateDefinitionRefArray: RenderingTemplateDefinitionRefArray;
+    InCodeProcessDefinition: InCodeProcessDefinitionWire;
+    AppInstallation: AppInstallation;
+    InCodeViewDefinitionArray: InCodeViewDefinitionArray;
+    InCodeProcessDefinitionArray: InCodeProcessDefinitionArray;
+    AppInstallationWithManifest: AppInstallationWithManifest;
+    AppInstallationArray: AppInstallationArray;
+    AppInstallationListEntry: AppInstallationListEntry;
+    AppInstallationWithManifestArray: AppInstallationWithManifestArray;
+    AppInstallationListEntryArray: AppInstallationListEntryArray;
+    BinaryFileResponse: BinaryFileResponse;
+    SigningAlgorithm: SigningAlgorithm;
+    ApiKeyTokenRequest: ApiKeyTokenRequest;
+    UserTokenRequest: UserTokenRequest;
+    ProjectTokenRequest: ProjectTokenRequest;
+    EnvironmentTokenRequest: EnvironmentTokenRequest;
+    AgentTokenRequest: AgentTokenRequest;
+    ServiceAccountTokenRequest: ServiceAccountTokenRequest;
+    AppSessionTokenRequest: AppSessionTokenRequest;
+    AppSessionTokenResponse: AppSessionTokenResponse;
+    IssueTokenRequest: IssueTokenRequest;
+    IssueTokenResponse: IssueTokenResponse;
+    IssueTokenForbiddenResponse: IssueTokenForbiddenResponse;
+    IssueTokenUnavailableResponse: IssueTokenUnavailableResponse;
+    EmailRouteData: EmailRouteData;
+    SendEmailRequest: SendEmailRequest;
+    SendEmailResponse: SendEmailResponse;
+    ResolveEmailRouteRequest: ResolveEmailRouteRequest;
+    CreateEmailRouteRequest: CreateEmailRouteRequest;
+    CreateEmailRouteResponse: CreateEmailRouteResponse;
+    EmailRouteResponse: EmailRouteResponse;
+    UpdateEmailRouteRequest: UpdateEmailRouteRequest;
+    UpdateEmailRouteResponse: UpdateEmailRouteResponse;
+    ForwardEmailRequest: ForwardEmailRequest;
+    ForwardEmailResponse: ForwardEmailResponse;
+    PendingAskStatus: PendingAskStatus;
+    PendingAskData: PendingAskData;
+    RegisterPendingAskRequest: RegisterPendingAskRequest;
+    RegisterPendingAskResponse: RegisterPendingAskResponse;
+    ResolvePendingAskRequest: ResolvePendingAskRequest;
+    ResolvePendingAskResponse: ResolvePendingAskResponse;
+    ListPendingAsksResponse: ListPendingAsksResponse;
+    ContentQueryPayload: ContentQueryPayload;
+    ContentQueryResult: ContentQueryResult;
+    CreateDelegationGrantPayload: CreateDelegationGrantPayload;
+    DelegationGrant: DelegationGrant;
+    DelegationGrantArray: DelegationGrantArray;
+}

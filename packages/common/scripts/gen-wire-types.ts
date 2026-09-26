@@ -57,6 +57,9 @@ const OUTPUT = join(SRC, 'wire-types.generated.ts');
 const TEST_OUTPUT = join(SRC, 'wire-types.generated.test.ts');
 const OUTPUT_MODULE = './wire-types.generated.js';
 
+/** The schema registry; its `*_SCHEMAS` groups name every published component. */
+const REGISTRY = 'api-schemas/registry.ts';
+
 /** `export type X = z.infer<typeof Y>` and `z.infer<typeof import('./m.js').Y>`, on one or more lines. */
 const ALIAS =
     /export\s+type\s+(\w+)\s*=\s*z\.(?:infer|output)<\s*typeof\s+(?:import\(\s*'([^']+)'\s*\)\.)?(\w+)\s*>\s*;/g;
@@ -160,9 +163,9 @@ const EXTERNAL_PACKAGES = [
         schemas: '@llumiverse/common/schemas',
         types: '@llumiverse/common',
         // Hand-written interfaces that `z.infer` of their schema is assignable to but not identical with
-        // (`ToolDefinition.input_schema` spells out optional keys the `looseObject` leaves open). These
+        // (`ToolDefinition.input_schema` spells out optional keys the `looseObject` leaves open, for one). These
         // are written out structurally instead.
-        inline: new Set(['ToolDefinitionSchema']),
+        inline: new Set(['DataSourceSchema', 'PromptSegmentSchema', 'ToolDefinitionSchema']),
     },
 ];
 
@@ -449,10 +452,15 @@ async function main() {
     // Schemas imported from other packages, referenced by the type each package exports beside them
     // (`XSchema` -> `X`). The generated test proves every such reference equal to what `z.infer` gives.
     const externalNames = new DefMap<{ name: string; specifier: string }>();
+    /** Export name -> schema and the specifier it is imported by, for the registry's external components. */
+    const externalSchemas = new Map<string, { schema: AnySchema; specifier: string }>();
     for (const pkg of EXTERNAL_PACKAGES) {
         const exports = (await import(pkg.schemas)) as Record<string, unknown>;
         const declared = declaredTypeNames(pkg.types);
         for (const [key, value] of Object.entries(exports)) {
+            if (isSchema(value) && !externalSchemas.has(key)) {
+                externalSchemas.set(key, { schema: value, specifier: pkg.schemas });
+            }
             const name = key.replace(/Schema$/, '');
             if (pkg.inline.has(key)) continue;
             if (isSchema(value) && name !== key && declared.has(name) && !externalNames.has(value)) {
@@ -750,6 +758,33 @@ async function main() {
         if (name !== ref.name) throw new Error(`${ref.file}: Wire.${ref.name} is now generated as Wire.${name}`);
     }
 
+    // Every registry component by the name it publishes, which `ApiComponentType<N>` indexes, so naming a
+    // component never evaluates `z.infer` over the registry. Read from the group literals (every entry is
+    // `Name: XSchema` or `Name: Namespace.XSchema`); the registry exports no name -> schema map.
+    const components: { name: string; exportName: string; specifier: string; type: string }[] = [];
+    for (const group of readFileSync(join(SRC, REGISTRY), 'utf8').matchAll(
+        // A group may carry an explicit annotation, a named map or an inline `{ ... }`, before its literal.
+        /^const \w+_SCHEMAS(?:: (?:\w+|\{\n[\s\S]*?\n\}))? = \{\n([\s\S]*?)\n\}/gm,
+    )) {
+        for (const line of group[1].split('\n')) {
+            if (/^\s*(?:\/\/|\/\*|\*|$)/.test(line)) continue;
+            const m = line.match(/^\s+(\w+): (?:\w+\.)?(\w+),$/);
+            if (!m) throw new Error(`${REGISTRY}: unrecognised component entry: ${line.trim()}`);
+            const external = schemaExports.has(m[2]) ? undefined : externalSchemas.get(m[2]);
+            const externalName = external && externalNames.get(external.schema);
+            if (external) {
+                // Named by the type its package declares beside it, else written out in place.
+                if (externalName) addImport(externalName.specifier, externalName.name);
+                const type = externalName ? externalName.name : emitRoot(external.schema);
+                components.push({ name: m[1], exportName: m[2], specifier: external.specifier, type });
+                continue;
+            }
+            const schema = resolveSchema(REGISTRY, m[2]);
+            const file = schemaExportFile.get(m[2]) as string;
+            components.push({ name: m[1], exportName: m[2], specifier: specifierFor(file), type: nameFor(schema) });
+        }
+    }
+
     const body: string[] = [];
     let usesZod = false;
     const checks: string[] = [];
@@ -801,6 +836,19 @@ async function main() {
         }
     }
 
+    body.push(
+        '/** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */',
+        'export interface ApiComponentTypes {',
+        ...components.map((c) => `    ${c.name}: ${c.type};`),
+        '}',
+    );
+    for (const c of components) {
+        checks.push(
+            `    'component:${c.name}': Same<W.ApiComponentTypes['${c.name}'], ` +
+                `z.infer<typeof import('${c.specifier}').${c.exportName}>>;`,
+        );
+    }
+
     // A fallback alias stays `z.infer` in its own module; generated types that reference it import it.
     for (const alias of aliases) {
         if (!generated.has(alias.name) && body.some((line) => new RegExp(`\\b${alias.name}\\b`).test(line))) {
@@ -826,6 +874,7 @@ async function main() {
             "import { describe, expect, it } from 'vitest';",
             "import type { z } from 'zod';",
             `import type * as W from '${OUTPUT_MODULE}';`,
+            "import type { ApiComponentName } from './api-schemas/registry.js';",
             '',
             '// Identical types, the same test `expectTypeOf().toEqualTypeOf()` uses: a nested `any` or a',
             '// widened member fails it. A schema edited without a regenerate fails `typecheck:test` on the',
@@ -834,15 +883,19 @@ async function main() {
             '',
             'interface Checks {',
             ...checks,
+            '    // A group the registry parse missed would leave its components out of `ApiComponentTypes`.',
+            "    'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;",
             '}',
             '',
             'const checks: Checks = {',
             ...[...generated].map((name) => `    ${name}: true,`),
+            ...components.map((c) => `    'component:${c.name}': true,`),
+            "    'component-names': true,",
             '};',
             '',
             "describe('wire-types.generated', () => {",
             "    it('asserts every generated type against its schema', () => {",
-            `        expect(Object.keys(checks)).toHaveLength(${generated.size});`,
+            `        expect(Object.keys(checks)).toHaveLength(${generated.size + components.length + 1});`,
             '    });',
             '});',
             '',

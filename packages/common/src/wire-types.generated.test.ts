@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
+import type { ApiComponentName } from './api-schemas/registry.js';
 import type * as W from './wire-types.generated.js';
 
 // Identical types, the same test `expectTypeOf().toEqualTypeOf()` uses: a nested `any` or a
@@ -3886,6 +3887,5540 @@ interface Checks {
         W.UpdateContentObjectPayloadWire,
         z.infer<typeof import('./api-schemas/content.js').UpdateContentObjectPayloadSchema>
     >;
+    ResourceVisibilityWire: Same<
+        W.ResourceVisibilityWire,
+        z.infer<typeof import('./api-schemas/project-configuration.js').ResourceVisibilitySchema>
+    >;
+    OAuthProviderArray: Same<
+        W.OAuthProviderArray,
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderArraySchema>
+    >;
+    OAuthClientArray: Same<
+        W.OAuthClientArray,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientArraySchema>
+    >;
+    ExecutionEnvironmentArray: Same<
+        W.ExecutionEnvironmentArray,
+        z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentArraySchema>
+    >;
+    RunAnalyticsResultArray: Same<
+        W.RunAnalyticsResultArray,
+        z.infer<typeof import('./api-schemas/analytics.js').RunAnalyticsResultArraySchema>
+    >;
+    InteractionStatusWire: Same<
+        W.InteractionStatusWire,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionStatusSchema>
+    >;
+    PromptStatusWire: Same<
+        W.PromptStatusWire,
+        z.infer<typeof import('./api-schemas/interaction.js').PromptStatusSchema>
+    >;
+    PromptSegmentDefTypeWire: Same<
+        W.PromptSegmentDefTypeWire,
+        z.infer<typeof import('./api-schemas/interaction.js').PromptSegmentDefTypeSchema>
+    >;
+    TemplateTypeWire: Same<
+        W.TemplateTypeWire,
+        z.infer<typeof import('./api-schemas/interaction.js').TemplateTypeSchema>
+    >;
+    PromptSegmentDefWire: Same<
+        W.PromptSegmentDefWire,
+        z.infer<typeof import('./api-schemas/interaction.js').PromptSegmentDefSchema>
+    >;
+    PromptSegmentRef_PromptTemplateRef: Same<
+        W.PromptSegmentRef_PromptTemplateRef,
+        z.infer<typeof import('./api-schemas/interaction.js').PromptSegmentRef_PromptTemplateRefSchema>
+    >;
+    InteractionArray: Same<
+        W.InteractionArray,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionArraySchema>
+    >;
+    InteractionRefArray: Same<
+        W.InteractionRefArray,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionRefArraySchema>
+    >;
+    InteractionNameArray: Same<
+        W.InteractionNameArray,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionNameArraySchema>
+    >;
+    PromptSegmentRef_ExportedPromptTemplateRef: Same<
+        W.PromptSegmentRef_ExportedPromptTemplateRef,
+        z.infer<typeof import('./api-schemas/interaction.js').PromptSegmentRef_ExportedPromptTemplateRefSchema>
+    >;
+    InteractionRefWithSchemaArray: Same<
+        W.InteractionRefWithSchemaArray,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionRefWithSchemaArraySchema>
+    >;
+    InteractionTagsArray: Same<
+        W.InteractionTagsArray,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionTagsArraySchema>
+    >;
+    InteractionEndpointArray: Same<
+        W.InteractionEndpointArray,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionEndpointArraySchema>
+    >;
+    CatalogInteractionRefArray: Same<
+        W.CatalogInteractionRefArray,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefArraySchema>
+    >;
+    CatalogTagQueryWire: Same<
+        W.CatalogTagQueryWire,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogTagQuerySchema>
+    >;
+    StoredCatalogInteractionsQueryWire: Same<
+        W.StoredCatalogInteractionsQueryWire,
+        z.infer<typeof import('./api-schemas/interaction.js').StoredCatalogInteractionsQuerySchema>
+    >;
+    ModelSourceWire: Same<W.ModelSourceWire, z.infer<typeof import('./api-schemas/interaction.js').ModelSourceSchema>>;
+    NumberValueMap: Same<W.NumberValueMap, z.infer<typeof import('./api-schemas/interaction.js').NumberValueMapSchema>>;
+    GeneratedTestDataRecordArray: Same<
+        W.GeneratedTestDataRecordArray,
+        z.infer<typeof import('./api-schemas/interaction.js').GeneratedTestDataRecordArraySchema>
+    >;
+    GeneratedInteractionDefinitionArray: Same<
+        W.GeneratedInteractionDefinitionArray,
+        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionDefinitionArraySchema>
+    >;
+    AgentSearchScopeWire: Same<
+        W.AgentSearchScopeWire,
+        z.infer<typeof import('./api-schemas/interaction.js').AgentSearchScopeSchema>
+    >;
+    AgentSearchScope_Collection: Same<
+        W.AgentSearchScope_Collection,
+        z.infer<typeof import('./api-schemas/interaction.js').AgentSearchScope_CollectionSchema>
+    >;
+    LlmCallTypeWire: Same<W.LlmCallTypeWire, z.infer<typeof import('./api-schemas/interaction.js').LlmCallTypeSchema>>;
+    ToolApprovalGrantMap: Same<
+        W.ToolApprovalGrantMap,
+        z.infer<typeof import('./api-schemas/interaction.js').ToolApprovalGrantMapSchema>
+    >;
+    ConversationStateWire: Same<
+        W.ConversationStateWire,
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationStateSchema>
+    >;
+    ExecutionRunStatusWire: Same<
+        W.ExecutionRunStatusWire,
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunStatusSchema>
+    >;
+    RunSourceTypesWire: Same<
+        W.RunSourceTypesWire,
+        z.infer<typeof import('./api-schemas/interaction.js').RunSourceTypesSchema>
+    >;
+    ExecutionRunWire: Same<
+        W.ExecutionRunWire,
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunSchema>
+    >;
+    ExecutionRunRefArray: Same<
+        W.ExecutionRunRefArray,
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunRefArraySchema>
+    >;
+    RunListQuery: Same<W.RunListQuery, z.infer<typeof import('./api-schemas/interaction.js').RunListQuerySchema>>;
+    InteractionExecutionResultWire: Same<
+        W.InteractionExecutionResultWire,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionExecutionResultSchema>
+    >;
+    LegacyExecutionRunResult: Same<
+        W.LegacyExecutionRunResult,
+        z.infer<typeof import('./api-schemas/interaction.js').LegacyExecutionRunResultSchema>
+    >;
+    LegacyPopulatedExecutionRunResult: Same<
+        W.LegacyPopulatedExecutionRunResult,
+        z.infer<typeof import('./api-schemas/interaction.js').LegacyPopulatedExecutionRunResultSchema>
+    >;
+    ExecuteInteractionByEndpointQueryWire: Same<
+        W.ExecuteInteractionByEndpointQueryWire,
+        z.infer<typeof import('./api-schemas/interaction.js').ExecuteInteractionByEndpointQuerySchema>
+    >;
+    ExecuteInteractionByEndpointHeadersWire: Same<
+        W.ExecuteInteractionByEndpointHeadersWire,
+        z.infer<typeof import('./api-schemas/interaction.js').ExecuteInteractionByEndpointHeadersSchema>
+    >;
+    ExecutionResponse: Same<
+        W.ExecutionResponse,
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionResponseSchema>
+    >;
+    StringValueMap: Same<W.StringValueMap, z.infer<typeof import('./api-schemas/files.js').StringValueMapSchema>>;
+    TaskArray: Same<W.TaskArray, z.infer<typeof import('./api-schemas/task.js').TaskArraySchema>>;
+    ContentObjectTypeItemArray: Same<
+        W.ContentObjectTypeItemArray,
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeItemArraySchema>
+    >;
+    ContentObjectTypeCatalogEntryArray: Same<
+        W.ContentObjectTypeCatalogEntryArray,
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeCatalogEntryArraySchema>
+    >;
+    StringArrayMap: Same<W.StringArrayMap, z.infer<typeof import('./api-schemas/dashboard.js').StringArrayMapSchema>>;
+    DashboardVersionItemArray: Same<
+        W.DashboardVersionItemArray,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersionItemArraySchema>
+    >;
+    DashboardItemArray: Same<
+        W.DashboardItemArray,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardItemArraySchema>
+    >;
+    DataTableSummaryArray: Same<
+        W.DataTableSummaryArray,
+        z.infer<typeof import('./api-schemas/data-store.js').DataTableSummaryArraySchema>
+    >;
+    DataStoreVersionTableStateMap: Same<
+        W.DataStoreVersionTableStateMap,
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreVersionTableStateMapSchema>
+    >;
+    DataColumnForAIMap: Same<
+        W.DataColumnForAIMap,
+        z.infer<typeof import('./api-schemas/data-store.js').DataColumnForAIMapSchema>
+    >;
+    DataStoreItemArray: Same<
+        W.DataStoreItemArray,
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreItemArraySchema>
+    >;
+    ImportTableDataMap: Same<
+        W.ImportTableDataMap,
+        z.infer<typeof import('./api-schemas/data-store.js').ImportTableDataMapSchema>
+    >;
+    DataTableArray: Same<W.DataTableArray, z.infer<typeof import('./api-schemas/data-store.js').DataTableArraySchema>>;
+    DataStoreVersionArray: Same<
+        W.DataStoreVersionArray,
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreVersionArraySchema>
+    >;
+    DataTableForAIMap: Same<
+        W.DataTableForAIMap,
+        z.infer<typeof import('./api-schemas/data-store.js').DataTableForAIMapSchema>
+    >;
+    PricingSyncPayload: Same<
+        W.PricingSyncPayload,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').PricingSyncPayloadSchema>
+    >;
+    PricingSyncDayResult: Same<
+        W.PricingSyncDayResult,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').PricingSyncDayResultSchema>
+    >;
+    PricingSyncResult: Same<
+        W.PricingSyncResult,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').PricingSyncResultSchema>
+    >;
+    DSLWorkflowDefinitionWire: Same<
+        W.DSLWorkflowDefinitionWire,
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowDefinitionSchema>
+    >;
+    WorkflowSearchAttributeValueWire: Same<
+        W.WorkflowSearchAttributeValueWire,
+        z.infer<typeof import('./api-schemas/process.js').WorkflowSearchAttributeValueSchema>
+    >;
+    ActivityFetchSpecMap: Same<
+        W.ActivityFetchSpecMap,
+        z.infer<typeof import('./api-schemas/process.js').ActivityFetchSpecMapSchema>
+    >;
+    WorkflowSearchAttributeValueMap: Same<
+        W.WorkflowSearchAttributeValueMap,
+        z.infer<typeof import('./api-schemas/process.js').WorkflowSearchAttributeValueMapSchema>
+    >;
+    DSLChildWorkflowStepWire: Same<
+        W.DSLChildWorkflowStepWire,
+        z.infer<typeof import('./api-schemas/process.js').DSLChildWorkflowStepSchema>
+    >;
+    DSLWorkflowDefinitionResponseWire: Same<
+        W.DSLWorkflowDefinitionResponseWire,
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowDefinitionResponseSchema>
+    >;
+    DSLWorkflowSpecWire: Same<
+        W.DSLWorkflowSpecWire,
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowSpecSchema>
+    >;
+    DSLWorkflowSpecWithActivitiesWire: Same<
+        W.DSLWorkflowSpecWithActivitiesWire,
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowSpecWithActivitiesSchema>
+    >;
+    DSLWorkflowSpecWithStepsWire: Same<
+        W.DSLWorkflowSpecWithStepsWire,
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowSpecWithStepsSchema>
+    >;
+    DSLWorkflowStepWire: Same<
+        W.DSLWorkflowStepWire,
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowStepSchema>
+    >;
+    WorkflowDefinitionPayloadWire: Same<
+        W.WorkflowDefinitionPayloadWire,
+        z.infer<typeof import('./api-schemas/process.js').WorkflowDefinitionPayloadSchema>
+    >;
+    WorkflowDefinitionPayloadWithActivitiesWire: Same<
+        W.WorkflowDefinitionPayloadWithActivitiesWire,
+        z.infer<typeof import('./api-schemas/process.js').WorkflowDefinitionPayloadWithActivitiesSchema>
+    >;
+    WorkflowDefinitionPayloadWithStepsWire: Same<
+        W.WorkflowDefinitionPayloadWithStepsWire,
+        z.infer<typeof import('./api-schemas/process.js').WorkflowDefinitionPayloadWithStepsSchema>
+    >;
+    UpdateWorkflowDefinitionPayloadWire: Same<
+        W.UpdateWorkflowDefinitionPayloadWire,
+        z.infer<typeof import('./api-schemas/process.js').UpdateWorkflowDefinitionPayloadSchema>
+    >;
+    UpdateWorkflowDefinitionPayloadWithActivitiesWire: Same<
+        W.UpdateWorkflowDefinitionPayloadWithActivitiesWire,
+        z.infer<typeof import('./api-schemas/process.js').UpdateWorkflowDefinitionPayloadWithActivitiesSchema>
+    >;
+    UpdateWorkflowDefinitionPayloadWithStepsWire: Same<
+        W.UpdateWorkflowDefinitionPayloadWithStepsWire,
+        z.infer<typeof import('./api-schemas/process.js').UpdateWorkflowDefinitionPayloadWithStepsSchema>
+    >;
+    AgentMessageTypeWire: Same<
+        W.AgentMessageTypeWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentMessageTypeSchema>
+    >;
+    BranchNodeBranchDefinitionWire: Same<
+        W.BranchNodeBranchDefinitionWire,
+        z.infer<typeof import('./api-schemas/process.js').BranchNodeBranchDefinitionSchema>
+    >;
+    CreateProcessDefinitionPayloadWire: Same<
+        W.CreateProcessDefinitionPayloadWire,
+        z.infer<typeof import('./api-schemas/process.js').CreateProcessDefinitionPayloadSchema>
+    >;
+    NodeDefinitionWire: Same<
+        W.NodeDefinitionWire,
+        z.infer<typeof import('./api-schemas/process.js').NodeDefinitionSchema>
+    >;
+    NodeDefinitionMap: Same<
+        W.NodeDefinitionMap,
+        z.infer<typeof import('./api-schemas/process.js').NodeDefinitionMapSchema>
+    >;
+    ProcessDefinitionWire: Same<
+        W.ProcessDefinitionWire,
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionSchema>
+    >;
+    ProcessDefinitionArray: Same<
+        W.ProcessDefinitionArray,
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionArraySchema>
+    >;
+    ProcessDefinitionBodyWire: Same<
+        W.ProcessDefinitionBodyWire,
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionBodySchema>
+    >;
+    UpdateProcessDefinitionPayloadWire: Same<
+        W.UpdateProcessDefinitionPayloadWire,
+        z.infer<typeof import('./api-schemas/process.js').UpdateProcessDefinitionPayloadSchema>
+    >;
+    ProcessScriptResourceMap: Same<
+        W.ProcessScriptResourceMap,
+        z.infer<typeof import('./api-schemas/process.js').ProcessScriptResourceMapSchema>
+    >;
+    ContentObjectStatusWire: Same<
+        W.ContentObjectStatusWire,
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectStatusSchema>
+    >;
+    ContentObjectTypeArray: Same<
+        W.ContentObjectTypeArray,
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectTypeArraySchema>
+    >;
+    ProjectedContentObjectApiResponseArray: Same<
+        W.ProjectedContentObjectApiResponseArray,
+        z.infer<typeof import('./api-schemas/content.js').ProjectedContentObjectApiResponseArraySchema>
+    >;
+    ContentObjectItemApiResponseArray: Same<
+        W.ContentObjectItemApiResponseArray,
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectItemApiResponseArraySchema>
+    >;
+    ContentObjectProcessingPriorityWire: Same<
+        W.ContentObjectProcessingPriorityWire,
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectProcessingPrioritySchema>
+    >;
+    ContentObjectApiResponseArray: Same<
+        W.ContentObjectApiResponseArray,
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectApiResponseArraySchema>
+    >;
+    CostExportCsvResponse: Same<
+        W.CostExportCsvResponse,
+        z.infer<typeof import('./api-schemas/content.js').CostExportCsvResponseSchema>
+    >;
+    SupportedEmbeddingTypesWire: Same<
+        W.SupportedEmbeddingTypesWire,
+        z.infer<typeof import('./api-schemas/content.js').SupportedEmbeddingTypesSchema>
+    >;
+    Record_SearchTypes_number: Same<
+        W.Record_SearchTypes_number,
+        z.infer<typeof import('./api-schemas/content.js').Record_SearchTypes_numberSchema>
+    >;
+    EmbeddingMap: Same<W.EmbeddingMap, z.infer<typeof import('./api-schemas/content.js').EmbeddingMapSchema>>;
+    ContentEmbeddingMap: Same<
+        W.ContentEmbeddingMap,
+        z.infer<typeof import('./api-schemas/content.js').ContentEmbeddingMapSchema>
+    >;
+    WorkflowRuleInputTypeWire: Same<
+        W.WorkflowRuleInputTypeWire,
+        z.infer<typeof import('./api-schemas/events.js').WorkflowRuleInputTypeSchema>
+    >;
+    WorkflowRuleItemArray: Same<
+        W.WorkflowRuleItemArray,
+        z.infer<typeof import('./api-schemas/events.js').WorkflowRuleItemArraySchema>
+    >;
+    CreateEventSubscriptionPayloadWire: Same<
+        W.CreateEventSubscriptionPayloadWire,
+        z.infer<typeof import('./api-schemas/events.js').CreateEventSubscriptionPayloadSchema>
+    >;
+    EventSubscriptionWire: Same<
+        W.EventSubscriptionWire,
+        z.infer<typeof import('./api-schemas/events.js').EventSubscriptionSchema>
+    >;
+    EventSubscriptionArray: Same<
+        W.EventSubscriptionArray,
+        z.infer<typeof import('./api-schemas/events.js').EventSubscriptionArraySchema>
+    >;
+    EventSubscriptionMutationResponseWire: Same<
+        W.EventSubscriptionMutationResponseWire,
+        z.infer<typeof import('./api-schemas/events.js').EventSubscriptionMutationResponseSchema>
+    >;
+    UpdateEventSubscriptionPayloadWire: Same<
+        W.UpdateEventSubscriptionPayloadWire,
+        z.infer<typeof import('./api-schemas/events.js').UpdateEventSubscriptionPayloadSchema>
+    >;
+    ServerSentEventsResponse: Same<
+        W.ServerSentEventsResponse,
+        z.infer<typeof import('./api-schemas/events.js').ServerSentEventsResponseSchema>
+    >;
+    ImportSpecWire: Same<W.ImportSpecWire, z.infer<typeof import('./api-schemas/process.js').ImportSpecSchema>>;
+    WorkflowExecutionStartResultArray: Same<
+        W.WorkflowExecutionStartResultArray,
+        z.infer<typeof import('./api-schemas/process.js').WorkflowExecutionStartResultArraySchema>
+    >;
+    RecordProcessRunPayloadWire: Same<
+        W.RecordProcessRunPayloadWire,
+        z.infer<typeof import('./api-schemas/process.js').RecordProcessRunPayloadSchema>
+    >;
+    ProcessTestSuiteArray: Same<
+        W.ProcessTestSuiteArray,
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestSuiteArraySchema>
+    >;
+    ProcessTestTargetWire: Same<
+        W.ProcessTestTargetWire,
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestTargetSchema>
+    >;
+    ProcessTestRunArray: Same<
+        W.ProcessTestRunArray,
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestRunArraySchema>
+    >;
+    EventDeliveryTargetWire: Same<
+        W.EventDeliveryTargetWire,
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryTargetSchema>
+    >;
+    EventDeliveryTargetInputWire: Same<
+        W.EventDeliveryTargetInputWire,
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryTargetInputSchema>
+    >;
+    ProcessEventDeliveryTargetWire: Same<
+        W.ProcessEventDeliveryTargetWire,
+        z.infer<typeof import('./api-schemas/events.js').ProcessEventDeliveryTargetSchema>
+    >;
+    EventIngestChannelArray: Same<
+        W.EventIngestChannelArray,
+        z.infer<typeof import('./api-schemas/events.js').EventIngestChannelArraySchema>
+    >;
+    CollectionStatusWire: Same<
+        W.CollectionStatusWire,
+        z.infer<typeof import('./api-schemas/content.js').CollectionStatusSchema>
+    >;
+    CollectionArray: Same<W.CollectionArray, z.infer<typeof import('./api-schemas/content.js').CollectionArraySchema>>;
+    AgentRunArtifactPathArray: Same<
+        W.AgentRunArtifactPathArray,
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunArtifactPathArraySchema>
+    >;
+    SignalAgentPayloadWire: Same<
+        W.SignalAgentPayloadWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').SignalAgentPayloadSchema>
+    >;
+    FileProcessingStatusWire: Same<
+        W.FileProcessingStatusWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').FileProcessingStatusSchema>
+    >;
+    AutonomousRunResponseWire: Same<
+        W.AutonomousRunResponseWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').AutonomousRunResponseSchema>
+    >;
+    AgentRunResponseWire: Same<
+        W.AgentRunResponseWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunResponseSchema>
+    >;
+    ListAgentRunsResponseWire: Same<
+        W.ListAgentRunsResponseWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ListAgentRunsResponseSchema>
+    >;
+    ProgrammaticRunResponseWire: Same<
+        W.ProgrammaticRunResponseWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ProgrammaticRunResponseSchema>
+    >;
+    SupervisedRunResponseWire: Same<
+        W.SupervisedRunResponseWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').SupervisedRunResponseSchema>
+    >;
+    AgentRunInternalsWire: Same<
+        W.AgentRunInternalsWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunInternalsSchema>
+    >;
+    RecordAgentRunPayloadWire: Same<
+        W.RecordAgentRunPayloadWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').RecordAgentRunPayloadSchema>
+    >;
+    RecordRunPayloadWire: Same<
+        W.RecordRunPayloadWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').RecordRunPayloadSchema>
+    >;
+    UpdateAgentRunStatusPayloadWire: Same<
+        W.UpdateAgentRunStatusPayloadWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').UpdateAgentRunStatusPayloadSchema>
+    >;
+    TurnTerminalTypeWire: Same<
+        W.TurnTerminalTypeWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').TurnTerminalTypeSchema>
+    >;
+    EvaluationSeverityWire: Same<
+        W.EvaluationSeverityWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationSeveritySchema>
+    >;
+    TurnEvaluationFlagWire: Same<
+        W.TurnEvaluationFlagWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').TurnEvaluationFlagSchema>
+    >;
+    ToolErrorClassWire: Same<
+        W.ToolErrorClassWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
+    >;
+    JudgeGateReasonWire: Same<
+        W.JudgeGateReasonWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeGateReasonSchema>
+    >;
+    JudgeOutcomeWire: Same<
+        W.JudgeOutcomeWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeOutcomeSchema>
+    >;
+    JudgeVerdictWire: Same<
+        W.JudgeVerdictWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeVerdictSchema>
+    >;
+    AgentEventWire: Same<W.AgentEventWire, z.infer<typeof import('./api-schemas/agent-runs.js').AgentEventSchema>>;
+    WorkflowDefinitionRefArray: Same<
+        W.WorkflowDefinitionRefArray,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowDefinitionRefArraySchema>
+    >;
+    ActivityTypeDefinitionWire: Same<
+        W.ActivityTypeDefinitionWire,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityTypeDefinitionSchema>
+    >;
+    ActivityPropertyDefinitionWire: Same<
+        W.ActivityPropertyDefinitionWire,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityPropertyDefinitionSchema>
+    >;
+    ActivityDefinitionWire: Same<
+        W.ActivityDefinitionWire,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityDefinitionSchema>
+    >;
+    ActivityCatalogWire: Same<
+        W.ActivityCatalogWire,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityCatalogSchema>
+    >;
+    TaskType_TIMER: Same<
+        W.TaskType_TIMER,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TaskType_TIMERSchema>
+    >;
+    TaskType_SIGNAL: Same<
+        W.TaskType_SIGNAL,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TaskType_SIGNALSchema>
+    >;
+    TaskType_CHILD_WORKFLOW: Same<
+        W.TaskType_CHILD_WORKFLOW,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TaskType_CHILD_WORKFLOWSchema>
+    >;
+    TaskType_ACTIVITY: Same<
+        W.TaskType_ACTIVITY,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TaskType_ACTIVITYSchema>
+    >;
+    TaskStatusWire: Same<W.TaskStatusWire, z.infer<typeof import('./api-schemas/workflow-runs.js').TaskStatusSchema>>;
+    ViewNavigationNodeWire: Same<
+        W.ViewNavigationNodeWire,
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewNavigationNodeSchema>
+    >;
+    ViewNavigationResultWire: Same<
+        W.ViewNavigationResultWire,
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewNavigationResultSchema>
+    >;
+    ViewNavigationResultMap: Same<
+        W.ViewNavigationResultMap,
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewNavigationResultMapSchema>
+    >;
+    PromptTemplateRefArray: Same<
+        W.PromptTemplateRefArray,
+        z.infer<typeof import('./api-schemas/prompt.js').PromptTemplateRefArraySchema>
+    >;
+    AggregatedToolArray: Same<
+        W.AggregatedToolArray,
+        z.infer<typeof import('./api-schemas/tools.js').AggregatedToolArraySchema>
+    >;
+    OAuthAuthStatusArray: Same<
+        W.OAuthAuthStatusArray,
+        z.infer<typeof import('./api-schemas/apps.js').OAuthAuthStatusArraySchema>
+    >;
+    KnownAuditActionWire: Same<
+        W.KnownAuditActionWire,
+        z.infer<typeof import('./api-schemas/audit-trail.js').KnownAuditActionSchema>
+    >;
+    AuditAggregationDimensionMap: Same<
+        W.AuditAggregationDimensionMap,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationDimensionMapSchema>
+    >;
+    AuditAggregationDimensionWire: Same<
+        W.AuditAggregationDimensionWire,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationDimensionSchema>
+    >;
+    AuditActionWire: Same<W.AuditActionWire, z.infer<typeof import('./api-schemas/audit-trail.js').AuditActionSchema>>;
+    ViewExperienceSchemaVersionWire: Same<
+        W.ViewExperienceSchemaVersionWire,
+        z.infer<typeof import('./api-schemas/views.js').ViewExperienceSchemaVersionSchema>
+    >;
+    ViewAgenticSearchModeWire: Same<
+        W.ViewAgenticSearchModeWire,
+        z.infer<typeof import('./api-schemas/views.js').ViewAgenticSearchModeSchema>
+    >;
+    ViewExperienceArray: Same<
+        W.ViewExperienceArray,
+        z.infer<typeof import('./api-schemas/views.js').ViewExperienceArraySchema>
+    >;
+    Extract_AppVersionGitRefType_branch_tag_commit: Same<
+        W.Extract_AppVersionGitRefType_branch_tag_commit,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').Extract_AppVersionGitRefType_branch_tag_commitSchema>
+    >;
+    AppPackageScopeWire: Same<
+        W.AppPackageScopeWire,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageScopeSchema>
+    >;
+    AppVersionRecordArray: Same<
+        W.AppVersionRecordArray,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionRecordArraySchema>
+    >;
+    AppToolCollectionArray: Same<
+        W.AppToolCollectionArray,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppToolCollectionArraySchema>
+    >;
+    SystemPackageQuery: Same<
+        W.SystemPackageQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').SystemPackageQuerySchema>
+    >;
+    InternalSecretDeleteResponse: Same<
+        W.InternalSecretDeleteResponse,
+        z.infer<typeof import('./api-schemas/secrets.js').InternalSecretDeleteResponseSchema>
+    >;
+    SupportedIntegrations_ask_user_webhook: Same<
+        W.SupportedIntegrations_ask_user_webhook,
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_ask_user_webhookSchema>
+    >;
+    SupportedIntegrations_resend: Same<
+        W.SupportedIntegrations_resend,
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_resendSchema>
+    >;
+    SupportedIntegrations_linkup: Same<
+        W.SupportedIntegrations_linkup,
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_linkupSchema>
+    >;
+    SupportedIntegrations_exa: Same<
+        W.SupportedIntegrations_exa,
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_exaSchema>
+    >;
+    SupportedIntegrations_serper: Same<
+        W.SupportedIntegrations_serper,
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_serperSchema>
+    >;
+    SupportedIntegrations_magic_pdf: Same<
+        W.SupportedIntegrations_magic_pdf,
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_magic_pdfSchema>
+    >;
+    SupportedIntegrations_aws: Same<
+        W.SupportedIntegrations_aws,
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_awsSchema>
+    >;
+    SupportedIntegrations_github: Same<
+        W.SupportedIntegrations_github,
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_githubSchema>
+    >;
+    SupportedIntegrations_gladia: Same<
+        W.SupportedIntegrations_gladia,
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_gladiaSchema>
+    >;
+    CompositeAppMenuNavItemWire: Same<
+        W.CompositeAppMenuNavItemWire,
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppMenuNavItemSchema>
+    >;
+    MCPOAuthConfigMap: Same<
+        W.MCPOAuthConfigMap,
+        z.infer<typeof import('./api-schemas/app-runtime.js').MCPOAuthConfigMapSchema>
+    >;
+    AppManifestArray: Same<
+        W.AppManifestArray,
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppManifestArraySchema>
+    >;
+    AppWidgetInfoMap: Same<
+        W.AppWidgetInfoMap,
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppWidgetInfoMapSchema>
+    >;
+    ProjectPluginArray: Same<
+        W.ProjectPluginArray,
+        z.infer<typeof import('./api-schemas/app-runtime.js').ProjectPluginArraySchema>
+    >;
+    InCodeTypeDefinitionArray: Same<
+        W.InCodeTypeDefinitionArray,
+        z.infer<typeof import('./api-schemas/app-runtime.js').InCodeTypeDefinitionArraySchema>
+    >;
+    RenderingTemplateDefinitionRefArray: Same<
+        W.RenderingTemplateDefinitionRefArray,
+        z.infer<typeof import('./api-schemas/app-runtime.js').RenderingTemplateDefinitionRefArraySchema>
+    >;
+    InCodeProcessDefinitionWire: Same<
+        W.InCodeProcessDefinitionWire,
+        z.infer<typeof import('./api-schemas/app-runtime.js').InCodeProcessDefinitionSchema>
+    >;
+    InCodeViewDefinitionArray: Same<
+        W.InCodeViewDefinitionArray,
+        z.infer<typeof import('./api-schemas/app-runtime.js').InCodeViewDefinitionArraySchema>
+    >;
+    InCodeProcessDefinitionArray: Same<
+        W.InCodeProcessDefinitionArray,
+        z.infer<typeof import('./api-schemas/app-runtime.js').InCodeProcessDefinitionArraySchema>
+    >;
+    AppInstallationArray: Same<
+        W.AppInstallationArray,
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppInstallationArraySchema>
+    >;
+    AppInstallationWithManifestArray: Same<
+        W.AppInstallationWithManifestArray,
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppInstallationWithManifestArraySchema>
+    >;
+    AppInstallationListEntryArray: Same<
+        W.AppInstallationListEntryArray,
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppInstallationListEntryArraySchema>
+    >;
+    BinaryFileResponse: Same<
+        W.BinaryFileResponse,
+        z.infer<typeof import('./api-schemas/app-runtime.js').BinaryFileResponseSchema>
+    >;
+    'component:AccountApiVersionPolicy': Same<
+        W.ApiComponentTypes['AccountApiVersionPolicy'],
+        z.infer<typeof import('./api-schemas/account.js').AccountApiVersionPolicySchema>
+    >;
+    'component:Account': Same<
+        W.ApiComponentTypes['Account'],
+        z.infer<typeof import('./api-schemas/account.js').AccountSchema>
+    >;
+    'component:UpdateAccountPayload': Same<
+        W.ApiComponentTypes['UpdateAccountPayload'],
+        z.infer<typeof import('./api-schemas/account.js').UpdateAccountPayloadSchema>
+    >;
+    'component:StripeBillingStatusResponse': Same<
+        W.ApiComponentTypes['StripeBillingStatusResponse'],
+        z.infer<typeof import('./api-schemas/account.js').StripeBillingStatusResponseSchema>
+    >;
+    'component:ApiKeyListQuery': Same<
+        W.ApiComponentTypes['ApiKeyListQuery'],
+        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyListQuerySchema>
+    >;
+    'component:QuotaStandingResponse': Same<
+        W.ApiComponentTypes['QuotaStandingResponse'],
+        z.infer<typeof import('./api-schemas/quota.js').QuotaStandingResponseSchema>
+    >;
+    'component:QuotaTierResponse': Same<
+        W.ApiComponentTypes['QuotaTierResponse'],
+        z.infer<typeof import('./api-schemas/quota.js').QuotaTierResponseSchema>
+    >;
+    'component:User': Same<W.ApiComponentTypes['User'], z.infer<typeof import('./api-schemas/user.js').UserSchema>>;
+    'component:UserArray': Same<
+        W.ApiComponentTypes['UserArray'],
+        z.infer<typeof import('./api-schemas/user.js').UserArraySchema>
+    >;
+    'component:UpdateUserPayload': Same<
+        W.ApiComponentTypes['UpdateUserPayload'],
+        z.infer<typeof import('./api-schemas/user.js').UpdateUserPayloadSchema>
+    >;
+    'component:DeleteByIdResult': Same<
+        W.ApiComponentTypes['DeleteByIdResult'],
+        z.infer<typeof import('./api-schemas/user.js').DeleteByIdResultSchema>
+    >;
+    'component:PrincipalIdentity': Same<
+        W.ApiComponentTypes['PrincipalIdentity'],
+        z.infer<typeof import('./api-schemas/user.js').PrincipalIdentitySchema>
+    >;
+    'component:SignupData': Same<
+        W.ApiComponentTypes['SignupData'],
+        z.infer<typeof import('./api-schemas/user.js').SignupDataSchema>
+    >;
+    'component:SignupPayload': Same<
+        W.ApiComponentTypes['SignupPayload'],
+        z.infer<typeof import('./api-schemas/user.js').SignupPayloadSchema>
+    >;
+    'component:UserRefArray': Same<
+        W.ApiComponentTypes['UserRefArray'],
+        z.infer<typeof import('./api-schemas/user.js').UserRefArraySchema>
+    >;
+    'component:UserGroup': Same<
+        W.ApiComponentTypes['UserGroup'],
+        z.infer<typeof import('./api-schemas/group.js').UserGroupSchema>
+    >;
+    'component:UserGroupArray': Same<
+        W.ApiComponentTypes['UserGroupArray'],
+        z.infer<typeof import('./api-schemas/group.js').UserGroupArraySchema>
+    >;
+    'component:UserGroupRef': Same<
+        W.ApiComponentTypes['UserGroupRef'],
+        z.infer<typeof import('./api-schemas/group.js').UserGroupRefSchema>
+    >;
+    'component:CreateUserGroupPayload': Same<
+        W.ApiComponentTypes['CreateUserGroupPayload'],
+        z.infer<typeof import('./api-schemas/group.js').CreateUserGroupPayloadSchema>
+    >;
+    'component:ListUserGroupsQuery': Same<
+        W.ApiComponentTypes['ListUserGroupsQuery'],
+        z.infer<typeof import('./api-schemas/group.js').ListUserGroupsQuerySchema>
+    >;
+    'component:UpdateUserGroupPayload': Same<
+        W.ApiComponentTypes['UpdateUserGroupPayload'],
+        z.infer<typeof import('./api-schemas/group.js').UpdateUserGroupPayloadSchema>
+    >;
+    'component:AccessControlEntry': Same<
+        W.ApiComponentTypes['AccessControlEntry'],
+        z.infer<typeof import('./api-schemas/access-control.js').AccessControlEntrySchema>
+    >;
+    'component:AccessControlEntryArray': Same<
+        W.ApiComponentTypes['AccessControlEntryArray'],
+        z.infer<typeof import('./api-schemas/access-control.js').AccessControlEntryArraySchema>
+    >;
+    'component:ACECreatePayload': Same<
+        W.ApiComponentTypes['ACECreatePayload'],
+        z.infer<typeof import('./api-schemas/access-control.js').ACECreatePayloadSchema>
+    >;
+    'component:ACEUpdatePayload': Same<
+        W.ApiComponentTypes['ACEUpdatePayload'],
+        z.infer<typeof import('./api-schemas/access-control.js').ACEUpdatePayloadSchema>
+    >;
+    'component:ProjectRefArray': Same<
+        W.ApiComponentTypes['ProjectRefArray'],
+        z.infer<typeof import('./api-schemas/apikey.js').ProjectRefArraySchema>
+    >;
+    'component:RoleDefinitionArray': Same<
+        W.ApiComponentTypes['RoleDefinitionArray'],
+        z.infer<typeof import('./api-schemas/access-control.js').RoleDefinitionArraySchema>
+    >;
+    'component:SystemRoleDefinitionArray': Same<
+        W.ApiComponentTypes['SystemRoleDefinitionArray'],
+        z.infer<typeof import('./api-schemas/access-control.js').SystemRoleDefinitionArraySchema>
+    >;
+    'component:ApiKey': Same<
+        W.ApiComponentTypes['ApiKey'],
+        z.infer<typeof import('./api-schemas/apikey.js').ApiKeySchema>
+    >;
+    'component:ApiKeyArray': Same<
+        W.ApiComponentTypes['ApiKeyArray'],
+        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyArraySchema>
+    >;
+    'component:ApiKeyWithValue': Same<
+        W.ApiComponentTypes['ApiKeyWithValue'],
+        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyWithValueSchema>
+    >;
+    'component:AccountApiKey': Same<
+        W.ApiComponentTypes['AccountApiKey'],
+        z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeySchema>
+    >;
+    'component:AccountApiKeyWithValue': Same<
+        W.ApiComponentTypes['AccountApiKeyWithValue'],
+        z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeyWithValueSchema>
+    >;
+    'component:AccountApiKeyArray': Same<
+        W.ApiComponentTypes['AccountApiKeyArray'],
+        z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeyArraySchema>
+    >;
+    'component:CreateAccountApiKeyPayload': Same<
+        W.ApiComponentTypes['CreateAccountApiKeyPayload'],
+        z.infer<typeof import('./api-schemas/apikey.js').CreateAccountApiKeyPayloadSchema>
+    >;
+    'component:UpdateAccountApiKeyPayload': Same<
+        W.ApiComponentTypes['UpdateAccountApiKeyPayload'],
+        z.infer<typeof import('./api-schemas/apikey.js').UpdateAccountApiKeyPayloadSchema>
+    >;
+    'component:ApiKeyReadResponse': Same<
+        W.ApiComponentTypes['ApiKeyReadResponse'],
+        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyReadResponseSchema>
+    >;
+    'component:ApiKeyReadQuery': Same<
+        W.ApiComponentTypes['ApiKeyReadQuery'],
+        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyReadQuerySchema>
+    >;
+    'component:CreateApiKeyPayload': Same<
+        W.ApiComponentTypes['CreateApiKeyPayload'],
+        z.infer<typeof import('./api-schemas/apikey.js').CreateApiKeyPayloadSchema>
+    >;
+    'component:UpdateApiKeyPayload': Same<
+        W.ApiComponentTypes['UpdateApiKeyPayload'],
+        z.infer<typeof import('./api-schemas/apikey.js').UpdateApiKeyPayloadSchema>
+    >;
+    'component:AuthTokenResponse': Same<
+        W.ApiComponentTypes['AuthTokenResponse'],
+        z.infer<typeof import('./api-schemas/apikey.js').AuthTokenResponseSchema>
+    >;
+    'component:DeleteOperationResult': Same<
+        W.ApiComponentTypes['DeleteOperationResult'],
+        z.infer<typeof import('./api-schemas/apikey.js').DeleteOperationResultSchema>
+    >;
+    'component:InviteUserRequestPayload': Same<
+        W.ApiComponentTypes['InviteUserRequestPayload'],
+        z.infer<typeof import('./api-schemas/invites.js').InviteUserRequestPayloadSchema>
+    >;
+    'component:InviteUserResponsePayload': Same<
+        W.ApiComponentTypes['InviteUserResponsePayload'],
+        z.infer<typeof import('./api-schemas/invites.js').InviteUserResponsePayloadSchema>
+    >;
+    'component:InviteAcceptanceResponse': Same<
+        W.ApiComponentTypes['InviteAcceptanceResponse'],
+        z.infer<typeof import('./api-schemas/invites.js').InviteAcceptanceResponseSchema>
+    >;
+    'component:InviteDeclineResponse': Same<
+        W.ApiComponentTypes['InviteDeclineResponse'],
+        z.infer<typeof import('./api-schemas/invites.js').InviteDeclineResponseSchema>
+    >;
+    'component:OnboardingProgress': Same<
+        W.ApiComponentTypes['OnboardingProgress'],
+        z.infer<typeof import('./api-schemas/invites.js').OnboardingProgressSchema>
+    >;
+    'component:AccountProjectsResponse': Same<
+        W.ApiComponentTypes['AccountProjectsResponse'],
+        z.infer<typeof import('./api-schemas/invites.js').AccountProjectsResponseSchema>
+    >;
+    'component:TransientToken_UserInviteTokenData_Array': Same<
+        W.ApiComponentTypes['TransientToken_UserInviteTokenData_Array'],
+        z.infer<typeof import('./api-schemas/invites.js').UserInviteTokenArraySchema>
+    >;
+    'component:ListProjectsQuery': Same<
+        W.ApiComponentTypes['ListProjectsQuery'],
+        z.infer<typeof import('./api-schemas/project.js').ListProjectsQuerySchema>
+    >;
+    'component:ProjectTagQuery': Same<
+        W.ApiComponentTypes['ProjectTagQuery'],
+        z.infer<typeof import('./api-schemas/project.js').ProjectTagQuerySchema>
+    >;
+    'component:ICreateProjectPayload': Same<
+        W.ApiComponentTypes['ICreateProjectPayload'],
+        z.infer<typeof import('./api-schemas/project.js').CreateProjectPayloadSchema>
+    >;
+    'component:ProjectPluginsUpdatePayload': Same<
+        W.ApiComponentTypes['ProjectPluginsUpdatePayload'],
+        z.infer<typeof import('./api-schemas/project.js').ProjectPluginsUpdatePayloadSchema>
+    >;
+    'component:CountResult': Same<
+        W.ApiComponentTypes['CountResult'],
+        z.infer<typeof import('./api-schemas/project.js').CountResultSchema>
+    >;
+    'component:ProjectIntegrationListResponse': Same<
+        W.ApiComponentTypes['ProjectIntegrationListResponse'],
+        z.infer<typeof import('./api-schemas/project.js').ProjectIntegrationListResponseSchema>
+    >;
+    'component:ProjectToolInfo': Same<
+        W.ApiComponentTypes['ProjectToolInfo'],
+        z.infer<typeof import('./api-schemas/project.js').ProjectToolInfoSchema>
+    >;
+    'component:ProjectToolInfoArray': Same<
+        W.ApiComponentTypes['ProjectToolInfoArray'],
+        z.infer<typeof import('./api-schemas/project.js').ProjectToolInfoArraySchema>
+    >;
+    'component:RenderingTemplateDefinition': Same<
+        W.ApiComponentTypes['RenderingTemplateDefinition'],
+        z.infer<typeof import('./api-schemas/project.js').RenderingTemplateDefinitionSchema>
+    >;
+    'component:RenderingTemplateDefinitionRef': Same<
+        W.ApiComponentTypes['RenderingTemplateDefinitionRef'],
+        z.infer<typeof import('./api-schemas/project.js').RenderingTemplateDefinitionRefSchema>
+    >;
+    'component:ProjectModelDefaults': Same<
+        W.ApiComponentTypes['ProjectModelDefaults'],
+        z.infer<typeof import('./api-schemas/project-configuration.js').ProjectModelDefaultsSchema>
+    >;
+    'component:ResourceVisibility': Same<
+        W.ApiComponentTypes['ResourceVisibility'],
+        z.infer<typeof import('./api-schemas/project-configuration.js').ResourceVisibilitySchema>
+    >;
+    'component:ProjectIndexingConfiguration': Same<
+        W.ApiComponentTypes['ProjectIndexingConfiguration'],
+        z.infer<typeof import('./api-schemas/project-configuration.js').ProjectIndexingConfigurationSchema>
+    >;
+    'component:ProjectConfigurationEmbedding': Same<
+        W.ApiComponentTypes['ProjectConfigurationEmbedding'],
+        z.infer<typeof import('./api-schemas/project-configuration.js').ProjectConfigurationEmbeddingSchema>
+    >;
+    'component:BrowserUseProjectConfiguration': Same<
+        W.ApiComponentTypes['BrowserUseProjectConfiguration'],
+        z.infer<typeof import('./api-schemas/project-configuration.js').BrowserUseProjectConfigurationSchema>
+    >;
+    'component:ProjectIntakeSniffConfiguration': Same<
+        W.ApiComponentTypes['ProjectIntakeSniffConfiguration'],
+        z.infer<typeof import('./api-schemas/project-configuration.js').ProjectIntakeSniffConfigurationSchema>
+    >;
+    'component:JSONSchema': Same<
+        W.ApiComponentTypes['JSONSchema'],
+        z.infer<typeof import('@llumiverse/common/schemas').JSONSchemaSchema>
+    >;
+    'component:ModelOptions': Same<
+        W.ApiComponentTypes['ModelOptions'],
+        z.infer<typeof import('@llumiverse/common/schemas').ModelOptionsSchema>
+    >;
+    'component:HttpTimeoutOptions': Same<
+        W.ApiComponentTypes['HttpTimeoutOptions'],
+        z.infer<typeof import('@llumiverse/common/schemas').HttpTimeoutOptionsSchema>
+    >;
+    'component:ContentTypeIntakePolicy': Same<
+        W.ApiComponentTypes['ContentTypeIntakePolicy'],
+        z.infer<typeof import('./api-schemas/store.js').ContentTypeIntakePolicySchema>
+    >;
+    'component:ProjectIntakeConfiguration': Same<
+        W.ApiComponentTypes['ProjectIntakeConfiguration'],
+        z.infer<typeof import('./api-schemas/project-configuration.js').ProjectIntakeConfigurationSchema>
+    >;
+    'component:ProjectConfiguration': Same<
+        W.ApiComponentTypes['ProjectConfiguration'],
+        z.infer<typeof import('./api-schemas/project-configuration.js').ProjectConfigurationSchema>
+    >;
+    'component:Project': Same<
+        W.ApiComponentTypes['Project'],
+        z.infer<typeof import('./api-schemas/project.js').ProjectSchema>
+    >;
+    'component:UpdateProjectPayload': Same<
+        W.ApiComponentTypes['UpdateProjectPayload'],
+        z.infer<typeof import('./api-schemas/project.js').UpdateProjectPayloadSchema>
+    >;
+    'component:UpdateProjectConfigurationPayload': Same<
+        W.ApiComponentTypes['UpdateProjectConfigurationPayload'],
+        z.infer<typeof import('./api-schemas/project.js').UpdateProjectConfigurationPayloadSchema>
+    >;
+    'component:ToolCollectionObject': Same<
+        W.ApiComponentTypes['ToolCollectionObject'],
+        z.infer<typeof import('./api-schemas/apps.js').ToolCollectionObjectSchema>
+    >;
+    'component:AppUIConfig': Same<
+        W.ApiComponentTypes['AppUIConfig'],
+        z.infer<typeof import('./api-schemas/apps.js').AppUIConfigSchema>
+    >;
+    'component:AppCapabilities': Same<
+        W.ApiComponentTypes['AppCapabilities'],
+        z.infer<typeof import('./api-schemas/apps.js').AppCapabilitiesSchema>
+    >;
+    'component:AppAccessControl': Same<
+        W.ApiComponentTypes['AppAccessControl'],
+        z.infer<typeof import('./api-schemas/apps.js').AppAccessControlSchema>
+    >;
+    'component:AppSourceConfig': Same<
+        W.ApiComponentTypes['AppSourceConfig'],
+        z.infer<typeof import('./api-schemas/apps.js').AppSourceConfigSchema>
+    >;
+    'component:AppManifestSource': Same<
+        W.ApiComponentTypes['AppManifestSource'],
+        z.infer<typeof import('./api-schemas/apps.js').AppManifestSourceSchema>
+    >;
+    'component:SuccessResponse': Same<
+        W.ApiComponentTypes['SuccessResponse'],
+        z.infer<typeof import('./api-schemas/oauth.js').SuccessResponseSchema>
+    >;
+    'component:OAuthProvider': Same<
+        W.ApiComponentTypes['OAuthProvider'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderSchema>
+    >;
+    'component:OAuthProviderArray': Same<
+        W.ApiComponentTypes['OAuthProviderArray'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderArraySchema>
+    >;
+    'component:CreateOAuthProviderPayload': Same<
+        W.ApiComponentTypes['CreateOAuthProviderPayload'],
+        z.infer<typeof import('./api-schemas/oauth.js').CreateOAuthProviderPayloadSchema>
+    >;
+    'component:UpdateOAuthProviderPayload': Same<
+        W.ApiComponentTypes['UpdateOAuthProviderPayload'],
+        z.infer<typeof import('./api-schemas/oauth.js').UpdateOAuthProviderPayloadSchema>
+    >;
+    'component:OAuthProviderAuthStatus': Same<
+        W.ApiComponentTypes['OAuthProviderAuthStatus'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderAuthStatusSchema>
+    >;
+    'component:OAuthProviderAuthorizeResponse': Same<
+        W.ApiComponentTypes['OAuthProviderAuthorizeResponse'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderAuthorizeResponseSchema>
+    >;
+    'component:OAuthProviderAccessTokenResponse': Same<
+        W.ApiComponentTypes['OAuthProviderAccessTokenResponse'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderAccessTokenResponseSchema>
+    >;
+    'component:OAuthProviderExchangePayload': Same<
+        W.ApiComponentTypes['OAuthProviderExchangePayload'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderExchangePayloadSchema>
+    >;
+    'component:OAuthClientType': Same<
+        W.ApiComponentTypes['OAuthClientType'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientTypeSchema>
+    >;
+    'component:OAuthClientStatus': Same<
+        W.ApiComponentTypes['OAuthClientStatus'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientStatusSchema>
+    >;
+    'component:OAuthRegistrationSource': Same<
+        W.ApiComponentTypes['OAuthRegistrationSource'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthRegistrationSourceSchema>
+    >;
+    'component:OAuthProjectBindingMode': Same<
+        W.ApiComponentTypes['OAuthProjectBindingMode'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthProjectBindingModeSchema>
+    >;
+    'component:OAuthTokenEndpointAuthMethod': Same<
+        W.ApiComponentTypes['OAuthTokenEndpointAuthMethod'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthTokenEndpointAuthMethodSchema>
+    >;
+    'component:OAuthGrantType': Same<
+        W.ApiComponentTypes['OAuthGrantType'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthGrantTypeSchema>
+    >;
+    'component:OAuthResponseType': Same<
+        W.ApiComponentTypes['OAuthResponseType'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthResponseTypeSchema>
+    >;
+    'component:OAuthAuthorizationRequestStatus': Same<
+        W.ApiComponentTypes['OAuthAuthorizationRequestStatus'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthAuthorizationRequestStatusSchema>
+    >;
+    'component:OAuthClientRegistrationMode': Same<
+        W.ApiComponentTypes['OAuthClientRegistrationMode'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientRegistrationModeSchema>
+    >;
+    'component:OAuthGrantStatus': Same<
+        W.ApiComponentTypes['OAuthGrantStatus'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthGrantStatusSchema>
+    >;
+    'component:OAuthGrantSortField': Same<
+        W.ApiComponentTypes['OAuthGrantSortField'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthGrantSortFieldSchema>
+    >;
+    'component:OAuthGrantSortOrder': Same<
+        W.ApiComponentTypes['OAuthGrantSortOrder'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthGrantSortOrderSchema>
+    >;
+    'component:OAuthAuthorizationServerMetadata': Same<
+        W.ApiComponentTypes['OAuthAuthorizationServerMetadata'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthAuthorizationServerMetadataSchema>
+    >;
+    'component:OAuthClientDisplayMetadata': Same<
+        W.ApiComponentTypes['OAuthClientDisplayMetadata'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientDisplayMetadataSchema>
+    >;
+    'component:OAuthAuthorizeQuery': Same<
+        W.ApiComponentTypes['OAuthAuthorizeQuery'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthAuthorizeQuerySchema>
+    >;
+    'component:CreateOAuthAuthorizationRequestPayload': Same<
+        W.ApiComponentTypes['CreateOAuthAuthorizationRequestPayload'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').CreateOAuthAuthorizationRequestPayloadSchema>
+    >;
+    'component:OAuthAuthorizationRequest': Same<
+        W.ApiComponentTypes['OAuthAuthorizationRequest'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthAuthorizationRequestSchema>
+    >;
+    'component:OAuthAuthorizationRequestGeneratedApp': Same<
+        W.ApiComponentTypes['OAuthAuthorizationRequestGeneratedApp'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthAuthorizationRequestGeneratedAppSchema>
+    >;
+    'component:OAuthLoginPayload': Same<
+        W.ApiComponentTypes['OAuthLoginPayload'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginPayloadSchema>
+    >;
+    'component:OAuthLoginUserNotFoundResponse': Same<
+        W.ApiComponentTypes['OAuthLoginUserNotFoundResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginUserNotFoundResponseSchema>
+    >;
+    'component:OAuthLoginDecisionResponse': Same<
+        W.ApiComponentTypes['OAuthLoginDecisionResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginDecisionResponseSchema>
+    >;
+    'component:ApproveOAuthAuthorizationRequestPayload': Same<
+        W.ApiComponentTypes['ApproveOAuthAuthorizationRequestPayload'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').ApproveOAuthAuthorizationRequestPayloadSchema>
+    >;
+    'component:OAuthGrantableScopesResponse': Same<
+        W.ApiComponentTypes['OAuthGrantableScopesResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthGrantableScopesResponseSchema>
+    >;
+    'component:OAuthAuthorizationDecisionResponse': Same<
+        W.ApiComponentTypes['OAuthAuthorizationDecisionResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthAuthorizationDecisionResponseSchema>
+    >;
+    'component:OAuthDeviceAuthorizationRequest': Same<
+        W.ApiComponentTypes['OAuthDeviceAuthorizationRequest'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthDeviceAuthorizationRequestSchema>
+    >;
+    'component:OAuthDeviceAuthorizationResponse': Same<
+        W.ApiComponentTypes['OAuthDeviceAuthorizationResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthDeviceAuthorizationResponseSchema>
+    >;
+    'component:OAuthTokenResponse': Same<
+        W.ApiComponentTypes['OAuthTokenResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthTokenResponseSchema>
+    >;
+    'component:OAuthClient': Same<
+        W.ApiComponentTypes['OAuthClient'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientSchema>
+    >;
+    'component:OAuthClientArray': Same<
+        W.ApiComponentTypes['OAuthClientArray'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientArraySchema>
+    >;
+    'component:OAuthClientCreateResponse': Same<
+        W.ApiComponentTypes['OAuthClientCreateResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientCreateResponseSchema>
+    >;
+    'component:OAuthClientScopeMetadata': Same<
+        W.ApiComponentTypes['OAuthClientScopeMetadata'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientScopeMetadataSchema>
+    >;
+    'component:CreateOAuthClientPayload': Same<
+        W.ApiComponentTypes['CreateOAuthClientPayload'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').CreateOAuthClientPayloadSchema>
+    >;
+    'component:UpdateOAuthClientPayload': Same<
+        W.ApiComponentTypes['UpdateOAuthClientPayload'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').UpdateOAuthClientPayloadSchema>
+    >;
+    'component:OAuthGrant': Same<
+        W.ApiComponentTypes['OAuthGrant'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthGrantSchema>
+    >;
+    'component:ListOAuthGrantsQuery': Same<
+        W.ApiComponentTypes['ListOAuthGrantsQuery'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').ListOAuthGrantsQuerySchema>
+    >;
+    'component:RevokeOAuthGrantQuery': Same<
+        W.ApiComponentTypes['RevokeOAuthGrantQuery'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').RevokeOAuthGrantQuerySchema>
+    >;
+    'component:BulkRevokeOAuthGrantsPayload': Same<
+        W.ApiComponentTypes['BulkRevokeOAuthGrantsPayload'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').BulkRevokeOAuthGrantsPayloadSchema>
+    >;
+    'component:OAuthGrantListResponse': Same<
+        W.ApiComponentTypes['OAuthGrantListResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthGrantListResponseSchema>
+    >;
+    'component:OAuthGrantRevokeResponse': Same<
+        W.ApiComponentTypes['OAuthGrantRevokeResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthGrantRevokeResponseSchema>
+    >;
+    'component:SupportedProviders': Same<
+        W.ApiComponentTypes['SupportedProviders'],
+        z.infer<typeof import('./api-schemas/environment.js').SupportedProvidersSchema>
+    >;
+    'component:ExecutionEnvironmentRef': Same<
+        W.ApiComponentTypes['ExecutionEnvironmentRef'],
+        z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentRefSchema>
+    >;
+    'component:ExecutionEnvironment': Same<
+        W.ApiComponentTypes['ExecutionEnvironment'],
+        z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSchema>
+    >;
+    'component:ExecutionEnvironmentArray': Same<
+        W.ApiComponentTypes['ExecutionEnvironmentArray'],
+        z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentArraySchema>
+    >;
+    'component:ExecutionEnvironmentSettings': Same<
+        W.ApiComponentTypes['ExecutionEnvironmentSettings'],
+        z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentSettingsSchema>
+    >;
+    'component:ExecutionEnvironmentCreatePayload': Same<
+        W.ApiComponentTypes['ExecutionEnvironmentCreatePayload'],
+        z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentCreatePayloadSchema>
+    >;
+    'component:ExecutionEnvironmentUpdatePayload': Same<
+        W.ApiComponentTypes['ExecutionEnvironmentUpdatePayload'],
+        z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentUpdatePayloadSchema>
+    >;
+    'component:ExecutionEnvironmentConfigUpdatePayload': Same<
+        W.ApiComponentTypes['ExecutionEnvironmentConfigUpdatePayload'],
+        z.infer<typeof import('./api-schemas/environment.js').ExecutionEnvironmentConfigUpdatePayloadSchema>
+    >;
+    'component:EnableEnvironmentModelPayload': Same<
+        W.ApiComponentTypes['EnableEnvironmentModelPayload'],
+        z.infer<typeof import('./api-schemas/environment.js').EnableEnvironmentModelPayloadSchema>
+    >;
+    'component:ListEnvironmentsQuery': Same<
+        W.ApiComponentTypes['ListEnvironmentsQuery'],
+        z.infer<typeof import('./api-schemas/environment.js').ListEnvironmentsQuerySchema>
+    >;
+    'component:MigrateInteractionsPayload': Same<
+        W.ApiComponentTypes['MigrateInteractionsPayload'],
+        z.infer<typeof import('./api-schemas/environment.js').MigrateInteractionsPayloadSchema>
+    >;
+    'component:MigrateInteractionsResult': Same<
+        W.ApiComponentTypes['MigrateInteractionsResult'],
+        z.infer<typeof import('./api-schemas/environment.js').MigrateInteractionsResultSchema>
+    >;
+    'component:VirtualEnvEntry': Same<
+        W.ApiComponentTypes['VirtualEnvEntry'],
+        z.infer<typeof import('./api-schemas/environment.js').VirtualEnvEntrySchema>
+    >;
+    'component:LoadBalancingEnvConfig': Same<
+        W.ApiComponentTypes['LoadBalancingEnvConfig'],
+        z.infer<typeof import('./api-schemas/environment.js').LoadBalancingEnvConfigSchema>
+    >;
+    'component:LoadBalancingEnvEntryConfig': Same<
+        W.ApiComponentTypes['LoadBalancingEnvEntryConfig'],
+        z.infer<typeof import('./api-schemas/environment.js').LoadBalancingEnvEntryConfigSchema>
+    >;
+    'component:MediatorEnvConfig': Same<
+        W.ApiComponentTypes['MediatorEnvConfig'],
+        z.infer<typeof import('./api-schemas/environment.js').MediatorEnvConfigSchema>
+    >;
+    'component:AIModel': Same<
+        W.ApiComponentTypes['AIModel'],
+        z.infer<typeof import('@llumiverse/common/schemas').AIModelSchema>
+    >;
+    'component:AIModelArray': Same<
+        W.ApiComponentTypes['AIModelArray'],
+        z.infer<typeof import('@llumiverse/common/schemas').AIModelArraySchema>
+    >;
+    'component:AIModelStatus': Same<
+        W.ApiComponentTypes['AIModelStatus'],
+        z.infer<typeof import('@llumiverse/common/schemas').AIModelStatusSchema>
+    >;
+    'component:ModelType': Same<
+        W.ApiComponentTypes['ModelType'],
+        z.infer<typeof import('@llumiverse/common/schemas').ModelTypeSchema>
+    >;
+    'component:ModelSearchPayload': Same<
+        W.ApiComponentTypes['ModelSearchPayload'],
+        z.infer<typeof import('@llumiverse/common/schemas').ModelSearchPayloadSchema>
+    >;
+    'component:RunAnalyticsQuery': Same<
+        W.ApiComponentTypes['RunAnalyticsQuery'],
+        z.infer<typeof import('./api-schemas/analytics.js').RunAnalyticsQuerySchema>
+    >;
+    'component:RunAnalyticsResult': Same<
+        W.ApiComponentTypes['RunAnalyticsResult'],
+        z.infer<typeof import('./api-schemas/analytics.js').RunAnalyticsResultSchema>
+    >;
+    'component:RunAnalyticsResultArray': Same<
+        W.ApiComponentTypes['RunAnalyticsResultArray'],
+        z.infer<typeof import('./api-schemas/analytics.js').RunAnalyticsResultArraySchema>
+    >;
+    'component:RunAnalyticsGroupBy': Same<
+        W.ApiComponentTypes['RunAnalyticsGroupBy'],
+        z.infer<typeof import('./api-schemas/analytics.js').RunAnalyticsGroupBySchema>
+    >;
+    'component:AnalyticsAxis': Same<
+        W.ApiComponentTypes['AnalyticsAxis'],
+        z.infer<typeof import('./api-schemas/analytics.js').AnalyticsAxisSchema>
+    >;
+    'component:TimeResolution': Same<
+        W.ApiComponentTypes['TimeResolution'],
+        z.infer<typeof import('./api-schemas/analytics.js').TimeResolutionSchema>
+    >;
+    'component:EmbeddingsApiRequest': Same<
+        W.ApiComponentTypes['EmbeddingsApiRequest'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingsApiRequestSchema>
+    >;
+    'component:EmbeddingsApiInput': Same<
+        W.ApiComponentTypes['EmbeddingsApiInput'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingsApiInputSchema>
+    >;
+    'component:EmbeddingsApiSource': Same<
+        W.ApiComponentTypes['EmbeddingsApiSource'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingsApiSourceSchema>
+    >;
+    'component:EmbeddingsApiTextInput': Same<
+        W.ApiComponentTypes['EmbeddingsApiTextInput'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingsApiTextInputSchema>
+    >;
+    'component:EmbeddingsApiImageInput': Same<
+        W.ApiComponentTypes['EmbeddingsApiImageInput'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingsApiImageInputSchema>
+    >;
+    'component:EmbeddingsApiVideoInput': Same<
+        W.ApiComponentTypes['EmbeddingsApiVideoInput'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingsApiVideoInputSchema>
+    >;
+    'component:EmbeddingsApiAudioInput': Same<
+        W.ApiComponentTypes['EmbeddingsApiAudioInput'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingsApiAudioInputSchema>
+    >;
+    'component:EmbeddingTaskType': Same<
+        W.ApiComponentTypes['EmbeddingTaskType'],
+        z.infer<typeof import('@llumiverse/common/schemas').EmbeddingTaskTypeSchema>
+    >;
+    'component:EmbeddingsResult': Same<
+        W.ApiComponentTypes['EmbeddingsResult'],
+        z.infer<typeof import('@llumiverse/common/schemas').EmbeddingsResultSchema>
+    >;
+    'component:EmbeddingResultItem': Same<
+        W.ApiComponentTypes['EmbeddingResultItem'],
+        z.infer<typeof import('@llumiverse/common/schemas').EmbeddingResultItemSchema>
+    >;
+    'component:EmbeddingOutput': Same<
+        W.ApiComponentTypes['EmbeddingOutput'],
+        z.infer<typeof import('@llumiverse/common/schemas').EmbeddingOutputSchema>
+    >;
+    'component:EmbeddingsTokenUsage': Same<
+        W.ApiComponentTypes['EmbeddingsTokenUsage'],
+        z.infer<typeof import('@llumiverse/common/schemas').EmbeddingsTokenUsageSchema>
+    >;
+    'component:JSONValue': Same<
+        W.ApiComponentTypes['JSONValue'],
+        z.infer<typeof import('@llumiverse/common/schemas').JSONValueSchema>
+    >;
+    'component:JSONObject': Same<
+        W.ApiComponentTypes['JSONObject'],
+        z.infer<typeof import('@llumiverse/common/schemas').JSONObjectSchema>
+    >;
+    'component:PromptRole': Same<
+        W.ApiComponentTypes['PromptRole'],
+        z.infer<typeof import('@llumiverse/common/schemas').PromptRoleSchema>
+    >;
+    'component:Modalities': Same<
+        W.ApiComponentTypes['Modalities'],
+        z.infer<typeof import('@llumiverse/common/schemas').ModalitiesSchema>
+    >;
+    'component:DataSource': Same<
+        W.ApiComponentTypes['DataSource'],
+        z.infer<typeof import('@llumiverse/common/schemas').DataSourceSchema>
+    >;
+    'component:PromptSegment': Same<
+        W.ApiComponentTypes['PromptSegment'],
+        z.infer<typeof import('@llumiverse/common/schemas').PromptSegmentSchema>
+    >;
+    'component:ToolDefinition': Same<
+        W.ApiComponentTypes['ToolDefinition'],
+        z.infer<typeof import('@llumiverse/common/schemas').ToolDefinitionSchema>
+    >;
+    'component:ToolUse': Same<
+        W.ApiComponentTypes['ToolUse'],
+        z.infer<typeof import('@llumiverse/common/schemas').ToolUseSchema>
+    >;
+    'component:TextResult': Same<
+        W.ApiComponentTypes['TextResult'],
+        z.infer<typeof import('@llumiverse/common/schemas').TextResultSchema>
+    >;
+    'component:JsonResult': Same<
+        W.ApiComponentTypes['JsonResult'],
+        z.infer<typeof import('@llumiverse/common/schemas').JsonResultSchema>
+    >;
+    'component:ImageResult': Same<
+        W.ApiComponentTypes['ImageResult'],
+        z.infer<typeof import('@llumiverse/common/schemas').ImageResultSchema>
+    >;
+    'component:VideoResult': Same<
+        W.ApiComponentTypes['VideoResult'],
+        z.infer<typeof import('@llumiverse/common/schemas').VideoResultSchema>
+    >;
+    'component:CompletionResult': Same<
+        W.ApiComponentTypes['CompletionResult'],
+        z.infer<typeof import('@llumiverse/common/schemas').CompletionResultSchema>
+    >;
+    'component:ExecutionTokenUsage': Same<
+        W.ApiComponentTypes['ExecutionTokenUsage'],
+        z.infer<typeof import('@llumiverse/common/schemas').ExecutionTokenUsageSchema>
+    >;
+    'component:StatelessExecutionOptions': Same<
+        W.ApiComponentTypes['StatelessExecutionOptions'],
+        z.infer<typeof import('@llumiverse/common/schemas').StatelessExecutionOptionsSchema>
+    >;
+    'component:UpdateInteractionConfigurationPayload': Same<
+        W.ApiComponentTypes['UpdateInteractionConfigurationPayload'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').UpdateInteractionConfigurationPayloadSchema>
+    >;
+    'component:InteractionConfigurationRecord': Same<
+        W.ApiComponentTypes['InteractionConfigurationRecord'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InteractionConfigurationRecordSchema>
+    >;
+    'component:InteractionConfigurationResult': Same<
+        W.ApiComponentTypes['InteractionConfigurationResult'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InteractionConfigurationResultSchema>
+    >;
+    'component:CreateInferenceProfilePayload': Same<
+        W.ApiComponentTypes['CreateInferenceProfilePayload'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').CreateInferenceProfilePayloadSchema>
+    >;
+    'component:UpdateInferenceProfilePayload': Same<
+        W.ApiComponentTypes['UpdateInferenceProfilePayload'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').UpdateInferenceProfilePayloadSchema>
+    >;
+    'component:InferenceProfileRecord': Same<
+        W.ApiComponentTypes['InferenceProfileRecord'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileRecordSchema>
+    >;
+    'component:InferenceProfileUsage': Same<
+        W.ApiComponentTypes['InferenceProfileUsage'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileUsageSchema>
+    >;
+    'component:InferenceProfileUsageEntry': Same<
+        W.ApiComponentTypes['InferenceProfileUsageEntry'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileUsageEntrySchema>
+    >;
+    'component:InferenceProfileUsageQuery': Same<
+        W.ApiComponentTypes['InferenceProfileUsageQuery'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileUsageQuerySchema>
+    >;
+    'component:InferenceProfileRecordArray': Same<
+        W.ApiComponentTypes['InferenceProfileRecordArray'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileRecordArraySchema>
+    >;
+    'component:InferenceProfileId': Same<
+        W.ApiComponentTypes['InferenceProfileId'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileIdSchema>
+    >;
+    'component:InferenceProfileName': Same<
+        W.ApiComponentTypes['InferenceProfileName'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileNameSchema>
+    >;
+    'component:InferenceProfile': Same<
+        W.ApiComponentTypes['InferenceProfile'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSchema>
+    >;
+    'component:InferenceProfileSnapshot': Same<
+        W.ApiComponentTypes['InferenceProfileSnapshot'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSnapshotSchema>
+    >;
+    'component:ProjectInferenceProfiles': Same<
+        W.ApiComponentTypes['ProjectInferenceProfiles'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').ProjectInferenceProfilesSchema>
+    >;
+    'component:InteractionStatus': Same<
+        W.ApiComponentTypes['InteractionStatus'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionStatusSchema>
+    >;
+    'component:InteractionVisibility': Same<
+        W.ApiComponentTypes['InteractionVisibility'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionVisibilitySchema>
+    >;
+    'component:PromptModalities': Same<
+        W.ApiComponentTypes['PromptModalities'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptModalitiesSchema>
+    >;
+    'component:PromptStatus': Same<
+        W.ApiComponentTypes['PromptStatus'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptStatusSchema>
+    >;
+    'component:PromptSegmentDefType': Same<
+        W.ApiComponentTypes['PromptSegmentDefType'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptSegmentDefTypeSchema>
+    >;
+    'component:TemplateType': Same<
+        W.ApiComponentTypes['TemplateType'],
+        z.infer<typeof import('./api-schemas/interaction.js').TemplateTypeSchema>
+    >;
+    'component:SchemaRef': Same<
+        W.ApiComponentTypes['SchemaRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').SchemaRefSchema>
+    >;
+    'component:CachePolicy': Same<
+        W.ApiComponentTypes['CachePolicy'],
+        z.infer<typeof import('./api-schemas/interaction.js').CachePolicySchema>
+    >;
+    'component:PromptTemplate': Same<
+        W.ApiComponentTypes['PromptTemplate'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptTemplateSchema>
+    >;
+    'component:InteractionPromptTemplateInput': Same<
+        W.ApiComponentTypes['InteractionPromptTemplateInput'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionPromptTemplateInputSchema>
+    >;
+    'component:PromptTemplateCreatePayload': Same<
+        W.ApiComponentTypes['PromptTemplateCreatePayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptTemplateCreatePayloadSchema>
+    >;
+    'component:PromptTemplateUpdatePayload': Same<
+        W.ApiComponentTypes['PromptTemplateUpdatePayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptTemplateUpdatePayloadSchema>
+    >;
+    'component:PromptTemplateRef': Same<
+        W.ApiComponentTypes['PromptTemplateRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptTemplateRefSchema>
+    >;
+    'component:PromptSegmentDef': Same<
+        W.ApiComponentTypes['PromptSegmentDef'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptSegmentDefSchema>
+    >;
+    'component:InteractionPromptSegmentInput': Same<
+        W.ApiComponentTypes['InteractionPromptSegmentInput'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionPromptSegmentInputSchema>
+    >;
+    'component:PromptSegmentRef_PromptTemplateRef': Same<
+        W.ApiComponentTypes['PromptSegmentRef_PromptTemplateRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptSegmentRef_PromptTemplateRefSchema>
+    >;
+    'component:InCodePrompt': Same<
+        W.ApiComponentTypes['InCodePrompt'],
+        z.infer<typeof import('./api-schemas/interaction.js').InCodePromptSchema>
+    >;
+    'component:Interaction': Same<
+        W.ApiComponentTypes['Interaction'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionSchema>
+    >;
+    'component:InteractionArray': Same<
+        W.ApiComponentTypes['InteractionArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionArraySchema>
+    >;
+    'component:InteractionRef': Same<
+        W.ApiComponentTypes['InteractionRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionRefSchema>
+    >;
+    'component:InteractionRefArray': Same<
+        W.ApiComponentTypes['InteractionRefArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionRefArraySchema>
+    >;
+    'component:InteractionName': Same<
+        W.ApiComponentTypes['InteractionName'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionNameSchema>
+    >;
+    'component:InteractionNameArray': Same<
+        W.ApiComponentTypes['InteractionNameArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionNameArraySchema>
+    >;
+    'component:ExportedPromptTemplateRef': Same<
+        W.ApiComponentTypes['ExportedPromptTemplateRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExportedPromptTemplateRefSchema>
+    >;
+    'component:PromptSegmentRef_ExportedPromptTemplateRef': Same<
+        W.ApiComponentTypes['PromptSegmentRef_ExportedPromptTemplateRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptSegmentRef_ExportedPromptTemplateRefSchema>
+    >;
+    'component:InteractionRefWithSchema': Same<
+        W.ApiComponentTypes['InteractionRefWithSchema'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionRefWithSchemaSchema>
+    >;
+    'component:InteractionRefWithSchemaArray': Same<
+        W.ApiComponentTypes['InteractionRefWithSchemaArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionRefWithSchemaArraySchema>
+    >;
+    'component:InteractionTags': Same<
+        W.ApiComponentTypes['InteractionTags'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionTagsSchema>
+    >;
+    'component:InteractionTagsArray': Same<
+        W.ApiComponentTypes['InteractionTagsArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionTagsArraySchema>
+    >;
+    'component:InteractionEndpoint': Same<
+        W.ApiComponentTypes['InteractionEndpoint'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionEndpointSchema>
+    >;
+    'component:InteractionEndpointArray': Same<
+        W.ApiComponentTypes['InteractionEndpointArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionEndpointArraySchema>
+    >;
+    'component:InteractionEndpointQuery': Same<
+        W.ApiComponentTypes['InteractionEndpointQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionEndpointQuerySchema>
+    >;
+    'component:InteractionCreatePayload': Same<
+        W.ApiComponentTypes['InteractionCreatePayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionCreatePayloadSchema>
+    >;
+    'component:InteractionUpdatePayload': Same<
+        W.ApiComponentTypes['InteractionUpdatePayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionUpdatePayloadSchema>
+    >;
+    'component:InteractionPublishPayload': Same<
+        W.ApiComponentTypes['InteractionPublishPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionPublishPayloadSchema>
+    >;
+    'component:InteractionForkPayload': Same<
+        W.ApiComponentTypes['InteractionForkPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionForkPayloadSchema>
+    >;
+    'component:InteractionsExportPayload': Same<
+        W.ApiComponentTypes['InteractionsExportPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionsExportPayloadSchema>
+    >;
+    'component:InteractionSearchQuery': Same<
+        W.ApiComponentTypes['InteractionSearchQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionSearchQuerySchema>
+    >;
+    'component:ResolveInteractionQuery': Same<
+        W.ApiComponentTypes['ResolveInteractionQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').ResolveInteractionQuerySchema>
+    >;
+    'component:CatalogInteractionRef': Same<
+        W.ApiComponentTypes['CatalogInteractionRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefSchema>
+    >;
+    'component:CatalogInteractionRefArray': Same<
+        W.ApiComponentTypes['CatalogInteractionRefArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefArraySchema>
+    >;
+    'component:InCodeInteraction': Same<
+        W.ApiComponentTypes['InCodeInteraction'],
+        z.infer<typeof import('./api-schemas/interaction.js').InCodeInteractionSchema>
+    >;
+    'component:ResolvedCatalogInteraction': Same<
+        W.ApiComponentTypes['ResolvedCatalogInteraction'],
+        z.infer<typeof import('./api-schemas/interaction.js').ResolvedCatalogInteractionSchema>
+    >;
+    'component:CatalogTagQuery': Same<
+        W.ApiComponentTypes['CatalogTagQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogTagQuerySchema>
+    >;
+    'component:StoredCatalogInteractionsQuery': Same<
+        W.ApiComponentTypes['StoredCatalogInteractionsQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').StoredCatalogInteractionsQuerySchema>
+    >;
+    'component:ModelSource': Same<
+        W.ApiComponentTypes['ModelSource'],
+        z.infer<typeof import('./api-schemas/interaction.js').ModelSourceSchema>
+    >;
+    'component:ResolvedEnvironmentInfo': Same<
+        W.ApiComponentTypes['ResolvedEnvironmentInfo'],
+        z.infer<typeof import('./api-schemas/interaction.js').ResolvedEnvironmentInfoSchema>
+    >;
+    'component:ResolvedInteractionExecutionInfo': Same<
+        W.ApiComponentTypes['ResolvedInteractionExecutionInfo'],
+        z.infer<typeof import('./api-schemas/interaction.js').ResolvedInteractionExecutionInfoSchema>
+    >;
+    'component:FacetSpec': Same<
+        W.ApiComponentTypes['FacetSpec'],
+        z.infer<typeof import('./api-schemas/interaction.js').FacetSpecSchema>
+    >;
+    'component:NumberValueMap': Same<
+        W.ApiComponentTypes['NumberValueMap'],
+        z.infer<typeof import('./api-schemas/interaction.js').NumberValueMapSchema>
+    >;
+    'component:ComputeInteractionFacetPayload': Same<
+        W.ApiComponentTypes['ComputeInteractionFacetPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').ComputeInteractionFacetPayloadSchema>
+    >;
+    'component:ComputedFacetResponse': Same<
+        W.ApiComponentTypes['ComputedFacetResponse'],
+        z.infer<typeof import('./api-schemas/interaction.js').ComputedFacetResponseSchema>
+    >;
+    'component:ImprovePromptPayloadConfig': Same<
+        W.ApiComponentTypes['ImprovePromptPayloadConfig'],
+        z.infer<typeof import('./api-schemas/interaction.js').ImprovePromptPayloadConfigSchema>
+    >;
+    'component:ImprovePromptPayload': Same<
+        W.ApiComponentTypes['ImprovePromptPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').ImprovePromptPayloadSchema>
+    >;
+    'component:PromptImprovementResponse': Same<
+        W.ApiComponentTypes['PromptImprovementResponse'],
+        z.infer<typeof import('./api-schemas/interaction.js').PromptImprovementResponseSchema>
+    >;
+    'component:GenerateTestDataPayload': Same<
+        W.ApiComponentTypes['GenerateTestDataPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').GenerateTestDataPayloadSchema>
+    >;
+    'component:GeneratedTestDataRecord': Same<
+        W.ApiComponentTypes['GeneratedTestDataRecord'],
+        z.infer<typeof import('./api-schemas/interaction.js').GeneratedTestDataRecordSchema>
+    >;
+    'component:GeneratedTestDataRecordArray': Same<
+        W.ApiComponentTypes['GeneratedTestDataRecordArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').GeneratedTestDataRecordArraySchema>
+    >;
+    'component:GenerateInteractionPayload': Same<
+        W.ApiComponentTypes['GenerateInteractionPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').GenerateInteractionPayloadSchema>
+    >;
+    'component:GeneratedInteractionDefinition': Same<
+        W.ApiComponentTypes['GeneratedInteractionDefinition'],
+        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionDefinitionSchema>
+    >;
+    'component:GeneratedInteractionDefinitionArray': Same<
+        W.ApiComponentTypes['GeneratedInteractionDefinitionArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionDefinitionArraySchema>
+    >;
+    'component:GeneratedInteractionPromptTemplate': Same<
+        W.ApiComponentTypes['GeneratedInteractionPromptTemplate'],
+        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionPromptTemplateSchema>
+    >;
+    'component:GeneratedInteractionPromptSegment': Same<
+        W.ApiComponentTypes['GeneratedInteractionPromptSegment'],
+        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionPromptSegmentSchema>
+    >;
+    'component:AgentRunnerOptions': Same<
+        W.ApiComponentTypes['AgentRunnerOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').AgentRunnerOptionsSchema>
+    >;
+    'component:AgentSearchScope': Same<
+        W.ApiComponentTypes['AgentSearchScope'],
+        z.infer<typeof import('./api-schemas/interaction.js').AgentSearchScopeSchema>
+    >;
+    'component:AgentSearchScope_Collection': Same<
+        W.ApiComponentTypes['AgentSearchScope_Collection'],
+        z.infer<typeof import('./api-schemas/interaction.js').AgentSearchScope_CollectionSchema>
+    >;
+    'component:SkillContextTriggers': Same<
+        W.ApiComponentTypes['SkillContextTriggers'],
+        z.infer<typeof import('./api-schemas/interaction.js').SkillContextTriggersSchema>
+    >;
+    'component:InitialToolCall': Same<
+        W.ApiComponentTypes['InitialToolCall'],
+        z.infer<typeof import('./api-schemas/interaction.js').InitialToolCallSchema>
+    >;
+    'component:ConversationVisibility': Same<
+        W.ApiComponentTypes['ConversationVisibility'],
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationVisibilitySchema>
+    >;
+    'component:ConversationStripOptions': Same<
+        W.ApiComponentTypes['ConversationStripOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationStripOptionsSchema>
+    >;
+    'component:StreamingOptions': Same<
+        W.ApiComponentTypes['StreamingOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').StreamingOptionsSchema>
+    >;
+    'component:StreamingTelemetryContext': Same<
+        W.ApiComponentTypes['StreamingTelemetryContext'],
+        z.infer<typeof import('./api-schemas/interaction.js').StreamingTelemetryContextSchema>
+    >;
+    'component:ResolvedRuntimeConfig': Same<
+        W.ApiComponentTypes['ResolvedRuntimeConfig'],
+        z.infer<typeof import('./api-schemas/interaction.js').ResolvedRuntimeConfigSchema>
+    >;
+    'component:LlmCallType': Same<
+        W.ApiComponentTypes['LlmCallType'],
+        z.infer<typeof import('./api-schemas/interaction.js').LlmCallTypeSchema>
+    >;
+    'component:InteractiveChannel': Same<
+        W.ApiComponentTypes['InteractiveChannel'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractiveChannelSchema>
+    >;
+    'component:EmailChannel': Same<
+        W.ApiComponentTypes['EmailChannel'],
+        z.infer<typeof import('./api-schemas/interaction.js').EmailChannelSchema>
+    >;
+    'component:UserChannel': Same<
+        W.ApiComponentTypes['UserChannel'],
+        z.infer<typeof import('./api-schemas/interaction.js').UserChannelSchema>
+    >;
+    'component:ToolReference': Same<
+        W.ApiComponentTypes['ToolReference'],
+        z.infer<typeof import('./api-schemas/interaction.js').ToolReferenceSchema>
+    >;
+    'component:ToolResult': Same<
+        W.ApiComponentTypes['ToolResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').ToolResultSchema>
+    >;
+    'component:ToolResultMeta': Same<
+        W.ApiComponentTypes['ToolResultMeta'],
+        z.infer<typeof import('./api-schemas/interaction.js').ToolResultMetaSchema>
+    >;
+    'component:ExternalizedToolInputRef': Same<
+        W.ApiComponentTypes['ExternalizedToolInputRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExternalizedToolInputRefSchema>
+    >;
+    'component:ExternalizedToolInputRefs': Same<
+        W.ApiComponentTypes['ExternalizedToolInputRefs'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExternalizedToolInputRefsSchema>
+    >;
+    'component:ToolApprovalGrant': Same<
+        W.ApiComponentTypes['ToolApprovalGrant'],
+        z.infer<typeof import('./api-schemas/interaction.js').ToolApprovalGrantSchema>
+    >;
+    'component:ToolApprovalGrantMap': Same<
+        W.ApiComponentTypes['ToolApprovalGrantMap'],
+        z.infer<typeof import('./api-schemas/interaction.js').ToolApprovalGrantMapSchema>
+    >;
+    'component:AgentToolApprovalMode': Same<
+        W.ApiComponentTypes['AgentToolApprovalMode'],
+        z.infer<typeof import('./api-schemas/interaction.js').AgentToolApprovalModeSchema>
+    >;
+    'component:PendingToolApprovalResults': Same<
+        W.ApiComponentTypes['PendingToolApprovalResults'],
+        z.infer<typeof import('./api-schemas/interaction.js').PendingToolApprovalResultsSchema>
+    >;
+    'component:AgentResourceAction': Same<
+        W.ApiComponentTypes['AgentResourceAction'],
+        z.infer<typeof import('./api-schemas/interaction.js').AgentResourceActionSchema>
+    >;
+    'component:AgentResourceType': Same<
+        W.ApiComponentTypes['AgentResourceType'],
+        z.infer<typeof import('./api-schemas/interaction.js').AgentResourceTypeSchema>
+    >;
+    'component:AgentResourceReference': Same<
+        W.ApiComponentTypes['AgentResourceReference'],
+        z.infer<typeof import('./api-schemas/interaction.js').AgentResourceReferenceSchema>
+    >;
+    'component:PendingMcpConnection': Same<
+        W.ApiComponentTypes['PendingMcpConnection'],
+        z.infer<typeof import('./api-schemas/interaction.js').PendingMcpConnectionSchema>
+    >;
+    'component:UsedSkill': Same<
+        W.ApiComponentTypes['UsedSkill'],
+        z.infer<typeof import('./api-schemas/interaction.js').UsedSkillSchema>
+    >;
+    'component:PlanTask': Same<
+        W.ApiComponentTypes['PlanTask'],
+        z.infer<typeof import('./api-schemas/interaction.js').PlanTaskSchema>
+    >;
+    'component:Plan': Same<
+        W.ApiComponentTypes['Plan'],
+        z.infer<typeof import('./api-schemas/interaction.js').PlanSchema>
+    >;
+    'component:WorkflowAncestor': Same<
+        W.ApiComponentTypes['WorkflowAncestor'],
+        z.infer<typeof import('./api-schemas/interaction.js').WorkflowAncestorSchema>
+    >;
+    'component:TextArtifactReference': Same<
+        W.ApiComponentTypes['TextArtifactReference'],
+        z.infer<typeof import('./api-schemas/interaction.js').TextArtifactReferenceSchema>
+    >;
+    'component:ConversationState': Same<
+        W.ApiComponentTypes['ConversationState'],
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationStateSchema>
+    >;
+    'component:ExecutionRunStatus': Same<
+        W.ApiComponentTypes['ExecutionRunStatus'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunStatusSchema>
+    >;
+    'component:RunSourceTypes': Same<
+        W.ApiComponentTypes['RunSourceTypes'],
+        z.infer<typeof import('./api-schemas/interaction.js').RunSourceTypesSchema>
+    >;
+    'component:RunSource': Same<
+        W.ApiComponentTypes['RunSource'],
+        z.infer<typeof import('./api-schemas/interaction.js').RunSourceSchema>
+    >;
+    'component:ExecutionRunDocRef': Same<
+        W.ApiComponentTypes['ExecutionRunDocRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunDocRefSchema>
+    >;
+    'component:ExecutionRunWorkflow': Same<
+        W.ApiComponentTypes['ExecutionRunWorkflow'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunWorkflowSchema>
+    >;
+    'component:ExecutionRunInteraction': Same<
+        W.ApiComponentTypes['ExecutionRunInteraction'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunInteractionSchema>
+    >;
+    'component:ExecutionRun': Same<
+        W.ApiComponentTypes['ExecutionRun'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunSchema>
+    >;
+    'component:ExecutionRunRef': Same<
+        W.ApiComponentTypes['ExecutionRunRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunRefSchema>
+    >;
+    'component:ExecutionRunRefArray': Same<
+        W.ApiComponentTypes['ExecutionRunRefArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunRefArraySchema>
+    >;
+    'component:UpdateExecutionRunPayload': Same<
+        W.ApiComponentTypes['UpdateExecutionRunPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').UpdateExecutionRunPayloadSchema>
+    >;
+    'component:RunCreatePayload': Same<
+        W.ApiComponentTypes['RunCreatePayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').RunCreatePayloadSchema>
+    >;
+    'component:SortOrder': Same<
+        W.ApiComponentTypes['SortOrder'],
+        z.infer<typeof import('./api-schemas/interaction.js').SortOrderSchema>
+    >;
+    'component:SortOption': Same<
+        W.ApiComponentTypes['SortOption'],
+        z.infer<typeof import('./api-schemas/interaction.js').SortOptionSchema>
+    >;
+    'component:RunSearchQuery': Same<
+        W.ApiComponentTypes['RunSearchQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').RunSearchQuerySchema>
+    >;
+    'component:RunListQuery': Same<
+        W.ApiComponentTypes['RunListQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').RunListQuerySchema>
+    >;
+    'component:RunSearchPayload': Same<
+        W.ApiComponentTypes['RunSearchPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').RunSearchPayloadSchema>
+    >;
+    'component:InteractionExecutionPayload': Same<
+        W.ApiComponentTypes['InteractionExecutionPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionExecutionPayloadSchema>
+    >;
+    'component:NamedInteractionExecutionPayload': Same<
+        W.ApiComponentTypes['NamedInteractionExecutionPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').NamedInteractionExecutionPayloadSchema>
+    >;
+    'component:InteractionExecutionResult': Same<
+        W.ApiComponentTypes['InteractionExecutionResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionExecutionResultSchema>
+    >;
+    'component:FindRunResult': Same<
+        W.ApiComponentTypes['FindRunResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').FindRunResultSchema>
+    >;
+    'component:FindRunResultArray': Same<
+        W.ApiComponentTypes['FindRunResultArray'],
+        z.infer<typeof import('./api-schemas/interaction.js').FindRunResultArraySchema>
+    >;
+    'component:PopulatedExecutionRunResult': Same<
+        W.ApiComponentTypes['PopulatedExecutionRunResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').PopulatedExecutionRunResultSchema>
+    >;
+    'component:LegacyExecutionRunResult': Same<
+        W.ApiComponentTypes['LegacyExecutionRunResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').LegacyExecutionRunResultSchema>
+    >;
+    'component:LegacyPopulatedExecutionRunResult': Same<
+        W.ApiComponentTypes['LegacyPopulatedExecutionRunResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').LegacyPopulatedExecutionRunResultSchema>
+    >;
+    'component:InteractionExecutionConfiguration': Same<
+        W.ApiComponentTypes['InteractionExecutionConfiguration'],
+        z.infer<typeof import('./api-schemas/store.js').InteractionExecutionConfigurationSchema>
+    >;
+    'component:InteractionExecutionError': Same<
+        W.ApiComponentTypes['InteractionExecutionError'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionExecutionErrorSchema>
+    >;
+    'component:ResultStorageOptions': Same<
+        W.ApiComponentTypes['ResultStorageOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').ResultStorageOptionsSchema>
+    >;
+    'component:ExecuteInteractionByEndpointQuery': Same<
+        W.ApiComponentTypes['ExecuteInteractionByEndpointQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecuteInteractionByEndpointQuerySchema>
+    >;
+    'component:ExecuteInteractionByEndpointHeaders': Same<
+        W.ApiComponentTypes['ExecuteInteractionByEndpointHeaders'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecuteInteractionByEndpointHeadersSchema>
+    >;
+    'component:AsyncCompletionMode': Same<
+        W.ApiComponentTypes['AsyncCompletionMode'],
+        z.infer<typeof import('./api-schemas/interaction.js').AsyncCompletionModeSchema>
+    >;
+    'component:AsyncCompletionOptions': Same<
+        W.ApiComponentTypes['AsyncCompletionOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').AsyncCompletionOptionsSchema>
+    >;
+    'component:AsyncExecutionPayload': Same<
+        W.ApiComponentTypes['AsyncExecutionPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').AsyncExecutionPayloadSchema>
+    >;
+    'component:AsyncInteractionExecutionPayload': Same<
+        W.ApiComponentTypes['AsyncInteractionExecutionPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').AsyncInteractionExecutionPayloadSchema>
+    >;
+    'component:AsyncConversationExecutionPayload': Same<
+        W.ApiComponentTypes['AsyncConversationExecutionPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').AsyncConversationExecutionPayloadSchema>
+    >;
+    'component:AsyncExecutionResult': Same<
+        W.ApiComponentTypes['AsyncExecutionResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').AsyncExecutionResultSchema>
+    >;
+    'component:RateLimitRequestPayload': Same<
+        W.ApiComponentTypes['RateLimitRequestPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').RateLimitRequestPayloadSchema>
+    >;
+    'component:RateLimitRequestResponse': Same<
+        W.ApiComponentTypes['RateLimitRequestResponse'],
+        z.infer<typeof import('./api-schemas/interaction.js').RateLimitRequestResponseSchema>
+    >;
+    'component:ComputeRunFacetPayload': Same<
+        W.ApiComponentTypes['ComputeRunFacetPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').ComputeRunFacetPayloadSchema>
+    >;
+    'component:ComputeRunFacetsResponse': Same<
+        W.ApiComponentTypes['ComputeRunFacetsResponse'],
+        z.infer<typeof import('./api-schemas/interaction.js').ComputeRunFacetsResponseSchema>
+    >;
+    'component:RunSearchMetaResponse': Same<
+        W.ApiComponentTypes['RunSearchMetaResponse'],
+        z.infer<typeof import('./api-schemas/interaction.js').RunSearchMetaResponseSchema>
+    >;
+    'component:ToolResultsPayload': Same<
+        W.ApiComponentTypes['ToolResultsPayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').ToolResultsPayloadSchema>
+    >;
+    'component:UserMessagePayload': Same<
+        W.ApiComponentTypes['UserMessagePayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').UserMessagePayloadSchema>
+    >;
+    'component:ExecutionResponse': Same<
+        W.ApiComponentTypes['ExecutionResponse'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecutionResponseSchema>
+    >;
+    'component:RunClonePayload': Same<
+        W.ApiComponentTypes['RunClonePayload'],
+        z.infer<typeof import('./api-schemas/interaction.js').RunClonePayloadSchema>
+    >;
+    'component:StringValueMap': Same<
+        W.ApiComponentTypes['StringValueMap'],
+        z.infer<typeof import('./api-schemas/files.js').StringValueMapSchema>
+    >;
+    'component:CopyFilePayload': Same<
+        W.ApiComponentTypes['CopyFilePayload'],
+        z.infer<typeof import('./api-schemas/files.js').CopyFilePayloadSchema>
+    >;
+    'component:CopyFileResponse': Same<
+        W.ApiComponentTypes['CopyFileResponse'],
+        z.infer<typeof import('./api-schemas/files.js').CopyFileResponseSchema>
+    >;
+    'component:DeleteFileResult': Same<
+        W.ApiComponentTypes['DeleteFileResult'],
+        z.infer<typeof import('./api-schemas/files.js').DeleteFileResultSchema>
+    >;
+    'component:FileBucketResponse': Same<
+        W.ApiComponentTypes['FileBucketResponse'],
+        z.infer<typeof import('./api-schemas/files.js').FileBucketResponseSchema>
+    >;
+    'component:FileListResponse': Same<
+        W.ApiComponentTypes['FileListResponse'],
+        z.infer<typeof import('./api-schemas/files.js').FileListResponseSchema>
+    >;
+    'component:FileMetadataResponse': Same<
+        W.ApiComponentTypes['FileMetadataResponse'],
+        z.infer<typeof import('./api-schemas/files.js').FileMetadataResponseSchema>
+    >;
+    'component:FileMetadataUpdateResult': Same<
+        W.ApiComponentTypes['FileMetadataUpdateResult'],
+        z.infer<typeof import('./api-schemas/files.js').FileMetadataUpdateResultSchema>
+    >;
+    'component:GetFileUrlPayload': Same<
+        W.ApiComponentTypes['GetFileUrlPayload'],
+        z.infer<typeof import('./api-schemas/files.js').GetFileUrlPayloadSchema>
+    >;
+    'component:GetFileUrlResponse': Same<
+        W.ApiComponentTypes['GetFileUrlResponse'],
+        z.infer<typeof import('./api-schemas/files.js').GetFileUrlResponseSchema>
+    >;
+    'component:GetUploadUrlPayload': Same<
+        W.ApiComponentTypes['GetUploadUrlPayload'],
+        z.infer<typeof import('./api-schemas/files.js').GetUploadUrlPayloadSchema>
+    >;
+    'component:BulkUploadUrlsPayload': Same<
+        W.ApiComponentTypes['BulkUploadUrlsPayload'],
+        z.infer<typeof import('./api-schemas/files.js').BulkUploadUrlsPayloadSchema>
+    >;
+    'component:BulkUploadUrlsResponse': Same<
+        W.ApiComponentTypes['BulkUploadUrlsResponse'],
+        z.infer<typeof import('./api-schemas/files.js').BulkUploadUrlsResponseSchema>
+    >;
+    'component:SetFileMetadataPayload': Same<
+        W.ApiComponentTypes['SetFileMetadataPayload'],
+        z.infer<typeof import('./api-schemas/files.js').SetFileMetadataPayloadSchema>
+    >;
+    'component:FileMetadataQuery': Same<
+        W.ApiComponentTypes['FileMetadataQuery'],
+        z.infer<typeof import('./api-schemas/files.js').FileMetadataQuerySchema>
+    >;
+    'component:FileListQuery': Same<
+        W.ApiComponentTypes['FileListQuery'],
+        z.infer<typeof import('./api-schemas/files.js').FileListQuerySchema>
+    >;
+    'component:FileDeleteQuery': Same<
+        W.ApiComponentTypes['FileDeleteQuery'],
+        z.infer<typeof import('./api-schemas/files.js').FileDeleteQuerySchema>
+    >;
+    'component:BucketReadAccessQuery': Same<
+        W.ApiComponentTypes['BucketReadAccessQuery'],
+        z.infer<typeof import('./api-schemas/files.js').BucketReadAccessQuerySchema>
+    >;
+    'component:BucketReadAccessStatusResponse': Same<
+        W.ApiComponentTypes['BucketReadAccessStatusResponse'],
+        z.infer<typeof import('./api-schemas/files.js').BucketReadAccessStatusResponseSchema>
+    >;
+    'component:EnsureBucketReadAccessPayload': Same<
+        W.ApiComponentTypes['EnsureBucketReadAccessPayload'],
+        z.infer<typeof import('./api-schemas/files.js').EnsureBucketReadAccessPayloadSchema>
+    >;
+    'component:EnsureBucketReadAccessResponse': Same<
+        W.ApiComponentTypes['EnsureBucketReadAccessResponse'],
+        z.infer<typeof import('./api-schemas/files.js').EnsureBucketReadAccessResponseSchema>
+    >;
+    'component:BucketCreateAccessQuery': Same<
+        W.ApiComponentTypes['BucketCreateAccessQuery'],
+        z.infer<typeof import('./api-schemas/files.js').BucketCreateAccessQuerySchema>
+    >;
+    'component:BucketCreateAccessStatusResponse': Same<
+        W.ApiComponentTypes['BucketCreateAccessStatusResponse'],
+        z.infer<typeof import('./api-schemas/files.js').BucketCreateAccessStatusResponseSchema>
+    >;
+    'component:EnsureBucketCreateAccessPayload': Same<
+        W.ApiComponentTypes['EnsureBucketCreateAccessPayload'],
+        z.infer<typeof import('./api-schemas/files.js').EnsureBucketCreateAccessPayloadSchema>
+    >;
+    'component:EnsureBucketCreateAccessResponse': Same<
+        W.ApiComponentTypes['EnsureBucketCreateAccessResponse'],
+        z.infer<typeof import('./api-schemas/files.js').EnsureBucketCreateAccessResponseSchema>
+    >;
+    'component:TaskFieldType': Same<
+        W.ApiComponentTypes['TaskFieldType'],
+        z.infer<typeof import('./api-schemas/task.js').TaskFieldTypeSchema>
+    >;
+    'component:DurableTaskStatus': Same<
+        W.ApiComponentTypes['DurableTaskStatus'],
+        z.infer<typeof import('./api-schemas/task.js').DurableTaskStatusSchema>
+    >;
+    'component:TaskSource': Same<
+        W.ApiComponentTypes['TaskSource'],
+        z.infer<typeof import('./api-schemas/task.js').TaskSourceSchema>
+    >;
+    'component:TaskField': Same<
+        W.ApiComponentTypes['TaskField'],
+        z.infer<typeof import('./api-schemas/task.js').TaskFieldSchema>
+    >;
+    'component:Task': Same<W.ApiComponentTypes['Task'], z.infer<typeof import('./api-schemas/task.js').TaskSchema>>;
+    'component:TaskArray': Same<
+        W.ApiComponentTypes['TaskArray'],
+        z.infer<typeof import('./api-schemas/task.js').TaskArraySchema>
+    >;
+    'component:CreateTaskPayload': Same<
+        W.ApiComponentTypes['CreateTaskPayload'],
+        z.infer<typeof import('./api-schemas/task.js').CreateTaskPayloadSchema>
+    >;
+    'component:UpdateTaskPayload': Same<
+        W.ApiComponentTypes['UpdateTaskPayload'],
+        z.infer<typeof import('./api-schemas/task.js').UpdateTaskPayloadSchema>
+    >;
+    'component:CompleteTaskPayload': Same<
+        W.ApiComponentTypes['CompleteTaskPayload'],
+        z.infer<typeof import('./api-schemas/task.js').CompleteTaskPayloadSchema>
+    >;
+    'component:ListTasksQuery': Same<
+        W.ApiComponentTypes['ListTasksQuery'],
+        z.infer<typeof import('./api-schemas/task.js').ListTasksQuerySchema>
+    >;
+    'component:ColumnLayout': Same<
+        W.ApiComponentTypes['ColumnLayout'],
+        z.infer<typeof import('./api-schemas/store.js').ColumnLayoutSchema>
+    >;
+    'component:ContentTypeEditingPolicy': Same<
+        W.ApiComponentTypes['ContentTypeEditingPolicy'],
+        z.infer<typeof import('./api-schemas/store.js').ContentTypeEditingPolicySchema>
+    >;
+    'component:ContentObjectTypeStatus': Same<
+        W.ApiComponentTypes['ContentObjectTypeStatus'],
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeStatusSchema>
+    >;
+    'component:ContentObjectTypeItem': Same<
+        W.ApiComponentTypes['ContentObjectTypeItem'],
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeItemSchema>
+    >;
+    'component:ContentObjectTypeItemArray': Same<
+        W.ApiComponentTypes['ContentObjectTypeItemArray'],
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeItemArraySchema>
+    >;
+    'component:ContentObjectTypeCatalogEntry': Same<
+        W.ApiComponentTypes['ContentObjectTypeCatalogEntry'],
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeCatalogEntrySchema>
+    >;
+    'component:ContentObjectTypeCatalogEntryArray': Same<
+        W.ApiComponentTypes['ContentObjectTypeCatalogEntryArray'],
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeCatalogEntryArraySchema>
+    >;
+    'component:InCodeTypeDefinition': Same<
+        W.ApiComponentTypes['InCodeTypeDefinition'],
+        z.infer<typeof import('./api-schemas/store.js').InCodeTypeDefinitionSchema>
+    >;
+    'component:CreateContentObjectTypePayload': Same<
+        W.ApiComponentTypes['CreateContentObjectTypePayload'],
+        z.infer<typeof import('./api-schemas/store.js').CreateContentObjectTypePayloadSchema>
+    >;
+    'component:UpdateContentObjectTypePayload': Same<
+        W.ApiComponentTypes['UpdateContentObjectTypePayload'],
+        z.infer<typeof import('./api-schemas/store.js').UpdateContentObjectTypePayloadSchema>
+    >;
+    'component:ContentObjectType': Same<
+        W.ApiComponentTypes['ContentObjectType'],
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeSchema>
+    >;
+    'component:ContentObjectTypeCatalogQuery': Same<
+        W.ApiComponentTypes['ContentObjectTypeCatalogQuery'],
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeCatalogQuerySchema>
+    >;
+    'component:ContentObjectTypeListQuery': Same<
+        W.ApiComponentTypes['ContentObjectTypeListQuery'],
+        z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeListQuerySchema>
+    >;
+    'component:DeleteCountResult': Same<
+        W.ApiComponentTypes['DeleteCountResult'],
+        z.infer<typeof import('./api-schemas/commands.js').DeleteCountResultSchema>
+    >;
+    'component:MigrationListResponse': Same<
+        W.ApiComponentTypes['MigrationListResponse'],
+        z.infer<typeof import('./api-schemas/commands.js').MigrationListResponseSchema>
+    >;
+    'component:RunMigrationPayload': Same<
+        W.ApiComponentTypes['RunMigrationPayload'],
+        z.infer<typeof import('./api-schemas/commands.js').RunMigrationPayloadSchema>
+    >;
+    'component:RunMigrationResponse': Same<
+        W.ApiComponentTypes['RunMigrationResponse'],
+        z.infer<typeof import('./api-schemas/commands.js').RunMigrationResponseSchema>
+    >;
+    'component:DashboardElasticsearchResultMapping': Same<
+        W.ApiComponentTypes['DashboardElasticsearchResultMapping'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchResultMappingSchema>
+    >;
+    'component:DashboardElasticsearchDsl': Same<
+        W.ApiComponentTypes['DashboardElasticsearchDsl'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchDslSchema>
+    >;
+    'component:DashboardSqlDataSource': Same<
+        W.ApiComponentTypes['DashboardSqlDataSource'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardSqlDataSourceSchema>
+    >;
+    'component:DashboardVersioningStatusResponse': Same<
+        W.ApiComponentTypes['DashboardVersioningStatusResponse'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersioningStatusResponseSchema>
+    >;
+    'component:DashboardVersioningPayload': Same<
+        W.ApiComponentTypes['DashboardVersioningPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersioningPayloadSchema>
+    >;
+    'component:PromoteDashboardVersionPayload': Same<
+        W.ApiComponentTypes['PromoteDashboardVersionPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').PromoteDashboardVersionPayloadSchema>
+    >;
+    'component:DashboardVersionItem': Same<
+        W.ApiComponentTypes['DashboardVersionItem'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersionItemSchema>
+    >;
+    'component:DashboardStatus': Same<
+        W.ApiComponentTypes['DashboardStatus'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardStatusSchema>
+    >;
+    'component:DashboardLayout': Same<
+        W.ApiComponentTypes['DashboardLayout'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardLayoutSchema>
+    >;
+    'component:DashboardPanelPosition': Same<
+        W.ApiComponentTypes['DashboardPanelPosition'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardPanelPositionSchema>
+    >;
+    'component:DashboardQuery': Same<
+        W.ApiComponentTypes['DashboardQuery'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardQuerySchema>
+    >;
+    'component:DashboardBulkDeleteResult': Same<
+        W.ApiComponentTypes['DashboardBulkDeleteResult'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardBulkDeleteResultSchema>
+    >;
+    'component:DashboardArchiveResult': Same<
+        W.ApiComponentTypes['DashboardArchiveResult'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardArchiveResultSchema>
+    >;
+    'component:CreateDashboardSnapshotPayload': Same<
+        W.ApiComponentTypes['CreateDashboardSnapshotPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').CreateDashboardSnapshotPayloadSchema>
+    >;
+    'component:DashboardBulkArchiveResult': Same<
+        W.ApiComponentTypes['DashboardBulkArchiveResult'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardBulkArchiveResultSchema>
+    >;
+    'component:StringArrayMap': Same<
+        W.ApiComponentTypes['StringArrayMap'],
+        z.infer<typeof import('./api-schemas/dashboard.js').StringArrayMapSchema>
+    >;
+    'component:DashboardStoreElasticsearchDataSource': Same<
+        W.ApiComponentTypes['DashboardStoreElasticsearchDataSource'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardStoreElasticsearchDataSourceSchema>
+    >;
+    'component:DashboardVersionItemArray': Same<
+        W.ApiComponentTypes['DashboardVersionItemArray'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersionItemArraySchema>
+    >;
+    'component:DashboardItem': Same<
+        W.ApiComponentTypes['DashboardItem'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardItemSchema>
+    >;
+    'component:DashboardPanel': Same<
+        W.ApiComponentTypes['DashboardPanel'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardPanelSchema>
+    >;
+    'component:DashboardDataSource': Same<
+        W.ApiComponentTypes['DashboardDataSource'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardDataSourceSchema>
+    >;
+    'component:DashboardItemArray': Same<
+        W.ApiComponentTypes['DashboardItemArray'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardItemArraySchema>
+    >;
+    'component:DashboardVersion': Same<
+        W.ApiComponentTypes['DashboardVersion'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersionSchema>
+    >;
+    'component:Dashboard': Same<
+        W.ApiComponentTypes['Dashboard'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardSchema>
+    >;
+    'component:CreateDashboardPayload': Same<
+        W.ApiComponentTypes['CreateDashboardPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').CreateDashboardPayloadSchema>
+    >;
+    'component:UpdateDashboardPayload': Same<
+        W.ApiComponentTypes['UpdateDashboardPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').UpdateDashboardPayloadSchema>
+    >;
+    'component:QueryValidationError': Same<
+        W.ApiComponentTypes['QueryValidationError'],
+        z.infer<typeof import('./api-schemas/data-store.js').QueryValidationErrorSchema>
+    >;
+    'component:QueryValidationPayload': Same<
+        W.ApiComponentTypes['QueryValidationPayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').QueryValidationPayloadSchema>
+    >;
+    'component:ListDataStoreVersionsQuery': Same<
+        W.ApiComponentTypes['ListDataStoreVersionsQuery'],
+        z.infer<typeof import('./api-schemas/data-store.js').ListDataStoreVersionsQuerySchema>
+    >;
+    'component:GetDataStoreTableQuery': Same<
+        W.ApiComponentTypes['GetDataStoreTableQuery'],
+        z.infer<typeof import('./api-schemas/data-store.js').GetDataStoreTableQuerySchema>
+    >;
+    'component:DataTableSemanticType': Same<
+        W.ApiComponentTypes['DataTableSemanticType'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataTableSemanticTypeSchema>
+    >;
+    'component:DataIndex': Same<
+        W.ApiComponentTypes['DataIndex'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataIndexSchema>
+    >;
+    'component:DataForeignKey': Same<
+        W.ApiComponentTypes['DataForeignKey'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataForeignKeySchema>
+    >;
+    'component:SemanticColumnType': Same<
+        W.ApiComponentTypes['SemanticColumnType'],
+        z.infer<typeof import('./api-schemas/data-store.js').SemanticColumnTypeSchema>
+    >;
+    'component:DataColumnType': Same<
+        W.ApiComponentTypes['DataColumnType'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataColumnTypeSchema>
+    >;
+    'component:DataColumnUpdate': Same<
+        W.ApiComponentTypes['DataColumnUpdate'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataColumnUpdateSchema>
+    >;
+    'component:DataRelationshipType': Same<
+        W.ApiComponentTypes['DataRelationshipType'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataRelationshipTypeSchema>
+    >;
+    'component:QueryResultColumn': Same<
+        W.ApiComponentTypes['QueryResultColumn'],
+        z.infer<typeof import('./api-schemas/data-store.js').QueryResultColumnSchema>
+    >;
+    'component:BatchQueryPayload': Same<
+        W.ApiComponentTypes['BatchQueryPayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').BatchQueryPayloadSchema>
+    >;
+    'component:QueryResult': Same<
+        W.ApiComponentTypes['QueryResult'],
+        z.infer<typeof import('./api-schemas/data-store.js').QueryResultSchema>
+    >;
+    'component:QueryPayload': Same<
+        W.ApiComponentTypes['QueryPayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').QueryPayloadSchema>
+    >;
+    'component:DataStoreMutateRowsResult': Same<
+        W.ApiComponentTypes['DataStoreMutateRowsResult'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreMutateRowsResultSchema>
+    >;
+    'component:DataStoreMutateRowsPayload': Same<
+        W.ApiComponentTypes['DataStoreMutateRowsPayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreMutateRowsPayloadSchema>
+    >;
+    'component:DataTableSummary': Same<
+        W.ApiComponentTypes['DataTableSummary'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataTableSummarySchema>
+    >;
+    'component:DataStoreVersionTableState': Same<
+        W.ApiComponentTypes['DataStoreVersionTableState'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreVersionTableStateSchema>
+    >;
+    'component:DataStoreStatus': Same<
+        W.ApiComponentTypes['DataStoreStatus'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreStatusSchema>
+    >;
+    'component:ImportDataFormat': Same<
+        W.ApiComponentTypes['ImportDataFormat'],
+        z.infer<typeof import('./api-schemas/data-store.js').ImportDataFormatSchema>
+    >;
+    'component:ImportDataSource': Same<
+        W.ApiComponentTypes['ImportDataSource'],
+        z.infer<typeof import('./api-schemas/data-store.js').ImportDataSourceSchema>
+    >;
+    'component:DataRelationshipForAI': Same<
+        W.ApiComponentTypes['DataRelationshipForAI'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataRelationshipForAISchema>
+    >;
+    'component:DataForeignKeyForAI': Same<
+        W.ApiComponentTypes['DataForeignKeyForAI'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataForeignKeyForAISchema>
+    >;
+    'component:DataColumnForAI': Same<
+        W.ApiComponentTypes['DataColumnForAI'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataColumnForAISchema>
+    >;
+    'component:ImportStatus': Same<
+        W.ApiComponentTypes['ImportStatus'],
+        z.infer<typeof import('./api-schemas/data-store.js').ImportStatusSchema>
+    >;
+    'component:DataStoreTableDropResult': Same<
+        W.ApiComponentTypes['DataStoreTableDropResult'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreTableDropResultSchema>
+    >;
+    'component:DataStoreArchiveResult': Same<
+        W.ApiComponentTypes['DataStoreArchiveResult'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreArchiveResultSchema>
+    >;
+    'component:CreateSnapshotPayload': Same<
+        W.ApiComponentTypes['CreateSnapshotPayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').CreateSnapshotPayloadSchema>
+    >;
+    'component:DataStoreDownloadInfo': Same<
+        W.ApiComponentTypes['DataStoreDownloadInfo'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreDownloadInfoSchema>
+    >;
+    'component:CreateDataStorePayload': Same<
+        W.ApiComponentTypes['CreateDataStorePayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').CreateDataStorePayloadSchema>
+    >;
+    'component:QueryValidationResult': Same<
+        W.ApiComponentTypes['QueryValidationResult'],
+        z.infer<typeof import('./api-schemas/data-store.js').QueryValidationResultSchema>
+    >;
+    'component:DataColumn': Same<
+        W.ApiComponentTypes['DataColumn'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataColumnSchema>
+    >;
+    'component:AlterTableOperation': Same<
+        W.ApiComponentTypes['AlterTableOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableOperationSchema>
+    >;
+    'component:DataRelationship': Same<
+        W.ApiComponentTypes['DataRelationship'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataRelationshipSchema>
+    >;
+    'component:CreateTablePayload': Same<
+        W.ApiComponentTypes['CreateTablePayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').CreateTablePayloadSchema>
+    >;
+    'component:BatchQueryResultItem': Same<
+        W.ApiComponentTypes['BatchQueryResultItem'],
+        z.infer<typeof import('./api-schemas/data-store.js').BatchQueryResultItemSchema>
+    >;
+    'component:DataTableSummaryArray': Same<
+        W.ApiComponentTypes['DataTableSummaryArray'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataTableSummaryArraySchema>
+    >;
+    'component:DataStoreVersionTableStateMap': Same<
+        W.ApiComponentTypes['DataStoreVersionTableStateMap'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreVersionTableStateMapSchema>
+    >;
+    'component:DataStoreItem': Same<
+        W.ApiComponentTypes['DataStoreItem'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreItemSchema>
+    >;
+    'component:ImportTableData': Same<
+        W.ApiComponentTypes['ImportTableData'],
+        z.infer<typeof import('./api-schemas/data-store.js').ImportTableDataSchema>
+    >;
+    'component:DataStoreTableDetail': Same<
+        W.ApiComponentTypes['DataStoreTableDetail'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreTableDetailSchema>
+    >;
+    'component:DataColumnForAIMap': Same<
+        W.ApiComponentTypes['DataColumnForAIMap'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataColumnForAIMapSchema>
+    >;
+    'component:ImportJob': Same<
+        W.ApiComponentTypes['ImportJob'],
+        z.infer<typeof import('./api-schemas/data-store.js').ImportJobSchema>
+    >;
+    'component:CreateTablesPayload': Same<
+        W.ApiComponentTypes['CreateTablesPayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').CreateTablesPayloadSchema>
+    >;
+    'component:DataTable': Same<
+        W.ApiComponentTypes['DataTable'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataTableSchema>
+    >;
+    'component:AlterTablePayload': Same<
+        W.ApiComponentTypes['AlterTablePayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTablePayloadSchema>
+    >;
+    'component:UpdateSchemaPayload': Same<
+        W.ApiComponentTypes['UpdateSchemaPayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').UpdateSchemaPayloadSchema>
+    >;
+    'component:BatchQueryResult': Same<
+        W.ApiComponentTypes['BatchQueryResult'],
+        z.infer<typeof import('./api-schemas/data-store.js').BatchQueryResultSchema>
+    >;
+    'component:DataStoreVersion': Same<
+        W.ApiComponentTypes['DataStoreVersion'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreVersionSchema>
+    >;
+    'component:DataStoreItemArray': Same<
+        W.ApiComponentTypes['DataStoreItemArray'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreItemArraySchema>
+    >;
+    'component:ImportTableDataMap': Same<
+        W.ApiComponentTypes['ImportTableDataMap'],
+        z.infer<typeof import('./api-schemas/data-store.js').ImportTableDataMapSchema>
+    >;
+    'component:DataTableForAI': Same<
+        W.ApiComponentTypes['DataTableForAI'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataTableForAISchema>
+    >;
+    'component:DataStoreFullSchemaResponse': Same<
+        W.ApiComponentTypes['DataStoreFullSchemaResponse'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreFullSchemaResponseSchema>
+    >;
+    'component:DataTableArray': Same<
+        W.ApiComponentTypes['DataTableArray'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataTableArraySchema>
+    >;
+    'component:DataSchema': Same<
+        W.ApiComponentTypes['DataSchema'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataSchemaSchema>
+    >;
+    'component:DataStoreVersionArray': Same<
+        W.ApiComponentTypes['DataStoreVersionArray'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreVersionArraySchema>
+    >;
+    'component:ImportDataPayload': Same<
+        W.ApiComponentTypes['ImportDataPayload'],
+        z.infer<typeof import('./api-schemas/data-store.js').ImportDataPayloadSchema>
+    >;
+    'component:DataTableForAIMap': Same<
+        W.ApiComponentTypes['DataTableForAIMap'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataTableForAIMapSchema>
+    >;
+    'component:DataStore': Same<
+        W.ApiComponentTypes['DataStore'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreSchema>
+    >;
+    'component:DataSchemaForAI': Same<
+        W.ApiComponentTypes['DataSchemaForAI'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataSchemaForAISchema>
+    >;
+    'component:DataStoreSchemaResponse': Same<
+        W.ApiComponentTypes['DataStoreSchemaResponse'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreSchemaResponseSchema>
+    >;
+    'component:CostAnalyticsQuery': Same<
+        W.ApiComponentTypes['CostAnalyticsQuery'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
+    >;
+    'component:CostRunPriceQuery': Same<
+        W.ApiComponentTypes['CostRunPriceQuery'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').CostRunPriceQuerySchema>
+    >;
+    'component:CostModelPricesQuery': Same<
+        W.ApiComponentTypes['CostModelPricesQuery'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').CostModelPricesQuerySchema>
+    >;
+    'component:CostExportQuery': Same<
+        W.ApiComponentTypes['CostExportQuery'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').CostExportQuerySchema>
+    >;
+    'component:ModelPricing': Same<
+        W.ApiComponentTypes['ModelPricing'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ModelPricingSchema>
+    >;
+    'component:CostTimeSeriesPoint': Same<
+        W.ApiComponentTypes['CostTimeSeriesPoint'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').CostTimeSeriesPointSchema>
+    >;
+    'component:CostSummary': Same<
+        W.ApiComponentTypes['CostSummary'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').CostSummarySchema>
+    >;
+    'component:ModelPriceComparison': Same<
+        W.ApiComponentTypes['ModelPriceComparison'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ModelPriceComparisonSchema>
+    >;
+    'component:CostByDimension': Same<
+        W.ApiComponentTypes['CostByDimension'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').CostByDimensionSchema>
+    >;
+    'component:ModelPriceComparisonResponse': Same<
+        W.ApiComponentTypes['ModelPriceComparisonResponse'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ModelPriceComparisonResponseSchema>
+    >;
+    'component:CostAnalyticsResponse': Same<
+        W.ApiComponentTypes['CostAnalyticsResponse'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsResponseSchema>
+    >;
+    'component:CostRunPriceResponse': Same<
+        W.ApiComponentTypes['CostRunPriceResponse'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').CostRunPriceResponseSchema>
+    >;
+    'component:PricingSyncPayload': Same<
+        W.ApiComponentTypes['PricingSyncPayload'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').PricingSyncPayloadSchema>
+    >;
+    'component:PricingSyncDayResult': Same<
+        W.ApiComponentTypes['PricingSyncDayResult'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').PricingSyncDayResultSchema>
+    >;
+    'component:PricingSyncResult': Same<
+        W.ApiComponentTypes['PricingSyncResult'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').PricingSyncResultSchema>
+    >;
+    'component:BulkObjectDeleteResult': Same<
+        W.ApiComponentTypes['BulkObjectDeleteResult'],
+        z.infer<typeof import('./api-schemas/bulk-operation.js').BulkObjectDeleteResultSchema>
+    >;
+    'component:BulkObjectUpdateResult': Same<
+        W.ApiComponentTypes['BulkObjectUpdateResult'],
+        z.infer<typeof import('./api-schemas/bulk-operation.js').BulkObjectUpdateResultSchema>
+    >;
+    'component:BulkObjectCreateResult': Same<
+        W.ApiComponentTypes['BulkObjectCreateResult'],
+        z.infer<typeof import('./api-schemas/bulk-operation.js').BulkObjectCreateResultSchema>
+    >;
+    'component:BulkOperationResult': Same<
+        W.ApiComponentTypes['BulkOperationResult'],
+        z.infer<typeof import('./api-schemas/bulk-operation.js').BulkOperationResultSchema>
+    >;
+    'component:BulkOperationPayload': Same<
+        W.ApiComponentTypes['BulkOperationPayload'],
+        z.infer<typeof import('./api-schemas/bulk-operation.js').BulkOperationPayloadSchema>
+    >;
+    'component:BulkOperationResponse': Same<
+        W.ApiComponentTypes['BulkOperationResponse'],
+        z.infer<typeof import('./api-schemas/bulk-operation.js').BulkOperationResponseSchema>
+    >;
+    'component:GroundedAssistantResponse': Same<
+        W.ApiComponentTypes['GroundedAssistantResponse'],
+        z.infer<typeof import('./api-schemas/document-processing.js').GroundedAssistantResponseSchema>
+    >;
+    'component:GroundedExtractionRequest': Same<
+        W.ApiComponentTypes['GroundedExtractionRequest'],
+        z.infer<typeof import('./api-schemas/document-processing.js').GroundedExtractionRequestSchema>
+    >;
+    'component:GroundedVerificationBreakdown': Same<
+        W.ApiComponentTypes['GroundedVerificationBreakdown'],
+        z.infer<typeof import('./api-schemas/document-processing.js').GroundedVerificationBreakdownSchema>
+    >;
+    'component:GroundedExtractionVerdict': Same<
+        W.ApiComponentTypes['GroundedExtractionVerdict'],
+        z.infer<typeof import('./api-schemas/document-processing.js').GroundedExtractionVerdictSchema>
+    >;
+    'component:DocProcessorOutputFormat': Same<
+        W.ApiComponentTypes['DocProcessorOutputFormat'],
+        z.infer<typeof import('./api-schemas/document-processing.js').DocProcessorOutputFormatSchema>
+    >;
+    'component:DocAnalyzerProgressStatus': Same<
+        W.ApiComponentTypes['DocAnalyzerProgressStatus'],
+        z.infer<typeof import('./api-schemas/document-processing.js').DocAnalyzerProgressStatusSchema>
+    >;
+    'component:DocumentProcessingPhase': Same<
+        W.ApiComponentTypes['DocumentProcessingPhase'],
+        z.infer<typeof import('./api-schemas/document-processing.js').DocumentProcessingPhaseSchema>
+    >;
+    'component:WorkflowExecutionStatus': Same<
+        W.ApiComponentTypes['WorkflowExecutionStatus'],
+        z.infer<typeof import('./api-schemas/document-processing.js').WorkflowExecutionStatusSchema>
+    >;
+    'component:DocumentPrepOptions': Same<
+        W.ApiComponentTypes['DocumentPrepOptions'],
+        z.infer<typeof import('./api-schemas/document-processing.js').DocumentPrepOptionsSchema>
+    >;
+    'component:MarkdownRenditionFormat': Same<
+        W.ApiComponentTypes['MarkdownRenditionFormat'],
+        z.infer<typeof import('./api-schemas/document-processing.js').MarkdownRenditionFormatSchema>
+    >;
+    'component:RenderMarkdownStatusQuery': Same<
+        W.ApiComponentTypes['RenderMarkdownStatusQuery'],
+        z.infer<typeof import('./api-schemas/document-processing.js').RenderMarkdownStatusQuerySchema>
+    >;
+    'component:RenderMarkdownStartResponse': Same<
+        W.ApiComponentTypes['RenderMarkdownStartResponse'],
+        z.infer<typeof import('./api-schemas/document-processing.js').RenderMarkdownStartResponseSchema>
+    >;
+    'component:PdfRenderingMetadata': Same<
+        W.ApiComponentTypes['PdfRenderingMetadata'],
+        z.infer<typeof import('./api-schemas/document-processing.js').PdfRenderingMetadataSchema>
+    >;
+    'component:GroundedExtractionResultResponse': Same<
+        W.ApiComponentTypes['GroundedExtractionResultResponse'],
+        z.infer<typeof import('./api-schemas/document-processing.js').GroundedExtractionResultResponseSchema>
+    >;
+    'component:DocAnalyzerProgress': Same<
+        W.ApiComponentTypes['DocAnalyzerProgress'],
+        z.infer<typeof import('./api-schemas/document-processing.js').DocAnalyzerProgressSchema>
+    >;
+    'component:RenderMarkdownStatusResponse': Same<
+        W.ApiComponentTypes['RenderMarkdownStatusResponse'],
+        z.infer<typeof import('./api-schemas/document-processing.js').RenderMarkdownStatusResponseSchema>
+    >;
+    'component:RenderMarkdownPayload': Same<
+        W.ApiComponentTypes['RenderMarkdownPayload'],
+        z.infer<typeof import('./api-schemas/document-processing.js').RenderMarkdownPayloadSchema>
+    >;
+    'component:DocAnalyzeRunStatusResponse': Same<
+        W.ApiComponentTypes['DocAnalyzeRunStatusResponse'],
+        z.infer<typeof import('./api-schemas/document-processing.js').DocAnalyzeRunStatusResponseSchema>
+    >;
+    'component:StartProjectReindexPayload': Same<
+        W.ApiComponentTypes['StartProjectReindexPayload'],
+        z.infer<typeof import('./api-schemas/indexing.js').StartProjectReindexPayloadSchema>
+    >;
+    'component:ReindexAgentRunsResponse': Same<
+        W.ApiComponentTypes['ReindexAgentRunsResponse'],
+        z.infer<typeof import('./api-schemas/indexing.js').ReindexAgentRunsResponseSchema>
+    >;
+    'component:ReindexAgentRunsPayload': Same<
+        W.ApiComponentTypes['ReindexAgentRunsPayload'],
+        z.infer<typeof import('./api-schemas/indexing.js').ReindexAgentRunsPayloadSchema>
+    >;
+    'component:IndexingStatusResponse': Same<
+        W.ApiComponentTypes['IndexingStatusResponse'],
+        z.infer<typeof import('./api-schemas/indexing.js').IndexingStatusResponseSchema>
+    >;
+    'component:DriftAnalysisResult': Same<
+        W.ApiComponentTypes['DriftAnalysisResult'],
+        z.infer<typeof import('./api-schemas/indexing.js').DriftAnalysisResultSchema>
+    >;
+    'component:DriftAnalysisProgress': Same<
+        W.ApiComponentTypes['DriftAnalysisProgress'],
+        z.infer<typeof import('./api-schemas/indexing.js').DriftAnalysisProgressSchema>
+    >;
+    'component:DriftAnalysisStatusResponse': Same<
+        W.ApiComponentTypes['DriftAnalysisStatusResponse'],
+        z.infer<typeof import('./api-schemas/indexing.js').DriftAnalysisStatusResponseSchema>
+    >;
+    'component:EmbeddingsStatusResponse': Same<
+        W.ApiComponentTypes['EmbeddingsStatusResponse'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingsStatusResponseSchema>
+    >;
+    'component:RecalculateEmbeddingsQuery': Same<
+        W.ApiComponentTypes['RecalculateEmbeddingsQuery'],
+        z.infer<typeof import('./api-schemas/embeddings.js').RecalculateEmbeddingsQuerySchema>
+    >;
+    'component:ProjectConfigurationEmbeddingEnablePayload': Same<
+        W.ApiComponentTypes['ProjectConfigurationEmbeddingEnablePayload'],
+        z.infer<typeof import('./api-schemas/embeddings.js').ProjectConfigurationEmbeddingEnablePayloadSchema>
+    >;
+    'component:EmbeddingBatchProviderState': Same<
+        W.ApiComponentTypes['EmbeddingBatchProviderState'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchProviderStateSchema>
+    >;
+    'component:EmbeddingBatchCapabilityRequest': Same<
+        W.ApiComponentTypes['EmbeddingBatchCapabilityRequest'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchCapabilityRequestSchema>
+    >;
+    'component:EmbeddingBatchCapabilityResponse': Same<
+        W.ApiComponentTypes['EmbeddingBatchCapabilityResponse'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchCapabilityResponseSchema>
+    >;
+    'component:EmbeddingBatchCreateRequest': Same<
+        W.ApiComponentTypes['EmbeddingBatchCreateRequest'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchCreateRequestSchema>
+    >;
+    'component:EmbeddingBatchJobRequest': Same<
+        W.ApiComponentTypes['EmbeddingBatchJobRequest'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchJobRequestSchema>
+    >;
+    'component:EmbeddingBatchJobResponse': Same<
+        W.ApiComponentTypes['EmbeddingBatchJobResponse'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchJobResponseSchema>
+    >;
+    'component:EmbeddingBatchRunState': Same<
+        W.ApiComponentTypes['EmbeddingBatchRunState'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchRunStateSchema>
+    >;
+    'component:EmbeddingBatchRunSummary': Same<
+        W.ApiComponentTypes['EmbeddingBatchRunSummary'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchRunSummarySchema>
+    >;
+    'component:EmbeddingBatchSubjob': Same<
+        W.ApiComponentTypes['EmbeddingBatchSubjob'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchSubjobSchema>
+    >;
+    'component:EmbeddingBatchPrepareRequest': Same<
+        W.ApiComponentTypes['EmbeddingBatchPrepareRequest'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchPrepareRequestSchema>
+    >;
+    'component:EmbeddingBatchPrepareResponse': Same<
+        W.ApiComponentTypes['EmbeddingBatchPrepareResponse'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchPrepareResponseSchema>
+    >;
+    'component:EmbeddingBatchRenditionPageRequest': Same<
+        W.ApiComponentTypes['EmbeddingBatchRenditionPageRequest'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchRenditionPageRequestSchema>
+    >;
+    'component:EmbeddingBatchRenditionPageResponse': Same<
+        W.ApiComponentTypes['EmbeddingBatchRenditionPageResponse'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchRenditionPageResponseSchema>
+    >;
+    'component:EmbeddingBatchUpdateRequest': Same<
+        W.ApiComponentTypes['EmbeddingBatchUpdateRequest'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchUpdateRequestSchema>
+    >;
+    'component:EmbeddingBatchApplyRequest': Same<
+        W.ApiComponentTypes['EmbeddingBatchApplyRequest'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchApplyRequestSchema>
+    >;
+    'component:EmbeddingBatchApplyResponse': Same<
+        W.ApiComponentTypes['EmbeddingBatchApplyResponse'],
+        z.infer<typeof import('./api-schemas/embeddings.js').EmbeddingBatchApplyResponseSchema>
+    >;
+    'component:GenericCommandResponse': Same<
+        W.ApiComponentTypes['GenericCommandResponse'],
+        z.infer<typeof import('./api-schemas/commands.js').GenericCommandResponseSchema>
+    >;
+    'component:DurationValue': Same<
+        W.ApiComponentTypes['DurationValue'],
+        z.infer<typeof import('./api-schemas/process.js').DurationValueSchema>
+    >;
+    'component:JsonLogicRule': Same<
+        W.ApiComponentTypes['JsonLogicRule'],
+        z.infer<typeof import('./api-schemas/process.js').JsonLogicRuleSchema>
+    >;
+    'component:DSLWorkflowDefinition': Same<
+        W.ApiComponentTypes['DSLWorkflowDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowDefinitionSchema>
+    >;
+    'component:ActivityFetchSpec': Same<
+        W.ApiComponentTypes['ActivityFetchSpec'],
+        z.infer<typeof import('./api-schemas/process.js').ActivityFetchSpecSchema>
+    >;
+    'component:WorkflowSearchAttributeValue': Same<
+        W.ApiComponentTypes['WorkflowSearchAttributeValue'],
+        z.infer<typeof import('./api-schemas/process.js').WorkflowSearchAttributeValueSchema>
+    >;
+    'component:DSLRetryPolicy': Same<
+        W.ApiComponentTypes['DSLRetryPolicy'],
+        z.infer<typeof import('./api-schemas/process.js').DSLRetryPolicySchema>
+    >;
+    'component:ActivityFetchSpecMap': Same<
+        W.ApiComponentTypes['ActivityFetchSpecMap'],
+        z.infer<typeof import('./api-schemas/process.js').ActivityFetchSpecMapSchema>
+    >;
+    'component:WorkflowSearchAttributeValueMap': Same<
+        W.ApiComponentTypes['WorkflowSearchAttributeValueMap'],
+        z.infer<typeof import('./api-schemas/process.js').WorkflowSearchAttributeValueMapSchema>
+    >;
+    'component:DSLActivityOptions': Same<
+        W.ApiComponentTypes['DSLActivityOptions'],
+        z.infer<typeof import('./api-schemas/process.js').DSLActivityOptionsSchema>
+    >;
+    'component:DSLActivitySpec': Same<
+        W.ApiComponentTypes['DSLActivitySpec'],
+        z.infer<typeof import('./api-schemas/process.js').DSLActivitySpecSchema>
+    >;
+    'component:WorkflowSearchAttributes': Same<
+        W.ApiComponentTypes['WorkflowSearchAttributes'],
+        z.infer<typeof import('./api-schemas/process.js').WorkflowSearchAttributesSchema>
+    >;
+    'component:DSLActivityStep': Same<
+        W.ApiComponentTypes['DSLActivityStep'],
+        z.infer<typeof import('./api-schemas/process.js').DSLActivityStepSchema>
+    >;
+    'component:DSLChildWorkflowStep': Same<
+        W.ApiComponentTypes['DSLChildWorkflowStep'],
+        z.infer<typeof import('./api-schemas/process.js').DSLChildWorkflowStepSchema>
+    >;
+    'component:DSLWorkflowDefinitionResponse': Same<
+        W.ApiComponentTypes['DSLWorkflowDefinitionResponse'],
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowDefinitionResponseSchema>
+    >;
+    'component:DSLWorkflowSpec': Same<
+        W.ApiComponentTypes['DSLWorkflowSpec'],
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowSpecSchema>
+    >;
+    'component:DSLWorkflowSpecWithActivities': Same<
+        W.ApiComponentTypes['DSLWorkflowSpecWithActivities'],
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowSpecWithActivitiesSchema>
+    >;
+    'component:DSLWorkflowSpecWithSteps': Same<
+        W.ApiComponentTypes['DSLWorkflowSpecWithSteps'],
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowSpecWithStepsSchema>
+    >;
+    'component:DSLWorkflowStep': Same<
+        W.ApiComponentTypes['DSLWorkflowStep'],
+        z.infer<typeof import('./api-schemas/process.js').DSLWorkflowStepSchema>
+    >;
+    'component:WorkflowDefinitionPayload': Same<
+        W.ApiComponentTypes['WorkflowDefinitionPayload'],
+        z.infer<typeof import('./api-schemas/process.js').WorkflowDefinitionPayloadSchema>
+    >;
+    'component:WorkflowDefinitionPayloadWithActivities': Same<
+        W.ApiComponentTypes['WorkflowDefinitionPayloadWithActivities'],
+        z.infer<typeof import('./api-schemas/process.js').WorkflowDefinitionPayloadWithActivitiesSchema>
+    >;
+    'component:WorkflowDefinitionPayloadWithSteps': Same<
+        W.ApiComponentTypes['WorkflowDefinitionPayloadWithSteps'],
+        z.infer<typeof import('./api-schemas/process.js').WorkflowDefinitionPayloadWithStepsSchema>
+    >;
+    'component:UpdateWorkflowDefinitionPayload': Same<
+        W.ApiComponentTypes['UpdateWorkflowDefinitionPayload'],
+        z.infer<typeof import('./api-schemas/process.js').UpdateWorkflowDefinitionPayloadSchema>
+    >;
+    'component:UpdateWorkflowDefinitionPayloadWithActivities': Same<
+        W.ApiComponentTypes['UpdateWorkflowDefinitionPayloadWithActivities'],
+        z.infer<typeof import('./api-schemas/process.js').UpdateWorkflowDefinitionPayloadWithActivitiesSchema>
+    >;
+    'component:UpdateWorkflowDefinitionPayloadWithSteps': Same<
+        W.ApiComponentTypes['UpdateWorkflowDefinitionPayloadWithSteps'],
+        z.infer<typeof import('./api-schemas/process.js').UpdateWorkflowDefinitionPayloadWithStepsSchema>
+    >;
+    'component:AgentMessageType': Same<
+        W.ApiComponentTypes['AgentMessageType'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentMessageTypeSchema>
+    >;
+    'component:ConversationFile': Same<
+        W.ApiComponentTypes['ConversationFile'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ConversationFileSchema>
+    >;
+    'component:AgentMessageDetails': Same<
+        W.ApiComponentTypes['AgentMessageDetails'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentMessageDetailsSchema>
+    >;
+    'component:CompactMessage': Same<
+        W.ApiComponentTypes['CompactMessage'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').CompactMessageSchema>
+    >;
+    'component:ProcessDefinitionMetadata': Same<
+        W.ApiComponentTypes['ProcessDefinitionMetadata'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionMetadataSchema>
+    >;
+    'component:BranchJoinPolicy': Same<
+        W.ApiComponentTypes['BranchJoinPolicy'],
+        z.infer<typeof import('./api-schemas/process.js').BranchJoinPolicySchema>
+    >;
+    'component:ParallelFailurePolicy': Same<
+        W.ApiComponentTypes['ParallelFailurePolicy'],
+        z.infer<typeof import('./api-schemas/process.js').ParallelFailurePolicySchema>
+    >;
+    'component:ParallelCollectField': Same<
+        W.ApiComponentTypes['ParallelCollectField'],
+        z.infer<typeof import('./api-schemas/process.js').ParallelCollectFieldSchema>
+    >;
+    'component:ParallelCollectMode': Same<
+        W.ApiComponentTypes['ParallelCollectMode'],
+        z.infer<typeof import('./api-schemas/process.js').ParallelCollectModeSchema>
+    >;
+    'component:HumanTaskDefinition': Same<
+        W.ApiComponentTypes['HumanTaskDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').HumanTaskDefinitionSchema>
+    >;
+    'component:TransitionTrigger': Same<
+        W.ApiComponentTypes['TransitionTrigger'],
+        z.infer<typeof import('./api-schemas/process.js').TransitionTriggerSchema>
+    >;
+    'component:ProcessNodeReturnsDefinition': Same<
+        W.ApiComponentTypes['ProcessNodeReturnsDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessNodeReturnsDefinitionSchema>
+    >;
+    'component:ProcessNodeRunType': Same<
+        W.ApiComponentTypes['ProcessNodeRunType'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessNodeRunTypeSchema>
+    >;
+    'component:ProcessNodeType': Same<
+        W.ApiComponentTypes['ProcessNodeType'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessNodeTypeSchema>
+    >;
+    'component:ProcessContextDefinition': Same<
+        W.ApiComponentTypes['ProcessContextDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessContextDefinitionSchema>
+    >;
+    'component:ProcessDefinitionFormatVersion': Same<
+        W.ApiComponentTypes['ProcessDefinitionFormatVersion'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionFormatVersionSchema>
+    >;
+    'component:ProcessDefinitionStatus': Same<
+        W.ApiComponentTypes['ProcessDefinitionStatus'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionStatusSchema>
+    >;
+    'component:RevertProcessDefinitionPayload': Same<
+        W.ApiComponentTypes['RevertProcessDefinitionPayload'],
+        z.infer<typeof import('./api-schemas/process.js').RevertProcessDefinitionPayloadSchema>
+    >;
+    'component:RetryProcessNodePayload': Same<
+        W.ApiComponentTypes['RetryProcessNodePayload'],
+        z.infer<typeof import('./api-schemas/process.js').RetryProcessNodePayloadSchema>
+    >;
+    'component:PublishProcessDefinitionPayload': Same<
+        W.ApiComponentTypes['PublishProcessDefinitionPayload'],
+        z.infer<typeof import('./api-schemas/process.js').PublishProcessDefinitionPayloadSchema>
+    >;
+    'component:ProcessDefinitionRevisionInfo': Same<
+        W.ApiComponentTypes['ProcessDefinitionRevisionInfo'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionRevisionInfoSchema>
+    >;
+    'component:NodeHistoryEntry': Same<
+        W.ApiComponentTypes['NodeHistoryEntry'],
+        z.infer<typeof import('./api-schemas/process.js').NodeHistoryEntrySchema>
+    >;
+    'component:BranchDefinition': Same<
+        W.ApiComponentTypes['BranchDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').BranchDefinitionSchema>
+    >;
+    'component:ParallelCollectDefinition': Same<
+        W.ApiComponentTypes['ParallelCollectDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').ParallelCollectDefinitionSchema>
+    >;
+    'component:TransitionDefinition': Same<
+        W.ApiComponentTypes['TransitionDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').TransitionDefinitionSchema>
+    >;
+    'component:BranchNodeBranchDefinition': Same<
+        W.ApiComponentTypes['BranchNodeBranchDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').BranchNodeBranchDefinitionSchema>
+    >;
+    'component:CreateProcessDefinitionPayload': Same<
+        W.ApiComponentTypes['CreateProcessDefinitionPayload'],
+        z.infer<typeof import('./api-schemas/process.js').CreateProcessDefinitionPayloadSchema>
+    >;
+    'component:NodeDefinition': Same<
+        W.ApiComponentTypes['NodeDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').NodeDefinitionSchema>
+    >;
+    'component:NodeDefinitionMap': Same<
+        W.ApiComponentTypes['NodeDefinitionMap'],
+        z.infer<typeof import('./api-schemas/process.js').NodeDefinitionMapSchema>
+    >;
+    'component:ProcessDefinition': Same<
+        W.ApiComponentTypes['ProcessDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionSchema>
+    >;
+    'component:ProcessDefinitionArray': Same<
+        W.ApiComponentTypes['ProcessDefinitionArray'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionArraySchema>
+    >;
+    'component:ProcessDefinitionBody': Same<
+        W.ApiComponentTypes['ProcessDefinitionBody'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessDefinitionBodySchema>
+    >;
+    'component:UpdateProcessDefinitionPayload': Same<
+        W.ApiComponentTypes['UpdateProcessDefinitionPayload'],
+        z.infer<typeof import('./api-schemas/process.js').UpdateProcessDefinitionPayloadSchema>
+    >;
+    'component:ListProcessDefinitionsQuery': Same<
+        W.ApiComponentTypes['ListProcessDefinitionsQuery'],
+        z.infer<typeof import('./api-schemas/process.js').ListProcessDefinitionsQuerySchema>
+    >;
+    'component:ProcessScriptInlineSource': Same<
+        W.ApiComponentTypes['ProcessScriptInlineSource'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessScriptInlineSourceSchema>
+    >;
+    'component:ProcessScriptLanguage': Same<
+        W.ApiComponentTypes['ProcessScriptLanguage'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessScriptLanguageSchema>
+    >;
+    'component:ProcessScriptSource': Same<
+        W.ApiComponentTypes['ProcessScriptSource'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessScriptSourceSchema>
+    >;
+    'component:ProcessScriptResource': Same<
+        W.ApiComponentTypes['ProcessScriptResource'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessScriptResourceSchema>
+    >;
+    'component:ProcessScriptResourceMap': Same<
+        W.ApiComponentTypes['ProcessScriptResourceMap'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessScriptResourceMapSchema>
+    >;
+    'component:ProcessResourcesDefinition': Same<
+        W.ApiComponentTypes['ProcessResourcesDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessResourcesDefinitionSchema>
+    >;
+    'component:GenerationRunMetadata': Same<
+        W.ApiComponentTypes['GenerationRunMetadata'],
+        z.infer<typeof import('./api-schemas/content.js').GenerationRunMetadataSchema>
+    >;
+    'component:ContentObjectUserPermissions': Same<
+        W.ApiComponentTypes['ContentObjectUserPermissions'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectUserPermissionsSchema>
+    >;
+    'component:ContentSource': Same<
+        W.ApiComponentTypes['ContentSource'],
+        z.infer<typeof import('./api-schemas/content.js').ContentSourceSchema>
+    >;
+    'component:ContentObjectStatus': Same<
+        W.ApiComponentTypes['ContentObjectStatus'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectStatusSchema>
+    >;
+    'component:InheritedPropertyMetadata': Same<
+        W.ApiComponentTypes['InheritedPropertyMetadata'],
+        z.infer<typeof import('./api-schemas/content.js').InheritedPropertyMetadataSchema>
+    >;
+    'component:TranscriptSegment': Same<
+        W.ApiComponentTypes['TranscriptSegment'],
+        z.infer<typeof import('./api-schemas/content.js').TranscriptSegmentSchema>
+    >;
+    'component:ContentObjectTypeArray': Same<
+        W.ApiComponentTypes['ContentObjectTypeArray'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectTypeArraySchema>
+    >;
+    'component:ContentObjectTextResponse': Same<
+        W.ApiComponentTypes['ContentObjectTextResponse'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectTextResponseSchema>
+    >;
+    'component:DeleteContentObjectResult': Same<
+        W.ApiComponentTypes['DeleteContentObjectResult'],
+        z.infer<typeof import('./api-schemas/content.js').DeleteContentObjectResultSchema>
+    >;
+    'component:Transcript': Same<
+        W.ApiComponentTypes['Transcript'],
+        z.infer<typeof import('./api-schemas/content.js').TranscriptSchema>
+    >;
+    'component:CreateContentObjectPayload': Same<
+        W.ApiComponentTypes['CreateContentObjectPayload'],
+        z.infer<typeof import('./api-schemas/content.js').CreateContentObjectPayloadSchema>
+    >;
+    'component:UpdateContentObjectPayload': Same<
+        W.ApiComponentTypes['UpdateContentObjectPayload'],
+        z.infer<typeof import('./api-schemas/content.js').UpdateContentObjectPayloadSchema>
+    >;
+    'component:ContentObjectApiTypeRef': Same<
+        W.ApiComponentTypes['ContentObjectApiTypeRef'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectApiTypeRefSchema>
+    >;
+    'component:ContentObjectApiResponse': Same<
+        W.ApiComponentTypes['ContentObjectApiResponse'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectApiResponseSchema>
+    >;
+    'component:ProjectedContentObjectApiResponse': Same<
+        W.ApiComponentTypes['ProjectedContentObjectApiResponse'],
+        z.infer<typeof import('./api-schemas/content.js').ProjectedContentObjectApiResponseSchema>
+    >;
+    'component:ProjectedContentObjectApiResponseArray': Same<
+        W.ApiComponentTypes['ProjectedContentObjectApiResponseArray'],
+        z.infer<typeof import('./api-schemas/content.js').ProjectedContentObjectApiResponseArraySchema>
+    >;
+    'component:ContentObjectItemApiResponse': Same<
+        W.ApiComponentTypes['ContentObjectItemApiResponse'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectItemApiResponseSchema>
+    >;
+    'component:ContentObjectItemApiResponseArray': Same<
+        W.ApiComponentTypes['ContentObjectItemApiResponseArray'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectItemApiResponseArraySchema>
+    >;
+    'component:ContentObjectProcessingPriority': Same<
+        W.ApiComponentTypes['ContentObjectProcessingPriority'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectProcessingPrioritySchema>
+    >;
+    'component:ContentObjectApiResponseArray': Same<
+        W.ApiComponentTypes['ContentObjectApiResponseArray'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectApiResponseArraySchema>
+    >;
+    'component:CreateContentObjectHeaders': Same<
+        W.ApiComponentTypes['CreateContentObjectHeaders'],
+        z.infer<typeof import('./api-schemas/content.js').CreateContentObjectHeadersSchema>
+    >;
+    'component:CreateContentObjectQuery': Same<
+        W.ApiComponentTypes['CreateContentObjectQuery'],
+        z.infer<typeof import('./api-schemas/content.js').CreateContentObjectQuerySchema>
+    >;
+    'component:UpdateContentObjectHeaders': Same<
+        W.ApiComponentTypes['UpdateContentObjectHeaders'],
+        z.infer<typeof import('./api-schemas/content.js').UpdateContentObjectHeadersSchema>
+    >;
+    'component:UpdateContentObjectQuery': Same<
+        W.ApiComponentTypes['UpdateContentObjectQuery'],
+        z.infer<typeof import('./api-schemas/content.js').UpdateContentObjectQuerySchema>
+    >;
+    'component:RevisionInfo': Same<
+        W.ApiComponentTypes['RevisionInfo'],
+        z.infer<typeof import('./api-schemas/content.js').RevisionInfoSchema>
+    >;
+    'component:StartContentObjectExportResponse': Same<
+        W.ApiComponentTypes['StartContentObjectExportResponse'],
+        z.infer<typeof import('./api-schemas/content.js').StartContentObjectExportResponseSchema>
+    >;
+    'component:ExportContentObjectsIncludeOptions': Same<
+        W.ApiComponentTypes['ExportContentObjectsIncludeOptions'],
+        z.infer<typeof import('./api-schemas/content.js').ExportContentObjectsIncludeOptionsSchema>
+    >;
+    'component:ExportContentObjectsFilter': Same<
+        W.ApiComponentTypes['ExportContentObjectsFilter'],
+        z.infer<typeof import('./api-schemas/content.js').ExportContentObjectsFilterSchema>
+    >;
+    'component:ContentObjectApiRevision': Same<
+        W.ApiComponentTypes['ContentObjectApiRevision'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectApiRevisionSchema>
+    >;
+    'component:ContentObjectExportArtifactFile': Same<
+        W.ApiComponentTypes['ContentObjectExportArtifactFile'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectExportArtifactFileSchema>
+    >;
+    'component:GetRenditionResponse': Same<
+        W.ApiComponentTypes['GetRenditionResponse'],
+        z.infer<typeof import('./api-schemas/content.js').GetRenditionResponseSchema>
+    >;
+    'component:ContentObjectExportResult': Same<
+        W.ApiComponentTypes['ContentObjectExportResult'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectExportResultSchema>
+    >;
+    'component:ContentObjectExportProgress': Same<
+        W.ApiComponentTypes['ContentObjectExportProgress'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectExportProgressSchema>
+    >;
+    'component:ExportPropertiesResponse': Same<
+        W.ApiComponentTypes['ExportPropertiesResponse'],
+        z.infer<typeof import('./api-schemas/content.js').ExportPropertiesResponseSchema>
+    >;
+    'component:DeleteContentObjectExportResponse': Same<
+        W.ApiComponentTypes['DeleteContentObjectExportResponse'],
+        z.infer<typeof import('./api-schemas/content.js').DeleteContentObjectExportResponseSchema>
+    >;
+    'component:StartContentObjectExportRequest': Same<
+        W.ApiComponentTypes['StartContentObjectExportRequest'],
+        z.infer<typeof import('./api-schemas/content.js').StartContentObjectExportRequestSchema>
+    >;
+    'component:ContentObjectExportArtifact': Same<
+        W.ApiComponentTypes['ContentObjectExportArtifact'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectExportArtifactSchema>
+    >;
+    'component:ContentObjectExportStatusResponse': Same<
+        W.ApiComponentTypes['ContentObjectExportStatusResponse'],
+        z.infer<typeof import('./api-schemas/content.js').ContentObjectExportStatusResponseSchema>
+    >;
+    'component:ListContentObjectExportsResponse': Same<
+        W.ApiComponentTypes['ListContentObjectExportsResponse'],
+        z.infer<typeof import('./api-schemas/content.js').ListContentObjectExportsResponseSchema>
+    >;
+    'component:ExportPropertiesPayload': Same<
+        W.ApiComponentTypes['ExportPropertiesPayload'],
+        z.infer<typeof import('./api-schemas/content.js').ExportPropertiesPayloadSchema>
+    >;
+    'component:CostExportCsvResponse': Same<
+        W.ApiComponentTypes['CostExportCsvResponse'],
+        z.infer<typeof import('./api-schemas/content.js').CostExportCsvResponseSchema>
+    >;
+    'component:GetObjectRenditionQuery': Same<
+        W.ApiComponentTypes['GetObjectRenditionQuery'],
+        z.infer<typeof import('./api-schemas/content.js').GetObjectRenditionQuerySchema>
+    >;
+    'component:scoreAggregationTypes': Same<
+        W.ApiComponentTypes['scoreAggregationTypes'],
+        z.infer<typeof import('./api-schemas/content.js').scoreAggregationTypesSchema>
+    >;
+    'component:dynamicScalingTypes': Same<
+        W.ApiComponentTypes['dynamicScalingTypes'],
+        z.infer<typeof import('./api-schemas/content.js').dynamicScalingTypesSchema>
+    >;
+    'component:Embedding': Same<
+        W.ApiComponentTypes['Embedding'],
+        z.infer<typeof import('./api-schemas/content.js').EmbeddingSchema>
+    >;
+    'component:SupportedEmbeddingTypes': Same<
+        W.ApiComponentTypes['SupportedEmbeddingTypes'],
+        z.infer<typeof import('./api-schemas/content.js').SupportedEmbeddingTypesSchema>
+    >;
+    'component:SetObjectEmbeddingsResponse': Same<
+        W.ApiComponentTypes['SetObjectEmbeddingsResponse'],
+        z.infer<typeof import('./api-schemas/content.js').SetObjectEmbeddingsResponseSchema>
+    >;
+    'component:Record_SearchTypes_number': Same<
+        W.ApiComponentTypes['Record_SearchTypes_number'],
+        z.infer<typeof import('./api-schemas/content.js').Record_SearchTypes_numberSchema>
+    >;
+    'component:EmbeddingSearchConfig': Same<
+        W.ApiComponentTypes['EmbeddingSearchConfig'],
+        z.infer<typeof import('./api-schemas/content.js').EmbeddingSearchConfigSchema>
+    >;
+    'component:EmbeddingMap': Same<
+        W.ApiComponentTypes['EmbeddingMap'],
+        z.infer<typeof import('./api-schemas/content.js').EmbeddingMapSchema>
+    >;
+    'component:FindPayload': Same<
+        W.ApiComponentTypes['FindPayload'],
+        z.infer<typeof import('./api-schemas/content.js').FindPayloadSchema>
+    >;
+    'component:ContentEmbeddingMap': Same<
+        W.ApiComponentTypes['ContentEmbeddingMap'],
+        z.infer<typeof import('./api-schemas/content.js').ContentEmbeddingMapSchema>
+    >;
+    'component:VectorSearchQuery': Same<
+        W.ApiComponentTypes['VectorSearchQuery'],
+        z.infer<typeof import('./api-schemas/content.js').VectorSearchQuerySchema>
+    >;
+    'component:ComplexSearchQuery': Same<
+        W.ApiComponentTypes['ComplexSearchQuery'],
+        z.infer<typeof import('./api-schemas/content.js').ComplexSearchQuerySchema>
+    >;
+    'component:ComputeObjectFacetPayload': Same<
+        W.ApiComponentTypes['ComputeObjectFacetPayload'],
+        z.infer<typeof import('./api-schemas/content.js').ComputeObjectFacetPayloadSchema>
+    >;
+    'component:ComplexSearchPayload': Same<
+        W.ApiComponentTypes['ComplexSearchPayload'],
+        z.infer<typeof import('./api-schemas/content.js').ComplexSearchPayloadSchema>
+    >;
+    'component:ObjectSearchResponse': Same<
+        W.ApiComponentTypes['ObjectSearchResponse'],
+        z.infer<typeof import('./api-schemas/content.js').ObjectSearchResponseSchema>
+    >;
+    'component:EventPriority': Same<
+        W.ApiComponentTypes['EventPriority'],
+        z.infer<typeof import('./api-schemas/events.js').EventPrioritySchema>
+    >;
+    'component:WorkflowRuleInputType': Same<
+        W.ApiComponentTypes['WorkflowRuleInputType'],
+        z.infer<typeof import('./api-schemas/events.js').WorkflowRuleInputTypeSchema>
+    >;
+    'component:WorkflowRuleItem': Same<
+        W.ApiComponentTypes['WorkflowRuleItem'],
+        z.infer<typeof import('./api-schemas/events.js').WorkflowRuleItemSchema>
+    >;
+    'component:WorkflowRule': Same<
+        W.ApiComponentTypes['WorkflowRule'],
+        z.infer<typeof import('./api-schemas/events.js').WorkflowRuleSchema>
+    >;
+    'component:CreateWorkflowRulePayload': Same<
+        W.ApiComponentTypes['CreateWorkflowRulePayload'],
+        z.infer<typeof import('./api-schemas/events.js').CreateWorkflowRulePayloadSchema>
+    >;
+    'component:UpdateWorkflowRulePayload': Same<
+        W.ApiComponentTypes['UpdateWorkflowRulePayload'],
+        z.infer<typeof import('./api-schemas/events.js').UpdateWorkflowRulePayloadSchema>
+    >;
+    'component:ListEventDeliveriesPayload': Same<
+        W.ApiComponentTypes['ListEventDeliveriesPayload'],
+        z.infer<typeof import('./api-schemas/events.js').ListEventDeliveriesPayloadSchema>
+    >;
+    'component:WorkflowRuleItemArray': Same<
+        W.ApiComponentTypes['WorkflowRuleItemArray'],
+        z.infer<typeof import('./api-schemas/events.js').WorkflowRuleItemArraySchema>
+    >;
+    'component:EventSubscriptionFilter': Same<
+        W.ApiComponentTypes['EventSubscriptionFilter'],
+        z.infer<typeof import('./api-schemas/events.js').EventSubscriptionFilterSchema>
+    >;
+    'component:ListEventDeliveriesResponse': Same<
+        W.ApiComponentTypes['ListEventDeliveriesResponse'],
+        z.infer<typeof import('./api-schemas/events.js').ListEventDeliveriesResponseSchema>
+    >;
+    'component:CreateEventSubscriptionPayload': Same<
+        W.ApiComponentTypes['CreateEventSubscriptionPayload'],
+        z.infer<typeof import('./api-schemas/events.js').CreateEventSubscriptionPayloadSchema>
+    >;
+    'component:EventSubscription': Same<
+        W.ApiComponentTypes['EventSubscription'],
+        z.infer<typeof import('./api-schemas/events.js').EventSubscriptionSchema>
+    >;
+    'component:EventSubscriptionArray': Same<
+        W.ApiComponentTypes['EventSubscriptionArray'],
+        z.infer<typeof import('./api-schemas/events.js').EventSubscriptionArraySchema>
+    >;
+    'component:EventSubscriptionMutationResponse': Same<
+        W.ApiComponentTypes['EventSubscriptionMutationResponse'],
+        z.infer<typeof import('./api-schemas/events.js').EventSubscriptionMutationResponseSchema>
+    >;
+    'component:UpdateEventSubscriptionPayload': Same<
+        W.ApiComponentTypes['UpdateEventSubscriptionPayload'],
+        z.infer<typeof import('./api-schemas/events.js').UpdateEventSubscriptionPayloadSchema>
+    >;
+    'component:ServerSentEventsResponse': Same<
+        W.ApiComponentTypes['ServerSentEventsResponse'],
+        z.infer<typeof import('./api-schemas/events.js').ServerSentEventsResponseSchema>
+    >;
+    'component:StreamEventDeliveriesQuery': Same<
+        W.ApiComponentTypes['StreamEventDeliveriesQuery'],
+        z.infer<typeof import('./api-schemas/events.js').StreamEventDeliveriesQuerySchema>
+    >;
+    'component:ProcessRunType': Same<
+        W.ApiComponentTypes['ProcessRunType'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessRunTypeSchema>
+    >;
+    'component:ProcessRunConfig': Same<
+        W.ApiComponentTypes['ProcessRunConfig'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessRunConfigSchema>
+    >;
+    'component:ProcessHistoryRef': Same<
+        W.ApiComponentTypes['ProcessHistoryRef'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessHistoryRefSchema>
+    >;
+    'component:ProcessHistoryResponse': Same<
+        W.ApiComponentTypes['ProcessHistoryResponse'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessHistoryResponseSchema>
+    >;
+    'component:ProcessContextResponse': Same<
+        W.ApiComponentTypes['ProcessContextResponse'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessContextResponseSchema>
+    >;
+    'component:WorkflowExecutionStartResult': Same<
+        W.ApiComponentTypes['WorkflowExecutionStartResult'],
+        z.infer<typeof import('./api-schemas/process.js').WorkflowExecutionStartResultSchema>
+    >;
+    'component:ImportSpec': Same<
+        W.ApiComponentTypes['ImportSpec'],
+        z.infer<typeof import('./api-schemas/process.js').ImportSpecSchema>
+    >;
+    'component:AnswerProcessTaskPayload': Same<
+        W.ApiComponentTypes['AnswerProcessTaskPayload'],
+        z.infer<typeof import('./api-schemas/process.js').AnswerProcessTaskPayloadSchema>
+    >;
+    'component:AdvanceProcessPayload': Same<
+        W.ApiComponentTypes['AdvanceProcessPayload'],
+        z.infer<typeof import('./api-schemas/process.js').AdvanceProcessPayloadSchema>
+    >;
+    'component:ProcessState': Same<
+        W.ApiComponentTypes['ProcessState'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessStateSchema>
+    >;
+    'component:WorkflowExecutionStartResultArray': Same<
+        W.ApiComponentTypes['WorkflowExecutionStartResultArray'],
+        z.infer<typeof import('./api-schemas/process.js').WorkflowExecutionStartResultArraySchema>
+    >;
+    'component:RecordProcessRunPayload': Same<
+        W.ApiComponentTypes['RecordProcessRunPayload'],
+        z.infer<typeof import('./api-schemas/process.js').RecordProcessRunPayloadSchema>
+    >;
+    'component:ProcessTestRunStatus': Same<
+        W.ApiComponentTypes['ProcessTestRunStatus'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestRunStatusSchema>
+    >;
+    'component:ProcessTestVirtualActor': Same<
+        W.ApiComponentTypes['ProcessTestVirtualActor'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestVirtualActorSchema>
+    >;
+    'component:ProcessTestFixtureResult': Same<
+        W.ApiComponentTypes['ProcessTestFixtureResult'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestFixtureResultSchema>
+    >;
+    'component:ProcessTestFixtureError': Same<
+        W.ApiComponentTypes['ProcessTestFixtureError'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestFixtureErrorSchema>
+    >;
+    'component:ProcessTestFixtureResponse': Same<
+        W.ApiComponentTypes['ProcessTestFixtureResponse'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestFixtureResponseSchema>
+    >;
+    'component:ProcessTestNodeFixture': Same<
+        W.ApiComponentTypes['ProcessTestNodeFixture'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestNodeFixtureSchema>
+    >;
+    'component:ProcessTestHumanAction': Same<
+        W.ApiComponentTypes['ProcessTestHumanAction'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestHumanActionSchema>
+    >;
+    'component:ProcessTestAssertions': Same<
+        W.ApiComponentTypes['ProcessTestAssertions'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestAssertionsSchema>
+    >;
+    'component:ProcessTestScenario': Same<
+        W.ApiComponentTypes['ProcessTestScenario'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestScenarioSchema>
+    >;
+    'component:ProcessTestSuite': Same<
+        W.ApiComponentTypes['ProcessTestSuite'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestSuiteSchema>
+    >;
+    'component:ProcessTestSuiteArray': Same<
+        W.ApiComponentTypes['ProcessTestSuiteArray'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestSuiteArraySchema>
+    >;
+    'component:CreateProcessTestSuitePayload': Same<
+        W.ApiComponentTypes['CreateProcessTestSuitePayload'],
+        z.infer<typeof import('./api-schemas/process.js').CreateProcessTestSuitePayloadSchema>
+    >;
+    'component:UpdateProcessTestSuitePayload': Same<
+        W.ApiComponentTypes['UpdateProcessTestSuitePayload'],
+        z.infer<typeof import('./api-schemas/process.js').UpdateProcessTestSuitePayloadSchema>
+    >;
+    'component:StartProcessTestRunPayload': Same<
+        W.ApiComponentTypes['StartProcessTestRunPayload'],
+        z.infer<typeof import('./api-schemas/process.js').StartProcessTestRunPayloadSchema>
+    >;
+    'component:ProcessTestStoredSubject': Same<
+        W.ApiComponentTypes['ProcessTestStoredSubject'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestStoredSubjectSchema>
+    >;
+    'component:ProcessTestResolvedSubject': Same<
+        W.ApiComponentTypes['ProcessTestResolvedSubject'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestResolvedSubjectSchema>
+    >;
+    'component:ProcessTestInlineSubject': Same<
+        W.ApiComponentTypes['ProcessTestInlineSubject'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestInlineSubjectSchema>
+    >;
+    'component:ProcessTestSubject': Same<
+        W.ApiComponentTypes['ProcessTestSubject'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestSubjectSchema>
+    >;
+    'component:ProcessTestTargetById': Same<
+        W.ApiComponentTypes['ProcessTestTargetById'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestTargetByIdSchema>
+    >;
+    'component:ProcessTestTargetWithDefinition': Same<
+        W.ApiComponentTypes['ProcessTestTargetWithDefinition'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestTargetWithDefinitionSchema>
+    >;
+    'component:ProcessTestTarget': Same<
+        W.ApiComponentTypes['ProcessTestTarget'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestTargetSchema>
+    >;
+    'component:SubmitProcessTestRunPayload': Same<
+        W.ApiComponentTypes['SubmitProcessTestRunPayload'],
+        z.infer<typeof import('./api-schemas/process.js').SubmitProcessTestRunPayloadSchema>
+    >;
+    'component:ProcessTestAssertionResult': Same<
+        W.ApiComponentTypes['ProcessTestAssertionResult'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestAssertionResultSchema>
+    >;
+    'component:ProcessTestActorDecision': Same<
+        W.ApiComponentTypes['ProcessTestActorDecision'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestActorDecisionSchema>
+    >;
+    'component:ProcessTestCoverage': Same<
+        W.ApiComponentTypes['ProcessTestCoverage'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestCoverageSchema>
+    >;
+    'component:ProcessTestChildTrace': Same<
+        W.ApiComponentTypes['ProcessTestChildTrace'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestChildTraceSchema>
+    >;
+    'component:ProcessTestScenarioResult': Same<
+        W.ApiComponentTypes['ProcessTestScenarioResult'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestScenarioResultSchema>
+    >;
+    'component:ProcessTestRun': Same<
+        W.ApiComponentTypes['ProcessTestRun'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestRunSchema>
+    >;
+    'component:ProcessTestRunArray': Same<
+        W.ApiComponentTypes['ProcessTestRunArray'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTestRunArraySchema>
+    >;
+    'component:ListProcessTestRunsQuery': Same<
+        W.ApiComponentTypes['ListProcessTestRunsQuery'],
+        z.infer<typeof import('./api-schemas/process.js').ListProcessTestRunsQuerySchema>
+    >;
+    'component:UpdateProcessTestScenarioPayload': Same<
+        W.ApiComponentTypes['UpdateProcessTestScenarioPayload'],
+        z.infer<typeof import('./api-schemas/process.js').UpdateProcessTestScenarioPayloadSchema>
+    >;
+    'component:AgentDeliveryMatchMode': Same<
+        W.ApiComponentTypes['AgentDeliveryMatchMode'],
+        z.infer<typeof import('./api-schemas/events.js').AgentDeliveryMatchModeSchema>
+    >;
+    'component:WebhookPayloadMode': Same<
+        W.ApiComponentTypes['WebhookPayloadMode'],
+        z.infer<typeof import('./api-schemas/events.js').WebhookPayloadModeSchema>
+    >;
+    'component:WebhookSigningMode': Same<
+        W.ApiComponentTypes['WebhookSigningMode'],
+        z.infer<typeof import('./api-schemas/events.js').WebhookSigningModeSchema>
+    >;
+    'component:SemanticConditionOnError': Same<
+        W.ApiComponentTypes['SemanticConditionOnError'],
+        z.infer<typeof import('./api-schemas/events.js').SemanticConditionOnErrorSchema>
+    >;
+    'component:SemanticConditionMode': Same<
+        W.ApiComponentTypes['SemanticConditionMode'],
+        z.infer<typeof import('./api-schemas/events.js').SemanticConditionModeSchema>
+    >;
+    'component:AgentSemanticEvaluator': Same<
+        W.ApiComponentTypes['AgentSemanticEvaluator'],
+        z.infer<typeof import('./api-schemas/events.js').AgentSemanticEvaluatorSchema>
+    >;
+    'component:InteractionSemanticEvaluator': Same<
+        W.ApiComponentTypes['InteractionSemanticEvaluator'],
+        z.infer<typeof import('./api-schemas/events.js').InteractionSemanticEvaluatorSchema>
+    >;
+    'component:SemanticEvaluationStatus': Same<
+        W.ApiComponentTypes['SemanticEvaluationStatus'],
+        z.infer<typeof import('./api-schemas/events.js').SemanticEvaluationStatusSchema>
+    >;
+    'component:EventDeliveryIntentStatus': Same<
+        W.ApiComponentTypes['EventDeliveryIntentStatus'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryIntentStatusSchema>
+    >;
+    'component:EventOutboxStatus': Same<
+        W.ApiComponentTypes['EventOutboxStatus'],
+        z.infer<typeof import('./api-schemas/events.js').EventOutboxStatusSchema>
+    >;
+    'component:EventDeliverySortField': Same<
+        W.ApiComponentTypes['EventDeliverySortField'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliverySortFieldSchema>
+    >;
+    'component:WebhookEventDeliveryTarget': Same<
+        W.ApiComponentTypes['WebhookEventDeliveryTarget'],
+        z.infer<typeof import('./api-schemas/events.js').WebhookEventDeliveryTargetSchema>
+    >;
+    'component:AppEventDeliveryTarget': Same<
+        W.ApiComponentTypes['AppEventDeliveryTarget'],
+        z.infer<typeof import('./api-schemas/events.js').AppEventDeliveryTargetSchema>
+    >;
+    'component:WorkflowEventDeliveryTarget': Same<
+        W.ApiComponentTypes['WorkflowEventDeliveryTarget'],
+        z.infer<typeof import('./api-schemas/events.js').WorkflowEventDeliveryTargetSchema>
+    >;
+    'component:EventDeliveryQueueFailureSummary': Same<
+        W.ApiComponentTypes['EventDeliveryQueueFailureSummary'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryQueueFailureSummarySchema>
+    >;
+    'component:EventOutboxQueueSummary': Same<
+        W.ApiComponentTypes['EventOutboxQueueSummary'],
+        z.infer<typeof import('./api-schemas/events.js').EventOutboxQueueSummarySchema>
+    >;
+    'component:EventDeliveryQueueSortField': Same<
+        W.ApiComponentTypes['EventDeliveryQueueSortField'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryQueueSortFieldSchema>
+    >;
+    'component:AgentEventDeliveryTarget': Same<
+        W.ApiComponentTypes['AgentEventDeliveryTarget'],
+        z.infer<typeof import('./api-schemas/events.js').AgentEventDeliveryTargetSchema>
+    >;
+    'component:WebhookEventDeliveryTargetInput': Same<
+        W.ApiComponentTypes['WebhookEventDeliveryTargetInput'],
+        z.infer<typeof import('./api-schemas/events.js').WebhookEventDeliveryTargetInputSchema>
+    >;
+    'component:AppEventDeliveryTargetInput': Same<
+        W.ApiComponentTypes['AppEventDeliveryTargetInput'],
+        z.infer<typeof import('./api-schemas/events.js').AppEventDeliveryTargetInputSchema>
+    >;
+    'component:WorkflowEventDeliveryTargetInput': Same<
+        W.ApiComponentTypes['WorkflowEventDeliveryTargetInput'],
+        z.infer<typeof import('./api-schemas/events.js').WorkflowEventDeliveryTargetInputSchema>
+    >;
+    'component:SemanticEvaluator': Same<
+        W.ApiComponentTypes['SemanticEvaluator'],
+        z.infer<typeof import('./api-schemas/events.js').SemanticEvaluatorSchema>
+    >;
+    'component:SemanticEvaluationRecord': Same<
+        W.ApiComponentTypes['SemanticEvaluationRecord'],
+        z.infer<typeof import('./api-schemas/events.js').SemanticEvaluationRecordSchema>
+    >;
+    'component:EventDeliveryQueueSubscriptionSummary': Same<
+        W.ApiComponentTypes['EventDeliveryQueueSubscriptionSummary'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryQueueSubscriptionSummarySchema>
+    >;
+    'component:EventDeliveryQueueSummaryPayload': Same<
+        W.ApiComponentTypes['EventDeliveryQueueSummaryPayload'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryQueueSummaryPayloadSchema>
+    >;
+    'component:CancelEventDeliveryIntentsPayload': Same<
+        W.ApiComponentTypes['CancelEventDeliveryIntentsPayload'],
+        z.infer<typeof import('./api-schemas/events.js').CancelEventDeliveryIntentsPayloadSchema>
+    >;
+    'component:CancelEventDeliveryIntentsResponse': Same<
+        W.ApiComponentTypes['CancelEventDeliveryIntentsResponse'],
+        z.infer<typeof import('./api-schemas/events.js').CancelEventDeliveryIntentsResponseSchema>
+    >;
+    'component:EventSemanticCondition': Same<
+        W.ApiComponentTypes['EventSemanticCondition'],
+        z.infer<typeof import('./api-schemas/events.js').EventSemanticConditionSchema>
+    >;
+    'component:EventDeliveryIntentSummary': Same<
+        W.ApiComponentTypes['EventDeliveryIntentSummary'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryIntentSummarySchema>
+    >;
+    'component:EventDeliveryQueueSummaryResponse': Same<
+        W.ApiComponentTypes['EventDeliveryQueueSummaryResponse'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryQueueSummaryResponseSchema>
+    >;
+    'component:EventDeliverySummary': Same<
+        W.ApiComponentTypes['EventDeliverySummary'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliverySummarySchema>
+    >;
+    'component:EventDeliveryTarget': Same<
+        W.ApiComponentTypes['EventDeliveryTarget'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryTargetSchema>
+    >;
+    'component:EventDeliveryTargetInput': Same<
+        W.ApiComponentTypes['EventDeliveryTargetInput'],
+        z.infer<typeof import('./api-schemas/events.js').EventDeliveryTargetInputSchema>
+    >;
+    'component:ProcessEventDeliveryTarget': Same<
+        W.ApiComponentTypes['ProcessEventDeliveryTarget'],
+        z.infer<typeof import('./api-schemas/events.js').ProcessEventDeliveryTargetSchema>
+    >;
+    'component:EventIngestSignatureEncoding': Same<
+        W.ApiComponentTypes['EventIngestSignatureEncoding'],
+        z.infer<typeof import('./api-schemas/events.js').EventIngestSignatureEncodingSchema>
+    >;
+    'component:EventIngestSignatureAlgorithm': Same<
+        W.ApiComponentTypes['EventIngestSignatureAlgorithm'],
+        z.infer<typeof import('./api-schemas/events.js').EventIngestSignatureAlgorithmSchema>
+    >;
+    'component:EventIngestResourceRule': Same<
+        W.ApiComponentTypes['EventIngestResourceRule'],
+        z.infer<typeof import('./api-schemas/events.js').EventIngestResourceRuleSchema>
+    >;
+    'component:EventIngestSignatureConfig': Same<
+        W.ApiComponentTypes['EventIngestSignatureConfig'],
+        z.infer<typeof import('./api-schemas/events.js').EventIngestSignatureConfigSchema>
+    >;
+    'component:EventIngestTransform': Same<
+        W.ApiComponentTypes['EventIngestTransform'],
+        z.infer<typeof import('./api-schemas/events.js').EventIngestTransformSchema>
+    >;
+    'component:EventIngestChannel': Same<
+        W.ApiComponentTypes['EventIngestChannel'],
+        z.infer<typeof import('./api-schemas/events.js').EventIngestChannelSchema>
+    >;
+    'component:EventIngestChannelMutationResponse': Same<
+        W.ApiComponentTypes['EventIngestChannelMutationResponse'],
+        z.infer<typeof import('./api-schemas/events.js').EventIngestChannelMutationResponseSchema>
+    >;
+    'component:CreateEventIngestChannelPayload': Same<
+        W.ApiComponentTypes['CreateEventIngestChannelPayload'],
+        z.infer<typeof import('./api-schemas/events.js').CreateEventIngestChannelPayloadSchema>
+    >;
+    'component:UpdateEventIngestChannelPayload': Same<
+        W.ApiComponentTypes['UpdateEventIngestChannelPayload'],
+        z.infer<typeof import('./api-schemas/events.js').UpdateEventIngestChannelPayloadSchema>
+    >;
+    'component:EventIngestChannelArray': Same<
+        W.ApiComponentTypes['EventIngestChannelArray'],
+        z.infer<typeof import('./api-schemas/events.js').EventIngestChannelArraySchema>
+    >;
+    'component:CollectionSecuritySettingsResponse': Same<
+        W.ApiComponentTypes['CollectionSecuritySettingsResponse'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionSecuritySettingsResponseSchema>
+    >;
+    'component:CollectionMembersUpdateResult': Same<
+        W.ApiComponentTypes['CollectionMembersUpdateResult'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionMembersUpdateResultSchema>
+    >;
+    'component:CollectionMembersUpdatePayload': Same<
+        W.ApiComponentTypes['CollectionMembersUpdatePayload'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionMembersUpdatePayloadSchema>
+    >;
+    'component:CollectionChildrenUpdateResult': Same<
+        W.ApiComponentTypes['CollectionChildrenUpdateResult'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionChildrenUpdateResultSchema>
+    >;
+    'component:CollectionChildrenUpdatePayload': Same<
+        W.ApiComponentTypes['CollectionChildrenUpdatePayload'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionChildrenUpdatePayloadSchema>
+    >;
+    'component:CollectionStatus': Same<
+        W.ApiComponentTypes['CollectionStatus'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionStatusSchema>
+    >;
+    'component:CollectionPropagationResponse': Same<
+        W.ApiComponentTypes['CollectionPropagationResponse'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionPropagationResponseSchema>
+    >;
+    'component:CreateCollectionPayload': Same<
+        W.ApiComponentTypes['CreateCollectionPayload'],
+        z.infer<typeof import('./api-schemas/content.js').CreateCollectionPayloadSchema>
+    >;
+    'component:UpdateCollectionPayload': Same<
+        W.ApiComponentTypes['UpdateCollectionPayload'],
+        z.infer<typeof import('./api-schemas/content.js').UpdateCollectionPayloadSchema>
+    >;
+    'component:ComplexCollectionSearchQuery': Same<
+        W.ApiComponentTypes['ComplexCollectionSearchQuery'],
+        z.infer<typeof import('./api-schemas/content.js').ComplexCollectionSearchQuerySchema>
+    >;
+    'component:Collection': Same<
+        W.ApiComponentTypes['Collection'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionSchema>
+    >;
+    'component:ComputeCollectionFacetPayload': Same<
+        W.ApiComponentTypes['ComputeCollectionFacetPayload'],
+        z.infer<typeof import('./api-schemas/content.js').ComputeCollectionFacetPayloadSchema>
+    >;
+    'component:CollectionArray': Same<
+        W.ApiComponentTypes['CollectionArray'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionArraySchema>
+    >;
+    'component:CollectionMembersQuery': Same<
+        W.ApiComponentTypes['CollectionMembersQuery'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionMembersQuerySchema>
+    >;
+    'component:UpdateAgentArtifactContentResponse': Same<
+        W.ApiComponentTypes['UpdateAgentArtifactContentResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').UpdateAgentArtifactContentResponseSchema>
+    >;
+    'component:UpdateAgentArtifactContentPayload': Same<
+        W.ApiComponentTypes['UpdateAgentArtifactContentPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').UpdateAgentArtifactContentPayloadSchema>
+    >;
+    'component:AgentArtifactContentResponse': Same<
+        W.ApiComponentTypes['AgentArtifactContentResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentArtifactContentResponseSchema>
+    >;
+    'component:AgentArtifactUrlResponse': Same<
+        W.ApiComponentTypes['AgentArtifactUrlResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentArtifactUrlResponseSchema>
+    >;
+    'component:AgentRunArtifactPathArray': Same<
+        W.ApiComponentTypes['AgentRunArtifactPathArray'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunArtifactPathArraySchema>
+    >;
+    'component:AgentRunArtifactUploadHeaders': Same<
+        W.ApiComponentTypes['AgentRunArtifactUploadHeaders'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunArtifactUploadHeadersSchema>
+    >;
+    'component:AgentRunArtifactQuery': Same<
+        W.ApiComponentTypes['AgentRunArtifactQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunArtifactQuerySchema>
+    >;
+    'component:AgentRunArtifactsQuery': Same<
+        W.ApiComponentTypes['AgentRunArtifactsQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunArtifactsQuerySchema>
+    >;
+    'component:TerminateAgentRunResponse': Same<
+        W.ApiComponentTypes['TerminateAgentRunResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').TerminateAgentRunResponseSchema>
+    >;
+    'component:SignalAgentPayload': Same<
+        W.ApiComponentTypes['SignalAgentPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').SignalAgentPayloadSchema>
+    >;
+    'component:PostAgentRunUpdateResponse': Same<
+        W.ApiComponentTypes['PostAgentRunUpdateResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').PostAgentRunUpdateResponseSchema>
+    >;
+    'component:FileProcessingStatus': Same<
+        W.ApiComponentTypes['FileProcessingStatus'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').FileProcessingStatusSchema>
+    >;
+    'component:AgentRunArchiveState': Same<
+        W.ApiComponentTypes['AgentRunArchiveState'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunArchiveStateSchema>
+    >;
+    'component:ResourceRef': Same<
+        W.ApiComponentTypes['ResourceRef'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ResourceRefSchema>
+    >;
+    'component:SignalAgentResponse': Same<
+        W.ApiComponentTypes['SignalAgentResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').SignalAgentResponseSchema>
+    >;
+    'component:AutonomousRunResponse': Same<
+        W.ApiComponentTypes['AutonomousRunResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AutonomousRunResponseSchema>
+    >;
+    'component:AgentRun': Same<
+        W.ApiComponentTypes['AgentRun'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunSchema>
+    >;
+    'component:CreateAgentRunPayload': Same<
+        W.ApiComponentTypes['CreateAgentRunPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').CreateAgentRunPayloadSchema>
+    >;
+    'component:CreateProcessRunByIdPayload': Same<
+        W.ApiComponentTypes['CreateProcessRunByIdPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').CreateProcessRunByIdPayloadSchema>
+    >;
+    'component:CreateProcessRunWithDefinitionPayload': Same<
+        W.ApiComponentTypes['CreateProcessRunWithDefinitionPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').CreateProcessRunWithDefinitionPayloadSchema>
+    >;
+    'component:CreateRunPayload': Same<
+        W.ApiComponentTypes['CreateRunPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').CreateRunPayloadSchema>
+    >;
+    'component:SearchAgentRunsResponse': Same<
+        W.ApiComponentTypes['SearchAgentRunsResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').SearchAgentRunsResponseSchema>
+    >;
+    'component:AgentRunUpdatesResponse': Same<
+        W.ApiComponentTypes['AgentRunUpdatesResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunUpdatesResponseSchema>
+    >;
+    'component:PostAgentRunUpdatePayload': Same<
+        W.ApiComponentTypes['PostAgentRunUpdatePayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').PostAgentRunUpdatePayloadSchema>
+    >;
+    'component:AgentRunResponse': Same<
+        W.ApiComponentTypes['AgentRunResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunResponseSchema>
+    >;
+    'component:ListAgentRunsResponse': Same<
+        W.ApiComponentTypes['ListAgentRunsResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ListAgentRunsResponseSchema>
+    >;
+    'component:ProgrammaticRunResponse': Same<
+        W.ApiComponentTypes['ProgrammaticRunResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ProgrammaticRunResponseSchema>
+    >;
+    'component:SupervisedRunResponse': Same<
+        W.ApiComponentTypes['SupervisedRunResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').SupervisedRunResponseSchema>
+    >;
+    'component:AgentRunInternals': Same<
+        W.ApiComponentTypes['AgentRunInternals'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunInternalsSchema>
+    >;
+    'component:AgentRunDetailsQuery': Same<
+        W.ApiComponentTypes['AgentRunDetailsQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunDetailsQuerySchema>
+    >;
+    'component:ListAgentRunsQuery': Same<
+        W.ApiComponentTypes['ListAgentRunsQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ListAgentRunsQuerySchema>
+    >;
+    'component:RecordAgentRunPayload': Same<
+        W.ApiComponentTypes['RecordAgentRunPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').RecordAgentRunPayloadSchema>
+    >;
+    'component:RecordRunPayload': Same<
+        W.ApiComponentTypes['RecordRunPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').RecordRunPayloadSchema>
+    >;
+    'component:AgentRunUpdatesQuery': Same<
+        W.ApiComponentTypes['AgentRunUpdatesQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunUpdatesQuerySchema>
+    >;
+    'component:SearchAgentRunsQuery': Same<
+        W.ApiComponentTypes['SearchAgentRunsQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').SearchAgentRunsQuerySchema>
+    >;
+    'component:StreamAgentRunQuery': Same<
+        W.ApiComponentTypes['StreamAgentRunQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').StreamAgentRunQuerySchema>
+    >;
+    'component:UpdateAgentRunStatusPayload': Same<
+        W.ApiComponentTypes['UpdateAgentRunStatusPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').UpdateAgentRunStatusPayloadSchema>
+    >;
+    'component:AgentRunFeedbackRating': Same<
+        W.ApiComponentTypes['AgentRunFeedbackRating'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunFeedbackRatingSchema>
+    >;
+    'component:AgentRunFeedbackReasonCode': Same<
+        W.ApiComponentTypes['AgentRunFeedbackReasonCode'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunFeedbackReasonCodeSchema>
+    >;
+    'component:AgentRunFeedbackPayload': Same<
+        W.ApiComponentTypes['AgentRunFeedbackPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunFeedbackPayloadSchema>
+    >;
+    'component:AgentRunFeedbackStatus': Same<
+        W.ApiComponentTypes['AgentRunFeedbackStatus'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunFeedbackStatusSchema>
+    >;
+    'component:AgentRunFeedbackCounts': Same<
+        W.ApiComponentTypes['AgentRunFeedbackCounts'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunFeedbackCountsSchema>
+    >;
+    'component:AgentRunFeedbackResponse': Same<
+        W.ApiComponentTypes['AgentRunFeedbackResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunFeedbackResponseSchema>
+    >;
+    'component:AgentRunFeedbackEntry': Same<
+        W.ApiComponentTypes['AgentRunFeedbackEntry'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunFeedbackEntrySchema>
+    >;
+    'component:AgentRunEvaluationRollup': Same<
+        W.ApiComponentTypes['AgentRunEvaluationRollup'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunEvaluationRollupSchema>
+    >;
+    'component:AgentRunJudgeResult': Same<
+        W.ApiComponentTypes['AgentRunJudgeResult'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunJudgeResultSchema>
+    >;
+    'component:AgentRunContradictionReason': Same<
+        W.ApiComponentTypes['AgentRunContradictionReason'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunContradictionReasonSchema>
+    >;
+    'component:AgentRunEvaluation': Same<
+        W.ApiComponentTypes['AgentRunEvaluation'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunEvaluationSchema>
+    >;
+    'component:TurnTerminalType': Same<
+        W.ApiComponentTypes['TurnTerminalType'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').TurnTerminalTypeSchema>
+    >;
+    'component:EvaluationSeverity': Same<
+        W.ApiComponentTypes['EvaluationSeverity'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationSeveritySchema>
+    >;
+    'component:TurnEvaluationFlag': Same<
+        W.ApiComponentTypes['TurnEvaluationFlag'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').TurnEvaluationFlagSchema>
+    >;
+    'component:ToolErrorClass': Same<
+        W.ApiComponentTypes['ToolErrorClass'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
+    >;
+    'component:JudgeGateReason': Same<
+        W.ApiComponentTypes['JudgeGateReason'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeGateReasonSchema>
+    >;
+    'component:JudgeOutcome': Same<
+        W.ApiComponentTypes['JudgeOutcome'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeOutcomeSchema>
+    >;
+    'component:JudgeVerdict': Same<
+        W.ApiComponentTypes['JudgeVerdict'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeVerdictSchema>
+    >;
+    'component:ListAgentRunsEvaluationSeverity': Same<
+        W.ApiComponentTypes['ListAgentRunsEvaluationSeverity'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ListAgentRunsEvaluationSeveritySchema>
+    >;
+    'component:AgentEvent': Same<
+        W.ApiComponentTypes['AgentEvent'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentEventSchema>
+    >;
+    'component:IngestAgentEventsPayload': Same<
+        W.ApiComponentTypes['IngestAgentEventsPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').IngestAgentEventsPayloadSchema>
+    >;
+    'component:IngestAgentEventsResponse': Same<
+        W.ApiComponentTypes['IngestAgentEventsResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').IngestAgentEventsResponseSchema>
+    >;
+    'component:WorkflowQueryResult': Same<
+        W.ApiComponentTypes['WorkflowQueryResult'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowQueryResultSchema>
+    >;
+    'component:WorkflowUpdatePublishResponse': Same<
+        W.ApiComponentTypes['WorkflowUpdatePublishResponse'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowUpdatePublishResponseSchema>
+    >;
+    'component:ListWorkflowRunsPayload': Same<
+        W.ApiComponentTypes['ListWorkflowRunsPayload'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ListWorkflowRunsPayloadSchema>
+    >;
+    'component:WorkflowDefinitionRef': Same<
+        W.ApiComponentTypes['WorkflowDefinitionRef'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowDefinitionRefSchema>
+    >;
+    'component:WorkflowRun': Same<
+        W.ApiComponentTypes['WorkflowRun'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowRunSchema>
+    >;
+    'component:EventError': Same<
+        W.ApiComponentTypes['EventError'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').EventErrorSchema>
+    >;
+    'component:SignalEventProperties': Same<
+        W.ApiComponentTypes['SignalEventProperties'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SignalEventPropertiesSchema>
+    >;
+    'component:WorkflowInputFile': Same<
+        W.ApiComponentTypes['WorkflowInputFile'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInputFileSchema>
+    >;
+    'component:WorkflowActionResponse': Same<
+        W.ApiComponentTypes['WorkflowActionResponse'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowActionResponseSchema>
+    >;
+    'component:WorkflowDefinitionRefArray': Same<
+        W.ApiComponentTypes['WorkflowDefinitionRefArray'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowDefinitionRefArraySchema>
+    >;
+    'component:ListWorkflowRunsResponse': Same<
+        W.ApiComponentTypes['ListWorkflowRunsResponse'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ListWorkflowRunsResponseSchema>
+    >;
+    'component:WorkflowRunEvent': Same<
+        W.ApiComponentTypes['WorkflowRunEvent'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowRunEventSchema>
+    >;
+    'component:WorkflowInput': Same<
+        W.ApiComponentTypes['WorkflowInput'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInputSchema>
+    >;
+    'component:WorkflowRunUpdatesResponse': Same<
+        W.ApiComponentTypes['WorkflowRunUpdatesResponse'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowRunUpdatesResponseSchema>
+    >;
+    'component:ExecuteWorkflowPayload': Same<
+        W.ApiComponentTypes['ExecuteWorkflowPayload'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ExecuteWorkflowPayloadSchema>
+    >;
+    'component:WorkflowHistory': Same<
+        W.ApiComponentTypes['WorkflowHistory'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowHistorySchema>
+    >;
+    'component:WorkflowRunWithDetails': Same<
+        W.ApiComponentTypes['WorkflowRunWithDetails'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowRunWithDetailsSchema>
+    >;
+    'component:BindRunWorkflowPayload': Same<
+        W.ApiComponentTypes['BindRunWorkflowPayload'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').BindRunWorkflowPayloadSchema>
+    >;
+    'component:WorkflowRunDetailsQuery': Same<
+        W.ApiComponentTypes['WorkflowRunDetailsQuery'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowRunDetailsQuerySchema>
+    >;
+    'component:WorkflowRunUpdatesQuery': Same<
+        W.ApiComponentTypes['WorkflowRunUpdatesQuery'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowRunUpdatesQuerySchema>
+    >;
+    'component:WorkflowRunStreamQuery': Same<
+        W.ApiComponentTypes['WorkflowRunStreamQuery'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowRunStreamQuerySchema>
+    >;
+    'component:ActivityTypeDefinition': Same<
+        W.ApiComponentTypes['ActivityTypeDefinition'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityTypeDefinitionSchema>
+    >;
+    'component:ActivityPropertyDefinition': Same<
+        W.ApiComponentTypes['ActivityPropertyDefinition'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityPropertyDefinitionSchema>
+    >;
+    'component:ActivityDefinition': Same<
+        W.ApiComponentTypes['ActivityDefinition'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityDefinitionSchema>
+    >;
+    'component:ActivityCatalog': Same<
+        W.ApiComponentTypes['ActivityCatalog'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityCatalogSchema>
+    >;
+    'component:WorkflowInteractionVars': Same<
+        W.ApiComponentTypes['WorkflowInteractionVars'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInteractionVarsSchema>
+    >;
+    'component:ListWorkflowInteractionsResponse': Same<
+        W.ApiComponentTypes['ListWorkflowInteractionsResponse'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ListWorkflowInteractionsResponseSchema>
+    >;
+    'component:RestartAgentRunPayload': Same<
+        W.ApiComponentTypes['RestartAgentRunPayload'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').RestartAgentRunPayloadSchema>
+    >;
+    'component:TaskType_TIMER': Same<
+        W.ApiComponentTypes['TaskType_TIMER'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TaskType_TIMERSchema>
+    >;
+    'component:TaskType_SIGNAL': Same<
+        W.ApiComponentTypes['TaskType_SIGNAL'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TaskType_SIGNALSchema>
+    >;
+    'component:TaskType_CHILD_WORKFLOW': Same<
+        W.ApiComponentTypes['TaskType_CHILD_WORKFLOW'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TaskType_CHILD_WORKFLOWSchema>
+    >;
+    'component:TaskType_ACTIVITY': Same<
+        W.ApiComponentTypes['TaskType_ACTIVITY'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TaskType_ACTIVITYSchema>
+    >;
+    'component:PendingActivity': Same<
+        W.ApiComponentTypes['PendingActivity'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').PendingActivitySchema>
+    >;
+    'component:AgentTask': Same<
+        W.ApiComponentTypes['AgentTask'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').AgentTaskSchema>
+    >;
+    'component:TaskStatus': Same<
+        W.ApiComponentTypes['TaskStatus'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TaskStatusSchema>
+    >;
+    'component:TimerTask': Same<
+        W.ApiComponentTypes['TimerTask'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').TimerTaskSchema>
+    >;
+    'component:SignalTask': Same<
+        W.ApiComponentTypes['SignalTask'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SignalTaskSchema>
+    >;
+    'component:ChildWorkflowTask': Same<
+        W.ApiComponentTypes['ChildWorkflowTask'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ChildWorkflowTaskSchema>
+    >;
+    'component:ActivityTask': Same<
+        W.ApiComponentTypes['ActivityTask'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityTaskSchema>
+    >;
+    'component:WorkflowTask': Same<
+        W.ApiComponentTypes['WorkflowTask'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowTaskSchema>
+    >;
+    'component:ViewNavigationNode': Same<
+        W.ApiComponentTypes['ViewNavigationNode'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewNavigationNodeSchema>
+    >;
+    'component:ViewHitAnnotation': Same<
+        W.ApiComponentTypes['ViewHitAnnotation'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewHitAnnotationSchema>
+    >;
+    'component:ViewExecutionWarning': Same<
+        W.ApiComponentTypes['ViewExecutionWarning'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionWarningSchema>
+    >;
+    'component:ViewQueryPlanningFailureCode': Same<
+        W.ApiComponentTypes['ViewQueryPlanningFailureCode'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewQueryPlanningFailureCodeSchema>
+    >;
+    'component:ExecuteViewRequest': Same<
+        W.ApiComponentTypes['ExecuteViewRequest'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ExecuteViewRequestSchema>
+    >;
+    'component:ViewNavigationResult': Same<
+        W.ApiComponentTypes['ViewNavigationResult'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewNavigationResultSchema>
+    >;
+    'component:ViewExecutionQueryPlan': Same<
+        W.ApiComponentTypes['ViewExecutionQueryPlan'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionQueryPlanSchema>
+    >;
+    'component:ViewRerankFailureCode': Same<
+        W.ApiComponentTypes['ViewRerankFailureCode'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewRerankFailureCodeSchema>
+    >;
+    'component:ViewExecutionRerankResult': Same<
+        W.ApiComponentTypes['ViewExecutionRerankResult'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionRerankResultSchema>
+    >;
+    'component:ViewExecutionSearchConfiguration': Same<
+        W.ApiComponentTypes['ViewExecutionSearchConfiguration'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionSearchConfigurationSchema>
+    >;
+    'component:ViewNavigationResultMap': Same<
+        W.ApiComponentTypes['ViewNavigationResultMap'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewNavigationResultMapSchema>
+    >;
+    'component:ViewExecutionSearchResult': Same<
+        W.ApiComponentTypes['ViewExecutionSearchResult'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionSearchResultSchema>
+    >;
+    'component:ViewHit': Same<
+        W.ApiComponentTypes['ViewHit'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewHitSchema>
+    >;
+    'component:ViewExecutionDefinition': Same<
+        W.ApiComponentTypes['ViewExecutionDefinition'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionDefinitionSchema>
+    >;
+    'component:ViewExperienceConfiguration': Same<
+        W.ApiComponentTypes['ViewExperienceConfiguration'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewExperienceConfigurationSchema>
+    >;
+    'component:ViewExecutionResult': Same<
+        W.ApiComponentTypes['ViewExecutionResult'],
+        z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionResultSchema>
+    >;
+    'component:PreviewViewExperienceRequest': Same<
+        W.ApiComponentTypes['PreviewViewExperienceRequest'],
+        z.infer<typeof import('./api-schemas/view-execution.js').PreviewViewExperienceRequestSchema>
+    >;
+    'component:RenderPromptPayload': Same<
+        W.ApiComponentTypes['RenderPromptPayload'],
+        z.infer<typeof import('./api-schemas/prompt.js').RenderPromptPayloadSchema>
+    >;
+    'component:RenderPromptResponse': Same<
+        W.ApiComponentTypes['RenderPromptResponse'],
+        z.infer<typeof import('./api-schemas/prompt.js').RenderPromptResponseSchema>
+    >;
+    'component:PromptTemplateInteractionVersion': Same<
+        W.ApiComponentTypes['PromptTemplateInteractionVersion'],
+        z.infer<typeof import('./api-schemas/prompt.js').PromptTemplateInteractionVersionSchema>
+    >;
+    'component:PromptTemplateForkPayload': Same<
+        W.ApiComponentTypes['PromptTemplateForkPayload'],
+        z.infer<typeof import('./api-schemas/prompt.js').PromptTemplateForkPayloadSchema>
+    >;
+    'component:PromptSearchQuery': Same<
+        W.ApiComponentTypes['PromptSearchQuery'],
+        z.infer<typeof import('./api-schemas/prompt.js').PromptSearchQuerySchema>
+    >;
+    'component:PromptTemplateInteractionUsage': Same<
+        W.ApiComponentTypes['PromptTemplateInteractionUsage'],
+        z.infer<typeof import('./api-schemas/prompt.js').PromptTemplateInteractionUsageSchema>
+    >;
+    'component:ComputePromptFacetPayload': Same<
+        W.ApiComponentTypes['ComputePromptFacetPayload'],
+        z.infer<typeof import('./api-schemas/prompt.js').ComputePromptFacetPayloadSchema>
+    >;
+    'component:PromptTemplateInteractionsResponse': Same<
+        W.ApiComponentTypes['PromptTemplateInteractionsResponse'],
+        z.infer<typeof import('./api-schemas/prompt.js').PromptTemplateInteractionsResponseSchema>
+    >;
+    'component:PromptTemplateRefArray': Same<
+        W.ApiComponentTypes['PromptTemplateRefArray'],
+        z.infer<typeof import('./api-schemas/prompt.js').PromptTemplateRefArraySchema>
+    >;
+    'component:ToolSource': Same<
+        W.ApiComponentTypes['ToolSource'],
+        z.infer<typeof import('./api-schemas/tools.js').ToolSourceSchema>
+    >;
+    'component:ToolRuntimeContext': Same<
+        W.ApiComponentTypes['ToolRuntimeContext'],
+        z.infer<typeof import('./api-schemas/tools.js').ToolRuntimeContextSchema>
+    >;
+    'component:ProcessToolCompatibilityReason': Same<
+        W.ApiComponentTypes['ProcessToolCompatibilityReason'],
+        z.infer<typeof import('./api-schemas/tools.js').ProcessToolCompatibilityReasonSchema>
+    >;
+    'component:ProcessToolCompatibility': Same<
+        W.ApiComponentTypes['ProcessToolCompatibility'],
+        z.infer<typeof import('./api-schemas/tools.js').ProcessToolCompatibilitySchema>
+    >;
+    'component:ValidateToolNamesPayload': Same<
+        W.ApiComponentTypes['ValidateToolNamesPayload'],
+        z.infer<typeof import('./api-schemas/tools.js').ValidateToolNamesPayloadSchema>
+    >;
+    'component:ToolValidationResult': Same<
+        W.ApiComponentTypes['ToolValidationResult'],
+        z.infer<typeof import('./api-schemas/tools.js').ToolValidationResultSchema>
+    >;
+    'component:AggregatedTool': Same<
+        W.ApiComponentTypes['AggregatedTool'],
+        z.infer<typeof import('./api-schemas/tools.js').AggregatedToolSchema>
+    >;
+    'component:ValidateToolNamesResponse': Same<
+        W.ApiComponentTypes['ValidateToolNamesResponse'],
+        z.infer<typeof import('./api-schemas/tools.js').ValidateToolNamesResponseSchema>
+    >;
+    'component:AggregatedToolArray': Same<
+        W.ApiComponentTypes['AggregatedToolArray'],
+        z.infer<typeof import('./api-schemas/tools.js').AggregatedToolArraySchema>
+    >;
+    'component:ListProjectToolsQuery': Same<
+        W.ApiComponentTypes['ListProjectToolsQuery'],
+        z.infer<typeof import('./api-schemas/tools.js').ListProjectToolsQuerySchema>
+    >;
+    'component:InspectProjectToolQuery': Same<
+        W.ApiComponentTypes['InspectProjectToolQuery'],
+        z.infer<typeof import('./api-schemas/tools.js').InspectProjectToolQuerySchema>
+    >;
+    'component:ToolInspection': Same<
+        W.ApiComponentTypes['ToolInspection'],
+        z.infer<typeof import('./api-schemas/tools.js').ToolInspectionSchema>
+    >;
+    'component:MCPToolAnnotations': Same<
+        W.ApiComponentTypes['MCPToolAnnotations'],
+        z.infer<typeof import('./api-schemas/apps.js').MCPToolAnnotationsSchema>
+    >;
+    'component:McpOAuthTokenResponse': Same<
+        W.ApiComponentTypes['McpOAuthTokenResponse'],
+        z.infer<typeof import('./api-schemas/apps.js').McpOAuthTokenResponseSchema>
+    >;
+    'component:McpOAuthTokenRequest': Same<
+        W.ApiComponentTypes['McpOAuthTokenRequest'],
+        z.infer<typeof import('./api-schemas/apps.js').McpOAuthTokenRequestSchema>
+    >;
+    'component:OAuthAuthStatus': Same<
+        W.ApiComponentTypes['OAuthAuthStatus'],
+        z.infer<typeof import('./api-schemas/apps.js').OAuthAuthStatusSchema>
+    >;
+    'component:OAuthMetadataResponse': Same<
+        W.ApiComponentTypes['OAuthMetadataResponse'],
+        z.infer<typeof import('./api-schemas/apps.js').OAuthMetadataResponseSchema>
+    >;
+    'component:McpOAuthDisconnectResponse': Same<
+        W.ApiComponentTypes['McpOAuthDisconnectResponse'],
+        z.infer<typeof import('./api-schemas/apps.js').McpOAuthDisconnectResponseSchema>
+    >;
+    'component:McpOAuthConnectResponse': Same<
+        W.ApiComponentTypes['McpOAuthConnectResponse'],
+        z.infer<typeof import('./api-schemas/apps.js').McpOAuthConnectResponseSchema>
+    >;
+    'component:OAuthAuthorizeResponse': Same<
+        W.ApiComponentTypes['OAuthAuthorizeResponse'],
+        z.infer<typeof import('./api-schemas/apps.js').OAuthAuthorizeResponseSchema>
+    >;
+    'component:OAuthAuthStatusArray': Same<
+        W.ApiComponentTypes['OAuthAuthStatusArray'],
+        z.infer<typeof import('./api-schemas/apps.js').OAuthAuthStatusArraySchema>
+    >;
+    'component:SetMcpApiKeyRequest': Same<
+        W.ApiComponentTypes['SetMcpApiKeyRequest'],
+        z.infer<typeof import('./api-schemas/apps.js').SetMcpApiKeyRequestSchema>
+    >;
+    'component:McpApiKeyStatus': Same<
+        W.ApiComponentTypes['McpApiKeyStatus'],
+        z.infer<typeof import('./api-schemas/apps.js').McpApiKeyStatusSchema>
+    >;
+    'component:AuditMeter': Same<
+        W.ApiComponentTypes['AuditMeter'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditMeterSchema>
+    >;
+    'component:KnownAuditAction': Same<
+        W.ApiComponentTypes['KnownAuditAction'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').KnownAuditActionSchema>
+    >;
+    'component:EventCategory': Same<
+        W.ApiComponentTypes['EventCategory'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').EventCategorySchema>
+    >;
+    'component:AuditAggregationDimensionMap': Same<
+        W.ApiComponentTypes['AuditAggregationDimensionMap'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationDimensionMapSchema>
+    >;
+    'component:AuditAggregationDistinctField': Same<
+        W.ApiComponentTypes['AuditAggregationDistinctField'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationDistinctFieldSchema>
+    >;
+    'component:AuditAggregationOperation': Same<
+        W.ApiComponentTypes['AuditAggregationOperation'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationOperationSchema>
+    >;
+    'component:AuditAggregationResolution': Same<
+        W.ApiComponentTypes['AuditAggregationResolution'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationResolutionSchema>
+    >;
+    'component:AuditAggregationDimension': Same<
+        W.ApiComponentTypes['AuditAggregationDimension'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationDimensionSchema>
+    >;
+    'component:AuditAggregationDetailField': Same<
+        W.ApiComponentTypes['AuditAggregationDetailField'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationDetailFieldSchema>
+    >;
+    'component:AuditAction': Same<
+        W.ApiComponentTypes['AuditAction'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditActionSchema>
+    >;
+    'component:AuditAggregationRow': Same<
+        W.ApiComponentTypes['AuditAggregationRow'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationRowSchema>
+    >;
+    'component:AuditAggregationMetric': Same<
+        W.ApiComponentTypes['AuditAggregationMetric'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationMetricSchema>
+    >;
+    'component:AuditAggregationGroup': Same<
+        W.ApiComponentTypes['AuditAggregationGroup'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationGroupSchema>
+    >;
+    'component:AuditAggregationDetailFilter': Same<
+        W.ApiComponentTypes['AuditAggregationDetailFilter'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationDetailFilterSchema>
+    >;
+    'component:AuditTrailEvent': Same<
+        W.ApiComponentTypes['AuditTrailEvent'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditTrailEventSchema>
+    >;
+    'component:AuditAggregationResponse': Same<
+        W.ApiComponentTypes['AuditAggregationResponse'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationResponseSchema>
+    >;
+    'component:AuditAggregationFilter': Same<
+        W.ApiComponentTypes['AuditAggregationFilter'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationFilterSchema>
+    >;
+    'component:AuditTrailResponse': Same<
+        W.ApiComponentTypes['AuditTrailResponse'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditTrailResponseSchema>
+    >;
+    'component:AuditAggregationQuery': Same<
+        W.ApiComponentTypes['AuditAggregationQuery'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationQuerySchema>
+    >;
+    'component:AuditTrailQuery': Same<
+        W.ApiComponentTypes['AuditTrailQuery'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditTrailQuerySchema>
+    >;
+    'component:ViewExperienceSchemaVersion': Same<
+        W.ApiComponentTypes['ViewExperienceSchemaVersion'],
+        z.infer<typeof import('./api-schemas/views.js').ViewExperienceSchemaVersionSchema>
+    >;
+    'component:ViewSortClause': Same<
+        W.ApiComponentTypes['ViewSortClause'],
+        z.infer<typeof import('./api-schemas/views.js').ViewSortClauseSchema>
+    >;
+    'component:ViewResultMedia': Same<
+        W.ApiComponentTypes['ViewResultMedia'],
+        z.infer<typeof import('./api-schemas/views.js').ViewResultMediaSchema>
+    >;
+    'component:ViewResultFieldFormat': Same<
+        W.ApiComponentTypes['ViewResultFieldFormat'],
+        z.infer<typeof import('./api-schemas/views.js').ViewResultFieldFormatSchema>
+    >;
+    'component:ViewBoardColumn': Same<
+        W.ApiComponentTypes['ViewBoardColumn'],
+        z.infer<typeof import('./api-schemas/views.js').ViewBoardColumnSchema>
+    >;
+    'component:ViewTableColumn': Same<
+        W.ApiComponentTypes['ViewTableColumn'],
+        z.infer<typeof import('./api-schemas/views.js').ViewTableColumnSchema>
+    >;
+    'component:ViewAgenticSearchMode': Same<
+        W.ApiComponentTypes['ViewAgenticSearchMode'],
+        z.infer<typeof import('./api-schemas/views.js').ViewAgenticSearchModeSchema>
+    >;
+    'component:AgenticViewRerankConfiguration': Same<
+        W.ApiComponentTypes['AgenticViewRerankConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').AgenticViewRerankConfigurationSchema>
+    >;
+    'component:ViewAgenticExecutionConfiguration': Same<
+        W.ApiComponentTypes['ViewAgenticExecutionConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').ViewAgenticExecutionConfigurationSchema>
+    >;
+    'component:AgenticViewSearchConfiguration': Same<
+        W.ApiComponentTypes['AgenticViewSearchConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').AgenticViewSearchConfigurationSchema>
+    >;
+    'component:ViewSearchFieldType': Same<
+        W.ApiComponentTypes['ViewSearchFieldType'],
+        z.infer<typeof import('./api-schemas/views.js').ViewSearchFieldTypeSchema>
+    >;
+    'component:ViewSearchFieldDefinition': Same<
+        W.ApiComponentTypes['ViewSearchFieldDefinition'],
+        z.infer<typeof import('./api-schemas/views.js').ViewSearchFieldDefinitionSchema>
+    >;
+    'component:ViewRangeDefinition': Same<
+        W.ApiComponentTypes['ViewRangeDefinition'],
+        z.infer<typeof import('./api-schemas/views.js').ViewRangeDefinitionSchema>
+    >;
+    'component:ViewHierarchyLevel': Same<
+        W.ApiComponentTypes['ViewHierarchyLevel'],
+        z.infer<typeof import('./api-schemas/views.js').ViewHierarchyLevelSchema>
+    >;
+    'component:ViewTermsNavigation': Same<
+        W.ApiComponentTypes['ViewTermsNavigation'],
+        z.infer<typeof import('./api-schemas/views.js').ViewTermsNavigationSchema>
+    >;
+    'component:ViewCollectionNavigation': Same<
+        W.ApiComponentTypes['ViewCollectionNavigation'],
+        z.infer<typeof import('./api-schemas/views.js').ViewCollectionNavigationSchema>
+    >;
+    'component:ViewLocationNavigation': Same<
+        W.ApiComponentTypes['ViewLocationNavigation'],
+        z.infer<typeof import('./api-schemas/views.js').ViewLocationNavigationSchema>
+    >;
+    'component:ViewElasticsearchQuery': Same<
+        W.ApiComponentTypes['ViewElasticsearchQuery'],
+        z.infer<typeof import('./api-schemas/views.js').ViewElasticsearchQuerySchema>
+    >;
+    'component:ViewExperienceLayout': Same<
+        W.ApiComponentTypes['ViewExperienceLayout'],
+        z.infer<typeof import('./api-schemas/views.js').ViewExperienceLayoutSchema>
+    >;
+    'component:ViewSortOption': Same<
+        W.ApiComponentTypes['ViewSortOption'],
+        z.infer<typeof import('./api-schemas/views.js').ViewSortOptionSchema>
+    >;
+    'component:ViewResultField': Same<
+        W.ApiComponentTypes['ViewResultField'],
+        z.infer<typeof import('./api-schemas/views.js').ViewResultFieldSchema>
+    >;
+    'component:ViewTableDisplay': Same<
+        W.ApiComponentTypes['ViewTableDisplay'],
+        z.infer<typeof import('./api-schemas/views.js').ViewTableDisplaySchema>
+    >;
+    'component:ViewListDisplay': Same<
+        W.ApiComponentTypes['ViewListDisplay'],
+        z.infer<typeof import('./api-schemas/views.js').ViewListDisplaySchema>
+    >;
+    'component:ViewKeyTermDefinition': Same<
+        W.ApiComponentTypes['ViewKeyTermDefinition'],
+        z.infer<typeof import('./api-schemas/views.js').ViewKeyTermDefinitionSchema>
+    >;
+    'component:ViewRangeNavigation': Same<
+        W.ApiComponentTypes['ViewRangeNavigation'],
+        z.infer<typeof import('./api-schemas/views.js').ViewRangeNavigationSchema>
+    >;
+    'component:ViewHierarchyNavigation': Same<
+        W.ApiComponentTypes['ViewHierarchyNavigation'],
+        z.infer<typeof import('./api-schemas/views.js').ViewHierarchyNavigationSchema>
+    >;
+    'component:ViewExperienceScope': Same<
+        W.ApiComponentTypes['ViewExperienceScope'],
+        z.infer<typeof import('./api-schemas/views.js').ViewExperienceScopeSchema>
+    >;
+    'component:ViewBoardCardConfiguration': Same<
+        W.ApiComponentTypes['ViewBoardCardConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').ViewBoardCardConfigurationSchema>
+    >;
+    'component:ViewSearchConfiguration': Same<
+        W.ApiComponentTypes['ViewSearchConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').ViewSearchConfigurationSchema>
+    >;
+    'component:ViewNavigationItem': Same<
+        W.ApiComponentTypes['ViewNavigationItem'],
+        z.infer<typeof import('./api-schemas/views.js').ViewNavigationItemSchema>
+    >;
+    'component:ViewBoardDisplay': Same<
+        W.ApiComponentTypes['ViewBoardDisplay'],
+        z.infer<typeof import('./api-schemas/views.js').ViewBoardDisplaySchema>
+    >;
+    'component:ViewCardsDisplay': Same<
+        W.ApiComponentTypes['ViewCardsDisplay'],
+        z.infer<typeof import('./api-schemas/views.js').ViewCardsDisplaySchema>
+    >;
+    'component:ViewGalleryDisplay': Same<
+        W.ApiComponentTypes['ViewGalleryDisplay'],
+        z.infer<typeof import('./api-schemas/views.js').ViewGalleryDisplaySchema>
+    >;
+    'component:ViewDisplayConfiguration': Same<
+        W.ApiComponentTypes['ViewDisplayConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').ViewDisplayConfigurationSchema>
+    >;
+    'component:ViewSelectionMode': Same<
+        W.ApiComponentTypes['ViewSelectionMode'],
+        z.infer<typeof import('./api-schemas/views.js').ViewSelectionModeSchema>
+    >;
+    'component:ViewSelectionConfiguration': Same<
+        W.ApiComponentTypes['ViewSelectionConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').ViewSelectionConfigurationSchema>
+    >;
+    'component:ViewActionPlacement': Same<
+        W.ApiComponentTypes['ViewActionPlacement'],
+        z.infer<typeof import('./api-schemas/views.js').ViewActionPlacementSchema>
+    >;
+    'component:ViewActionSelectionRequirement': Same<
+        W.ApiComponentTypes['ViewActionSelectionRequirement'],
+        z.infer<typeof import('./api-schemas/views.js').ViewActionSelectionRequirementSchema>
+    >;
+    'component:ViewActionConfiguration': Same<
+        W.ApiComponentTypes['ViewActionConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').ViewActionConfigurationSchema>
+    >;
+    'component:ViewActionsConfiguration': Same<
+        W.ApiComponentTypes['ViewActionsConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').ViewActionsConfigurationSchema>
+    >;
+    'component:ViewUploadDropParameters': Same<
+        W.ApiComponentTypes['ViewUploadDropParameters'],
+        z.infer<typeof import('./api-schemas/views.js').ViewUploadDropParametersSchema>
+    >;
+    'component:ViewDropConfiguration': Same<
+        W.ApiComponentTypes['ViewDropConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').ViewDropConfigurationSchema>
+    >;
+    'component:ViewResultsConfiguration': Same<
+        W.ApiComponentTypes['ViewResultsConfiguration'],
+        z.infer<typeof import('./api-schemas/views.js').ViewResultsConfigurationSchema>
+    >;
+    'component:CreateViewExperienceRequest': Same<
+        W.ApiComponentTypes['CreateViewExperienceRequest'],
+        z.infer<typeof import('./api-schemas/views.js').CreateViewExperienceRequestSchema>
+    >;
+    'component:ViewExperience': Same<
+        W.ApiComponentTypes['ViewExperience'],
+        z.infer<typeof import('./api-schemas/views.js').ViewExperienceSchema>
+    >;
+    'component:UpdateViewExperienceRequest': Same<
+        W.ApiComponentTypes['UpdateViewExperienceRequest'],
+        z.infer<typeof import('./api-schemas/views.js').UpdateViewExperienceRequestSchema>
+    >;
+    'component:ViewExperienceArray': Same<
+        W.ApiComponentTypes['ViewExperienceArray'],
+        z.infer<typeof import('./api-schemas/views.js').ViewExperienceArraySchema>
+    >;
+    'component:ViewExperienceListQuery': Same<
+        W.ApiComponentTypes['ViewExperienceListQuery'],
+        z.infer<typeof import('./api-schemas/views.js').ViewExperienceListQuerySchema>
+    >;
+    'component:UpdateAppInstallationOAuthApprovalPayload': Same<
+        W.ApiComponentTypes['UpdateAppInstallationOAuthApprovalPayload'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').UpdateAppInstallationOAuthApprovalPayloadSchema>
+    >;
+    'component:UpdateAppInstallationToolAllowlistPayload': Same<
+        W.ApiComponentTypes['UpdateAppInstallationToolAllowlistPayload'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').UpdateAppInstallationToolAllowlistPayloadSchema>
+    >;
+    'component:ValidateUrlResponse': Same<
+        W.ApiComponentTypes['ValidateUrlResponse'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').ValidateUrlResponseSchema>
+    >;
+    'component:ValidateUrlRequest': Same<
+        W.ApiComponentTypes['ValidateUrlRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').ValidateUrlRequestSchema>
+    >;
+    'component:AppVersionUrls': Same<
+        W.ApiComponentTypes['AppVersionUrls'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionUrlsSchema>
+    >;
+    'component:AppVersionGitRefType': Same<
+        W.ApiComponentTypes['AppVersionGitRefType'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionGitRefTypeSchema>
+    >;
+    'component:AppVersionTarget': Same<
+        W.ApiComponentTypes['AppVersionTarget'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionTargetSchema>
+    >;
+    'component:AppVersionState': Same<
+        W.ApiComponentTypes['AppVersionState'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionStateSchema>
+    >;
+    'component:AppVersionKind': Same<
+        W.ApiComponentTypes['AppVersionKind'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionKindSchema>
+    >;
+    'component:StartAppScaffoldResponse': Same<
+        W.ApiComponentTypes['StartAppScaffoldResponse'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppScaffoldResponseSchema>
+    >;
+    'component:AppScaffoldModule': Same<
+        W.ApiComponentTypes['AppScaffoldModule'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppScaffoldModuleSchema>
+    >;
+    'component:AppBuildTrigger': Same<
+        W.ApiComponentTypes['AppBuildTrigger'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppBuildTriggerSchema>
+    >;
+    'component:Extract_AppVersionGitRefType_branch_tag_commit': Same<
+        W.ApiComponentTypes['Extract_AppVersionGitRefType_branch_tag_commit'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').Extract_AppVersionGitRefType_branch_tag_commitSchema>
+    >;
+    'component:StartAppBuildResponse': Same<
+        W.ApiComponentTypes['StartAppBuildResponse'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppBuildResponseSchema>
+    >;
+    'component:AgentToolApprovalClass': Same<
+        W.ApiComponentTypes['AgentToolApprovalClass'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AgentToolApprovalClassSchema>
+    >;
+    'component:AppDevelopmentTask': Same<
+        W.ApiComponentTypes['AppDevelopmentTask'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDevelopmentTaskSchema>
+    >;
+    'component:AppInstallationProviderBinding': Same<
+        W.ApiComponentTypes['AppInstallationProviderBinding'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationProviderBindingSchema>
+    >;
+    'component:AppInstallationOAuthBinding': Same<
+        W.ApiComponentTypes['AppInstallationOAuthBinding'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationOAuthBindingSchema>
+    >;
+    'component:OAuthClientCredentials': Same<
+        W.ApiComponentTypes['OAuthClientCredentials'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').OAuthClientCredentialsSchema>
+    >;
+    'component:AppPackageScope': Same<
+        W.ApiComponentTypes['AppPackageScope'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageScopeSchema>
+    >;
+    'component:AppInspectionCapabilityReport': Same<
+        W.ApiComponentTypes['AppInspectionCapabilityReport'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInspectionCapabilityReportSchema>
+    >;
+    'component:AppScaffoldProgressStatus': Same<
+        W.ApiComponentTypes['AppScaffoldProgressStatus'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppScaffoldProgressStatusSchema>
+    >;
+    'component:AppRepoTreeEntry': Same<
+        W.ApiComponentTypes['AppRepoTreeEntry'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoTreeEntrySchema>
+    >;
+    'component:AppRepoRef': Same<
+        W.ApiComponentTypes['AppRepoRef'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoRefSchema>
+    >;
+    'component:AppRepoCommit': Same<
+        W.ApiComponentTypes['AppRepoCommit'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoCommitSchema>
+    >;
+    'component:AgentRunType': Same<
+        W.ApiComponentTypes['AgentRunType'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AgentRunTypeSchema>
+    >;
+    'component:EventRef': Same<
+        W.ApiComponentTypes['EventRef'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').EventRefSchema>
+    >;
+    'component:InCodeTypeRef': Same<
+        W.ApiComponentTypes['InCodeTypeRef'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').InCodeTypeRefSchema>
+    >;
+    'component:StoredTypeRef': Same<
+        W.ApiComponentTypes['StoredTypeRef'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').StoredTypeRefSchema>
+    >;
+    'component:ConversationActivityState': Same<
+        W.ApiComponentTypes['ConversationActivityState'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').ConversationActivityStateSchema>
+    >;
+    'component:AgentRunStatus': Same<
+        W.ApiComponentTypes['AgentRunStatus'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AgentRunStatusSchema>
+    >;
+    'component:RunKind': Same<
+        W.ApiComponentTypes['RunKind'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').RunKindSchema>
+    >;
+    'component:RunType': Same<
+        W.ApiComponentTypes['RunType'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').RunTypeSchema>
+    >;
+    'component:AppBuildProgressStatus': Same<
+        W.ApiComponentTypes['AppBuildProgressStatus'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppBuildProgressStatusSchema>
+    >;
+    'component:DeleteAppVersionResponse': Same<
+        W.ApiComponentTypes['DeleteAppVersionResponse'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').DeleteAppVersionResponseSchema>
+    >;
+    'component:AppDeleteSummary': Same<
+        W.ApiComponentTypes['AppDeleteSummary'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeleteSummarySchema>
+    >;
+    'component:AppRepoBranch': Same<
+        W.ApiComponentTypes['AppRepoBranch'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoBranchSchema>
+    >;
+    'component:AppRepoDocumentCommit': Same<
+        W.ApiComponentTypes['AppRepoDocumentCommit'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoDocumentCommitSchema>
+    >;
+    'component:AppVersionGitSource': Same<
+        W.ApiComponentTypes['AppVersionGitSource'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionGitSourceSchema>
+    >;
+    'component:StartAppScaffoldRequest': Same<
+        W.ApiComponentTypes['StartAppScaffoldRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppScaffoldRequestSchema>
+    >;
+    'component:StartAppDevelopmentTaskRequest': Same<
+        W.ApiComponentTypes['StartAppDevelopmentTaskRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppDevelopmentTaskRequestSchema>
+    >;
+    'component:StartAppBuildRequest': Same<
+        W.ApiComponentTypes['StartAppBuildRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppBuildRequestSchema>
+    >;
+    'component:AgentToolDefinition': Same<
+        W.ApiComponentTypes['AgentToolDefinition'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AgentToolDefinitionSchema>
+    >;
+    'component:AppDevelopmentTaskList': Same<
+        W.ApiComponentTypes['AppDevelopmentTaskList'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDevelopmentTaskListSchema>
+    >;
+    'component:OAuthClientCredentialsMap': Same<
+        W.ApiComponentTypes['OAuthClientCredentialsMap'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').OAuthClientCredentialsMapSchema>
+    >;
+    'component:AppOAuthCollectionParams': Same<
+        W.ApiComponentTypes['AppOAuthCollectionParams'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppOAuthCollectionParamsSchema>
+    >;
+    'component:McpApiKeyCredential': Same<
+        W.ApiComponentTypes['McpApiKeyCredential'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').McpApiKeyCredentialSchema>
+    >;
+    'component:AppApiKeyCollectionParams': Same<
+        W.ApiComponentTypes['AppApiKeyCollectionParams'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppApiKeyCollectionParamsSchema>
+    >;
+    'component:AppInspectionIssue': Same<
+        W.ApiComponentTypes['AppInspectionIssue'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInspectionIssueSchema>
+    >;
+    'component:AppScaffoldProgress': Same<
+        W.ApiComponentTypes['AppScaffoldProgress'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppScaffoldProgressSchema>
+    >;
+    'component:AppRepoTree': Same<
+        W.ApiComponentTypes['AppRepoTree'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoTreeSchema>
+    >;
+    'component:AppRepoRefs': Same<
+        W.ApiComponentTypes['AppRepoRefs'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoRefsSchema>
+    >;
+    'component:AppRepoCommits': Same<
+        W.ApiComponentTypes['AppRepoCommits'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoCommitsSchema>
+    >;
+    'component:ContentObjectTypeRef': Same<
+        W.ApiComponentTypes['ContentObjectTypeRef'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').ContentObjectTypeRefSchema>
+    >;
+    'component:AppBuildProgress': Same<
+        W.ApiComponentTypes['AppBuildProgress'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppBuildProgressSchema>
+    >;
+    'component:AppVersionStorage': Same<
+        W.ApiComponentTypes['AppVersionStorage'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionStorageSchema>
+    >;
+    'component:AppToolCollection': Same<
+        W.ApiComponentTypes['AppToolCollection'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppToolCollectionSchema>
+    >;
+    'component:AppOAuthProviderParams': Same<
+        W.ApiComponentTypes['AppOAuthProviderParams'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppOAuthProviderParamsSchema>
+    >;
+    'component:AppInspectionResult': Same<
+        W.ApiComponentTypes['AppInspectionResult'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInspectionResultSchema>
+    >;
+    'component:AppVersionRecord': Same<
+        W.ApiComponentTypes['AppVersionRecord'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionRecordSchema>
+    >;
+    'component:AgentRunSearchHit': Same<
+        W.ApiComponentTypes['AgentRunSearchHit'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AgentRunSearchHitSchema>
+    >;
+    'component:UpsertAppVersionRequest': Same<
+        W.ApiComponentTypes['UpsertAppVersionRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').UpsertAppVersionRequestSchema>
+    >;
+    'component:AppInstallationPayload': Same<
+        W.ApiComponentTypes['AppInstallationPayload'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationPayloadSchema>
+    >;
+    'component:AppDevelopmentTaskDetails': Same<
+        W.ApiComponentTypes['AppDevelopmentTaskDetails'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDevelopmentTaskDetailsSchema>
+    >;
+    'component:AppVersionRecordArray': Same<
+        W.ApiComponentTypes['AppVersionRecordArray'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionRecordArraySchema>
+    >;
+    'component:AppToolCollectionArray': Same<
+        W.ApiComponentTypes['AppToolCollectionArray'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppToolCollectionArraySchema>
+    >;
+    'component:AppInstallationKind': Same<
+        W.ApiComponentTypes['AppInstallationKind'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationKindSchema>
+    >;
+    'component:AppInstallationsQuery': Same<
+        W.ApiComponentTypes['AppInstallationsQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationsQuerySchema>
+    >;
+    'component:AppListScope': Same<
+        W.ApiComponentTypes['AppListScope'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppListScopeSchema>
+    >;
+    'component:AppsQuery': Same<
+        W.ApiComponentTypes['AppsQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppsQuerySchema>
+    >;
+    'component:AppInstallationProjectsQuery': Same<
+        W.ApiComponentTypes['AppInstallationProjectsQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationProjectsQuerySchema>
+    >;
+    'component:SystemPackageQuery': Same<
+        W.ApiComponentTypes['SystemPackageQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').SystemPackageQuerySchema>
+    >;
+    'component:WebsiteCredentialTotpAlgorithm': Same<
+        W.ApiComponentTypes['WebsiteCredentialTotpAlgorithm'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialTotpAlgorithmSchema>
+    >;
+    'component:WebsiteCredentialTotpMetadata': Same<
+        W.ApiComponentTypes['WebsiteCredentialTotpMetadata'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialTotpMetadataSchema>
+    >;
+    'component:WebsiteCredentialSecretInput': Same<
+        W.ApiComponentTypes['WebsiteCredentialSecretInput'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialSecretInputSchema>
+    >;
+    'component:WebsiteCredentialCapability': Same<
+        W.ApiComponentTypes['WebsiteCredentialCapability'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialCapabilitySchema>
+    >;
+    'component:WebsiteCredentialWebsite': Same<
+        W.ApiComponentTypes['WebsiteCredentialWebsite'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialWebsiteSchema>
+    >;
+    'component:SecretKind': Same<
+        W.ApiComponentTypes['SecretKind'],
+        z.infer<typeof import('./api-schemas/secrets.js').SecretKindSchema>
+    >;
+    'component:WebsiteCredentialRecord': Same<
+        W.ApiComponentTypes['WebsiteCredentialRecord'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialRecordSchema>
+    >;
+    'component:WebsiteCredentialFillResponse': Same<
+        W.ApiComponentTypes['WebsiteCredentialFillResponse'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialFillResponseSchema>
+    >;
+    'component:WebsiteCredentialFillRequest': Same<
+        W.ApiComponentTypes['WebsiteCredentialFillRequest'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialFillRequestSchema>
+    >;
+    'component:DeleteSecretResponse': Same<
+        W.ApiComponentTypes['DeleteSecretResponse'],
+        z.infer<typeof import('./api-schemas/secrets.js').DeleteSecretResponseSchema>
+    >;
+    'component:WebsiteCredentialMetadata': Same<
+        W.ApiComponentTypes['WebsiteCredentialMetadata'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialMetadataSchema>
+    >;
+    'component:WebsiteCredentialMetadataUpdate': Same<
+        W.ApiComponentTypes['WebsiteCredentialMetadataUpdate'],
+        z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialMetadataUpdateSchema>
+    >;
+    'component:SecretRecord': Same<
+        W.ApiComponentTypes['SecretRecord'],
+        z.infer<typeof import('./api-schemas/secrets.js').SecretRecordSchema>
+    >;
+    'component:CreateSecretRequest': Same<
+        W.ApiComponentTypes['CreateSecretRequest'],
+        z.infer<typeof import('./api-schemas/secrets.js').CreateSecretRequestSchema>
+    >;
+    'component:UpdateSecretRequest': Same<
+        W.ApiComponentTypes['UpdateSecretRequest'],
+        z.infer<typeof import('./api-schemas/secrets.js').UpdateSecretRequestSchema>
+    >;
+    'component:ListSecretsResponse': Same<
+        W.ApiComponentTypes['ListSecretsResponse'],
+        z.infer<typeof import('./api-schemas/secrets.js').ListSecretsResponseSchema>
+    >;
+    'component:SecretProjectQuery': Same<
+        W.ApiComponentTypes['SecretProjectQuery'],
+        z.infer<typeof import('./api-schemas/secrets.js').SecretProjectQuerySchema>
+    >;
+    'component:ListSecretsQuery': Same<
+        W.ApiComponentTypes['ListSecretsQuery'],
+        z.infer<typeof import('./api-schemas/secrets.js').ListSecretsQuerySchema>
+    >;
+    'component:SecretLookupQuery': Same<
+        W.ApiComponentTypes['SecretLookupQuery'],
+        z.infer<typeof import('./api-schemas/secrets.js').SecretLookupQuerySchema>
+    >;
+    'component:EventWebhookSigningSecretRequest': Same<
+        W.ApiComponentTypes['EventWebhookSigningSecretRequest'],
+        z.infer<typeof import('./api-schemas/secrets.js').EventWebhookSigningSecretRequestSchema>
+    >;
+    'component:EventWebhookSigningSecretResponse': Same<
+        W.ApiComponentTypes['EventWebhookSigningSecretResponse'],
+        z.infer<typeof import('./api-schemas/secrets.js').EventWebhookSigningSecretResponseSchema>
+    >;
+    'component:SignEventWebhookRequest': Same<
+        W.ApiComponentTypes['SignEventWebhookRequest'],
+        z.infer<typeof import('./api-schemas/secrets.js').SignEventWebhookRequestSchema>
+    >;
+    'component:SignEventWebhookResponse': Same<
+        W.ApiComponentTypes['SignEventWebhookResponse'],
+        z.infer<typeof import('./api-schemas/secrets.js').SignEventWebhookResponseSchema>
+    >;
+    'component:EventIngestSigningSecretRequest': Same<
+        W.ApiComponentTypes['EventIngestSigningSecretRequest'],
+        z.infer<typeof import('./api-schemas/secrets.js').EventIngestSigningSecretRequestSchema>
+    >;
+    'component:EventIngestSigningSecretResponse': Same<
+        W.ApiComponentTypes['EventIngestSigningSecretResponse'],
+        z.infer<typeof import('./api-schemas/secrets.js').EventIngestSigningSecretResponseSchema>
+    >;
+    'component:VerifyEventIngestSignatureRequest': Same<
+        W.ApiComponentTypes['VerifyEventIngestSignatureRequest'],
+        z.infer<typeof import('./api-schemas/secrets.js').VerifyEventIngestSignatureRequestSchema>
+    >;
+    'component:VerifyEventIngestSignatureResponse': Same<
+        W.ApiComponentTypes['VerifyEventIngestSignatureResponse'],
+        z.infer<typeof import('./api-schemas/secrets.js').VerifyEventIngestSignatureResponseSchema>
+    >;
+    'component:GithubInstallationTokenRequest': Same<
+        W.ApiComponentTypes['GithubInstallationTokenRequest'],
+        z.infer<typeof import('./api-schemas/secrets.js').GithubInstallationTokenRequestSchema>
+    >;
+    'component:GithubInstallationTokenResponse': Same<
+        W.ApiComponentTypes['GithubInstallationTokenResponse'],
+        z.infer<typeof import('./api-schemas/secrets.js').GithubInstallationTokenResponseSchema>
+    >;
+    'component:InternalSecretDeleteResponse': Same<
+        W.ApiComponentTypes['InternalSecretDeleteResponse'],
+        z.infer<typeof import('./api-schemas/secrets.js').InternalSecretDeleteResponseSchema>
+    >;
+    'component:SupportedIntegrations_ask_user_webhook': Same<
+        W.ApiComponentTypes['SupportedIntegrations_ask_user_webhook'],
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_ask_user_webhookSchema>
+    >;
+    'component:SupportedIntegrations_resend': Same<
+        W.ApiComponentTypes['SupportedIntegrations_resend'],
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_resendSchema>
+    >;
+    'component:SupportedIntegrations_linkup': Same<
+        W.ApiComponentTypes['SupportedIntegrations_linkup'],
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_linkupSchema>
+    >;
+    'component:SupportedIntegrations_exa': Same<
+        W.ApiComponentTypes['SupportedIntegrations_exa'],
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_exaSchema>
+    >;
+    'component:SupportedIntegrations_serper': Same<
+        W.ApiComponentTypes['SupportedIntegrations_serper'],
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_serperSchema>
+    >;
+    'component:SupportedIntegrations_magic_pdf': Same<
+        W.ApiComponentTypes['SupportedIntegrations_magic_pdf'],
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_magic_pdfSchema>
+    >;
+    'component:SupportedIntegrations_aws': Same<
+        W.ApiComponentTypes['SupportedIntegrations_aws'],
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_awsSchema>
+    >;
+    'component:SupportedIntegrations_github': Same<
+        W.ApiComponentTypes['SupportedIntegrations_github'],
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_githubSchema>
+    >;
+    'component:SupportedIntegrations_gladia': Same<
+        W.ApiComponentTypes['SupportedIntegrations_gladia'],
+        z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_gladiaSchema>
+    >;
+    'component:AskUserWebhookConfiguration': Same<
+        W.ApiComponentTypes['AskUserWebhookConfiguration'],
+        z.infer<typeof import('./api-schemas/integrations.js').AskUserWebhookConfigurationSchema>
+    >;
+    'component:ResendConfiguration': Same<
+        W.ApiComponentTypes['ResendConfiguration'],
+        z.infer<typeof import('./api-schemas/integrations.js').ResendConfigurationSchema>
+    >;
+    'component:LinkupConfiguration': Same<
+        W.ApiComponentTypes['LinkupConfiguration'],
+        z.infer<typeof import('./api-schemas/integrations.js').LinkupConfigurationSchema>
+    >;
+    'component:ExaConfiguration': Same<
+        W.ApiComponentTypes['ExaConfiguration'],
+        z.infer<typeof import('./api-schemas/integrations.js').ExaConfigurationSchema>
+    >;
+    'component:SerperConfiguration': Same<
+        W.ApiComponentTypes['SerperConfiguration'],
+        z.infer<typeof import('./api-schemas/integrations.js').SerperConfigurationSchema>
+    >;
+    'component:GithubConfiguration': Same<
+        W.ApiComponentTypes['GithubConfiguration'],
+        z.infer<typeof import('./api-schemas/integrations.js').GithubConfigurationSchema>
+    >;
+    'component:GladiaConfiguration': Same<
+        W.ApiComponentTypes['GladiaConfiguration'],
+        z.infer<typeof import('./api-schemas/integrations.js').GladiaConfigurationSchema>
+    >;
+    'component:RemoteActivityDefinition': Same<
+        W.ApiComponentTypes['RemoteActivityDefinition'],
+        z.infer<typeof import('./api-schemas/integrations.js').RemoteActivityDefinitionSchema>
+    >;
+    'component:AskUserWebhookConfigurationInput': Same<
+        W.ApiComponentTypes['AskUserWebhookConfigurationInput'],
+        z.infer<typeof import('./api-schemas/integrations.js').AskUserWebhookConfigurationInputSchema>
+    >;
+    'component:ResendConfigurationInput': Same<
+        W.ApiComponentTypes['ResendConfigurationInput'],
+        z.infer<typeof import('./api-schemas/integrations.js').ResendConfigurationInputSchema>
+    >;
+    'component:LinkupConfigurationInput': Same<
+        W.ApiComponentTypes['LinkupConfigurationInput'],
+        z.infer<typeof import('./api-schemas/integrations.js').LinkupConfigurationInputSchema>
+    >;
+    'component:ExaConfigurationInput': Same<
+        W.ApiComponentTypes['ExaConfigurationInput'],
+        z.infer<typeof import('./api-schemas/integrations.js').ExaConfigurationInputSchema>
+    >;
+    'component:SerperConfigurationInput': Same<
+        W.ApiComponentTypes['SerperConfigurationInput'],
+        z.infer<typeof import('./api-schemas/integrations.js').SerperConfigurationInputSchema>
+    >;
+    'component:MagicPdfConfiguration': Same<
+        W.ApiComponentTypes['MagicPdfConfiguration'],
+        z.infer<typeof import('./api-schemas/integrations.js').MagicPdfConfigurationSchema>
+    >;
+    'component:AwsConfiguration': Same<
+        W.ApiComponentTypes['AwsConfiguration'],
+        z.infer<typeof import('./api-schemas/integrations.js').AwsConfigurationSchema>
+    >;
+    'component:GithubConfigurationInput': Same<
+        W.ApiComponentTypes['GithubConfigurationInput'],
+        z.infer<typeof import('./api-schemas/integrations.js').GithubConfigurationInputSchema>
+    >;
+    'component:GladiaConfigurationInput': Same<
+        W.ApiComponentTypes['GladiaConfigurationInput'],
+        z.infer<typeof import('./api-schemas/integrations.js').GladiaConfigurationInputSchema>
+    >;
+    'component:ProjectIntegrationConfigResponse': Same<
+        W.ApiComponentTypes['ProjectIntegrationConfigResponse'],
+        z.infer<typeof import('./api-schemas/integrations.js').ProjectIntegrationConfigResponseSchema>
+    >;
+    'component:ProjectIntegrationConfigRequest': Same<
+        W.ApiComponentTypes['ProjectIntegrationConfigRequest'],
+        z.infer<typeof import('./api-schemas/integrations.js').ProjectIntegrationConfigRequestSchema>
+    >;
+    'component:CompositeAppNavItemPermissions': Same<
+        W.ApiComponentTypes['CompositeAppNavItemPermissions'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppNavItemPermissionsSchema>
+    >;
+    'component:CompositeAppEntry': Same<
+        W.ApiComponentTypes['CompositeAppEntry'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppEntrySchema>
+    >;
+    'component:CompositeAppHomePlugin': Same<
+        W.ApiComponentTypes['CompositeAppHomePlugin'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppHomePluginSchema>
+    >;
+    'component:CompositeAppThemeOverrides': Same<
+        W.ApiComponentTypes['CompositeAppThemeOverrides'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppThemeOverridesSchema>
+    >;
+    'component:CompositeAppHeaderItemTarget': Same<
+        W.ApiComponentTypes['CompositeAppHeaderItemTarget'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppHeaderItemTargetSchema>
+    >;
+    'component:CompositeAppHeaderItemKind': Same<
+        W.ApiComponentTypes['CompositeAppHeaderItemKind'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppHeaderItemKindSchema>
+    >;
+    'component:CompositeAppUserMenuOverrides': Same<
+        W.ApiComponentTypes['CompositeAppUserMenuOverrides'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppUserMenuOverridesSchema>
+    >;
+    'component:CompositeAppHeaderOverrides': Same<
+        W.ApiComponentTypes['CompositeAppHeaderOverrides'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppHeaderOverridesSchema>
+    >;
+    'component:CompositeAppSidebarOverrides': Same<
+        W.ApiComponentTypes['CompositeAppSidebarOverrides'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppSidebarOverridesSchema>
+    >;
+    'component:CompositeAppSwitchersOverrides': Same<
+        W.ApiComponentTypes['CompositeAppSwitchersOverrides'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppSwitchersOverridesSchema>
+    >;
+    'component:CompositeAppMessageStyle': Same<
+        W.ApiComponentTypes['CompositeAppMessageStyle'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppMessageStyleSchema>
+    >;
+    'component:CompositeAppLogoOverrides': Same<
+        W.ApiComponentTypes['CompositeAppLogoOverrides'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppLogoOverridesSchema>
+    >;
+    'component:CompositeAppCardOverrides': Same<
+        W.ApiComponentTypes['CompositeAppCardOverrides'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppCardOverridesSchema>
+    >;
+    'component:CompositeAppMenuNavItem': Same<
+        W.ApiComponentTypes['CompositeAppMenuNavItem'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppMenuNavItemSchema>
+    >;
+    'component:CompositeAppHeaderItem': Same<
+        W.ApiComponentTypes['CompositeAppHeaderItem'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppHeaderItemSchema>
+    >;
+    'component:CompositeAppMessageOverrides': Same<
+        W.ApiComponentTypes['CompositeAppMessageOverrides'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppMessageOverridesSchema>
+    >;
+    'component:CompositeAppMenuSection': Same<
+        W.ApiComponentTypes['CompositeAppMenuSection'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppMenuSectionSchema>
+    >;
+    'component:CompositeAppConfig': Same<
+        W.ApiComponentTypes['CompositeAppConfig'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppConfigSchema>
+    >;
+    'component:CompositeAppConfigPayload': Same<
+        W.ApiComponentTypes['CompositeAppConfigPayload'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').CompositeAppConfigPayloadSchema>
+    >;
+    'component:MCPOAuthConfigMap': Same<
+        W.ApiComponentTypes['MCPOAuthConfigMap'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').MCPOAuthConfigMapSchema>
+    >;
+    'component:AppWidgetInfo': Same<
+        W.ApiComponentTypes['AppWidgetInfo'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppWidgetInfoSchema>
+    >;
+    'component:AppDashboardDefinition': Same<
+        W.ApiComponentTypes['AppDashboardDefinition'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppDashboardDefinitionSchema>
+    >;
+    'component:AppManifestData': Same<
+        W.ApiComponentTypes['AppManifestData'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppManifestDataSchema>
+    >;
+    'component:UpdateAppPayload': Same<
+        W.ApiComponentTypes['UpdateAppPayload'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').UpdateAppPayloadSchema>
+    >;
+    'component:AppManifest': Same<
+        W.ApiComponentTypes['AppManifest'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppManifestSchema>
+    >;
+    'component:AppManifestArray': Same<
+        W.ApiComponentTypes['AppManifestArray'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppManifestArraySchema>
+    >;
+    'component:AppWidgetInfoMap': Same<
+        W.ApiComponentTypes['AppWidgetInfoMap'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppWidgetInfoMapSchema>
+    >;
+    'component:PromoteAppVersionResponse': Same<
+        W.ApiComponentTypes['PromoteAppVersionResponse'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').PromoteAppVersionResponseSchema>
+    >;
+    'component:AppPackage': Same<
+        W.ApiComponentTypes['AppPackage'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppPackageSchema>
+    >;
+    'component:ProjectPluginArray': Same<
+        W.ApiComponentTypes['ProjectPluginArray'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').ProjectPluginArraySchema>
+    >;
+    'component:InCodeViewDefinition': Same<
+        W.ApiComponentTypes['InCodeViewDefinition'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').InCodeViewDefinitionSchema>
+    >;
+    'component:InCodeTypeDefinitionArray': Same<
+        W.ApiComponentTypes['InCodeTypeDefinitionArray'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').InCodeTypeDefinitionArraySchema>
+    >;
+    'component:RenderingTemplateDefinitionRefArray': Same<
+        W.ApiComponentTypes['RenderingTemplateDefinitionRefArray'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').RenderingTemplateDefinitionRefArraySchema>
+    >;
+    'component:InCodeProcessDefinition': Same<
+        W.ApiComponentTypes['InCodeProcessDefinition'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').InCodeProcessDefinitionSchema>
+    >;
+    'component:AppInstallation': Same<
+        W.ApiComponentTypes['AppInstallation'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppInstallationSchema>
+    >;
+    'component:InCodeViewDefinitionArray': Same<
+        W.ApiComponentTypes['InCodeViewDefinitionArray'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').InCodeViewDefinitionArraySchema>
+    >;
+    'component:InCodeProcessDefinitionArray': Same<
+        W.ApiComponentTypes['InCodeProcessDefinitionArray'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').InCodeProcessDefinitionArraySchema>
+    >;
+    'component:AppInstallationWithManifest': Same<
+        W.ApiComponentTypes['AppInstallationWithManifest'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppInstallationWithManifestSchema>
+    >;
+    'component:AppInstallationArray': Same<
+        W.ApiComponentTypes['AppInstallationArray'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppInstallationArraySchema>
+    >;
+    'component:AppInstallationListEntry': Same<
+        W.ApiComponentTypes['AppInstallationListEntry'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppInstallationListEntrySchema>
+    >;
+    'component:AppInstallationWithManifestArray': Same<
+        W.ApiComponentTypes['AppInstallationWithManifestArray'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppInstallationWithManifestArraySchema>
+    >;
+    'component:AppInstallationListEntryArray': Same<
+        W.ApiComponentTypes['AppInstallationListEntryArray'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppInstallationListEntryArraySchema>
+    >;
+    'component:BinaryFileResponse': Same<
+        W.ApiComponentTypes['BinaryFileResponse'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').BinaryFileResponseSchema>
+    >;
+    'component:SigningAlgorithm': Same<
+        W.ApiComponentTypes['SigningAlgorithm'],
+        z.infer<typeof import('./api-schemas/sts.js').SigningAlgorithmSchema>
+    >;
+    'component:ApiKeyTokenRequest': Same<
+        W.ApiComponentTypes['ApiKeyTokenRequest'],
+        z.infer<typeof import('./api-schemas/sts.js').ApiKeyTokenRequestSchema>
+    >;
+    'component:UserTokenRequest': Same<
+        W.ApiComponentTypes['UserTokenRequest'],
+        z.infer<typeof import('./api-schemas/sts.js').UserTokenRequestSchema>
+    >;
+    'component:ProjectTokenRequest': Same<
+        W.ApiComponentTypes['ProjectTokenRequest'],
+        z.infer<typeof import('./api-schemas/sts.js').ProjectTokenRequestSchema>
+    >;
+    'component:EnvironmentTokenRequest': Same<
+        W.ApiComponentTypes['EnvironmentTokenRequest'],
+        z.infer<typeof import('./api-schemas/sts.js').EnvironmentTokenRequestSchema>
+    >;
+    'component:AgentTokenRequest': Same<
+        W.ApiComponentTypes['AgentTokenRequest'],
+        z.infer<typeof import('./api-schemas/sts.js').AgentTokenRequestSchema>
+    >;
+    'component:ServiceAccountTokenRequest': Same<
+        W.ApiComponentTypes['ServiceAccountTokenRequest'],
+        z.infer<typeof import('./api-schemas/sts.js').ServiceAccountTokenRequestSchema>
+    >;
+    'component:AppSessionTokenRequest': Same<
+        W.ApiComponentTypes['AppSessionTokenRequest'],
+        z.infer<typeof import('./api-schemas/sts.js').AppSessionTokenRequestSchema>
+    >;
+    'component:AppSessionTokenResponse': Same<
+        W.ApiComponentTypes['AppSessionTokenResponse'],
+        z.infer<typeof import('./api-schemas/sts.js').AppSessionTokenResponseSchema>
+    >;
+    'component:IssueTokenRequest': Same<
+        W.ApiComponentTypes['IssueTokenRequest'],
+        z.infer<typeof import('./api-schemas/sts.js').IssueTokenRequestSchema>
+    >;
+    'component:IssueTokenResponse': Same<
+        W.ApiComponentTypes['IssueTokenResponse'],
+        z.infer<typeof import('./api-schemas/sts.js').IssueTokenResponseSchema>
+    >;
+    'component:IssueTokenForbiddenResponse': Same<
+        W.ApiComponentTypes['IssueTokenForbiddenResponse'],
+        z.infer<typeof import('./api-schemas/sts.js').IssueTokenForbiddenResponseSchema>
+    >;
+    'component:IssueTokenUnavailableResponse': Same<
+        W.ApiComponentTypes['IssueTokenUnavailableResponse'],
+        z.infer<typeof import('./api-schemas/sts.js').IssueTokenUnavailableResponseSchema>
+    >;
+    'component:EmailRouteData': Same<
+        W.ApiComponentTypes['EmailRouteData'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').EmailRouteDataSchema>
+    >;
+    'component:SendEmailRequest': Same<
+        W.ApiComponentTypes['SendEmailRequest'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').SendEmailRequestSchema>
+    >;
+    'component:SendEmailResponse': Same<
+        W.ApiComponentTypes['SendEmailResponse'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').SendEmailResponseSchema>
+    >;
+    'component:ResolveEmailRouteRequest': Same<
+        W.ApiComponentTypes['ResolveEmailRouteRequest'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').ResolveEmailRouteRequestSchema>
+    >;
+    'component:CreateEmailRouteRequest': Same<
+        W.ApiComponentTypes['CreateEmailRouteRequest'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').CreateEmailRouteRequestSchema>
+    >;
+    'component:CreateEmailRouteResponse': Same<
+        W.ApiComponentTypes['CreateEmailRouteResponse'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').CreateEmailRouteResponseSchema>
+    >;
+    'component:EmailRouteResponse': Same<
+        W.ApiComponentTypes['EmailRouteResponse'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').EmailRouteResponseSchema>
+    >;
+    'component:UpdateEmailRouteRequest': Same<
+        W.ApiComponentTypes['UpdateEmailRouteRequest'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').UpdateEmailRouteRequestSchema>
+    >;
+    'component:UpdateEmailRouteResponse': Same<
+        W.ApiComponentTypes['UpdateEmailRouteResponse'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').UpdateEmailRouteResponseSchema>
+    >;
+    'component:ForwardEmailRequest': Same<
+        W.ApiComponentTypes['ForwardEmailRequest'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').ForwardEmailRequestSchema>
+    >;
+    'component:ForwardEmailResponse': Same<
+        W.ApiComponentTypes['ForwardEmailResponse'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').ForwardEmailResponseSchema>
+    >;
+    'component:PendingAskStatus': Same<
+        W.ApiComponentTypes['PendingAskStatus'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskStatusSchema>
+    >;
+    'component:PendingAskData': Same<
+        W.ApiComponentTypes['PendingAskData'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDataSchema>
+    >;
+    'component:RegisterPendingAskRequest': Same<
+        W.ApiComponentTypes['RegisterPendingAskRequest'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').RegisterPendingAskRequestSchema>
+    >;
+    'component:RegisterPendingAskResponse': Same<
+        W.ApiComponentTypes['RegisterPendingAskResponse'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').RegisterPendingAskResponseSchema>
+    >;
+    'component:ResolvePendingAskRequest': Same<
+        W.ApiComponentTypes['ResolvePendingAskRequest'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').ResolvePendingAskRequestSchema>
+    >;
+    'component:ResolvePendingAskResponse': Same<
+        W.ApiComponentTypes['ResolvePendingAskResponse'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').ResolvePendingAskResponseSchema>
+    >;
+    'component:ListPendingAsksResponse': Same<
+        W.ApiComponentTypes['ListPendingAsksResponse'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').ListPendingAsksResponseSchema>
+    >;
+    'component:ContentQueryPayload': Same<
+        W.ApiComponentTypes['ContentQueryPayload'],
+        z.infer<typeof import('./api-schemas/content-query.js').ContentQueryPayloadSchema>
+    >;
+    'component:ContentQueryResult': Same<
+        W.ApiComponentTypes['ContentQueryResult'],
+        z.infer<typeof import('./api-schemas/content-query.js').ContentQueryResultSchema>
+    >;
+    'component:CreateDelegationGrantPayload': Same<
+        W.ApiComponentTypes['CreateDelegationGrantPayload'],
+        z.infer<typeof import('./api-schemas/delegation.js').CreateDelegationGrantPayloadSchema>
+    >;
+    'component:DelegationGrant': Same<
+        W.ApiComponentTypes['DelegationGrant'],
+        z.infer<typeof import('./api-schemas/delegation.js').DelegationGrantSchema>
+    >;
+    'component:DelegationGrantArray': Same<
+        W.ApiComponentTypes['DelegationGrantArray'],
+        z.infer<typeof import('./api-schemas/delegation.js').DelegationGrantArraySchema>
+    >;
+    // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
+    'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
 }
 
 const checks: Checks = {
@@ -4977,10 +10512,1406 @@ const checks: Checks = {
     SubmitProcessTestRunPayloadWire: true,
     CreateContentObjectPayloadWire: true,
     UpdateContentObjectPayloadWire: true,
+    ResourceVisibilityWire: true,
+    OAuthProviderArray: true,
+    OAuthClientArray: true,
+    ExecutionEnvironmentArray: true,
+    RunAnalyticsResultArray: true,
+    InteractionStatusWire: true,
+    PromptStatusWire: true,
+    PromptSegmentDefTypeWire: true,
+    TemplateTypeWire: true,
+    PromptSegmentDefWire: true,
+    PromptSegmentRef_PromptTemplateRef: true,
+    InteractionArray: true,
+    InteractionRefArray: true,
+    InteractionNameArray: true,
+    PromptSegmentRef_ExportedPromptTemplateRef: true,
+    InteractionRefWithSchemaArray: true,
+    InteractionTagsArray: true,
+    InteractionEndpointArray: true,
+    CatalogInteractionRefArray: true,
+    CatalogTagQueryWire: true,
+    StoredCatalogInteractionsQueryWire: true,
+    ModelSourceWire: true,
+    NumberValueMap: true,
+    GeneratedTestDataRecordArray: true,
+    GeneratedInteractionDefinitionArray: true,
+    AgentSearchScopeWire: true,
+    AgentSearchScope_Collection: true,
+    LlmCallTypeWire: true,
+    ToolApprovalGrantMap: true,
+    ConversationStateWire: true,
+    ExecutionRunStatusWire: true,
+    RunSourceTypesWire: true,
+    ExecutionRunWire: true,
+    ExecutionRunRefArray: true,
+    RunListQuery: true,
+    InteractionExecutionResultWire: true,
+    LegacyExecutionRunResult: true,
+    LegacyPopulatedExecutionRunResult: true,
+    ExecuteInteractionByEndpointQueryWire: true,
+    ExecuteInteractionByEndpointHeadersWire: true,
+    ExecutionResponse: true,
+    StringValueMap: true,
+    TaskArray: true,
+    ContentObjectTypeItemArray: true,
+    ContentObjectTypeCatalogEntryArray: true,
+    StringArrayMap: true,
+    DashboardVersionItemArray: true,
+    DashboardItemArray: true,
+    DataTableSummaryArray: true,
+    DataStoreVersionTableStateMap: true,
+    DataColumnForAIMap: true,
+    DataStoreItemArray: true,
+    ImportTableDataMap: true,
+    DataTableArray: true,
+    DataStoreVersionArray: true,
+    DataTableForAIMap: true,
+    PricingSyncPayload: true,
+    PricingSyncDayResult: true,
+    PricingSyncResult: true,
+    DSLWorkflowDefinitionWire: true,
+    WorkflowSearchAttributeValueWire: true,
+    ActivityFetchSpecMap: true,
+    WorkflowSearchAttributeValueMap: true,
+    DSLChildWorkflowStepWire: true,
+    DSLWorkflowDefinitionResponseWire: true,
+    DSLWorkflowSpecWire: true,
+    DSLWorkflowSpecWithActivitiesWire: true,
+    DSLWorkflowSpecWithStepsWire: true,
+    DSLWorkflowStepWire: true,
+    WorkflowDefinitionPayloadWire: true,
+    WorkflowDefinitionPayloadWithActivitiesWire: true,
+    WorkflowDefinitionPayloadWithStepsWire: true,
+    UpdateWorkflowDefinitionPayloadWire: true,
+    UpdateWorkflowDefinitionPayloadWithActivitiesWire: true,
+    UpdateWorkflowDefinitionPayloadWithStepsWire: true,
+    AgentMessageTypeWire: true,
+    BranchNodeBranchDefinitionWire: true,
+    CreateProcessDefinitionPayloadWire: true,
+    NodeDefinitionWire: true,
+    NodeDefinitionMap: true,
+    ProcessDefinitionWire: true,
+    ProcessDefinitionArray: true,
+    ProcessDefinitionBodyWire: true,
+    UpdateProcessDefinitionPayloadWire: true,
+    ProcessScriptResourceMap: true,
+    ContentObjectStatusWire: true,
+    ContentObjectTypeArray: true,
+    ProjectedContentObjectApiResponseArray: true,
+    ContentObjectItemApiResponseArray: true,
+    ContentObjectProcessingPriorityWire: true,
+    ContentObjectApiResponseArray: true,
+    CostExportCsvResponse: true,
+    SupportedEmbeddingTypesWire: true,
+    Record_SearchTypes_number: true,
+    EmbeddingMap: true,
+    ContentEmbeddingMap: true,
+    WorkflowRuleInputTypeWire: true,
+    WorkflowRuleItemArray: true,
+    CreateEventSubscriptionPayloadWire: true,
+    EventSubscriptionWire: true,
+    EventSubscriptionArray: true,
+    EventSubscriptionMutationResponseWire: true,
+    UpdateEventSubscriptionPayloadWire: true,
+    ServerSentEventsResponse: true,
+    ImportSpecWire: true,
+    WorkflowExecutionStartResultArray: true,
+    RecordProcessRunPayloadWire: true,
+    ProcessTestSuiteArray: true,
+    ProcessTestTargetWire: true,
+    ProcessTestRunArray: true,
+    EventDeliveryTargetWire: true,
+    EventDeliveryTargetInputWire: true,
+    ProcessEventDeliveryTargetWire: true,
+    EventIngestChannelArray: true,
+    CollectionStatusWire: true,
+    CollectionArray: true,
+    AgentRunArtifactPathArray: true,
+    SignalAgentPayloadWire: true,
+    FileProcessingStatusWire: true,
+    AutonomousRunResponseWire: true,
+    AgentRunResponseWire: true,
+    ListAgentRunsResponseWire: true,
+    ProgrammaticRunResponseWire: true,
+    SupervisedRunResponseWire: true,
+    AgentRunInternalsWire: true,
+    RecordAgentRunPayloadWire: true,
+    RecordRunPayloadWire: true,
+    UpdateAgentRunStatusPayloadWire: true,
+    TurnTerminalTypeWire: true,
+    EvaluationSeverityWire: true,
+    TurnEvaluationFlagWire: true,
+    ToolErrorClassWire: true,
+    JudgeGateReasonWire: true,
+    JudgeOutcomeWire: true,
+    JudgeVerdictWire: true,
+    AgentEventWire: true,
+    WorkflowDefinitionRefArray: true,
+    ActivityTypeDefinitionWire: true,
+    ActivityPropertyDefinitionWire: true,
+    ActivityDefinitionWire: true,
+    ActivityCatalogWire: true,
+    TaskType_TIMER: true,
+    TaskType_SIGNAL: true,
+    TaskType_CHILD_WORKFLOW: true,
+    TaskType_ACTIVITY: true,
+    TaskStatusWire: true,
+    ViewNavigationNodeWire: true,
+    ViewNavigationResultWire: true,
+    ViewNavigationResultMap: true,
+    PromptTemplateRefArray: true,
+    AggregatedToolArray: true,
+    OAuthAuthStatusArray: true,
+    KnownAuditActionWire: true,
+    AuditAggregationDimensionMap: true,
+    AuditAggregationDimensionWire: true,
+    AuditActionWire: true,
+    ViewExperienceSchemaVersionWire: true,
+    ViewAgenticSearchModeWire: true,
+    ViewExperienceArray: true,
+    Extract_AppVersionGitRefType_branch_tag_commit: true,
+    AppPackageScopeWire: true,
+    AppVersionRecordArray: true,
+    AppToolCollectionArray: true,
+    SystemPackageQuery: true,
+    InternalSecretDeleteResponse: true,
+    SupportedIntegrations_ask_user_webhook: true,
+    SupportedIntegrations_resend: true,
+    SupportedIntegrations_linkup: true,
+    SupportedIntegrations_exa: true,
+    SupportedIntegrations_serper: true,
+    SupportedIntegrations_magic_pdf: true,
+    SupportedIntegrations_aws: true,
+    SupportedIntegrations_github: true,
+    SupportedIntegrations_gladia: true,
+    CompositeAppMenuNavItemWire: true,
+    MCPOAuthConfigMap: true,
+    AppManifestArray: true,
+    AppWidgetInfoMap: true,
+    ProjectPluginArray: true,
+    InCodeTypeDefinitionArray: true,
+    RenderingTemplateDefinitionRefArray: true,
+    InCodeProcessDefinitionWire: true,
+    InCodeViewDefinitionArray: true,
+    InCodeProcessDefinitionArray: true,
+    AppInstallationArray: true,
+    AppInstallationWithManifestArray: true,
+    AppInstallationListEntryArray: true,
+    BinaryFileResponse: true,
+    'component:AccountApiVersionPolicy': true,
+    'component:Account': true,
+    'component:UpdateAccountPayload': true,
+    'component:StripeBillingStatusResponse': true,
+    'component:ApiKeyListQuery': true,
+    'component:QuotaStandingResponse': true,
+    'component:QuotaTierResponse': true,
+    'component:User': true,
+    'component:UserArray': true,
+    'component:UpdateUserPayload': true,
+    'component:DeleteByIdResult': true,
+    'component:PrincipalIdentity': true,
+    'component:SignupData': true,
+    'component:SignupPayload': true,
+    'component:UserRefArray': true,
+    'component:UserGroup': true,
+    'component:UserGroupArray': true,
+    'component:UserGroupRef': true,
+    'component:CreateUserGroupPayload': true,
+    'component:ListUserGroupsQuery': true,
+    'component:UpdateUserGroupPayload': true,
+    'component:AccessControlEntry': true,
+    'component:AccessControlEntryArray': true,
+    'component:ACECreatePayload': true,
+    'component:ACEUpdatePayload': true,
+    'component:ProjectRefArray': true,
+    'component:RoleDefinitionArray': true,
+    'component:SystemRoleDefinitionArray': true,
+    'component:ApiKey': true,
+    'component:ApiKeyArray': true,
+    'component:ApiKeyWithValue': true,
+    'component:AccountApiKey': true,
+    'component:AccountApiKeyWithValue': true,
+    'component:AccountApiKeyArray': true,
+    'component:CreateAccountApiKeyPayload': true,
+    'component:UpdateAccountApiKeyPayload': true,
+    'component:ApiKeyReadResponse': true,
+    'component:ApiKeyReadQuery': true,
+    'component:CreateApiKeyPayload': true,
+    'component:UpdateApiKeyPayload': true,
+    'component:AuthTokenResponse': true,
+    'component:DeleteOperationResult': true,
+    'component:InviteUserRequestPayload': true,
+    'component:InviteUserResponsePayload': true,
+    'component:InviteAcceptanceResponse': true,
+    'component:InviteDeclineResponse': true,
+    'component:OnboardingProgress': true,
+    'component:AccountProjectsResponse': true,
+    'component:TransientToken_UserInviteTokenData_Array': true,
+    'component:ListProjectsQuery': true,
+    'component:ProjectTagQuery': true,
+    'component:ICreateProjectPayload': true,
+    'component:ProjectPluginsUpdatePayload': true,
+    'component:CountResult': true,
+    'component:ProjectIntegrationListResponse': true,
+    'component:ProjectToolInfo': true,
+    'component:ProjectToolInfoArray': true,
+    'component:RenderingTemplateDefinition': true,
+    'component:RenderingTemplateDefinitionRef': true,
+    'component:ProjectModelDefaults': true,
+    'component:ResourceVisibility': true,
+    'component:ProjectIndexingConfiguration': true,
+    'component:ProjectConfigurationEmbedding': true,
+    'component:BrowserUseProjectConfiguration': true,
+    'component:ProjectIntakeSniffConfiguration': true,
+    'component:JSONSchema': true,
+    'component:ModelOptions': true,
+    'component:HttpTimeoutOptions': true,
+    'component:ContentTypeIntakePolicy': true,
+    'component:ProjectIntakeConfiguration': true,
+    'component:ProjectConfiguration': true,
+    'component:Project': true,
+    'component:UpdateProjectPayload': true,
+    'component:UpdateProjectConfigurationPayload': true,
+    'component:ToolCollectionObject': true,
+    'component:AppUIConfig': true,
+    'component:AppCapabilities': true,
+    'component:AppAccessControl': true,
+    'component:AppSourceConfig': true,
+    'component:AppManifestSource': true,
+    'component:SuccessResponse': true,
+    'component:OAuthProvider': true,
+    'component:OAuthProviderArray': true,
+    'component:CreateOAuthProviderPayload': true,
+    'component:UpdateOAuthProviderPayload': true,
+    'component:OAuthProviderAuthStatus': true,
+    'component:OAuthProviderAuthorizeResponse': true,
+    'component:OAuthProviderAccessTokenResponse': true,
+    'component:OAuthProviderExchangePayload': true,
+    'component:OAuthClientType': true,
+    'component:OAuthClientStatus': true,
+    'component:OAuthRegistrationSource': true,
+    'component:OAuthProjectBindingMode': true,
+    'component:OAuthTokenEndpointAuthMethod': true,
+    'component:OAuthGrantType': true,
+    'component:OAuthResponseType': true,
+    'component:OAuthAuthorizationRequestStatus': true,
+    'component:OAuthClientRegistrationMode': true,
+    'component:OAuthGrantStatus': true,
+    'component:OAuthGrantSortField': true,
+    'component:OAuthGrantSortOrder': true,
+    'component:OAuthAuthorizationServerMetadata': true,
+    'component:OAuthClientDisplayMetadata': true,
+    'component:OAuthAuthorizeQuery': true,
+    'component:CreateOAuthAuthorizationRequestPayload': true,
+    'component:OAuthAuthorizationRequest': true,
+    'component:OAuthAuthorizationRequestGeneratedApp': true,
+    'component:OAuthLoginPayload': true,
+    'component:OAuthLoginUserNotFoundResponse': true,
+    'component:OAuthLoginDecisionResponse': true,
+    'component:ApproveOAuthAuthorizationRequestPayload': true,
+    'component:OAuthGrantableScopesResponse': true,
+    'component:OAuthAuthorizationDecisionResponse': true,
+    'component:OAuthDeviceAuthorizationRequest': true,
+    'component:OAuthDeviceAuthorizationResponse': true,
+    'component:OAuthTokenResponse': true,
+    'component:OAuthClient': true,
+    'component:OAuthClientArray': true,
+    'component:OAuthClientCreateResponse': true,
+    'component:OAuthClientScopeMetadata': true,
+    'component:CreateOAuthClientPayload': true,
+    'component:UpdateOAuthClientPayload': true,
+    'component:OAuthGrant': true,
+    'component:ListOAuthGrantsQuery': true,
+    'component:RevokeOAuthGrantQuery': true,
+    'component:BulkRevokeOAuthGrantsPayload': true,
+    'component:OAuthGrantListResponse': true,
+    'component:OAuthGrantRevokeResponse': true,
+    'component:SupportedProviders': true,
+    'component:ExecutionEnvironmentRef': true,
+    'component:ExecutionEnvironment': true,
+    'component:ExecutionEnvironmentArray': true,
+    'component:ExecutionEnvironmentSettings': true,
+    'component:ExecutionEnvironmentCreatePayload': true,
+    'component:ExecutionEnvironmentUpdatePayload': true,
+    'component:ExecutionEnvironmentConfigUpdatePayload': true,
+    'component:EnableEnvironmentModelPayload': true,
+    'component:ListEnvironmentsQuery': true,
+    'component:MigrateInteractionsPayload': true,
+    'component:MigrateInteractionsResult': true,
+    'component:VirtualEnvEntry': true,
+    'component:LoadBalancingEnvConfig': true,
+    'component:LoadBalancingEnvEntryConfig': true,
+    'component:MediatorEnvConfig': true,
+    'component:AIModel': true,
+    'component:AIModelArray': true,
+    'component:AIModelStatus': true,
+    'component:ModelType': true,
+    'component:ModelSearchPayload': true,
+    'component:RunAnalyticsQuery': true,
+    'component:RunAnalyticsResult': true,
+    'component:RunAnalyticsResultArray': true,
+    'component:RunAnalyticsGroupBy': true,
+    'component:AnalyticsAxis': true,
+    'component:TimeResolution': true,
+    'component:EmbeddingsApiRequest': true,
+    'component:EmbeddingsApiInput': true,
+    'component:EmbeddingsApiSource': true,
+    'component:EmbeddingsApiTextInput': true,
+    'component:EmbeddingsApiImageInput': true,
+    'component:EmbeddingsApiVideoInput': true,
+    'component:EmbeddingsApiAudioInput': true,
+    'component:EmbeddingTaskType': true,
+    'component:EmbeddingsResult': true,
+    'component:EmbeddingResultItem': true,
+    'component:EmbeddingOutput': true,
+    'component:EmbeddingsTokenUsage': true,
+    'component:JSONValue': true,
+    'component:JSONObject': true,
+    'component:PromptRole': true,
+    'component:Modalities': true,
+    'component:DataSource': true,
+    'component:PromptSegment': true,
+    'component:ToolDefinition': true,
+    'component:ToolUse': true,
+    'component:TextResult': true,
+    'component:JsonResult': true,
+    'component:ImageResult': true,
+    'component:VideoResult': true,
+    'component:CompletionResult': true,
+    'component:ExecutionTokenUsage': true,
+    'component:StatelessExecutionOptions': true,
+    'component:UpdateInteractionConfigurationPayload': true,
+    'component:InteractionConfigurationRecord': true,
+    'component:InteractionConfigurationResult': true,
+    'component:CreateInferenceProfilePayload': true,
+    'component:UpdateInferenceProfilePayload': true,
+    'component:InferenceProfileRecord': true,
+    'component:InferenceProfileUsage': true,
+    'component:InferenceProfileUsageEntry': true,
+    'component:InferenceProfileUsageQuery': true,
+    'component:InferenceProfileRecordArray': true,
+    'component:InferenceProfileId': true,
+    'component:InferenceProfileName': true,
+    'component:InferenceProfile': true,
+    'component:InferenceProfileSnapshot': true,
+    'component:ProjectInferenceProfiles': true,
+    'component:InteractionStatus': true,
+    'component:InteractionVisibility': true,
+    'component:PromptModalities': true,
+    'component:PromptStatus': true,
+    'component:PromptSegmentDefType': true,
+    'component:TemplateType': true,
+    'component:SchemaRef': true,
+    'component:CachePolicy': true,
+    'component:PromptTemplate': true,
+    'component:InteractionPromptTemplateInput': true,
+    'component:PromptTemplateCreatePayload': true,
+    'component:PromptTemplateUpdatePayload': true,
+    'component:PromptTemplateRef': true,
+    'component:PromptSegmentDef': true,
+    'component:InteractionPromptSegmentInput': true,
+    'component:PromptSegmentRef_PromptTemplateRef': true,
+    'component:InCodePrompt': true,
+    'component:Interaction': true,
+    'component:InteractionArray': true,
+    'component:InteractionRef': true,
+    'component:InteractionRefArray': true,
+    'component:InteractionName': true,
+    'component:InteractionNameArray': true,
+    'component:ExportedPromptTemplateRef': true,
+    'component:PromptSegmentRef_ExportedPromptTemplateRef': true,
+    'component:InteractionRefWithSchema': true,
+    'component:InteractionRefWithSchemaArray': true,
+    'component:InteractionTags': true,
+    'component:InteractionTagsArray': true,
+    'component:InteractionEndpoint': true,
+    'component:InteractionEndpointArray': true,
+    'component:InteractionEndpointQuery': true,
+    'component:InteractionCreatePayload': true,
+    'component:InteractionUpdatePayload': true,
+    'component:InteractionPublishPayload': true,
+    'component:InteractionForkPayload': true,
+    'component:InteractionsExportPayload': true,
+    'component:InteractionSearchQuery': true,
+    'component:ResolveInteractionQuery': true,
+    'component:CatalogInteractionRef': true,
+    'component:CatalogInteractionRefArray': true,
+    'component:InCodeInteraction': true,
+    'component:ResolvedCatalogInteraction': true,
+    'component:CatalogTagQuery': true,
+    'component:StoredCatalogInteractionsQuery': true,
+    'component:ModelSource': true,
+    'component:ResolvedEnvironmentInfo': true,
+    'component:ResolvedInteractionExecutionInfo': true,
+    'component:FacetSpec': true,
+    'component:NumberValueMap': true,
+    'component:ComputeInteractionFacetPayload': true,
+    'component:ComputedFacetResponse': true,
+    'component:ImprovePromptPayloadConfig': true,
+    'component:ImprovePromptPayload': true,
+    'component:PromptImprovementResponse': true,
+    'component:GenerateTestDataPayload': true,
+    'component:GeneratedTestDataRecord': true,
+    'component:GeneratedTestDataRecordArray': true,
+    'component:GenerateInteractionPayload': true,
+    'component:GeneratedInteractionDefinition': true,
+    'component:GeneratedInteractionDefinitionArray': true,
+    'component:GeneratedInteractionPromptTemplate': true,
+    'component:GeneratedInteractionPromptSegment': true,
+    'component:AgentRunnerOptions': true,
+    'component:AgentSearchScope': true,
+    'component:AgentSearchScope_Collection': true,
+    'component:SkillContextTriggers': true,
+    'component:InitialToolCall': true,
+    'component:ConversationVisibility': true,
+    'component:ConversationStripOptions': true,
+    'component:StreamingOptions': true,
+    'component:StreamingTelemetryContext': true,
+    'component:ResolvedRuntimeConfig': true,
+    'component:LlmCallType': true,
+    'component:InteractiveChannel': true,
+    'component:EmailChannel': true,
+    'component:UserChannel': true,
+    'component:ToolReference': true,
+    'component:ToolResult': true,
+    'component:ToolResultMeta': true,
+    'component:ExternalizedToolInputRef': true,
+    'component:ExternalizedToolInputRefs': true,
+    'component:ToolApprovalGrant': true,
+    'component:ToolApprovalGrantMap': true,
+    'component:AgentToolApprovalMode': true,
+    'component:PendingToolApprovalResults': true,
+    'component:AgentResourceAction': true,
+    'component:AgentResourceType': true,
+    'component:AgentResourceReference': true,
+    'component:PendingMcpConnection': true,
+    'component:UsedSkill': true,
+    'component:PlanTask': true,
+    'component:Plan': true,
+    'component:WorkflowAncestor': true,
+    'component:TextArtifactReference': true,
+    'component:ConversationState': true,
+    'component:ExecutionRunStatus': true,
+    'component:RunSourceTypes': true,
+    'component:RunSource': true,
+    'component:ExecutionRunDocRef': true,
+    'component:ExecutionRunWorkflow': true,
+    'component:ExecutionRunInteraction': true,
+    'component:ExecutionRun': true,
+    'component:ExecutionRunRef': true,
+    'component:ExecutionRunRefArray': true,
+    'component:UpdateExecutionRunPayload': true,
+    'component:RunCreatePayload': true,
+    'component:SortOrder': true,
+    'component:SortOption': true,
+    'component:RunSearchQuery': true,
+    'component:RunListQuery': true,
+    'component:RunSearchPayload': true,
+    'component:InteractionExecutionPayload': true,
+    'component:NamedInteractionExecutionPayload': true,
+    'component:InteractionExecutionResult': true,
+    'component:FindRunResult': true,
+    'component:FindRunResultArray': true,
+    'component:PopulatedExecutionRunResult': true,
+    'component:LegacyExecutionRunResult': true,
+    'component:LegacyPopulatedExecutionRunResult': true,
+    'component:InteractionExecutionConfiguration': true,
+    'component:InteractionExecutionError': true,
+    'component:ResultStorageOptions': true,
+    'component:ExecuteInteractionByEndpointQuery': true,
+    'component:ExecuteInteractionByEndpointHeaders': true,
+    'component:AsyncCompletionMode': true,
+    'component:AsyncCompletionOptions': true,
+    'component:AsyncExecutionPayload': true,
+    'component:AsyncInteractionExecutionPayload': true,
+    'component:AsyncConversationExecutionPayload': true,
+    'component:AsyncExecutionResult': true,
+    'component:RateLimitRequestPayload': true,
+    'component:RateLimitRequestResponse': true,
+    'component:ComputeRunFacetPayload': true,
+    'component:ComputeRunFacetsResponse': true,
+    'component:RunSearchMetaResponse': true,
+    'component:ToolResultsPayload': true,
+    'component:UserMessagePayload': true,
+    'component:ExecutionResponse': true,
+    'component:RunClonePayload': true,
+    'component:StringValueMap': true,
+    'component:CopyFilePayload': true,
+    'component:CopyFileResponse': true,
+    'component:DeleteFileResult': true,
+    'component:FileBucketResponse': true,
+    'component:FileListResponse': true,
+    'component:FileMetadataResponse': true,
+    'component:FileMetadataUpdateResult': true,
+    'component:GetFileUrlPayload': true,
+    'component:GetFileUrlResponse': true,
+    'component:GetUploadUrlPayload': true,
+    'component:BulkUploadUrlsPayload': true,
+    'component:BulkUploadUrlsResponse': true,
+    'component:SetFileMetadataPayload': true,
+    'component:FileMetadataQuery': true,
+    'component:FileListQuery': true,
+    'component:FileDeleteQuery': true,
+    'component:BucketReadAccessQuery': true,
+    'component:BucketReadAccessStatusResponse': true,
+    'component:EnsureBucketReadAccessPayload': true,
+    'component:EnsureBucketReadAccessResponse': true,
+    'component:BucketCreateAccessQuery': true,
+    'component:BucketCreateAccessStatusResponse': true,
+    'component:EnsureBucketCreateAccessPayload': true,
+    'component:EnsureBucketCreateAccessResponse': true,
+    'component:TaskFieldType': true,
+    'component:DurableTaskStatus': true,
+    'component:TaskSource': true,
+    'component:TaskField': true,
+    'component:Task': true,
+    'component:TaskArray': true,
+    'component:CreateTaskPayload': true,
+    'component:UpdateTaskPayload': true,
+    'component:CompleteTaskPayload': true,
+    'component:ListTasksQuery': true,
+    'component:ColumnLayout': true,
+    'component:ContentTypeEditingPolicy': true,
+    'component:ContentObjectTypeStatus': true,
+    'component:ContentObjectTypeItem': true,
+    'component:ContentObjectTypeItemArray': true,
+    'component:ContentObjectTypeCatalogEntry': true,
+    'component:ContentObjectTypeCatalogEntryArray': true,
+    'component:InCodeTypeDefinition': true,
+    'component:CreateContentObjectTypePayload': true,
+    'component:UpdateContentObjectTypePayload': true,
+    'component:ContentObjectType': true,
+    'component:ContentObjectTypeCatalogQuery': true,
+    'component:ContentObjectTypeListQuery': true,
+    'component:DeleteCountResult': true,
+    'component:MigrationListResponse': true,
+    'component:RunMigrationPayload': true,
+    'component:RunMigrationResponse': true,
+    'component:DashboardElasticsearchResultMapping': true,
+    'component:DashboardElasticsearchDsl': true,
+    'component:DashboardSqlDataSource': true,
+    'component:DashboardVersioningStatusResponse': true,
+    'component:DashboardVersioningPayload': true,
+    'component:PromoteDashboardVersionPayload': true,
+    'component:DashboardVersionItem': true,
+    'component:DashboardStatus': true,
+    'component:DashboardLayout': true,
+    'component:DashboardPanelPosition': true,
+    'component:DashboardQuery': true,
+    'component:DashboardBulkDeleteResult': true,
+    'component:DashboardArchiveResult': true,
+    'component:CreateDashboardSnapshotPayload': true,
+    'component:DashboardBulkArchiveResult': true,
+    'component:StringArrayMap': true,
+    'component:DashboardStoreElasticsearchDataSource': true,
+    'component:DashboardVersionItemArray': true,
+    'component:DashboardItem': true,
+    'component:DashboardPanel': true,
+    'component:DashboardDataSource': true,
+    'component:DashboardItemArray': true,
+    'component:DashboardVersion': true,
+    'component:Dashboard': true,
+    'component:CreateDashboardPayload': true,
+    'component:UpdateDashboardPayload': true,
+    'component:QueryValidationError': true,
+    'component:QueryValidationPayload': true,
+    'component:ListDataStoreVersionsQuery': true,
+    'component:GetDataStoreTableQuery': true,
+    'component:DataTableSemanticType': true,
+    'component:DataIndex': true,
+    'component:DataForeignKey': true,
+    'component:SemanticColumnType': true,
+    'component:DataColumnType': true,
+    'component:DataColumnUpdate': true,
+    'component:DataRelationshipType': true,
+    'component:QueryResultColumn': true,
+    'component:BatchQueryPayload': true,
+    'component:QueryResult': true,
+    'component:QueryPayload': true,
+    'component:DataStoreMutateRowsResult': true,
+    'component:DataStoreMutateRowsPayload': true,
+    'component:DataTableSummary': true,
+    'component:DataStoreVersionTableState': true,
+    'component:DataStoreStatus': true,
+    'component:ImportDataFormat': true,
+    'component:ImportDataSource': true,
+    'component:DataRelationshipForAI': true,
+    'component:DataForeignKeyForAI': true,
+    'component:DataColumnForAI': true,
+    'component:ImportStatus': true,
+    'component:DataStoreTableDropResult': true,
+    'component:DataStoreArchiveResult': true,
+    'component:CreateSnapshotPayload': true,
+    'component:DataStoreDownloadInfo': true,
+    'component:CreateDataStorePayload': true,
+    'component:QueryValidationResult': true,
+    'component:DataColumn': true,
+    'component:AlterTableOperation': true,
+    'component:DataRelationship': true,
+    'component:CreateTablePayload': true,
+    'component:BatchQueryResultItem': true,
+    'component:DataTableSummaryArray': true,
+    'component:DataStoreVersionTableStateMap': true,
+    'component:DataStoreItem': true,
+    'component:ImportTableData': true,
+    'component:DataStoreTableDetail': true,
+    'component:DataColumnForAIMap': true,
+    'component:ImportJob': true,
+    'component:CreateTablesPayload': true,
+    'component:DataTable': true,
+    'component:AlterTablePayload': true,
+    'component:UpdateSchemaPayload': true,
+    'component:BatchQueryResult': true,
+    'component:DataStoreVersion': true,
+    'component:DataStoreItemArray': true,
+    'component:ImportTableDataMap': true,
+    'component:DataTableForAI': true,
+    'component:DataStoreFullSchemaResponse': true,
+    'component:DataTableArray': true,
+    'component:DataSchema': true,
+    'component:DataStoreVersionArray': true,
+    'component:ImportDataPayload': true,
+    'component:DataTableForAIMap': true,
+    'component:DataStore': true,
+    'component:DataSchemaForAI': true,
+    'component:DataStoreSchemaResponse': true,
+    'component:CostAnalyticsQuery': true,
+    'component:CostRunPriceQuery': true,
+    'component:CostModelPricesQuery': true,
+    'component:CostExportQuery': true,
+    'component:ModelPricing': true,
+    'component:CostTimeSeriesPoint': true,
+    'component:CostSummary': true,
+    'component:ModelPriceComparison': true,
+    'component:CostByDimension': true,
+    'component:ModelPriceComparisonResponse': true,
+    'component:CostAnalyticsResponse': true,
+    'component:CostRunPriceResponse': true,
+    'component:PricingSyncPayload': true,
+    'component:PricingSyncDayResult': true,
+    'component:PricingSyncResult': true,
+    'component:BulkObjectDeleteResult': true,
+    'component:BulkObjectUpdateResult': true,
+    'component:BulkObjectCreateResult': true,
+    'component:BulkOperationResult': true,
+    'component:BulkOperationPayload': true,
+    'component:BulkOperationResponse': true,
+    'component:GroundedAssistantResponse': true,
+    'component:GroundedExtractionRequest': true,
+    'component:GroundedVerificationBreakdown': true,
+    'component:GroundedExtractionVerdict': true,
+    'component:DocProcessorOutputFormat': true,
+    'component:DocAnalyzerProgressStatus': true,
+    'component:DocumentProcessingPhase': true,
+    'component:WorkflowExecutionStatus': true,
+    'component:DocumentPrepOptions': true,
+    'component:MarkdownRenditionFormat': true,
+    'component:RenderMarkdownStatusQuery': true,
+    'component:RenderMarkdownStartResponse': true,
+    'component:PdfRenderingMetadata': true,
+    'component:GroundedExtractionResultResponse': true,
+    'component:DocAnalyzerProgress': true,
+    'component:RenderMarkdownStatusResponse': true,
+    'component:RenderMarkdownPayload': true,
+    'component:DocAnalyzeRunStatusResponse': true,
+    'component:StartProjectReindexPayload': true,
+    'component:ReindexAgentRunsResponse': true,
+    'component:ReindexAgentRunsPayload': true,
+    'component:IndexingStatusResponse': true,
+    'component:DriftAnalysisResult': true,
+    'component:DriftAnalysisProgress': true,
+    'component:DriftAnalysisStatusResponse': true,
+    'component:EmbeddingsStatusResponse': true,
+    'component:RecalculateEmbeddingsQuery': true,
+    'component:ProjectConfigurationEmbeddingEnablePayload': true,
+    'component:EmbeddingBatchProviderState': true,
+    'component:EmbeddingBatchCapabilityRequest': true,
+    'component:EmbeddingBatchCapabilityResponse': true,
+    'component:EmbeddingBatchCreateRequest': true,
+    'component:EmbeddingBatchJobRequest': true,
+    'component:EmbeddingBatchJobResponse': true,
+    'component:EmbeddingBatchRunState': true,
+    'component:EmbeddingBatchRunSummary': true,
+    'component:EmbeddingBatchSubjob': true,
+    'component:EmbeddingBatchPrepareRequest': true,
+    'component:EmbeddingBatchPrepareResponse': true,
+    'component:EmbeddingBatchRenditionPageRequest': true,
+    'component:EmbeddingBatchRenditionPageResponse': true,
+    'component:EmbeddingBatchUpdateRequest': true,
+    'component:EmbeddingBatchApplyRequest': true,
+    'component:EmbeddingBatchApplyResponse': true,
+    'component:GenericCommandResponse': true,
+    'component:DurationValue': true,
+    'component:JsonLogicRule': true,
+    'component:DSLWorkflowDefinition': true,
+    'component:ActivityFetchSpec': true,
+    'component:WorkflowSearchAttributeValue': true,
+    'component:DSLRetryPolicy': true,
+    'component:ActivityFetchSpecMap': true,
+    'component:WorkflowSearchAttributeValueMap': true,
+    'component:DSLActivityOptions': true,
+    'component:DSLActivitySpec': true,
+    'component:WorkflowSearchAttributes': true,
+    'component:DSLActivityStep': true,
+    'component:DSLChildWorkflowStep': true,
+    'component:DSLWorkflowDefinitionResponse': true,
+    'component:DSLWorkflowSpec': true,
+    'component:DSLWorkflowSpecWithActivities': true,
+    'component:DSLWorkflowSpecWithSteps': true,
+    'component:DSLWorkflowStep': true,
+    'component:WorkflowDefinitionPayload': true,
+    'component:WorkflowDefinitionPayloadWithActivities': true,
+    'component:WorkflowDefinitionPayloadWithSteps': true,
+    'component:UpdateWorkflowDefinitionPayload': true,
+    'component:UpdateWorkflowDefinitionPayloadWithActivities': true,
+    'component:UpdateWorkflowDefinitionPayloadWithSteps': true,
+    'component:AgentMessageType': true,
+    'component:ConversationFile': true,
+    'component:AgentMessageDetails': true,
+    'component:CompactMessage': true,
+    'component:ProcessDefinitionMetadata': true,
+    'component:BranchJoinPolicy': true,
+    'component:ParallelFailurePolicy': true,
+    'component:ParallelCollectField': true,
+    'component:ParallelCollectMode': true,
+    'component:HumanTaskDefinition': true,
+    'component:TransitionTrigger': true,
+    'component:ProcessNodeReturnsDefinition': true,
+    'component:ProcessNodeRunType': true,
+    'component:ProcessNodeType': true,
+    'component:ProcessContextDefinition': true,
+    'component:ProcessDefinitionFormatVersion': true,
+    'component:ProcessDefinitionStatus': true,
+    'component:RevertProcessDefinitionPayload': true,
+    'component:RetryProcessNodePayload': true,
+    'component:PublishProcessDefinitionPayload': true,
+    'component:ProcessDefinitionRevisionInfo': true,
+    'component:NodeHistoryEntry': true,
+    'component:BranchDefinition': true,
+    'component:ParallelCollectDefinition': true,
+    'component:TransitionDefinition': true,
+    'component:BranchNodeBranchDefinition': true,
+    'component:CreateProcessDefinitionPayload': true,
+    'component:NodeDefinition': true,
+    'component:NodeDefinitionMap': true,
+    'component:ProcessDefinition': true,
+    'component:ProcessDefinitionArray': true,
+    'component:ProcessDefinitionBody': true,
+    'component:UpdateProcessDefinitionPayload': true,
+    'component:ListProcessDefinitionsQuery': true,
+    'component:ProcessScriptInlineSource': true,
+    'component:ProcessScriptLanguage': true,
+    'component:ProcessScriptSource': true,
+    'component:ProcessScriptResource': true,
+    'component:ProcessScriptResourceMap': true,
+    'component:ProcessResourcesDefinition': true,
+    'component:GenerationRunMetadata': true,
+    'component:ContentObjectUserPermissions': true,
+    'component:ContentSource': true,
+    'component:ContentObjectStatus': true,
+    'component:InheritedPropertyMetadata': true,
+    'component:TranscriptSegment': true,
+    'component:ContentObjectTypeArray': true,
+    'component:ContentObjectTextResponse': true,
+    'component:DeleteContentObjectResult': true,
+    'component:Transcript': true,
+    'component:CreateContentObjectPayload': true,
+    'component:UpdateContentObjectPayload': true,
+    'component:ContentObjectApiTypeRef': true,
+    'component:ContentObjectApiResponse': true,
+    'component:ProjectedContentObjectApiResponse': true,
+    'component:ProjectedContentObjectApiResponseArray': true,
+    'component:ContentObjectItemApiResponse': true,
+    'component:ContentObjectItemApiResponseArray': true,
+    'component:ContentObjectProcessingPriority': true,
+    'component:ContentObjectApiResponseArray': true,
+    'component:CreateContentObjectHeaders': true,
+    'component:CreateContentObjectQuery': true,
+    'component:UpdateContentObjectHeaders': true,
+    'component:UpdateContentObjectQuery': true,
+    'component:RevisionInfo': true,
+    'component:StartContentObjectExportResponse': true,
+    'component:ExportContentObjectsIncludeOptions': true,
+    'component:ExportContentObjectsFilter': true,
+    'component:ContentObjectApiRevision': true,
+    'component:ContentObjectExportArtifactFile': true,
+    'component:GetRenditionResponse': true,
+    'component:ContentObjectExportResult': true,
+    'component:ContentObjectExportProgress': true,
+    'component:ExportPropertiesResponse': true,
+    'component:DeleteContentObjectExportResponse': true,
+    'component:StartContentObjectExportRequest': true,
+    'component:ContentObjectExportArtifact': true,
+    'component:ContentObjectExportStatusResponse': true,
+    'component:ListContentObjectExportsResponse': true,
+    'component:ExportPropertiesPayload': true,
+    'component:CostExportCsvResponse': true,
+    'component:GetObjectRenditionQuery': true,
+    'component:scoreAggregationTypes': true,
+    'component:dynamicScalingTypes': true,
+    'component:Embedding': true,
+    'component:SupportedEmbeddingTypes': true,
+    'component:SetObjectEmbeddingsResponse': true,
+    'component:Record_SearchTypes_number': true,
+    'component:EmbeddingSearchConfig': true,
+    'component:EmbeddingMap': true,
+    'component:FindPayload': true,
+    'component:ContentEmbeddingMap': true,
+    'component:VectorSearchQuery': true,
+    'component:ComplexSearchQuery': true,
+    'component:ComputeObjectFacetPayload': true,
+    'component:ComplexSearchPayload': true,
+    'component:ObjectSearchResponse': true,
+    'component:EventPriority': true,
+    'component:WorkflowRuleInputType': true,
+    'component:WorkflowRuleItem': true,
+    'component:WorkflowRule': true,
+    'component:CreateWorkflowRulePayload': true,
+    'component:UpdateWorkflowRulePayload': true,
+    'component:ListEventDeliveriesPayload': true,
+    'component:WorkflowRuleItemArray': true,
+    'component:EventSubscriptionFilter': true,
+    'component:ListEventDeliveriesResponse': true,
+    'component:CreateEventSubscriptionPayload': true,
+    'component:EventSubscription': true,
+    'component:EventSubscriptionArray': true,
+    'component:EventSubscriptionMutationResponse': true,
+    'component:UpdateEventSubscriptionPayload': true,
+    'component:ServerSentEventsResponse': true,
+    'component:StreamEventDeliveriesQuery': true,
+    'component:ProcessRunType': true,
+    'component:ProcessRunConfig': true,
+    'component:ProcessHistoryRef': true,
+    'component:ProcessHistoryResponse': true,
+    'component:ProcessContextResponse': true,
+    'component:WorkflowExecutionStartResult': true,
+    'component:ImportSpec': true,
+    'component:AnswerProcessTaskPayload': true,
+    'component:AdvanceProcessPayload': true,
+    'component:ProcessState': true,
+    'component:WorkflowExecutionStartResultArray': true,
+    'component:RecordProcessRunPayload': true,
+    'component:ProcessTestRunStatus': true,
+    'component:ProcessTestVirtualActor': true,
+    'component:ProcessTestFixtureResult': true,
+    'component:ProcessTestFixtureError': true,
+    'component:ProcessTestFixtureResponse': true,
+    'component:ProcessTestNodeFixture': true,
+    'component:ProcessTestHumanAction': true,
+    'component:ProcessTestAssertions': true,
+    'component:ProcessTestScenario': true,
+    'component:ProcessTestSuite': true,
+    'component:ProcessTestSuiteArray': true,
+    'component:CreateProcessTestSuitePayload': true,
+    'component:UpdateProcessTestSuitePayload': true,
+    'component:StartProcessTestRunPayload': true,
+    'component:ProcessTestStoredSubject': true,
+    'component:ProcessTestResolvedSubject': true,
+    'component:ProcessTestInlineSubject': true,
+    'component:ProcessTestSubject': true,
+    'component:ProcessTestTargetById': true,
+    'component:ProcessTestTargetWithDefinition': true,
+    'component:ProcessTestTarget': true,
+    'component:SubmitProcessTestRunPayload': true,
+    'component:ProcessTestAssertionResult': true,
+    'component:ProcessTestActorDecision': true,
+    'component:ProcessTestCoverage': true,
+    'component:ProcessTestChildTrace': true,
+    'component:ProcessTestScenarioResult': true,
+    'component:ProcessTestRun': true,
+    'component:ProcessTestRunArray': true,
+    'component:ListProcessTestRunsQuery': true,
+    'component:UpdateProcessTestScenarioPayload': true,
+    'component:AgentDeliveryMatchMode': true,
+    'component:WebhookPayloadMode': true,
+    'component:WebhookSigningMode': true,
+    'component:SemanticConditionOnError': true,
+    'component:SemanticConditionMode': true,
+    'component:AgentSemanticEvaluator': true,
+    'component:InteractionSemanticEvaluator': true,
+    'component:SemanticEvaluationStatus': true,
+    'component:EventDeliveryIntentStatus': true,
+    'component:EventOutboxStatus': true,
+    'component:EventDeliverySortField': true,
+    'component:WebhookEventDeliveryTarget': true,
+    'component:AppEventDeliveryTarget': true,
+    'component:WorkflowEventDeliveryTarget': true,
+    'component:EventDeliveryQueueFailureSummary': true,
+    'component:EventOutboxQueueSummary': true,
+    'component:EventDeliveryQueueSortField': true,
+    'component:AgentEventDeliveryTarget': true,
+    'component:WebhookEventDeliveryTargetInput': true,
+    'component:AppEventDeliveryTargetInput': true,
+    'component:WorkflowEventDeliveryTargetInput': true,
+    'component:SemanticEvaluator': true,
+    'component:SemanticEvaluationRecord': true,
+    'component:EventDeliveryQueueSubscriptionSummary': true,
+    'component:EventDeliveryQueueSummaryPayload': true,
+    'component:CancelEventDeliveryIntentsPayload': true,
+    'component:CancelEventDeliveryIntentsResponse': true,
+    'component:EventSemanticCondition': true,
+    'component:EventDeliveryIntentSummary': true,
+    'component:EventDeliveryQueueSummaryResponse': true,
+    'component:EventDeliverySummary': true,
+    'component:EventDeliveryTarget': true,
+    'component:EventDeliveryTargetInput': true,
+    'component:ProcessEventDeliveryTarget': true,
+    'component:EventIngestSignatureEncoding': true,
+    'component:EventIngestSignatureAlgorithm': true,
+    'component:EventIngestResourceRule': true,
+    'component:EventIngestSignatureConfig': true,
+    'component:EventIngestTransform': true,
+    'component:EventIngestChannel': true,
+    'component:EventIngestChannelMutationResponse': true,
+    'component:CreateEventIngestChannelPayload': true,
+    'component:UpdateEventIngestChannelPayload': true,
+    'component:EventIngestChannelArray': true,
+    'component:CollectionSecuritySettingsResponse': true,
+    'component:CollectionMembersUpdateResult': true,
+    'component:CollectionMembersUpdatePayload': true,
+    'component:CollectionChildrenUpdateResult': true,
+    'component:CollectionChildrenUpdatePayload': true,
+    'component:CollectionStatus': true,
+    'component:CollectionPropagationResponse': true,
+    'component:CreateCollectionPayload': true,
+    'component:UpdateCollectionPayload': true,
+    'component:ComplexCollectionSearchQuery': true,
+    'component:Collection': true,
+    'component:ComputeCollectionFacetPayload': true,
+    'component:CollectionArray': true,
+    'component:CollectionMembersQuery': true,
+    'component:UpdateAgentArtifactContentResponse': true,
+    'component:UpdateAgentArtifactContentPayload': true,
+    'component:AgentArtifactContentResponse': true,
+    'component:AgentArtifactUrlResponse': true,
+    'component:AgentRunArtifactPathArray': true,
+    'component:AgentRunArtifactUploadHeaders': true,
+    'component:AgentRunArtifactQuery': true,
+    'component:AgentRunArtifactsQuery': true,
+    'component:TerminateAgentRunResponse': true,
+    'component:SignalAgentPayload': true,
+    'component:PostAgentRunUpdateResponse': true,
+    'component:FileProcessingStatus': true,
+    'component:AgentRunArchiveState': true,
+    'component:ResourceRef': true,
+    'component:SignalAgentResponse': true,
+    'component:AutonomousRunResponse': true,
+    'component:AgentRun': true,
+    'component:CreateAgentRunPayload': true,
+    'component:CreateProcessRunByIdPayload': true,
+    'component:CreateProcessRunWithDefinitionPayload': true,
+    'component:CreateRunPayload': true,
+    'component:SearchAgentRunsResponse': true,
+    'component:AgentRunUpdatesResponse': true,
+    'component:PostAgentRunUpdatePayload': true,
+    'component:AgentRunResponse': true,
+    'component:ListAgentRunsResponse': true,
+    'component:ProgrammaticRunResponse': true,
+    'component:SupervisedRunResponse': true,
+    'component:AgentRunInternals': true,
+    'component:AgentRunDetailsQuery': true,
+    'component:ListAgentRunsQuery': true,
+    'component:RecordAgentRunPayload': true,
+    'component:RecordRunPayload': true,
+    'component:AgentRunUpdatesQuery': true,
+    'component:SearchAgentRunsQuery': true,
+    'component:StreamAgentRunQuery': true,
+    'component:UpdateAgentRunStatusPayload': true,
+    'component:AgentRunFeedbackRating': true,
+    'component:AgentRunFeedbackReasonCode': true,
+    'component:AgentRunFeedbackPayload': true,
+    'component:AgentRunFeedbackStatus': true,
+    'component:AgentRunFeedbackCounts': true,
+    'component:AgentRunFeedbackResponse': true,
+    'component:AgentRunFeedbackEntry': true,
+    'component:AgentRunEvaluationRollup': true,
+    'component:AgentRunJudgeResult': true,
+    'component:AgentRunContradictionReason': true,
+    'component:AgentRunEvaluation': true,
+    'component:TurnTerminalType': true,
+    'component:EvaluationSeverity': true,
+    'component:TurnEvaluationFlag': true,
+    'component:ToolErrorClass': true,
+    'component:JudgeGateReason': true,
+    'component:JudgeOutcome': true,
+    'component:JudgeVerdict': true,
+    'component:ListAgentRunsEvaluationSeverity': true,
+    'component:AgentEvent': true,
+    'component:IngestAgentEventsPayload': true,
+    'component:IngestAgentEventsResponse': true,
+    'component:WorkflowQueryResult': true,
+    'component:WorkflowUpdatePublishResponse': true,
+    'component:ListWorkflowRunsPayload': true,
+    'component:WorkflowDefinitionRef': true,
+    'component:WorkflowRun': true,
+    'component:EventError': true,
+    'component:SignalEventProperties': true,
+    'component:WorkflowInputFile': true,
+    'component:WorkflowActionResponse': true,
+    'component:WorkflowDefinitionRefArray': true,
+    'component:ListWorkflowRunsResponse': true,
+    'component:WorkflowRunEvent': true,
+    'component:WorkflowInput': true,
+    'component:WorkflowRunUpdatesResponse': true,
+    'component:ExecuteWorkflowPayload': true,
+    'component:WorkflowHistory': true,
+    'component:WorkflowRunWithDetails': true,
+    'component:BindRunWorkflowPayload': true,
+    'component:WorkflowRunDetailsQuery': true,
+    'component:WorkflowRunUpdatesQuery': true,
+    'component:WorkflowRunStreamQuery': true,
+    'component:ActivityTypeDefinition': true,
+    'component:ActivityPropertyDefinition': true,
+    'component:ActivityDefinition': true,
+    'component:ActivityCatalog': true,
+    'component:WorkflowInteractionVars': true,
+    'component:ListWorkflowInteractionsResponse': true,
+    'component:RestartAgentRunPayload': true,
+    'component:TaskType_TIMER': true,
+    'component:TaskType_SIGNAL': true,
+    'component:TaskType_CHILD_WORKFLOW': true,
+    'component:TaskType_ACTIVITY': true,
+    'component:PendingActivity': true,
+    'component:AgentTask': true,
+    'component:TaskStatus': true,
+    'component:TimerTask': true,
+    'component:SignalTask': true,
+    'component:ChildWorkflowTask': true,
+    'component:ActivityTask': true,
+    'component:WorkflowTask': true,
+    'component:ViewNavigationNode': true,
+    'component:ViewHitAnnotation': true,
+    'component:ViewExecutionWarning': true,
+    'component:ViewQueryPlanningFailureCode': true,
+    'component:ExecuteViewRequest': true,
+    'component:ViewNavigationResult': true,
+    'component:ViewExecutionQueryPlan': true,
+    'component:ViewRerankFailureCode': true,
+    'component:ViewExecutionRerankResult': true,
+    'component:ViewExecutionSearchConfiguration': true,
+    'component:ViewNavigationResultMap': true,
+    'component:ViewExecutionSearchResult': true,
+    'component:ViewHit': true,
+    'component:ViewExecutionDefinition': true,
+    'component:ViewExperienceConfiguration': true,
+    'component:ViewExecutionResult': true,
+    'component:PreviewViewExperienceRequest': true,
+    'component:RenderPromptPayload': true,
+    'component:RenderPromptResponse': true,
+    'component:PromptTemplateInteractionVersion': true,
+    'component:PromptTemplateForkPayload': true,
+    'component:PromptSearchQuery': true,
+    'component:PromptTemplateInteractionUsage': true,
+    'component:ComputePromptFacetPayload': true,
+    'component:PromptTemplateInteractionsResponse': true,
+    'component:PromptTemplateRefArray': true,
+    'component:ToolSource': true,
+    'component:ToolRuntimeContext': true,
+    'component:ProcessToolCompatibilityReason': true,
+    'component:ProcessToolCompatibility': true,
+    'component:ValidateToolNamesPayload': true,
+    'component:ToolValidationResult': true,
+    'component:AggregatedTool': true,
+    'component:ValidateToolNamesResponse': true,
+    'component:AggregatedToolArray': true,
+    'component:ListProjectToolsQuery': true,
+    'component:InspectProjectToolQuery': true,
+    'component:ToolInspection': true,
+    'component:MCPToolAnnotations': true,
+    'component:McpOAuthTokenResponse': true,
+    'component:McpOAuthTokenRequest': true,
+    'component:OAuthAuthStatus': true,
+    'component:OAuthMetadataResponse': true,
+    'component:McpOAuthDisconnectResponse': true,
+    'component:McpOAuthConnectResponse': true,
+    'component:OAuthAuthorizeResponse': true,
+    'component:OAuthAuthStatusArray': true,
+    'component:SetMcpApiKeyRequest': true,
+    'component:McpApiKeyStatus': true,
+    'component:AuditMeter': true,
+    'component:KnownAuditAction': true,
+    'component:EventCategory': true,
+    'component:AuditAggregationDimensionMap': true,
+    'component:AuditAggregationDistinctField': true,
+    'component:AuditAggregationOperation': true,
+    'component:AuditAggregationResolution': true,
+    'component:AuditAggregationDimension': true,
+    'component:AuditAggregationDetailField': true,
+    'component:AuditAction': true,
+    'component:AuditAggregationRow': true,
+    'component:AuditAggregationMetric': true,
+    'component:AuditAggregationGroup': true,
+    'component:AuditAggregationDetailFilter': true,
+    'component:AuditTrailEvent': true,
+    'component:AuditAggregationResponse': true,
+    'component:AuditAggregationFilter': true,
+    'component:AuditTrailResponse': true,
+    'component:AuditAggregationQuery': true,
+    'component:AuditTrailQuery': true,
+    'component:ViewExperienceSchemaVersion': true,
+    'component:ViewSortClause': true,
+    'component:ViewResultMedia': true,
+    'component:ViewResultFieldFormat': true,
+    'component:ViewBoardColumn': true,
+    'component:ViewTableColumn': true,
+    'component:ViewAgenticSearchMode': true,
+    'component:AgenticViewRerankConfiguration': true,
+    'component:ViewAgenticExecutionConfiguration': true,
+    'component:AgenticViewSearchConfiguration': true,
+    'component:ViewSearchFieldType': true,
+    'component:ViewSearchFieldDefinition': true,
+    'component:ViewRangeDefinition': true,
+    'component:ViewHierarchyLevel': true,
+    'component:ViewTermsNavigation': true,
+    'component:ViewCollectionNavigation': true,
+    'component:ViewLocationNavigation': true,
+    'component:ViewElasticsearchQuery': true,
+    'component:ViewExperienceLayout': true,
+    'component:ViewSortOption': true,
+    'component:ViewResultField': true,
+    'component:ViewTableDisplay': true,
+    'component:ViewListDisplay': true,
+    'component:ViewKeyTermDefinition': true,
+    'component:ViewRangeNavigation': true,
+    'component:ViewHierarchyNavigation': true,
+    'component:ViewExperienceScope': true,
+    'component:ViewBoardCardConfiguration': true,
+    'component:ViewSearchConfiguration': true,
+    'component:ViewNavigationItem': true,
+    'component:ViewBoardDisplay': true,
+    'component:ViewCardsDisplay': true,
+    'component:ViewGalleryDisplay': true,
+    'component:ViewDisplayConfiguration': true,
+    'component:ViewSelectionMode': true,
+    'component:ViewSelectionConfiguration': true,
+    'component:ViewActionPlacement': true,
+    'component:ViewActionSelectionRequirement': true,
+    'component:ViewActionConfiguration': true,
+    'component:ViewActionsConfiguration': true,
+    'component:ViewUploadDropParameters': true,
+    'component:ViewDropConfiguration': true,
+    'component:ViewResultsConfiguration': true,
+    'component:CreateViewExperienceRequest': true,
+    'component:ViewExperience': true,
+    'component:UpdateViewExperienceRequest': true,
+    'component:ViewExperienceArray': true,
+    'component:ViewExperienceListQuery': true,
+    'component:UpdateAppInstallationOAuthApprovalPayload': true,
+    'component:UpdateAppInstallationToolAllowlistPayload': true,
+    'component:ValidateUrlResponse': true,
+    'component:ValidateUrlRequest': true,
+    'component:AppVersionUrls': true,
+    'component:AppVersionGitRefType': true,
+    'component:AppVersionTarget': true,
+    'component:AppVersionState': true,
+    'component:AppVersionKind': true,
+    'component:StartAppScaffoldResponse': true,
+    'component:AppScaffoldModule': true,
+    'component:AppBuildTrigger': true,
+    'component:Extract_AppVersionGitRefType_branch_tag_commit': true,
+    'component:StartAppBuildResponse': true,
+    'component:AgentToolApprovalClass': true,
+    'component:AppDevelopmentTask': true,
+    'component:AppInstallationProviderBinding': true,
+    'component:AppInstallationOAuthBinding': true,
+    'component:OAuthClientCredentials': true,
+    'component:AppPackageScope': true,
+    'component:AppInspectionCapabilityReport': true,
+    'component:AppScaffoldProgressStatus': true,
+    'component:AppRepoTreeEntry': true,
+    'component:AppRepoRef': true,
+    'component:AppRepoCommit': true,
+    'component:AgentRunType': true,
+    'component:EventRef': true,
+    'component:InCodeTypeRef': true,
+    'component:StoredTypeRef': true,
+    'component:ConversationActivityState': true,
+    'component:AgentRunStatus': true,
+    'component:RunKind': true,
+    'component:RunType': true,
+    'component:AppBuildProgressStatus': true,
+    'component:DeleteAppVersionResponse': true,
+    'component:AppDeleteSummary': true,
+    'component:AppRepoBranch': true,
+    'component:AppRepoDocumentCommit': true,
+    'component:AppVersionGitSource': true,
+    'component:StartAppScaffoldRequest': true,
+    'component:StartAppDevelopmentTaskRequest': true,
+    'component:StartAppBuildRequest': true,
+    'component:AgentToolDefinition': true,
+    'component:AppDevelopmentTaskList': true,
+    'component:OAuthClientCredentialsMap': true,
+    'component:AppOAuthCollectionParams': true,
+    'component:McpApiKeyCredential': true,
+    'component:AppApiKeyCollectionParams': true,
+    'component:AppInspectionIssue': true,
+    'component:AppScaffoldProgress': true,
+    'component:AppRepoTree': true,
+    'component:AppRepoRefs': true,
+    'component:AppRepoCommits': true,
+    'component:ContentObjectTypeRef': true,
+    'component:AppBuildProgress': true,
+    'component:AppVersionStorage': true,
+    'component:AppToolCollection': true,
+    'component:AppOAuthProviderParams': true,
+    'component:AppInspectionResult': true,
+    'component:AppVersionRecord': true,
+    'component:AgentRunSearchHit': true,
+    'component:UpsertAppVersionRequest': true,
+    'component:AppInstallationPayload': true,
+    'component:AppDevelopmentTaskDetails': true,
+    'component:AppVersionRecordArray': true,
+    'component:AppToolCollectionArray': true,
+    'component:AppInstallationKind': true,
+    'component:AppInstallationsQuery': true,
+    'component:AppListScope': true,
+    'component:AppsQuery': true,
+    'component:AppInstallationProjectsQuery': true,
+    'component:SystemPackageQuery': true,
+    'component:WebsiteCredentialTotpAlgorithm': true,
+    'component:WebsiteCredentialTotpMetadata': true,
+    'component:WebsiteCredentialSecretInput': true,
+    'component:WebsiteCredentialCapability': true,
+    'component:WebsiteCredentialWebsite': true,
+    'component:SecretKind': true,
+    'component:WebsiteCredentialRecord': true,
+    'component:WebsiteCredentialFillResponse': true,
+    'component:WebsiteCredentialFillRequest': true,
+    'component:DeleteSecretResponse': true,
+    'component:WebsiteCredentialMetadata': true,
+    'component:WebsiteCredentialMetadataUpdate': true,
+    'component:SecretRecord': true,
+    'component:CreateSecretRequest': true,
+    'component:UpdateSecretRequest': true,
+    'component:ListSecretsResponse': true,
+    'component:SecretProjectQuery': true,
+    'component:ListSecretsQuery': true,
+    'component:SecretLookupQuery': true,
+    'component:EventWebhookSigningSecretRequest': true,
+    'component:EventWebhookSigningSecretResponse': true,
+    'component:SignEventWebhookRequest': true,
+    'component:SignEventWebhookResponse': true,
+    'component:EventIngestSigningSecretRequest': true,
+    'component:EventIngestSigningSecretResponse': true,
+    'component:VerifyEventIngestSignatureRequest': true,
+    'component:VerifyEventIngestSignatureResponse': true,
+    'component:GithubInstallationTokenRequest': true,
+    'component:GithubInstallationTokenResponse': true,
+    'component:InternalSecretDeleteResponse': true,
+    'component:SupportedIntegrations_ask_user_webhook': true,
+    'component:SupportedIntegrations_resend': true,
+    'component:SupportedIntegrations_linkup': true,
+    'component:SupportedIntegrations_exa': true,
+    'component:SupportedIntegrations_serper': true,
+    'component:SupportedIntegrations_magic_pdf': true,
+    'component:SupportedIntegrations_aws': true,
+    'component:SupportedIntegrations_github': true,
+    'component:SupportedIntegrations_gladia': true,
+    'component:AskUserWebhookConfiguration': true,
+    'component:ResendConfiguration': true,
+    'component:LinkupConfiguration': true,
+    'component:ExaConfiguration': true,
+    'component:SerperConfiguration': true,
+    'component:GithubConfiguration': true,
+    'component:GladiaConfiguration': true,
+    'component:RemoteActivityDefinition': true,
+    'component:AskUserWebhookConfigurationInput': true,
+    'component:ResendConfigurationInput': true,
+    'component:LinkupConfigurationInput': true,
+    'component:ExaConfigurationInput': true,
+    'component:SerperConfigurationInput': true,
+    'component:MagicPdfConfiguration': true,
+    'component:AwsConfiguration': true,
+    'component:GithubConfigurationInput': true,
+    'component:GladiaConfigurationInput': true,
+    'component:ProjectIntegrationConfigResponse': true,
+    'component:ProjectIntegrationConfigRequest': true,
+    'component:CompositeAppNavItemPermissions': true,
+    'component:CompositeAppEntry': true,
+    'component:CompositeAppHomePlugin': true,
+    'component:CompositeAppThemeOverrides': true,
+    'component:CompositeAppHeaderItemTarget': true,
+    'component:CompositeAppHeaderItemKind': true,
+    'component:CompositeAppUserMenuOverrides': true,
+    'component:CompositeAppHeaderOverrides': true,
+    'component:CompositeAppSidebarOverrides': true,
+    'component:CompositeAppSwitchersOverrides': true,
+    'component:CompositeAppMessageStyle': true,
+    'component:CompositeAppLogoOverrides': true,
+    'component:CompositeAppCardOverrides': true,
+    'component:CompositeAppMenuNavItem': true,
+    'component:CompositeAppHeaderItem': true,
+    'component:CompositeAppMessageOverrides': true,
+    'component:CompositeAppMenuSection': true,
+    'component:CompositeAppConfig': true,
+    'component:CompositeAppConfigPayload': true,
+    'component:MCPOAuthConfigMap': true,
+    'component:AppWidgetInfo': true,
+    'component:AppDashboardDefinition': true,
+    'component:AppManifestData': true,
+    'component:UpdateAppPayload': true,
+    'component:AppManifest': true,
+    'component:AppManifestArray': true,
+    'component:AppWidgetInfoMap': true,
+    'component:PromoteAppVersionResponse': true,
+    'component:AppPackage': true,
+    'component:ProjectPluginArray': true,
+    'component:InCodeViewDefinition': true,
+    'component:InCodeTypeDefinitionArray': true,
+    'component:RenderingTemplateDefinitionRefArray': true,
+    'component:InCodeProcessDefinition': true,
+    'component:AppInstallation': true,
+    'component:InCodeViewDefinitionArray': true,
+    'component:InCodeProcessDefinitionArray': true,
+    'component:AppInstallationWithManifest': true,
+    'component:AppInstallationArray': true,
+    'component:AppInstallationListEntry': true,
+    'component:AppInstallationWithManifestArray': true,
+    'component:AppInstallationListEntryArray': true,
+    'component:BinaryFileResponse': true,
+    'component:SigningAlgorithm': true,
+    'component:ApiKeyTokenRequest': true,
+    'component:UserTokenRequest': true,
+    'component:ProjectTokenRequest': true,
+    'component:EnvironmentTokenRequest': true,
+    'component:AgentTokenRequest': true,
+    'component:ServiceAccountTokenRequest': true,
+    'component:AppSessionTokenRequest': true,
+    'component:AppSessionTokenResponse': true,
+    'component:IssueTokenRequest': true,
+    'component:IssueTokenResponse': true,
+    'component:IssueTokenForbiddenResponse': true,
+    'component:IssueTokenUnavailableResponse': true,
+    'component:EmailRouteData': true,
+    'component:SendEmailRequest': true,
+    'component:SendEmailResponse': true,
+    'component:ResolveEmailRouteRequest': true,
+    'component:CreateEmailRouteRequest': true,
+    'component:CreateEmailRouteResponse': true,
+    'component:EmailRouteResponse': true,
+    'component:UpdateEmailRouteRequest': true,
+    'component:UpdateEmailRouteResponse': true,
+    'component:ForwardEmailRequest': true,
+    'component:ForwardEmailResponse': true,
+    'component:PendingAskStatus': true,
+    'component:PendingAskData': true,
+    'component:RegisterPendingAskRequest': true,
+    'component:RegisterPendingAskResponse': true,
+    'component:ResolvePendingAskRequest': true,
+    'component:ResolvePendingAskResponse': true,
+    'component:ListPendingAsksResponse': true,
+    'component:ContentQueryPayload': true,
+    'component:ContentQueryResult': true,
+    'component:CreateDelegationGrantPayload': true,
+    'component:DelegationGrant': true,
+    'component:DelegationGrantArray': true,
+    'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(1088);
+        expect(Object.keys(checks)).toHaveLength(2484);
     });
 });
