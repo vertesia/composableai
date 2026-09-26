@@ -34,7 +34,7 @@ import {
     ProcessStateSchema,
     RecordProcessRunPayloadSchema,
 } from './process.js';
-import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
+import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { nullableStringSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
 
@@ -614,6 +614,19 @@ export const AgentArtifactUrlResponseSchema = z
     })
     .meta({ id: 'AgentArtifactUrlResponse', description: 'Signed artifact URL response for agent artifacts.' });
 
+export const AllocateAgentRunBudgetPayloadSchema = z
+    .strictObject({
+        additional_tokens: z.number().int().positive().meta({
+            description:
+                'Weighted tokens to add. They are added to the limit the run was granted, so usage past that limit is paid out of them.',
+        }),
+    })
+    .meta({
+        id: 'AllocateAgentRunBudgetPayload',
+        description:
+            'Budget to add to a run paused because its token budget ran out. The run resumes from where it stopped.',
+    });
+
 export const SignalAgentResponseSchema = z
     .strictObject({
         status: z.string(),
@@ -1039,6 +1052,10 @@ export const CreateAgentRunPayloadSchema = z
         checkpoint: AgentCheckpointConfigurationSchema.meta({
             description:
                 "Structured checkpoint override for this run. Field-wise it takes precedence over the interaction's `agent_runner_options.checkpoint` and the project's `configuration.agent.checkpoint`; the legacy `checkpoint_tokens` above still wins over everything when set.",
+        }).optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Token budget for this run and its subagent workstreams. Field-wise it takes precedence over the interaction's `agent_runner_options.budget` and the project's `configuration.agent.budget`.",
         }).optional(),
         max_iterations: z.number().meta({ description: 'Maximum conversation iterations (default: 20)' }).optional(),
         notify_endpoints: z.array(z.string()).meta({ description: 'Webhook URLs to notify on completion' }).optional(),

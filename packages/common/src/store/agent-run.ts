@@ -36,6 +36,7 @@ import type {
     AgentRunSchema,
     AgentRunUpdatesQuerySchema,
     AgentRunUpdatesResponseSchema,
+    AllocateAgentRunBudgetPayloadSchema,
     CreateAgentRunPayloadSchema,
     CreateProcessRunByIdPayloadSchema,
     CreateProcessRunWithDefinitionPayloadSchema,
@@ -355,6 +356,8 @@ export type SignalAgentPayload =
     | Record<string, unknown>;
 
 export type SignalAgentResponse = z.infer<typeof SignalAgentResponseSchema>;
+
+export type AllocateAgentRunBudgetPayload = z.infer<typeof AllocateAgentRunBudgetPayloadSchema>;
 
 export type AgentRunUpdatesResponse = z.infer<typeof AgentRunUpdatesResponseSchema>;
 

@@ -9,6 +9,7 @@ import type {
     UsedSkillSchema,
 } from '../api-schemas/interaction.js';
 import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
+import type { AgentBudgetConfiguration } from '../project.js';
 import type { ExecutionRunDocRef } from '../runs.js';
 import type { AgentToolApprovalMode, PendingToolApprovalResults, ToolApprovalGrant } from './agent-approval.js';
 import type { Plan, WorkflowAncestor } from './workflow.js';
@@ -153,6 +154,13 @@ export interface ConversationState {
      * checkpoint_tokens override, and the model-based default.
      */
     checkpoint_tokens?: number;
+
+    /**
+     * Project-configured agent token budget (cached from project.configuration.agent.budget at
+     * conversation start). The workflow resolves the effective budget field-wise from this, the
+     * interaction's agent_runner_options.budget, and the per-run budget override.
+     */
+    budget?: AgentBudgetConfiguration;
 
     /**
      * Active communication channels with their current state.

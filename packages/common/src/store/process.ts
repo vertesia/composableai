@@ -14,6 +14,8 @@ import type {
     ParallelCollectFieldSchema,
     ParallelCollectModeSchema,
     ParallelFailurePolicySchema,
+    ProcessBudgetStateSchema,
+    ProcessBudgetSummarySchema,
     ProcessContextDefinitionSchema,
     ProcessContextResponseSchema,
     ProcessDefinitionFormatVersionSchema,
@@ -31,6 +33,7 @@ import type {
     ProcessScriptResourceSchema,
     ProcessScriptSourceSchema,
     ProcessStateSchema,
+    ProcessTerminalReasonSchema,
     ProcessTestActorDecisionSchema,
     ProcessTestAssertionResultSchema,
     ProcessTestAssertionsSchema,
@@ -249,6 +252,9 @@ export interface ProcessHistoryCheckpoint {
 }
 
 export type ProcessState = z.infer<typeof ProcessStateSchema>;
+export type ProcessTerminalReason = z.infer<typeof ProcessTerminalReasonSchema>;
+export type ProcessBudgetState = z.infer<typeof ProcessBudgetStateSchema>;
+export type ProcessBudgetSummary = z.infer<typeof ProcessBudgetSummarySchema>;
 
 export interface CreateProcessDefinitionPayload {
     name: string;

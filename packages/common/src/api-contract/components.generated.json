@@ -5195,6 +5195,10 @@
       "checkpoint": {
         "$ref": "#/components/schemas/AgentCheckpointConfiguration",
         "description": "Conversation checkpoint (context compaction) tuning."
+      },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Default token budget for agent runs in this project. Field-wise overridden by the interaction's `agent_runner_options.budget` and the per-run `budget`."
       }
     },
     "additionalProperties": false,
@@ -5213,6 +5217,39 @@
       }
     },
     "additionalProperties": false
+  },
+  "AgentBudgetConfiguration": {
+    "type": "object",
+    "properties": {
+      "limit_tokens": {
+        "type": "number",
+        "description": "Weighted token budget shared by the run and every subagent workstream it launches. When the run and its workstreams together use this many weighted tokens, the agent gets one final turn without tools to summarize its work, and the run ends. This is a soft limit, not a spending cap: workstreams running concurrently and the final summary turns can go over it. Unset or <=0 means no budget."
+      },
+      "reminder_at_remaining_tokens": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "description": "Remaining-budget thresholds, in weighted tokens, at which the agent is told how much budget is left. Each threshold is delivered once per context window (again after a checkpoint). Values outside (0, limit_tokens) are ignored. Unset means reminders at 25% and 10% remaining."
+      },
+      "output_token_weight": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Weight applied to output tokens, reasoning included, when charging the budget. Default 5."
+      },
+      "input_token_weight": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Weight applied to input tokens not read from the prompt cache. Default 1."
+      },
+      "cached_input_token_weight": {
+        "type": "number",
+        "minimum": 0,
+        "description": "Weight applied to input tokens read from the prompt cache. Default 0, so a long conversation that mostly re-reads cached context is not charged again for it."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Weighted token budget for an agent run and its subagent workstreams. A call is charged output × output_token_weight + uncached input × input_token_weight + cached input × cached_input_token_weight."
   },
   "ProjectConfiguration": {
     "type": "object",
@@ -9640,6 +9677,10 @@
       "checkpoint": {
         "$ref": "#/components/schemas/AgentCheckpointConfiguration",
         "description": "Per-agent context checkpoint configuration. Field-wise it overrides the project's `configuration.agent.checkpoint`; a per-run `checkpoint_tokens` override still wins over both."
+      },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Per-agent token budget. Field-wise it overrides the project's `configuration.agent.budget`; the per-run `budget` wins over both."
       }
     },
     "additionalProperties": false,
@@ -11977,6 +12018,10 @@
         "type": "number",
         "description": "Project-configured checkpoint hard cap in tokens (cached from project.configuration.agent_checkpoint_tokens at conversation start). The workflow resolves the effective threshold from these, the per-run checkpoint_tokens override, and the model-based default."
       },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Project-configured agent token budget (cached from project.configuration.agent.budget at conversation start). The workflow resolves the effective budget field-wise from this, the interaction's agent_runner_options.budget, and the per-run budget override."
+      },
       "user_channels": {
         "type": "array",
         "items": {
@@ -14154,6 +14199,10 @@
       "checkpoint": {
         "$ref": "#/components/schemas/AgentCheckpointConfiguration",
         "description": "Structured per-run checkpoint override. Field-wise it takes precedence over the interaction's `agent_runner_options.checkpoint` and the project's `configuration.agent.checkpoint`. The legacy absolute `checkpoint_tokens` above still wins over everything when set."
+      },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Per-run token budget override. Field-wise it takes precedence over the interaction's `agent_runner_options.budget` and the project's `configuration.agent.budget`. Subagent workstreams receive the remaining budget of their parent here."
       },
       "strip_options": {
         "$ref": "#/components/schemas/ConversationStripOptions",
@@ -18815,6 +18864,10 @@
       "build_version": {
         "type": "boolean",
         "description": "Create one immutable app version after validation. Defaults to false."
+      },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Token budget for the whole task, shared by the App Builder run and every step of its development process. Field-wise it overrides the project's `configuration.agent.budget`; `limit_tokens` <= 0 runs the task without a budget."
       }
     },
     "required": [
@@ -31258,6 +31311,10 @@
         "type": "string",
         "description": "Free-form message from the user when starting a run. Passed to the orchestrator LLM in supervised mode; stored on the run regardless so programmatic runs retain the intent that triggered them."
       },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Token budget shared by the whole run: agent nodes, interaction nodes, nested processes and, when the run is managed by an agent run, that agent run. Agent nodes and nested processes start with what is left of it. When it runs out the process stops scheduling nodes and lets running agent nodes write a final summary. A run managed by an interactive agent run then pauses (`budget.awaiting_allocation`) until more budget is added through that agent run, and retries the interrupted node; any other run ends failed with `terminal_reason` `token_budget_exhausted`. This is a soft limit, not a spending cap."
+      },
       "process_workstream_monitor": {
         "type": "object",
         "properties": {
@@ -31409,6 +31466,88 @@
     },
     "additionalProperties": false
   },
+  "ProcessTerminalReason": {
+    "type": "string",
+    "enum": [
+      "token_budget_exhausted"
+    ],
+    "description": "Why a process run ended other than by reaching a final node. `token_budget_exhausted`: the run spent its token budget; it ends with status `failed`."
+  },
+  "ProcessBudgetSummary": {
+    "type": "object",
+    "properties": {
+      "node_id": {
+        "type": "string"
+      },
+      "attempt": {
+        "type": "number"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "token_budget_exhausted",
+          "cancelled_at_deadline"
+        ],
+        "description": "`token_budget_exhausted`: the node ended with a final summary turn. `cancelled_at_deadline`: the node was still running at the wrap-up deadline and was cancelled without a summary."
+      },
+      "summary": {
+        "type": "string",
+        "description": "The node's final summary, truncated to 2,000 characters."
+      },
+      "summary_truncated": {
+        "type": "boolean"
+      },
+      "artifact": {
+        "type": "string",
+        "description": "Path of the node's conversation among the process run's artifacts, which holds the full summary."
+      },
+      "child_run_id": {
+        "type": "string"
+      },
+      "usage_incomplete": {
+        "type": "boolean",
+        "description": "True when the node's final token usage never arrived; the run total counts its last reported usage."
+      }
+    },
+    "required": [
+      "node_id",
+      "attempt",
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessBudgetState": {
+    "type": "object",
+    "properties": {
+      "limit_tokens": {
+        "type": "number"
+      },
+      "used_units": {
+        "type": "number",
+        "description": "Weighted tokens used by the run and everything it launched."
+      },
+      "exhausted": {
+        "type": "boolean"
+      },
+      "awaiting_allocation": {
+        "type": "boolean",
+        "description": "True while the run is paused because its budget ran out, waiting for more budget. Only a run managed by an interactive agent run pauses; the run then shows status `running`."
+      },
+      "summaries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessBudgetSummary"
+        },
+        "description": "One entry per node the budget stopped: at most the latest attempt, 50 entries."
+      }
+    },
+    "required": [
+      "limit_tokens",
+      "used_units",
+      "exhausted"
+    ],
+    "additionalProperties": false
+  },
   "ProcessState": {
     "type": "object",
     "properties": {
@@ -31430,6 +31569,13 @@
       },
       "sequence": {
         "type": "number"
+      },
+      "terminal_reason": {
+        "$ref": "#/components/schemas/ProcessTerminalReason"
+      },
+      "budget": {
+        "$ref": "#/components/schemas/ProcessBudgetState",
+        "description": "Token budget of the run, present when the run has one."
       }
     },
     "required": [
@@ -33715,6 +33861,22 @@
     "additionalProperties": false,
     "description": "Response from signaling an agent workflow."
   },
+  "AllocateAgentRunBudgetPayload": {
+    "type": "object",
+    "properties": {
+      "additional_tokens": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Weighted tokens to add. They are added to the limit the run was granted, so usage past that limit is paid out of them."
+      }
+    },
+    "required": [
+      "additional_tokens"
+    ],
+    "additionalProperties": false,
+    "description": "Budget to add to a run paused because its token budget ran out. The run resumes from where it stopped."
+  },
   "AgentRunEvaluationRollup": {
     "type": "object",
     "properties": {
@@ -34839,6 +35001,10 @@
       "checkpoint": {
         "$ref": "#/components/schemas/AgentCheckpointConfiguration",
         "description": "Structured checkpoint override for this run. Field-wise it takes precedence over the interaction's `agent_runner_options.checkpoint` and the project's `configuration.agent.checkpoint`; the legacy `checkpoint_tokens` above still wins over everything when set."
+      },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Token budget for this run and its subagent workstreams. Field-wise it takes precedence over the interaction's `agent_runner_options.budget` and the project's `configuration.agent.budget`."
       },
       "max_iterations": {
         "type": "number",
@@ -38801,6 +38967,9 @@
       },
       "checkpoint_tokens": {
         "type": "number"
+      },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration"
       },
       "version": {
         "type": "number"

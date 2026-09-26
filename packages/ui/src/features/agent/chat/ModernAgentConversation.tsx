@@ -42,11 +42,13 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
 import { AgentApprovalModeSelector } from './AgentApprovalModeSelector';
+import { AgentBudgetPauseBanner } from './AgentBudgetPauseBanner';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AgentRunFeedbackProvider } from './AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
+import { findBudgetPause } from './budgetPause';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
@@ -1818,6 +1820,10 @@ function ModernAgentConversationInner({
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
     const isAgentWorking = !effectiveIsCompleted && !isWorkflowTerminal;
+    const budgetPause = useMemo(
+        () => (isWorkflowTerminal ? undefined : findBudgetPause(messages)),
+        [isWorkflowTerminal, messages],
+    );
 
     useEffect(() => {
         onAgentWorkingChange?.(isAgentWorking);
@@ -2908,6 +2914,15 @@ function ModernAgentConversationInner({
                         ) : (
                             (showInput || canContinueConversation) && (
                                 <>
+                                    {budgetPause && (
+                                        <AgentBudgetPauseBanner
+                                            client={client}
+                                            agentRunId={agentRunId}
+                                            pause={budgetPause}
+                                            onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
+                                            disabled={!isPlaybackLive || !allowWorkflowControl}
+                                        />
+                                    )}
                                     {composerContext}
                                     <MessageInput
                                         onSend={handleSendMessage}

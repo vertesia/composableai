@@ -1789,6 +1789,9 @@ const PROCESS_RUNTIME_SCHEMAS = {
     AnswerProcessTaskPayload: ProcessSchemas.AnswerProcessTaskPayloadSchema,
     AdvanceProcessPayload: ProcessSchemas.AdvanceProcessPayloadSchema,
     ProcessState: ProcessSchemas.ProcessStateSchema,
+    ProcessTerminalReason: ProcessSchemas.ProcessTerminalReasonSchema,
+    ProcessBudgetState: ProcessSchemas.ProcessBudgetStateSchema,
+    ProcessBudgetSummary: ProcessSchemas.ProcessBudgetSummarySchema,
     WorkflowExecutionStartResultArray: ProcessSchemas.WorkflowExecutionStartResultArraySchema,
     RecordProcessRunPayload: ProcessSchemas.RecordProcessRunPayloadSchema,
     ProcessTestRunStatus: ProcessSchemas.ProcessTestRunStatusSchema,
@@ -1910,6 +1913,7 @@ const AGENT_RUN_SCHEMAS = {
     AgentRunArchiveState: AgentRunSchemas.AgentRunArchiveStateSchema,
     ResourceRef: AgentRunSchemas.ResourceRefSchema,
     SignalAgentResponse: AgentRunSchemas.SignalAgentResponseSchema,
+    AllocateAgentRunBudgetPayload: AgentRunSchemas.AllocateAgentRunBudgetPayloadSchema,
     AutonomousRunResponse: AgentRunSchemas.AutonomousRunResponseSchema,
     AgentRun: AgentRunSchemas.AgentRunSchema,
     CreateAgentRunPayload: AgentRunSchemas.CreateAgentRunPayloadSchema,
@@ -2726,6 +2730,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // The agent configuration block under `ProjectConfiguration`, published closed on both sides.
     'AgentProjectConfiguration',
     'AgentCheckpointConfiguration',
+    'AgentBudgetConfiguration',
     // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
     'HttpTimeoutOptions',
     // The intake policy tree. Every object in it is published closed today, including the inline
@@ -2999,6 +3004,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ContentObjectExportArtifactFile',
     'ProcessRunConfig',
     'ProcessHistoryRef',
+    'ProcessBudgetState',
+    'ProcessBudgetSummary',
     'NodeHistoryEntry',
     'ResourceRef',
     'WorkflowRun',
@@ -3033,6 +3040,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'WorkflowActionResponse',
     'AnswerProcessTaskPayload',
     'SignalAgentResponse',
+    'AllocateAgentRunBudgetPayload',
     'AdvanceProcessPayload',
     'BranchDefinition',
     'ParallelCollectDefinition',
