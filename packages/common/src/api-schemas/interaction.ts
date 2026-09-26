@@ -22,6 +22,7 @@ import {
 import { PromptSegmentDefType, PromptStatus, TemplateType } from '../prompt.js';
 import { AgentToolApprovalModes } from '../store/agent-approval.js';
 import { LlmCallType } from '../workflow-analytics.js';
+import { AgentRunSettingsSchema, AgentRunSettingsSnapshotSchema } from './agent-run-settings.js';
 import { ProjectRefSchema } from './apikey.js';
 import { ExecutionEnvironmentRefSchema } from './environment.js';
 import { InferenceProfileIdSchema, InferenceProfileSnapshotSchema } from './inference-profile.js';
@@ -1681,6 +1682,7 @@ export const ExecutionRunRefSchema = z
 export const ConversationStateSchema = z
     .strictObject({
         run: ExecutionRunDocRefSchema.meta({ description: 'A reference to the run that started the conversation' }),
+        settings_snapshot: AgentRunSettingsSnapshotSchema.optional(),
         environment: z.string().meta({ description: 'The execution environment with provider info for LLM calls.' }),
         options: StatelessExecutionOptionsSchema.meta({ description: 'The options to use on the next call.' }),
         tool_use: z.array(ToolUseSchema).meta({ description: 'The tools to call next.' }).optional(),
@@ -2162,6 +2164,11 @@ export const AsyncConversationExecutionPayloadSchema = z
                     'If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping.',
             })
             .optional(),
+        settings: AgentRunSettingsSchema.optional(),
+        settings_snapshot: AgentRunSettingsSnapshotSchema.optional().meta({
+            description:
+                'Server-resolved settings carried by the workflow. Public launch requests resolve their own snapshot.',
+        }),
         config: InteractionExecutionConfigurationSchema.optional(),
         result_schema: z.union([JSONSchemaSchema, SchemaRefSchema, z.null()]).optional(),
         do_validate: z.boolean().optional(),
@@ -2399,7 +2406,10 @@ export const RunCreatePayloadSchema = z
             'Interaction execution payload for creating a new run It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run',
     });
 
-export const AsyncExecutionPayloadSchema = z
+export const AsyncExecutionPayloadSchema: z.ZodDiscriminatedUnion<
+    [typeof AsyncConversationExecutionPayloadSchema, typeof AsyncInteractionExecutionPayloadSchema],
+    'type'
+> = z
     .discriminatedUnion('type', [AsyncConversationExecutionPayloadSchema, AsyncInteractionExecutionPayloadSchema])
     .meta({ id: 'AsyncExecutionPayload' });
 

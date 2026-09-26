@@ -7,6 +7,16 @@ export type {
     VideoResult,
 } from '@llumiverse/common';
 export * from './access-control.js';
+export type {
+    AgentRunAnalysisSettings,
+    AgentRunAnalysisSnapshot,
+    AgentRunInferenceSettings,
+    AgentRunInferenceSnapshot,
+    AgentRunSettings,
+    AgentRunSettingsSnapshot,
+    AgentRunToolSettings,
+    AgentRunToolSettingsSnapshot,
+} from './agent-run-settings.js';
 export * from './analytics.js';
 /**
  * Schema-derived API types. MUST stay `export type` — tsc erases it, so `lib/index.js` never
