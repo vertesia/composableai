@@ -40,6 +40,24 @@ export interface ModelConfigChangedSignal {
     effort?: ReasoningEffort | null;
 }
 
+/** Name of the signal that carries an {@link AllocateBudgetSignal}. */
+export const ALLOCATE_BUDGET_SIGNAL = 'AllocateBudget';
+
+/**
+ * Adds token budget to a run that is paused because its budget ran out. Only interactive runs pause;
+ * others end with `token_budget_exhausted`. The allocation adds to the limit the run was granted, so
+ * usage past that limit is paid out of it: a run granted 1,000,000 that used 1,050,000 has 450,000
+ * left after an allocation of 500,000.
+ */
+export interface AllocateBudgetSignal {
+    /** Weighted tokens to add. Must be positive. */
+    additional_tokens: number;
+    /** Principal that granted the allocation. */
+    requested_by?: string;
+    /** Epoch milliseconds when the allocation was granted. */
+    requested_at?: number;
+}
+
 /**
  * Attachment metadata for processing in conversation workflows.
  */

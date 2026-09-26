@@ -201,7 +201,7 @@ export const ProcessRunConfigSchema = z
             .optional(),
         budget: AgentBudgetConfigurationSchema.meta({
             description:
-                'Token budget shared by the whole run: agent nodes, interaction nodes, nested processes and, when the run is managed by an agent run, that agent run. Agent nodes and nested processes start with what is left of it. When it runs out the process stops scheduling nodes, lets running agent nodes write a final summary, and ends failed with `terminal_reason` `token_budget_exhausted`. This is a soft limit, not a spending cap.',
+                'Token budget shared by the whole run: agent nodes, interaction nodes, nested processes and, when the run is managed by an agent run, that agent run. Agent nodes and nested processes start with what is left of it. When it runs out the process stops scheduling nodes and lets running agent nodes write a final summary. A run managed by an interactive agent run then pauses (`budget.awaiting_allocation`) until more budget is added through that agent run, and retries the interrupted node; any other run ends failed with `terminal_reason` `token_budget_exhausted`. This is a soft limit, not a spending cap.',
         }).optional(),
         process_workstream_monitor: z
             .strictObject({
@@ -410,6 +410,13 @@ export const ProcessBudgetStateSchema = z
         limit_tokens: z.number(),
         used_units: z.number().meta({ description: 'Weighted tokens used by the run and everything it launched.' }),
         exhausted: z.boolean(),
+        awaiting_allocation: z
+            .boolean()
+            .meta({
+                description:
+                    'True while the run is paused because its budget ran out, waiting for more budget. Only a run managed by an interactive agent run pauses; the run then shows status `running`.',
+            })
+            .optional(),
         summaries: z
             .array(ProcessBudgetSummarySchema)
             .meta({ description: 'One entry per node the budget stopped: at most the latest attempt, 50 entries.' })

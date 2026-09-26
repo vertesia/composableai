@@ -12,6 +12,7 @@ import {
     type AgentRunInternals,
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
+    type AllocateAgentRunBudgetPayload,
     type BindRunWorkflowPayload,
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
@@ -224,6 +225,14 @@ export class AgentsApi extends ApiTopic {
      */
     restart(id: string): Promise<AgentRun> {
         return this.post(`/${id}/restart`, {});
+    }
+
+    /**
+     * Add token budget to a run paused because its budget ran out; the run resumes from where it
+     * stopped. The amount is added to the limit the run was granted, so usage past it is paid first.
+     */
+    allocateBudget(id: string, payload: AllocateAgentRunBudgetPayload): Promise<SignalAgentResponse> {
+        return this.post(`/${id}/budget`, { payload });
     }
 
     /**
