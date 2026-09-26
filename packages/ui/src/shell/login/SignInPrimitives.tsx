@@ -55,10 +55,11 @@ const SIGNIN_STEP_BUTTON_BASE = 'cursor-pointer inline-flex items-center justify
 const SIGNIN_STEP_BUTTON_VARIANTS = {
     // Filled CTA; greys out when disabled.
     primary:
-        'h-[42px] gap-2.5 rounded-md bg-foreground text-background hover:opacity-90 ' +
+        'h-[42px] gap-2.5 rounded-md bg-[var(--auth-button,var(--foreground))] text-[color:var(--auth-button-text,var(--background))] hover:opacity-90 ' +
         'disabled:opacity-50 disabled:cursor-not-allowed',
     // Non-interactive primary kept at full opacity (spinner reads as active).
-    loading: 'h-[42px] gap-2.5 rounded-md bg-foreground text-background opacity-90',
+    loading:
+        'h-[42px] gap-2.5 rounded-md bg-[var(--auth-button,var(--foreground))] text-[color:var(--auth-button-text,var(--background))] opacity-90',
     // Flat text link.
     ghost: 'h-9 text-muted hover:text-foreground',
 } as const;
@@ -317,7 +318,9 @@ export function SignInProviderButton({ provider, label, onClick, variant = 'outl
     }
 
     const variantClass =
-        variant === 'filled' ? '!bg-foreground text-background hover:!bg-foreground/90' : 'hover:shadow-sm';
+        variant === 'filled'
+            ? '!bg-[var(--auth-button,var(--foreground))] text-[color:var(--auth-button-text,var(--background))] hover:!bg-[var(--auth-button,var(--foreground))]/90'
+            : 'hover:shadow-sm';
     return (
         <Button
             variant="outline"

@@ -1,4 +1,5 @@
 import { AbstractFetchClient, type FETCH_FN, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
+import type { AppSessionTokenRequest, AppSessionTokenResponse } from '@vertesia/common';
 import { APP_VERSION_HEADER, type AuthTokenPayload, type AuthTokenResponse } from '@vertesia/common';
 import AccountApi from './AccountApi.js';
 import AccountsApi from './AccountsApi.js';
@@ -10,6 +11,8 @@ import CommandsApi from './CommandsApi.js';
 import DelegationGrantsApi from './DelegationGrantsApi.js';
 import EnvironmentsApi from './EnvironmentsApi.js';
 import { IamApi } from './IamApi.js';
+import InferenceProfilesApi from './InferenceProfilesApi.js';
+import InteractionConfigurationsApi from './InteractionConfigurationsApi.js';
 import InteractionsApi from './InteractionsApi.js';
 import InternalSecretsApi from './InternalSecretsApi.js';
 import OAuthClientsApi from './OAuthClientsApi.js';
@@ -413,6 +416,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      *
      * @returns AuthTokenResponse
      */
+    async mintAppSessionToken(request: AppSessionTokenRequest): Promise<AppSessionTokenResponse> {
+        return this.post<AppSessionTokenResponse>(`${this.tokenServerUrl}/token/app-session`, { payload: request });
+    }
+
     async getAuthToken(token?: string): Promise<AuthTokenResponse> {
         // Route through the base client (absolute URL) so the call benefits from the
         // retry policy. The default retry methods exclude POST as non-idempotent, but
@@ -441,6 +448,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     }
 
     projects = new ProjectsApi(this);
+    interactionConfigurations = new InteractionConfigurationsApi(this);
+    inferenceProfiles = new InferenceProfilesApi(this);
     environments = new EnvironmentsApi(this);
     interactions = new InteractionsApi(this);
     skills = new SkillsApi(this);

@@ -22,17 +22,17 @@ import type { AccountRef } from './user.js';
 export * from './apikey-values.js';
 
 /**
- * Per-scope, per-verb property-condition arrays that narrow content visibility
- * at query time. Each value array uses $or semantics — any matching condition
- * set grants access. Presence of this object switches content access from
- * allow-all to restrict mode.
+ * Per-scope, per-verb property-condition arrays that narrow resource access.
+ * Each value array uses $or semantics — any matching condition set grants
+ * access. The consumer defines when the presence of its scope switches access
+ * from the baseline to restrict mode.
  *
  * The bare keys `read`/`write`/`delete` apply to the default `'document'`
  * scope. They also receive entries emitted by system-role ABAC ACEs (which
  * predate the scope concept).
  *
  * Non-default scopes appear as prefixed keys: `'collection:read'`,
- * `'collection:write'`, `'task:read'`, etc. — the prefix is the
+ * `'agent_run:control'`, `'task:read'`, etc. — the prefix is the
  * `AceConditions.scope` value, the suffix is the verb derived from the
  * ABAC role's permission set.
  *
@@ -42,7 +42,7 @@ export interface ContentSecurity {
     read?: PropertyConditions[];
     write?: PropertyConditions[];
     delete?: PropertyConditions[];
-    /** Scope-prefixed entries: `'collection:read'`, `'task:write'`, etc. */
+    /** Scope-prefixed entries: `'collection:read'`, `'agent_run:control'`, etc. */
     [scopedKey: string]: PropertyConditions[] | undefined;
 }
 
@@ -80,6 +80,8 @@ export type ApiKeyListQuery = z.infer<typeof ApiKeyListQuerySchema>;
 export type ApiKeyReadQuery = z.infer<typeof ApiKeyReadQuerySchema>;
 
 export interface AuthTokenPayload {
+    credential_scope?: 'project' | 'account';
+    credential_profile?: 'account_admin_v1';
     delegation?: import('./delegation.js').DelegationTokenClaim;
     sub: string;
     name: string;
@@ -124,8 +126,8 @@ export interface AuthTokenPayload {
     /** groups */
     groups?: UserGroupRef[]; //group ids
 
-    /** Content security conditions keyed by permission (read/write/delete).
-     *  Presence triggers restrict mode: project:* is dropped from security filters.
+    /** Scoped ABAC conditions keyed by operation.
+     *  Each resource consumer defines its baseline/restrict composition.
      *
      *  Transitional: this field is being renamed to `abac` (see [[pending-migrations]]).
      *  Both fields are typed so consumers can dual-read during the transition.
@@ -194,3 +196,13 @@ export enum PrincipalType {
     Agent = 'agent',
     Schedule = 'schedule',
 }
+
+export type AccountApiKey = z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeySchema>;
+export type AccountApiKeyWithValue = z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeyWithValueSchema>;
+export type AccountApiKeyArray = z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeyArraySchema>;
+export type CreateAccountApiKeyPayload = z.infer<
+    typeof import('./api-schemas/apikey.js').CreateAccountApiKeyPayloadSchema
+>;
+export type UpdateAccountApiKeyPayload = z.infer<
+    typeof import('./api-schemas/apikey.js').UpdateAccountApiKeyPayloadSchema
+>;

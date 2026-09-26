@@ -201,17 +201,14 @@ export async function generateOrAssignContentType(
         properties: {
             document_type: {
                 type: 'string',
-                enum: [...existing_types.map((t) => t.name), 'other'],
+                enum: [...new Set([...existing_types.map((t) => t.name), 'other'])],
                 description: "Name of the matching document type, or 'other' when none matches.",
             },
         },
         required: ['document_type'],
     };
 
-    log.info(
-        'Execute SelectDocumentType interaction on content with \nexisting types - passing slim catalog: ' +
-            existing_types.filter((t) => !t.tags?.includes('system')).map((t) => t.name),
-    );
+    log.debug('Selecting document type from catalog', { objectId, candidateCount: existing_types.length });
 
     let res: Awaited<ReturnType<typeof executeInteractionFromActivity>>;
     try {

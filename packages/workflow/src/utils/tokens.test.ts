@@ -5,9 +5,16 @@ const mocks = vi.hoisted(() => ({
     getEncoding: vi.fn(),
 }));
 
-vi.mock('tiktoken', () => ({
-    get_encoding: mocks.getEncoding,
-}));
+vi.mock('node:module', async (importOriginal) => {
+    const original = await importOriginal<typeof import('node:module')>();
+    return {
+        ...original,
+        createRequire: (filename: string | URL) => {
+            const requireCjs = original.createRequire(filename);
+            return (id: string) => (id === 'tiktoken' ? { get_encoding: mocks.getEncoding } : requireCjs(id));
+        },
+    };
+});
 
 function mockEncoder() {
     return {

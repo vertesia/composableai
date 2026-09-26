@@ -1,9 +1,12 @@
+import branding from 'virtual:vertesia-branding';
 import { Env } from '@vertesia/ui/env';
 import { requestIframeHostAuthToken } from '@vertesia/ui/shell';
 
-const CONFIG__PLUGIN_TITLE = 'Ui Plugin Template';
+import { appOAuthPermissions } from '../app-permissions.js';
 
-document.title = CONFIG__PLUGIN_TITLE;
+const appTitle = branding.title ?? branding.name;
+
+document.title = appTitle;
 
 // Endpoints must be supplied by the build environment via VITE_VERTESIA_*_URL.
 // The appgen live-preview/version-build pipeline injects these — see
@@ -23,16 +26,34 @@ function requiredEnv(name: 'VITE_VERTESIA_STUDIO_URL' | 'VITE_VERTESIA_ZENO_URL'
     return value;
 }
 
-Env.init({
-    name: CONFIG__PLUGIN_TITLE,
-    version: '1.0.0',
-    isLocalDev: true,
-    isDocker: true,
-    type: 'development',
-    endpoints: {
-        studio: requiredEnv('VITE_VERTESIA_STUDIO_URL'),
-        zeno: requiredEnv('VITE_VERTESIA_ZENO_URL'),
-        sts: requiredEnv('VITE_VERTESIA_STS_URL'),
+Env.init(
+    {
+        name: appTitle,
+        version: '1.0.0',
+        isLocalDev: true,
+        isDocker: true,
+        type: 'development',
+        endpoints: {
+            studio: requiredEnv('VITE_VERTESIA_STUDIO_URL'),
+            zeno: requiredEnv('VITE_VERTESIA_ZENO_URL'),
+            sts: requiredEnv('VITE_VERTESIA_STS_URL'),
+            auth: import.meta.env.VITE_AUTH_SERVER_URL?.trim() || undefined,
+        },
+        // Vercel serves this metadata document; localhost keeps the development broker flow.
+        // Gateway and embedded sessions take precedence over this independent-host configuration.
+        oauth:
+            import.meta.env.VITE_OAUTH_CLIENT_ID || (import.meta.env.PROD && window.location.protocol === 'https:')
+                ? {
+                      clientId:
+                          import.meta.env.VITE_OAUTH_CLIENT_ID ||
+                          `${window.location.origin}/.well-known/oauth-client/vertesia-app`,
+                      redirectUri:
+                          import.meta.env.VITE_OAUTH_REDIRECT_URI ||
+                          `${window.location.origin}${import.meta.env.DEV ? '/' : '/app'}`,
+                      ...appOAuthPermissions(import.meta.env.VITE_OAUTH_SCOPES),
+                  }
+                : undefined,
+        authTokenProvider: requestIframeHostAuthToken,
     },
-    authTokenProvider: requestIframeHostAuthToken,
-});
+    import.meta.env,
+);

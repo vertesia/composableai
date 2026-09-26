@@ -84,6 +84,14 @@ export const ApiKeySchema = z
         account: z.string(),
         project: ProjectRefSchema,
         enabled: z.boolean(),
+        scim_provisioning: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Organization-wide SCIM provisioning credential. Only account administrators may create ' +
+                    'or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access.',
+            }),
         created_by: z.string(),
         updated_by: z.string(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -147,6 +155,7 @@ export const CreateApiKeyPayloadSchema = ApiKeySchema.pick({
     role: true,
     type: true,
     expires_at: true,
+    scim_provisioning: true,
     properties: true,
     clearance: true,
     compartments: true,
@@ -155,7 +164,7 @@ export const CreateApiKeyPayloadSchema = ApiKeySchema.pick({
     .meta({ id: 'CreateApiKeyPayload' });
 
 /**
- * What `PUT /apikeys/:keyId` accepts: the six fields the handler applies, each optional.
+ * What `PUT /apikeys/:keyId` accepts: the fields the handler applies, each optional.
  *
  * Narrower than the create payload in both directions — `type` and `expires_at` are immutable after
  * creation, `enabled` is only settable here — which is precisely why one shared component could not
@@ -167,6 +176,7 @@ export const UpdateApiKeyPayloadSchema = ApiKeySchema.pick({
     name: true,
     role: true,
     enabled: true,
+    scim_provisioning: true,
     properties: true,
     clearance: true,
     compartments: true,
@@ -197,3 +207,34 @@ export type ApiKeyReadResponseFromSchema = z.infer<typeof ApiKeyReadResponseSche
 export type CreateApiKeyPayloadFromSchema = z.infer<typeof CreateApiKeyPayloadSchema>;
 export type UpdateApiKeyPayloadFromSchema = z.infer<typeof UpdateApiKeyPayloadSchema>;
 export type AuthTokenResponseFromSchema = z.infer<typeof AuthTokenResponseSchema>;
+
+/** Project-independent organization credentials, managed only by interactive administrators. */
+export const AccountApiKeySchema = ApiKeySchema.pick({
+    id: true,
+    name: true,
+    account: true,
+    enabled: true,
+    maskedValue: true,
+    created_by: true,
+    updated_by: true,
+    created_at: true,
+    updated_at: true,
+    expires_at: true,
+})
+    .extend({
+        scope: z.literal('account'),
+        profile: z.literal('account_admin_v1'),
+        last_used_at: z.string().meta({ format: 'date-time' }).optional(),
+    })
+    .meta({ id: 'AccountApiKey' });
+export const AccountApiKeyWithValueSchema = AccountApiKeySchema.extend({ value: z.string() }).meta({
+    id: 'AccountApiKeyWithValue',
+});
+export const AccountApiKeyArraySchema = z.array(AccountApiKeySchema).meta({ id: 'AccountApiKeyArray' });
+export const CreateAccountApiKeyPayloadSchema = AccountApiKeySchema.pick({ name: true, expires_at: true })
+    .extend({ name: z.string().trim().min(1).regex(/\S/) })
+    .meta({ id: 'CreateAccountApiKeyPayload' });
+export const UpdateAccountApiKeyPayloadSchema = AccountApiKeySchema.pick({ name: true, enabled: true })
+    .extend({ name: z.string().trim().min(1).regex(/\S/) })
+    .partial()
+    .meta({ id: 'UpdateAccountApiKeyPayload' });

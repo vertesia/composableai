@@ -178,7 +178,7 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
         format: originParams.format || legacyParams.format_output || 'png', // Default to png if format is missing
     };
 
-    log.info(`Generating video rendition for ${objectId}`, {
+    log.debug(`Generating video rendition for ${objectId}`, {
         originParams,
         params,
     });
@@ -245,7 +245,7 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
             requestedCount: thumbnailCount,
         });
         if (!inputObject.content?.etag) {
-            log.warn(`Document ${objectId} has no etag, using object id as etag`);
+            log.debug(`Document ${objectId} has no etag, using object id as etag`);
         }
         const etag = inputObject.content.etag ?? inputObject.id;
 

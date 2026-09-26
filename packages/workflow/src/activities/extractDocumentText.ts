@@ -79,7 +79,7 @@ async function extractFromObject(
         throw new DocumentNotFoundError(`Document ${objectId} not found`, objectIds);
     }
 
-    log.info(`Extracting text for object ${doc.id}`);
+    log.debug(`Extracting text for object ${doc.id}`);
 
     if (!doc.content?.type || !doc.content?.source) {
         if (doc.text) {

@@ -7,16 +7,21 @@ import { createContext, useContext } from 'react';
 import { getComposableToken } from './auth/composable';
 import { authReturnUrl, centralAuthUrl, mountRootUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
+import { gatewayFetch, loadGatewaySession, logoutGatewaySession, usesGatewaySession } from './auth/gateway';
+import { getAppOAuthToken, revokeAppOAuthSession } from './auth/oauth';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
 
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
 export interface UserSessionLoginOptions {
+    /** Studio-only onboarding; custom apps leave this disabled. */
     loadOnboardingStatus?: boolean;
+    authMethod?: 'token' | 'oauth';
 }
 
 class UserSession {
+    private authMethod: 'token' | 'oauth' = 'token';
     isLoading = true;
     client: VertesiaClient;
     authError?: Error;
@@ -31,9 +36,14 @@ class UserSession {
             this.client = client;
         } else {
             this.client = new VertesiaClient({
-                serverUrl: Env.endpoints.studio,
-                storeUrl: Env.endpoints.zeno,
+                serverUrl: usesGatewaySession()
+                    ? `${window.location.origin}/__appgen/session/studio`
+                    : Env.endpoints.studio,
+                storeUrl: usesGatewaySession()
+                    ? `${window.location.origin}/__appgen/session/store`
+                    : Env.endpoints.zeno,
                 tokenServerUrl: Env.endpoints.sts,
+                fetch: usesGatewaySession() ? gatewayFetch : undefined,
             });
         }
 
@@ -42,6 +52,7 @@ class UserSession {
         }
 
         this.logout = this.logout.bind(this);
+        this.signOut = this.signOut.bind(this);
     }
 
     get store() {
@@ -72,6 +83,9 @@ class UserSession {
     }
 
     get rawAuthToken() {
+        if (this.authMethod === 'oauth') return getAppOAuthToken();
+        if (usesGatewaySession())
+            return Promise.reject(new Error('Gateway session credentials are not available to application JavaScript'));
         return getComposableToken().then((res) => {
             const token = res?.rawToken;
             if (!token) {
@@ -88,6 +102,16 @@ class UserSession {
      * stale — STS recomputes the `apps` claim from ACEs on every issuance.
      */
     async refreshAuthToken(): Promise<AuthTokenPayload> {
+        if (usesGatewaySession()) {
+            const payload = await this.loginGatewaySession();
+            this.setSession?.(this.clone());
+            return payload;
+        }
+        if (this.authMethod === 'oauth') {
+            this.authToken = jwtDecode<AuthTokenPayload>(await getAppOAuthToken(true));
+            this.setSession?.(this.clone());
+            return this.authToken;
+        }
         const res = await getComposableToken(undefined, undefined, undefined, true);
         const token = res?.rawToken;
         if (!token) {
@@ -108,6 +132,8 @@ class UserSession {
     }
 
     async login(token: string, options: UserSessionLoginOptions = {}) {
+        // Bind credential lookup to the completed login, not the transient URL hash/state.
+        this.authMethod = options.authMethod ?? 'token';
         this.authError = undefined;
         this.isLoading = false;
         this.client.withAuthCallback(() => this.authCallback);
@@ -125,11 +151,20 @@ class UserSession {
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
-        if (options.loadOnboardingStatus ?? true) {
+        if (options.loadOnboardingStatus) {
             await this.fetchOnboardingStatus();
         }
 
         return Promise.resolve();
+    }
+
+    async loginGatewaySession() {
+        this.authToken = await loadGatewaySession();
+        this.client.withAuthCallback(undefined);
+        this.authError = undefined;
+        this.isLoading = false;
+        Env.onLogin?.(this.authToken);
+        return this.authToken;
     }
 
     isLoggedIn() {
@@ -138,6 +173,39 @@ class UserSession {
 
     logout() {
         console.log('Logging out');
+        if (usesGatewaySession()) {
+            void logoutGatewaySession()
+                .then(() => {
+                    this.authToken = undefined;
+                    this.authError = undefined;
+                    this.isLoading = false;
+                    Env.onLogout?.();
+                    this.setSession?.(this.clone());
+                })
+                .catch((error: unknown) => {
+                    this.authError = error instanceof Error ? error : new Error(String(error));
+                    this.setSession?.(this.clone());
+                });
+            return;
+        }
+
+        if (this.authMethod === 'oauth') {
+            void revokeAppOAuthSession()
+                .catch(() => undefined)
+                .finally(() => {
+                    const logoutUrl = new URL(centralAuthUrl());
+                    logoutUrl.pathname = '/logout';
+                    logoutUrl.searchParams.set('redirect_uri', authReturnUrl().toString());
+                    location.replace(logoutUrl.toString());
+                });
+            this.client.withAuthCallback(undefined);
+            this.authToken = undefined;
+            this.authError = undefined;
+            this.isLoading = false;
+            Env.onLogout?.();
+            this.setSession?.(this.clone());
+            return;
+        }
 
         if (shouldRedirectToCentralAuth()) {
             // Redirect to central auth for logout
@@ -279,6 +347,7 @@ class UserSession {
         session.isLoading = this.isLoading;
         session.authError = this.authError;
         session.authToken = this.authToken;
+        session.authMethod = this.authMethod;
         session.setSession = this.setSession;
         session.lastSelectedAccount = this.lastSelectedAccount;
         session.switchAccount = this.switchAccount;

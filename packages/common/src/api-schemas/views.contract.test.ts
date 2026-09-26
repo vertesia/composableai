@@ -70,19 +70,12 @@ describe('ViewExperienceConfiguration', () => {
         ).toBe(false);
     });
 
-    it('accepts View model options that name no driver, while the shared config still requires one', () => {
-        // The regression: a View's `model_options` are authored in the editor and saved before any
-        // driver is resolved, so they carry no `_option_id`. Validating them against the
-        // `ModelOptions` driver union — every branch of which requires that discriminator — meant a
-        // stored View could not satisfy its own response schema, and `GET /views` logged a contract
-        // violation on every call.
+    it('accepts untagged View options and preserves the shared options schema reference', () => {
+        // View options and shared model options both permit an omitted family ID.
         const authored = { model_options: { temperature: 0.2, max_tokens: 1024 } };
         expect(validateApiResponse('ViewAgenticExecutionConfiguration', authored).valid).toBe(true);
 
-        // The split is the point: agent runs, events and workflow runs record options a driver
-        // already resolved, so the shared component keeps the union. Asserted on the published
-        // schema because `InteractionExecutionConfiguration` is not itself a response slot — if it
-        // ever stops pointing at `ModelOptions`, the relaxation leaked out of Views.
+        // Keep the shared component wired to the canonical options contract.
         const modelOptions = (name: string) =>
             (ApiSchemaComponents[name] as { properties: Record<string, unknown> }).properties.model_options;
         expect(modelOptions('InteractionExecutionConfiguration')).toEqual({

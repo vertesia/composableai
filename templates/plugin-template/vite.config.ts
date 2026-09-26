@@ -4,10 +4,13 @@ import { createRequire } from 'node:module';
 import tailwindcss from '@tailwindcss/vite';
 import { apiServerPlugin } from '@vertesia/build-tools/vite';
 import { vertesiaPluginBuilder } from '@vertesia/plugin-builder';
+import { createAppBrandingPlugin } from '@vertesia/ui/boot/vite';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 import react from '@vitejs/plugin-react';
 import { type ConfigEnv, defineConfig, type Plugin, type UserConfig } from 'vite';
 import serveStatic from 'vite-plugin-serve-static';
+import { appOAuthScopes } from './src/app-permissions';
+import branding from './src/modules/app/branding';
 
 /**
  * List of dependencies that must be bundled in the plugin bundle
@@ -175,6 +178,7 @@ function defineLibConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
+            createAppBrandingPlugin(branding, new URL('./src/modules/app/branding/index.ts', import.meta.url)),
             vertesiaPluginBuilder({ inlineCss: CONFIG__inlineCss, input: 'src/ui/index.css' }),
         ],
         build: {
@@ -226,6 +230,17 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         plugins: [
             tailwindcss(),
             react(),
+            createAppBrandingPlugin(branding, new URL('./src/modules/app/branding/index.ts', import.meta.url)),
+            {
+                name: 'vertesia-app-permissions',
+                generateBundle() {
+                    this.emitFile({
+                        type: 'asset',
+                        fileName: 'app-package-summary.json',
+                        source: JSON.stringify({ oauth_scopes: appOAuthScopes, ui: true }),
+                    });
+                },
+            },
             reactImportMapPlugin(),
             staleAssetRecoveryPlugin(isVercelBuild),
             // HTTPS is required for Firebase auth but must be disabled under appgen/Vercel dev
@@ -243,10 +258,9 @@ function defineAppConfig({ command }: ConfigEnv): UserConfig {
         build: {
             outDir: 'dist/app', // App build goes to dist/app/
         },
-        optimizeDeps:
-            process.env.DEV_MODE === '1'
-                ? { include: ['html-parse-stringify', 'use-sync-external-store/shim'] }
-                : undefined,
+        // Prebundle the CommonJS store shim in every dev mode. Lazy discovery through
+        // react-i18next can otherwise introduce a second React instance in linked SDKs.
+        optimizeDeps: { include: ['html-parse-stringify', 'use-sync-external-store/shim'] },
         // for authentication with Firebase
         server: {
             hmr: process.env.APPGEN_DISABLE_HMR === '1' ? false : undefined,

@@ -1,9 +1,9 @@
 import type { InteractionSpec } from '@vertesia/common';
-import { Badge, Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
+import { Badge, Card, CardContent, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 import { ROLE_VARIANTS } from '../components/typeVariants.js';
 
@@ -39,11 +39,7 @@ export function InteractionDetail() {
     }
 
     if (!interaction) {
-        return (
-            <div className="flex h-64 items-center justify-center text-muted">
-                <Spinner />
-            </div>
-        );
+        return <AdminLoadingPage />;
     }
 
     const { agent_runner_options } = interaction;

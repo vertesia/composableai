@@ -1,4 +1,11 @@
-export type { VertexAIGeminiOmniVideoOptions, VideoResult } from '@llumiverse/common';
+export type {
+    AudioResult,
+    OpenAiAudioOptions,
+    OpenAiSpeechOptions,
+    OpenAiTranscriptionOptions,
+    VertexAIGeminiOmniVideoOptions,
+    VideoResult,
+} from '@llumiverse/common';
 export * from './access-control.js';
 export * from './analytics.js';
 /**
@@ -8,7 +15,7 @@ export * from './analytics.js';
  */
 export type { UserGroupArrayFromSchema } from './api-schemas/group.js';
 export type {
-    PrincipalContextFromSchema,
+    AbacPrincipalContextFromSchema,
     UserArrayFromSchema,
     UserRefArrayFromSchema,
 } from './api-schemas/user.js';
@@ -34,6 +41,23 @@ export * from './environment.js';
 export * from './facets.js';
 export * from './graph.js';
 export * from './group.js';
+export type {
+    CreateInferenceProfilePayload,
+    InferenceProfile,
+    InferenceProfileId,
+    InferenceProfileName,
+    InferenceProfileRecord,
+    InferenceProfileRecordArray,
+    InferenceProfileSnapshot,
+    InferenceProfileUsage,
+    InferenceProfileUsageEntry,
+    InferenceProfileUsageQuery,
+    InteractionConfigurationRecord,
+    InteractionConfigurationResult,
+    ProjectInferenceProfiles,
+    UpdateInferenceProfilePayload,
+    UpdateInteractionConfigurationPayload,
+} from './inference-profile.js';
 export * from './integrations.js';
 export * from './interaction.js';
 export * from './json.js';
@@ -58,6 +82,7 @@ export * from './schema-for-extraction.js';
 export * from './secrets.js';
 export * from './skill.js';
 export * from './store/index.js';
+export * from './store/rendering.js';
 export type {
     ContentObjectExportArtifact,
     ContentObjectExportArtifactFile,

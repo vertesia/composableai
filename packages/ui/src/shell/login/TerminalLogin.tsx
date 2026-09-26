@@ -4,22 +4,20 @@ import {
     Center,
     ErrorBox,
     errorMessage,
+    FormItem,
     Input,
     SelectBox,
-    Spinner,
     useFetch,
     useToast,
 } from '@vertesia/ui/core';
 import { Env } from '@vertesia/ui/env';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useLocation } from '@vertesia/ui/router';
-import {
-    fetchComposableTokenFromFirebaseToken,
-    fetchComposableTokenFromVertesiaToken,
-    getCurrentVertesiaToken,
-    useUserSession,
-} from '@vertesia/ui/session';
-import { useState } from 'react';
+import { fetchComposableTokenFromVertesiaToken, useUserSession } from '@vertesia/ui/session';
+import { useContext, useState } from 'react';
+import { BrandedAuthLoadingScreen } from '../BrandedAuthScreens';
+import { BrandingContext } from '../BrandedLoadingIndicator';
+import { SignInPageShell } from './SignInPageShell';
 
 interface ProfileData {
     profile?: string;
@@ -31,6 +29,7 @@ interface LoginResult extends Required<ProfileData> {
     token: string;
     studio_server_url: string;
     zeno_server_url: string;
+    oauth_server_url: string;
 }
 
 interface ClientInfo extends ProfileData {
@@ -92,10 +91,16 @@ function getClientInfo(location: Location): ClientInfo | null {
 }
 
 export function TerminalLogin() {
+    const session = useUserSession();
+    const brand = useContext(BrandingContext);
     const [payload, setPayload] = useState<LoginResult | undefined>();
     const [error, setError] = useState<Error>();
     const location = useLocation();
     const clientInfo = getClientInfo(location);
+    const { data: allProjects, error: projectsError } = useFetch(
+        () => (session.user ? session.client.projects.list() : Promise.resolve([])),
+        { deps: [session.user], condition: () => !!clientInfo },
+    );
     const toast = useToast();
     const { t } = useUITranslation();
 
@@ -132,15 +137,20 @@ export function TerminalLogin() {
         // expire in 1 day
         let payload: LoginResult | undefined;
         try {
-            const vertesiaToken = getCurrentVertesiaToken();
-            const token = vertesiaToken
-                ? await fetchComposableTokenFromVertesiaToken(vertesiaToken, data.account, data.project, 24 * 3600)
-                : await fetchComposableTokenFromFirebaseToken(data.account, data.project, 24 * 3600);
+            // Resolve the active session through the shared provider (OAuth, Firebase or central auth).
+            // Exchange it server-side for the selected project rather than handing the browser's token to the CLI.
+            const token = await fetchComposableTokenFromVertesiaToken(
+                await session.rawAuthToken,
+                data.account,
+                data.project,
+                24 * 3600,
+            );
             if (token) {
                 payload = {
                     ...data,
                     studio_server_url: Env.endpoints.studio,
                     zeno_server_url: Env.endpoints.zeno,
+                    oauth_server_url: Env.endpoints.sts,
                     token,
                 } as LoginResult;
                 await fetch(clientInfo.redirect, {
@@ -180,30 +190,45 @@ export function TerminalLogin() {
             );
         }
 
+        if (projectsError) {
+            return <ErrorBox title={t('login.terminal.errorLoadingProjects')}>{errorMessage(projectsError)}</ErrorBox>;
+        }
+
         return payload ? (
             <AuthDoneScreen payload={payload} error={error} />
         ) : (
-            <AuthAcceptScreen clientInfo={clientInfo} onAccept={onAccept} />
+            <AuthAcceptScreen clientInfo={clientInfo} onAccept={onAccept} allProjects={allProjects ?? []} />
         );
     };
 
+    if (clientInfo && !projectsError && (!session.user || !allProjects)) {
+        return <BrandedAuthLoadingScreen />;
+    }
     const page = getPageContent();
 
-    return <div className="w-full flex flex-col items-center gap-4 mt-24">{page}</div>;
+    return (
+        <div className="fixed inset-0 overflow-y-auto bg-background text-foreground">
+            <SignInPageShell
+                lightLogo={brand.logo?.light}
+                darkLogo={brand.logo?.dark ?? brand.logo?.light}
+                logoAlt={brand.logo?.alt ?? brand.name}
+                footer={brand.copy?.footer}
+            >
+                <div className="w-full max-w-xl space-y-4 rounded-lg border border-border bg-card p-6 text-card-foreground shadow-sm">
+                    {page}
+                </div>
+            </SignInPageShell>
+        </div>
+    );
 }
 
 interface AuthAcceptScreenProps {
+    allProjects: ProjectRef[];
     onAccept: (data: ProfileData) => void;
     clientInfo: ClientInfo;
 }
-function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenProps>) {
-    const { client, user } = useUserSession();
-    const { data: allProjects, error } = useFetch(() => (user ? client.projects.list() : Promise.resolve([])), [user]);
+function AuthAcceptScreen({ onAccept, clientInfo, allProjects }: Readonly<AuthAcceptScreenProps>) {
     const { t } = useUITranslation();
-
-    if (error) {
-        return <ErrorBox title={t('login.terminal.errorLoadingProjects')}>{errorMessage(error)}</ErrorBox>;
-    }
 
     const getEnvironmentName = () => {
         if (Env.isLocalDev) {
@@ -216,9 +241,9 @@ function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenPro
 
     const envName = getEnvironmentName();
 
-    return user && allProjects ? (
+    return (
         <>
-            <div className="w-1/3">
+            <div className="w-full">
                 <div className="mb-4 text-xl font-semibold text-info">Authorizing client on {envName} environment.</div>
                 <div className="mb-2 text-base text-muted">
                     <div>{t('login.terminal.clientWantsAuth')}</div>
@@ -234,8 +259,6 @@ function AuthAcceptScreen({ onAccept, clientInfo }: Readonly<AuthAcceptScreenPro
             </div>
             <ProfileForm onAccept={onAccept} allProjects={allProjects} data={clientInfo} />
         </>
-    ) : (
-        <Spinner size="lg" />
     );
 }
 
@@ -305,19 +328,16 @@ function ProfileForm({ allProjects, data, onAccept }: Readonly<ProfileFormProps>
     const projects = allProjects.filter((p) => p.account === currentData.account);
 
     return (
-        <div className="w-1/3">
-            <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-muted">{t('login.terminal.profileName')}</span>
+        <div className="w-full">
+            <FormItem className="mb-4" label={t('login.terminal.profileName')}>
                 <Input type="text" value={currentData.profile} onChange={onChangeProfile} />
-            </div>
-            <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-muted">{t('login.terminal.account')}</span>
+            </FormItem>
+            <FormItem className="mb-4" label={t('login.terminal.account')}>
                 <SelectAccount value={currentData.account} onChange={onChangeAccount} accounts={accounts || []} />
-            </div>
-            <div className="mb-4 flex flex-col gap-2">
-                <span className="font-semibold text-muted">{t('login.terminal.project')}</span>
+            </FormItem>
+            <FormItem className="mb-4" label={t('login.terminal.project')}>
                 <SelectProject value={currentData.project} onChange={onChangeProject} projects={projects} />
-            </div>
+            </FormItem>
             <div className="mb-4 text-sm text-attention">{t('login.terminal.browserPermissionNote')}</div>
             <div>
                 <Button size="xl" onClick={() => onAccept(currentData)}>
@@ -329,17 +349,19 @@ function ProfileForm({ allProjects, data, onAccept }: Readonly<ProfileFormProps>
 }
 
 interface SelectAccountProps {
+    id?: string;
     value?: string;
     accounts: AccountRef[];
     onChange: (value: AccountRef) => void;
 }
-function SelectAccount({ value, accounts, onChange }: Readonly<SelectAccountProps>) {
+function SelectAccount({ id, value, accounts, onChange }: Readonly<SelectAccountProps>) {
     const { t } = useUITranslation();
     const _onChange = (value: AccountRef) => {
         onChange(value);
     };
     return (
         <SelectBox
+            id={id}
             options={accounts}
             value={accounts?.find((a) => a.id === value)}
             onChange={_onChange}
@@ -351,17 +373,19 @@ function SelectAccount({ value, accounts, onChange }: Readonly<SelectAccountProp
 }
 
 interface SelectProjectProps {
+    id?: string;
     value?: string;
     projects: ProjectRef[];
     onChange: (value: ProjectRef) => void;
 }
-function SelectProject({ value, projects, onChange }: Readonly<SelectProjectProps>) {
+function SelectProject({ id, value, projects, onChange }: Readonly<SelectProjectProps>) {
     const { t } = useUITranslation();
     const _onChange = (value: ProjectRef) => {
         onChange(value);
     };
     return (
         <SelectBox
+            id={id}
             by="id"
             value={projects.find((p) => p.id === value)}
             options={projects}

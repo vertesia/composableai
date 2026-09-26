@@ -14,7 +14,7 @@ import {
     writeAuthBundle,
     writeRefreshedAuthBundle,
 } from './keyring.js';
-import { canUseOAuthProfile, OAuthUnavailableError, startOAuthSession } from './oauth.js';
+import { canUseOAuthProfile, discoverCliConfiguration, OAuthUnavailableError, startOAuthSession } from './oauth.js';
 import { type ConfigPayload, type ConfigResult, startConfigSession } from './server/index.js';
 import { readInlineTokenExpiry, readResultAccessTokenExpiry, readResultRefreshTokenExpiry } from './token-expiry.js';
 
@@ -273,6 +273,10 @@ export class ConfigureProfile {
 
     async start(onResult?: OnResultCallback, signal?: AbortSignal) {
         this.onResultCallback = onResult;
+        if (this.data.config_url) {
+            const discovered = await discoverCliConfiguration(this.data.config_url);
+            if (discovered) Object.assign(this.data, discovered);
+        }
         if (canUseOAuthProfile(this.data)) {
             try {
                 const result = await startOAuthSession(

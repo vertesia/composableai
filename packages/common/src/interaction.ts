@@ -61,6 +61,7 @@ import type {
     ResolvedEnvironmentInfoSchema,
     ResolvedInteractionExecutionInfoSchema,
     ResolvedRuntimeConfigSchema,
+    ResolveInteractionQuerySchema,
     ResultStorageOptionsSchema,
     RunSourceSchema,
     SchemaRefSchema,
@@ -75,6 +76,7 @@ import type {
 } from './api-schemas/interaction.js';
 import type { InteractionExecutionConfigurationSchema } from './api-schemas/store.js';
 import type { ExecutionEnvironmentRef } from './environment.js';
+import type { InferenceProfileSnapshot } from './inference-profile.js';
 import type { ProjectRef } from './project.js';
 import type { PopulatedPromptSegmentDef } from './prompt.js';
 import type { TextArtifactReference } from './store/conversation-state.js';
@@ -121,12 +123,7 @@ export interface ExecuteInteractionByEndpointHeaders {
     'x-interaction-tag'?: string;
 }
 
-export interface ResolveInteractionQuery {
-    environment?: string;
-    model?: string;
-    hasImage?: boolean;
-    hasVideo?: boolean;
-}
+export type ResolveInteractionQuery = z.infer<typeof ResolveInteractionQuerySchema>;
 
 export type InCodePrompt = z.infer<typeof InCodePromptSchema>;
 export type InCodeInteraction = z.infer<typeof InCodeInteractionSchema>;
@@ -449,6 +446,7 @@ export interface BaseExecutionRun<P = unknown> {
     account: AccountRef;
     project: ProjectRef;
     config: InteractionExecutionConfiguration;
+    inference_profile?: InferenceProfileSnapshot;
     error?: InteractionExecutionError;
     source: RunSource;
 

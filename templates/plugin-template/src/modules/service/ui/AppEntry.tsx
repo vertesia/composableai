@@ -1,3 +1,4 @@
+import branding from 'virtual:vertesia-branding';
 import { type Route, RouterProvider } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { IFRAME_APP_CONTENT_SLOT, IFRAME_APP_SLOT_PARAM, StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
@@ -7,6 +8,7 @@ import { App } from '../../../ui/shell/App';
 import { OrgGate } from '../../../ui/shell/layouts/OrgGate';
 import { PluginAccessDenied } from '../../../ui/shell/layouts/PluginAccessDenied';
 import { PluginLayout } from '../../../ui/shell/layouts/PluginLayout';
+import { appAuthScreens } from '../../app/branding/screens';
 
 setUsePluginAssets(false);
 
@@ -61,7 +63,7 @@ function AppVersionScope({ children }: { children: ReactNode }) {
 
 export function AppEntry() {
     return (
-        <VertesiaShell authToken={runtimeAuthToken}>
+        <VertesiaShell branding={branding} preserveSignInPath authToken={runtimeAuthToken} authScreens={appAuthScreens}>
             <AppVersionScope>
                 <OrgGate>
                     <RouterProvider routes={routes} />

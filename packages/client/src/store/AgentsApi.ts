@@ -7,6 +7,8 @@ import {
     type AgentMessage,
     type AgentRun,
     type AgentRunDetailsStreamEvent,
+    type AgentRunFeedbackPayload,
+    type AgentRunFeedbackResponse,
     type AgentRunInternals,
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
@@ -165,7 +167,23 @@ export class AgentsApi extends ApiTopic {
         if (query?.cursor) params.cursor = query.cursor;
         if (query?.sort) params.sort = query.sort;
         if (query?.order) params.order = query.order;
+        if (query?.evaluation_severity?.length) params.evaluation_severity = query.evaluation_severity.join(',');
+        if (query?.evaluation_flag?.length) params.evaluation_flag = query.evaluation_flag.join(',');
+        if (query?.feedback_rating) params.feedback_rating = query.feedback_rating;
+        if (query?.contradicted !== undefined) params.contradicted = String(query.contradicted);
         return params;
+    }
+
+    /**
+     * Rate an agent run: thumbs up or down, with an optional reason code and comment.
+     *
+     * `feedback_id` is the client's idempotency key: a retried request with the same id is a no-op.
+     * `status: 'replaced'` means an earlier rating by the same user on the same scope was
+     * superseded; `disabled` means this deployment does not record feedback. All answer 200 because
+     * a rating is never the user's error.
+     */
+    recordFeedback(id: string, payload: AgentRunFeedbackPayload): Promise<AgentRunFeedbackResponse> {
+        return this.post(`/${id}/feedback`, { payload });
     }
 
     /**
@@ -417,6 +435,15 @@ export class AgentsApi extends ApiTopic {
             );
         };
 
+        // A 404 while polling means the run itself is gone (deleted, or never persisted): nothing
+        // will ever arrive, so stop instead of polling the missing resource every 5s forever.
+        const isRunGone = (error: unknown): boolean =>
+            typeof error === 'object' && error !== null && (error as { status?: unknown }).status === 404;
+        const exitBecauseRunGone = () => {
+            console.warn(`Agent stream ${id}: the run no longer exists (404); stopping the polling fallback.`);
+            exit(null);
+        };
+
         const pollTick = async () => {
             if (isClosed || !isPolling) return;
             let polledMessages = false;
@@ -438,6 +465,10 @@ export class AgentsApi extends ApiTopic {
                     }
                 }
             } catch (err) {
+                if (isRunGone(err)) {
+                    exitBecauseRunGone();
+                    return;
+                }
                 warnPollFailure('GET /updates', err);
             }
             if (isClosed || !isPolling) return;
@@ -450,6 +481,10 @@ export class AgentsApi extends ApiTopic {
                 }
                 if (polledMessages) consecutivePollFailures = 0;
             } catch (err) {
+                if (isRunGone(err)) {
+                    exitBecauseRunGone();
+                    return;
+                }
                 warnPollFailure('run status check', err);
             }
             if (isClosed || !isPolling) return;

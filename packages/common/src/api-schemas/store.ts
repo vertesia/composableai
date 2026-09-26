@@ -2,6 +2,7 @@ import { HttpTimeoutOptionsSchema, ModelOptionsSchema, PromptCacheModeSchema } f
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
+import { InferenceProfileIdSchema } from './inference-profile.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 
 /**
@@ -78,6 +79,12 @@ export const ConfigModesSchema = z.enum(ConfigModes).meta({ id: 'ConfigModes' })
 export const InteractionExecutionConfigurationSchema = z
     .strictObject({
         id: z.string().optional(),
+        inference_profile: InferenceProfileIdSchema.nullable()
+            .optional()
+            .meta({ description: 'Select a project inference profile. Null bypasses profile defaults.' }),
+        inherit_model_config: z.boolean().optional().meta({
+            description: 'Treat supplied model settings as inherited fallback: an applicable profile replaces them.',
+        }),
         environment: z.string().optional(),
         model: z.string().optional(),
         do_validate: z.boolean().optional(),

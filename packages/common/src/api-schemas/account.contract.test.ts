@@ -74,7 +74,7 @@ describe('gate 1 — the schema is the single source of truth for the public typ
             portal_url: 'https://billing.stripe.com/p/session_1',
         };
         if (enabled.status === 'enabled') {
-            assertType<Equals<typeof enabled.portal_url, string>>(true);
+            assertType<Equals<typeof enabled.portal_url, string | null>>(true);
             expect(enabled.portal_url).toBe('https://billing.stripe.com/p/session_1');
         }
 
@@ -146,6 +146,7 @@ describe('gate 3 — AJV validates the same canonical objects that are published
     it('enforces the discriminated union per branch', () => {
         const validate = compile('StripeBillingStatusResponse');
         expect(validate({ status: 'enabled', billing_method: 'stripe', portal_url: 'https://x' })).toBe(true);
+        expect(validate({ status: 'enabled', billing_method: 'stripe', portal_url: null })).toBe(true);
         expect(validate({ status: 'disabled', billing_method: null, reason: 'No billing method' })).toBe(true);
         // The flattened interface allowed this; a real discriminated union does not.
         expect(validate({ status: 'enabled', billing_method: 'stripe', reason: 'nope' })).toBe(false);

@@ -24,6 +24,7 @@ import { AgentToolApprovalModes } from '../store/agent-approval.js';
 import { LlmCallType } from '../workflow-analytics.js';
 import { ProjectRefSchema } from './apikey.js';
 import { ExecutionEnvironmentRefSchema } from './environment.js';
+import { InferenceProfileIdSchema, InferenceProfileSnapshotSchema } from './inference-profile.js';
 import { AccountRefSchema } from './invites.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
@@ -488,6 +489,7 @@ export const InteractionPublishPayloadSchema = z
 
 export const InteractionForkPayloadSchema = z
     .strictObject({
+        newName: z.string().optional(),
         keepTags: z.boolean().optional(),
         forkPrompts: z.boolean().optional(),
         targetProject: z.string().optional(),
@@ -743,6 +745,8 @@ export const ResolvedRuntimeConfigSchema = z
         environment: ResolvedEnvironmentInfoSchema,
         model: z.string().optional(),
         model_source: ModelSourceSchema,
+        inference_profile: InferenceProfileSnapshotSchema.optional(),
+        model_options: ModelOptionsSchema.optional(),
     })
     .meta({ id: 'ResolvedRuntimeConfig', description: 'Resolved runtime configuration for an interaction' });
 
@@ -882,6 +886,8 @@ export const RateLimitRequestPayloadSchema = z
     .strictObject({
         interaction: z.string(),
         environment_id: z.string().optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
+        inherit_model_config: z.boolean().optional(),
         model_id: z.string().optional(),
         workflow_run_id: z
             .string()
@@ -984,6 +990,7 @@ export const InteractionCreatePayloadSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
         store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
@@ -1010,6 +1017,7 @@ export const InteractionSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
         store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
@@ -1098,6 +1106,7 @@ export const InCodeInteractionSchema = z
         tags: z.array(z.string()).optional(),
         agent_runner_options: AgentRunnerOptionsSchema.optional(),
         model_options: ModelOptionsSchema.optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
         prompts: z.array(InCodePromptSchema),
         externalId: z.string().optional(),
         runtime: z
@@ -1231,6 +1240,7 @@ export const InteractionUpdatePayloadSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
         store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
@@ -1454,6 +1464,7 @@ export const ExecutionRunSchema: z.ZodType = z
         account: AccountRefSchema,
         project: ProjectRefSchema,
         config: InteractionExecutionConfigurationSchema,
+        inference_profile: InferenceProfileSnapshotSchema.optional(),
         error: InteractionExecutionErrorSchema.optional(),
         source: RunSourceSchema,
         output_modality: ModalitiesSchema.meta({
@@ -1511,6 +1522,7 @@ export const InteractionExecutionResultSchema = z
         created_at: z.string().meta({ format: 'date-time' }),
         updated_at: z.string().meta({ format: 'date-time' }),
         config: InteractionExecutionConfigurationSchema,
+        inference_profile: InferenceProfileSnapshotSchema.optional(),
         error: InteractionExecutionErrorSchema.optional(),
         source: RunSourceSchema,
         output_modality: ModalitiesSchema.meta({
@@ -1646,6 +1658,7 @@ export const ExecutionRunRefSchema = z
         account: AccountRefSchema,
         project: ProjectRefSchema,
         config: InteractionExecutionConfigurationSchema,
+        inference_profile: InferenceProfileSnapshotSchema.optional(),
         error: InteractionExecutionErrorSchema.optional(),
         source: RunSourceSchema,
         output_modality: ModalitiesSchema.meta({
@@ -2422,6 +2435,8 @@ export const ResolveInteractionQuerySchema = z
     .strictObject({
         environment: z.string().optional(),
         model: z.string().optional(),
+        inference_profile: InferenceProfileIdSchema.optional(),
+        inherit_model_config: InteractionExecutionConfigurationSchema.shape.inherit_model_config,
         hasImage: z.boolean().optional(),
         hasVideo: z.boolean().optional(),
     })

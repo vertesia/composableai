@@ -81,6 +81,27 @@ describe('VertesiaEnvironment runtime configuration', () => {
         expect(window.AUTH_MODE).toBeUndefined();
     });
 
+    it('uses the gateway broker ahead of an app build endpoint', () => {
+        vi.stubGlobal('window', {
+            __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central', authUrl: 'https://auth.dev1.vertesia.io/' },
+        });
+        const env = new VertesiaEnvironment().init({
+            ...baseProps,
+            endpoints: { ...baseProps.endpoints, auth: 'https://internal-auth.vertesia.app/' },
+        });
+        expect(env.endpoints.auth).toBe('https://auth.dev1.vertesia.io/');
+        expect(window.AUTH_MODE).toBe('central');
+    });
+
+    it('preserves the app broker with an older central runtime contract', () => {
+        vi.stubGlobal('window', { __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central' } });
+        const env = new VertesiaEnvironment().init({
+            ...baseProps,
+            endpoints: { ...baseProps.endpoints, auth: 'https://auth.dev1.vertesia.io/' },
+        });
+        expect(env.endpoints.auth).toBe('https://auth.dev1.vertesia.io/');
+    });
+
     it('accepts injected Central Auth mode without Firebase configuration', () => {
         vi.stubGlobal('window', {
             __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central' },
@@ -91,4 +112,152 @@ describe('VertesiaEnvironment runtime configuration', () => {
         expect(env.firebase).toBeUndefined();
         expect(window.AUTH_MODE).toBe('central');
     });
+});
+
+describe('VertesiaEnvironment build configuration', () => {
+    const buildEnv = {
+        VITE_FIREBASE_API_KEY: 'build-key',
+        VITE_FIREBASE_AUTH_DOMAIN: 'project.firebaseapp.com',
+        VITE_FIREBASE_PROJECT_ID: 'project',
+        VITE_FIREBASE_APP_ID: 'build-app',
+    };
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('enables Firebase only with an explicit mode and complete build settings', () => {
+        vi.stubGlobal('window', {});
+        const env = new VertesiaEnvironment().init(baseProps, { ...buildEnv, VITE_AUTH_MODE: 'firebase' });
+        expect(env.firebase?.apiKey).toBe('build-key');
+        expect(env.firebase?.authDomain).toBe('project.firebaseapp.com');
+        expect(window.AUTH_MODE).toBe('firebase');
+    });
+
+    it.each([buildEnv, { VITE_FIREBASE_API_KEY: 'unused-key' }])(
+        'retains central auth when Firebase values exist without an explicit mode',
+        (settings) => {
+            vi.stubGlobal('window', {});
+            const env = new VertesiaEnvironment().init(baseProps, settings);
+            expect(env.firebase).toBeUndefined();
+            expect(window.AUTH_MODE).toBeUndefined();
+        },
+    );
+
+    it('allows explicit central mode even with Firebase build settings', () => {
+        vi.stubGlobal('window', {});
+        const env = new VertesiaEnvironment().init(baseProps, { ...buildEnv, VITE_AUTH_MODE: 'central' });
+        expect(env.firebase).toBeUndefined();
+        expect(window.AUTH_MODE).toBe('central');
+    });
+
+    it('rejects incomplete settings when Firebase is selected', () => {
+        vi.stubGlobal('window', {});
+        expect(() =>
+            new VertesiaEnvironment().init(baseProps, {
+                VITE_AUTH_MODE: 'firebase',
+                VITE_FIREBASE_API_KEY: 'key',
+            }),
+        ).toThrow('VITE_FIREBASE_AUTH_DOMAIN, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID');
+    });
+
+    it('rejects an unknown mode', () => {
+        vi.stubGlobal('window', {});
+        expect(() => new VertesiaEnvironment().init(baseProps, { VITE_AUTH_MODE: 'typo' })).toThrow(
+            'VITE_AUTH_MODE must be firebase or central',
+        );
+    });
+
+    it('preserves gateway Firebase configuration ahead of conflicting build settings', () => {
+        const firebase = {
+            apiKey: 'runtime-key',
+            authDomain: 'gateway.example.com',
+            projectId: 'runtime',
+            appId: 'runtime-app',
+        };
+        vi.stubGlobal('window', { __VERTESIA_RUNTIME_CONFIG__: { authMode: 'firebase', firebase } });
+        const env = new VertesiaEnvironment().init(baseProps, { VITE_AUTH_MODE: 'central' });
+        expect(env.firebase).toEqual(firebase);
+        expect(window.AUTH_MODE).toBe('firebase');
+    });
+
+    it('preserves gateway central mode ahead of Firebase build settings', () => {
+        vi.stubGlobal('window', { __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central' } });
+        const env = new VertesiaEnvironment().init(baseProps, buildEnv);
+        expect(env.firebase).toBeUndefined();
+        expect(window.AUTH_MODE).toBe('central');
+    });
+
+    it('leaves the existing central default unchanged without settings', () => {
+        vi.stubGlobal('window', {});
+        const env = new VertesiaEnvironment().init(baseProps, {});
+        expect(env.firebase).toBeUndefined();
+        expect(window.AUTH_MODE).toBeUndefined();
+    });
+});
+
+describe('build-time default workspace', () => {
+    it('reads and trims Vertesia IDs independently of the Firebase project', () => {
+        const env = new VertesiaEnvironment().init(baseProps, {
+            VITE_VERTESIA_ACCOUNT_ID: ' account-1 ',
+            VITE_VERTESIA_PROJECT_ID: ' project-1 ',
+        });
+        expect(env.defaultAuthSelection).toEqual({ accountId: 'account-1', projectId: 'project-1' });
+    });
+    it('ignores blank settings and preserves an explicit selection as a whole pair', () => {
+        expect(
+            new VertesiaEnvironment().init(baseProps, { VITE_VERTESIA_ACCOUNT_ID: ' ' }).defaultAuthSelection,
+        ).toBeUndefined();
+        const env = new VertesiaEnvironment().init(
+            { ...baseProps, defaultAuthSelection: { accountId: 'explicit' } },
+            { VITE_VERTESIA_ACCOUNT_ID: 'build', VITE_VERTESIA_PROJECT_ID: 'other-project' },
+        );
+        expect(env.defaultAuthSelection).toEqual({ accountId: 'explicit' });
+    });
+});
+
+describe('fixed Firebase tenant', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('combines an app tenant with gateway credentials', () => {
+        vi.stubGlobal('window', {
+            __VERTESIA_RUNTIME_CONFIG__: {
+                authMode: 'firebase',
+                firebase: {
+                    apiKey: 'gateway',
+                    authDomain: 'app.example.com',
+                    projectId: 'project',
+                    appId: 'app',
+                },
+            },
+        });
+        const env = new VertesiaEnvironment().init(baseProps, { VITE_FIREBASE_TENANT_ID: ' example-tenant ' });
+        expect(env.firebase?.tenantId).toBe('example-tenant');
+        expect(env.firebase?.apiKey).toBe('gateway');
+    });
+
+    it('does not enable Firebase just because a tenant is supplied', () => {
+        vi.stubGlobal('window', {});
+        const env = new VertesiaEnvironment().init(baseProps, { VITE_FIREBASE_TENANT_ID: 'tenant' });
+        expect(env.firebase).toBeUndefined();
+    });
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+it('uses injected branch OAuth identity and API endpoints over build-time preview settings', () => {
+    const origin = 'https://app-gateway-dev-auth-test.api.dev1.vertesia.io';
+    const oauth = {
+        clientId: `${origin}/tenants/05948c_98b1eb/apps/test-app/.well-known/oauth-client/vertesia-app`,
+        redirectUri: `${origin}/tenants/05948c_98b1eb/apps/test-app/app/`,
+    };
+    const endpoints = {
+        studio: 'https://studio-server-dev-auth-test.api.dev1.vertesia.io',
+        zeno: 'https://zeno-server-dev-auth-test.api.dev1.vertesia.io',
+        sts: 'https://token-server-dev-auth-test.api.dev1.vertesia.io',
+    };
+    vi.stubGlobal('window', { __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central', oauth, endpoints } });
+    const env = new VertesiaEnvironment().init(baseProps);
+    expect(env.oauth).toEqual(oauth);
+    expect(env.endpoints).toMatchObject(endpoints);
+    expect(window.AUTH_MODE).toBe('central');
+    expect(env.firebase).toBeUndefined();
 });

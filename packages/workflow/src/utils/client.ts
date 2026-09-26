@@ -4,9 +4,9 @@
 
 import { Context } from '@temporalio/activity';
 import type { FETCH_FN } from '@vertesia/api-fetch-client';
-import { decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
+import { decodeEndpoints, decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
 import type { WorkflowExecutionBaseParams } from '@vertesia/common';
-import { type Dispatcher, EnvHttpProxyAgent } from 'undici';
+import type { Dispatcher } from 'undici';
 import { WorkflowParamNotFoundError } from '../errors.js';
 
 // Short default timeout for ordinary workflow -> server/store calls (object GETs, status updates,
@@ -20,10 +20,17 @@ const WORKFLOW_FETCH_TIMEOUT_ENV = 'VERTESIA_WORKFLOW_FETCH_TIMEOUT_MS';
 // The API client already gives every finite request an explicit AbortSignal deadline. Disable
 // undici's independent five-minute response timeout so it cannot terminate an admitted, cancellable
 // activity request behind the deadline owner's back. One dispatcher is shared for the worker process.
-const workflowDispatcher = new EnvHttpProxyAgent({
-    headersTimeout: 0,
-    bodyTimeout: 0,
-});
+let workflowDispatcher: Promise<Dispatcher> | undefined;
+
+function getWorkflowDispatcher(): Promise<Dispatcher> {
+    workflowDispatcher ??= import('undici')
+        .then(({ EnvHttpProxyAgent }) => new EnvHttpProxyAgent({ headersTimeout: 0, bodyTimeout: 0 }))
+        .catch((error: unknown) => {
+            workflowDispatcher = undefined;
+            throw error;
+        });
+    return workflowDispatcher;
+}
 
 type DispatcherRequestInit = RequestInit & { dispatcher: Dispatcher };
 
@@ -34,12 +41,16 @@ function combineSignals(requestSignal: AbortSignal | null, activitySignal?: Abor
 }
 
 function createWorkflowFetch(activitySignal?: AbortSignal): FETCH_FN {
-    return (input, init) => {
+    return async (input, init) => {
         const requestSignal = input instanceof Request ? input.signal : (init?.signal ?? null);
+        const signal = combineSignals(requestSignal, activitySignal);
+        signal?.throwIfAborted();
+        const dispatcher = await getWorkflowDispatcher();
+        signal?.throwIfAborted();
         return globalThis.fetch(input, {
             ...init,
-            dispatcher: workflowDispatcher,
-            signal: combineSignals(requestSignal, activitySignal),
+            dispatcher,
+            signal,
         } as DispatcherRequestInit);
     };
 }
@@ -66,6 +77,12 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
     }
 
     const token = decodeJWT(payload.auth_token);
+    // Normalize the token's endpoints claim (string | object) the same way the main client does.
+    // Only decode when the claim is actually present: decodeEndpoints(undefined) returns the
+    // PRODUCTION endpoint map (token: https://sts.vertesia.io), which would mask the tokenServerUrl
+    // fallback below and mint against prod for a non-prod token. An empty map preserves the fallback
+    // to `token.iss`.
+    const tokenEndpoints = token.endpoints ? decodeEndpoints(token.endpoints) : {};
 
     let requestSequence = 0;
     let requestPrefix: string | undefined;
@@ -85,7 +102,11 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
     return {
         serverUrl: payload.config.studio_url,
         storeUrl: payload.config.store_url,
-        tokenServerUrl: token.iss,
+        // Prefer the token's own endpoints.token (the mint host that issued it) and fall back to the
+        // issuer only for legacy tokens without an endpoints claim — same resolution the main client
+        // and tools-sdk use. This keeps `iss` as the stable identity (WIF/JWKS) while letting a branch
+        // STS on its own host be the mint endpoint.
+        tokenServerUrl: tokenEndpoints.token || token.iss,
         apikey: payload.auth_token,
         timeout: parseWorkflowFetchTimeoutMs(),
         fetch: createWorkflowFetch(activitySignal),
