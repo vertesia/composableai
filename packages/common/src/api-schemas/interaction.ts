@@ -27,7 +27,7 @@ import { ExecutionEnvironmentRefSchema } from './environment.js';
 import { InferenceProfileIdSchema, InferenceProfileSnapshotSchema } from './inference-profile.js';
 import { AccountRefSchema } from './invites.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
-import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
+import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
@@ -805,6 +805,10 @@ export const AgentRunnerOptionsSchema = z
         checkpoint: AgentCheckpointConfigurationSchema.meta({
             description:
                 "Per-agent context checkpoint configuration. Field-wise it overrides the project's `configuration.agent.checkpoint`; a per-run `checkpoint_tokens` override still wins over both.",
+        }).optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Per-agent token budget. Field-wise it overrides the project's `configuration.agent.budget`; the per-run `budget` wins over both.",
         }).optional(),
     })
     .meta({
@@ -2279,6 +2283,10 @@ export const AsyncConversationExecutionPayloadSchema = z
         checkpoint: AgentCheckpointConfigurationSchema.meta({
             description:
                 "Structured per-run checkpoint override. Field-wise it takes precedence over the interaction's `agent_runner_options.checkpoint` and the project's `configuration.agent.checkpoint`. The legacy absolute `checkpoint_tokens` above still wins over everything when set.",
+        }).optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Per-run token budget override. Field-wise it takes precedence over the interaction's `agent_runner_options.budget` and the project's `configuration.agent.budget`. Subagent workstreams receive the remaining budget of their parent here.",
         }).optional(),
         strip_options: ConversationStripOptionsSchema.meta({
             description:

@@ -2726,6 +2726,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // The agent configuration block under `ProjectConfiguration`, published closed on both sides.
     'AgentProjectConfiguration',
     'AgentCheckpointConfiguration',
+    'AgentBudgetConfiguration',
     // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
     'HttpTimeoutOptions',
     // The intake policy tree. Every object in it is published closed today, including the inline

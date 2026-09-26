@@ -78,6 +78,8 @@ export class PayloadBuilder {
     _debug_mode: boolean = false;
     _non_blocking_subagents: boolean = true;
     _checkpoint_tokens: number | undefined;
+    /** Per-run token budget (`budget.limit_tokens`), in weighted tokens. */
+    _budget_tokens: number | undefined;
     _visibility: ConversationVisibility | undefined;
     _user_channels: UserChannel[] | undefined;
     _collection: string | undefined;
@@ -133,6 +135,7 @@ export class PayloadBuilder {
         builder._debug_mode = this._debug_mode;
         builder._non_blocking_subagents = this._non_blocking_subagents;
         builder._checkpoint_tokens = this._checkpoint_tokens;
+        builder._budget_tokens = this._budget_tokens;
         builder._visibility = this._visibility;
         builder._user_channels = this._user_channels ? [...this._user_channels] : undefined;
         builder._inputValidator = this._inputValidator;
@@ -225,6 +228,27 @@ export class PayloadBuilder {
             this._checkpoint_tokens = value;
             this.onStateChanged();
         }
+    }
+
+    get budget_tokens(): number | undefined {
+        return this._budget_tokens;
+    }
+
+    set budget_tokens(value: number | undefined) {
+        if (value !== this._budget_tokens) {
+            this._budget_tokens = value;
+            this.onStateChanged();
+        }
+    }
+
+    /**
+     * The per-run `budget` payload. Only the limit is sent, so the weights and reminders configured
+     * on the agent or project still apply field-wise.
+     */
+    get budget(): { limit_tokens: number } | undefined {
+        return this._budget_tokens != null && this._budget_tokens > 0
+            ? { limit_tokens: this._budget_tokens }
+            : undefined;
     }
 
     get visibility(): ConversationVisibility | undefined {
@@ -504,6 +528,9 @@ export class PayloadBuilder {
     setCheckpointTokens(value: number | undefined) {
         this.checkpoint_tokens = value;
     }
+    setBudgetTokens(value: number | undefined) {
+        this.budget_tokens = value;
+    }
     setVisibility(value: ConversationVisibility | undefined) {
         this.visibility = value;
     }
@@ -578,6 +605,7 @@ export class PayloadBuilder {
         this._debug_mode = false;
         this._non_blocking_subagents = true;
         this._checkpoint_tokens = undefined;
+        this._budget_tokens = undefined;
         this._visibility = undefined;
         this._user_channels = undefined;
         this._collection = undefined;

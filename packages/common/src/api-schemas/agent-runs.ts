@@ -34,7 +34,7 @@ import {
     ProcessStateSchema,
     RecordProcessRunPayloadSchema,
 } from './process.js';
-import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
+import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { nullableStringSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
 
@@ -1039,6 +1039,10 @@ export const CreateAgentRunPayloadSchema = z
         checkpoint: AgentCheckpointConfigurationSchema.meta({
             description:
                 "Structured checkpoint override for this run. Field-wise it takes precedence over the interaction's `agent_runner_options.checkpoint` and the project's `configuration.agent.checkpoint`; the legacy `checkpoint_tokens` above still wins over everything when set.",
+        }).optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Token budget for this run and its subagent workstreams. Field-wise it takes precedence over the interaction's `agent_runner_options.budget` and the project's `configuration.agent.budget`.",
         }).optional(),
         max_iterations: z.number().meta({ description: 'Maximum conversation iterations (default: 20)' }).optional(),
         notify_endpoints: z.array(z.string()).meta({ description: 'Webhook URLs to notify on completion' }).optional(),

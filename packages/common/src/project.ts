@@ -25,6 +25,7 @@ import type {
     UpdateProjectPayloadSchema,
 } from './api-schemas/project.js';
 import type {
+    AgentBudgetConfigurationSchema,
     AgentCheckpointConfigurationSchema,
     AgentProjectConfigurationSchema,
     BrowserUseProjectConfigurationSchema,
@@ -170,6 +171,8 @@ export type ProjectConfiguration = z.infer<typeof ProjectConfigurationSchema>;
 export type AgentProjectConfiguration = z.infer<typeof AgentProjectConfigurationSchema>;
 
 export type AgentCheckpointConfiguration = z.infer<typeof AgentCheckpointConfigurationSchema>;
+
+export type AgentBudgetConfiguration = z.infer<typeof AgentBudgetConfigurationSchema>;
 
 export type ProjectSearchPropertyType = z.infer<typeof ProjectSearchPropertyTypeSchema>;
 
