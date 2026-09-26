@@ -116,6 +116,14 @@ describe('AsyncConversationExecutionPayload contract', () => {
         expect(AsyncConversationExecutionPayloadSchema.parse(payload)).toMatchObject(payload);
     });
 
+    it('accepts the final verification opt-in as a boolean only', () => {
+        const payload = { type: 'conversation', interaction: 'sys:GeneralAgent', final_verification: true };
+        expect(validateApiRequest('AsyncConversationExecutionPayload', payload).valid).toBe(true);
+        expect(
+            validateApiRequest('AsyncConversationExecutionPayload', { ...payload, final_verification: 'yes' }).valid,
+        ).toBe(false);
+    });
+
     it('rejects a non-string app-version target', () => {
         expect(() =>
             AsyncConversationExecutionPayloadSchema.parse({
