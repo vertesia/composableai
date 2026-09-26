@@ -118,7 +118,7 @@ function BatchProgressPanelComponent({
     return (
         <div
             className={cn(
-                'border-s-4 shadow-md overflow-hidden bg-white dark:bg-muted mb-5',
+                'border-s-4 shadow-md overflow-hidden bg-card text-card-foreground mb-5',
                 getBorderColor(),
                 className,
             )}
@@ -130,7 +130,7 @@ function BatchProgressPanelComponent({
                 tabIndex={0}
                 aria-expanded={isExpanded}
                 className={cn(
-                    'flex items-center justify-between px-4 py-2 border-b border-border/80 bg-info/50 dark:bg-info/10 cursor-pointer',
+                    'flex items-center justify-between px-4 py-2 border-b border-border/80 bg-info/50 bg-info/10 cursor-pointer',
                     headerClassName,
                 )}
                 onClick={() => setIsExpanded(!isExpanded)}
@@ -169,7 +169,7 @@ function BatchProgressPanelComponent({
             </div>
 
             {/* Progress bar */}
-            <div className={cn('px-4 py-2 bg-muted/50 dark:bg-muted/30', progressBarClassName)}>
+            <div className={cn('px-4 py-2 bg-muted/40', progressBarClassName)}>
                 <div className="flex items-center gap-3">
                     <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div

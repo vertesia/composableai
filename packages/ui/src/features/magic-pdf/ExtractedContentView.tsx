@@ -106,7 +106,7 @@ function MarkdownPageView({ pageNumber }: MarkdownPageViewProps) {
     }
 
     return (
-        <div className="px-4 py-2 prose prose-sm max-w-none dark:prose-invert">
+        <div className="px-4 py-2 prose prose-sm max-w-none ">
             {content ? <MarkdownRenderer>{content}</MarkdownRenderer> : <div>No markdown content available</div>}
         </div>
     );

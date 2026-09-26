@@ -156,7 +156,7 @@ function EditDescriptionModalForm({ value, onSave }: EditDescriptionModalFormPro
             <ModalBody className="h-max">
                 <textarea
                     ref={ref}
-                    className="dark:bg-muted w-full h-full dark:text-white"
+                    className="bg-background w-full h-full text-foreground"
                     value={currentValue}
                     onChange={(e) => setCurrentValue(e.target.value)}
                 />

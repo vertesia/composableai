@@ -29,7 +29,7 @@ export function UserAvatar({ user }: { user: AuthTokenPayload | UserRef }) {
                 <p className="text-sm font-medium text-foreground group-hover:text-foreground">
                     {user.name ?? 'Deleted User'}
                 </p>
-                <p className="text-xs font-medium text-muted dark:text-foreground group-hover:text-foreground">
+                <p className="text-xs font-medium text-muted group-hover:text-foreground">
                     {user.email ?? 'Deleted User'}
                 </p>
             </div>

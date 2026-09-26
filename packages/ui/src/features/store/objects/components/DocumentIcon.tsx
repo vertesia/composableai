@@ -80,7 +80,7 @@ export function DocumentIcon({
 
     return (
         <Card
-            className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''} ${isHighlighted ? 'border-info bg-info/50 dark:bg-info/20' : ''}`}
+            className={`relative flex flex-col border h-fit w-full ${selectedObject?.id === document.id ? 'border-attention border-4' : ''} ${isHighlighted ? 'border-info bg-info/20' : ''}`}
             onClick={() => onRowClick?.(document)}
         >
             {isHighlighted && (

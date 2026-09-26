@@ -517,7 +517,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                     );
                     const progressDetails = getProgressDetails(details as Record<string, unknown> | undefined);
                     return (
-                        <div className={cn('px-4 py-2 bg-muted/50 dark:bg-muted/30', classNames.itemContentClassName)}>
+                        <div className={cn('px-4 py-2 bg-muted/40', classNames.itemContentClassName)}>
                             {/* Badges row: tool name + status + timestamp */}
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <span className={cn(badgeClass, classNames.toolBadgeClassName)}>{toolName}</span>
@@ -576,7 +576,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                     typeof details?.observation === 'string' ? details.observation : undefined;
                                 if (observation && observation !== messageContent) {
                                     return (
-                                        <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                        <div className="vprose prose  prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
                                             <MarkdownRenderer artifactRunId={artifactRunId}>
                                                 {observation}
                                             </MarkdownRenderer>
@@ -908,7 +908,13 @@ function ToolCallGroupComponent({
     };
 
     return (
-        <div className={cn('border-s-4 overflow-hidden bg-white dark:bg-muted mb-4', getBorderColor(), rootClassName)}>
+        <div
+            className={cn(
+                'border-s-4 overflow-hidden bg-card text-card-foreground mb-4',
+                getBorderColor(),
+                rootClassName,
+            )}
+        >
             {/* Compact header */}
             {/* biome-ignore lint/a11y/useSemanticElements: header contains nested Buttons; button-in-button is invalid HTML so role="button" on a div is the pragmatic choice. */}
             <div
@@ -1126,7 +1132,7 @@ function ToolCallGroupComponent({
                                                             : undefined;
                                                     if (observation && observation !== fullMessage) {
                                                         return (
-                                                            <div className="vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
+                                                            <div className="vprose prose  prose-p:leading-relaxed prose-p:my-1.5 max-w-none text-sm">
                                                                 <MarkdownRenderer artifactRunId={artifactRunId}>
                                                                     {observation}
                                                                 </MarkdownRenderer>

@@ -63,7 +63,7 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
                 <div className={clsx(className, 'flex items-center justify-start', asMenuTrigger && 'cursor-pointer')}>
                     <Avatar
                         size="sm"
-                        color="bg-amber-500"
+                        color="bg-info text-info"
                         shape="circle"
                         /*src={picture} */
                         name={user?.name}
@@ -73,7 +73,7 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
             <PopoverContent align="start" className="w-[280px] mx-2 my-1 p-0">
                 <div className="divide-y divide-border">
                     <div className="py-2 ps-2">
-                        <p className="px-4 dark:text-white mb-1">{user?.name ?? 'Unknown'}</p>
+                        <p className="px-4 text-foreground mb-1">{user?.name ?? 'Unknown'}</p>
                         <p className="px-4 text-xs text-muted">{user?.email ?? ''}</p>
                     </div>
                     <div className="w-full p-1">

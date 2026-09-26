@@ -2,43 +2,43 @@ export interface Theme {
     /**
      * The tag name color (`<tag-name />`)
      *
-     * @default #d43900
+     * @default var(--destructive)
      */
     tagColor?: string;
     /**
      * The text color (`<tag>Text</tag>`)
      *
-     * @default #333
+     * @default var(--foreground)
      */
     textColor?: string;
     /**
      * The attribute key color (`<tag attribute-key="hello" />`)
      *
-     * @default #2a7ab0
+     * @default var(--info)
      */
     attributeKeyColor?: string;
     /**
      * The attribute value color (` <tag attr="Attribute value">`)
      *
-     * @default #008000
+     * @default var(--success)
      */
     attributeValueColor?: string;
     /**
      * The separators colors (`<, >, </, />, =, <?, ?>`)
      *
-     * @default #333
+     * @default var(--foreground)
      */
     separatorColor?: string;
     /**
      * The comment color (`<!-- this is a comment -->`)
      *
-     * @default #aaa
+     * @default var(--muted)
      */
     commentColor?: string;
     /**
      * the cdata element color (`<![CDATA[some stuff]]>`)
      *
-     * @default #1D781D
+     * @default var(--success)
      */
     cdataColor?: string;
     /**
@@ -60,13 +60,13 @@ export interface XMLViewerProps {
      * @default
      * ```js
      * {
-     *   tagColor: '#d43900',
-     *   textColor: '#333',
-     *   attributeKeyColor: '#2a7ab0',
-     *   attributeValueColor: '#008000',
-     *   separatorColor: '#333',
-     *   commentColor: '#aaa',
-     *   cdataColor: '#1d781d',
+     *   tagColor: 'var(--destructive)',
+     *   textColor: 'var(--foreground)',
+     *   attributeKeyColor: 'var(--info)',
+     *   attributeValueColor: 'var(--success)',
+     *   separatorColor: 'var(--foreground)',
+     *   commentColor: 'var(--muted)',
+     *   cdataColor: 'var(--success)',
      *   fontFamily: 'monospace',
      * }
      * ```

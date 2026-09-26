@@ -81,7 +81,7 @@ function SystemAvatar({ showTitle = false, size = 'md' }: InfoProps) {
     return (
         <UserPopoverPanel title={t('user.systemUser')} description={t('user.systemUserDescription')}>
             <div className="flex gap-2 items-center">
-                <Avatar src="/icon.svg" size={size} />
+                <Avatar size={size} />
                 {showTitle && <div className="text-sm font-semibold ps-2">{t('user.systemUser')}</div>}
             </div>
         </UserPopoverPanel>
@@ -116,7 +116,7 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = 'md' }: Ser
     return (
         <UserPopoverPanel title={t('user.serviceAccount')} description={description}>
             <div className="flex flex-row items-center gap-2">
-                <Avatar src="/cloud.svg" name="SA" color="bg-amber-500" className="px-[5px] text-white" size={size} />
+                <Avatar name="SA" color="bg-attention text-attention" size={size} />
                 {showTitle && (
                     <div className="text-sm font-semibold ps-2 truncate">
                         {t('user.serviceAccount')} : ~{accountId.slice(-6)}
@@ -146,9 +146,9 @@ function EmailAgentAvatar({ email, showTitle = false, size = 'md' }: EmailAgentA
             <div className="flex items-center gap-2">
                 <div className="flex items-center -space-x-2">
                     <Avatar
-                        src="/cloud.svg"
-                        color="bg-amber-500"
-                        className="px-[5px] text-white border-2 border-background"
+                        name="AG"
+                        color="bg-attention text-attention"
+                        className="px-[5px] border-2 border-background"
                         size={size}
                     />
                     <Avatar name={email} size={size} className="border-2 border-background" />
@@ -214,7 +214,7 @@ function AgentAvatar({
             {!user && !apiKey && (
                 <>
                     <div>{t('user.serviceAccountDescription')}</div>
-                    <div className="text-foreground dark:text-muted text-sm">
+                    <div className="text-foreground text-sm">
                         <span className="font-semibold">ID:</span> {agentId}
                     </div>
                 </>
@@ -227,9 +227,9 @@ function AgentAvatar({
             <div className="flex items-center gap-2">
                 <div className="flex items-center -space-x-2">
                     <Avatar
-                        src="/cloud.svg"
-                        color="bg-amber-500"
-                        className="px-[5px] text-white border-2 border-background"
+                        name="AG"
+                        color="bg-info text-info"
+                        className="px-[5px] border-2 border-background"
                         size={size}
                     />
                     {user && (
@@ -241,7 +241,12 @@ function AgentAvatar({
                         />
                     )}
                     {apiKey && (
-                        <Avatar name="API" color="bg-gray-400" size={size} className="border-2 border-background" />
+                        <Avatar
+                            name="API"
+                            color="bg-secondary text-secondary"
+                            size={size}
+                            className="border-2 border-background"
+                        />
                     )}
                 </div>
                 {showTitle && (
@@ -267,7 +272,7 @@ function ErrorAvatar({ title = 'Error', error, showTitle = false, size = 'md' }:
         <UnknownAvatar
             title={title}
             message={errorMessage(error)}
-            color="bg-red-500"
+            color="bg-destructive text-destructive"
             showTitle={showTitle}
             size={size}
         />
@@ -438,7 +443,7 @@ function GroupAvatar({ userId, showTitle = false, size = 'md' }: GroupAvatarProp
 
     if (error) {
         if (isNotFoundError(error)) {
-            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-indigo-500" />;
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-info text-info" />;
         }
         return <ErrorAvatar title={t('user.failedToFetchGroup')} error={error} showTitle={showTitle} size={size} />;
     }
@@ -482,7 +487,7 @@ function UserAvatar({ userId, showTitle = false, size = 'md' }: UserAvatarProps)
 
     if (error) {
         if (isNotFoundError(error)) {
-            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-indigo-500" />;
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-info text-info" />;
         }
         return <ErrorAvatar title={t('user.failedToFetchUser')} error={error} showTitle={showTitle} size={size} />;
     }
@@ -503,7 +508,7 @@ function UserAvatar({ userId, showTitle = false, size = 'md' }: UserAvatarProps)
             description={description}
         >
             <div className="flex flex-row items-center gap-2">
-                <Avatar src={user.picture} name={user.name} color="bg-indigo-500" size={size} />
+                <Avatar src={user.picture} name={user.name} color="bg-info" size={size} />
                 {showTitle && (
                     <div className="text-sm font-semibold ps-2">
                         {user.name || user.email || user.username || t('user.unknown')}
@@ -523,7 +528,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = 'md' }: ApiKeyAv
 
     if (error) {
         if (isNotFoundError(error)) {
-            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-pink-500" />;
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-done text-done" />;
         }
         return <ErrorAvatar title={t('user.failedToFetchApiKey')} error={error} showTitle={showTitle} size={size} />;
     }
@@ -533,9 +538,9 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = 'md' }: ApiKeyAv
     }
 
     const title = t('user.privateKey');
-    const avatar = <Avatar name={'PK'} color="bg-pink-500" size={size} />;
+    const avatar = <Avatar name="PK" color="bg-done text-done" size={size} />;
     const description = (
-        <Table className="dark:bg-muted dark:text-foreground table-fixed w-full">
+        <Table className="bg-card text-card-foreground table-fixed w-full">
             <tr>
                 <td className="font-semibold w-20">{t('user.key')}</td>
                 <td className="truncate max-w-0">{data?.name}</td>
