@@ -1,7 +1,8 @@
 /** Node-only adapter. Import from @vertesia/ui/boot/vite, never from browser code. */
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { extname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { type AppBranding, brandedBootOptions, escapeBrandHtml } from './branding.js';
 import { injectBootScreenHtml } from './index.js';
 
@@ -25,7 +26,9 @@ const MIME: Record<string, string> = {
 export function resolveBrandingAssets(branding: AppBranding, moduleUrl: URL, watch: (file: string) => void = () => {}) {
     function asset(value: string, base = moduleUrl): string {
         if (/^(https?:|data:|#)/i.test(value)) return value;
-        const url = new URL(value, base);
+        const url = value.startsWith('@vertesia/ui/assets/')
+            ? pathToFileURL(createRequire(import.meta.url).resolve(value))
+            : new URL(value, base);
         if (url.protocol !== 'file:') throw new Error(`Unsupported branding asset URL: ${value}`);
         const file = fileURLToPath(url);
         const mime = MIME[extname(file).toLowerCase()];
