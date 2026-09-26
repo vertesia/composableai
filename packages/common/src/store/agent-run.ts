@@ -32,7 +32,7 @@ import type {
     AgentRunFeedbackReasonCodeSchema,
     AgentRunFeedbackResponseSchema,
     AgentRunFeedbackStatusSchema,
-    AgentRunJudgeResultSchema,
+    AgentRunLlmEvaluationResultSchema,
     AgentRunSchema,
     AgentRunUpdatesQuerySchema,
     AgentRunUpdatesResponseSchema,
@@ -302,7 +302,7 @@ export type AgentRunFeedbackCounts = z.infer<typeof AgentRunFeedbackCountsSchema
 export type AgentRunFeedbackResponse = z.infer<typeof AgentRunFeedbackResponseSchema>;
 export type AgentRunFeedbackEntry = z.infer<typeof AgentRunFeedbackEntrySchema>;
 export type AgentRunEvaluationRollup = z.infer<typeof AgentRunEvaluationRollupSchema>;
-export type AgentRunJudgeResult = z.infer<typeof AgentRunJudgeResultSchema>;
+export type AgentRunLlmEvaluationResult = z.infer<typeof AgentRunLlmEvaluationResultSchema>;
 export type AgentRunContradictionReason = z.infer<typeof AgentRunContradictionReasonSchema>;
 export type AgentRunEvaluation = z.infer<typeof AgentRunEvaluationSchema>;
 

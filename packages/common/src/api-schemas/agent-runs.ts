@@ -92,17 +92,17 @@ const TelemetryProducerSchema = z.strictObject({
     version: z.string(),
 });
 
-export const JudgeGateReasonSchema = z
+export const EvaluationGateReasonSchema = z
     .enum(['signal', 'sample', 'opt_in', 'always_on'])
-    .meta({ id: 'JudgeGateReason', description: 'Why the judge looked at a run.' });
+    .meta({ id: 'EvaluationGateReason', description: 'Why a run was selected for LLM evaluation.' });
 
-export const JudgeOutcomeSchema = z
-    .enum(['judged', 'skipped_unarchived', 'failed'])
-    .meta({ id: 'JudgeOutcome', description: 'What a judge run produced.' });
+export const EvaluationOutcomeSchema = z
+    .enum(['evaluated', 'skipped_unarchived', 'failed'])
+    .meta({ id: 'EvaluationOutcome', description: 'Outcome of an LLM evaluation run.' });
 
-export const JudgeVerdictSchema = z
+export const EvaluationVerdictSchema = z
     .enum(['success', 'partial', 'failure'])
-    .meta({ id: 'JudgeVerdict', description: "The judge's reading of a turn." });
+    .meta({ id: 'EvaluationVerdict', description: 'LLM evaluation verdict for a turn.' });
 
 // ----------------------------------------------------------------------------
 // User feedback
@@ -226,7 +226,7 @@ const AgentRunEvaluationTotalsSchema = z.strictObject({
 
 /**
  * What the workflow reports about a run: the fold of its turn evaluations. Owned by the workflow;
- * it never carries feedback or judge fields, which the server owns.
+ * it never carries feedback or evaluator fields, which the server owns.
  */
 export const AgentRunEvaluationRollupSchema = z
     .strictObject({
@@ -246,36 +246,36 @@ export const AgentRunEvaluationRollupSchema = z
     })
     .meta({ id: 'AgentRunEvaluationRollup', description: 'Fold of the turn evaluations of a run.' });
 
-export const AgentRunJudgeResultSchema = z
+export const AgentRunLlmEvaluationResultSchema = z
     .strictObject({
         rev: z.number().int(),
-        gate: JudgeGateReasonSchema,
+        gate: EvaluationGateReasonSchema,
         sample_rate: z.number(),
         selected_probability: z.number(),
-        outcome: JudgeOutcomeSchema,
-        verdict: JudgeVerdictSchema.optional(),
+        outcome: EvaluationOutcomeSchema,
+        verdict: EvaluationVerdictSchema.optional(),
         score: z.number().optional(),
         model: z.string().optional(),
         prompt_version: z.string(),
-        turns_judged: z.array(z.number().int()).optional(),
-        judged_at: z.string().meta({ format: 'date-time' }),
+        turns_evaluated: z.array(z.number().int()).optional(),
+        evaluated_at: z.string().meta({ format: 'date-time' }),
     })
-    .meta({ id: 'AgentRunJudgeResult', description: 'Latest judge result for a run.' });
+    .meta({ id: 'AgentRunLlmEvaluationResult', description: 'Latest LLM evaluation result for a run.' });
 
 export const AgentRunContradictionReasonSchema = z
-    .enum(['feedback_down_on_clean_run', 'judge_failure_on_clean_run'])
+    .enum(['feedback_down_on_clean_run', 'evaluation_failure_on_clean_run'])
     .meta({ id: 'AgentRunContradictionReason' });
 
 /**
  * The server-owned evaluation summary of a run: the workflow rollup, the feedback counts and the
- * judge result, plus the derived severity, flags and contradiction the run list filters on.
+ * evaluator result, plus the derived severity, flags and contradiction the run list filters on.
  */
 export const AgentRunEvaluationSchema = z
     .strictObject({
         rev: z.number().int().meta({ description: 'Bumped on every change to any part of the summary.' }),
         rollup: AgentRunEvaluationRollupSchema.optional(),
         feedback_counts: AgentRunFeedbackCountsSchema.optional(),
-        judge: AgentRunJudgeResultSchema.optional(),
+        llm_evaluation: AgentRunLlmEvaluationResultSchema.optional(),
         severity: EvaluationSeveritySchema,
         flags: z.array(TurnEvaluationFlagSchema),
         contradicted: z.boolean(),
@@ -453,17 +453,17 @@ const FeedbackEventSchema = z.strictObject({
     replaced: z.boolean(),
 });
 
-const TurnJudgementEventSchema = z.strictObject({
+const TurnLlmEvaluationEventSchema = z.strictObject({
     ...agentEventBase,
-    eventType: z.literal(AgentEventType.TurnJudgement),
+    eventType: z.literal(AgentEventType.TurnLlmEvaluation),
     evaluationRev: z.number().int(),
     workstreamId: z.string(),
     turnSeq: z.number().int().min(0),
-    gate: JudgeGateReasonSchema,
+    gate: EvaluationGateReasonSchema,
     sampleRate: z.number(),
     selectedProbability: z.number(),
-    outcome: JudgeOutcomeSchema,
-    verdict: JudgeVerdictSchema.optional(),
+    outcome: EvaluationOutcomeSchema,
+    verdict: EvaluationVerdictSchema.optional(),
     score: z.number().optional(),
     reasons: z.array(z.string()).optional(),
     promptVersion: z.string(),
@@ -491,7 +491,7 @@ export const AgentEventSchema: z.ZodType<AgentEvent> = z
         ToolCallEventSchema,
         TurnEvaluationEventSchema,
         FeedbackEventSchema,
-        TurnJudgementEventSchema,
+        TurnLlmEvaluationEventSchema,
         StallBreakerEventSchema,
     ])
     .meta({ id: 'AgentEvent' });
@@ -1422,7 +1422,7 @@ export const ListAgentRunsQuerySchema = z
         }).optional(),
         contradicted: z
             .boolean()
-            .meta({ description: 'Only runs whose feedback or judge contradicts the detectors' })
+            .meta({ description: 'Only runs whose feedback or LLM evaluation contradicts the detectors' })
             .optional(),
     })
     .meta({ id: 'ListAgentRunsQuery' });
