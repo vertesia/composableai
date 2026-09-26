@@ -18864,6 +18864,10 @@
       "build_version": {
         "type": "boolean",
         "description": "Create one immutable app version after validation. Defaults to false."
+      },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Token budget for the whole task, shared by the App Builder run and every step of its development process. Field-wise it overrides the project's `configuration.agent.budget`; `limit_tokens` <= 0 runs the task without a budget."
       }
     },
     "required": [
@@ -31307,6 +31311,10 @@
         "type": "string",
         "description": "Free-form message from the user when starting a run. Passed to the orchestrator LLM in supervised mode; stored on the run regardless so programmatic runs retain the intent that triggered them."
       },
+      "budget": {
+        "$ref": "#/components/schemas/AgentBudgetConfiguration",
+        "description": "Token budget shared by the whole run: agent nodes, interaction nodes, nested processes and, when the run is managed by an agent run, that agent run. Agent nodes and nested processes start with what is left of it. When it runs out the process stops scheduling nodes, lets running agent nodes write a final summary, and ends failed with `terminal_reason` `token_budget_exhausted`. This is a soft limit, not a spending cap."
+      },
       "process_workstream_monitor": {
         "type": "object",
         "properties": {
@@ -31458,6 +31466,84 @@
     },
     "additionalProperties": false
   },
+  "ProcessTerminalReason": {
+    "type": "string",
+    "enum": [
+      "token_budget_exhausted"
+    ],
+    "description": "Why a process run ended other than by reaching a final node. `token_budget_exhausted`: the run spent its token budget; it ends with status `failed`."
+  },
+  "ProcessBudgetSummary": {
+    "type": "object",
+    "properties": {
+      "node_id": {
+        "type": "string"
+      },
+      "attempt": {
+        "type": "number"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "token_budget_exhausted",
+          "cancelled_at_deadline"
+        ],
+        "description": "`token_budget_exhausted`: the node ended with a final summary turn. `cancelled_at_deadline`: the node was still running at the wrap-up deadline and was cancelled without a summary."
+      },
+      "summary": {
+        "type": "string",
+        "description": "The node's final summary, truncated to 2,000 characters."
+      },
+      "summary_truncated": {
+        "type": "boolean"
+      },
+      "artifact": {
+        "type": "string",
+        "description": "Path of the node's conversation among the process run's artifacts, which holds the full summary."
+      },
+      "child_run_id": {
+        "type": "string"
+      },
+      "usage_incomplete": {
+        "type": "boolean",
+        "description": "True when the node's final token usage never arrived; the run total counts its last reported usage."
+      }
+    },
+    "required": [
+      "node_id",
+      "attempt",
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "ProcessBudgetState": {
+    "type": "object",
+    "properties": {
+      "limit_tokens": {
+        "type": "number"
+      },
+      "used_units": {
+        "type": "number",
+        "description": "Weighted tokens used by the run and everything it launched."
+      },
+      "exhausted": {
+        "type": "boolean"
+      },
+      "summaries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ProcessBudgetSummary"
+        },
+        "description": "One entry per node the budget stopped: at most the latest attempt, 50 entries."
+      }
+    },
+    "required": [
+      "limit_tokens",
+      "used_units",
+      "exhausted"
+    ],
+    "additionalProperties": false
+  },
   "ProcessState": {
     "type": "object",
     "properties": {
@@ -31479,6 +31565,13 @@
       },
       "sequence": {
         "type": "number"
+      },
+      "terminal_reason": {
+        "$ref": "#/components/schemas/ProcessTerminalReason"
+      },
+      "budget": {
+        "$ref": "#/components/schemas/ProcessBudgetState",
+        "description": "Token budget of the run, present when the run has one."
       }
     },
     "required": [

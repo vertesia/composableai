@@ -9,6 +9,7 @@ import { AgentRunTypeSchema } from './app-lifecycle.js';
 import { StringValueMapSchema } from './files.js';
 import { ConversationVisibilitySchema, RunSourceSchema } from './interaction.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
+import { AgentBudgetConfigurationSchema } from './project-configuration.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { TaskFieldSchema } from './task.js';
 
@@ -198,6 +199,10 @@ export const ProcessRunConfigSchema = z
                     'Free-form message from the user when starting a run. Passed to the orchestrator LLM in supervised mode; stored on the run regardless so programmatic runs retain the intent that triggered them.',
             })
             .optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                'Token budget shared by the whole run: agent nodes, interaction nodes, nested processes and, when the run is managed by an agent run, that agent run. Agent nodes and nested processes start with what is left of it. When it runs out the process stops scheduling nodes, lets running agent nodes write a final summary, and ends failed with `terminal_reason` `token_budget_exhausted`. This is a soft limit, not a spending cap.',
+        }).optional(),
         process_workstream_monitor: z
             .strictObject({
                 monitor_workflow_id: z.string(),
@@ -363,6 +368,55 @@ export const TransitionDefinitionSchema = z
 
 export const ProcessScriptSourceSchema = ProcessScriptInlineSourceSchema.meta({ id: 'ProcessScriptSource' });
 
+export const ProcessTerminalReasonSchema = z.enum(['token_budget_exhausted']).meta({
+    id: 'ProcessTerminalReason',
+    description:
+        'Why a process run ended other than by reaching a final node. `token_budget_exhausted`: the run spent its token budget; it ends with status `failed`.',
+});
+
+export const ProcessBudgetSummarySchema = z
+    .strictObject({
+        node_id: z.string(),
+        attempt: z.number(),
+        status: z.enum(['token_budget_exhausted', 'cancelled_at_deadline']).meta({
+            description:
+                '`token_budget_exhausted`: the node ended with a final summary turn. `cancelled_at_deadline`: the node was still running at the wrap-up deadline and was cancelled without a summary.',
+        }),
+        summary: z
+            .string()
+            .meta({ description: "The node's final summary, truncated to 2,000 characters." })
+            .optional(),
+        summary_truncated: z.boolean().optional(),
+        artifact: z
+            .string()
+            .meta({
+                description:
+                    "Path of the node's conversation among the process run's artifacts, which holds the full summary.",
+            })
+            .optional(),
+        child_run_id: z.string().optional(),
+        usage_incomplete: z
+            .boolean()
+            .meta({
+                description:
+                    "True when the node's final token usage never arrived; the run total counts its last reported usage.",
+            })
+            .optional(),
+    })
+    .meta({ id: 'ProcessBudgetSummary' });
+
+export const ProcessBudgetStateSchema = z
+    .strictObject({
+        limit_tokens: z.number(),
+        used_units: z.number().meta({ description: 'Weighted tokens used by the run and everything it launched.' }),
+        exhausted: z.boolean(),
+        summaries: z
+            .array(ProcessBudgetSummarySchema)
+            .meta({ description: 'One entry per node the budget stopped: at most the latest attempt, 50 entries.' })
+            .optional(),
+    })
+    .meta({ id: 'ProcessBudgetState' });
+
 export const ProcessStateSchema = z
     .strictObject({
         context: z.looseObject({}),
@@ -370,6 +424,10 @@ export const ProcessStateSchema = z
         node_history: z.array(NodeHistoryEntrySchema),
         node_history_ref: ProcessHistoryRefSchema.optional(),
         sequence: z.number(),
+        terminal_reason: ProcessTerminalReasonSchema.optional(),
+        budget: ProcessBudgetStateSchema.meta({
+            description: 'Token budget of the run, present when the run has one.',
+        }).optional(),
     })
     .meta({ id: 'ProcessState' });
 
