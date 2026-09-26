@@ -39,15 +39,15 @@ export const calendarStyles = `
 .calendar-wrapper .react-calendar__month-view__days__day:hover,
 .calendar-wrapper .react-calendar__decade-view__years__year:hover,
 .calendar-wrapper .react-calendar__year-view__months__month:hover {
-  background: #b5b5b580 !important;
+  background: color-mix(in srgb, var(--muted) 50%, transparent) !important;
 }
 
 .calendar-wrapper .react-calendar__tile:not(.react-calendar__tile--active):hover {
-  background: #b5b5b580 !important;
+  background: color-mix(in srgb, var(--muted) 50%, transparent) !important;
 }
 
 .calendar-wrapper .react-calendar__tile--hover {
-  background: #b5b5b580 !important;
+  background: color-mix(in srgb, var(--muted) 50%, transparent) !important;
 }
 
 .calendar-wrapper .react-calendar__tile--disabled,
@@ -59,7 +59,7 @@ export const calendarStyles = `
 .calendar-wrapper .react-calendar__decade-view__years__year--disabled,
 .calendar-wrapper .react-calendar__decade-view__years__year:disabled {
   cursor: not-allowed !important;
-  color: #9ca3af !important;
+  color: var(--muted) !important;
 }
 
 .calendar-wrapper .react-calendar__tile--disabled:hover,

@@ -617,7 +617,7 @@ function SummaryUserBubble({
             <div
                 className={cn(
                     'max-w-[min(44rem,82%)] rounded-[1.35rem] bg-mixer-muted/35 px-4 py-2.5',
-                    'text-sm font-normal leading-6 text-foreground/90 shadow-sm shadow-black/5 dark:bg-mixer-muted/15 dark:text-foreground/88 dark:shadow-none',
+                    'text-sm font-normal leading-6 text-foreground/90 bg-mixer-muted/35 shadow-sm',
                     'break-words [overflow-wrap:anywhere]',
                     className,
                 )}
@@ -3171,7 +3171,7 @@ function AllMessagesMixedComponent({
                 .vprose hr {
                     margin-top: 1rem;
                     margin-bottom: 1rem;
-                    border-color: var(--gray-5, #d1d5db);
+                    border-color: var(--border);
                 }
                 /* Better blockquote styling */
                 .vprose blockquote {
@@ -3179,8 +3179,8 @@ function AllMessagesMixedComponent({
                     margin-bottom: 0.875rem;
                     padding-left: 1rem;
                     border-left-width: 3px;
-                    border-left-color: var(--gray-6, #d1d5db);
-                    color: var(--gray-11, #6b7280);
+                    border-left-color: var(--border);
+                    color: var(--muted);
                 }
                 /* Code blocks */
                 .vprose pre {
@@ -3189,14 +3189,14 @@ function AllMessagesMixedComponent({
                     padding: 0.75rem;
                     border-radius: 0.5rem;
                     overflow-x: auto;
-                    background-color: var(--color-muted, #f3f4f6);
-                    color: var(--color-foreground, #1f2937);
+                    background-color: var(--muted-background);
+                    color: var(--foreground);
                 }
                 .vprose pre code {
                     color: inherit;
                 }
                 .dark .vprose pre {
-                    color: var(--color-foreground, #f9fafb);
+                    color: var(--foreground);
                 }
 
                 /* Summary chat markdown: keep structure, but match the app's quieter conversation surface. */

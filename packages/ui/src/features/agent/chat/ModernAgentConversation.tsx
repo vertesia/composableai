@@ -500,8 +500,7 @@ function PendingStartConversation({ message, startedAt }: { message: string; sta
                 <div
                     className={cn(
                         'max-w-[min(44rem,82%)] rounded-[1.35rem] bg-mixer-muted/35 px-4 py-2.5',
-                        'break-words text-sm font-normal leading-6 text-foreground/90 shadow-sm shadow-black/5',
-                        'dark:bg-mixer-muted/15 dark:text-foreground/88 dark:shadow-none [overflow-wrap:anywhere]',
+                        'break-words text-sm font-normal leading-6 text-foreground/90 bg-mixer-muted/35 shadow-sm [overflow-wrap:anywhere]',
                     )}
                 >
                     <div className="whitespace-pre-wrap">{message}</div>
@@ -2990,7 +2989,7 @@ function ModernAgentConversationInner({
                 >
                     {/* Drag overlay for full-panel file drop */}
                     {canUploadFiles && isDragOver && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-info/80 dark:bg-info/40 z-50 pointer-events-none rounded-lg">
+                        <div className="absolute inset-0 flex items-center justify-center bg-info/40 z-50 pointer-events-none rounded-lg">
                             <div className="text-info font-medium flex items-center gap-2 text-lg">
                                 <UploadIcon className="size-6" />
                                 Drop files to upload

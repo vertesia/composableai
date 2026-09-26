@@ -356,19 +356,15 @@ export function SlidingThinkingIndicator({
                                         ) : (
                                             <div
                                                 className={cn(
-                                                    'py-2 px-3 border-s-2 bg-white dark:bg-muted flex items-center w-full',
+                                                    'py-2 px-3 border-s-2 bg-card flex items-center w-full',
                                                     'transition-all duration-200 ease-in-out rounded-e-md',
                                                     // Set border color based on message type
                                                     {
-                                                        // Categorical message-type palette, not semantic state:
-                                                        // these must stay in step with <PulsingMessageLoader color>
-                                                        // in AnimatedThinkingDots, which uses the same hue names.
-                                                        'border-blue-400 dark:border-blue-500':
-                                                            getThinkingColor(message) === 'blue',
-                                                        'border-purple-400 dark:border-purple-500':
-                                                            getThinkingColor(message) === 'purple',
-                                                        'border-teal-400 dark:border-teal-500':
-                                                            getThinkingColor(message) === 'teal',
+                                                        // Map the existing thinking types into shared theme semantics.
+                                                        'border-info': ['blue', 'teal'].includes(
+                                                            getThinkingColor(message),
+                                                        ),
+                                                        'border-done': getThinkingColor(message) === 'purple',
                                                     },
                                                 )}
                                             >
@@ -402,12 +398,10 @@ export function SlidingThinkingIndicator({
                                                     className={cn(
                                                         'text-sm font-medium flex-1 overflow-hidden text-ellipsis me-3',
                                                         {
-                                                            'text-blue-700 dark:text-blue-300':
-                                                                getThinkingColor(message) === 'blue',
-                                                            'text-purple-700 dark:text-purple-300':
-                                                                getThinkingColor(message) === 'purple',
-                                                            'text-teal-700 dark:text-teal-300':
-                                                                getThinkingColor(message) === 'teal',
+                                                            'text-info': ['blue', 'teal'].includes(
+                                                                getThinkingColor(message),
+                                                            ),
+                                                            'text-done': getThinkingColor(message) === 'purple',
                                                         },
                                                     )}
                                                 >

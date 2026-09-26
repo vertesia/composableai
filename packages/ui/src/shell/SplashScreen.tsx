@@ -27,17 +27,8 @@ export function DefaultAuthLoadingScreen({
     loadingLabel = 'Loading',
 }: AuthLoadingScreenProps & { loadingLabel?: string }) {
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999999 }} role="status" aria-label={loadingLabel}>
-            <div
-                style={{
-                    display: 'flex',
-                    width: '100%',
-                    height: '100%',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-                className="flex w-full h-full items-center justify-center"
-            >
+        <div className="fixed inset-0 z-[999999]" role="status" aria-label={loadingLabel}>
+            <div className="flex w-full h-full items-center justify-center">
                 <LoadingAnimation loadingIcon={loadingIcon} />
             </div>
         </div>
@@ -47,8 +38,6 @@ export function DefaultAuthLoadingScreen({
 function LoadingIcon() {
     const stopColor1 = 'currentColor';
     const stopColor2 = 'currentColor';
-    // const stopColor1 = "#4F46E5";
-    // const stopColor2 = "#4F46E5";
     return (
         <svg
             width="32"

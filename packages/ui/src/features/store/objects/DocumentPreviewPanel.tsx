@@ -127,10 +127,10 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
 
     return (
         <div
-            className={`fixed inset-y-0 end-0 w-2/5 dark:bg-muted shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${panelTranslateClass}`}
+            className={`fixed inset-y-0 end-0 w-2/5 bg-card text-card-foreground shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${panelTranslateClass}`}
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b dark:border-border bg-gradient-to-r from-indigo-50 to-gray-50 dark:from-gray-800 dark:to-gray-900">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted">
                 <div className="flex items-center">
                     <FileText className="h-5 w-5 text-info me-2" />
                     <h2 className="text-lg font-semibold text-foreground truncate">
@@ -151,7 +151,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                         variant="ghost"
                         size="sm"
                         onClick={onClose}
-                        className="flex items-center text-muted hover:text-foreground dark:text-foreground"
+                        className="flex items-center text-muted hover:text-foreground"
                     >
                         <X className="h-5 w-5" />
                     </Button>
@@ -212,15 +212,13 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                         <Spinner size="md" className="text-info" />
                                     </div>
                                 ) : text ? (
-                                    <div className="shadow rounded-md p-4 border border-border bg-white dark:bg-muted">
+                                    <div className="shadow rounded-md p-4 border border-border bg-card text-card-foreground">
                                         {seemsMarkdown ? (
-                                            <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-muted prose-pre:my-2 prose-headings:text-info dark:prose-invert">
+                                            <div className="prose prose-sm max-w-none prose-p:my-2 prose-pre:bg-muted prose-pre:my-2 prose-headings:text-info ">
                                                 <MarkdownRenderer>{text}</MarkdownRenderer>
                                             </div>
                                         ) : (
-                                            <pre className="text-wrap whitespace-pre-wrap dark:text-foreground">
-                                                {text}
-                                            </pre>
+                                            <pre className="text-wrap whitespace-pre-wrap text-foreground">{text}</pre>
                                         )}
                                     </div>
                                 ) : null}
@@ -229,7 +227,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 {isImage && (
                                     <div className="mt-4">
                                         {imageUrl ? (
-                                            <div className="border border-border rounded-md p-2 bg-white dark:bg-muted">
+                                            <div className="border border-border rounded-md p-2 bg-card text-card-foreground">
                                                 <img
                                                     src={imageUrl}
                                                     alt={object?.name}
@@ -261,7 +259,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                 {/* No Content Notice */}
                                 {!isImage && !text && !isPdf && !loadingText && (
                                     <div className="flex flex-col items-center justify-center h-64 border border-border rounded-md p-4 bg-muted">
-                                        <FileText className="h-16 w-16 text-foreground dark:text-muted mb-4" />
+                                        <FileText className="h-16 w-16 text-foreground mb-4" />
                                         <p className="text-muted text-center">{t('store.noPreviewAvailable')}</p>
                                     </div>
                                 )}
@@ -271,12 +269,12 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                         {currentTab === 'properties' && object && (
                             <div className="h-full">
                                 {object.properties ? (
-                                    <div className="shadow rounded-md p-4 border border-border bg-white dark:bg-muted">
+                                    <div className="shadow rounded-md p-4 border border-border bg-card text-card-foreground">
                                         <JSONDisplay value={object.properties} />
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center h-64 border border-border rounded-md p-4 bg-muted">
-                                        <Info className="h-16 w-16 text-foreground dark:text-muted mb-4" />
+                                        <Info className="h-16 w-16 text-foreground mb-4" />
                                         <p className="text-muted text-center">{t('store.noPropertiesAvailable')}</p>
                                     </div>
                                 )}
@@ -285,18 +283,18 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
                                     <h3 className="text-sm font-semibold text-foreground mb-2">
                                         {t('store.documentInformation')}
                                     </h3>
-                                    <div className="shadow rounded-md p-4 border border-border bg-white dark:bg-muted">
+                                    <div className="shadow rounded-md p-4 border border-border bg-card text-card-foreground">
                                         <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
                                             <div className="text-muted">{t('store.id')}</div>
-                                            <div className="font-medium dark:text-foreground">{object.id}</div>
+                                            <div className="font-medium text-foreground">{object.id}</div>
 
                                             <div className="text-muted">{t('store.contentType')}</div>
-                                            <div className="font-medium dark:text-foreground">
+                                            <div className="font-medium text-foreground">
                                                 {object.type?.name || t('store.unknown')}
                                             </div>
 
                                             <div className="text-muted">{t('store.contentType')}</div>
-                                            <div className="font-medium dark:text-foreground">
+                                            <div className="font-medium text-foreground">
                                                 {object.content?.type || t('store.na')}
                                             </div>
 
@@ -330,7 +328,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
             )}
 
             {/* Footer actions */}
-            <div className="flex items-center justify-between p-4 border-t bg-muted dark:border-border">
+            <div className="flex items-center justify-between p-4 border-t bg-muted border-border">
                 <div>
                     {object?.content?.source && (
                         <Button

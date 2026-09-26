@@ -105,7 +105,7 @@ function DocumentPanelComponent({
                 ) : error ? (
                     <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm">{error}</div>
                 ) : content ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div className="vprose prose prose-sm max-w-none">
                         <MarkdownRenderer artifactRunId={runId}>{content}</MarkdownRenderer>
                     </div>
                 ) : (

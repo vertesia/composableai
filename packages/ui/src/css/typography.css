@@ -81,7 +81,7 @@
 }
 
 .vprose :not(pre) > code {
-    @apply px-1.5 py-0.5 rounded text-muted bg-muted/20 dark:bg-muted/30;
+    @apply px-1.5 py-0.5 rounded text-muted bg-muted/20;
 }
 
 .vprose .code-language-indicator {

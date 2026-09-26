@@ -1,5 +1,15 @@
 import { type ApiKey, PrincipalType, type User, type UserGroup } from '@vertesia/common';
-import { Avatar, errorMessage, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from '@vertesia/ui/core';
+import {
+    Avatar,
+    CloudIcon,
+    errorMessage,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    SvgAvatar,
+    Table,
+    useFetch,
+} from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Users, Users2 } from 'lucide-react';
@@ -71,6 +81,14 @@ function AvatarPlaceholder() {
     return <div className="size-8" />;
 }
 
+function CloudAvatar({ size, color, className }: { size: InfoProps['size']; color: string; className?: string }) {
+    return (
+        <SvgAvatar size={size} color={color} className={`p-1.5 ${className || ''}`}>
+            <CloudIcon className="size-full" />
+        </SvgAvatar>
+    );
+}
+
 interface InfoProps {
     showTitle?: boolean;
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -81,7 +99,7 @@ function SystemAvatar({ showTitle = false, size = 'md' }: InfoProps) {
     return (
         <UserPopoverPanel title={t('user.systemUser')} description={t('user.systemUserDescription')}>
             <div className="flex gap-2 items-center">
-                <Avatar src="/icon.svg" size={size} />
+                <Avatar size={size} />
                 {showTitle && <div className="text-sm font-semibold ps-2">{t('user.systemUser')}</div>}
             </div>
         </UserPopoverPanel>
@@ -116,7 +134,7 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = 'md' }: Ser
     return (
         <UserPopoverPanel title={t('user.serviceAccount')} description={description}>
             <div className="flex flex-row items-center gap-2">
-                <Avatar src="/cloud.svg" name="SA" color="bg-amber-500" className="px-[5px] text-white" size={size} />
+                <CloudAvatar size={size} color="bg-attention text-attention" />
                 {showTitle && (
                     <div className="text-sm font-semibold ps-2 truncate">
                         {t('user.serviceAccount')} : ~{accountId.slice(-6)}
@@ -145,11 +163,10 @@ function EmailAgentAvatar({ email, showTitle = false, size = 'md' }: EmailAgentA
         <UserPopoverPanel title={'Email Agent'} description={description}>
             <div className="flex items-center gap-2">
                 <div className="flex items-center -space-x-2">
-                    <Avatar
-                        src="/cloud.svg"
-                        color="bg-amber-500"
-                        className="px-[5px] text-white border-2 border-background"
+                    <CloudAvatar
                         size={size}
+                        color="bg-attention text-attention"
+                        className="border-2 border-background"
                     />
                     <Avatar name={email} size={size} className="border-2 border-background" />
                 </div>
@@ -214,7 +231,7 @@ function AgentAvatar({
             {!user && !apiKey && (
                 <>
                     <div>{t('user.serviceAccountDescription')}</div>
-                    <div className="text-foreground dark:text-muted text-sm">
+                    <div className="text-foreground text-sm">
                         <span className="font-semibold">ID:</span> {agentId}
                     </div>
                 </>
@@ -226,12 +243,7 @@ function AgentAvatar({
         <UserPopoverPanel title={_title} description={description}>
             <div className="flex items-center gap-2">
                 <div className="flex items-center -space-x-2">
-                    <Avatar
-                        src="/cloud.svg"
-                        color="bg-amber-500"
-                        className="px-[5px] text-white border-2 border-background"
-                        size={size}
-                    />
+                    <CloudAvatar size={size} color="bg-info text-info" className="border-2 border-background" />
                     {user && (
                         <Avatar
                             src={user.picture}
@@ -241,7 +253,12 @@ function AgentAvatar({
                         />
                     )}
                     {apiKey && (
-                        <Avatar name="API" color="bg-gray-400" size={size} className="border-2 border-background" />
+                        <Avatar
+                            name="API"
+                            color="bg-secondary text-secondary"
+                            size={size}
+                            className="border-2 border-background"
+                        />
                     )}
                 </div>
                 {showTitle && (
@@ -267,7 +284,7 @@ function ErrorAvatar({ title = 'Error', error, showTitle = false, size = 'md' }:
         <UnknownAvatar
             title={title}
             message={errorMessage(error)}
-            color="bg-red-500"
+            color="bg-destructive text-destructive"
             showTitle={showTitle}
             size={size}
         />
@@ -438,7 +455,7 @@ function GroupAvatar({ userId, showTitle = false, size = 'md' }: GroupAvatarProp
 
     if (error) {
         if (isNotFoundError(error)) {
-            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-indigo-500" />;
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-info text-info" />;
         }
         return <ErrorAvatar title={t('user.failedToFetchGroup')} error={error} showTitle={showTitle} size={size} />;
     }
@@ -482,7 +499,7 @@ function UserAvatar({ userId, showTitle = false, size = 'md' }: UserAvatarProps)
 
     if (error) {
         if (isNotFoundError(error)) {
-            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-indigo-500" />;
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-info text-info" />;
         }
         return <ErrorAvatar title={t('user.failedToFetchUser')} error={error} showTitle={showTitle} size={size} />;
     }
@@ -503,7 +520,7 @@ function UserAvatar({ userId, showTitle = false, size = 'md' }: UserAvatarProps)
             description={description}
         >
             <div className="flex flex-row items-center gap-2">
-                <Avatar src={user.picture} name={user.name} color="bg-indigo-500" size={size} />
+                <Avatar src={user.picture} name={user.name} color="bg-info" size={size} />
                 {showTitle && (
                     <div className="text-sm font-semibold ps-2">
                         {user.name || user.email || user.username || t('user.unknown')}
@@ -523,7 +540,7 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = 'md' }: ApiKeyAv
 
     if (error) {
         if (isNotFoundError(error)) {
-            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-pink-500" />;
+            return <MissingPrincipalAvatar showTitle={showTitle} size={size} color="bg-done text-done" />;
         }
         return <ErrorAvatar title={t('user.failedToFetchApiKey')} error={error} showTitle={showTitle} size={size} />;
     }
@@ -533,9 +550,9 @@ export function ApiKeyAvatar({ keyId, showTitle = false, size = 'md' }: ApiKeyAv
     }
 
     const title = t('user.privateKey');
-    const avatar = <Avatar name={'PK'} color="bg-pink-500" size={size} />;
+    const avatar = <Avatar name="PK" color="bg-done text-done" size={size} />;
     const description = (
-        <Table className="dark:bg-muted dark:text-foreground table-fixed w-full">
+        <Table className="bg-card text-card-foreground table-fixed w-full">
             <tr>
                 <td className="font-semibold w-20">{t('user.key')}</td>
                 <td className="truncate max-w-0">{data?.name}</td>

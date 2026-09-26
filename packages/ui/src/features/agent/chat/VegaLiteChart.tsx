@@ -31,12 +31,10 @@ const DEFAULT_DASHBOARD_HEIGHT = 500;
 // Error display component
 function VegaErrorDisplay({ error, chartTitle }: { error: string; chartTitle?: string }) {
     return (
-        <div className="flex items-center justify-center h-full bg-red-50 dark:bg-red-950 rounded-md p-4">
+        <div className="flex items-center justify-center h-full bg-destructive text-destructive rounded-md p-4">
             <div className="text-center">
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                    Cannot render {chartTitle || 'Vega-Lite'} chart
-                </p>
-                <p className="text-xs text-red-500 dark:text-red-500 mt-1 max-w-xs truncate">{error}</p>
+                <p className="text-sm font-medium text-destructive">Cannot render {chartTitle || 'Vega-Lite'} chart</p>
+                <p className="text-xs text-destructive mt-1 max-w-xs truncate">{error}</p>
             </div>
         </div>
     );
@@ -46,7 +44,7 @@ function VegaErrorDisplay({ error, chartTitle }: { error: string; chartTitle?: s
 function VegaLoadingPlaceholder() {
     return (
         <output className="flex items-center justify-center w-full h-full">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-500 dark:text-gray-400" />
+            <Loader2 className="w-5 h-5 animate-spin text-muted" />
         </output>
     );
 }
@@ -71,7 +69,7 @@ function FullscreenDialog({
             <DialogPrimitive.Portal>
                 <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
                 <DialogPrimitive.Content
-                    className="fixed inset-2 sm:inset-4 z-50 flex flex-col bg-white dark:bg-gray-900 rounded-xl shadow-2xl transition-all duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2"
+                    className="fixed inset-2 sm:inset-4 z-50 flex flex-col bg-card text-card-foreground rounded-xl shadow-2xl transition-all duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2"
                     onEscapeKeyDown={onClose}
                 >
                     {/* Close button - top right corner */}
@@ -79,10 +77,10 @@ function FullscreenDialog({
                         <Button
                             variant="unstyled"
                             onClick={onClose}
-                            className="absolute top-3 end-3 z-10 p-2 rounded-lg bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 shadow-sm"
+                            className="absolute top-3 end-3 z-10 p-2 rounded-lg bg-card backdrop-blur-sm hover:bg-muted transition-colors duration-150 shadow-sm"
                             aria-label={t('agent.closeFullscreen')}
                         >
-                            <X className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                            <X className="w-5 h-5 text-muted" />
                         </Button>
                     </DialogPrimitive.Close>
                     {/* Chart content first - takes most space */}
@@ -90,13 +88,13 @@ function FullscreenDialog({
                         {children}
                     </div>
                     {/* Title bar at bottom */}
-                    <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 rounded-b-xl">
+                    <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-border bg-muted rounded-b-xl">
                         <div className="flex flex-col">
-                            <DialogPrimitive.Title className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            <DialogPrimitive.Title className="text-base font-semibold text-card-foreground">
                                 {title || t('agent.dashboard')}
                             </DialogPrimitive.Title>
                             {description && (
-                                <DialogPrimitive.Description className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                                <DialogPrimitive.Description className="text-sm text-muted mt-0.5">
                                     {description}
                                 </DialogPrimitive.Description>
                             )}
@@ -133,27 +131,21 @@ function calculateAutoHeight(spec: VegaSpecObject, mode: 'chart' | 'dashboard'):
 }
 
 // Modern color palette - vibrant but professional
-const CHART_COLORS = {
-    // Primary palette - vibrant gradients
-    categorical: [
-        '#6366f1', // indigo
-        '#8b5cf6', // violet
-        '#ec4899', // pink
-        '#f43f5e', // rose
-        '#f97316', // orange
-        '#eab308', // yellow
-        '#22c55e', // green
-        '#14b8a6', // teal
-        '#06b6d4', // cyan
-        '#3b82f6', // blue
-    ],
-    // Sequential schemes
-    blues: ['#dbeafe', '#93c5fd', '#3b82f6', '#1d4ed8', '#1e3a8a'],
-    purples: ['#f3e8ff', '#c4b5fd', '#8b5cf6', '#6d28d9', '#4c1d95'],
-    greens: ['#dcfce7', '#86efac', '#22c55e', '#15803d', '#14532d'],
-    // Diverging
-    diverging: ['#ef4444', '#fca5a5', '#fef3c7', '#86efac', '#22c55e'],
-};
+function getThemeColor(token: string, fallback: string): string {
+    if (typeof window === 'undefined') return fallback;
+    return getComputedStyle(document.documentElement).getPropertyValue(token).trim() || fallback;
+}
+
+function getChartColors() {
+    const colors = [1, 2, 3, 4, 5].map((index) => getThemeColor(`--chart-${index}`, '#3b82f6'));
+    return {
+        categorical: [...colors, ...colors],
+        blues: colors,
+        purples: colors,
+        greens: colors,
+        diverging: colors,
+    };
+}
 
 // Helper types for artifact resolution
 type ArtifactReference = {
@@ -487,16 +479,21 @@ function replaceArtifactData(spec: VegaSpecObject, resolvedData: Map<string, unk
 }
 
 // Get dark mode config for Vega with enhanced styling
-function getDarkModeConfig(isDark: boolean): Record<string, unknown> {
+function getDarkModeConfig(_isDark: boolean): Record<string, unknown> {
+    const colors = getChartColors();
+    const font = getThemeColor('--font-sans', 'system-ui, sans-serif');
+    const foreground = getThemeColor('--foreground', '#18181b');
+    const muted = getThemeColor('--muted', '#71717a');
+    const border = getThemeColor('--border', '#e4e4e7');
     const baseConfig = {
         background: 'transparent',
         view: { stroke: 'transparent' },
         // Modern color range
         range: {
-            category: CHART_COLORS.categorical,
-            diverging: CHART_COLORS.diverging,
-            heatmap: CHART_COLORS.purples,
-            ramp: CHART_COLORS.blues,
+            category: colors.categorical,
+            diverging: colors.diverging,
+            heatmap: colors.purples,
+            ramp: colors.blues,
         },
         // Enable tooltips by default for all mark types with enhanced styling
         mark: { tooltip: true },
@@ -534,64 +531,32 @@ function getDarkModeConfig(isDark: boolean): Record<string, unknown> {
         },
     };
 
-    if (isDark) {
-        return {
-            ...baseConfig,
-            axis: {
-                labelColor: '#a1a1aa',
-                titleColor: '#e4e4e7',
-                gridColor: '#3f3f46',
-                domainColor: '#52525b',
-                tickColor: '#52525b',
-                labelFont: 'Inter, system-ui, sans-serif',
-                titleFont: 'Inter, system-ui, sans-serif',
-                labelFontSize: 11,
-                titleFontSize: 12,
-                titleFontWeight: 500,
-            },
-            legend: {
-                labelColor: '#a1a1aa',
-                titleColor: '#e4e4e7',
-                labelFont: 'Inter, system-ui, sans-serif',
-                titleFont: 'Inter, system-ui, sans-serif',
-                labelFontSize: 11,
-                titleFontSize: 12,
-                symbolSize: 100,
-            },
-            title: {
-                color: '#fafafa',
-                font: 'Inter, system-ui, sans-serif',
-                fontSize: 14,
-                fontWeight: 600,
-            },
-        };
-    }
     return {
         ...baseConfig,
         axis: {
-            labelColor: '#71717a',
-            titleColor: '#3f3f46',
-            gridColor: '#e4e4e7',
-            domainColor: '#d4d4d8',
-            tickColor: '#d4d4d8',
-            labelFont: 'Inter, system-ui, sans-serif',
-            titleFont: 'Inter, system-ui, sans-serif',
+            labelColor: muted,
+            titleColor: foreground,
+            gridColor: border,
+            domainColor: border,
+            tickColor: border,
+            labelFont: font,
+            titleFont: font,
             labelFontSize: 11,
             titleFontSize: 12,
             titleFontWeight: 500,
         },
         legend: {
-            labelColor: '#71717a',
-            titleColor: '#3f3f46',
-            labelFont: 'Inter, system-ui, sans-serif',
-            titleFont: 'Inter, system-ui, sans-serif',
+            labelColor: muted,
+            titleColor: foreground,
+            labelFont: font,
+            titleFont: font,
             labelFontSize: 11,
             titleFontSize: 12,
             symbolSize: 100,
         },
         title: {
-            color: '#18181b',
-            font: 'Inter, system-ui, sans-serif',
+            color: foreground,
+            font,
             fontSize: 14,
             fontWeight: 600,
         },
@@ -1002,7 +967,7 @@ export const VegaLiteChart = memo(
                     variant="unstyled"
                     onClick={handleCopy}
                     disabled={isCopied}
-                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-1"
+                    className="text-xs px-2 py-1 rounded border border-border bg-muted text-muted hover:bg-muted/80 cursor-pointer transition-colors disabled:opacity-50 flex items-center gap-1"
                     title={t('agent.copyToClipboard')}
                 >
                     {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
@@ -1012,7 +977,7 @@ export const VegaLiteChart = memo(
                     variant="unstyled"
                     onClick={handleExport}
                     disabled={isExporting}
-                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    className="text-xs px-2 py-1 rounded border border-border bg-muted text-muted hover:bg-muted/80 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                     title={t('agent.exportAsPng')}
                 >
                     <Download className="w-3 h-3" />
@@ -1022,7 +987,7 @@ export const VegaLiteChart = memo(
                     <Button
                         variant="unstyled"
                         onClick={toggleFullscreen}
-                        className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors flex items-center gap-1"
+                        className="text-xs px-2 py-1 rounded border border-border bg-muted text-muted hover:bg-muted/80 cursor-pointer transition-colors flex items-center gap-1"
                         title={isFullscreen ? t('agent.exitFullscreen') : t('agent.fullscreen')}
                     >
                         {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
@@ -1037,18 +1002,16 @@ export const VegaLiteChart = memo(
         // (covers the gap before the effect runs)
         if (isLoadingArtifacts || (hasArtifactReferences && !resolvedSpec)) {
             return (
-                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                <div className="bg-card text-card-foreground rounded-lg border border-border shadow-sm">
                     <div className="flex flex-col gap-2 p-3">
                         <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                                {title || 'Chart'}
-                            </span>
+                            <span className="font-medium text-sm text-card-foreground">{title || 'Chart'}</span>
                         </div>
                         <div
-                            className="flex items-center justify-center bg-gray-50 dark:bg-gray-800 rounded"
+                            className="flex items-center justify-center bg-muted rounded"
                             style={{ width: '100%', height: baseHeight }}
                         >
-                            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
+                            <div className="flex items-center gap-2 text-muted">
                                 <Loader2 className="w-5 h-5 animate-spin" />
                                 <span className="text-sm">Loading data from artifacts...</span>
                             </div>
@@ -1061,12 +1024,10 @@ export const VegaLiteChart = memo(
         // Show artifact error state
         if (artifactError) {
             return (
-                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                <div className="bg-card text-card-foreground rounded-lg border border-border shadow-sm">
                     <div className="flex flex-col gap-2 p-3">
                         <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                                {title || 'Chart'}
-                            </span>
+                            <span className="font-medium text-sm text-card-foreground">{title || 'Chart'}</span>
                         </div>
                         <div style={{ width: '100%', height: baseHeight }}>
                             <VegaErrorDisplay error={artifactError} chartTitle={title} />
@@ -1078,12 +1039,10 @@ export const VegaLiteChart = memo(
 
         if (error) {
             return (
-                <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                <div className="bg-card text-card-foreground rounded-lg border border-border shadow-sm">
                     <div className="flex flex-col gap-2 p-3">
                         <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
-                                {title || 'Chart'}
-                            </span>
+                            <span className="font-medium text-sm text-card-foreground">{title || 'Chart'}</span>
                         </div>
                         <div style={{ width: '100%', height: baseHeight }}>
                             <VegaErrorDisplay error={error} chartTitle={title} />
@@ -1116,28 +1075,28 @@ export const VegaLiteChart = memo(
                 {/* Main chart container */}
                 <div
                     className={cn(
-                        'bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm',
+                        'bg-card text-card-foreground rounded-lg border border-border shadow-sm',
                         isDashboard && 'border-2',
                     )}
                 >
                     <div className="flex flex-col gap-2 p-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                                <span className="font-medium text-sm text-card-foreground">
                                     {title || (isDashboard ? 'Dashboard' : 'Chart')}
                                 </span>
                                 {isDashboard && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-info text-info">
                                         Interactive
                                     </span>
                                 )}
                             </div>
                             <Toolbar />
                         </div>
-                        {description && <span className="text-xs text-gray-500 dark:text-gray-400">{description}</span>}
+                        {description && <span className="text-xs text-muted">{description}</span>}
                         <div
                             ref={containerRef}
-                            className="bg-white dark:bg-gray-900 rounded overflow-hidden"
+                            className="bg-card text-card-foreground rounded overflow-hidden"
                             style={{ width: '100%', height: baseHeight, minWidth: 0 }}
                         >
                             <Suspense fallback={<VegaLoadingPlaceholder />}>
@@ -1173,7 +1132,7 @@ export const VegaLiteChart = memo(
                     </div>
                     {/* Floating toolbar in fullscreen */}
                     <div className="absolute bottom-6 end-6">
-                        <Toolbar className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 border border-gray-200 dark:border-gray-700" />
+                        <Toolbar className="bg-card rounded-lg shadow-lg p-2 border border-border" />
                     </div>
                 </FullscreenDialog>
             </>
