@@ -7,7 +7,6 @@ import { useState } from 'react';
 import { type DocumentSelection, useDocumentSelection } from '../DocumentSelectionProvider.js';
 import { DocumentUploadModal } from '../upload/DocumentUploadModal.js';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
-import { StartWorkflowButton } from './actions/StartWorkflowButton';
 import { ObjectsActionContextProvider } from './ObjectsActionContext';
 import { useObjectsActionContext } from './ObjectsActionHooks';
 import type { ObjectsActionSpec } from './ObjectsActionSpec';
@@ -17,8 +16,10 @@ interface SelectionActionsProps {
     allowMutations?: boolean;
     allowDelete?: boolean;
     /**
-     * Opt-in: shows the "Start Workflow" action. Defaults to `false` so it never leaks to read-only
-     * surfaces — callers must pass a permission-gated value (e.g. `canRunWorkflow(perms)`).
+     * Opt-in: shows the "Start Workflow" entry in the actions menu. Defaults to `false` so it never
+     * leaks to read-only surfaces — callers must pass a permission-gated value (e.g.
+     * `canRunWorkflow(perms)`). Running a workflow is its own permission, so this is deliberately
+     * separate from `allowMutations`.
      */
     allowWorkflowRun?: boolean;
 }
@@ -52,11 +53,11 @@ export function SelectionActions({
                         </Button>
                     </div>
                 )}
-                {allowWorkflowRun && <StartWorkflowButton />}
                 <SelectionActionsPopover
                     selection={selection}
                     allowMutations={allowMutations}
                     allowDelete={allowDelete}
+                    allowWorkflowRun={allowWorkflowRun}
                 >
                     {(actions) =>
                         actions.length > 0 ? (
@@ -123,7 +124,9 @@ function SelectionActionsPopover({
     children,
     allowMutations = true,
     allowDelete = true,
-}: SelectionActionsPopoverProps & Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete'>>) {
+    allowWorkflowRun = false,
+}: SelectionActionsPopoverProps &
+    Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>) {
     const context = useObjectsActionContext();
     const executeAction = (action: ObjectsActionSpec) => {
         context.run(action.id);
@@ -131,6 +134,7 @@ function SelectionActionsPopover({
     const actions = getAvailableActions(context.actions, selection, {
         allowMutations,
         allowDelete,
+        allowWorkflowRun,
     });
     const trigger = children(actions);
 
@@ -169,7 +173,7 @@ function PopoverBody({ executeAction, actions }: PopoverBodyProps) {
 function getAvailableActions(
     actions: ObjectsActionSpec[],
     selection: DocumentSelection,
-    permissions: Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete'>>,
+    permissions: Required<Pick<SelectionActionsProps, 'allowMutations' | 'allowDelete' | 'allowWorkflowRun'>>,
 ): ObjectsActionSpec[] {
     if (!selection?.hasSelection()) {
         return [ExportPropertiesAction];
@@ -181,6 +185,9 @@ function getAvailableActions(
         }
         if (action.id === 'delete' || action.id === 'deleteFromCollections') {
             return permissions.allowDelete;
+        }
+        if (action.id === 'runIntake') {
+            return permissions.allowWorkflowRun;
         }
         if (action.id === 'changeType' || action.id === 'addToCollection' || action.id === 'removeFromCollection') {
             return permissions.allowMutations;

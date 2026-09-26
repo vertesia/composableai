@@ -77,7 +77,12 @@ import {
     RoleDefinitionArraySchema,
     SystemRoleDefinitionArraySchema,
 } from './access-control.js';
-import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
+import {
+    AccountApiVersionPolicySchema,
+    AccountSchema,
+    StripeBillingStatusResponseSchema,
+    UpdateAccountPayloadSchema,
+} from './account.js';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
 import * as AgentCommunicationSchemas from './agent-communication.js';
 import * as AgentRunSchemas from './agent-runs.js';
@@ -364,6 +369,22 @@ import {
     WorkflowExecutionStatusSchema,
 } from './document-processing.js';
 import {
+    EmbeddingBatchApplyRequestSchema,
+    EmbeddingBatchApplyResponseSchema,
+    EmbeddingBatchCapabilityRequestSchema,
+    EmbeddingBatchCapabilityResponseSchema,
+    EmbeddingBatchCreateRequestSchema,
+    EmbeddingBatchJobRequestSchema,
+    EmbeddingBatchJobResponseSchema,
+    EmbeddingBatchPrepareRequestSchema,
+    EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchProviderStateSchema,
+    EmbeddingBatchRenditionPageRequestSchema,
+    EmbeddingBatchRenditionPageResponseSchema,
+    EmbeddingBatchRunStateSchema,
+    EmbeddingBatchRunSummarySchema,
+    EmbeddingBatchSubjobSchema,
+    EmbeddingBatchUpdateRequestSchema,
     EmbeddingsApiAudioInputSchema,
     EmbeddingsApiImageInputSchema,
     EmbeddingsApiInputSchema,
@@ -373,6 +394,7 @@ import {
     EmbeddingsApiVideoInputSchema,
     EmbeddingsStatusResponseSchema,
     ProjectConfigurationEmbeddingEnablePayloadSchema,
+    RecalculateEmbeddingsQuerySchema,
 } from './embeddings.js';
 import {
     EnableEnvironmentModelPayloadSchema,
@@ -809,6 +831,7 @@ import * as WorkflowRunSchemas from './workflow-runs.js';
  * group approaches the proven-safe size.
  */
 const IAM_AND_ACCOUNT_SCHEMAS = {
+    AccountApiVersionPolicy: AccountApiVersionPolicySchema,
     Account: AccountSchema,
     UpdateAccountPayload: UpdateAccountPayloadSchema,
     StripeBillingStatusResponse: StripeBillingStatusResponseSchema,
@@ -1205,6 +1228,12 @@ const EXECUTION_RUN_SCHEMAS = {
     RunSearchQuery: RunSearchQuerySchema,
     RunListQuery: RunListQuerySchema,
     RunSearchPayload: RunSearchPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+// Split out of EXECUTION_RUN_SCHEMAS rather than grown in place: one literal covering both halves
+// infers a type too large for tsc to serialize into the declaration file (TS7056). The split is
+// purely structural — `mergeComponentGroups` and `ApiSchemaMap` see the same component set.
+const INTERACTION_EXECUTION_SCHEMAS = {
     // Executing an interaction, synchronously or as a workflow.
     InteractionExecutionPayload: InteractionExecutionPayloadSchema,
     NamedInteractionExecutionPayload: NamedInteractionExecutionPayloadSchema,
@@ -1463,7 +1492,24 @@ const INDEXING_SCHEMAS = {
 
 const EMBEDDING_ADMIN_SCHEMAS = {
     EmbeddingsStatusResponse: EmbeddingsStatusResponseSchema,
+    RecalculateEmbeddingsQuery: RecalculateEmbeddingsQuerySchema,
     ProjectConfigurationEmbeddingEnablePayload: ProjectConfigurationEmbeddingEnablePayloadSchema,
+    EmbeddingBatchProviderState: EmbeddingBatchProviderStateSchema,
+    EmbeddingBatchCapabilityRequest: EmbeddingBatchCapabilityRequestSchema,
+    EmbeddingBatchCapabilityResponse: EmbeddingBatchCapabilityResponseSchema,
+    EmbeddingBatchCreateRequest: EmbeddingBatchCreateRequestSchema,
+    EmbeddingBatchJobRequest: EmbeddingBatchJobRequestSchema,
+    EmbeddingBatchJobResponse: EmbeddingBatchJobResponseSchema,
+    EmbeddingBatchRunState: EmbeddingBatchRunStateSchema,
+    EmbeddingBatchRunSummary: EmbeddingBatchRunSummarySchema,
+    EmbeddingBatchSubjob: EmbeddingBatchSubjobSchema,
+    EmbeddingBatchPrepareRequest: EmbeddingBatchPrepareRequestSchema,
+    EmbeddingBatchPrepareResponse: EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchRenditionPageRequest: EmbeddingBatchRenditionPageRequestSchema,
+    EmbeddingBatchRenditionPageResponse: EmbeddingBatchRenditionPageResponseSchema,
+    EmbeddingBatchUpdateRequest: EmbeddingBatchUpdateRequestSchema,
+    EmbeddingBatchApplyRequest: EmbeddingBatchApplyRequestSchema,
+    EmbeddingBatchApplyResponse: EmbeddingBatchApplyResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const COMMAND_SCHEMAS = {
@@ -2256,6 +2302,7 @@ const API_SCHEMA_GROUPS = [
     INTERACTION_AUTHORING_SCHEMAS,
     AGENT_CONVERSATION_SCHEMAS,
     EXECUTION_RUN_SCHEMAS,
+    INTERACTION_EXECUTION_SCHEMAS,
     PROMPT_AUTHORING_SCHEMAS,
     PROJECT_TOOL_SCHEMAS,
     REMOTE_MCP_SCHEMAS,
@@ -2318,6 +2365,7 @@ type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof INTERACTION_AUTHORING_SCHEMAS &
     typeof AGENT_CONVERSATION_SCHEMAS &
     typeof EXECUTION_RUN_SCHEMAS &
+    typeof INTERACTION_EXECUTION_SCHEMAS &
     typeof PROMPT_AUTHORING_SCHEMAS &
     typeof PROJECT_TOOL_SCHEMAS &
     typeof REMOTE_MCP_SCHEMAS &
@@ -2435,7 +2483,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'QuotaStandingWindow',
     'QuotaStandingAdmissionClass',
     'QuotaTierResponse',
-    // The IAM closure. PrincipalContext is composed into PrincipalIdentity rather than hoisted,
+    // The IAM closure. AbacPrincipalContext is composed into PrincipalIdentity rather than hoisted,
     // so it has no component of its own to list.
     'User',
     'UpdateUserPayload',
@@ -2558,33 +2606,12 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     //
     // `JSONSchema` is deliberately absent: it is OPEN by design and by long-standing publication —
     // a JSON Schema carries keywords the type never enumerated. `JSONSchemaProperties` is a map.
-    'TextFallbackOptions',
-    'AzureFoundryChatOptions',
-    'ImagenOptions',
-    'VertexAIClaudeOptions',
-    'VertexAIGeminiOptions',
-    'VertexAIGeminiOmniVideoOptions',
-    'VertexAIGrokOptions',
-    'NovaCanvasOptions',
-    'BedrockConverseOptions',
-    'BedrockNovaOptions',
-    'BedrockMistralOptions',
-    'BedrockAI21Options',
-    'BedrockCohereCommandOptions',
-    'BedrockClaudeOptions',
-    'BedrockPalmyraOptions',
-    'BedrockGptOssOptions',
-    'TwelvelabsPegasusOptions',
-    'BedrockMantleResponsesOptions',
-    'BedrockMantleChatCompletionsOptions',
-    'BedrockMantleClaudeOptions',
-    'OpenAiThinkingOptions',
-    'OpenAiTextOptions',
-    'OpenAiDalleOptions',
-    'OpenAiGptImageOptions',
-    'XAIGrokImageOptions',
-    'GroqOptions',
-    'MistralTextOptions',
+    // Derive membership so new provider schemas inherit this enforcement check automatically.
+    ...ModelOptionsSchema.options.map((schema) => {
+        const id = schema.meta()?.id;
+        if (!id) throw new Error('Model option schemas must declare a component id');
+        return id;
+    }),
     // The app-manifest leaves. Every object among them is published closed today, the nested `git`
     // block included, and it is spelled `strictObject` so the emission carries it directly. The five
     // enums take no `additionalProperties` at all.
@@ -2752,6 +2779,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DriftAnalysisResult',
     'DriftAnalysisProgress',
     'EmbeddingsStatusResponse',
+    'EmbeddingBatchRunSummary',
+    'RecalculateEmbeddingsQuery',
     'ProjectConfigurationEmbeddingEnablePayload',
     'GenericCommandResponse',
     'DriftAnalysisStatusResponse',
@@ -3384,13 +3413,25 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
  * divergence. Note that `.refine()` is silently DROPPED rather than rejected, so refinements must
  * not be used to express contract rules — they would be invisible to both the spec and AJV.
  */
-function emitRawSchemas(): Record<string, unknown> {
-    return Object.fromEntries(
-        Object.entries(API_SCHEMAS).map(([name, schema]) => [
-            name,
-            z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' }),
-        ]),
+function emitSchema(name: string, schema: z.ZodType): unknown {
+    const emitted = z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' }) as Record<string, unknown>;
+    const rootRef = emitted.$ref;
+    const defs = emitted.$defs;
+    const expectedRef = `#/$defs/${name}`;
+    if (rootRef !== expectedRef || !defs || typeof defs !== 'object' || Array.isArray(defs)) return emitted;
+
+    const root = (defs as Record<string, unknown>)[name];
+    if (!root || typeof root !== 'object' || Array.isArray(root)) return emitted;
+    const remainingDefs = Object.fromEntries(
+        Object.entries(defs as Record<string, unknown>).filter(([id]) => id !== name),
     );
+    return Object.keys(remainingDefs).length === 0
+        ? root
+        : { ...(root as Record<string, unknown>), $defs: remainingDefs };
+}
+
+function emitRawSchemas(): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitSchema(name, schema)]));
 }
 
 /**

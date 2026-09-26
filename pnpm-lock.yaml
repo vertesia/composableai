@@ -15,6 +15,9 @@ catalogs:
     typescript-legacy:
       specifier: npm:typescript@6.0.3
       version: 6.0.3
+    zod:
+      specifier: 4.6.5
+      version: 4.6.5
 
 overrides:
   vitest@>=2.1.0 <4.1.11: 4.1.11
@@ -251,8 +254,8 @@ importers:
   llumiverse/common:
     dependencies:
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -349,8 +352,8 @@ importers:
         specifier: ^5.2.3
         version: 5.2.3
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@hono/node-server':
         specifier: ^2.1.0
@@ -522,8 +525,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.20.0)
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -812,8 +815,8 @@ importers:
         specifier: ^6.2.8
         version: 6.2.8
       zod:
-        specifier: ^4.4.3
-        version: 4.4.3
+        specifier: 'catalog:'
+        version: 4.6.5
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -7434,8 +7437,8 @@ packages:
     resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
     engines: {node: '>=18'}
 
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+  zod@4.6.5:
+    resolution: {integrity: sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -14072,6 +14075,6 @@ snapshots:
 
   yoctocolors@2.1.2: {}
 
-  zod@4.4.3: {}
+  zod@4.6.5: {}
 
   zwitch@2.0.4: {}

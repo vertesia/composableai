@@ -20,13 +20,13 @@ export interface McpConnectionGroup {
     memberIds: string[];
     /** Collection names represented by this row. */
     memberNames: string[];
-    authType: 'oauth' | 'api_key';
+    authType: 'none' | 'oauth' | 'api_key';
     oauthGrantType?: 'authorization_code' | 'client_credentials';
     authStatus?: OAuthAuthStatus;
 }
 
 /**
- * Loads the project's installed authenticated MCP tool collections and resolves their status.
+ * Loads the project's installed MCP tool collections and resolves their status.
  *
  * Shared by the MCP connections button (badge count) and dialog (list) so the data is
  * fetched once and refreshed together after connect/disconnect.
@@ -57,8 +57,10 @@ export function useMcpConnections() {
                 const mcpCollections = inst.manifest.tool_collections
                     .map((c) => normalizeToolCollection(c))
                     .filter((c): c is MCPToolCollectionObject => c.type === 'mcp');
-                const oauthCollections = mcpCollections.filter((c) => c.auth !== 'api_key' && oauthIds.includes(c.id));
-                const apiKeyCollections = mcpCollections.filter((c) => c.auth === 'api_key');
+                const oauthCollections = mcpCollections.filter(
+                    (c) => c.auth !== 'none' && c.auth !== 'api_key' && oauthIds.includes(c.id),
+                );
+                const directCollections = mcpCollections.filter((c) => c.auth === 'none' || c.auth === 'api_key');
 
                 const providerMap = new Map<string, MCPToolCollectionObject[]>();
                 const oauthAppMap = new Map<string, MCPToolCollectionObject[]>();
@@ -124,16 +126,16 @@ export function useMcpConnections() {
                     });
                 }
 
-                for (const col of apiKeyCollections) {
+                for (const col of directCollections) {
                     allGroups.push({
-                        key: `${inst.id}:api-key:${col.id}`,
+                        key: `${inst.id}:${col.auth}:${col.id}`,
                         appId: inst.id,
                         appName: inst.manifest.title || inst.manifest.name,
                         label: col.name,
                         representativeId: col.id,
                         memberIds: [col.id],
                         memberNames: [col.name],
-                        authType: 'api_key',
+                        authType: col.auth === 'none' ? 'none' : 'api_key',
                     });
                 }
             }
@@ -155,6 +157,8 @@ export function useMcpConnections() {
             const statusRequestsByApp = new Map<string, Promise<OAuthAuthStatus[]>>();
             const groupsWithStatus = await Promise.all(
                 allGroups.map(async (group) => {
+                    // Anonymous servers are available without a credential status lookup.
+                    if (group.authType === 'none') return group;
                     try {
                         let statusRequest = statusRequestsByApp.get(group.appId);
                         if (!statusRequest) {
@@ -219,15 +223,19 @@ export function toggleGroupDisabled(
     return Array.from(current);
 }
 
+/** Anonymous servers are available without authentication; other modes require valid credentials. */
+export function isGroupConnected(group: McpConnectionGroup): boolean {
+    return group.authType === 'none' || group.authStatus?.authenticated === true;
+}
+
 /** Count connected MCP groups that are enabled for the current conversation. */
 export function countConnectedActiveGroups(groups: McpConnectionGroup[], disabled?: string[]): number {
-    return groups.filter((group) => group.authStatus?.authenticated === true && !isGroupDisabled(group, disabled))
-        .length;
+    return groups.filter((group) => isGroupConnected(group) && !isGroupDisabled(group, disabled)).length;
 }
 
 /** Names of connected MCP groups that are enabled for the current conversation. */
 export function getConnectedActiveGroupLabels(groups: McpConnectionGroup[], disabled?: string[]): string[] {
     return groups
-        .filter((group) => group.authStatus?.authenticated === true && !isGroupDisabled(group, disabled))
+        .filter((group) => isGroupConnected(group) && !isGroupDisabled(group, disabled))
         .map((group) => group.label);
 }

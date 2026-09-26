@@ -1556,7 +1556,7 @@ function ModernAgentConversationInner({
         showInput,
         showSlidingPanel,
         setShowSlidingPanel,
-    } = useAgentPlans(messages, interactive, isModal);
+    } = useAgentPlans(messages, interactive);
 
     const {
         openDocuments,
@@ -1588,6 +1588,9 @@ function ModernAgentConversationInner({
     const conversationRef = useRef<HTMLDivElement | null>(null);
     const conversationLayoutRef = useRef<HTMLDivElement | null>(null);
     const [isSending, setIsSending] = useState(false);
+    // Request-input overlays replace the composer while the user chooses a response. Keep the
+    // ordinary composer draft here so that temporary unmount does not discard it.
+    const [composerValue, setComposerValue] = useState('');
     const [isCompactingContext, setIsCompactingContext] = useState(false);
     const [internalViewMode, setInternalViewMode] = useState<AgentConversationViewMode>('sliding');
     const viewMode = controlledViewMode ?? internalViewMode;
@@ -1940,9 +1943,10 @@ function ModernAgentConversationInner({
     // Unified right panel state
     // ────────────────────────────────────────────
     type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
-    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>(
-        conversationContent || conversationTab ? 'conversation' : 'plan',
+    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab | undefined>(
+        conversationContent || conversationTab ? 'conversation' : undefined,
     );
+    const defaultRightPanelTab = plans.length > 0 || panelWorkstreams.length === 0 ? 'plan' : 'workstreams';
     const [selectedArtifactPath, setSelectedArtifactPath] = useState<string | null>(null);
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
@@ -2913,6 +2917,8 @@ function ModernAgentConversationInner({
                                     {composerContext}
                                     <MessageInput
                                         onSend={handleSendMessage}
+                                        value={composerValue}
+                                        onValueChange={setComposerValue}
                                         onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
                                         approvalModeSlot={
                                             interactive && toolApprovalMode ? (
@@ -3091,8 +3097,8 @@ function ModernAgentConversationInner({
                                     conversationContent={conversationTab ? conversationAreaJsx : conversationContent}
                                     // Panel control
                                     onClose={handleCloseRightPanel}
-                                    defaultTab={rightPanelTab}
-                                    activeTab={rightPanelTab}
+                                    defaultTab={rightPanelTab ?? defaultRightPanelTab}
+                                    activeTab={rightPanelTab ?? defaultRightPanelTab}
                                     onTabChange={setRightPanelTab}
                                 />
                             </div>

@@ -1,10 +1,10 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
-import type { PrincipalContext, PrincipalIdentity } from '../principal-context.js';
+import type { AbacPrincipalContext, PrincipalIdentity } from '../principal-context.js';
 import type { UpdateUserPayload, User } from '../user.js';
 import type { JsonObject } from './adapter.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
-import type { PrincipalContextFromSchema, UserArrayFromSchema } from './user.js';
+import type { AbacPrincipalContextFromSchema, UserArrayFromSchema } from './user.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -27,19 +27,23 @@ const VALID_USER = {
 describe('gate 1 — the schema is the single source of truth for the public IAM types', () => {
     it('publishes the exact schema-derived type, not a hand-written twin', () => {
         assertType<Equals<UserArrayFromSchema, User[]>>(true);
-        assertType<Equals<PrincipalContext, PrincipalContextFromSchema>>(true);
+        assertType<Equals<AbacPrincipalContext, AbacPrincipalContextFromSchema>>(true);
         expect(true).toBe(true);
     });
 
-    it('derives the inherited principal fields rather than restating them', () => {
-        // PrincipalIdentity used to `extends PrincipalContext`, so composing the schemas is what
-        // keeps the five inherited fields from becoming a twin one level down — the failure mode
-        // this batch was scoped to avoid.
-        assertType<Equals<PrincipalIdentity['clearance'], PrincipalContext['clearance']>>(true);
-        assertType<Equals<PrincipalIdentity['compartments'], PrincipalContext['compartments']>>(true);
-        assertType<Equals<PrincipalIdentity['email'], PrincipalContext['email']>>(true);
-        assertType<Equals<PrincipalIdentity['tags'], PrincipalContext['tags']>>(true);
-        assertType<Equals<PrincipalIdentity['properties'], PrincipalContext['properties']>>(true);
+    it('derives the identity fields from the ABAC context rather than restating them', () => {
+        // PrincipalIdentity `extends AbacPrincipalContext`, so composing the schemas is what keeps
+        // the inherited fields from becoming a twin one level down — the failure mode this batch was
+        // scoped to avoid. `kind` and `id` are part of the ABAC context itself (resolvable as
+        // `$principal.*`), not identity-only metadata.
+        assertType<Equals<PrincipalIdentity['kind'], AbacPrincipalContext['kind']>>(true);
+        assertType<Equals<PrincipalIdentity['id'], AbacPrincipalContext['id']>>(true);
+        assertType<Equals<PrincipalIdentity['clearance'], AbacPrincipalContext['clearance']>>(true);
+        assertType<Equals<PrincipalIdentity['compartments'], AbacPrincipalContext['compartments']>>(true);
+        assertType<Equals<PrincipalIdentity['email'], AbacPrincipalContext['email']>>(true);
+        assertType<Equals<PrincipalIdentity['tags'], AbacPrincipalContext['tags']>>(true);
+        assertType<Equals<PrincipalIdentity['properties'], AbacPrincipalContext['properties']>>(true);
+        assertType<Equals<PrincipalIdentity['kind'], 'user' | 'apikey'>>(true);
         assertType<Equals<PrincipalIdentity['id'], string>>(true);
         expect(true).toBe(true);
     });
@@ -80,20 +84,22 @@ describe('gate 1 — the schema is the single source of truth for the public IAM
 });
 
 describe('gate 2 — the published components match the closure the types come from', () => {
-    it('does not hoist PrincipalContext into a component of its own', () => {
+    it('does not hoist AbacPrincipalContext into a component of its own', () => {
         // It is a public TYPE but has never been a published component. Hoisting it would add a
         // $ref to PrincipalIdentity that every generated client would have to follow.
-        expect(Object.keys(ApiSchemaComponents)).not.toContain('PrincipalContext');
+        expect(Object.keys(ApiSchemaComponents)).not.toContain('AbacPrincipalContext');
         const props = ApiSchemaComponents.PrincipalIdentity.properties as Record<string, JsonObject>;
+        expect(props.kind).toEqual({ type: 'string', enum: ['user', 'apikey'] });
         expect(props.clearance).toEqual({ type: 'number' });
         expect(props.id).toEqual({ type: 'string' });
     });
 
-    it('publishes the composed property order, id last', () => {
-        // `.extend()` appends, which is what `interface … extends …` produced and what the document
-        // already carries.
+    it('publishes the composed property order — kind and id first', () => {
+        // `AbacPrincipalContext` lists its discriminators (kind, id) ahead of the merged BLP
+        // attributes; PrincipalIdentity `.extend({})`s it, adding nothing, so the order is the
+        // context's own.
         const props = ApiSchemaComponents.PrincipalIdentity.properties as JsonObject;
-        expect(Object.keys(props)).toEqual(['clearance', 'compartments', 'email', 'tags', 'properties', 'id']);
+        expect(Object.keys(props)).toEqual(['kind', 'id', 'clearance', 'compartments', 'email', 'tags', 'properties']);
     });
 
     it('declares the timestamps the endpoint has always shipped', () => {

@@ -4,3 +4,4 @@ export * from './ConfirmAction';
 export * from './DeleteObjectsAction';
 export * from './ExportPropertiesAction';
 export * from './RemoveFromCollectionAction';
+export * from './RunIntakeAction';
