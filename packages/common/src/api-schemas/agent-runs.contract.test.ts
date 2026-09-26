@@ -238,3 +238,34 @@ describe('agent run evaluation API contracts', () => {
         expect(validateApiRequest('ListAgentRunsQuery', { evaluation_severity: ['unrated', 'high'] }).valid).toBe(true);
     });
 });
+
+describe('agent evaluation policy contracts', () => {
+    it.each(['disabled', 'opt_in', 'always_on'])('accepts project policy %s', (evaluation_policy) => {
+        expect(validateApiRequest('UpdateProjectConfigurationPayload', { agent: { evaluation_policy } }).valid).toBe(
+            true,
+        );
+    });
+    it('rejects unsupported policies', () => {
+        expect(
+            validateApiRequest('UpdateProjectConfigurationPayload', { agent: { evaluation_policy: 'sample' } }).valid,
+        ).toBe(false);
+    });
+    it.each([true, false])('accepts per-run evaluate=%s', (evaluate) => {
+        expect(validateApiRequest('CreateAgentRunPayload', { interaction: 'sys:GeneralAgent', evaluate }).valid).toBe(
+            true,
+        );
+        expect(
+            validateApiRequest('RecordAgentRunPayload', {
+                interaction: 'sys:GeneralAgent',
+                workflow_id: 'workflow',
+                first_workflow_run_id: 'run',
+                evaluate,
+            }).valid,
+        ).toBe(true);
+    });
+    it('rejects a non-boolean evaluation request', () => {
+        expect(
+            validateApiRequest('CreateAgentRunPayload', { interaction: 'sys:GeneralAgent', evaluate: 'yes' }).valid,
+        ).toBe(false);
+    });
+});

@@ -16,6 +16,7 @@ import {
     RunTypeSchema,
 } from './app-lifecycle.js';
 import {
+    AgentEvaluateRequestSchema,
     AgentResourceReferenceSchema,
     AgentSearchScopeSchema,
     AgentToolApprovalModeSchema,
@@ -92,7 +93,7 @@ const TelemetryProducerSchema = z.strictObject({
 });
 
 export const JudgeGateReasonSchema = z
-    .enum(['signal', 'sample'])
+    .enum(['signal', 'sample', 'opt_in', 'always_on'])
     .meta({ id: 'JudgeGateReason', description: 'Why the judge looked at a run.' });
 
 export const JudgeOutcomeSchema = z
@@ -781,6 +782,7 @@ export const AutonomousRunResponseSchema = z
             .array(z.string())
             .meta({ description: 'Lessons learned from the conversation (extracted at completion)' })
             .optional(),
+        evaluate: AgentEvaluateRequestSchema,
         evaluation: AgentRunEvaluationSchema.meta({ description: 'Evaluation summary of the run.' }).optional(),
         feedback: z
             .array(AgentRunFeedbackEntrySchema)
@@ -934,6 +936,7 @@ export const AgentRunSchema = z
             .array(z.string())
             .meta({ description: 'Lessons learned from the conversation (extracted at completion)' })
             .optional(),
+        evaluate: AgentEvaluateRequestSchema,
         evaluation: AgentRunEvaluationSchema.meta({ description: 'Evaluation summary of the run.' }).optional(),
         feedback: z
             .array(AgentRunFeedbackEntrySchema)
@@ -966,6 +969,7 @@ export const CreateAgentRunPayloadSchema = z
     .strictObject({
         interaction: z.string().meta({ description: 'Interaction ID or code (e.g. "sys:generic_question").' }),
         ...ConversationEnrichmentFields,
+        evaluate: AgentEvaluateRequestSchema,
         data: z.looseObject({}).meta({ description: 'Input parameters, typed per interaction' }).optional(),
         config: InteractionExecutionConfigurationSchema.meta({
             description: 'Execution configuration (environment, model, model_options, etc.)',
@@ -1473,6 +1477,7 @@ export const RecordAgentRunPayloadSchema = z
         run_kind: z.literal('agent').optional(),
         interaction: z.string(),
         ...ConversationEnrichmentFields,
+        evaluate: AgentEvaluateRequestSchema,
         parent_run_id: z.string().optional(),
         workstream_id: z.string().optional(),
         schedule_id: z.string().optional(),

@@ -146,6 +146,10 @@ export const AgentCheckpointConfigurationSchema = z
 
 export const AgentProjectConfigurationSchema = z
     .strictObject({
+        evaluation_policy: z.enum(['disabled', 'opt_in', 'always_on']).optional().meta({
+            description:
+                'LLM judging policy. Defaults to always_on when omitted. disabled prevents judging even when requested; opt_in requires evaluate=true on the run; always_on judges every eligible run without sampling. Deterministic diagnostics are unaffected.',
+        }),
         checkpoint: AgentCheckpointConfigurationSchema.optional().meta({
             description: 'Conversation checkpoint (context compaction) tuning.',
         }),

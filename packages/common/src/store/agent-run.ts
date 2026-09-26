@@ -261,6 +261,7 @@ export interface RecordAgentRunPayload<TData = Record<string, unknown>> extends 
     topic?: string;
     generate_topic?: boolean;
     generate_lessons?: boolean;
+    evaluate?: boolean;
     first_workflow_run_id: string;
     schedule_id?: string;
     visibility?: ConversationVisibility;

@@ -5192,6 +5192,15 @@
   "AgentProjectConfiguration": {
     "type": "object",
     "properties": {
+      "evaluation_policy": {
+        "type": "string",
+        "enum": [
+          "disabled",
+          "opt_in",
+          "always_on"
+        ],
+        "description": "LLM judging policy. Defaults to always_on when omitted. disabled prevents judging even when requested; opt_in requires evaluate=true on the run; always_on judges every eligible run without sampling. Deterministic diagnostics are unaffected."
+      },
       "checkpoint": {
         "$ref": "#/components/schemas/AgentCheckpointConfiguration",
         "description": "Conversation checkpoint (context compaction) tuning."
@@ -14008,6 +14017,10 @@
       "generate_lessons": {
         "type": "boolean",
         "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
+      },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "app_version": {
         "type": "string",
@@ -34017,7 +34030,9 @@
     "type": "string",
     "enum": [
       "signal",
-      "sample"
+      "sample",
+      "opt_in",
+      "always_on"
     ],
     "description": "Why the judge looked at a run."
   },
@@ -34375,6 +34390,10 @@
         },
         "description": "Lessons learned from the conversation (extracted at completion)"
       },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
+      },
       "evaluation": {
         "$ref": "#/components/schemas/AgentRunEvaluation",
         "description": "Evaluation summary of the run."
@@ -34649,6 +34668,10 @@
         },
         "description": "Lessons learned from the conversation (extracted at completion)"
       },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
+      },
       "evaluation": {
         "$ref": "#/components/schemas/AgentRunEvaluation",
         "description": "Evaluation summary of the run."
@@ -34719,6 +34742,10 @@
       "generate_lessons": {
         "type": "boolean",
         "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
+      },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "data": {
         "type": "object",
@@ -35626,6 +35653,10 @@
       "generate_lessons": {
         "type": "boolean",
         "description": "Whether to generate lessons automatically at completion. Defaults to true; conversation content remains searchable when disabled."
+      },
+      "evaluate": {
+        "type": "boolean",
+        "description": "Request LLM judging when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on."
       },
       "parent_run_id": {
         "type": "string"

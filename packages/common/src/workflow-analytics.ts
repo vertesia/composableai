@@ -443,7 +443,7 @@ export interface FeedbackEvent extends BaseAgentEvent {
 }
 
 /** Why the judge looked at a run. */
-export type JudgeGateReason = 'signal' | 'sample';
+export type JudgeGateReason = 'signal' | 'sample' | 'opt_in' | 'always_on';
 
 /** What the judge run produced. */
 export type JudgeOutcome = 'judged' | 'skipped_unarchived' | 'failed';
