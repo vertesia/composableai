@@ -26,14 +26,14 @@
     "scripts": {
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run check:locales && pnpm run check:rtl-classes && pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "build": "pnpm run check:locales && pnpm run check:rtl-classes && pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "lint": "biome lint src && pnpm run check:rtl-classes",
         "lint:fix": "biome lint --write src",
         "check:locales": "node scripts/check-locales.mjs",
         "check:rtl-classes": "node scripts/check-rtl-classes.mjs --mode=strict",
         "test": "vitest run",
         "test:watch": "vitest",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit"
     },
     "dependencies": {
         "@floating-ui/dom": "^1.8.0",

@@ -15,9 +15,9 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "license": "Apache-2.0",

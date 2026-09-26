@@ -28,9 +28,9 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json",
         "build:native:macos": "bun build ./src/index.ts --compile --target=bun-darwin-arm64 --define VERTESIA_CLI_RUNTIME='\"native darwin-arm64\"' --outfile ../cli-darwin-arm64/bin/vertesia && bun build ./src/index.ts --compile --target=bun-darwin-x64 --define VERTESIA_CLI_RUNTIME='\"native darwin-x64\"' --outfile ../cli-darwin-x64/bin/vertesia",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },

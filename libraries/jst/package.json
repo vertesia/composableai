@@ -25,10 +25,10 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "build": "tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "build": "tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "typecheck": "tsc --noEmit",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
+        "typecheck": "tsc --checkers 1 --noEmit",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit"
     },
     "peerDependencies": {
         "handlebars": ">=4.7.9"

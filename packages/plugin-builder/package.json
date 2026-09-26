@@ -23,7 +23,7 @@
     ],
     "scripts": {
         "lint": "biome lint src",
-        "build": "tsc -p tsconfig.json",
+        "build": "tsc --checkers 1 -p tsconfig.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "devDependencies": {
