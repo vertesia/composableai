@@ -1,5 +1,15 @@
 import { type ApiKey, PrincipalType, type User, type UserGroup } from '@vertesia/common';
-import { Avatar, errorMessage, Popover, PopoverContent, PopoverTrigger, Table, useFetch } from '@vertesia/ui/core';
+import {
+    Avatar,
+    CloudIcon,
+    errorMessage,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    SvgAvatar,
+    Table,
+    useFetch,
+} from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { Users, Users2 } from 'lucide-react';
@@ -71,6 +81,14 @@ function AvatarPlaceholder() {
     return <div className="size-8" />;
 }
 
+function CloudAvatar({ size, color, className }: { size: InfoProps['size']; color: string; className?: string }) {
+    return (
+        <SvgAvatar size={size} color={color} className={`p-1.5 ${className || ''}`}>
+            <CloudIcon className="size-full" />
+        </SvgAvatar>
+    );
+}
+
 interface InfoProps {
     showTitle?: boolean;
     size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -116,7 +134,7 @@ function ServiceAccountAvatar({ accountId, showTitle = false, size = 'md' }: Ser
     return (
         <UserPopoverPanel title={t('user.serviceAccount')} description={description}>
             <div className="flex flex-row items-center gap-2">
-                <Avatar name="SA" color="bg-attention text-attention" size={size} />
+                <CloudAvatar size={size} color="bg-attention text-attention" />
                 {showTitle && (
                     <div className="text-sm font-semibold ps-2 truncate">
                         {t('user.serviceAccount')} : ~{accountId.slice(-6)}
@@ -145,11 +163,10 @@ function EmailAgentAvatar({ email, showTitle = false, size = 'md' }: EmailAgentA
         <UserPopoverPanel title={'Email Agent'} description={description}>
             <div className="flex items-center gap-2">
                 <div className="flex items-center -space-x-2">
-                    <Avatar
-                        name="AG"
-                        color="bg-attention text-attention"
-                        className="px-[5px] border-2 border-background"
+                    <CloudAvatar
                         size={size}
+                        color="bg-attention text-attention"
+                        className="border-2 border-background"
                     />
                     <Avatar name={email} size={size} className="border-2 border-background" />
                 </div>
@@ -226,12 +243,7 @@ function AgentAvatar({
         <UserPopoverPanel title={_title} description={description}>
             <div className="flex items-center gap-2">
                 <div className="flex items-center -space-x-2">
-                    <Avatar
-                        name="AG"
-                        color="bg-info text-info"
-                        className="px-[5px] border-2 border-background"
-                        size={size}
-                    />
+                    <CloudAvatar size={size} color="bg-info text-info" className="border-2 border-background" />
                     {user && (
                         <Avatar
                             src={user.picture}
