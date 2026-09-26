@@ -75,7 +75,7 @@ function PropertyElement({ name, value }: PropertyElementProps) {
             return (
                 <div className="vprose prose">
                     <PropertyTitle name={name} />
-                    <div className="vvprose prose prose-sm">{info.value}</div>
+                    <div className="vprose prose prose-sm">{info.value}</div>
                 </div>
             );
         case ValueType.Array:

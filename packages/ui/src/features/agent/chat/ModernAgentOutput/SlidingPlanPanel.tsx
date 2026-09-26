@@ -74,7 +74,7 @@ export default function SlidingPlanPanel({ plan, workstreamStatus, isOpen, onClo
                                 if (status === 'in_progress') {
                                     StatusIcon = Clock;
                                     statusColor = 'text-info';
-                                    bgColor = 'bg-info/50 bg-info/10';
+                                    bgColor = 'bg-info';
                                 } else if (status === 'completed') {
                                     StatusIcon = CheckCircle;
                                     statusColor = 'text-success';

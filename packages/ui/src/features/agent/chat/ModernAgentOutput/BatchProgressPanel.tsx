@@ -130,7 +130,7 @@ function BatchProgressPanelComponent({
                 tabIndex={0}
                 aria-expanded={isExpanded}
                 className={cn(
-                    'flex items-center justify-between px-4 py-2 border-b border-border/80 bg-info/50 bg-info/10 cursor-pointer',
+                    'flex items-center justify-between px-4 py-2 border-b border-border/80 bg-info cursor-pointer',
                     headerClassName,
                 )}
                 onClick={() => setIsExpanded(!isExpanded)}
