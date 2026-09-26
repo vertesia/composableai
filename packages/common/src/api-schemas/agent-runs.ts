@@ -1041,6 +1041,13 @@ export const CreateAgentRunPayloadSchema = z
                 "Structured checkpoint override for this run. Field-wise it takes precedence over the interaction's `agent_runner_options.checkpoint` and the project's `configuration.agent.checkpoint`; the legacy `checkpoint_tokens` above still wins over everything when set.",
         }).optional(),
         max_iterations: z.number().meta({ description: 'Maximum conversation iterations (default: 20)' }).optional(),
+        final_verification: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, a non-interactive free-form run takes one extra turn after its answer to check that the task is complete. Off by default. Not kept on restart or fork.',
+            })
+            .optional(),
         notify_endpoints: z.array(z.string()).meta({ description: 'Webhook URLs to notify on completion' }).optional(),
         debug_mode: z.boolean().meta({ description: 'Enable debug mode for verbose logging' }).optional(),
         started_by: z
