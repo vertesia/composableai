@@ -11,6 +11,8 @@
     "files": [
         "lib",
         "src",
+        "!src/**/*.test.*",
+        "!src/**/__tests__",
         "tsconfig.dist.json",
         "llms.txt"
     ],

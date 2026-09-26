@@ -10,7 +10,8 @@
     },
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "license": "Apache-2.0",
     "scripts": {

@@ -29,7 +29,8 @@
     "homepage": "https://docs.vertesiahq.com",
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "repository": {
         "type": "git",
