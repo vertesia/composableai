@@ -302,6 +302,9 @@ export function IntakePolicyEditor({
     const initialPolicy = objectType?.intake ?? value;
     const [editorValue, setEditorValue] = useState(() => stringifyPolicy(initialPolicy));
     const [savedValue, setSavedValue] = useState(() => stringifyPolicy(initialPolicy));
+    // Keep the form's structural draft while a field is temporarily outside schema bounds.
+    // Falling back to EMPTY_POLICY here would silently discard other intake settings on the next edit.
+    const [formDraftPolicy, setFormDraftPolicy] = useState<ContentTypeIntakePolicy | undefined>();
     const [validationMessage, setValidationMessage] = useState<string | undefined>(undefined);
     // Open on the first leading tab when a consumer supplies one (settings opens on General);
     // otherwise the policy sections start at their first tab.
@@ -379,6 +382,7 @@ export function IntakePolicyEditor({
                 const nextValue = stringifyPolicy(saved ?? policy);
                 setEditorValue(nextValue);
                 setSavedValue(nextValue);
+                setFormDraftPolicy(undefined);
                 onIntakeUpdate?.(saved ?? policy);
                 toast({
                     status: 'success',
@@ -414,6 +418,7 @@ export function IntakePolicyEditor({
 
     const onRevert = () => {
         setEditorValue(savedValue);
+        setFormDraftPolicy(undefined);
         editorRef.current?.setValue(savedValue);
         setValidationMessage(undefined);
     };
@@ -431,12 +436,14 @@ export function IntakePolicyEditor({
     const insertExample = (example: IntakeExample) => {
         const value = stringifyPolicy(example.value);
         setEditorValue(value);
+        setFormDraftPolicy(undefined);
         editorRef.current?.setValue(value);
         setValidationMessage(undefined);
         setActiveTab('classification');
     };
 
     const onFormChange = (policy: ContentTypeIntakePolicy) => {
+        setFormDraftPolicy(policy);
         setEditorValue(stringifyPolicy(policy));
         setValidationMessage(undefined);
     };
@@ -448,7 +455,7 @@ export function IntakePolicyEditor({
             return;
         }
         const nextTab = tab as IntakePolicyFormSection | 'json';
-        if (nextTab !== 'json' && !currentPolicy) {
+        if (nextTab !== 'json' && !currentPolicy && !formDraftPolicy) {
             setValidationMessage(t('intakePolicy.error.fixJsonBeforeForm'));
             setActiveTab('json');
             return;
@@ -526,7 +533,7 @@ export function IntakePolicyEditor({
 
     const policyTabs = createEditorTabs(
         t,
-        currentPolicy ?? EMPTY_POLICY,
+        formDraftPolicy ?? currentPolicy ?? EMPTY_POLICY,
         readonly,
         onFormChange,
         editorValue,
@@ -535,6 +542,7 @@ export function IntakePolicyEditor({
             beforeMount,
             onChange: (value) => {
                 setEditorValue(value);
+                setFormDraftPolicy(undefined);
                 setValidationMessage(undefined);
             },
             theme,
