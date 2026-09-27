@@ -1,51 +1,6 @@
-import type { z } from 'zod';
-import type { ProjectRefSchema } from './api-schemas/apikey.js';
-import type {
-    EmbeddingsStatusResponseSchema,
-    ProjectConfigurationEmbeddingEnablePayloadSchema,
-} from './api-schemas/embeddings.js';
-import type {
-    DriftAnalysisProgressSchema,
-    DriftAnalysisResultSchema,
-    DriftAnalysisStatusResponseSchema,
-    IndexingStatusResponseSchema,
-    ReindexAgentRunsPayloadSchema,
-    ReindexAgentRunsResponseSchema,
-    StartProjectReindexPayloadSchema,
-} from './api-schemas/indexing.js';
-import type {
-    CreateProjectPayloadFromSchema,
-    ListProjectsQuerySchema,
-    ProjectIntegrationListEntrySchema,
-    ProjectIntegrationListResponseSchema,
-    ProjectPluginsUpdatePayloadSchema,
-    ProjectSchema,
-    ProjectTagQuerySchema,
-    UpdateProjectConfigurationPayloadSchema,
-    UpdateProjectPayloadSchema,
-} from './api-schemas/project.js';
-import type {
-    AgentCheckpointConfigurationSchema,
-    AgentProjectConfigurationSchema,
-    BrowserUseProjectConfigurationSchema,
-    BrowserUseRiskPolicySchema,
-    BrowserUseScreenshotCaptureSchema,
-    ElasticsearchBackendSchema,
-    IntakeVisionProfileSettingsUpdateSchema,
-    ModalityDefaultsSchema,
-    ModelDefaultSchema,
-    ProjectConfigurationEmbeddingSchema,
-    ProjectConfigurationSchema,
-    ProjectIndexingConfigurationSchema,
-    ProjectIntakeConfigurationSchema,
-    ProjectIntakeSniffConfigurationSchema,
-    ProjectModelDefaultsSchema,
-    ProjectSearchPropertyMappingSchema,
-    ProjectSearchPropertyTypeSchema,
-    ProjectSearchTierSchema,
-    SystemDefaultsSchema,
-} from './api-schemas/project-configuration.js';
+import type { CreateProjectPayloadFromSchema } from './api-schemas/project.js';
 import type { AccountRef } from './user.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * `SystemRoles` lives in `./project-values.js` so the API schemas can read it without importing this
@@ -73,19 +28,19 @@ export interface PopulatedProjectRef {
 // The `restricted` flag's explanation lives in the schema's `.meta()`, which is what the published
 // component carries; it is no longer visible as TSDoc here, the same trade every other
 // schema-derived type in this package already makes.
-export type ProjectRef = z.infer<typeof ProjectRefSchema>;
+export type ProjectRef = Wire.ProjectRef;
 
-export type ProjectTagQuery = z.infer<typeof ProjectTagQuerySchema>;
+export type ProjectTagQuery = Wire.ProjectTagQuery;
 
-export type ListProjectsQuery = z.infer<typeof ListProjectsQuerySchema>;
+export type ListProjectsQuery = Wire.ListProjectsQuery;
 
 // ==========================================
 // Project Model Defaults Types
 // ==========================================
 
-export type ModelDefault = z.infer<typeof ModelDefaultSchema>;
+export type ModelDefault = Wire.ModelDefault;
 
-export type ModalityDefaults = z.infer<typeof ModalityDefaultsSchema>;
+export type ModalityDefaults = Wire.ModalityDefaults;
 
 /**
  * System interaction category enum.
@@ -137,13 +92,13 @@ export const SYSTEM_INTERACTION_CATEGORIES: Record<string, SystemInteractionCate
  * asserts that its keys are exactly the category union — a new category has to be added in both
  * places, and fails to compile until it is.
  */
-export type SystemDefaults = z.infer<typeof SystemDefaultsSchema>;
+export type SystemDefaults = Wire.SystemDefaults;
 
-export type ProjectModelDefaults = z.infer<typeof ProjectModelDefaultsSchema>;
+export type ProjectModelDefaults = Wire.ProjectModelDefaults;
 
-export type BrowserUseRiskPolicy = z.infer<typeof BrowserUseRiskPolicySchema>;
+export type BrowserUseRiskPolicy = Wire.BrowserUseRiskPolicy;
 
-export type BrowserUseScreenshotCapture = z.infer<typeof BrowserUseScreenshotCaptureSchema>;
+export type BrowserUseScreenshotCapture = Wire.BrowserUseScreenshotCapture;
 
 /**
  * Project defaults and caps for `browser_use` agent workstreams.
@@ -152,30 +107,30 @@ export type BrowserUseScreenshotCapture = z.infer<typeof BrowserUseScreenshotCap
  * interface. Nothing read it, and its descriptions had already drifted from the TSDoc the published
  * component was derived from — the schema module is now the only statement of the shape.
  */
-export type BrowserUseProjectConfiguration = z.infer<typeof BrowserUseProjectConfigurationSchema>;
+export type BrowserUseProjectConfiguration = Wire.BrowserUseProjectConfiguration;
 
 // ==========================================
 // Project Configuration
 // ==========================================
 
-export type ProjectSearchTier = z.infer<typeof ProjectSearchTierSchema>;
-export type ElasticsearchBackend = z.infer<typeof ElasticsearchBackendSchema>;
+export type ProjectSearchTier = Wire.ProjectSearchTier;
+export type ElasticsearchBackend = Wire.ElasticsearchBackend;
 
-export type ProjectIntakeSniffConfiguration = z.infer<typeof ProjectIntakeSniffConfigurationSchema>;
+export type ProjectIntakeSniffConfiguration = Wire.ProjectIntakeSniffConfiguration;
 
-export type ProjectIntakeConfiguration = z.infer<typeof ProjectIntakeConfigurationSchema>;
+export type ProjectIntakeConfiguration = Wire.ProjectIntakeConfiguration;
 
-export type ProjectConfiguration = z.infer<typeof ProjectConfigurationSchema>;
+export type ProjectConfiguration = Wire.ProjectConfiguration;
 
-export type AgentProjectConfiguration = z.infer<typeof AgentProjectConfigurationSchema>;
+export type AgentProjectConfiguration = Wire.AgentProjectConfiguration;
 
-export type AgentCheckpointConfiguration = z.infer<typeof AgentCheckpointConfigurationSchema>;
+export type AgentCheckpointConfiguration = Wire.AgentCheckpointConfiguration;
 
-export type ProjectSearchPropertyType = z.infer<typeof ProjectSearchPropertyTypeSchema>;
+export type ProjectSearchPropertyType = Wire.ProjectSearchPropertyType;
 
-export type ProjectSearchPropertyMapping = z.infer<typeof ProjectSearchPropertyMappingSchema>;
+export type ProjectSearchPropertyMapping = Wire.ProjectSearchPropertyMapping;
 
-export type ProjectIndexingConfiguration = z.infer<typeof ProjectIndexingConfigurationSchema>;
+export type ProjectIndexingConfiguration = Wire.ProjectIndexingConfiguration;
 
 // export interface ProjectConfigurationEmbeddings {
 //     environment: string;
@@ -201,30 +156,28 @@ export const SearchTypes = {
     ...FullTextType,
 } as const;
 
-export type ProjectConfigurationEmbedding = z.infer<typeof ProjectConfigurationEmbeddingSchema>;
+export type ProjectConfigurationEmbedding = Wire.ProjectConfigurationEmbedding;
 
-export type ProjectConfigurationEmbeddingEnablePayload = z.infer<
-    typeof ProjectConfigurationEmbeddingEnablePayloadSchema
->;
+export type ProjectConfigurationEmbeddingEnablePayload = Wire.ProjectConfigurationEmbeddingEnablePayload;
 
-export type Project = z.infer<typeof ProjectSchema>;
+export type Project = Wire.Project;
 
-export type ProjectPluginsUpdatePayload = z.infer<typeof ProjectPluginsUpdatePayloadSchema>;
+export type ProjectPluginsUpdatePayload = Wire.ProjectPluginsUpdatePayload;
 
 export const ProjectRefPopulate = 'id name account';
 
-export type EmbeddingsStatusResponse = z.infer<typeof EmbeddingsStatusResponseSchema>;
+export type EmbeddingsStatusResponse = Wire.EmbeddingsStatusResponse;
 
 /**
  * Response from indexing status endpoint
  */
-export type IndexingStatusResponse = z.infer<typeof IndexingStatusResponseSchema>;
+export type IndexingStatusResponse = Wire.IndexingStatusResponse;
 
-export type StartProjectReindexPayload = z.infer<typeof StartProjectReindexPayloadSchema>;
+export type StartProjectReindexPayload = Wire.StartProjectReindexPayload;
 
-export type ReindexAgentRunsPayload = z.infer<typeof ReindexAgentRunsPayloadSchema>;
+export type ReindexAgentRunsPayload = Wire.ReindexAgentRunsPayload;
 
-export type ReindexAgentRunsResponse = z.infer<typeof ReindexAgentRunsResponseSchema>;
+export type ReindexAgentRunsResponse = Wire.ReindexAgentRunsResponse;
 
 // ============================================================================
 // Internal indexing types (used by Temporal workflows)
@@ -625,18 +578,18 @@ export interface AnalyzeDriftBatchResult {
     sample_stale_ids: string[];
 }
 
-export type DriftAnalysisProgress = z.infer<typeof DriftAnalysisProgressSchema>;
+export type DriftAnalysisProgress = Wire.DriftAnalysisProgress;
 
-export type DriftAnalysisResult = z.infer<typeof DriftAnalysisResultSchema>;
+export type DriftAnalysisResult = Wire.DriftAnalysisResult;
 
-export type DriftAnalysisStatusResponse = z.infer<typeof DriftAnalysisStatusResponseSchema>;
+export type DriftAnalysisStatusResponse = Wire.DriftAnalysisStatusResponse;
 
-export type ProjectIntegrationListEntry = z.infer<typeof ProjectIntegrationListEntrySchema>;
+export type ProjectIntegrationListEntry = Wire.ProjectIntegrationListEntry;
 
-export type ProjectIntegrationListResponse = z.infer<typeof ProjectIntegrationListResponseSchema>;
+export type ProjectIntegrationListResponse = Wire.ProjectIntegrationListResponse;
 
-export type UpdateProjectPayload = z.infer<typeof UpdateProjectPayloadSchema>;
+export type UpdateProjectPayload = Wire.UpdateProjectPayload;
 
-export type UpdateProjectConfigurationPayload = z.infer<typeof UpdateProjectConfigurationPayloadSchema>;
+export type UpdateProjectConfigurationPayload = Wire.UpdateProjectConfigurationPayload;
 
-export type IntakeVisionProfileSettingsUpdate = z.infer<typeof IntakeVisionProfileSettingsUpdateSchema>;
+export type IntakeVisionProfileSettingsUpdate = Wire.IntakeVisionProfileSettingsUpdate;

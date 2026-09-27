@@ -1,27 +1,5 @@
-/**
- * Cost Analytics Types
- *
- * Types for the cost attribution dashboard.
- * Combines audit trail metering data with billing export pricing
- * to compute per-org/project/env/model cost breakdowns.
- */
-
-import type { z } from 'zod';
-import type {
-    CostAnalyticsQuerySchema,
-    CostAnalyticsResponseSchema,
-    CostByDimensionSchema,
-    CostExportQuerySchema,
-    CostModelPricesQuerySchema,
-    CostRunPriceQuerySchema,
-    CostRunPriceResponseSchema,
-    CostSummarySchema,
-    CostTimeSeriesPointSchema,
-    ModelPriceComparisonResponseSchema,
-    ModelPriceComparisonSchema,
-    ModelPricingSchema,
-} from './api-schemas/cost-analytics.js';
 import { BILLABLE_AUDIT_ACTIONS } from './audit-trail.js';
+import type * as Wire from './wire-types.generated.js';
 
 export { BILLABLE_AUDIT_ACTIONS };
 
@@ -29,30 +7,30 @@ export { BILLABLE_AUDIT_ACTIONS };
 // Query
 // ============================================================================
 
-export type CostAnalyticsQuery = z.infer<typeof CostAnalyticsQuerySchema>;
+export type CostAnalyticsQuery = Wire.CostAnalyticsQuery;
 
-export type CostModelPricesQuery = z.infer<typeof CostModelPricesQuerySchema>;
+export type CostModelPricesQuery = Wire.CostModelPricesQuery;
 
-export type CostExportQuery = z.infer<typeof CostExportQuerySchema>;
+export type CostExportQuery = Wire.CostExportQuery;
 
 // ============================================================================
 // Response
 // ============================================================================
 
-export type CostSummary = z.infer<typeof CostSummarySchema>;
+export type CostSummary = Wire.CostSummary;
 
-export type CostByDimension = z.infer<typeof CostByDimensionSchema>;
+export type CostByDimension = Wire.CostByDimension;
 
-export type CostTimeSeriesPoint = z.infer<typeof CostTimeSeriesPointSchema>;
+export type CostTimeSeriesPoint = Wire.CostTimeSeriesPoint;
 
-export type ModelPricing = z.infer<typeof ModelPricingSchema>;
+export type ModelPricing = Wire.ModelPricing;
 
-export type ModelPriceComparison = z.infer<typeof ModelPriceComparisonSchema>;
+export type ModelPriceComparison = Wire.ModelPriceComparison;
 
-export type ModelPriceComparisonResponse = z.infer<typeof ModelPriceComparisonResponseSchema>;
+export type ModelPriceComparisonResponse = Wire.ModelPriceComparisonResponse;
 
-export type CostAnalyticsResponse = z.infer<typeof CostAnalyticsResponseSchema>;
+export type CostAnalyticsResponse = Wire.CostAnalyticsResponse;
 
-export type CostRunPriceQuery = z.infer<typeof CostRunPriceQuerySchema>;
+export type CostRunPriceQuery = Wire.CostRunPriceQuery;
 
-export type CostRunPriceResponse = z.infer<typeof CostRunPriceResponseSchema>;
+export type CostRunPriceResponse = Wire.CostRunPriceResponse;

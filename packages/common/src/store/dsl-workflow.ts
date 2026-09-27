@@ -1,18 +1,5 @@
-import type { z } from 'zod';
-import type {
-    ActivityFetchSpecSchema,
-    DSLActivityOptionsSchema,
-    DSLActivitySpecSchema,
-    DSLActivityStepSchema,
-    DSLRetryPolicySchema,
-    DurationValueSchema,
-} from '../api-schemas/process.js';
-import type {
-    WorkflowDefinitionRefSchema,
-    WorkflowInputFileSchema,
-    WorkflowInputSchema,
-} from '../api-schemas/workflow-runs.js';
 import type { ToolExecutionMetadata } from '../tool-execution.js';
+import type * as Wire from '../wire-types.generated.js';
 import type { BaseObject } from './common.js';
 import type { WorkflowExecutionPayload } from './index.js';
 
@@ -23,16 +10,16 @@ import type { WorkflowExecutionPayload } from './index.js';
  */
 export type ParentClosePolicyType = 'TERMINATE' | 'ABANDON' | 'REQUEST_CANCEL' | undefined;
 
-export type DurationValue = z.infer<typeof DurationValueSchema>;
+export type DurationValue = Wire.DurationValue;
 
 /**
  * Discriminator for workflow input type - either object IDs or GCS file URIs
  */
 export type WorkflowInputType = 'objectIds' | 'files';
 
-export type WorkflowInputFile = z.infer<typeof WorkflowInputFileSchema>;
+export type WorkflowInputFile = Wire.WorkflowInputFile;
 
-export type WorkflowInput = z.infer<typeof WorkflowInputSchema>;
+export type WorkflowInput = Wire.WorkflowInput;
 
 /**
  * The payload sent when starting a workflow from the temporal client to the workflow instance.
@@ -45,9 +32,9 @@ export interface DSLWorkflowExecutionPayload extends WorkflowExecutionPayload<Re
     workflow: DSLWorkflowSpec;
 }
 
-export type DSLActivityOptions = z.infer<typeof DSLActivityOptionsSchema>;
+export type DSLActivityOptions = Wire.DSLActivityOptions;
 
-export type DSLRetryPolicy = z.infer<typeof DSLRetryPolicySchema>;
+export type DSLRetryPolicy = Wire.DSLRetryPolicy;
 
 // Temporal accepts Date values internally, while the HTTP schema documents their JSON string form.
 // Keep the execution type truthful at the Temporal boundary instead of pretending HTTP validation revives dates.
@@ -69,7 +56,7 @@ export interface DSLActivityExecutionPayload<ParamsT extends object> extends Wor
 // The published schema intentionally leaves array items open. This narrower authoring type is an
 // internal DSL convenience, not a claim made by the HTTP validator.
 export type ImportSpec = (string | Record<string, string>)[];
-export type ActivityFetchSpec = z.infer<typeof ActivityFetchSpecSchema>;
+export type ActivityFetchSpec = Wire.ActivityFetchSpec;
 
 interface DSLWorkflowStepBase {
     /**
@@ -79,7 +66,7 @@ interface DSLWorkflowStepBase {
     type: 'activity' | 'workflow';
 }
 
-type DSLActivitySpecWire = z.infer<typeof DSLActivitySpecSchema>;
+type DSLActivitySpecWire = Wire.DSLActivitySpecWire;
 
 /** The published activity shape with a caller-specializable parameter bag. */
 export type DSLActivitySpec<PARAMS extends object = Record<string, unknown>> = Omit<
@@ -90,7 +77,7 @@ export type DSLActivitySpec<PARAMS extends object = Record<string, unknown>> = O
     import?: ImportSpec;
 };
 
-type DSLActivityStepWire = z.infer<typeof DSLActivityStepSchema>;
+type DSLActivityStepWire = Wire.DSLActivityStepWire;
 
 /** The published activity-step shape with a caller-specializable parameter bag. */
 export type DSLActivityStep<PARAMS extends object = Record<string, unknown>> = Omit<
@@ -262,7 +249,7 @@ export interface DSLWorkflowDefinitionResponse extends DSLWorkflowDefinition {
     spec_format: 'steps' | 'activities';
 }
 
-export type WorkflowDefinitionRef = z.infer<typeof WorkflowDefinitionRefSchema>;
+export type WorkflowDefinitionRef = Wire.WorkflowDefinitionRef;
 
 export const WorkflowDefinitionRefPopulate = 'id name description tags created_at updated_at';
 

@@ -2,8 +2,8 @@ import { InferenceProfileIdSchema } from './inference-profile.js';
 // Runtime schemas for the process API domain.
 
 import { JSONObjectSchema, JSONSchemaSchema, ModelOptionsSchema } from '@llumiverse/common/schemas';
-import type { StringValue } from 'ms';
 import { z } from 'zod';
+import type { DurationString } from '../store/duration.js';
 import { PermissionSchema } from './access-control.js';
 import { AgentRunTypeSchema } from './app-lifecycle.js';
 import { StringValueMapSchema } from './files.js';
@@ -14,7 +14,7 @@ import { TaskFieldSchema } from './task.js';
 
 export const DurationValueSchema = z
     .union([z.string(), z.number()])
-    .meta({ id: 'DurationValue', anyOf: undefined, type: ['string', 'number'] }) as z.ZodType<StringValue | number>;
+    .meta({ id: 'DurationValue', anyOf: undefined, type: ['string', 'number'] }) as z.ZodType<DurationString | number>;
 
 export const JsonLogicRuleSchema = z.looseObject({}).meta({ id: 'JsonLogicRule' });
 

@@ -1,35 +1,27 @@
-import type { z } from 'zod';
-import type {
-    DocAnalyzeRunStatusResponseSchema,
-    DocAnalyzerProgressSchema,
-    DocAnalyzerProgressStatusSchema,
-    DocProcessorOutputFormatSchema,
-    DocumentPrepOptionsSchema,
-    DocumentProcessingPhaseSchema,
-} from '../api-schemas/document-processing.js';
+import type * as Wire from '../wire-types.generated.js';
 import type { WorkflowExecutionPayload } from './workflow.js';
 
-export type DocumentPrepOptions = z.infer<typeof DocumentPrepOptionsSchema>;
+export type DocumentPrepOptions = Wire.DocumentPrepOptions;
 
 export interface DocumentPrepWorkflowPayload extends Omit<WorkflowExecutionPayload, 'vars'> {
     vars: DocumentPrepOptions;
 }
 
-export type DocumentProcessingPhase = z.infer<typeof DocumentProcessingPhaseSchema>;
+export type DocumentProcessingPhase = Wire.DocumentProcessingPhase;
 
 /**
  * Output format for document processing workflows
  */
-export type DocProcessorOutputFormat = z.infer<typeof DocProcessorOutputFormatSchema>;
+export type DocProcessorOutputFormat = Wire.DocProcessorOutputFormat;
 
 /**
  * Represents a document analysis run status
  */
-export type DocAnalyzeRunStatusResponse = z.infer<typeof DocAnalyzeRunStatusResponseSchema>;
+export type DocAnalyzeRunStatusResponse = Wire.DocAnalyzeRunStatusResponse;
 
-export type DocAnalyzerProgress = z.infer<typeof DocAnalyzerProgressSchema>;
+export type DocAnalyzerProgress = Wire.DocAnalyzerProgress;
 
-export type DocAnalyzerProgressStatus = z.infer<typeof DocAnalyzerProgressStatusSchema>;
+export type DocAnalyzerProgressStatus = Wire.DocAnalyzerProgressStatus;
 
 /**
  * Adapt Tables Parameters, part of the request
