@@ -1,6 +1,6 @@
 import { type AgentMessage, type AgentMessageDetails, AgentMessageType } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
-import { findBudgetPause, suggestedBudgetAllocation } from './budgetPause';
+import { findBudgetPause, parseBudgetAmount, suggestedBudgetAllocation } from './budgetPause';
 
 function message(type: AgentMessageType, details?: Record<string, unknown>): AgentMessage {
     return {
@@ -58,5 +58,19 @@ describe('suggestedBudgetAllocation', () => {
     it('should offer at least 100,000', () => {
         expect(suggestedBudgetAllocation({ limitTokens: 50_000 })).toBe(100_000);
         expect(suggestedBudgetAllocation({})).toBe(100_000);
+    });
+});
+
+describe('parseBudgetAmount', () => {
+    it('should read a whole number, with or without digit grouping', () => {
+        expect(parseBudgetAmount('150000')).toBe(150_000);
+        expect(parseBudgetAmount(' 150,000 ')).toBe(150_000);
+        expect(parseBudgetAmount('150 000')).toBe(150_000);
+    });
+
+    it('should reject zero, negatives, decimals and text', () => {
+        for (const value of ['0', '-5', '1.5', '10k', '', 'more']) {
+            expect(parseBudgetAmount(value)).toBeUndefined();
+        }
     });
 });

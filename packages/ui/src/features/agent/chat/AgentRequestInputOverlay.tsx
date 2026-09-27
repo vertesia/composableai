@@ -13,6 +13,13 @@ import {
     sendRequestInputResponse,
 } from './ModernAgentOutput/requestInputMessages';
 
+/** Placement shared by the prompts that take the composer's place while the run waits on the user. */
+export const REQUEST_INPUT_OVERLAY_CLASS = cn(
+    'flex-shrink-0 border-t border-border/70 bg-background/95 backdrop-blur',
+    'fixed bottom-0 end-0 start-0 z-20 lg:sticky lg:start-auto lg:end-auto',
+    'pb-safe-area',
+);
+
 export interface AgentRequestInputOverlayProps {
     message?: RequestInputMessageWithUx;
     onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
@@ -86,12 +93,7 @@ export function AgentRequestInputOverlay({
         sendRequestInputResponse(onSendMessage, message, value, metadata);
     };
 
-    const wrapperClassName = cn(
-        'flex-shrink-0 border-t border-border/70 bg-background/95 backdrop-blur',
-        'fixed bottom-0 end-0 start-0 z-20 lg:sticky lg:start-auto lg:end-auto',
-        'pb-safe-area',
-        className,
-    );
+    const wrapperClassName = cn(REQUEST_INPUT_OVERLAY_CLASS, className);
 
     if (mcpConnect) {
         return (

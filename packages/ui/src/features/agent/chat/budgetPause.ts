@@ -32,3 +32,11 @@ export function suggestedBudgetAllocation(pause: BudgetPause): number {
     const half = Math.round((pause.limitTokens ?? 0) / 2 / 10_000) * 10_000;
     return Math.max(100_000, half);
 }
+
+/** Reads a typed budget amount, allowing digit grouping ("150,000", "150 000"): a whole number above zero. */
+export function parseBudgetAmount(value: string): number | undefined {
+    const digits = value.replace(/[\s,_]/g, '');
+    if (!/^\d+$/.test(digits)) return undefined;
+    const amount = Number(digits);
+    return Number.isSafeInteger(amount) && amount > 0 ? amount : undefined;
+}
