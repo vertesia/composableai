@@ -6,7 +6,8 @@
     "license": "Apache-2.0",
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "exports": {
         ".": {
@@ -19,7 +20,7 @@
         "lint": "biome lint src",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && vite build --mode lib",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && vite build --mode lib",
         "dev": "vite dev"
     },
     "peerDependencies": {

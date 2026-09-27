@@ -13,58 +13,9 @@
  */
 
 import type { ReasoningEffort } from '@llumiverse/common';
-import type { z } from 'zod';
-import type {
-    AgentArtifactContentResponseSchema,
-    AgentArtifactUrlResponseSchema,
-    AgentRunArchiveStateSchema,
-    AgentRunArtifactQuerySchema,
-    AgentRunArtifactsQuerySchema,
-    AgentRunArtifactUploadHeadersSchema,
-    AgentRunContradictionReasonSchema,
-    AgentRunDetailsQuerySchema,
-    AgentRunEvaluationRollupSchema,
-    AgentRunEvaluationSchema,
-    AgentRunFeedbackCountsSchema,
-    AgentRunFeedbackEntrySchema,
-    AgentRunFeedbackPayloadSchema,
-    AgentRunFeedbackRatingSchema,
-    AgentRunFeedbackReasonCodeSchema,
-    AgentRunFeedbackResponseSchema,
-    AgentRunFeedbackStatusSchema,
-    AgentRunJudgeResultSchema,
-    AgentRunSchema,
-    AgentRunUpdatesQuerySchema,
-    AgentRunUpdatesResponseSchema,
-    CreateAgentRunPayloadSchema,
-    CreateProcessRunByIdPayloadSchema,
-    CreateProcessRunWithDefinitionPayloadSchema,
-    CreateRunPayloadSchema,
-    IngestAgentEventsPayloadSchema,
-    IngestAgentEventsResponseSchema,
-    ListAgentRunsEvaluationSeveritySchema,
-    ListAgentRunsQuerySchema,
-    PostAgentRunUpdatePayloadSchema,
-    PostAgentRunUpdateResponseSchema,
-    SearchAgentRunsQuerySchema,
-    SearchAgentRunsResponseSchema,
-    SignalAgentResponseSchema,
-    StreamAgentRunQuerySchema,
-    TerminateAgentRunResponseSchema,
-    UpdateAgentArtifactContentPayloadSchema,
-    UpdateAgentArtifactContentResponseSchema,
-} from '../api-schemas/agent-runs.js';
-import type {
-    AgentRunSearchHitSchema,
-    AgentRunStatusSchema,
-    AgentRunTypeSchema,
-    RunKindSchema,
-    RunTypeSchema,
-} from '../api-schemas/app-lifecycle.js';
-import type { ProcessRunConfigSchema, ProcessRunTypeSchema } from '../api-schemas/process.js';
-import type { BindRunWorkflowPayloadSchema, RestartAgentRunPayloadSchema } from '../api-schemas/workflow-runs.js';
 import type { ConversationVisibility, InteractionExecutionConfiguration, RunSource } from '../interaction.js';
 import type { EventRef } from '../platform-event.js';
+import type * as Wire from '../wire-types.generated.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
 import type { ProcessDefinitionBody, ProcessState } from './process.js';
 import type { ModelConfigChangedSignal, StopSignal, UserInputSignal } from './signals.js';
@@ -78,16 +29,16 @@ import type {
 
 export * from './agent-run-values.js';
 
-export type AgentRunStatus = z.infer<typeof AgentRunStatusSchema>;
+export type AgentRunStatus = Wire.AgentRunStatus;
 
-export type AgentRunArchiveState = z.infer<typeof AgentRunArchiveStateSchema>;
+export type AgentRunArchiveState = Wire.AgentRunArchiveState;
 
-export type AgentRunType = z.infer<typeof AgentRunTypeSchema>;
+export type AgentRunType = Wire.AgentRunType;
 
-export type RunKind = z.infer<typeof RunKindSchema>;
+export type RunKind = Wire.RunKind;
 
-export type RunType = z.infer<typeof RunTypeSchema>;
-export type ProcessRunType = z.infer<typeof ProcessRunTypeSchema>;
+export type RunType = Wire.RunType;
+export type ProcessRunType = Wire.ProcessRunType;
 
 /**
  * Shared fields for all records stored in the agent_runs collection.
@@ -169,7 +120,7 @@ interface RunBase {
     updated_at: string;
 }
 
-type AgentRunWire = z.infer<typeof AgentRunSchema>;
+type AgentRunWire = Wire.AgentRunWire;
 
 /**
  * The wire contract is schema-derived; the two generic data bags remain caller-specializable.
@@ -183,7 +134,7 @@ export type AgentRun<TData = Record<string, unknown>, TProperties = Record<strin
     properties?: TProperties;
 };
 
-export type ProcessRunConfig = z.infer<typeof ProcessRunConfigSchema>;
+export type ProcessRunConfig = Wire.ProcessRunConfig;
 
 export interface ProcessRun extends RunBase {
     run_kind: 'process';
@@ -208,7 +159,7 @@ export type AgentRunResponse<TData = Record<string, unknown>, TProperties = Reco
     | SupervisedRunResponse
     | ProgrammaticRunResponse;
 
-type CreateAgentRunWire = z.infer<typeof CreateAgentRunPayloadSchema>;
+type CreateAgentRunWire = Wire.CreateAgentRunPayloadWire;
 export type CreateAgentRunPayload<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = Omit<
     CreateAgentRunWire,
     'data' | 'properties'
@@ -289,21 +240,21 @@ export type RecordRunPayload<TData = Record<string, unknown>, TSource = RunSourc
  * @internal Attaches the first Temporal run id after a pre-created run record
  * has successfully started its workflow.
  */
-export type BindRunWorkflowPayload = z.infer<typeof BindRunWorkflowPayloadSchema>;
+export type BindRunWorkflowPayload = Wire.BindRunWorkflowPayload;
 
-export type TerminateAgentRunResponse = z.infer<typeof TerminateAgentRunResponseSchema>;
+export type TerminateAgentRunResponse = Wire.TerminateAgentRunResponse;
 
-export type AgentRunFeedbackRating = z.infer<typeof AgentRunFeedbackRatingSchema>;
-export type AgentRunFeedbackReasonCode = z.infer<typeof AgentRunFeedbackReasonCodeSchema>;
-export type AgentRunFeedbackPayload = z.infer<typeof AgentRunFeedbackPayloadSchema>;
-export type AgentRunFeedbackStatus = z.infer<typeof AgentRunFeedbackStatusSchema>;
-export type AgentRunFeedbackCounts = z.infer<typeof AgentRunFeedbackCountsSchema>;
-export type AgentRunFeedbackResponse = z.infer<typeof AgentRunFeedbackResponseSchema>;
-export type AgentRunFeedbackEntry = z.infer<typeof AgentRunFeedbackEntrySchema>;
-export type AgentRunEvaluationRollup = z.infer<typeof AgentRunEvaluationRollupSchema>;
-export type AgentRunJudgeResult = z.infer<typeof AgentRunJudgeResultSchema>;
-export type AgentRunContradictionReason = z.infer<typeof AgentRunContradictionReasonSchema>;
-export type AgentRunEvaluation = z.infer<typeof AgentRunEvaluationSchema>;
+export type AgentRunFeedbackRating = Wire.AgentRunFeedbackRating;
+export type AgentRunFeedbackReasonCode = Wire.AgentRunFeedbackReasonCode;
+export type AgentRunFeedbackPayload = Wire.AgentRunFeedbackPayload;
+export type AgentRunFeedbackStatus = Wire.AgentRunFeedbackStatus;
+export type AgentRunFeedbackCounts = Wire.AgentRunFeedbackCounts;
+export type AgentRunFeedbackResponse = Wire.AgentRunFeedbackResponse;
+export type AgentRunFeedbackEntry = Wire.AgentRunFeedbackEntry;
+export type AgentRunEvaluationRollup = Wire.AgentRunEvaluationRollup;
+export type AgentRunJudgeResult = Wire.AgentRunJudgeResult;
+export type AgentRunContradictionReason = Wire.AgentRunContradictionReason;
+export type AgentRunEvaluation = Wire.AgentRunEvaluation;
 
 /**
  * Payload for updating an AgentRun's lifecycle and derived metadata.
@@ -354,43 +305,43 @@ export type SignalAgentPayload =
     | ConversationFileBatchRef
     | Record<string, unknown>;
 
-export type SignalAgentResponse = z.infer<typeof SignalAgentResponseSchema>;
+export type SignalAgentResponse = Wire.SignalAgentResponse;
 
-export type AgentRunUpdatesResponse = z.infer<typeof AgentRunUpdatesResponseSchema>;
+export type AgentRunUpdatesResponse = Wire.AgentRunUpdatesResponse;
 
-export type AgentRunUpdatesQuery = z.infer<typeof AgentRunUpdatesQuerySchema>;
+export type AgentRunUpdatesQuery = Wire.AgentRunUpdatesQuery;
 
-export type StreamAgentRunQuery = z.infer<typeof StreamAgentRunQuerySchema>;
+export type StreamAgentRunQuery = Wire.StreamAgentRunQuery;
 
-export type AgentRunDetailsQuery = z.infer<typeof AgentRunDetailsQuerySchema>;
+export type AgentRunDetailsQuery = Wire.AgentRunDetailsQuery;
 
-export type AgentRunArtifactsQuery = z.infer<typeof AgentRunArtifactsQuerySchema>;
+export type AgentRunArtifactsQuery = Wire.AgentRunArtifactsQuery;
 
-export type AgentRunArtifactUploadHeaders = z.infer<typeof AgentRunArtifactUploadHeadersSchema>;
+export type AgentRunArtifactUploadHeaders = Wire.AgentRunArtifactUploadHeaders;
 
-export type AgentRunArtifactQuery = z.infer<typeof AgentRunArtifactQuerySchema>;
+export type AgentRunArtifactQuery = Wire.AgentRunArtifactQuery;
 
-export type PostAgentRunUpdatePayload = z.infer<typeof PostAgentRunUpdatePayloadSchema>;
+export type PostAgentRunUpdatePayload = Wire.PostAgentRunUpdatePayload;
 
-export type PostAgentRunUpdateResponse = z.infer<typeof PostAgentRunUpdateResponseSchema>;
+export type PostAgentRunUpdateResponse = Wire.PostAgentRunUpdateResponse;
 
-export type AgentArtifactUrlResponse = z.infer<typeof AgentArtifactUrlResponseSchema>;
+export type AgentArtifactUrlResponse = Wire.AgentArtifactUrlResponse;
 
-export type AgentArtifactContentResponse = z.infer<typeof AgentArtifactContentResponseSchema>;
+export type AgentArtifactContentResponse = Wire.AgentArtifactContentResponse;
 
-export type UpdateAgentArtifactContentPayload = z.infer<typeof UpdateAgentArtifactContentPayloadSchema>;
+export type UpdateAgentArtifactContentPayload = Wire.UpdateAgentArtifactContentPayload;
 
-export type UpdateAgentArtifactContentResponse = z.infer<typeof UpdateAgentArtifactContentResponseSchema>;
+export type UpdateAgentArtifactContentResponse = Wire.UpdateAgentArtifactContentResponse;
 
 /**
  * Telemetry ingestion payload for an agent run.
  */
-export type IngestAgentEventsPayload = z.infer<typeof IngestAgentEventsPayloadSchema>;
+export type IngestAgentEventsPayload = Wire.IngestAgentEventsPayload;
 
 /**
  * Telemetry ingestion response for an agent run.
  */
-export type IngestAgentEventsResponse = z.infer<typeof IngestAgentEventsResponseSchema>;
+export type IngestAgentEventsResponse = Wire.IngestAgentEventsResponse;
 
 /**
  * History event payload emitted by the agent details SSE stream.
@@ -422,12 +373,12 @@ export type AgentRunDetailsStreamEvent =
     | { type: 'error'; data: AgentRunDetailsErrorStreamEvent };
 
 /** Evaluation severity filter values; `unrated` selects runs without an evaluation. */
-export type ListAgentRunsEvaluationSeverity = z.infer<typeof ListAgentRunsEvaluationSeveritySchema>;
+export type ListAgentRunsEvaluationSeverity = Wire.ListAgentRunsEvaluationSeverity;
 
 /**
  * Filters for listing agent runs.
  */
-export type ListAgentRunsQuery = z.infer<typeof ListAgentRunsQuerySchema>;
+export type ListAgentRunsQuery = Wire.ListAgentRunsQuery;
 
 export interface ListAgentRunsResponse {
     items: AgentRunResponse[];
@@ -438,11 +389,11 @@ export interface ListAgentRunsResponse {
 /**
  * Query for searching agent runs via Elasticsearch.
  */
-export type SearchAgentRunsQuery = z.infer<typeof SearchAgentRunsQuerySchema>;
+export type SearchAgentRunsQuery = Wire.SearchAgentRunsQuery;
 
-export type AgentRunSearchHit = z.infer<typeof AgentRunSearchHitSchema>;
+export type AgentRunSearchHit = Wire.AgentRunSearchHit;
 
-export type SearchAgentRunsResponse = z.infer<typeof SearchAgentRunsResponseSchema>;
+export type SearchAgentRunsResponse = Wire.SearchAgentRunsResponse;
 
 /**
  * Internal/Temporal details for an AgentRun.
@@ -471,10 +422,10 @@ export interface AgentRunInternals {
     updated_at: string;
 }
 
-export type CreateProcessRunByIdPayload = z.infer<typeof CreateProcessRunByIdPayloadSchema>;
+export type CreateProcessRunByIdPayload = Wire.CreateProcessRunByIdPayload;
 
-export type CreateProcessRunWithDefinitionPayload = z.infer<typeof CreateProcessRunWithDefinitionPayloadSchema>;
+export type CreateProcessRunWithDefinitionPayload = Wire.CreateProcessRunWithDefinitionPayload;
 
-export type CreateRunPayload = z.infer<typeof CreateRunPayloadSchema>;
+export type CreateRunPayload = Wire.CreateRunPayload;
 
-export type RestartAgentRunPayload = z.infer<typeof RestartAgentRunPayloadSchema>;
+export type RestartAgentRunPayload = Wire.RestartAgentRunPayload;
