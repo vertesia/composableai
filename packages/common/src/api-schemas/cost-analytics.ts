@@ -222,6 +222,18 @@ const PricingCoverageSchema = z.strictObject({
             calls: z.number(),
         }),
     ),
+    cost_by_source: z
+        .strictObject({
+            provider_billed: z.number().meta({ description: 'USD the provider reported billing for the calls.' }),
+            run_time_estimate: z.number().meta({
+                description: 'USD estimated from list prices when the calls ran, for calls with no billed amount.',
+            }),
+            price_table: z.number().meta({
+                description: 'USD computed from the pricing table, for calls with no cost recorded when they ran.',
+            }),
+        })
+        .optional()
+        .meta({ description: "How the total cost splits by where each call's cost came from." }),
 });
 
 export const ModelPriceComparisonResponseSchema = z
