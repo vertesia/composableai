@@ -2,6 +2,8 @@ import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CreateSubjectPayload,
     DeleteSubjectQuery,
+    FindSubjectsPayload,
+    FindSubjectsResponse,
     ResolveSubjectsPayload,
     ResolveSubjectsResponse,
     Subject,
@@ -35,6 +37,10 @@ export class SubjectsApi extends ApiTopic {
 
     resolve(payload: ResolveSubjectsPayload): Promise<ResolveSubjectsResponse> {
         return this.post('/resolve', { payload });
+    }
+
+    find(payload: FindSubjectsPayload): Promise<FindSubjectsResponse> {
+        return this.post('/find', { payload });
     }
 
     upsert(payload: UpsertSubjectsPayload): Promise<UpsertSubjectsResponse> {

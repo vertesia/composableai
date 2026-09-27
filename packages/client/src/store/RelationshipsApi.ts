@@ -5,6 +5,10 @@ import type {
     FindRelationshipsPayload,
     FindRelationshipsResponse,
     Relationship,
+    RelationshipContributionState,
+    RelationshipContributionStateQuery,
+    SubmitRelationshipContributionPayload,
+    SubmitRelationshipContributionResponse,
     TraverseRelationshipsPayload,
     TraverseRelationshipsResponse,
     UpdateRelationshipPayload,
@@ -35,6 +39,16 @@ export class RelationshipsApi extends ApiTopic {
 
     upsert(payload: UpsertRelationshipsPayload): Promise<UpsertRelationshipsResponse> {
         return this.post('/upsert', { payload });
+    }
+
+    getContributionState(query: RelationshipContributionStateQuery): Promise<RelationshipContributionState> {
+        return this.get('/contributions/state', { query });
+    }
+
+    submitContribution(
+        payload: SubmitRelationshipContributionPayload,
+    ): Promise<SubmitRelationshipContributionResponse> {
+        return this.post('/contributions', { payload });
     }
 
     find(payload: FindRelationshipsPayload): Promise<FindRelationshipsResponse> {

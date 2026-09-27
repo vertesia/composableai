@@ -10,6 +10,28 @@ import {
 const MODEL_OPTIONS = { temperature: 0 } as unknown as NonNullable<InteractionExecutionConfiguration['model_options']>;
 
 describe('updateIntakePolicy', () => {
+    it('edits memory settings while preserving inherited values and other intake steps', () => {
+        const policy: ContentTypeIntakePolicy = {
+            extraction: { enabled: true },
+            memory: { enabled: true, scope: 'intake-memory', config: { model: 'model-a' } },
+        };
+        const updated = updateIntakePolicy(policy, ['memory', 'max_entities'], 25);
+        expect(updated).toEqual({
+            extraction: { enabled: true },
+            memory: { enabled: true, scope: 'intake-memory', config: { model: 'model-a' }, max_entities: 25 },
+        });
+        expect(updateIntakePolicy(updated, ['memory', 'enabled'], undefined).memory?.enabled).toBeUndefined();
+        expect(policy.memory?.max_entities).toBeUndefined();
+    });
+
+    it('keeps an explicit memory disable distinct from inherited policy', () => {
+        const inherited = updateIntakePolicy({}, ['memory', 'enabled'], undefined);
+        const disabled = updateIntakePolicy(inherited, ['memory', 'enabled'], false);
+        expect(inherited.memory).toBeUndefined();
+        expect(disabled.memory).toEqual({ enabled: false });
+        expect(updateIntakePolicy(disabled, ['memory', 'enabled'], undefined).memory).toBeUndefined();
+    });
+
     it('updates a nested field without losing sibling or advanced fields', () => {
         const policy = {
             extraction: {

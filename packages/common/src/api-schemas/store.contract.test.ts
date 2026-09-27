@@ -1,11 +1,22 @@
 import { Ajv } from 'ajv';
 import { describe, expect, it } from 'vitest';
 import { ContentTypeIntakePolicySchema as GeneratedIntakePolicySchema } from '../store/intake-policy-schema.generated.js';
-import type { ContentObjectTypeRef, ContentTypeIntakePolicy, IntakePageRanges } from '../store/store.js';
+import type {
+    ContentObjectTypeRef,
+    ContentTypeIntakePolicy,
+    ContentTypeMemoryPolicy,
+    IntakePageRanges,
+} from '../store/store.js';
 import type { JsonObject } from './adapter.js';
 import { ResolveInteractionQuerySchema } from './interaction.js';
+import { ProjectIntakeConfigurationSchema } from './project-configuration.js';
 import { ApiSchemaComponents, bundleCanonicalComponent, validateApiResponse } from './registry.js';
-import { ContentTypeIntakePolicySchema, InteractionExecutionConfigurationSchema } from './store.js';
+import {
+    ContentObjectTypeItemSchema,
+    ContentTypeIntakePolicySchema,
+    type ContentTypeMemoryPolicySchema,
+    InteractionExecutionConfigurationSchema,
+} from './store.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
 type Equals<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
@@ -39,6 +50,36 @@ describe('generated artifact and canonical component', () => {
     it('registers the component the alias claims, under the id the alias name requires', () => {
         expect(Object.keys(ApiSchemaComponents)).toContain('ContentTypeIntakePolicy');
         assertType<Equals<ContentTypeIntakePolicy, (typeof ContentTypeIntakePolicySchema)['_zod']['output']>>(true);
+        expect(Object.keys(ApiSchemaComponents)).toContain('ContentTypeMemoryPolicy');
+        assertType<Equals<ContentTypeMemoryPolicy, (typeof ContentTypeMemoryPolicySchema)['_zod']['output']>>(true);
+    });
+
+    it('round-trips bounded memory policy through the published intake component', () => {
+        const policy: ContentTypeIntakePolicy = {
+            memory: {
+                enabled: true,
+                scope: 'intake-memory',
+                max_entities: 50,
+                max_relationships: 100,
+                max_text_chars: 100000,
+            },
+        };
+        expect(ContentTypeIntakePolicySchema.parse(policy)).toEqual(policy);
+        expect(validate(policy)).toBe(true);
+        expect(ContentTypeIntakePolicySchema.safeParse({ memory: { max_entities: 101 } }).success).toBe(false);
+        expect(ContentTypeIntakePolicySchema.safeParse({ memory: { scope: '' } }).success).toBe(false);
+        expect(ContentTypeIntakePolicySchema.parse({ memory: { enabled: false } })).toEqual({
+            memory: { enabled: false },
+        });
+    });
+
+    it('accepts project defaults and explicit type-level memory disable', () => {
+        const project = ProjectIntakeConfigurationSchema.parse({
+            default_policy: { memory: { enabled: true, max_entities: 25 } },
+        });
+        expect(project.default_policy?.memory?.enabled).toBe(true);
+        const typeOverride = ContentObjectTypeItemSchema.shape.intake.parse({ memory: { enabled: false } });
+        expect(typeOverride?.memory?.enabled).toBe(false);
     });
 });
 

@@ -27,7 +27,13 @@ import {
     updateIntakePolicy,
 } from './intake-policy-editor.logic.js';
 
-export type IntakePolicyFormSection = 'classification' | 'conversion' | 'extraction' | 'grounding' | 'output';
+export type IntakePolicyFormSection =
+    | 'classification'
+    | 'conversion'
+    | 'extraction'
+    | 'grounding'
+    | 'memory'
+    | 'output';
 
 interface IntakePolicyFormProps {
     policy: ContentTypeIntakePolicy;
@@ -586,6 +592,63 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         onChange={(value) => setValue(['extraction', 'grounding', 'review', 'config'], value)}
                         readonly={readonly}
                     />
+                </FormSection>
+            </FormSurface>
+        );
+    }
+
+    if (section === 'memory') {
+        return (
+            <FormSurface>
+                <FormSection
+                    title={t('intakePolicy.section.memory')}
+                    description={t('intakePolicy.help.section.memory')}
+                >
+                    <TriStateField
+                        label={t('intakePolicy.field.enabled')}
+                        value={policy.memory?.enabled}
+                        onChange={(value) => setValue(['memory', 'enabled'], value)}
+                        readonly={readonly}
+                    />
+                    <ModelConfigFields
+                        title={t('intakePolicy.field.model')}
+                        config={policy.memory?.config}
+                        onChange={(value) => setValue(['memory', 'config'], value)}
+                        readonly={readonly}
+                    />
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <InputField
+                            label={t('intakePolicy.field.memoryScope')}
+                            description={t('intakePolicy.help.memoryScope')}
+                            value={policy.memory?.scope}
+                            onChange={(value) => setValue(['memory', 'scope'], value)}
+                            readonly={readonly}
+                        />
+                        <NumberField
+                            label={t('intakePolicy.field.maxEntities')}
+                            value={policy.memory?.max_entities}
+                            min={1}
+                            max={100}
+                            onChange={(value) => setValue(['memory', 'max_entities'], value)}
+                            readonly={readonly}
+                        />
+                        <NumberField
+                            label={t('intakePolicy.field.maxRelationships')}
+                            value={policy.memory?.max_relationships}
+                            min={1}
+                            max={100}
+                            onChange={(value) => setValue(['memory', 'max_relationships'], value)}
+                            readonly={readonly}
+                        />
+                        <NumberField
+                            label={t('intakePolicy.field.maxMemoryTextChars')}
+                            value={policy.memory?.max_text_chars}
+                            min={1000}
+                            max={500000}
+                            onChange={(value) => setValue(['memory', 'max_text_chars'], value)}
+                            readonly={readonly}
+                        />
+                    </div>
                 </FormSection>
             </FormSurface>
         );

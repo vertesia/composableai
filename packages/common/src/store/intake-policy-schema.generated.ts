@@ -230,6 +230,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             additionalProperties: false,
             description: 'Controls schema-property extraction after type assignment.',
         },
+        memory: {
+            $ref: '#/$defs/ContentTypeMemoryPolicy',
+            description: 'Controls evidence-grounded memory contributions during intake.',
+        },
         rendering_template: {
             type: 'string',
             description: 'Handlebars template used to materialize extracted properties into object text.',
@@ -897,6 +901,46 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 force: {
                     type: 'boolean',
                     description: 'Run review regardless of hardness.',
+                },
+            },
+            additionalProperties: false,
+        },
+        ContentTypeMemoryPolicy: {
+            type: 'object',
+            properties: {
+                enabled: {
+                    type: 'boolean',
+                    description: 'Enable memory contribution extraction for this intake policy.',
+                },
+                config: {
+                    $ref: '#/$defs/InteractionExecutionConfiguration',
+                    description:
+                        'Model/environment configuration for memory extraction. Defaults to the intake run config.',
+                },
+                scope: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 128,
+                    description:
+                        'Stable contribution scope across model and schema changes. Defaults to intake-memory.',
+                },
+                max_entities: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 100,
+                    description: 'Entity cap per extraction. Defaults to 50.',
+                },
+                max_relationships: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 100,
+                    description: 'Relationship cap per extraction. Defaults to 100.',
+                },
+                max_text_chars: {
+                    type: 'integer',
+                    minimum: 1000,
+                    maximum: 500000,
+                    description: 'Maximum document text characters sent to memory extraction. Defaults to 100000.',
                 },
             },
             additionalProperties: false,

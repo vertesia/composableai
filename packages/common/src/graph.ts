@@ -15,6 +15,8 @@ export type DeleteSubjectQuery = z.infer<typeof GraphSchemas.DeleteSubjectQueryS
 export type ResolveSubjectsPayload = z.infer<typeof GraphSchemas.ResolveSubjectsPayloadSchema>;
 export type SubjectResolution = z.infer<typeof GraphSchemas.SubjectResolutionSchema>;
 export type ResolveSubjectsResponse = z.infer<typeof GraphSchemas.ResolveSubjectsResponseSchema>;
+export type FindSubjectsPayload = z.infer<typeof GraphSchemas.FindSubjectsPayloadSchema>;
+export type FindSubjectsResponse = z.infer<typeof GraphSchemas.FindSubjectsResponseSchema>;
 export type SubjectReadResponse = z.infer<typeof GraphSchemas.SubjectReadResponseSchema>;
 export type SubjectRelationshipContext = z.infer<typeof GraphSchemas.SubjectRelationshipContextSchema>;
 export type UpsertSubjectItem = z.infer<typeof GraphSchemas.UpsertSubjectItemSchema>;
@@ -30,6 +32,31 @@ export type UpsertRelationshipItem = z.infer<typeof GraphSchemas.UpsertRelations
 export type UpsertRelationshipsPayload = z.infer<typeof GraphSchemas.UpsertRelationshipsPayloadSchema>;
 export type RelationshipMutationResult = z.infer<typeof GraphSchemas.RelationshipMutationResultSchema>;
 export type UpsertRelationshipsResponse = z.infer<typeof GraphSchemas.UpsertRelationshipsResponseSchema>;
+export type RelationshipContributionSource = z.infer<typeof GraphSchemas.RelationshipContributionSourceSchema>;
+export type RelationshipContributionEvidence = z.infer<typeof GraphSchemas.RelationshipContributionEvidenceSchema>;
+export type RelationshipContributionEntity = z.infer<typeof GraphSchemas.RelationshipContributionEntitySchema>;
+export type RelationshipContributionEntityEndpoint = z.infer<
+    typeof GraphSchemas.RelationshipContributionEntityEndpointSchema
+>;
+export type RelationshipContributionEndpoint = z.infer<typeof GraphSchemas.RelationshipContributionEndpointSchema>;
+export type RelationshipContributionRelationship = z.infer<
+    typeof GraphSchemas.RelationshipContributionRelationshipSchema
+>;
+export type SubmitRelationshipContributionPayload = z.infer<
+    typeof GraphSchemas.SubmitRelationshipContributionPayloadSchema
+>;
+export type RelationshipContributionStateQuery = z.infer<typeof GraphSchemas.RelationshipContributionStateQuerySchema>;
+export type RelationshipContributionState = z.infer<typeof GraphSchemas.RelationshipContributionStateSchema>;
+export type RelationshipContributionEntityResolution = z.infer<
+    typeof GraphSchemas.RelationshipContributionEntityResolutionSchema
+>;
+export type RelationshipContributionRelationshipResolution = z.infer<
+    typeof GraphSchemas.RelationshipContributionRelationshipResolutionSchema
+>;
+export type RelationshipContributionCounts = z.infer<typeof GraphSchemas.RelationshipContributionCountsSchema>;
+export type SubmitRelationshipContributionResponse = z.infer<
+    typeof GraphSchemas.SubmitRelationshipContributionResponseSchema
+>;
 export type RelationshipDirection = z.infer<typeof GraphSchemas.RelationshipDirectionSchema>;
 export type FindRelationshipsPayload = z.infer<typeof GraphSchemas.FindRelationshipsPayloadSchema>;
 export type FindRelationshipsResponse = z.infer<typeof GraphSchemas.FindRelationshipsResponseSchema>;

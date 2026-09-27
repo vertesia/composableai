@@ -249,6 +249,33 @@ export const EmbeddingTypeEnabledMapSchema = z
     })
     .meta({ id: 'EmbeddingTypeEnabledMap' });
 
+export const ContentTypeMemoryPolicySchema = z
+    .strictObject({
+        enabled: z
+            .boolean()
+            .optional()
+            .meta({ description: 'Enable memory contribution extraction for this intake policy.' }),
+        config: InteractionExecutionConfigurationSchema.optional().meta({
+            description: 'Model/environment configuration for memory extraction. Defaults to the intake run config.',
+        }),
+        scope: z.string().min(1).max(128).optional().meta({
+            description: 'Stable contribution scope across model and schema changes. Defaults to intake-memory.',
+        }),
+        max_entities: z
+            .int32()
+            .min(1)
+            .max(100)
+            .optional()
+            .meta({ description: 'Entity cap per extraction. Defaults to 50.' }),
+        max_relationships: z.int32().min(1).max(100).optional().meta({
+            description: 'Relationship cap per extraction. Defaults to 100.',
+        }),
+        max_text_chars: z.int32().min(1000).max(500000).optional().meta({
+            description: 'Maximum document text characters sent to memory extraction. Defaults to 100000.',
+        }),
+    })
+    .meta({ id: 'ContentTypeMemoryPolicy' });
+
 export const ContentTypeIntakePolicySchema = z
     .strictObject({
         mode: z
@@ -389,6 +416,9 @@ export const ContentTypeIntakePolicySchema = z
             })
             .optional()
             .meta({ description: 'Controls schema-property extraction after type assignment.' }),
+        memory: ContentTypeMemoryPolicySchema.optional().meta({
+            description: 'Controls evidence-grounded memory contributions during intake.',
+        }),
         rendering_template: z.string().optional().meta({
             description: 'Handlebars template used to materialize extracted properties into object text.',
         }),

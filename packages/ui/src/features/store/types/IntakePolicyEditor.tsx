@@ -585,6 +585,7 @@ function createEditorTabs(
         formTab('conversion', t('intakePolicy.tab.conversion')),
         formTab('extraction', t('intakePolicy.tab.extraction')),
         formTab('grounding', t('intakePolicy.tab.grounding')),
+        formTab('memory', t('intakePolicy.tab.memory')),
         formTab('output', t('intakePolicy.tab.output')),
         {
             name: 'json',
@@ -629,6 +630,7 @@ function IntakeSummary({ policy }: { policy: ContentTypeIntakePolicy }) {
         [t('intakePolicy.summary.source'), optionLabel(t, policy.extraction?.source)],
         [t('intakePolicy.summary.extraction'), enabledLabel(t, policy.extraction?.enabled)],
         [t('intakePolicy.summary.grounding'), enabledLabel(t, grounding?.enabled)],
+        [t('intakePolicy.summary.memory'), enabledLabel(t, policy.memory?.enabled)],
         [t('intakePolicy.summary.defaultView'), optionLabel(t, policy.default_view)],
         [t('intakePolicy.summary.toc'), enabledLabel(t, policy.generate_toc)],
         [

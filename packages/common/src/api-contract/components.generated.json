@@ -4790,6 +4790,44 @@
     },
     "additionalProperties": false
   },
+  "ContentTypeMemoryPolicy": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Enable memory contribution extraction for this intake policy."
+      },
+      "config": {
+        "$ref": "#/components/schemas/InteractionExecutionConfiguration",
+        "description": "Model/environment configuration for memory extraction. Defaults to the intake run config."
+      },
+      "scope": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "description": "Stable contribution scope across model and schema changes. Defaults to intake-memory."
+      },
+      "max_entities": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100,
+        "description": "Entity cap per extraction. Defaults to 50."
+      },
+      "max_relationships": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100,
+        "description": "Relationship cap per extraction. Defaults to 100."
+      },
+      "max_text_chars": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 500000,
+        "description": "Maximum document text characters sent to memory extraction. Defaults to 100000."
+      }
+    },
+    "additionalProperties": false
+  },
   "EmbeddingTypeEnabledMap": {
     "type": "object",
     "properties": {
@@ -5036,6 +5074,10 @@
         },
         "additionalProperties": false,
         "description": "Controls schema-property extraction after type assignment."
+      },
+      "memory": {
+        "$ref": "#/components/schemas/ContentTypeMemoryPolicy",
+        "description": "Controls evidence-grounded memory contributions during intake."
       },
       "rendering_template": {
         "type": "string",
@@ -25709,6 +25751,55 @@
     ],
     "additionalProperties": false
   },
+  "FindSubjectsPayload": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      },
+      "cursor": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "query"
+    ],
+    "additionalProperties": false
+  },
+  "FindSubjectsResponse": {
+    "type": "object",
+    "properties": {
+      "subjects": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Subject"
+        }
+      },
+      "cursor": {
+        "type": "string"
+      },
+      "truncated": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "subjects",
+      "truncated"
+    ],
+    "additionalProperties": false
+  },
   "SubjectRelationshipContext": {
     "type": "object",
     "properties": {
@@ -26229,6 +26320,448 @@
     },
     "required": [
       "results"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionSource": {
+    "type": "object",
+    "properties": {
+      "document_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "document_version_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "text_etag": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "document_id",
+      "document_version_id",
+      "text_etag"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionEvidence": {
+    "type": "object",
+    "properties": {
+      "excerpt": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4000
+      }
+    },
+    "required": [
+      "excerpt"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionEntity": {
+    "type": "object",
+    "properties": {
+      "key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500
+      },
+      "identifiers": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SubjectIdentifier"
+        }
+      },
+      "evidence": {
+        "minItems": 1,
+        "maxItems": 4,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipContributionEvidence"
+        }
+      }
+    },
+    "required": [
+      "key",
+      "type",
+      "name",
+      "identifiers",
+      "evidence"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionEntityEndpoint": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "entity"
+      },
+      "key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "kind",
+      "key"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionEndpoint": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/RelationshipContributionEntityEndpoint"
+      },
+      {
+        "$ref": "#/components/schemas/SubjectEndpointRef"
+      },
+      {
+        "$ref": "#/components/schemas/DocumentEndpointRef"
+      },
+      {
+        "$ref": "#/components/schemas/DocumentVersionEndpointRef"
+      },
+      {
+        "$ref": "#/components/schemas/ExternalEndpointRef"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "entity": "#/components/schemas/RelationshipContributionEntityEndpoint",
+        "subject": "#/components/schemas/SubjectEndpointRef",
+        "document": "#/components/schemas/DocumentEndpointRef",
+        "document_version": "#/components/schemas/DocumentVersionEndpointRef",
+        "external": "#/components/schemas/ExternalEndpointRef"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionRelationship": {
+    "type": "object",
+    "properties": {
+      "key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "source": {
+        "$ref": "#/components/schemas/RelationshipContributionEndpoint"
+      },
+      "target": {
+        "$ref": "#/components/schemas/RelationshipContributionEndpoint"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "evidence": {
+        "minItems": 1,
+        "maxItems": 4,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipContributionEvidence"
+        }
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    },
+    "required": [
+      "key",
+      "type",
+      "source",
+      "target",
+      "properties",
+      "evidence"
+    ],
+    "additionalProperties": false
+  },
+  "SubmitRelationshipContributionPayload": {
+    "type": "object",
+    "properties": {
+      "generation_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "source": {
+        "$ref": "#/components/schemas/RelationshipContributionSource"
+      },
+      "scope": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "catalog_fingerprint": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "config_fingerprint": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "extraction_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "complete": {
+        "type": "boolean"
+      },
+      "entities": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipContributionEntity"
+        }
+      },
+      "relationships": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipContributionRelationship"
+        }
+      }
+    },
+    "required": [
+      "generation_key",
+      "expected_revision",
+      "source",
+      "scope",
+      "catalog_fingerprint",
+      "config_fingerprint",
+      "extraction_run_id",
+      "complete",
+      "entities",
+      "relationships"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionStateQuery": {
+    "type": "object",
+    "properties": {
+      "document_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "scope": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "document_id",
+      "scope"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionState": {
+    "type": "object",
+    "properties": {
+      "revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "generation_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "revision"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionEntityResolution": {
+    "type": "object",
+    "properties": {
+      "key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "subject_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "resolved",
+          "created",
+          "unresolved"
+        ]
+      }
+    },
+    "required": [
+      "key",
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionRelationshipResolution": {
+    "type": "object",
+    "properties": {
+      "key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "relationship_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "published",
+          "unresolved"
+        ]
+      }
+    },
+    "required": [
+      "key",
+      "status"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipContributionCounts": {
+    "type": "object",
+    "properties": {
+      "proposed_entities": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "resolved_entities": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "created_entities": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "unresolved_entities": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "proposed_relationships": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "published_relationships": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "unresolved_relationships": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "proposed_entities",
+      "resolved_entities",
+      "created_entities",
+      "unresolved_entities",
+      "proposed_relationships",
+      "published_relationships",
+      "unresolved_relationships"
+    ],
+    "additionalProperties": false
+  },
+  "SubmitRelationshipContributionResponse": {
+    "type": "object",
+    "properties": {
+      "generation_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "staged",
+          "published",
+          "superseded"
+        ]
+      },
+      "counts": {
+        "$ref": "#/components/schemas/RelationshipContributionCounts"
+      },
+      "entities": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipContributionEntityResolution"
+        }
+      },
+      "relationships": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipContributionRelationshipResolution"
+        }
+      }
+    },
+    "required": [
+      "generation_key",
+      "revision",
+      "status",
+      "counts",
+      "entities",
+      "relationships"
     ],
     "additionalProperties": false
   },

@@ -68,6 +68,13 @@ import type {
     ProcessDefinitionBody,
     UpdateProcessDefinitionPayload,
 } from '../store/process.js';
+import type {
+    ContentObjectType,
+    ContentObjectTypeCatalogEntry,
+    ContentObjectTypeItem,
+    CreateContentObjectTypePayload,
+    UpdateContentObjectTypePayload,
+} from '../store/store.js';
 import type { ViewNavigationNode } from '../views.js';
 import {
     ACECreatePayloadSchema,
@@ -740,6 +747,7 @@ import {
     ContentObjectTypeStatusSchema,
     ContentTypeEditingPolicySchema,
     ContentTypeIntakePolicySchema,
+    ContentTypeMemoryPolicySchema,
     CreateContentObjectTypePayloadSchema,
     DeleteSchemaCandidateResponseSchema,
     GenerateSchemaCandidateDraftResponseSchema,
@@ -951,6 +959,7 @@ const PROJECT_AND_APP_SCHEMAS = {
     // The intake policy tree. Everything it reaches — InteractionExecutionConfiguration, the two
     // grounding policies, the page/vision enums and the embedding switches — is hoisted from here.
     ContentTypeIntakePolicy: ContentTypeIntakePolicySchema,
+    ContentTypeMemoryPolicy: ContentTypeMemoryPolicySchema,
     // Registered after the policy it references. `IntakeVisionProfileSettingsUpdate` and the
     // per-detail override map are hoisted from here; neither has a TypeScript name to alias.
     ProjectIntakeConfiguration: ProjectIntakeConfigurationSchema,
@@ -1435,14 +1444,14 @@ const CONTENT_TYPE_CATALOG_SCHEMAS = {
     ListSchemaCandidatesResponse: ListSchemaCandidatesResponseSchema,
     GenerateSchemaCandidateDraftResponse: GenerateSchemaCandidateDraftResponseSchema,
     DeleteSchemaCandidateResponse: DeleteSchemaCandidateResponseSchema,
-    ContentObjectTypeItem: ContentObjectTypeItemSchema,
-    ContentObjectTypeItemArray: ContentObjectTypeItemArraySchema,
-    ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntrySchema,
-    ContentObjectTypeCatalogEntryArray: ContentObjectTypeCatalogEntryArraySchema,
+    ContentObjectTypeItem: ContentObjectTypeItemSchema as z.ZodType,
+    ContentObjectTypeItemArray: ContentObjectTypeItemArraySchema as z.ZodType,
+    ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntrySchema as z.ZodType,
+    ContentObjectTypeCatalogEntryArray: ContentObjectTypeCatalogEntryArraySchema as z.ZodType,
     InCodeTypeDefinition: InCodeTypeDefinitionSchema,
-    CreateContentObjectTypePayload: CreateContentObjectTypePayloadSchema,
-    UpdateContentObjectTypePayload: UpdateContentObjectTypePayloadSchema,
-    ContentObjectType: ContentObjectTypeSchema,
+    CreateContentObjectTypePayload: CreateContentObjectTypePayloadSchema as z.ZodType,
+    UpdateContentObjectTypePayload: UpdateContentObjectTypePayloadSchema as z.ZodType,
+    ContentObjectType: ContentObjectTypeSchema as z.ZodType,
     ContentObjectTypeCatalogQuery: ContentObjectTypeCatalogQuerySchema,
     ContentObjectTypeListQuery: ContentObjectTypeListQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
@@ -2453,6 +2462,8 @@ const GRAPH_SCHEMAS = {
     ResolveSubjectsPayload: GraphSchemas.ResolveSubjectsPayloadSchema,
     SubjectResolution: GraphSchemas.SubjectResolutionSchema,
     ResolveSubjectsResponse: GraphSchemas.ResolveSubjectsResponseSchema,
+    FindSubjectsPayload: GraphSchemas.FindSubjectsPayloadSchema,
+    FindSubjectsResponse: GraphSchemas.FindSubjectsResponseSchema,
     SubjectReadResponse: GraphSchemas.SubjectReadResponseSchema,
     SubjectRelationshipContext: GraphSchemas.SubjectRelationshipContextSchema,
     UpsertSubjectItem: GraphSchemas.UpsertSubjectItemSchema,
@@ -2468,6 +2479,19 @@ const GRAPH_SCHEMAS = {
     UpsertRelationshipsPayload: GraphSchemas.UpsertRelationshipsPayloadSchema,
     RelationshipMutationResult: GraphSchemas.RelationshipMutationResultSchema,
     UpsertRelationshipsResponse: GraphSchemas.UpsertRelationshipsResponseSchema,
+    RelationshipContributionSource: GraphSchemas.RelationshipContributionSourceSchema,
+    RelationshipContributionEvidence: GraphSchemas.RelationshipContributionEvidenceSchema,
+    RelationshipContributionEntity: GraphSchemas.RelationshipContributionEntitySchema,
+    RelationshipContributionEntityEndpoint: GraphSchemas.RelationshipContributionEntityEndpointSchema,
+    RelationshipContributionEndpoint: GraphSchemas.RelationshipContributionEndpointSchema,
+    RelationshipContributionRelationship: GraphSchemas.RelationshipContributionRelationshipSchema,
+    SubmitRelationshipContributionPayload: GraphSchemas.SubmitRelationshipContributionPayloadSchema,
+    RelationshipContributionStateQuery: GraphSchemas.RelationshipContributionStateQuerySchema,
+    RelationshipContributionState: GraphSchemas.RelationshipContributionStateSchema,
+    RelationshipContributionEntityResolution: GraphSchemas.RelationshipContributionEntityResolutionSchema,
+    RelationshipContributionRelationshipResolution: GraphSchemas.RelationshipContributionRelationshipResolutionSchema,
+    RelationshipContributionCounts: GraphSchemas.RelationshipContributionCountsSchema,
+    SubmitRelationshipContributionResponse: GraphSchemas.SubmitRelationshipContributionResponseSchema,
     RelationshipDirection: GraphSchemas.RelationshipDirectionSchema,
     FindRelationshipsPayload: GraphSchemas.FindRelationshipsPayloadSchema,
     FindRelationshipsResponse: GraphSchemas.FindRelationshipsResponseSchema,
@@ -2636,6 +2660,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ResolveSubjectsPayload',
     'SubjectResolution',
     'ResolveSubjectsResponse',
+    'FindSubjectsPayload',
+    'FindSubjectsResponse',
     'SubjectReadResponse',
     'SubjectRelationshipContext',
     'UpsertSubjectItem',
@@ -2651,6 +2677,19 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'UpsertRelationshipsPayload',
     'RelationshipMutationResult',
     'UpsertRelationshipsResponse',
+    'RelationshipContributionSource',
+    'RelationshipContributionEvidence',
+    'RelationshipContributionEntity',
+    'RelationshipContributionEntityEndpoint',
+    'RelationshipContributionEndpoint',
+    'RelationshipContributionRelationship',
+    'SubmitRelationshipContributionPayload',
+    'RelationshipContributionStateQuery',
+    'RelationshipContributionState',
+    'RelationshipContributionEntityResolution',
+    'RelationshipContributionRelationshipResolution',
+    'RelationshipContributionCounts',
+    'SubmitRelationshipContributionResponse',
     'FindRelationshipsPayload',
     'FindRelationshipsResponse',
     'RelationshipTraversalStep',
@@ -2842,6 +2881,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // The intake policy tree. Every object in it is published closed today, including the inline
     // nested ones, which the schemas spell `strictObject` so the emission carries it directly.
     'ContentTypeIntakePolicy',
+    'ContentTypeMemoryPolicy',
     'ContentTypeExtractionGroundingPolicy',
     'ContentTypeExtractionGroundingReviewPolicy',
     'InteractionExecutionConfiguration',
@@ -3721,13 +3761,20 @@ export function buildApiSchemaComponents(): Readonly<Record<string, JsonObject>>
 }
 
 /**
- * Explicit TypeScript recursion boundary for schemas whose runtime graph is lazy.
+ * Explicit TypeScript recursion and declaration-size boundary for large schemas.
  *
- * Zod cannot infer a finite named type through a mutually-recursive graph. The schemas remain the
- * runtime and OpenAPI authority; these names preserve the recursive TypeScript declarations until
- * TypeScript can infer recursive aliases without collapsing them to `unknown`.
+ * Zod cannot infer a finite named type through a mutually-recursive graph, and some expanded policy
+ * schemas exceed TypeScript's declaration serializer. The schemas remain the runtime and OpenAPI
+ * authority; these names preserve public output types without widening them to `unknown`.
  */
 interface ZenoRecursiveComponentTypes {
+    ContentObjectType: ContentObjectType;
+    ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntry;
+    ContentObjectTypeCatalogEntryArray: ContentObjectTypeCatalogEntry[];
+    ContentObjectTypeItem: ContentObjectTypeItem;
+    ContentObjectTypeItemArray: ContentObjectTypeItem[];
+    CreateContentObjectTypePayload: CreateContentObjectTypePayload;
+    UpdateContentObjectTypePayload: UpdateContentObjectTypePayload;
     ViewNavigationNode: ViewNavigationNode;
     AgentRunResponse: AgentRunResponse;
     AgentRunInternals: AgentRunInternals;

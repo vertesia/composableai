@@ -90,6 +90,17 @@ export const SubjectResolutionSchema = z
 export const ResolveSubjectsResponseSchema = z
     .strictObject({ resolutions: z.array(SubjectResolutionSchema), subjects: z.array(SubjectSchema) })
     .meta({ id: 'ResolveSubjectsResponse' });
+export const FindSubjectsPayloadSchema = z
+    .strictObject({
+        query: z.string().min(1).max(200),
+        type: idSchema.optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+        cursor: z.string().optional(),
+    })
+    .meta({ id: 'FindSubjectsPayload' });
+export const FindSubjectsResponseSchema = z
+    .strictObject({ subjects: z.array(SubjectSchema), cursor: z.string().optional(), truncated: z.boolean() })
+    .meta({ id: 'FindSubjectsResponse' });
 export const UpsertSubjectItemSchema = z
     .strictObject({
         idempotency_key: idSchema,
@@ -171,6 +182,105 @@ export const RelationshipMutationResultSchema = z
 export const UpsertRelationshipsResponseSchema = z
     .strictObject({ results: z.array(RelationshipMutationResultSchema) })
     .meta({ id: 'UpsertRelationshipsResponse' });
+
+/** One source version's bounded, retryable input to canonical graph reconciliation. */
+export const RelationshipContributionSourceSchema = z
+    .strictObject({
+        document_id: idSchema,
+        document_version_id: idSchema,
+        text_etag: idSchema,
+    })
+    .meta({ id: 'RelationshipContributionSource' });
+export const RelationshipContributionEvidenceSchema = z
+    .strictObject({ excerpt: z.string().min(1).max(4000) })
+    .meta({ id: 'RelationshipContributionEvidence' });
+export const RelationshipContributionEntitySchema = z
+    .strictObject({
+        key: idSchema,
+        type: idSchema,
+        name: z.string().min(1).max(500),
+        identifiers: z.array(SubjectIdentifierSchema).max(10),
+        evidence: z.array(RelationshipContributionEvidenceSchema).min(1).max(4),
+    })
+    .meta({ id: 'RelationshipContributionEntity' });
+export const RelationshipContributionEntityEndpointSchema = z
+    .strictObject({ kind: z.literal('entity'), key: idSchema })
+    .meta({ id: 'RelationshipContributionEntityEndpoint' });
+export const RelationshipContributionEndpointSchema = z
+    .discriminatedUnion('kind', [
+        RelationshipContributionEntityEndpointSchema,
+        SubjectEndpointRefSchema,
+        DocumentEndpointRefSchema,
+        DocumentVersionEndpointRefSchema,
+        ExternalEndpointRefSchema,
+    ])
+    .meta({ id: 'RelationshipContributionEndpoint' });
+export const RelationshipContributionRelationshipSchema = z
+    .strictObject({
+        key: idSchema,
+        type: idSchema,
+        source: RelationshipContributionEndpointSchema,
+        target: RelationshipContributionEndpointSchema,
+        properties: jsonObjectSchema,
+        evidence: z.array(RelationshipContributionEvidenceSchema).min(1).max(4),
+        confidence: z.number().min(0).max(1).optional(),
+    })
+    .meta({ id: 'RelationshipContributionRelationship' });
+export const SubmitRelationshipContributionPayloadSchema = z
+    .strictObject({
+        generation_key: idSchema,
+        expected_revision: revisionSchema,
+        source: RelationshipContributionSourceSchema,
+        scope: idSchema,
+        catalog_fingerprint: idSchema,
+        config_fingerprint: idSchema,
+        extraction_run_id: idSchema,
+        complete: z.boolean(),
+        entities: z.array(RelationshipContributionEntitySchema).max(100),
+        relationships: z.array(RelationshipContributionRelationshipSchema).max(100),
+    })
+    .meta({ id: 'SubmitRelationshipContributionPayload' });
+export const RelationshipContributionStateQuerySchema = z
+    .strictObject({ document_id: idSchema, scope: idSchema })
+    .meta({ id: 'RelationshipContributionStateQuery' });
+export const RelationshipContributionStateSchema = z
+    .strictObject({ revision: revisionSchema, generation_key: idSchema.optional() })
+    .meta({ id: 'RelationshipContributionState' });
+export const RelationshipContributionEntityResolutionSchema = z
+    .strictObject({
+        key: idSchema,
+        subject_id: idSchema.optional(),
+        status: z.enum(['resolved', 'created', 'unresolved']),
+    })
+    .meta({ id: 'RelationshipContributionEntityResolution' });
+export const RelationshipContributionRelationshipResolutionSchema = z
+    .strictObject({
+        key: idSchema,
+        relationship_id: idSchema.optional(),
+        status: z.enum(['published', 'unresolved']),
+    })
+    .meta({ id: 'RelationshipContributionRelationshipResolution' });
+export const RelationshipContributionCountsSchema = z
+    .strictObject({
+        proposed_entities: z.number().int().nonnegative(),
+        resolved_entities: z.number().int().nonnegative(),
+        created_entities: z.number().int().nonnegative(),
+        unresolved_entities: z.number().int().nonnegative(),
+        proposed_relationships: z.number().int().nonnegative(),
+        published_relationships: z.number().int().nonnegative(),
+        unresolved_relationships: z.number().int().nonnegative(),
+    })
+    .meta({ id: 'RelationshipContributionCounts' });
+export const SubmitRelationshipContributionResponseSchema = z
+    .strictObject({
+        generation_key: idSchema,
+        revision: revisionSchema,
+        status: z.enum(['staged', 'published', 'superseded']),
+        counts: RelationshipContributionCountsSchema,
+        entities: z.array(RelationshipContributionEntityResolutionSchema),
+        relationships: z.array(RelationshipContributionRelationshipResolutionSchema),
+    })
+    .meta({ id: 'SubmitRelationshipContributionResponse' });
 
 export const RelationshipDirectionSchema = z
     .enum(['both', 'incoming', 'outgoing'])

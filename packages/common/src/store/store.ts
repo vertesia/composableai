@@ -91,6 +91,7 @@ import type {
     ContentTypeExtractionGroundingPolicySchema,
     ContentTypeExtractionGroundingReviewPolicySchema,
     ContentTypeIntakePolicySchema,
+    ContentTypeMemoryPolicySchema,
     CreateContentObjectTypePayloadSchema,
     DeleteSchemaCandidateResponseSchema,
     GenerateSchemaCandidateDraftResponseSchema,
@@ -630,6 +631,7 @@ export type ContentTypeExtractionGroundingReviewPolicy = z.infer<
 export type ContentTypeExtractionGroundingPolicy = z.infer<typeof ContentTypeExtractionGroundingPolicySchema>;
 
 export type ContentTypeIntakePolicy = z.infer<typeof ContentTypeIntakePolicySchema>;
+export type ContentTypeMemoryPolicy = z.infer<typeof ContentTypeMemoryPolicySchema>;
 
 // No TSDoc: the description is the canonical schema's, and a doc comment above a canonical alias is
 // published a second time.
