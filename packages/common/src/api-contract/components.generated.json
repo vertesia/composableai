@@ -26456,8 +26456,7 @@
     "type": "object",
     "required": [
       "kind"
-    ],
-    "additionalProperties": false
+    ]
   },
   "RelationshipContributionRelationship": {
     "type": "object",

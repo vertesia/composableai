@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ApiSchemaComponents, validateApiRequest } from '../api-contract/index.js';
 import {
     EndpointRefSchema,
     FindSubjectsPayloadSchema,
@@ -9,7 +10,6 @@ import {
     SubmitRelationshipContributionResponseSchema,
     TraverseRelationshipsPayloadSchema,
 } from './graph.js';
-import { ApiSchemaComponents } from './registry.js';
 
 describe('graph API contracts', () => {
     it('requires a valid endpoint discriminator and keeps traversal direction optional', () => {
@@ -75,6 +75,29 @@ describe('graph API contracts', () => {
             ],
         };
         expect(SubmitRelationshipContributionPayloadSchema.safeParse(payload).success).toBe(true);
+        expect(validateApiRequest('SubmitRelationshipContributionPayload', payload).valid).toBe(true);
+        for (const endpoint of [
+            { kind: 'entity', key: 'company' },
+            { kind: 'subject', id: 'subject-1' },
+            { kind: 'document', id: 'root-1' },
+            { kind: 'document_version', id: 'version-1' },
+            { kind: 'external', namespace: 'lei', value: '123' },
+        ]) {
+            expect(
+                validateApiRequest('SubmitRelationshipContributionPayload', {
+                    ...payload,
+                    relationships: [{ ...payload.relationships[0], source: endpoint, target: endpoint }],
+                }).valid,
+            ).toBe(true);
+        }
+        expect(
+            validateApiRequest('SubmitRelationshipContributionPayload', {
+                ...payload,
+                relationships: [
+                    { ...payload.relationships[0], source: { kind: 'entity', key: 'company', extra: true } },
+                ],
+            }).valid,
+        ).toBe(false);
         expect(RelationshipContributionEndpointSchema.safeParse({ kind: 'entity', key: 'company' }).success).toBe(true);
         expect(RelationshipContributionEndpointSchema.safeParse({ kind: 'entity', id: 'company' }).success).toBe(false);
         expect(RelationshipContributionEndpointSchema.safeParse({ kind: 'subject', key: 'company' }).success).toBe(

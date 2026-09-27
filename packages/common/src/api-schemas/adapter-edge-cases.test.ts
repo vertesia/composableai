@@ -61,6 +61,27 @@ describe('reference integrity', () => {
 });
 
 describe('additionalProperties policy', () => {
+    it('closes union branches without rejecting their fields at the discriminator wrapper', () => {
+        const components = toOpenApiComponents(
+            {
+                Endpoint: {
+                    type: 'object',
+                    required: ['kind'],
+                    oneOf: [
+                        { type: 'object', properties: { kind: { const: 'entity' }, key: { type: 'string' } } },
+                        { type: 'object', properties: { kind: { const: 'subject' }, id: { type: 'string' } } },
+                    ],
+                },
+            },
+            { strictComponents: new Set(['Endpoint']) },
+        );
+        expect(components.Endpoint.additionalProperties).toBeUndefined();
+        expect((components.Endpoint.oneOf as JsonObject[]).map((branch) => branch.additionalProperties)).toEqual([
+            false,
+            false,
+        ]);
+    });
+
     it('preserves a schema-valued additionalProperties on an open component', () => {
         // Record<string, string> — deleting the keyword would widen the value type to `any`.
         const components = toOpenApiComponents({

@@ -445,7 +445,15 @@ function isOnlyStringType(schema: JsonObject): boolean {
  * at another component, which is governed by its own listing.
  */
 function closeObjects(node: JsonObject): void {
-    if (typeof node[REF] !== 'string' && node.type === 'object' && node.additionalProperties === undefined) {
+    // A union has no properties of its own: its branches own the allowed keys. Closing the
+    // union wrapper rejects every branch property even when that branch is itself strict.
+    if (
+        typeof node[REF] !== 'string' &&
+        node.type === 'object' &&
+        !Array.isArray(node.oneOf) &&
+        !Array.isArray(node.anyOf) &&
+        node.additionalProperties === undefined
+    ) {
         node.additionalProperties = false;
     }
     eachSubschema(node, closeObjects);
