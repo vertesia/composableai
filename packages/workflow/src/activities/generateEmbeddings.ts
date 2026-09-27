@@ -163,7 +163,7 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
     const sourceText =
         type === SupportedEmbeddingTypes.text
             ? document.text
-            : document.properties
+            : document.properties && Object.keys(document.properties).length > 0
               ? JSON.stringify(document.properties)
               : undefined;
 
