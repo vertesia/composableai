@@ -273,7 +273,7 @@ function StreamingMessageComponent({
             {/* Card wrapper matching MessageItem structure */}
             <div
                 className={cn(
-                    'border-s-4 bg-white dark:bg-muted mb-4 border-s-done w-full max-w-full overflow-hidden',
+                    'border-s-4 bg-card text-card-foreground mb-4 border-s-done w-full max-w-full overflow-hidden',
                     cardClassName,
                 )}
                 data-workstream-id={workstreamId}
@@ -311,7 +311,7 @@ function StreamingMessageComponent({
                 <div className={cn('px-3 pb-2 streaming-content', isTyping && 'streaming-active', contentClassName)}>
                     <div
                         className={cn(
-                            'vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words',
+                            'vprose prose  prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words',
                             proseClassName,
                         )}
                         style={{ overflowWrap: 'anywhere' }}

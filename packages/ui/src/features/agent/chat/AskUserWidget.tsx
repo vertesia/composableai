@@ -397,7 +397,7 @@ export function AskUserWidget({
                         <div className="min-w-0 flex-1">
                             <div className={SCROLLABLE_PROMPT_CLASS}>
                                 <div
-                                    className={`agent-ask-question prose prose-sm dark:prose-invert max-w-none text-foreground ${questionClassName || ''}`}
+                                    className={`agent-ask-question vprose prose prose-sm max-w-none text-foreground ${questionClassName || ''}`}
                                 >
                                     <MarkdownRenderer>{question}</MarkdownRenderer>
                                 </div>
@@ -424,7 +424,7 @@ export function AskUserWidget({
                                             ${
                                                 selectedOptions.has(option.id)
                                                     ? 'bg-info border border-info'
-                                                    : 'bg-white dark:bg-muted border border-border hover:bg-muted'
+                                                    : 'bg-card text-card-foreground border border-border hover:bg-muted'
                                             }
                                             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
@@ -433,7 +433,7 @@ export function AskUserWidget({
                                             checked={selectedOptions.has(option.id)}
                                             onChange={() => toggleOption(option.id)}
                                             disabled={isLoading}
-                                            className="mt-0.5 w-4 h-4 rounded border-border text-info focus:ring-info dark:bg-muted"
+                                            className="mt-0.5 w-4 h-4 rounded border-border text-info focus:ring-info bg-background"
                                         />
                                         <div className="flex-1 overflow-hidden">
                                             <div className="flex items-center gap-2 text-sm font-medium text-foreground break-words">
@@ -472,7 +472,7 @@ export function AskUserWidget({
                                         onClick={() => onSelect?.(option.id)}
                                         disabled={isLoading}
                                         className={`w-full h-auto whitespace-normal text-start px-4 py-3 rounded-lg border border-border
-                                            bg-white dark:bg-muted
+                                            bg-card text-card-foreground
                                             hover:bg-muted hover:border-border
                                             focus:outline-none focus:ring-2 focus:ring-info focus:ring-offset-1
                                             transition-colors
@@ -513,7 +513,7 @@ export function AskUserWidget({
                                 onKeyDown={handleKeyDown}
                                 placeholder={resolvedPlaceholder}
                                 disabled={isLoading}
-                                className={`flex-1 px-3 py-2 text-sm border border-border rounded-md bg-white dark:bg-muted focus:ring-2 focus:ring-info focus:border-transparent ${inputClassName || ''}`}
+                                className={`flex-1 px-3 py-2 text-sm border border-border rounded-md bg-card text-card-foreground focus:ring-2 focus:ring-info focus:border-transparent ${inputClassName || ''}`}
                             />
                             <Button
                                 size="sm"

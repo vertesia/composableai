@@ -457,7 +457,7 @@ function MessageItemComponent({
         return (
             <div
                 className={cn(
-                    'vprose prose prose-slate dark:prose-invert prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words',
+                    'vprose prose  prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words',
                     resolvedStyle.proseClassName,
                 )}
                 style={{ overflowWrap: 'anywhere' }}
@@ -573,7 +573,7 @@ function MessageItemComponent({
         <div className={cn('w-full max-w-full', resolvedStyle.className)}>
             <div
                 className={cn(
-                    'group border-s-4 bg-white dark:bg-muted mb-4 w-full max-w-full overflow-hidden',
+                    'group border-s-4 bg-card text-card-foreground mb-4 w-full max-w-full overflow-hidden',
                     resolvedStyle.borderColor,
                     resolvedStyle.cardClassName,
                 )}
@@ -636,7 +636,12 @@ function MessageItemComponent({
                 </div>
 
                 {/* Message content */}
-                <div className={cn('px-4 pb-3 bg-white dark:bg-muted overflow-hidden', resolvedStyle.contentClassName)}>
+                <div
+                    className={cn(
+                        'px-4 pb-3 bg-card text-card-foreground overflow-hidden',
+                        resolvedStyle.contentClassName,
+                    )}
+                >
                     {/* Check for REQUEST_INPUT with UX config - render AskUserWidget instead of plain text */}
                     {askUserUx ? (
                         <AskUserWidget

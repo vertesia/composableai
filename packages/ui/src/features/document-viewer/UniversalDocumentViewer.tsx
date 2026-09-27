@@ -690,7 +690,7 @@ export function UniversalDocumentViewer({
         );
     } else if (isMarkdown(context)) {
         body = (
-            <div className="prose prose-sm dark:prose-invert max-w-none px-5 py-4">
+            <div className="vprose prose prose-sm max-w-none px-5 py-4">
                 <MarkdownRenderer artifactRunId={source.artifact?.runId} components={markdownComponents}>
                     {context.content || ''}
                 </MarkdownRenderer>
