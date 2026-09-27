@@ -8627,8 +8627,16 @@
         "type": "number",
         "description": "Number of input tokens written to prompt cache."
       },
+      "prompt_cache_write_1h": {
+        "type": "number",
+        "description": "Of `prompt_cache_write`, the tokens written with a one-hour cache lifetime, when the provider reports it. The remainder used the default (five-minute) lifetime."
+      },
       "prompt_new": {
         "type": "number"
+      },
+      "provider_cost_usd": {
+        "type": "number",
+        "description": "Amount the provider reported charging for this request, in USD, when the provider returns it (e.g. OpenRouter). Absent for bring-your-own-key requests."
       }
     },
     "additionalProperties": false
