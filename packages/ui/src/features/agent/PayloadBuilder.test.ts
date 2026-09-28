@@ -155,3 +155,60 @@ it('validates profile availability across builder snapshots without blocking ad 
     store.snapshot.setInferenceProfile(undefined);
     expect(store.snapshot.inferenceProfileError).toBeUndefined();
 });
+
+describe('run check flags', () => {
+    it('defaults to no evaluation request and no final verification', () => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        expect(store.snapshot.evaluate).toBeUndefined();
+        expect(store.snapshot.final_verification).toBe(false);
+    });
+
+    it.each([true, false])('publishes evaluate=%s and notifies only on change', (value) => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        const listener = vi.fn();
+        store.subscribe(listener);
+
+        store.snapshot.setEvaluate(value);
+        expect(store.snapshot.evaluate).toBe(value);
+        expect(listener).toHaveBeenCalledOnce();
+
+        store.snapshot.setEvaluate(value);
+        expect(listener).toHaveBeenCalledOnce();
+    });
+
+    it('publishes the final verification opt-in and notifies only on change', () => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        const listener = vi.fn();
+        store.subscribe(listener);
+
+        store.snapshot.setFinalVerification(true);
+        expect(store.snapshot.final_verification).toBe(true);
+        expect(listener).toHaveBeenCalledOnce();
+
+        store.snapshot.setFinalVerification(true);
+        expect(listener).toHaveBeenCalledOnce();
+    });
+
+    it('keeps both flags across later snapshots and clones', () => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        store.snapshot.setEvaluate(true);
+        store.snapshot.setFinalVerification(true);
+
+        store.snapshot.setModel('model-id');
+
+        expect(store.snapshot.evaluate).toBe(true);
+        expect(store.snapshot.final_verification).toBe(true);
+        expect(store.snapshot.clone()).toMatchObject({ evaluate: true, final_verification: true });
+    });
+
+    it('clears both flags on reset', () => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        store.snapshot.setEvaluate(true);
+        store.snapshot.setFinalVerification(true);
+
+        store.snapshot.reset();
+
+        expect(store.snapshot.evaluate).toBeUndefined();
+        expect(store.snapshot.final_verification).toBe(false);
+    });
+});

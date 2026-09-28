@@ -349,8 +349,8 @@ const TabsTrigger: React.ForwardRefExoticComponent<
                           )
                         : cn(
                               'px-3 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer rounded-sm transition-colors',
-                              'tborder border-input bg-muted shadow-xs hover:bg-muted ring-inset',
-                              'data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm',
+                              'border border-input bg-muted shadow-xs hover:bg-muted ring-inset',
+                              'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm',
                               'disabled:pointer-events-none disabled:opacity-50',
                           ),
                     className,

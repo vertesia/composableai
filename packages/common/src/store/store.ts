@@ -1,100 +1,6 @@
-import type { z } from 'zod';
-import type {
-    ContentObjectTypeRefSchema,
-    InCodeTypeRefSchema,
-    StoredTypeRefSchema,
-} from '../api-schemas/app-lifecycle.js';
-import type {
-    ComplexSearchPayloadSchema,
-    ContentObjectApiResponseSchema,
-    ContentObjectApiRevisionSchema,
-    ContentObjectApiTypeRefSchema,
-    ContentObjectExportArtifactFileSchema,
-    ContentObjectExportArtifactSchema,
-    ContentObjectExportProgressSchema,
-    ContentObjectExportResultSchema,
-    ContentObjectExportStatusResponseSchema,
-    ContentObjectItemApiResponseSchema,
-    ContentObjectTextResponseSchema,
-    ContentObjectUserPermissionsSchema,
-    ContentSourceSchema,
-    CreateContentObjectHeadersSchema,
-    CreateContentObjectPayloadSchema,
-    CreateContentObjectQuerySchema,
-    DeleteContentObjectExportResponseSchema,
-    DeleteContentObjectResultSchema,
-    EmbeddingSchema,
-    ExportContentObjectsFilterSchema,
-    ExportContentObjectsIncludeOptionsSchema,
-    GenerationRunMetadataSchema,
-    GetObjectRenditionQuerySchema,
-    GetRenditionResponseSchema,
-    InheritedPropertyMetadataSchema,
-    ListContentObjectExportsResponseSchema,
-    ObjectSearchResponseSchema,
-    ProjectedContentObjectApiResponseSchema,
-    RevisionInfoSchema,
-    SetObjectEmbeddingsResponseSchema,
-    StartContentObjectExportRequestSchema,
-    StartContentObjectExportResponseSchema,
-    TranscriptSchema,
-    TranscriptSegmentSchema,
-    UpdateContentObjectHeadersSchema,
-    UpdateContentObjectPayloadSchema,
-    UpdateContentObjectQuerySchema,
-} from '../api-schemas/content.js';
-import type { MarkdownRenditionFormatSchema } from '../api-schemas/document-processing.js';
-import type {
-    CreateWorkflowRulePayloadSchema,
-    UpdateWorkflowRulePayloadSchema,
-    WorkflowRuleItemSchema,
-    WorkflowRuleSchema,
-} from '../api-schemas/events.js';
-import type {
-    BucketCreateAccessStatusResponseSchema,
-    BucketReadAccessStatusResponseSchema,
-    BulkUploadUrlsPayloadSchema,
-    BulkUploadUrlsResponseSchema,
-    CopyFilePayloadSchema,
-    CopyFileResponseSchema,
-    DeleteFileResultSchema,
-    EnsureBucketCreateAccessPayloadSchema,
-    EnsureBucketCreateAccessResponseSchema,
-    EnsureBucketReadAccessPayloadSchema,
-    EnsureBucketReadAccessResponseSchema,
-    FileBucketResponseSchema,
-    FileDeleteQuerySchema,
-    FileListQuerySchema,
-    FileListResponseSchema,
-    FileMetadataQuerySchema,
-    FileMetadataResponseSchema,
-    FileMetadataUpdateResultSchema,
-    GetFileUrlPayloadSchema,
-    GetFileUrlResponseSchema,
-    GetUploadUrlPayloadSchema,
-    SetFileMetadataPayloadSchema,
-} from '../api-schemas/files.js';
-import type {
-    ColumnLayoutSchema,
-    ContentObjectTypeCatalogEntrySchema,
-    ContentObjectTypeCatalogQuerySchema,
-    ContentObjectTypeItemSchema,
-    ContentObjectTypeListQuerySchema,
-    ContentObjectTypeSchema,
-    ContentObjectTypeStatusSchema,
-    ContentTypeEditingPolicySchema,
-    ContentTypeExtractionGroundingPolicySchema,
-    ContentTypeExtractionGroundingReviewPolicySchema,
-    ContentTypeIntakePolicySchema,
-    CreateContentObjectTypePayloadSchema,
-    InCodeTypeDefinitionSchema,
-    IntakePageRangesSchema,
-    IntakePageScopeSchema,
-    IntakeVisionDetailSchema,
-    UpdateContentObjectTypePayloadSchema,
-} from '../api-schemas/store.js';
 import type { JSONObject } from '../json.js';
 import type { SupportedEmbeddingTypes } from '../project.js';
+import type * as Wire from '../wire-types.generated.js';
 import type { BaseObject } from './common.js';
 
 export enum ContentObjectApiHeaders {
@@ -108,15 +14,15 @@ export enum ContentObjectApiHeaders {
     SUPPRESS_WORKFLOWS = 'x-suppress-workflows',
 }
 
-export type CreateContentObjectQuery = z.infer<typeof CreateContentObjectQuerySchema>;
+export type CreateContentObjectQuery = Wire.CreateContentObjectQuery;
 
-export type CreateContentObjectHeaders = z.infer<typeof CreateContentObjectHeadersSchema>;
+export type CreateContentObjectHeaders = Wire.CreateContentObjectHeaders;
 
-export type UpdateContentObjectQuery = z.infer<typeof UpdateContentObjectQuerySchema>;
+export type UpdateContentObjectQuery = Wire.UpdateContentObjectQuery;
 
-export type UpdateContentObjectHeaders = z.infer<typeof UpdateContentObjectHeadersSchema>;
+export type UpdateContentObjectHeaders = Wire.UpdateContentObjectHeaders;
 
-export type GetObjectRenditionQuery = z.infer<typeof GetObjectRenditionQuerySchema>;
+export type GetObjectRenditionQuery = Wire.GetObjectRenditionQuery;
 
 /**
  * Headers for Data Store API calls.
@@ -136,15 +42,15 @@ export enum ContentObjectStatus {
     archived = 'archived',
 }
 
-export type Embedding = z.infer<typeof EmbeddingSchema>;
+export type Embedding = Wire.Embedding;
 
-export type ExportContentObjectsIncludeOptions = z.infer<typeof ExportContentObjectsIncludeOptionsSchema>;
+export type ExportContentObjectsIncludeOptions = Wire.ExportContentObjectsIncludeOptions;
 
-export type ExportContentObjectsFilter = z.infer<typeof ExportContentObjectsFilterSchema>;
+export type ExportContentObjectsFilter = Wire.ExportContentObjectsFilter;
 
-export type StartContentObjectExportRequest = z.infer<typeof StartContentObjectExportRequestSchema>;
+export type StartContentObjectExportRequest = Wire.StartContentObjectExportRequest;
 
-export type StartContentObjectExportResponse = z.infer<typeof StartContentObjectExportResponseSchema>;
+export type StartContentObjectExportResponse = Wire.StartContentObjectExportResponse;
 
 export interface ZenoBulkContentObjectExportRequest extends Omit<StartContentObjectExportRequest, 'compression'> {
     tenant_id: string;
@@ -211,38 +117,38 @@ export interface ZenoBulkContentObjectExportComposeRequest extends ZenoBulkConte
     started_at?: string;
 }
 
-export type ContentObjectExportResult = z.infer<typeof ContentObjectExportResultSchema>;
+export type ContentObjectExportResult = Wire.ContentObjectExportResult;
 
-export type ContentObjectExportProgress = z.infer<typeof ContentObjectExportProgressSchema>;
+export type ContentObjectExportProgress = Wire.ContentObjectExportProgress;
 
-export type ContentObjectExportStatusResponse = z.infer<typeof ContentObjectExportStatusResponseSchema>;
+export type ContentObjectExportStatusResponse = Wire.ContentObjectExportStatusResponse;
 
-export type ContentObjectExportArtifact = z.infer<typeof ContentObjectExportArtifactSchema>;
+export type ContentObjectExportArtifact = Wire.ContentObjectExportArtifact;
 
-export type ContentObjectExportArtifactFile = z.infer<typeof ContentObjectExportArtifactFileSchema>;
+export type ContentObjectExportArtifactFile = Wire.ContentObjectExportArtifactFile;
 
-export type ListContentObjectExportsResponse = z.infer<typeof ListContentObjectExportsResponseSchema>;
+export type ListContentObjectExportsResponse = Wire.ListContentObjectExportsResponse;
 
-export type DeleteContentObjectExportResponse = z.infer<typeof DeleteContentObjectExportResponseSchema>;
+export type DeleteContentObjectExportResponse = Wire.DeleteContentObjectExportResponse;
 
-export type InheritedPropertyMetadata = z.infer<typeof InheritedPropertyMetadataSchema>;
-export type ContentObjectUserPermissions = z.infer<typeof ContentObjectUserPermissionsSchema>;
+export type InheritedPropertyMetadata = Wire.InheritedPropertyMetadata;
+export type ContentObjectUserPermissions = Wire.ContentObjectUserPermissions;
 
-export type ContentObjectTextResponse = z.infer<typeof ContentObjectTextResponseSchema>;
+export type ContentObjectTextResponse = Wire.ContentObjectTextResponse;
 
-export type DeleteContentObjectResult = z.infer<typeof DeleteContentObjectResultSchema>;
+export type DeleteContentObjectResult = Wire.DeleteContentObjectResult;
 
-export type SetObjectEmbeddingsResponse = z.infer<typeof SetObjectEmbeddingsResponseSchema>;
+export type SetObjectEmbeddingsResponse = Wire.SetObjectEmbeddingsResponse;
 
-export type ContentObjectApiTypeRef = z.infer<typeof ContentObjectApiTypeRefSchema>;
+export type ContentObjectApiTypeRef = Wire.ContentObjectApiTypeRef;
 
-export type ContentObjectApiRevision = z.infer<typeof ContentObjectApiRevisionSchema>;
+export type ContentObjectApiRevision = Wire.ContentObjectApiRevision;
 
-export type ContentObjectItemApiResponse = z.infer<typeof ContentObjectItemApiResponseSchema>;
+export type ContentObjectItemApiResponse = Wire.ContentObjectItemApiResponse;
 
-export type ContentObjectApiResponse = z.infer<typeof ContentObjectApiResponseSchema>;
+export type ContentObjectApiResponse = Wire.ContentObjectApiResponse;
 
-export type ProjectedContentObjectApiResponse = z.infer<typeof ProjectedContentObjectApiResponseSchema>;
+export type ProjectedContentObjectApiResponse = Wire.ProjectedContentObjectApiResponse;
 
 export type FullObjectSearchResponse = Omit<ObjectSearchResponse, 'results'> & {
     results: ContentObjectItemApiResponse[];
@@ -287,7 +193,7 @@ export interface Location {
     longitude: number;
 }
 
-export type GenerationRunMetadata = z.infer<typeof GenerationRunMetadataSchema>;
+export type GenerationRunMetadata = Wire.GenerationRunMetadata;
 
 // Base rendition interface for document and audio
 export interface Rendition {
@@ -466,13 +372,13 @@ interface GroundedMetadata {
     [key: string]: unknown;
 }
 
-export type Transcript = z.infer<typeof TranscriptSchema>;
+export type Transcript = Wire.Transcript;
 
-export type TranscriptSegment = z.infer<typeof TranscriptSegmentSchema>;
+export type TranscriptSegment = Wire.TranscriptSegment;
 
-export type ContentSource = z.infer<typeof ContentSourceSchema>;
+export type ContentSource = Wire.ContentSource;
 
-export type RevisionInfo = z.infer<typeof RevisionInfoSchema>;
+export type RevisionInfo = Wire.RevisionInfo;
 
 /**
  * The content object item is a simplified version of the ContentObject that is returned by the store API when listing objects.
@@ -555,7 +461,7 @@ export interface ContentObjectItem<T = JSONObject> extends BaseObject {
     user_permissions?: ContentObjectUserPermissions;
 }
 
-type CreateContentObjectPayloadWire = z.infer<typeof CreateContentObjectPayloadSchema>;
+type CreateContentObjectPayloadWire = Wire.CreateContentObjectPayloadWire;
 export type CreateContentObjectPayload<T = JSONObject> = Omit<
     CreateContentObjectPayloadWire,
     'properties' | 'metadata'
@@ -569,17 +475,17 @@ export function getContentTypeRefId(type: ContentObjectTypeRef): string {
     return type.id;
 }
 
-export type ContentObjectTypeRef = z.infer<typeof ContentObjectTypeRefSchema>;
+export type ContentObjectTypeRef = Wire.ContentObjectTypeRef;
 
-export type ComplexSearchPayload = z.infer<typeof ComplexSearchPayloadSchema>;
+export type ComplexSearchPayload = Wire.ComplexSearchPayload;
 
-export type ColumnLayout = z.infer<typeof ColumnLayoutSchema>;
+export type ColumnLayout = Wire.ColumnLayout;
 
-export type ContentObjectTypeStatus = z.infer<typeof ContentObjectTypeStatusSchema>;
+export type ContentObjectTypeStatus = Wire.ContentObjectTypeStatus;
 
-export type IntakeVisionDetail = z.infer<typeof IntakeVisionDetailSchema>;
+export type IntakeVisionDetail = Wire.IntakeVisionDetail;
 
-export type IntakePageScope = z.infer<typeof IntakePageScopeSchema>;
+export type IntakePageScope = Wire.IntakePageScope;
 
 /**
  * Inclusive `[start, end]` pairs.
@@ -589,15 +495,13 @@ export type IntakePageScope = z.infer<typeof IntakePageScopeSchema>;
  * tuple, and reproducing it is what keeps the generated clients unchanged. The length is still
  * enforced at runtime.
  */
-export type IntakePageRanges = z.infer<typeof IntakePageRangesSchema>;
+export type IntakePageRanges = Wire.IntakePageRanges;
 
-export type ContentTypeExtractionGroundingReviewPolicy = z.infer<
-    typeof ContentTypeExtractionGroundingReviewPolicySchema
->;
+export type ContentTypeExtractionGroundingReviewPolicy = Wire.ContentTypeExtractionGroundingReviewPolicy;
 
-export type ContentTypeExtractionGroundingPolicy = z.infer<typeof ContentTypeExtractionGroundingPolicySchema>;
+export type ContentTypeExtractionGroundingPolicy = Wire.ContentTypeExtractionGroundingPolicy;
 
-export type ContentTypeIntakePolicy = z.infer<typeof ContentTypeIntakePolicySchema>;
+export type ContentTypeIntakePolicy = Wire.ContentTypeIntakePolicy;
 
 // No TSDoc: the description is the canonical schema's, and a doc comment above a canonical alias is
 // published a second time.
@@ -606,34 +510,34 @@ export type ContentTypeIntakePolicy = z.infer<typeof ContentTypeIntakePolicySche
 // same thing as the Zod schema and had to be kept in step by hand; `./editing-policy-schema.generated.ts`
 // now emits it from the canonical component, under the same exported name, so the validator the types
 // resource compiles and the component the spec publishes are the same object.
-export type ContentTypeEditingPolicy = z.infer<typeof ContentTypeEditingPolicySchema>;
+export type ContentTypeEditingPolicy = Wire.ContentTypeEditingPolicy;
 
-export type ContentObjectType = z.infer<typeof ContentObjectTypeSchema>;
-export type ContentObjectTypeItem = z.infer<typeof ContentObjectTypeItemSchema>;
+export type ContentObjectType = Wire.ContentObjectType;
+export type ContentObjectTypeItem = Wire.ContentObjectTypeItem;
 // Was `Pick<ContentObjectTypeItem, ...>`, and published under the name that derived from:
 // `Pick_ContentObjectTypeItem_id_name_description_tags_object_schema_...`. A mapped type over a
 // canonical alias resolves to `{}`, so the shape is authored now — and it publishes under its own
 // name, which is what the API always meant.
-export type InCodeTypeDefinition = z.infer<typeof InCodeTypeDefinitionSchema>;
-export type ContentObjectTypeCatalogEntry = z.infer<typeof ContentObjectTypeCatalogEntrySchema>;
+export type InCodeTypeDefinition = Wire.InCodeTypeDefinition;
+export type ContentObjectTypeCatalogEntry = Wire.ContentObjectTypeCatalogEntry;
 /**
  * The itnerface to be used whend efining types in a plugin app.
  */
 export type InCodeTypeSpec = Omit<InCodeTypeDefinition, 'id'>;
 
-export type CreateContentObjectTypePayload = z.infer<typeof CreateContentObjectTypePayloadSchema>;
+export type CreateContentObjectTypePayload = Wire.CreateContentObjectTypePayload;
 
-export type UpdateContentObjectTypePayload = z.infer<typeof UpdateContentObjectTypePayloadSchema>;
+export type UpdateContentObjectTypePayload = Wire.UpdateContentObjectTypePayload;
 
 export enum WorkflowRuleInputType {
     single = 'single',
     multiple = 'multiple',
     none = 'none',
 }
-export type WorkflowRuleItem = z.infer<typeof WorkflowRuleItemSchema>;
-export type WorkflowRule = z.infer<typeof WorkflowRuleSchema>;
+export type WorkflowRuleItem = Wire.WorkflowRuleItem;
+export type WorkflowRule = Wire.WorkflowRule;
 
-export type CreateWorkflowRulePayload = z.infer<typeof CreateWorkflowRulePayloadSchema>;
+export type CreateWorkflowRulePayload = Wire.CreateWorkflowRulePayload;
 export interface UploadWorkflowRulePayload
     extends Partial<Omit<WorkflowRule, 'id' | 'created_at' | 'updated_at' | 'owner'>> {}
 
@@ -648,7 +552,7 @@ export const MarkdownRenditionFormat = {
     pdf: 'pdf',
 } as const;
 
-export type MarkdownRenditionFormat = z.infer<typeof MarkdownRenditionFormatSchema>;
+export type MarkdownRenditionFormat = Wire.MarkdownRenditionFormat;
 
 export interface GetRenditionParams {
     format: ImageRenditionFormat | MarkdownRenditionFormat;
@@ -658,9 +562,9 @@ export interface GetRenditionParams {
     block_on_generation?: boolean;
 }
 
-export type GetRenditionResponse = z.infer<typeof GetRenditionResponseSchema>;
+export type GetRenditionResponse = Wire.GetRenditionResponse;
 
-export type ObjectSearchResponse = z.infer<typeof ObjectSearchResponseSchema>;
+export type ObjectSearchResponse = Wire.ObjectSearchResponse;
 
 // ============================================================================
 // Rendition Format Compatibility Utilities
@@ -728,53 +632,53 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
     return false;
 }
 
-export type GetUploadUrlPayload = z.infer<typeof GetUploadUrlPayloadSchema>;
+export type GetUploadUrlPayload = Wire.GetUploadUrlPayload;
 
-export type GetFileUrlPayload = z.infer<typeof GetFileUrlPayloadSchema>;
+export type GetFileUrlPayload = Wire.GetFileUrlPayload;
 
-export type GetFileUrlResponse = z.infer<typeof GetFileUrlResponseSchema>;
+export type GetFileUrlResponse = Wire.GetFileUrlResponse;
 
-export type EnsureBucketReadAccessPayload = z.infer<typeof EnsureBucketReadAccessPayloadSchema>;
+export type EnsureBucketReadAccessPayload = Wire.EnsureBucketReadAccessPayload;
 
-export type EnsureBucketReadAccessResponse = z.infer<typeof EnsureBucketReadAccessResponseSchema>;
+export type EnsureBucketReadAccessResponse = Wire.EnsureBucketReadAccessResponse;
 
-export type BucketReadAccessStatusResponse = z.infer<typeof BucketReadAccessStatusResponseSchema>;
+export type BucketReadAccessStatusResponse = Wire.BucketReadAccessStatusResponse;
 
-export type EnsureBucketCreateAccessPayload = z.infer<typeof EnsureBucketCreateAccessPayloadSchema>;
+export type EnsureBucketCreateAccessPayload = Wire.EnsureBucketCreateAccessPayload;
 
-export type EnsureBucketCreateAccessResponse = z.infer<typeof EnsureBucketCreateAccessResponseSchema>;
+export type EnsureBucketCreateAccessResponse = Wire.EnsureBucketCreateAccessResponse;
 
-export type BucketCreateAccessStatusResponse = z.infer<typeof BucketCreateAccessStatusResponseSchema>;
+export type BucketCreateAccessStatusResponse = Wire.BucketCreateAccessStatusResponse;
 
-export type FileMetadataResponse = z.infer<typeof FileMetadataResponseSchema>;
+export type FileMetadataResponse = Wire.FileMetadataResponse;
 
-export type SetFileMetadataPayload = z.infer<typeof SetFileMetadataPayloadSchema>;
+export type SetFileMetadataPayload = Wire.SetFileMetadataPayload;
 
-export type FileMetadataUpdateResult = z.infer<typeof FileMetadataUpdateResultSchema>;
+export type FileMetadataUpdateResult = Wire.FileMetadataUpdateResult;
 
-export type BulkUploadUrlsPayload = z.infer<typeof BulkUploadUrlsPayloadSchema>;
+export type BulkUploadUrlsPayload = Wire.BulkUploadUrlsPayload;
 
-export type BulkUploadUrlsResponse = z.infer<typeof BulkUploadUrlsResponseSchema>;
+export type BulkUploadUrlsResponse = Wire.BulkUploadUrlsResponse;
 
-export type FileBucketResponse = z.infer<typeof FileBucketResponseSchema>;
+export type FileBucketResponse = Wire.FileBucketResponse;
 
-export type FileListResponse = z.infer<typeof FileListResponseSchema>;
+export type FileListResponse = Wire.FileListResponse;
 
-export type FileMetadataQuery = z.infer<typeof FileMetadataQuerySchema>;
+export type FileMetadataQuery = Wire.FileMetadataQuery;
 
-export type FileListQuery = z.infer<typeof FileListQuerySchema>;
+export type FileListQuery = Wire.FileListQuery;
 
-export type FileDeleteQuery = z.infer<typeof FileDeleteQuerySchema>;
+export type FileDeleteQuery = Wire.FileDeleteQuery;
 
-export type ContentObjectTypeCatalogQuery = z.infer<typeof ContentObjectTypeCatalogQuerySchema>;
+export type ContentObjectTypeCatalogQuery = Wire.ContentObjectTypeCatalogQuery;
 
-export type ContentObjectTypeListQuery = z.infer<typeof ContentObjectTypeListQuerySchema>;
+export type ContentObjectTypeListQuery = Wire.ContentObjectTypeListQuery;
 
-export type CopyFilePayload = z.infer<typeof CopyFilePayloadSchema>;
+export type CopyFilePayload = Wire.CopyFilePayload;
 
-export type CopyFileResponse = z.infer<typeof CopyFileResponseSchema>;
+export type CopyFileResponse = Wire.CopyFileResponse;
 
-export type DeleteFileResult = z.infer<typeof DeleteFileResultSchema>;
+export type DeleteFileResult = Wire.DeleteFileResult;
 
 export enum ContentObjectProcessingPriority {
     normal = 'normal',
@@ -856,11 +760,11 @@ export function supportsVisualRendition(contentType: string | undefined): boolea
     return canGenerateRendition(contentType, ImageRenditionFormat.jpeg);
 }
 
-export type InCodeTypeRef = z.infer<typeof InCodeTypeRefSchema>;
+export type InCodeTypeRef = Wire.InCodeTypeRef;
 
-export type StoredTypeRef = z.infer<typeof StoredTypeRefSchema>;
+export type StoredTypeRef = Wire.StoredTypeRef;
 
-type UpdateContentObjectPayloadWire = z.infer<typeof UpdateContentObjectPayloadSchema>;
+type UpdateContentObjectPayloadWire = Wire.UpdateContentObjectPayloadWire;
 
 /**
  * Mirrors {@link CreateContentObjectPayload}: `properties` and `metadata` are reopened over the wire
@@ -875,4 +779,4 @@ export type UpdateContentObjectPayload<T = JSONObject> = Omit<
     metadata?: ContentObjectItem['metadata'];
 };
 
-export type UpdateWorkflowRulePayload = z.infer<typeof UpdateWorkflowRulePayloadSchema>;
+export type UpdateWorkflowRulePayload = Wire.UpdateWorkflowRulePayload;

@@ -8,13 +8,13 @@ interface AnimatedThinkingDotsProps {
 }
 
 export function AnimatedThinkingDots({ className, inline = false, color = 'blue' }: AnimatedThinkingDotsProps) {
-    // Enhanced gradient colors based on the color prop
+    // Keep the existing color options while resolving their appearance through the app theme.
     const gradientColors = {
-        blue: 'from-blue-400 to-indigo-500 dark:from-blue-500 dark:to-indigo-400',
-        purple: 'from-purple-400 to-violet-500 dark:from-purple-500 dark:to-violet-400',
-        teal: 'from-teal-400 to-emerald-500 dark:from-teal-500 dark:to-emerald-400',
-        green: 'from-green-400 to-emerald-500 dark:from-green-500 dark:to-emerald-400',
-        amber: 'from-amber-400 to-orange-500 dark:from-amber-500 dark:to-orange-400',
+        blue: 'from-info to-info',
+        purple: 'from-done to-done',
+        teal: 'from-info to-info',
+        green: 'from-success to-success',
+        amber: 'from-attention to-attention',
     };
 
     const gradientClass = gradientColors[color];
@@ -50,11 +50,11 @@ export function PulsatingCircle({ className, size = 'md', color = 'blue' }: Puls
 
     // Enhanced color mapping with gradients
     const colorClasses = {
-        blue: 'bg-blue-500 dark:bg-blue-400',
-        purple: 'bg-purple-500 dark:bg-purple-400',
-        teal: 'bg-teal-500 dark:bg-teal-400',
-        green: 'bg-green-500 dark:bg-green-400',
-        amber: 'bg-amber-500 dark:bg-amber-400',
+        blue: 'bg-info',
+        purple: 'bg-done',
+        teal: 'bg-info',
+        green: 'bg-success',
+        amber: 'bg-attention',
     };
 
     // Return enhanced implementation using smoother animations
@@ -95,11 +95,11 @@ interface TypedDotsProps {
 export function TypedDots({ className, color = 'blue' }: TypedDotsProps) {
     const [dots, setDots] = useState('.');
     const colorClasses = {
-        blue: 'text-blue-600 dark:text-blue-400',
-        purple: 'text-purple-600 dark:text-purple-400',
-        teal: 'text-teal-600 dark:text-teal-400',
-        green: 'text-green-600 dark:text-green-400',
-        amber: 'text-amber-600 dark:text-amber-400',
+        blue: 'text-info',
+        purple: 'text-done',
+        teal: 'text-info',
+        green: 'text-success',
+        amber: 'text-attention',
     };
 
     useEffect(() => {
@@ -122,24 +122,24 @@ interface PulsingMessageLoaderProps {
 export function PulsingMessageLoader({ message, className, color = 'blue' }: PulsingMessageLoaderProps) {
     const colorClasses = {
         blue: {
-            dot: 'bg-blue-500 dark:bg-blue-400',
-            text: 'text-blue-700 dark:text-blue-300',
+            dot: 'bg-info',
+            text: 'text-info',
         },
         purple: {
-            dot: 'bg-purple-500 dark:bg-purple-400',
-            text: 'text-purple-700 dark:text-purple-300',
+            dot: 'bg-done',
+            text: 'text-done',
         },
         teal: {
-            dot: 'bg-teal-500 dark:bg-teal-400',
-            text: 'text-teal-700 dark:text-teal-300',
+            dot: 'bg-info',
+            text: 'text-info',
         },
         green: {
-            dot: 'bg-green-500 dark:bg-green-400',
-            text: 'text-green-700 dark:text-green-300',
+            dot: 'bg-success',
+            text: 'text-success',
         },
         amber: {
-            dot: 'bg-amber-500 dark:bg-amber-400',
-            text: 'text-amber-700 dark:text-amber-300',
+            dot: 'bg-attention',
+            text: 'text-attention',
         },
     };
 
@@ -201,27 +201,27 @@ export function ThinkingBar({ className, color = 'blue', width = 'md', message }
 
     // Color classes
     const colorClasses = {
-        blue: 'bg-blue-200 dark:bg-blue-900/30',
-        purple: 'bg-purple-200 dark:bg-purple-900/30',
-        teal: 'bg-teal-200 dark:bg-teal-900/30',
-        green: 'bg-green-200 dark:bg-green-900/30',
-        amber: 'bg-amber-200 dark:bg-amber-900/30',
+        blue: 'bg-info',
+        purple: 'bg-done',
+        teal: 'bg-info',
+        green: 'bg-success',
+        amber: 'bg-attention',
     };
 
     const barColorClasses = {
-        blue: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-400',
-        purple: 'bg-gradient-to-r from-purple-400 to-purple-500 dark:from-purple-500 dark:to-purple-400',
-        teal: 'bg-gradient-to-r from-teal-400 to-teal-500 dark:from-teal-500 dark:to-teal-400',
-        green: 'bg-gradient-to-r from-green-400 to-green-500 dark:from-green-500 dark:to-green-400',
-        amber: 'bg-gradient-to-r from-amber-400 to-amber-500 dark:from-amber-500 dark:to-amber-400',
+        blue: 'bg-gradient-to-r from-info to-info',
+        purple: 'bg-gradient-to-r from-done to-done',
+        teal: 'bg-gradient-to-r from-info to-info',
+        green: 'bg-gradient-to-r from-success to-success',
+        amber: 'bg-gradient-to-r from-attention to-attention',
     };
 
     const textColorClasses = {
-        blue: 'text-blue-700 dark:text-blue-300',
-        purple: 'text-purple-700 dark:text-purple-300',
-        teal: 'text-teal-700 dark:text-teal-300',
-        green: 'text-green-700 dark:text-green-300',
-        amber: 'text-amber-700 dark:text-amber-300',
+        blue: 'text-info',
+        purple: 'text-done',
+        teal: 'text-info',
+        green: 'text-success',
+        amber: 'text-attention',
     };
 
     // Using requestAnimationFrame for smoother animation
@@ -337,11 +337,11 @@ export function WavyThinking({ className, color = 'blue', size = 'md' }: WavyThi
 
     // Enhanced color classes with gradients for more visual appeal
     const colorClasses = {
-        blue: 'bg-gradient-to-b from-blue-400 to-blue-500 dark:from-blue-400 dark:to-blue-500',
-        purple: 'bg-gradient-to-b from-purple-400 to-purple-500 dark:from-purple-400 dark:to-purple-500',
-        teal: 'bg-gradient-to-b from-teal-400 to-teal-500 dark:from-teal-400 dark:to-teal-500',
-        green: 'bg-gradient-to-b from-green-400 to-green-500 dark:from-green-400 dark:to-green-500',
-        amber: 'bg-gradient-to-b from-amber-400 to-amber-500 dark:from-amber-400 dark:to-amber-500',
+        blue: 'bg-gradient-to-b from-info to-info',
+        purple: 'bg-gradient-to-b from-done to-done',
+        teal: 'bg-gradient-to-b from-info to-info',
+        green: 'bg-gradient-to-b from-success to-success',
+        amber: 'bg-gradient-to-b from-attention to-attention',
     };
 
     // Use requestAnimationFrame for smooth animation
