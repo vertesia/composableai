@@ -2139,6 +2139,13 @@ export type CostAnalyticsResponse = {
                   service_tier: string;
                   calls: number;
               }[];
+              cost_by_source?:
+                  | {
+                        provider_billed: number;
+                        run_time_estimate: number;
+                        price_table: number;
+                    }
+                  | undefined;
           }
         | undefined;
     query_range: {
@@ -2175,6 +2182,13 @@ export type CostRunPriceResponse = {
                   service_tier: string;
                   calls: number;
               }[];
+              cost_by_source?:
+                  | {
+                        provider_billed: number;
+                        run_time_estimate: number;
+                        price_table: number;
+                    }
+                  | undefined;
           }
         | undefined;
     query_range?:
