@@ -14180,6 +14180,10 @@
         "additionalProperties": true,
         "description": "Metadata inherited from parent workflow. Used to propagate context (e.g., apiKey, session info) to child workflows/workstreams. When a workstream is spawned, the parent's `data` is preserved here so that child tools can access it via metadata.parent_metadata."
       },
+      "final_verification": {
+        "type": "boolean",
+        "description": "When true, a non-interactive free-form run takes one extra turn after its answer to check that the task is complete. Off by default, and never applied to workstreams: their parent reviews the result and can message the workstream to continue."
+      },
       "non_blocking_subagents": {
         "type": "boolean",
         "description": "When true, subagent/workstream tool calls use fire-and-forget `startChild()` instead of blocking `executeChild()`. The parent continues reasoning while children run, receiving progress/completion via Temporal signals."
@@ -34843,6 +34847,10 @@
       "max_iterations": {
         "type": "number",
         "description": "Maximum conversation iterations (default: 20)"
+      },
+      "final_verification": {
+        "type": "boolean",
+        "description": "When true, a non-interactive free-form run takes one extra turn after its answer to check that the task is complete. Off by default. Not kept on restart or fork."
       },
       "notify_endpoints": {
         "type": "array",

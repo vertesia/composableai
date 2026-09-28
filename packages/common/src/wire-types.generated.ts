@@ -4113,6 +4113,7 @@ export type AsyncConversationExecutionPayload = {
               [k: string]: unknown;
           }
         | undefined;
+    final_verification?: boolean | undefined;
     non_blocking_subagents?: boolean | undefined;
     restart_from_workflow_run_id?: string | undefined;
     source_first_workflow_run_id?: string | undefined;
@@ -9624,6 +9625,7 @@ export type CreateAgentRunPayloadWire = {
     checkpoint_tokens?: number | undefined;
     checkpoint?: AgentCheckpointConfiguration | undefined;
     max_iterations?: number | undefined;
+    final_verification?: boolean | undefined;
     notify_endpoints?: string[] | undefined;
     debug_mode?: boolean | undefined;
     started_by?: string | undefined;
