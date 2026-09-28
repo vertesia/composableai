@@ -1,5 +1,11 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
-import type { Collection, ContentObject, ContentObjectItem } from '@vertesia/common';
+import type {
+    Collection,
+    ComplexSearchPayload,
+    ComputedFacetResponse,
+    ContentObject,
+    ContentObjectItem,
+} from '@vertesia/common';
 
 /** A project sharing content with the caller. */
 export interface SharedProjectRef {
@@ -22,6 +28,28 @@ export type ResolvedContent =
 
 /** A cross-project search hit, stamped with its owner project and relevance score. */
 export type ContentSearchHit = ContentObjectItem & { projectId: string; score: number };
+
+/** Which projects a cross-project content search covered. */
+export interface SharedSearchCoverage {
+    /** 'hybrid' when vector search ran on at least one field, otherwise 'text'. */
+    mode: 'text' | 'hybrid';
+    /** Project ids actually searched — full-text spans every reachable project. */
+    searched: string[];
+    /** Reachable project ids excluded from the vector pass as embedding-incompatible (hybrid only). */
+    vectorIncompatible: string[];
+}
+
+/**
+ * Response of the cross-project content search: the hits plus `coverage`. This is an object envelope —
+ * distinct from the plain array returned by the single-project object search — so callers can tell the
+ * two apart (array = project search, `{ results, coverage }` = cross-project search).
+ */
+export interface ContentSearchResponse {
+    results: ContentSearchHit[];
+    /** Facets computed across every reachable project. */
+    facets: ComputedFacetResponse;
+    coverage: SharedSearchCoverage;
+}
 
 /**
  * Read-only client for the `/api/content` namespace: browse and read content shared by other
@@ -74,18 +102,17 @@ export class ContentApi extends ApiTopic {
     }
 
     /**
-     * Search content reachable by the caller (current project + shared projects). `onlyShared` drops
-     * the current project; `q` is the full-text query; `from`/`limit` paginate. Each hit is stamped
-     * with its owner projectId.
+     * Search content reachable by the caller (current project + shared projects). Takes the same
+     * `ComplexSearchPayload` as `objects.search` — full-text, vector/hybrid, filters and facets — applied
+     * across every reachable project (vector runs only over embedding-compatible ones). `onlyShared` drops
+     * the current project. Pagination (`payload.limit`/`offset`) is text-only; a vector/hybrid run returns
+     * a top-N window. Returns `{ results, facets, coverage }` — each hit stamped with its owner projectId,
+     * plus which projects were searched vs. excluded from the vector pass.
      */
-    search(options?: { q?: string; onlyShared?: boolean; from?: number; limit?: number }): Promise<ContentSearchHit[]> {
-        return this.get('/search', {
-            query: {
-                q: options?.q,
-                onlyShared: options?.onlyShared ? 'true' : undefined,
-                from: options?.from,
-                limit: options?.limit,
-            },
+    search(payload: ComplexSearchPayload, options?: { onlyShared?: boolean }): Promise<ContentSearchResponse> {
+        return this.post('/search', {
+            payload,
+            query: { onlyShared: options?.onlyShared ? 'true' : undefined },
         });
     }
 
