@@ -2027,6 +2027,8 @@ export type CostAnalyticsQuery = {
         | 'service_tier'
         | 'interaction'
         | 'workflow'
+        | 'agent_run'
+        | 'workflow_run'
         | undefined;
     resolution?: 'hour' | 'day' | 'week' | 'month' | undefined;
     model?: string | undefined;
@@ -2092,11 +2094,12 @@ export type ModelPricing = {
     provider?: string | undefined;
     provider_account_id?: string | undefined;
     service_tier?: string | undefined;
+    min_prompt_tokens?: number | undefined;
     input_price_per_m_tokens: number;
     cached_input_price_per_m_tokens?: number | undefined;
     cache_write_input_price_per_m_tokens?: number | undefined;
     output_price_per_m_tokens: number;
-    source: 'billing_export' | 'model_pricing_daily' | 'unavailable';
+    source: 'billing_export' | 'model_pricing_daily' | 'run_time_estimate' | 'unavailable';
 };
 export type ModelPriceComparison = {
     model: string;
@@ -2140,6 +2143,13 @@ export type CostAnalyticsResponse = {
                   service_tier: string;
                   calls: number;
               }[];
+              cost_by_source?:
+                  | {
+                        provider_billed: number;
+                        run_time_estimate: number;
+                        price_table: number;
+                    }
+                  | undefined;
           }
         | undefined;
     query_range: {
@@ -2176,6 +2186,13 @@ export type CostRunPriceResponse = {
                   service_tier: string;
                   calls: number;
               }[];
+              cost_by_source?:
+                  | {
+                        provider_billed: number;
+                        run_time_estimate: number;
+                        price_table: number;
+                    }
+                  | undefined;
           }
         | undefined;
     query_range?:

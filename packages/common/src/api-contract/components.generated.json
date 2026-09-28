@@ -4424,6 +4424,13 @@
           "5m",
           "1h"
         ]
+      },
+      "speed": {
+        "type": "string",
+        "enum": [
+          "standard",
+          "fast"
+        ]
       }
     },
     "additionalProperties": false
@@ -4593,7 +4600,7 @@
       },
       "inherit_model_config": {
         "type": "boolean",
-        "description": "Treat supplied model settings as inherited fallback: an applicable profile replaces them."
+        "description": "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them."
       },
       "environment": {
         "type": "string"
@@ -8673,8 +8680,20 @@
         "type": "number",
         "description": "Number of input tokens written to prompt cache."
       },
+      "prompt_cache_write_1h": {
+        "type": "number",
+        "description": "Of `prompt_cache_write`, the tokens written with a one-hour cache lifetime, when the provider reports it. The remainder used the default (five-minute) lifetime."
+      },
       "prompt_new": {
         "type": "number"
+      },
+      "result_image": {
+        "type": "number",
+        "description": "Of `result`, the tokens of generated images, when the provider reports them. Image output is priced separately from text output."
+      },
+      "provider_cost_usd": {
+        "type": "number",
+        "description": "Amount the provider reported charging for this request, in USD, when the provider returns it (e.g. OpenRouter). Absent for bring-your-own-key requests."
       }
     },
     "additionalProperties": false
@@ -10596,7 +10615,7 @@
       },
       "inherit_model_config": {
         "type": "boolean",
-        "description": "Treat supplied model settings as inherited fallback: an applicable profile replaces them."
+        "description": "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them."
       },
       "hasImage": {
         "type": "boolean"
@@ -16726,7 +16745,7 @@
       },
       "inherit_model_config": {
         "type": "boolean",
-        "description": "Treat supplied model settings as inherited fallback: an applicable profile replaces them."
+        "description": "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them."
       },
       "environment": {
         "type": "string"
@@ -36478,6 +36497,9 @@
           "errorType": {
             "type": "string"
           },
+          "executionRunId": {
+            "type": "string"
+          },
           "nestedInteractionId": {
             "type": "string"
           },
@@ -41992,9 +42014,11 @@
           "provider",
           "service_tier",
           "interaction",
-          "workflow"
+          "workflow",
+          "agent_run",
+          "workflow_run"
         ],
-        "description": "Group results by this dimension"
+        "description": "Group results by this dimension. `agent_run` groups by root agent run, including the calls of its sub-agents; `workflow_run` groups by Temporal workflow run, which separates each sub-agent."
       },
       "resolution": {
         "type": "string",
@@ -42211,6 +42235,12 @@
         "type": "string",
         "description": "Processing tier this price applies to"
       },
+      "min_prompt_tokens": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "When set, these prices apply to calls whose prompt (input, cached and cache-write tokens) is longer than this many tokens, in place of the prices without it."
+      },
       "input_price_per_m_tokens": {
         "type": "number"
       },
@@ -42228,8 +42258,10 @@
         "enum": [
           "billing_export",
           "model_pricing_daily",
+          "run_time_estimate",
           "unavailable"
-        ]
+        ],
+        "description": "Where the rates come from. `run_time_estimate` rates are the ones recorded on the calls when their cost was estimated; the others come from the pricing catalog."
       }
     },
     "required": [
@@ -42513,6 +42545,30 @@
               ],
               "additionalProperties": false
             }
+          },
+          "cost_by_source": {
+            "type": "object",
+            "properties": {
+              "provider_billed": {
+                "type": "number",
+                "description": "USD the provider reported billing for the calls."
+              },
+              "run_time_estimate": {
+                "type": "number",
+                "description": "USD estimated from list prices when the calls ran, for calls with no billed amount."
+              },
+              "price_table": {
+                "type": "number",
+                "description": "USD computed from the pricing table, for calls with no cost recorded when they ran."
+              }
+            },
+            "required": [
+              "provider_billed",
+              "run_time_estimate",
+              "price_table"
+            ],
+            "additionalProperties": false,
+            "description": "How the total cost splits by where each call's cost came from."
           }
         },
         "required": [
@@ -42608,6 +42664,30 @@
               ],
               "additionalProperties": false
             }
+          },
+          "cost_by_source": {
+            "type": "object",
+            "properties": {
+              "provider_billed": {
+                "type": "number",
+                "description": "USD the provider reported billing for the calls."
+              },
+              "run_time_estimate": {
+                "type": "number",
+                "description": "USD estimated from list prices when the calls ran, for calls with no billed amount."
+              },
+              "price_table": {
+                "type": "number",
+                "description": "USD computed from the pricing table, for calls with no cost recorded when they ran."
+              }
+            },
+            "required": [
+              "provider_billed",
+              "run_time_estimate",
+              "price_table"
+            ],
+            "additionalProperties": false,
+            "description": "How the total cost splits by where each call's cost came from."
           }
         },
         "required": [
