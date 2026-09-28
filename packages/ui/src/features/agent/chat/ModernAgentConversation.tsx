@@ -42,11 +42,13 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
 import { AgentApprovalModeSelector } from './AgentApprovalModeSelector';
+import { AgentBudgetPauseOverlay } from './AgentBudgetPauseOverlay';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AgentRunFeedbackProvider } from './AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
+import { findBudgetPause } from './budgetPause';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
@@ -1817,6 +1819,10 @@ function ModernAgentConversationInner({
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
     const isAgentWorking = !effectiveIsCompleted && !isWorkflowTerminal;
+    const budgetPause = useMemo(
+        () => (isWorkflowTerminal ? undefined : findBudgetPause(messages)),
+        [isWorkflowTerminal, messages],
+    );
 
     useEffect(() => {
         onAgentWorkingChange?.(isAgentWorking);
@@ -1836,6 +1842,14 @@ function ModernAgentConversationInner({
     const shouldShowRequestInputOverlay =
         Boolean(pendingRequestInputMessage) && !isFailed && (!isWorkflowTerminal || canContinueConversation);
     const isViewingPlaybackHistory = isPlaybackEnabled && !isPlaybackLive;
+    // A budget pause takes the composer's place, as a pending question does: the run takes no
+    // messages until the user adds budget or stops it.
+    const shouldShowBudgetPauseOverlay =
+        Boolean(budgetPause) &&
+        !isFailed &&
+        !isViewingPlaybackHistory &&
+        shouldRenderMessageInputArea &&
+        (showInput || canContinueConversation);
     const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
     const contextWindowUsage = useMemo(() => toContextWindowUsage(messages), [messages]);
     // The run is still "alive" while it waits for user input (idle on ask_user), so keep the
@@ -2865,6 +2879,14 @@ function ModernAgentConversationInner({
                     onMcpConnected={isPlaybackLive ? handleMcpConnected : undefined}
                     disabled={isUploading || !isPlaybackLive}
                     isLoading={isSending || isUploading}
+                />
+            ) : shouldShowBudgetPauseOverlay && budgetPause ? (
+                <AgentBudgetPauseOverlay
+                    client={client}
+                    agentRunId={agentRunId}
+                    pause={budgetPause}
+                    onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
+                    disabled={!isPlaybackLive || !allowWorkflowControl}
                 />
             ) : isViewingPlaybackHistory && playbackActiveWorkstreams.length > 0 ? (
                 <div className="flex-shrink-0 pb-safe-area">

@@ -2261,6 +2261,10 @@ interface Checks {
         W.AgentCheckpointConfiguration,
         z.infer<typeof import('./api-schemas/project-configuration.js').AgentCheckpointConfigurationSchema>
     >;
+    AgentBudgetConfiguration: Same<
+        W.AgentBudgetConfiguration,
+        z.infer<typeof import('./api-schemas/project-configuration.js').AgentBudgetConfigurationSchema>
+    >;
     ProjectSearchPropertyType: Same<
         W.ProjectSearchPropertyType,
         z.infer<typeof import('./api-schemas/project-configuration.js').ProjectSearchPropertyTypeSchema>
@@ -2638,6 +2642,10 @@ interface Checks {
         W.SignalAgentResponse,
         z.infer<typeof import('./api-schemas/agent-runs.js').SignalAgentResponseSchema>
     >;
+    AllocateAgentRunBudgetPayload: Same<
+        W.AllocateAgentRunBudgetPayload,
+        z.infer<typeof import('./api-schemas/agent-runs.js').AllocateAgentRunBudgetPayloadSchema>
+    >;
     AgentRunUpdatesResponse: Same<
         W.AgentRunUpdatesResponse,
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunUpdatesResponseSchema>
@@ -2971,6 +2979,18 @@ interface Checks {
         z.infer<typeof import('./api-schemas/process.js').ProcessHistoryRefSchema>
     >;
     ProcessState: Same<W.ProcessState, z.infer<typeof import('./api-schemas/process.js').ProcessStateSchema>>;
+    ProcessTerminalReason: Same<
+        W.ProcessTerminalReason,
+        z.infer<typeof import('./api-schemas/process.js').ProcessTerminalReasonSchema>
+    >;
+    ProcessBudgetState: Same<
+        W.ProcessBudgetState,
+        z.infer<typeof import('./api-schemas/process.js').ProcessBudgetStateSchema>
+    >;
+    ProcessBudgetSummary: Same<
+        W.ProcessBudgetSummary,
+        z.infer<typeof import('./api-schemas/process.js').ProcessBudgetSummarySchema>
+    >;
     PublishProcessDefinitionPayload: Same<
         W.PublishProcessDefinitionPayload,
         z.infer<typeof import('./api-schemas/process.js').PublishProcessDefinitionPayloadSchema>
@@ -7355,6 +7375,18 @@ interface Checks {
         W.ApiComponentTypes['ProcessState'],
         z.infer<typeof import('./api-schemas/process.js').ProcessStateSchema>
     >;
+    'component:ProcessTerminalReason': Same<
+        W.ApiComponentTypes['ProcessTerminalReason'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessTerminalReasonSchema>
+    >;
+    'component:ProcessBudgetState': Same<
+        W.ApiComponentTypes['ProcessBudgetState'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessBudgetStateSchema>
+    >;
+    'component:ProcessBudgetSummary': Same<
+        W.ApiComponentTypes['ProcessBudgetSummary'],
+        z.infer<typeof import('./api-schemas/process.js').ProcessBudgetSummarySchema>
+    >;
     'component:WorkflowExecutionStartResultArray': Same<
         W.ApiComponentTypes['WorkflowExecutionStartResultArray'],
         z.infer<typeof import('./api-schemas/process.js').WorkflowExecutionStartResultArraySchema>
@@ -7778,6 +7810,10 @@ interface Checks {
     'component:SignalAgentResponse': Same<
         W.ApiComponentTypes['SignalAgentResponse'],
         z.infer<typeof import('./api-schemas/agent-runs.js').SignalAgentResponseSchema>
+    >;
+    'component:AllocateAgentRunBudgetPayload': Same<
+        W.ApiComponentTypes['AllocateAgentRunBudgetPayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AllocateAgentRunBudgetPayloadSchema>
     >;
     'component:AutonomousRunResponse': Same<
         W.ApiComponentTypes['AutonomousRunResponse'],
@@ -10047,6 +10083,7 @@ const checks: Checks = {
     ProjectConfiguration: true,
     AgentProjectConfiguration: true,
     AgentCheckpointConfiguration: true,
+    AgentBudgetConfiguration: true,
     ProjectSearchPropertyType: true,
     ProjectSearchPropertyMapping: true,
     ProjectIndexingConfiguration: true,
@@ -10151,6 +10188,7 @@ const checks: Checks = {
     AgentRunContradictionReason: true,
     AgentRunEvaluation: true,
     SignalAgentResponse: true,
+    AllocateAgentRunBudgetPayload: true,
     AgentRunUpdatesResponse: true,
     AgentRunUpdatesQuery: true,
     StreamAgentRunQuery: true,
@@ -10241,6 +10279,9 @@ const checks: Checks = {
     NodeHistoryEntry: true,
     ProcessHistoryRef: true,
     ProcessState: true,
+    ProcessTerminalReason: true,
+    ProcessBudgetState: true,
+    ProcessBudgetSummary: true,
     PublishProcessDefinitionPayload: true,
     RevertProcessDefinitionPayload: true,
     AdvanceProcessPayload: true,
@@ -11391,6 +11432,9 @@ const checks: Checks = {
     'component:AnswerProcessTaskPayload': true,
     'component:AdvanceProcessPayload': true,
     'component:ProcessState': true,
+    'component:ProcessTerminalReason': true,
+    'component:ProcessBudgetState': true,
+    'component:ProcessBudgetSummary': true,
     'component:WorkflowExecutionStartResultArray': true,
     'component:RecordProcessRunPayload': true,
     'component:ProcessTestRunStatus': true,
@@ -11497,6 +11541,7 @@ const checks: Checks = {
     'component:AgentRunArchiveState': true,
     'component:ResourceRef': true,
     'component:SignalAgentResponse': true,
+    'component:AllocateAgentRunBudgetPayload': true,
     'component:AutonomousRunResponse': true,
     'component:AgentRun': true,
     'component:CreateAgentRunPayload': true,
@@ -11912,6 +11957,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2484);
+        expect(Object.keys(checks)).toHaveLength(2493);
     });
 });

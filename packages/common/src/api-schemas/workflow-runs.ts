@@ -12,6 +12,7 @@ import {
     InteractionRefSchema,
     UserChannelSchema,
 } from './interaction.js';
+import { AgentBudgetConfigurationSchema } from './project-configuration.js';
 import { nullableStringSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
 
@@ -112,6 +113,7 @@ export const WorkflowInteractionVarsSchema = z
         collection_id: z.string().optional(),
         disabled_mcp_collections: z.array(z.string()).optional(),
         checkpoint_tokens: z.number().optional(),
+        budget: AgentBudgetConfigurationSchema.optional(),
         version: z.number().optional(),
         agent_run_id: z.string().optional(),
     })
