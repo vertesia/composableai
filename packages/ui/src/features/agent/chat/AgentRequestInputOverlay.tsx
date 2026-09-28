@@ -1,10 +1,10 @@
 import type { McpConnectUxConfig } from '@vertesia/common';
-import { Button, cn } from '@vertesia/ui/core';
+import { Button } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { XIcon } from 'lucide-react';
 import { RemoteMcpConnectionButton } from '../../oauth/RemoteMcpConnectionButton.js';
-import { AskUserWidget } from './AskUserWidget';
+import { ComposerOverlay, ComposerOverlayQuestion } from './ComposerOverlay';
 import {
     getRequestInputDisplayText,
     getRequestInputResponseMetadata,
@@ -12,13 +12,6 @@ import {
     type RequestInputMessageWithUx,
     sendRequestInputResponse,
 } from './ModernAgentOutput/requestInputMessages';
-
-/** Placement shared by the prompts that take the composer's place while the run waits on the user. */
-export const REQUEST_INPUT_OVERLAY_CLASS = cn(
-    'flex-shrink-0 border-t border-border/70 bg-background/95 backdrop-blur',
-    'fixed bottom-0 end-0 start-0 z-20 lg:sticky lg:start-auto lg:end-auto',
-    'pb-safe-area',
-);
 
 export interface AgentRequestInputOverlayProps {
     message?: RequestInputMessageWithUx;
@@ -93,11 +86,9 @@ export function AgentRequestInputOverlay({
         sendRequestInputResponse(onSendMessage, message, value, metadata);
     };
 
-    const wrapperClassName = cn(REQUEST_INPUT_OVERLAY_CLASS, className);
-
     if (mcpConnect) {
         return (
-            <div className={wrapperClassName} data-agent-request-input-overlay>
+            <ComposerOverlay className={className} data-agent-request-input-overlay>
                 <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0 text-sm leading-6 text-foreground/85">{displayText}</div>
                     <McpRequestInputControls
@@ -107,31 +98,25 @@ export function AgentRequestInputOverlay({
                         disabled={isDisabled}
                     />
                 </div>
-            </div>
+            </ComposerOverlay>
         );
     }
 
     return (
-        <div className={wrapperClassName} data-agent-request-input-overlay>
-            <div className="mx-auto w-full max-w-3xl px-3 py-3">
-                <AskUserWidget
-                    question={displayText}
-                    options={options}
-                    variant={uxConfig.variant}
-                    multiSelect={uxConfig.multiSelect}
-                    allowFreeResponse={options.length === 0 || !!freeResponse}
-                    placeholder={freeResponse?.placeholder}
-                    submitLabel={freeResponse?.submit_label}
-                    onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
-                    onMultiSelect={(optionIds) => send(optionIds.join(', '))}
-                    onSubmit={(value) => send(value, freeResponse?.metadata)}
-                    hideBorder
-                    compact
-                    isLoading={isDisabled}
-                    className="my-0"
-                    cardClassName="bg-background/80 shadow-lg shadow-black/5 dark:shadow-none"
-                />
-            </div>
-        </div>
+        <ComposerOverlay className={className} data-agent-request-input-overlay>
+            <ComposerOverlayQuestion
+                question={displayText}
+                options={options}
+                variant={uxConfig.variant}
+                multiSelect={uxConfig.multiSelect}
+                allowFreeResponse={options.length === 0 || !!freeResponse}
+                placeholder={freeResponse?.placeholder}
+                submitLabel={freeResponse?.submit_label}
+                onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
+                onMultiSelect={(optionIds) => send(optionIds.join(', '))}
+                onSubmit={(value) => send(value, freeResponse?.metadata)}
+                isLoading={isDisabled}
+            />
+        </ComposerOverlay>
     );
 }

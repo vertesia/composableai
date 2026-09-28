@@ -58,6 +58,29 @@ export interface AllocateBudgetSignal {
     requested_at?: number;
 }
 
+/** `status_reason` of the message a run posts when it pauses because its token budget ran out. */
+export const AGENT_BUDGET_STATUS_AWAITING = 'awaiting_budget';
+/** `status_reason` of the message a paused run posts when budget was added and it resumes. */
+export const AGENT_BUDGET_STATUS_ALLOCATED = 'budget_allocated';
+
+export type AgentBudgetStatusReason = typeof AGENT_BUDGET_STATUS_AWAITING | typeof AGENT_BUDGET_STATUS_ALLOCATED;
+
+/** `details` of a budget status message: the run paused on its budget or resumed after an allocation. */
+export interface AgentBudgetStatusDetails {
+    status_reason: AgentBudgetStatusReason;
+    /** Weighted tokens used, rounded. */
+    budget_used_units: number;
+    budget_limit_tokens: number;
+    /** Allocation revision; 0 before the first allocation. */
+    budget_revision: number;
+    /** Weighted tokens still missing when an allocation did not pay the overshoot. */
+    budget_shortfall?: number;
+    /** Weighted tokens added, on {@link AGENT_BUDGET_STATUS_ALLOCATED}. */
+    additional_tokens?: number;
+    /** Principals that granted the allocation. */
+    requested_by?: string[];
+}
+
 /**
  * Attachment metadata for processing in conversation workflows.
  */

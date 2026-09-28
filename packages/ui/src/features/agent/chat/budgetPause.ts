@@ -1,4 +1,9 @@
-import type { AgentMessage } from '@vertesia/common';
+import {
+    AGENT_BUDGET_STATUS_ALLOCATED,
+    AGENT_BUDGET_STATUS_AWAITING,
+    type AgentBudgetStatusDetails,
+    type AgentMessage,
+} from '@vertesia/common';
 
 export interface BudgetPause {
     /** Weighted tokens used when the run paused. */
@@ -14,10 +19,11 @@ export interface BudgetPause {
  */
 export function findBudgetPause(messages: readonly AgentMessage[]): BudgetPause | undefined {
     for (let index = messages.length - 1; index >= 0; index--) {
-        const details = messages[index].details as Record<string, unknown> | undefined;
+        // Untrusted until checked: any message can carry details.
+        const details = messages[index].details as Partial<Record<keyof AgentBudgetStatusDetails, unknown>> | undefined;
         const reason = details?.status_reason;
-        if (reason === 'budget_allocated') return undefined;
-        if (reason === 'awaiting_budget') {
+        if (reason === AGENT_BUDGET_STATUS_ALLOCATED) return undefined;
+        if (reason === AGENT_BUDGET_STATUS_AWAITING) {
             return {
                 usedUnits: typeof details?.budget_used_units === 'number' ? details.budget_used_units : undefined,
                 limitTokens: typeof details?.budget_limit_tokens === 'number' ? details.budget_limit_tokens : undefined,

@@ -3,9 +3,9 @@ import { useToast } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
-import { REQUEST_INPUT_OVERLAY_CLASS } from './AgentRequestInputOverlay';
-import { type AskUserOption, AskUserWidget } from './AskUserWidget';
+import type { AskUserOption } from './AskUserWidget';
 import { type BudgetPause, parseBudgetAmount, suggestedBudgetAllocation } from './budgetPause';
+import { ComposerOverlay, ComposerOverlayQuestion } from './ComposerOverlay';
 
 const ALLOCATE_OPTION = 'allocate';
 const STOP_OPTION = 'stop';
@@ -74,27 +74,21 @@ export function AgentBudgetPauseOverlay({ client, agentRunId, pause, onStop, dis
     ];
 
     return (
-        <div className={REQUEST_INPUT_OVERLAY_CLASS} data-agent-budget-pause-overlay>
-            <div className="mx-auto w-full max-w-3xl px-3 py-3">
-                <AskUserWidget
-                    question={`**${t('agent.budgetPause.title')}**\n\n${description}`}
-                    options={options}
-                    onSelect={(optionId) => {
-                        if (optionId === STOP_OPTION) onStop?.();
-                        else void allocate(suggested);
-                    }}
-                    allowFreeResponse
-                    placeholder={t('agent.budgetPause.customAmountPlaceholder')}
-                    submitLabel={t('agent.budgetPause.customAmountSubmit')}
-                    onSubmit={handleCustomAmount}
-                    icon={<AlertTriangle className="size-4" />}
-                    hideBorder
-                    compact
-                    isLoading={disabled || isSubmitting}
-                    className="my-0"
-                    cardClassName="bg-background/80 shadow-lg shadow-black/5 dark:shadow-none"
-                />
-            </div>
-        </div>
+        <ComposerOverlay data-agent-budget-pause-overlay>
+            <ComposerOverlayQuestion
+                question={`**${t('agent.budgetPause.title')}**\n\n${description}`}
+                options={options}
+                onSelect={(optionId) => {
+                    if (optionId === STOP_OPTION) onStop?.();
+                    else void allocate(suggested);
+                }}
+                allowFreeResponse
+                placeholder={t('agent.budgetPause.customAmountPlaceholder')}
+                submitLabel={t('agent.budgetPause.customAmountSubmit')}
+                onSubmit={handleCustomAmount}
+                icon={<AlertTriangle className="size-4" />}
+                isLoading={disabled || isSubmitting}
+            />
+        </ComposerOverlay>
     );
 }
