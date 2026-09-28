@@ -295,6 +295,61 @@ describe('agent evaluation policy contracts', () => {
     });
 });
 
+describe('agent evaluation request on conversation execution and responses', () => {
+    const timestamp = '2026-09-28T10:00:00.000Z';
+    const agentRun = {
+        id: '64b000000000000000000002',
+        account: '64b000000000000000000003',
+        project: '64b000000000000000000004',
+        run_kind: 'agent',
+        run_type: 'autonomous',
+        status: 'completed',
+        started_by: 'user:test',
+        started_at: timestamp,
+        created_at: timestamp,
+        updated_at: timestamp,
+        interaction: 'sys:GeneralAgent',
+        interactionRef: {
+            id: 'sys:GeneralAgent',
+            name: 'General Agent',
+            endpoint: 'sys:GeneralAgent',
+            status: 'code',
+            version: 0,
+            tags: [],
+            updated_at: timestamp,
+        },
+    };
+
+    it.each([true, false])('accepts evaluate=%s on the conversation execution payload', (evaluate) => {
+        expect(
+            validateApiRequest('AsyncConversationExecutionPayload', {
+                type: 'conversation',
+                interaction: 'sys:GeneralAgent',
+                evaluate,
+            }).valid,
+        ).toBe(true);
+    });
+
+    it('rejects a non-boolean evaluate on the conversation execution payload', () => {
+        expect(
+            validateApiRequest('AsyncConversationExecutionPayload', {
+                type: 'conversation',
+                interaction: 'sys:GeneralAgent',
+                evaluate: 'yes',
+            }).valid,
+        ).toBe(false);
+    });
+
+    it.each([true, false, undefined])('returns the stored evaluate=%s on agent run responses', (evaluate) => {
+        const run = evaluate === undefined ? agentRun : { ...agentRun, evaluate };
+        expect(validateApiResponse('AgentRun', run).valid).toBe(true);
+    });
+
+    it('rejects a non-boolean evaluate on agent run responses', () => {
+        expect(validateApiResponse('AgentRun', { ...agentRun, evaluate: 'yes' }).valid).toBe(false);
+    });
+});
+
 describe('agent run creation contract', () => {
     it('accepts the final verification opt-in as a boolean only', () => {
         const payload = { interaction: 'sys:GeneralAgent', final_verification: true };
