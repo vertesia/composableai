@@ -25,6 +25,16 @@ describe('renderTemplate', () => {
             renderTemplate('return `Hello ${name}`', TemplateType.jst, { properties: { name: {} } }, { name: 'Ada' }),
         ).toEqual('Hello Ada');
     });
+
+    it('supplies system variables to both template languages', () => {
+        const system = { model: 'test-model', now: new Date('2026-01-02T03:04:05.000Z') };
+        expect(renderTemplate('{{#if _now}}{{_now}}{{/if}} {{_model}}', TemplateType.handlebars, {}, {}, system)).toBe(
+            '2026-01-02T03:04:05.000Z test-model',
+        );
+        expect(renderTemplate('return `${_now} ${_model}`', TemplateType.jst, {}, {}, system)).toBe(
+            '2026-01-02T03:04:05.000Z test-model',
+        );
+    });
 });
 
 describe('renderSegments', () => {

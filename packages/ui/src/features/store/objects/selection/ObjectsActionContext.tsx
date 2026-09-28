@@ -10,6 +10,7 @@ import { ChangeTypeAction } from './actions/ChangeTypeAction';
 import { DeleteObjectsAction, DeleteObjectsFromCollectionsAction } from './actions/DeleteObjectsAction';
 import { ExportPropertiesAction } from './actions/ExportPropertiesAction';
 import { RemoveFromCollectionAction } from './actions/RemoveFromCollectionAction';
+import { RunIntakeAction } from './actions/RunIntakeAction';
 import { ObjectsActionContext } from './ObjectsActionContextClass';
 import { ObjectsActionContextReact, useObjectsActionContext } from './ObjectsActionHooks';
 import type { ObjectsActionSpec } from './ObjectsActionSpec';
@@ -18,6 +19,7 @@ const DEFAULT_ACTIONS: ObjectsActionSpec[] = [
     ExportPropertiesAction,
     ChangeTypeAction,
     AddToCollectionAction,
+    RunIntakeAction,
     DeleteObjectsAction,
     RemoveFromCollectionAction,
     DeleteObjectsFromCollectionsAction,

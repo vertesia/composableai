@@ -61,6 +61,7 @@ import type {
     ResolvedEnvironmentInfoSchema,
     ResolvedInteractionExecutionInfoSchema,
     ResolvedRuntimeConfigSchema,
+    ResolveInteractionQuerySchema,
     ResultStorageOptionsSchema,
     RunSourceSchema,
     SchemaRefSchema,
@@ -121,12 +122,7 @@ export interface ExecuteInteractionByEndpointHeaders {
     'x-interaction-tag'?: string;
 }
 
-export interface ResolveInteractionQuery {
-    environment?: string;
-    model?: string;
-    hasImage?: boolean;
-    hasVideo?: boolean;
-}
+export type ResolveInteractionQuery = z.infer<typeof ResolveInteractionQuerySchema>;
 
 export type InCodePrompt = z.infer<typeof InCodePromptSchema>;
 export type InCodeInteraction = z.infer<typeof InCodeInteractionSchema>;

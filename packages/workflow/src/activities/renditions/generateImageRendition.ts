@@ -73,7 +73,7 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
 
         //IF no etag, log and use use object id as etag
         if (!inputObject.content.etag) {
-            log.warn(`Document ${objectId} has no etag, using object id as etag`);
+            log.debug(`Document ${objectId} has no etag, using object id as etag`);
         }
         const contentEtag = inputObject.content.etag ?? inputObject.id;
 

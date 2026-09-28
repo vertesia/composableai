@@ -34,6 +34,7 @@ export const PromptTemplateInteractionVersionSchema = z
 
 export const PromptTemplateForkPayloadSchema = z
     .strictObject({
+        newName: z.string().optional(),
         keepTags: z.boolean().optional(),
         targetProject: z.string().optional(),
     })

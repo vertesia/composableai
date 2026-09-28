@@ -1228,6 +1228,12 @@ const EXECUTION_RUN_SCHEMAS = {
     RunSearchQuery: RunSearchQuerySchema,
     RunListQuery: RunListQuerySchema,
     RunSearchPayload: RunSearchPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+// Split out of EXECUTION_RUN_SCHEMAS rather than grown in place: one literal covering both halves
+// infers a type too large for tsc to serialize into the declaration file (TS7056). The split is
+// purely structural — `mergeComponentGroups` and `ApiSchemaMap` see the same component set.
+const INTERACTION_EXECUTION_SCHEMAS = {
     // Executing an interaction, synchronously or as a workflow.
     InteractionExecutionPayload: InteractionExecutionPayloadSchema,
     NamedInteractionExecutionPayload: NamedInteractionExecutionPayloadSchema,
@@ -2297,6 +2303,7 @@ const API_SCHEMA_GROUPS = [
     INTERACTION_AUTHORING_SCHEMAS,
     AGENT_CONVERSATION_SCHEMAS,
     EXECUTION_RUN_SCHEMAS,
+    INTERACTION_EXECUTION_SCHEMAS,
     PROMPT_AUTHORING_SCHEMAS,
     PROJECT_TOOL_SCHEMAS,
     REMOTE_MCP_SCHEMAS,
@@ -2359,6 +2366,7 @@ type ApiSchemaMap = typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof INTERACTION_AUTHORING_SCHEMAS &
     typeof AGENT_CONVERSATION_SCHEMAS &
     typeof EXECUTION_RUN_SCHEMAS &
+    typeof INTERACTION_EXECUTION_SCHEMAS &
     typeof PROMPT_AUTHORING_SCHEMAS &
     typeof PROJECT_TOOL_SCHEMAS &
     typeof REMOTE_MCP_SCHEMAS &
@@ -2476,7 +2484,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'QuotaStandingWindow',
     'QuotaStandingAdmissionClass',
     'QuotaTierResponse',
-    // The IAM closure. PrincipalContext is composed into PrincipalIdentity rather than hoisted,
+    // The IAM closure. AbacPrincipalContext is composed into PrincipalIdentity rather than hoisted,
     // so it has no component of its own to list.
     'User',
     'UpdateUserPayload',
@@ -3407,13 +3415,25 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
  * divergence. Note that `.refine()` is silently DROPPED rather than rejected, so refinements must
  * not be used to express contract rules — they would be invisible to both the spec and AJV.
  */
-function emitRawSchemas(): Record<string, unknown> {
-    return Object.fromEntries(
-        Object.entries(API_SCHEMAS).map(([name, schema]) => [
-            name,
-            z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' }),
-        ]),
+function emitSchema(name: string, schema: z.ZodType): unknown {
+    const emitted = z.toJSONSchema(schema, { target: 'draft-2020-12', io: 'input' }) as Record<string, unknown>;
+    const rootRef = emitted.$ref;
+    const defs = emitted.$defs;
+    const expectedRef = `#/$defs/${name}`;
+    if (rootRef !== expectedRef || !defs || typeof defs !== 'object' || Array.isArray(defs)) return emitted;
+
+    const root = (defs as Record<string, unknown>)[name];
+    if (!root || typeof root !== 'object' || Array.isArray(root)) return emitted;
+    const remainingDefs = Object.fromEntries(
+        Object.entries(defs as Record<string, unknown>).filter(([id]) => id !== name),
     );
+    return Object.keys(remainingDefs).length === 0
+        ? root
+        : { ...(root as Record<string, unknown>), $defs: remainingDefs };
+}
+
+function emitRawSchemas(): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitSchema(name, schema)]));
 }
 
 /**

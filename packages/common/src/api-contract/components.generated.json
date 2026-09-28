@@ -10,15 +10,6 @@
           20260319,
           20260803
         ]
-      },
-      "override_api_version": {
-        "type": "number",
-        "enum": [
-          20250925,
-          20260210,
-          20260319,
-          20260803
-        ]
       }
     }
   },
@@ -561,6 +552,16 @@
   "PrincipalIdentity": {
     "type": "object",
     "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "user",
+          "apikey"
+        ]
+      },
+      "id": {
+        "type": "string"
+      },
       "clearance": {
         "type": "number"
       },
@@ -582,20 +583,18 @@
       "properties": {
         "type": "object",
         "additionalProperties": true
-      },
-      "id": {
-        "type": "string"
       }
     },
     "required": [
+      "kind",
+      "id",
       "clearance",
       "compartments",
       "tags",
-      "properties",
-      "id"
+      "properties"
     ],
     "additionalProperties": false,
-    "description": "Response shape of the `/iam/users/identity` endpoint: the current principal's  {@link  PrincipalContext }  plus its id. Distinct from `PrincipalContext` itself because the id is identity metadata, not a merged BLP field — adding it to `PrincipalContext` would unintentionally expose `$principal.id` to PrincipalSet rule evaluation."
+    "description": "Response shape of the `/iam/users/identity` endpoint: the current principal's full ABAC context — its `kind` (always `user` here), `id`, and the merged BLP attributes a rule can reference through `$principal.*`."
   },
   "SignupData": {
     "type": "object",
@@ -3461,6 +3460,14 @@
       "reasoning_effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
       },
+      "reasoning_context": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "current_turn",
+          "all_turns"
+        ]
+      },
       "image_detail": {
         "type": "string",
         "enum": [
@@ -4004,6 +4011,10 @@
       },
       "model": {
         "type": "string"
+      },
+      "inherit_model_config": {
+        "type": "boolean",
+        "description": "Treat environment and model as inherited fallbacks after interaction settings, before project defaults."
       },
       "do_validate": {
         "type": "boolean"
@@ -4637,13 +4648,9 @@
         "description": "Project defaults and caps for browser_use agent workstreams."
       },
       "pdf_template_object_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Object ID of a content object containing a custom LaTeX template (.latex file) to use as the branded PDF template. When set, \"Export as Branded PDF\" uses this template instead of the built-in Vertesia default template. `null` clears it."
       }
@@ -4828,13 +4835,9 @@
         "description": "Project defaults and caps for browser_use agent workstreams."
       },
       "pdf_template_object_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Object ID of a content object containing a custom LaTeX template (.latex file) to use as the branded PDF template. When set, \"Export as Branded PDF\" uses this template instead of the built-in Vertesia default template. `null` clears it."
       }
@@ -9214,6 +9217,9 @@
   "InteractionForkPayload": {
     "type": "object",
     "properties": {
+      "newName": {
+        "type": "string"
+      },
       "keepTags": {
         "type": "boolean"
       },
@@ -9322,6 +9328,10 @@
       },
       "model": {
         "type": "string"
+      },
+      "inherit_model_config": {
+        "type": "boolean",
+        "description": "Treat environment and model as inherited fallbacks after interaction settings, before project defaults."
       },
       "hasImage": {
         "type": "boolean"
@@ -13211,13 +13221,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13246,13 +13252,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13281,13 +13283,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13316,13 +13314,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13351,13 +13345,9 @@
           "type": "object",
           "properties": {
             "_id": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
+              "type": [
+                "string",
+                "null"
               ]
             },
             "count": {
@@ -13676,6 +13666,9 @@
   "PromptTemplateForkPayload": {
     "type": "object",
     "properties": {
+      "newName": {
+        "type": "string"
+      },
       "keepTags": {
         "type": "boolean"
       },
@@ -14279,13 +14272,9 @@
         "description": "Whether a key is stored for this collection."
       },
       "hint": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Last few characters of the stored key, for display only. Null when unset."
       }
@@ -14355,113 +14344,69 @@
     "type": "object",
     "properties": {
       "time": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "action": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "resource_type": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "event_category": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "provider": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.pipeline": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.verdict": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.workflow_type": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "details.rule_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "model": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       }
     },
@@ -14621,13 +14566,9 @@
         "$ref": "#/components/schemas/EventCategory"
       },
       "source": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "root_event_id": {
@@ -14673,33 +14614,21 @@
         "type": "boolean"
       },
       "principal_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "principal_type": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "effective_principal_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "roles": {
@@ -14709,63 +14638,39 @@
         }
       },
       "account_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "tenant_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "account_name": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_name": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "provider": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ],
         "description": "Provider type for billable/provider-backed events, e.g. vertexai, bedrock."
       },
@@ -15154,6 +15059,10 @@
       },
       "model": {
         "type": "string"
+      },
+      "inherit_model_config": {
+        "type": "boolean",
+        "description": "Treat environment and model as inherited fallbacks after interaction settings, before project defaults."
       },
       "do_validate": {
         "type": "boolean"
@@ -16891,33 +16800,21 @@
         "type": "string"
       },
       "account_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "project_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "tenant_id": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       }
     },
@@ -24095,13 +23992,9 @@
         "$ref": "#/components/schemas/DurableTaskStatus"
       },
       "assignee": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "null"
         ]
       },
       "fields": {
@@ -27287,13 +27180,9 @@
         "$ref": "#/components/schemas/StringArrayMap"
       },
       "sensitivity": {
-        "anyOf": [
-          {
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "number",
+          "null"
         ]
       },
       "compartments": {
@@ -31719,6 +31608,10 @@
           "type": "string"
         },
         "description": "List of property names from the collection's properties that should be shared with (injected into) member objects. These properties will be propagated to all members of this collection and merged as arrays."
+      },
+      "user_permissions": {
+        "$ref": "#/components/schemas/ContentObjectUserPermissions",
+        "description": "Computed per-request permissions for the current user on this collection. Not stored — computed on the fly from the collection's security field (same semantics as a content object's user_permissions)."
       }
     },
     "required": [
@@ -35407,19 +35300,11 @@
         ]
       },
       "value": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "type": "boolean"
-          },
-          {
-            "type": "number"
-          },
-          {
-            "type": "null"
-          }
+        "type": [
+          "string",
+          "boolean",
+          "number",
+          "null"
         ]
       },
       "members": {

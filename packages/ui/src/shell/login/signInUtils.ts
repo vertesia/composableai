@@ -1,16 +1,21 @@
 import { getFirebaseAuth, setFirebaseTenant } from '@vertesia/ui/session';
+import { FirebaseError } from 'firebase/app';
 import {
     type AuthProvider,
     signOut as firebaseSignOut,
     GithubAuthProvider,
     GoogleAuthProvider,
     OAuthProvider,
+    signInWithEmailAndPassword,
     signInWithRedirect,
 } from 'firebase/auth';
 
 // Matches auth-tenants.json `provider` values. Tenant context is derived from
 // email resolution at sign-in time, not encoded here.
-export type ProviderId = 'google' | 'github' | 'microsoft' | 'oidc';
+export type ProviderId = 'google' | 'github' | 'microsoft' | 'oidc' | 'password';
+
+/** Providers that sign in by redirecting to an identity provider. `password` signs in in place. */
+export type RedirectProviderId = Exclude<ProviderId, 'password'>;
 
 export interface LastSuccessfulLogin {
     email: string;
@@ -140,28 +145,28 @@ const buildOidcProvider: ProviderBuilder = (email) => {
     return p;
 };
 
-const PROVIDER_BUILDERS: Record<ProviderId, ProviderBuilder> = {
+const PROVIDER_BUILDERS: Record<RedirectProviderId, ProviderBuilder> = {
     google: buildGoogleProvider,
     github: buildGithubProvider,
     microsoft: buildMicrosoftProvider,
     oidc: buildOidcProvider,
 };
 
-function buildFirebaseProvider(idp: ProviderId, email?: string, redirectTo?: string): AuthProvider {
+function buildFirebaseProvider(idp: RedirectProviderId, email?: string, redirectTo?: string): AuthProvider {
     return PROVIDER_BUILDERS[idp](email, redirectTo);
 }
 
 export async function startSignIn(
-    provider: ProviderId,
+    provider: RedirectProviderId,
     email: string,
     redirectTo?: string,
-): Promise<{ ok: true } | { ok: false; reason: 'no-email' }> {
+): Promise<{ ok: true } | { ok: false; reason: 'no-email' | 'password-required' }> {
     if (!email) return { ok: false, reason: 'no-email' };
 
     // A tenant-mapped email uses the tenant's provider (overriding `provider`); otherwise use `provider`.
     const tenant = await setFirebaseTenant(email);
     const auth = getFirebaseAuth();
-    let effectiveIdp = provider;
+    let effectiveIdp: ProviderId = provider;
     let tenantName: string | undefined;
 
     if (tenant) {
@@ -175,13 +180,61 @@ export async function startSignIn(
         if (auth.tenantId) auth.tenantId = null;
     }
 
+    // A password tenant has no identity provider to redirect to; its step collects the password.
+    if (effectiveIdp === 'password') return { ok: false, reason: 'password-required' };
+
     writePendingSignin({ email, provider: effectiveIdp, tenantName });
     void signInWithRedirect(auth, buildFirebaseProvider(effectiveIdp, email, redirectTo));
     return { ok: true };
 }
 
+export type PasswordSignInFailure = 'not-password-tenant' | 'invalid-credentials' | 'too-many-attempts' | 'failed';
+
+// Firebase reports an unknown user, a wrong password and a disabled user with distinct codes on
+// some SDK versions; they are folded into one answer so the form does not reveal which it was.
+const INVALID_CREDENTIAL_CODES = new Set([
+    'auth/invalid-credential',
+    'auth/invalid-email',
+    'auth/user-disabled',
+    'auth/user-not-found',
+    'auth/wrong-password',
+]);
+
+export function passwordFailureReason(err: unknown): Exclude<PasswordSignInFailure, 'not-password-tenant'> {
+    if (!(err instanceof FirebaseError)) return 'failed';
+    if (INVALID_CREDENTIAL_CODES.has(err.code)) return 'invalid-credentials';
+    if (err.code === 'auth/too-many-requests') return 'too-many-attempts';
+    return 'failed';
+}
+
+/**
+ * Signs in a user of a password tenant, in place — there is no redirect. Only an address whose
+ * domain resolves to a tenant configured for password sign-in may use it; the tenant is resolved
+ * again here rather than trusted from the caller, so a returning session cannot carry a stale one.
+ * On success the session's auth-state listener completes the login.
+ */
+export async function signInWithPassword(
+    email: string,
+    password: string,
+): Promise<{ ok: true } | { ok: false; reason: PasswordSignInFailure }> {
+    const tenant = await setFirebaseTenant(email);
+    if (!tenant) return { ok: false, reason: 'failed' };
+    if (tenant.provider !== 'password') return { ok: false, reason: 'not-password-tenant' };
+
+    const tenantName = tenant.label || tenant.name || undefined;
+    localStorage.setItem('tenantName', tenantName ?? '');
+    writePendingSignin({ email, provider: 'password', tenantName });
+    try {
+        await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
+        return { ok: true };
+    } catch (err: unknown) {
+        clearPendingSignin();
+        return { ok: false, reason: passwordFailureReason(err) };
+    }
+}
+
 /** Starts a provider sign-in directly, skipping email/tenant resolution and clearing any tenant routing. */
-export function startSignInWithoutTenant(provider: ProviderId, redirectTo?: string): void {
+export function startSignInWithoutTenant(provider: RedirectProviderId, redirectTo?: string): void {
     const auth = getFirebaseAuth();
     localStorage.removeItem('tenantName');
     if (auth.tenantId) auth.tenantId = null;

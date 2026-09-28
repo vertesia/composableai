@@ -80,6 +80,10 @@ export const InteractionExecutionConfigurationSchema = z
         id: z.string().optional(),
         environment: z.string().optional(),
         model: z.string().optional(),
+        inherit_model_config: z.boolean().optional().meta({
+            description:
+                'Treat environment and model as inherited fallbacks after interaction settings, before project defaults.',
+        }),
         do_validate: z.boolean().optional(),
         run_data: RunDataStorageLevelSchema.optional(),
         configMode: ConfigModesSchema.optional(),

@@ -487,6 +487,7 @@ export const InteractionPublishPayloadSchema = z
 
 export const InteractionForkPayloadSchema = z
     .strictObject({
+        newName: z.string().optional(),
         keepTags: z.boolean().optional(),
         forkPrompts: z.boolean().optional(),
         targetProject: z.string().optional(),
@@ -2410,6 +2411,7 @@ export const ResolveInteractionQuerySchema = z
     .strictObject({
         environment: z.string().optional(),
         model: z.string().optional(),
+        inherit_model_config: InteractionExecutionConfigurationSchema.shape.inherit_model_config,
         hasImage: z.boolean().optional(),
         hasVideo: z.boolean().optional(),
     })
