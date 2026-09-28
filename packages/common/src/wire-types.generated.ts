@@ -2097,7 +2097,7 @@ export type ModelPricing = {
     cached_input_price_per_m_tokens?: number | undefined;
     cache_write_input_price_per_m_tokens?: number | undefined;
     output_price_per_m_tokens: number;
-    source: 'billing_export' | 'model_pricing_daily' | 'unavailable';
+    source: 'billing_export' | 'model_pricing_daily' | 'run_time_estimate' | 'unavailable';
 };
 export type ModelPriceComparison = {
     model: string;

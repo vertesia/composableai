@@ -42072,8 +42072,10 @@
         "enum": [
           "billing_export",
           "model_pricing_daily",
+          "run_time_estimate",
           "unavailable"
-        ]
+        ],
+        "description": "Where the rates come from. `run_time_estimate` rates are the ones recorded on the calls when their cost was estimated; the others come from the pricing catalog."
       }
     },
     "required": [

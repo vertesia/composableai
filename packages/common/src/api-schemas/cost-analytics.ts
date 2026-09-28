@@ -151,7 +151,11 @@ export const ModelPricingSchema = z
         cached_input_price_per_m_tokens: z.number().optional(),
         cache_write_input_price_per_m_tokens: z.number().optional(),
         output_price_per_m_tokens: z.number(),
-        source: z.enum(['billing_export', 'model_pricing_daily', 'unavailable']),
+        source: z.enum(['billing_export', 'model_pricing_daily', 'run_time_estimate', 'unavailable']).meta({
+            description:
+                'Where the rates come from. `run_time_estimate` rates are the ones recorded on the calls when their ' +
+                'cost was estimated; the others come from the pricing catalog.',
+        }),
     })
     .meta({ id: 'ModelPricing' });
 
