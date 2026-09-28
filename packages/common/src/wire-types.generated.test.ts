@@ -2622,9 +2622,9 @@ interface Checks {
         W.AgentRunEvaluationRollup,
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunEvaluationRollupSchema>
     >;
-    AgentRunJudgeResult: Same<
-        W.AgentRunJudgeResult,
-        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunJudgeResultSchema>
+    AgentRunLlmEvaluationResult: Same<
+        W.AgentRunLlmEvaluationResult,
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunLlmEvaluationResultSchema>
     >;
     AgentRunContradictionReason: Same<
         W.AgentRunContradictionReason,
@@ -4382,17 +4382,17 @@ interface Checks {
         W.ToolErrorClassWire,
         z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
     >;
-    JudgeGateReasonWire: Same<
-        W.JudgeGateReasonWire,
-        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeGateReasonSchema>
+    EvaluationGateReasonWire: Same<
+        W.EvaluationGateReasonWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationGateReasonSchema>
     >;
-    JudgeOutcomeWire: Same<
-        W.JudgeOutcomeWire,
-        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeOutcomeSchema>
+    EvaluationOutcomeWire: Same<
+        W.EvaluationOutcomeWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationOutcomeSchema>
     >;
-    JudgeVerdictWire: Same<
-        W.JudgeVerdictWire,
-        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeVerdictSchema>
+    EvaluationVerdictWire: Same<
+        W.EvaluationVerdictWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationVerdictSchema>
     >;
     AgentEventWire: Same<W.AgentEventWire, z.infer<typeof import('./api-schemas/agent-runs.js').AgentEventSchema>>;
     WorkflowDefinitionRefArray: Same<
@@ -7899,9 +7899,9 @@ interface Checks {
         W.ApiComponentTypes['AgentRunEvaluationRollup'],
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunEvaluationRollupSchema>
     >;
-    'component:AgentRunJudgeResult': Same<
-        W.ApiComponentTypes['AgentRunJudgeResult'],
-        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunJudgeResultSchema>
+    'component:AgentRunLlmEvaluationResult': Same<
+        W.ApiComponentTypes['AgentRunLlmEvaluationResult'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunLlmEvaluationResultSchema>
     >;
     'component:AgentRunContradictionReason': Same<
         W.ApiComponentTypes['AgentRunContradictionReason'],
@@ -7927,17 +7927,17 @@ interface Checks {
         W.ApiComponentTypes['ToolErrorClass'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
     >;
-    'component:JudgeGateReason': Same<
-        W.ApiComponentTypes['JudgeGateReason'],
-        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeGateReasonSchema>
+    'component:EvaluationGateReason': Same<
+        W.ApiComponentTypes['EvaluationGateReason'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationGateReasonSchema>
     >;
-    'component:JudgeOutcome': Same<
-        W.ApiComponentTypes['JudgeOutcome'],
-        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeOutcomeSchema>
+    'component:EvaluationOutcome': Same<
+        W.ApiComponentTypes['EvaluationOutcome'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationOutcomeSchema>
     >;
-    'component:JudgeVerdict': Same<
-        W.ApiComponentTypes['JudgeVerdict'],
-        z.infer<typeof import('./api-schemas/agent-runs.js').JudgeVerdictSchema>
+    'component:EvaluationVerdict': Same<
+        W.ApiComponentTypes['EvaluationVerdict'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationVerdictSchema>
     >;
     'component:ListAgentRunsEvaluationSeverity': Same<
         W.ApiComponentTypes['ListAgentRunsEvaluationSeverity'],
@@ -10147,7 +10147,7 @@ const checks: Checks = {
     AgentRunFeedbackResponse: true,
     AgentRunFeedbackEntry: true,
     AgentRunEvaluationRollup: true,
-    AgentRunJudgeResult: true,
+    AgentRunLlmEvaluationResult: true,
     AgentRunContradictionReason: true,
     AgentRunEvaluation: true,
     SignalAgentResponse: true,
@@ -10644,9 +10644,9 @@ const checks: Checks = {
     EvaluationSeverityWire: true,
     TurnEvaluationFlagWire: true,
     ToolErrorClassWire: true,
-    JudgeGateReasonWire: true,
-    JudgeOutcomeWire: true,
-    JudgeVerdictWire: true,
+    EvaluationGateReasonWire: true,
+    EvaluationOutcomeWire: true,
+    EvaluationVerdictWire: true,
     AgentEventWire: true,
     WorkflowDefinitionRefArray: true,
     ActivityTypeDefinitionWire: true,
@@ -11527,16 +11527,16 @@ const checks: Checks = {
     'component:AgentRunFeedbackResponse': true,
     'component:AgentRunFeedbackEntry': true,
     'component:AgentRunEvaluationRollup': true,
-    'component:AgentRunJudgeResult': true,
+    'component:AgentRunLlmEvaluationResult': true,
     'component:AgentRunContradictionReason': true,
     'component:AgentRunEvaluation': true,
     'component:TurnTerminalType': true,
     'component:EvaluationSeverity': true,
     'component:TurnEvaluationFlag': true,
     'component:ToolErrorClass': true,
-    'component:JudgeGateReason': true,
-    'component:JudgeOutcome': true,
-    'component:JudgeVerdict': true,
+    'component:EvaluationGateReason': true,
+    'component:EvaluationOutcome': true,
+    'component:EvaluationVerdict': true,
     'component:ListAgentRunsEvaluationSeverity': true,
     'component:AgentEvent': true,
     'component:IngestAgentEventsPayload': true,

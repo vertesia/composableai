@@ -76,6 +76,8 @@ export class PayloadBuilderStore {
 export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _evaluate: boolean | undefined;
+    _final_verification: boolean = false;
     _non_blocking_subagents: boolean = true;
     _checkpoint_tokens: number | undefined;
     _visibility: ConversationVisibility | undefined;
@@ -131,6 +133,8 @@ export class PayloadBuilder {
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
+        builder._evaluate = this._evaluate;
+        builder._final_verification = this._final_verification;
         builder._non_blocking_subagents = this._non_blocking_subagents;
         builder._checkpoint_tokens = this._checkpoint_tokens;
         builder._visibility = this._visibility;
@@ -201,6 +205,30 @@ export class PayloadBuilder {
     set debug_mode(debug_mode: boolean) {
         if (debug_mode !== this._debug_mode) {
             this._debug_mode = debug_mode;
+            this.onStateChanged();
+        }
+    }
+
+    /** Per-run LLM evaluation request; undefined leaves the project policy default. */
+    get evaluate(): boolean | undefined {
+        return this._evaluate;
+    }
+
+    set evaluate(value: boolean | undefined) {
+        if (value !== this._evaluate) {
+            this._evaluate = value;
+            this.onStateChanged();
+        }
+    }
+
+    /** Opt-in final self-check turn; the workflow applies it to non-interactive runs only. */
+    get final_verification(): boolean {
+        return this._final_verification;
+    }
+
+    set final_verification(value: boolean) {
+        if (value !== this._final_verification) {
+            this._final_verification = value;
             this.onStateChanged();
         }
     }
@@ -498,6 +526,12 @@ export class PayloadBuilder {
     setDebugMode(debug_mode: boolean) {
         this.debug_mode = debug_mode;
     }
+    setEvaluate(value: boolean | undefined) {
+        this.evaluate = value;
+    }
+    setFinalVerification(value: boolean) {
+        this.final_verification = value;
+    }
     setUserChannels(channels: UserChannel[] | undefined) {
         this.user_channels = channels;
     }
@@ -576,6 +610,8 @@ export class PayloadBuilder {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._evaluate = undefined;
+        this._final_verification = false;
         this._non_blocking_subagents = true;
         this._checkpoint_tokens = undefined;
         this._visibility = undefined;
