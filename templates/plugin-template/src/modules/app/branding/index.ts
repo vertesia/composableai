@@ -6,9 +6,10 @@ const CONFIG__PLUGIN_TITLE = 'Vertesia';
 export default defineAppBranding({
     name: CONFIG__PLUGIN_TITLE,
     logo: {
-        light: '../../../../public/logo-light.png',
-        dark: '../../../../public/logo-dark.png',
+        light: '@vertesia/ui/assets/logo-light.png',
+        dark: '@vertesia/ui/assets/logo-dark.png',
         alt: 'Vertesia',
     },
-    loadingIcon: { light: '../../../../public/icon.svg' },
+    favicon: '@vertesia/ui/assets/icon.svg',
+    loadingIcon: { light: '@vertesia/ui/assets/icon.svg' },
 });

@@ -25,7 +25,7 @@ interface AvatarProps {
     color?: string; // the color class
     className?: string;
 }
-export function Avatar({ size, src, name, shape = 'circle', color = 'bg-muted', className }: AvatarProps) {
+export function Avatar({ size, src, name, shape = 'circle', color = 'bg-muted text-muted', className }: AvatarProps) {
     const rounded = shape === 'circle' ? 'rounded-full' : 'rounded-md';
     const sizeClass = getRealSize(size || 'md');
 
@@ -48,7 +48,9 @@ export function Avatar({ size, src, name, shape = 'circle', color = 'bg-muted', 
                 className={`inline-flex ${sizeClass} items-center justify-center ${rounded} ${color} ${className}`}
                 title={name}
             >
-                <span className={`${size !== 'xs' ? 'text-xs' : 'text-[0.6rem]'} font-medium leading-none text-white`}>
+                <span
+                    className={`${size !== 'xs' ? 'text-xs' : 'text-[0.6rem]'} font-medium leading-none text-current`}
+                >
                     {text}
                 </span>
             </span>

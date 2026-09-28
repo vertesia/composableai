@@ -52,8 +52,11 @@ export default defineAppBranding({
 
 Add those assets beside the configuration. Paths resolve relative to this file and are embedded by
 the Vite adapter, including for first paint and gateway version paths. Missing local assets fail the
-build. To retain the template's Vertesia appearance, copy its branding configuration and the referenced
-`public/logo-light.png`, `public/logo-dark.png`, and `public/icon.svg` instead.
+build. To retain the template's Vertesia appearance, copy its branding configuration: it references
+`@vertesia/ui/assets/*`, which the adapter embeds from the installed UI package. Remove the old
+`public/logo-light.png`, `public/logo-dark.png`, `public/icon.svg`, and `public/favicon.ico` copies once
+no custom code references them. Remove the hardcoded favicon link from `index.html`; the configured
+`favicon` now supplies it.
 
 Create `src/modules/app/branding/screens.ts`:
 

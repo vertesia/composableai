@@ -294,3 +294,11 @@ describe('agent evaluation policy contracts', () => {
         ).toBe(false);
     });
 });
+
+describe('agent run creation contract', () => {
+    it('accepts the final verification opt-in as a boolean only', () => {
+        const payload = { interaction: 'sys:GeneralAgent', final_verification: true };
+        expect(validateApiRequest('CreateAgentRunPayload', payload).valid).toBe(true);
+        expect(validateApiRequest('CreateAgentRunPayload', { ...payload, final_verification: 1 }).valid).toBe(false);
+    });
+});

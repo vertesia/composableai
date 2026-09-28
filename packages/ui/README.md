@@ -223,6 +223,14 @@ first-paint document color. These inputs must be trusted static developer conten
 also reveals the optional slow-notice/reload elements after 10/30 seconds and wires `data-boot-reload`
 buttons. Hosts with their own startup/error controller can continue using `autoStart: false`.
 
+### Default brand assets
+
+The canonical Vertesia artwork is exported as `@vertesia/ui/assets/logo-light.png`,
+`@vertesia/ui/assets/logo-dark.png`, and `@vertesia/ui/assets/icon.svg`. These files ship with
+this package. Hosts can resolve and copy them into their static output at the URLs used by
+`vertesiaBranding` (`/logo-light.png`, `/logo-dark.png`, `/icon.svg`), or import them through
+an asset-aware bundler. The SVG is shared by the default favicon and loading artwork.
+
 ### Shared branding configuration
 
 `defineAppBranding` and `AppBranding` from `@vertesia/ui/boot` define the data-only branding contract.
@@ -252,6 +260,26 @@ to enable `VITE_AUTH_MODE` (`firebase` or `central`) and the `VITE_FIREBASE_API_
 Complete Firebase settings select Firebase mode when the mode is omitted; partial settings fail at startup.
 Valid injected runtime configuration takes precedence, while explicit `props.firebase` and `window.AUTH_MODE`
 retain their existing priority. Set `props.endpoints.auth` separately for the central authentication URL.
+
+The template defaults to the canonical images in `@vertesia/ui/assets/*`; the Vite branding
+adapter embeds those package references just like local assets. No copied Vertesia images are needed
+in `public/`. Set `favicon` explicitly in the branding configuration; it is independent of `loadingIcon`.
+
+### App theme and component spinners
+
+Branding configuration controls the shared authentication and boot presentation. For the overall app
+and admin UI, override semantic CSS variables in the app stylesheet (`src/ui/index.css` in the plugin template) (light and dark themes). Keep
+layout styling in app components and reuse the shared UI stylesheet.
+
+`loadingIcon` controls boot/auth loaders; it does not replace every inline `Spinner`. To customize
+those too, wrap the relevant application tree with `SpinnerIconProvider` from `@vertesia/ui/core`.
+Its `value` is a React component accepting `SpinnerIconProps`; apply its `className` to preserve the
+resolved size and caller styles. Give custom artwork an accessible label and respect reduced motion.
+Omitting the provider keeps the standard inline SVG spinner.
+
+Template branding is selected at build time: rebuild and republish the app after changing it.
+It does not automatically inherit a host deployment's brand setting. A central sign-in service owns
+its own branding; an embedded app uses the host's authentication flow.
 
 Loading-logo motion is configurable in `loadingIcon`, for both pre-React boot and authentication loading:
 
