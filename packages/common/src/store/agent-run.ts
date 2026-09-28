@@ -212,6 +212,7 @@ export interface RecordAgentRunPayload<TData = Record<string, unknown>> extends 
     topic?: string;
     generate_topic?: boolean;
     generate_lessons?: boolean;
+    evaluate?: boolean;
     first_workflow_run_id: string;
     schedule_id?: string;
     visibility?: ConversationVisibility;
@@ -252,7 +253,7 @@ export type AgentRunFeedbackCounts = Wire.AgentRunFeedbackCounts;
 export type AgentRunFeedbackResponse = Wire.AgentRunFeedbackResponse;
 export type AgentRunFeedbackEntry = Wire.AgentRunFeedbackEntry;
 export type AgentRunEvaluationRollup = Wire.AgentRunEvaluationRollup;
-export type AgentRunJudgeResult = Wire.AgentRunJudgeResult;
+export type AgentRunLlmEvaluationResult = Wire.AgentRunLlmEvaluationResult;
 export type AgentRunContradictionReason = Wire.AgentRunContradictionReason;
 export type AgentRunEvaluation = Wire.AgentRunEvaluation;
 

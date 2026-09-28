@@ -4074,6 +4074,7 @@ export type AsyncConversationExecutionPayload = {
     topic?: string | undefined;
     generate_topic?: boolean | undefined;
     generate_lessons?: boolean | undefined;
+    evaluate?: boolean | undefined;
     app_version?: string | undefined;
     data?: unknown | undefined;
     config?: InteractionExecutionConfiguration | undefined;
@@ -5543,6 +5544,7 @@ export type ProjectConfiguration = {
     pdf_template_object_id?: string | null | undefined;
 };
 export type AgentProjectConfiguration = {
+    evaluation_policy?: 'disabled' | 'opt_in' | 'always_on' | undefined;
     checkpoint?: AgentCheckpointConfiguration | undefined;
 };
 export type AgentCheckpointConfiguration = {
@@ -6504,25 +6506,25 @@ export type AgentRunEvaluationRollup = {
     };
     updated_at: string;
 };
-export type AgentRunJudgeResult = {
+export type AgentRunLlmEvaluationResult = {
     rev: number;
-    gate: JudgeGateReasonWire;
+    gate: EvaluationGateReasonWire;
     sample_rate: number;
     selected_probability: number;
-    outcome: JudgeOutcomeWire;
-    verdict?: JudgeVerdictWire | undefined;
+    outcome: EvaluationOutcomeWire;
+    verdict?: EvaluationVerdictWire | undefined;
     score?: number | undefined;
     model?: string | undefined;
     prompt_version: string;
-    turns_judged?: number[] | undefined;
-    judged_at: string;
+    turns_evaluated?: number[] | undefined;
+    evaluated_at: string;
 };
-export type AgentRunContradictionReason = 'feedback_down_on_clean_run' | 'judge_failure_on_clean_run';
+export type AgentRunContradictionReason = 'feedback_down_on_clean_run' | 'evaluation_failure_on_clean_run';
 export type AgentRunEvaluation = {
     rev: number;
     rollup?: AgentRunEvaluationRollup | undefined;
     feedback_counts?: AgentRunFeedbackCounts | undefined;
-    judge?: AgentRunJudgeResult | undefined;
+    llm_evaluation?: AgentRunLlmEvaluationResult | undefined;
     severity: EvaluationSeverityWire;
     flags: TurnEvaluationFlagWire[];
     contradicted: boolean;
@@ -9580,6 +9582,7 @@ export type AgentRunWire = {
     generate_topic?: boolean | undefined;
     generate_lessons?: boolean | undefined;
     lessons_learned?: string[] | undefined;
+    evaluate?: boolean | undefined;
     evaluation?: AgentRunEvaluation | undefined;
     feedback?: AgentRunFeedbackEntry[] | undefined;
     archived_at?: string | undefined;
@@ -9593,6 +9596,7 @@ export type CreateAgentRunPayloadWire = {
     topic?: string | undefined;
     generate_topic?: boolean | undefined;
     generate_lessons?: boolean | undefined;
+    evaluate?: boolean | undefined;
     data?:
         | {
               [k: string]: unknown;
@@ -10275,6 +10279,7 @@ export type AutonomousRunResponseWire = {
     generate_topic?: boolean | undefined;
     generate_lessons?: boolean | undefined;
     lessons_learned?: string[] | undefined;
+    evaluate?: boolean | undefined;
     evaluation?: AgentRunEvaluation | undefined;
     feedback?: AgentRunFeedbackEntry[] | undefined;
     archived_at?: string | undefined;
@@ -10317,6 +10322,7 @@ export type RecordAgentRunPayloadWire = {
     topic?: string | undefined;
     generate_topic?: boolean | undefined;
     generate_lessons?: boolean | undefined;
+    evaluate?: boolean | undefined;
     parent_run_id?: string | undefined;
     workstream_id?: string | undefined;
     schedule_id?: string | undefined;
@@ -10369,9 +10375,9 @@ export type TurnEvaluationFlagWire =
     | 'approval_denied'
     | 'circuit_breaker';
 export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'other';
-export type JudgeGateReasonWire = 'signal' | 'sample';
-export type JudgeOutcomeWire = 'judged' | 'skipped_unarchived' | 'failed';
-export type JudgeVerdictWire = 'success' | 'partial' | 'failure';
+export type EvaluationGateReasonWire = 'signal' | 'sample' | 'opt_in' | 'always_on';
+export type EvaluationOutcomeWire = 'evaluated' | 'skipped_unarchived' | 'failed';
+export type EvaluationVerdictWire = 'success' | 'partial' | 'failure';
 export type AgentEventWire = AgentEvent;
 export type WorkflowDefinitionRefArray = WorkflowDefinitionRef[];
 export type ActivityTypeDefinitionWire = ActivityTypeDefinition;
@@ -11368,16 +11374,16 @@ export interface ApiComponentTypes {
     AgentRunFeedbackResponse: AgentRunFeedbackResponse;
     AgentRunFeedbackEntry: AgentRunFeedbackEntry;
     AgentRunEvaluationRollup: AgentRunEvaluationRollup;
-    AgentRunJudgeResult: AgentRunJudgeResult;
+    AgentRunLlmEvaluationResult: AgentRunLlmEvaluationResult;
     AgentRunContradictionReason: AgentRunContradictionReason;
     AgentRunEvaluation: AgentRunEvaluation;
     TurnTerminalType: TurnTerminalTypeWire;
     EvaluationSeverity: EvaluationSeverityWire;
     TurnEvaluationFlag: TurnEvaluationFlagWire;
     ToolErrorClass: ToolErrorClassWire;
-    JudgeGateReason: JudgeGateReasonWire;
-    JudgeOutcome: JudgeOutcomeWire;
-    JudgeVerdict: JudgeVerdictWire;
+    EvaluationGateReason: EvaluationGateReasonWire;
+    EvaluationOutcome: EvaluationOutcomeWire;
+    EvaluationVerdict: EvaluationVerdictWire;
     ListAgentRunsEvaluationSeverity: ListAgentRunsEvaluationSeverity;
     AgentEvent: AgentEventWire;
     IngestAgentEventsPayload: IngestAgentEventsPayload;
