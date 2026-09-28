@@ -127,7 +127,7 @@ export function AgentRequestInputOverlay({
                     compact
                     isLoading={isDisabled}
                     className="my-0"
-                    cardClassName="bg-background/80 shadow-lg shadow-black/5 dark:shadow-none"
+                    cardClassName="bg-background/80 shadow-lg shadow-black/5 "
                 />
             </div>
         </div>

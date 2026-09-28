@@ -7,80 +7,13 @@ import type {
     StatelessExecutionOptions,
     ToolUse,
 } from '@llumiverse/common';
-import type { z } from 'zod';
-import type {
-    AgentResourceActionSchema,
-    AgentResourceReferenceSchema,
-    AgentResourceTypeSchema,
-    AgentRunnerOptionsSchema,
-    AsyncCompletionModeSchema,
-    AsyncCompletionOptionsSchema,
-    AsyncConversationExecutionPayloadSchema,
-    AsyncExecutionPayloadSchema,
-    AsyncExecutionResultSchema,
-    AsyncInteractionExecutionPayloadSchema,
-    CachePolicySchema,
-    CatalogInteractionRefSchema,
-    ConversationStripOptionsSchema,
-    ConversationVisibilitySchema,
-    ExecutionRunInteractionSchema,
-    ExecutionRunRefSchema,
-    ExecutionRunWorkflowSchema,
-    GeneratedInteractionDefinitionSchema,
-    GeneratedInteractionPromptSegmentSchema,
-    GeneratedInteractionPromptTemplateSchema,
-    GeneratedTestDataRecordSchema,
-    GenerateInteractionPayloadSchema,
-    GenerateTestDataPayloadSchema,
-    ImprovePromptPayloadConfigSchema,
-    ImprovePromptPayloadSchema,
-    InCodeInteractionSchema,
-    InCodePromptSchema,
-    InitialToolCallSchema,
-    InteractionCreatePayloadSchema,
-    InteractionEndpointQuerySchema,
-    InteractionEndpointSchema,
-    InteractionExecutionErrorSchema,
-    InteractionExecutionPayloadSchema,
-    InteractionForkPayloadSchema,
-    InteractionNameSchema,
-    InteractionPublishPayloadSchema,
-    InteractionRefSchema,
-    InteractionRefWithSchemaSchema,
-    InteractionSchema,
-    InteractionsExportPayloadSchema,
-    InteractionTagsSchema,
-    InteractionUpdatePayloadSchema,
-    InteractionVisibilitySchema,
-    NamedInteractionExecutionPayloadSchema,
-    PromptImprovementResponseSchema,
-    PromptModalitiesSchema,
-    RateLimitRequestPayloadSchema,
-    RateLimitRequestResponseSchema,
-    ResolvedCatalogInteractionSchema,
-    ResolvedEnvironmentInfoSchema,
-    ResolvedInteractionExecutionInfoSchema,
-    ResolvedRuntimeConfigSchema,
-    ResolveInteractionQuerySchema,
-    ResultStorageOptionsSchema,
-    RunSourceSchema,
-    SchemaRefSchema,
-    SkillContextTriggersSchema,
-    StreamingOptionsSchema,
-    StreamingTelemetryContextSchema,
-    ToolResultMetaSchema,
-    ToolResultSchema,
-    ToolResultsPayloadSchema,
-    UpdateExecutionRunPayloadSchema,
-    UserMessagePayloadSchema,
-} from './api-schemas/interaction.js';
-import type { InteractionExecutionConfigurationSchema } from './api-schemas/store.js';
 import type { ExecutionEnvironmentRef } from './environment.js';
 import type { InferenceProfileSnapshot } from './inference-profile.js';
 import type { ProjectRef } from './project.js';
 import type { PopulatedPromptSegmentDef } from './prompt.js';
 import type { TextArtifactReference } from './store/conversation-state.js';
 import type { AccountRef } from './user.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * `RunDataStorageLevel` and `ConfigModes` live in `./interaction-values.js` so the API schemas can
@@ -89,13 +22,13 @@ import type { AccountRef } from './user.js';
  */
 export * from './interaction-values.js';
 
-export type InteractionExecutionError = z.infer<typeof InteractionExecutionErrorSchema>;
+export type InteractionExecutionError = Wire.InteractionExecutionError;
 
 /**
  * Configuration for stripping large data from conversation history
  * to prevent JSON serialization issues and reduce storage bloat.
  */
-export type ConversationStripOptions = z.infer<typeof ConversationStripOptionsSchema>;
+export type ConversationStripOptions = Wire.ConversationStripOptions;
 
 // ------------------ in code interactions -----------------
 /**
@@ -104,7 +37,7 @@ export type ConversationStripOptions = z.infer<typeof ConversationStripOptionsSc
  * Stored interactions can use `oid:` prefix.
  * If no prefix is used it fallback on `oid:`.
  */
-export type CatalogInteractionRef = z.infer<typeof CatalogInteractionRefSchema>;
+export type CatalogInteractionRef = Wire.CatalogInteractionRef;
 
 export interface CatalogTagQuery {
     tag?: string;
@@ -123,30 +56,30 @@ export interface ExecuteInteractionByEndpointHeaders {
     'x-interaction-tag'?: string;
 }
 
-export type ResolveInteractionQuery = z.infer<typeof ResolveInteractionQuerySchema>;
+export type ResolveInteractionQuery = Wire.ResolveInteractionQuery;
 
-export type InCodePrompt = z.infer<typeof InCodePromptSchema>;
-export type InCodeInteraction = z.infer<typeof InCodeInteractionSchema>;
-export type ResolvedCatalogInteraction = z.infer<typeof ResolvedCatalogInteractionSchema>;
+export type InCodePrompt = Wire.InCodePrompt;
+export type InCodeInteraction = Wire.InCodeInteraction;
+export type ResolvedCatalogInteraction = Wire.ResolvedCatalogInteraction;
 export type InteractionSpec = Omit<InCodeInteraction, 'id' | 'runtime' | 'type' | 'published' | 'version'>;
 // ---------------------------------------------------------
 
 /**
  * The payload to query the interaction endpoints
  */
-export type InteractionEndpointQuery = z.infer<typeof InteractionEndpointQuerySchema>;
+export type InteractionEndpointQuery = Wire.InteractionEndpointQuery;
 
 /**
  * A description of an interaction endpoint.
  */
-export type InteractionEndpoint = z.infer<typeof InteractionEndpointSchema>;
+export type InteractionEndpoint = Wire.InteractionEndpoint;
 
-export type InteractionTags = z.infer<typeof InteractionTagsSchema>;
+export type InteractionTags = Wire.InteractionTags;
 
-export type InteractionRef = z.infer<typeof InteractionRefSchema>;
+export type InteractionRef = Wire.InteractionRef;
 
 /** An interaction reduced to the fields a name picker needs. */
-export type InteractionName = z.infer<typeof InteractionNameSchema>;
+export type InteractionName = Wire.InteractionName;
 
 /**
  * An interaction reference carrying the schemas an export needs to reconstruct it.
@@ -156,9 +89,9 @@ export type InteractionName = z.infer<typeof InteractionNameSchema>;
  * canonical alias — the alias publishes as a bare reference, with no members to omit — and the
  * interface also overstated each prompt template, which an export populates with `inputSchema` alone.
  */
-export type InteractionRefWithSchema = z.infer<typeof InteractionRefWithSchemaSchema>;
+export type InteractionRefWithSchema = Wire.InteractionRefWithSchema;
 
-export type InteractionsExportPayload = z.infer<typeof InteractionsExportPayloadSchema>;
+export type InteractionsExportPayload = Wire.InteractionsExportPayload;
 
 export enum InteractionStatus {
     draft = 'draft',
@@ -179,16 +112,16 @@ export enum ExecutionRunStatus {
  * Schema can be stored or specified as a reference to an external schema.
  * We only support "store:" references for now
  */
-export type SchemaRef = z.infer<typeof SchemaRefSchema>;
-export type CachePolicy = z.infer<typeof CachePolicySchema>;
-export type InteractionVisibility = z.infer<typeof InteractionVisibilitySchema>;
-export type Interaction = z.infer<typeof InteractionSchema>;
+export type SchemaRef = Wire.SchemaRef;
+export type CachePolicy = Wire.CachePolicy;
+export type InteractionVisibility = Wire.InteractionVisibility;
+export type Interaction = Wire.Interaction;
 
-export type InteractionCreatePayload = z.infer<typeof InteractionCreatePayloadSchema>;
+export type InteractionCreatePayload = Wire.InteractionCreatePayload;
 
-export type InteractionUpdatePayload = z.infer<typeof InteractionUpdatePayloadSchema>;
+export type InteractionUpdatePayload = Wire.InteractionUpdatePayload;
 
-export type InteractionPublishPayload = z.infer<typeof InteractionPublishPayloadSchema>;
+export type InteractionPublishPayload = Wire.InteractionPublishPayload;
 
 export interface InteractionDeletePayload {
     /**
@@ -200,13 +133,13 @@ export interface InteractionDeletePayload {
     cascade?: boolean;
 }
 
-export type InteractionForkPayload = z.infer<typeof InteractionForkPayloadSchema>;
+export type InteractionForkPayload = Wire.InteractionForkPayload;
 
-export type InteractionExecutionPayload = z.infer<typeof InteractionExecutionPayloadSchema>;
+export type InteractionExecutionPayload = Wire.InteractionExecutionPayload;
 
-export type NamedInteractionExecutionPayload = z.infer<typeof NamedInteractionExecutionPayloadSchema>;
+export type NamedInteractionExecutionPayload = Wire.NamedInteractionExecutionPayload;
 
-export type ConversationVisibility = z.infer<typeof ConversationVisibilitySchema>;
+export type ConversationVisibility = Wire.ConversationVisibility;
 
 /**
  * Defines the scope for agent search operations.
@@ -222,13 +155,13 @@ export enum AgentSearchScope {
  * Context triggers for auto-injection of skills.
  * When these conditions match, the skill is automatically injected into the agent context.
  */
-export type SkillContextTriggers = z.infer<typeof SkillContextTriggersSchema>;
+export type SkillContextTriggers = Wire.SkillContextTriggers;
 
 /**
  * Configuration options for Agent Runner functionality.
  * These options control how interactions are exposed and executed in the Agent Runner.
  */
-export type AgentRunnerOptions = z.infer<typeof AgentRunnerOptionsSchema>;
+export type AgentRunnerOptions = Wire.AgentRunnerOptions;
 
 // ================= User Communication Channels ====================
 // Import for local use
@@ -250,50 +183,50 @@ export {
  * A tool invocation executed before the first model turn of a conversation.
  * Results are injected into the initial context so the agent starts with them in hand.
  */
-export type InitialToolCall = z.infer<typeof InitialToolCallSchema>;
+export type InitialToolCall = Wire.InitialToolCall;
 
-export type AsyncConversationExecutionPayload = z.infer<typeof AsyncConversationExecutionPayloadSchema>;
+export type AsyncConversationExecutionPayload = Wire.AsyncConversationExecutionPayload;
 
-export type AsyncInteractionExecutionPayload = z.infer<typeof AsyncInteractionExecutionPayloadSchema>;
+export type AsyncInteractionExecutionPayload = Wire.AsyncInteractionExecutionPayload;
 
 /**
  * @discriminator type
  */
-export type AsyncExecutionPayload = z.infer<typeof AsyncExecutionPayloadSchema>;
+export type AsyncExecutionPayload = Wire.AsyncExecutionPayload;
 
-export type AsyncExecutionResult = z.infer<typeof AsyncExecutionResultSchema>;
+export type AsyncExecutionResult = Wire.AsyncExecutionResult;
 
 /**
  * Telemetry context for streaming mode.
  * Contains info not available in current_state needed to send LlmCallEvent.
  */
-export type StreamingTelemetryContext = z.infer<typeof StreamingTelemetryContextSchema>;
+export type StreamingTelemetryContext = Wire.StreamingTelemetryContext;
 
 /**
  * Options for storing inference results to cloud storage
  */
-export type ResultStorageOptions = z.infer<typeof ResultStorageOptionsSchema>;
+export type ResultStorageOptions = Wire.ResultStorageOptions;
 
-export type AsyncCompletionMode = z.infer<typeof AsyncCompletionModeSchema>;
+export type AsyncCompletionMode = Wire.AsyncCompletionMode;
 
 /**
  * Streaming-specific options (only needed when stream=true)
  */
-export type StreamingOptions = z.infer<typeof StreamingOptionsSchema>;
+export type StreamingOptions = Wire.StreamingOptions;
 
 /**
  * Options for async completion and/or streaming LLM responses
  */
-export type AsyncCompletionOptions = z.infer<typeof AsyncCompletionOptionsSchema>;
+export type AsyncCompletionOptions = Wire.AsyncCompletionOptions;
 
 /**
  * The kinds of Vertesia resource an agent tool can report having created, updated, or deleted.
  * Restricted to resources that have a real detail route to navigate to — do not emit a reference
  * for a mutation with no meaningful navigation target. Add new kinds only once their route exists.
  */
-export type AgentResourceType = z.infer<typeof AgentResourceTypeSchema>;
+export type AgentResourceType = Wire.AgentResourceType;
 
-export type AgentResourceAction = z.infer<typeof AgentResourceActionSchema>;
+export type AgentResourceAction = Wire.AgentResourceAction;
 
 /**
  * A navigable reference to a resource an agent tool mutated. Tools return these as tool-result
@@ -301,13 +234,13 @@ export type AgentResourceAction = z.infer<typeof AgentResourceActionSchema>;
  * tool's completed lifecycle message so the UI can render deterministic deep links and an
  * end-of-turn "resources changed" summary — independent of any link the model writes in prose.
  */
-export type AgentResourceReference = z.infer<typeof AgentResourceReferenceSchema>;
+export type AgentResourceReference = Wire.AgentResourceReference;
 
 /**
  * Metadata a tool executor may attach to its result. Kept as an open record for forward
  * compatibility while typing the fields the runtime interprets.
  */
-export type ToolResultMeta = z.infer<typeof ToolResultMetaSchema>;
+export type ToolResultMeta = Wire.ToolResultMeta;
 
 export interface ToolResultContent {
     content: string;
@@ -373,14 +306,14 @@ export function normalizeAgentResources(value: unknown): AgentResourceReference[
     return result;
 }
 
-export type ToolResult = z.infer<typeof ToolResultSchema>;
+export type ToolResult = Wire.ToolResult;
 
 /**
  * The payload to sent the tool responses back to the target LLM
  */
-export type ToolResultsPayload = z.infer<typeof ToolResultsPayloadSchema>;
+export type ToolResultsPayload = Wire.ToolResultsPayload;
 
-export type UserMessagePayload = z.infer<typeof UserMessagePayloadSchema>;
+export type UserMessagePayload = Wire.UserMessagePayload;
 
 // ================= end async execution payloads ====================
 
@@ -394,9 +327,9 @@ export enum RunSourceTypes {
     schedule = 'schedule',
 }
 
-export type RunSource = z.infer<typeof RunSourceSchema>;
+export type RunSource = Wire.RunSource;
 
-export type ExecutionRunInteraction = z.infer<typeof ExecutionRunInteractionSchema>;
+export type ExecutionRunInteraction = Wire.ExecutionRunInteraction;
 
 export interface BaseExecutionRun<P = unknown> {
     readonly id: string;
@@ -475,9 +408,9 @@ export interface PopulatedExecutionRun<P = unknown> extends BaseExecutionRun<P> 
     interaction?: ExecutionRunInteraction;
 }
 
-export type ExecutionRunWorkflow = z.infer<typeof ExecutionRunWorkflowSchema>;
+export type ExecutionRunWorkflow = Wire.ExecutionRunWorkflow;
 
-export type PromptModalities = z.infer<typeof PromptModalitiesSchema>;
+export type PromptModalities = Wire.PromptModalities;
 
 export interface InteractionExecutionResult<P = unknown>
     extends Omit<ExecutionRun<P>, 'account' | 'project' | 'interaction'> {
@@ -489,31 +422,31 @@ export interface InteractionExecutionResult<P = unknown>
     options?: StatelessExecutionOptions;
 }
 
-export type ExecutionRunRef = z.infer<typeof ExecutionRunRefSchema>;
+export type ExecutionRunRef = Wire.ExecutionRunRef;
 
-export type InteractionExecutionConfiguration = z.infer<typeof InteractionExecutionConfigurationSchema>;
+export type InteractionExecutionConfiguration = Wire.InteractionExecutionConfiguration;
 
-export type GenerateInteractionPayload = z.infer<typeof GenerateInteractionPayloadSchema>;
+export type GenerateInteractionPayload = Wire.GenerateInteractionPayload;
 
-export type GenerateTestDataPayload = z.infer<typeof GenerateTestDataPayloadSchema>;
+export type GenerateTestDataPayload = Wire.GenerateTestDataPayload;
 
-export type GeneratedTestDataRecord = z.infer<typeof GeneratedTestDataRecordSchema>;
+export type GeneratedTestDataRecord = Wire.GeneratedTestDataRecord;
 
-export type ImprovePromptPayloadConfig = z.infer<typeof ImprovePromptPayloadConfigSchema>;
+export type ImprovePromptPayloadConfig = Wire.ImprovePromptPayloadConfig;
 
-export type ImprovePromptPayload = z.infer<typeof ImprovePromptPayloadSchema>;
+export type ImprovePromptPayload = Wire.ImprovePromptPayload;
 
-export type GeneratedInteractionPromptTemplate = z.infer<typeof GeneratedInteractionPromptTemplateSchema>;
+export type GeneratedInteractionPromptTemplate = Wire.GeneratedInteractionPromptTemplate;
 
-export type GeneratedInteractionPromptSegment = z.infer<typeof GeneratedInteractionPromptSegmentSchema>;
+export type GeneratedInteractionPromptSegment = Wire.GeneratedInteractionPromptSegment;
 
-export type GeneratedInteractionDefinition = z.infer<typeof GeneratedInteractionDefinitionSchema>;
+export type GeneratedInteractionDefinition = Wire.GeneratedInteractionDefinition;
 
-export type PromptImprovementResponse = z.infer<typeof PromptImprovementResponseSchema>;
+export type PromptImprovementResponse = Wire.PromptImprovementResponse;
 
-export type RateLimitRequestPayload = z.infer<typeof RateLimitRequestPayloadSchema>;
+export type RateLimitRequestPayload = Wire.RateLimitRequestPayload;
 
-export type RateLimitRequestResponse = z.infer<typeof RateLimitRequestResponseSchema>;
+export type RateLimitRequestResponse = Wire.RateLimitRequestResponse;
 
 /**
  * Source of the resolved model configuration
@@ -538,22 +471,22 @@ export enum ModelSource {
 /**
  * Resolved environment information
  */
-export type ResolvedEnvironmentInfo = z.infer<typeof ResolvedEnvironmentInfoSchema>;
+export type ResolvedEnvironmentInfo = Wire.ResolvedEnvironmentInfo;
 
 /**
  * Resolved runtime configuration for an interaction
  */
-export type ResolvedRuntimeConfig = z.infer<typeof ResolvedRuntimeConfigSchema>;
+export type ResolvedRuntimeConfig = Wire.ResolvedRuntimeConfig;
 
 /**
  * Resolved execution info for an interaction.
  * Contains the interaction ID, basic metadata, and the resolved runtime configuration
  * (environment, model) that would be used at execution time.
  */
-export type ResolvedInteractionExecutionInfo = z.infer<typeof ResolvedInteractionExecutionInfoSchema>;
+export type ResolvedInteractionExecutionInfo = Wire.ResolvedInteractionExecutionInfo;
 
 export interface PopulatedInteraction extends Omit<Interaction, 'prompts'> {
     prompts: PopulatedPromptSegmentDef[];
 }
 
-export type UpdateExecutionRunPayload = z.infer<typeof UpdateExecutionRunPayloadSchema>;
+export type UpdateExecutionRunPayload = Wire.UpdateExecutionRunPayload;

@@ -2118,6 +2118,11 @@ export const AsyncInteractionExecutionPayloadSchema = z
     })
     .meta({ id: 'AsyncInteractionExecutionPayload' });
 
+export const AgentEvaluateRequestSchema = z.boolean().optional().meta({
+    description:
+        'Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on.',
+});
+
 export const ConversationEnrichmentFields = {
     title: z.string().min(1).meta({ description: 'Caller-provided conversation title.' }).optional(),
     topic: z
@@ -2148,6 +2153,7 @@ export const AsyncConversationExecutionPayloadSchema = z
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
         ...ConversationEnrichmentFields,
+        evaluate: AgentEvaluateRequestSchema,
         app_version: z
             .string()
             .meta({
@@ -2302,6 +2308,13 @@ export const AsyncConversationExecutionPayloadSchema = z
             .meta({
                 description:
                     "Metadata inherited from parent workflow. Used to propagate context (e.g., apiKey, session info) to child workflows/workstreams. When a workstream is spawned, the parent's `data` is preserved here so that child tools can access it via metadata.parent_metadata.",
+            })
+            .optional(),
+        final_verification: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, a non-interactive free-form run takes one extra turn after its answer to check that the task is complete. Off by default, and never applied to workstreams: their parent reviews the result and can message the workstream to continue.',
             })
             .optional(),
         non_blocking_subagents: z

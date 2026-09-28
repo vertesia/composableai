@@ -1,37 +1,23 @@
-/**
- * Durable human task types used by process human_task nodes and agent asks.
- */
-import type { z } from 'zod';
-import type {
-    CompleteTaskPayloadSchema,
-    CreateTaskPayloadSchema,
-    DurableTaskStatusSchema,
-    ListTasksQuerySchema,
-    TaskFieldSchema,
-    TaskFieldTypeSchema,
-    TaskSchema,
-    TaskSourceSchema,
-    UpdateTaskPayloadSchema,
-} from '../api-schemas/task.js';
+import type * as Wire from '../wire-types.generated.js';
 
-export type DurableTaskStatus = z.infer<typeof DurableTaskStatusSchema>;
+export type DurableTaskStatus = Wire.DurableTaskStatus;
 
-export type TaskFieldType = z.infer<typeof TaskFieldTypeSchema>;
+export type TaskFieldType = Wire.TaskFieldType;
 
-export type TaskField = z.infer<typeof TaskFieldSchema>;
+export type TaskField = Wire.TaskField;
 
-export type TaskSource = z.infer<typeof TaskSourceSchema>;
+export type TaskSource = Wire.TaskSource;
 
 /**
  * The timestamps are ISO date-time STRINGS, not `Date`: this is the wire shape, and JSON has no date
  * type. The Mongoose model keeps `Date` — persistence and transport are different contracts.
  */
-export type Task = z.infer<typeof TaskSchema>;
+export type Task = Wire.Task;
 
-export type CreateTaskPayload = z.infer<typeof CreateTaskPayloadSchema>;
+export type CreateTaskPayload = Wire.CreateTaskPayload;
 
-export type UpdateTaskPayload = z.infer<typeof UpdateTaskPayloadSchema>;
+export type UpdateTaskPayload = Wire.UpdateTaskPayload;
 
-export type CompleteTaskPayload = z.infer<typeof CompleteTaskPayloadSchema>;
+export type CompleteTaskPayload = Wire.CompleteTaskPayload;
 
-export type ListTasksQuery = z.infer<typeof ListTasksQuerySchema>;
+export type ListTasksQuery = Wire.ListTasksQuery;

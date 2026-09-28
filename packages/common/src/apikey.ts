@@ -1,19 +1,8 @@
-import type { z } from 'zod';
 import type { PropertyConditions } from './access-control.js';
-import type {
-    ApiKeyArraySchema,
-    ApiKeyListQuerySchema,
-    ApiKeyReadQuerySchema,
-    ApiKeyReadResponseSchema,
-    ApiKeySchema,
-    ApiKeyWithValueSchema,
-    AuthTokenResponseSchema,
-    CreateApiKeyPayloadSchema,
-    UpdateApiKeyPayloadSchema,
-} from './api-schemas/apikey.js';
 import type { UserGroupRef } from './group.js';
 import type { ProjectRef, SystemRoles } from './project.js';
 import type { AccountRef } from './user.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * `ApiKeyTypes` lives in `./apikey-values.js` so the API schemas can read it without importing this
@@ -54,8 +43,8 @@ export interface ContentSecurity {
  * `format: date-time` strings and JSON has no date type, so the previous `Date` declaration
  * described the Mongoose document rather than the response a client parses.
  */
-export type ApiKey = z.infer<typeof ApiKeySchema>;
-export type ApiKeyArray = z.infer<typeof ApiKeyArraySchema>;
+export type ApiKey = Wire.ApiKey;
+export type ApiKeyArray = Wire.ApiKeyArray;
 /**
  * Create and update take DIFFERENT payloads, and did not before.
  *
@@ -64,10 +53,10 @@ export type ApiKeyArray = z.infer<typeof ApiKeyArraySchema>;
  * `role` (which unset a required path). Splitting it is source-breaking for the SDK and is announced
  * as a release operation; the two names say which operation they belong to.
  */
-export type CreateApiKeyPayload = z.infer<typeof CreateApiKeyPayloadSchema>;
-export type UpdateApiKeyPayload = z.infer<typeof UpdateApiKeyPayloadSchema>;
-export type ApiKeyWithValue = z.infer<typeof ApiKeyWithValueSchema>;
-export type ApiKeyReadResponse = z.infer<typeof ApiKeyReadResponseSchema>;
+export type CreateApiKeyPayload = Wire.CreateApiKeyPayload;
+export type UpdateApiKeyPayload = Wire.UpdateApiKeyPayload;
+export type ApiKeyWithValue = Wire.ApiKeyWithValue;
+export type ApiKeyReadResponse = Wire.ApiKeyReadResponse;
 
 export interface CreatePublicKeyPayload {
     name?: string;
@@ -75,9 +64,9 @@ export interface CreatePublicKeyPayload {
     ttl?: number;
 }
 
-export type AuthTokenResponse = z.infer<typeof AuthTokenResponseSchema>;
-export type ApiKeyListQuery = z.infer<typeof ApiKeyListQuerySchema>;
-export type ApiKeyReadQuery = z.infer<typeof ApiKeyReadQuerySchema>;
+export type AuthTokenResponse = Wire.AuthTokenResponse;
+export type ApiKeyListQuery = Wire.ApiKeyListQuery;
+export type ApiKeyReadQuery = Wire.ApiKeyReadQuery;
 
 export interface AuthTokenPayload {
     credential_scope?: 'project' | 'account';
@@ -197,12 +186,8 @@ export enum PrincipalType {
     Schedule = 'schedule',
 }
 
-export type AccountApiKey = z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeySchema>;
-export type AccountApiKeyWithValue = z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeyWithValueSchema>;
-export type AccountApiKeyArray = z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeyArraySchema>;
-export type CreateAccountApiKeyPayload = z.infer<
-    typeof import('./api-schemas/apikey.js').CreateAccountApiKeyPayloadSchema
->;
-export type UpdateAccountApiKeyPayload = z.infer<
-    typeof import('./api-schemas/apikey.js').UpdateAccountApiKeyPayloadSchema
->;
+export type AccountApiKey = Wire.AccountApiKey;
+export type AccountApiKeyWithValue = Wire.AccountApiKeyWithValue;
+export type AccountApiKeyArray = Wire.AccountApiKeyArray;
+export type CreateAccountApiKeyPayload = Wire.CreateAccountApiKeyPayload;
+export type UpdateAccountApiKeyPayload = Wire.UpdateAccountApiKeyPayload;

@@ -1,26 +1,4 @@
-import type { z } from 'zod';
-import type {
-    AccountApiVersionPolicySchema,
-    AccountBillingSchema,
-    AccountSchema,
-    UpdateAccountPayloadSchema,
-} from './api-schemas/account.js';
-import type {
-    AccountProjectsResponseSchema,
-    AccountRefSchema,
-    InviteAcceptanceResponseSchema,
-    InviteDeclineResponseSchema,
-    InviteUserRequestPayloadSchema,
-    InviteUserResponsePayloadSchema,
-    OnboardingProgressSchema,
-} from './api-schemas/invites.js';
-import type {
-    SignupDataSchema,
-    SignupPayloadSchema,
-    UpdateUserPayloadSchema,
-    UserRefSchema,
-    UserSchema,
-} from './api-schemas/user.js';
+import type * as Wire from './wire-types.generated.js';
 
 export * from './account-values.js';
 
@@ -34,8 +12,8 @@ export * from './account-values.js';
  * `@dglabs/server-common` describes what Mongo actually holds (optional email, ObjectId
  * references, Date timestamps) and is deliberately independent of this type.
  */
-export type User = z.infer<typeof UserSchema>;
-export type UpdateUserPayload = z.infer<typeof UpdateUserPayloadSchema>;
+export type User = Wire.User;
+export type UpdateUserPayload = Wire.UpdateUserPayload;
 
 /**
  * The compact user shape embedded in other resources' responses, derived from `UserRefSchema`.
@@ -43,7 +21,7 @@ export type UpdateUserPayload = z.infer<typeof UpdateUserPayloadSchema>;
  * `UserRefPopulate` is the Mongoose projection that produces it, and the two are meant to stay in
  * step: a field added here without adding it there yields a response missing the field.
  */
-export type UserRef = z.infer<typeof UserRefSchema>;
+export type UserRef = Wire.UserRef;
 
 export const UserRefPopulate = 'id name email picture';
 
@@ -70,15 +48,15 @@ export { RESTRICTED_ENVIRONMENT_ERROR_CODE } from './sts-errors.js';
  * bundle — runtime consumers reach the schemas through the `@vertesia/common/api-schemas` entry
  * point instead.
  */
-export type Account = z.infer<typeof AccountSchema>;
-export type AccountBilling = z.infer<typeof AccountBillingSchema>;
-export type UpdateAccountPayload = z.infer<typeof UpdateAccountPayloadSchema>;
+export type Account = Wire.Account;
+export type AccountBilling = Wire.AccountBilling;
+export type UpdateAccountPayload = Wire.UpdateAccountPayload;
 
 // The compact account reference, derived from the schema in `./api-schemas/invites.js`. It was
 // hand-written for the same reason `ProjectRef` was — `ExecutionRun` and `UserInviteTokenData` still
 // reach it through types the scanner derives — and is an alias now for the same reason: the scanner
 // short-circuits such an alias to the published component rather than failing to expand it.
-export type AccountRef = z.infer<typeof AccountRefSchema>;
+export type AccountRef = Wire.AccountRef;
 
 export const AccountRefPopulate = 'id name';
 
@@ -92,22 +70,22 @@ export const AccountRefPopulate = 'id name';
  * reads it and the alias is safe. `AccountRefSchema` is still the runtime source of truth, and the
  * `Equals` assertion in `invites.contract.test.ts` is what holds the interface to it.
  */
-export type InviteUserRequestPayload = z.infer<typeof InviteUserRequestPayloadSchema>;
-export type InviteUserResponsePayload = z.infer<typeof InviteUserResponsePayloadSchema>;
-export type InviteAcceptanceResponse = z.infer<typeof InviteAcceptanceResponseSchema>;
-export type InviteDeclineResponse = z.infer<typeof InviteDeclineResponseSchema>;
-export type AccountProjectsResponse = z.infer<typeof AccountProjectsResponseSchema>;
+export type InviteUserRequestPayload = Wire.InviteUserRequestPayload;
+export type InviteUserResponsePayload = Wire.InviteUserResponsePayload;
+export type InviteAcceptanceResponse = Wire.InviteAcceptanceResponse;
+export type InviteDeclineResponse = Wire.InviteDeclineResponse;
+export type AccountProjectsResponse = Wire.AccountProjectsResponse;
 
-export type OnboardingProgress = z.infer<typeof OnboardingProgressSchema>;
+export type OnboardingProgress = Wire.OnboardingProgress;
 
 /**
  * Data collected at signup, used for onboarding and segments.
  */
-export type SignupData = z.infer<typeof SignupDataSchema>;
+export type SignupData = Wire.SignupData;
 
 /**
  * The `POST /auth/signup` request body.
  */
-export type SignupPayload = z.infer<typeof SignupPayloadSchema>;
+export type SignupPayload = Wire.SignupPayload;
 
-export type AccountApiVersionPolicy = z.infer<typeof AccountApiVersionPolicySchema>;
+export type AccountApiVersionPolicy = Wire.AccountApiVersionPolicy;

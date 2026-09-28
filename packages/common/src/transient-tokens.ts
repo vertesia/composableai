@@ -1,6 +1,6 @@
-import type { z } from 'zod';
-import type { UserInviteTokenDataSchema, UserInviteTokenFromSchema } from './api-schemas/invites.js';
+import type { UserInviteTokenFromSchema } from './api-schemas/invites.js';
 import type { TransientTokenType } from './transient-tokens-values.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * `TransientTokenType` lives in `./transient-tokens-values.js` so the API schemas can read it
@@ -22,7 +22,7 @@ export interface TransientToken<T> {
  * The invite payload as it crosses the wire, inferred from `./api-schemas/invites.js`. Every
  * reference is populated by the handlers before the response is built.
  */
-export type UserInviteTokenData = z.infer<typeof UserInviteTokenDataSchema>;
+export type UserInviteTokenData = Wire.UserInviteTokenData;
 
 /** One pending invite, as the three invite listings publish it. */
 export type UserInviteToken = UserInviteTokenFromSchema;

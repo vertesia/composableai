@@ -1,110 +1,40 @@
-import type { z } from 'zod';
-import type {
-    AdvanceProcessPayloadSchema,
-    AnswerProcessTaskPayloadSchema,
-    BranchDefinitionSchema,
-    BranchJoinPolicySchema,
-    CreateProcessTestSuitePayloadSchema,
-    HumanTaskDefinitionSchema,
-    JsonLogicRuleSchema,
-    ListProcessDefinitionsQuerySchema,
-    ListProcessTestRunsQuerySchema,
-    NodeHistoryEntrySchema,
-    ParallelCollectDefinitionSchema,
-    ParallelCollectFieldSchema,
-    ParallelCollectModeSchema,
-    ParallelFailurePolicySchema,
-    ProcessContextDefinitionSchema,
-    ProcessContextResponseSchema,
-    ProcessDefinitionFormatVersionSchema,
-    ProcessDefinitionMetadataSchema,
-    ProcessDefinitionRevisionInfoSchema,
-    ProcessDefinitionStatusSchema,
-    ProcessHistoryRefSchema,
-    ProcessHistoryResponseSchema,
-    ProcessNodeReturnsDefinitionSchema,
-    ProcessNodeRunTypeSchema,
-    ProcessNodeTypeSchema,
-    ProcessResourcesDefinitionSchema,
-    ProcessScriptInlineSourceSchema,
-    ProcessScriptLanguageSchema,
-    ProcessScriptResourceSchema,
-    ProcessScriptSourceSchema,
-    ProcessStateSchema,
-    ProcessTestActorDecisionSchema,
-    ProcessTestAssertionResultSchema,
-    ProcessTestAssertionsSchema,
-    ProcessTestChildTraceSchema,
-    ProcessTestCoverageSchema,
-    ProcessTestFixtureErrorSchema,
-    ProcessTestFixtureResponseSchema,
-    ProcessTestFixtureResultSchema,
-    ProcessTestHumanActionSchema,
-    ProcessTestInlineSubjectSchema,
-    ProcessTestNodeFixtureSchema,
-    ProcessTestResolvedSubjectSchema,
-    ProcessTestRunSchema,
-    ProcessTestRunStatusSchema,
-    ProcessTestScenarioResultSchema,
-    ProcessTestScenarioSchema,
-    ProcessTestStoredSubjectSchema,
-    ProcessTestSubjectSchema,
-    ProcessTestSuiteSchema,
-    ProcessTestTargetByIdSchema,
-    ProcessTestTargetWithDefinitionSchema,
-    ProcessTestVirtualActorSchema,
-    PublishProcessDefinitionPayloadSchema,
-    RetryProcessNodePayloadSchema,
-    RevertProcessDefinitionPayloadSchema,
-    StartProcessTestRunPayloadSchema,
-    SubmitProcessTestRunPayloadSchema,
-    TransitionDefinitionSchema,
-    TransitionTriggerSchema,
-    UpdateProcessTestScenarioPayloadSchema,
-    UpdateProcessTestSuitePayloadSchema,
-} from '../api-schemas/process.js';
-import type {
-    ProcessAgentExecutionPolicySchema,
-    ProcessAgentPhaseResetSchema,
-    ProcessAgentToolInputContainsSchema,
-    ProcessAgentToolPhaseSchema,
-} from '../api-schemas/process-agent-policy.js';
 import type { JSONSchema } from '../json-schema.js';
+import type * as Wire from '../wire-types.generated.js';
 
-export type JsonLogicRule = z.infer<typeof JsonLogicRuleSchema>;
+export type JsonLogicRule = Wire.JsonLogicRule;
 
-export type ProcessDefinitionStatus = z.infer<typeof ProcessDefinitionStatusSchema>;
-export type ListProcessDefinitionsQuery = z.infer<typeof ListProcessDefinitionsQuerySchema>;
-export type ListProcessTestRunsQuery = z.infer<typeof ListProcessTestRunsQuerySchema>;
+export type ProcessDefinitionStatus = Wire.ProcessDefinitionStatus;
+export type ListProcessDefinitionsQuery = Wire.ListProcessDefinitionsQuery;
+export type ListProcessTestRunsQuery = Wire.ListProcessTestRunsQuery;
 export const PROCESS_DEFINITION_FORMAT_VERSION = 1 as const;
-export type ProcessDefinitionFormatVersion = z.infer<typeof ProcessDefinitionFormatVersionSchema>;
+export type ProcessDefinitionFormatVersion = Wire.ProcessDefinitionFormatVersion;
 
-export type ProcessNodeType = z.infer<typeof ProcessNodeTypeSchema>;
+export type ProcessNodeType = Wire.ProcessNodeType;
 
-export type TransitionTrigger = z.infer<typeof TransitionTriggerSchema>;
-export type ParallelFailurePolicy = z.infer<typeof ParallelFailurePolicySchema>;
-export type ProcessNodeRunType = z.infer<typeof ProcessNodeRunTypeSchema>;
-export type ParallelCollectMode = z.infer<typeof ParallelCollectModeSchema>;
-export type BranchJoinPolicy = z.infer<typeof BranchJoinPolicySchema>;
-export type ProcessDefinitionMetadata = z.infer<typeof ProcessDefinitionMetadataSchema>;
-export type ProcessAgentToolPhase = z.infer<typeof ProcessAgentToolPhaseSchema>;
-export type ProcessAgentToolInputContains = z.infer<typeof ProcessAgentToolInputContainsSchema>;
-export type ProcessAgentPhaseReset = z.infer<typeof ProcessAgentPhaseResetSchema>;
-export type ProcessAgentExecutionPolicy = z.infer<typeof ProcessAgentExecutionPolicySchema>;
-export type ProcessScriptLanguage = z.infer<typeof ProcessScriptLanguageSchema>;
+export type TransitionTrigger = Wire.TransitionTrigger;
+export type ParallelFailurePolicy = Wire.ParallelFailurePolicy;
+export type ProcessNodeRunType = Wire.ProcessNodeRunType;
+export type ParallelCollectMode = Wire.ParallelCollectMode;
+export type BranchJoinPolicy = Wire.BranchJoinPolicy;
+export type ProcessDefinitionMetadata = Wire.ProcessDefinitionMetadata;
+export type ProcessAgentToolPhase = Wire.ProcessAgentToolPhase;
+export type ProcessAgentToolInputContains = Wire.ProcessAgentToolInputContains;
+export type ProcessAgentPhaseReset = Wire.ProcessAgentPhaseReset;
+export type ProcessAgentExecutionPolicy = Wire.ProcessAgentExecutionPolicy;
+export type ProcessScriptLanguage = Wire.ProcessScriptLanguage;
 
-export type ProcessScriptInlineSource = z.infer<typeof ProcessScriptInlineSourceSchema>;
+export type ProcessScriptInlineSource = Wire.ProcessScriptInlineSource;
 
-export type ProcessScriptSource = z.infer<typeof ProcessScriptSourceSchema>;
+export type ProcessScriptSource = Wire.ProcessScriptSource;
 
-export type ProcessScriptResource = z.infer<typeof ProcessScriptResourceSchema>;
+export type ProcessScriptResource = Wire.ProcessScriptResource;
 
-export type ProcessResourcesDefinition = z.infer<typeof ProcessResourcesDefinitionSchema>;
-export type ParallelCollectField = z.infer<typeof ParallelCollectFieldSchema>;
+export type ProcessResourcesDefinition = Wire.ProcessResourcesDefinition;
+export type ParallelCollectField = Wire.ParallelCollectField;
 
-export type TransitionDefinition = z.infer<typeof TransitionDefinitionSchema>;
+export type TransitionDefinition = Wire.TransitionDefinition;
 
-export type BranchDefinition = z.infer<typeof BranchDefinitionSchema>;
+export type BranchDefinition = Wire.BranchDefinition;
 
 export interface BranchNodeBranchDefinition {
     id: string;
@@ -114,11 +44,11 @@ export interface BranchNodeBranchDefinition {
     metadata?: ProcessDefinitionMetadata;
 }
 
-export type HumanTaskDefinition = z.infer<typeof HumanTaskDefinitionSchema>;
+export type HumanTaskDefinition = Wire.HumanTaskDefinition;
 
-export type ProcessNodeReturnsDefinition = z.infer<typeof ProcessNodeReturnsDefinitionSchema>;
+export type ProcessNodeReturnsDefinition = Wire.ProcessNodeReturnsDefinition;
 
-export type ParallelCollectDefinition = z.infer<typeof ParallelCollectDefinitionSchema>;
+export type ParallelCollectDefinition = Wire.ParallelCollectDefinition;
 
 export interface NodeDefinition {
     type: ProcessNodeType;
@@ -189,7 +119,7 @@ export interface NodeDefinition {
     metadata?: ProcessDefinitionMetadata;
 }
 
-export type ProcessContextDefinition = z.infer<typeof ProcessContextDefinitionSchema>;
+export type ProcessContextDefinition = Wire.ProcessContextDefinition;
 
 export interface ProcessDefinitionBody {
     format_version: ProcessDefinitionFormatVersion;
@@ -217,7 +147,7 @@ export interface InCodeProcessDefinition {
     definition: ProcessDefinitionBody;
 }
 
-export type ProcessDefinitionRevisionInfo = z.infer<typeof ProcessDefinitionRevisionInfoSchema>;
+export type ProcessDefinitionRevisionInfo = Wire.ProcessDefinitionRevisionInfo;
 
 export interface ProcessDefinition {
     id: string;
@@ -237,9 +167,9 @@ export interface ProcessDefinition {
     updated_by: string;
 }
 
-export type NodeHistoryEntry = z.infer<typeof NodeHistoryEntrySchema>;
+export type NodeHistoryEntry = Wire.NodeHistoryEntry;
 
-export type ProcessHistoryRef = z.infer<typeof ProcessHistoryRefSchema>;
+export type ProcessHistoryRef = Wire.ProcessHistoryRef;
 
 export interface ProcessHistoryCheckpoint {
     sequence: number;
@@ -248,7 +178,7 @@ export interface ProcessHistoryCheckpoint {
     entries: NodeHistoryEntry[];
 }
 
-export type ProcessState = z.infer<typeof ProcessStateSchema>;
+export type ProcessState = Wire.ProcessState;
 
 export interface CreateProcessDefinitionPayload {
     name: string;
@@ -282,54 +212,51 @@ export interface UpdateProcessDefinitionPayload {
     definition?: ProcessDefinitionBody;
 }
 
-export type PublishProcessDefinitionPayload = z.infer<typeof PublishProcessDefinitionPayloadSchema>;
+export type PublishProcessDefinitionPayload = Wire.PublishProcessDefinitionPayload;
 
-export type RevertProcessDefinitionPayload = z.infer<typeof RevertProcessDefinitionPayloadSchema>;
+export type RevertProcessDefinitionPayload = Wire.RevertProcessDefinitionPayload;
 
-export type AdvanceProcessPayload = z.infer<typeof AdvanceProcessPayloadSchema>;
+export type AdvanceProcessPayload = Wire.AdvanceProcessPayload;
 
-export type AnswerProcessTaskPayload = z.infer<typeof AnswerProcessTaskPayloadSchema>;
+export type AnswerProcessTaskPayload = Wire.AnswerProcessTaskPayload;
 
-export type RetryProcessNodePayload = z.infer<typeof RetryProcessNodePayloadSchema>;
+export type RetryProcessNodePayload = Wire.RetryProcessNodePayload;
 
-export type ProcessContextResponse = z.infer<typeof ProcessContextResponseSchema>;
+export type ProcessContextResponse = Wire.ProcessContextResponse;
 
-export type ProcessHistoryResponse = z.infer<typeof ProcessHistoryResponseSchema>;
+export type ProcessHistoryResponse = Wire.ProcessHistoryResponse;
 
-export type ProcessTestRunStatus = z.infer<typeof ProcessTestRunStatusSchema>;
-export type ProcessTestVirtualActor = z.infer<typeof ProcessTestVirtualActorSchema>;
-export type ProcessTestFixtureResult = z.infer<typeof ProcessTestFixtureResultSchema>;
-export type ProcessTestFixtureError = z.infer<typeof ProcessTestFixtureErrorSchema>;
-export type ProcessTestFixtureResponse = z.infer<typeof ProcessTestFixtureResponseSchema>;
-export type ProcessTestNodeFixture = z.infer<typeof ProcessTestNodeFixtureSchema>;
-export type ProcessTestHumanAction = z.infer<typeof ProcessTestHumanActionSchema>;
-export type ProcessTestAssertions = z.infer<typeof ProcessTestAssertionsSchema>;
-export type ProcessTestScenario = z.infer<typeof ProcessTestScenarioSchema>;
-export type ProcessTestSuite = z.infer<typeof ProcessTestSuiteSchema>;
-export type CreateProcessTestSuitePayload = z.infer<typeof CreateProcessTestSuitePayloadSchema>;
-export type UpdateProcessTestSuitePayload = z.infer<typeof UpdateProcessTestSuitePayloadSchema>;
-export type StartProcessTestRunPayload = z.infer<typeof StartProcessTestRunPayloadSchema>;
-export type ProcessTestAssertionResult = z.infer<typeof ProcessTestAssertionResultSchema>;
-export type ProcessTestActorDecision = z.infer<typeof ProcessTestActorDecisionSchema>;
-export type ProcessTestCoverage = z.infer<typeof ProcessTestCoverageSchema>;
-export type ProcessTestChildTrace = z.infer<typeof ProcessTestChildTraceSchema>;
-export type ProcessTestScenarioResult = z.infer<typeof ProcessTestScenarioResultSchema>;
-export type ProcessTestRun = Omit<z.infer<typeof ProcessTestRunSchema>, 'process_definition_snapshot'> & {
+export type ProcessTestRunStatus = Wire.ProcessTestRunStatus;
+export type ProcessTestVirtualActor = Wire.ProcessTestVirtualActor;
+export type ProcessTestFixtureResult = Wire.ProcessTestFixtureResult;
+export type ProcessTestFixtureError = Wire.ProcessTestFixtureError;
+export type ProcessTestFixtureResponse = Wire.ProcessTestFixtureResponse;
+export type ProcessTestNodeFixture = Wire.ProcessTestNodeFixture;
+export type ProcessTestHumanAction = Wire.ProcessTestHumanAction;
+export type ProcessTestAssertions = Wire.ProcessTestAssertions;
+export type ProcessTestScenario = Wire.ProcessTestScenario;
+export type ProcessTestSuite = Wire.ProcessTestSuite;
+export type CreateProcessTestSuitePayload = Wire.CreateProcessTestSuitePayload;
+export type UpdateProcessTestSuitePayload = Wire.UpdateProcessTestSuitePayload;
+export type StartProcessTestRunPayload = Wire.StartProcessTestRunPayload;
+export type ProcessTestAssertionResult = Wire.ProcessTestAssertionResult;
+export type ProcessTestActorDecision = Wire.ProcessTestActorDecision;
+export type ProcessTestCoverage = Wire.ProcessTestCoverage;
+export type ProcessTestChildTrace = Wire.ProcessTestChildTrace;
+export type ProcessTestScenarioResult = Wire.ProcessTestScenarioResult;
+export type ProcessTestRun = Omit<Wire.ProcessTestRunWire, 'process_definition_snapshot'> & {
     process_definition_snapshot: ProcessDefinitionBody;
 };
-export type ProcessTestStoredSubject = z.infer<typeof ProcessTestStoredSubjectSchema>;
-export type ProcessTestResolvedSubject = z.infer<typeof ProcessTestResolvedSubjectSchema>;
-export type ProcessTestInlineSubject = z.infer<typeof ProcessTestInlineSubjectSchema>;
-export type ProcessTestSubject = z.infer<typeof ProcessTestSubjectSchema>;
-export type ProcessTestTargetById = z.infer<typeof ProcessTestTargetByIdSchema>;
-export type ProcessTestTargetWithDefinition = Omit<
-    z.infer<typeof ProcessTestTargetWithDefinitionSchema>,
-    'definition'
-> & {
+export type ProcessTestStoredSubject = Wire.ProcessTestStoredSubject;
+export type ProcessTestResolvedSubject = Wire.ProcessTestResolvedSubject;
+export type ProcessTestInlineSubject = Wire.ProcessTestInlineSubject;
+export type ProcessTestSubject = Wire.ProcessTestSubject;
+export type ProcessTestTargetById = Wire.ProcessTestTargetById;
+export type ProcessTestTargetWithDefinition = Omit<Wire.ProcessTestTargetWithDefinitionWire, 'definition'> & {
     definition: ProcessDefinitionBody;
 };
 export type ProcessTestTarget = ProcessTestTargetById | ProcessTestTargetWithDefinition;
-export type SubmitProcessTestRunPayload = Omit<z.infer<typeof SubmitProcessTestRunPayloadSchema>, 'process'> & {
+export type SubmitProcessTestRunPayload = Omit<Wire.SubmitProcessTestRunPayloadWire, 'process'> & {
     process: ProcessTestTarget;
 };
-export type UpdateProcessTestScenarioPayload = z.infer<typeof UpdateProcessTestScenarioPayloadSchema>;
+export type UpdateProcessTestScenarioPayload = Wire.UpdateProcessTestScenarioPayload;

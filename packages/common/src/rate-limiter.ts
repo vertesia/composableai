@@ -1,16 +1,4 @@
-import type { z } from 'zod';
-/**
- * Rate Limiter Types
- */
-
-import type {
-    QuotaEffectiveTierSchema,
-    QuotaStandingAdmissionClassSchema,
-    QuotaStandingResourceSchema,
-    QuotaStandingResponseSchema,
-    QuotaStandingWindowSchema,
-    QuotaTierResponseSchema,
-} from './api-schemas/quota.js';
+import type * as Wire from './wire-types.generated.js';
 
 interface RateLimiterCapacity {
     current: number;
@@ -56,9 +44,9 @@ export type RateLimiterStatusResponse = RateLimiterStatus[];
  * `import type` erases at compile time, so nothing here pulls zod into a browser or SDK bundle;
  * runtime consumers reach the schemas through the `@vertesia/common/api-schemas` entry point.
  */
-export type QuotaStandingWindow = z.infer<typeof QuotaStandingWindowSchema>;
-export type QuotaStandingResource = z.infer<typeof QuotaStandingResourceSchema>;
-export type QuotaStandingAdmissionClass = z.infer<typeof QuotaStandingAdmissionClassSchema>;
-export type QuotaEffectiveTier = z.infer<typeof QuotaEffectiveTierSchema>;
-export type QuotaStandingResponse = z.infer<typeof QuotaStandingResponseSchema>;
-export type QuotaTierResponse = z.infer<typeof QuotaTierResponseSchema>;
+export type QuotaStandingWindow = Wire.QuotaStandingWindow;
+export type QuotaStandingResource = Wire.QuotaStandingResource;
+export type QuotaStandingAdmissionClass = Wire.QuotaStandingAdmissionClass;
+export type QuotaEffectiveTier = Wire.QuotaEffectiveTier;
+export type QuotaStandingResponse = Wire.QuotaStandingResponse;
+export type QuotaTierResponse = Wire.QuotaTierResponse;
