@@ -69,6 +69,7 @@ for (const [name, replacement] of [
     ['new head', [{ ...pr, head: { ...pr.head, sha: childSha } }]],
     ['fork', [{ ...pr, head: { ...pr.head, repo: { full_name: 'someone/studio' } } }]],
     ['wrong author', [{ ...pr, user }]],
+    ['retired preview target', [{ ...pr, base: { ref: 'preview' } }]],
     ['unsupported target', [{ ...pr, base: { ref: 'feature' } }]],
 ]) {
     test(`ignore ${name}`, async () => {
@@ -278,3 +279,11 @@ test('sync notification still fails on source API errors', async () => {
         throw new Error('GitHub API unavailable');
     }), /GitHub API unavailable/);
 });
+
+for (const repository of ['vertesia/studio', 'vertesia/composableai', 'vertesia/llumiverse']) {
+    test(`retired preview pushes do not notify in ${repository}`, async () => {
+        const sourceRun = { ...run, event: 'push', head_branch: 'preview' };
+        assert.equal(await notification({ ...context, repo: repository, event: { workflow_run: sourceRun } },
+            async () => ({ workflow_runs: [sourceRun] })), null);
+    });
+}
