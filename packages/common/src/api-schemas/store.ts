@@ -82,9 +82,14 @@ export const InteractionExecutionConfigurationSchema = z
         inference_profile: InferenceProfileIdSchema.nullable()
             .optional()
             .meta({ description: 'Select a project inference profile. Null bypasses profile defaults.' }),
-        inherit_model_config: z.boolean().optional().meta({
-            description: 'Treat supplied model settings as inherited fallback: an applicable profile replaces them.',
-        }),
+        inherit_model_config: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as " +
+                    "a fallback: the interaction's bound or attached profile, or its own model, replaces them.",
+            }),
         environment: z.string().optional(),
         model: z.string().optional(),
         do_validate: z.boolean().optional(),

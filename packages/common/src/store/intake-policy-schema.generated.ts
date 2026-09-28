@@ -1124,7 +1124,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 inherit_model_config: {
                     type: 'boolean',
                     description:
-                        'Treat supplied model settings as inherited fallback: an applicable profile replaces them.',
+                        "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them.",
                 },
                 environment: {
                     type: 'string',
