@@ -36320,6 +36320,9 @@
           "errorType": {
             "type": "string"
           },
+          "executionRunId": {
+            "type": "string"
+          },
           "nestedInteractionId": {
             "type": "string"
           },
@@ -41831,9 +41834,11 @@
           "provider",
           "service_tier",
           "interaction",
-          "workflow"
+          "workflow",
+          "agent_run",
+          "workflow_run"
         ],
-        "description": "Group results by this dimension"
+        "description": "Group results by this dimension. `agent_run` groups by root agent run, including the calls of its sub-agents; `workflow_run` groups by Temporal workflow run, which separates each sub-agent."
       },
       "resolution": {
         "type": "string",

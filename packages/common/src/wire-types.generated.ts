@@ -2026,6 +2026,8 @@ export type CostAnalyticsQuery = {
         | 'service_tier'
         | 'interaction'
         | 'workflow'
+        | 'agent_run'
+        | 'workflow_run'
         | undefined;
     resolution?: 'hour' | 'day' | 'week' | 'month' | undefined;
     model?: string | undefined;

@@ -47,8 +47,14 @@ export const CostAnalyticsQuerySchema = z
                 'service_tier',
                 'interaction',
                 'workflow',
+                'agent_run',
+                'workflow_run',
             ])
-            .meta({ description: 'Group results by this dimension' })
+            .meta({
+                description:
+                    'Group results by this dimension. `agent_run` groups by root agent run, including the calls of ' +
+                    'its sub-agents; `workflow_run` groups by Temporal workflow run, which separates each sub-agent.',
+            })
             .optional(),
         resolution: z.enum(['hour', 'day', 'week', 'month']).meta({ description: 'Time series resolution' }).optional(),
         model: z.string().meta({ description: 'Filter by model pattern' }).optional(),
