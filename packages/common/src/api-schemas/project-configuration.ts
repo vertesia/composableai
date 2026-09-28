@@ -178,8 +178,8 @@ export const AgentBudgetConfigurationSchema = z
             .optional()
             .meta({
                 description:
-                    'Weight applied to input tokens read from the prompt cache. Default 0, so a long conversation ' +
-                    'that mostly re-reads cached context is not charged again for it.',
+                    'Weight applied to input tokens read from the prompt cache. Default 0.1, so a long conversation ' +
+                    'that mostly re-reads cached context is charged a tenth of the uncached rate for it.',
             }),
     })
     .meta({
