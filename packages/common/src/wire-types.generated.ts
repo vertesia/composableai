@@ -2093,6 +2093,7 @@ export type ModelPricing = {
     provider?: string | undefined;
     provider_account_id?: string | undefined;
     service_tier?: string | undefined;
+    min_prompt_tokens?: number | undefined;
     input_price_per_m_tokens: number;
     cached_input_price_per_m_tokens?: number | undefined;
     cache_write_input_price_per_m_tokens?: number | undefined;

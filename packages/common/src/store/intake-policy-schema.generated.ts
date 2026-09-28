@@ -293,6 +293,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['5m', '1h'],
                 },
+                speed: {
+                    type: 'string',
+                    enum: ['standard', 'fast'],
+                },
             },
             additionalProperties: false,
         },

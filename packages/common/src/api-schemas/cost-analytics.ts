@@ -147,6 +147,16 @@ export const ModelPricingSchema = z
         provider: z.string().optional(),
         provider_account_id: z.string().optional(),
         service_tier: z.string().meta({ description: 'Processing tier this price applies to' }).optional(),
+        min_prompt_tokens: z
+            .number()
+            .int()
+            .nonnegative()
+            .meta({
+                description:
+                    'When set, these prices apply to calls whose prompt (input, cached and cache-write tokens) is ' +
+                    'longer than this many tokens, in place of the prices without it.',
+            })
+            .optional(),
         input_price_per_m_tokens: z.number(),
         cached_input_price_per_m_tokens: z.number().optional(),
         cache_write_input_price_per_m_tokens: z.number().optional(),

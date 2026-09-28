@@ -4424,6 +4424,13 @@
           "5m",
           "1h"
         ]
+      },
+      "speed": {
+        "type": "string",
+        "enum": [
+          "standard",
+          "fast"
+        ]
       }
     },
     "additionalProperties": false
@@ -42054,6 +42061,12 @@
       "service_tier": {
         "type": "string",
         "description": "Processing tier this price applies to"
+      },
+      "min_prompt_tokens": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "When set, these prices apply to calls whose prompt (input, cached and cache-write tokens) is longer than this many tokens, in place of the prices without it."
       },
       "input_price_per_m_tokens": {
         "type": "number"
