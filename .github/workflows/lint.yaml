@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - preview
       - "release/**"
       - "production/**"
       - "hotfix**"
@@ -44,7 +43,13 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Test automerge CI policy
+<<<<<<< HEAD
         run: node --test .github/bin/automerge-ci.test.mjs
+=======
+        run: node --test .github/bin/automerge-ci.test.mjs .github/bin/ci-approve.test.mjs
+      - name: Test automation notifications
+        run: node --test .github/bin/automation-notification.test.mjs .github/bin/submodule-sync-policy.test.mjs
+>>>>>>> a237198d (feat: approve tested PRs with GitHub App and retire preview branch routing (#2337))
       - name: Locate pnpm store
         id: pnpm-store
         shell: bash
