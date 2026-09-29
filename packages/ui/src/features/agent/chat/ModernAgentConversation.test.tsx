@@ -311,38 +311,54 @@ describe('ModernAgentConversation send handling', () => {
     });
 
     it('does not allocate budget again when playback returns to the same live pause', async () => {
-        const user = userEvent.setup();
-        mockStreamState({
-            messages: [
-                createMessage(AgentMessageType.QUESTION, 'Start'),
-                createMessage(AgentMessageType.ANSWER, 'Working'),
-                {
-                    ...createMessage(AgentMessageType.IDLE, 'Budget exhausted'),
-                    details: { status_reason: 'awaiting_budget' },
+        const scrollDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView');
+        const scrollIntoView = vi.fn();
+        Object.defineProperty(Element.prototype, 'scrollIntoView', {
+            configurable: true,
+            writable: true,
+            value: scrollIntoView,
+        });
+        let view: ReturnType<typeof renderConversation> | undefined;
+        try {
+            const user = userEvent.setup();
+            mockStreamState({
+                messages: [
+                    createMessage(AgentMessageType.QUESTION, 'Start'),
+                    createMessage(AgentMessageType.ANSWER, 'Working'),
+                    {
+                        ...createMessage(AgentMessageType.IDLE, 'Budget exhausted'),
+                        details: { status_reason: 'awaiting_budget' },
+                    },
+                ],
+                agentRunStatus: 'RUNNING',
+            });
+            const onBudgetRequest = vi.fn(
+                async (request: import('./AgentBudgetPauseOverlay').AgentBudgetRequestContext) => {
+                    await request.allocateBudget(50_000);
                 },
-            ],
-            agentRunStatus: 'RUNNING',
-        });
-        const onBudgetRequest = vi.fn(
-            async (request: import('./AgentBudgetPauseOverlay').AgentBudgetRequestContext) => {
-                await request.allocateBudget(50_000);
-            },
-        );
-        renderConversation({
-            enablePlayback: true,
-            onBudgetRequest,
-            renderBudgetRequest: () => <div role="status">Budget pause active</div>,
-        });
-        await waitFor(() => expect(mocks.allocateBudget).toHaveBeenCalledTimes(1));
-        await user.click(await screen.findByRole('button', { name: 'Jump to first message' }));
-        await waitFor(() => expect(screen.queryByText('Budget pause active', { exact: true })).toBeNull());
-        expect(onBudgetRequest).toHaveBeenCalledTimes(1);
-        await user.click(await screen.findByRole('button', { name: 'Jump to live' }));
-        expect(await screen.findByText('Budget pause active', { exact: true })).toBeTruthy();
-        // Flush the remounted overlay's callback microtask before checking absence of another allocation.
-        await act(async () => {});
-        expect(onBudgetRequest).toHaveBeenCalledTimes(1);
-        expect(mocks.allocateBudget).toHaveBeenCalledTimes(1);
+            );
+            view = renderConversation({
+                enablePlayback: true,
+                onBudgetRequest,
+                renderBudgetRequest: () => <div role="status">Budget pause active</div>,
+            });
+            await waitFor(() => expect(mocks.allocateBudget).toHaveBeenCalledTimes(1));
+            await user.click(await screen.findByRole('button', { name: 'Jump to first message' }));
+            await waitFor(() => expect(screen.queryByText('Budget pause active', { exact: true })).toBeNull());
+            expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+            await user.click(await screen.findByRole('button', { name: 'Jump to live' }));
+            expect(await screen.findByText('Budget pause active', { exact: true })).toBeTruthy();
+            // Wait for the scheduled animation frame as well as the remounted overlay's callback.
+            await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'end' }));
+            await act(async () => {});
+            expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+            expect(mocks.allocateBudget).toHaveBeenCalledTimes(1);
+        } finally {
+            // Unmount cancels any remaining frame before removing jsdom's scrolling stub.
+            view?.unmount();
+            if (scrollDescriptor) Object.defineProperty(Element.prototype, 'scrollIntoView', scrollDescriptor);
+            else Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
+        }
     });
 
     it('blocks a delayed budget allocation from the previous run after switching runs', async () => {
