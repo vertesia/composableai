@@ -94,11 +94,9 @@ overrides:
   # sourceMappingURL reads arbitrary .map files when `from` is unset).
   postcss@<8.5.23: 8.5.23
   "js-yaml@>=4.0.0 <4.3.1": 4.3.1
-  # GHSA-pm4m-ph32-ghv5 (5.x line, reached via packages/build-tools). This lockfile already
-  # resolves 5.2.2; the floor pins that in place so a future resolution cannot drop back to a
-  # vulnerable 5.x. Major-scoped on purpose — a bare `js-yaml@<5.2.2` would drag the 4.x
-  # consumers above across a major.
-  "js-yaml@>=5.0.0 <5.2.2": 5.2.2
+  # GHSA-r3ph-w7gj-g6xm: bound CPU use for empty merge sources.
+  # Keep 3.x/4.x consumers on their existing major versions.
+  "js-yaml@>=5.0.0 <5.4.2": 5.4.2
   # GHSA-2v37-7h3g-55p8: zero-sized custom generators can loop indefinitely.
   # PostCSS remains on nanoid 3; only vulnerable releases are redirected to the latest 3.x patch.
   "nanoid@<3.3.17": 3.3.18
