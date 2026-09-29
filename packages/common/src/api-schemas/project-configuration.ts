@@ -1,6 +1,7 @@
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ResourceVisibility } from '../project-values.js';
+import { ProjectInferenceProfilesSchema } from './inference-profile.js';
 import { ContentTypeIntakePolicySchema } from './store.js';
 
 /**
@@ -67,11 +68,12 @@ export const ProjectSearchTierSchema = z.enum(['standard', 'performance']).meta(
 export const ElasticsearchBackendSchema = z.enum(['serverless', 'hosted']).meta({ id: 'ElasticsearchBackend' });
 
 export const ProjectSearchPropertyTypeSchema = z
-    .enum(['keyword', 'text', 'boolean', 'long', 'double', 'date', 'geo_point'])
+    .enum(['keyword', 'text', 'boolean', 'long', 'double', 'date', 'geo_point', 'nested'])
     .meta({
         id: 'ProjectSearchPropertyType',
         description:
-            'Elasticsearch field types that may be explicitly assigned to content-object properties. Paths are ' +
+            'Elasticsearch field types that may be explicitly assigned to content-object properties. ' +
+            'Declare nested object-array paths with type `nested` and their children as separate dotted paths. Paths are ' +
             "relative to the object's `properties` field.",
     });
 
@@ -142,10 +144,65 @@ export const AgentCheckpointConfigurationSchema = z
     })
     .meta({ id: 'AgentCheckpointConfiguration' });
 
+export const AgentBudgetConfigurationSchema = z
+    .strictObject({
+        limit_tokens: z
+            .number()
+            .optional()
+            .meta({
+                description:
+                    'Weighted token budget shared by the run and every subagent workstream it launches. When the ' +
+                    'run and its workstreams together use this many weighted tokens, the agent gets one final ' +
+                    'turn without tools to summarize its work, and the run ends. This is a soft limit, not a ' +
+                    'spending cap: workstreams running concurrently and the final summary turns can go over ' +
+                    'it. Unset or <=0 means no budget.',
+            }),
+        reminder_at_remaining_tokens: z
+            .array(z.number())
+            .optional()
+            .meta({
+                description:
+                    'Remaining-budget thresholds, in weighted tokens, at which the agent is told how much budget ' +
+                    'is left. Each threshold is delivered once per context window (again after a checkpoint). ' +
+                    'Values outside (0, limit_tokens) are ignored. Unset means reminders at 25% and 10% remaining.',
+            }),
+        output_token_weight: z.number().min(0).optional().meta({
+            description: 'Weight applied to output tokens, reasoning included, when charging the budget. Default 5.',
+        }),
+        input_token_weight: z.number().min(0).optional().meta({
+            description: 'Weight applied to input tokens not read from the prompt cache. Default 1.',
+        }),
+        cached_input_token_weight: z
+            .number()
+            .min(0)
+            .optional()
+            .meta({
+                description:
+                    'Weight applied to input tokens read from the prompt cache. Default 0.1, so a long conversation ' +
+                    'that mostly re-reads cached context is charged a tenth of the uncached rate for it.',
+            }),
+    })
+    .meta({
+        id: 'AgentBudgetConfiguration',
+        description:
+            'Weighted token budget for an agent run and its subagent workstreams. A call is charged ' +
+            'output × output_token_weight + uncached input × input_token_weight + cached input × ' +
+            'cached_input_token_weight.',
+    });
+
 export const AgentProjectConfigurationSchema = z
     .strictObject({
+        evaluation_policy: z.enum(['disabled', 'opt_in', 'always_on']).optional().meta({
+            description:
+                'LLM evaluation policy. Defaults to always_on when omitted. disabled prevents evaluation even when requested; opt_in requires evaluate=true on the run; always_on evaluates every eligible run without sampling. Deterministic diagnostics are unaffected.',
+        }),
         checkpoint: AgentCheckpointConfigurationSchema.optional().meta({
             description: 'Conversation checkpoint (context compaction) tuning.',
+        }),
+        budget: AgentBudgetConfigurationSchema.optional().meta({
+            description:
+                'Default token budget for agent runs in this project. Field-wise overridden by the ' +
+                "interaction's `agent_runner_options.budget` and the per-run `budget`.",
         }),
     })
     .meta({
@@ -421,7 +478,11 @@ export const ProjectConfigurationSchema = z
         default_environment: z.string().optional(),
         default_model: z.string().optional(),
         human_context: z.string().optional(),
-        defaults: ProjectModelDefaultsSchema.optional(),
+        defaults: ProjectModelDefaultsSchema.optional().meta({
+            deprecated: true,
+            description: 'Legacy model defaults, replaced by inference profile assignments after migration.',
+        }),
+        inference: ProjectInferenceProfilesSchema.optional(),
         default_visibility: ResourceVisibilitySchema.optional(),
         sync_content_properties: z.boolean().optional(),
         embeddings: z.strictObject({
@@ -459,6 +520,12 @@ export const ProjectConfigurationSchema = z
                     "'de'). Determines which Elasticsearch analyzer is used for the text field. Defaults to 'en' " +
                     '(English/standard analyzer).\n\nChanging this value requires a full reindex to take effect.',
             }),
+        oauth_clients: z
+            .strictObject({
+                external_clients: z.enum(['allow_all', 'allowlist']).optional(),
+                allowed_origins: z.array(z.string()).optional(),
+            })
+            .optional(),
         browser_use: BrowserUseProjectConfigurationSchema.optional().meta({
             description: 'Project defaults and caps for browser_use agent workstreams.',
         }),

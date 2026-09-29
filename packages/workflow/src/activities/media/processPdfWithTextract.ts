@@ -10,7 +10,6 @@
  *  </page>
  */
 
-import { fromWebToken } from '@aws-sdk/credential-providers';
 import type { AwsCredentialIdentityProvider } from '@smithy/types';
 import { log } from '@temporalio/activity';
 import {
@@ -20,7 +19,6 @@ import {
     type DSLActivitySpec,
     SupportedIntegrations,
 } from '@vertesia/common';
-import { TextractProcessor } from '../../conversion/TextractProcessor.js';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../../errors.js';
 import { type TextExtractionResult, TextExtractionStatus } from '../../result-types.js';
@@ -75,6 +73,7 @@ export async function convertPdfToStructuredText(
     )) as AwsConfiguration;
     const credentials = await getS3AWSCredentials(awsConfig, payload.auth_token, project.id);
 
+    const { TextractProcessor } = await import('../../conversion/TextractProcessor.js');
     const processor = new TextractProcessor({
         fileKey: objectId,
         region: 'us-west-2',
@@ -150,6 +149,7 @@ export async function getS3AWSCredentials(
         roleArn: awsConfig.s3_role_arn,
     });
 
+    const { fromWebToken } = await import('@aws-sdk/credential-providers');
     const credentials = fromWebToken({
         webIdentityToken: composableAuthToken,
         roleArn: awsConfig.s3_role_arn,

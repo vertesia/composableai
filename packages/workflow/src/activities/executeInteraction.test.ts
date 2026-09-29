@@ -13,9 +13,10 @@ vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
 });
 
 let testEnv: MockActivityEnvironment;
+const activityLogger = { trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn(), log: vi.fn() };
 
 beforeAll(() => {
-    testEnv = new MockActivityEnvironment();
+    testEnv = new MockActivityEnvironment({}, { logger: activityLogger });
 });
 
 beforeEach(() => {
@@ -148,6 +149,8 @@ describe('executeInteraction retryability', () => {
             config: {
                 environment: 'env-id',
                 model: 'model-id',
+                inference_profile: '507f1f77bcf86cd799439011',
+                inherit_model_config: true,
                 http_timeout: httpTimeout,
             },
         };
@@ -181,6 +184,8 @@ describe('executeInteraction retryability', () => {
                 interaction: 'testInteraction',
                 environment_id: 'env-id',
                 model_id: 'model-id',
+                inference_profile: '507f1f77bcf86cd799439011',
+                inherit_model_config: true,
                 rate_limit_id: expect.stringMatching(/:testInteraction$/),
             }),
         );
@@ -193,6 +198,11 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             message: 'Interaction Execution failed testInteraction: rendition in progress',
         });
+        expect(activityLogger.debug).toHaveBeenCalledWith(
+            'Interaction testInteraction is waiting for a rendition',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -212,6 +222,30 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
+        expect(activityLogger.error).toHaveBeenCalled();
+    });
+
+    it('keeps explicitly permanent 412 failures at error level', async () => {
+        await mockInteractionError(
+            Object.assign(new Error('permanent precondition failure'), {
+                statusCode: 412,
+                retryable: false,
+            }),
+        );
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+        expect(activityLogger.error).toHaveBeenCalled();
+    });
+
+    it('does not retry unavailable rendition responses', async () => {
+        await mockInteractionError(Object.assign(new Error('rendition unavailable'), { statusCode: 422 }));
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+        expect(activityLogger.error).toHaveBeenCalled();
     });
 
     it('should honor explicitly retryable 4xx execution errors', async () => {

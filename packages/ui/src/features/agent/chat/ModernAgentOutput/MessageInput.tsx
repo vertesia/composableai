@@ -55,6 +55,10 @@ function formatTokenCountInK(tokens: number): string {
 
 interface MessageInputProps {
     onSend: (message: string) => void;
+    /** Controlled composer draft. When omitted, the composer manages its own draft. */
+    value?: string;
+    /** Called whenever the composer draft changes. */
+    onValueChange?: (value: string) => void;
     onStop?: () => void;
     disabled?: boolean;
     isSending?: boolean;
@@ -121,6 +125,8 @@ interface MessageInputProps {
 
 export default function MessageInput({
     onSend,
+    value: controlledValue,
+    onValueChange,
     onStop,
     approvalModeSlot,
     mcpSlot,
@@ -163,7 +169,17 @@ export default function MessageInput({
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
     const ref = useRef<HTMLTextAreaElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [value, setValue] = useState('');
+    const [uncontrolledValue, setUncontrolledValue] = useState('');
+    const value = controlledValue ?? uncontrolledValue;
+    const setValue = useCallback(
+        (nextValue: string) => {
+            if (controlledValue === undefined) {
+                setUncontrolledValue(nextValue);
+            }
+            onValueChange?.(nextValue);
+        },
+        [controlledValue, onValueChange],
+    );
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
     const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -456,7 +472,7 @@ export default function MessageInput({
         >
             {/* Drag overlay */}
             {isDragOver && canDropFiles && (
-                <div className="absolute inset-0 flex items-center justify-center bg-info/80 dark:bg-info/40 rounded-lg z-10 pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center bg-info/40 rounded-lg z-10 pointer-events-none">
                     <div className="text-info font-medium flex items-center gap-2">
                         <UploadIcon className="size-5" />
                         {t('agent.dropFilesToUpload')}

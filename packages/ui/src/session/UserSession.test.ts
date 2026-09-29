@@ -1,7 +1,11 @@
 import type { VertesiaClient } from '@vertesia/client';
 import { type AuthTokenPayload, PrincipalType } from '@vertesia/common';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as composable from './auth/composable';
+import * as oauth from './auth/oauth';
 import { UserSession } from './UserSession';
+
+afterEach(() => vi.restoreAllMocks());
 
 const projectToken: AuthTokenPayload = {
     sub: 'test-user',
@@ -33,6 +37,16 @@ function createSession(onboardingProgress: () => Promise<Record<string, boolean>
 }
 
 describe('UserSession.fetchOnboardingStatus', () => {
+    it.each(['token', 'oauth'] as const)(
+        'does not load Studio onboarding for a default %s login',
+        async (authMethod) => {
+            const onboardingProgress = vi.fn(async () => ({ project_created: true }));
+            const { session } = createSession(onboardingProgress);
+            await session.login(encodeToken(projectToken), { authMethod });
+            expect(onboardingProgress).not.toHaveBeenCalled();
+            expect(session.onboardingComplete).toBeUndefined();
+        },
+    );
     it('skips onboarding before authentication without publishing a status', async () => {
         const onboardingProgress = vi.fn(async () => ({ project_created: true }));
         const { session, setSession } = createSession(onboardingProgress);
@@ -48,12 +62,12 @@ describe('UserSession.fetchOnboardingStatus', () => {
         const onboardingProgress = vi.fn(async () => ({ project_created: true }));
         const { session, setSession } = createSession(onboardingProgress);
 
-        await session.login(encodeToken({ ...projectToken, project: undefined }));
+        await session.login(encodeToken({ ...projectToken, project: undefined }), { loadOnboardingStatus: true });
         expect(onboardingProgress).not.toHaveBeenCalled();
         expect(session.onboardingComplete).toBeUndefined();
         expect(setSession).not.toHaveBeenCalled();
 
-        await session.login(encodeToken(projectToken));
+        await session.login(encodeToken(projectToken), { loadOnboardingStatus: true });
         expect(onboardingProgress).toHaveBeenCalledOnce();
         expect(session.onboardingComplete).toBe(true);
         expect(setSession).toHaveBeenCalledOnce();
@@ -100,5 +114,36 @@ describe('UserSession.signOut', () => {
         signOutClone();
         expect(cloneLogout).toHaveBeenCalledOnce();
         expect(logout).toHaveBeenCalledOnce();
+    });
+});
+
+describe('UserSession credential provider', () => {
+    it('keeps the accepted token session after the fragment state is consumed', async () => {
+        const rawToken = encodeToken(projectToken);
+        vi.spyOn(composable, 'getComposableToken').mockResolvedValue({ rawToken, token: projectToken, error: false });
+        const acquireOAuth = vi.spyOn(oauth, 'getAppOAuthToken').mockResolvedValue('oauth-token');
+        // OAuth is configured again after the one-time fragment nonce is cleared.
+        vi.spyOn(oauth, 'usesAppOAuth').mockReturnValue(true);
+        const { session } = createSession(async () => ({}));
+        await session.login(rawToken, { loadOnboardingStatus: false });
+
+        await expect(session.authCallback).resolves.toBe(`Bearer ${rawToken}`);
+        await expect(session.clone().authCallback).resolves.toBe(`Bearer ${rawToken}`);
+        await session.refreshAuthToken();
+        expect(acquireOAuth).not.toHaveBeenCalled();
+    });
+
+    it('retains OAuth acquisition and refresh for OAuth logins and cloned sessions', async () => {
+        const rawToken = encodeToken({ ...projectToken, type: PrincipalType.OAuthAccess });
+        const acquireOAuth = vi.spyOn(oauth, 'getAppOAuthToken').mockResolvedValue(rawToken);
+        const acquireLegacy = vi.spyOn(composable, 'getComposableToken');
+        const { session } = createSession(async () => ({}));
+        await session.login(rawToken, { loadOnboardingStatus: false, authMethod: 'oauth' });
+
+        await expect(session.authCallback).resolves.toBe(`Bearer ${rawToken}`);
+        await expect(session.clone().authCallback).resolves.toBe(`Bearer ${rawToken}`);
+        await session.refreshAuthToken();
+        expect(acquireOAuth).toHaveBeenCalledWith(true);
+        expect(acquireLegacy).not.toHaveBeenCalled();
     });
 });

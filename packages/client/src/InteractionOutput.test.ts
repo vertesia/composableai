@@ -3,6 +3,20 @@ import { describe, expect, it } from 'vitest';
 import { InteractionOutput, IS_INTERACTION_OUTPUT } from './InteractionOutput.js';
 
 describe('InteractionOutput', () => {
+    it('exposes audio metadata and URI without treating it as text or JSON', () => {
+        const audio = {
+            type: 'audio' as const,
+            value: 'gs://bucket/speech.mp3',
+            mime_type: 'audio/mpeg',
+            container: 'mp3',
+        };
+        const output = InteractionOutput.from([audio]);
+        expect(output.hasAudio()).toBe(true);
+        expect(output.audio()).toEqual(audio);
+        expect(output.audios()).toEqual([audio]);
+        expect(output.text()).toBe('');
+    });
+
     const sampleResults: CompletionResult[] = [
         { type: 'text', value: 'Hello, ' },
         { type: 'text', value: 'World!' },

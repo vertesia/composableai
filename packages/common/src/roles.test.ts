@@ -7,6 +7,7 @@ describe('shared role vocabulary', () => {
         expect(Object.values(SystemRoles).sort()).toEqual(
             [
                 'admin',
+                'app_admin',
                 'app_member',
                 'application',
                 'auditor',
@@ -27,6 +28,6 @@ describe('shared role vocabulary', () => {
     });
 
     test('exports ABAC scopes used by role wire types', () => {
-        expect(AbacScopes).toEqual(['document', 'collection', 'task']);
+        expect(AbacScopes).toEqual(['document', 'collection', 'agent_run', 'task']);
     });
 });

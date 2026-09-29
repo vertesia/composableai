@@ -18,6 +18,7 @@ import {
     shouldRedirectToCentralAuth,
 } from './domainRouting';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
+import { isStsTokenIssuer } from './tokenIssuer';
 
 let AUTH_TOKEN_RAW: string | undefined;
 let AUTH_TOKEN: AuthTokenPayload | undefined;
@@ -137,18 +138,17 @@ function identityFromAcceptedToken(token: string): AuthenticatedIdentity | undef
 }
 
 export function resolveAuthSelection(currentUrl: URL): { accountId?: string; projectId?: string } {
-    const urlAccount = currentUrl.searchParams.get('a') ?? undefined;
-    const urlProject = currentUrl.searchParams.get('p') ?? undefined;
+    // A URL selection owns the whole pair: never attach an unrelated configured account/project.
+    const hasUrlScope = currentUrl.searchParams.has('a') || currentUrl.searchParams.has('p');
+    const defaults = hasUrlScope ? undefined : Env.defaultAuthSelection;
+    const urlAccount = currentUrl.searchParams.get('a') ?? defaults?.accountId;
+    const urlProject = currentUrl.searchParams.get('p') ?? defaults?.projectId;
     const accountId =
         urlAccount ??
         (urlProject === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);
     const projectId = urlProject ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${accountId}`) ?? undefined;
 
     return { accountId, projectId };
-}
-
-function normalizeIssuer(value: string | undefined): string | undefined {
-    return value?.replace(/\/+$/, '');
 }
 
 function decodeToken(token: string): AuthTokenPayload {
@@ -159,7 +159,7 @@ function isVertesiaIssuedToken(token: string | undefined): token is string {
     if (!token) return false;
     try {
         const decoded = decodeToken(token) as AuthTokenPayload & { iss?: string };
-        return normalizeIssuer(decoded.iss) === normalizeIssuer(Env.endpoints.sts);
+        return isStsTokenIssuer(decoded.iss, Env.endpoints.sts);
     } catch {
         return false;
     }
@@ -167,7 +167,11 @@ function isVertesiaIssuedToken(token: string | undefined): token is string {
 
 function canUseVertesiaTokenDirectly(token: string, accountId?: string, projectId?: string): boolean {
     const decoded = decodeToken(token);
-    if (!decoded.exp || decoded.exp <= Date.now() / 1000 + 300) {
+    const appSession =
+        'client_id' in decoded &&
+        typeof decoded.client_id === 'string' &&
+        decoded.client_id.startsWith('vertesia-app:');
+    if (!decoded.exp || decoded.exp <= Date.now() / 1000 + (appSession ? 60 : 300)) {
         return false;
     }
     const hasAuthorizationClaims = Boolean(
@@ -534,7 +538,8 @@ export async function getComposableToken(
             AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
         } else if (!devAuthToken) {
             // Embedded apps can reacquire a fresh credential from their host after their cached token expires.
-            const refreshCredential = (await Env.authTokenProvider?.()) ?? initToken ?? AUTH_TOKEN_RAW;
+            const providerCredential = await Env.authTokenProvider?.();
+            const refreshCredential = providerCredential ?? initToken ?? AUTH_TOKEN_RAW;
             // `forceRefresh` has to defeat this shortcut, not just the cache above it. A caller
             // asking for a forced refresh wants claims recomputed -- `refreshAuthToken()` exists so
             // a stale `apps` claim can be re-read after an ACE change, and STS recomputes it on
@@ -542,7 +547,7 @@ export async function getComposableToken(
             // returns the very token whose claims were suspect, silently making the call a no-op
             // for exactly the sessions that have no other credential to fall back on.
             if (
-                !forceRefresh &&
+                (!forceRefresh || !!providerCredential) &&
                 refreshCredential &&
                 isVertesiaIssuedToken(refreshCredential) &&
                 canUseVertesiaTokenDirectly(refreshCredential, selectedAccount, selectedProject)

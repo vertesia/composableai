@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { APPGEN_PACKAGE_SPEC_PATTERN } from '../appgen.js';
 import { AppAccessControlSchema, AppAvailableInSchema, MCPToolAnnotationsSchema } from './apps.js';
 import { EventCategorySchema } from './audit-trail.js';
+import { AgentBudgetConfigurationSchema } from './project-configuration.js';
 
 // The app lifecycle contracts: versions, builds, scaffolds, git repositories, development tasks,
 // installations and inspection. `./apps.js` holds the manifest itself and the tool-collection
@@ -39,6 +40,13 @@ export const UpdateAppInstallationToolAllowlistPayloadSchema = z
         tool_allowlist: nullableToolAllowlistSchema,
     })
     .meta({ id: 'UpdateAppInstallationToolAllowlistPayload' });
+
+export const UpdateAppInstallationOAuthApprovalPayloadSchema = z
+    .strictObject({ approved_scopes: z.array(z.string().min(1)).max(200) })
+    .meta({
+        id: 'UpdateAppInstallationOAuthApprovalPayload',
+        description: 'Approve OAuth scopes for this project installation. An empty list revokes project approval.',
+    });
 
 export const ValidateUrlResponseSchema = z
     .strictObject({
@@ -405,6 +413,10 @@ export const StartAppScaffoldRequestSchema = z
         title: z.string().optional(),
         description: z.string().optional(),
         modules: z.array(AppScaffoldModuleSchema).optional(),
+        oauth_scopes: z
+            .array(z.string())
+            .optional()
+            .meta({ description: 'App permissions declared in generated source. Defaults to sign-in only.' }),
         appgen_package_spec: z
             .string()
             .regex(APPGEN_PACKAGE_SPEC_PATTERN)
@@ -431,6 +443,10 @@ export const StartAppDevelopmentTaskRequestSchema = z
             .boolean()
             .meta({ description: 'Create one immutable app version after validation. Defaults to false.' })
             .optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Token budget for the whole task, shared by the App Builder run and every step of its development process. Field-wise it overrides the project's `configuration.agent.budget`; `limit_tokens` <= 0 runs the task without a budget.",
+        }).optional(),
     })
     .meta({ id: 'StartAppDevelopmentTaskRequest' });
 

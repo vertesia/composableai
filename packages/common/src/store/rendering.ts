@@ -1,17 +1,4 @@
-/**
- * Rendering API types
- *
- * Types for rendering content to various formats (PDF, DOCX, images)
- */
-
-import type { z } from 'zod';
-import type {
-    PdfRenderingMetadataSchema,
-    RenderMarkdownPayloadSchema,
-    RenderMarkdownStartResponseSchema,
-    RenderMarkdownStatusQuerySchema,
-    RenderMarkdownStatusResponseSchema,
-} from '../api-schemas/document-processing.js';
+import type * as Wire from '../wire-types.generated.js';
 import type { ImageRenditionFormat, MarkdownRenditionFormat } from './store.js';
 import { WorkflowExecutionStatus } from './workflow.js';
 
@@ -43,8 +30,17 @@ export function getRenditionsPath(contentEtag: string, params: ImageRenditionPar
     return `renditions/${contentEtag}/${params.max_hw}`;
 }
 
+export function getRenditionPagePath(
+    contentEtag: string,
+    params: ImageRenditionParams,
+    pageNumber: number | string = 0,
+) {
+    const page = typeof pageNumber === 'number' ? String(pageNumber).padStart(4, '0') : pageNumber;
+    return `${getRenditionsPath(contentEtag, params)}/${page}.${params.format}`;
+}
+
 /** Metadata for PDF rendering, inferred from the published API schema. */
-export type PdfRenderingMetadata = z.infer<typeof PdfRenderingMetadataSchema>;
+export type PdfRenderingMetadata = Wire.PdfRenderingMetadata;
 
 /** Workflow vars for markdown renditions (pdf, docx) */
 export interface MarkdownRenditionVars extends BaseRenditionVars {
@@ -86,20 +82,20 @@ export type GenerateRenditionVars = ImageRenditionVars | MarkdownRenditionVars;
  * Payload for rendering markdown to PDF or DOCX.
  * Either object_id OR content must be provided.
  */
-export type RenderMarkdownPayload = z.infer<typeof RenderMarkdownPayloadSchema>;
+export type RenderMarkdownPayload = Wire.RenderMarkdownPayload;
 
 /**
  * Initial response when starting a markdown rendering workflow.
  * Clients should poll status using workflow_id/workflow_run_id.
  */
-export type RenderMarkdownStartResponse = z.infer<typeof RenderMarkdownStartResponseSchema>;
+export type RenderMarkdownStartResponse = Wire.RenderMarkdownStartResponse;
 
 /**
  * Polled status response for markdown rendering workflow.
  */
-export type RenderMarkdownStatusResponse = z.infer<typeof RenderMarkdownStatusResponseSchema>;
+export type RenderMarkdownStatusResponse = Wire.RenderMarkdownStatusResponse;
 
-export type RenderMarkdownStatusQuery = z.infer<typeof RenderMarkdownStatusQuerySchema>;
+export type RenderMarkdownStatusQuery = Wire.RenderMarkdownStatusQuery;
 
 /**
  * Client-side polling options for markdown rendering.

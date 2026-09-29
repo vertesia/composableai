@@ -1,29 +1,17 @@
-import type { z } from 'zod';
-import type {
-    WebsiteCredentialCapabilitySchema,
-    WebsiteCredentialFillRequestSchema,
-    WebsiteCredentialFillResponseSchema,
-    WebsiteCredentialMetadataSchema,
-    WebsiteCredentialMetadataUpdateSchema,
-    WebsiteCredentialRecordSchema,
-    WebsiteCredentialSecretInputSchema,
-    WebsiteCredentialTotpAlgorithmSchema,
-    WebsiteCredentialTotpMetadataSchema,
-    WebsiteCredentialWebsiteSchema,
-} from './api-schemas/secrets.js';
-export type WebsiteCredentialCapability = z.infer<typeof WebsiteCredentialCapabilitySchema>;
+import type * as Wire from './wire-types.generated.js';
+export type WebsiteCredentialCapability = Wire.WebsiteCredentialCapability;
 
-export type WebsiteCredentialTotpAlgorithm = z.infer<typeof WebsiteCredentialTotpAlgorithmSchema>;
+export type WebsiteCredentialTotpAlgorithm = Wire.WebsiteCredentialTotpAlgorithm;
 
-export type WebsiteCredentialWebsite = z.infer<typeof WebsiteCredentialWebsiteSchema>;
+export type WebsiteCredentialWebsite = Wire.WebsiteCredentialWebsite;
 
-export type WebsiteCredentialTotpMetadata = z.infer<typeof WebsiteCredentialTotpMetadataSchema>;
+export type WebsiteCredentialTotpMetadata = Wire.WebsiteCredentialTotpMetadata;
 
-export type WebsiteCredentialMetadata = z.infer<typeof WebsiteCredentialMetadataSchema>;
+export type WebsiteCredentialMetadata = Wire.WebsiteCredentialMetadata;
 
-export type WebsiteCredentialRecord = z.infer<typeof WebsiteCredentialRecordSchema>;
+export type WebsiteCredentialRecord = Wire.WebsiteCredentialRecord;
 
-export type WebsiteCredentialSecretInput = z.infer<typeof WebsiteCredentialSecretInputSchema>;
+export type WebsiteCredentialSecretInput = Wire.WebsiteCredentialSecretInput;
 
 export interface CreateWebsiteCredentialRequest extends WebsiteCredentialMetadata {
     secret?: WebsiteCredentialSecretInput;
@@ -37,8 +25,8 @@ export interface UpdateWebsiteCredentialRequest extends Partial<WebsiteCredentia
     clear_oauth?: boolean;
 }
 
-export type WebsiteCredentialFillRequest = z.infer<typeof WebsiteCredentialFillRequestSchema>;
+export type WebsiteCredentialFillRequest = Wire.WebsiteCredentialFillRequest;
 
-export type WebsiteCredentialFillResponse = z.infer<typeof WebsiteCredentialFillResponseSchema>;
+export type WebsiteCredentialFillResponse = Wire.WebsiteCredentialFillResponse;
 
-export type WebsiteCredentialMetadataUpdate = z.infer<typeof WebsiteCredentialMetadataUpdateSchema>;
+export type WebsiteCredentialMetadataUpdate = Wire.WebsiteCredentialMetadataUpdate;

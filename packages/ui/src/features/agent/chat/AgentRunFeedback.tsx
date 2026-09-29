@@ -1,6 +1,7 @@
 import {
     AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH,
     type AgentMessage,
+    AgentMessageType,
     type AgentRunFeedbackEntry,
     type AgentRunFeedbackPayload,
     type AgentRunFeedbackRating,
@@ -59,6 +60,18 @@ export function agentRunFeedbackReasonCodes(rating: AgentRunFeedbackRating): Age
  */
 export function agentMessageFeedbackId(message: Pick<AgentMessage, 'workstream_id' | 'timestamp'>): string {
     return `${message.workstream_id || 'main'}:${message.timestamp}`;
+}
+
+/**
+ * Whether a transcript message can carry a rating. Only a final answer can: while an answer is
+ * still streaming, the transcript shows a placeholder stamped with the browser clock, and a
+ * rating keyed to that timestamp would never match the answer the worker eventually posts, so
+ * the same answer would end up rated twice.
+ */
+export function isAgentMessageRatable(message: Pick<AgentMessage, 'type' | 'details'>): boolean {
+    if (message.type !== AgentMessageType.ANSWER) return false;
+    const details = message.details as { source?: unknown } | undefined;
+    return details?.source !== 'streaming_summary';
 }
 
 /** Idempotency key for one submission; the server counts a retried id once. */

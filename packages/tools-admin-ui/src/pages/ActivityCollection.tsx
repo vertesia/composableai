@@ -1,8 +1,8 @@
 import type { RemoteActivityDefinition } from '@vertesia/common';
-import { Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
+import { Card, CardContent, useFetch } from '@vertesia/ui/core';
 import { useParams } from '@vertesia/ui/router';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 import { TYPE_VARIANTS } from '../components/typeVariants.js';
 
@@ -29,12 +29,7 @@ export function ActivityCollection() {
         return (
             <div className="p-6 text-destructive">Failed to load activity collection &ldquo;{collection}&rdquo;.</div>
         );
-    if (!data)
-        return (
-            <div className="flex h-64 items-center justify-center text-muted">
-                <Spinner />
-            </div>
-        );
+    if (!data) return <AdminLoadingPage />;
 
     return (
         <DetailPage

@@ -27,7 +27,7 @@ export async function setDocumentStatus(payload: DSLActivityExecutionPayload<Set
         const status = err && typeof err === 'object' && 'status' in err ? err.status : undefined;
         const name = err instanceof Error ? err.name : undefined;
         if (status === 404 || name === 'ZenoClientNotFoundError') {
-            log.warn(
+            log.info(
                 `Document ${objectId} not found - may have been deleted. Skipping status update to '${params.status}'`,
             );
             return undefined; // Signal that document wasn't found

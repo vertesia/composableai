@@ -14,6 +14,12 @@ hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$hook_dir/.." && pwd)"
 cd "$repo_root"
 
+# Git can export a relative GIT_WORK_TREE for linked worktrees. Package scripts
+# change directory, so let their Git commands discover the checkout from .git.
+while IFS= read -r git_env_var; do
+    unset "$git_env_var"
+done < <(git rev-parse --local-env-vars)
+
 # CI installs with --frozen-lockfile, so a lockfile that drifted from a package.json edit fails
 # every job before it runs anything. --lockfile-only keeps this a verification: it resolves against
 # the manifests without touching node_modules, and --frozen-lockfile makes it report the drift
@@ -29,12 +35,20 @@ if ! pnpm install --lockfile-only --frozen-lockfile; then
 fi
 
 # The generator runs through tsx over ./src and reads @llumiverse/common from its built lib, so it
-# needs an installed workspace. A standalone clone without node_modules cannot run it; CI covers
-# that case.
+# needs an installed workspace. When this repo is checked out as a submodule of a parent workspace,
+# the parent installs its dependencies and owns the turbo and biome binaries; `pnpm exec` finds
+# them once the parent's bin directory is on PATH, as the pre-commit hook does for biome. A
+# standalone clone without node_modules cannot run it; CI covers that case.
 if [ ! -d node_modules ]; then
-    echo "[pre-push] node_modules not found; skipping the schema check."
-    echo "[pre-push] Run 'pnpm install' to enable it, or rely on CI."
-    exit 0
+    if [ -d packages/common/node_modules ] && [ -x ../node_modules/.bin/turbo ] && [ -x ../node_modules/.bin/biome ]; then
+        echo "[pre-push] node_modules not found locally - using the parent workspace's tools"
+        PATH="$(cd .. && pwd)/node_modules/.bin:$PATH"
+        export PATH
+    else
+        echo "[pre-push] node_modules not found; skipping the schema check."
+        echo "[pre-push] Run 'pnpm install' to enable it, or rely on CI."
+        exit 0
+    fi
 fi
 
 echo "Checking the committed schemas in packages/common are up to date..."
@@ -45,7 +59,9 @@ if ! pnpm --dir packages/common run check:pre-push; then
     echo "The generator has already written the correct files to your working tree; review and commit:"
     echo "  git add packages/common/src/api-contract/components.generated.json \\"
     echo "          packages/common/src/store/intake-policy-schema.generated.ts \\"
-    echo "          packages/common/src/store/editing-policy-schema.generated.ts"
+    echo "          packages/common/src/store/editing-policy-schema.generated.ts \\"
+    echo "          packages/common/src/wire-types.generated.ts \\"
+    echo "          packages/common/src/wire-types.generated.test.ts"
     echo "  git commit -m 'chore: regenerate schemas'"
     echo ""
     echo "Push with --no-verify to skip this check."

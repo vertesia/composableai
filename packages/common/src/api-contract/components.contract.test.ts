@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { buildApiSchemaComponents } from '../api-schemas/registry.js';
 import { ApiSchemaComponents } from './index.js';
@@ -66,7 +66,7 @@ function resolveRuntimeGraph(entry: string): string[] {
 const packageOf = (url: string): string | undefined =>
     url.match(/node_modules\/(?:\.pnpm\/[^/]+\/node_modules\/)?((?:@[^/]+\/)?[^/]+)/)?.[1];
 
-describe.skipIf(!existsSync(BUILT_ENTRY))('api-contract zod isolation', () => {
+describe('api-contract zod isolation', () => {
     it('does not reference zod or the Zod registry from the entry file', () => {
         // `index.ts` imports `ApiComponentName`/`ApiComponentType` from the registry with
         // `import type`, which tsc elides. Dropping the `type` keyword would compile fine and quietly

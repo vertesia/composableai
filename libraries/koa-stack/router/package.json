@@ -1,16 +1,17 @@
 {
     "name": "@koa-stack/router",
-    "version": "0.26.0-dev",
+    "version": "0.27.0-dev.20260914.133404Z",
     "description": "A powerfull koa router using typescript decorations",
     "type": "module",
     "scripts": {
-        "build": "tsc -p tsconfig.json",
+        "build": "tsc --checkers 1 -p tsconfig.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "test": "vitest run"
     },
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "keywords": [
         "koa",
@@ -39,7 +40,7 @@
         "@types/statuses": "^2.0.6",
         "@vertesia/tsconfig": "workspace:*",
         "typescript": "catalog:",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     },
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",

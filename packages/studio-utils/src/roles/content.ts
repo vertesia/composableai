@@ -1,4 +1,4 @@
-import type { AbacScope, RoleDomain } from '@vertesia/common';
+import { type AbacScope, Permission, type RoleDomain } from '@vertesia/common';
 import { AbacRole, type Role, type RolePartition } from './classes.js';
 
 const ContentRoleDomain: RoleDomain = 'content';
@@ -18,19 +18,28 @@ export enum ContentRoleNames {
 
 class ContentReaderRole extends AbacRole {
     constructor() {
-        super(ContentRoleNames.content_reader, ['read'], ContentRoleDomain, APPLICABLE_SCOPES);
+        super(ContentRoleNames.content_reader, ['read'], ContentRoleDomain, APPLICABLE_SCOPES, [
+            Permission.content_read,
+        ]);
     }
 }
 
 class ContentWriterRole extends AbacRole {
     constructor() {
-        super(ContentRoleNames.content_writer, ['read', 'write'], ContentRoleDomain, APPLICABLE_SCOPES);
+        super(ContentRoleNames.content_writer, ['read', 'write'], ContentRoleDomain, APPLICABLE_SCOPES, [
+            Permission.content_read,
+            Permission.content_write,
+        ]);
     }
 }
 
 class ContentManagerRole extends AbacRole {
     constructor() {
-        super(ContentRoleNames.content_manager, ['read', 'write', 'delete'], ContentRoleDomain, APPLICABLE_SCOPES);
+        super(ContentRoleNames.content_manager, ['read', 'write', 'delete'], ContentRoleDomain, APPLICABLE_SCOPES, [
+            Permission.content_read,
+            Permission.content_write,
+            Permission.content_delete,
+        ]);
     }
 }
 

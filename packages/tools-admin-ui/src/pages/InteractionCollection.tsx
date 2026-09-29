@@ -1,8 +1,8 @@
 import type { CatalogInteractionRef } from '@vertesia/common';
-import { Badge, Card, CardContent, Spinner, useFetch } from '@vertesia/ui/core';
+import { Badge, Card, CardContent, useFetch } from '@vertesia/ui/core';
 import { NavLink, useParams } from '@vertesia/ui/router';
-
 import { useAdminContext } from '../AdminContext.js';
+import { AdminLoadingPage } from '../components/AdminLoadingPage.js';
 import { DetailPage } from '../components/DetailPage.js';
 import { TYPE_VARIANTS } from '../components/typeVariants.js';
 
@@ -24,11 +24,7 @@ export function InteractionCollection() {
     }
 
     if (!interactions) {
-        return (
-            <div className="flex h-64 items-center justify-center text-muted">
-                <Spinner />
-            </div>
-        );
+        return <AdminLoadingPage />;
     }
 
     return (

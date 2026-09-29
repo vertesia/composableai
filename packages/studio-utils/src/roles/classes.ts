@@ -62,6 +62,13 @@ export class AbacRole extends Role<string> {
         permissions: string[],
         domain: RoleDomain,
         public applicableScopes: readonly AbacScope[],
+        /**
+         * The central `Permission`s a caller must hold to delegate this role through an ACE.
+         * Declared explicitly because ABAC verbs (`read`, `control`, ...) are scope vocabulary,
+         * not `Permission` values — deriving them from `${domain}:${verb}` only happens to work
+         * for the `content` domain and yields unknown keys for every other one.
+         */
+        public delegationPermissions: readonly Permission[],
     ) {
         super(name, permissions, domain);
     }

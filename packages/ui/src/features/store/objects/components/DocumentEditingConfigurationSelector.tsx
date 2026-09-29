@@ -1,4 +1,10 @@
-import type { ExecutionEnvironmentRef, InteractionExecutionConfiguration, Project } from '@vertesia/common';
+import type {
+    ExecutionEnvironmentRef,
+    InferenceProfile,
+    InferenceProfileRecord,
+    InteractionExecutionConfiguration,
+    Project,
+} from '@vertesia/common';
 import { Button, Popover, PopoverContent, PopoverTrigger, SelectBox, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -6,6 +12,7 @@ import { ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 export interface DocumentEditingConfiguration {
+    inference_profile?: string | null;
     environment?: string;
     model?: string;
     model_options?: InteractionExecutionConfiguration['model_options'];
@@ -18,11 +25,14 @@ interface ModelOption {
 
 export function getDocumentEditingProjectDefault(
     project: Pick<Project, 'configuration'>,
+    profile?: InferenceProfileRecord | InferenceProfile,
 ): DocumentEditingConfiguration {
-    const defaults = project.configuration?.defaults?.system?.agent ?? project.configuration?.defaults?.base;
+    const defaults = profile ?? project.configuration?.defaults?.system?.agent ?? project.configuration?.defaults?.base;
     return {
+        ...(profile && 'id' in profile ? { inference_profile: profile.id } : {}),
         environment: defaults?.environment,
         model: defaults?.model,
+        ...(profile?.model_options ? { model_options: profile.model_options } : {}),
     };
 }
 

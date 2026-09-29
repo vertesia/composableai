@@ -1,8 +1,9 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload, SystemRoleDefinition } from '@vertesia/common';
+import { Button } from '@vertesia/ui/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { UserPermissionProvider } from './UserPermissionsProvider';
+import { type PermissionLoadingScreenProps, UserPermissionProvider } from './UserPermissionsProvider';
 
 const session = {
     client: new VertesiaClient({ serverUrl: 'https://studio.example.test', storeUrl: 'https://store.example.test' }),
@@ -168,5 +169,53 @@ describe('role mapping recovery', () => {
         renderProvider();
         expect(screen.getByText('Protected workspace')).toBeTruthy();
         expect(fetch).not.toHaveBeenCalled();
+    });
+    it.each([401, 403, 500])('supplies working recovery actions to a custom screen for status %s', async (status) => {
+        const fetch = vi
+            .spyOn(session.client.iam.roles, 'listSystem')
+            .mockRejectedValue(Object.assign(new Error('Request failed'), { status }));
+        const CustomScreen = ({ status: phase, onAction, actionLabel }: PermissionLoadingScreenProps) => (
+            <main>
+                <p>Custom {phase}</p>
+                {phase === 'error' && <Button onClick={onAction}>{actionLabel}</Button>}
+            </main>
+        );
+        const view = render(
+            <UserPermissionProvider LoadingScreen={CustomScreen}>
+                <div>Protected workspace</div>
+            </UserPermissionProvider>,
+        );
+        expect(view.container.firstElementChild?.tagName).toBe('MAIN');
+        expect(screen.getByText('Custom loading')).toBeTruthy();
+        expect(screen.queryByText('Protected workspace')).toBeNull();
+        await advance(0);
+        expect(screen.getByText('Custom error')).toBeTruthy();
+        expect(screen.queryByText('Protected workspace')).toBeNull();
+        fetch.mockResolvedValue([]);
+        fireEvent.click(screen.getByRole('button'));
+        await advance(0);
+        if (status === 401 || status === 403) {
+            expect(session.signOut).toHaveBeenCalledOnce();
+            expect(screen.queryByText('Protected workspace')).toBeNull();
+        } else {
+            expect(screen.getByText('Protected workspace')).toBeTruthy();
+            expect(screen.queryByText('Custom error')).toBeNull();
+        }
+    });
+
+    it('reports automatic retrying to a custom screen before revealing protected content', async () => {
+        vi.spyOn(session.client.iam.roles, 'listSystem')
+            .mockRejectedValueOnce(Object.assign(new Error('Unavailable'), { status: 503 }))
+            .mockResolvedValue([]);
+        render(
+            <UserPermissionProvider LoadingScreen={({ status }) => <main>Custom {status}</main>}>
+                <div>Protected workspace</div>
+            </UserPermissionProvider>,
+        );
+        await advance(0);
+        expect(screen.getByText('Custom retrying')).toBeTruthy();
+        expect(screen.queryByText('Protected workspace')).toBeNull();
+        await advance(1_000);
+        expect(screen.getByText('Protected workspace')).toBeTruthy();
     });
 });

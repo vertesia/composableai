@@ -82,7 +82,7 @@ describe('iframe host authentication', () => {
         expect(resolveIframeHostOrigin()).toBe('http://localhost:5173');
     });
 
-    it('ignores an empty early response and waits for a usable host token', async () => {
+    it.each([false, true])('settles a denied or expired host response immediately (expired=%s)', async (expired) => {
         const requests: unknown[] = [];
         const parentWindow = { postMessage: (message: unknown) => requests.push(message) } as unknown as Window;
         Object.defineProperty(window, 'parent', { configurable: true, value: parentWindow });
@@ -98,21 +98,18 @@ describe('iframe host authentication', () => {
 
         window.dispatchEvent(
             new MessageEvent('message', {
-                data: { type: IFRAME_AUTH_RESPONSE, requestId: request.requestId },
+                data: {
+                    type: IFRAME_AUTH_RESPONSE,
+                    requestId: request.requestId,
+                    ...(expired ? { token: 'expired', expiresAt: Date.now() - 1 } : {}),
+                },
                 origin: 'https://cloud.vertesia.io',
                 source: parentWindow,
             }),
         );
         await Promise.resolve();
-        expect(settled).toBe(false);
+        expect(settled).toBe(true);
 
-        window.dispatchEvent(
-            new MessageEvent('message', {
-                data: { type: IFRAME_AUTH_RESPONSE, requestId: request.requestId, token: 'fresh-token' },
-                origin: 'https://cloud.vertesia.io',
-                source: parentWindow,
-            }),
-        );
-        await expect(tokenPromise).resolves.toBe('fresh-token');
+        await expect(tokenPromise).resolves.toBeUndefined();
     });
 });

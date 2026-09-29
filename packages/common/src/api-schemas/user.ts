@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type * as Wire from '../wire-types.generated.js';
 
 /**
  * Runtime API schemas for the IAM user endpoints.
@@ -9,15 +10,22 @@ import { z } from 'zod';
  */
 
 /**
- * Not hoisted: no `id` in `.meta()`, so the adapter inlines it into `PrincipalIdentity` instead of
- * emitting a `PrincipalContext` component and a `$ref` the document has never published.
+ * The full principal context resolved at token-issue time — every field a rule can reference through
+ * `$principal.*`: the principal `kind`, its `id`, and the merged BLP attributes. This is the single
+ * source of truth the token server mirrors into the JWT, the shared `buildPrincipalContext`
+ * produces, and the UI condition editor offers. `kind` and `id` are first-class members here, not
+ * identity-only metadata: they are resolvable in ResourceSet/PrincipalSet conditions, so hiding them
+ * (as an earlier split of this schema did) under-declared what the server actually matches against.
  *
- * It still exists as a schema rather than being spelled out inside `PrincipalIdentitySchema`,
- * because `PrincipalContext` is a public type in its own right — consumed by PrincipalSet condition
- * evaluation and client-side ABAC tooling. Composing the two is what keeps the five inherited fields
- * from becoming a hand-written twin of the schema that publishes them.
+ * Not hoisted: no `id` in `.meta()`, so the adapter inlines it into `PrincipalIdentity` instead of
+ * emitting an `AbacPrincipalContext` component and a `$ref` the document has never published. It
+ * still exists as a schema in its own right because it is a public type composed into
+ * `PrincipalIdentitySchema` — composing is what keeps the shared fields from becoming a hand-written
+ * twin of the schema that publishes them.
  */
-export const PrincipalContextSchema = z.object({
+export const AbacPrincipalContextSchema = z.object({
+    kind: z.enum(['user', 'apikey']),
+    id: z.string(),
     clearance: z.number(),
     compartments: z.array(z.string()),
     email: z.string().optional(),
@@ -26,19 +34,18 @@ export const PrincipalContextSchema = z.object({
 });
 
 /**
- * `.extend()` rather than a fresh object literal: it appends `id` after the inherited five, which is
- * both what `interface PrincipalIdentity extends PrincipalContext` produced and the property order
- * the document already publishes.
+ * Response shape of the `/iam/users/identity` endpoint. Extends {@link AbacPrincipalContextSchema}
+ * adding nothing today: the two are kept as distinct names so identity-only fields — ones that must
+ * NOT become resolvable as `$principal.*` — can be added here later without widening the ABAC
+ * surface. Invariant: the ABAC principal context is always a subset of the identity. At this
+ * endpoint `kind` is always `user`.
  */
-export const PrincipalIdentitySchema = PrincipalContextSchema.extend({
-    id: z.string(),
-}).meta({
+export const PrincipalIdentitySchema = AbacPrincipalContextSchema.extend({}).meta({
     id: 'PrincipalIdentity',
     description:
-        "Response shape of the `/iam/users/identity` endpoint: the current principal's  {@link  " +
-        'PrincipalContext }  plus its id. Distinct from `PrincipalContext` itself because the id is ' +
-        'identity metadata, not a merged BLP field — adding it to `PrincipalContext` would ' +
-        'unintentionally expose `$principal.id` to PrincipalSet rule evaluation.',
+        "Response shape of the `/iam/users/identity` endpoint: the current principal's full ABAC " +
+        'context — its `kind` (always `user` here), `id`, and the merged BLP attributes a rule can ' +
+        'reference through `$principal.*`.',
 });
 
 /**
@@ -194,11 +201,11 @@ export const SignupPayloadSchema = z
  * The public IAM types, inferred rather than written. `../principal-context.ts`, `../user.ts` and
  * `../common.ts` re-export these under their public names.
  */
-export type PrincipalContextFromSchema = z.infer<typeof PrincipalContextSchema>;
-export type PrincipalIdentityFromSchema = z.infer<typeof PrincipalIdentitySchema>;
-export type UserFromSchema = z.infer<typeof UserSchema>;
-export type UserArrayFromSchema = z.infer<typeof UserArraySchema>;
-export type UserRefFromSchema = z.infer<typeof UserRefSchema>;
-export type UserRefArrayFromSchema = z.infer<typeof UserRefArraySchema>;
-export type UpdateUserPayloadFromSchema = z.infer<typeof UpdateUserPayloadSchema>;
-export type DeleteByIdResultFromSchema = z.infer<typeof DeleteByIdResultSchema>;
+export type AbacPrincipalContextFromSchema = Wire.AbacPrincipalContextFromSchema;
+export type PrincipalIdentityFromSchema = Wire.PrincipalIdentityFromSchema;
+export type UserFromSchema = Wire.UserFromSchema;
+export type UserArrayFromSchema = Wire.UserArrayFromSchema;
+export type UserRefFromSchema = Wire.UserRefFromSchema;
+export type UserRefArrayFromSchema = Wire.UserRefArrayFromSchema;
+export type UpdateUserPayloadFromSchema = Wire.UpdateUserPayloadFromSchema;
+export type DeleteByIdResultFromSchema = Wire.DeleteByIdResultFromSchema;

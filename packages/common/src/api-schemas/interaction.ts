@@ -24,9 +24,10 @@ import { AgentToolApprovalModes } from '../store/agent-approval.js';
 import { LlmCallType } from '../workflow-analytics.js';
 import { ProjectRefSchema } from './apikey.js';
 import { ExecutionEnvironmentRefSchema } from './environment.js';
+import { InferenceProfileIdSchema, InferenceProfileSnapshotSchema } from './inference-profile.js';
 import { AccountRefSchema } from './invites.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
-import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
+import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
@@ -488,6 +489,7 @@ export const InteractionPublishPayloadSchema = z
 
 export const InteractionForkPayloadSchema = z
     .strictObject({
+        newName: z.string().optional(),
         keepTags: z.boolean().optional(),
         forkPrompts: z.boolean().optional(),
         targetProject: z.string().optional(),
@@ -743,6 +745,8 @@ export const ResolvedRuntimeConfigSchema = z
         environment: ResolvedEnvironmentInfoSchema,
         model: z.string().optional(),
         model_source: ModelSourceSchema,
+        inference_profile: InferenceProfileSnapshotSchema.optional(),
+        model_options: ModelOptionsSchema.optional(),
     })
     .meta({ id: 'ResolvedRuntimeConfig', description: 'Resolved runtime configuration for an interaction' });
 
@@ -801,6 +805,10 @@ export const AgentRunnerOptionsSchema = z
         checkpoint: AgentCheckpointConfigurationSchema.meta({
             description:
                 "Per-agent context checkpoint configuration. Field-wise it overrides the project's `configuration.agent.checkpoint`; a per-run `checkpoint_tokens` override still wins over both.",
+        }).optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Per-agent token budget. Field-wise it overrides the project's `configuration.agent.budget`; the per-run `budget` wins over both.",
         }).optional(),
     })
     .meta({
@@ -882,6 +890,8 @@ export const RateLimitRequestPayloadSchema = z
     .strictObject({
         interaction: z.string(),
         environment_id: z.string().optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
+        inherit_model_config: z.boolean().optional(),
         model_id: z.string().optional(),
         workflow_run_id: z
             .string()
@@ -984,6 +994,7 @@ export const InteractionCreatePayloadSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
         store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
@@ -1010,6 +1021,7 @@ export const InteractionSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
         store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
@@ -1098,6 +1110,7 @@ export const InCodeInteractionSchema = z
         tags: z.array(z.string()).optional(),
         agent_runner_options: AgentRunnerOptionsSchema.optional(),
         model_options: ModelOptionsSchema.optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
         prompts: z.array(InCodePromptSchema),
         externalId: z.string().optional(),
         runtime: z
@@ -1231,6 +1244,7 @@ export const InteractionUpdatePayloadSchema = z
         environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
+        inference_profile: InferenceProfileIdSchema.nullable().optional(),
         store_media_results: z.boolean().optional(),
         restriction: RunDataStorageLevelSchema.optional(),
         output_modality: ModalitiesSchema.meta({
@@ -1454,6 +1468,7 @@ export const ExecutionRunSchema: z.ZodType = z
         account: AccountRefSchema,
         project: ProjectRefSchema,
         config: InteractionExecutionConfigurationSchema,
+        inference_profile: InferenceProfileSnapshotSchema.optional(),
         error: InteractionExecutionErrorSchema.optional(),
         source: RunSourceSchema,
         output_modality: ModalitiesSchema.meta({
@@ -1511,6 +1526,7 @@ export const InteractionExecutionResultSchema = z
         created_at: z.string().meta({ format: 'date-time' }),
         updated_at: z.string().meta({ format: 'date-time' }),
         config: InteractionExecutionConfigurationSchema,
+        inference_profile: InferenceProfileSnapshotSchema.optional(),
         error: InteractionExecutionErrorSchema.optional(),
         source: RunSourceSchema,
         output_modality: ModalitiesSchema.meta({
@@ -1646,6 +1662,7 @@ export const ExecutionRunRefSchema = z
         account: AccountRefSchema,
         project: ProjectRefSchema,
         config: InteractionExecutionConfigurationSchema,
+        inference_profile: InferenceProfileSnapshotSchema.optional(),
         error: InteractionExecutionErrorSchema.optional(),
         source: RunSourceSchema,
         output_modality: ModalitiesSchema.meta({
@@ -1754,6 +1771,10 @@ export const ConversationStateSchema = z
                     'Project-configured checkpoint hard cap in tokens (cached from project.configuration.agent_checkpoint_tokens at conversation start). The workflow resolves the effective threshold from these, the per-run checkpoint_tokens override, and the model-based default.',
             })
             .optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Project-configured agent token budget (cached from project.configuration.agent.budget at conversation start). The workflow resolves the effective budget field-wise from this, the interaction's agent_runner_options.budget, and the per-run budget override.",
+        }).optional(),
         user_channels: z
             .array(UserChannelSchema)
             .meta({
@@ -2105,6 +2126,11 @@ export const AsyncInteractionExecutionPayloadSchema = z
     })
     .meta({ id: 'AsyncInteractionExecutionPayload' });
 
+export const AgentEvaluateRequestSchema = z.boolean().optional().meta({
+    description:
+        'Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on.',
+});
+
 export const ConversationEnrichmentFields = {
     title: z.string().min(1).meta({ description: 'Caller-provided conversation title.' }).optional(),
     topic: z
@@ -2135,6 +2161,7 @@ export const AsyncConversationExecutionPayloadSchema = z
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
         ...ConversationEnrichmentFields,
+        evaluate: AgentEvaluateRequestSchema,
         app_version: z
             .string()
             .meta({
@@ -2267,6 +2294,10 @@ export const AsyncConversationExecutionPayloadSchema = z
             description:
                 "Structured per-run checkpoint override. Field-wise it takes precedence over the interaction's `agent_runner_options.checkpoint` and the project's `configuration.agent.checkpoint`. The legacy absolute `checkpoint_tokens` above still wins over everything when set.",
         }).optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Per-run token budget override. Field-wise it takes precedence over the interaction's `agent_runner_options.budget` and the project's `configuration.agent.budget`. Subagent workstreams receive the remaining budget of their parent here.",
+        }).optional(),
         strip_options: ConversationStripOptionsSchema.meta({
             description:
                 'Configuration for stripping large data (images, text) from conversation history to prevent JSON serialization issues and reduce storage bloat.',
@@ -2289,6 +2320,13 @@ export const AsyncConversationExecutionPayloadSchema = z
             .meta({
                 description:
                     "Metadata inherited from parent workflow. Used to propagate context (e.g., apiKey, session info) to child workflows/workstreams. When a workstream is spawned, the parent's `data` is preserved here so that child tools can access it via metadata.parent_metadata.",
+            })
+            .optional(),
+        final_verification: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, a non-interactive free-form run takes one extra turn after its answer to check that the task is complete. Off by default, and never applied to workstreams: their parent reviews the result and can message the workstream to continue.',
             })
             .optional(),
         non_blocking_subagents: z
@@ -2422,6 +2460,8 @@ export const ResolveInteractionQuerySchema = z
     .strictObject({
         environment: z.string().optional(),
         model: z.string().optional(),
+        inference_profile: InferenceProfileIdSchema.optional(),
+        inherit_model_config: InteractionExecutionConfigurationSchema.shape.inherit_model_config,
         hasImage: z.boolean().optional(),
         hasVideo: z.boolean().optional(),
     })

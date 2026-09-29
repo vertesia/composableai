@@ -7,6 +7,8 @@ import type {
     OAuthDeviceAuthorizationRequest,
     OAuthDeviceAuthorizationResponse,
     OAuthGrantableScopesResponse,
+    OAuthLoginDecisionResponse,
+    OAuthLoginPayload,
 } from '@vertesia/common';
 
 export default class OAuthServerApi extends ClientBase {
@@ -18,6 +20,10 @@ export default class OAuthServerApi extends ClientBase {
         this.createServerError = parent.createServerError;
         this.errorFactory = parent.errorFactory;
         this.verboseErrors = parent.verboseErrors;
+    }
+
+    login(requestId: string, payload: OAuthLoginPayload): Promise<OAuthLoginDecisionResponse> {
+        return this.post(`/requests/${encodeURIComponent(requestId)}/login`, { payload });
     }
 
     get headers() {

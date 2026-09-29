@@ -105,11 +105,8 @@ export type ConversationUserContentBlock = z.infer<typeof Canonical.UserContentB
 export type ConversationUserTurn = z.infer<typeof Canonical.UserTurnSchema>;
 export type ConversationVideoBlock = z.infer<typeof Canonical.VideoBlockSchema>;
 
-import type {
-    AvailableRunConversationSchema,
-    RunConversationResponseSchema,
-    UnavailableRunConversationSchema,
-} from './api-schemas/run-conversation.js';
+import type { AvailableRunConversationSchema } from './api-schemas/run-conversation.js';
+import type * as Wire from './wire-types.generated.js';
 export type AvailableRunConversation = z.infer<typeof AvailableRunConversationSchema>;
-export type UnavailableRunConversation = z.infer<typeof UnavailableRunConversationSchema>;
-export type RunConversationResponse = z.infer<typeof RunConversationResponseSchema>;
+export type UnavailableRunConversation = Wire.UnavailableRunConversation;
+export type RunConversationResponse = Wire.RunConversationResponse;

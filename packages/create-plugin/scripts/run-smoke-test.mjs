@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 /**
  * Smoke test for create-plugin: scaffolds a project from the local plugin
@@ -46,6 +47,8 @@ try {
         console.error(`smoke test: expected ${projectPath}/package.json to exist`);
         exitCode = 1;
     } else {
+        const generatedEnv = readFileSync(join(projectPath, '.env.app'), 'utf8');
+        assert.match(generatedEnv, /^VITE_AUTH_SERVER_URL=https:\/\/auth\.dev1\.vertesia\.io\/$/m);
         const generatedPackage = JSON.parse(readFileSync(join(projectPath, 'package.json'), 'utf8'));
         const internalDependencies = Object.entries({
             ...generatedPackage.dependencies,
@@ -71,7 +74,15 @@ try {
             );
             exitCode = 1;
         } else {
-            console.log(`smoke test: scaffolded at ${projectPath} OK`);
+            // Check the generated source, since substitutions can introduce lint errors
+            // that are absent from the template itself (for example unused imports).
+            const lint = spawnSync('biome', ['lint', 'src'], { cwd: projectPath, stdio: 'inherit' });
+            if (lint.status !== 0) {
+                console.error('smoke test: generated source failed lint', lint.error ?? '');
+                exitCode = lint.status ?? 1;
+            } else {
+                console.log(`smoke test: scaffolded and linted at ${projectPath} OK`);
+            }
         }
     }
 } finally {

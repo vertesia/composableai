@@ -173,6 +173,9 @@ function replaceInTextFile(content: string, answers: Record<string, unknown>): {
 }
 
 function serializeCodeValue(value: unknown, previousValue: string): string | undefined {
+    if (Array.isArray(value)) {
+        return `[${value.map((item) => serializeCodeValue(item, "'")).join(', ')}]`;
+    }
     if (typeof value === 'string' && previousValue.trimStart().startsWith("'")) {
         const escaped = value
             .replaceAll('\\', '\\\\')

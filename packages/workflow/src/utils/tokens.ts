@@ -1,4 +1,13 @@
-import { get_encoding, type TiktokenEncoding } from 'tiktoken';
+import { createRequire } from 'node:module';
+import type { TiktokenEncoding } from 'tiktoken';
+
+const requireCjs = createRequire(import.meta.url);
+
+// Keep token helpers synchronous without loading the WASM module until it is needed.
+function getEncoding(encoding: TiktokenEncoding) {
+    const { get_encoding } = requireCjs('tiktoken') as typeof import('tiktoken');
+    return get_encoding(encoding);
+}
 
 export type TruncateSpec =
     | number
@@ -17,7 +26,7 @@ export function truncByMaxTokens(content: string, by: TruncateSpec) {
         maxTokens = by.max_tokens;
         encoding = by.encoding || 'cl100k_base';
     }
-    const enc = get_encoding(encoding);
+    const enc = getEncoding(encoding);
     let tokens = enc.encode(content);
     if (tokens.length > maxTokens) {
         tokens = tokens.slice(0, maxTokens);
@@ -28,7 +37,7 @@ export function truncByMaxTokens(content: string, by: TruncateSpec) {
 }
 
 export function countTokens(text: string, encoding: TiktokenEncoding = 'cl100k_base') {
-    const encoder = get_encoding(encoding);
+    const encoder = getEncoding(encoding);
     if (!encoder) {
         throw new Error(`Unknown encoding ${encoding}`);
     }

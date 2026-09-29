@@ -16,6 +16,7 @@ import {
     RunTypeSchema,
 } from './app-lifecycle.js';
 import {
+    AgentEvaluateRequestSchema,
     AgentResourceReferenceSchema,
     AgentSearchScopeSchema,
     AgentToolApprovalModeSchema,
@@ -34,7 +35,7 @@ import {
     ProcessStateSchema,
     RecordProcessRunPayloadSchema,
 } from './process.js';
-import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
+import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { nullableStringSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
 
@@ -64,6 +65,7 @@ export const TurnEvaluationFlagSchema = z
         'overhead',
         'followup_after_answer',
         'approval_denied',
+        'circuit_breaker',
     ])
     .meta({ id: 'TurnEvaluationFlag', description: 'Reason behind an evaluation severity.' });
 
@@ -90,17 +92,17 @@ const TelemetryProducerSchema = z.strictObject({
     version: z.string(),
 });
 
-export const JudgeGateReasonSchema = z
-    .enum(['signal', 'sample'])
-    .meta({ id: 'JudgeGateReason', description: 'Why the judge looked at a run.' });
+export const EvaluationGateReasonSchema = z
+    .enum(['signal', 'sample', 'opt_in', 'always_on'])
+    .meta({ id: 'EvaluationGateReason', description: 'Why a run was selected for LLM evaluation.' });
 
-export const JudgeOutcomeSchema = z
-    .enum(['judged', 'skipped_unarchived', 'failed'])
-    .meta({ id: 'JudgeOutcome', description: 'What a judge run produced.' });
+export const EvaluationOutcomeSchema = z
+    .enum(['evaluated', 'skipped_unarchived', 'failed'])
+    .meta({ id: 'EvaluationOutcome', description: 'Outcome of an LLM evaluation run.' });
 
-export const JudgeVerdictSchema = z
+export const EvaluationVerdictSchema = z
     .enum(['success', 'partial', 'failure'])
-    .meta({ id: 'JudgeVerdict', description: "The judge's reading of a turn." });
+    .meta({ id: 'EvaluationVerdict', description: 'LLM evaluation verdict for a turn.' });
 
 // ----------------------------------------------------------------------------
 // User feedback
@@ -169,7 +171,12 @@ export const AgentRunFeedbackCountsSchema = z
         last_rating: AgentRunFeedbackRatingSchema.optional(),
         last_reason_code: AgentRunFeedbackReasonCodeSchema.optional(),
     })
-    .meta({ id: 'AgentRunFeedbackCounts', description: 'Ratings over the retained feedback entries.' });
+    .meta({
+        id: 'AgentRunFeedbackCounts',
+        description:
+            'Ratings over the retained feedback entries, one vote per rater: a user who rated the run and ' +
+            'one of its answers counts once, by their latest rating.',
+    });
 
 export const AgentRunFeedbackResponseSchema = z
     .strictObject({
@@ -213,11 +220,13 @@ const AgentRunEvaluationTotalsSchema = z.strictObject({
     approvals_requested: z.number().int(),
     approvals_denied: z.number().int(),
     stop_requests: z.number().int(),
+    /** Absent on rollups written before the stall counters existed; read as 0. */
+    stall_trips: z.number().int().optional(),
 });
 
 /**
  * What the workflow reports about a run: the fold of its turn evaluations. Owned by the workflow;
- * it never carries feedback or judge fields, which the server owns.
+ * it never carries feedback or evaluator fields, which the server owns.
  */
 export const AgentRunEvaluationRollupSchema = z
     .strictObject({
@@ -237,36 +246,36 @@ export const AgentRunEvaluationRollupSchema = z
     })
     .meta({ id: 'AgentRunEvaluationRollup', description: 'Fold of the turn evaluations of a run.' });
 
-export const AgentRunJudgeResultSchema = z
+export const AgentRunLlmEvaluationResultSchema = z
     .strictObject({
         rev: z.number().int(),
-        gate: JudgeGateReasonSchema,
+        gate: EvaluationGateReasonSchema,
         sample_rate: z.number(),
         selected_probability: z.number(),
-        outcome: JudgeOutcomeSchema,
-        verdict: JudgeVerdictSchema.optional(),
+        outcome: EvaluationOutcomeSchema,
+        verdict: EvaluationVerdictSchema.optional(),
         score: z.number().optional(),
         model: z.string().optional(),
         prompt_version: z.string(),
-        turns_judged: z.array(z.number().int()).optional(),
-        judged_at: z.string().meta({ format: 'date-time' }),
+        turns_evaluated: z.array(z.number().int()).optional(),
+        evaluated_at: z.string().meta({ format: 'date-time' }),
     })
-    .meta({ id: 'AgentRunJudgeResult', description: 'Latest judge result for a run.' });
+    .meta({ id: 'AgentRunLlmEvaluationResult', description: 'Latest LLM evaluation result for a run.' });
 
 export const AgentRunContradictionReasonSchema = z
-    .enum(['feedback_down_on_clean_run', 'judge_failure_on_clean_run'])
+    .enum(['feedback_down_on_clean_run', 'evaluation_failure_on_clean_run'])
     .meta({ id: 'AgentRunContradictionReason' });
 
 /**
  * The server-owned evaluation summary of a run: the workflow rollup, the feedback counts and the
- * judge result, plus the derived severity, flags and contradiction the run list filters on.
+ * evaluator result, plus the derived severity, flags and contradiction the run list filters on.
  */
 export const AgentRunEvaluationSchema = z
     .strictObject({
         rev: z.number().int().meta({ description: 'Bumped on every change to any part of the summary.' }),
         rollup: AgentRunEvaluationRollupSchema.optional(),
         feedback_counts: AgentRunFeedbackCountsSchema.optional(),
-        judge: AgentRunJudgeResultSchema.optional(),
+        llm_evaluation: AgentRunLlmEvaluationResultSchema.optional(),
         severity: EvaluationSeveritySchema,
         flags: z.array(TurnEvaluationFlagSchema),
         contradicted: z.boolean(),
@@ -342,6 +351,7 @@ const LlmCallEventSchema = z.strictObject({
     callType: z.enum(LlmCallType),
     attemptNumber: z.number().optional(),
     errorType: z.string().optional(),
+    executionRunId: z.string().optional(),
     // `NestedInteractionEvent` — an interaction executed from inside a tool — is an `LlmCallEvent`
     // with three more fields and the same `eventType`, so it cannot be a branch of its own and has to
     // widen this one. They are optional because a plain LLM call carries none of them; the three
@@ -421,6 +431,9 @@ const TurnEvaluationEventSchema = z.strictObject({
     approvalsRequested: z.number().int(),
     approvalsDenied: z.number().int(),
     stopRequests: z.number().int(),
+    /** Absent on events from producers that predate the stall counters; read as 0. */
+    stallCorrectives: z.number().int().optional(),
+    stallTrips: z.number().int().optional(),
     followupAfterAnswer: z.boolean(),
     severity: EvaluationSeveritySchema,
     flags: z.array(TurnEvaluationFlagSchema),
@@ -441,21 +454,34 @@ const FeedbackEventSchema = z.strictObject({
     replaced: z.boolean(),
 });
 
-const TurnJudgementEventSchema = z.strictObject({
+const TurnLlmEvaluationEventSchema = z.strictObject({
     ...agentEventBase,
-    eventType: z.literal(AgentEventType.TurnJudgement),
+    eventType: z.literal(AgentEventType.TurnLlmEvaluation),
     evaluationRev: z.number().int(),
     workstreamId: z.string(),
     turnSeq: z.number().int().min(0),
-    gate: JudgeGateReasonSchema,
+    gate: EvaluationGateReasonSchema,
     sampleRate: z.number(),
     selectedProbability: z.number(),
-    outcome: JudgeOutcomeSchema,
-    verdict: JudgeVerdictSchema.optional(),
+    outcome: EvaluationOutcomeSchema,
+    verdict: EvaluationVerdictSchema.optional(),
     score: z.number().optional(),
     reasons: z.array(z.string()).optional(),
     promptVersion: z.string(),
     detectorVersion: z.number().int().optional(),
+});
+
+const StallBreakerEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.StallBreaker),
+    action: z.enum(['corrective', 'trip']),
+    toolNames: z.array(z.string()),
+    repeatCount: z.number().int(),
+    stallMeasure: z.number().int(),
+    allErrored: z.boolean(),
+    iteration: z.number().int(),
+    interactive: z.boolean(),
+    workstreamId: z.string(),
 });
 
 export const AgentEventSchema: z.ZodType<AgentEvent> = z
@@ -466,7 +492,8 @@ export const AgentEventSchema: z.ZodType<AgentEvent> = z
         ToolCallEventSchema,
         TurnEvaluationEventSchema,
         FeedbackEventSchema,
-        TurnJudgementEventSchema,
+        TurnLlmEvaluationEventSchema,
+        StallBreakerEventSchema,
     ])
     .meta({ id: 'AgentEvent' });
 
@@ -588,6 +615,19 @@ export const AgentArtifactUrlResponseSchema = z
         path: z.string(),
     })
     .meta({ id: 'AgentArtifactUrlResponse', description: 'Signed artifact URL response for agent artifacts.' });
+
+export const AllocateAgentRunBudgetPayloadSchema = z
+    .strictObject({
+        additional_tokens: z.number().int().positive().meta({
+            description:
+                'Weighted tokens to add. They are added to the limit the run was granted, so usage past that limit is paid out of them.',
+        }),
+    })
+    .meta({
+        id: 'AllocateAgentRunBudgetPayload',
+        description:
+            'Budget to add to a run paused because its token budget ran out. The run resumes from where it stopped.',
+    });
 
 export const SignalAgentResponseSchema = z
     .strictObject({
@@ -756,6 +796,7 @@ export const AutonomousRunResponseSchema = z
             .array(z.string())
             .meta({ description: 'Lessons learned from the conversation (extracted at completion)' })
             .optional(),
+        evaluate: AgentEvaluateRequestSchema,
         evaluation: AgentRunEvaluationSchema.meta({ description: 'Evaluation summary of the run.' }).optional(),
         feedback: z
             .array(AgentRunFeedbackEntrySchema)
@@ -909,6 +950,7 @@ export const AgentRunSchema = z
             .array(z.string())
             .meta({ description: 'Lessons learned from the conversation (extracted at completion)' })
             .optional(),
+        evaluate: AgentEvaluateRequestSchema,
         evaluation: AgentRunEvaluationSchema.meta({ description: 'Evaluation summary of the run.' }).optional(),
         feedback: z
             .array(AgentRunFeedbackEntrySchema)
@@ -941,6 +983,7 @@ export const CreateAgentRunPayloadSchema = z
     .strictObject({
         interaction: z.string().meta({ description: 'Interaction ID or code (e.g. "sys:generic_question").' }),
         ...ConversationEnrichmentFields,
+        evaluate: AgentEvaluateRequestSchema,
         data: z.looseObject({}).meta({ description: 'Input parameters, typed per interaction' }).optional(),
         config: InteractionExecutionConfigurationSchema.meta({
             description: 'Execution configuration (environment, model, model_options, etc.)',
@@ -1015,7 +1058,18 @@ export const CreateAgentRunPayloadSchema = z
             description:
                 "Structured checkpoint override for this run. Field-wise it takes precedence over the interaction's `agent_runner_options.checkpoint` and the project's `configuration.agent.checkpoint`; the legacy `checkpoint_tokens` above still wins over everything when set.",
         }).optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Token budget for this run and its subagent workstreams. Field-wise it takes precedence over the interaction's `agent_runner_options.budget` and the project's `configuration.agent.budget`.",
+        }).optional(),
         max_iterations: z.number().meta({ description: 'Maximum conversation iterations (default: 20)' }).optional(),
+        final_verification: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, a non-interactive free-form run takes one extra turn after its answer to check that the task is complete. Off by default. Not kept on restart or fork.',
+            })
+            .optional(),
         notify_endpoints: z.array(z.string()).meta({ description: 'Webhook URLs to notify on completion' }).optional(),
         debug_mode: z.boolean().meta({ description: 'Enable debug mode for verbose logging' }).optional(),
         started_by: z
@@ -1393,7 +1447,7 @@ export const ListAgentRunsQuerySchema = z
         }).optional(),
         contradicted: z
             .boolean()
-            .meta({ description: 'Only runs whose feedback or judge contradicts the detectors' })
+            .meta({ description: 'Only runs whose feedback or LLM evaluation contradicts the detectors' })
             .optional(),
     })
     .meta({ id: 'ListAgentRunsQuery' });
@@ -1448,6 +1502,7 @@ export const RecordAgentRunPayloadSchema = z
         run_kind: z.literal('agent').optional(),
         interaction: z.string(),
         ...ConversationEnrichmentFields,
+        evaluate: AgentEvaluateRequestSchema,
         parent_run_id: z.string().optional(),
         workstream_id: z.string().optional(),
         schedule_id: z.string().optional(),

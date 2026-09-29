@@ -13,7 +13,7 @@
  * offsets the rewriter needs.
  */
 
-import { initSync, parse } from 'es-module-lexer';
+import { parse } from 'es-module-lexer/minimal';
 import type { TransformerRule } from '../core/types.js';
 
 export interface ImportOccurrence {
@@ -31,20 +31,6 @@ export interface ImportOccurrence {
 
     /** The quote character used in the source. */
     quote: "'" | '"' | '`';
-}
-
-/**
- * `es-module-lexer` is WASM-backed and must be initialised before the first `parse`.
- *
- * Initialised synchronously and once, so `detectQueryImports` stays a plain function — making it
- * async would push a promise through the scanner and every caller for no benefit.
- */
-let initialised = false;
-function ensureInitialised(): void {
-    if (!initialised) {
-        initSync();
-        initialised = true;
-    }
 }
 
 const QUOTES = new Set(["'", '"', '`']);
@@ -76,8 +62,7 @@ function quoteBounds(source: string, start: number, end: number): { quoteStart: 
  * stop, not quietly emit less. `transformImports` adds the file path to the message.
  */
 export function detectQueryImports(content: string, transformers: TransformerRule[]): ImportOccurrence[] {
-    ensureInitialised();
-
+    // The minimal build preserves the v2 import offsets and initialises synchronously on first parse in Node.js.
     const [imports] = parse(content);
 
     const occurrences: ImportOccurrence[] = [];

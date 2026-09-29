@@ -69,3 +69,8 @@ declare module '*.svg.js' {
     const content: string;
     export default content;
 }
+
+declare module 'virtual:vertesia-branding' {
+    const branding: import('@vertesia/ui/boot').AppBranding;
+    export default branding;
+}

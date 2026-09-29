@@ -499,6 +499,10 @@ export const CollectionSchema = z
                     "List of property names from the collection's properties that should be shared with (injected into) member objects. These properties will be propagated to all members of this collection and merged as arrays.",
             })
             .optional(),
+        user_permissions: ContentObjectUserPermissionsSchema.meta({
+            description:
+                "Computed per-request permissions for the current user on this collection. Not stored — computed on the fly from the collection's security field (same semantics as a content object's user_permissions).",
+        }).optional(),
     })
     .meta({ id: 'Collection' });
 

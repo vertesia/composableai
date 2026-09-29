@@ -77,14 +77,63 @@ export class OAuthUnavailableError extends Error {
     }
 }
 
-export function canUseOAuthProfile(profile: Partial<Pick<Profile, 'studio_server_url'>>): boolean {
+/** Public deployment configuration; no browser session or credentials are sent. */
+export async function discoverCliConfiguration(configUrl: string): Promise<
+    | {
+          studio_server_url: string;
+          zeno_server_url: string;
+          oauth_server_url: string;
+      }
+    | undefined
+> {
+    const url = new URL('/.well-known/vertesia-cli', configUrl);
+    const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) || url.hostname.endsWith('.localhost');
+    if (url.protocol !== 'https:' && !(url.protocol === 'http:' && loopback)) {
+        throw new Error('CLI discovery requires HTTPS or loopback HTTP');
+    }
+    const response = await fetch(url, {
+        headers: { Accept: 'application/json' },
+        redirect: 'error',
+        signal: AbortSignal.timeout(10_000),
+    });
+    if (response.status === 404 || response.status === 501) return undefined;
+    if (!response.ok) throw new Error(`CLI discovery failed (${response.status})`);
+    // Older SPAs return index.html for unknown paths.
+    if (response.headers.get('content-type')?.includes('text/html')) return undefined;
+    const data: unknown = await response.json();
+    if (!data || typeof data !== 'object') throw new Error('Invalid CLI discovery document');
+    const read = (key: string): string => {
+        const value = (data as Record<string, unknown>)[key];
+        if (typeof value !== 'string') throw new Error(`CLI discovery is missing ${key}`);
+        const endpoint = new URL(value);
+        const local =
+            ['localhost', '127.0.0.1', '[::1]'].includes(endpoint.hostname) || endpoint.hostname.endsWith('.localhost');
+        if (
+            endpoint.username ||
+            endpoint.password ||
+            endpoint.search ||
+            endpoint.hash ||
+            (endpoint.protocol !== 'https:' && !(loopback && local && endpoint.protocol === 'http:'))
+        ) {
+            throw new Error(`Invalid CLI endpoint: ${key}`);
+        }
+        return endpoint.toString().replace(/\/+$/, '');
+    };
+    return {
+        studio_server_url: read('studio_server_url'),
+        zeno_server_url: read('zeno_server_url'),
+        oauth_server_url: read('oauth_server_url'),
+    };
+}
+
+export function canUseOAuthProfile(profile: Partial<Pick<Profile, 'studio_server_url' | 'oauth_server_url'>>): boolean {
     if (!profile.studio_server_url) {
         return false;
     }
     try {
         const url = new URL(profile.studio_server_url);
         const isLoopbackHost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
-        const isLocalDev = process.env.IS_LOCAL_DEV === 'true';
+        const isLocalDev = process.env.IS_LOCAL_DEV === 'true' || Boolean(profile.oauth_server_url);
         if (url.protocol === 'https:') {
             return !isLoopbackHost || isLocalDev;
         }

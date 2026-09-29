@@ -5,7 +5,10 @@ function makeJwt(payload: Record<string, unknown>) {
     return `${encode({ alg: 'ES256', typ: 'JWT' })}.${encode(payload)}.signature`;
 }
 
-async function importComposableAuth(authTokenProvider?: () => Promise<string | undefined>) {
+async function importComposableAuth(
+    authTokenProvider?: () => Promise<string | undefined>,
+    defaultAuthSelection?: { accountId?: string; projectId?: string },
+) {
     vi.resetModules();
     const [{ Env }, composableAuth] = await Promise.all([import('@vertesia/ui/env'), import('./composable')]);
     Env.init({
@@ -20,6 +23,7 @@ async function importComposableAuth(authTokenProvider?: () => Promise<string | u
             sts: 'https://sts.dev1.vertesia.io',
         },
         authTokenProvider,
+        defaultAuthSelection,
     });
     return composableAuth;
 }
@@ -34,7 +38,7 @@ describe('getComposableToken', () => {
         vi.clearAllMocks();
     });
 
-    it('uses an authorization-bearing STS-issued Vertesia token directly instead of exchanging it', async () => {
+    it.each([false, true])('uses an authorization-bearing STS token directly (branch=%s)', async (branch) => {
         const token = makeJwt({
             iss: 'https://sts.dev1.vertesia.io',
             exp: Math.floor(Date.now() / 1000) + 3600,
@@ -47,6 +51,10 @@ describe('getComposableToken', () => {
         vi.stubGlobal('fetch', fetchMock);
 
         const { getComposableToken } = await importComposableAuth();
+        if (branch) {
+            const { Env } = await import('@vertesia/ui/env');
+            Env.endpoints.sts = 'https://token-server-dev-example.api.dev1.vertesia.io';
+        }
         const result = await getComposableToken('account-id', 'project-id', token, false, true);
 
         expect(result.rawToken).toBe(token);
@@ -79,6 +87,24 @@ describe('getComposableToken', () => {
         expect(result.rawToken).toBe(freshToken);
         expect(authTokenProvider).toHaveBeenCalledOnce();
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('uses a short-lived scoped iframe token directly, including a forced host refresh', async () => {
+        const token = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 120,
+            client_id: 'vertesia-app:analytics',
+            account: { id: 'account-id' },
+            project: { id: 'project-id' },
+            apps: ['analytics'],
+        });
+        const provider = vi.fn(async () => token);
+        const fetcher = vi.fn();
+        vi.stubGlobal('fetch', fetcher);
+        const { getComposableToken } = await importComposableAuth(provider);
+        expect((await getComposableToken('account-id', 'project-id', undefined, true, true)).rawToken).toBe(token);
+        expect(provider).toHaveBeenCalledOnce();
+        expect(fetcher).not.toHaveBeenCalled();
     });
 
     it('falls back to the cached credential when the injected provider is unavailable', async () => {
@@ -372,5 +398,23 @@ describe('resolveAuthSelection', () => {
             accountId: 'stored-account',
             projectId: 'stored-project',
         });
+    });
+});
+
+describe('configured workspace selection', () => {
+    afterEach(() => localStorage.clear());
+    it.each([
+        [{ accountId: 'env-a', projectId: 'env-p' }, '', { accountId: 'env-a', projectId: 'env-p' }],
+        [{ projectId: 'env-p' }, '', { accountId: undefined, projectId: 'env-p' }],
+        [{ accountId: 'env-a' }, '', { accountId: 'env-a', projectId: 'env-a-cached-p' }],
+        [{ accountId: 'env-a', projectId: 'env-p' }, '?p=url-p', { accountId: undefined, projectId: 'url-p' }],
+        [{ accountId: 'env-a', projectId: 'env-p' }, '?a=url-a', { accountId: 'url-a', projectId: undefined }],
+        [{ accountId: 'env-a', projectId: 'env-p' }, '?a=url-a&p=url-p', { accountId: 'url-a', projectId: 'url-p' }],
+    ] as const)('selects %j with URL %s', async (selection, query, expected) => {
+        localStorage.setItem('composableai.lastSelectedAccountId', 'old-a');
+        localStorage.setItem('composableai.lastSelectedProjectId-old-a', 'old-p');
+        localStorage.setItem('composableai.lastSelectedProjectId-env-a', 'env-a-cached-p');
+        const { resolveAuthSelection } = await importComposableAuth(undefined, selection);
+        expect(resolveAuthSelection(new URL(`https://app.example.test/${query}`))).toEqual(expected);
     });
 });

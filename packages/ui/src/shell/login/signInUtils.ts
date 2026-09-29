@@ -1,3 +1,4 @@
+import { Env } from '@vertesia/ui/env';
 import { getFirebaseAuth, setFirebaseTenant } from '@vertesia/ui/session';
 import {
     type AuthProvider,
@@ -197,7 +198,7 @@ export async function startSignIn(
     } else {
         // No tenant — clear any stale tenant routing from a prior attempt.
         localStorage.removeItem('tenantName');
-        if (auth.tenantId) auth.tenantId = null;
+        auth.tenantId = Env.firebase?.tenantId ?? null;
     }
 
     writePendingSignin({ email, provider: effectiveIdp, tenantName });
@@ -205,12 +206,19 @@ export async function startSignIn(
     return { ok: true };
 }
 
-/** Starts a provider sign-in directly, skipping email/tenant resolution and clearing any tenant routing. */
+/** Starts sign-in without email discovery, preserving an explicitly configured tenant. */
 export function startSignInWithoutTenant(provider: ProviderId, redirectTo?: string): void {
     const auth = getFirebaseAuth();
     localStorage.removeItem('tenantName');
-    if (auth.tenantId) auth.tenantId = null;
-    void signInWithRedirect(auth, buildFirebaseProvider(provider, undefined, redirectTo));
+    auth.tenantId = Env.firebase?.tenantId ?? null;
+    void signInWithRedirect(
+        auth,
+        buildFirebaseProvider(
+            Env.firebase?.tenantId ? ((Env.firebase.providerType as ProviderId) ?? 'oidc') : provider,
+            undefined,
+            redirectTo,
+        ),
+    );
 }
 
 export function providerLabel(id: ProviderId): string {

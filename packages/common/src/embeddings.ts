@@ -1,14 +1,5 @@
 import type { EmbeddingsResult } from '@llumiverse/common';
-import type { z } from 'zod';
-import type {
-    EmbeddingsApiAudioInputSchema,
-    EmbeddingsApiImageInputSchema,
-    EmbeddingsApiInputSchema,
-    EmbeddingsApiRequestSchema,
-    EmbeddingsApiSourceSchema,
-    EmbeddingsApiTextInputSchema,
-    EmbeddingsApiVideoInputSchema,
-} from './api-schemas/embeddings.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * The embeddings request types, inferred from `./api-schemas/embeddings.js`. Their documentation
@@ -16,19 +7,19 @@ import type {
  * `description`, which is how the union's description came to be the truncated `"…Mirror of"` the
  * document carried for as long as the types lived here.
  */
-export type EmbeddingsApiInput = z.infer<typeof EmbeddingsApiInputSchema>;
+export type EmbeddingsApiInput = Wire.EmbeddingsApiInput;
 
-export type EmbeddingsApiSource = z.infer<typeof EmbeddingsApiSourceSchema>;
+export type EmbeddingsApiSource = Wire.EmbeddingsApiSource;
 
-export type EmbeddingsApiTextInput = z.infer<typeof EmbeddingsApiTextInputSchema>;
+export type EmbeddingsApiTextInput = Wire.EmbeddingsApiTextInput;
 
-export type EmbeddingsApiImageInput = z.infer<typeof EmbeddingsApiImageInputSchema>;
+export type EmbeddingsApiImageInput = Wire.EmbeddingsApiImageInput;
 
-export type EmbeddingsApiVideoInput = z.infer<typeof EmbeddingsApiVideoInputSchema>;
+export type EmbeddingsApiVideoInput = Wire.EmbeddingsApiVideoInput;
 
-export type EmbeddingsApiAudioInput = z.infer<typeof EmbeddingsApiAudioInputSchema>;
+export type EmbeddingsApiAudioInput = Wire.EmbeddingsApiAudioInput;
 
-export type EmbeddingsApiRequest = z.infer<typeof EmbeddingsApiRequestSchema>;
+export type EmbeddingsApiRequest = Wire.EmbeddingsApiRequest;
 
 /**
  * Wire-format result. Identical to @llumiverse/common's EmbeddingsResult
@@ -36,3 +27,20 @@ export type EmbeddingsApiRequest = z.infer<typeof EmbeddingsApiRequestSchema>;
  * that prefer to consume types from @vertesia/common.
  */
 export type EmbeddingsApiResult = EmbeddingsResult;
+export type RecalculateEmbeddingsQuery = Wire.RecalculateEmbeddingsQuery;
+export type EmbeddingBatchCapabilityRequest = Wire.EmbeddingBatchCapabilityRequest;
+export type EmbeddingBatchCapabilityResponse = Wire.EmbeddingBatchCapabilityResponse;
+export type EmbeddingBatchCreateRequest = Wire.EmbeddingBatchCreateRequest;
+export type EmbeddingBatchJobRequest = Wire.EmbeddingBatchJobRequest;
+export type EmbeddingBatchJobResponse = Wire.EmbeddingBatchJobResponse;
+export type EmbeddingBatchProviderState = Wire.EmbeddingBatchProviderState;
+export type EmbeddingBatchRunState = Wire.EmbeddingBatchRunState;
+export type EmbeddingBatchRunSummary = Wire.EmbeddingBatchRunSummary;
+export type EmbeddingBatchSubjob = Wire.EmbeddingBatchSubjob;
+export type EmbeddingBatchPrepareRequest = Wire.EmbeddingBatchPrepareRequest;
+export type EmbeddingBatchPrepareResponse = Wire.EmbeddingBatchPrepareResponse;
+export type EmbeddingBatchRenditionPageRequest = Wire.EmbeddingBatchRenditionPageRequest;
+export type EmbeddingBatchRenditionPageResponse = Wire.EmbeddingBatchRenditionPageResponse;
+export type EmbeddingBatchUpdateRequest = Wire.EmbeddingBatchUpdateRequest;
+export type EmbeddingBatchApplyRequest = Wire.EmbeddingBatchApplyRequest;
+export type EmbeddingBatchApplyResponse = Wire.EmbeddingBatchApplyResponse;

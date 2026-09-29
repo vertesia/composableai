@@ -217,6 +217,21 @@ export class InteractionOutput<T = unknown> {
         return this.results.filter((r) => r.type === 'image').map((r) => r.value);
     }
 
+    hasAudio(): boolean {
+        return this.results.some((r) => r.type === 'audio');
+    }
+
+    /** Get complete audio metadata and its durable file reference. */
+    audios() {
+        return this.results.filter((r) => r.type === 'audio');
+    }
+
+    audio() {
+        const result = this.audios()[0];
+        if (!result) throw new Error('No audio result found');
+        return result;
+    }
+
     /** Get the first video result URI. */
     video(): string {
         const videoResult = this.results.find((r) => r.type === 'video');

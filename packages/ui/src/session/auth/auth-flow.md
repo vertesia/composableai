@@ -6,9 +6,21 @@ This document describes the authentication flow for the Vertesia user-facing app
 
 The authentication system uses:
 - **Firebase** for identity management and OAuth provider integration
-- **Central Auth** (internal-auth.vertesia.app) for centralized authentication flow
+- **Central Auth** (auth.vertesia.io) for centralized authentication flow
 - **STS (Security Token Service)** (sts.vertesia.io) to validate Firebase tokens and generate Vertesia JWT tokens
 - **Session state management** to validate redirects and prevent CSRF attacks
+
+### Central Auth endpoint selection
+
+`https://auth.vertesia.io/` is the default broker. Regional scaffolding can set
+`VITE_AUTH_ENDPOINT`; applications can also configure the `Env` initialization property `endpoints.auth` explicitly.
+For compatible generated app shells, a gateway-provided central runtime config
+(`window.__VERTESIA_RUNTIME_CONFIG__` with `authMode: 'central'` and `authUrl`)
+takes precedence over the build-time endpoint. A runtime config without `authUrl`
+retains the configured endpoint or default. Explicit Firebase mode uses direct
+Firebase authentication instead of the central broker.
+
+The diagrams below use the default hostname; redirects use the selected broker.
 
 ### STS Endpoints
 - Production/Preview: `https://sts.vertesia.io`
@@ -179,8 +191,8 @@ The authentication system uses:
 ┌──────────────────────┐    │ - Microsoft          │    ┌──────────────────────┐
 │ Build redirect URL:  │    └──────────┬───────────┘    │ Redirect to SSO      │
 │                      │               │                │ provider (Okta,      │
-│ internal-auth        │               ▼                │ Azure AD, etc.)      │
-│ .vertesia.app        │    ┌──────────────────────┐    └──────────┬───────────┘
+│ auth.vertesia.io      │               ▼                │ Azure AD, etc.)      │
+│                      │    ┌──────────────────────┐    └──────────┬───────────┘
 │ ?sts=...             │    │ Firebase OAuth       │               │
 │ &redirect_uri=...    │    │ redirect & return    │               ▼
 │ &state=...           │    └──────────┬───────────┘    ┌──────────────────────┐
@@ -329,7 +341,7 @@ The authentication system uses:
 
 ### Path A: Central Auth (Option 1) - Returns with JWT
 1. User clicks "Continue with Central Auth"
-2. Redirects to internal-auth.vertesia.app
+2. Redirects to auth.vertesia.io
 3. Central auth authenticates user and gets Firebase token
 4. **Central auth calls STS** (`POST sts.vertesia.io/token/issue` with Firebase token)
 5. **STS validates Firebase token and generates Vertesia JWT**
@@ -472,8 +484,8 @@ The authentication system uses:
                 │ Redirect to Central  │         │ getFirebaseAuth()    │
                 │ Auth for logout:     │         │   .signOut()         │
                 │                      │         │                      │
-                │ internal-auth        │         │ (Triggers            │
-                │  .vertesia.app       │         │  onAuthStateChanged  │
+                │ auth.vertesia.io      │         │ (Triggers            │
+                │                      │         │  onAuthStateChanged  │
                 │  /logout             │         │  with anonymous user)│
                 │                      │         └──────────┬───────────┘
                 │ (Central auth        │                    │
@@ -712,7 +724,7 @@ flowchart TB
     subgraph Option1[OPTION 1: CENTRAL AUTH]
         C1[Generate state<br/>Save to sessionStorage]
         C2[Get account/project<br/>from URL or localStorage]
-        C3[Build redirect URL:<br/>internal-auth.vertesia.app<br/>?sts=...&redirect_uri=...&state=...]
+        C3[Build redirect URL:<br/>auth.vertesia.io<br/>?sts=...&redirect_uri=...&state=...]
         C4[window.location.replace<br/>to central auth]
         C5[Central Auth Page<br/>User authenticates<br/>Gets Firebase token]
         C6[Central auth calls STS:<br/>POST sts.vertesia.io/token/issue<br/>Authorization: Bearer Firebase<br/>Body: type, account_id, project_id]
@@ -774,7 +786,7 @@ flowchart TB
 
     Check -->|YES| ShouldRedirect{shouldRedirectTo<br/>CentralAuth?}
 
-    ShouldRedirect -->|YES| RedirectLogout[Redirect to Central Auth<br/>for logout<br/><br/>internal-auth.vertesia.app<br/>/logout<br/><br/>Central auth handles<br/>Firebase logout]
+    ShouldRedirect -->|YES| RedirectLogout[Redirect to Central Auth<br/>for logout<br/><br/>auth.vertesia.io<br/>/logout<br/><br/>Central auth handles<br/>Firebase logout]
 
     ShouldRedirect -->|NO| FirebaseSignout[getFirebaseAuth.signOut<br/><br/>Triggers onAuthStateChanged<br/>with anonymous user]
 
@@ -837,7 +849,7 @@ flowchart TB
 sequenceDiagram
     actor User
     participant App as Composable UI
-    participant CentralAuth as Central Auth<br/>(internal-auth.vertesia.app)
+    participant CentralAuth as Central Auth<br/>(auth.vertesia.io)
     participant Firebase as Firebase Auth
     participant STS as STS<br/>(sts.vertesia.io)
 
@@ -1030,7 +1042,7 @@ flowchart TB
 
     Check -->|YES| ShouldRedirect{shouldRedirectTo<br/>CentralAuth?}
 
-    ShouldRedirect -->|YES| RedirectLogout[Redirect to Central Auth<br/>for logout<br/><br/>internal-auth.vertesia.app<br/>/logout<br/><br/>Central auth handles<br/>Firebase logout]
+    ShouldRedirect -->|YES| RedirectLogout[Redirect to Central Auth<br/>for logout<br/><br/>auth.vertesia.io<br/>/logout<br/><br/>Central auth handles<br/>Firebase logout]
 
     ShouldRedirect -->|NO| FirebaseSignout[getFirebaseAuth.signOut<br/><br/>Triggers onAuthStateChanged<br/>with anonymous user]
 
@@ -1078,7 +1090,7 @@ flowchart TB
         LO2[session.logout or<br/>session.signOut]
         LO3{authToken<br/>exists?}
         LO4{shouldRedirectTo<br/>CentralAuth?}
-        LO5[Redirect to Central Auth<br/>for logout<br/><br/>internal-auth.vertesia.app<br/>/logout<br/><br/>Central auth handles<br/>Firebase logout]
+        LO5[Redirect to Central Auth<br/>for logout<br/><br/>auth.vertesia.io<br/>/logout<br/><br/>Central auth handles<br/>Firebase logout]
         LO6[getFirebaseAuth.signOut<br/><br/>Triggers onAuthStateChanged<br/>with anonymous user]
         LO7[Clear session data:<br/>- authError = undefined<br/>- isLoading = false<br/>- authToken = undefined<br/>- typeRegistry = undefined]
         LO8[client.withAuthCallback<br/>undefined<br/><br/>Clear client auth]
@@ -1092,3 +1104,16 @@ flowchart TB
         LO6 --> LO7
         LO7 --> LO8 --> LO9
     end
+## OAuth credential lifetime
+
+The short-lived access token and the ten-minute PKCE transaction are stored in tab-scoped
+sessionStorage. The state and verifier must survive the authorization redirect; the transaction is
+consumed once on return. Refresh credentials are held only in module memory, never browser storage.
+Reloading retains a valid access token; after it expires, a fresh broker round-trip is required.
+Logout revokes the in-memory refresh credential and clears both stored records. This does not make
+arbitrary scripts running on the application origin trusted: they share that origin's privileges.
+
+Embedded applications reacquire scoped credentials through the parent message protocol. A response
+without a token is a denial, and an already-expired `expiresAt` is rejected. JWT expiry governs the
+session cache; app-scoped tokens use a 60-second renewal window and are never exchanged for a broader
+session token just because their lifetime is shorter than a normal session's.

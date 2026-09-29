@@ -22,7 +22,6 @@ const AUTO_REDIRECT_SECONDS = 15;
  * docs/restrict-access-to-non-production-envs.md.
  */
 export default function SignInRestrictedEnvStep({ onUseDifferentEmail }: SignInRestrictedEnvStepProps) {
-    const { t } = useUITranslation();
     // Region-aware: send the user to their own region's production site, never another region's (an
     // EU user must not be redirected to the US site). Falls back to the canonical site when unknown.
     const productionUrl = getProductionAppUrl(Env.region);
@@ -53,6 +52,24 @@ export default function SignInRestrictedEnvStep({ onUseDifferentEmail }: SignInR
     }, [productionUrl]);
 
     return (
+        <SignInRestrictedEnvView
+            secondsLeft={secondsLeft}
+            onUseDifferentEmail={onUseDifferentEmail}
+            onRedirect={() => {
+                window.location.href = productionUrl;
+            }}
+        />
+    );
+}
+
+/** Shared presentation; the host owns session cleanup and automatic redirects. */
+export function SignInRestrictedEnvView({
+    secondsLeft = AUTO_REDIRECT_SECONDS,
+    onUseDifferentEmail,
+    onRedirect,
+}: SignInRestrictedEnvStepProps & { secondsLeft?: number; onRedirect: () => void }) {
+    const { t } = useUITranslation();
+    return (
         <SignInStepLayout>
             <SignInStepHeader
                 variant="destructive"
@@ -67,12 +84,7 @@ export default function SignInRestrictedEnvStep({ onUseDifferentEmail }: SignInR
                     title={t('auth.restricted.calloutTitle')}
                     meta={t('auth.restricted.calloutMeta')}
                 />
-                <SignInStepButton
-                    className="w-full"
-                    onClick={() => {
-                        window.location.href = productionUrl;
-                    }}
-                >
+                <SignInStepButton className="w-full" onClick={onRedirect}>
                     {t('auth.restricted.redirect')}
                 </SignInStepButton>
                 <SignInStepButton variant="ghost" onClick={onUseDifferentEmail}>

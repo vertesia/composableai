@@ -9,24 +9,24 @@
     "scripts": {
         "lint": "biome lint src",
         "format": "biome format --write src",
-        "build": "tsc --build",
+        "build": "tsc --build --checkers 1",
         "clean": "tsc --build --clean",
         "aws": "npx bun ./src/index.ts aws",
         "gcp": "npx bun ./src/index.ts gcp"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.10",
+        "@biomejs/biome": "2.5.13",
         "@tsconfig/node-lts": "^24.0.1",
-        "@types/bun": "^1.4.0",
+        "@types/bun": "^1.4.2",
         "globals": "^17.12.0",
         "typescript": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-iam": "^3.1125.0",
-        "@vertesia/client": "1.4.1",
-        "@vertesia/common": "1.4.1",
+        "@aws-sdk/client-iam": "^3.1134.0",
+        "@vertesia/client": "1.5.0",
+        "@vertesia/common": "1.5.0",
         "commander": "^15.0.0",
         "dotenv": "^17.4.2",
-        "google-auth-library": "^11.0.2"
+        "google-auth-library": "^11.1.0"
     }
 }

@@ -124,3 +124,19 @@ export const IssueTokenForbiddenResponseSchema = z
 export const IssueTokenUnavailableResponseSchema = z
     .strictObject({ error: z.string(), message: z.string() })
     .meta({ id: 'IssueTokenUnavailableResponse' });
+
+export const AppSessionTokenRequestSchema = z
+    .strictObject({
+        app_name: z.string().min(1),
+        scopes: z.array(z.string()).optional(),
+        ttl_seconds: z.number().int().min(1).max(900).optional(),
+    })
+    .meta({ id: 'AppSessionTokenRequest' });
+
+export const AppSessionTokenResponseSchema = z
+    .strictObject({
+        token: z.string(),
+        token_type: z.literal('Bearer'),
+        expires_in: z.number().int(),
+    })
+    .meta({ id: 'AppSessionTokenResponse' });

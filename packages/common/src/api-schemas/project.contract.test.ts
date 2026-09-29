@@ -242,6 +242,21 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         expect(SYSTEM_INTERACTION_CATEGORIES.ContentSearchReranker).toBe(SystemInteractionCategory.analysis);
     });
 
+    it('uses the agent model default for every app development agent', () => {
+        // Each is launched in-code without an environment or model of its own, so an uncategorised
+        // one silently resolves to the project BASE default instead of the agent default.
+        for (const endpoint of [
+            'AppDevelopmentOrchestrator',
+            'AppSolutionArchitect',
+            'AppDesigner',
+            'AppDeveloper',
+            'AppReviewer',
+            'AppTester',
+        ]) {
+            expect(SYSTEM_INTERACTION_CATEGORIES[endpoint]).toBe(SystemInteractionCategory.agent);
+        }
+    });
+
     it('publishes the property-mapping map without the propertyNames z.record adds', () => {
         // `Record<string, ProjectSearchPropertyMapping>` is inline in the interface and has no
         // TypeScript name, so it never becomes a canonical alias — it stays canonical AND derived,
@@ -251,6 +266,21 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
             type: 'object',
             additionalProperties: { $ref: '#/components/schemas/ProjectSearchPropertyMapping' },
         });
+    });
+
+    it('accepts explicit nested paths through the project configuration contract', () => {
+        expect(ApiSchemaComponents.ProjectSearchPropertyType.enum).toContain('nested');
+        expect(
+            validateApiRequest('UpdateProjectConfigurationPayload', {
+                indexing: {
+                    property_mappings: {
+                        line_items: { type: 'nested' },
+                        'line_items.sku': { type: 'keyword' },
+                        'line_items.quantity': { type: 'long' },
+                    },
+                },
+            }).valid,
+        ).toBe(true);
     });
 
     it('publishes geo_point as an explicit project property mapping type', () => {

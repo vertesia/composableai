@@ -25,6 +25,16 @@ describe('renderTemplate', () => {
             renderTemplate('return `Hello ${name}`', TemplateType.jst, { properties: { name: {} } }, { name: 'Ada' }),
         ).toEqual('Hello Ada');
     });
+
+    it('supplies system variables to both template languages', () => {
+        const system = { model: 'test-model', now: new Date('2026-01-02T03:04:05.000Z') };
+        expect(renderTemplate('{{#if _now}}{{_now}}{{/if}} {{_model}}', TemplateType.handlebars, {}, {}, system)).toBe(
+            '2026-01-02T03:04:05.000Z test-model',
+        );
+        expect(renderTemplate('return `${_now} ${_model}`', TemplateType.jst, {}, {}, system)).toBe(
+            '2026-01-02T03:04:05.000Z test-model',
+        );
+    });
 });
 
 describe('renderSegments', () => {
@@ -97,13 +107,14 @@ function createPromptTemplate(overrides: Partial<PromptTemplate>): PromptTemplat
         role: PromptRole.user,
         status: PromptStatus.draft,
         version: 1,
+        edit_revision: 1,
         content: '',
         content_type: TemplateType.jst,
         project: 'project-1',
         created_by: 'user-1',
         updated_by: 'user-1',
-        created_at: new Date('2026-01-01T00:00:00.000Z'),
-        updated_at: new Date('2026-01-01T00:00:00.000Z'),
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
         ...overrides,
     };
 }

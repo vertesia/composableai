@@ -61,6 +61,8 @@ vi.mock('./ModernAgentOutput/Header', () => ({
 vi.mock('./ModernAgentOutput/MessageInput', () => ({
     default: (props: {
         onSend: (message: string) => void;
+        value?: string;
+        onValueChange?: (value: string) => void;
         activeTaskCount?: number;
         activeWorkstreams?: Array<{ workstream_id: string; status: string }>;
         onSelectWorkstream?: (workstreamId: string) => void;
@@ -81,6 +83,11 @@ vi.mock('./ModernAgentOutput/MessageInput', () => ({
         return (
             <div>
                 {props.approvalModeSlot}
+                <textarea
+                    aria-label="composer draft"
+                    value={props.value}
+                    onChange={(event) => props.onValueChange?.(event.target.value)}
+                />
                 <button type="button" onClick={() => props.onSend('follow up')}>
                     composer send
                 </button>
@@ -1278,7 +1285,7 @@ describe('ModernAgentConversation send handling', () => {
             expect.objectContaining({ workstream_id: 'beta', status: 'running' }),
             expect.objectContaining({ workstream_id: 'gamma', status: 'completed' }),
         ]);
-        expect(latestRightPanelProps.activeTab).toBe('plan');
+        expect(latestRightPanelProps.activeTab).toBe('workstreams');
         expect(latestMessageInputProps.activeTaskCount).toBe(2);
         expect(latestMessageInputProps.activeWorkstreams).toEqual([
             expect.objectContaining({ workstream_id: 'alpha', status: 'running' }),
@@ -1706,6 +1713,80 @@ describe('ModernAgentConversation send handling', () => {
         );
     });
 
+    it('restores the composer draft after an option response without sending it as part of that response', async () => {
+        const requestMessage = {
+            ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
+            details: {
+                request_id: 'ask-user-1',
+                ux: {
+                    options: [
+                        { id: 'red', label: 'Red' },
+                        { id: 'blue', label: 'Blue' },
+                    ],
+                },
+            },
+        };
+        mockStreamState({ messages: [], isCompleted: false, agentRunStatus: 'RUNNING' });
+
+        const view = renderConversation({ hideMessageInput: false });
+        fireEvent.change(screen.getByRole('textbox', { name: 'composer draft' }), {
+            target: { value: 'My pending message' },
+        });
+
+        mockStreamState({ messages: [requestMessage], isCompleted: false, agentRunStatus: 'RUNNING' });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                title="Agent"
+                hideHeader
+                hideMessageInput={false}
+                showRightPanel={false}
+            />,
+        );
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: 'Blue' }));
+            await Promise.resolve();
+        });
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledWith(
+                'agent-run-1',
+                'UserInput',
+                expect.objectContaining({ message: 'blue' }),
+            );
+        });
+
+        mockStreamState({
+            messages: [
+                requestMessage,
+                {
+                    ...createMessage(AgentMessageType.QUESTION, 'blue'),
+                    details: { request_input_response: { request_id: 'ask-user-1' } },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                title="Agent"
+                hideHeader
+                hideMessageInput={false}
+                showRightPanel={false}
+            />,
+        );
+
+        expect((screen.getByRole('textbox', { name: 'composer draft' }) as HTMLTextAreaElement).value).toBe(
+            'My pending message',
+        );
+        expect(mocks.sendSignal).not.toHaveBeenCalledWith(
+            'agent-run-1',
+            'UserInput',
+            expect.objectContaining({ message: 'My pending message' }),
+        );
+    });
+
     it('does not resurrect an answered request overlay after remounting before the persisted echo arrives', async () => {
         const requestMessage = {
             ...createMessage(AgentMessageType.REQUEST_INPUT, 'What is your favorite color?'),
@@ -1958,6 +2039,74 @@ describe('ModernAgentConversation send handling', () => {
             'UserInput',
             expect.objectContaining({ message: 'follow up' }),
         );
+    });
+
+    it('continues a run that ended while shown as running when the send is rejected with 409', async () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            agentRunStatus: 'RUNNING',
+        });
+        mocks.sendSignal
+            .mockRejectedValueOnce(Object.assign(new Error('This agent run has ended.'), { status: 409 }))
+            .mockResolvedValueOnce({});
+
+        renderConversation({ onRestart: vi.fn() });
+        mocks.retrieve.mockResolvedValue({ status: 'completed' });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledTimes(2);
+        });
+
+        expect(mocks.restart).toHaveBeenCalledWith('agent-run-1');
+        expect(mocks.reconnect).toHaveBeenCalledTimes(1);
+        expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[1]);
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'received');
+        });
+        expect(mocks.updateOptimisticMessageStatus).not.toHaveBeenCalledWith(expect.any(String), 'failed');
+    });
+
+    it('shows how the run ended instead of continuing it when it failed', async () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            agentRunStatus: 'RUNNING',
+        });
+        mocks.sendSignal.mockRejectedValue(Object.assign(new Error('This agent run has ended.'), { status: 409 }));
+
+        renderConversation({ onRestart: vi.fn() });
+        mocks.retrieve.mockResolvedValue({ status: 'failed' });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'failed');
+        });
+        expect(mocks.restart).not.toHaveBeenCalled();
+        expect(mocks.reconnect).toHaveBeenCalledTimes(1);
+        expect(mocks.sendSignal).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not restart a run that answers 409 while still running', async () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            agentRunStatus: 'RUNNING',
+        });
+        mocks.sendSignal.mockRejectedValue(
+            Object.assign(new Error('Agent run workflow is not ready yet; retry shortly.'), { status: 409 }),
+        );
+
+        renderConversation({ onRestart: vi.fn() });
+        mocks.retrieve.mockResolvedValue({ status: 'running' });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'failed');
+        });
+        expect(mocks.restart).not.toHaveBeenCalled();
+        expect(mocks.reconnect).not.toHaveBeenCalled();
     });
 
     it('marks a sent message as sending and then received', async () => {

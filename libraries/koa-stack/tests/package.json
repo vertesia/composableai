@@ -6,7 +6,7 @@
     "type": "module",
     "scripts": {
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc --project ./tsconfig.build.json",
+        "build": "pnpm run clean:lib && tsc --checkers 1 --project ./tsconfig.build.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "test": "pnpm exec vitest run src"
     },
@@ -25,6 +25,6 @@
         "@vertesia/tsconfig": "workspace:*",
         "supertest": "^7.2.2",
         "typescript": "catalog:",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     }
 }
