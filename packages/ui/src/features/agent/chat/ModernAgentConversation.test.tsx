@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { type AgentMessage, AgentMessageType, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
 import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -24,6 +25,7 @@ const mocks = vi.hoisted(() => ({
     useFileProcessing: vi.fn(),
     getActiveWorkstreams: vi.fn(),
     retrieve: vi.fn(),
+    allocateBudget: vi.fn(),
 }));
 
 vi.mock('@vertesia/ui/session', () => ({
@@ -35,6 +37,7 @@ vi.mock('@vertesia/ui/session', () => ({
                 uploadArtifact: mocks.uploadArtifact,
                 getActiveWorkstreams: mocks.getActiveWorkstreams,
                 retrieve: mocks.retrieve,
+                allocateBudget: mocks.allocateBudget,
             },
         },
         project: undefined,
@@ -271,6 +274,7 @@ describe('ModernAgentConversation send handling', () => {
         window.sessionStorage.clear();
         mocks.restart.mockResolvedValue({ id: 'agent-run-1' });
         mocks.sendSignal.mockResolvedValue({});
+        mocks.allocateBudget.mockResolvedValue({});
         mocks.uploadArtifact.mockResolvedValue({});
         mocks.getActiveWorkstreams.mockResolvedValue({ running: [] });
         mocks.retrieve.mockResolvedValue({ disabled_mcp_collections: undefined });
@@ -305,6 +309,228 @@ describe('ModernAgentConversation send handling', () => {
     afterEach(() => {
         vi.restoreAllMocks();
     });
+
+    it('does not allocate budget again when playback returns to the same live pause', async () => {
+        const scrollDescriptor = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollIntoView');
+        const scrollIntoView = vi.fn();
+        Object.defineProperty(Element.prototype, 'scrollIntoView', {
+            configurable: true,
+            writable: true,
+            value: scrollIntoView,
+        });
+        let view: ReturnType<typeof renderConversation> | undefined;
+        try {
+            const user = userEvent.setup();
+            mockStreamState({
+                messages: [
+                    createMessage(AgentMessageType.QUESTION, 'Start'),
+                    createMessage(AgentMessageType.ANSWER, 'Working'),
+                    {
+                        ...createMessage(AgentMessageType.IDLE, 'Budget exhausted'),
+                        details: { status_reason: 'awaiting_budget' },
+                    },
+                ],
+                agentRunStatus: 'RUNNING',
+            });
+            const onBudgetRequest = vi.fn(
+                async (request: import('./AgentBudgetPauseOverlay').AgentBudgetRequestContext) => {
+                    await request.allocateBudget(50_000);
+                },
+            );
+            view = renderConversation({
+                enablePlayback: true,
+                onBudgetRequest,
+                renderBudgetRequest: () => <div role="status">Budget pause active</div>,
+            });
+            await waitFor(() => expect(mocks.allocateBudget).toHaveBeenCalledTimes(1));
+            await user.click(await screen.findByRole('button', { name: 'Jump to first message' }));
+            await waitFor(() => expect(screen.queryByText('Budget pause active', { exact: true })).toBeNull());
+            expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+            await user.click(await screen.findByRole('button', { name: 'Jump to live' }));
+            expect(await screen.findByText('Budget pause active', { exact: true })).toBeTruthy();
+            // Wait for the scheduled animation frame as well as the remounted overlay's callback.
+            await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'end' }));
+            await act(async () => {});
+            expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+            expect(mocks.allocateBudget).toHaveBeenCalledTimes(1);
+        } finally {
+            // Unmount cancels any remaining frame before removing jsdom's scrolling stub.
+            view?.unmount();
+            if (scrollDescriptor) Object.defineProperty(Element.prototype, 'scrollIntoView', scrollDescriptor);
+            else Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
+        }
+    });
+
+    it('blocks a delayed budget allocation from the previous run after switching runs', async () => {
+        let releasePreviousRun: () => void = () => {
+            throw new Error('Previous run not initialized');
+        };
+        const previousRunGate = new Promise<void>((resolve) => {
+            releasePreviousRun = resolve;
+        });
+        const previousAllocation = vi.fn();
+        const onBudgetRequest = vi.fn(
+            async (request: import('./AgentBudgetPauseOverlay').AgentBudgetRequestContext) => {
+                if (request.agentRunId === 'agent-run-1') {
+                    await previousRunGate;
+                    previousAllocation(await request.allocateBudget(50_000));
+                } else {
+                    await request.allocateBudget(75_000);
+                }
+            },
+        );
+        const messages: AgentMessage[] = [
+            {
+                ...createMessage(AgentMessageType.IDLE, 'Budget exhausted'),
+                details: { status_reason: 'awaiting_budget' },
+            },
+        ];
+        mockStreamState({ messages, agentRunStatus: 'RUNNING' });
+        const view = renderConversation({ onBudgetRequest });
+        await waitFor(() => expect(onBudgetRequest).toHaveBeenCalledTimes(1));
+        mockStreamState({
+            messages: messages.map((message) => ({ ...message, workflow_run_id: 'workflow-run-2' })),
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-2"
+                hideHeader
+                hideMessageInput
+                showRightPanel={false}
+                onBudgetRequest={onBudgetRequest}
+            />,
+        );
+        await waitFor(() =>
+            expect(mocks.allocateBudget).toHaveBeenCalledWith('agent-run-2', { additional_tokens: 75_000 }),
+        );
+        await act(async () => {
+            releasePreviousRun();
+            await previousRunGate;
+        });
+        await waitFor(() => expect(previousAllocation).toHaveBeenCalledWith(false));
+        expect(onBudgetRequest).toHaveBeenCalledTimes(2);
+        expect(mocks.allocateBudget).toHaveBeenCalledTimes(1);
+    });
+
+    it('handles budget requests with the composer hidden and suppresses token status text', async () => {
+        const budgetMessage: AgentMessage = {
+            ...createMessage(AgentMessageType.IDLE, 'Token budget exhausted'),
+            details: { status_reason: 'awaiting_budget', budget_limit_tokens: 100_000 },
+        };
+        mockStreamState({ messages: [budgetMessage], agentRunStatus: 'RUNNING' });
+        const onBudgetRequest = vi.fn(
+            async (request: import('./AgentBudgetPauseOverlay').AgentBudgetRequestContext) => {
+                await request.allocateBudget(50_000);
+            },
+        );
+        renderConversation({ onBudgetRequest });
+        await waitFor(() =>
+            expect(mocks.allocateBudget).toHaveBeenCalledWith('agent-run-1', { additional_tokens: 50_000 }),
+        );
+        expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+        expect(latestAllMessagesMixedProps()?.messages).toEqual([]);
+        expect(screen.queryByText('composer send')).toBeNull();
+    });
+
+    it('passes the custom budget renderer through and restores the composer on allocation', async () => {
+        const budgetMessage: AgentMessage = {
+            ...createMessage(AgentMessageType.IDLE, 'Token budget exhausted'),
+            details: { status_reason: 'awaiting_budget', budget_limit_tokens: 100_000 },
+        };
+        mockStreamState({ messages: [budgetMessage], agentRunStatus: 'RUNNING' });
+        const renderBudgetRequest = () => <div>Continue this task?</div>;
+        const view = renderConversation({ hideMessageInput: false, renderBudgetRequest });
+        expect(await screen.findByText('Continue this task?')).toBeTruthy();
+        expect(screen.queryByText('composer send')).toBeNull();
+        mockStreamState({
+            messages: [
+                budgetMessage,
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'Budget allocated'),
+                    details: { status_reason: 'budget_allocated' },
+                },
+            ],
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                hideHeader
+                showRightPanel={false}
+                renderBudgetRequest={renderBudgetRequest}
+            />,
+        );
+        await waitFor(() => expect(screen.queryByText('Continue this task?')).toBeNull());
+        expect(await screen.findByText('composer send')).toBeTruthy();
+    });
+
+    it('notifies again for a new pause, but not for unrelated messages during the same pause', async () => {
+        const firstPause: AgentMessage = {
+            ...createMessage(AgentMessageType.IDLE, 'Token budget exhausted'),
+            timestamp: 1,
+            details: { status_reason: 'awaiting_budget' },
+        };
+        const onBudgetRequest = vi.fn();
+        mockStreamState({ messages: [firstPause], agentRunStatus: 'RUNNING' });
+        const view = renderConversation({ onBudgetRequest });
+        await waitFor(() => expect(onBudgetRequest).toHaveBeenCalledTimes(1));
+        mockStreamState({
+            messages: [firstPause, createMessage(AgentMessageType.UPDATE, 'status')],
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                hideHeader
+                hideMessageInput
+                showRightPanel={false}
+                onBudgetRequest={onBudgetRequest}
+            />,
+        );
+        await act(async () => {});
+        expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+        mockStreamState({
+            messages: [
+                firstPause,
+                {
+                    ...createMessage(AgentMessageType.UPDATE, 'allocated'),
+                    details: { status_reason: 'budget_allocated' },
+                },
+                { ...firstPause, timestamp: 2 },
+            ],
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                hideHeader
+                hideMessageInput
+                showRightPanel={false}
+                onBudgetRequest={onBudgetRequest}
+            />,
+        );
+        await waitFor(() => expect(onBudgetRequest).toHaveBeenCalledTimes(2));
+    });
+
+    it.each(['COMPLETED', 'FAILED', 'TERMINATED'])(
+        'does not handle a stale budget pause in a %s run',
+        async (agentRunStatus) => {
+            mockStreamState({
+                messages: [
+                    {
+                        ...createMessage(AgentMessageType.IDLE, 'Token budget exhausted'),
+                        details: { status_reason: 'awaiting_budget' },
+                    },
+                ],
+                agentRunStatus,
+            });
+            const onBudgetRequest = vi.fn();
+            renderConversation({ onBudgetRequest });
+            await act(async () => {});
+            expect(onBudgetRequest).not.toHaveBeenCalled();
+        },
+    );
 
     it('reports when the main agent turn starts and returns to idle', async () => {
         const onAgentWorkingChange = vi.fn();
@@ -721,6 +947,57 @@ describe('ModernAgentConversation send handling', () => {
 
         expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
     });
+
+    it.each(['automatic', 'custom UI'] as const)(
+        'preserves budget overrides after starting a new run (%s)',
+        async (mode) => {
+            const startWorkflow = vi.fn().mockResolvedValue({ agent_run_id: 'agent-run-new' });
+            mockStreamState({
+                messages: [
+                    {
+                        ...createMessage(AgentMessageType.IDLE, 'Token budget exhausted'),
+                        details: { status_reason: 'awaiting_budget', budget_limit_tokens: 100_000 },
+                    },
+                ],
+                agentRunStatus: 'RUNNING',
+            });
+            const onBudgetRequest = vi.fn(
+                async (request: import('./AgentBudgetPauseOverlay').AgentBudgetRequestContext) => {
+                    await request.allocateBudget(50_000);
+                },
+            );
+            const renderBudgetRequest = vi.fn(() => <div>Application budget controls</div>);
+            renderWithProviders(
+                <ModernAgentConversation
+                    startWorkflow={startWorkflow}
+                    hideHeader
+                    hideFileUpload
+                    initialMessage=""
+                    placeholder="New budget task"
+                    onBudgetRequest={mode === 'automatic' ? onBudgetRequest : undefined}
+                    renderBudgetRequest={mode === 'custom UI' ? renderBudgetRequest : undefined}
+                />,
+            );
+            fireEvent.change(await screen.findByPlaceholderText('New budget task', { exact: true }), {
+                target: { value: 'Start the task' },
+            });
+            fireEvent.click(await screen.findByRole('button', { name: 'Start Agent' }));
+
+            if (mode === 'automatic') {
+                await waitFor(() =>
+                    expect(mocks.allocateBudget).toHaveBeenCalledWith('agent-run-new', { additional_tokens: 50_000 }),
+                );
+                expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+            } else {
+                expect(await screen.findByText('Application budget controls')).toBeTruthy();
+                expect(renderBudgetRequest).toHaveBeenCalledWith(
+                    expect.objectContaining({ agentRunId: 'agent-run-new' }),
+                );
+                expect(mocks.allocateBudget).not.toHaveBeenCalled();
+            }
+            expect(document.querySelector('[data-agent-budget-pause-overlay]')).toBeNull();
+        },
+    );
 
     it('passes the selected approval mode when starting a new interactive run', async () => {
         const startWorkflow = vi.fn().mockResolvedValue(undefined);

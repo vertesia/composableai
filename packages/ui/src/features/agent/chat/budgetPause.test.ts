@@ -23,7 +23,7 @@ describe('findBudgetPause', () => {
             }),
             message(AgentMessageType.QUESTION),
         ]);
-        expect(pause).toEqual({ usedUnits: 1_050_000, limitTokens: 1_000_000 });
+        expect(pause).toEqual({ requestId: 'run-1:1', usedUnits: 1_050_000, limitTokens: 1_000_000 });
     });
 
     it('should clear the pause once a budget_allocated status follows it', () => {
@@ -42,7 +42,7 @@ describe('findBudgetPause', () => {
                 message(AgentMessageType.UPDATE, { status_reason: 'budget_allocated' }),
                 message(AgentMessageType.IDLE, { status_reason: 'awaiting_budget', budget_limit_tokens: 1_500_000 }),
             ]),
-        ).toEqual({ usedUnits: undefined, limitTokens: 1_500_000 });
+        ).toEqual({ requestId: 'run-1:1', usedUnits: undefined, limitTokens: 1_500_000 });
     });
 
     it('should find no pause in a conversation without budget statuses', () => {
