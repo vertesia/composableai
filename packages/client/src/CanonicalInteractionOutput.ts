@@ -1,4 +1,4 @@
-import { parseAcceptedOutputFragment } from '@llumiverse/conversation';
+import { cloneSemanticallyValidAcceptedOutputFragment } from '@llumiverse/conversation/output-runtime';
 import type {
     ConversationOutputAsset,
     ConversationOutputBlock,
@@ -23,7 +23,7 @@ export class CanonicalInteractionOutput<T = unknown> {
     readonly fragment: CanonicalInteractionOutputFragment;
 
     constructor(fragment: CanonicalInteractionOutputFragment) {
-        this.fragment = parseAcceptedOutputFragment(fragment);
+        this.fragment = cloneSemanticallyValidAcceptedOutputFragment(fragment);
     }
 
     get blocks(): readonly ConversationOutputBlock[] {

@@ -66,7 +66,7 @@ describe('experimental canonical interaction API client', () => {
         expect(requests.map((wireRequest) => [wireRequest.method, new URL(wireRequest.url).pathname])).toEqual([
             ['POST', '/api/v1/interactions/interaction%2F1/execute'],
             ['POST', '/api/v1/execute'],
-            ['POST', '/api/v1/runs/'],
+            ['POST', '/api/v1/runs'],
             ['GET', '/api/v1/runs/run%2F1'],
         ]);
     });

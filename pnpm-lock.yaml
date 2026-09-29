@@ -673,6 +673,9 @@ importers:
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
+      '@llumiverse/conversation':
+        specifier: workspace:*
+        version: link:../../llumiverse/conversation
       '@vertesia/api-fetch-client':
         specifier: workspace:*
         version: link:../api-fetch-client
