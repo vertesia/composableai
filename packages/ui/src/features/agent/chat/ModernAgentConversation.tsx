@@ -1,6 +1,8 @@
 import type { VertesiaClient } from '@vertesia/client';
 import {
     type ActiveWorkstreamEntry,
+    AGENT_BUDGET_STATUS_ALLOCATED,
+    AGENT_BUDGET_STATUS_AWAITING,
     type AgentMessage,
     AgentMessageType,
     type AgentRun,
@@ -42,7 +44,11 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
 import { AgentApprovalModeSelector } from './AgentApprovalModeSelector';
-import { AgentBudgetPauseOverlay } from './AgentBudgetPauseOverlay';
+import {
+    AgentBudgetPauseOverlay,
+    type AgentBudgetRequestContext,
+    type AgentBudgetRequestOverrides,
+} from './AgentBudgetPauseOverlay';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
@@ -615,7 +621,7 @@ function downloadJsonFile(filename: string, payload: unknown) {
     URL.revokeObjectURL(url);
 }
 
-export interface ModernAgentConversationProps {
+export interface ModernAgentConversationProps extends AgentBudgetRequestOverrides {
     /** Stable AgentRun ID — the primary identifier for all runtime operations. */
     agentRunId?: string;
     /**
@@ -882,6 +888,8 @@ function StartWorkflowView({
     allowWorkflowControl,
     initialToolApprovalMode,
     onAgentWorkingChange,
+    onBudgetRequest,
+    renderBudgetRequest,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const isCompactStartView = startViewVariant !== 'default';
@@ -1217,6 +1225,8 @@ function StartWorkflowView({
                     className,
                     allowWorkflowControl,
                     onAgentWorkingChange,
+                    onBudgetRequest,
+                    renderBudgetRequest,
                 }}
                 agentRunId={startedAgentRunId}
                 title={title}
@@ -1542,6 +1552,8 @@ function ModernAgentConversationInner({
     enablePlayback,
     showPlaybackToggle = true,
     messageFilter,
+    onBudgetRequest,
+    renderBudgetRequest,
     initialWorkstream,
 }: ModernAgentConversationProps & { agentRunId: string }) {
     const { t } = useUITranslation();
@@ -1790,12 +1802,20 @@ function ModernAgentConversationInner({
 
     const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
     const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
+    const hasBudgetOverride = Boolean(onBudgetRequest || renderBudgetRequest);
     const transcriptSourceMessages = useMemo(() => {
         // Passive artifact autosaves are surfaced by the editor's own save indicator, not the chat.
         return messages.filter(
-            (message) => !isPassiveArtifactUpdate(message) && !(hiddenMessageTypes?.includes(message.type) ?? false),
+            (message) =>
+                !isPassiveArtifactUpdate(message) &&
+                !(hiddenMessageTypes?.includes(message.type) ?? false) &&
+                !(
+                    hasBudgetOverride &&
+                    (message.details?.status_reason === AGENT_BUDGET_STATUS_AWAITING ||
+                        message.details?.status_reason === AGENT_BUDGET_STATUS_ALLOCATED)
+                ),
         );
-    }, [hiddenMessageTypes, messages]);
+    }, [hasBudgetOverride, hiddenMessageTypes, messages]);
     const playbackSourceMessages = useMemo(
         () => filterMessagesForActiveWorkstream(transcriptSourceMessages, activeWorkstream),
         [activeWorkstream, transcriptSourceMessages],
@@ -1837,6 +1857,18 @@ function ModernAgentConversationInner({
         [isWorkflowTerminal, messages],
     );
 
+    const notifiedBudgetRequest = useRef<string | undefined>(undefined);
+    const handleBudgetRequest = useCallback(
+        async (request: AgentBudgetRequestContext) => {
+            const key = `${request.agentRunId}:${request.pause.requestId}`;
+            // Hiding and reopening the prompt (for example during playback) must not allocate twice.
+            if (notifiedBudgetRequest.current === key) return;
+            notifiedBudgetRequest.current = key;
+            await onBudgetRequest?.(request);
+        },
+        [onBudgetRequest],
+    );
+
     useEffect(() => {
         onAgentWorkingChange?.(isAgentWorking);
     }, [isAgentWorking, onAgentWorkingChange]);
@@ -1861,8 +1893,7 @@ function ModernAgentConversationInner({
         Boolean(budgetPause) &&
         !isFailed &&
         !isViewingPlaybackHistory &&
-        shouldRenderMessageInputArea &&
-        (showInput || canContinueConversation);
+        (hasBudgetOverride || (shouldRenderMessageInputArea && (showInput || canContinueConversation)));
     const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
     const contextWindowUsage = useMemo(() => toContextWindowUsage(messages), [messages]);
     // The run is still "alive" while it waits for user input (idle on ask_user), so keep the
@@ -2904,7 +2935,7 @@ function ModernAgentConversationInner({
                 </AgentRunFeedbackProvider>
             )}
 
-            {shouldShowRequestInputOverlay ? (
+            {shouldShowRequestInputOverlay && !(hasBudgetOverride && shouldShowBudgetPauseOverlay) ? (
                 <AgentRequestInputOverlay
                     message={pendingRequestInputMessage}
                     onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
@@ -2914,6 +2945,9 @@ function ModernAgentConversationInner({
                 />
             ) : shouldShowBudgetPauseOverlay && budgetPause ? (
                 <AgentBudgetPauseOverlay
+                    key={`${agentRunId}:${budgetPause.requestId}`}
+                    onBudgetRequest={onBudgetRequest ? handleBudgetRequest : undefined}
+                    renderBudgetRequest={renderBudgetRequest}
                     client={client}
                     agentRunId={agentRunId}
                     pause={budgetPause}

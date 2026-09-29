@@ -6,6 +6,8 @@ import {
 } from '@vertesia/common';
 
 export interface BudgetPause {
+    /** Identifies the pause event within the run history. */
+    requestId?: string;
     /** Weighted tokens used when the run paused. */
     usedUnits?: number;
     /** Limit the run reached. */
@@ -25,6 +27,7 @@ export function findBudgetPause(messages: readonly AgentMessage[]): BudgetPause 
         if (reason === AGENT_BUDGET_STATUS_ALLOCATED) return undefined;
         if (reason === AGENT_BUDGET_STATUS_AWAITING) {
             return {
+                requestId: `${messages[index].workflow_run_id}:${messages[index].timestamp}`,
                 usedUnits: typeof details?.budget_used_units === 'number' ? details.budget_used_units : undefined,
                 limitTokens: typeof details?.budget_limit_tokens === 'number' ? details.budget_limit_tokens : undefined,
             };
