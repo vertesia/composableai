@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - preview
       - "release/**"
       - "production/**"
       - "hotfix**"
@@ -16,7 +15,7 @@ env:
   COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 # Cancel superseded runs on the same branch (latest push wins). Each branch
-# still gets its own concurrent run, so main/preview/PR pushes don't block
+# still gets its own concurrent run, so main/release/PR pushes don't block
 # each other.
 concurrency:
   group: composable-${{ github.ref }}
@@ -143,7 +142,7 @@ jobs:
     name: Notify vertesia/studio of new commit
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preview' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/repo-dispatch'))
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/repo-dispatch'))
     needs:
       - unit-tests
       - template-smoke-test

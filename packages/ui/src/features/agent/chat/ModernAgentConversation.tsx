@@ -150,6 +150,24 @@ async function closeStagedFileBatch(
     }
 }
 
+const TERMINAL_WORKFLOW_STATUSES = new Set(['COMPLETED', 'FAILED', 'CANCELED', 'CANCELLED', 'TERMINATED', 'TIMED_OUT']);
+
+function isTerminalWorkflowStatus(status: string | null | undefined): boolean {
+    return !!status && TERMINAL_WORKFLOW_STATUSES.has(status.toUpperCase());
+}
+
+/**
+ * Whether the next message can continue an ended run by restarting it. FAILED runs are excluded: a
+ * failed run is a dead end, so the failed box and its explicit Restart action are shown instead.
+ */
+function canContinueWorkflowStatus(status: string | null | undefined, canRestart: boolean): boolean {
+    return canRestart && isTerminalWorkflowStatus(status) && status?.toUpperCase() !== 'FAILED';
+}
+
+function isConflictError(err: unknown): boolean {
+    return typeof err === 'object' && err !== null && 'status' in err && err.status === 409;
+}
+
 function getTimestampMs(timestamp: number | string | undefined): number {
     if (typeof timestamp === 'number') return timestamp;
     if (!timestamp) return Date.now();
@@ -1662,17 +1680,10 @@ function ModernAgentConversationInner({
         return agentRunStatus;
     }, [lastMainMessage, agentRunStatus]);
 
-    const isWorkflowTerminal = useMemo(() => {
-        const normalizedStatus = effectiveWorkflowStatus?.toUpperCase();
-        return (
-            normalizedStatus === 'COMPLETED' ||
-            normalizedStatus === 'FAILED' ||
-            normalizedStatus === 'CANCELED' ||
-            normalizedStatus === 'CANCELLED' ||
-            normalizedStatus === 'TERMINATED' ||
-            normalizedStatus === 'TIMED_OUT'
-        );
-    }, [effectiveWorkflowStatus]);
+    const isWorkflowTerminal = useMemo(
+        () => isTerminalWorkflowStatus(effectiveWorkflowStatus),
+        [effectiveWorkflowStatus],
+    );
 
     // When a terminal conversation can be restarted (host provided a restart handler),
     // we keep the composer visible and seamlessly resume the agent on the next message
@@ -1680,8 +1691,8 @@ function ModernAgentConversationInner({
     // FAILED runs are excluded: a failed run is a dead end, so we surface the failed box /
     // `failedAction` (e.g. an explicit Restart button) instead of silently resuming.
     const canContinueConversation = useMemo(
-        () => isWorkflowTerminal && effectiveWorkflowStatus?.toUpperCase() !== 'FAILED' && !!onRestart,
-        [isWorkflowTerminal, effectiveWorkflowStatus, onRestart],
+        () => canContinueWorkflowStatus(effectiveWorkflowStatus, !!onRestart),
+        [effectiveWorkflowStatus, onRestart],
     );
     const shouldRenderMessageInputArea = !hideMessageInput || canContinueConversation;
 
@@ -1709,6 +1720,8 @@ function ModernAgentConversationInner({
     isWorkflowTerminalRef.current = isWorkflowTerminal;
     const canContinueConversationRef = useRef(canContinueConversation);
     canContinueConversationRef.current = canContinueConversation;
+    const canRestartRef = useRef(!!onRestart);
+    canRestartRef.current = !!onRestart;
 
     // ────────────────────────────────────────────
     // Computed values
@@ -2332,13 +2345,32 @@ function ModernAgentConversationInner({
             if (requestInputId) {
                 markRequestInputIdAnsweredForSession(agentRunId, requestInputId);
             }
+            const restartAndReconnect = async () => {
+                await client.agents.restart(agentRunId);
+                reconnectStream();
+            };
             const deliver = (async () => {
                 await waitForPendingToolApprovalModeChange();
                 if (isWorkflowTerminalRef.current) {
-                    await client.agents.restart(agentRunId);
-                    reconnectStream();
+                    await restartAndReconnect();
                 }
-                await sendUserInput();
+                try {
+                    await sendUserInput();
+                } catch (err: unknown) {
+                    // The run can end while this view still shows it running — for example when it
+                    // reaches its maximum duration while idle — and the signal then answers 409.
+                    // Re-read its status and, if it ended and can be continued, continue it the way
+                    // a run already known to be ended is continued above.
+                    if (!isConflictError(err)) throw err;
+                    const run = await client.agents.retrieve(agentRunId);
+                    if (!canContinueWorkflowStatus(run.status, canRestartRef.current)) {
+                        // Reconnecting re-reads the status, so the view shows how the run ended.
+                        if (isTerminalWorkflowStatus(run.status)) reconnectStream();
+                        throw err;
+                    }
+                    await restartAndReconnect();
+                    await sendUserInput();
+                }
                 markReceived();
             })();
 
