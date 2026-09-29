@@ -280,6 +280,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['low', 'medium', 'high', 'xhigh', 'max'],
                 },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
+                },
                 thinking_budget_tokens: {
                     type: 'number',
                 },
@@ -401,6 +407,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 top_k: {
                     type: 'number',
+                },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
                 },
                 thinking_budget_tokens: {
                     type: 'number',
@@ -610,6 +622,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 effort: {
                     type: 'string',
                     enum: ['low', 'medium', 'high', 'xhigh', 'max'],
+                },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
                 },
                 thinking_budget_tokens: {
                     type: 'number',
@@ -1624,6 +1642,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 effort: {
                     type: 'string',
                     enum: ['low', 'medium', 'high', 'xhigh', 'max'],
+                },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
                 },
                 thinking_budget_tokens: {
                     type: 'number',
