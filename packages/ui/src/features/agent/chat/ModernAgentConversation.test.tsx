@@ -2041,6 +2041,74 @@ describe('ModernAgentConversation send handling', () => {
         );
     });
 
+    it('continues a run that ended while shown as running when the send is rejected with 409', async () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            agentRunStatus: 'RUNNING',
+        });
+        mocks.sendSignal
+            .mockRejectedValueOnce(Object.assign(new Error('This agent run has ended.'), { status: 409 }))
+            .mockResolvedValueOnce({});
+
+        renderConversation({ onRestart: vi.fn() });
+        mocks.retrieve.mockResolvedValue({ status: 'completed' });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        await waitFor(() => {
+            expect(mocks.sendSignal).toHaveBeenCalledTimes(2);
+        });
+
+        expect(mocks.restart).toHaveBeenCalledWith('agent-run-1');
+        expect(mocks.reconnect).toHaveBeenCalledTimes(1);
+        expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[1]);
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'received');
+        });
+        expect(mocks.updateOptimisticMessageStatus).not.toHaveBeenCalledWith(expect.any(String), 'failed');
+    });
+
+    it('shows how the run ended instead of continuing it when it failed', async () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            agentRunStatus: 'RUNNING',
+        });
+        mocks.sendSignal.mockRejectedValue(Object.assign(new Error('This agent run has ended.'), { status: 409 }));
+
+        renderConversation({ onRestart: vi.fn() });
+        mocks.retrieve.mockResolvedValue({ status: 'failed' });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'failed');
+        });
+        expect(mocks.restart).not.toHaveBeenCalled();
+        expect(mocks.reconnect).toHaveBeenCalledTimes(1);
+        expect(mocks.sendSignal).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not restart a run that answers 409 while still running', async () => {
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+            agentRunStatus: 'RUNNING',
+        });
+        mocks.sendSignal.mockRejectedValue(
+            Object.assign(new Error('Agent run workflow is not ready yet; retry shortly.'), { status: 409 }),
+        );
+
+        renderConversation({ onRestart: vi.fn() });
+        mocks.retrieve.mockResolvedValue({ status: 'running' });
+
+        fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+        await waitFor(() => {
+            expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'failed');
+        });
+        expect(mocks.restart).not.toHaveBeenCalled();
+        expect(mocks.reconnect).not.toHaveBeenCalled();
+    });
+
     it('marks a sent message as sending and then received', async () => {
         mockStreamState({
             messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
