@@ -1440,7 +1440,22 @@ const DURABLE_TASK_SCHEMAS = {
     ListTasksQuery: ListTasksQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const CONTENT_TYPE_CATALOG_SCHEMAS = {
+// Keep declaration emit from expanding the nested content-type schemas.
+const CONTENT_TYPE_CATALOG_SCHEMAS: {
+    readonly ColumnLayout: typeof ColumnLayoutSchema;
+    readonly ContentTypeEditingPolicy: typeof ContentTypeEditingPolicySchema;
+    readonly ContentObjectTypeStatus: typeof ContentObjectTypeStatusSchema;
+    readonly ContentObjectTypeItem: typeof ContentObjectTypeItemSchema;
+    readonly ContentObjectTypeItemArray: typeof ContentObjectTypeItemArraySchema;
+    readonly ContentObjectTypeCatalogEntry: typeof ContentObjectTypeCatalogEntrySchema;
+    readonly ContentObjectTypeCatalogEntryArray: typeof ContentObjectTypeCatalogEntryArraySchema;
+    readonly InCodeTypeDefinition: typeof InCodeTypeDefinitionSchema;
+    readonly CreateContentObjectTypePayload: typeof CreateContentObjectTypePayloadSchema;
+    readonly UpdateContentObjectTypePayload: typeof UpdateContentObjectTypePayloadSchema;
+    readonly ContentObjectType: typeof ContentObjectTypeSchema;
+    readonly ContentObjectTypeCatalogQuery: typeof ContentObjectTypeCatalogQuerySchema;
+    readonly ContentObjectTypeListQuery: typeof ContentObjectTypeListQuerySchema;
+} = {
     ColumnLayout: ColumnLayoutSchema,
     ContentTypeEditingPolicy: ContentTypeEditingPolicySchema,
     ContentObjectTypeStatus: ContentObjectTypeStatusSchema,
