@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { type AgentMessage, AgentMessageType, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
 import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -307,6 +308,93 @@ describe('ModernAgentConversation send handling', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it('does not allocate budget again when playback returns to the same live pause', async () => {
+        const user = userEvent.setup();
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'Start'),
+                createMessage(AgentMessageType.ANSWER, 'Working'),
+                {
+                    ...createMessage(AgentMessageType.IDLE, 'Budget exhausted'),
+                    details: { status_reason: 'awaiting_budget' },
+                },
+            ],
+            agentRunStatus: 'RUNNING',
+        });
+        const onBudgetRequest = vi.fn(
+            async (request: import('./AgentBudgetPauseOverlay').AgentBudgetRequestContext) => {
+                await request.allocateBudget(50_000);
+            },
+        );
+        renderConversation({
+            enablePlayback: true,
+            onBudgetRequest,
+            renderBudgetRequest: () => <div role="status">Budget pause active</div>,
+        });
+        await waitFor(() => expect(mocks.allocateBudget).toHaveBeenCalledTimes(1));
+        await user.click(await screen.findByRole('button', { name: 'Jump to first message' }));
+        await waitFor(() => expect(screen.queryByText('Budget pause active', { exact: true })).toBeNull());
+        expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+        await user.click(await screen.findByRole('button', { name: 'Jump to live' }));
+        expect(await screen.findByText('Budget pause active', { exact: true })).toBeTruthy();
+        // Flush the remounted overlay's callback microtask before checking absence of another allocation.
+        await act(async () => {});
+        expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+        expect(mocks.allocateBudget).toHaveBeenCalledTimes(1);
+    });
+
+    it('blocks a delayed budget allocation from the previous run after switching runs', async () => {
+        let releasePreviousRun: () => void = () => {
+            throw new Error('Previous run not initialized');
+        };
+        const previousRunGate = new Promise<void>((resolve) => {
+            releasePreviousRun = resolve;
+        });
+        const previousAllocation = vi.fn();
+        const onBudgetRequest = vi.fn(
+            async (request: import('./AgentBudgetPauseOverlay').AgentBudgetRequestContext) => {
+                if (request.agentRunId === 'agent-run-1') {
+                    await previousRunGate;
+                    previousAllocation(await request.allocateBudget(50_000));
+                } else {
+                    await request.allocateBudget(75_000);
+                }
+            },
+        );
+        const messages: AgentMessage[] = [
+            {
+                ...createMessage(AgentMessageType.IDLE, 'Budget exhausted'),
+                details: { status_reason: 'awaiting_budget' },
+            },
+        ];
+        mockStreamState({ messages, agentRunStatus: 'RUNNING' });
+        const view = renderConversation({ onBudgetRequest });
+        await waitFor(() => expect(onBudgetRequest).toHaveBeenCalledTimes(1));
+        mockStreamState({
+            messages: messages.map((message) => ({ ...message, workflow_run_id: 'workflow-run-2' })),
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-2"
+                hideHeader
+                hideMessageInput
+                showRightPanel={false}
+                onBudgetRequest={onBudgetRequest}
+            />,
+        );
+        await waitFor(() =>
+            expect(mocks.allocateBudget).toHaveBeenCalledWith('agent-run-2', { additional_tokens: 75_000 }),
+        );
+        await act(async () => {
+            releasePreviousRun();
+            await previousRunGate;
+        });
+        await waitFor(() => expect(previousAllocation).toHaveBeenCalledWith(false));
+        expect(onBudgetRequest).toHaveBeenCalledTimes(2);
+        expect(mocks.allocateBudget).toHaveBeenCalledTimes(1);
     });
 
     it('handles budget requests with the composer hidden and suppresses token status text', async () => {
@@ -869,12 +957,15 @@ describe('ModernAgentConversation send handling', () => {
                     hideHeader
                     hideFileUpload
                     initialMessage=""
+                    placeholder="New budget task"
                     onBudgetRequest={mode === 'automatic' ? onBudgetRequest : undefined}
                     renderBudgetRequest={mode === 'custom UI' ? renderBudgetRequest : undefined}
                 />,
             );
-            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Start the task' } });
-            fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
+            fireEvent.change(await screen.findByPlaceholderText('New budget task', { exact: true }), {
+                target: { value: 'Start the task' },
+            });
+            fireEvent.click(await screen.findByRole('button', { name: 'Start Agent' }));
 
             if (mode === 'automatic') {
                 await waitFor(() =>

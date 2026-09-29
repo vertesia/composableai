@@ -31,9 +31,11 @@ describe('budget request overrides', () => {
     it('keeps the default prompt and allocation when no override is supplied', async () => {
         const { props, allocateBudget } = setup();
         render(<AgentBudgetPauseOverlay {...props} />);
-        fireEvent.click(screen.getByText('Default token prompt'));
+        fireEvent.click(await screen.findByRole('button', { name: 'Default token prompt' }));
         await waitFor(() => expect(allocateBudget).toHaveBeenCalledWith('run-1', { additional_tokens: 500_000 }));
-        expect(screen.getByRole('button').hasAttribute('disabled')).toBe(true);
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: 'Default token prompt' }).hasAttribute('disabled')).toBe(true),
+        );
     });
 
     it('automatically allocates once across StrictMode effects and callback changes', async () => {
@@ -52,9 +54,10 @@ describe('budget request overrides', () => {
                 <AgentBudgetPauseOverlay {...props} onBudgetRequest={(request) => callback(request)} />
             </StrictMode>,
         );
+        await act(async () => {});
         expect(callback).toHaveBeenCalledTimes(1);
         expect(allocateBudget).toHaveBeenCalledWith('run-1', { additional_tokens: 200_000 });
-        expect(screen.queryByText('Default token prompt')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Default token prompt' })).toBeNull();
     });
 
     it('renders application UI with allocation and stop actions', async () => {
@@ -81,11 +84,11 @@ describe('budget request overrides', () => {
                 )}
             />,
         );
-        fireEvent.click(screen.getByText('Continue working'));
+        fireEvent.click(await screen.findByRole('button', { name: 'Continue working' }));
         await waitFor(() => expect(allocateBudget).toHaveBeenCalledWith('run-1', { additional_tokens: 123_000 }));
-        fireEvent.click(screen.getByText('Finish'));
+        fireEvent.click(await screen.findByRole('button', { name: 'Finish' }));
         expect(stop).toHaveBeenCalledTimes(1);
-        expect(screen.queryByText('Default token prompt')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Default token prompt' })).toBeNull();
     });
 
     it('allows a renderer to hide the UI without falling back to the default', () => {
