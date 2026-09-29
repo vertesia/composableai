@@ -11,8 +11,8 @@ on:
         description: "The commit SHA of vertesia/llumiverse to update"
         required: true
       branch:
-        # example: "main" or "preview"
-        #   (don't use "refs/heads/main" or "refs/heads/preview")
+        # example: "main" or "release/1.6"
+        #   (don't use "refs/heads/main" or "refs/heads/release/1.6")
         description: "The branch to update the submodule in"
         required: true
         default: "main"
@@ -44,9 +44,8 @@ jobs:
       - name: Validate branch
         run: |
           if [[ "${TARGET_COMPOSABLEAI_BRANCH}" != "main" \
-                && "${TARGET_COMPOSABLEAI_BRANCH}" != "preview" \
                 && ! "${TARGET_COMPOSABLEAI_BRANCH}" =~ ^release/[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid branch '${TARGET_COMPOSABLEAI_BRANCH}'. Only 'main', 'preview', and 'release/X.Y' branches are supported."
+            echo "::error::Invalid branch '${TARGET_COMPOSABLEAI_BRANCH}'. Only 'main' and 'release/X.Y' branches are supported."
             exit 1
           fi
           echo "Branch '${TARGET_COMPOSABLEAI_BRANCH}' is valid."
