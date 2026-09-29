@@ -244,6 +244,8 @@ interface BaseLlmCallEvent extends BaseAgentEvent {
     attemptNumber?: number;
     /** Error type if failed */
     errorType?: string;
+    /** The interaction run that recorded the call, and its billing event (its `request_id`) */
+    executionRunId?: string;
 }
 
 export interface LlmCallEvent extends BaseLlmCallEvent {}

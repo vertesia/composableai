@@ -308,6 +308,8 @@ export type SignalAgentPayload =
 
 export type SignalAgentResponse = Wire.SignalAgentResponse;
 
+export type AllocateAgentRunBudgetPayload = Wire.AllocateAgentRunBudgetPayload;
+
 export type AgentRunUpdatesResponse = Wire.AgentRunUpdatesResponse;
 
 export type AgentRunUpdatesQuery = Wire.AgentRunUpdatesQuery;

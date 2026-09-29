@@ -126,6 +126,8 @@ export type AgentProjectConfiguration = Wire.AgentProjectConfiguration;
 
 export type AgentCheckpointConfiguration = Wire.AgentCheckpointConfiguration;
 
+export type AgentBudgetConfiguration = Wire.AgentBudgetConfiguration;
+
 export type ProjectSearchPropertyType = Wire.ProjectSearchPropertyType;
 
 export type ProjectSearchPropertyMapping = Wire.ProjectSearchPropertyMapping;

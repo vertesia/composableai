@@ -179,6 +179,9 @@ export interface ProcessHistoryCheckpoint {
 }
 
 export type ProcessState = Wire.ProcessState;
+export type ProcessTerminalReason = Wire.ProcessTerminalReason;
+export type ProcessBudgetState = Wire.ProcessBudgetState;
+export type ProcessBudgetSummary = Wire.ProcessBudgetSummary;
 
 export interface CreateProcessDefinitionPayload {
     name: string;

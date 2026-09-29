@@ -869,6 +869,7 @@ export type StartAppDevelopmentTaskRequest = {
     environment: string;
     model: string;
     build_version?: boolean | undefined;
+    budget?: AgentBudgetConfiguration | undefined;
 };
 export type AppScaffoldProgressStatus =
     | 'queued'
@@ -2026,6 +2027,8 @@ export type CostAnalyticsQuery = {
         | 'service_tier'
         | 'interaction'
         | 'workflow'
+        | 'agent_run'
+        | 'workflow_run'
         | undefined;
     resolution?: 'hour' | 'day' | 'week' | 'month' | undefined;
     model?: string | undefined;
@@ -2091,11 +2094,12 @@ export type ModelPricing = {
     provider?: string | undefined;
     provider_account_id?: string | undefined;
     service_tier?: string | undefined;
+    min_prompt_tokens?: number | undefined;
     input_price_per_m_tokens: number;
     cached_input_price_per_m_tokens?: number | undefined;
     cache_write_input_price_per_m_tokens?: number | undefined;
     output_price_per_m_tokens: number;
-    source: 'billing_export' | 'model_pricing_daily' | 'unavailable';
+    source: 'billing_export' | 'model_pricing_daily' | 'run_time_estimate' | 'unavailable';
 };
 export type ModelPriceComparison = {
     model: string;
@@ -2139,6 +2143,13 @@ export type CostAnalyticsResponse = {
                   service_tier: string;
                   calls: number;
               }[];
+              cost_by_source?:
+                  | {
+                        provider_billed: number;
+                        run_time_estimate: number;
+                        price_table: number;
+                    }
+                  | undefined;
           }
         | undefined;
     query_range: {
@@ -2175,6 +2186,13 @@ export type CostRunPriceResponse = {
                   service_tier: string;
                   calls: number;
               }[];
+              cost_by_source?:
+                  | {
+                        provider_billed: number;
+                        run_time_estimate: number;
+                        price_table: number;
+                    }
+                  | undefined;
           }
         | undefined;
     query_range?:
@@ -4053,6 +4071,7 @@ export type AgentRunnerOptions = {
     collection_id?: string | undefined;
     request_template?: string | undefined;
     checkpoint?: AgentCheckpointConfiguration | undefined;
+    budget?: AgentBudgetConfiguration | undefined;
 };
 /**
  * A tool invocation executed before the first model turn of a conversation.
@@ -4104,6 +4123,7 @@ export type AsyncConversationExecutionPayload = {
     disabled_mcp_collections?: string[] | undefined;
     checkpoint_tokens?: number | undefined;
     checkpoint?: AgentCheckpointConfiguration | undefined;
+    budget?: AgentBudgetConfiguration | undefined;
     strip_options?: ConversationStripOptions | undefined;
     task_id?: string | undefined;
     launch_id?: string | undefined;
@@ -5546,10 +5566,18 @@ export type ProjectConfiguration = {
 export type AgentProjectConfiguration = {
     evaluation_policy?: 'disabled' | 'opt_in' | 'always_on' | undefined;
     checkpoint?: AgentCheckpointConfiguration | undefined;
+    budget?: AgentBudgetConfiguration | undefined;
 };
 export type AgentCheckpointConfiguration = {
     context_threshold?: number | undefined;
     max_tokens?: number | undefined;
+};
+export type AgentBudgetConfiguration = {
+    limit_tokens?: number | undefined;
+    reminder_at_remaining_tokens?: number[] | undefined;
+    output_token_weight?: number | undefined;
+    input_token_weight?: number | undefined;
+    cached_input_token_weight?: number | undefined;
 };
 export type ProjectSearchPropertyType =
     | 'keyword'
@@ -6410,6 +6438,7 @@ export type ProcessRunConfig = {
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
     user_message?: string | undefined;
+    budget?: AgentBudgetConfiguration | undefined;
     process_workstream_monitor?:
         | {
               monitor_workflow_id: string;
@@ -6535,6 +6564,9 @@ export type AgentRunEvaluation = {
 export type SignalAgentResponse = {
     status: string;
     message: string;
+};
+export type AllocateAgentRunBudgetPayload = {
+    additional_tokens: number;
 };
 export type AgentRunUpdatesResponse = {
     messages: CompactMessage[];
@@ -7221,6 +7253,26 @@ export type ProcessState = {
     node_history: NodeHistoryEntry[];
     node_history_ref?: ProcessHistoryRef | undefined;
     sequence: number;
+    terminal_reason?: ProcessTerminalReason | undefined;
+    budget?: ProcessBudgetState | undefined;
+};
+export type ProcessTerminalReason = 'token_budget_exhausted';
+export type ProcessBudgetState = {
+    limit_tokens: number;
+    used_units: number;
+    exhausted: boolean;
+    awaiting_allocation?: boolean | undefined;
+    summaries?: ProcessBudgetSummary[] | undefined;
+};
+export type ProcessBudgetSummary = {
+    node_id: string;
+    attempt: number;
+    status: 'token_budget_exhausted' | 'cancelled_at_deadline';
+    summary?: string | undefined;
+    summary_truncated?: boolean | undefined;
+    artifact?: string | undefined;
+    child_run_id?: string | undefined;
+    usage_incomplete?: boolean | undefined;
 };
 export type PublishProcessDefinitionPayload = {
     confirmed: boolean;
@@ -8721,6 +8773,7 @@ export type WorkflowInteractionVars = {
     collection_id?: string | undefined;
     disabled_mcp_collections?: string[] | undefined;
     checkpoint_tokens?: number | undefined;
+    budget?: AgentBudgetConfiguration | undefined;
     version?: number | undefined;
     agent_run_id?: string | undefined;
 };
@@ -9628,6 +9681,7 @@ export type CreateAgentRunPayloadWire = {
     user_channels?: UserChannel[] | undefined;
     checkpoint_tokens?: number | undefined;
     checkpoint?: AgentCheckpointConfiguration | undefined;
+    budget?: AgentBudgetConfiguration | undefined;
     max_iterations?: number | undefined;
     final_verification?: boolean | undefined;
     notify_endpoints?: string[] | undefined;
@@ -9887,6 +9941,7 @@ export type ConversationStateWire = {
     streaming_enabled?: boolean | undefined;
     checkpoint_threshold?: number | undefined;
     checkpoint_tokens?: number | undefined;
+    budget?: AgentBudgetConfiguration | undefined;
     user_channels?: UserChannel[] | undefined;
     resolvedInteraction?: ResolvedInteractionExecutionInfo | undefined;
     end_conversation?:
@@ -11238,6 +11293,9 @@ export interface ApiComponentTypes {
     AnswerProcessTaskPayload: AnswerProcessTaskPayload;
     AdvanceProcessPayload: AdvanceProcessPayload;
     ProcessState: ProcessState;
+    ProcessTerminalReason: ProcessTerminalReason;
+    ProcessBudgetState: ProcessBudgetState;
+    ProcessBudgetSummary: ProcessBudgetSummary;
     WorkflowExecutionStartResultArray: WorkflowExecutionStartResultArray;
     RecordProcessRunPayload: RecordProcessRunPayloadWire;
     ProcessTestRunStatus: ProcessTestRunStatus;
@@ -11344,6 +11402,7 @@ export interface ApiComponentTypes {
     AgentRunArchiveState: AgentRunArchiveState;
     ResourceRef: ResourceRef;
     SignalAgentResponse: SignalAgentResponse;
+    AllocateAgentRunBudgetPayload: AllocateAgentRunBudgetPayload;
     AutonomousRunResponse: AutonomousRunResponseWire;
     AgentRun: AgentRunWire;
     CreateAgentRunPayload: CreateAgentRunPayloadWire;
