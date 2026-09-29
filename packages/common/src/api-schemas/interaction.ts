@@ -1688,6 +1688,13 @@ export const ConversationStateSchema = z
         environment: z.string().meta({ description: 'The execution environment with provider info for LLM calls.' }),
         options: StatelessExecutionOptionsSchema.meta({ description: 'The options to use on the next call.' }),
         tool_use: z.array(ToolUseSchema).meta({ description: 'The tools to call next.' }).optional(),
+        post_checkpoint_pending_tool_ids: z
+            .array(z.string().min(1))
+            .meta({
+                description:
+                    'Pending tool-call IDs preserved by the latest semantic checkpoint. This readiness marker prevents a second checkpoint before those exact calls are answered.',
+            })
+            .optional(),
         tool_approval_mode: AgentToolApprovalModeSchema.meta({
             description: 'Effective side-effecting tool approval mode for this interactive conversation.',
         }).optional(),
@@ -2511,6 +2518,9 @@ export const UserMessagePayloadSchema = z
     .strictObject({
         ...resumeConversationFields,
         message: z.string(),
+        execution_purpose: z.enum(['conversation', 'checkpoint_summary']).optional(),
+        operation_id: z.string().min(1).optional(),
+        artifact_storage_id: z.string().min(1).optional(),
         /**
          * Tool results still owed to the model when the user message is sent.
          *

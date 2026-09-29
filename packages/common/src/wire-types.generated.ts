@@ -4298,6 +4298,9 @@ export type UserMessagePayload = {
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
     message: string;
+    execution_purpose?: 'conversation' | 'checkpoint_summary' | undefined;
+    operation_id?: string | undefined;
+    artifact_storage_id?: string | undefined;
     results?: ToolResult[] | undefined;
 };
 export type RunSource = {
@@ -9929,6 +9932,7 @@ export type ConversationStateWire = {
     environment: string;
     options: StatelessExecutionOptions;
     tool_use?: ToolUse[] | undefined;
+    post_checkpoint_pending_tool_ids?: string[] | undefined;
     tool_approval_mode?: AgentToolApprovalMode | undefined;
     tool_approval_grants?: ToolApprovalGrantMap | undefined;
     pending_tool_approval_results?: PendingToolApprovalResults | undefined;

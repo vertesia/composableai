@@ -34,7 +34,9 @@ describe('RunsApi canonical retrieval', () => {
             onRequest: (request) => requests.push(request),
         });
         expect(await client.runs.retrieveConversation('run-1')).toEqual(response);
-        expect(new URL(requests[0]!.url).pathname).toBe('/api/v1/runs/run-1/conversation');
-        expect(requests[0]!.method).toBe('GET');
+        const request = requests[0];
+        if (!request) throw new Error('Expected a conversation retrieval request');
+        expect(new URL(request.url).pathname).toBe('/api/v1/runs/run-1/conversation');
+        expect(request.method).toBe('GET');
     });
 });

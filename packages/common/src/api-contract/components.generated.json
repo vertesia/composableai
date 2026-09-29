@@ -2606,6 +2606,9 @@
           "$ref": "#/components/schemas/ConversationIdentifier"
         }
       },
+      "derivation_generation": {
+        "$ref": "#/components/schemas/ConversationGeneration"
+      },
       "supersedes_compaction_id": {
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
@@ -15210,6 +15213,14 @@
         },
         "description": "The tools to call next."
       },
+      "post_checkpoint_pending_tool_ids": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Pending tool-call IDs preserved by the latest semantic checkpoint. This readiness marker prevents a second checkpoint before those exact calls are answered."
+      },
       "tool_approval_mode": {
         "$ref": "#/components/schemas/AgentToolApprovalMode",
         "description": "Effective side-effecting tool approval mode for this interactive conversation."
@@ -18354,6 +18365,21 @@
       },
       "message": {
         "type": "string"
+      },
+      "execution_purpose": {
+        "type": "string",
+        "enum": [
+          "conversation",
+          "checkpoint_summary"
+        ]
+      },
+      "operation_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "artifact_storage_id": {
+        "type": "string",
+        "minLength": 1
       },
       "results": {
         "type": "array",

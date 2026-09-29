@@ -53,6 +53,9 @@ export interface ConversationState {
      */
     tool_use?: ToolUse[];
 
+    /** Pending tool-call IDs preserved by the latest semantic checkpoint. */
+    post_checkpoint_pending_tool_ids?: string[];
+
     /** Effective side-effecting tool approval mode for this interactive conversation. */
     tool_approval_mode?: AgentToolApprovalMode;
 
