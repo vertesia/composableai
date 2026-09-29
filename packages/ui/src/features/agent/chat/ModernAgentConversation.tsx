@@ -888,6 +888,8 @@ function StartWorkflowView({
     allowWorkflowControl,
     initialToolApprovalMode,
     onAgentWorkingChange,
+    onBudgetRequest,
+    renderBudgetRequest,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const isCompactStartView = startViewVariant !== 'default';
@@ -1223,6 +1225,8 @@ function StartWorkflowView({
                     className,
                     allowWorkflowControl,
                     onAgentWorkingChange,
+                    onBudgetRequest,
+                    renderBudgetRequest,
                 }}
                 agentRunId={startedAgentRunId}
                 title={title}

@@ -844,6 +844,54 @@ describe('ModernAgentConversation send handling', () => {
         expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
     });
 
+    it.each(['automatic', 'custom UI'] as const)(
+        'preserves budget overrides after starting a new run (%s)',
+        async (mode) => {
+            const startWorkflow = vi.fn().mockResolvedValue({ agent_run_id: 'agent-run-new' });
+            mockStreamState({
+                messages: [
+                    {
+                        ...createMessage(AgentMessageType.IDLE, 'Token budget exhausted'),
+                        details: { status_reason: 'awaiting_budget', budget_limit_tokens: 100_000 },
+                    },
+                ],
+                agentRunStatus: 'RUNNING',
+            });
+            const onBudgetRequest = vi.fn(
+                async (request: import('./AgentBudgetPauseOverlay').AgentBudgetRequestContext) => {
+                    await request.allocateBudget(50_000);
+                },
+            );
+            const renderBudgetRequest = vi.fn(() => <div>Application budget controls</div>);
+            renderWithProviders(
+                <ModernAgentConversation
+                    startWorkflow={startWorkflow}
+                    hideHeader
+                    hideFileUpload
+                    initialMessage=""
+                    onBudgetRequest={mode === 'automatic' ? onBudgetRequest : undefined}
+                    renderBudgetRequest={mode === 'custom UI' ? renderBudgetRequest : undefined}
+                />,
+            );
+            fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Start the task' } });
+            fireEvent.click(screen.getByRole('button', { name: 'Start Agent' }));
+
+            if (mode === 'automatic') {
+                await waitFor(() =>
+                    expect(mocks.allocateBudget).toHaveBeenCalledWith('agent-run-new', { additional_tokens: 50_000 }),
+                );
+                expect(onBudgetRequest).toHaveBeenCalledTimes(1);
+            } else {
+                expect(await screen.findByText('Application budget controls')).toBeTruthy();
+                expect(renderBudgetRequest).toHaveBeenCalledWith(
+                    expect.objectContaining({ agentRunId: 'agent-run-new' }),
+                );
+                expect(mocks.allocateBudget).not.toHaveBeenCalled();
+            }
+            expect(document.querySelector('[data-agent-budget-pause-overlay]')).toBeNull();
+        },
+    );
+
     it('passes the selected approval mode when starting a new interactive run', async () => {
         const startWorkflow = vi.fn().mockResolvedValue(undefined);
         renderWithProviders(
