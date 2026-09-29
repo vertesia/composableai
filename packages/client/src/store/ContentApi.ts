@@ -5,6 +5,7 @@ import type {
     ComputedFacetResponse,
     ContentObject,
     ContentObjectItem,
+    GetRenditionResponse,
 } from '@vertesia/common';
 
 /** A project sharing content with the caller. */
@@ -91,6 +92,22 @@ export class ContentApi extends ApiTopic {
     /** Read a shared entity's detail: an object id → the full object; a collection id → its meta. */
     getShared(projectId: string, id: string): Promise<ContentObject | Collection> {
         return this.get(`/shared/${projectId}/${id}`);
+    }
+
+    /**
+     * A rendition (visual content) of a shared object — the rendered file (image / PDF) from the owner
+     * project's storage. `format`: 'jpeg' | 'png' | 'webp' | 'pdf' | 'docx'. Returns `{ status, renditions:
+     * url[] }`; rejects with 404 if no rendition of that format has been generated yet by the owner project.
+     */
+    getSharedRendition(
+        projectId: string,
+        id: string,
+        format: string,
+        options?: { max_hw?: number },
+    ): Promise<GetRenditionResponse> {
+        return this.get(`/shared/${projectId}/${id}/renditions/${format}`, {
+            query: { max_hw: options?.max_hw },
+        });
     }
 
     /**
