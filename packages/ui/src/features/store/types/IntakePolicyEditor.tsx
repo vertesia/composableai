@@ -511,9 +511,10 @@ export function IntakePolicyEditor({
     ) : undefined;
 
     /** Panel chrome for the policy tabs. Each tab owns its panel now that the switcher is outside. */
-    const withPolicyPanel = (content: ReactNode) => (
-        <Panel title={title} className="bg-background! h-full" action={action}>
-            <div className="flex h-full min-h-0 flex-col gap-3">
+    const withPolicyPanel = (content: ReactNode, fill = false) => (
+        <Panel title={title} className="bg-background! h-full overflow-hidden" action={action}>
+            {/* A fill tab (JSON) sizes itself to the panel and scrolls inside its own panes. */}
+            <div className={`flex min-h-0 flex-1 flex-col gap-3 ${fill ? 'overflow-hidden' : 'overflow-auto'}`}>
                 {validationMessage && (
                     <div className="rounded-sm border border-destructive bg-mixer-destructive/10 px-3 py-2 text-sm whitespace-pre-line text-destructive">
                         {validationMessage}
@@ -543,7 +544,7 @@ export function IntakePolicyEditor({
     );
 
     return (
-        <div className="flex h-full min-h-0 w-full flex-col gap-3">
+        <div className="flex h-full min-h-0 w-full flex-col gap-2">
             <IntakeSummary policy={summaryPolicy} />
             <Tabs
                 tabs={leadingTabs ? [...leadingTabs, ...policyTabs] : policyTabs}
@@ -554,7 +555,7 @@ export function IntakePolicyEditor({
                 className="px-0 min-h-0 flex-1 flex-row!"
             >
                 <TabsBar className="py-2 w-48 shrink-0" direction="vertical" />
-                <TabsPanel className="min-h-0 min-w-0 flex-1 overflow-auto ps-4" />
+                <TabsPanel className="min-h-0 min-w-0 flex-1 overflow-auto pb-0!" />
             </Tabs>
         </div>
     );
@@ -572,7 +573,7 @@ function createEditorTabs(
         onChange: (value: string) => void;
         theme: string;
     },
-    wrap: (content: ReactNode) => ReactNode,
+    wrap: (content: ReactNode, fill?: boolean) => ReactNode,
 ) {
     const formTab = (name: IntakePolicyFormSection, label: string) => ({
         name,
@@ -590,30 +591,34 @@ function createEditorTabs(
             name: 'json',
             label: t('intakePolicy.tab.json'),
             content: wrap(
-                <div className="flex h-full min-h-[36rem] gap-4 py-3">
-                    <div className="min-w-0 flex-1 overflow-hidden rounded-sm border">
-                        <MonacoEditor
-                            value={editorValue}
-                            language="json"
-                            editorRef={json.editorRef}
-                            beforeMount={json.beforeMount}
-                            onChange={(update) => json.onChange(update.state.doc.toString())}
-                            theme={json.theme === 'dark' ? 'vs-dark' : 'vs'}
-                            options={{
-                                readOnly: readonly,
-                                minimap: { enabled: false },
-                                scrollBeyondLastLine: false,
-                                wordWrap: 'on',
-                                lineNumbers: 'on',
-                                automaticLayout: true,
-                                formatOnPaste: true,
-                                formatOnType: true,
-                                tabSize: 2,
-                            }}
-                        />
+                <div className="@container flex min-h-0 flex-1 gap-4">
+                    {/* Absolute child gives Monaco's height="100%" a definite box to fill. */}
+                    <div className="relative min-w-0 flex-1 overflow-hidden rounded-sm border">
+                        <div className="absolute inset-0">
+                            <MonacoEditor
+                                value={editorValue}
+                                language="json"
+                                editorRef={json.editorRef}
+                                beforeMount={json.beforeMount}
+                                onChange={(update) => json.onChange(update.state.doc.toString())}
+                                theme={json.theme === 'dark' ? 'vs-dark' : 'vs'}
+                                options={{
+                                    readOnly: readonly,
+                                    minimap: { enabled: false },
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: 'on',
+                                    lineNumbers: 'on',
+                                    automaticLayout: true,
+                                    formatOnPaste: true,
+                                    formatOnType: true,
+                                    tabSize: 2,
+                                }}
+                            />
+                        </div>
                     </div>
                     <IntakeHelp />
                 </div>,
+                true,
             ),
         },
     ];
@@ -652,7 +657,7 @@ function IntakeSummary({ policy }: { policy: ContentTypeIntakePolicy }) {
 function IntakeHelp() {
     const { t } = useUITranslation();
     return (
-        <aside className="hidden w-80 shrink-0 overflow-y-auto rounded-sm border bg-mixer-muted/20 p-3 text-sm lg:block">
+        <aside className="hidden w-80 shrink-0 overflow-y-auto rounded-sm border bg-mixer-muted/20 p-3 text-sm @3xl:block">
             <div className="mb-3 font-semibold">{t('intakePolicy.help.title')}</div>
             <div className="space-y-3 text-muted">
                 <HelpItem label="identification" text={t('intakePolicy.help.identification')} />
