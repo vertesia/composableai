@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "1.5.0",
+    "version": "1.5.1",
     "license": "Apache-2.0",
     "type": "module",
     "main": "./lib/index.js",
@@ -62,5 +62,5 @@
         "ai",
         "typescript"
     ],
-    "gitHead": "3485742020066ab1fd3292487cf3a9577b5e4d91"
+    "gitHead": "7ab3acd95af12b8c254e1b3852e67d5078790f98"
 }
