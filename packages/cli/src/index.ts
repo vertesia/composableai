@@ -77,7 +77,7 @@ authRoot
     .description('Authenticate a profile, creating it when it does not exist')
     .option(
         '-t, --target <env>',
-        'The target environment for a new profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.',
+        'The target environment for a new profile. Possible values are: local, dev-main, preview, prod or a custom URL.',
     )
     .option(
         '-r, --region <region>',
@@ -242,7 +242,7 @@ profilesRoot
     .alias('create')
     .option(
         '-t, --target <env>',
-        'The target environment for the profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.',
+        'The target environment for the profile. Possible values are: local, dev-main, preview, prod or a custom URL.',
     )
     .option(
         '-r, --region <region>',
