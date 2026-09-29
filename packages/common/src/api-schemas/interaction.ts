@@ -11,6 +11,12 @@ import {
     ToolDefinitionSchema,
     ToolUseSchema,
 } from '@llumiverse/common/schemas';
+import {
+    ConversationMaterializedInputSchema,
+    ConversationRefSchema,
+    PendingApplicationToolCallSchema,
+    ToolCallSourceRefSchema,
+} from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
 import {
     AgentSearchScope,
@@ -1944,6 +1950,43 @@ export const UpdateExecutionRunPayloadSchema = z
 
 export const ExecutionRunRefArraySchema = z.array(ExecutionRunRefSchema).meta({ id: 'ExecutionRunRefArray' });
 
+/**
+ * Bounded canonical authority carried across the async Studio/Temporal acknowledgement boundary.
+ * The document remains in the scoped durable head store; legacy ConversationState stays unchanged.
+ */
+export const CanonicalConversationHeadScopeSchema = z
+    .union([z.literal('root'), z.string().regex(/^workstream:[A-Za-z0-9_-]{1,128}$/)])
+    .meta({ id: 'CanonicalConversationHeadScope' });
+
+export const CanonicalConversationHeadScopeQuerySchema = z
+    .strictObject({
+        conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
+    })
+    .meta({ id: 'CanonicalConversationHeadScopeQuery' });
+
+/** Ordered, bounded application call identity carried by Temporal without canonical arguments. */
+export const CanonicalPendingApplicationToolCallSchema = PendingApplicationToolCallSchema.meta({
+    id: 'CanonicalPendingApplicationToolCall',
+});
+
+export const CanonicalContinuationStateSchema = z
+    .strictObject({
+        head: ConversationRefSchema,
+        scope: CanonicalConversationHeadScopeSchema,
+        materialized_input: ConversationMaterializedInputSchema.optional(),
+        tool_call_sources: z.record(z.string().min(1), ToolCallSourceRefSchema).optional(),
+        pending_tool_calls: z.array(CanonicalPendingApplicationToolCallSchema).max(256).optional(),
+    })
+    .meta({ id: 'CanonicalContinuationState' });
+
+/** Async Temporal acknowledgement that keeps the strict legacy state and canonical authority distinct. */
+export const CanonicalAsyncCompletionResultSchema = z
+    .strictObject({
+        state: ConversationStateSchema,
+        canonical_state: CanonicalContinuationStateSchema.optional(),
+    })
+    .meta({ id: 'CanonicalAsyncCompletionResult' });
+
 export const AsyncCompletionOptionsSchema = z
     .strictObject({
         run_id: z.string().meta({ description: 'Workflow run ID for message context' }),
@@ -1968,6 +2011,10 @@ export const AsyncCompletionOptionsSchema = z
         current_state: ConversationStateSchema.meta({
             description:
                 'Current conversation state to merge with execution result. The platform stores the conversation and completes the activity with merged state. Required when task_token is provided.',
+        }).optional(),
+        canonical_state: CanonicalContinuationStateSchema.meta({
+            description:
+                'Canonical conversation authority for async acknowledgement. References an exact scoped durable head without embedding the full document in legacy current_state.',
         }).optional(),
         heartbeat_interval_ms: z
             .number()
@@ -2508,6 +2555,7 @@ const resumeConversationFields = {
     tools: z.array(ToolDefinitionSchema),
     strip_options: ConversationStripOptionsSchema.optional(),
     asyncCompletion: AsyncCompletionOptionsSchema.optional(),
+    materialized_input: ConversationMaterializedInputSchema.optional(),
 };
 
 export const ToolResultsPayloadSchema = z

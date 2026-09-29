@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -26,7 +26,10 @@ function generate(files: Record<string, string>): { dir: string; read: (file: st
     mkdirSync(root, { recursive: true });
     const dir = mkdtempSync(join(root, 'gen-wire-types-'));
     dirs.push(dir);
-    for (const [file, text] of Object.entries(files)) writeFileSync(join(dir, file), text);
+    for (const [file, text] of Object.entries(files)) {
+        mkdirSync(dirname(join(dir, file)), { recursive: true });
+        writeFileSync(join(dir, file), text);
+    }
     run('tsx', [join(PACKAGE, 'scripts', 'gen-wire-types.ts'), '--src', dir, '--no-format']);
     const read = (file: string) => readFileSync(join(dir, file), 'utf8');
     const tsFiles = [...Object.keys(files), 'wire-types.generated.ts', 'wire-types.generated.test.ts'];
@@ -54,6 +57,46 @@ afterEach(() => {
 });
 
 describe('gen-wire-types', () => {
+    it('preserves registry components when formatting wraps schema references', { timeout: 60_000 }, () => {
+        const { read } = generate({
+            'payload.ts': [
+                "import { z } from 'zod';",
+                'export const PayloadSchema = z.strictObject({ name: z.string() });',
+                'export type Payload = z.infer<typeof PayloadSchema>;',
+            ].join('\n'),
+            'api-schemas/registry.ts': [
+                "import * as PayloadSchemas from '../payload.js';",
+                'type FixtureSchemaMap = { WrappedPayload: typeof PayloadSchemas.PayloadSchema };',
+                'const FIXTURE_SCHEMAS: FixtureSchemaMap = {',
+                '    // Keep this component registered when its value wraps.',
+                '    WrappedPayload:',
+                '        PayloadSchemas.PayloadSchema,',
+                '};',
+                'export type ApiComponentName = keyof typeof FIXTURE_SCHEMAS;',
+            ].join('\n'),
+        });
+        expect(read('wire-types.generated.ts')).toMatch(/WrappedPayload: Payload;/);
+        expect(read('wire-types.generated.test.ts')).toContain('Payload: Same<');
+    });
+
+    it('references canonical tool execution types from their owning package', { timeout: 60_000 }, () => {
+        const { read } = generate({
+            'api-schemas/registry.ts': [
+                "import { ConversationToolExecutionResultSchema } from '@llumiverse/conversation/schemas';",
+                'const FIXTURE_SCHEMAS = {',
+                '    ConversationToolExecutionResult: ConversationToolExecutionResultSchema,',
+                '};',
+                'export type ApiComponentName = keyof typeof FIXTURE_SCHEMAS;',
+            ].join('\n'),
+        });
+        expect(read('wire-types.generated.ts')).toContain(
+            "import type { ConversationToolExecutionResult } from '@llumiverse/conversation';",
+        );
+        expect(read('wire-types.generated.ts')).toMatch(
+            /ConversationToolExecutionResult: ConversationToolExecutionResult;/,
+        );
+    });
+
     it('keeps a Wire.X alias resolving when its schema becomes unsupported', { timeout: 60_000 }, () => {
         // `Prefixed` was generated once, so its module already reads `Wire.Prefixed`; a template literal
         // is not something the walker writes out.

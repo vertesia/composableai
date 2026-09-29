@@ -41,7 +41,7 @@ function document(turns: ConversationDocumentV0['turns']): ConversationDocumentV
     return {
         format: 'llumiverse.conversation',
         schema_version: 0,
-        experimental_revision: '2026-09-11.ingestion.1',
+        experimental_revision: '2026-09-30.adoption.1',
         id: 'conversation-1',
         revision: 1,
         created_at: timestamps.recorded_at,

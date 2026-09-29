@@ -31,6 +31,10 @@ import {
     ToolUseSchema,
     VideoResultSchema,
 } from '@llumiverse/common/schemas';
+import {
+    ConversationToolExecutionRequestSchema,
+    ConversationToolExecutionResultSchema,
+} from '@llumiverse/conversation/schemas';
 import type { z } from 'zod';
 import type {
     CreateEventSubscriptionPayload,
@@ -238,6 +242,7 @@ import {
     BulkOperationResultSchema,
 } from './bulk-operation.js';
 import { CANONICAL_CONVERSATION_SCHEMAS } from './canonical-conversation.js';
+import * as CanonicalInteractionSchemas from './canonical-interaction-execution.js';
 import {
     DeleteCountResultSchema,
     GenericCommandResponseSchema,
@@ -502,6 +507,11 @@ import {
     AsyncExecutionResultSchema,
     AsyncInteractionExecutionPayloadSchema,
     CachePolicySchema,
+    CanonicalAsyncCompletionResultSchema,
+    CanonicalContinuationStateSchema,
+    CanonicalConversationHeadScopeQuerySchema,
+    CanonicalConversationHeadScopeSchema,
+    CanonicalPendingApplicationToolCallSchema,
     CatalogInteractionRefArraySchema,
     CatalogInteractionRefSchema,
     CatalogTagQuerySchema,
@@ -728,6 +738,11 @@ import {
 } from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import { RunConversationResponseSchema } from './run-conversation.js';
+import {
+    AppendRunConversationToolResultsPayloadSchema,
+    AppendRunConversationToolResultsResponseSchema,
+    PublishAgentRunConversationHeadPayloadSchema,
+} from './run-conversation-append.js';
 import * as SecretSchemas from './secrets.js';
 import {
     ColumnLayoutSchema,
@@ -1322,6 +1337,11 @@ const EXECUTION_REQUEST_SCHEMAS: {
     ExecuteInteractionByEndpointQuery: typeof ExecuteInteractionByEndpointQuerySchema;
     ExecuteInteractionByEndpointHeaders: typeof ExecuteInteractionByEndpointHeadersSchema;
     AsyncCompletionMode: typeof AsyncCompletionModeSchema;
+    CanonicalAsyncCompletionResult: typeof CanonicalAsyncCompletionResultSchema;
+    CanonicalConversationHeadScope: typeof CanonicalConversationHeadScopeSchema;
+    CanonicalConversationHeadScopeQuery: typeof CanonicalConversationHeadScopeQuerySchema;
+    CanonicalContinuationState: typeof CanonicalContinuationStateSchema;
+    CanonicalPendingApplicationToolCall: typeof CanonicalPendingApplicationToolCallSchema;
     AsyncCompletionOptions: typeof AsyncCompletionOptionsSchema;
     AsyncExecutionPayload: typeof AsyncExecutionPayloadSchema;
     AsyncInteractionExecutionPayload: typeof AsyncInteractionExecutionPayloadSchema;
@@ -1357,6 +1377,11 @@ const EXECUTION_REQUEST_SCHEMAS: {
     ExecuteInteractionByEndpointQuery: ExecuteInteractionByEndpointQuerySchema,
     ExecuteInteractionByEndpointHeaders: ExecuteInteractionByEndpointHeadersSchema,
     AsyncCompletionMode: AsyncCompletionModeSchema,
+    CanonicalAsyncCompletionResult: CanonicalAsyncCompletionResultSchema,
+    CanonicalConversationHeadScope: CanonicalConversationHeadScopeSchema,
+    CanonicalConversationHeadScopeQuery: CanonicalConversationHeadScopeQuerySchema,
+    CanonicalContinuationState: CanonicalContinuationStateSchema,
+    CanonicalPendingApplicationToolCall: CanonicalPendingApplicationToolCallSchema,
     AsyncCompletionOptions: AsyncCompletionOptionsSchema,
     AsyncExecutionPayload: AsyncExecutionPayloadSchema,
     AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayloadSchema,
@@ -1423,12 +1448,15 @@ const CONTENT_TYPE_CATALOG_SCHEMAS = {
     ContentObjectTypeItemArray: ContentObjectTypeItemArraySchema,
     ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntrySchema,
     ContentObjectTypeCatalogEntryArray: ContentObjectTypeCatalogEntryArraySchema,
-    InCodeTypeDefinition: InCodeTypeDefinitionSchema,
-    CreateContentObjectTypePayload: CreateContentObjectTypePayloadSchema,
-    UpdateContentObjectTypePayload: UpdateContentObjectTypePayloadSchema,
     ContentObjectType: ContentObjectTypeSchema,
     ContentObjectTypeCatalogQuery: ContentObjectTypeCatalogQuerySchema,
     ContentObjectTypeListQuery: ContentObjectTypeListQuerySchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const CONTENT_TYPE_AUTHORING_SCHEMAS = {
+    InCodeTypeDefinition: InCodeTypeDefinitionSchema,
+    CreateContentObjectTypePayload: CreateContentObjectTypePayloadSchema,
+    UpdateContentObjectTypePayload: UpdateContentObjectTypePayloadSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const MIGRATION_COMMAND_SCHEMAS = {
@@ -2426,11 +2454,58 @@ const DELEGATION_SCHEMAS = {
     DelegationGrant: DelegationGrantSchema,
     DelegationGrantArray: DelegationGrantArraySchema,
 };
+// Preserve references to the authoritative schema types in declarations instead of serializing
+// the full recursive conversation graph once for each interaction envelope.
+type CanonicalInteractionSchemaMap = {
+    readonly [Key in keyof typeof CanonicalInteractionSchemas as Key extends `${infer Name}Schema`
+        ? Name
+        : never]: (typeof CanonicalInteractionSchemas)[Key];
+};
+
+const CANONICAL_INTERACTION_SCHEMAS: CanonicalInteractionSchemaMap = {
+    ExperimentalCanonicalInteractionHeaders: CanonicalInteractionSchemas.ExperimentalCanonicalInteractionHeadersSchema,
+    ExperimentalCanonicalInteractionInitialState:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionInitialStateSchema,
+    ExperimentalCanonicalInteractionReturnPolicy:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionReturnPolicySchema,
+    ExperimentalCanonicalInteractionExecutionConfiguration:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionConfigurationSchema,
+    ExperimentalCanonicalInteractionExecutionRequest:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionRequestSchema,
+    ExperimentalCanonicalNamedInteractionExecutionRequest:
+        CanonicalInteractionSchemas.ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
+    ExperimentalCanonicalInteractionDocumentHistory:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionDocumentHistorySchema,
+    ExperimentalCanonicalInteractionReferenceHistory:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionReferenceHistorySchema,
+    ExperimentalCanonicalInteractionUnavailableHistory:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionUnavailableHistorySchema,
+    ExperimentalCanonicalInteractionHistory: CanonicalInteractionSchemas.ExperimentalCanonicalInteractionHistorySchema,
+    ExperimentalCanonicalInteractionRun: CanonicalInteractionSchemas.ExperimentalCanonicalInteractionRunSchema,
+    ExperimentalCanonicalInteractionAcceptedOutput:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionAcceptedOutputSchema,
+    ExperimentalCanonicalInteractionUnavailableOutput:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionUnavailableOutputSchema,
+    ExperimentalCanonicalInteractionOutput: CanonicalInteractionSchemas.ExperimentalCanonicalInteractionOutputSchema,
+    ExperimentalCanonicalInteractionExecutionResult:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionResultSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const CANONICAL_TOOL_EXECUTION_SCHEMAS = {
+    ConversationToolExecutionRequest: ConversationToolExecutionRequestSchema,
+    ConversationToolExecutionResult: ConversationToolExecutionResultSchema,
+} as const;
+
 const RUN_CONVERSATION_SCHEMAS = {
     RunConversationResponse: RunConversationResponseSchema,
+    AppendRunConversationToolResultsPayload: AppendRunConversationToolResultsPayloadSchema,
+    AppendRunConversationToolResultsResponse: AppendRunConversationToolResultsResponseSchema,
+    PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayloadSchema,
 } as const;
 
 const API_SCHEMA_GROUPS = [
+    CANONICAL_TOOL_EXECUTION_SCHEMAS,
+    CANONICAL_INTERACTION_SCHEMAS,
     RUN_CONVERSATION_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
@@ -2461,6 +2536,7 @@ const API_SCHEMA_GROUPS = [
     FILE_STORAGE_SCHEMAS,
     DURABLE_TASK_SCHEMAS,
     CONTENT_TYPE_CATALOG_SCHEMAS,
+    CONTENT_TYPE_AUTHORING_SCHEMAS,
     MIGRATION_COMMAND_SCHEMAS,
     PROCESS_DSL_SCHEMAS,
     AGENT_MESSAGE_SCHEMAS,
@@ -2496,7 +2572,9 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof RUN_CONVERSATION_SCHEMAS &
+type ApiSchemaMap = typeof CANONICAL_TOOL_EXECUTION_SCHEMAS &
+    typeof CANONICAL_INTERACTION_SCHEMAS &
+    typeof RUN_CONVERSATION_SCHEMAS &
     typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
@@ -2525,6 +2603,7 @@ type ApiSchemaMap = typeof RUN_CONVERSATION_SCHEMAS &
     typeof FILE_STORAGE_SCHEMAS &
     typeof DURABLE_TASK_SCHEMAS &
     typeof CONTENT_TYPE_CATALOG_SCHEMAS &
+    typeof CONTENT_TYPE_AUTHORING_SCHEMAS &
     typeof MIGRATION_COMMAND_SCHEMAS &
     typeof PROCESS_DSL_SCHEMAS &
     typeof AGENT_MESSAGE_SCHEMAS &
@@ -2570,9 +2649,14 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    ...Object.entries(CANONICAL_INTERACTION_SCHEMAS)
+        .filter(([, schema]) => schema.def.type === 'object')
+        .map(([name]) => name),
     ...Object.entries(CANONICAL_CONVERSATION_SCHEMAS)
         .filter(([, schema]) => schema.def.type === 'object')
         .map(([name]) => name),
+    'AppendRunConversationToolResultsPayload',
+    'AppendRunConversationToolResultsResponse',
     'AvailableRunConversation',
     'UnavailableRunConversation',
     'UpdateInteractionConfigurationPayload',

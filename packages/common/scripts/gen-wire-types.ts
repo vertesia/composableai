@@ -164,6 +164,11 @@ function specifierFor(file: string): string {
  */
 const EXTERNAL_PACKAGES = [
     {
+        schemas: '@llumiverse/conversation/schemas',
+        types: '@llumiverse/conversation',
+        inline: new Set<string>(),
+    },
+    {
         schemas: '@llumiverse/common/schemas',
         types: '@llumiverse/common',
         // Hand-written interfaces that `z.infer` of their schema is assignable to but not identical with
@@ -771,10 +776,18 @@ async function main() {
         // A group may carry an explicit annotation, a named map or an inline `{ ... }`, before its literal.
         /^const \w+_SCHEMAS(?:: (?:\w+|\{\n[\s\S]*?\n\}))? = \{\n([\s\S]*?)\n\}/gm,
     )) {
-        for (const line of group[1].split('\n')) {
-            if (/^\s*(?:\/\/|\/\*|\*|$)/.test(line)) continue;
-            const m = line.match(/^\s+(\w+): (?:\w+\.)?(\w+),$/);
-            if (!m) throw new Error(`${REGISTRY}: unrecognised component entry: ${line.trim()}`);
+        // Biome may wrap a long component name and schema reference onto separate lines.
+        // Groups deliberately contain only named schema references, so commas delimit entries.
+        const entries = group[1]
+            .split('\n')
+            .filter((line) => !/^\s*(?:\/\/|\/\*|\*|$)/.test(line))
+            .join('\n')
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean);
+        for (const entry of entries) {
+            const m = entry.match(/^(\w+):\s*(?:\w+\.)?(\w+)$/);
+            if (!m) throw new Error(`${REGISTRY}: unrecognised component entry: ${entry}`);
             const external = schemaExports.has(m[2]) ? undefined : externalSchemas.get(m[2]);
             const externalName = external && externalNames.get(external.schema);
             if (external) {

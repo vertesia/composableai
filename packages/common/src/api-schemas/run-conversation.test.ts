@@ -1,5 +1,11 @@
 import { createConversationDocument, createUserTurn } from '@llumiverse/conversation';
-import { ConversationDocumentSchema } from '@llumiverse/conversation/schemas';
+import {
+    ConversationAcceptedOutputFragmentSchema,
+    ConversationDocumentSchema,
+    ConversationMaterializedInputSchema,
+    ConversationToolExecutionRequestSchema,
+    ConversationToolExecutionResultSchema,
+} from '@llumiverse/conversation/schemas';
 import { describe, expect, it } from 'vitest';
 import { validateApiResponse } from '../api-contract/index.js';
 import { CANONICAL_CONVERSATION_SCHEMAS } from './canonical-conversation.js';
@@ -24,8 +30,18 @@ function availableHistory() {
 
 describe('run conversation wire contract', () => {
     it('keeps the complete named canonical schema closure strict and publicly owned', () => {
-        const emitted = ConversationDocumentSchema.toJSONSchema({ target: 'draft-2020-12', io: 'input' });
-        expect(Object.keys(CANONICAL_CONVERSATION_SCHEMAS).sort()).toEqual(Object.keys(emitted.$defs ?? {}).sort());
+        const definitions = new Set<string>();
+        for (const schema of [
+            ConversationDocumentSchema,
+            ConversationAcceptedOutputFragmentSchema,
+            ConversationToolExecutionRequestSchema,
+            ConversationToolExecutionResultSchema,
+            ConversationMaterializedInputSchema,
+        ]) {
+            const emitted = schema.toJSONSchema({ target: 'draft-2020-12', io: 'input' });
+            for (const name of Object.keys(emitted.$defs ?? {})) definitions.add(name);
+        }
+        expect(Object.keys(CANONICAL_CONVERSATION_SCHEMAS).sort()).toEqual([...definitions].sort());
     });
 
     it('preserves recursive JSON and matches runtime enforcement', () => {

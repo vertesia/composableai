@@ -3,6 +3,7 @@ import type { z } from 'zod';
 
 // Public component names are aliases of the canonical schemas, not a second conversation model.
 export type ConversationAccountingProvenance = z.infer<typeof Canonical.AccountingProvenanceSchema>;
+export type ConversationAcceptedOutputFragment = z.infer<typeof Canonical.ConversationAcceptedOutputFragmentSchema>;
 export type ConversationAgentContentBlock = z.infer<typeof Canonical.AgentContentBlockSchema>;
 export type ConversationAgentTurn = z.infer<typeof Canonical.AgentTurnSchema>;
 export type ConversationAsset = z.infer<typeof Canonical.AssetSchema>;
@@ -33,6 +34,7 @@ export type ConversationExecutedGeneration = z.infer<typeof Canonical.ExecutedGe
 export type ConversationExecutionReceipt = z.infer<typeof Canonical.ExecutionReceiptSchema>;
 export type ConversationExtensionBlock = z.infer<typeof Canonical.ExtensionBlockSchema>;
 export type ConversationExternalAssetStorage = z.infer<typeof Canonical.ExternalAssetStorageSchema>;
+export type ConversationExternalizedToolArguments = z.infer<typeof Canonical.ExternalizedToolArgumentsSchema>;
 export type ConversationExternalReferenceBlock = z.infer<typeof Canonical.ExternalReferenceBlockSchema>;
 export type ConversationGeneratedAgentTurn = z.infer<typeof Canonical.GeneratedAgentTurnSchema>;
 export type ConversationGeneratedAssetProvenance = z.infer<typeof Canonical.GeneratedAssetProvenanceSchema>;
@@ -46,6 +48,7 @@ export type ConversationImageBlock = z.infer<typeof Canonical.ImageBlockSchema>;
 export type ConversationImageRegion = z.infer<typeof Canonical.ImageRegionSchema>;
 export type ConversationImportedAgentTurn = z.infer<typeof Canonical.ImportedAgentTurnSchema>;
 export type ConversationImportedAssetProvenance = z.infer<typeof Canonical.ImportedAssetProvenanceSchema>;
+export type ConversationInvalidatedReplayArchive = z.infer<typeof Canonical.InvalidatedReplayArchiveSchema>;
 export type ConversationImportedGeneration = z.infer<typeof Canonical.ImportedGenerationSchema>;
 export type ConversationImportedTurnProvenance = z.infer<typeof Canonical.ImportedTurnProvenanceSchema>;
 export type ConversationInlineBase64AssetStorage = z.infer<typeof Canonical.InlineBase64AssetStorageSchema>;
@@ -54,11 +57,14 @@ export type ConversationInlineTextAssetStorage = z.infer<typeof Canonical.Inline
 export type ConversationInsertedTurnProvenance = z.infer<typeof Canonical.InsertedTurnProvenanceSchema>;
 export type ConversationInvalidToolArguments = z.infer<typeof Canonical.InvalidToolArgumentsSchema>;
 export type ConversationJsonBlock = z.infer<typeof Canonical.JsonBlockSchema>;
+export type ConversationJsonPath = z.infer<typeof Canonical.JsonPathSchema>;
+export type ConversationJsonPathSegment = z.infer<typeof Canonical.JsonPathSegmentSchema>;
 export type ConversationJsonObject = z.infer<typeof Canonical.JsonObjectSchema>;
 export type ConversationJsonValue = z.infer<typeof Canonical.JsonValueSchema>;
 export type ConversationLineage = z.infer<typeof Canonical.ConversationLineageSchema>;
 export type ConversationLineageParent = z.infer<typeof Canonical.ConversationLineageParentSchema>;
 export type ConversationMetadata = z.infer<typeof Canonical.MetadataSchema>;
+export type ConversationMaterializedInput = z.infer<typeof Canonical.ConversationMaterializedInputSchema>;
 export type ConversationModelTarget = z.infer<typeof Canonical.ModelTargetSchema>;
 export type ConversationModelVisibility = z.infer<typeof Canonical.ModelVisibilitySchema>;
 export type ConversationNativeIdentity = z.infer<typeof Canonical.NativeIdentitySchema>;
@@ -69,6 +75,14 @@ export type ConversationNongeneratedAgentTurn = z.infer<typeof Canonical.Nongene
 export type ConversationNonGeneratedTurnProvenance = z.infer<typeof Canonical.NonGeneratedTurnProvenanceSchema>;
 export type ConversationNonnegativeSafeInteger = z.infer<typeof Canonical.NonnegativeSafeIntegerSchema>;
 export type ConversationOperationReceipt = z.infer<typeof Canonical.OperationReceiptSchema>;
+export type ConversationOutputAsset = z.infer<typeof Canonical.ConversationOutputAssetSchema>;
+export type ConversationOutputBlock = z.infer<typeof Canonical.ConversationOutputBlockSchema>;
+export type ConversationOutputCompleteness = z.infer<typeof Canonical.ConversationOutputCompletenessSchema>;
+export type ConversationOutputGeneration = z.infer<typeof Canonical.ConversationOutputGenerationSchema>;
+export type ConversationOutputGenerationUsage = z.infer<typeof Canonical.ConversationOutputGenerationUsageSchema>;
+export type ConversationOutputReceipt = z.infer<typeof Canonical.ConversationOutputReceiptSchema>;
+export type ConversationOutputToolCallBlock = z.infer<typeof Canonical.ConversationOutputToolCallBlockSchema>;
+export type ConversationOutputTurn = z.infer<typeof Canonical.ConversationOutputTurnSchema>;
 export type ConversationPageRange = z.infer<typeof Canonical.PageRangeSchema>;
 export type ConversationPositiveSafeInteger = z.infer<typeof Canonical.PositiveSafeIntegerSchema>;
 export type ConversationProcessingState = z.infer<typeof Canonical.ProcessingStateSchema>;
@@ -88,9 +102,11 @@ export type ConversationRetrievalCapability = z.infer<typeof Canonical.Retrieval
 export type ConversationSourceTurnContextEntry = z.infer<typeof Canonical.SourceTurnContextEntrySchema>;
 export type ConversationStructuredToolArguments = z.infer<typeof Canonical.StructuredToolArgumentsSchema>;
 export type ConversationTextBlock = z.infer<typeof Canonical.TextBlockSchema>;
+export type ConversationTextAssetToolArgumentHydration = z.infer<typeof Canonical.TextAssetToolArgumentHydrationSchema>;
 export type ConversationTimeRange = z.infer<typeof Canonical.TimeRangeSchema>;
 export type ConversationTimestamp = z.infer<typeof Canonical.TimestampSchema>;
 export type ConversationToolArguments = z.infer<typeof Canonical.ToolArgumentsSchema>;
+export type ConversationToolArgumentHydration = z.infer<typeof Canonical.ToolArgumentHydrationSchema>;
 export type ConversationToolCallBlock = z.infer<typeof Canonical.ToolCallBlockSchema>;
 export type ConversationToolDefinition = z.infer<typeof Canonical.ToolDefinitionSchema>;
 export type ConversationToolInputSchema = z.infer<typeof Canonical.ToolInputSchemaSchema>;
@@ -105,8 +121,16 @@ export type ConversationUserContentBlock = z.infer<typeof Canonical.UserContentB
 export type ConversationUserTurn = z.infer<typeof Canonical.UserTurnSchema>;
 export type ConversationVideoBlock = z.infer<typeof Canonical.VideoBlockSchema>;
 
-import type { AvailableRunConversationSchema } from './api-schemas/run-conversation.js';
 import type * as Wire from './wire-types.generated.js';
-export type AvailableRunConversation = z.infer<typeof AvailableRunConversationSchema>;
+export type AvailableRunConversation = Wire.AvailableRunConversation;
 export type UnavailableRunConversation = Wire.UnavailableRunConversation;
 export type RunConversationResponse = Wire.RunConversationResponse;
+export type ConversationToolCallSourceRef = z.infer<typeof Canonical.ToolCallSourceRefSchema>;
+export type ConversationPendingApplicationToolCall = z.infer<typeof Canonical.PendingApplicationToolCallSchema>;
+export type ConversationApplicationToolCallBlock = z.infer<typeof Canonical.ApplicationToolCallBlockSchema>;
+export type ConversationApplicationToolExecutionReceipt = z.infer<
+    typeof Canonical.ApplicationToolExecutionReceiptSchema
+>;
+export type ConversationExecutedToolTurn = z.infer<typeof Canonical.ExecutedToolTurnSchema>;
+export type ConversationToolExecutionRequest = z.infer<typeof Canonical.ConversationToolExecutionRequestSchema>;
+export type ConversationToolExecutionResult = z.infer<typeof Canonical.ConversationToolExecutionResultSchema>;

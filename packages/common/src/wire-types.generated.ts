@@ -31,7 +31,23 @@ import type {
     ToolUse,
     VideoResult,
 } from '@llumiverse/common';
-import type { z } from 'zod';
+import type {
+    ApplicationToolExecutionReceipt,
+    Asset,
+    ContextEntry,
+    ConversationAcceptedOutputFragment,
+    ConversationDocument,
+    ConversationMaterializedInput,
+    ConversationRef,
+    ConversationToolExecutionRequest,
+    ConversationToolExecutionResult,
+    ExecutedToolTurn,
+    JsonObject,
+    OperationReceipt,
+    PendingApplicationToolCall,
+    ToolCallSourceRef,
+    ToolDefinition,
+} from '@llumiverse/conversation';
 import type { AccessControlPrincipalType, AccessControlResourceType, Permission } from './access-control-values.js';
 import type { AccountType, BillingMethod, QuotaTier } from './account-values.js';
 import type { ApiKeyTypes } from './apikey-values.js';
@@ -1866,15 +1882,106 @@ export type WebsiteCredentialMetadataUpdate = {
     totp?: WebsiteCredentialTotpMetadata | undefined;
     expires_at?: string | undefined;
 };
-export type AvailableRunConversation = z.infer<
-    typeof import('./api-schemas/run-conversation.js').AvailableRunConversationSchema
->;
+export type AvailableRunConversation = {
+    status: 'available';
+    conversation: ConversationDocument;
+};
 export type UnavailableRunConversation = {
     status: 'unavailable';
     reason: 'not_recorded' | 'retention_policy' | 'pruned';
     retention?: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel] | undefined;
 };
 export type RunConversationResponse = AvailableRunConversation | UnavailableRunConversation;
+export type ExperimentalCanonicalInteractionInitialState =
+    | {
+          type: 'new';
+      }
+    | {
+          type: 'document';
+          document: ConversationDocument;
+      };
+export type ExperimentalCanonicalInteractionHeaders = {
+    'x-api-version': '=20260930';
+};
+export type ExperimentalCanonicalInteractionReturnPolicy = {
+    history: 'document' | 'reference' | 'none';
+};
+export type ExperimentalCanonicalInteractionExecutionConfiguration = {
+    id?: string | undefined;
+    inference_profile?: InferenceProfileId | null | undefined;
+    inherit_model_config?: boolean | undefined;
+    environment?: string | undefined;
+    model?: string | undefined;
+    do_validate?: boolean | undefined;
+    configMode?: (typeof ConfigModes)[keyof typeof ConfigModes] | undefined;
+    model_options?: ModelOptions | undefined;
+    prompt_cache_key?: string | undefined;
+    prompt_cache_mode?: PromptCacheMode | undefined;
+    prompt_cache_ttl_seconds?: number | undefined;
+    prompt_cache_schema_suffix?: boolean | undefined;
+    http_timeout?: HttpTimeoutOptions | undefined;
+};
+export type ExperimentalCanonicalInteractionExecutionRequest = {
+    initial_state: ExperimentalCanonicalInteractionInitialState;
+    retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
+    return_policy: ExperimentalCanonicalInteractionReturnPolicy;
+    data?: JsonObject | undefined;
+    config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
+    result_schema?: JSONSchema | SchemaRef | null | undefined;
+    tags?: string[] | undefined;
+};
+export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
+    initial_state: ExperimentalCanonicalInteractionInitialState;
+    retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
+    return_policy: ExperimentalCanonicalInteractionReturnPolicy;
+    data?: JsonObject | undefined;
+    config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
+    result_schema?: JSONSchema | SchemaRef | null | undefined;
+    tags?: string[] | undefined;
+    interaction: string;
+};
+export type ExperimentalCanonicalInteractionDocumentHistory = {
+    status: 'document';
+    conversation: ConversationDocument;
+};
+export type ExperimentalCanonicalInteractionReferenceHistory = {
+    status: 'reference';
+    conversation: ConversationRef;
+};
+export type ExperimentalCanonicalInteractionUnavailableHistory = {
+    status: 'unavailable';
+    reason: 'not_requested' | 'not_recorded' | 'retention_policy' | 'pruned';
+    retention?: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel] | undefined;
+};
+export type ExperimentalCanonicalInteractionHistory =
+    | ExperimentalCanonicalInteractionDocumentHistory
+    | ExperimentalCanonicalInteractionReferenceHistory
+    | ExperimentalCanonicalInteractionUnavailableHistory;
+export type ExperimentalCanonicalInteractionRun = {
+    id: string;
+    status: ExecutionRunStatusWire;
+    interaction?: string | undefined;
+    created_at: string;
+    updated_at: string;
+    retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
+    error?: InteractionExecutionError | undefined;
+};
+export type ExperimentalCanonicalInteractionAcceptedOutput = {
+    status: 'accepted';
+    fragment: ConversationAcceptedOutputFragment;
+};
+export type ExperimentalCanonicalInteractionUnavailableOutput = {
+    status: 'unavailable';
+    reason: 'no_accepted_response' | 'not_recorded' | 'pruned';
+};
+export type ExperimentalCanonicalInteractionOutput =
+    | ExperimentalCanonicalInteractionAcceptedOutput
+    | ExperimentalCanonicalInteractionUnavailableOutput;
+export type ExperimentalCanonicalInteractionExecutionResult = {
+    run: ExperimentalCanonicalInteractionRun;
+    output: ExperimentalCanonicalInteractionOutput;
+    history: ExperimentalCanonicalInteractionHistory;
+};
 export type FindPayload = {
     query: {
         [k: string]: unknown;
@@ -4200,6 +4307,27 @@ export type StreamingOptions = {
     redis_channel: string;
     workstream_id?: string | undefined;
 };
+/** Exact scoped canonical authority carried beside the legacy async conversation state. */
+export type CanonicalContinuationState = {
+    head: ConversationRef;
+    scope: CanonicalConversationHeadScope;
+    materialized_input?: ConversationMaterializedInput | undefined;
+    tool_call_sources?: Record<string, ToolCallSourceRef> | undefined;
+    pending_tool_calls?: PendingApplicationToolCall[] | undefined;
+};
+/** Ordered application tool-call identity carried without model-visible or exact arguments. */
+export type CanonicalPendingApplicationToolCall = PendingApplicationToolCall;
+/** Validated scope for one authoritative canonical agent-run head. */
+export type CanonicalConversationHeadScope = 'root' | string;
+/** Query envelope selecting one canonical agent-run head scope. */
+export type CanonicalConversationHeadScopeQuery = {
+    conversation_scope?: CanonicalConversationHeadScope | undefined;
+};
+/** Async activity acknowledgement with canonical authority kept outside legacy ConversationState. */
+export type CanonicalAsyncCompletionResult = {
+    state: ConversationStateWire;
+    canonical_state?: CanonicalContinuationState | undefined;
+};
 /**
  * Options for async completion and/or streaming LLM responses
  */
@@ -4210,6 +4338,7 @@ export type AsyncCompletionOptions = {
     task_token?: string | undefined;
     activity_id?: string | undefined;
     current_state?: ConversationStateWire | undefined;
+    canonical_state?: CanonicalContinuationState | undefined;
     heartbeat_interval_ms?: number | undefined;
     telemetry?: StreamingTelemetryContext | undefined;
     result_storage?: ResultStorageOptions | undefined;
@@ -4281,6 +4410,7 @@ export type ToolResultsPayload = {
     }[];
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
+    materialized_input?: ConversationMaterializedInput | undefined;
     results: ToolResult[];
 };
 export type UserMessagePayload = {
@@ -4297,6 +4427,7 @@ export type UserMessagePayload = {
     }[];
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
+    materialized_input?: ConversationMaterializedInput | undefined;
     message: string;
     execution_purpose?: 'conversation' | 'checkpoint_summary' | undefined;
     operation_id?: string | undefined;
@@ -6117,6 +6248,25 @@ export type RoleDefinition = RoleDefinitionFromSchema;
  * by the server's `/roles/system` endpoint.
  */
 export type SystemRoleDefinition = SystemRoleDefinitionFromSchema;
+export type AppendRunConversationToolResultsPayload = {
+    conversation_id: string;
+    expected_revision: number;
+    operation_id: string;
+    recorded_at: string;
+    turns: Readonly<ExecutedToolTurn[]>;
+    assets?: Readonly<Asset[]> | undefined;
+    execution_receipts: Readonly<ApplicationToolExecutionReceipt[]>;
+    context_entries: Readonly<ContextEntry[]>;
+};
+export type AppendRunConversationToolResultsResponse = {
+    conversation: ConversationRef;
+    operation_receipt: OperationReceipt;
+    applied: boolean;
+};
+export type PublishAgentRunConversationHeadPayload = {
+    document: ConversationDocument;
+    expected_head?: ConversationRef | undefined;
+};
 /**
  * The run ref is used to identify a run document in the storage
  */
@@ -10784,13 +10934,7 @@ export interface ApiComponentTypes {
               }[]
             | undefined;
     };
-    ToolDefinition: {
-        name: string;
-        description?: string | undefined;
-        input_schema: {
-            [k: string]: unknown;
-        };
-    };
+    ToolDefinition: ToolDefinition;
     ToolUse: ToolUse;
     TextResult: TextResult;
     JsonResult: JsonResult;
@@ -10940,6 +11084,11 @@ export interface ApiComponentTypes {
     ExecuteInteractionByEndpointQuery: ExecuteInteractionByEndpointQueryWire;
     ExecuteInteractionByEndpointHeaders: ExecuteInteractionByEndpointHeadersWire;
     AsyncCompletionMode: AsyncCompletionMode;
+    CanonicalAsyncCompletionResult: CanonicalAsyncCompletionResult;
+    CanonicalConversationHeadScope: CanonicalConversationHeadScope;
+    CanonicalConversationHeadScopeQuery: CanonicalConversationHeadScopeQuery;
+    CanonicalContinuationState: CanonicalContinuationState;
+    CanonicalPendingApplicationToolCall: CanonicalPendingApplicationToolCall;
     AsyncCompletionOptions: AsyncCompletionOptions;
     AsyncExecutionPayload: AsyncExecutionPayload;
     AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayload;
@@ -10996,12 +11145,12 @@ export interface ApiComponentTypes {
     ContentObjectTypeItemArray: ContentObjectTypeItemArray;
     ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntry;
     ContentObjectTypeCatalogEntryArray: ContentObjectTypeCatalogEntryArray;
-    InCodeTypeDefinition: InCodeTypeDefinition;
-    CreateContentObjectTypePayload: CreateContentObjectTypePayload;
-    UpdateContentObjectTypePayload: UpdateContentObjectTypePayload;
     ContentObjectType: ContentObjectType;
     ContentObjectTypeCatalogQuery: ContentObjectTypeCatalogQuery;
     ContentObjectTypeListQuery: ContentObjectTypeListQuery;
+    InCodeTypeDefinition: InCodeTypeDefinition;
+    CreateContentObjectTypePayload: CreateContentObjectTypePayload;
+    UpdateContentObjectTypePayload: UpdateContentObjectTypePayload;
     DeleteCountResult: DeleteCountResult;
     MigrationListResponse: MigrationListResponse;
     RunMigrationPayload: RunMigrationPayload;
@@ -11828,5 +11977,25 @@ export interface ApiComponentTypes {
     CreateDelegationGrantPayload: CreateDelegationGrantPayload;
     DelegationGrant: DelegationGrant;
     DelegationGrantArray: DelegationGrantArray;
+    ExperimentalCanonicalInteractionHeaders: ExperimentalCanonicalInteractionHeaders;
+    ExperimentalCanonicalInteractionInitialState: ExperimentalCanonicalInteractionInitialState;
+    ExperimentalCanonicalInteractionReturnPolicy: ExperimentalCanonicalInteractionReturnPolicy;
+    ExperimentalCanonicalInteractionExecutionConfiguration: ExperimentalCanonicalInteractionExecutionConfiguration;
+    ExperimentalCanonicalInteractionExecutionRequest: ExperimentalCanonicalInteractionExecutionRequest;
+    ExperimentalCanonicalNamedInteractionExecutionRequest: ExperimentalCanonicalNamedInteractionExecutionRequest;
+    ExperimentalCanonicalInteractionDocumentHistory: ExperimentalCanonicalInteractionDocumentHistory;
+    ExperimentalCanonicalInteractionReferenceHistory: ExperimentalCanonicalInteractionReferenceHistory;
+    ExperimentalCanonicalInteractionUnavailableHistory: ExperimentalCanonicalInteractionUnavailableHistory;
+    ExperimentalCanonicalInteractionHistory: ExperimentalCanonicalInteractionHistory;
+    ExperimentalCanonicalInteractionRun: ExperimentalCanonicalInteractionRun;
+    ExperimentalCanonicalInteractionAcceptedOutput: ExperimentalCanonicalInteractionAcceptedOutput;
+    ExperimentalCanonicalInteractionUnavailableOutput: ExperimentalCanonicalInteractionUnavailableOutput;
+    ExperimentalCanonicalInteractionOutput: ExperimentalCanonicalInteractionOutput;
+    ExperimentalCanonicalInteractionExecutionResult: ExperimentalCanonicalInteractionExecutionResult;
+    ConversationToolExecutionRequest: ConversationToolExecutionRequest;
+    ConversationToolExecutionResult: ConversationToolExecutionResult;
     RunConversationResponse: RunConversationResponse;
+    AppendRunConversationToolResultsPayload: AppendRunConversationToolResultsPayload;
+    AppendRunConversationToolResultsResponse: AppendRunConversationToolResultsResponse;
+    PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayload;
 }

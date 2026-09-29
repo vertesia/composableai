@@ -1,11 +1,15 @@
 import type { ExecutionResponse } from '@llumiverse/common';
 import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fetch-client';
 import type {
+    AppendRunConversationToolResultsPayload,
+    AppendRunConversationToolResultsResponse,
     ComputeRunFacetPayload,
     ComputeRunFacetsResponse,
     ExecutionRun,
     ExecutionRunDocRef,
     ExecutionRunRef,
+    ExperimentalCanonicalInteractionExecutionResult,
+    ExperimentalCanonicalNamedInteractionExecutionRequest,
     FindPayload,
     FindRunResult,
     InteractionExecutionResult,
@@ -19,7 +23,13 @@ import type {
     ToolResultsPayload,
     UserMessagePayload,
 } from '@vertesia/common';
+import { type CanonicalInteractionRequestOptions, canonicalInteractionHeaders } from './CanonicalInteractionApi.js';
+import {
+    type EnhancedExperimentalCanonicalInteractionExecutionResult,
+    enhanceExperimentalCanonicalInteractionExecutionResult,
+} from './CanonicalInteractionOutput.js';
 import type { VertesiaClient } from './client.js';
+import { INTERACTION_EXECUTION_TIMEOUT_MS } from './execute.js';
 import {
     type EnhancedExecutionRun,
     type EnhancedInteractionExecutionResult,
@@ -36,6 +46,8 @@ export interface FilterOption {
 export type { ComputeRunFacetsResponse } from '@vertesia/common';
 
 type ResumeRequestOptions = Pick<IRequestParams, 'headers' | 'signal' | 'timeoutMs'>;
+
+export type { CanonicalInteractionRequestOptions } from './CanonicalInteractionApi.js';
 
 export class RunsApi extends ApiTopic {
     constructor(parent: ClientBase) {
@@ -75,9 +87,36 @@ export class RunsApi extends ApiTopic {
         return enhanceExecutionRun<ResultT, ParamsT>(r);
     }
 
+    /** Retrieve the explicitly versioned experimental canonical execution envelope. */
+    async retrieveCanonical<T = unknown>(
+        id: string,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult<T>> {
+        const result = await this.get<ExperimentalCanonicalInteractionExecutionResult>(`/${encodeURIComponent(id)}`, {
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+        return enhanceExperimentalCanonicalInteractionExecutionResult<T>(result);
+    }
+
     /** Retrieve a retained canonical history, or the explicit reason it is unavailable. */
     retrieveConversation(id: string): Promise<RunConversationResponse> {
         return this.get(`/${encodeURIComponent(id)}/conversation`);
+    }
+
+    /** Durably append canonical tool results before the next model preparation. */
+    appendConversationToolResults(
+        id: string,
+        payload: AppendRunConversationToolResultsPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<AppendRunConversationToolResultsResponse> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/tool-results`, {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
     }
 
     retrievePopulated<P = unknown>(id: string): Promise<PopulatedExecutionRun<P>> {
@@ -117,6 +156,25 @@ export class RunsApi extends ApiTopic {
             signal: options?.signal,
         });
         return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
+    }
+
+    /** Create a run through the explicitly versioned experimental canonical contract. */
+    async createCanonical<T = unknown>(
+        payload: ExperimentalCanonicalNamedInteractionExecutionRequest,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult<T>> {
+        const sessionTags = (this.client as VertesiaClient).sessionTags;
+        if (sessionTags) {
+            const tags = (Array.isArray(sessionTags) ? sessionTags : [sessionTags]).concat(payload.tags ?? []);
+            payload = { ...payload, tags };
+        }
+        const result = await this.post<ExperimentalCanonicalInteractionExecutionResult>('/', {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            timeoutMs: options?.timeoutMs ?? INTERACTION_EXECUTION_TIMEOUT_MS,
+            signal: options?.signal,
+        });
+        return enhanceExperimentalCanonicalInteractionExecutionResult<T>(result);
     }
 
     /**

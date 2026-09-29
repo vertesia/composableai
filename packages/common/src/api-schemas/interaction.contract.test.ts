@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { AsyncConversationExecutionPayload } from '../interaction.js';
 import {
     AsyncConversationExecutionPayloadSchema,
+    CanonicalAsyncCompletionResultSchema,
+    CanonicalContinuationStateSchema,
+    CanonicalConversationHeadScopeQuerySchema,
+    CanonicalConversationHeadScopeSchema,
+    CanonicalPendingApplicationToolCallSchema,
     ComputeRunFacetPayloadSchema,
     ComputeRunFacetsResponseSchema,
     ConversationStateSchema,
@@ -21,6 +26,76 @@ import { validateApiRequest } from './registry.js';
 describe('conversation state contract', () => {
     it('publishes the tool catalog storage scope used to resolve tool references', () => {
         expect(ConversationStateSchema.shape.tool_catalog_storage_id.safeParse('process-run-1').success).toBe(true);
+    });
+
+    it('keeps canonical async authority outside the strict legacy state', () => {
+        const state = {
+            run: { id: 'run-1', account: 'account-1', project: 'project-1' },
+            environment: 'environment-1',
+            options: { model: 'model-1' },
+            output: [],
+            ancestors: [],
+        };
+        const canonicalState = {
+            head: { conversation_id: 'conversation-1', revision: 4 },
+            scope: 'workstream:reviewer',
+        };
+        const result = { state, canonical_state: canonicalState };
+
+        expect(CanonicalContinuationStateSchema.parse(canonicalState)).toEqual(canonicalState);
+        expect(CanonicalAsyncCompletionResultSchema.parse(result)).toEqual(result);
+        expect(validateApiRequest('CanonicalAsyncCompletionResult', result).valid).toBe(true);
+        expect(ConversationStateSchema.safeParse({ ...state, canonical_state: canonicalState }).success).toBe(false);
+    });
+
+    it('uses one strict root-or-workstream scope contract for carrier and query', () => {
+        expect(CanonicalConversationHeadScopeSchema.parse('root')).toBe('root');
+        expect(CanonicalConversationHeadScopeSchema.parse('workstream:reviewer_2')).toBe('workstream:reviewer_2');
+        expect(
+            CanonicalConversationHeadScopeQuerySchema.parse({ conversation_scope: 'workstream:reviewer_2' }),
+        ).toEqual({ conversation_scope: 'workstream:reviewer_2' });
+        expect(validateApiRequest('CanonicalConversationHeadScopeQuery', { conversation_scope: 'root' }).valid).toBe(
+            true,
+        );
+        expect(CanonicalConversationHeadScopeSchema.safeParse('workstream:../../other').success).toBe(false);
+        expect(
+            CanonicalConversationHeadScopeQuerySchema.safeParse({ conversation_scope: 'root', extra: true }).success,
+        ).toBe(false);
+    });
+
+    it('carries ordered application call identities with matching exact sources', () => {
+        const source = {
+            conversation: { conversation_id: 'conversation-1', revision: 4 },
+            turn_id: 'turn-1',
+            block_id: 'block-1',
+            call_id: 'call-1',
+            call_fingerprint: `sha256:${'a'.repeat(64)}`,
+        };
+        const pending = {
+            source,
+            call: { call_id: 'call-1', tool_name: 'write_document', executor: 'application' },
+        };
+
+        expect(CanonicalPendingApplicationToolCallSchema.parse(pending)).toEqual(pending);
+        expect(
+            CanonicalContinuationStateSchema.parse({
+                head: source.conversation,
+                scope: 'root',
+                pending_tool_calls: [pending],
+            }).pending_tool_calls,
+        ).toEqual([pending]);
+        expect(
+            CanonicalPendingApplicationToolCallSchema.safeParse({
+                ...pending,
+                call: { ...pending.call, call_id: 'other-call' },
+            }).success,
+        ).toBe(false);
+        expect(
+            CanonicalPendingApplicationToolCallSchema.safeParse({
+                ...pending,
+                call: { ...pending.call, executor: 'provider' },
+            }).success,
+        ).toBe(false);
     });
 });
 

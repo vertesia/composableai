@@ -13,7 +13,12 @@ import {
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
     type AllocateAgentRunBudgetPayload,
+    type AppendRunConversationToolResultsPayload,
+    type AppendRunConversationToolResultsResponse,
     type BindRunWorkflowPayload,
+    type CanonicalConversationHeadScope,
+    type ConversationDocumentV0,
+    type ConversationRef,
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
     type ErrorAnalyticsResponse,
@@ -29,6 +34,7 @@ import {
     type ProcessRun,
     type ProcessState,
     type PromptSizeAnalyticsResponse,
+    type PublishAgentRunConversationHeadPayload,
     parseMessage,
     type RecordAgentRunPayload,
     type RecordProcessRunPayload,
@@ -78,6 +84,58 @@ export function escapeArtifactPathDelimiters(path: string): string {
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/agents');
+    }
+
+    /** @internal Publish the first durable operational canonical head for a workflow. */
+    initializeConversationHead(
+        id: string,
+        document: ConversationDocumentV0,
+        expectedHead?: ConversationRef,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<ConversationRef> {
+        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
+            query: { conversation_scope: scope },
+            payload: {
+                document,
+                ...(expectedHead === undefined ? {} : { expected_head: expectedHead }),
+            } satisfies PublishAgentRunConversationHeadPayload,
+        });
+    }
+
+    /** @internal Load only a revision recorded as committed for this agent run. */
+    getConversationHead(
+        id: string,
+        conversation: ConversationRef,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<ConversationDocumentV0> {
+        return this.get(
+            `/${encodeURIComponent(id)}/conversation/${encodeURIComponent(conversation.conversation_id)}` +
+                `/revisions/${conversation.revision}`,
+            { query: { conversation_scope: scope } },
+        );
+    }
+
+    /** @internal Load the latest committed operational head for retry-ledger checks. */
+    getCurrentConversationHead(
+        id: string,
+        conversationId: string,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<ConversationDocumentV0> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/${encodeURIComponent(conversationId)}/head`, {
+            query: { conversation_scope: scope },
+        });
+    }
+
+    /** @internal Append verified application tool results to the durable operational head. */
+    appendConversationToolResults(
+        id: string,
+        payload: AppendRunConversationToolResultsPayload,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<AppendRunConversationToolResultsResponse> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/tool-results`, {
+            payload,
+            query: { conversation_scope: scope },
+        });
     }
 
     // ========================================================================

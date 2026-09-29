@@ -795,6 +795,10 @@ interface Checks {
         W.WebsiteCredentialMetadataUpdate,
         z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialMetadataUpdateSchema>
     >;
+    AvailableRunConversation: Same<
+        W.AvailableRunConversation,
+        z.infer<typeof import('./api-schemas/run-conversation.js').AvailableRunConversationSchema>
+    >;
     UnavailableRunConversation: Same<
         W.UnavailableRunConversation,
         z.infer<typeof import('./api-schemas/run-conversation.js').UnavailableRunConversationSchema>
@@ -802,6 +806,96 @@ interface Checks {
     RunConversationResponse: Same<
         W.RunConversationResponse,
         z.infer<typeof import('./api-schemas/run-conversation.js').RunConversationResponseSchema>
+    >;
+    ExperimentalCanonicalInteractionInitialState: Same<
+        W.ExperimentalCanonicalInteractionInitialState,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionInitialStateSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionHeaders: Same<
+        W.ExperimentalCanonicalInteractionHeaders,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionHeadersSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionReturnPolicy: Same<
+        W.ExperimentalCanonicalInteractionReturnPolicy,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReturnPolicySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionExecutionConfiguration: Same<
+        W.ExperimentalCanonicalInteractionExecutionConfiguration,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionConfigurationSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionExecutionRequest: Same<
+        W.ExperimentalCanonicalInteractionExecutionRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionRequestSchema
+        >
+    >;
+    ExperimentalCanonicalNamedInteractionExecutionRequest: Same<
+        W.ExperimentalCanonicalNamedInteractionExecutionRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalNamedInteractionExecutionRequestSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionDocumentHistory: Same<
+        W.ExperimentalCanonicalInteractionDocumentHistory,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionDocumentHistorySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionReferenceHistory: Same<
+        W.ExperimentalCanonicalInteractionReferenceHistory,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReferenceHistorySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionUnavailableHistory: Same<
+        W.ExperimentalCanonicalInteractionUnavailableHistory,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionUnavailableHistorySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionHistory: Same<
+        W.ExperimentalCanonicalInteractionHistory,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionHistorySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionRun: Same<
+        W.ExperimentalCanonicalInteractionRun,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRunSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionAcceptedOutput: Same<
+        W.ExperimentalCanonicalInteractionAcceptedOutput,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionAcceptedOutputSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionUnavailableOutput: Same<
+        W.ExperimentalCanonicalInteractionUnavailableOutput,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionUnavailableOutputSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionOutput: Same<
+        W.ExperimentalCanonicalInteractionOutput,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionOutputSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionExecutionResult: Same<
+        W.ExperimentalCanonicalInteractionExecutionResult,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionResultSchema
+        >
     >;
     FindPayload: Same<W.FindPayload, z.infer<typeof import('./api-schemas/content.js').FindPayloadSchema>>;
     GenericCommandResponse: Same<
@@ -1664,6 +1758,26 @@ interface Checks {
         W.StreamingOptions,
         z.infer<typeof import('./api-schemas/interaction.js').StreamingOptionsSchema>
     >;
+    CanonicalContinuationState: Same<
+        W.CanonicalContinuationState,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalContinuationStateSchema>
+    >;
+    CanonicalPendingApplicationToolCall: Same<
+        W.CanonicalPendingApplicationToolCall,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalPendingApplicationToolCallSchema>
+    >;
+    CanonicalConversationHeadScope: Same<
+        W.CanonicalConversationHeadScope,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeSchema>
+    >;
+    CanonicalConversationHeadScopeQuery: Same<
+        W.CanonicalConversationHeadScopeQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeQuerySchema>
+    >;
+    CanonicalAsyncCompletionResult: Same<
+        W.CanonicalAsyncCompletionResult,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalAsyncCompletionResultSchema>
+    >;
     AsyncCompletionOptions: Same<
         W.AsyncCompletionOptions,
         z.infer<typeof import('./api-schemas/interaction.js').AsyncCompletionOptionsSchema>
@@ -2466,6 +2580,20 @@ interface Checks {
     SystemRoleDefinition: Same<
         W.SystemRoleDefinition,
         z.infer<typeof import('./api-schemas/access-control.js').SystemRoleDefinitionSchema>
+    >;
+    AppendRunConversationToolResultsPayload: Same<
+        W.AppendRunConversationToolResultsPayload,
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsPayloadSchema>
+    >;
+    AppendRunConversationToolResultsResponse: Same<
+        W.AppendRunConversationToolResultsResponse,
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsResponseSchema
+        >
+    >;
+    PublishAgentRunConversationHeadPayload: Same<
+        W.PublishAgentRunConversationHeadPayload,
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').PublishAgentRunConversationHeadPayloadSchema>
     >;
     ExecutionRunDocRef: Same<
         W.ExecutionRunDocRef,
@@ -5316,7 +5444,7 @@ interface Checks {
     >;
     'component:ToolDefinition': Same<
         W.ApiComponentTypes['ToolDefinition'],
-        z.infer<typeof import('@llumiverse/common/schemas').ToolDefinitionSchema>
+        z.infer<typeof import('@llumiverse/conversation/schemas').ToolDefinitionSchema>
     >;
     'component:ToolUse': Same<
         W.ApiComponentTypes['ToolUse'],
@@ -5914,6 +6042,26 @@ interface Checks {
         W.ApiComponentTypes['AsyncCompletionMode'],
         z.infer<typeof import('./api-schemas/interaction.js').AsyncCompletionModeSchema>
     >;
+    'component:CanonicalAsyncCompletionResult': Same<
+        W.ApiComponentTypes['CanonicalAsyncCompletionResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalAsyncCompletionResultSchema>
+    >;
+    'component:CanonicalConversationHeadScope': Same<
+        W.ApiComponentTypes['CanonicalConversationHeadScope'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeSchema>
+    >;
+    'component:CanonicalConversationHeadScopeQuery': Same<
+        W.ApiComponentTypes['CanonicalConversationHeadScopeQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeQuerySchema>
+    >;
+    'component:CanonicalContinuationState': Same<
+        W.ApiComponentTypes['CanonicalContinuationState'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalContinuationStateSchema>
+    >;
+    'component:CanonicalPendingApplicationToolCall': Same<
+        W.ApiComponentTypes['CanonicalPendingApplicationToolCall'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalPendingApplicationToolCallSchema>
+    >;
     'component:AsyncCompletionOptions': Same<
         W.ApiComponentTypes['AsyncCompletionOptions'],
         z.infer<typeof import('./api-schemas/interaction.js').AsyncCompletionOptionsSchema>
@@ -6135,18 +6283,6 @@ interface Checks {
         W.ApiComponentTypes['ContentObjectTypeCatalogEntryArray'],
         z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeCatalogEntryArraySchema>
     >;
-    'component:InCodeTypeDefinition': Same<
-        W.ApiComponentTypes['InCodeTypeDefinition'],
-        z.infer<typeof import('./api-schemas/store.js').InCodeTypeDefinitionSchema>
-    >;
-    'component:CreateContentObjectTypePayload': Same<
-        W.ApiComponentTypes['CreateContentObjectTypePayload'],
-        z.infer<typeof import('./api-schemas/store.js').CreateContentObjectTypePayloadSchema>
-    >;
-    'component:UpdateContentObjectTypePayload': Same<
-        W.ApiComponentTypes['UpdateContentObjectTypePayload'],
-        z.infer<typeof import('./api-schemas/store.js').UpdateContentObjectTypePayloadSchema>
-    >;
     'component:ContentObjectType': Same<
         W.ApiComponentTypes['ContentObjectType'],
         z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeSchema>
@@ -6158,6 +6294,18 @@ interface Checks {
     'component:ContentObjectTypeListQuery': Same<
         W.ApiComponentTypes['ContentObjectTypeListQuery'],
         z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeListQuerySchema>
+    >;
+    'component:InCodeTypeDefinition': Same<
+        W.ApiComponentTypes['InCodeTypeDefinition'],
+        z.infer<typeof import('./api-schemas/store.js').InCodeTypeDefinitionSchema>
+    >;
+    'component:CreateContentObjectTypePayload': Same<
+        W.ApiComponentTypes['CreateContentObjectTypePayload'],
+        z.infer<typeof import('./api-schemas/store.js').CreateContentObjectTypePayloadSchema>
+    >;
+    'component:UpdateContentObjectTypePayload': Same<
+        W.ApiComponentTypes['UpdateContentObjectTypePayload'],
+        z.infer<typeof import('./api-schemas/store.js').UpdateContentObjectTypePayloadSchema>
     >;
     'component:DeleteCountResult': Same<
         W.ApiComponentTypes['DeleteCountResult'],
@@ -9463,9 +9611,121 @@ interface Checks {
         W.ApiComponentTypes['DelegationGrantArray'],
         z.infer<typeof import('./api-schemas/delegation.js').DelegationGrantArraySchema>
     >;
+    'component:ExperimentalCanonicalInteractionHeaders': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionHeaders'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionHeadersSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionInitialState': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionInitialState'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionInitialStateSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionReturnPolicy': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionReturnPolicy'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReturnPolicySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionExecutionConfiguration': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionExecutionConfiguration'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionConfigurationSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionExecutionRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionExecutionRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalNamedInteractionExecutionRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalNamedInteractionExecutionRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalNamedInteractionExecutionRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionDocumentHistory': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionDocumentHistory'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionDocumentHistorySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionReferenceHistory': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionReferenceHistory'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReferenceHistorySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionUnavailableHistory': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionUnavailableHistory'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionUnavailableHistorySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionHistory': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionHistory'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionHistorySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionRun': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionRun'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRunSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionAcceptedOutput': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionAcceptedOutput'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionAcceptedOutputSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionUnavailableOutput': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionUnavailableOutput'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionUnavailableOutputSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionOutput': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionOutput'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionOutputSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionExecutionResult': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionExecutionResult'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionResultSchema
+        >
+    >;
+    'component:ConversationToolExecutionRequest': Same<
+        W.ApiComponentTypes['ConversationToolExecutionRequest'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationToolExecutionRequestSchema>
+    >;
+    'component:ConversationToolExecutionResult': Same<
+        W.ApiComponentTypes['ConversationToolExecutionResult'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationToolExecutionResultSchema>
+    >;
     'component:RunConversationResponse': Same<
         W.ApiComponentTypes['RunConversationResponse'],
         z.infer<typeof import('./api-schemas/run-conversation.js').RunConversationResponseSchema>
+    >;
+    'component:AppendRunConversationToolResultsPayload': Same<
+        W.ApiComponentTypes['AppendRunConversationToolResultsPayload'],
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsPayloadSchema>
+    >;
+    'component:AppendRunConversationToolResultsResponse': Same<
+        W.ApiComponentTypes['AppendRunConversationToolResultsResponse'],
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsResponseSchema
+        >
+    >;
+    'component:PublishAgentRunConversationHeadPayload': Same<
+        W.ApiComponentTypes['PublishAgentRunConversationHeadPayload'],
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').PublishAgentRunConversationHeadPayloadSchema>
     >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
@@ -9694,8 +9954,24 @@ const checks: Checks = {
     WebsiteCredentialFillRequest: true,
     WebsiteCredentialFillResponse: true,
     WebsiteCredentialMetadataUpdate: true,
+    AvailableRunConversation: true,
     UnavailableRunConversation: true,
     RunConversationResponse: true,
+    ExperimentalCanonicalInteractionInitialState: true,
+    ExperimentalCanonicalInteractionHeaders: true,
+    ExperimentalCanonicalInteractionReturnPolicy: true,
+    ExperimentalCanonicalInteractionExecutionConfiguration: true,
+    ExperimentalCanonicalInteractionExecutionRequest: true,
+    ExperimentalCanonicalNamedInteractionExecutionRequest: true,
+    ExperimentalCanonicalInteractionDocumentHistory: true,
+    ExperimentalCanonicalInteractionReferenceHistory: true,
+    ExperimentalCanonicalInteractionUnavailableHistory: true,
+    ExperimentalCanonicalInteractionHistory: true,
+    ExperimentalCanonicalInteractionRun: true,
+    ExperimentalCanonicalInteractionAcceptedOutput: true,
+    ExperimentalCanonicalInteractionUnavailableOutput: true,
+    ExperimentalCanonicalInteractionOutput: true,
+    ExperimentalCanonicalInteractionExecutionResult: true,
     FindPayload: true,
     GenericCommandResponse: true,
     DeleteByIdResult: true,
@@ -9936,6 +10212,11 @@ const checks: Checks = {
     ResultStorageOptions: true,
     AsyncCompletionMode: true,
     StreamingOptions: true,
+    CanonicalContinuationState: true,
+    CanonicalPendingApplicationToolCall: true,
+    CanonicalConversationHeadScope: true,
+    CanonicalConversationHeadScopeQuery: true,
+    CanonicalAsyncCompletionResult: true,
     AsyncCompletionOptions: true,
     AgentResourceType: true,
     AgentResourceAction: true,
@@ -10151,6 +10432,9 @@ const checks: Checks = {
     RoleDomain: true,
     RoleDefinition: true,
     SystemRoleDefinition: true,
+    AppendRunConversationToolResultsPayload: true,
+    AppendRunConversationToolResultsResponse: true,
+    PublishAgentRunConversationHeadPayload: true,
     ExecutionRunDocRef: true,
     FindRunResult: true,
     FindRunResultArray: true,
@@ -11078,6 +11362,11 @@ const checks: Checks = {
     'component:ExecuteInteractionByEndpointQuery': true,
     'component:ExecuteInteractionByEndpointHeaders': true,
     'component:AsyncCompletionMode': true,
+    'component:CanonicalAsyncCompletionResult': true,
+    'component:CanonicalConversationHeadScope': true,
+    'component:CanonicalConversationHeadScopeQuery': true,
+    'component:CanonicalContinuationState': true,
+    'component:CanonicalPendingApplicationToolCall': true,
     'component:AsyncCompletionOptions': true,
     'component:AsyncExecutionPayload': true,
     'component:AsyncInteractionExecutionPayload': true,
@@ -11134,12 +11423,12 @@ const checks: Checks = {
     'component:ContentObjectTypeItemArray': true,
     'component:ContentObjectTypeCatalogEntry': true,
     'component:ContentObjectTypeCatalogEntryArray': true,
-    'component:InCodeTypeDefinition': true,
-    'component:CreateContentObjectTypePayload': true,
-    'component:UpdateContentObjectTypePayload': true,
     'component:ContentObjectType': true,
     'component:ContentObjectTypeCatalogQuery': true,
     'component:ContentObjectTypeListQuery': true,
+    'component:InCodeTypeDefinition': true,
+    'component:CreateContentObjectTypePayload': true,
+    'component:UpdateContentObjectTypePayload': true,
     'component:DeleteCountResult': true,
     'component:MigrationListResponse': true,
     'component:RunMigrationPayload': true,
@@ -11966,12 +12255,32 @@ const checks: Checks = {
     'component:CreateDelegationGrantPayload': true,
     'component:DelegationGrant': true,
     'component:DelegationGrantArray': true,
+    'component:ExperimentalCanonicalInteractionHeaders': true,
+    'component:ExperimentalCanonicalInteractionInitialState': true,
+    'component:ExperimentalCanonicalInteractionReturnPolicy': true,
+    'component:ExperimentalCanonicalInteractionExecutionConfiguration': true,
+    'component:ExperimentalCanonicalInteractionExecutionRequest': true,
+    'component:ExperimentalCanonicalNamedInteractionExecutionRequest': true,
+    'component:ExperimentalCanonicalInteractionDocumentHistory': true,
+    'component:ExperimentalCanonicalInteractionReferenceHistory': true,
+    'component:ExperimentalCanonicalInteractionUnavailableHistory': true,
+    'component:ExperimentalCanonicalInteractionHistory': true,
+    'component:ExperimentalCanonicalInteractionRun': true,
+    'component:ExperimentalCanonicalInteractionAcceptedOutput': true,
+    'component:ExperimentalCanonicalInteractionUnavailableOutput': true,
+    'component:ExperimentalCanonicalInteractionOutput': true,
+    'component:ExperimentalCanonicalInteractionExecutionResult': true,
+    'component:ConversationToolExecutionRequest': true,
+    'component:ConversationToolExecutionResult': true,
     'component:RunConversationResponse': true,
+    'component:AppendRunConversationToolResultsPayload': true,
+    'component:AppendRunConversationToolResultsResponse': true,
+    'component:PublishAgentRunConversationHeadPayload': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2496);
+        expect(Object.keys(checks)).toHaveLength(2545);
     });
 });
