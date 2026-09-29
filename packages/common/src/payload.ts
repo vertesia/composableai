@@ -1,18 +1,3 @@
-import type { z } from 'zod';
-import type {
-    ComputeCollectionFacetPayloadSchema,
-    ComputeObjectFacetPayloadSchema,
-    ExportPropertiesPayloadSchema,
-    ExportPropertiesResponseSchema,
-} from './api-schemas/content.js';
-import type {
-    ComputeInteractionFacetPayloadSchema,
-    ComputeRunFacetPayloadSchema,
-    RunSearchPayloadSchema,
-    SortOptionSchema,
-    SortOrderSchema,
-} from './api-schemas/interaction.js';
-import type { ComputePromptFacetPayloadSchema } from './api-schemas/prompt.js';
 import type { FacetSpec } from './facets.js';
 import type {
     InteractionSearchQuery,
@@ -21,10 +6,11 @@ import type {
     PromptSearchQuery,
     SimpleSearchQuery,
 } from './query.js';
+import type * as Wire from './wire-types.generated.js';
 
-export type SortOrder = z.infer<typeof SortOrderSchema>;
+export type SortOrder = Wire.SortOrder;
 
-export type SortOption = z.infer<typeof SortOptionSchema>;
+export type SortOption = Wire.SortOption;
 
 interface SearchPayload {
     facets?: FacetSpec[];
@@ -61,18 +47,18 @@ export interface PromptSearchPayload extends SearchPayload {
     query?: PromptSearchQuery;
 }
 
-export type RunSearchPayload = z.infer<typeof RunSearchPayloadSchema>;
+export type RunSearchPayload = Wire.RunSearchPayload;
 
-export type ComputeCollectionFacetPayload = z.infer<typeof ComputeCollectionFacetPayloadSchema>;
+export type ComputeCollectionFacetPayload = Wire.ComputeCollectionFacetPayload;
 
-export type ComputeInteractionFacetPayload = z.infer<typeof ComputeInteractionFacetPayloadSchema>;
+export type ComputeInteractionFacetPayload = Wire.ComputeInteractionFacetPayload;
 
-export type ComputeObjectFacetPayload = z.infer<typeof ComputeObjectFacetPayloadSchema>;
+export type ComputeObjectFacetPayload = Wire.ComputeObjectFacetPayload;
 
-export type ComputePromptFacetPayload = z.infer<typeof ComputePromptFacetPayloadSchema>;
+export type ComputePromptFacetPayload = Wire.ComputePromptFacetPayload;
 
-export type ComputeRunFacetPayload = z.infer<typeof ComputeRunFacetPayloadSchema>;
+export type ComputeRunFacetPayload = Wire.ComputeRunFacetPayload;
 
-export type ExportPropertiesPayload = z.infer<typeof ExportPropertiesPayloadSchema>;
+export type ExportPropertiesPayload = Wire.ExportPropertiesPayload;
 
-export type ExportPropertiesResponse = z.infer<typeof ExportPropertiesResponseSchema>;
+export type ExportPropertiesResponse = Wire.ExportPropertiesResponse;

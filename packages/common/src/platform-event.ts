@@ -1,74 +1,25 @@
-import type { z } from 'zod';
-import type { EventRefSchema } from './api-schemas/app-lifecycle.js';
-import type { EventCategorySchema } from './api-schemas/audit-trail.js';
-import type {
-    AgentDeliveryMatchModeSchema,
-    AgentEventDeliveryTargetSchema,
-    AgentSemanticEvaluatorSchema,
-    AppEventDeliveryTargetInputSchema,
-    AppEventDeliveryTargetSchema,
-    CancelEventDeliveryIntentsPayloadSchema,
-    CancelEventDeliveryIntentsResponseSchema,
-    CreateEventIngestChannelPayloadSchema,
-    EventDeliveryIntentStatusSchema,
-    EventDeliveryIntentSummarySchema,
-    EventDeliveryQueueFailureSummarySchema,
-    EventDeliveryQueueSortFieldSchema,
-    EventDeliveryQueueSubscriptionSummarySchema,
-    EventDeliveryQueueSummaryPayloadSchema,
-    EventDeliveryQueueSummaryResponseSchema,
-    EventDeliverySortFieldSchema,
-    EventDeliverySummarySchema,
-    EventIngestChannelMutationResponseSchema,
-    EventIngestChannelSchema,
-    EventIngestResourceRuleSchema,
-    EventIngestSignatureAlgorithmSchema,
-    EventIngestSignatureConfigSchema,
-    EventIngestSignatureEncodingSchema,
-    EventIngestTransformSchema,
-    EventOutboxQueueSummarySchema,
-    EventOutboxStatusSchema,
-    EventPrioritySchema,
-    EventSemanticConditionSchema,
-    EventSubscriptionFilterSchema,
-    InteractionSemanticEvaluatorSchema,
-    ListEventDeliveriesPayloadSchema,
-    ListEventDeliveriesResponseSchema,
-    SemanticConditionModeSchema,
-    SemanticConditionOnErrorSchema,
-    SemanticEvaluationRecordSchema,
-    SemanticEvaluationStatusSchema,
-    SemanticEvaluatorSchema,
-    StreamEventDeliveriesQuerySchema,
-    UpdateEventIngestChannelPayloadSchema,
-    WebhookEventDeliveryTargetInputSchema,
-    WebhookEventDeliveryTargetSchema,
-    WebhookPayloadModeSchema,
-    WebhookSigningModeSchema,
-    WorkflowEventDeliveryTargetInputSchema,
-    WorkflowEventDeliveryTargetSchema,
-} from './api-schemas/events.js';
 import type { AuditMeter } from './audit-trail.js';
 import type { ConversationVisibility } from './interaction.js';
 import type { SystemRoles } from './project.js';
 import type { ProcessDefinitionBody, ProcessRunType } from './store/index.js';
+import type * as Wire from './wire-types.generated.js';
 
 // Inferred from `./api-schemas/audit-trail.js`, which is where the schema sits: the audit trail is
 // the only place the category is published, and the converter grouped it with the endpoints that
 // publish it rather than with the event types that carry it.
-export type EventCategory = z.infer<typeof EventCategorySchema>;
+export type EventCategory = Wire.EventCategory;
 
-export type EventPriority = z.infer<typeof EventPrioritySchema>;
+export type EventPriority = Wire.EventPriority;
 
-export type WebhookSigningMode = z.infer<typeof WebhookSigningModeSchema>;
+export type WebhookSigningMode = Wire.WebhookSigningMode;
 
-export type WebhookPayloadMode = z.infer<typeof WebhookPayloadModeSchema>;
+export type WebhookPayloadMode = Wire.WebhookPayloadMode;
 
-export type EventOutboxStatus = z.infer<typeof EventOutboxStatusSchema>;
+export type EventOutboxStatus = Wire.EventOutboxStatus;
 
-export type EventDeliveryIntentStatus = z.infer<typeof EventDeliveryIntentStatusSchema>;
+export type EventDeliveryIntentStatus = Wire.EventDeliveryIntentStatus;
 
-export type EventRef = z.infer<typeof EventRefSchema>;
+export type EventRef = Wire.EventRef;
 
 export interface PlatformEvent extends EventRef {
     timestamp: string;
@@ -93,39 +44,39 @@ export interface PlatformEvent extends EventRef {
     details?: Record<string, unknown>;
 }
 
-export type EventSubscriptionFilter = z.infer<typeof EventSubscriptionFilterSchema>;
+export type EventSubscriptionFilter = Wire.EventSubscriptionFilter;
 
 // --- Semantic conditions ---
 // A semantic_condition is an LLM-evaluated natural-language predicate applied AFTER all structural
 // filters (categories, actions, resource types, JSONLogic condition) have matched.
 
-export type SemanticConditionMode = z.infer<typeof SemanticConditionModeSchema>;
+export type SemanticConditionMode = Wire.SemanticConditionMode;
 
-export type SemanticConditionOnError = z.infer<typeof SemanticConditionOnErrorSchema>;
+export type SemanticConditionOnError = Wire.SemanticConditionOnError;
 
-export type SemanticEvaluationStatus = z.infer<typeof SemanticEvaluationStatusSchema>;
+export type SemanticEvaluationStatus = Wire.SemanticEvaluationStatus;
 
-export type InteractionSemanticEvaluator = z.infer<typeof InteractionSemanticEvaluatorSchema>;
+export type InteractionSemanticEvaluator = Wire.InteractionSemanticEvaluator;
 
-export type AgentSemanticEvaluator = z.infer<typeof AgentSemanticEvaluatorSchema>;
+export type AgentSemanticEvaluator = Wire.AgentSemanticEvaluator;
 
-export type SemanticEvaluator = z.infer<typeof SemanticEvaluatorSchema>;
+export type SemanticEvaluator = Wire.SemanticEvaluator;
 
-export type EventSemanticCondition = z.infer<typeof EventSemanticConditionSchema>;
+export type EventSemanticCondition = Wire.EventSemanticCondition;
 
-export type SemanticEvaluationRecord = z.infer<typeof SemanticEvaluationRecordSchema>;
+export type SemanticEvaluationRecord = Wire.SemanticEvaluationRecord;
 
-export type WorkflowEventDeliveryTarget = z.infer<typeof WorkflowEventDeliveryTargetSchema>;
+export type WorkflowEventDeliveryTarget = Wire.WorkflowEventDeliveryTarget;
 
-export type WebhookEventDeliveryTarget = z.infer<typeof WebhookEventDeliveryTargetSchema>;
+export type WebhookEventDeliveryTarget = Wire.WebhookEventDeliveryTarget;
 
-export type AppEventDeliveryTarget = z.infer<typeof AppEventDeliveryTargetSchema>;
+export type AppEventDeliveryTarget = Wire.AppEventDeliveryTarget;
 
 export const DEFAULT_EVENT_AGENT_INTERACTION_REF = 'sys:GeneralAgent';
 
-export type AgentDeliveryMatchMode = z.infer<typeof AgentDeliveryMatchModeSchema>;
+export type AgentDeliveryMatchMode = Wire.AgentDeliveryMatchMode;
 
-export type AgentEventDeliveryTarget = z.infer<typeof AgentEventDeliveryTargetSchema>;
+export type AgentEventDeliveryTarget = Wire.AgentEventDeliveryTarget;
 
 export interface ProcessEventDeliveryTarget {
     type: 'process';
@@ -155,11 +106,11 @@ export type EventDeliveryTarget =
 // callers supply the input shapes below: server-managed fields (has_secret, secret_label,
 // migrated_rule_name) are omitted, and write-only directives (rotate_signing_secret) are added.
 
-export type WorkflowEventDeliveryTargetInput = z.infer<typeof WorkflowEventDeliveryTargetInputSchema>;
+export type WorkflowEventDeliveryTargetInput = Wire.WorkflowEventDeliveryTargetInput;
 
-export type WebhookEventDeliveryTargetInput = z.infer<typeof WebhookEventDeliveryTargetInputSchema>;
+export type WebhookEventDeliveryTargetInput = Wire.WebhookEventDeliveryTargetInput;
 
-export type AppEventDeliveryTargetInput = z.infer<typeof AppEventDeliveryTargetInputSchema>;
+export type AppEventDeliveryTargetInput = Wire.AppEventDeliveryTargetInput;
 
 export type EventDeliveryTargetInput =
     | WorkflowEventDeliveryTargetInput
@@ -229,17 +180,17 @@ export interface EventSubscriptionMutationResponse {
     webhook_signing_secret?: string;
 }
 
-export type EventDeliveryIntentSummary = z.infer<typeof EventDeliveryIntentSummarySchema>;
+export type EventDeliveryIntentSummary = Wire.EventDeliveryIntentSummary;
 
-export type EventDeliverySummary = z.infer<typeof EventDeliverySummarySchema>;
+export type EventDeliverySummary = Wire.EventDeliverySummary;
 
-export type EventDeliverySortField = z.infer<typeof EventDeliverySortFieldSchema>;
+export type EventDeliverySortField = Wire.EventDeliverySortField;
 
-export type ListEventDeliveriesPayload = z.infer<typeof ListEventDeliveriesPayloadSchema>;
+export type ListEventDeliveriesPayload = Wire.ListEventDeliveriesPayload;
 
-export type ListEventDeliveriesResponse = z.infer<typeof ListEventDeliveriesResponseSchema>;
+export type ListEventDeliveriesResponse = Wire.ListEventDeliveriesResponse;
 
-export type StreamEventDeliveriesQuery = z.infer<typeof StreamEventDeliveriesQuerySchema>;
+export type StreamEventDeliveriesQuery = Wire.StreamEventDeliveriesQuery;
 
 export interface EventDeliveryStreamItem {
     cursor: string;
@@ -325,41 +276,41 @@ export interface ListEventIngestChannelsQuery {
     sort_order?: 'asc' | 'desc';
 }
 
-export type EventDeliveryQueueSortField = z.infer<typeof EventDeliveryQueueSortFieldSchema>;
+export type EventDeliveryQueueSortField = Wire.EventDeliveryQueueSortField;
 
-export type EventDeliveryQueueSummaryPayload = z.infer<typeof EventDeliveryQueueSummaryPayloadSchema>;
+export type EventDeliveryQueueSummaryPayload = Wire.EventDeliveryQueueSummaryPayload;
 
-export type EventOutboxQueueSummary = z.infer<typeof EventOutboxQueueSummarySchema>;
+export type EventOutboxQueueSummary = Wire.EventOutboxQueueSummary;
 
-export type EventDeliveryQueueFailureSummary = z.infer<typeof EventDeliveryQueueFailureSummarySchema>;
+export type EventDeliveryQueueFailureSummary = Wire.EventDeliveryQueueFailureSummary;
 
-export type EventDeliveryQueueSubscriptionSummary = z.infer<typeof EventDeliveryQueueSubscriptionSummarySchema>;
+export type EventDeliveryQueueSubscriptionSummary = Wire.EventDeliveryQueueSubscriptionSummary;
 
-export type EventDeliveryQueueSummaryResponse = z.infer<typeof EventDeliveryQueueSummaryResponseSchema>;
+export type EventDeliveryQueueSummaryResponse = Wire.EventDeliveryQueueSummaryResponse;
 
-export type CancelEventDeliveryIntentsPayload = z.infer<typeof CancelEventDeliveryIntentsPayloadSchema>;
+export type CancelEventDeliveryIntentsPayload = Wire.CancelEventDeliveryIntentsPayload;
 
-export type CancelEventDeliveryIntentsResponse = z.infer<typeof CancelEventDeliveryIntentsResponseSchema>;
+export type CancelEventDeliveryIntentsResponse = Wire.CancelEventDeliveryIntentsResponse;
 
 // --- External event ingest channels ---
 // An ingest channel is a token-authenticated inbound endpoint that lets external systems publish
 // events into the platform event bus. Ingested events get event_category 'external' and
 // source 'external:<source>', and match event subscriptions like any other platform event.
 
-export type EventIngestResourceRule = z.infer<typeof EventIngestResourceRuleSchema>;
+export type EventIngestResourceRule = Wire.EventIngestResourceRule;
 
-export type EventIngestTransform = z.infer<typeof EventIngestTransformSchema>;
+export type EventIngestTransform = Wire.EventIngestTransform;
 
-export type EventIngestSignatureAlgorithm = z.infer<typeof EventIngestSignatureAlgorithmSchema>;
+export type EventIngestSignatureAlgorithm = Wire.EventIngestSignatureAlgorithm;
 
-export type EventIngestSignatureEncoding = z.infer<typeof EventIngestSignatureEncodingSchema>;
+export type EventIngestSignatureEncoding = Wire.EventIngestSignatureEncoding;
 
-export type EventIngestSignatureConfig = z.infer<typeof EventIngestSignatureConfigSchema>;
+export type EventIngestSignatureConfig = Wire.EventIngestSignatureConfig;
 
-export type EventIngestChannel = z.infer<typeof EventIngestChannelSchema>;
+export type EventIngestChannel = Wire.EventIngestChannel;
 
-export type CreateEventIngestChannelPayload = z.infer<typeof CreateEventIngestChannelPayloadSchema>;
+export type CreateEventIngestChannelPayload = Wire.CreateEventIngestChannelPayload;
 
-export type UpdateEventIngestChannelPayload = z.infer<typeof UpdateEventIngestChannelPayloadSchema>;
+export type UpdateEventIngestChannelPayload = Wire.UpdateEventIngestChannelPayload;
 
-export type EventIngestChannelMutationResponse = z.infer<typeof EventIngestChannelMutationResponseSchema>;
+export type EventIngestChannelMutationResponse = Wire.EventIngestChannelMutationResponse;

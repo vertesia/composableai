@@ -69,6 +69,7 @@ import type {
     UpdateProcessDefinitionPayload,
 } from '../store/process.js';
 import type { ViewNavigationNode } from '../views.js';
+import type { ApiComponentTypes } from '../wire-types.generated.js';
 import {
     ACECreatePayloadSchema,
     ACEUpdatePayloadSchema,
@@ -1789,6 +1790,9 @@ const PROCESS_RUNTIME_SCHEMAS = {
     AnswerProcessTaskPayload: ProcessSchemas.AnswerProcessTaskPayloadSchema,
     AdvanceProcessPayload: ProcessSchemas.AdvanceProcessPayloadSchema,
     ProcessState: ProcessSchemas.ProcessStateSchema,
+    ProcessTerminalReason: ProcessSchemas.ProcessTerminalReasonSchema,
+    ProcessBudgetState: ProcessSchemas.ProcessBudgetStateSchema,
+    ProcessBudgetSummary: ProcessSchemas.ProcessBudgetSummarySchema,
     WorkflowExecutionStartResultArray: ProcessSchemas.WorkflowExecutionStartResultArraySchema,
     RecordProcessRunPayload: ProcessSchemas.RecordProcessRunPayloadSchema,
     ProcessTestRunStatus: ProcessSchemas.ProcessTestRunStatusSchema,
@@ -1910,6 +1914,7 @@ const AGENT_RUN_SCHEMAS = {
     AgentRunArchiveState: AgentRunSchemas.AgentRunArchiveStateSchema,
     ResourceRef: AgentRunSchemas.ResourceRefSchema,
     SignalAgentResponse: AgentRunSchemas.SignalAgentResponseSchema,
+    AllocateAgentRunBudgetPayload: AgentRunSchemas.AllocateAgentRunBudgetPayloadSchema,
     AutonomousRunResponse: AgentRunSchemas.AutonomousRunResponseSchema,
     AgentRun: AgentRunSchemas.AgentRunSchema,
     CreateAgentRunPayload: AgentRunSchemas.CreateAgentRunPayloadSchema,
@@ -1940,16 +1945,16 @@ const AGENT_RUN_SCHEMAS = {
     AgentRunFeedbackResponse: AgentRunSchemas.AgentRunFeedbackResponseSchema,
     AgentRunFeedbackEntry: AgentRunSchemas.AgentRunFeedbackEntrySchema,
     AgentRunEvaluationRollup: AgentRunSchemas.AgentRunEvaluationRollupSchema,
-    AgentRunJudgeResult: AgentRunSchemas.AgentRunJudgeResultSchema,
+    AgentRunLlmEvaluationResult: AgentRunSchemas.AgentRunLlmEvaluationResultSchema,
     AgentRunContradictionReason: AgentRunSchemas.AgentRunContradictionReasonSchema,
     AgentRunEvaluation: AgentRunSchemas.AgentRunEvaluationSchema,
     TurnTerminalType: AgentRunSchemas.TurnTerminalTypeSchema,
     EvaluationSeverity: AgentRunSchemas.EvaluationSeveritySchema,
     TurnEvaluationFlag: AgentRunSchemas.TurnEvaluationFlagSchema,
     ToolErrorClass: AgentRunSchemas.ToolErrorClassSchema,
-    JudgeGateReason: AgentRunSchemas.JudgeGateReasonSchema,
-    JudgeOutcome: AgentRunSchemas.JudgeOutcomeSchema,
-    JudgeVerdict: AgentRunSchemas.JudgeVerdictSchema,
+    EvaluationGateReason: AgentRunSchemas.EvaluationGateReasonSchema,
+    EvaluationOutcome: AgentRunSchemas.EvaluationOutcomeSchema,
+    EvaluationVerdict: AgentRunSchemas.EvaluationVerdictSchema,
     ListAgentRunsEvaluationSeverity: AgentRunSchemas.ListAgentRunsEvaluationSeveritySchema,
     AgentEvent: AgentRunSchemas.AgentEventSchema,
     IngestAgentEventsPayload: AgentRunSchemas.IngestAgentEventsPayloadSchema,
@@ -2726,6 +2731,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // The agent configuration block under `ProjectConfiguration`, published closed on both sides.
     'AgentProjectConfiguration',
     'AgentCheckpointConfiguration',
+    'AgentBudgetConfiguration',
     // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
     'HttpTimeoutOptions',
     // The intake policy tree. Every object in it is published closed today, including the inline
@@ -2959,7 +2965,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AgentRunFeedbackCounts',
     'AgentRunFeedbackEntry',
     'AgentRunEvaluationRollup',
-    'AgentRunJudgeResult',
+    'AgentRunLlmEvaluationResult',
     'AgentRunEvaluation',
     'StartContentObjectExportResponse',
     'ExportContentObjectsIncludeOptions',
@@ -2999,6 +3005,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ContentObjectExportArtifactFile',
     'ProcessRunConfig',
     'ProcessHistoryRef',
+    'ProcessBudgetState',
+    'ProcessBudgetSummary',
     'NodeHistoryEntry',
     'ResourceRef',
     'WorkflowRun',
@@ -3033,6 +3041,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'WorkflowActionResponse',
     'AnswerProcessTaskPayload',
     'SignalAgentResponse',
+    'AllocateAgentRunBudgetPayload',
     'AdvanceProcessPayload',
     'BranchDefinition',
     'ParallelCollectDefinition',
@@ -3657,12 +3666,25 @@ interface ZenoRecursiveComponentTypes {
 /**
  * The wire type a component publishes.
  *
- * `ApiComponentType<'Account'>` is `z.infer<typeof AccountSchema>` — the map is indexed directly
- * rather than dispatched through the groups, which the intersection makes possible.
+ * `ApiComponentType<'Account'>` is the plain type `gen:schemas` writes for `AccountSchema` into
+ * `ApiComponentTypes`, which `wire-types.generated.test.ts` proves identical to its `z.infer`. Indexing
+ * that map rather than `z.infer<ApiSchemaMap[N]>` keeps Zod's inference out of every program that names
+ * a component. A component the generator has not seen yet resolves to `never`, which
+ * `registry-groups.test.ts` rejects.
+ *
+ * It is wrapped in `NoInfer` because `N` always comes from a component-name argument and can never be
+ * recovered from the wire type. Without it, a call whose result has a contextual type — a destructuring
+ * `const { file } = validatedQuery(ctx, 'FileMetadataQuery')`, an `await`, a typed `return` — makes the
+ * checker infer `N` from that context while `N` is still unresolved, which evaluates `z.infer` across
+ * every component in the registry: about 500k types, 1 GB and 2 s of `tsc` in each consuming program.
  */
-export type ApiComponentType<N extends ApiComponentName> = N extends keyof ZenoRecursiveComponentTypes
-    ? ZenoRecursiveComponentTypes[N]
-    : z.infer<ApiSchemaMap[N]>;
+export type ApiComponentType<N extends ApiComponentName> = NoInfer<
+    N extends keyof ZenoRecursiveComponentTypes
+        ? ZenoRecursiveComponentTypes[N]
+        : N extends keyof ApiComponentTypes
+          ? ApiComponentTypes[N]
+          : never
+>;
 
 /**
  * Names a published component from inside a handler signature:

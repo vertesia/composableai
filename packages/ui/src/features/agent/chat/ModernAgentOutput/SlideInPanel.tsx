@@ -40,7 +40,7 @@ export default function SlideInPanel({ isOpen, onClose, title, children, width =
                 size="none"
                 aria-label="Close panel"
                 tabIndex={-1}
-                className={`!fixed inset-0 bg-black/10 dark:bg-black/30 z-40 transition-opacity duration-300 ${
+                className={`!fixed inset-0 bg-foreground/20 z-40 transition-opacity duration-300 ${
                     isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
                 onClick={onClose}
@@ -48,7 +48,7 @@ export default function SlideInPanel({ isOpen, onClose, title, children, width =
 
             {/* Slide-in panel */}
             <div
-                className={`fixed top-0 end-0 bottom-0 z-50 bg-white dark:bg-muted shadow-lg border-s border-border transition-transform duration-300 ease-in-out ${panelTranslateClass}`}
+                className={`fixed top-0 end-0 bottom-0 z-50 bg-card text-card-foreground shadow-lg border-s border-border transition-transform duration-300 ease-in-out ${panelTranslateClass}`}
                 style={{ width }}
             >
                 {/* Header */}
