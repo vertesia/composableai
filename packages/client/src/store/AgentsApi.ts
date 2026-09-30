@@ -13,6 +13,8 @@ import {
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
     type AllocateAgentRunBudgetPayload,
+    type AppendRunConversationProgramTurnPayload,
+    type AppendRunConversationProgramTurnResponse,
     type AppendRunConversationToolResultsPayload,
     type AppendRunConversationToolResultsResponse,
     type BindRunWorkflowPayload,
@@ -143,6 +145,18 @@ export class AgentsApi extends ApiTopic {
         scope: CanonicalConversationHeadScope = 'root',
     ): Promise<AppendRunConversationToolResultsResponse> {
         return this.post(`/${encodeURIComponent(id)}/conversation/tool-results`, {
+            payload,
+            query: { conversation_scope: scope },
+        });
+    }
+
+    /** @internal Append one server-owned ordinary controller instruction to the durable operational head. */
+    appendConversationProgramTurn(
+        id: string,
+        payload: AppendRunConversationProgramTurnPayload,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<AppendRunConversationProgramTurnResponse> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/program-turns`, {
             payload,
             query: { conversation_scope: scope },
         });

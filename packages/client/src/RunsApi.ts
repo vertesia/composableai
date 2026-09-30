@@ -1,6 +1,8 @@
 import type { ExecutionResponse } from '@llumiverse/common';
 import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fetch-client';
 import type {
+    AppendRunConversationProgramTurnPayload,
+    AppendRunConversationProgramTurnResponse,
     AppendRunConversationToolResultsPayload,
     AppendRunConversationToolResultsResponse,
     ComputeRunFacetPayload,
@@ -120,6 +122,20 @@ export class RunsApi extends ApiTopic {
         options?: CanonicalInteractionRequestOptions,
     ): Promise<AppendRunConversationToolResultsResponse> {
         return this.post(`/${encodeURIComponent(id)}/conversation/tool-results`, {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Durably append one server-owned ordinary program instruction. */
+    appendConversationProgramTurn(
+        id: string,
+        payload: AppendRunConversationProgramTurnPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<AppendRunConversationProgramTurnResponse> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/program-turns`, {
             payload,
             headers: canonicalInteractionHeaders(options?.headers),
             signal: options?.signal,

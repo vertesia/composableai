@@ -1,4 +1,5 @@
 import {
+    type AppendRunConversationProgramTurnPayload,
     type AppendRunConversationToolResultsPayload,
     EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
     type ToolResultsPayload,
@@ -78,6 +79,49 @@ describe('RunsApi canonical retrieval', () => {
         expect(request.method).toBe('POST');
         expect(request.headers.get('x-api-version')).toBe(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE);
         expect(request.headers.get('x-trace')).toBe('append');
+        await expect(request.json()).resolves.toEqual(payload);
+    });
+
+    it('posts a canonical program instruction with the exact experimental header', async () => {
+        const requests: Request[] = [];
+        const response = {
+            conversation: { conversation_id: 'conversation-1', revision: 2 },
+            operation_receipt: {
+                id: 'controller-corrective:1',
+                conversation_id: 'conversation-1',
+                payload_fingerprint: `sha256:${'0'.repeat(64)}`,
+                base_revision: 1,
+                result_revision: 2,
+                recorded_at: '2026-09-30T00:00:00.000Z',
+            },
+            applied: true,
+        };
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json(response)),
+            onRequest: (request) => requests.push(request),
+        });
+        const payload = {
+            conversation_id: 'conversation-1',
+            expected_revision: 1,
+            operation_id: 'controller-corrective:1',
+            recorded_at: '2026-09-30T00:00:00.000Z',
+            purpose: 'controller_corrective',
+            text: 'Use a different tool before answering.',
+        } satisfies AppendRunConversationProgramTurnPayload;
+
+        expect(
+            await client.runs.appendConversationProgramTurn('run/1', payload, {
+                headers: { 'X-Api-Version': '=1', 'x-trace': 'program' },
+            }),
+        ).toEqual(response);
+        const request = requests[0];
+        if (!request) throw new Error('Expected a canonical program-turn append request');
+        expect(new URL(request.url).pathname).toBe('/api/v1/runs/run%2F1/conversation/program-turns');
+        expect(request.method).toBe('POST');
+        expect(request.headers.get('x-api-version')).toBe(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE);
+        expect(request.headers.get('x-trace')).toBe('program');
         await expect(request.json()).resolves.toEqual(payload);
     });
 });

@@ -7982,6 +7982,62 @@
       "status"
     ]
   },
+  "AppendRunConversationProgramTurnPayload": {
+    "type": "object",
+    "properties": {
+      "conversation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "expected_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "purpose": {
+        "type": "string",
+        "const": "controller_corrective"
+      },
+      "text": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 65536
+      }
+    },
+    "required": [
+      "conversation_id",
+      "expected_revision",
+      "operation_id",
+      "recorded_at",
+      "purpose",
+      "text"
+    ],
+    "additionalProperties": false
+  },
+  "AppendRunConversationProgramTurnResponse": {
+    "type": "object",
+    "properties": {
+      "conversation": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "operation_receipt": {
+        "$ref": "#/components/schemas/ConversationOperationReceipt"
+      },
+      "applied": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "conversation",
+      "operation_receipt",
+      "applied"
+    ],
+    "additionalProperties": false,
+    "description": "Acknowledges the committed operation at the current canonical head. An exact retry after a later append advances the head returns a revision conflict so callers reconcile without duplicating the program turn."
+  },
   "AppendRunConversationToolResultsPayload": {
     "type": "object",
     "properties": {
@@ -8058,7 +8114,8 @@
       "operation_receipt",
       "applied"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "description": "Acknowledges the committed operation at the current canonical head. An exact retry after a later append advances the head returns a revision conflict so callers reconcile without repeating tool execution."
   },
   "PublishAgentRunConversationHeadPayload": {
     "type": "object",

@@ -751,6 +751,8 @@ import {
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import { RunConversationResponseSchema } from './run-conversation.js';
 import {
+    AppendRunConversationProgramTurnPayloadSchema,
+    AppendRunConversationProgramTurnResponseSchema,
     AppendRunConversationToolResultsPayloadSchema,
     AppendRunConversationToolResultsResponseSchema,
     PublishAgentRunConversationHeadPayloadSchema,
@@ -2567,6 +2569,8 @@ const CANONICAL_TOOL_EXECUTION_SCHEMAS = {
 
 const RUN_CONVERSATION_SCHEMAS = {
     RunConversationResponse: RunConversationResponseSchema,
+    AppendRunConversationProgramTurnPayload: AppendRunConversationProgramTurnPayloadSchema,
+    AppendRunConversationProgramTurnResponse: AppendRunConversationProgramTurnResponseSchema,
     AppendRunConversationToolResultsPayload: AppendRunConversationToolResultsPayloadSchema,
     AppendRunConversationToolResultsResponse: AppendRunConversationToolResultsResponseSchema,
     PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayloadSchema,
@@ -2731,6 +2735,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     ...Object.entries(CANONICAL_CONVERSATION_SCHEMAS)
         .filter(([, schema]) => schema.def.type === 'object')
         .map(([name]) => name),
+    'AppendRunConversationProgramTurnPayload',
+    'AppendRunConversationProgramTurnResponse',
     'AppendRunConversationToolResultsPayload',
     'AppendRunConversationToolResultsResponse',
     'AvailableRunConversation',

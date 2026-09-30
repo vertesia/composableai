@@ -2647,6 +2647,16 @@ interface Checks {
         W.SystemRoleDefinition,
         z.infer<typeof import('./api-schemas/access-control.js').SystemRoleDefinitionSchema>
     >;
+    AppendRunConversationProgramTurnPayload: Same<
+        W.AppendRunConversationProgramTurnPayload,
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationProgramTurnPayloadSchema>
+    >;
+    AppendRunConversationProgramTurnResponse: Same<
+        W.AppendRunConversationProgramTurnResponse,
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationProgramTurnResponseSchema
+        >
+    >;
     AppendRunConversationToolResultsPayload: Same<
         W.AppendRunConversationToolResultsPayload,
         z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsPayloadSchema>
@@ -9889,6 +9899,16 @@ interface Checks {
         W.ApiComponentTypes['RunConversationResponse'],
         z.infer<typeof import('./api-schemas/run-conversation.js').RunConversationResponseSchema>
     >;
+    'component:AppendRunConversationProgramTurnPayload': Same<
+        W.ApiComponentTypes['AppendRunConversationProgramTurnPayload'],
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationProgramTurnPayloadSchema>
+    >;
+    'component:AppendRunConversationProgramTurnResponse': Same<
+        W.ApiComponentTypes['AppendRunConversationProgramTurnResponse'],
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationProgramTurnResponseSchema
+        >
+    >;
     'component:AppendRunConversationToolResultsPayload': Same<
         W.ApiComponentTypes['AppendRunConversationToolResultsPayload'],
         z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsPayloadSchema>
@@ -10619,6 +10639,8 @@ const checks: Checks = {
     RoleDomain: true,
     RoleDefinition: true,
     SystemRoleDefinition: true,
+    AppendRunConversationProgramTurnPayload: true,
+    AppendRunConversationProgramTurnResponse: true,
     AppendRunConversationToolResultsPayload: true,
     AppendRunConversationToolResultsResponse: true,
     PublishAgentRunConversationHeadPayload: true,
@@ -12482,6 +12504,8 @@ const checks: Checks = {
     'component:ConversationToolExecutionRequest': true,
     'component:ConversationToolExecutionResult': true,
     'component:RunConversationResponse': true,
+    'component:AppendRunConversationProgramTurnPayload': true,
+    'component:AppendRunConversationProgramTurnResponse': true,
     'component:AppendRunConversationToolResultsPayload': true,
     'component:AppendRunConversationToolResultsResponse': true,
     'component:PublishAgentRunConversationHeadPayload': true,
@@ -12490,6 +12514,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2578);
+        expect(Object.keys(checks)).toHaveLength(2582);
     });
 });

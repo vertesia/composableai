@@ -6312,6 +6312,19 @@ export type RoleDefinition = RoleDefinitionFromSchema;
  * by the server's `/roles/system` endpoint.
  */
 export type SystemRoleDefinition = SystemRoleDefinitionFromSchema;
+export type AppendRunConversationProgramTurnPayload = {
+    conversation_id: string;
+    expected_revision: number;
+    operation_id: string;
+    recorded_at: string;
+    purpose: 'controller_corrective';
+    text: string;
+};
+export type AppendRunConversationProgramTurnResponse = {
+    conversation: ConversationRef;
+    operation_receipt: OperationReceipt;
+    applied: boolean;
+};
 export type AppendRunConversationToolResultsPayload = {
     conversation_id: string;
     expected_revision: number;
@@ -12081,6 +12094,8 @@ export interface ApiComponentTypes {
     ConversationToolExecutionRequest: ConversationToolExecutionRequest;
     ConversationToolExecutionResult: ConversationToolExecutionResult;
     RunConversationResponse: RunConversationResponse;
+    AppendRunConversationProgramTurnPayload: AppendRunConversationProgramTurnPayload;
+    AppendRunConversationProgramTurnResponse: AppendRunConversationProgramTurnResponse;
     AppendRunConversationToolResultsPayload: AppendRunConversationToolResultsPayload;
     AppendRunConversationToolResultsResponse: AppendRunConversationToolResultsResponse;
     PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayload;
