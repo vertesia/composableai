@@ -50,7 +50,9 @@ export const ALLOCATE_BUDGET_SIGNAL = 'AllocateBudget';
  * left after an allocation of 500,000.
  */
 export interface AllocateBudgetSignal {
-    /** Weighted tokens to add. Must be positive. */
+    /** USD allocation; additional_tokens is zero for this signal variant. */
+    additional_usd?: number;
+    /** Positive weighted tokens for a token grant; zero when additional_usd is supplied. */
     additional_tokens: number;
     /** Principal that granted the allocation. */
     requested_by?: string;
@@ -67,6 +69,11 @@ export type AgentBudgetStatusReason = typeof AGENT_BUDGET_STATUS_AWAITING | type
 
 /** `details` of a budget status message: the run paused on its budget or resumed after an allocation. */
 export interface AgentBudgetStatusDetails {
+    budget_mode?: 'token' | 'dollar';
+    budget_limit_usd?: number;
+    budget_reported_usd?: number;
+    budget_estimated_usd?: number;
+    budget_unmeasured_calls?: number;
     status_reason: AgentBudgetStatusReason;
     /** Weighted tokens used, rounded. */
     budget_used_units: number;

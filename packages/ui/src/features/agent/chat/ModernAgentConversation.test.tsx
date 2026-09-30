@@ -1376,6 +1376,52 @@ describe('ModernAgentConversation send handling', () => {
         expect(latestMessageInputProps.onCompactContext).toBeTypeOf('function');
     });
 
+    it.each([undefined, 'all', 'main', 'child'])(
+        'passes the remaining budget to the composer for view %s',
+        (initialWorkstream) => {
+            const root = {
+                ...createMessage(AgentMessageType.UPDATE, 'Waiting for input'),
+                details: {
+                    budget_mode: 'dollar',
+                    budget_limit_tokens: 1_000_000,
+                    budget_used_units: 20_000,
+                    budget_limit_usd: 2,
+                    budget_reported_usd: 0.1,
+                    budget_estimated_usd: 0.15,
+                },
+            };
+            mockStreamState({
+                messages: [
+                    root,
+                    {
+                        ...root,
+                        workstream_id: 'child',
+                        details: {
+                            budget_limit_tokens: 1000,
+                            budget_used_units: 100,
+                        },
+                    },
+                ],
+                isCompleted: false,
+                agentRunStatus: 'RUNNING',
+            });
+
+            renderConversation({ hideMessageInput: false, initialWorkstream });
+
+            expect(mocks.messageInputProps.mock.lastCall?.[0].remainingBudget).toEqual(
+                initialWorkstream === 'child'
+                    ? { limitTokens: 1000, remainingTokens: 900, incomplete: false }
+                    : {
+                          limitTokens: 1_000_000,
+                          remainingTokens: 980_000,
+                          limitUsd: 2,
+                          remainingUsd: 1.75,
+                          incomplete: false,
+                      },
+            );
+        },
+    );
+
     it('derives context usage from persisted messages and sends manual compact signal', async () => {
         mockStreamState({
             messages: [

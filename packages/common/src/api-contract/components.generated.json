@@ -1,4 +1,160 @@
 {
+  "RunBudgetOwner": {
+    "type": "object",
+    "properties": {
+      "workflow_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "first_run_id": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "workflow_id",
+      "first_run_id"
+    ],
+    "additionalProperties": false
+  },
+  "RunBudgetUsage": {
+    "type": "object",
+    "properties": {
+      "input": {
+        "type": "number",
+        "minimum": 0
+      },
+      "cached_input": {
+        "type": "number",
+        "minimum": 0
+      },
+      "output": {
+        "type": "number",
+        "minimum": 0
+      }
+    },
+    "required": [
+      "input",
+      "cached_input",
+      "output"
+    ],
+    "additionalProperties": false
+  },
+  "ReadRunBudgetUsagePayload": {
+    "type": "object",
+    "properties": {
+      "account_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "project_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "agent_run_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "owner": {
+        "$ref": "#/components/schemas/RunBudgetOwner"
+      },
+      "require_estimates": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "account_id",
+      "project_id",
+      "agent_run_id",
+      "owner"
+    ],
+    "additionalProperties": false
+  },
+  "RunBudgetTotals": {
+    "type": "object",
+    "properties": {
+      "measured": {
+        "$ref": "#/components/schemas/RunBudgetUsage"
+      },
+      "unpriced": {
+        "$ref": "#/components/schemas/RunBudgetUsage"
+      },
+      "reported_nano_usd": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "estimated_nano_usd": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "unmeasured_calls": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "missing_usage_calls": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "measured",
+      "unpriced",
+      "reported_nano_usd",
+      "estimated_nano_usd",
+      "unmeasured_calls",
+      "missing_usage_calls"
+    ],
+    "additionalProperties": false
+  },
+  "RunBudgetCapability": {
+    "type": "object",
+    "properties": {
+      "supported": {
+        "type": "boolean"
+      },
+      "source": {
+        "type": "string",
+        "enum": [
+          "provider",
+          "estimate",
+          "unavailable"
+        ]
+      },
+      "reason": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "supported",
+      "source"
+    ],
+    "additionalProperties": false
+  },
+  "RunBudgetCapabilityQuery": {
+    "type": "object",
+    "properties": {
+      "check_model": {
+        "type": "boolean",
+        "description": "False checks only whether estimates are enabled, without consulting model prices."
+      },
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "service_tier": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "model"
+    ],
+    "additionalProperties": false,
+    "description": "Selected model and requested serving tier for run budget admission."
+  },
   "CreateDelegationGrantPayload": {
     "type": "object",
     "properties": {
@@ -5271,6 +5427,28 @@
   "AgentBudgetConfiguration": {
     "type": "object",
     "properties": {
+      "mode": {
+        "type": "string",
+        "enum": [
+          "token",
+          "dollar"
+        ],
+        "description": "Run budget mode. An omitted mode preserves weighted-token budgeting."
+      },
+      "limit_usd": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 9007199.25474099,
+        "description": "Soft USD allowance for priced model calls; dollar mode also requires limit_tokens for unpriced calls."
+      },
+      "reminder_at_remaining_fractions": {
+        "type": "array",
+        "items": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 1
+        }
+      },
       "limit_tokens": {
         "type": "number",
         "description": "Weighted token budget shared by the run and every subagent workstream it launches. When the run and its workstreams together use this many weighted tokens, the agent gets one final turn without tools to summarize its work, and the run ends. This is a soft limit, not a spending cap: workstreams running concurrently and the final summary turns can go over it. Unset or <=0 means no budget."
@@ -7595,9 +7773,6 @@
   "ExecutionEnvironmentSettings": {
     "type": "object",
     "properties": {
-      "bucket_access_principal": {
-        "type": "string"
-      },
       "default_headers": {
         "$ref": "#/components/schemas/StringValueMap",
         "description": "Custom HTTP headers sent by OpenAI-compatible environments."
@@ -8794,6 +8969,17 @@
             "type": "null"
           }
         ]
+      },
+      "budget": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AgentBudgetConfiguration"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Project-scoped agent budget override. Null restores the code-defined or project default; omission preserves the saved budget."
       }
     },
     "required": [
@@ -8813,6 +8999,17 @@
             "type": "null"
           }
         ]
+      },
+      "budget": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AgentBudgetConfiguration"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Project-scoped agent budget override. Null restores the code-defined or project default; omission preserves the saved budget."
       },
       "id": {
         "type": "string",
@@ -31619,6 +31816,38 @@
   "ProcessBudgetState": {
     "type": "object",
     "properties": {
+      "mode": {
+        "type": "string",
+        "enum": [
+          "token",
+          "dollar"
+        ],
+        "description": "Absent on historical token-only status."
+      },
+      "limit_usd": {
+        "type": "number",
+        "minimum": 0
+      },
+      "reported_usd": {
+        "type": "number",
+        "minimum": 0
+      },
+      "estimated_usd": {
+        "type": "number",
+        "minimum": 0
+      },
+      "accounting_status": {
+        "type": "string",
+        "enum": [
+          "current",
+          "incomplete"
+        ]
+      },
+      "unmeasured_calls": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
       "limit_tokens": {
         "type": "number"
       },
@@ -31675,7 +31904,7 @@
       },
       "budget": {
         "$ref": "#/components/schemas/ProcessBudgetState",
-        "description": "Token budget of the run, present when the run has one."
+        "description": "Run budget status, including dollar consumption when configured."
       }
     },
     "required": [
@@ -33978,20 +34207,39 @@
     "description": "Response from signaling an agent workflow."
   },
   "AllocateAgentRunBudgetPayload": {
-    "type": "object",
-    "properties": {
-      "additional_tokens": {
-        "type": "integer",
-        "exclusiveMinimum": 0,
-        "maximum": 9007199254740991,
-        "description": "Weighted tokens to add. They are added to the limit the run was granted, so usage past that limit is paid out of them."
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "additional_tokens": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Weighted tokens to add to the run allowance."
+          }
+        },
+        "required": [
+          "additional_tokens"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "additional_usd": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199.25474099,
+            "description": "USD to add to the dollar allowance."
+          }
+        },
+        "required": [
+          "additional_usd"
+        ],
+        "additionalProperties": false
       }
-    },
-    "required": [
-      "additional_tokens"
     ],
-    "additionalProperties": false,
-    "description": "Budget to add to a run paused because its token budget ran out. The run resumes from where it stopped."
+    "description": "Add exactly one allowance: weighted tokens or USD."
   },
   "AgentRunEvaluationRollup": {
     "type": "object",

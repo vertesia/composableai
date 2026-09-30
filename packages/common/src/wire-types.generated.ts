@@ -3320,7 +3320,6 @@ export type MediatorEnvConfig = {
     model_options?: TextFallbackOptions | undefined;
 };
 export type ExecutionEnvironmentSettings = {
-    bucket_access_principal?: string | undefined;
     default_headers?: StringValueMap | undefined;
     [k: string]: unknown;
 };
@@ -3533,9 +3532,11 @@ export type InferenceProfileRecord = {
 export type InferenceProfileRecordArray = InferenceProfileRecord[];
 export type UpdateInteractionConfigurationPayload = {
     inference_profile: InferenceProfileId | null;
+    budget?: AgentBudgetConfiguration | null | undefined;
 };
 export type InteractionConfigurationRecord = {
     inference_profile: InferenceProfileId | null;
+    budget?: AgentBudgetConfiguration | null | undefined;
     id: string;
     project: string;
     interaction: string;
@@ -5573,6 +5574,9 @@ export type AgentCheckpointConfiguration = {
     max_tokens?: number | undefined;
 };
 export type AgentBudgetConfiguration = {
+    mode?: 'token' | 'dollar' | undefined;
+    limit_usd?: number | undefined;
+    reminder_at_remaining_fractions?: number[] | undefined;
     limit_tokens?: number | undefined;
     reminder_at_remaining_tokens?: number[] | undefined;
     output_token_weight?: number | undefined;
@@ -6104,6 +6108,40 @@ export type RoleDefinition = RoleDefinitionFromSchema;
  * by the server's `/roles/system` endpoint.
  */
 export type SystemRoleDefinition = SystemRoleDefinitionFromSchema;
+export type RunBudgetOwner = {
+    workflow_id: string;
+    first_run_id: string;
+};
+export type RunBudgetUsage = {
+    input: number;
+    cached_input: number;
+    output: number;
+};
+export type ReadRunBudgetUsagePayload = {
+    account_id: string;
+    project_id: string;
+    agent_run_id: string;
+    owner: RunBudgetOwner;
+    require_estimates?: boolean | undefined;
+};
+export type RunBudgetTotals = {
+    measured: RunBudgetUsage;
+    unpriced: RunBudgetUsage;
+    reported_nano_usd: number;
+    estimated_nano_usd: number;
+    unmeasured_calls: number;
+    missing_usage_calls: number;
+};
+export type RunBudgetCapability = {
+    supported: boolean;
+    source: 'provider' | 'estimate' | 'unavailable';
+    reason?: string | undefined;
+};
+export type RunBudgetCapabilityQuery = {
+    check_model?: boolean | undefined;
+    model: string;
+    service_tier?: string | undefined;
+};
 /**
  * The run ref is used to identify a run document in the storage
  */
@@ -6565,9 +6603,13 @@ export type SignalAgentResponse = {
     status: string;
     message: string;
 };
-export type AllocateAgentRunBudgetPayload = {
-    additional_tokens: number;
-};
+export type AllocateAgentRunBudgetPayload =
+    | {
+          additional_tokens: number;
+      }
+    | {
+          additional_usd: number;
+      };
 export type AgentRunUpdatesResponse = {
     messages: CompactMessage[];
 };
@@ -7262,6 +7304,12 @@ export type ProcessState = {
 };
 export type ProcessTerminalReason = 'token_budget_exhausted';
 export type ProcessBudgetState = {
+    mode?: 'token' | 'dollar' | undefined;
+    limit_usd?: number | undefined;
+    reported_usd?: number | undefined;
+    estimated_usd?: number | undefined;
+    accounting_status?: 'current' | 'incomplete' | undefined;
+    unmeasured_calls?: number | undefined;
     limit_tokens: number;
     used_units: number;
     exhausted: boolean;
@@ -11825,4 +11873,10 @@ export interface ApiComponentTypes {
     CreateDelegationGrantPayload: CreateDelegationGrantPayload;
     DelegationGrant: DelegationGrant;
     DelegationGrantArray: DelegationGrantArray;
+    RunBudgetOwner: RunBudgetOwner;
+    RunBudgetUsage: RunBudgetUsage;
+    ReadRunBudgetUsagePayload: ReadRunBudgetUsagePayload;
+    RunBudgetTotals: RunBudgetTotals;
+    RunBudgetCapability: RunBudgetCapability;
+    RunBudgetCapabilityQuery: RunBudgetCapabilityQuery;
 }

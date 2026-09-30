@@ -407,6 +407,12 @@ export const ProcessBudgetSummarySchema = z
 
 export const ProcessBudgetStateSchema = z
     .strictObject({
+        mode: z.enum(['token', 'dollar']).optional().meta({ description: 'Absent on historical token-only status.' }),
+        limit_usd: z.number().nonnegative().optional(),
+        reported_usd: z.number().nonnegative().optional(),
+        estimated_usd: z.number().nonnegative().optional(),
+        accounting_status: z.enum(['current', 'incomplete']).optional(),
+        unmeasured_calls: z.number().int().nonnegative().optional(),
         limit_tokens: z.number(),
         used_units: z.number().meta({ description: 'Weighted tokens used by the run and everything it launched.' }),
         exhausted: z.boolean(),
@@ -433,7 +439,7 @@ export const ProcessStateSchema = z
         sequence: z.number(),
         terminal_reason: ProcessTerminalReasonSchema.optional(),
         budget: ProcessBudgetStateSchema.meta({
-            description: 'Token budget of the run, present when the run has one.',
+            description: 'Run budget status, including dollar consumption when configured.',
         }).optional(),
     })
     .meta({ id: 'ProcessState' });
