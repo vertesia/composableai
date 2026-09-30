@@ -617,17 +617,23 @@ export const AgentArtifactUrlResponseSchema = z
     .meta({ id: 'AgentArtifactUrlResponse', description: 'Signed artifact URL response for agent artifacts.' });
 
 export const AllocateAgentRunBudgetPayloadSchema = z
-    .strictObject({
-        additional_tokens: z.number().int().positive().meta({
-            description:
-                'Weighted tokens to add. They are added to the limit the run was granted, so usage past that limit is paid out of them.',
+    .union([
+        z.strictObject({
+            additional_tokens: z
+                .number()
+                .int()
+                .positive()
+                .meta({ description: 'Weighted tokens to add to the run allowance.' }),
         }),
-    })
-    .meta({
-        id: 'AllocateAgentRunBudgetPayload',
-        description:
-            'Budget to add to a run paused because its token budget ran out. The run resumes from where it stopped.',
-    });
+        z.strictObject({
+            additional_usd: z
+                .number()
+                .positive()
+                .max(Number.MAX_SAFE_INTEGER / 1e9)
+                .meta({ description: 'USD to add to the dollar allowance.' }),
+        }),
+    ])
+    .meta({ id: 'AllocateAgentRunBudgetPayload', description: 'Add exactly one allowance: weighted tokens or USD.' });
 
 export const SignalAgentResponseSchema = z
     .strictObject({

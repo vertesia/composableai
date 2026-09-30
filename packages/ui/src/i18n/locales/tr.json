@@ -1227,5 +1227,22 @@
     "widgets.schema.extractFromDocument": "Çıkar",
     "widgets.schema.extractFromDocumentHint": "Kapalı olduğunda çıkarma modelleri bu alanı atlar (x-extract: false kaydedilir). Eşleşme puanları, ERP kimlikleri veya çıkarma dışında doldurulan alanlarda kullanın.",
     "widgets.schema.noExtract": "çıkarma",
-    "widgets.schema.propertyColumn": "Özellikler"
+    "widgets.schema.propertyColumn": "Özellikler",
+    "agent.budgetPause.usdAdd": "${{amount}} ekle",
+    "agent.budgetPause.usdHelp": "USD tutarını girin. Yedek belirteçlerin ayrı bir sınırı vardır.",
+    "agent.budgetPause.usdPlaceholder": "Ek USD",
+    "agent.budgetPause.usdTitle": "Çalıştırma bütçesi tükendi",
+    "agent.budgetPause.usdUsage": "Bildirilen ${{reported}} + tahmini ${{estimated}}; sınır ${{limit}}.",
+    "grounded.conflicts_one": "grounded.conflicts",
+    "grounded.conflicts_other": "grounded.conflicts",
+    "grounded.digitalVerifiedOf_one": "grounded.digitalVerifiedOf",
+    "grounded.digitalVerifiedOf_other": "grounded.digitalVerifiedOf",
+    "grounded.modelVerifiedOf_one": "grounded.modelVerifiedOf",
+    "grounded.modelVerifiedOf_other": "grounded.modelVerifiedOf",
+    "grounded.reviewCorrections_one": "grounded.reviewCorrections",
+    "grounded.reviewCorrections_other": "grounded.reviewCorrections",
+    "grounded.unverifiedCount_one": "grounded.unverifiedCount",
+    "grounded.unverifiedCount_other": "grounded.unverifiedCount",
+    "intakePolicy.option.pagesPerSheet_one": "intakePolicy.option.pagesPerSheet",
+    "intakePolicy.option.pagesPerSheet_other": "intakePolicy.option.pagesPerSheet"
 }

@@ -1227,5 +1227,22 @@
     "widgets.schema.extractFromDocumentHint": "When off, extraction models skip this field (stores x-extract: false). Use for match scores, ERP ids, or fields filled outside extraction.",
     "widgets.schema.invalidPropertyDeclaration": "Invalid property declaration",
     "widgets.schema.noExtract": "no extract",
-    "widgets.schema.propertyColumn": "Property"
+    "widgets.schema.propertyColumn": "Property",
+    "agent.budgetPause.usdAdd": "Add ${{amount}}",
+    "agent.budgetPause.usdHelp": "Enter an amount in USD. Fallback tokens have a separate allowance.",
+    "agent.budgetPause.usdPlaceholder": "Additional USD",
+    "agent.budgetPause.usdTitle": "Run budget exhausted",
+    "agent.budgetPause.usdUsage": "${{reported}} reported + ${{estimated}} estimated; limit ${{limit}}.",
+    "grounded.conflicts_one": "grounded.conflicts",
+    "grounded.conflicts_other": "grounded.conflicts",
+    "grounded.digitalVerifiedOf_one": "grounded.digitalVerifiedOf",
+    "grounded.digitalVerifiedOf_other": "grounded.digitalVerifiedOf",
+    "grounded.modelVerifiedOf_one": "grounded.modelVerifiedOf",
+    "grounded.modelVerifiedOf_other": "grounded.modelVerifiedOf",
+    "grounded.reviewCorrections_one": "grounded.reviewCorrections",
+    "grounded.reviewCorrections_other": "grounded.reviewCorrections",
+    "grounded.unverifiedCount_one": "grounded.unverifiedCount",
+    "grounded.unverifiedCount_other": "grounded.unverifiedCount",
+    "intakePolicy.option.pagesPerSheet_one": "intakePolicy.option.pagesPerSheet",
+    "intakePolicy.option.pagesPerSheet_other": "intakePolicy.option.pagesPerSheet"
 }

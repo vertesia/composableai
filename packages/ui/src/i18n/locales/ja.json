@@ -1227,5 +1227,22 @@
     "widgets.schema.extractFromDocument": "抽出",
     "widgets.schema.extractFromDocumentHint": "オフにすると、抽出モデルはこのフィールドをスキップします（x-extract: falseを保存）。一致スコア、ERP ID、または抽出以外で入力するフィールドに使用します。",
     "widgets.schema.noExtract": "抽出しない",
-    "widgets.schema.propertyColumn": "プロパティ"
+    "widgets.schema.propertyColumn": "プロパティ",
+    "agent.budgetPause.usdAdd": "${{amount}} を追加",
+    "agent.budgetPause.usdHelp": "USDで金額を入力してください。代替トークンには別の上限があります。",
+    "agent.budgetPause.usdPlaceholder": "追加するUSD",
+    "agent.budgetPause.usdTitle": "実行予算を使い切りました",
+    "agent.budgetPause.usdUsage": "報告額 ${{reported}} + 推定額 ${{estimated}}、上限 ${{limit}}。",
+    "grounded.conflicts_one": "grounded.conflicts",
+    "grounded.conflicts_other": "grounded.conflicts",
+    "grounded.digitalVerifiedOf_one": "grounded.digitalVerifiedOf",
+    "grounded.digitalVerifiedOf_other": "grounded.digitalVerifiedOf",
+    "grounded.modelVerifiedOf_one": "grounded.modelVerifiedOf",
+    "grounded.modelVerifiedOf_other": "grounded.modelVerifiedOf",
+    "grounded.reviewCorrections_one": "grounded.reviewCorrections",
+    "grounded.reviewCorrections_other": "grounded.reviewCorrections",
+    "grounded.unverifiedCount_one": "grounded.unverifiedCount",
+    "grounded.unverifiedCount_other": "grounded.unverifiedCount",
+    "intakePolicy.option.pagesPerSheet_one": "intakePolicy.option.pagesPerSheet",
+    "intakePolicy.option.pagesPerSheet_other": "intakePolicy.option.pagesPerSheet"
 }

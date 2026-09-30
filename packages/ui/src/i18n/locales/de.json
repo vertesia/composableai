@@ -1227,5 +1227,22 @@
     "widgets.schema.extractFromDocument": "Extrahieren",
     "widgets.schema.extractFromDocumentHint": "Wenn deaktiviert, überspringen Extraktionsmodelle dieses Feld (speichert x-extract: false). Für Übereinstimmungswerte, ERP-IDs oder außerhalb der Extraktion befüllte Felder verwenden.",
     "widgets.schema.noExtract": "nicht extrahieren",
-    "widgets.schema.propertyColumn": "Eigenschaft"
+    "widgets.schema.propertyColumn": "Eigenschaft",
+    "agent.budgetPause.usdAdd": "{{amount}} $ hinzufügen",
+    "agent.budgetPause.usdHelp": "Betrag in USD eingeben. Ersatz-Token haben ein eigenes Limit.",
+    "agent.budgetPause.usdPlaceholder": "Zusätzliche USD",
+    "agent.budgetPause.usdTitle": "Ausführungsbudget erschöpft",
+    "agent.budgetPause.usdUsage": "{{reported}} $ gemeldet + {{estimated}} $ geschätzt; Limit {{limit}} $.",
+    "grounded.conflicts_one": "grounded.conflicts",
+    "grounded.conflicts_other": "grounded.conflicts",
+    "grounded.digitalVerifiedOf_one": "grounded.digitalVerifiedOf",
+    "grounded.digitalVerifiedOf_other": "grounded.digitalVerifiedOf",
+    "grounded.modelVerifiedOf_one": "grounded.modelVerifiedOf",
+    "grounded.modelVerifiedOf_other": "grounded.modelVerifiedOf",
+    "grounded.reviewCorrections_one": "grounded.reviewCorrections",
+    "grounded.reviewCorrections_other": "grounded.reviewCorrections",
+    "grounded.unverifiedCount_one": "grounded.unverifiedCount",
+    "grounded.unverifiedCount_other": "grounded.unverifiedCount",
+    "intakePolicy.option.pagesPerSheet_one": "intakePolicy.option.pagesPerSheet",
+    "intakePolicy.option.pagesPerSheet_other": "intakePolicy.option.pagesPerSheet"
 }

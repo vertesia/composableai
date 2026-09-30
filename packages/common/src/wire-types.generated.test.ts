@@ -2459,6 +2459,24 @@ interface Checks {
         W.SystemRoleDefinition,
         z.infer<typeof import('./api-schemas/access-control.js').SystemRoleDefinitionSchema>
     >;
+    RunBudgetOwner: Same<W.RunBudgetOwner, z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetOwnerSchema>>;
+    RunBudgetUsage: Same<W.RunBudgetUsage, z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetUsageSchema>>;
+    ReadRunBudgetUsagePayload: Same<
+        W.ReadRunBudgetUsagePayload,
+        z.infer<typeof import('./api-schemas/run-budget.js').ReadRunBudgetUsagePayloadSchema>
+    >;
+    RunBudgetTotals: Same<
+        W.RunBudgetTotals,
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetTotalsSchema>
+    >;
+    RunBudgetCapability: Same<
+        W.RunBudgetCapability,
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilitySchema>
+    >;
+    RunBudgetCapabilityQuery: Same<
+        W.RunBudgetCapabilityQuery,
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilityQuerySchema>
+    >;
     ExecutionRunDocRef: Same<
         W.ExecutionRunDocRef,
         z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunDocRefSchema>
@@ -9455,6 +9473,30 @@ interface Checks {
         W.ApiComponentTypes['DelegationGrantArray'],
         z.infer<typeof import('./api-schemas/delegation.js').DelegationGrantArraySchema>
     >;
+    'component:RunBudgetOwner': Same<
+        W.ApiComponentTypes['RunBudgetOwner'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetOwnerSchema>
+    >;
+    'component:RunBudgetUsage': Same<
+        W.ApiComponentTypes['RunBudgetUsage'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetUsageSchema>
+    >;
+    'component:ReadRunBudgetUsagePayload': Same<
+        W.ApiComponentTypes['ReadRunBudgetUsagePayload'],
+        z.infer<typeof import('./api-schemas/run-budget.js').ReadRunBudgetUsagePayloadSchema>
+    >;
+    'component:RunBudgetTotals': Same<
+        W.ApiComponentTypes['RunBudgetTotals'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetTotalsSchema>
+    >;
+    'component:RunBudgetCapability': Same<
+        W.ApiComponentTypes['RunBudgetCapability'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilitySchema>
+    >;
+    'component:RunBudgetCapabilityQuery': Same<
+        W.ApiComponentTypes['RunBudgetCapabilityQuery'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilityQuerySchema>
+    >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
 }
@@ -10137,6 +10179,12 @@ const checks: Checks = {
     RoleDomain: true,
     RoleDefinition: true,
     SystemRoleDefinition: true,
+    RunBudgetOwner: true,
+    RunBudgetUsage: true,
+    ReadRunBudgetUsagePayload: true,
+    RunBudgetTotals: true,
+    RunBudgetCapability: true,
+    RunBudgetCapabilityQuery: true,
     ExecutionRunDocRef: true,
     FindRunResult: true,
     FindRunResultArray: true,
@@ -11952,11 +12000,17 @@ const checks: Checks = {
     'component:CreateDelegationGrantPayload': true,
     'component:DelegationGrant': true,
     'component:DelegationGrantArray': true,
+    'component:RunBudgetOwner': true,
+    'component:RunBudgetUsage': true,
+    'component:ReadRunBudgetUsagePayload': true,
+    'component:RunBudgetTotals': true,
+    'component:RunBudgetCapability': true,
+    'component:RunBudgetCapabilityQuery': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2493);
+        expect(Object.keys(checks)).toHaveLength(2505);
     });
 });

@@ -146,6 +146,19 @@ export const AgentCheckpointConfigurationSchema = z
 
 export const AgentBudgetConfigurationSchema = z
     .strictObject({
+        mode: z.enum(['token', 'dollar']).optional().meta({
+            description: 'Run budget mode. An omitted mode preserves weighted-token budgeting.',
+        }),
+        limit_usd: z
+            .number()
+            .positive()
+            .max(Number.MAX_SAFE_INTEGER / 1e9)
+            .optional()
+            .meta({
+                description:
+                    'Soft USD allowance for priced model calls; dollar mode also requires limit_tokens for unpriced calls.',
+            }),
+        reminder_at_remaining_fractions: z.array(z.number().positive().lt(1)).optional(),
         limit_tokens: z
             .number()
             .optional()

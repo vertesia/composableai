@@ -1227,5 +1227,22 @@
     "widgets.schema.extractFromDocument": "提取",
     "widgets.schema.extractFromDocumentHint": "关闭后，提取模型将跳过此字段（存储 x-extract: false）。适用于匹配分数、ERP ID 或在提取流程外填写的字段。",
     "widgets.schema.noExtract": "不提取",
-    "widgets.schema.propertyColumn": "属性"
+    "widgets.schema.propertyColumn": "属性",
+    "agent.budgetPause.usdAdd": "增加 ${{amount}}",
+    "agent.budgetPause.usdHelp": "请输入美元金额。备用令牌有单独的限额。",
+    "agent.budgetPause.usdPlaceholder": "增加的美元金额",
+    "agent.budgetPause.usdTitle": "运行预算已耗尽",
+    "agent.budgetPause.usdUsage": "报告费用 ${{reported}} + 估算费用 ${{estimated}}；上限 ${{limit}}。",
+    "grounded.conflicts_one": "grounded.conflicts",
+    "grounded.conflicts_other": "grounded.conflicts",
+    "grounded.digitalVerifiedOf_one": "grounded.digitalVerifiedOf",
+    "grounded.digitalVerifiedOf_other": "grounded.digitalVerifiedOf",
+    "grounded.modelVerifiedOf_one": "grounded.modelVerifiedOf",
+    "grounded.modelVerifiedOf_other": "grounded.modelVerifiedOf",
+    "grounded.reviewCorrections_one": "grounded.reviewCorrections",
+    "grounded.reviewCorrections_other": "grounded.reviewCorrections",
+    "grounded.unverifiedCount_one": "grounded.unverifiedCount",
+    "grounded.unverifiedCount_other": "grounded.unverifiedCount",
+    "intakePolicy.option.pagesPerSheet_one": "intakePolicy.option.pagesPerSheet",
+    "intakePolicy.option.pagesPerSheet_other": "intakePolicy.option.pagesPerSheet"
 }

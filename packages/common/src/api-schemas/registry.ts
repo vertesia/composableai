@@ -726,6 +726,7 @@ import {
     RenderPromptResponseSchema,
 } from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
+import * as RunBudgetSchemas from './run-budget.js';
 import * as SecretSchemas from './secrets.js';
 import {
     ColumnLayoutSchema,
@@ -2424,7 +2425,16 @@ const DELEGATION_SCHEMAS = {
     DelegationGrant: DelegationGrantSchema,
     DelegationGrantArray: DelegationGrantArraySchema,
 };
+const RUN_BUDGET_SCHEMAS = {
+    RunBudgetOwner: RunBudgetSchemas.RunBudgetOwnerSchema,
+    RunBudgetUsage: RunBudgetSchemas.RunBudgetUsageSchema,
+    ReadRunBudgetUsagePayload: RunBudgetSchemas.ReadRunBudgetUsagePayloadSchema,
+    RunBudgetTotals: RunBudgetSchemas.RunBudgetTotalsSchema,
+    RunBudgetCapability: RunBudgetSchemas.RunBudgetCapabilitySchema,
+    RunBudgetCapabilityQuery: RunBudgetSchemas.RunBudgetCapabilityQuerySchema,
+};
 const API_SCHEMA_GROUPS = [
+    RUN_BUDGET_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2489,7 +2499,8 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
+type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
+    typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
     typeof OAUTH_SCHEMAS &
@@ -2732,6 +2743,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AgentProjectConfiguration',
     'AgentCheckpointConfiguration',
     'AgentBudgetConfiguration',
+    ...Object.keys(RUN_BUDGET_SCHEMAS),
     // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
     'HttpTimeoutOptions',
     // The intake policy tree. Every object in it is published closed today, including the inline

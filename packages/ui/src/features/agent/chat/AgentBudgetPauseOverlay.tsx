@@ -14,6 +14,8 @@ export interface AgentBudgetRequestContext {
     agentRunId: string;
     pause: BudgetPause;
     suggestedTokens: number;
+    suggestedUsd?: number;
+    allocateUsd?: (additionalUsd: number) => Promise<boolean>;
     /** Returns false on failure or when disabled, already submitting, or awaiting server acknowledgement. */
     allocateBudget: (additionalTokens: number) => Promise<boolean>;
     stop?: () => void;
@@ -60,7 +62,10 @@ export function AgentBudgetPauseOverlay({
     const allocationPending = useRef(false);
     const callbackInvoked = useRef(false);
     const active = useRef(false);
-    const suggested = suggestedBudgetAllocation(pause);
+    const dollarExhausted =
+        pause.limitUsd !== undefined && (pause.reportedUsd ?? 0) + (pause.estimatedUsd ?? 0) >= pause.limitUsd;
+    const suggestedUsd = Math.max(1, Math.ceil((pause.limitUsd ?? 0) / 2));
+    const suggested = dollarExhausted ? suggestedUsd : suggestedBudgetAllocation(pause);
     const overridden = Boolean(onBudgetRequest || renderBudgetRequest);
 
     useEffect(() => {
@@ -71,17 +76,30 @@ export function AgentBudgetPauseOverlay({
     }, [disabled]);
 
     const allocate = useCallback(
-        async (amount: number) => {
+        async (amount: number, currency: 'tokens' | 'usd' = 'tokens') => {
             if (disabled || !active.current || allocationPending.current) return false;
-            if (!Number.isSafeInteger(amount) || amount <= 0) {
-                setError(new RangeError('Additional tokens must be a positive safe integer'));
+            if (
+                !Number.isFinite(amount) ||
+                amount <= 0 ||
+                (currency === 'tokens'
+                    ? !Number.isSafeInteger(amount)
+                    : !Number.isSafeInteger(Math.round(amount * 1e9)))
+            ) {
+                setError(
+                    new RangeError(
+                        currency === 'usd' ? t('agent.budgetPause.usdHelp') : t('agent.budgetPause.invalidAmount'),
+                    ),
+                );
                 return false;
             }
             allocationPending.current = true;
             setError(undefined);
             setIsSubmitting(true);
             try {
-                await client.agents.allocateBudget(agentRunId, { additional_tokens: amount });
+                await client.agents.allocateBudget(
+                    agentRunId,
+                    currency === 'usd' ? { additional_usd: amount } : { additional_tokens: amount },
+                );
                 // Keep the action locked until the allocation status removes this pause.
                 return true;
             } catch (error: unknown) {
@@ -107,14 +125,18 @@ export function AgentBudgetPauseOverlay({
         () => ({
             agentRunId,
             pause,
-            suggestedTokens: suggested,
+            suggestedTokens: suggestedBudgetAllocation(pause),
+            ...(pause.limitUsd !== undefined && {
+                suggestedUsd,
+                allocateUsd: (amount: number) => allocate(amount, 'usd'),
+            }),
             allocateBudget: allocate,
             stop: disabled ? undefined : onStop,
             disabled,
             isSubmitting,
             error,
         }),
-        [agentRunId, pause, suggested, allocate, disabled, onStop, isSubmitting, error],
+        [agentRunId, pause, suggestedUsd, allocate, disabled, onStop, isSubmitting, error],
     );
 
     useEffect(() => {
@@ -133,26 +155,38 @@ export function AgentBudgetPauseOverlay({
     if (overridden) return renderBudgetRequest?.(request) ?? null;
 
     const handleCustomAmount = (value: string) => {
-        const amount = parseBudgetAmount(value);
+        const amount =
+            dollarExhausted && /^\d+(?:\.\d{1,9})?$/.test(value.trim()) ? Number(value) : parseBudgetAmount(value);
         if (amount === undefined) {
-            toast({ status: 'warning', title: t('agent.budgetPause.invalidAmount'), duration: 4000 });
+            toast({
+                status: 'warning',
+                title: dollarExhausted ? t('agent.budgetPause.usdHelp') : t('agent.budgetPause.invalidAmount'),
+                duration: 4000,
+            });
             return;
         }
-        void allocate(amount);
+        void allocate(amount, dollarExhausted ? 'usd' : 'tokens');
     };
 
     const used = pause.usedUnits !== undefined ? Math.round(pause.usedUnits).toLocaleString() : undefined;
     const limit = pause.limitTokens !== undefined ? Math.round(pause.limitTokens).toLocaleString() : undefined;
-    const description =
-        used && limit
-            ? t('agent.budgetPause.descriptionWithUsage', { used, limit })
-            : t('agent.budgetPause.description');
+    const description = dollarExhausted
+        ? t('agent.budgetPause.usdUsage', {
+              reported: (pause.reportedUsd ?? 0).toFixed(4),
+              estimated: (pause.estimatedUsd ?? 0).toFixed(4),
+              limit: pause.limitUsd,
+          })
+        : used && limit
+          ? t('agent.budgetPause.descriptionWithUsage', { used, limit })
+          : t('agent.budgetPause.description');
 
     const options: AskUserOption[] = [
         {
             id: ALLOCATE_OPTION,
-            label: t('agent.budgetPause.addOption', { amount: suggested.toLocaleString() }),
-            description: t('agent.budgetPause.amountHelp'),
+            label: dollarExhausted
+                ? t('agent.budgetPause.usdAdd', { amount: suggested })
+                : t('agent.budgetPause.addOption', { amount: suggested.toLocaleString() }),
+            description: dollarExhausted ? t('agent.budgetPause.usdHelp') : t('agent.budgetPause.amountHelp'),
         },
         ...(onStop ? [{ id: STOP_OPTION, label: t('agent.budgetPause.stop') }] : []),
     ];
@@ -160,14 +194,18 @@ export function AgentBudgetPauseOverlay({
     return (
         <ComposerOverlay data-agent-budget-pause-overlay>
             <ComposerOverlayQuestion
-                question={`**${t('agent.budgetPause.title')}**\n\n${description}`}
+                question={`**${dollarExhausted ? t('agent.budgetPause.usdTitle') : t('agent.budgetPause.title')}**\n\n${description}`}
                 options={options}
                 onSelect={(optionId) => {
                     if (optionId === STOP_OPTION) onStop?.();
-                    else void allocate(suggested);
+                    else void allocate(suggested, dollarExhausted ? 'usd' : 'tokens');
                 }}
                 allowFreeResponse
-                placeholder={t('agent.budgetPause.customAmountPlaceholder')}
+                placeholder={
+                    dollarExhausted
+                        ? t('agent.budgetPause.usdPlaceholder')
+                        : t('agent.budgetPause.customAmountPlaceholder')
+                }
                 submitLabel={t('agent.budgetPause.customAmountSubmit')}
                 onSubmit={handleCustomAmount}
                 icon={<AlertTriangle className="size-4" />}

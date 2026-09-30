@@ -1239,5 +1239,22 @@
     "widgets.schema.extractFromDocument": "Extraire",
     "widgets.schema.extractFromDocumentHint": "Lorsque cette option est désactivée, les modèles d’extraction ignorent ce champ (enregistre x-extract: false). À utiliser pour les scores de correspondance, les identifiants ERP ou les champs remplis hors extraction.",
     "widgets.schema.noExtract": "ne pas extraire",
-    "widgets.schema.propertyColumn": "Propriété"
+    "widgets.schema.propertyColumn": "Propriété",
+    "agent.budgetPause.usdAdd": "Ajouter {{amount}} $",
+    "agent.budgetPause.usdHelp": "Saisissez un montant en USD. Les jetons de secours ont une limite distincte.",
+    "agent.budgetPause.usdPlaceholder": "USD supplémentaires",
+    "agent.budgetPause.usdTitle": "Budget d’exécution épuisé",
+    "agent.budgetPause.usdUsage": "{{reported}} $ facturés + {{estimated}} $ estimés ; limite : {{limit}} $.",
+    "grounded.conflicts_one": "grounded.conflicts",
+    "grounded.conflicts_other": "grounded.conflicts",
+    "grounded.digitalVerifiedOf_one": "grounded.digitalVerifiedOf",
+    "grounded.digitalVerifiedOf_other": "grounded.digitalVerifiedOf",
+    "grounded.modelVerifiedOf_one": "grounded.modelVerifiedOf",
+    "grounded.modelVerifiedOf_other": "grounded.modelVerifiedOf",
+    "grounded.reviewCorrections_one": "grounded.reviewCorrections",
+    "grounded.reviewCorrections_other": "grounded.reviewCorrections",
+    "grounded.unverifiedCount_one": "grounded.unverifiedCount",
+    "grounded.unverifiedCount_other": "grounded.unverifiedCount",
+    "intakePolicy.option.pagesPerSheet_one": "intakePolicy.option.pagesPerSheet",
+    "intakePolicy.option.pagesPerSheet_other": "intakePolicy.option.pagesPerSheet"
 }

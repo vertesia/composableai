@@ -1253,5 +1253,22 @@
     "widgets.schema.extractFromDocument": "Извлекать",
     "widgets.schema.extractFromDocumentHint": "Если отключено, модели извлечения пропускают это поле (сохраняется x-extract: false). Используйте для оценок совпадения, ID ERP и полей, заполняемых вне извлечения.",
     "widgets.schema.noExtract": "не извлекать",
-    "widgets.schema.propertyColumn": "Свойства"
+    "widgets.schema.propertyColumn": "Свойства",
+    "agent.budgetPause.usdAdd": "Добавить ${{amount}}",
+    "agent.budgetPause.usdHelp": "Введите сумму в USD. Для резервных токенов установлен отдельный лимит.",
+    "agent.budgetPause.usdPlaceholder": "Дополнительные USD",
+    "agent.budgetPause.usdTitle": "Бюджет выполнения исчерпан",
+    "agent.budgetPause.usdUsage": "Заявлено ${{reported}} + оценка ${{estimated}}; лимит ${{limit}}.",
+    "grounded.conflicts_one": "grounded.conflicts",
+    "grounded.conflicts_other": "grounded.conflicts",
+    "grounded.digitalVerifiedOf_one": "grounded.digitalVerifiedOf",
+    "grounded.digitalVerifiedOf_other": "grounded.digitalVerifiedOf",
+    "grounded.modelVerifiedOf_one": "grounded.modelVerifiedOf",
+    "grounded.modelVerifiedOf_other": "grounded.modelVerifiedOf",
+    "grounded.reviewCorrections_one": "grounded.reviewCorrections",
+    "grounded.reviewCorrections_other": "grounded.reviewCorrections",
+    "grounded.unverifiedCount_one": "grounded.unverifiedCount",
+    "grounded.unverifiedCount_other": "grounded.unverifiedCount",
+    "intakePolicy.option.pagesPerSheet_one": "intakePolicy.option.pagesPerSheet",
+    "intakePolicy.option.pagesPerSheet_other": "intakePolicy.option.pagesPerSheet"
 }
