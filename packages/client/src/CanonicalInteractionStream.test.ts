@@ -1,3 +1,4 @@
+import { ConnectionError, ServerError } from '@vertesia/api-fetch-client';
 import type {
     ConversationStreamEvent,
     ExperimentalCanonicalInteractionStreamEnvelope,
@@ -332,6 +333,65 @@ describe('canonical interaction stream SDK session', () => {
 
         await expect(consumeCanonicalInteractionStream(transport, request)).rejects.toThrow('protocol failed');
         expect(reads).toBe(0);
+    });
+
+    it('reconnects a public RunsApi stream after an actual status-zero ConnectionError', async () => {
+        const requests: Request[] = [];
+        const envelopes = [opened(), wrapped(accepted(STREAM_ID, 0))];
+        const body = envelopes.map((envelope) => `data: ${JSON.stringify(envelope)}\n\n`).join('');
+        const fetch = vi
+            .fn()
+            .mockRejectedValueOnce(new Error('socket reset'))
+            .mockResolvedValueOnce(new Response(body, { headers: { 'content-type': 'text/event-stream' } }));
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch,
+            onRequest: (wireRequest) => requests.push(wireRequest.clone()),
+        });
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+            const result = await client.runs.streamCanonical(request, { max_reconnects: 1 });
+            expect(result.terminal_event.type).toBe('response_accepted');
+            expect(fetch).toHaveBeenCalledTimes(2);
+            expect(requests).toHaveLength(2);
+            expect(await requests[0].json()).toEqual(request);
+            expect(await requests[1].json()).toEqual(request);
+        } finally {
+            errorSpy.mockRestore();
+        }
+    });
+
+    it('stops retrying status-zero connection failures after the bounded reconnect budget', async () => {
+        const connection = new ConnectionError(
+            new Request('https://studio.example.com/api/v1/runs/canonical-stream'),
+            new Error('offline'),
+        );
+        const transport: CanonicalInteractionStreamTransport = {
+            connect: vi.fn().mockRejectedValue(connection),
+        };
+
+        await expect(consumeCanonicalInteractionStream(transport, request, { max_reconnects: 1 })).rejects.toBe(
+            connection,
+        );
+        expect(transport.connect).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not reconnect HTTP 409 response errors', async () => {
+        const conflict = new ServerError(
+            'request binding conflict',
+            new Request('https://studio.example.com/api/v1/runs/canonical-stream'),
+            409,
+            { errorCode: 'canonical_request_mismatch' },
+        );
+        const transport: CanonicalInteractionStreamTransport = {
+            connect: vi.fn().mockRejectedValue(conflict),
+        };
+
+        await expect(consumeCanonicalInteractionStream(transport, request, { max_reconnects: 2 })).rejects.toBe(
+            conflict,
+        );
+        expect(transport.connect).toHaveBeenCalledOnce();
     });
 
     it('uses the exact versioned endpoint and parses the finite accepted event', async () => {

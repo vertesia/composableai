@@ -1,11 +1,22 @@
+import { createHash } from 'node:crypto';
 import type { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { ServerError } from '@vertesia/api-fetch-client';
-import type { VertesiaClient } from '@vertesia/client';
-import { ContentEventName, type DSLActivityExecutionPayload, ExecutionRunStatus } from '@vertesia/common';
+import type { EnhancedExperimentalCanonicalInteractionExecutionResult, VertesiaClient } from '@vertesia/client';
+import {
+    CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE,
+    ContentEventName,
+    type DSLActivityExecutionPayload,
+    ExecutionRunStatus,
+    RunDataStorageLevel,
+} from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
-import { type ExecuteInteractionParams, executeInteraction } from './executeInteraction.js';
+import {
+    type ExecuteInteractionParams,
+    executeInteraction,
+    executeInteractionFromActivity,
+} from './executeInteraction.js';
 
 vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../dsl/setup/ActivityContext.js')>();
@@ -40,16 +51,131 @@ const createPayload = (): DSLActivityExecutionPayload<ExecuteInteractionParams> 
     activity: { name: 'executeInteraction', params: {} },
 });
 
+function canonicalResult(
+    options: {
+        id?: string;
+        status?: ExecutionRunStatus;
+        generationStatus?: 'completed' | 'failed' | 'cancelled';
+        turnStatus?: 'completed' | 'interrupted' | 'failed';
+        acceptedOutput?: boolean;
+        error?: { message: string; code?: string; retryable?: boolean };
+        blocks?: readonly Record<string, unknown>[];
+        assets?: Record<string, Record<string, unknown>>;
+    } = {},
+): EnhancedExperimentalCanonicalInteractionExecutionResult {
+    const id = options.id ?? 'run-id';
+    const status = options.status ?? ExecutionRunStatus.completed;
+    const generationStatus =
+        options.generationStatus ?? (status === ExecutionRunStatus.completed ? 'completed' : 'failed');
+    const turnStatus =
+        options.turnStatus ??
+        (generationStatus === 'failed' ? 'failed' : generationStatus === 'cancelled' ? 'interrupted' : 'completed');
+    const acceptedOutput = options.acceptedOutput ?? status === ExecutionRunStatus.completed;
+    const blocks = options.blocks ?? [];
+    const assets = options.assets ?? {};
+    const output = {
+        blocks,
+        fragment: {
+            turn: { status: turnStatus },
+            generation: {
+                requested_model: 'requested-model-id',
+                resolved_model: 'resolved-model-id',
+                status: generationStatus,
+                finish_reason: generationStatus === 'completed' ? 'stop' : 'error',
+                timestamps: {
+                    recorded_at: '2026-01-01T00:00:00.000Z',
+                    provider_duration_ms: 321,
+                },
+                usage: {
+                    input_tokens: 10,
+                    input_new_tokens: 6,
+                    cache_read_tokens: 4,
+                    cache_write_tokens: 2,
+                    output_tokens: 3,
+                    total_tokens: 13,
+                },
+            },
+            assets,
+        },
+        asset(assetId: string) {
+            const asset = assets[assetId];
+            if (!asset) throw new Error(`Missing test asset ${assetId}`);
+            return asset;
+        },
+        object<T>() {
+            const block = blocks.find((candidate) => candidate.type === 'json');
+            if (!block) throw new Error('No JSON block');
+            return block.value as T;
+        },
+        text() {
+            return blocks.flatMap((block) => (block.type === 'text' ? [block.text] : [])).join('\n');
+        },
+    };
+    return {
+        run: {
+            id,
+            status,
+            created_at: '2026-01-01T00:00:00.000Z',
+            updated_at: '2026-01-01T00:00:00.000Z',
+            retention: 'STANDARD',
+            ...(options.error ? { error: options.error } : {}),
+        },
+        output: acceptedOutput
+            ? { status: 'accepted', fragment: output.fragment }
+            : { status: 'unavailable', reason: 'no_accepted_response' },
+        history: { status: 'unavailable', reason: 'not_requested', retention: 'STANDARD' },
+        ...(acceptedOutput ? { canonicalOutput: output } : {}),
+    } as unknown as EnhancedExperimentalCanonicalInteractionExecutionResult;
+}
+
+function acceptedStream(runId = 'run-id') {
+    return {
+        run_id: runId,
+        operation_id: 'operation-id',
+        stream_id: 'stream-id',
+        terminal_event: { type: 'response_accepted' },
+        cursor: { stream_id: 'stream-id', event_id: 'event-id', sequence: 1 },
+        retained_events: [],
+    } as unknown as Awaited<ReturnType<VertesiaClient['runs']['streamCanonical']>>;
+}
+
+function terminatedStream(runId: string) {
+    return {
+        ...acceptedStream(runId),
+        terminal_event: { type: 'stream_terminated', outcome: 'failed' },
+    } as unknown as Awaited<ReturnType<VertesiaClient['runs']['streamCanonical']>>;
+}
+
+function mockCanonicalClient(result = canonicalResult()) {
+    const requestSlot = vi.fn().mockResolvedValue({ delay_ms: 0 });
+    const streamCanonical = vi.fn().mockResolvedValue(acceptedStream(result.run.id));
+    const retrieveCanonical = vi.fn().mockResolvedValue(result);
+    const search = vi.fn().mockResolvedValue([]);
+    const retrieve = vi.fn();
+    const uploadFile = vi.fn();
+    const downloadFile = vi.fn();
+    return {
+        client: {
+            interactions: { requestSlot },
+            runs: { streamCanonical, retrieveCanonical, search, retrieve },
+            files: { uploadFile, downloadFile },
+        } as unknown as VertesiaClient,
+        requestSlot,
+        streamCanonical,
+        retrieveCanonical,
+        search,
+        retrieve,
+        uploadFile,
+        downloadFile,
+    };
+}
+
 async function mockInteractionError(
     error: Error & { statusCode?: number; status?: number; code?: number; retryable?: boolean },
 ): Promise<void> {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
-    const mockClient = {
-        interactions: {
-            requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }),
-            executeByName: vi.fn().mockRejectedValue(error),
-        },
-    } as unknown as VertesiaClient;
+    const { client: mockClient, streamCanonical } = mockCanonicalClient();
+    streamCanonical.mockRejectedValue(error);
 
     vi.mocked(setupActivity).mockResolvedValue({
         client: mockClient,
@@ -61,13 +187,8 @@ async function mockInteractionError(
 describe('executeInteraction retryability', () => {
     it('should durably retry before executing when the LLM limiter returns a delay', async () => {
         const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
-        const executeByName = vi.fn();
-        const mockClient = {
-            interactions: {
-                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 5_000 }),
-                executeByName,
-            },
-        } as unknown as VertesiaClient;
+        const { client: mockClient, requestSlot, streamCanonical } = mockCanonicalClient();
+        requestSlot.mockResolvedValue({ delay_ms: 5_000 });
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
             inputType: 'objectIds',
@@ -79,7 +200,7 @@ describe('executeInteraction retryability', () => {
             nextRetryDelay: 5_000,
             nonRetryable: false,
         } satisfies Partial<ApplicationFailure>);
-        expect(executeByName).not.toHaveBeenCalled();
+        expect(streamCanonical).not.toHaveBeenCalled();
     });
 
     it('preserves typed API 429 metadata for the activity retry interceptor', async () => {
@@ -124,28 +245,14 @@ describe('executeInteraction retryability', () => {
         } satisfies Partial<ApplicationFailure>);
     });
 
-    it('should forward the execution config object to interaction execution', async () => {
+    it('should forward config, result binding, and workflow attribution to canonical execution', async () => {
         const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
-        const httpTimeout = {
-            headersTimeout: 1_000,
-            bodyTimeout: 2_000,
-            connectTimeout: 300,
-        };
-        const executeByName = vi.fn().mockResolvedValue({
-            id: 'run-id',
-            status: ExecutionRunStatus.completed,
-            result: [],
-        });
-        const requestSlot = vi.fn().mockResolvedValue({ delay_ms: 0 });
-        const mockClient = {
-            interactions: {
-                requestSlot,
-                executeByName,
-            },
-        } as unknown as VertesiaClient;
+        const httpTimeout = { headersTimeout: 1_000, bodyTimeout: 2_000, connectTimeout: 300 };
+        const { client: mockClient, requestSlot, streamCanonical } = mockCanonicalClient();
         const payload = createPayload();
         const params: ExecuteInteractionParams = {
             ...payload.params,
+            result_schema: { type: 'object' },
             config: {
                 environment: 'env-id',
                 model: 'model-id',
@@ -154,7 +261,6 @@ describe('executeInteraction retryability', () => {
                 http_timeout: httpTimeout,
             },
         };
-
         vi.mocked(setupActivity).mockResolvedValue({
             client: mockClient,
             inputType: 'objectIds',
@@ -166,19 +272,22 @@ describe('executeInteraction retryability', () => {
             status: ExecutionRunStatus.completed,
         });
 
-        expect(executeByName).toHaveBeenCalledWith(
-            'testInteraction',
-            expect.objectContaining({
-                config: expect.objectContaining({
-                    environment: 'env-id',
-                    model: 'model-id',
-                    http_timeout: httpTimeout,
-                }),
-                workflow: expect.objectContaining({
-                    rate_limit_id: expect.stringMatching(/:testInteraction$/),
-                }),
-            }),
-        );
+        const streamRequest = streamCanonical.mock.calls[0][0];
+        expect(streamRequest.request).toMatchObject({
+            interaction: 'testInteraction',
+            initial_state: { type: 'new' },
+            retention: 'STANDARD',
+            return_policy: { history: 'none' },
+            config: {
+                environment: 'env-id',
+                model: 'model-id',
+                http_timeout: httpTimeout,
+            },
+            result_schema: { type: 'object' },
+            workflow: {
+                rate_limit_id: expect.stringMatching(/:testInteraction$/),
+            },
+        });
         expect(requestSlot).toHaveBeenCalledWith(
             expect.objectContaining({
                 interaction: 'testInteraction',
@@ -189,7 +298,7 @@ describe('executeInteraction retryability', () => {
                 rate_limit_id: expect.stringMatching(/:testInteraction$/),
             }),
         );
-        expect(requestSlot.mock.calls[0][0].rate_limit_id).toBe(executeByName.mock.calls[0][1].workflow.rate_limit_id);
+        expect(requestSlot.mock.calls[0][0].rate_limit_id).toBe(streamRequest.request.workflow?.rate_limit_id);
     });
 
     it('should leave 412 rendition-in-progress failures retryable', async () => {
@@ -272,5 +381,419 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
+    });
+});
+
+describe('executeInteraction canonical lifecycle', () => {
+    const retryEnvironment = (attempt: number) =>
+        new MockActivityEnvironment({
+            attempt,
+            activityId: 'activity-id',
+            workflowExecution: { workflowId: 'workflow-id', runId: 'workflow-run-id' },
+        });
+
+    it('rejects user tags that collide with durable predecessor identity before admission', async () => {
+        const mocks = mockCanonicalClient();
+
+        await expect(
+            retryEnvironment(1).run(
+                executeInteractionFromActivity,
+                mocks.client,
+                'testInteraction',
+                { tags: ['workflow-predecessor:forged'] },
+                {},
+            ),
+        ).rejects.toThrow('reserved prefix workflow-predecessor:');
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+    });
+
+    it('returns an accepted retry before admission or redispatch', async () => {
+        const accepted = canonicalResult({ id: 'accepted-run' });
+        const mocks = mockCanonicalClient(accepted);
+        mocks.search.mockResolvedValue([{ id: 'accepted-run' }]);
+        mocks.retrieveCanonical.mockResolvedValue(accepted);
+
+        await expect(
+            retryEnvironment(2).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
+        ).resolves.toBe(accepted);
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+        expect(mocks.search).toHaveBeenCalledWith(
+            expect.objectContaining({
+                query: expect.objectContaining({
+                    workflow_run_ids: ['workflow-run-id'],
+                    tags: [expect.stringMatching(/^workflow-interaction:/)],
+                }),
+            }),
+        );
+    });
+
+    it('recovers a completed accepted generation despite stale failed run projection', async () => {
+        const accepted = canonicalResult({
+            id: 'accepted-run',
+            status: ExecutionRunStatus.failed,
+            generationStatus: 'completed',
+            acceptedOutput: true,
+            error: { message: 'stale host delivery failure', code: 'HOST_DELIVERY_FAILED', retryable: true },
+        });
+        const mocks = mockCanonicalClient(accepted);
+        mocks.search.mockResolvedValue([{ id: 'accepted-run', tags: ['workflow-predecessor:initial'] }]);
+        mocks.retrieveCanonical.mockResolvedValue(accepted);
+
+        await expect(
+            retryEnvironment(2).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
+        ).resolves.toBe(accepted);
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+    });
+
+    it('returns an accepted cancelled generation with an interrupted turn as cutoff output', async () => {
+        const cutoff = canonicalResult({
+            generationStatus: 'cancelled',
+            turnStatus: 'interrupted',
+        });
+        const mocks = mockCanonicalClient(cutoff);
+
+        await expect(
+            retryEnvironment(1).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
+        ).resolves.toBe(cutoff);
+    });
+
+    it('does not return an accepted fragment whose generation failed on a fresh execution', async () => {
+        const failed = canonicalResult({
+            status: ExecutionRunStatus.completed,
+            generationStatus: 'failed',
+            error: { message: 'provider rejected output', code: 'OUTPUT_FAILED', retryable: false },
+        });
+        const mocks = mockCanonicalClient(failed);
+
+        await expect(
+            retryEnvironment(1).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
+        ).rejects.toMatchObject({ retryable: false, errorCode: 'OUTPUT_FAILED' });
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+    });
+
+    it.each([ExecutionRunStatus.failed, ExecutionRunStatus.completed, ExecutionRunStatus.processing])(
+        'advances after response_accepted confirms canonical failure with host status %s',
+        async (runStatus) => {
+            const failed = canonicalResult({
+                id: 'failed-run',
+                status: runStatus,
+                generationStatus: 'completed',
+                turnStatus: 'failed',
+                acceptedOutput: true,
+                error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: false },
+            });
+            const accepted = canonicalResult({ id: 'retry-run' });
+            const mocks = mockCanonicalClient(accepted);
+            mocks.search.mockResolvedValue([{ id: 'failed-run', tags: ['workflow-predecessor:initial'] }]);
+            mocks.streamCanonical
+                .mockResolvedValueOnce(acceptedStream('failed-run'))
+                .mockResolvedValueOnce(acceptedStream('retry-run'));
+            mocks.retrieveCanonical
+                .mockResolvedValueOnce(failed)
+                .mockResolvedValueOnce(failed)
+                .mockResolvedValueOnce(accepted);
+
+            await expect(
+                retryEnvironment(2).run(
+                    executeInteractionFromActivity,
+                    mocks.client,
+                    'testInteraction',
+                    { include_previous_error: true },
+                    {},
+                ),
+            ).resolves.toBe(accepted);
+            expect(mocks.streamCanonical).toHaveBeenCalledTimes(2);
+            expect(mocks.streamCanonical.mock.calls[1][0].operation_id).not.toBe(
+                mocks.streamCanonical.mock.calls[0][0].operation_id,
+            );
+            expect(mocks.streamCanonical.mock.calls[1][0].request.data).toMatchObject({
+                previous_error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: false },
+            });
+        },
+    );
+
+    it('heartbeats while a provider stream is idle and clears the timer after settlement', async () => {
+        vi.useFakeTimers();
+        try {
+            const environment = new MockActivityEnvironment({
+                attempt: 1,
+                activityId: 'activity-id',
+                heartbeatTimeoutMs: 1_000,
+                workflowExecution: { workflowId: 'workflow-id', runId: 'workflow-run-id' },
+            });
+            const heartbeatDetails: unknown[] = [];
+            environment.on('heartbeat', (details) => heartbeatDetails.push(details));
+            const mocks = mockCanonicalClient();
+            let resolveStream: ((value: ReturnType<typeof acceptedStream>) => void) | undefined;
+            mocks.streamCanonical.mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        resolveStream = resolve;
+                    }),
+            );
+
+            const execution = environment.run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {});
+            await vi.advanceTimersByTimeAsync(501);
+            expect(heartbeatDetails).toContainEqual({ operation_id: expect.stringMatching(/^workflow-interaction:/) });
+
+            resolveStream?.(acceptedStream());
+            await execution;
+            const settledCount = heartbeatDetails.length;
+            await vi.advanceTimersByTimeAsync(20_000);
+            expect(heartbeatDetails).toHaveLength(settledCount);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('reuses the exact operation when the prior run is not yet searchable', async () => {
+        const mocks = mockCanonicalClient();
+        await retryEnvironment(1).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {});
+        await retryEnvironment(2).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {});
+
+        expect(mocks.streamCanonical).toHaveBeenCalledTimes(2);
+        expect(mocks.streamCanonical.mock.calls[0][0].operation_id).toBe(
+            mocks.streamCanonical.mock.calls[1][0].operation_id,
+        );
+        expect(mocks.streamCanonical.mock.calls[0][0].request).toEqual(mocks.streamCanonical.mock.calls[1][0].request);
+        expect(mocks.requestSlot).toHaveBeenCalledTimes(2);
+        expect(mocks.requestSlot.mock.calls[0][0].rate_limit_id).toBe(mocks.requestSlot.mock.calls[1][0].rate_limit_id);
+    });
+
+    it('rechecks one stable admission reservation after a delayed first attempt', async () => {
+        const mocks = mockCanonicalClient();
+        mocks.requestSlot.mockResolvedValueOnce({ delay_ms: 5_000 }).mockResolvedValueOnce({ delay_ms: 0 });
+
+        await expect(
+            retryEnvironment(1).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
+        ).rejects.toMatchObject({ type: 'InteractionRateLimitRetry', nonRetryable: false, nextRetryDelay: 5_000 });
+        await retryEnvironment(2).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {});
+
+        expect(mocks.requestSlot).toHaveBeenCalledTimes(2);
+        expect(mocks.requestSlot.mock.calls[0][0].rate_limit_id).toBe(mocks.requestSlot.mock.calls[1][0].rate_limit_id);
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+        expect(mocks.streamCanonical.mock.calls[0][0].request.workflow?.rate_limit_id).toBe(
+            mocks.requestSlot.mock.calls[1][0].rate_limit_id,
+        );
+    });
+
+    it('resumes an active operation without obtaining a second admission slot', async () => {
+        const active = canonicalResult({ id: 'active-run', status: ExecutionRunStatus.processing });
+        const accepted = canonicalResult({ id: 'active-run' });
+        const mocks = mockCanonicalClient(accepted);
+        mocks.search.mockResolvedValue([{ id: 'active-run', tags: ['workflow-predecessor:initial'] }]);
+        mocks.retrieveCanonical.mockResolvedValueOnce(active).mockResolvedValueOnce(accepted);
+
+        await retryEnvironment(2).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {});
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+    });
+
+    it('starts a new bound operation only after a previous failure is confirmed', async () => {
+        const first = mockCanonicalClient();
+        await retryEnvironment(1).run(executeInteractionFromActivity, first.client, 'testInteraction', {}, {});
+        const firstOperation = first.streamCanonical.mock.calls[0][0].operation_id;
+
+        const failure = canonicalResult({
+            id: 'failed-run',
+            status: ExecutionRunStatus.failed,
+            error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: true },
+        });
+        const accepted = canonicalResult({ id: 'retry-run' });
+        const retry = mockCanonicalClient(accepted);
+        retry.search.mockResolvedValue([{ id: 'failed-run', tags: ['workflow-predecessor:initial'] }]);
+        retry.streamCanonical
+            .mockResolvedValueOnce(terminatedStream('failed-run'))
+            .mockResolvedValueOnce(acceptedStream('retry-run'));
+        retry.retrieveCanonical
+            .mockResolvedValueOnce(failure)
+            .mockResolvedValueOnce(failure)
+            .mockResolvedValueOnce(accepted);
+
+        await retryEnvironment(2).run(
+            executeInteractionFromActivity,
+            retry.client,
+            'testInteraction',
+            {
+                include_previous_error: true,
+            },
+            {},
+        );
+        expect(retry.streamCanonical.mock.calls[0][0].operation_id).toBe(firstOperation);
+        const retryRequest = retry.streamCanonical.mock.calls[1][0];
+        expect(retryRequest.operation_id).not.toBe(firstOperation);
+        expect(retryRequest.request.data).toMatchObject({
+            previous_error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: true },
+        });
+        expect(retry.requestSlot).toHaveBeenCalledOnce();
+    });
+
+    it('reconstructs an active retry from its confirmed predecessor even when search omits that predecessor', async () => {
+        const failure = canonicalResult({
+            id: 'failed-predecessor',
+            status: ExecutionRunStatus.failed,
+            error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: true },
+        });
+        const active = canonicalResult({ id: 'active-run', status: ExecutionRunStatus.processing });
+        const accepted = canonicalResult({ id: 'active-run' });
+        const mocks = mockCanonicalClient(accepted);
+        mocks.search.mockResolvedValue([{ id: 'active-run', tags: ['workflow-predecessor:failed-predecessor'] }]);
+        mocks.retrieveCanonical
+            .mockResolvedValueOnce(active)
+            .mockResolvedValueOnce(failure)
+            .mockResolvedValueOnce(accepted);
+
+        await retryEnvironment(3).run(
+            executeInteractionFromActivity,
+            mocks.client,
+            'testInteraction',
+            { include_previous_error: true },
+            {},
+        );
+
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical.mock.calls[0][0].request.data).toMatchObject({
+            previous_error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: true },
+        });
+        expect(mocks.retrieveCanonical).toHaveBeenCalledWith('failed-predecessor');
+    });
+
+    it('retries a failed Mongo run at the same operation until its stream terminal is authoritative', async () => {
+        const failure = canonicalResult({
+            id: 'failed-run',
+            status: ExecutionRunStatus.failed,
+            error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: true },
+        });
+        const mocks = mockCanonicalClient();
+        mocks.search.mockResolvedValue([{ id: 'failed-run', tags: ['workflow-predecessor:initial'] }]);
+        mocks.retrieveCanonical.mockResolvedValue(failure);
+        const pending = new ServerError(
+            'Canonical stream dispatch outcome is indeterminate',
+            new Request('https://studio.test/api/v1/runs/canonical-stream'),
+            409,
+            { errorCode: CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE },
+        );
+        mocks.streamCanonical.mockRejectedValue(pending);
+
+        await expect(
+            retryEnvironment(2).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
+        ).rejects.toMatchObject({ type: 'CanonicalStreamRecoveryPending', nonRetryable: false });
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+        expect(mocks.streamCanonical.mock.calls[0][0].request.tags).toContain('workflow-predecessor:initial');
+    });
+
+    it('preserves a canonical stream HTTP error whose payload is null', async () => {
+        const mocks = mockCanonicalClient();
+        const error = new ServerError(
+            'Canonical stream failed',
+            new Request('https://studio.test/api/v1/runs/canonical-stream'),
+            500,
+            null,
+        );
+        mocks.streamCanonical.mockRejectedValue(error);
+
+        await expect(
+            retryEnvironment(1).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
+        ).rejects.toBe(error);
+    });
+
+    it('projects canonical JSON and verified image bytes at the legacy DSL boundary', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const bytes = new Uint8Array([1, 2, 3, 4]);
+        const hash = `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
+        const result = canonicalResult({
+            blocks: [
+                { id: 'json-block', type: 'json', value: { answer: 42 } },
+                { id: 'image-block', type: 'image', asset_id: 'image-asset' },
+            ],
+            assets: {
+                'image-asset': {
+                    id: 'image-asset',
+                    kind: 'image',
+                    mime_type: 'image/png',
+                    storage: { type: 'inline_base64', data: Buffer.from(bytes).toString('base64') },
+                    provenance: { type: 'generated', generation_id: 'generation-id' },
+                    byte_length: bytes.byteLength,
+                    content_hash: hash,
+                    created_at: '2026-01-01T00:00:00.000Z',
+                },
+            },
+        });
+        const mocks = mockCanonicalClient(result);
+        mocks.uploadFile.mockImplementation(async (source) => {
+            expect(source.type).toBe('image/png');
+            const uploaded: Uint8Array[] = [];
+            for await (const chunk of source.stream) uploaded.push(chunk);
+            expect(Buffer.concat(uploaded)).toEqual(Buffer.from(bytes));
+            return 'uploaded-image-id';
+        });
+        const payload = createPayload();
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mocks.client,
+            inputType: 'objectIds',
+            params: payload.params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        await expect(testEnv.run(executeInteraction, payload)).resolves.toMatchObject({
+            runId: 'run-id',
+            result: [
+                { type: 'json', value: { answer: 42 } },
+                { type: 'image', value: 'uploaded-image-id' },
+            ],
+        });
+        expect(mocks.uploadFile).toHaveBeenCalledOnce();
+    });
+
+    it('projects the supported legacy run view from retained canonical output when legacy result retention is unavailable', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const result = canonicalResult({ blocks: [{ id: 'text-block', type: 'text', text: 'answer' }] });
+        result.run.retention = RunDataStorageLevel.RESTRICTED;
+        const mocks = mockCanonicalClient(result);
+        mocks.retrieve.mockResolvedValue({
+            id: 'run-id',
+            environment: 'environment-id',
+            config: { temperature: 0.2 },
+            result: undefined,
+            token_use: undefined,
+        });
+        const payload = createPayload();
+        payload.params.config = { run_data: RunDataStorageLevel.RESTRICTED };
+        payload.activity.projection = {
+            finish: '${#.finish_reason}',
+            id: '${#.id}',
+            duration: '${#.execution_time}',
+            environment: '${#.environment}',
+            model: '${#.modelId}',
+            prompt: '${#.token_use.prompt}',
+            promptCached: '${#.token_use.prompt_cached}',
+            promptNew: '${#.token_use.prompt_new}',
+            resultTokens: '${#.token_use.result}',
+            text: '${#.result[0].value}',
+            total: '${#.token_use.total}',
+        };
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mocks.client,
+            inputType: 'objectIds',
+            params: payload.params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        await expect(testEnv.run(executeInteraction, payload)).resolves.toEqual({
+            duration: 321,
+            environment: 'environment-id',
+            finish: 'stop',
+            id: 'run-id',
+            model: 'resolved-model-id',
+            prompt: 10,
+            promptCached: 4,
+            promptNew: 6,
+            resultTokens: 3,
+            text: 'answer',
+            total: 13,
+        });
+        expect(mocks.retrieve).toHaveBeenCalledWith('run-id');
     });
 });

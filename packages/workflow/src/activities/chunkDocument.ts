@@ -2,7 +2,11 @@ import { ApplicationFailure, log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import type { DocPart } from '../utils/chunks.js';
-import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
+import {
+    executeInteractionFromActivity,
+    type InteractionExecutionParams,
+    requireCanonicalInteractionOutput,
+} from './executeInteraction.js';
 
 const INT_CHUNK_DOCUMENT = 'sys:ChunkDocument';
 
@@ -121,7 +125,7 @@ export async function chunkDocument(
         throw error;
     }
 
-    const jsonResult = res.result.object<ChunkDocumentInteractionResult>();
+    const jsonResult = requireCanonicalInteractionOutput(res).object<ChunkDocumentInteractionResult>();
 
     const parts = jsonResult.parts;
     if (!parts || parts.length === 0) {

@@ -244,7 +244,11 @@ export async function consumeCanonicalInteractionStream(
             if (terminal) break;
             if (error instanceof Error && error.name === 'AbortError') throw error;
             if (options.signal?.aborted) throw error;
-            if (error && typeof error === 'object' && 'status' in error) throw error;
+            const status =
+                error && typeof error === 'object' && 'status' in error && typeof error.status === 'number'
+                    ? error.status
+                    : undefined;
+            if (status !== undefined && status !== 0) throw error;
             if (reconnects >= maxReconnects) throw error;
             reconnects += 1;
             continue;
