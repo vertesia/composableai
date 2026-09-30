@@ -8970,6 +8970,17 @@
             "type": "null"
           }
         ]
+      },
+      "budget": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AgentBudgetConfiguration"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Project-scoped agent budget override. Null restores the code-defined or project default; omission preserves the saved budget."
       }
     },
     "required": [
@@ -8989,6 +9000,17 @@
             "type": "null"
           }
         ]
+      },
+      "budget": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/AgentBudgetConfiguration"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Project-scoped agent budget override. Null restores the code-defined or project default; omission preserves the saved budget."
       },
       "id": {
         "type": "string",

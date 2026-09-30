@@ -2263,7 +2263,7 @@ interface Checks {
     >;
     AgentBudgetConfiguration: Same<
         W.AgentBudgetConfiguration,
-        z.infer<typeof import('./api-schemas/project-configuration.js').AgentBudgetConfigurationSchema>
+        z.infer<typeof import('./api-schemas/agent-budget.js').AgentBudgetConfigurationSchema>
     >;
     ProjectSearchPropertyType: Same<
         W.ProjectSearchPropertyType,

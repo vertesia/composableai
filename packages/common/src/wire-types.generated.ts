@@ -3533,9 +3533,11 @@ export type InferenceProfileRecord = {
 export type InferenceProfileRecordArray = InferenceProfileRecord[];
 export type UpdateInteractionConfigurationPayload = {
     inference_profile: InferenceProfileId | null;
+    budget?: AgentBudgetConfiguration | null | undefined;
 };
 export type InteractionConfigurationRecord = {
     inference_profile: InferenceProfileId | null;
+    budget?: AgentBudgetConfiguration | null | undefined;
     id: string;
     project: string;
     interaction: string;
