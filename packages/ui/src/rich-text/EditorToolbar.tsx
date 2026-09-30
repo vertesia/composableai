@@ -166,6 +166,15 @@ function getSelectionAnchor(editor: Editor, selection: Selection) {
     };
 }
 
+function getEnclosingDialog(editor: Editor): HTMLElement | undefined {
+    try {
+        return editor.view.dom.closest<HTMLElement>('[role="dialog"]') ?? undefined;
+    } catch {
+        // The editor view is not mounted yet.
+        return undefined;
+    }
+}
+
 interface SelectionCommentProps {
     editor: Editor;
     selection: Selection;
@@ -189,6 +198,9 @@ function SelectionComment({
 }: SelectionCommentProps) {
     const { t } = useUITranslation();
     const portalContainer = usePortalContainer();
+    // A modal (Radix Dialog) traps focus inside its content element: portaling outside it would let the trap
+    // steal focus back from the textarea, so mount inside the enclosing dialog when there is one.
+    const portalRoot = useMemo(() => getEnclosingDialog(editor) ?? portalContainer, [editor, portalContainer]);
     const { refs, floatingStyles } = useFloating({
         placement: 'right-start',
         strategy: 'fixed',
@@ -202,7 +214,7 @@ function SelectionComment({
     }, [anchor, refs]);
 
     return (
-        <FloatingPortal root={portalContainer}>
+        <FloatingPortal root={portalRoot}>
             <div ref={refs.setFloating} style={floatingStyles} className="pointer-events-auto z-100">
                 {composing ? (
                     <div
