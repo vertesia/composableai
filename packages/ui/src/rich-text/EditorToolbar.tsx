@@ -691,7 +691,9 @@ export function EditorToolbar({
             ) : null}
 
             {showList && pending.length > 0 ? (
-                <ul className="max-h-48 shrink-0 space-y-1.5 overflow-y-auto border-b border-mixer-muted/15 px-3 py-2">
+                // Stacked above the floating selection-comment button (z-100) so it slides beneath the list when
+                // the selection scrolls up under it.
+                <ul className="relative z-101 max-h-48 shrink-0 space-y-1.5 overflow-y-auto border-b border-mixer-muted/15 bg-background px-3 py-2">
                     {pending.map((entry) => (
                         <li
                             key={entry.id}
