@@ -48,7 +48,6 @@ export const MediatorEnvConfigSchema = z
  */
 export const ExecutionEnvironmentSettingsSchema = z
     .object({
-        bucket_access_principal: z.string().optional(),
         default_headers: StringValueMapSchema.meta({
             description: 'Custom HTTP headers sent by OpenAI-compatible environments.',
         }).optional(),

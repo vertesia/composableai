@@ -3320,7 +3320,6 @@ export type MediatorEnvConfig = {
     model_options?: TextFallbackOptions | undefined;
 };
 export type ExecutionEnvironmentSettings = {
-    bucket_access_principal?: string | undefined;
     default_headers?: StringValueMap | undefined;
     [k: string]: unknown;
 };
