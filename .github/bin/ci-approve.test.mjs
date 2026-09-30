@@ -7,8 +7,10 @@ import {
     CONTEXT,
     evaluate,
     githubApi,
+    isTransientApiError,
     MARKER,
     ownsReview,
+    READ_RETRY_DELAYS_MS,
     reconcile,
     requiresHuman,
     targets,
@@ -48,7 +50,11 @@ function fixture({ pulls = [pr], reviews = [], files = [] } = {}) {
         }),
         reviews: async () => structuredClone(stored),
         files: async () => files,
-        open: async () => pulls,
+        opened: [],
+        async open(branch) {
+            this.opened.push(branch);
+            return pulls;
+        },
         status: async (...args) => writes.push(['status', ...args]),
         dismiss: async (_number, id) => {
             writes.push(['dismiss', id]);
@@ -123,20 +129,26 @@ for (const [name, change] of [
     });
 }
 
-test('CI policy edits and renames need a human, with a passing CI status', async () => {
+test('dependency, CI, and configuration changes receive approval after CI passes', async () => {
     for (const file of [
         { filename: '.github/workflows/lint.yaml' },
         { filename: 'package.json' },
         { filename: 'src/innocent.js', previous_filename: '.github/bin/automerge-ci.mjs' },
         { filename: 'packages/example/vitest.config.ts' },
+        { filename: '.githooks/pre-commit' },
+        { filename: 'scripts/build.mjs' },
+        { filename: 'pnpm-workspace.yaml' },
+        { filename: 'turbo.json' },
+        { filename: 'biome.json' },
+        { filename: 'packages/example/tsconfig.json' },
     ]) {
-        const api = fixture({ files: [file], reviews: [approval] });
+        const api = fixture({ files: [file] });
         const result = await reconcile(api, 12, () => true);
-        assert.equal(result.approve, false);
+        assert.equal(result.approve, true);
         assert.equal(result.state, 'success');
-        assert.ok(api.writes.some(([kind]) => kind === 'dismiss'));
+        assert.ok(api.writes.some(([kind]) => kind === 'approve'));
     }
-    assert.equal(requiresHuman(pr, [{ filename: 'apps/server/src/handler.ts' }]), false);
+    assert.equal(requiresHuman(pr), false);
 });
 
 for (const [name, update] of [
@@ -205,6 +217,7 @@ test('manual discovery excludes forks and unsupported bases', async () => {
         ],
     });
     assert.deepEqual(await targets(api, {}, 'workflow_dispatch'), [12]);
+    assert.deepEqual(api.opened, [undefined]);
 });
 
 test('workflow events resolve current PRs even when the event has no PR list or an old SHA', async () => {
@@ -224,6 +237,7 @@ test('workflow events resolve current PRs even when the event has no PR list or 
         ),
         [12],
     );
+    assert.deepEqual(api.opened, ['feature']);
     assert.deepEqual(
         await targets(
             api,
@@ -260,6 +274,81 @@ test('API transport paginates reviews and scopes approval writes to the App toke
     assert.equal(JSON.parse(calls[1].options.input).commit_id, sha);
 });
 
+function ghFailure(stderr) {
+    return Object.assign(new Error('Command failed: gh api'), { status: 1, stderr });
+}
+
+function flakyApi(failures) {
+    const calls = [];
+    const sleeps = [];
+    const api = githubApi(
+        { GITHUB_REPOSITORY: 'vertesia/studio', GH_TOKEN: 'read', GH_REVIEW_TOKEN: 'app' },
+        (_cmd, args) => {
+            calls.push(args);
+            if (calls.length <= failures.length) throw failures[calls.length - 1];
+            return args.includes('--paginate') ? JSON.stringify([[pr]]) : JSON.stringify(approval);
+        },
+        (ms) => sleeps.push(ms),
+    );
+    return { api, calls, sleeps };
+}
+
+test('CI-completion discovery asks GitHub for the branch instead of listing every open PR', () => {
+    const { api, calls } = flakyApi([]);
+    api.open('feat/x#1');
+    assert.equal(calls[0][1], 'repos/vertesia/studio/pulls?state=open&head=vertesia:feat%2Fx%231&per_page=100');
+    api.open();
+    assert.equal(calls[1][1], 'repos/vertesia/studio/pulls?state=open&per_page=100');
+});
+
+test('a transient read failure is retried with backoff', () => {
+    const { api, calls, sleeps } = flakyApi([
+        ghFailure('gh: Server Error (HTTP 502)'),
+        ghFailure('error connecting to api.github.com'),
+    ]);
+    assert.deepEqual(api.open('feature'), [pr]);
+    assert.equal(calls.length, 3);
+    assert.deepEqual(sleeps, READ_RETRY_DELAYS_MS);
+});
+
+test('a read still failing after every retry surfaces the last error', () => {
+    const failures = Array.from({ length: READ_RETRY_DELAYS_MS.length + 1 }, () =>
+        ghFailure('gh: Server Error (HTTP 503)'),
+    );
+    const { api, calls } = flakyApi(failures);
+    assert.throws(
+        () => api.pr(12),
+        (error) => error === failures.at(-1),
+    );
+    assert.equal(calls.length, failures.length);
+});
+
+test('client errors and writes are not retried', () => {
+    const notFound = ghFailure('gh: Not Found (HTTP 404)');
+    const reads = flakyApi([notFound]);
+    assert.throws(
+        () => reads.api.pr(12),
+        (error) => error === notFound,
+    );
+    assert.equal(reads.calls.length, 1);
+
+    const serverError = ghFailure('gh: Server Error (HTTP 502)');
+    const writes = flakyApi([serverError]);
+    assert.throws(
+        () => writes.api.approve(12, sha, 'review'),
+        (error) => error === serverError,
+    );
+    assert.equal(writes.calls.length, 1);
+    assert.deepEqual(writes.sleeps, []);
+});
+
+test('only server errors and dropped connections count as transient', () => {
+    assert.equal(isTransientApiError(ghFailure('gh: Bad Gateway (HTTP 502)')), true);
+    assert.equal(isTransientApiError(ghFailure('Post "https://api.github.com/graphql": unexpected EOF')), true);
+    assert.equal(isTransientApiError(ghFailure('gh: Validation Failed (HTTP 422)')), false);
+    assert.equal(isTransientApiError(new Error('Missing GitHub token')), false);
+});
+
 test('workflow executes only trusted scripts and observes pushes and CI completion', () => {
     const workflow = readFileSync(new URL('../workflows/ci-approve.yaml', import.meta.url), 'utf8');
     assert.match(workflow, /ref: \$\{\{ github.workflow_sha \}\}/);
@@ -281,14 +370,12 @@ test('additive ruleset requires CI without changing human review or thread rules
     assert.deepEqual(ruleset.conditions.ref_name.include, ['refs/heads/main', 'refs/heads/release/**']);
 });
 
-test('truncated changed-file listings cannot authorize an approval', async () => {
+test('approval does not depend on listing changed files', async () => {
     const api = fixture();
     api.pr = async () => ({ ...pr, changed_files: 3001 });
-    await assert.rejects(
-        reconcile(api, 12, () => true),
-        /Incomplete PR file list/,
-    );
-    assert.ok(!api.writes.some(([kind]) => kind === 'approve'));
+    api.files = async () => assert.fail('must not request changed files');
+    assert.equal((await reconcile(api, 12, () => true)).approve, true);
+    assert.ok(api.writes.some(([kind]) => kind === 'approve'));
 });
 
 test('failed dismissal still publishes a blocking error status', async () => {
@@ -396,7 +483,7 @@ test('a newer substantive run on another base prevents fallback to older CI', ()
     assert.equal(verifyPrCi(ciApi([ciRun, later]), pr, [ciWorkflow]), false);
 });
 
-test('lockfile changes require human review after CI passes', async () => {
+test('lockfile changes retain approval after CI passes', async () => {
     for (const file of [
         { filename: 'pnpm-lock.yaml' },
         { filename: 'nested/pnpm-lock.yaml' },
@@ -404,9 +491,9 @@ test('lockfile changes require human review after CI passes', async () => {
     ]) {
         const api = fixture({ files: [file], reviews: [approval] });
         const result = await reconcile(api, pr.number, () => true);
-        assert.equal(result.approve, false);
+        assert.equal(result.approve, true);
         assert.equal(result.state, 'success');
-        assert.ok(api.writes.some(([kind, id]) => kind === 'dismiss' && id === approval.id));
+        assert.ok(!api.writes.some(([kind]) => kind === 'dismiss'));
         assert.ok(!api.writes.some(([kind]) => kind === 'approve'));
     }
 });

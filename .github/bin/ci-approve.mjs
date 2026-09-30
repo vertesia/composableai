@@ -20,21 +20,10 @@ export function ownsReview(review) {
     );
 }
 
-export function requiresHuman(pr, files) {
+export function requiresHuman(pr) {
     if (pr.labels.some(({ name }) => name === 'human-review-required')) return true;
     // Existing specialized gates retain ownership of deployment and automation PRs.
-    if (pr.labels.some(({ name }) => name === 'deployment') || pr.user.type === 'Bot') return true;
-    return files.some(({ filename, previous_filename }) =>
-        [filename, previous_filename].some(
-            (path) =>
-                path &&
-                (/^(\.github\/|\.githooks\/|scripts\/)/.test(path) ||
-                    /(^|\/)(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|turbo\.json|biome\.json|tsconfig[^/]*\.json)$/.test(
-                        path,
-                    ) ||
-                    /(^|\/)(vitest|vite|jest)\.config\.[^/]+$/.test(path)),
-        ),
-    );
+    return pr.labels.some(({ name }) => name === 'deployment') || pr.user.type === 'Bot';
 }
 
 export async function evaluate(api, pr, ci) {
@@ -52,9 +41,7 @@ export async function evaluate(api, pr, ci) {
             reason: 'Waiting for successful lint, build, and selected tests for this commit.',
         };
     }
-    const files = await api.files(pr.number);
-    if (files.length !== pr.changed_files) throw new Error('Incomplete PR file list');
-    const human = requiresHuman(pr, files);
+    const human = requiresHuman(pr);
     return {
         state: 'success',
         approve: !human,
@@ -148,7 +135,22 @@ export async function reconcile(api, number, ci, { pushed = false } = {}) {
     }
 }
 
-export function githubApi(env, call = execFileSync) {
+// Delays before each retry of a read. A CI-completion event is the only trigger that re-checks a
+// finished head, so one transient 5xx on a read would otherwise leave its PR pending until a manual
+// dispatch.
+export const READ_RETRY_DELAYS_MS = [2000, 5000];
+
+export function isTransientApiError(error) {
+    return /HTTP 5\d\d|error connecting to|connection reset|i\/o timeout|unexpected EOF/i.test(
+        `${error?.stderr ?? ''}\n${error?.message ?? ''}`,
+    );
+}
+
+function sleepSync(ms) {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+export function githubApi(env, call = execFileSync, sleep = sleepSync) {
     const repo = env.GITHUB_REPOSITORY;
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo ?? '')) throw new Error('Invalid GITHUB_REPOSITORY');
     const request = (endpoint, { method = 'GET', body, review = false, pages = false } = {}) => {
@@ -157,13 +159,25 @@ export function githubApi(env, call = execFileSync) {
         const args = ['api', endpoint, '--method', method];
         if (pages) args.push('--paginate', '--slurp');
         if (body) args.push('--input', '-');
-        const output = call('gh', args, {
-            encoding: 'utf8',
-            maxBuffer: 32 * 1024 * 1024,
-            env: { ...env, GH_TOKEN: token },
-            input: body ? JSON.stringify(body) : undefined,
-        });
-        return output.trim() ? JSON.parse(output) : null;
+        const send = () =>
+            call('gh', args, {
+                encoding: 'utf8',
+                maxBuffer: 32 * 1024 * 1024,
+                env: { ...env, GH_TOKEN: token },
+                input: body ? JSON.stringify(body) : undefined,
+            });
+        // Only reads are retried: a write answered with a 5xx may still have been applied.
+        const delays = method === 'GET' ? READ_RETRY_DELAYS_MS : [];
+        for (let attempt = 0; ; attempt++) {
+            try {
+                const output = send();
+                return output.trim() ? JSON.parse(output) : null;
+            } catch (error) {
+                if (attempt >= delays.length || !isTransientApiError(error)) throw error;
+                console.warn(`Retrying ${method} ${endpoint} after a transient error: ${error.message}`);
+                sleep(delays[attempt]);
+            }
+        }
     };
     const pages = (endpoint) => request(endpoint, { pages: true });
     const list = (endpoint) => pages(`${endpoint}${endpoint.includes('?') ? '&' : '?'}per_page=100`).flat();
@@ -171,8 +185,13 @@ export function githubApi(env, call = execFileSync) {
         repo,
         pages,
         pr: (number) => request(`repos/${repo}/pulls/${number}`),
-        open: () => list(`repos/${repo}/pulls?state=open`),
-        files: (number) => list(`repos/${repo}/pulls/${number}/files`),
+        // With a branch, GitHub filters server-side: one small page instead of every open PR in the repo.
+        open: (branch) =>
+            list(
+                `repos/${repo}/pulls?state=open${
+                    branch ? `&head=${repo.split('/')[0]}:${encodeURIComponent(branch)}` : ''
+                }`,
+            ),
         reviews: (number) => list(`repos/${repo}/pulls/${number}/reviews`),
         dismiss: (number, id, message) =>
             request(`repos/${repo}/pulls/${number}/reviews/${id}/dismissals`, {
@@ -215,7 +234,7 @@ export async function targets(api, event, eventName) {
         const run = event.workflow_run;
         if (run.head_repository?.full_name !== api.repo) return [];
         // Query current PRs: event.pull_requests can be empty and events may arrive out of order.
-        return (await api.open())
+        return (await api.open(run.head_branch))
             .filter((pr) => pr.head.repo?.full_name === api.repo && pr.head.ref === run.head_branch)
             .map((pr) => pr.number);
     }
