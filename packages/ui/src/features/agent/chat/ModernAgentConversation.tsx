@@ -1853,7 +1853,9 @@ function ModernAgentConversationInner({
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
     const isAgentWorking = !effectiveIsCompleted && !isWorkflowTerminal;
     const remainingBudget = useMemo(
-        () => findRunBudgetRemaining(displayedMessages, activeWorkstream || 'main'),
+        // The combined conversation view shows the main run's shared budget.
+        () =>
+            findRunBudgetRemaining(displayedMessages, activeWorkstream === 'all' ? 'main' : activeWorkstream || 'main'),
         [displayedMessages, activeWorkstream],
     );
     const budgetPause = useMemo(
