@@ -438,6 +438,10 @@ jobs:
       pull-requests: read # Inspect source PR labels and resolve contributors.
       actions: read # Inspect workflow failures in the reusable notifier.
     uses: ./.github/workflows/notify-automation.yaml # zizmor: ignore[self-repository] actionlint does not yet support $/ workflow references.
+    # Name the secret so the called job can resolve it from its submodule-sync environment
+    # (actions/runner#1490); without it the job fails with an empty private-key.
+    secrets:
+      APP_VERTESIA_SUBMODULE_SYNC_PEM: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }} # zizmor: ignore[secrets-outside-env] Resolved by the called submodule-sync environment.
     with:
       source_repository: vertesia/llumiverse
       source_sha: ${{ inputs.llumiverse_sha || github.event.client_payload.llumiverse_sha }}
