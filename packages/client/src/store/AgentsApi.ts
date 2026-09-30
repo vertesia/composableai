@@ -1,3 +1,4 @@
+import { conversationOutputReceiptsEqual } from '@llumiverse/conversation/output-runtime';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import {
     type ActiveWorkstreamsQueryResult,
@@ -20,10 +21,12 @@ import {
     type BindRunWorkflowPayload,
     type CanonicalConversationHeadScope,
     type ConversationDocumentV0,
+    type ConversationOutputReceipt,
     type ConversationRef,
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
     type ErrorAnalyticsResponse,
+    type ExperimentalCanonicalInteractionOutput,
     type FirstResponseBehaviorAnalyticsResponse,
     type IngestAgentEventsPayload,
     type IngestAgentEventsResponse,
@@ -63,6 +66,8 @@ import {
     type WorkflowRunWithDetails,
     type WorkflowToolParametersQuery,
 } from '@vertesia/common';
+import { type CanonicalInteractionRequestOptions, canonicalInteractionHeaders } from '../CanonicalInteractionApi.js';
+import { CanonicalInteractionOutput } from '../CanonicalInteractionOutput.js';
 import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
 import { fetchSignedUrl } from './signed-url.js';
@@ -136,6 +141,34 @@ export class AgentsApi extends ApiTopic {
         return this.get(`/${encodeURIComponent(id)}/conversation/head`, {
             query: { conversation_scope: scope },
         });
+    }
+
+    /** Load output from one exact committed canonical response and verify its complete receipt. */
+    async retrieveConversationAcceptedOutput<T = unknown>(
+        id: string,
+        expectedReceipt: ConversationOutputReceipt,
+        scope: CanonicalConversationHeadScope = 'root',
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<CanonicalInteractionOutput<T>> {
+        const receipt = structuredClone(expectedReceipt);
+        const response = await this.get<ExperimentalCanonicalInteractionOutput>(
+            `/${encodeURIComponent(id)}/conversation/${encodeURIComponent(receipt.conversation_id)}` +
+                `/revisions/${receipt.result_revision}/accepted-output/${encodeURIComponent(receipt.id)}`,
+            {
+                query: { conversation_scope: scope },
+                headers: canonicalInteractionHeaders(options?.headers),
+                signal: options?.signal,
+                timeoutMs: options?.timeoutMs,
+            },
+        );
+        if (response.status !== 'accepted') {
+            throw new Error('Canonical accepted output endpoint returned unavailable output');
+        }
+        const output = new CanonicalInteractionOutput<T>(response.fragment);
+        if (!conversationOutputReceiptsEqual(output.fragment.receipt, receipt)) {
+            throw new Error('Canonical accepted output receipt does not match the requested receipt');
+        }
+        return output;
     }
 
     /** @internal Append verified application tool results to the durable operational head. */

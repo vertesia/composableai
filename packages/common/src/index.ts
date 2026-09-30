@@ -26,6 +26,7 @@ export * from './ask-user.js';
 export * from './audit-trail.js';
 export * from './browser-credentials.js';
 export * from './canonical-conversation.js';
+export * from './canonical-generation-evidence.js';
 export type * from './canonical-interaction-execution.js';
 export type * from './canonical-interaction-stream.js';
 export { CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE } from './canonical-interaction-stream.js';

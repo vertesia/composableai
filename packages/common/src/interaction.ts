@@ -226,6 +226,12 @@ export type CanonicalConversationHeadScope = Wire.CanonicalConversationHeadScope
 /** Query envelope selecting one canonical agent-run head scope. */
 export type CanonicalConversationHeadScopeQuery = Wire.CanonicalConversationHeadScopeQuery;
 
+/** Exact accepted-generation metadata reusable outside agent-run scoped state. */
+export type ConversationAcceptedGenerationEvidence = Wire.ConversationAcceptedGenerationEvidence;
+
+/** Accepted-generation metadata explicitly bound to one canonical agent-run head scope. */
+export type CanonicalScopedGenerationEvidence = Wire.CanonicalScopedGenerationEvidence;
+
 /** Async activity acknowledgement with canonical authority kept outside legacy ConversationState. */
 export type CanonicalAsyncCompletionResult = Wire.CanonicalAsyncCompletionResult;
 

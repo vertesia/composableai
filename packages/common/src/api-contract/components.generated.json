@@ -20685,6 +20685,25 @@
     },
     "additionalProperties": false
   },
+  "CanonicalScopedGenerationEvidence": {
+    "type": "object",
+    "properties": {
+      "receipt": {
+        "$ref": "#/components/schemas/ConversationOutputReceipt"
+      },
+      "generation": {
+        "$ref": "#/components/schemas/ConversationOutputGeneration"
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      }
+    },
+    "required": [
+      "receipt",
+      "generation",
+      "scope"
+    ]
+  },
   "CanonicalAsyncCompletionResult": {
     "type": "object",
     "properties": {
@@ -20693,6 +20712,10 @@
       },
       "canonical_state": {
         "$ref": "#/components/schemas/CanonicalContinuationState"
+      },
+      "generation_evidence": {
+        "$ref": "#/components/schemas/CanonicalScopedGenerationEvidence",
+        "description": "Exact accepted generation supplying current finish, usage, and model-call control metadata. This is independent of canonical_state.output_receipt, which supplies workflow-visible output."
       }
     },
     "required": [
@@ -20706,6 +20729,21 @@
         "$ref": "#/components/schemas/CanonicalConversationHeadScope"
       }
     }
+  },
+  "ConversationAcceptedGenerationEvidence": {
+    "type": "object",
+    "properties": {
+      "receipt": {
+        "$ref": "#/components/schemas/ConversationOutputReceipt"
+      },
+      "generation": {
+        "$ref": "#/components/schemas/ConversationOutputGeneration"
+      }
+    },
+    "required": [
+      "receipt",
+      "generation"
+    ]
   },
   "AsyncConversationExecutionPayload": {
     "type": "object",

@@ -13,6 +13,7 @@ import {
 } from '@llumiverse/common/schemas';
 import {
     ConversationMaterializedInputSchema,
+    ConversationOutputGenerationSchema,
     ConversationOutputReceiptSchema,
     ConversationRefSchema,
     PendingApplicationToolCallSchema,
@@ -1965,6 +1966,22 @@ export const CanonicalConversationHeadScopeQuerySchema = z
     })
     .meta({ id: 'CanonicalConversationHeadScopeQuery' });
 
+/**
+ * Exact accepted-generation metadata without response content, history, provider replay, or an
+ * agent-specific head scope. Consumers must enforce the receipt/generation cross-record binding.
+ */
+export const ConversationAcceptedGenerationEvidenceSchema = z
+    .strictObject({
+        receipt: ConversationOutputReceiptSchema,
+        generation: ConversationOutputGenerationSchema,
+    })
+    .meta({ id: 'ConversationAcceptedGenerationEvidence' });
+
+/** Accepted-generation metadata bound to one canonical agent-run head scope. */
+export const CanonicalScopedGenerationEvidenceSchema = ConversationAcceptedGenerationEvidenceSchema.extend({
+    scope: CanonicalConversationHeadScopeSchema,
+}).meta({ id: 'CanonicalScopedGenerationEvidence' });
+
 /** Ordered, bounded application call identity carried by Temporal without canonical arguments. */
 export const CanonicalPendingApplicationToolCallSchema = PendingApplicationToolCallSchema.meta({
     id: 'CanonicalPendingApplicationToolCall',
@@ -1990,6 +2007,11 @@ export const CanonicalAsyncCompletionResultSchema = z
     .strictObject({
         state: ConversationStateSchema,
         canonical_state: CanonicalContinuationStateSchema.optional(),
+        generation_evidence: CanonicalScopedGenerationEvidenceSchema.meta({
+            description:
+                'Exact accepted generation supplying current finish, usage, and model-call control metadata. ' +
+                'This is independent of canonical_state.output_receipt, which supplies workflow-visible output.',
+        }).optional(),
     })
     .meta({ id: 'CanonicalAsyncCompletionResult' });
 

@@ -1,6 +1,82 @@
-import type { ConversationDocumentV0 } from '@vertesia/common';
+import {
+    appendConversationRecords,
+    createAcceptedOutputFragment,
+    createConversationDocument,
+    type Generation,
+} from '@llumiverse/conversation';
+import {
+    type ConversationDocumentV0,
+    type ConversationOutputReceipt,
+    EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+} from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
 import { ZenoClient } from './client.js';
+
+const recordedAt = '2026-10-01T00:00:00.000Z';
+
+function acceptedOutput() {
+    const initial = createConversationDocument({ id: 'conversation:accepted', created_at: recordedAt });
+    const generation = {
+        id: 'generation:accepted',
+        record_source: 'executed' as const,
+        request_id: 'request:accepted',
+        attempt_id: 'attempt:accepted',
+        purpose: 'interaction',
+        requested_model: 'test-model',
+        provider: 'test-provider',
+        protocol: 'test-protocol',
+        adapter_version: 'test-adapter',
+        status: 'completed' as const,
+        finish_reason: 'stop',
+        timestamps: { recorded_at: recordedAt, completed_at: recordedAt },
+        source: { conversation_id: initial.id, revision: initial.revision },
+        request_receipt: {
+            id: 'request-receipt:accepted',
+            request_id: 'request:accepted',
+            attempt_id: 'attempt:accepted',
+            source: { conversation_id: initial.id, revision: initial.revision },
+            context_fingerprint: 'context-fingerprint',
+            tool_set_fingerprint: 'tool-set-fingerprint',
+            request_fingerprint: 'request-fingerprint',
+            target: {
+                provider: 'test-provider',
+                protocol: 'test-protocol',
+                model: 'test-model',
+                adapter_version: 'test-adapter',
+            },
+            tool_definition_ids: [],
+            asset_versions: [],
+            item_mappings: [],
+            recorded_at: recordedAt,
+        },
+    } satisfies Generation;
+    const document = appendConversationRecords(
+        initial,
+        {
+            turns: [
+                {
+                    id: 'turn:accepted',
+                    kind: 'agent',
+                    authority: 'ordinary',
+                    status: 'completed',
+                    timestamps: { recorded_at: recordedAt, completed_at: recordedAt },
+                    model_visibility: 'include',
+                    provenance: { type: 'generated' },
+                    generation_id: generation.id,
+                    blocks: [{ id: 'block:text', type: 'text', text: 'accepted answer', format: 'plain' }],
+                },
+            ],
+            generations: [generation],
+        },
+        {
+            expected_revision: initial.revision,
+            operation_id: 'response:accepted',
+            payload_fingerprint: 'response-fingerprint',
+            recorded_at: recordedAt,
+        },
+    ).document;
+    return createAcceptedOutputFragment(document, 'response:accepted');
+}
 
 describe('AgentsApi canonical conversation transport', () => {
     it('discovers the scoped head without requiring a compatibility-projection conversation id', async () => {
@@ -61,5 +137,92 @@ describe('AgentsApi canonical conversation transport', () => {
         );
         expect(new URL(requests[0].url).searchParams.get('conversation_scope')).toBe('workstream:launch-1');
         await expect(requests[0].json()).resolves.toEqual(payload);
+    });
+
+    it('loads exact accepted output with the experimental header and verifies the full receipt', async () => {
+        const requests: Request[] = [];
+        const fragment = acceptedOutput();
+        const client = new ZenoClient({
+            serverUrl: 'https://store.test',
+            apikey: 'token',
+            fetch: (async (input: Request | string, init?: RequestInit) => {
+                const request = input instanceof Request ? input : new Request(input, init);
+                requests.push(request);
+                return Response.json({ status: 'accepted', fragment });
+            }) as typeof fetch,
+        });
+
+        const output = await client.agents.retrieveConversationAcceptedOutput(
+            'run/with delimiter',
+            fragment.receipt,
+            'workstream:launch-1',
+            { headers: { 'X-Api-Version': '=1', 'x-trace': 'accepted-output' } },
+        );
+
+        expect(output.text()).toBe('accepted answer');
+        expect(requests).toHaveLength(1);
+        const request = requests[0];
+        const url = new URL(request.url);
+        expect(url.pathname).toBe(
+            '/api/v1/agents/run%2Fwith%20delimiter/conversation/conversation%3Aaccepted/' +
+                'revisions/1/accepted-output/response%3Aaccepted',
+        );
+        expect(url.searchParams.get('conversation_scope')).toBe('workstream:launch-1');
+        expect(request.headers.get('x-api-version')).toBe(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE);
+        expect(request.headers.get('x-trace')).toBe('accepted-output');
+    });
+
+    it('rejects a valid fragment whose complete receipt differs from the expected receipt', async () => {
+        const fragment = acceptedOutput();
+        const client = new ZenoClient({
+            serverUrl: 'https://store.test',
+            apikey: 'token',
+            fetch: (async () => Response.json({ status: 'accepted', fragment })) as typeof fetch,
+        });
+        const mismatched = {
+            ...fragment.receipt,
+            recorded_at: '2026-10-01T00:00:01.000Z',
+        } satisfies ConversationOutputReceipt;
+
+        await expect(client.agents.retrieveConversationAcceptedOutput('run-1', mismatched)).rejects.toThrow(
+            'Canonical accepted output receipt does not match the requested receipt',
+        );
+    });
+
+    it('snapshots the expected receipt before awaiting transport', async () => {
+        const fragment = acceptedOutput();
+        let releaseResponse: () => void = () => {};
+        const responseReady = new Promise<void>((resolve) => {
+            releaseResponse = resolve;
+        });
+        const client = new ZenoClient({
+            serverUrl: 'https://store.test',
+            apikey: 'token',
+            fetch: (async () => {
+                await responseReady;
+                return Response.json({ status: 'accepted', fragment });
+            }) as typeof fetch,
+        });
+        const expected = structuredClone(fragment.receipt);
+
+        const pending = client.agents.retrieveConversationAcceptedOutput('run-1', expected);
+        expected.recorded_at = '2026-10-01T00:00:01.000Z';
+        releaseResponse();
+
+        await expect(pending).resolves.toMatchObject({ fragment: { receipt: fragment.receipt } });
+    });
+
+    it('rejects a non-accepted response envelope', async () => {
+        const fragment = acceptedOutput();
+        const client = new ZenoClient({
+            serverUrl: 'https://store.test',
+            apikey: 'token',
+            fetch: (async () =>
+                Response.json({ status: 'unavailable', reason: 'no_accepted_response' })) as typeof fetch,
+        });
+
+        await expect(client.agents.retrieveConversationAcceptedOutput('run-1', fragment.receipt)).rejects.toThrow(
+            'Canonical accepted output endpoint returned unavailable output',
+        );
     });
 });

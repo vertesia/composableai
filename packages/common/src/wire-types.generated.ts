@@ -38,6 +38,7 @@ import type {
     ConversationAcceptedOutputFragment,
     ConversationDocument,
     ConversationMaterializedInput,
+    ConversationOutputGeneration,
     ConversationOutputReceipt,
     ConversationRef,
     ConversationStreamCursor,
@@ -4401,10 +4402,22 @@ export type CanonicalConversationHeadScope = 'root' | string;
 export type CanonicalConversationHeadScopeQuery = {
     conversation_scope?: CanonicalConversationHeadScope | undefined;
 };
+/** Exact accepted-generation metadata reusable outside agent-run scoped state. */
+export type ConversationAcceptedGenerationEvidence = {
+    receipt: ConversationOutputReceipt;
+    generation: ConversationOutputGeneration;
+};
+/** Accepted-generation metadata explicitly bound to one canonical agent-run head scope. */
+export type CanonicalScopedGenerationEvidence = {
+    receipt: ConversationOutputReceipt;
+    generation: ConversationOutputGeneration;
+    scope: CanonicalConversationHeadScope;
+};
 /** Async activity acknowledgement with canonical authority kept outside legacy ConversationState. */
 export type CanonicalAsyncCompletionResult = {
     state: ConversationStateWire;
     canonical_state?: CanonicalContinuationState | undefined;
+    generation_evidence?: CanonicalScopedGenerationEvidence | undefined;
 };
 /**
  * Options for async completion and/or streaming LLM responses
@@ -11236,10 +11249,12 @@ export interface ApiComponentTypes {
     ExecuteInteractionByEndpointHeaders: ExecuteInteractionByEndpointHeadersWire;
     AsyncCompletionMode: AsyncCompletionMode;
     CanonicalAsyncCompletionResult: CanonicalAsyncCompletionResult;
+    CanonicalScopedGenerationEvidence: CanonicalScopedGenerationEvidence;
     CanonicalConversationHeadScope: CanonicalConversationHeadScope;
     CanonicalConversationHeadScopeQuery: CanonicalConversationHeadScopeQuery;
     CanonicalContinuationState: CanonicalContinuationState;
     CanonicalPendingApplicationToolCall: CanonicalPendingApplicationToolCall;
+    ConversationAcceptedGenerationEvidence: ConversationAcceptedGenerationEvidence;
     AsyncCompletionOptions: AsyncCompletionOptions;
     AsyncExecutionPayload: AsyncExecutionPayload;
     AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayload;

@@ -36,6 +36,8 @@ export {
     CanonicalConversationHeadScopeQuerySchema,
     CanonicalConversationHeadScopeSchema,
     CanonicalPendingApplicationToolCallSchema,
+    CanonicalScopedGenerationEvidenceSchema,
+    ConversationAcceptedGenerationEvidenceSchema,
     SchemaRefSchema,
 } from './interaction.js';
 export * from './oauth-server.js';

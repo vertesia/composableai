@@ -524,6 +524,7 @@ import {
     CanonicalConversationHeadScopeQuerySchema,
     CanonicalConversationHeadScopeSchema,
     CanonicalPendingApplicationToolCallSchema,
+    CanonicalScopedGenerationEvidenceSchema,
     CatalogInteractionRefArraySchema,
     CatalogInteractionRefSchema,
     CatalogTagQuerySchema,
@@ -531,6 +532,7 @@ import {
     ComputeInteractionFacetPayloadSchema,
     ComputeRunFacetPayloadSchema,
     ComputeRunFacetsResponseSchema,
+    ConversationAcceptedGenerationEvidenceSchema,
     ConversationStateSchema,
     ConversationStripOptionsSchema,
     ConversationVisibilitySchema,
@@ -1353,10 +1355,12 @@ const EXECUTION_REQUEST_SCHEMAS: {
     ExecuteInteractionByEndpointHeaders: typeof ExecuteInteractionByEndpointHeadersSchema;
     AsyncCompletionMode: typeof AsyncCompletionModeSchema;
     CanonicalAsyncCompletionResult: typeof CanonicalAsyncCompletionResultSchema;
+    CanonicalScopedGenerationEvidence: typeof CanonicalScopedGenerationEvidenceSchema;
     CanonicalConversationHeadScope: typeof CanonicalConversationHeadScopeSchema;
     CanonicalConversationHeadScopeQuery: typeof CanonicalConversationHeadScopeQuerySchema;
     CanonicalContinuationState: typeof CanonicalContinuationStateSchema;
     CanonicalPendingApplicationToolCall: typeof CanonicalPendingApplicationToolCallSchema;
+    ConversationAcceptedGenerationEvidence: typeof ConversationAcceptedGenerationEvidenceSchema;
     AsyncCompletionOptions: typeof AsyncCompletionOptionsSchema;
     AsyncExecutionPayload: typeof AsyncExecutionPayloadSchema;
     AsyncInteractionExecutionPayload: typeof AsyncInteractionExecutionPayloadSchema;
@@ -1393,10 +1397,12 @@ const EXECUTION_REQUEST_SCHEMAS: {
     ExecuteInteractionByEndpointHeaders: ExecuteInteractionByEndpointHeadersSchema,
     AsyncCompletionMode: AsyncCompletionModeSchema,
     CanonicalAsyncCompletionResult: CanonicalAsyncCompletionResultSchema,
+    CanonicalScopedGenerationEvidence: CanonicalScopedGenerationEvidenceSchema,
     CanonicalConversationHeadScope: CanonicalConversationHeadScopeSchema,
     CanonicalConversationHeadScopeQuery: CanonicalConversationHeadScopeQuerySchema,
     CanonicalContinuationState: CanonicalContinuationStateSchema,
     CanonicalPendingApplicationToolCall: CanonicalPendingApplicationToolCallSchema,
+    ConversationAcceptedGenerationEvidence: ConversationAcceptedGenerationEvidenceSchema,
     AsyncCompletionOptions: AsyncCompletionOptionsSchema,
     AsyncExecutionPayload: AsyncExecutionPayloadSchema,
     AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayloadSchema,

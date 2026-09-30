@@ -1846,6 +1846,14 @@ interface Checks {
         W.CanonicalConversationHeadScopeQuery,
         z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeQuerySchema>
     >;
+    ConversationAcceptedGenerationEvidence: Same<
+        W.ConversationAcceptedGenerationEvidence,
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationAcceptedGenerationEvidenceSchema>
+    >;
+    CanonicalScopedGenerationEvidence: Same<
+        W.CanonicalScopedGenerationEvidence,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalScopedGenerationEvidenceSchema>
+    >;
     CanonicalAsyncCompletionResult: Same<
         W.CanonicalAsyncCompletionResult,
         z.infer<typeof import('./api-schemas/interaction.js').CanonicalAsyncCompletionResultSchema>
@@ -6146,6 +6154,10 @@ interface Checks {
         W.ApiComponentTypes['CanonicalAsyncCompletionResult'],
         z.infer<typeof import('./api-schemas/interaction.js').CanonicalAsyncCompletionResultSchema>
     >;
+    'component:CanonicalScopedGenerationEvidence': Same<
+        W.ApiComponentTypes['CanonicalScopedGenerationEvidence'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalScopedGenerationEvidenceSchema>
+    >;
     'component:CanonicalConversationHeadScope': Same<
         W.ApiComponentTypes['CanonicalConversationHeadScope'],
         z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeSchema>
@@ -6161,6 +6173,10 @@ interface Checks {
     'component:CanonicalPendingApplicationToolCall': Same<
         W.ApiComponentTypes['CanonicalPendingApplicationToolCall'],
         z.infer<typeof import('./api-schemas/interaction.js').CanonicalPendingApplicationToolCallSchema>
+    >;
+    'component:ConversationAcceptedGenerationEvidence': Same<
+        W.ApiComponentTypes['ConversationAcceptedGenerationEvidence'],
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationAcceptedGenerationEvidenceSchema>
     >;
     'component:AsyncCompletionOptions': Same<
         W.ApiComponentTypes['AsyncCompletionOptions'],
@@ -10478,6 +10494,8 @@ const checks: Checks = {
     CanonicalPendingApplicationToolCall: true,
     CanonicalConversationHeadScope: true,
     CanonicalConversationHeadScopeQuery: true,
+    ConversationAcceptedGenerationEvidence: true,
+    CanonicalScopedGenerationEvidence: true,
     CanonicalAsyncCompletionResult: true,
     AsyncCompletionOptions: true,
     AgentResourceType: true,
@@ -11633,10 +11651,12 @@ const checks: Checks = {
     'component:ExecuteInteractionByEndpointHeaders': true,
     'component:AsyncCompletionMode': true,
     'component:CanonicalAsyncCompletionResult': true,
+    'component:CanonicalScopedGenerationEvidence': true,
     'component:CanonicalConversationHeadScope': true,
     'component:CanonicalConversationHeadScopeQuery': true,
     'component:CanonicalContinuationState': true,
     'component:CanonicalPendingApplicationToolCall': true,
+    'component:ConversationAcceptedGenerationEvidence': true,
     'component:AsyncCompletionOptions': true,
     'component:AsyncExecutionPayload': true,
     'component:AsyncInteractionExecutionPayload': true,
@@ -12582,6 +12602,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2596);
+        expect(Object.keys(checks)).toHaveLength(2600);
     });
 });

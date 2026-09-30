@@ -8,8 +8,10 @@ import {
     CanonicalConversationHeadScopeQuerySchema,
     CanonicalConversationHeadScopeSchema,
     CanonicalPendingApplicationToolCallSchema,
+    CanonicalScopedGenerationEvidenceSchema,
     ComputeRunFacetPayloadSchema,
     ComputeRunFacetsResponseSchema,
+    ConversationAcceptedGenerationEvidenceSchema,
     ConversationStateSchema,
     ExecutionRunRefSchema,
     FindRunResultSchema,
@@ -79,6 +81,61 @@ describe('conversation state contract', () => {
                 canonical_output_reference: 'legacy-content',
             }).success,
         ).toBe(false);
+    });
+
+    it('publishes generic accepted-generation evidence and an explicit agent scope wrapper', () => {
+        const evidence = {
+            receipt: {
+                id: 'response:1',
+                conversation_id: 'conversation-1',
+                base_revision: 3,
+                result_revision: 4,
+                recorded_at: '2026-10-01T00:00:00.000Z',
+                accepted_turn_ids: ['turn-1'],
+                accepted_generation_ids: ['generation-1'],
+            },
+            generation: {
+                id: 'generation-1',
+                record_source: 'executed' as const,
+                request_id: 'request-1',
+                attempt_id: 'attempt-1',
+                purpose: 'conversation',
+                requested_model: 'model-1',
+                provider: 'provider-1',
+                protocol: 'protocol-1',
+                adapter_version: 'adapter-1',
+                status: 'completed' as const,
+                finish_reason: 'stop',
+                timestamps: { recorded_at: '2026-10-01T00:00:00.000Z' },
+                source: { conversation_id: 'conversation-1', revision: 3 },
+                usage: { input_tokens: 10, output_tokens: 2, total_tokens: 12 },
+            },
+        };
+        const scopedEvidence = { ...evidence, scope: 'workstream:reviewer' as const };
+        const result = {
+            state: {
+                run: { id: 'run-1', account: 'account-1', project: 'project-1' },
+                environment: 'environment-1',
+                options: { model: 'model-1' },
+                output: [],
+                ancestors: [],
+            },
+            canonical_state: {
+                head: { conversation_id: 'conversation-1', revision: 5 },
+                scope: 'workstream:reviewer' as const,
+            },
+            generation_evidence: scopedEvidence,
+        };
+
+        expect(ConversationAcceptedGenerationEvidenceSchema.parse(evidence)).toEqual(evidence);
+        expect(CanonicalScopedGenerationEvidenceSchema.parse(scopedEvidence)).toEqual(scopedEvidence);
+        expect(CanonicalAsyncCompletionResultSchema.parse(result)).toEqual(result);
+        expect(validateApiRequest('ConversationAcceptedGenerationEvidence', evidence).valid).toBe(true);
+        expect(validateApiRequest('CanonicalScopedGenerationEvidence', scopedEvidence).valid).toBe(true);
+        expect(validateApiRequest('CanonicalAsyncCompletionResult', result).valid).toBe(true);
+        expect(ConversationAcceptedGenerationEvidenceSchema.safeParse({ ...evidence, scope: 'root' }).success).toBe(
+            false,
+        );
     });
 
     it('uses one strict root-or-workstream scope contract for carrier and query', () => {
