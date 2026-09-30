@@ -294,7 +294,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         }
         const executionError = toExecutionError(error);
         if (isRenditionPending(executionError)) {
-            log.debug(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
+            log.warn(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
         } else if (executionError.statusCode === 429) {
             log.warn(`Resource exhausted while executing interaction ${interactionName}`, { error: executionError });
         } else {

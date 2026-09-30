@@ -54,7 +54,7 @@ import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AgentRunFeedbackProvider } from './AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
-import { findBudgetPause } from './budgetPause';
+import { findBudgetPause, findRunBudgetRemaining } from './budgetPause';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
@@ -1852,6 +1852,12 @@ function ModernAgentConversationInner({
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
     const isAgentWorking = !effectiveIsCompleted && !isWorkflowTerminal;
+    const remainingBudget = useMemo(
+        // The combined conversation view shows the main run's shared budget.
+        () =>
+            findRunBudgetRemaining(displayedMessages, activeWorkstream === 'all' ? 'main' : activeWorkstream || 'main'),
+        [displayedMessages, activeWorkstream],
+    );
     const budgetPause = useMemo(
         () => (isWorkflowTerminal ? undefined : findBudgetPause(messages)),
         [isWorkflowTerminal, messages],
@@ -3024,6 +3030,7 @@ function ModernAgentConversationInner({
                                         isStopping={isStopping}
                                         isStreaming={!effectiveIsCompleted}
                                         isCompleted={effectiveIsCompleted}
+                                        remainingBudget={remainingBudget}
                                         contextWindowUsage={canCompactContext ? contextWindowUsage : undefined}
                                         onCompactContext={canCompactContext ? handleCompactContext : undefined}
                                         isCompactingContext={isCompactingContext}

@@ -357,3 +357,15 @@ describe('agent run creation contract', () => {
         expect(validateApiRequest('CreateAgentRunPayload', { ...payload, final_verification: 1 }).valid).toBe(false);
     });
 });
+
+describe('run budget allocation contract', () => {
+    it.each([{ additional_tokens: 1000 }, { additional_usd: 0.25 }])('accepts one allowance: %j', (payload) => {
+        expect(validateApiRequest('AllocateAgentRunBudgetPayload', payload).valid).toBe(true);
+    });
+    it.each([{}, { additional_tokens: 1, additional_usd: 1 }, { additional_usd: 0 }, { additional_tokens: -1 }])(
+        'rejects ambiguous or invalid allowances: %j',
+        (payload) => {
+            expect(validateApiRequest('AllocateAgentRunBudgetPayload', payload).valid).toBe(false);
+        },
+    );
+});

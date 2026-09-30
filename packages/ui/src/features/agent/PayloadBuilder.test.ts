@@ -212,3 +212,22 @@ describe('run check flags', () => {
         expect(store.snapshot.final_verification).toBe(false);
     });
 });
+
+it('submits a complete dollar policy and preserves it across builder snapshots', () => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    store.snapshot.setBudgetUsd(12.5, 200_000);
+    expect(store.snapshot.budget).toEqual({ mode: 'dollar', limit_usd: 12.5, limit_tokens: 200_000 });
+    store.snapshot.setBudgetTokens(300_000);
+    expect(store.snapshot.budget).toEqual({ mode: 'dollar', limit_usd: 12.5, limit_tokens: 300_000 });
+    store.snapshot.setBudgetUsd(undefined);
+    expect(store.snapshot.budget).toEqual({ limit_tokens: 300_000 });
+});
+
+it.each([0, -1, NaN, Infinity, Number.MAX_SAFE_INTEGER])('clears invalid USD budget %s', (amount) => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    store.snapshot.setBudgetUsd(amount);
+    expect(store.snapshot.budget).toBeUndefined();
+    store.snapshot.setBudgetUsd(10, 200_000);
+    store.snapshot.setBudgetUsd(amount);
+    expect(store.snapshot.budget).toEqual({ limit_tokens: 200_000 });
+});

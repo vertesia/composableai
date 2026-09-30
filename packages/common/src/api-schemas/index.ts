@@ -44,6 +44,7 @@ export * from './process.js';
 export * from './process-agent-policy.js';
 export * from './quota.js';
 export * from './registry.js';
+export * from './run-budget.js';
 export * from './run-conversation.js';
 export * from './run-conversation-append.js';
 export * from './secrets.js';

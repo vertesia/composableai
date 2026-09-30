@@ -12,6 +12,7 @@ export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from './InteractionBase.js';
 export * from './InteractionOutput.js';
 export { default as InternalAccountsApi } from './InternalAccountsApi.js';
+export { default as InternalRunBudgetsApi } from './InternalRunBudgetsApi.js';
 export { default as InternalSecretsApi } from './InternalSecretsApi.js';
 export * from './managed-sse.js';
 export { default as OAuthClientsApi } from './OAuthClientsApi.js';

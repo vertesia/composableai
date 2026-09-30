@@ -2457,7 +2457,7 @@ interface Checks {
     >;
     AgentBudgetConfiguration: Same<
         W.AgentBudgetConfiguration,
-        z.infer<typeof import('./api-schemas/project-configuration.js').AgentBudgetConfigurationSchema>
+        z.infer<typeof import('./api-schemas/agent-budget.js').AgentBudgetConfigurationSchema>
     >;
     ProjectSearchPropertyType: Same<
         W.ProjectSearchPropertyType,
@@ -2652,6 +2652,24 @@ interface Checks {
     SystemRoleDefinition: Same<
         W.SystemRoleDefinition,
         z.infer<typeof import('./api-schemas/access-control.js').SystemRoleDefinitionSchema>
+    >;
+    RunBudgetOwner: Same<W.RunBudgetOwner, z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetOwnerSchema>>;
+    RunBudgetUsage: Same<W.RunBudgetUsage, z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetUsageSchema>>;
+    ReadRunBudgetUsagePayload: Same<
+        W.ReadRunBudgetUsagePayload,
+        z.infer<typeof import('./api-schemas/run-budget.js').ReadRunBudgetUsagePayloadSchema>
+    >;
+    RunBudgetTotals: Same<
+        W.RunBudgetTotals,
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetTotalsSchema>
+    >;
+    RunBudgetCapability: Same<
+        W.RunBudgetCapability,
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilitySchema>
+    >;
+    RunBudgetCapabilityQuery: Same<
+        W.RunBudgetCapabilityQuery,
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilityQuerySchema>
     >;
     AppendRunConversationProgramTurnPayload: Same<
         W.AppendRunConversationProgramTurnPayload,
@@ -9935,6 +9953,30 @@ interface Checks {
         W.ApiComponentTypes['PublishAgentRunConversationHeadPayload'],
         z.infer<typeof import('./api-schemas/run-conversation-append.js').PublishAgentRunConversationHeadPayloadSchema>
     >;
+    'component:RunBudgetOwner': Same<
+        W.ApiComponentTypes['RunBudgetOwner'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetOwnerSchema>
+    >;
+    'component:RunBudgetUsage': Same<
+        W.ApiComponentTypes['RunBudgetUsage'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetUsageSchema>
+    >;
+    'component:ReadRunBudgetUsagePayload': Same<
+        W.ApiComponentTypes['ReadRunBudgetUsagePayload'],
+        z.infer<typeof import('./api-schemas/run-budget.js').ReadRunBudgetUsagePayloadSchema>
+    >;
+    'component:RunBudgetTotals': Same<
+        W.ApiComponentTypes['RunBudgetTotals'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetTotalsSchema>
+    >;
+    'component:RunBudgetCapability': Same<
+        W.ApiComponentTypes['RunBudgetCapability'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilitySchema>
+    >;
+    'component:RunBudgetCapabilityQuery': Same<
+        W.ApiComponentTypes['RunBudgetCapabilityQuery'],
+        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilityQuerySchema>
+    >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
 }
@@ -10652,6 +10694,12 @@ const checks: Checks = {
     RoleDomain: true,
     RoleDefinition: true,
     SystemRoleDefinition: true,
+    RunBudgetOwner: true,
+    RunBudgetUsage: true,
+    ReadRunBudgetUsagePayload: true,
+    RunBudgetTotals: true,
+    RunBudgetCapability: true,
+    RunBudgetCapabilityQuery: true,
     AppendRunConversationProgramTurnPayload: true,
     AppendRunConversationProgramTurnResponse: true,
     AppendRunConversationToolResultsPayload: true,
@@ -12523,11 +12571,17 @@ const checks: Checks = {
     'component:AppendRunConversationToolResultsPayload': true,
     'component:AppendRunConversationToolResultsResponse': true,
     'component:PublishAgentRunConversationHeadPayload': true,
+    'component:RunBudgetOwner': true,
+    'component:RunBudgetUsage': true,
+    'component:ReadRunBudgetUsagePayload': true,
+    'component:RunBudgetTotals': true,
+    'component:RunBudgetCapability': true,
+    'component:RunBudgetCapabilityQuery': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2584);
+        expect(Object.keys(checks)).toHaveLength(2596);
     });
 });

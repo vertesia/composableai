@@ -206,3 +206,24 @@ describe('budget request overrides', () => {
         },
     );
 });
+
+it('offers USD when the dollar allowance is exhausted and tokens when fallback is exhausted', async () => {
+    const { props, allocateBudget } = setup();
+    const view = render(
+        <AgentBudgetPauseOverlay
+            {...props}
+            pause={{ limitUsd: 10, reportedUsd: 8, estimatedUsd: 3, limitTokens: 1000, usedUnits: 50 }}
+        />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Default token prompt' }));
+    await waitFor(() => expect(allocateBudget).toHaveBeenCalledWith('run-1', { additional_usd: 5 }));
+    view.unmount();
+    render(
+        <AgentBudgetPauseOverlay
+            {...props}
+            pause={{ limitUsd: 10, reportedUsd: 1, estimatedUsd: 1, limitTokens: 1000, usedUnits: 1000 }}
+        />,
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Default token prompt' }));
+    await waitFor(() => expect(allocateBudget).toHaveBeenLastCalledWith('run-1', { additional_tokens: 100_000 }));
+});

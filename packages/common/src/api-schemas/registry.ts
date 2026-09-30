@@ -749,6 +749,7 @@ import {
     RenderPromptResponseSchema,
 } from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
+import * as RunBudgetSchemas from './run-budget.js';
 import { RunConversationResponseSchema } from './run-conversation.js';
 import {
     AppendRunConversationProgramTurnPayloadSchema,
@@ -2578,12 +2579,22 @@ const RUN_CONVERSATION_SCHEMAS = {
     PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayloadSchema,
 } as const;
 
+const RUN_BUDGET_SCHEMAS = {
+    RunBudgetOwner: RunBudgetSchemas.RunBudgetOwnerSchema,
+    RunBudgetUsage: RunBudgetSchemas.RunBudgetUsageSchema,
+    ReadRunBudgetUsagePayload: RunBudgetSchemas.ReadRunBudgetUsagePayloadSchema,
+    RunBudgetTotals: RunBudgetSchemas.RunBudgetTotalsSchema,
+    RunBudgetCapability: RunBudgetSchemas.RunBudgetCapabilitySchema,
+    RunBudgetCapabilityQuery: RunBudgetSchemas.RunBudgetCapabilityQuerySchema,
+};
+
 const API_SCHEMA_GROUPS = [
     CANONICAL_TOOL_EXECUTION_SCHEMAS,
     CANONICAL_INTERACTION_SCHEMAS,
     CANONICAL_INTERACTION_STREAM_SCHEMAS,
     CANONICAL_CONVERSATION_STREAM_SCHEMAS,
     RUN_CONVERSATION_SCHEMAS,
+    RUN_BUDGET_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2654,6 +2665,7 @@ type ApiSchemaMap = typeof CANONICAL_TOOL_EXECUTION_SCHEMAS &
     typeof CANONICAL_INTERACTION_STREAM_SCHEMAS &
     typeof CANONICAL_CONVERSATION_STREAM_SCHEMAS &
     typeof RUN_CONVERSATION_SCHEMAS &
+    typeof RUN_BUDGET_SCHEMAS &
     typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
