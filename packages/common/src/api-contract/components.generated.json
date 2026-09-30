@@ -5707,6 +5707,40 @@
       "DEBUG"
     ]
   },
+  "ExecutionRunWorkflow": {
+    "type": "object",
+    "properties": {
+      "agent_run_id": {
+        "type": "string",
+        "description": "Root agent run owning this inference, including inference performed by child workstreams."
+      },
+      "rate_limit_id": {
+        "type": "string",
+        "description": "Stable identifier pairing an interaction rate-limit admission with its completion feedback."
+      },
+      "run_id": {
+        "type": "string",
+        "deprecated": true,
+        "x-deprecated-message": "For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions.",
+        "description": "The Temporal Workflow Run ID related to this Interaction Run.\n\nA Run ID is a globally unique, platform-level identifier for a Workflow Execution.\n\nDeprecated: For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions."
+      },
+      "workflow_id": {
+        "type": "string",
+        "deprecated": true,
+        "x-deprecated-message": "For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions.",
+        "description": "The Temporal Workflow ID related to this Interaction Run.\n\nDeprecated: For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions."
+      },
+      "activity_type": {
+        "type": "string",
+        "description": "The Temporal Activity Type used for executing this Interaction. Undefined if the interaction was not executed as part of a workflow (such as Agent Runner)."
+      }
+    },
+    "required": [
+      "run_id",
+      "workflow_id"
+    ],
+    "additionalProperties": false
+  },
   "ExperimentalCanonicalInteractionExecutionRequest": {
     "type": "object",
     "properties": {
@@ -5733,6 +5767,9 @@
         "items": {
           "type": "string"
         }
+      },
+      "workflow": {
+        "$ref": "#/components/schemas/ExecutionRunWorkflow"
       }
     },
     "required": [
@@ -5799,6 +5836,9 @@
         "items": {
           "type": "string"
         }
+      },
+      "workflow": {
+        "$ref": "#/components/schemas/ExecutionRunWorkflow"
       },
       "interaction": {
         "type": "string",
@@ -18739,40 +18779,6 @@
       "principal_type",
       "principal_id",
       "client_ip"
-    ],
-    "additionalProperties": false
-  },
-  "ExecutionRunWorkflow": {
-    "type": "object",
-    "properties": {
-      "agent_run_id": {
-        "type": "string",
-        "description": "Root agent run owning this inference, including inference performed by child workstreams."
-      },
-      "rate_limit_id": {
-        "type": "string",
-        "description": "Stable identifier pairing an interaction rate-limit admission with its completion feedback."
-      },
-      "run_id": {
-        "type": "string",
-        "deprecated": true,
-        "x-deprecated-message": "For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions.",
-        "description": "The Temporal Workflow Run ID related to this Interaction Run.\n\nA Run ID is a globally unique, platform-level identifier for a Workflow Execution.\n\nDeprecated: For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions."
-      },
-      "workflow_id": {
-        "type": "string",
-        "deprecated": true,
-        "x-deprecated-message": "For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions.",
-        "description": "The Temporal Workflow ID related to this Interaction Run.\n\nDeprecated: For agent runs, use the Agent Runs API (`/api/v1/agents`) instead.\nThe AgentRun object provides a stable ID that survives workflow restarts.\nThis field is only relevant for legacy non-agent interaction executions."
-      },
-      "activity_type": {
-        "type": "string",
-        "description": "The Temporal Activity Type used for executing this Interaction. Undefined if the interaction was not executed as part of a workflow (such as Agent Runner)."
-      }
-    },
-    "required": [
-      "run_id",
-      "workflow_id"
     ],
     "additionalProperties": false
   },

@@ -1961,6 +1961,7 @@ export type ExperimentalCanonicalInteractionExecutionRequest = {
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     tags?: string[] | undefined;
+    workflow?: ExecutionRunWorkflow | undefined;
 };
 export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
     initial_state: ExperimentalCanonicalInteractionInitialState;
@@ -1970,6 +1971,7 @@ export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     tags?: string[] | undefined;
+    workflow?: ExecutionRunWorkflow | undefined;
     interaction: string;
     prompts?: ExperimentalCanonicalInteractionInlinePrompt[] | undefined;
 };

@@ -54,6 +54,35 @@ describe('experimental canonical interaction execution schemas', () => {
         });
     });
 
+    it.each([
+        ['unnamed', ExperimentalCanonicalInteractionExecutionRequestSchema, {}],
+        ['named', ExperimentalCanonicalNamedInteractionExecutionRequestSchema, { interaction: 'test-interaction' }],
+    ])('composes exact optional workflow attribution into the %s request contract', (_label, schema, extra) => {
+        const workflow = {
+            run_id: 'workflow-run:1',
+            workflow_id: 'workflow:1',
+            agent_run_id: 'agent-run:1',
+            rate_limit_id: 'rate-limit:1',
+            activity_type: 'executeInteraction',
+        };
+        const request = {
+            ...extra,
+            initial_state: { type: 'new' as const },
+            retention: 'STANDARD' as const,
+            return_policy: { history: 'none' as const },
+            workflow,
+        };
+
+        expect(schema.parse(request)).toMatchObject({ workflow });
+        expect(schema.safeParse({ ...request, workflow: { ...workflow, unknown: true } }).success).toBe(false);
+
+        const name = schema.meta()?.id;
+        if (!name) throw new Error('Canonical interaction request schema has no component id');
+        expect(ApiSchemaComponents[name as keyof typeof ApiSchemaComponents]).toMatchObject({
+            properties: { workflow: { $ref: '#/components/schemas/ExecutionRunWorkflow' } },
+        });
+    });
+
     it('requires a run-bound exact reference and stable handoff operation identity', () => {
         expect(
             ExperimentalCanonicalInteractionExecutionRequestSchema.parse({

@@ -28,6 +28,7 @@ export * from './browser-credentials.js';
 export * from './canonical-conversation.js';
 export type * from './canonical-interaction-execution.js';
 export type * from './canonical-interaction-stream.js';
+export { CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE } from './canonical-interaction-stream.js';
 export * from './common.js';
 export * from './content-query.js';
 export * from './cost-analytics.js';

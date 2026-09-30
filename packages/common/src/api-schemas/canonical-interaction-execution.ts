@@ -9,7 +9,12 @@ import {
 import { z } from 'zod';
 import { RunDataStorageLevel } from '../interaction-values.js';
 import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE, VERSION_HEADER } from '../versions.js';
-import { ExecutionRunStatusSchema, InCodePromptSchema, InteractionExecutionErrorSchema } from './interaction.js';
+import {
+    ExecutionRunStatusSchema,
+    ExecutionRunWorkflowSchema,
+    InCodePromptSchema,
+    InteractionExecutionErrorSchema,
+} from './interaction.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
 export const ExperimentalCanonicalInteractionHeadersSchema = z
@@ -97,6 +102,7 @@ const canonicalExecutionRequestFields = {
     config: ExperimentalCanonicalInteractionExecutionConfigurationSchema.optional(),
     result_schema: ExperimentalCanonicalInteractionResultSchemaInputSchema.optional(),
     tags: z.array(z.string()).optional(),
+    workflow: ExecutionRunWorkflowSchema.optional(),
 };
 
 const referenceDebugRetentionJsonSchema = {

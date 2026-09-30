@@ -1,5 +1,11 @@
 import type * as Wire from './wire-types.generated.js';
 
+/**
+ * A canonical stream operation is durably reserved, but its dispatch outcome is not yet observable.
+ * Clients may retry only the same operation and request when this code is returned.
+ */
+export const CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE = 'canonical_stream_recovery_pending';
+
 export type ExperimentalCanonicalInteractionStreamRequest = Wire.ExperimentalCanonicalInteractionStreamRequest;
 export type ExperimentalCanonicalInteractionStreamOpened = Wire.ExperimentalCanonicalInteractionStreamOpened;
 export type ExperimentalCanonicalInteractionStreamResumed = Wire.ExperimentalCanonicalInteractionStreamResumed;
