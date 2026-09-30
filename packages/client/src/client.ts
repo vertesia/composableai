@@ -14,6 +14,7 @@ import { IamApi } from './IamApi.js';
 import InferenceProfilesApi from './InferenceProfilesApi.js';
 import InteractionConfigurationsApi from './InteractionConfigurationsApi.js';
 import InteractionsApi from './InteractionsApi.js';
+import InternalRunBudgetsApi from './InternalRunBudgetsApi.js';
 import InternalSecretsApi from './InternalSecretsApi.js';
 import OAuthClientsApi from './OAuthClientsApi.js';
 import OAuthGrantsApi from './OAuthGrantsApi.js';
@@ -128,6 +129,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     remoteMcpConnections: RemoteMcpConnectionsApi;
     secrets: SecretsApi;
     internalSecrets: InternalSecretsApi;
+    internalRunBudgets: InternalRunBudgetsApi;
 
     /**
      * Create a client from the given token.
@@ -260,6 +262,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
         this.secrets = new SecretsApi(this);
         this.internalSecrets = new InternalSecretsApi(this);
+        this.internalRunBudgets = new InternalRunBudgetsApi(this);
     }
 
     withApiVersion(version: string | number | null) {

@@ -17,6 +17,7 @@ import { Activity, ArrowUpIcon, FileTextIcon, PaperclipIcon, PlusIcon, SquareIco
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
+import type { RunBudgetRemaining } from '../budgetPause.js';
 import { extractFilesFromClipboard } from '../clipboardFiles.js';
 import type { WorkstreamInfo } from '../workstreams.js';
 import { ActiveWorkstreamsSummary } from './ActiveWorkstreamsSummary';
@@ -66,6 +67,7 @@ interface MessageInputProps {
     isStreaming?: boolean;
     isCompleted?: boolean;
     contextWindowUsage?: ContextWindowUsage;
+    remainingBudget?: RunBudgetRemaining;
     onCompactContext?: () => void;
     isCompactingContext?: boolean;
     activeTaskCount?: number;
@@ -136,6 +138,7 @@ export default function MessageInput({
     isStreaming = false,
     isCompleted = false,
     contextWindowUsage,
+    remainingBudget,
     onCompactContext,
     isCompactingContext = false,
     activeTaskCount = 0,
@@ -590,6 +593,34 @@ export default function MessageInput({
                                         {contextTokenUsageLabel && (
                                             <span className="mt-1 block text-foreground/80">
                                                 {contextTokenUsageLabel}
+                                            </span>
+                                        )}
+                                        {remainingBudget && (
+                                            <span className="mt-2 block border-t border-border pt-2">
+                                                {remainingBudget.remainingUsd !== undefined && (
+                                                    <span className="block">
+                                                        {t('agent.runBudgetRemainingUsd', {
+                                                            remaining: remainingBudget.remainingUsd.toFixed(4),
+                                                            limit: remainingBudget.limitUsd?.toFixed(4),
+                                                        })}
+                                                    </span>
+                                                )}
+                                                <span className="block">
+                                                    {t(
+                                                        remainingBudget.remainingUsd !== undefined
+                                                            ? 'agent.runBudgetRemainingFallback'
+                                                            : 'agent.runBudgetRemainingTokens',
+                                                        {
+                                                            remaining: formatTokenCountInK(
+                                                                remainingBudget.remainingTokens,
+                                                            ),
+                                                            limit: formatTokenCountInK(remainingBudget.limitTokens),
+                                                        },
+                                                    )}
+                                                </span>
+                                                {remainingBudget.incomplete && (
+                                                    <span className="block">{t('agent.runBudgetIncomplete')}</span>
+                                                )}
                                             </span>
                                         )}
                                     </span>
