@@ -8,6 +8,7 @@ import { APP_VERSION_HEADER, type BulkOperationPayload, type BulkOperationRespon
 import { warnUnknownOptions } from '../unknown-options.js';
 import { AgentsApi } from './AgentsApi.js';
 import { CollectionsApi } from './CollectionsApi.js';
+import { ContentApi } from './ContentApi.js';
 import { CostApi } from './CostApi.js';
 import { DataApi } from './DataApi.js';
 import { EmailApi } from './EmailApi.js';
@@ -122,6 +123,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     agents = new AgentsApi(this);
     cost = new CostApi(this);
     objects = new ObjectsApi(this);
+    content = new ContentApi(this);
     types = new TypesApi(this);
     workflows = new WorkflowsApi(this);
     schedules = new SchedulesApi(this);

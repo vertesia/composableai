@@ -199,6 +199,16 @@ export interface InteractionExecutionParams {
      * activity won't be retried if it fails due to resource exhaustion (429)
      */
     exit_on_resource_exhaustion?: boolean;
+
+    /**
+     * Stable caller-owned identity for one logical interaction invocation within an activity.
+     * Reuse the same key when Temporal retries that invocation and use a distinct key for each
+     * independent call to the same interaction from the same activity.
+     */
+    invocation_key?: string;
+
+    /** Agent run that owns this nested interaction for hierarchy and telemetry attribution. */
+    agent_run_id?: string;
 }
 
 /**
@@ -225,7 +235,11 @@ export interface ExecuteInteraction extends DSLActivitySpec<ExecuteInteractionPa
 
 const MAX_PROJECTED_MEDIA_BYTES = 50 * 1024 * 1024;
 const MAX_PROJECTED_MEDIA_CHUNKS = 16_384;
+const MAX_WORKFLOW_INVOCATION_KEY_LENGTH = 128;
+const WORKFLOW_INTERACTION_TAG_PREFIX = 'workflow-interaction:';
 const WORKFLOW_PREDECESSOR_TAG_PREFIX = 'workflow-predecessor:';
+const WORKFLOW_INVOCATION_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
+const WORKFLOW_RESERVED_TAG_PREFIXES = [WORKFLOW_PREDECESSOR_TAG_PREFIX, WORKFLOW_INTERACTION_TAG_PREFIX] as const;
 
 type CanonicalWorkflowRequest = ExperimentalCanonicalNamedInteractionExecutionRequest & {
     workflow: ExecutionRunWorkflow;
@@ -240,7 +254,7 @@ interface CanonicalRetryState {
 }
 
 function workflowInteractionTag(rateLimitId: string): string {
-    return `workflow-interaction:${createHash('sha256').update(rateLimitId).digest('hex')}`;
+    return `${WORKFLOW_INTERACTION_TAG_PREFIX}${createHash('sha256').update(rateLimitId).digest('hex')}`;
 }
 
 function workflowInteractionOperationId(rateLimitId: string, predecessorRunId?: string): string {
@@ -262,20 +276,31 @@ function predecessorFromTags(tags: readonly string[] | undefined): string | unde
     return values[0] === 'initial' ? undefined : values[0];
 }
 
+export class CanonicalInteractionExecutionError extends Error {
+    readonly errorCode?: string;
+    readonly retryable?: boolean;
+
+    constructor(
+        interactionName: string,
+        readonly result: EnhancedExperimentalCanonicalInteractionExecutionResult,
+    ) {
+        const source = result.run.error;
+        super(`Interaction Execution failed ${interactionName}: ${source?.message || 'Unknown error'}`);
+        this.name = 'CanonicalInteractionExecutionError';
+        this.retryable = source?.retryable;
+        this.errorCode = source?.code;
+    }
+}
+
+export function isCanonicalInteractionExecutionError(error: unknown): error is CanonicalInteractionExecutionError {
+    return error instanceof CanonicalInteractionExecutionError;
+}
+
 function canonicalExecutionError(
     interactionName: string,
     result: EnhancedExperimentalCanonicalInteractionExecutionResult,
-): Error {
-    const source = result.run.error;
-    const error = new Error(
-        `Interaction Execution failed ${interactionName}: ${source?.message || 'Unknown error'}`,
-    ) as Error & {
-        retryable?: boolean;
-        errorCode?: string;
-    };
-    error.retryable = source?.retryable;
-    error.errorCode = source?.code;
-    return error;
+): CanonicalInteractionExecutionError {
+    return new CanonicalInteractionExecutionError(interactionName, result);
 }
 
 export function requireCanonicalInteractionOutput<T = unknown>(
@@ -313,9 +338,15 @@ async function inspectCanonicalRetryState(
         result: EnhancedExperimentalCanonicalInteractionExecutionResult;
     }> = [];
 
+    let accepted:
+        | {
+              ref: (typeof refs)[number];
+              result: EnhancedExperimentalCanonicalInteractionExecutionResult;
+          }
+        | undefined;
     for (const ref of refs) {
         const result = await client.runs.retrieveCanonical(ref.id);
-        if (isCanonicalInteractionSuccess(result)) return { accepted: result, active: false };
+        if (!accepted && isCanonicalInteractionSuccess(result)) accepted = { ref, result };
         entries.push({ ref, result });
     }
     if (refs.length >= 100) {
@@ -344,6 +375,10 @@ async function inspectCanonicalRetryState(
         }
         return { operation_predecessor_run_id: predecessor.run.id, previous_error: predecessor.run.error };
     };
+
+    if (accepted) {
+        return { accepted: accepted.result, active: false, ...(await resolvePredecessor(accepted.ref)) };
+    }
 
     const active = entries.find(
         ({ result }) =>
@@ -441,7 +476,11 @@ function canonicalLegacyTokenUse(usage: ConversationOutputGenerationUsage | unde
     };
 }
 
-async function projectCanonicalCompletionResults(
+/**
+ * Temporary compatibility projection for workflow/tool boundaries that still expose CompletionResult[].
+ * Canonical output remains authoritative; callers must not persist this projection as conversation history.
+ */
+export async function projectCanonicalCompletionResults(
     client: VertesiaClient,
     result: EnhancedExperimentalCanonicalInteractionExecutionResult,
 ): Promise<CompletionResult[]> {
@@ -624,12 +663,29 @@ export async function executeInteractionFromActivity(
     debug?: boolean,
 ): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult> {
     const userTags = params.tags;
-    if (userTags?.some((tag) => tag.startsWith(WORKFLOW_PREDECESSOR_TAG_PREFIX))) {
-        throw new Error(`Interaction tags may not use reserved prefix ${WORKFLOW_PREDECESSOR_TAG_PREFIX}`);
+    const reservedTagPrefix = WORKFLOW_RESERVED_TAG_PREFIXES.find((prefix) =>
+        userTags?.some((tag) => tag.startsWith(prefix)),
+    );
+    if (reservedTagPrefix) {
+        throw new Error(`Interaction tags may not use reserved prefix ${reservedTagPrefix}`);
+    }
+    const invocationKey = params.invocation_key;
+    if (
+        invocationKey !== undefined &&
+        (typeof invocationKey !== 'string' ||
+            invocationKey.length > MAX_WORKFLOW_INVOCATION_KEY_LENGTH ||
+            !WORKFLOW_INVOCATION_KEY_PATTERN.test(invocationKey))
+    ) {
+        throw new Error(
+            `Interaction invocation_key must match ${WORKFLOW_INVOCATION_KEY_PATTERN} and contain at most ${MAX_WORKFLOW_INVOCATION_KEY_LENGTH} characters`,
+        );
     }
     const info = activityInfo();
     const execution = activityWorkflowExecution(info);
-    const rateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
+    const baseRateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
+    const rateLimitId = invocationKey
+        ? `${baseRateLimitId}:invocation-key:${invocationKey.length}:${invocationKey}`
+        : baseRateLimitId;
     const operationTag = workflowInteractionTag(rateLimitId);
     const baseTags = ['workflow', operationTag, ...(userTags ?? [])];
     const workflow: ExecutionRunWorkflow = {
@@ -637,14 +693,13 @@ export async function executeInteractionFromActivity(
         workflow_id: execution.workflowId,
         activity_type: info.activityType,
         rate_limit_id: rateLimitId,
+        ...(params.agent_run_id ? { agent_run_id: params.agent_run_id } : {}),
     };
 
     const retryState =
         info.attempt > 1
             ? await inspectCanonicalRetryState(client, execution.runId, operationTag)
             : ({ active: false } satisfies CanonicalRetryState);
-    if (retryState.accepted) return retryState.accepted;
-
     const configDefaults = params.config ?? {};
     const config: InteractionExecutionConfiguration = {
         ...configDefaults,
@@ -735,6 +790,20 @@ export async function executeInteractionFromActivity(
 
     let predecessorRunId = retryState.operation_predecessor_run_id;
     let previousError = retryState.previous_error;
+    if (retryState.accepted) {
+        const acceptedRequest = makeRequest(predecessorRunId, previousError);
+        const acceptedStream = await dispatch(acceptedRequest.operationId, acceptedRequest.request);
+        if (acceptedStream.terminal_event.type !== 'response_accepted') {
+            throw ApplicationFailure.create({
+                message: 'Canonical accepted interaction did not recover an accepted terminal',
+                type: 'CanonicalStreamRecoveryPending',
+                nonRetryable: false,
+            });
+        }
+        const recovered = await client.runs.retrieveCanonical(acceptedStream.run_id);
+        if (!isCanonicalInteractionSuccess(recovered)) throw canonicalExecutionError(interactionName, recovered);
+        return recovered;
+    }
     if (retryState.failed_candidate) {
         const prior = makeRequest(predecessorRunId, previousError);
         const priorStream = await dispatch(prior.operationId, prior.request);

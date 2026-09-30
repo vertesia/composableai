@@ -13,9 +13,11 @@ import {
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
 import {
+    CanonicalInteractionExecutionError,
     type ExecuteInteractionParams,
     executeInteraction,
     executeInteractionFromActivity,
+    isCanonicalInteractionExecutionError,
 } from './executeInteraction.js';
 
 vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
@@ -252,6 +254,7 @@ describe('executeInteraction retryability', () => {
         const payload = createPayload();
         const params: ExecuteInteractionParams = {
             ...payload.params,
+            agent_run_id: 'agent-run-id',
             result_schema: { type: 'object' },
             config: {
                 environment: 'env-id',
@@ -285,6 +288,7 @@ describe('executeInteraction retryability', () => {
             },
             result_schema: { type: 'object' },
             workflow: {
+                agent_run_id: 'agent-run-id',
                 rate_limit_id: expect.stringMatching(/:testInteraction$/),
             },
         });
@@ -408,17 +412,38 @@ describe('executeInteraction canonical lifecycle', () => {
         expect(mocks.streamCanonical).not.toHaveBeenCalled();
     });
 
-    it('returns an accepted retry before admission or redispatch', async () => {
+    it('rejects user tags that collide with generated invocation identity before recovery or transport', async () => {
+        const mocks = mockCanonicalClient();
+
+        await expect(
+            retryEnvironment(2).run(
+                executeInteractionFromActivity,
+                mocks.client,
+                'testInteraction',
+                { tags: ['workflow-interaction:forged'] },
+                {},
+            ),
+        ).rejects.toThrow('reserved prefix workflow-interaction:');
+        expect(mocks.search).not.toHaveBeenCalled();
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+    });
+
+    it('reopens an accepted retry against the exact request binding without another admission', async () => {
         const accepted = canonicalResult({ id: 'accepted-run' });
         const mocks = mockCanonicalClient(accepted);
-        mocks.search.mockResolvedValue([{ id: 'accepted-run' }]);
+        mocks.search.mockResolvedValue([{ id: 'accepted-run', tags: ['workflow-predecessor:initial'] }]);
         mocks.retrieveCanonical.mockResolvedValue(accepted);
 
         await expect(
             retryEnvironment(2).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
         ).resolves.toBe(accepted);
         expect(mocks.requestSlot).not.toHaveBeenCalled();
-        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+        expect(mocks.streamCanonical.mock.calls[0][0].request).toMatchObject({
+            data: {},
+            tags: expect.arrayContaining(['workflow-predecessor:initial']),
+        });
         expect(mocks.search).toHaveBeenCalledWith(
             expect.objectContaining({
                 query: expect.objectContaining({
@@ -427,6 +452,191 @@ describe('executeInteraction canonical lifecycle', () => {
                 }),
             }),
         );
+    });
+
+    it('rejects a changed payload instead of returning a stale accepted result for the same invocation key', async () => {
+        const first = mockCanonicalClient();
+        await retryEnvironment(1).run(
+            executeInteractionFromActivity,
+            first.client,
+            'testInteraction',
+            { invocation_key: 'slot-a' },
+            { value: 'original' },
+        );
+        const originalOperationId = first.streamCanonical.mock.calls[0][0].operation_id;
+
+        const accepted = canonicalResult({ id: 'accepted-run' });
+        const retry = mockCanonicalClient(accepted);
+        retry.search.mockResolvedValue([{ id: 'accepted-run', tags: ['workflow-predecessor:initial'] }]);
+        retry.retrieveCanonical.mockResolvedValue(accepted);
+        const conflict = new ServerError(
+            'Canonical request does not match the accepted operation',
+            new Request('https://studio.test/api/v1/runs/canonical-stream'),
+            409,
+            { errorCode: 'canonical_request_mismatch' },
+        );
+        retry.streamCanonical.mockRejectedValue(conflict);
+
+        await expect(
+            retryEnvironment(2).run(
+                executeInteractionFromActivity,
+                retry.client,
+                'testInteraction',
+                { invocation_key: 'slot-a' },
+                { value: 'changed' },
+            ),
+        ).rejects.toBe(conflict);
+        expect(retry.requestSlot).not.toHaveBeenCalled();
+        expect(retry.streamCanonical).toHaveBeenCalledOnce();
+        expect(retry.streamCanonical.mock.calls[0][0]).toMatchObject({
+            operation_id: originalOperationId,
+            request: { data: { value: 'changed' } },
+        });
+    });
+
+    it('reconstructs an accepted retry from its stored predecessor identity and error', async () => {
+        const failed = canonicalResult({
+            id: 'failed-predecessor',
+            status: ExecutionRunStatus.failed,
+            error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: true },
+        });
+        const accepted = canonicalResult({ id: 'accepted-run' });
+        const mocks = mockCanonicalClient(accepted);
+        mocks.search.mockResolvedValue([
+            { id: 'accepted-run', tags: ['workflow-predecessor:failed-predecessor'] },
+            { id: 'failed-predecessor', tags: ['workflow-predecessor:initial'] },
+        ]);
+        mocks.retrieveCanonical
+            .mockResolvedValueOnce(accepted)
+            .mockResolvedValueOnce(failed)
+            .mockResolvedValueOnce(accepted);
+
+        await expect(
+            retryEnvironment(3).run(
+                executeInteractionFromActivity,
+                mocks.client,
+                'testInteraction',
+                { include_previous_error: true, invocation_key: 'slot-a' },
+                { value: 'same' },
+            ),
+        ).resolves.toBe(accepted);
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+        expect(mocks.streamCanonical.mock.calls[0][0].request).toMatchObject({
+            data: {
+                value: 'same',
+                previous_error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: true },
+            },
+            tags: expect.arrayContaining(['workflow-predecessor:failed-predecessor']),
+        });
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+    });
+
+    it('keeps an accepted retry pending until the exact operation yields response_accepted', async () => {
+        const accepted = canonicalResult({ id: 'accepted-run' });
+        const mocks = mockCanonicalClient(accepted);
+        mocks.search.mockResolvedValue([{ id: 'accepted-run', tags: ['workflow-predecessor:initial'] }]);
+        mocks.streamCanonical.mockResolvedValue(terminatedStream('accepted-run'));
+
+        await expect(
+            retryEnvironment(2).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
+        ).rejects.toMatchObject({ type: 'CanonicalStreamRecoveryPending', nonRetryable: false });
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+    });
+
+    it('isolates same-interaction calls by stable invocation key and recovers each exact operation', async () => {
+        const firstA = mockCanonicalClient();
+        const firstB = mockCanonicalClient();
+        await retryEnvironment(1).run(
+            executeInteractionFromActivity,
+            firstA.client,
+            'testInteraction',
+            { invocation_key: 'slot-a' },
+            { value: 'a' },
+        );
+        await retryEnvironment(1).run(
+            executeInteractionFromActivity,
+            firstB.client,
+            'testInteraction',
+            { invocation_key: 'slot-b' },
+            { value: 'b' },
+        );
+
+        const firstRequestA = firstA.streamCanonical.mock.calls[0][0];
+        const firstRequestB = firstB.streamCanonical.mock.calls[0][0];
+        const operationTagA = firstRequestA.request.tags?.find((tag: string) =>
+            tag.startsWith('workflow-interaction:'),
+        );
+        const operationTagB = firstRequestB.request.tags?.find((tag: string) =>
+            tag.startsWith('workflow-interaction:'),
+        );
+        expect(firstRequestA.operation_id).not.toBe(firstRequestB.operation_id);
+        expect(firstRequestA.request.workflow?.rate_limit_id).not.toBe(firstRequestB.request.workflow?.rate_limit_id);
+        expect(operationTagA).toBeDefined();
+        expect(operationTagA).not.toBe(operationTagB);
+
+        const acceptedA = canonicalResult({ id: 'accepted-a' });
+        const acceptedB = canonicalResult({ id: 'accepted-b' });
+        const retryA = mockCanonicalClient(acceptedA);
+        const retryB = mockCanonicalClient(acceptedB);
+        retryA.search.mockResolvedValue([{ id: 'accepted-a', tags: ['workflow-predecessor:initial'] }]);
+        retryB.search.mockResolvedValue([{ id: 'accepted-b', tags: ['workflow-predecessor:initial'] }]);
+
+        await retryEnvironment(2).run(
+            executeInteractionFromActivity,
+            retryA.client,
+            'testInteraction',
+            { invocation_key: 'slot-a' },
+            { value: 'a' },
+        );
+        await retryEnvironment(2).run(
+            executeInteractionFromActivity,
+            retryB.client,
+            'testInteraction',
+            { invocation_key: 'slot-b' },
+            { value: 'b' },
+        );
+
+        expect(retryA.search.mock.calls[0][0].query.tags).toEqual([operationTagA]);
+        expect(retryB.search.mock.calls[0][0].query.tags).toEqual([operationTagB]);
+        expect(retryA.streamCanonical.mock.calls[0][0].operation_id).toBe(firstRequestA.operation_id);
+        expect(retryB.streamCanonical.mock.calls[0][0].operation_id).toBe(firstRequestB.operation_id);
+        expect(retryA.requestSlot).not.toHaveBeenCalled();
+        expect(retryB.requestSlot).not.toHaveBeenCalled();
+    });
+
+    it.each(['', 'contains spaces', 'contains/slash', `x${'a'.repeat(128)}`])(
+        'rejects invalid invocation key %j before search, admission, or transport',
+        async (invocationKey) => {
+            const mocks = mockCanonicalClient();
+            await expect(
+                retryEnvironment(2).run(
+                    executeInteractionFromActivity,
+                    mocks.client,
+                    'testInteraction',
+                    { invocation_key: invocationKey },
+                    {},
+                ),
+            ).rejects.toThrow('Interaction invocation_key must match');
+            expect(mocks.search).not.toHaveBeenCalled();
+            expect(mocks.requestSlot).not.toHaveBeenCalled();
+            expect(mocks.streamCanonical).not.toHaveBeenCalled();
+        },
+    );
+
+    it('rejects a non-string invocation key from malformed runtime input before identity construction', async () => {
+        const mocks = mockCanonicalClient();
+        await expect(
+            retryEnvironment(2).run(
+                executeInteractionFromActivity,
+                mocks.client,
+                'testInteraction',
+                { invocation_key: 7 as unknown as string },
+                {},
+            ),
+        ).rejects.toThrow('Interaction invocation_key must match');
+        expect(mocks.search).not.toHaveBeenCalled();
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).not.toHaveBeenCalled();
     });
 
     it('recovers a completed accepted generation despite stale failed run projection', async () => {
@@ -445,7 +655,7 @@ describe('executeInteraction canonical lifecycle', () => {
             retryEnvironment(2).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
         ).resolves.toBe(accepted);
         expect(mocks.requestSlot).not.toHaveBeenCalled();
-        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
     });
 
     it('returns an accepted cancelled generation with an interrupted turn as cutoff output', async () => {
@@ -468,9 +678,19 @@ describe('executeInteraction canonical lifecycle', () => {
         });
         const mocks = mockCanonicalClient(failed);
 
-        await expect(
-            retryEnvironment(1).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
-        ).rejects.toMatchObject({ retryable: false, errorCode: 'OUTPUT_FAILED' });
+        const execution = retryEnvironment(1).run(
+            executeInteractionFromActivity,
+            mocks.client,
+            'testInteraction',
+            {},
+            {},
+        );
+        await expect(execution).rejects.toMatchObject({ retryable: false, errorCode: 'OUTPUT_FAILED' });
+        await execution.catch((error: unknown) => {
+            expect(error).toBeInstanceOf(CanonicalInteractionExecutionError);
+            expect(isCanonicalInteractionExecutionError(error)).toBe(true);
+            if (isCanonicalInteractionExecutionError(error)) expect(error.result).toBe(failed);
+        });
         expect(mocks.streamCanonical).toHaveBeenCalledOnce();
     });
 

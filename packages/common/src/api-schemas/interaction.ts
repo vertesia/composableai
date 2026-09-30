@@ -13,6 +13,7 @@ import {
 } from '@llumiverse/common/schemas';
 import {
     ConversationMaterializedInputSchema,
+    ConversationOutputReceiptSchema,
     ConversationRefSchema,
     PendingApplicationToolCallSchema,
     ToolCallSourceRefSchema,
@@ -1973,6 +1974,11 @@ export const CanonicalContinuationStateSchema = z
     .strictObject({
         head: ConversationRefSchema,
         scope: CanonicalConversationHeadScopeSchema,
+        output_receipt: ConversationOutputReceiptSchema.meta({
+            description:
+                'Exact immutable accepted-response receipt that currently supplies workflow-visible output. ' +
+                'Its conversation may precede head after an input-only append or semantic checkpoint.',
+        }).optional(),
         materialized_input: ConversationMaterializedInputSchema.optional(),
         tool_call_sources: z.record(z.string().min(1), ToolCallSourceRefSchema).optional(),
         pending_tool_calls: z.array(CanonicalPendingApplicationToolCallSchema).max(256).optional(),
@@ -2016,6 +2022,13 @@ export const AsyncCompletionOptionsSchema = z
             description:
                 'Canonical conversation authority for async acknowledgement. References an exact scoped durable head without embedding the full document in legacy current_state.',
         }).optional(),
+        canonical_output_reference: z
+            .literal('conversation_output_receipt_v1')
+            .meta({
+                description:
+                    'Private workflow opt-in that replaces returned response content with output_receipt authority.',
+            })
+            .optional(),
         heartbeat_interval_ms: z
             .number()
             .meta({

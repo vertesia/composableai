@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { AsyncConversationExecutionPayload } from '../interaction.js';
 import {
+    AsyncCompletionOptionsSchema,
     AsyncConversationExecutionPayloadSchema,
     CanonicalAsyncCompletionResultSchema,
     CanonicalContinuationStateSchema,
@@ -46,6 +47,38 @@ describe('conversation state contract', () => {
         expect(CanonicalAsyncCompletionResultSchema.parse(result)).toEqual(result);
         expect(validateApiRequest('CanonicalAsyncCompletionResult', result).valid).toBe(true);
         expect(ConversationStateSchema.safeParse({ ...state, canonical_state: canonicalState }).success).toBe(false);
+    });
+
+    it('carries an exact output receipt only for the versioned private async opt-in', () => {
+        const outputReceipt = {
+            id: 'response:1',
+            conversation_id: 'conversation-1',
+            base_revision: 3,
+            result_revision: 4,
+            recorded_at: '2026-10-01T00:00:00.000Z',
+            accepted_turn_ids: ['turn-1'],
+            accepted_generation_ids: ['generation-1'],
+        };
+        const canonicalState = CanonicalContinuationStateSchema.parse({
+            head: { conversation_id: 'conversation-1', revision: 5 },
+            scope: 'root',
+            output_receipt: outputReceipt,
+        });
+        expect(canonicalState.output_receipt).toEqual(outputReceipt);
+        expect(
+            AsyncCompletionOptionsSchema.parse({
+                run_id: 'workflow-run-1',
+                activity_id: 'activity-1',
+                canonical_output_reference: 'conversation_output_receipt_v1',
+            }).canonical_output_reference,
+        ).toBe('conversation_output_receipt_v1');
+        expect(
+            AsyncCompletionOptionsSchema.safeParse({
+                run_id: 'workflow-run-1',
+                activity_id: 'activity-1',
+                canonical_output_reference: 'legacy-content',
+            }).success,
+        ).toBe(false);
     });
 
     it('uses one strict root-or-workstream scope contract for carrier and query', () => {

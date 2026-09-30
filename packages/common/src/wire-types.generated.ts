@@ -38,6 +38,7 @@ import type {
     ConversationAcceptedOutputFragment,
     ConversationDocument,
     ConversationMaterializedInput,
+    ConversationOutputReceipt,
     ConversationRef,
     ConversationStreamCursor,
     ConversationStreamDecodeEvidence,
@@ -4387,6 +4388,7 @@ export type StreamingOptions = {
 export type CanonicalContinuationState = {
     head: ConversationRef;
     scope: CanonicalConversationHeadScope;
+    output_receipt?: ConversationOutputReceipt | undefined;
     materialized_input?: ConversationMaterializedInput | undefined;
     tool_call_sources?: Record<string, ToolCallSourceRef> | undefined;
     pending_tool_calls?: PendingApplicationToolCall[] | undefined;
@@ -4415,6 +4417,7 @@ export type AsyncCompletionOptions = {
     activity_id?: string | undefined;
     current_state?: ConversationStateWire | undefined;
     canonical_state?: CanonicalContinuationState | undefined;
+    canonical_output_reference?: 'conversation_output_receipt_v1' | undefined;
     heartbeat_interval_ms?: number | undefined;
     telemetry?: StreamingTelemetryContext | undefined;
     result_storage?: ResultStorageOptions | undefined;
@@ -6303,7 +6306,7 @@ export type ResourceRef = {
  * (e.g. tasks), extend `AbacScopes` with the new scope(s) AND extend
  * `RoleDomains` with the new domain.
  */
-export type AbacScope = 'document' | 'collection' | 'agent_run' | 'task';
+export type AbacScope = 'document' | 'collection' | 'agent_run' | 'shared_content' | 'task';
 /**
  * Logical grouping of roles by the service area that owns them. One domain may
  * declare roles applicable to multiple scopes (e.g. the `content` domain owns
@@ -6311,7 +6314,7 @@ export type AbacScope = 'document' | 'collection' | 'agent_run' | 'task';
  * domain owns the built-in foundational roles (currently exposed as
  * `SystemRoles`) — registered first so domain partitions cannot shadow them.
  */
-export type RoleDomain = 'system' | 'content' | 'agent_runs' | 'tasks';
+export type RoleDomain = 'system' | 'content' | 'agent_runs' | 'shared_content' | 'tasks';
 /**
  * Wire shape of a role returned by the IAM `/roles` endpoint.
  *
@@ -7067,6 +7070,7 @@ export type CreateCollectionPayload = {
     shared_properties?: string[] | undefined;
     sensitivity?: number | undefined;
     compartments?: string[] | undefined;
+    shared_root?: boolean | undefined;
     name: string;
     dynamic: boolean;
 };
@@ -7099,6 +7103,8 @@ export type Collection = {
     security?: StringArrayMap | undefined;
     sensitivity?: number | undefined;
     compartments?: string[] | undefined;
+    shared?: boolean | undefined;
+    shared_root?: boolean | undefined;
     shared_properties?: string[] | undefined;
     user_permissions?: ContentObjectUserPermissions | undefined;
 };
@@ -7154,6 +7160,7 @@ export type UpdateCollectionPayload = {
     shared_properties?: string[] | undefined;
     sensitivity?: number | undefined;
     compartments?: string[] | undefined;
+    shared_root?: boolean | undefined;
     name?: string | undefined;
     dynamic?: boolean | undefined;
 };
@@ -8026,6 +8033,8 @@ export type ContentObjectItemApiResponse = {
     security?: StringArrayMap | undefined;
     sensitivity?: number | null | undefined;
     compartments?: string[] | undefined;
+    shared?: boolean | undefined;
+    shared_root?: boolean | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined;
 };
 export type ContentObjectApiResponse = {
@@ -8081,6 +8090,8 @@ export type ContentObjectApiResponse = {
     security?: StringArrayMap | undefined;
     sensitivity?: number | null | undefined;
     compartments?: string[] | undefined;
+    shared?: boolean | undefined;
+    shared_root?: boolean | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined;
 };
 export type ProjectedContentObjectApiResponse = {
@@ -8140,6 +8151,8 @@ export type ProjectedContentObjectApiResponse = {
     security?: StringArrayMap | undefined | undefined;
     sensitivity?: number | null | undefined | undefined;
     compartments?: string[] | undefined | undefined;
+    shared?: boolean | undefined | undefined;
+    shared_root?: boolean | undefined | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined | undefined;
 };
 export type GenerationRunMetadata = {
@@ -10075,6 +10088,7 @@ export type CreateContentObjectPayloadWire = {
     security?: StringArrayMap | undefined;
     sensitivity?: number | undefined;
     compartments?: string[] | undefined;
+    shared_root?: boolean | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined;
     parent?: string | undefined;
     location?: string | undefined;
@@ -10122,6 +10136,7 @@ export type UpdateContentObjectPayloadWire = {
     security?: StringArrayMap | undefined;
     sensitivity?: number | undefined;
     compartments?: string[] | undefined;
+    shared_root?: boolean | undefined;
     inherited_properties?: InheritedPropertyMetadata[] | undefined;
     parent?: string | undefined;
     location?: string | undefined;
