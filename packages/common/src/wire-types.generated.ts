@@ -39,10 +39,21 @@ import type {
     ConversationDocument,
     ConversationMaterializedInput,
     ConversationRef,
+    ConversationStreamCursor,
+    ConversationStreamDecodeEvidence,
+    ConversationStreamDraftBlock,
+    ConversationStreamEvent,
+    ConversationStreamFailureDiagnostic,
+    ConversationStreamIdentity,
+    ConversationStreamReconciliation,
+    ConversationStreamResponseMapping,
+    ConversationStreamTransformationProof,
     ConversationToolExecutionRequest,
     ConversationToolExecutionResult,
     ExecutedToolTurn,
     JsonObject,
+    NativeStreamPathSegment,
+    NativeStreamPosition,
     OperationReceipt,
     PendingApplicationToolCall,
     ToolCallSourceRef,
@@ -1995,6 +2006,46 @@ export type ExperimentalCanonicalInteractionExecutionResult = {
     output: ExperimentalCanonicalInteractionOutput;
     history: ExperimentalCanonicalInteractionHistory;
 };
+export type ExperimentalCanonicalInteractionStreamRequest = {
+    operation_id: string;
+    request: ExperimentalCanonicalNamedInteractionExecutionRequest;
+    resume_after?: ConversationStreamCursor | undefined;
+};
+export type ExperimentalCanonicalInteractionStreamOpened = {
+    api_version: '=20260930';
+    run_id: string;
+    operation_id: string;
+    stream_id: string;
+    type: 'stream_opened';
+};
+export type ExperimentalCanonicalInteractionStreamResumed = {
+    api_version: '=20260930';
+    run_id: string;
+    operation_id: string;
+    stream_id: string;
+    type: 'stream_resumed';
+    resumed_after: ConversationStreamCursor;
+};
+export type ExperimentalCanonicalInteractionAcceptedRecoveryOpened = {
+    api_version: '=20260930';
+    run_id: string;
+    operation_id: string;
+    stream_id: string;
+    type: 'accepted_recovery_opened';
+    replaces_stream_id: string;
+};
+export type ExperimentalCanonicalInteractionConversationEvent = {
+    api_version: '=20260930';
+    type: 'conversation_event';
+    run_id: string;
+    host_status: 'provisional' | 'accepted' | 'terminated';
+    event: ConversationStreamEvent;
+};
+export type ExperimentalCanonicalInteractionStreamEnvelope =
+    | ExperimentalCanonicalInteractionStreamOpened
+    | ExperimentalCanonicalInteractionStreamResumed
+    | ExperimentalCanonicalInteractionAcceptedRecoveryOpened
+    | ExperimentalCanonicalInteractionConversationEvent;
 export type FindPayload = {
     query: {
         [k: string]: unknown;
@@ -12010,6 +12061,23 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalInteractionUnavailableOutput: ExperimentalCanonicalInteractionUnavailableOutput;
     ExperimentalCanonicalInteractionOutput: ExperimentalCanonicalInteractionOutput;
     ExperimentalCanonicalInteractionExecutionResult: ExperimentalCanonicalInteractionExecutionResult;
+    ExperimentalCanonicalInteractionStreamRequest: ExperimentalCanonicalInteractionStreamRequest;
+    ExperimentalCanonicalInteractionStreamOpened: ExperimentalCanonicalInteractionStreamOpened;
+    ExperimentalCanonicalInteractionStreamResumed: ExperimentalCanonicalInteractionStreamResumed;
+    ExperimentalCanonicalInteractionAcceptedRecoveryOpened: ExperimentalCanonicalInteractionAcceptedRecoveryOpened;
+    ExperimentalCanonicalInteractionConversationEvent: ExperimentalCanonicalInteractionConversationEvent;
+    ExperimentalCanonicalInteractionStreamEnvelope: ExperimentalCanonicalInteractionStreamEnvelope;
+    ConversationStreamIdentity: ConversationStreamIdentity;
+    ConversationStreamCursor: ConversationStreamCursor;
+    ConversationNativeStreamPathSegment: NativeStreamPathSegment;
+    ConversationNativeStreamPosition: NativeStreamPosition;
+    ConversationStreamDraftBlock: ConversationStreamDraftBlock;
+    ConversationStreamFailureDiagnostic: ConversationStreamFailureDiagnostic;
+    ConversationStreamReconciliation: ConversationStreamReconciliation;
+    ConversationStreamTransformationProof: ConversationStreamTransformationProof;
+    ConversationStreamResponseMapping: ConversationStreamResponseMapping;
+    ConversationStreamDecodeEvidence: ConversationStreamDecodeEvidence;
+    ConversationStreamEvent: ConversationStreamEvent;
     ConversationToolExecutionRequest: ConversationToolExecutionRequest;
     ConversationToolExecutionResult: ConversationToolExecutionResult;
     RunConversationResponse: RunConversationResponse;

@@ -927,6 +927,42 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionResultSchema
         >
     >;
+    ExperimentalCanonicalInteractionStreamRequest: Same<
+        W.ExperimentalCanonicalInteractionStreamRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamRequestSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionStreamOpened: Same<
+        W.ExperimentalCanonicalInteractionStreamOpened,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamOpenedSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionStreamResumed: Same<
+        W.ExperimentalCanonicalInteractionStreamResumed,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamResumedSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionAcceptedRecoveryOpened: Same<
+        W.ExperimentalCanonicalInteractionAcceptedRecoveryOpened,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionAcceptedRecoveryOpenedSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionConversationEvent: Same<
+        W.ExperimentalCanonicalInteractionConversationEvent,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionConversationEventSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionStreamEnvelope: Same<
+        W.ExperimentalCanonicalInteractionStreamEnvelope,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamEnvelopeSchema
+        >
+    >;
     FindPayload: Same<W.FindPayload, z.infer<typeof import('./api-schemas/content.js').FindPayloadSchema>>;
     GenericCommandResponse: Same<
         W.GenericCommandResponse,
@@ -9761,6 +9797,86 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionResultSchema
         >
     >;
+    'component:ExperimentalCanonicalInteractionStreamRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionStreamRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionStreamOpened': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionStreamOpened'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamOpenedSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionStreamResumed': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionStreamResumed'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamResumedSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionAcceptedRecoveryOpened': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionAcceptedRecoveryOpened'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionAcceptedRecoveryOpenedSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionConversationEvent': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionConversationEvent'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionConversationEventSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionStreamEnvelope': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionStreamEnvelope'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamEnvelopeSchema
+        >
+    >;
+    'component:ConversationStreamIdentity': Same<
+        W.ApiComponentTypes['ConversationStreamIdentity'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamIdentitySchema>
+    >;
+    'component:ConversationStreamCursor': Same<
+        W.ApiComponentTypes['ConversationStreamCursor'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamCursorSchema>
+    >;
+    'component:ConversationNativeStreamPathSegment': Same<
+        W.ApiComponentTypes['ConversationNativeStreamPathSegment'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').NativeStreamPathSegmentSchema>
+    >;
+    'component:ConversationNativeStreamPosition': Same<
+        W.ApiComponentTypes['ConversationNativeStreamPosition'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').NativeStreamPositionSchema>
+    >;
+    'component:ConversationStreamDraftBlock': Same<
+        W.ApiComponentTypes['ConversationStreamDraftBlock'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamDraftBlockSchema>
+    >;
+    'component:ConversationStreamFailureDiagnostic': Same<
+        W.ApiComponentTypes['ConversationStreamFailureDiagnostic'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamFailureDiagnosticSchema>
+    >;
+    'component:ConversationStreamReconciliation': Same<
+        W.ApiComponentTypes['ConversationStreamReconciliation'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamReconciliationSchema>
+    >;
+    'component:ConversationStreamTransformationProof': Same<
+        W.ApiComponentTypes['ConversationStreamTransformationProof'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamTransformationProofSchema>
+    >;
+    'component:ConversationStreamResponseMapping': Same<
+        W.ApiComponentTypes['ConversationStreamResponseMapping'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamResponseMappingSchema>
+    >;
+    'component:ConversationStreamDecodeEvidence': Same<
+        W.ApiComponentTypes['ConversationStreamDecodeEvidence'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamDecodeEvidenceSchema>
+    >;
+    'component:ConversationStreamEvent': Same<
+        W.ApiComponentTypes['ConversationStreamEvent'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamEventSchema>
+    >;
     'component:ConversationToolExecutionRequest': Same<
         W.ApiComponentTypes['ConversationToolExecutionRequest'],
         z.infer<typeof import('@llumiverse/conversation/schemas').ConversationToolExecutionRequestSchema>
@@ -10037,6 +10153,12 @@ const checks: Checks = {
     ExperimentalCanonicalInteractionUnavailableOutput: true,
     ExperimentalCanonicalInteractionOutput: true,
     ExperimentalCanonicalInteractionExecutionResult: true,
+    ExperimentalCanonicalInteractionStreamRequest: true,
+    ExperimentalCanonicalInteractionStreamOpened: true,
+    ExperimentalCanonicalInteractionStreamResumed: true,
+    ExperimentalCanonicalInteractionAcceptedRecoveryOpened: true,
+    ExperimentalCanonicalInteractionConversationEvent: true,
+    ExperimentalCanonicalInteractionStreamEnvelope: true,
     FindPayload: true,
     GenericCommandResponse: true,
     DeleteByIdResult: true,
@@ -12340,6 +12462,23 @@ const checks: Checks = {
     'component:ExperimentalCanonicalInteractionUnavailableOutput': true,
     'component:ExperimentalCanonicalInteractionOutput': true,
     'component:ExperimentalCanonicalInteractionExecutionResult': true,
+    'component:ExperimentalCanonicalInteractionStreamRequest': true,
+    'component:ExperimentalCanonicalInteractionStreamOpened': true,
+    'component:ExperimentalCanonicalInteractionStreamResumed': true,
+    'component:ExperimentalCanonicalInteractionAcceptedRecoveryOpened': true,
+    'component:ExperimentalCanonicalInteractionConversationEvent': true,
+    'component:ExperimentalCanonicalInteractionStreamEnvelope': true,
+    'component:ConversationStreamIdentity': true,
+    'component:ConversationStreamCursor': true,
+    'component:ConversationNativeStreamPathSegment': true,
+    'component:ConversationNativeStreamPosition': true,
+    'component:ConversationStreamDraftBlock': true,
+    'component:ConversationStreamFailureDiagnostic': true,
+    'component:ConversationStreamReconciliation': true,
+    'component:ConversationStreamTransformationProof': true,
+    'component:ConversationStreamResponseMapping': true,
+    'component:ConversationStreamDecodeEvidence': true,
+    'component:ConversationStreamEvent': true,
     'component:ConversationToolExecutionRequest': true,
     'component:ConversationToolExecutionResult': true,
     'component:RunConversationResponse': true,
@@ -12351,6 +12490,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2555);
+        expect(Object.keys(checks)).toHaveLength(2578);
     });
 });

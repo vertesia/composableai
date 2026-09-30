@@ -5,6 +5,7 @@ export { getOAuthPermissionScopes, Permission } from '@vertesia/common';
 export * from './CanonicalConversation.js';
 export * from './CanonicalInteractionApi.js';
 export * from './CanonicalInteractionOutput.js';
+export * from './CanonicalInteractionStream.js';
 export * from './client.js';
 export { default as DelegationGrantsApi } from './DelegationGrantsApi.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';

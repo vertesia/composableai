@@ -6455,6 +6455,1463 @@
     ],
     "additionalProperties": false
   },
+  "ConversationStreamCursor": {
+    "type": "object",
+    "properties": {
+      "stream_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "event_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "sequence": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      }
+    },
+    "required": [
+      "stream_id",
+      "event_id",
+      "sequence"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalInteractionStreamRequest": {
+    "type": "object",
+    "properties": {
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "request": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalNamedInteractionExecutionRequest"
+      },
+      "resume_after": {
+        "$ref": "#/components/schemas/ConversationStreamCursor"
+      }
+    },
+    "required": [
+      "operation_id",
+      "request"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalInteractionStreamOpened": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "run_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "stream_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "stream_opened"
+      }
+    },
+    "required": [
+      "api_version",
+      "run_id",
+      "operation_id",
+      "stream_id",
+      "type"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalInteractionStreamResumed": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "run_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "stream_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "stream_resumed"
+      },
+      "resumed_after": {
+        "$ref": "#/components/schemas/ConversationStreamCursor"
+      }
+    },
+    "required": [
+      "api_version",
+      "run_id",
+      "operation_id",
+      "stream_id",
+      "type",
+      "resumed_after"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalInteractionAcceptedRecoveryOpened": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "run_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "stream_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "accepted_recovery_opened"
+      },
+      "replaces_stream_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "api_version",
+      "run_id",
+      "operation_id",
+      "stream_id",
+      "type",
+      "replaces_stream_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationNativeStreamPosition": {
+    "type": "object",
+    "properties": {
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "path": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationNativeStreamPathSegment"
+        }
+      },
+      "native_item_id": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "protocol",
+      "path"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationStreamReconciliation": {
+    "type": "object",
+    "properties": {
+      "draft_block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "native_positions": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationNativeStreamPosition"
+        }
+      },
+      "committed_block_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "disposition": {
+        "type": "string",
+        "enum": [
+          "direct",
+          "structured_output",
+          "omitted_invalid",
+          "replay_only"
+        ]
+      },
+      "transformation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "draft_block_ids",
+      "native_positions",
+      "committed_block_ids",
+      "disposition"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationStreamFailureDiagnostic": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "message": {
+        "type": "string",
+        "maxLength": 1024
+      },
+      "retryable": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "code",
+      "message"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationStreamEvent": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "type": {
+            "type": "string",
+            "const": "draft_started"
+          },
+          "origin": {
+            "type": "string",
+            "const": "live_transport"
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "type",
+          "origin"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "draft_block_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "native_position": {
+            "$ref": "#/components/schemas/ConversationNativeStreamPosition"
+          },
+          "type": {
+            "type": "string",
+            "const": "draft_block_started"
+          },
+          "block": {
+            "$ref": "#/components/schemas/ConversationStreamDraftBlock"
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "draft_block_id",
+          "native_position",
+          "type",
+          "block"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "draft_block_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "native_position": {
+            "$ref": "#/components/schemas/ConversationNativeStreamPosition"
+          },
+          "type": {
+            "type": "string",
+            "const": "draft_text_delta"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "draft_block_id",
+          "native_position",
+          "type",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "draft_block_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "native_position": {
+            "$ref": "#/components/schemas/ConversationNativeStreamPosition"
+          },
+          "type": {
+            "type": "string",
+            "const": "draft_reasoning_delta"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "draft_block_id",
+          "native_position",
+          "type",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "draft_block_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "native_position": {
+            "$ref": "#/components/schemas/ConversationNativeStreamPosition"
+          },
+          "type": {
+            "type": "string",
+            "const": "draft_tool_call_identity"
+          },
+          "call_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tool_name": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "draft_block_id",
+          "native_position",
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "draft_block_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "native_position": {
+            "$ref": "#/components/schemas/ConversationNativeStreamPosition"
+          },
+          "type": {
+            "type": "string",
+            "const": "draft_tool_arguments_delta"
+          },
+          "arguments": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "encoding": {
+                    "type": "string",
+                    "const": "json_fragment"
+                  },
+                  "fragment": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "encoding",
+                  "fragment"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "encoding": {
+                    "type": "string",
+                    "const": "json_value_snapshot"
+                  },
+                  "value": {
+                    "$ref": "#/components/schemas/ConversationJsonValue"
+                  }
+                },
+                "required": [
+                  "encoding",
+                  "value"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "draft_block_id",
+          "native_position",
+          "type",
+          "arguments"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "draft_block_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "native_position": {
+            "$ref": "#/components/schemas/ConversationNativeStreamPosition"
+          },
+          "type": {
+            "type": "string",
+            "const": "draft_block_finished"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "native_complete",
+              "interrupted",
+              "malformed",
+              "failed"
+            ]
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "draft_block_id",
+          "native_position",
+          "type",
+          "outcome"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "type": {
+            "type": "string",
+            "const": "usage_snapshot"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/ConversationGenerationUsage"
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "type",
+          "usage"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "type": {
+            "type": "string",
+            "const": "draft_finished"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "completed",
+              "interrupted",
+              "failed"
+            ]
+          },
+          "finish_reason": {
+            "type": "string"
+          },
+          "service_tier": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "type",
+          "outcome"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "type": {
+            "type": "string",
+            "const": "response_accepted"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "live_transport",
+              "accepted_recovery"
+            ]
+          },
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "operation_receipt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "committed_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "turn_status": {
+            "$ref": "#/components/schemas/ConversationTurnStatus"
+          },
+          "generation_status": {
+            "$ref": "#/components/schemas/ConversationGenerationStatus"
+          },
+          "committed_block_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "accepted_asset_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "reconciliations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationStreamReconciliation"
+            }
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "type",
+          "origin",
+          "conversation",
+          "operation_receipt_id",
+          "committed_turn_id",
+          "turn_status",
+          "generation_status",
+          "committed_block_ids",
+          "accepted_asset_ids",
+          "reconciliations"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "stream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "generation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "draft_turn_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "event_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "sequence": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "type": {
+            "type": "string",
+            "const": "stream_terminated"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "cancelled",
+              "failed"
+            ]
+          },
+          "diagnostic": {
+            "$ref": "#/components/schemas/ConversationStreamFailureDiagnostic"
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "stream_id",
+          "request_id",
+          "attempt_id",
+          "response_operation_id",
+          "generation_id",
+          "draft_turn_id",
+          "event_id",
+          "sequence",
+          "type",
+          "outcome"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "ConversationNativeStreamPathSegment": {
+    "anyOf": [
+      {
+        "type": "string",
+        "minLength": 1
+      },
+      {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      }
+    ]
+  },
+  "ConversationStreamDraftBlock": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "text"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "reasoning"
+          },
+          "visibility": {
+            "type": "string",
+            "const": "display"
+          }
+        },
+        "required": [
+          "type",
+          "visibility"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "tool_call"
+          },
+          "executor": {
+            "type": "string",
+            "enum": [
+              "application",
+              "provider"
+            ]
+          },
+          "call_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tool_name": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "type",
+          "executor"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "image",
+              "audio",
+              "video",
+              "document"
+            ]
+          },
+          "mime_type": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "ExperimentalCanonicalInteractionConversationEvent": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "type": {
+        "type": "string",
+        "const": "conversation_event"
+      },
+      "run_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "host_status": {
+        "type": "string",
+        "enum": [
+          "provisional",
+          "accepted",
+          "terminated"
+        ]
+      },
+      "event": {
+        "$ref": "#/components/schemas/ConversationStreamEvent"
+      }
+    },
+    "required": [
+      "api_version",
+      "type",
+      "run_id",
+      "host_status",
+      "event"
+    ],
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "event": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "const": "response_accepted"
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "event"
+          ]
+        },
+        "then": {
+          "properties": {
+            "host_status": {
+              "const": "accepted"
+            }
+          },
+          "required": [
+            "host_status"
+          ]
+        },
+        "else": {
+          "if": {
+            "properties": {
+              "event": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "const": "stream_terminated"
+                  }
+                },
+                "required": [
+                  "type"
+                ],
+                "additionalProperties": true
+              }
+            },
+            "required": [
+              "event"
+            ]
+          },
+          "then": {
+            "properties": {
+              "host_status": {
+                "const": "terminated"
+              }
+            },
+            "required": [
+              "host_status"
+            ]
+          },
+          "else": {
+            "properties": {
+              "host_status": {
+                "const": "provisional"
+              }
+            },
+            "required": [
+              "host_status"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "ExperimentalCanonicalInteractionStreamEnvelope": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionStreamOpened"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionStreamResumed"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionAcceptedRecoveryOpened"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionConversationEvent"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "stream_opened": "#/components/schemas/ExperimentalCanonicalInteractionStreamOpened",
+        "stream_resumed": "#/components/schemas/ExperimentalCanonicalInteractionStreamResumed",
+        "accepted_recovery_opened": "#/components/schemas/ExperimentalCanonicalInteractionAcceptedRecoveryOpened",
+        "conversation_event": "#/components/schemas/ExperimentalCanonicalInteractionConversationEvent"
+      }
+    }
+  },
+  "ConversationStreamIdentity": {
+    "type": "object",
+    "properties": {
+      "stream_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "request_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "attempt_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "response_operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "generation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "draft_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "stream_id",
+      "request_id",
+      "attempt_id",
+      "response_operation_id",
+      "generation_id",
+      "draft_turn_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationStreamTransformationProof": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "structured_output"
+      },
+      "source_block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "source_texts": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "result_block_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "source_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "result_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "source_block_ids",
+      "source_texts",
+      "result_block_id",
+      "source_fingerprint",
+      "result_fingerprint"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationStreamResponseMapping": {
+    "type": "object",
+    "properties": {
+      "canonical_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "native_position": {
+        "$ref": "#/components/schemas/ConversationNativeStreamPosition"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "turn",
+          "block",
+          "call"
+        ]
+      }
+    },
+    "required": [
+      "canonical_id",
+      "native_position",
+      "kind"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationStreamDecodeEvidence": {
+    "type": "object",
+    "properties": {
+      "item_mappings": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationStreamResponseMapping"
+        }
+      },
+      "transformations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationStreamTransformationProof"
+        }
+      }
+    },
+    "required": [
+      "item_mappings",
+      "transformations"
+    ],
+    "additionalProperties": false
+  },
   "AvailableRunConversation": {
     "type": "object",
     "properties": {

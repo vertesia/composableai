@@ -12,7 +12,7 @@ const CLIENT_ENTRIES = [
 ];
 
 /** Markers that prove a runtime schema import leaked into a browser artifact. */
-const FORBIDDEN = ['zod', '_zod', 'ZodObject', 'api-schemas', 'toOpenApiComponents', 'ApiSchemaComponents'];
+const FORBIDDEN = ['zod', '_zod', 'ZodObject', 'api-schemas', 'toOpenApiComponents', 'ApiSchemaComponents', 'require('];
 
 function expectNoSchemaRuntime(file: string, label: string): void {
     const contents = readFileSync(file, 'utf8');

@@ -135,3 +135,16 @@ export type ConversationApplicationToolExecutionReceipt = z.infer<
 export type ConversationExecutedToolTurn = z.infer<typeof Canonical.ExecutedToolTurnSchema>;
 export type ConversationToolExecutionRequest = z.infer<typeof Canonical.ConversationToolExecutionRequestSchema>;
 export type ConversationToolExecutionResult = z.infer<typeof Canonical.ConversationToolExecutionResultSchema>;
+export type ConversationStreamIdentity = z.infer<typeof Canonical.ConversationStreamIdentitySchema>;
+export type ConversationStreamCursor = z.infer<typeof Canonical.ConversationStreamCursorSchema>;
+export type ConversationNativeStreamPathSegment = z.infer<typeof Canonical.NativeStreamPathSegmentSchema>;
+export type ConversationNativeStreamPosition = z.infer<typeof Canonical.NativeStreamPositionSchema>;
+export type ConversationStreamDraftBlock = z.infer<typeof Canonical.ConversationStreamDraftBlockSchema>;
+export type ConversationStreamFailureDiagnostic = z.infer<typeof Canonical.ConversationStreamFailureDiagnosticSchema>;
+export type ConversationStreamReconciliation = z.infer<typeof Canonical.ConversationStreamReconciliationSchema>;
+export type ConversationStreamTransformationProof = z.infer<
+    typeof Canonical.ConversationStreamTransformationProofSchema
+>;
+export type ConversationStreamResponseMapping = z.infer<typeof Canonical.ConversationStreamResponseMappingSchema>;
+export type ConversationStreamDecodeEvidence = z.infer<typeof Canonical.ConversationStreamDecodeEvidenceSchema>;
+export type ConversationStreamEvent = z.infer<typeof Canonical.ConversationStreamEventSchema>;

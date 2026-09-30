@@ -18,6 +18,7 @@ export * from './apikey.js';
 export * from './app-runtime.js';
 export * from './bulk-operation.js';
 export * from './canonical-interaction-execution.js';
+export * from './canonical-interaction-stream.js';
 export * from './content.js';
 export * from './content-query.js';
 export * from './cost-analytics.js';

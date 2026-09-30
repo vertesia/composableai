@@ -32,8 +32,19 @@ import {
     VideoResultSchema,
 } from '@llumiverse/common/schemas';
 import {
+    ConversationStreamCursorSchema,
+    ConversationStreamDecodeEvidenceSchema,
+    ConversationStreamDraftBlockSchema,
+    ConversationStreamEventSchema,
+    ConversationStreamFailureDiagnosticSchema,
+    ConversationStreamIdentitySchema,
+    ConversationStreamReconciliationSchema,
+    ConversationStreamResponseMappingSchema,
+    ConversationStreamTransformationProofSchema,
     ConversationToolExecutionRequestSchema,
     ConversationToolExecutionResultSchema,
+    NativeStreamPathSegmentSchema,
+    NativeStreamPositionSchema,
 } from '@llumiverse/conversation/schemas';
 import type { z } from 'zod';
 import type {
@@ -243,6 +254,7 @@ import {
 } from './bulk-operation.js';
 import { CANONICAL_CONVERSATION_SCHEMAS } from './canonical-conversation.js';
 import * as CanonicalInteractionSchemas from './canonical-interaction-execution.js';
+import * as CanonicalInteractionStreamSchemas from './canonical-interaction-stream.js';
 import {
     DeleteCountResultSchema,
     GenericCommandResponseSchema,
@@ -2513,6 +2525,41 @@ const CANONICAL_INTERACTION_SCHEMAS: CanonicalInteractionSchemaMap = {
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionResultSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+type CanonicalInteractionStreamSchemaMap = {
+    readonly [Key in keyof typeof CanonicalInteractionStreamSchemas as Key extends `${infer Name}Schema`
+        ? Name
+        : never]: (typeof CanonicalInteractionStreamSchemas)[Key];
+};
+
+const CANONICAL_INTERACTION_STREAM_SCHEMAS: CanonicalInteractionStreamSchemaMap = {
+    ExperimentalCanonicalInteractionStreamRequest:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionStreamRequestSchema,
+    ExperimentalCanonicalInteractionStreamOpened:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionStreamOpenedSchema,
+    ExperimentalCanonicalInteractionStreamResumed:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionStreamResumedSchema,
+    ExperimentalCanonicalInteractionAcceptedRecoveryOpened:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionAcceptedRecoveryOpenedSchema,
+    ExperimentalCanonicalInteractionConversationEvent:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionConversationEventSchema,
+    ExperimentalCanonicalInteractionStreamEnvelope:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionStreamEnvelopeSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const CANONICAL_CONVERSATION_STREAM_SCHEMAS = {
+    ConversationStreamIdentity: ConversationStreamIdentitySchema,
+    ConversationStreamCursor: ConversationStreamCursorSchema,
+    ConversationNativeStreamPathSegment: NativeStreamPathSegmentSchema,
+    ConversationNativeStreamPosition: NativeStreamPositionSchema,
+    ConversationStreamDraftBlock: ConversationStreamDraftBlockSchema,
+    ConversationStreamFailureDiagnostic: ConversationStreamFailureDiagnosticSchema,
+    ConversationStreamReconciliation: ConversationStreamReconciliationSchema,
+    ConversationStreamTransformationProof: ConversationStreamTransformationProofSchema,
+    ConversationStreamResponseMapping: ConversationStreamResponseMappingSchema,
+    ConversationStreamDecodeEvidence: ConversationStreamDecodeEvidenceSchema,
+    ConversationStreamEvent: ConversationStreamEventSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const CANONICAL_TOOL_EXECUTION_SCHEMAS = {
     ConversationToolExecutionRequest: ConversationToolExecutionRequestSchema,
     ConversationToolExecutionResult: ConversationToolExecutionResultSchema,
@@ -2528,6 +2575,8 @@ const RUN_CONVERSATION_SCHEMAS = {
 const API_SCHEMA_GROUPS = [
     CANONICAL_TOOL_EXECUTION_SCHEMAS,
     CANONICAL_INTERACTION_SCHEMAS,
+    CANONICAL_INTERACTION_STREAM_SCHEMAS,
+    CANONICAL_CONVERSATION_STREAM_SCHEMAS,
     RUN_CONVERSATION_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
@@ -2596,6 +2645,8 @@ const API_SCHEMA_GROUPS = [
  */
 type ApiSchemaMap = typeof CANONICAL_TOOL_EXECUTION_SCHEMAS &
     typeof CANONICAL_INTERACTION_SCHEMAS &
+    typeof CANONICAL_INTERACTION_STREAM_SCHEMAS &
+    typeof CANONICAL_CONVERSATION_STREAM_SCHEMAS &
     typeof RUN_CONVERSATION_SCHEMAS &
     typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
@@ -2672,6 +2723,9 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     ...Object.entries(CANONICAL_INTERACTION_SCHEMAS)
+        .filter(([, schema]) => schema.def.type === 'object')
+        .map(([name]) => name),
+    ...Object.entries(CANONICAL_INTERACTION_STREAM_SCHEMAS)
         .filter(([, schema]) => schema.def.type === 'object')
         .map(([name]) => name),
     ...Object.entries(CANONICAL_CONVERSATION_SCHEMAS)

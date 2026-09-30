@@ -9,6 +9,8 @@ import type {
     ExecutionRunDocRef,
     ExecutionRunRef,
     ExperimentalCanonicalInteractionExecutionResult,
+    ExperimentalCanonicalInteractionStreamEnvelope,
+    ExperimentalCanonicalInteractionStreamRequest,
     ExperimentalCanonicalNamedInteractionExecutionRequest,
     FindPayload,
     FindRunResult,
@@ -28,6 +30,12 @@ import {
     type EnhancedExperimentalCanonicalInteractionExecutionResult,
     enhanceExperimentalCanonicalInteractionExecutionResult,
 } from './CanonicalInteractionOutput.js';
+import {
+    CanonicalInteractionStreamProtocolError,
+    type CanonicalInteractionStreamResult,
+    type CanonicalInteractionStreamSessionOptions,
+    consumeCanonicalInteractionStream,
+} from './CanonicalInteractionStream.js';
 import type { VertesiaClient } from './client.js';
 import { INTERACTION_EXECUTION_TIMEOUT_MS } from './execute.js';
 import {
@@ -175,6 +183,62 @@ export class RunsApi extends ApiTopic {
             signal: options?.signal,
         });
         return enhanceExperimentalCanonicalInteractionExecutionResult<T>(result);
+    }
+
+    /** Stream one explicitly versioned canonical interaction run with bounded reconnect validation. */
+    async streamCanonical(
+        payload: ExperimentalCanonicalInteractionStreamRequest,
+        options: CanonicalInteractionStreamSessionOptions & CanonicalInteractionRequestOptions = {},
+    ): Promise<CanonicalInteractionStreamResult> {
+        const sessionTags = (this.client as VertesiaClient).sessionTags;
+        if (sessionTags) {
+            const tags = (Array.isArray(sessionTags) ? sessionTags : [sessionTags]).concat(payload.request.tags ?? []);
+            payload = { ...payload, request: { ...payload.request, tags } };
+        }
+        return consumeCanonicalInteractionStream(
+            {
+                connect: async (request, onEnvelope) => {
+                    const controller = new AbortController();
+                    const abortFromCaller = () => controller.abort(options.signal?.reason);
+                    if (options.signal?.aborted) abortFromCaller();
+                    else options.signal?.addEventListener('abort', abortFromCaller, { once: true });
+                    try {
+                        await this.sseRequest(
+                            'POST',
+                            '/canonical-stream',
+                            {
+                                payload: request,
+                                headers: canonicalInteractionHeaders(options.headers),
+                                timeoutMs: options.timeoutMs ?? INTERACTION_EXECUTION_TIMEOUT_MS,
+                                signal: controller.signal,
+                            },
+                            (event) => {
+                                if (event.type !== 'event') return;
+                                let envelope: ExperimentalCanonicalInteractionStreamEnvelope;
+                                try {
+                                    envelope = JSON.parse(event.data) as ExperimentalCanonicalInteractionStreamEnvelope;
+                                } catch (cause) {
+                                    throw new CanonicalInteractionStreamProtocolError(
+                                        'Canonical interaction stream emitted invalid JSON',
+                                        { cause },
+                                    );
+                                }
+                                try {
+                                    onEnvelope(envelope);
+                                } catch (cause) {
+                                    controller.abort(cause);
+                                    throw cause;
+                                }
+                            },
+                        );
+                    } finally {
+                        options.signal?.removeEventListener('abort', abortFromCaller);
+                    }
+                },
+            },
+            payload,
+            options,
+        );
     }
 
     /**

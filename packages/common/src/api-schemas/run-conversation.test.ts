@@ -3,6 +3,12 @@ import {
     ConversationAcceptedOutputFragmentSchema,
     ConversationDocumentSchema,
     ConversationMaterializedInputSchema,
+    ConversationStreamCursorSchema,
+    ConversationStreamDecodeEvidenceSchema,
+    ConversationStreamEventSchema,
+    ConversationStreamIdentitySchema,
+    ConversationStreamResponseMappingSchema,
+    ConversationStreamTransformationProofSchema,
     ConversationToolExecutionRequestSchema,
     ConversationToolExecutionResultSchema,
 } from '@llumiverse/conversation/schemas';
@@ -37,6 +43,12 @@ describe('run conversation wire contract', () => {
             ConversationToolExecutionRequestSchema,
             ConversationToolExecutionResultSchema,
             ConversationMaterializedInputSchema,
+            ConversationStreamIdentitySchema,
+            ConversationStreamCursorSchema,
+            ConversationStreamEventSchema,
+            ConversationStreamResponseMappingSchema,
+            ConversationStreamTransformationProofSchema,
+            ConversationStreamDecodeEvidenceSchema,
         ]) {
             const emitted = schema.toJSONSchema({ target: 'draft-2020-12', io: 'input' });
             for (const name of Object.keys(emitted.$defs ?? {})) definitions.add(name);

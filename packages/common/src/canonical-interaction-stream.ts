@@ -1,0 +1,9 @@
+import type * as Wire from './wire-types.generated.js';
+
+export type ExperimentalCanonicalInteractionStreamRequest = Wire.ExperimentalCanonicalInteractionStreamRequest;
+export type ExperimentalCanonicalInteractionStreamOpened = Wire.ExperimentalCanonicalInteractionStreamOpened;
+export type ExperimentalCanonicalInteractionStreamResumed = Wire.ExperimentalCanonicalInteractionStreamResumed;
+export type ExperimentalCanonicalInteractionAcceptedRecoveryOpened =
+    Wire.ExperimentalCanonicalInteractionAcceptedRecoveryOpened;
+export type ExperimentalCanonicalInteractionConversationEvent = Wire.ExperimentalCanonicalInteractionConversationEvent;
+export type ExperimentalCanonicalInteractionStreamEnvelope = Wire.ExperimentalCanonicalInteractionStreamEnvelope;
