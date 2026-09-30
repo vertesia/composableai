@@ -126,6 +126,16 @@ export class AgentsApi extends ApiTopic {
         });
     }
 
+    /** @internal Discover the latest committed operational head for one owner/scope. */
+    discoverCurrentConversationHead(
+        id: string,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<ConversationDocumentV0> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/head`, {
+            query: { conversation_scope: scope },
+        });
+    }
+
     /** @internal Append verified application tool results to the durable operational head. */
     appendConversationToolResults(
         id: string,
