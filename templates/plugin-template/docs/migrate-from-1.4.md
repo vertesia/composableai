@@ -95,8 +95,9 @@ The two changes that matter:
 
 ### 4. Chrome-less rendering in the host content slot
 
-When Studio embeds the app it appends `?__vertesia_slot=content`; the host provides navigation
-chrome, so the app must skip its own `PluginLayout`. In the standalone entry (1.4: `src/ui/main.tsx`),
+When a Composite App embeds the app it appends `?__vertesia_slot=content`; the host provides navigation
+chrome, so the app must skip its own `PluginLayout`. The App Portal embeds the app full screen without that
+parameter, so the app keeps its own chrome there. In the standalone entry (1.4: `src/ui/main.tsx`),
 wrap the app route:
 
 ```tsx
@@ -143,8 +144,9 @@ that build in an iframe instead of injecting the library bundle.
 - `pnpm build` (or your PM equivalent), redeploy.
 - Standalone: open the deployed app top-level — sign-in must still round-trip through Central Auth
   and land back on the deep link.
-- Embedded: open the app from Studio (app portal / composite app) — it must render without its own
-  sidebar/chrome and become authenticated **without any redirect** (the token arrives over
+- Embedded: open the app from Studio — inside a composite app it must render without its own
+  sidebar/chrome; from the app portal it fills the window with its own chrome. Either way it must stay
+  on the Studio URL and become authenticated **without any redirect** (the token arrives over
   postMessage from the Studio host).
 - Local dev note: the trusted-origin check only accepts a loopback parent when the app itself runs
   on loopback, and otherwise only Studio UI hostnames over HTTPS — you cannot test the iframe
