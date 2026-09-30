@@ -31765,6 +31765,38 @@
   "ProcessBudgetState": {
     "type": "object",
     "properties": {
+      "mode": {
+        "type": "string",
+        "enum": [
+          "token",
+          "dollar"
+        ],
+        "description": "Absent on historical token-only status."
+      },
+      "limit_usd": {
+        "type": "number",
+        "minimum": 0
+      },
+      "reported_usd": {
+        "type": "number",
+        "minimum": 0
+      },
+      "estimated_usd": {
+        "type": "number",
+        "minimum": 0
+      },
+      "accounting_status": {
+        "type": "string",
+        "enum": [
+          "current",
+          "incomplete"
+        ]
+      },
+      "unmeasured_calls": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
       "limit_tokens": {
         "type": "number"
       },
@@ -31821,7 +31853,7 @@
       },
       "budget": {
         "$ref": "#/components/schemas/ProcessBudgetState",
-        "description": "Token budget of the run, present when the run has one."
+        "description": "Run budget status, including dollar consumption when configured."
       }
     },
     "required": [

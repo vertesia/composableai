@@ -7299,6 +7299,12 @@ export type ProcessState = {
 };
 export type ProcessTerminalReason = 'token_budget_exhausted';
 export type ProcessBudgetState = {
+    mode?: 'token' | 'dollar' | undefined;
+    limit_usd?: number | undefined;
+    reported_usd?: number | undefined;
+    estimated_usd?: number | undefined;
+    accounting_status?: 'current' | 'incomplete' | undefined;
+    unmeasured_calls?: number | undefined;
     limit_tokens: number;
     used_units: number;
     exhausted: boolean;
