@@ -40,7 +40,7 @@ export interface RateLimitMetadata {
 export class RequestError extends Error {
     status: number;
     payload: unknown;
-    request: Request;
+    request!: Request;
     request_info: string;
     displayDetails: boolean;
     original_message: string;
@@ -58,7 +58,13 @@ export class RequestError extends Error {
     ) {
         super(createMessage(message, request, status, payload, displayDetails));
         this.original_message = message;
-        this.request = request;
+        // Keep the request available to callers without including its headers in structured logs.
+        Object.defineProperty(this, 'request', {
+            value: request,
+            enumerable: false,
+            configurable: true,
+            writable: true,
+        });
         this.status = status;
         this.payload = payload;
         this.request_info = `${request.method} ${request.url} => ${status}`;

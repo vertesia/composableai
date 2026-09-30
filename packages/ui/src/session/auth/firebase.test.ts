@@ -1,0 +1,72 @@
+import { Env } from '@vertesia/ui/env';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { getFirebaseAuthToken, setFirebaseTenant } from './firebase';
+
+const firebaseMocks = vi.hoisted(() => ({
+    auth: {
+        tenantId: null as string | null,
+        currentUser: null as null | {
+            email: string;
+            displayName: string;
+            uid: string;
+            getIdToken: ReturnType<typeof vi.fn>;
+        },
+    },
+}));
+
+vi.mock('firebase/app', () => ({ initializeApp: vi.fn(() => ({})) }));
+vi.mock('firebase/auth', () => ({ getAuth: vi.fn(() => firebaseMocks.auth) }));
+
+describe('configured Firebase tenant', () => {
+    afterEach(() => {
+        firebaseMocks.auth.tenantId = null;
+        firebaseMocks.auth.currentUser = null;
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    it('logs a missing discovered tenant once at warning level', async () => {
+        vi.spyOn(Env, 'firebase', 'get').mockReturnValue({
+            apiKey: 'key',
+            authDomain: 'app.example.com',
+            projectId: 'project',
+        });
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue(
+                new Response(JSON.stringify({ error: 'Tenant not found' }), {
+                    status: 404,
+                    headers: { 'content-type': 'application/json' },
+                }),
+            ),
+        );
+        const warn = vi.spyOn(Env.logger, 'warn');
+        const error = vi.spyOn(Env.logger, 'error');
+
+        await setFirebaseTenant('someone@another-company.com');
+
+        expect(warn).toHaveBeenCalledOnce();
+        expect(error).not.toHaveBeenCalled();
+    });
+
+    it('logs a token refresh failure once at warning level', async () => {
+        vi.spyOn(Env, 'firebase', 'get').mockReturnValue({
+            apiKey: 'key',
+            authDomain: 'app.example.com',
+            projectId: 'project',
+        });
+        firebaseMocks.auth.currentUser = {
+            email: 'someone@example.com',
+            displayName: 'Someone',
+            uid: 'user-id',
+            getIdToken: vi.fn().mockRejectedValue(new Error('network unavailable')),
+        };
+        const warn = vi.spyOn(Env.logger, 'warn');
+        const error = vi.spyOn(Env.logger, 'error');
+
+        await expect(getFirebaseAuthToken(true)).resolves.toBeNull();
+
+        expect(warn).toHaveBeenCalledOnce();
+        expect(error).not.toHaveBeenCalled();
+    });
+});
