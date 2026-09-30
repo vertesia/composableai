@@ -30,6 +30,15 @@ describe('preprocessMathDelimiters', () => {
         expect(preprocessMathDelimiters('$100K-$500K range')).toBe('\\$100K-\\$500K range');
     });
 
+    it('escapes currency pairs that enclose prose, whatever surrounds the $', () => {
+        expect(
+            preprocessMathDelimiters('summed directly ($49,137,431.65) equals the sub-totals ($49,137,431.65).'),
+        ).toBe('summed directly (\\$49,137,431.65) equals the sub-totals (\\$49,137,431.65).');
+        expect(preprocessMathDelimiters('**−$10,710** in lost revenue with a **−$6,154.50** net drop')).toBe(
+            '**−\\$10,710** in lost revenue with a **−\\$6,154.50** net drop',
+        );
+    });
+
     it('preserves uncertain content as fallback', () => {
         expect(preprocessMathDelimiters('$100 + 200$')).toBe('$100 + 200$');
     });

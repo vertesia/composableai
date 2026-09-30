@@ -31,6 +31,8 @@ const RE_LEADING_SPACE = /^\s/; // space after opening $
 const RE_TRAILING_SPACE = /\s$/; // space before closing $
 const RE_TRAILING_OPERATOR = /[+*/-]$/; // ends with bare operator
 const RE_ION_NOTATION = /\^[+-]$/; // except ^+ or ^- (ion notation)
+const RE_LEADING_AMOUNT = /^\d/; // opens on a figure, as in $49,137,431.65
+const RE_PROSE_WORD = /(?<![\\a-zA-Z])[a-zA-Z]{2,}/; // a word that is not a \command
 
 /**
  * Returns true if content between `$...$` contains LaTeX structural patterns.
@@ -52,6 +54,7 @@ function hasCurrencyPattern(content: string): boolean {
     if (RE_LEADING_SPACE.test(content)) return true;
     if (RE_TRAILING_SPACE.test(content)) return true;
     if (RE_TRAILING_OPERATOR.test(content) && !RE_ION_NOTATION.test(content)) return true;
+    if (RE_LEADING_AMOUNT.test(content) && RE_PROSE_WORD.test(content)) return true;
     return false;
 }
 
