@@ -10,6 +10,7 @@ import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
 import { renderTransformerModule, validateBuiltInteractionPrompts } from './build-server-support.mjs';
 
+const sandbox = process.argv.includes('--sandbox');
 const bt = await import('@vertesia/build-tools');
 // Transformers are TransformerRule objects: { pattern: RegExp, transform: fn, virtual?: bool }.
 const rules = [
@@ -73,30 +74,39 @@ const plugin = {
 
 mkdirSync('lib', { recursive: true });
 await build({
-    entryPoints: {
-        server: 'src/tool-server/server.ts',
-        'server-node': 'src/tool-server/server-node.ts',
-        config: 'src/tool-server/config.ts',
-    },
+    entryPoints: sandbox
+        ? { 'server-sandbox': 'src/tool-server/server.ts' }
+        : {
+              server: 'src/tool-server/server.ts',
+              'server-node': 'src/tool-server/server-node.ts',
+              config: 'src/tool-server/config.ts',
+          },
     bundle: true,
-    platform: 'node',
+    platform: sandbox ? 'browser' : 'node',
+    alias: sandbox ? { '@vertesia/tools-sdk': '@vertesia/tools-sdk/sandbox' } : {},
     format: 'esm',
-    target: 'node24',
+    target: sandbox ? 'es2022' : 'node24',
     outdir: 'lib',
     plugins: [plugin],
     logLevel: 'warning',
 });
-console.log('[B] esbuild self-contained bundle -> lib/server.js, lib/server-node.js, lib/config.js');
+console.log(
+    sandbox
+        ? '[sandbox] browser bundle -> lib/server-sandbox.js'
+        : '[B] esbuild self-contained bundle -> lib/server.js, lib/server-node.js, lib/config.js',
+);
 
 // Import the actual production bundle, not the TypeScript source. This catches transformer or
 // bundler regressions that source-level interaction tests cannot see (for example a `?prompt`
 // import silently becoming `{}` and reaching the model as an empty message list).
-const builtConfigUrl = pathToFileURL(resolve('lib/config.js')).href;
-const { ServerConfig: builtServerConfig } = await import(`${builtConfigUrl}?validation=${Date.now()}`);
-const interactionValidation = validateBuiltInteractionPrompts(builtServerConfig);
-console.log(
-    `[B] validated ${interactionValidation.promptCount} prompt(s) across ${interactionValidation.interactionCount} interaction(s)`,
-);
+if (!sandbox) {
+    const builtConfigUrl = pathToFileURL(resolve('lib/config.js')).href;
+    const { ServerConfig: builtServerConfig } = await import(`${builtConfigUrl}?validation=${Date.now()}`);
+    const interactionValidation = validateBuiltInteractionPrompts(builtServerConfig);
+    console.log(
+        `[B] validated ${interactionValidation.promptCount} prompt(s) across ${interactionValidation.interactionCount} interaction(s)`,
+    );
+}
 
 // Compile skill widgets to dist/widgets/<name>.js (browser ESM, React provided by the host).
 // Mirrors build-tools' compileWidgets DEFAULT_EXTERNALS so the widget loads in the app shell.

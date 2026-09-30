@@ -3,6 +3,7 @@ export { AuthSession, authorize } from './auth.js';
 export * from './ContentTypesCollection.js';
 export { copyRuntimeAssets } from './copy-assets.js';
 export * from './InteractionCollection.js';
+export { loadSkillsFromDirectory, loadToolsFromDirectory } from './node-loaders.js';
 export * from './RenderingTemplateCollection.js';
 export * from './SkillCollection.js';
 export type { BuildAppPackageOptions } from './server/app-package.js';
