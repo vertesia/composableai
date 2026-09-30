@@ -74,3 +74,25 @@ describe('parseBudgetAmount', () => {
         }
     });
 });
+
+it('reads reported and estimated USD from persisted budget pause messages', () => {
+    expect(
+        findBudgetPause([
+            message(AgentMessageType.IDLE, {
+                status_reason: 'awaiting_budget',
+                budget_limit_usd: 2,
+                budget_reported_usd: 1.5,
+                budget_estimated_usd: 0.6,
+                budget_used_units: 50,
+                budget_limit_tokens: 1000,
+            }),
+        ]),
+    ).toEqual({
+        requestId: 'run-1:1',
+        limitUsd: 2,
+        reportedUsd: 1.5,
+        estimatedUsd: 0.6,
+        usedUnits: 50,
+        limitTokens: 1000,
+    });
+});

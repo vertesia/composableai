@@ -52,7 +52,7 @@ export const ALLOCATE_BUDGET_SIGNAL = 'AllocateBudget';
 export interface AllocateBudgetSignal {
     /** USD allocation; additional_tokens is zero for this signal variant. */
     additional_usd?: number;
-    /** Weighted tokens to add. Must be positive. */
+    /** Positive weighted tokens for a token grant; zero when additional_usd is supplied. */
     additional_tokens: number;
     /** Principal that granted the allocation. */
     requested_by?: string;

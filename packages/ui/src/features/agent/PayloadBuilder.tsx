@@ -280,8 +280,10 @@ export class PayloadBuilder {
     }
 
     setBudgetUsd(value: number | undefined, fallbackTokens?: number) {
-        this._budget_usd = value;
-        if (value !== undefined) this._budget_tokens ??= fallbackTokens ?? 1_000_000;
+        const valid =
+            value !== undefined && Number.isFinite(value) && value > 0 && value <= Number.MAX_SAFE_INTEGER / 1e9;
+        this._budget_usd = valid ? value : undefined;
+        if (valid) this._budget_tokens ??= fallbackTokens ?? 1_000_000;
         this.onStateChanged();
     }
 
