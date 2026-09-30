@@ -1300,5 +1300,9 @@
     "grounded.unverifiedCount_one": "{{count}} غير متحقق منها",
     "grounded.unverifiedCount_other": "{{count}} غير متحقق منها",
     "intakePolicy.option.pagesPerSheet_one": "{{count}} صفحة لكل ورقة",
-    "intakePolicy.option.pagesPerSheet_other": "{{count}} صفحة لكل ورقة"
+    "intakePolicy.option.pagesPerSheet_other": "{{count}} صفحة لكل ورقة",
+    "agent.runBudgetRemainingUsd": "ميزانية التشغيل المتبقية: {{remaining}} دولار / {{limit}} دولار",
+    "agent.runBudgetRemainingFallback": "الرموز الاحتياطية المتبقية: {{remaining}} / {{limit}}",
+    "agent.runBudgetRemainingTokens": "ميزانية التشغيل المتبقية: {{remaining}} / {{limit}} رمز",
+    "agent.runBudgetIncomplete": "الاحتساب غير مكتمل؛ قد تظهر الميزانية المتبقية أعلى من قيمتها الفعلية."
 }

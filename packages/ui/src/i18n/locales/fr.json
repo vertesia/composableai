@@ -1260,5 +1260,9 @@
     "grounded.unverifiedCount_one": "{{count}} non vérifiée(s)",
     "grounded.unverifiedCount_other": "{{count}} non vérifiée(s)",
     "intakePolicy.option.pagesPerSheet_one": "{{count}} pages par feuille",
-    "intakePolicy.option.pagesPerSheet_other": "{{count}} pages par feuille"
+    "intakePolicy.option.pagesPerSheet_other": "{{count}} pages par feuille",
+    "agent.runBudgetRemainingUsd": "Budget restant : {{remaining}} $ / {{limit}} $",
+    "agent.runBudgetRemainingFallback": "Jetons de secours restants : {{remaining}} / {{limit}}",
+    "agent.runBudgetRemainingTokens": "Budget restant : {{remaining}} / {{limit}} jetons",
+    "agent.runBudgetIncomplete": "Comptabilisation incomplète ; le budget restant peut être surestimé."
 }

@@ -1248,5 +1248,9 @@
     "grounded.unverifiedCount_one": "{{count}}개 미확인",
     "grounded.unverifiedCount_other": "{{count}}개 미확인",
     "intakePolicy.option.pagesPerSheet_one": "시트당 {{count}}페이지",
-    "intakePolicy.option.pagesPerSheet_other": "시트당 {{count}}페이지"
+    "intakePolicy.option.pagesPerSheet_other": "시트당 {{count}}페이지",
+    "agent.runBudgetRemainingUsd": "남은 실행 예산: ${{remaining}} / ${{limit}}",
+    "agent.runBudgetRemainingFallback": "남은 예비 토큰: {{remaining}} / {{limit}}",
+    "agent.runBudgetRemainingTokens": "남은 실행 예산: {{remaining}} / {{limit}} 토큰",
+    "agent.runBudgetIncomplete": "집계가 불완전하여 남은 예산이 실제보다 크게 표시될 수 있습니다."
 }

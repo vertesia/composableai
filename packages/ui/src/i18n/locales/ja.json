@@ -1248,5 +1248,9 @@
     "grounded.unverifiedCount_one": "{{count}}件未確認",
     "grounded.unverifiedCount_other": "{{count}}件未確認",
     "intakePolicy.option.pagesPerSheet_one": "1シートあたり{{count}}ページ",
-    "intakePolicy.option.pagesPerSheet_other": "1シートあたり{{count}}ページ"
+    "intakePolicy.option.pagesPerSheet_other": "1シートあたり{{count}}ページ",
+    "agent.runBudgetRemainingUsd": "残りの実行予算：{{remaining}}ドル / {{limit}}ドル",
+    "agent.runBudgetRemainingFallback": "残りの予備トークン：{{remaining}} / {{limit}}",
+    "agent.runBudgetRemainingTokens": "残りの実行予算：{{remaining}} / {{limit}}トークン",
+    "agent.runBudgetIncomplete": "集計が不完全なため、残りの予算が実際より多く表示される場合があります。"
 }

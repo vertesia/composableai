@@ -1248,5 +1248,9 @@
     "grounded.unverifiedCount_one": "{{count}} 個未驗證",
     "grounded.unverifiedCount_other": "{{count}} 個未驗證",
     "intakePolicy.option.pagesPerSheet_one": "每张 {{count}} 頁",
-    "intakePolicy.option.pagesPerSheet_other": "每张 {{count}} 頁"
+    "intakePolicy.option.pagesPerSheet_other": "每张 {{count}} 頁",
+    "agent.runBudgetRemainingUsd": "剩餘執行預算：{{remaining}}美元 / {{limit}}美元",
+    "agent.runBudgetRemainingFallback": "剩餘備用權杖：{{remaining}} / {{limit}}",
+    "agent.runBudgetRemainingTokens": "剩餘執行預算：{{remaining}} / {{limit}} 權杖",
+    "agent.runBudgetIncomplete": "計費統計不完整，剩餘預算可能偏高。"
 }

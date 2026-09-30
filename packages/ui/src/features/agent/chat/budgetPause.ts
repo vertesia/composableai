@@ -57,3 +57,40 @@ export function parseBudgetAmount(value: string): number | undefined {
     const amount = Number(digits);
     return Number.isSafeInteger(amount) && amount > 0 ? amount : undefined;
 }
+
+export interface RunBudgetRemaining {
+    limitTokens: number;
+    remainingTokens: number;
+    limitUsd?: number;
+    remainingUsd?: number;
+    incomplete: boolean;
+}
+
+/** Read the latest complete snapshot for this workstream, including top-ups. */
+export function findRunBudgetRemaining(
+    messages: readonly AgentMessage[],
+    workstreamId = 'main',
+): RunBudgetRemaining | undefined {
+    const valid = (value: unknown): value is number =>
+        typeof value === 'number' && Number.isFinite(value) && value >= 0;
+    for (let index = messages.length - 1; index >= 0; index--) {
+        const message = messages[index];
+        if ((message.workstream_id || 'main') !== workstreamId) continue;
+        const d = message.details;
+        if (!d || !valid(d.budget_limit_tokens) || !valid(d.budget_used_units)) continue;
+        if (d.budget_limit_tokens <= 0) return undefined;
+        const tokens = {
+            limitTokens: d.budget_limit_tokens,
+            remainingTokens: Math.max(0, d.budget_limit_tokens - d.budget_used_units),
+            incomplete: d.accounting_status === 'incomplete',
+        };
+        if (d.budget_mode !== 'dollar') return tokens;
+        if (!valid(d.budget_limit_usd) || !valid(d.budget_reported_usd) || !valid(d.budget_estimated_usd)) continue;
+        return {
+            ...tokens,
+            limitUsd: d.budget_limit_usd,
+            remainingUsd: Math.max(0, d.budget_limit_usd - d.budget_reported_usd - d.budget_estimated_usd),
+        };
+    }
+    return undefined;
+}

@@ -1274,5 +1274,9 @@
     "grounded.unverifiedCount_one": "{{count}} не проверено",
     "grounded.unverifiedCount_other": "{{count}} не проверено",
     "intakePolicy.option.pagesPerSheet_one": "{{count}} страниц на лист",
-    "intakePolicy.option.pagesPerSheet_other": "{{count}} страниц на лист"
+    "intakePolicy.option.pagesPerSheet_other": "{{count}} страниц на лист",
+    "agent.runBudgetRemainingUsd": "Остаток бюджета: {{remaining}} $ / {{limit}} $",
+    "agent.runBudgetRemainingFallback": "Осталось резервных токенов: {{remaining}} / {{limit}}",
+    "agent.runBudgetRemainingTokens": "Остаток бюджета: {{remaining}} / {{limit}} токенов",
+    "agent.runBudgetIncomplete": "Учёт неполный; остаток бюджета может быть завышен."
 }

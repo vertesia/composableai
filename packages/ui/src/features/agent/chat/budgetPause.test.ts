@@ -1,6 +1,6 @@
 import { type AgentMessage, type AgentMessageDetails, AgentMessageType } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
-import { findBudgetPause, parseBudgetAmount, suggestedBudgetAllocation } from './budgetPause';
+import { findBudgetPause, findRunBudgetRemaining, parseBudgetAmount, suggestedBudgetAllocation } from './budgetPause';
 
 function message(type: AgentMessageType, details?: Record<string, unknown>): AgentMessage {
     return {
@@ -94,5 +94,43 @@ it('reads reported and estimated USD from persisted budget pause messages', () =
         estimatedUsd: 0.6,
         usedUnits: 50,
         limitTokens: 1000,
+    });
+});
+
+describe('remaining run budget', () => {
+    const snapshot = (details: Record<string, unknown>) =>
+        message(AgentMessageType.UPDATE, {
+            budget_limit_tokens: 1000,
+            budget_used_units: 200,
+            ...details,
+        });
+    it('uses the latest top-up and ignores child and partial snapshots', () => {
+        expect(
+            findRunBudgetRemaining([
+                snapshot({}),
+                snapshot({ budget_limit_tokens: 2000 }),
+                { ...snapshot({ budget_limit_tokens: 10 }), workstream_id: 'child' },
+                message(AgentMessageType.UPDATE, { budget_used_units: 900 }),
+            ]),
+        ).toMatchObject({ limitTokens: 2000, remainingTokens: 1800 });
+    });
+    it('subtracts reported and estimated USD and clamps soft-limit overshoot', () => {
+        expect(
+            findRunBudgetRemaining([
+                snapshot({
+                    budget_mode: 'dollar',
+                    budget_limit_usd: 2,
+                    budget_reported_usd: 1.5,
+                    budget_estimated_usd: 0.25,
+                    budget_used_units: 1100,
+                    accounting_status: 'incomplete',
+                }),
+            ]),
+        ).toEqual({ limitTokens: 1000, remainingTokens: 0, limitUsd: 2, remainingUsd: 0.25, incomplete: true });
+    });
+    it('omits missing, disabled and invalid budgets', () => {
+        expect(findRunBudgetRemaining([])).toBeUndefined();
+        expect(findRunBudgetRemaining([snapshot({ budget_limit_tokens: 0 })])).toBeUndefined();
+        expect(findRunBudgetRemaining([snapshot({ budget_used_units: NaN })])).toBeUndefined();
     });
 });

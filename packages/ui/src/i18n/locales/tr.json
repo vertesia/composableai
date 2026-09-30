@@ -1248,5 +1248,9 @@
     "grounded.unverifiedCount_one": "{{count}} doğrulanmadı",
     "grounded.unverifiedCount_other": "{{count}} doğrulanmadı",
     "intakePolicy.option.pagesPerSheet_one": "Yaprak başına {{count}} sayfa",
-    "intakePolicy.option.pagesPerSheet_other": "Yaprak başına {{count}} sayfa"
+    "intakePolicy.option.pagesPerSheet_other": "Yaprak başına {{count}} sayfa",
+    "agent.runBudgetRemainingUsd": "Kalan çalışma bütçesi: {{remaining}} $ / {{limit}} $",
+    "agent.runBudgetRemainingFallback": "Kalan yedek token: {{remaining}} / {{limit}}",
+    "agent.runBudgetRemainingTokens": "Kalan çalışma bütçesi: {{remaining}} / {{limit}} token",
+    "agent.runBudgetIncomplete": "Hesaplama eksik; kalan bütçe olduğundan yüksek görünebilir."
 }

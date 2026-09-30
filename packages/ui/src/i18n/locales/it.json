@@ -1259,5 +1259,9 @@
     "grounded.unverifiedCount_one": "{{count}} non verificati",
     "grounded.unverifiedCount_other": "{{count}} non verificati",
     "intakePolicy.option.pagesPerSheet_one": "{{count}} pagine per foglio",
-    "intakePolicy.option.pagesPerSheet_other": "{{count}} pagine per foglio"
+    "intakePolicy.option.pagesPerSheet_other": "{{count}} pagine per foglio",
+    "agent.runBudgetRemainingUsd": "Budget rimanente: {{remaining}} USD / {{limit}} USD",
+    "agent.runBudgetRemainingFallback": "Token di riserva rimanenti: {{remaining}} / {{limit}}",
+    "agent.runBudgetRemainingTokens": "Budget rimanente: {{remaining}} / {{limit}} token",
+    "agent.runBudgetIncomplete": "Contabilizzazione incompleta; il budget rimanente potrebbe essere sovrastimato."
 }

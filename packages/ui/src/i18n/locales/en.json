@@ -1248,5 +1248,9 @@
     "grounded.unverifiedCount_one": "{{count}} unverified",
     "grounded.unverifiedCount_other": "{{count}} unverified",
     "intakePolicy.option.pagesPerSheet_one": "{{count}} pages per sheet",
-    "intakePolicy.option.pagesPerSheet_other": "{{count}} pages per sheet"
+    "intakePolicy.option.pagesPerSheet_other": "{{count}} pages per sheet",
+    "agent.runBudgetRemainingUsd": "Run budget remaining: ${{remaining}} / ${{limit}}",
+    "agent.runBudgetRemainingFallback": "Fallback tokens remaining: {{remaining}} / {{limit}}",
+    "agent.runBudgetRemainingTokens": "Run budget remaining: {{remaining}} / {{limit}} tokens",
+    "agent.runBudgetIncomplete": "Accounting incomplete; remaining budget may be overstated."
 }
