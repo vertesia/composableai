@@ -861,6 +861,12 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionResultSchemaInputSchema
         >
     >;
+    ExperimentalCanonicalInteractionInlinePrompt: Same<
+        W.ExperimentalCanonicalInteractionInlinePrompt,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionInlinePromptSchema
+        >
+    >;
     ExperimentalCanonicalInteractionExecutionRequest: Same<
         W.ExperimentalCanonicalInteractionExecutionRequest,
         z.infer<
@@ -9741,6 +9747,12 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionResultSchemaInputSchema
         >
     >;
+    'component:ExperimentalCanonicalInteractionInlinePrompt': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionInlinePrompt'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionInlinePromptSchema
+        >
+    >;
     'component:ExperimentalCanonicalInteractionExecutionRequest': Same<
         W.ApiComponentTypes['ExperimentalCanonicalInteractionExecutionRequest'],
         z.infer<
@@ -10162,6 +10174,7 @@ const checks: Checks = {
     ExperimentalCanonicalInteractionReturnPolicy: true,
     ExperimentalCanonicalInteractionExecutionConfiguration: true,
     ExperimentalCanonicalInteractionResultSchemaInput: true,
+    ExperimentalCanonicalInteractionInlinePrompt: true,
     ExperimentalCanonicalInteractionExecutionRequest: true,
     ExperimentalCanonicalNamedInteractionExecutionRequest: true,
     ExperimentalCanonicalInteractionDocumentHistory: true,
@@ -12473,6 +12486,7 @@ const checks: Checks = {
     'component:ExperimentalCanonicalInteractionReturnPolicy': true,
     'component:ExperimentalCanonicalInteractionExecutionConfiguration': true,
     'component:ExperimentalCanonicalInteractionResultSchemaInput': true,
+    'component:ExperimentalCanonicalInteractionInlinePrompt': true,
     'component:ExperimentalCanonicalInteractionExecutionRequest': true,
     'component:ExperimentalCanonicalNamedInteractionExecutionRequest': true,
     'component:ExperimentalCanonicalInteractionDocumentHistory': true,
@@ -12514,6 +12528,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2582);
+        expect(Object.keys(checks)).toHaveLength(2584);
     });
 });

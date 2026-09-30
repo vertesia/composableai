@@ -6,6 +6,7 @@ import {
     ExperimentalCanonicalInteractionExecutionRequestSchema,
     ExperimentalCanonicalInteractionHeadersSchema,
     ExperimentalCanonicalInteractionHistorySchema,
+    ExperimentalCanonicalInteractionInlinePromptSchema,
     ExperimentalCanonicalInteractionResultSchemaInputSchema,
     ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
 } from './canonical-interaction-execution.js';
@@ -160,26 +161,87 @@ describe('experimental canonical interaction execution schemas', () => {
             properties: {
                 initial_state: { $ref: '#/$defs/ExperimentalCanonicalInteractionInitialState' },
             },
-            allOf: [
-                {
-                    if: {
-                        properties: {
-                            initial_state: {
-                                properties: { type: { const: 'reference' } },
-                                required: ['type'],
-                            },
-                        },
-                        required: ['initial_state'],
-                    },
-                    // biome-ignore lint/suspicious/noThenProperty: JSON Schema's conditional keyword is literally `then`.
-                    then: {
-                        properties: { retention: { const: 'DEBUG' } },
-                        required: ['retention'],
+        });
+        expect(emitted.allOf).toContainEqual({
+            if: {
+                properties: {
+                    initial_state: {
+                        properties: { type: { const: 'reference' } },
+                        required: ['type'],
                     },
                 },
-            ],
+                required: ['initial_state'],
+            },
+            // biome-ignore lint/suspicious/noThenProperty: JSON Schema's conditional keyword is literally `then`.
+            then: {
+                properties: { retention: { const: 'DEBUG' } },
+                required: ['retention'],
+            },
         });
         expect(emitted).not.toHaveProperty('anyOf');
+    });
+
+    it('restricts inline prompt definitions to temporary named interactions in Zod and JSON Schema', () => {
+        const prompts = [
+            {
+                role: 'user' as const,
+                content: 'Hello {{name}}',
+                content_type: 'handlebars' as const,
+                schema: { type: 'object', properties: { name: { type: 'string' } } },
+            },
+        ];
+        const base = {
+            initial_state: { type: 'new' as const },
+            retention: 'STANDARD' as const,
+            return_policy: { history: 'none' as const },
+        };
+
+        expect(
+            ExperimentalCanonicalNamedInteractionExecutionRequestSchema.safeParse({
+                ...base,
+                interaction: 'tmp:playground-draft',
+                prompts,
+            }).success,
+        ).toBe(true);
+        expect(
+            ExperimentalCanonicalNamedInteractionExecutionRequestSchema.safeParse({
+                ...base,
+                interaction: 'tmp:playground-draft',
+            }).success,
+        ).toBe(false);
+        expect(
+            ExperimentalCanonicalNamedInteractionExecutionRequestSchema.safeParse({
+                ...base,
+                interaction: 'stored-interaction',
+                prompts,
+            }).success,
+        ).toBe(false);
+
+        const ajv = new Ajv2020({ strictSchema: false, allErrors: true });
+        const validate = ajv.compile({
+            components: { schemas: ApiSchemaComponents },
+            $ref: '#/components/schemas/ExperimentalCanonicalNamedInteractionExecutionRequest',
+        });
+        expect(validate({ ...base, interaction: 'tmp:playground-draft', prompts })).toBe(true);
+        expect(validate({ ...base, interaction: 'tmp:playground-draft' })).toBe(false);
+        expect(validate({ ...base, interaction: 'stored-interaction', prompts })).toBe(false);
+        expect(validate({ ...base, interaction: 'stored-interaction' })).toBe(true);
+
+        const promptName = ExperimentalCanonicalInteractionInlinePromptSchema.meta()?.id;
+        if (!promptName) throw new Error('Canonical inline prompt schema has no component id');
+        expect(emittedComponent(ExperimentalCanonicalInteractionInlinePromptSchema, promptName)).toMatchObject({
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+                schema: { $ref: '#/$defs/ConversationJsonObject' },
+            },
+        });
+        expect(
+            ExperimentalCanonicalInteractionInlinePromptSchema.safeParse({
+                ...prompts[0],
+                schema: ['not', 'an', 'object'],
+            }).success,
+        ).toBe(false);
     });
 
     it('publishes result_schema as a portable arbitrary object while retaining exact JSON values', () => {

@@ -5648,6 +5648,57 @@
       }
     ]
   },
+  "PromptRole": {
+    "type": "string",
+    "enum": [
+      "safety",
+      "system",
+      "user",
+      "assistant",
+      "negative",
+      "mask",
+      "tool"
+    ]
+  },
+  "TemplateType": {
+    "type": "string",
+    "enum": [
+      "jst",
+      "handlebars",
+      "text"
+    ]
+  },
+  "ExperimentalCanonicalInteractionInlinePrompt": {
+    "type": "object",
+    "properties": {
+      "role": {
+        "$ref": "#/components/schemas/PromptRole"
+      },
+      "content": {
+        "type": "string"
+      },
+      "content_type": {
+        "$ref": "#/components/schemas/TemplateType"
+      },
+      "name": {
+        "type": "string",
+        "description": "optional name of the prompt segment. Use kebab case for prompt names"
+      },
+      "externalId": {
+        "type": "string",
+        "description": "optional reference to an external resource if any. Used internally by the system to synchronize stored prompts with in-code prompts."
+      },
+      "schema": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      }
+    },
+    "required": [
+      "role",
+      "content",
+      "content_type"
+    ],
+    "additionalProperties": false
+  },
   "RunDataStorageLevel": {
     "type": "string",
     "enum": [
@@ -5752,6 +5803,13 @@
       "interaction": {
         "type": "string",
         "minLength": 1
+      },
+      "prompts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ExperimentalCanonicalInteractionInlinePrompt"
+        },
+        "description": "Inline prompt definitions for a temporary `tmp:` interaction."
       }
     },
     "required": [
@@ -5789,6 +5847,31 @@
           "required": [
             "retention"
           ]
+        }
+      },
+      {
+        "if": {
+          "properties": {
+            "interaction": {
+              "type": "string",
+              "pattern": "^tmp:"
+            }
+          },
+          "required": [
+            "interaction"
+          ]
+        },
+        "then": {
+          "required": [
+            "prompts"
+          ]
+        },
+        "else": {
+          "not": {
+            "required": [
+              "prompts"
+            ]
+          }
         }
       }
     ]
@@ -14638,18 +14721,6 @@
       "$ref": "#/components/schemas/JSONValue"
     }
   },
-  "PromptRole": {
-    "type": "string",
-    "enum": [
-      "safety",
-      "system",
-      "user",
-      "assistant",
-      "negative",
-      "mask",
-      "tool"
-    ]
-  },
   "Modalities": {
     "type": "string",
     "enum": [
@@ -15422,14 +15493,6 @@
     "enum": [
       "chat",
       "template"
-    ]
-  },
-  "TemplateType": {
-    "type": "string",
-    "enum": [
-      "jst",
-      "handlebars",
-      "text"
     ]
   },
   "SchemaRef": {

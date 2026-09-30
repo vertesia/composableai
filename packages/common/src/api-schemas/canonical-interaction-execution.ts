@@ -9,7 +9,7 @@ import {
 import { z } from 'zod';
 import { RunDataStorageLevel } from '../interaction-values.js';
 import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE, VERSION_HEADER } from '../versions.js';
-import { ExecutionRunStatusSchema, InteractionExecutionErrorSchema } from './interaction.js';
+import { ExecutionRunStatusSchema, InCodePromptSchema, InteractionExecutionErrorSchema } from './interaction.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
 export const ExperimentalCanonicalInteractionHeadersSchema = z
@@ -77,6 +77,18 @@ export const ExperimentalCanonicalInteractionResultSchemaInputSchema = z
     .nullable(JsonObjectSchema)
     .meta({ id: 'ExperimentalCanonicalInteractionResultSchemaInput' });
 
+/**
+ * Portable prompt authoring input for temporary canonical interactions.
+ *
+ * The server validates the optional schema object with the authoritative JSONSchemaSchema before
+ * reserving an execution. Keeping the recursive implementation schema out of this wire component
+ * prevents generated clients from confusing JSON Schema's `additionalProperties` keyword with
+ * their own free-form property storage.
+ */
+export const ExperimentalCanonicalInteractionInlinePromptSchema = InCodePromptSchema.omit({ schema: true })
+    .extend({ schema: JsonObjectSchema.optional() })
+    .meta({ id: 'ExperimentalCanonicalInteractionInlinePrompt' });
+
 const canonicalExecutionRequestFields = {
     initial_state: ExperimentalCanonicalInteractionInitialStateSchema,
     retention: RunDataStorageLevelSchema,
@@ -108,6 +120,20 @@ const referenceDebugRetentionJsonSchema = {
     ],
 } as const;
 
+const namedDraftPromptJsonSchema = {
+    allOf: [
+        {
+            if: {
+                properties: { interaction: { type: 'string', pattern: '^tmp:' } },
+                required: ['interaction'],
+            },
+            // biome-ignore lint/suspicious/noThenProperty: JSON Schema's conditional keyword is literally `then`.
+            then: { required: ['prompts'] },
+            else: { not: { required: ['prompts'] } },
+        },
+    ],
+} as const;
+
 function requireDebugRetentionForReference(
     value: { initial_state: { type: string }; retention: RunDataStorageLevel },
     context: z.core.$RefinementCtx,
@@ -117,6 +143,26 @@ function requireDebugRetentionForReference(
             code: 'custom',
             message: 'Canonical reference continuation requires DEBUG retention',
             path: ['retention'],
+        });
+    }
+}
+
+function requireDraftPromptsForTemporaryInteraction(
+    value: { interaction: string; prompts?: unknown[] },
+    context: z.core.$RefinementCtx,
+): void {
+    const temporary = value.interaction.startsWith('tmp:');
+    if (temporary && value.prompts === undefined) {
+        context.addIssue({
+            code: 'custom',
+            message: 'Temporary canonical interactions require inline prompts',
+            path: ['prompts'],
+        });
+    } else if (!temporary && value.prompts !== undefined) {
+        context.addIssue({
+            code: 'custom',
+            message: 'Inline prompts are only valid for temporary canonical interactions',
+            path: ['prompts'],
         });
     }
 }
@@ -133,11 +179,18 @@ export const ExperimentalCanonicalNamedInteractionExecutionRequestSchema = z
     .strictObject({
         ...canonicalExecutionRequestFields,
         interaction: z.string().min(1),
+        prompts: z
+            .array(ExperimentalCanonicalInteractionInlinePromptSchema)
+            .meta({ description: 'Inline prompt definitions for a temporary `tmp:` interaction.' })
+            .optional(),
     })
-    .superRefine(requireDebugRetentionForReference)
+    .superRefine((value, context) => {
+        requireDebugRetentionForReference(value, context);
+        requireDraftPromptsForTemporaryInteraction(value, context);
+    })
     .meta({
         id: 'ExperimentalCanonicalNamedInteractionExecutionRequest',
-        ...referenceDebugRetentionJsonSchema,
+        allOf: [...referenceDebugRetentionJsonSchema.allOf, ...namedDraftPromptJsonSchema.allOf],
     });
 
 export const ExperimentalCanonicalInteractionDocumentHistorySchema = z

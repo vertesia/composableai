@@ -11,6 +11,7 @@ export type ExperimentalCanonicalInteractionReturnPolicy = Wire.ExperimentalCano
 export type ExperimentalCanonicalInteractionExecutionConfiguration =
     Wire.ExperimentalCanonicalInteractionExecutionConfiguration;
 export type ExperimentalCanonicalInteractionResultSchemaInput = Wire.ExperimentalCanonicalInteractionResultSchemaInput;
+export type ExperimentalCanonicalInteractionInlinePrompt = Wire.ExperimentalCanonicalInteractionInlinePrompt;
 export type ExperimentalCanonicalInteractionExecutionRequest = Wire.ExperimentalCanonicalInteractionExecutionRequest;
 export type ExperimentalCanonicalNamedInteractionExecutionRequest =
     Wire.ExperimentalCanonicalNamedInteractionExecutionRequest;

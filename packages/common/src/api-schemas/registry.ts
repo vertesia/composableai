@@ -2506,6 +2506,8 @@ const CANONICAL_INTERACTION_SCHEMAS: CanonicalInteractionSchemaMap = {
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionConfigurationSchema,
     ExperimentalCanonicalInteractionResultSchemaInput:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionResultSchemaInputSchema,
+    ExperimentalCanonicalInteractionInlinePrompt:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionInlinePromptSchema,
     ExperimentalCanonicalInteractionExecutionRequest:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionRequestSchema,
     ExperimentalCanonicalNamedInteractionExecutionRequest:

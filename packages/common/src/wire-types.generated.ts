@@ -1945,6 +1945,14 @@ export type ExperimentalCanonicalInteractionExecutionConfiguration = {
     http_timeout?: HttpTimeoutOptions | undefined;
 };
 export type ExperimentalCanonicalInteractionResultSchemaInput = JsonObject | null;
+export type ExperimentalCanonicalInteractionInlinePrompt = {
+    role: (typeof PromptRole)[keyof typeof PromptRole];
+    content: string;
+    content_type: TemplateTypeWire;
+    name?: string | undefined;
+    externalId?: string | undefined;
+    schema?: JsonObject | undefined;
+};
 export type ExperimentalCanonicalInteractionExecutionRequest = {
     initial_state: ExperimentalCanonicalInteractionInitialState;
     retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
@@ -1963,6 +1971,7 @@ export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     tags?: string[] | undefined;
     interaction: string;
+    prompts?: ExperimentalCanonicalInteractionInlinePrompt[] | undefined;
 };
 export type ExperimentalCanonicalInteractionDocumentHistory = {
     status: 'document';
@@ -12063,6 +12072,7 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalInteractionReturnPolicy: ExperimentalCanonicalInteractionReturnPolicy;
     ExperimentalCanonicalInteractionExecutionConfiguration: ExperimentalCanonicalInteractionExecutionConfiguration;
     ExperimentalCanonicalInteractionResultSchemaInput: ExperimentalCanonicalInteractionResultSchemaInput;
+    ExperimentalCanonicalInteractionInlinePrompt: ExperimentalCanonicalInteractionInlinePrompt;
     ExperimentalCanonicalInteractionExecutionRequest: ExperimentalCanonicalInteractionExecutionRequest;
     ExperimentalCanonicalNamedInteractionExecutionRequest: ExperimentalCanonicalNamedInteractionExecutionRequest;
     ExperimentalCanonicalInteractionDocumentHistory: ExperimentalCanonicalInteractionDocumentHistory;
