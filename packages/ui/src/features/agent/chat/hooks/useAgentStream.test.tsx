@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { AgentRunStreamMessagesOptions, VertesiaClient } from '@vertesia/client';
 import { type AgentMessage, AgentMessageType, FileProcessingStatus } from '@vertesia/common';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Env } from '@vertesia/ui/env';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAgentStream } from './useAgentStream';
 
 type StreamMessagesMock = ReturnType<
@@ -43,6 +44,10 @@ describe('useAgentStream', () => {
         vi.clearAllMocks();
     });
 
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
     it('keeps the stream subscribed while an interactive conversation is idle', async () => {
         const streamMessages = vi.fn<
             (
@@ -59,6 +64,54 @@ describe('useAgentStream', () => {
 
         await waitFor(() => expect(streamMessages).toHaveBeenCalled());
         expect(streamMessages.mock.calls[0][4]).toMatchObject({ closeOnIdle: false });
+    });
+
+    it('does not warn when agent internals briefly return 404 during startup', async () => {
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(() => new Promise(() => {}));
+        const client = createClient(streamMessages);
+        vi.mocked(client.agents.getInternals).mockRejectedValue({ status: 404 });
+        const warn = vi.spyOn(Env.logger, 'warn');
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => expect(client.agents.getInternals).toHaveBeenCalled());
+        await act(async () => undefined);
+        expect(warn).not.toHaveBeenCalled();
+        expect(consoleError).not.toHaveBeenCalled();
+    });
+
+    it('warns once when the auxiliary agent status check fails unexpectedly', async () => {
+        const streamMessages = vi.fn<
+            (
+                id: string,
+                onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+                since?: number,
+                signal?: AbortSignal,
+                options?: AgentRunStreamMessagesOptions,
+            ) => Promise<unknown>
+        >(() => new Promise(() => {}));
+        const client = createClient(streamMessages);
+        vi.mocked(client.agents.getInternals).mockRejectedValue({ status: 503 });
+        const warn = vi.spyOn(Env.logger, 'warn');
+
+        renderHook(() => useAgentStream(client, 'agent-run-1'));
+
+        await waitFor(() => expect(warn).toHaveBeenCalledOnce());
+        expect(warn).toHaveBeenCalledWith(
+            'Failed to check agent run status; continuing with the message stream',
+            expect.objectContaining({
+                vertesia: expect.objectContaining({ agent_run_id: 'agent-run-1', status: 503 }),
+            }),
+        );
     });
 
     it('marks initial history as empty when the history fetch returns no messages', async () => {

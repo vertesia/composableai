@@ -194,7 +194,7 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             message: 'Interaction Execution failed testInteraction: rendition in progress',
         });
-        expect(activityLogger.debug).toHaveBeenCalledWith(
+        expect(activityLogger.warn).toHaveBeenCalledWith(
             'Interaction testInteraction is waiting for a rendition',
             expect.any(Object),
         );
@@ -210,6 +210,11 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             message: 'Interaction Execution failed testInteraction: precondition failed',
         });
+        expect(activityLogger.warn).toHaveBeenCalledWith(
+            'Interaction testInteraction is waiting for a rendition',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
     it('should mark other 4xx failures as non-retryable', async () => {
