@@ -369,3 +369,82 @@ describe('run budget allocation contract', () => {
         },
     );
 });
+
+describe('agent canonical conversation stream API contracts', () => {
+    const baseEvent = {
+        format: 'llumiverse.conversation' as const,
+        schema_version: 0 as const,
+        experimental_revision: '2026-09-30.adoption.1' as const,
+        stream_id: 'stream:agent-contract',
+        request_id: 'request:agent-contract',
+        attempt_id: 'attempt:agent-contract',
+        response_operation_id: 'operation:agent-contract',
+        generation_id: 'generation:agent-contract',
+        draft_turn_id: 'turn:draft-agent-contract',
+        event_id: 'stream:agent-contract#0',
+        sequence: 0,
+    };
+    const envelopeBase = {
+        api_version: '=20260930' as const,
+        agent_run_id: 'agent:contract',
+        scope: 'root' as const,
+        type: 'conversation_event' as const,
+        execution_run_id: 'execution:contract',
+    };
+
+    it('publishes live draft events but excludes response acceptance from the generated component', () => {
+        expect(
+            validateApiResponse('ExperimentalAgentConversationEvent', {
+                ...envelopeBase,
+                event: { ...baseEvent, type: 'draft_started', origin: 'live_transport' },
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ExperimentalAgentConversationEvent', {
+                ...envelopeBase,
+                event: {
+                    ...baseEvent,
+                    type: 'response_accepted',
+                    origin: 'live_transport',
+                    conversation: { conversation_id: 'conversation:contract', revision: 2 },
+                    operation_receipt_id: 'operation:accepted',
+                    committed_turn_id: 'turn:accepted',
+                    turn_status: 'completed',
+                    generation_status: 'completed',
+                    committed_block_ids: ['block:accepted'],
+                    accepted_asset_ids: [],
+                    reconciliations: [],
+                },
+            }).valid,
+        ).toBe(false);
+    });
+});
+
+describe('recorded child canonical conversation binding contracts', () => {
+    const payload = {
+        interaction: 'sys:ProcessAgentNode',
+        workflow_id: 'process:agent:node:1',
+        first_workflow_run_id: 'temporal-run-1',
+        parent_run_id: '64b000000000000000000001',
+        workstream_id: 'node',
+        canonical_conversation_owner_run_id: '64b000000000000000000001',
+    };
+
+    it('accepts an optional exact workstream scope on a recorded child', () => {
+        expect(
+            validateApiRequest('RecordAgentRunPayload', {
+                ...payload,
+                canonical_conversation_scope: 'workstream:node-1',
+            }).valid,
+        ).toBe(true);
+    });
+
+    it('rejects a malformed canonical scope at the published boundary', () => {
+        expect(
+            validateApiRequest('RecordAgentRunPayload', {
+                ...payload,
+                canonical_conversation_scope: 'node-1',
+            }).valid,
+        ).toBe(false);
+    });
+});

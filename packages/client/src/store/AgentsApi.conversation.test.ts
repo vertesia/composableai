@@ -212,6 +212,117 @@ describe('AgentsApi canonical conversation transport', () => {
         await expect(pending).resolves.toMatchObject({ fragment: { receipt: fragment.receipt } });
     });
 
+    it('streams typed live resets and reconciles accepted output through the exact receipt endpoint', async () => {
+        const fragment = acceptedOutput();
+        const abort = new AbortController();
+        const requests: Request[] = [];
+        const envelopes = [
+            {
+                api_version: EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+                agent_run_id: 'run/with delimiter',
+                scope: 'workstream:launch-1',
+                workstream_id: 'launch-1',
+                type: 'preview_unavailable',
+                reason: 'live_only',
+            },
+            {
+                api_version: EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+                agent_run_id: 'run/with delimiter',
+                scope: 'workstream:launch-1',
+                workstream_id: 'launch-1',
+                type: 'accepted_output',
+                source: {
+                    conversation_id: fragment.receipt.conversation_id,
+                    revision: fragment.receipt.result_revision,
+                },
+                receipt: fragment.receipt,
+            },
+        ];
+        const body = envelopes.map((envelope) => `data: ${JSON.stringify(envelope)}\n\n`).join('');
+        const client = new ZenoClient({
+            serverUrl: 'https://store.test',
+            apikey: 'token',
+            fetch: (async (input: Request | string, init?: RequestInit) => {
+                const request = input instanceof Request ? input : new Request(input, init);
+                requests.push(request.clone());
+                if (new URL(request.url).pathname.endsWith('/conversation/stream')) {
+                    return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
+                }
+                return Response.json({ status: 'accepted', fragment });
+            }) as typeof fetch,
+        });
+        const updates: string[] = [];
+
+        await client.agents.streamCanonicalConversation(
+            'run/with delimiter',
+            (update) => {
+                updates.push(update.type);
+                if (update.type === 'accepted_output') {
+                    expect(update.output.text()).toBe('accepted answer');
+                    abort.abort();
+                }
+            },
+            {
+                scope: 'workstream:launch-1',
+                workstream_id: 'launch-1',
+                signal: abort.signal,
+                max_reconnects: 0,
+                headers: { 'x-api-version': '=1', 'x-trace': 'agent-canonical-stream' },
+            },
+        );
+
+        expect(updates).toEqual(['preview_unavailable', 'accepted_output']);
+        expect(requests).toHaveLength(2);
+        const streamUrl = new URL(requests[0].url);
+        expect(streamUrl.pathname).toBe('/api/v1/agents/run%2Fwith%20delimiter/conversation/stream');
+        expect(streamUrl.searchParams.get('conversation_scope')).toBe('workstream:launch-1');
+        expect(streamUrl.searchParams.get('workstream_id')).toBe('launch-1');
+        expect(requests[0].headers.get('x-api-version')).toBe(
+            EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+        );
+        expect(requests[0].headers.get('x-trace')).toBe('agent-canonical-stream');
+        expect(new URL(requests[1].url).pathname).toContain('/accepted-output/response%3Aaccepted');
+    });
+
+    it('omits an unknown scope and pins the authorized child scope from the stream', async () => {
+        const abort = new AbortController();
+        const requests: Request[] = [];
+        const body = `data: ${JSON.stringify({
+            api_version: EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+            agent_run_id: 'child-run',
+            scope: 'workstream:child-launch-1',
+            workstream_id: 'child-node',
+            type: 'preview_unavailable',
+            reason: 'live_only',
+        })}\n\n`;
+        const client = new ZenoClient({
+            serverUrl: 'https://store.test',
+            apikey: 'token',
+            fetch: (async (input: Request | string, init?: RequestInit) => {
+                const request = input instanceof Request ? input : new Request(input, init);
+                requests.push(request.clone());
+                return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
+            }) as typeof fetch,
+        });
+
+        await client.agents.streamCanonicalConversation(
+            'child-run',
+            (update) => {
+                expect(update).toMatchObject({
+                    type: 'preview_unavailable',
+                    scope: 'workstream:child-launch-1',
+                    workstream_id: 'child-node',
+                });
+                abort.abort();
+            },
+            { signal: abort.signal, max_reconnects: 0 },
+        );
+
+        const url = new URL(requests[0].url);
+        expect(url.searchParams.has('conversation_scope')).toBe(false);
+        expect(url.searchParams.has('workstream_id')).toBe(false);
+    });
+
     it('rejects a non-accepted response envelope', async () => {
         const fragment = acceptedOutput();
         const client = new ZenoClient({

@@ -2902,6 +2902,26 @@ interface Checks {
         W.StreamAgentRunQuery,
         z.infer<typeof import('./api-schemas/agent-runs.js').StreamAgentRunQuerySchema>
     >;
+    ExperimentalAgentConversationStreamQuery: Same<
+        W.ExperimentalAgentConversationStreamQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamQuerySchema>
+    >;
+    ExperimentalAgentConversationEvent: Same<
+        W.ExperimentalAgentConversationEvent,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationEventSchema>
+    >;
+    ExperimentalAgentConversationPreviewUnavailable: Same<
+        W.ExperimentalAgentConversationPreviewUnavailable,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationPreviewUnavailableSchema>
+    >;
+    ExperimentalAgentConversationAcceptedOutput: Same<
+        W.ExperimentalAgentConversationAcceptedOutput,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputSchema>
+    >;
+    ExperimentalAgentConversationStreamEnvelope: Same<
+        W.ExperimentalAgentConversationStreamEnvelope,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamEnvelopeSchema>
+    >;
     AgentRunDetailsQuery: Same<
         W.AgentRunDetailsQuery,
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunDetailsQuerySchema>
@@ -8171,6 +8191,26 @@ interface Checks {
         W.ApiComponentTypes['StreamAgentRunQuery'],
         z.infer<typeof import('./api-schemas/agent-runs.js').StreamAgentRunQuerySchema>
     >;
+    'component:ExperimentalAgentConversationStreamQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationStreamQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamQuerySchema>
+    >;
+    'component:ExperimentalAgentConversationEvent': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationEvent'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationEventSchema>
+    >;
+    'component:ExperimentalAgentConversationPreviewUnavailable': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationPreviewUnavailable'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationPreviewUnavailableSchema>
+    >;
+    'component:ExperimentalAgentConversationAcceptedOutput': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationAcceptedOutput'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputSchema>
+    >;
+    'component:ExperimentalAgentConversationStreamEnvelope': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationStreamEnvelope'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamEnvelopeSchema>
+    >;
     'component:UpdateAgentRunStatusPayload': Same<
         W.ApiComponentTypes['UpdateAgentRunStatusPayload'],
         z.infer<typeof import('./api-schemas/agent-runs.js').UpdateAgentRunStatusPayloadSchema>
@@ -10778,6 +10818,11 @@ const checks: Checks = {
     AgentRunUpdatesResponse: true,
     AgentRunUpdatesQuery: true,
     StreamAgentRunQuery: true,
+    ExperimentalAgentConversationStreamQuery: true,
+    ExperimentalAgentConversationEvent: true,
+    ExperimentalAgentConversationPreviewUnavailable: true,
+    ExperimentalAgentConversationAcceptedOutput: true,
+    ExperimentalAgentConversationStreamEnvelope: true,
     AgentRunDetailsQuery: true,
     AgentRunArtifactsQuery: true,
     AgentRunArtifactUploadHeaders: true,
@@ -12156,6 +12201,11 @@ const checks: Checks = {
     'component:AgentRunUpdatesQuery': true,
     'component:SearchAgentRunsQuery': true,
     'component:StreamAgentRunQuery': true,
+    'component:ExperimentalAgentConversationStreamQuery': true,
+    'component:ExperimentalAgentConversationEvent': true,
+    'component:ExperimentalAgentConversationPreviewUnavailable': true,
+    'component:ExperimentalAgentConversationAcceptedOutput': true,
+    'component:ExperimentalAgentConversationStreamEnvelope': true,
     'component:UpdateAgentRunStatusPayload': true,
     'component:AgentRunFeedbackRating': true,
     'component:AgentRunFeedbackReasonCode': true,
@@ -12602,6 +12652,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2600);
+        expect(Object.keys(checks)).toHaveLength(2610);
     });
 });

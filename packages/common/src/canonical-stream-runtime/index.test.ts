@@ -1,10 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { CONVERSATION_STREAM_MAX_EVENT_BYTES } from '@llumiverse/conversation/streaming-runtime';
 import { describe, expect, it } from 'vitest';
+import { ExperimentalAgentConversationStreamEnvelopeSchema } from '../api-schemas/agent-runs.js';
 import { ExperimentalCanonicalInteractionStreamEnvelopeSchema } from '../api-schemas/canonical-interaction-stream.js';
 import {
     EXPERIMENTAL_CANONICAL_INTERACTION_STREAM_MAX_ENVELOPE_BYTES,
     parseConversationStreamEvent,
+    parseExperimentalAgentConversationStreamEnvelope,
     parseExperimentalCanonicalInteractionStreamEnvelope,
 } from './index.js';
 
@@ -135,5 +137,77 @@ describe('canonical stream browser runtime validators', () => {
         expect(source).not.toContain('zod');
         expect(source).not.toContain('api-schemas');
         expect(source).not.toContain('components.generated');
+    });
+});
+
+describe('agent conversation stream browser runtime validator', () => {
+    const base = {
+        api_version: API_VERSION,
+        agent_run_id: RUN_ID,
+        scope: 'root' as const,
+    };
+    const receipt = {
+        id: 'operation:accepted',
+        conversation_id: 'conversation:runtime',
+        base_revision: 3,
+        result_revision: 4,
+        recorded_at: '2026-10-01T00:00:00.000Z',
+        accepted_turn_ids: ['turn:accepted'],
+        accepted_generation_ids: ['generation:accepted'],
+        accepted_asset_ids: [],
+    };
+
+    it('accepts live events, preview resets, and exact durable accepted references', () => {
+        const values = [
+            { ...base, type: 'preview_unavailable' as const, reason: 'live_only' as const },
+            {
+                ...base,
+                type: 'conversation_event' as const,
+                execution_run_id: 'execution:runtime',
+                event: event(),
+            },
+            {
+                ...base,
+                type: 'accepted_output' as const,
+                source: { conversation_id: receipt.conversation_id, revision: receipt.result_revision },
+                receipt,
+            },
+        ];
+        for (const value of values) {
+            expect(ExperimentalAgentConversationStreamEnvelopeSchema.safeParse(value).success).toBe(true);
+            expect(parseExperimentalAgentConversationStreamEnvelope(value)).toBe(value);
+        }
+    });
+
+    it('rejects response acceptance as a provisional event and mismatched accepted references', () => {
+        const responseAccepted = {
+            ...event(),
+            type: 'response_accepted' as const,
+            origin: 'live_transport' as const,
+            conversation: { conversation_id: receipt.conversation_id, revision: receipt.result_revision },
+            operation_receipt_id: receipt.id,
+            committed_turn_id: receipt.accepted_turn_ids[0],
+            turn_status: 'completed' as const,
+            generation_status: 'completed' as const,
+            committed_block_ids: ['block:accepted'],
+            accepted_asset_ids: [],
+            reconciliations: [],
+        };
+        expect(() =>
+            parseExperimentalAgentConversationStreamEnvelope({
+                ...base,
+                type: 'conversation_event',
+                execution_run_id: 'execution:runtime',
+                event: responseAccepted,
+            }),
+        ).toThrow(TypeError);
+        expect(() =>
+            parseExperimentalAgentConversationStreamEnvelope({
+                ...base,
+                type: 'accepted_output',
+                source: { conversation_id: receipt.conversation_id, revision: receipt.result_revision + 1 },
+                receipt,
+            }),
+        ).toThrow('source does not match');
     });
 });

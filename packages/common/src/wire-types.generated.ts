@@ -6887,6 +6887,40 @@ export type StreamAgentRunQuery = {
     since?: number | undefined;
     skipHistory?: boolean | undefined;
 };
+export type ExperimentalAgentConversationStreamQuery = {
+    conversation_scope?: CanonicalConversationHeadScope | undefined;
+    workstream_id?: string | undefined;
+};
+export type ExperimentalAgentConversationEvent = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    type: 'conversation_event';
+    execution_run_id: string;
+    event: ConversationStreamEvent;
+};
+export type ExperimentalAgentConversationPreviewUnavailable = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    type: 'preview_unavailable';
+    reason: 'live_only' | 'late_join' | 'sequence_gap' | 'queue_overflow';
+};
+export type ExperimentalAgentConversationAcceptedOutput = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    type: 'accepted_output';
+    source: ConversationRef;
+    receipt: ConversationOutputReceipt;
+};
+export type ExperimentalAgentConversationStreamEnvelope =
+    | ExperimentalAgentConversationEvent
+    | ExperimentalAgentConversationPreviewUnavailable
+    | ExperimentalAgentConversationAcceptedOutput;
 export type AgentRunDetailsQuery = {
     from?: string | undefined;
     include_history?: boolean | undefined;
@@ -9936,6 +9970,8 @@ export type AgentRunWire = {
     run_kind: 'agent';
     parent_run_id?: string | undefined;
     workstream_id?: string | undefined;
+    canonical_conversation_owner_run_id?: string | undefined;
+    canonical_conversation_scope?: CanonicalConversationHeadScope | undefined;
     run_type: 'autonomous';
     account: string;
     project: string;
@@ -10638,6 +10674,8 @@ export type AutonomousRunResponseWire = {
     run_kind: 'agent';
     parent_run_id?: string | undefined;
     workstream_id?: string | undefined;
+    canonical_conversation_owner_run_id?: string | undefined;
+    canonical_conversation_scope?: CanonicalConversationHeadScope | undefined;
     run_type: 'autonomous';
     account: string;
     project: string;
@@ -10708,6 +10746,8 @@ export type RecordAgentRunPayloadWire = {
     evaluate?: boolean | undefined;
     parent_run_id?: string | undefined;
     workstream_id?: string | undefined;
+    canonical_conversation_owner_run_id?: string | undefined;
+    canonical_conversation_scope?: CanonicalConversationHeadScope | undefined;
     schedule_id?: string | undefined;
     visibility?: ConversationVisibility | undefined;
     data?:
@@ -11754,6 +11794,11 @@ export interface ApiComponentTypes {
     AgentRunUpdatesQuery: AgentRunUpdatesQuery;
     SearchAgentRunsQuery: SearchAgentRunsQuery;
     StreamAgentRunQuery: StreamAgentRunQuery;
+    ExperimentalAgentConversationStreamQuery: ExperimentalAgentConversationStreamQuery;
+    ExperimentalAgentConversationEvent: ExperimentalAgentConversationEvent;
+    ExperimentalAgentConversationPreviewUnavailable: ExperimentalAgentConversationPreviewUnavailable;
+    ExperimentalAgentConversationAcceptedOutput: ExperimentalAgentConversationAcceptedOutput;
+    ExperimentalAgentConversationStreamEnvelope: ExperimentalAgentConversationStreamEnvelope;
     UpdateAgentRunStatusPayload: UpdateAgentRunStatusPayloadWire;
     AgentRunFeedbackRating: AgentRunFeedbackRating;
     AgentRunFeedbackReasonCode: AgentRunFeedbackReasonCode;

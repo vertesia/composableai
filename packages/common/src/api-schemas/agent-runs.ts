@@ -1,9 +1,15 @@
 // Runtime schemas for the agent runs API domain.
 
 import { ExecutionTokenUsageSchema, ReasoningEffortSchema } from '@llumiverse/common/schemas';
+import {
+    ConversationOutputReceiptSchema,
+    ConversationRefSchema,
+    ConversationStreamEventSchema,
+} from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
 import { AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH, AGENT_RUN_FEEDBACK_ID_MAX_LENGTH } from '../store/agent-run-values.js';
 import type { AgentMessageType, FileProcessingStatus } from '../store/workflow.js';
+import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE } from '../versions.js';
 import { type AgentEvent, AgentEventType, LlmCallType, TelemetryToolType } from '../workflow-analytics.js';
 import * as AppLifecycleSchemas from './app-lifecycle.js';
 import {
@@ -20,6 +26,7 @@ import {
     AgentResourceReferenceSchema,
     AgentSearchScopeSchema,
     AgentToolApprovalModeSchema,
+    CanonicalConversationHeadScopeSchema,
     ConversationEnrichmentFields,
     ConversationVisibilitySchema,
     InitialToolCallSchema,
@@ -748,6 +755,13 @@ export const AutonomousRunResponseSchema = z
             .string()
             .meta({ description: 'Workstream this run occupies inside its parent run (the process node id).' })
             .optional(),
+        canonical_conversation_owner_run_id: z
+            .string()
+            .meta({ description: 'Run that durably owns this recorded child agent canonical conversation.' })
+            .optional(),
+        canonical_conversation_scope: CanonicalConversationHeadScopeSchema.meta({
+            description: 'Exact canonical head scope assigned to this recorded child agent.',
+        }).optional(),
         run_type: z.literal('autonomous'),
         account: z.string().meta({ description: 'Account ID' }),
         project: z.string().meta({ description: 'Project ID' }),
@@ -902,6 +916,13 @@ export const AgentRunSchema = z
             .string()
             .meta({ description: 'Workstream this run occupies inside its parent run (the process node id).' })
             .optional(),
+        canonical_conversation_owner_run_id: z
+            .string()
+            .meta({ description: 'Run that durably owns this recorded child agent canonical conversation.' })
+            .optional(),
+        canonical_conversation_scope: CanonicalConversationHeadScopeSchema.meta({
+            description: 'Exact canonical head scope assigned to this recorded child agent.',
+        }).optional(),
         run_type: z.literal('autonomous').meta({ description: 'Public-facing runtime mode' }),
         account: z.string().meta({ description: 'Account ID' }),
         project: z.string().meta({ description: 'Project ID' }),
@@ -1501,6 +1522,117 @@ export const StreamAgentRunQuerySchema = AgentRunUpdatesQuerySchema.extend({
     skipHistory: z.boolean().optional(),
 }).meta({ id: 'StreamAgentRunQuery' });
 
+export const ExperimentalAgentConversationStreamQuerySchema = z
+    .strictObject({
+        conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
+        workstream_id: z.string().min(1).max(512).optional(),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationStreamQuery',
+        description: 'Selects one canonical agent-run scope and optional live workstream delivery filter.',
+    });
+
+const agentConversationStreamBaseShape = {
+    api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+    agent_run_id: z.string().min(1).max(512),
+    scope: CanonicalConversationHeadScopeSchema,
+    workstream_id: z.string().min(1).max(512).optional(),
+};
+
+export const ExperimentalAgentConversationEventSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('conversation_event'),
+        execution_run_id: z.string().min(1).max(512),
+        event: ConversationStreamEventSchema,
+    })
+    .superRefine((value, context) => {
+        if (value.event.type === 'response_accepted') {
+            context.addIssue({
+                code: 'custom',
+                message: 'Accepted output is delivered as an exact durable output reference',
+                path: ['event', 'type'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationEvent',
+        description:
+            'One verified live canonical conversation event. Accepted output uses a durable reference envelope.',
+        allOf: [
+            {
+                not: {
+                    properties: {
+                        event: {
+                            properties: { type: { const: 'response_accepted' } },
+                            required: ['type'],
+                        },
+                    },
+                    required: ['event'],
+                },
+            },
+        ],
+    });
+
+export const ExperimentalAgentConversationPreviewUnavailableSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('preview_unavailable'),
+        reason: z.enum(['live_only', 'late_join', 'sequence_gap', 'queue_overflow']),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationPreviewUnavailable',
+        description: 'Clears provisional preview state when an exact live event prefix is unavailable.',
+    });
+
+export const ExperimentalAgentConversationAcceptedOutputSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('accepted_output'),
+        source: ConversationRefSchema,
+        receipt: ConversationOutputReceiptSchema,
+    })
+    .superRefine((value, context) => {
+        if (value.source.conversation_id !== value.receipt.conversation_id) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Accepted output source conversation must match its receipt',
+                path: ['source', 'conversation_id'],
+            });
+        }
+        if (value.source.revision !== value.receipt.result_revision) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Accepted output source revision must match its receipt',
+                path: ['source', 'revision'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationAcceptedOutput',
+        description: 'Reference to the latest exact durable accepted output for the requested canonical scope.',
+    });
+
+export const ExperimentalAgentConversationStreamEnvelopeSchema = z
+    .discriminatedUnion('type', [
+        ExperimentalAgentConversationEventSchema,
+        ExperimentalAgentConversationPreviewUnavailableSchema,
+        ExperimentalAgentConversationAcceptedOutputSchema,
+    ])
+    .meta({
+        id: 'ExperimentalAgentConversationStreamEnvelope',
+        type: 'object',
+        required: ['type'],
+        discriminator: {
+            propertyName: 'type',
+            mapping: {
+                conversation_event: '#/components/schemas/ExperimentalAgentConversationEvent',
+                preview_unavailable: '#/components/schemas/ExperimentalAgentConversationPreviewUnavailable',
+                accepted_output: '#/components/schemas/ExperimentalAgentConversationAcceptedOutput',
+            },
+        },
+    });
+
 export const RecordAgentRunPayloadSchema = z
     .strictObject({
         workflow_id: z.string(),
@@ -1511,6 +1643,8 @@ export const RecordAgentRunPayloadSchema = z
         evaluate: AgentEvaluateRequestSchema,
         parent_run_id: z.string().optional(),
         workstream_id: z.string().optional(),
+        canonical_conversation_owner_run_id: z.string().optional(),
+        canonical_conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
         schedule_id: z.string().optional(),
         visibility: ConversationVisibilitySchema.optional(),
         data: z.looseObject({}).optional(),

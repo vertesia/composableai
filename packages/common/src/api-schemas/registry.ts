@@ -1999,6 +1999,12 @@ const AGENT_RUN_SCHEMAS = {
     AgentRunUpdatesQuery: AgentRunSchemas.AgentRunUpdatesQuerySchema,
     SearchAgentRunsQuery: AgentRunSchemas.SearchAgentRunsQuerySchema,
     StreamAgentRunQuery: AgentRunSchemas.StreamAgentRunQuerySchema,
+    ExperimentalAgentConversationStreamQuery: AgentRunSchemas.ExperimentalAgentConversationStreamQuerySchema,
+    ExperimentalAgentConversationEvent: AgentRunSchemas.ExperimentalAgentConversationEventSchema,
+    ExperimentalAgentConversationPreviewUnavailable:
+        AgentRunSchemas.ExperimentalAgentConversationPreviewUnavailableSchema,
+    ExperimentalAgentConversationAcceptedOutput: AgentRunSchemas.ExperimentalAgentConversationAcceptedOutputSchema,
+    ExperimentalAgentConversationStreamEnvelope: AgentRunSchemas.ExperimentalAgentConversationStreamEnvelopeSchema,
     UpdateAgentRunStatusPayload: AgentRunSchemas.UpdateAgentRunStatusPayloadSchema,
     AgentRunFeedbackRating: AgentRunSchemas.AgentRunFeedbackRatingSchema,
     AgentRunFeedbackReasonCode: AgentRunSchemas.AgentRunFeedbackReasonCodeSchema,

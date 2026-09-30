@@ -9,6 +9,7 @@ import {
     preflightJsonInput,
 } from '@llumiverse/conversation/streaming-runtime';
 import type { ExperimentalCanonicalInteractionStreamEnvelope } from '../canonical-interaction-stream.js';
+import type { ExperimentalAgentConversationStreamEnvelope } from '../store/agent-run.js';
 import validateCanonicalStreamWireValue from './canonical-stream-validator.generated.js';
 
 /** Fixed host wrapper budget above the canonical event's independently enforced byte limit. */
@@ -19,6 +20,7 @@ interface CanonicalStreamWireValues {
     ConversationStreamCursor: ConversationStreamCursor;
     ConversationStreamEvent: ConversationStreamEvent;
     ExperimentalCanonicalInteractionStreamEnvelope: ExperimentalCanonicalInteractionStreamEnvelope;
+    ExperimentalAgentConversationStreamEnvelope: ExperimentalAgentConversationStreamEnvelope;
 }
 
 function parseCanonicalStreamWireValue<K extends keyof CanonicalStreamWireValues>(
@@ -61,6 +63,23 @@ export function parseExperimentalCanonicalInteractionStreamEnvelope(
     }
     if (envelope.type === 'accepted_recovery_opened' && envelope.replaces_stream_id === envelope.stream_id) {
         throw new TypeError('Canonical accepted recovery must replace a different stream');
+    }
+    return envelope;
+}
+
+export function parseExperimentalAgentConversationStreamEnvelope(
+    input: unknown,
+): ExperimentalAgentConversationStreamEnvelope {
+    const envelope = parseCanonicalStreamWireValue('ExperimentalAgentConversationStreamEnvelope', input);
+    if (envelope.type === 'conversation_event' && envelope.event.type === 'response_accepted') {
+        throw new TypeError('Agent conversation stream accepted output must use a durable reference envelope');
+    }
+    if (
+        envelope.type === 'accepted_output' &&
+        (envelope.source.conversation_id !== envelope.receipt.conversation_id ||
+            envelope.source.revision !== envelope.receipt.result_revision)
+    ) {
+        throw new TypeError('Agent conversation stream accepted output source does not match its receipt');
     }
     return envelope;
 }

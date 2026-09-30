@@ -245,6 +245,27 @@ type CanonicalWorkflowRequest = ExperimentalCanonicalNamedInteractionExecutionRe
     workflow: ExecutionRunWorkflow;
 };
 
+/**
+ * Complete canonical request fields supplied by a workflow activity before host-owned execution identity is attached.
+ *
+ * The executor derives `workflow`, operation, invocation, and rate-limit identities from the active Temporal activity.
+ * Keeping `workflow` out of this input prevents a caller from selecting another durable execution lineage.
+ */
+export type CanonicalInteractionActivityRequest = Omit<
+    ExperimentalCanonicalNamedInteractionExecutionRequest,
+    'workflow'
+>;
+
+export interface CanonicalInteractionActivityPlan {
+    request: CanonicalInteractionActivityRequest;
+    /** Stable caller-owned key used as one input to the host-derived operation and rate-limit identities. */
+    invocation_key?: string;
+    /** Include a confirmed predecessor failure in the next request's `data.previous_error`. */
+    include_previous_error?: boolean;
+    /** Agent run attribution carried by the trusted workflow activity. */
+    agent_run_id?: string;
+}
+
 interface CanonicalRetryState {
     accepted?: EnhancedExperimentalCanonicalInteractionExecutionResult;
     active: boolean;
@@ -655,21 +676,24 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
     }
 }
 
-export async function executeInteractionFromActivity(
+export async function executeCanonicalInteractionFromActivity(
     client: VertesiaClient,
-    interactionName: string,
-    params: InteractionExecutionParams,
-    prompt_data: Record<string, unknown>,
+    plan: CanonicalInteractionActivityPlan,
     debug?: boolean,
 ): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult> {
-    const userTags = params.tags;
+    const suppliedRequest = plan.request as ExperimentalCanonicalNamedInteractionExecutionRequest;
+    if (Object.hasOwn(suppliedRequest, 'workflow')) {
+        throw new Error('Canonical activity execution derives workflow identity from the active Temporal activity');
+    }
+    const { data: requestData, tags: userTags, workflow: _callerWorkflow, ...requestFields } = suppliedRequest;
+    const interactionName = requestFields.interaction;
     const reservedTagPrefix = WORKFLOW_RESERVED_TAG_PREFIXES.find((prefix) =>
         userTags?.some((tag) => tag.startsWith(prefix)),
     );
     if (reservedTagPrefix) {
         throw new Error(`Interaction tags may not use reserved prefix ${reservedTagPrefix}`);
     }
-    const invocationKey = params.invocation_key;
+    const invocationKey = plan.invocation_key;
     if (
         invocationKey !== undefined &&
         (typeof invocationKey !== 'string' ||
@@ -693,42 +717,32 @@ export async function executeInteractionFromActivity(
         workflow_id: execution.workflowId,
         activity_type: info.activityType,
         rate_limit_id: rateLimitId,
-        ...(params.agent_run_id ? { agent_run_id: params.agent_run_id } : {}),
+        ...(plan.agent_run_id ? { agent_run_id: plan.agent_run_id } : {}),
     };
 
     const retryState =
         info.attempt > 1
             ? await inspectCanonicalRetryState(client, execution.runId, operationTag)
             : ({ active: false } satisfies CanonicalRetryState);
-    const configDefaults = params.config ?? {};
-    const config: InteractionExecutionConfiguration = {
-        ...configDefaults,
-        environment: params.environment ?? configDefaults.environment,
-        model: params.model ?? configDefaults.model,
-        model_options: params.model_options ?? configDefaults.model_options,
-        http_timeout: params.http_timeout ?? configDefaults.http_timeout,
-        do_validate: params.validate_result ?? configDefaults.do_validate,
-    };
-    const { run_data: retention = RunDataStorageLevel.STANDARD, ...canonicalConfig } = config;
+    const canonicalConfig = requestFields.config ?? {};
 
     const makeRequest = (
         predecessorRunId: string | undefined,
         previousError: CanonicalRetryState['previous_error'],
     ): { operationId: string; request: CanonicalWorkflowRequest } => {
-        const data = {
-            ...prompt_data,
-            ...(params.include_previous_error && previousError ? { previous_error: previousError } : {}),
-        };
+        const includePreviousError = plan.include_previous_error && previousError !== undefined;
+        const data =
+            requestData === undefined && !includePreviousError
+                ? undefined
+                : {
+                      ...(requestData ?? {}),
+                      ...(includePreviousError ? { previous_error: previousError } : {}),
+                  };
         return {
             operationId: workflowInteractionOperationId(rateLimitId, predecessorRunId),
             request: {
-                interaction: interactionName,
-                initial_state: { type: 'new' },
-                retention,
-                return_policy: { history: 'none' },
-                data: data as CanonicalWorkflowRequest['data'],
-                config: canonicalConfig,
-                result_schema: params.result_schema as CanonicalWorkflowRequest['result_schema'],
+                ...requestFields,
+                ...(data === undefined ? {} : { data: data as CanonicalWorkflowRequest['data'] }),
                 tags: [...baseTags, workflowPredecessorTag(predecessorRunId)],
                 workflow,
             },
@@ -740,7 +754,7 @@ export async function executeInteractionFromActivity(
             operation_id: operationId,
             config: canonicalConfig,
             data: request.data,
-            result_schema: params.result_schema,
+            result_schema: request.result_schema,
             tags: request.tags,
             workflow,
         });
@@ -833,10 +847,10 @@ export async function executeInteractionFromActivity(
     if (!retryState.active) {
         const slot = await client.interactions.requestSlot({
             interaction: interactionName,
-            inference_profile: config.inference_profile,
-            inherit_model_config: config.inherit_model_config,
-            environment_id: config.environment,
-            model_id: config.model,
+            inference_profile: canonicalConfig.inference_profile,
+            inherit_model_config: canonicalConfig.inherit_model_config,
+            environment_id: canonicalConfig.environment,
+            model_id: canonicalConfig.model,
             rate_limit_id: rateLimitId,
         });
         if (slot.delay_ms > 0) {
@@ -863,6 +877,45 @@ export async function executeInteractionFromActivity(
         throw canonicalExecutionError(interactionName, result);
     }
     return result;
+}
+
+export async function executeInteractionFromActivity(
+    client: VertesiaClient,
+    interactionName: string,
+    params: InteractionExecutionParams,
+    prompt_data: Record<string, unknown>,
+    debug?: boolean,
+): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult> {
+    const configDefaults = params.config ?? {};
+    const config: InteractionExecutionConfiguration = {
+        ...configDefaults,
+        environment: params.environment ?? configDefaults.environment,
+        model: params.model ?? configDefaults.model,
+        model_options: params.model_options ?? configDefaults.model_options,
+        http_timeout: params.http_timeout ?? configDefaults.http_timeout,
+        do_validate: params.validate_result ?? configDefaults.do_validate,
+    };
+    const { run_data: retention = RunDataStorageLevel.STANDARD, ...canonicalConfig } = config;
+
+    return executeCanonicalInteractionFromActivity(
+        client,
+        {
+            request: {
+                interaction: interactionName,
+                initial_state: { type: 'new' },
+                retention,
+                return_policy: { history: 'none' },
+                data: prompt_data as CanonicalInteractionActivityRequest['data'],
+                config: canonicalConfig,
+                result_schema: params.result_schema as CanonicalInteractionActivityRequest['result_schema'],
+                tags: params.tags,
+            },
+            invocation_key: params.invocation_key,
+            include_previous_error: params.include_previous_error,
+            agent_run_id: params.agent_run_id,
+        },
+        debug,
+    );
 }
 /**
  * Returns true for 4xx status codes that indicate permanent client errors.

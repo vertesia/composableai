@@ -17,6 +17,7 @@ const componentNames = [
     'ConversationStreamCursor',
     'ConversationStreamEvent',
     'ExperimentalCanonicalInteractionStreamEnvelope',
+    'ExperimentalAgentConversationStreamEnvelope',
 ] as const;
 
 const definitions: Record<string, unknown> = {};

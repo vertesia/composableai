@@ -41279,6 +41279,14 @@
         "type": "string",
         "description": "Workstream this run occupies inside its parent run (the process node id)."
       },
+      "canonical_conversation_owner_run_id": {
+        "type": "string",
+        "description": "Run that durably owns this recorded child agent canonical conversation."
+      },
+      "canonical_conversation_scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope",
+        "description": "Exact canonical head scope assigned to this recorded child agent."
+      },
       "run_type": {
         "type": "string",
         "const": "autonomous"
@@ -41555,6 +41563,14 @@
       "workstream_id": {
         "type": "string",
         "description": "Workstream this run occupies inside its parent run (the process node id)."
+      },
+      "canonical_conversation_owner_run_id": {
+        "type": "string",
+        "description": "Run that durably owns this recorded child agent canonical conversation."
+      },
+      "canonical_conversation_scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope",
+        "description": "Exact canonical head scope assigned to this recorded child agent."
       },
       "run_type": {
         "type": "string",
@@ -42663,6 +42679,12 @@
       "workstream_id": {
         "type": "string"
       },
+      "canonical_conversation_owner_run_id": {
+        "type": "string"
+      },
+      "canonical_conversation_scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
       "schedule_id": {
         "type": "string"
       },
@@ -42783,6 +42805,193 @@
       },
       "skipHistory": {
         "type": "boolean"
+      }
+    }
+  },
+  "ExperimentalAgentConversationStreamQuery": {
+    "type": "object",
+    "properties": {
+      "conversation_scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      }
+    },
+    "description": "Selects one canonical agent-run scope and optional live workstream delivery filter."
+  },
+  "ExperimentalAgentConversationEvent": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "agent_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "type": {
+        "type": "string",
+        "const": "conversation_event"
+      },
+      "execution_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "event": {
+        "$ref": "#/components/schemas/ConversationStreamEvent"
+      }
+    },
+    "required": [
+      "api_version",
+      "agent_run_id",
+      "scope",
+      "type",
+      "execution_run_id",
+      "event"
+    ],
+    "allOf": [
+      {
+        "not": {
+          "properties": {
+            "event": {
+              "properties": {
+                "type": {
+                  "const": "response_accepted"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            }
+          },
+          "required": [
+            "event"
+          ]
+        }
+      }
+    ],
+    "description": "One verified live canonical conversation event. Accepted output uses a durable reference envelope."
+  },
+  "ExperimentalAgentConversationPreviewUnavailable": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "agent_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "type": {
+        "type": "string",
+        "const": "preview_unavailable"
+      },
+      "reason": {
+        "type": "string",
+        "enum": [
+          "live_only",
+          "late_join",
+          "sequence_gap",
+          "queue_overflow"
+        ]
+      }
+    },
+    "required": [
+      "api_version",
+      "agent_run_id",
+      "scope",
+      "type",
+      "reason"
+    ],
+    "description": "Clears provisional preview state when an exact live event prefix is unavailable."
+  },
+  "ExperimentalAgentConversationAcceptedOutput": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "agent_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "type": {
+        "type": "string",
+        "const": "accepted_output"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "receipt": {
+        "$ref": "#/components/schemas/ConversationOutputReceipt"
+      }
+    },
+    "required": [
+      "api_version",
+      "agent_run_id",
+      "scope",
+      "type",
+      "source",
+      "receipt"
+    ],
+    "description": "Reference to the latest exact durable accepted output for the requested canonical scope."
+  },
+  "ExperimentalAgentConversationStreamEnvelope": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationEvent"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationPreviewUnavailable"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationAcceptedOutput"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "conversation_event": "#/components/schemas/ExperimentalAgentConversationEvent",
+        "preview_unavailable": "#/components/schemas/ExperimentalAgentConversationPreviewUnavailable",
+        "accepted_output": "#/components/schemas/ExperimentalAgentConversationAcceptedOutput"
       }
     }
   },

@@ -2,6 +2,7 @@ import type { AsyncExecutionResult } from '@vertesia/common';
 
 export type { EnableEnvironmentModelPayload, OrphanedAppInstallation } from '@vertesia/common';
 export { getOAuthPermissionScopes, Permission } from '@vertesia/common';
+export * from './AgentConversationStream.js';
 export * from './CanonicalConversation.js';
 export * from './CanonicalInteractionApi.js';
 export * from './CanonicalInteractionOutput.js';

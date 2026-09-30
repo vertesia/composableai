@@ -6,17 +6,23 @@ import type { EnhancedExperimentalCanonicalInteractionExecutionResult, VertesiaC
 import {
     CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE,
     ContentEventName,
+    type ConversationDocumentV0,
     type DSLActivityExecutionPayload,
     ExecutionRunStatus,
     RunDataStorageLevel,
 } from '@vertesia/common';
+import { ExperimentalCanonicalNamedInteractionExecutionRequestSchema } from '@vertesia/common/api-schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
 import {
+    type CanonicalInteractionActivityPlan,
+    type CanonicalInteractionActivityRequest,
     CanonicalInteractionExecutionError,
     type ExecuteInteractionParams,
+    executeCanonicalInteractionFromActivity,
     executeInteraction,
     executeInteractionFromActivity,
+    type InteractionExecutionParams,
     isCanonicalInteractionExecutionError,
 } from './executeInteraction.js';
 
@@ -169,6 +175,70 @@ function mockCanonicalClient(result = canonicalResult()) {
         retrieve,
         uploadFile,
         downloadFile,
+    };
+}
+
+function canonicalActivityRequest(
+    overrides: Partial<CanonicalInteractionActivityRequest> = {},
+): CanonicalInteractionActivityRequest {
+    return {
+        interaction: 'testInteraction',
+        initial_state: { type: 'new' },
+        retention: RunDataStorageLevel.STANDARD,
+        return_policy: { history: 'none' },
+        data: {},
+        config: {},
+        ...overrides,
+    };
+}
+
+function canonicalToolDocument(): ConversationDocumentV0 {
+    return {
+        format: 'llumiverse.conversation',
+        schema_version: 0,
+        experimental_revision: '2026-09-30.adoption.1',
+        id: 'conversation-id',
+        revision: 0,
+        created_at: '2026-01-01T00:00:00.000Z',
+        updated_at: '2026-01-01T00:00:00.000Z',
+        turns: [],
+        generations: {},
+        operation_receipts: {},
+        execution_receipts: {},
+        assets: {},
+        tool_definitions: {
+            'tool-definition:lookup': {
+                id: 'tool-definition:lookup',
+                name: 'lookup',
+                version: '1',
+                description: 'Look up a record',
+                input_schema: {
+                    type: 'object',
+                    properties: { query: { type: 'string' } },
+                    required: ['query'],
+                },
+                result_capabilities: ['json'],
+            },
+        },
+        context: {
+            revision: 0,
+            entries: [],
+            active_tool_definition_ids: ['tool-definition:lookup'],
+            protected_entry_ids: [],
+            retrieval_requirements: [],
+        },
+        compactions: {},
+        processing: { enabled: false, policy_revision: 0, processors: [] },
+    } satisfies ConversationDocumentV0;
+}
+
+function canonicalActivityPlan(
+    requestOverrides: Partial<CanonicalInteractionActivityRequest> = {},
+    planOverrides: Omit<Partial<CanonicalInteractionActivityPlan>, 'request'> = {},
+): CanonicalInteractionActivityPlan {
+    return {
+        request: canonicalActivityRequest(requestOverrides),
+        ...planOverrides,
     };
 }
 
@@ -388,14 +458,228 @@ describe('executeInteraction retryability', () => {
     });
 });
 
-describe('executeInteraction canonical lifecycle', () => {
-    const retryEnvironment = (attempt: number) =>
-        new MockActivityEnvironment({
-            attempt,
-            activityId: 'activity-id',
-            workflowExecution: { workflowId: 'workflow-id', runId: 'workflow-run-id' },
+const retryEnvironment = (attempt: number) =>
+    new MockActivityEnvironment({
+        attempt,
+        activityId: 'activity-id',
+        workflowExecution: { workflowId: 'workflow-id', runId: 'workflow-run-id' },
+    });
+
+describe('executeCanonicalInteractionFromActivity', () => {
+    it('rejects caller-supplied workflow identity before recovery, admission, or transport', async () => {
+        const mocks = mockCanonicalClient();
+        const request = {
+            ...canonicalActivityRequest(),
+            workflow: { run_id: 'forged-run', workflow_id: 'forged-workflow' },
+        } as unknown as CanonicalInteractionActivityRequest;
+
+        await expect(
+            retryEnvironment(2).run(executeCanonicalInteractionFromActivity, mocks.client, { request }),
+        ).rejects.toThrow('derives workflow identity from the active Temporal activity');
+        expect(mocks.search).not.toHaveBeenCalled();
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+    });
+
+    it('forwards every canonical request field while deriving protected execution identities', async () => {
+        const mocks = mockCanonicalClient();
+        const document = canonicalToolDocument();
+        const request = canonicalActivityRequest({
+            initial_state: { type: 'document', document },
+            retention: RunDataStorageLevel.DEBUG,
+            return_policy: { history: 'document' },
+            data: { question: 'Where is the record?' },
+            config: {
+                environment: 'environment-id',
+                model: 'model-id',
+                inference_profile: '000000000000000000000001',
+                inherit_model_config: true,
+            },
+            result_schema: { type: 'object', properties: { answer: { type: 'string' } } },
+            tags: ['caller-tag'],
+        });
+        expect(ExperimentalCanonicalNamedInteractionExecutionRequestSchema.parse(request)).toEqual(request);
+
+        await retryEnvironment(1).run(executeCanonicalInteractionFromActivity, mocks.client, {
+            request,
+            invocation_key: 'initial-agent-turn',
+            agent_run_id: 'agent-run-id',
         });
 
+        expect(mocks.requestSlot).toHaveBeenCalledWith({
+            interaction: 'testInteraction',
+            inference_profile: '000000000000000000000001',
+            inherit_model_config: true,
+            environment_id: 'environment-id',
+            model_id: 'model-id',
+            rate_limit_id: expect.stringContaining(':invocation-key:18:initial-agent-turn'),
+        });
+        const sent = mocks.streamCanonical.mock.calls[0][0];
+        expect(sent.request).toMatchObject({
+            interaction: request.interaction,
+            initial_state: request.initial_state,
+            retention: request.retention,
+            return_policy: request.return_policy,
+            data: request.data,
+            config: request.config,
+            result_schema: request.result_schema,
+            tags: [
+                'workflow',
+                expect.stringMatching(/^workflow-interaction:/),
+                'caller-tag',
+                'workflow-predecessor:initial',
+            ],
+            workflow: {
+                run_id: 'workflow-run-id',
+                workflow_id: 'workflow-id',
+                rate_limit_id: expect.stringContaining(':invocation-key:18:initial-agent-turn'),
+                agent_run_id: 'agent-run-id',
+            },
+        });
+        expect(sent.request.initial_state).toEqual({
+            type: 'document',
+            document: expect.objectContaining({
+                tool_definitions: document.tool_definitions,
+                context: expect.objectContaining({ active_tool_definition_ids: ['tool-definition:lookup'] }),
+            }),
+        });
+        expect(Object.hasOwn(request, 'workflow')).toBe(false);
+    });
+
+    it('keeps the compatibility wrapper request and identity byte-for-byte equivalent', async () => {
+        const wrapperMocks = mockCanonicalClient();
+        const directMocks = mockCanonicalClient();
+        const params = {
+            tags: ['caller-tag'],
+            invocation_key: 'slot-a',
+            agent_run_id: 'agent-run-id',
+            config: {
+                run_data: RunDataStorageLevel.RESTRICTED,
+                environment: 'configured-environment',
+                model: 'configured-model',
+                inference_profile: 'profile-id',
+            },
+            environment: 'override-environment',
+            model: 'override-model',
+            result_schema: { type: 'object' },
+        } satisfies InteractionExecutionParams;
+        const data = { value: 'same' };
+
+        await retryEnvironment(1).run(
+            executeInteractionFromActivity,
+            wrapperMocks.client,
+            'testInteraction',
+            params,
+            data,
+        );
+        await retryEnvironment(1).run(
+            executeCanonicalInteractionFromActivity,
+            directMocks.client,
+            canonicalActivityPlan(
+                {
+                    retention: RunDataStorageLevel.RESTRICTED,
+                    data,
+                    config: {
+                        environment: 'override-environment',
+                        model: 'override-model',
+                        inference_profile: 'profile-id',
+                    },
+                    result_schema: { type: 'object' },
+                    tags: ['caller-tag'],
+                },
+                { invocation_key: 'slot-a', agent_run_id: 'agent-run-id' },
+            ),
+        );
+
+        expect(wrapperMocks.requestSlot.mock.calls[0][0]).toEqual(directMocks.requestSlot.mock.calls[0][0]);
+        expect(wrapperMocks.streamCanonical.mock.calls[0][0]).toEqual(directMocks.streamCanonical.mock.calls[0][0]);
+    });
+
+    it('reuses the exact operation and forwards a changed canonical tool catalog for conflict rejection', async () => {
+        const original = mockCanonicalClient();
+        const originalDocument = canonicalToolDocument();
+        await retryEnvironment(1).run(
+            executeCanonicalInteractionFromActivity,
+            original.client,
+            canonicalActivityPlan(
+                { initial_state: { type: 'document', document: originalDocument } },
+                { invocation_key: 'slot-a' },
+            ),
+        );
+        const originalOperationId = original.streamCanonical.mock.calls[0][0].operation_id;
+
+        const accepted = canonicalResult({ id: 'accepted-run' });
+        const retry = mockCanonicalClient(accepted);
+        retry.search.mockResolvedValue([{ id: 'accepted-run', tags: ['workflow-predecessor:initial'] }]);
+        retry.retrieveCanonical.mockResolvedValue(accepted);
+        const conflict = new ServerError(
+            'Canonical request does not match the accepted operation',
+            new Request('https://studio.test/api/v1/runs/canonical-stream'),
+            409,
+            { errorCode: 'canonical_request_mismatch' },
+        );
+        retry.streamCanonical.mockRejectedValue(conflict);
+        const changedDocument = structuredClone(originalDocument);
+        changedDocument.tool_definitions['tool-definition:lookup'].version = '2';
+
+        await expect(
+            retryEnvironment(2).run(
+                executeCanonicalInteractionFromActivity,
+                retry.client,
+                canonicalActivityPlan(
+                    { initial_state: { type: 'document', document: changedDocument } },
+                    { invocation_key: 'slot-a' },
+                ),
+            ),
+        ).rejects.toBe(conflict);
+        expect(retry.requestSlot).not.toHaveBeenCalled();
+        expect(retry.streamCanonical.mock.calls[0][0]).toMatchObject({
+            operation_id: originalOperationId,
+            request: {
+                initial_state: {
+                    type: 'document',
+                    document: {
+                        tool_definitions: {
+                            'tool-definition:lookup': expect.objectContaining({ version: '2' }),
+                        },
+                        context: expect.objectContaining({ active_tool_definition_ids: ['tool-definition:lookup'] }),
+                    },
+                },
+            },
+        });
+    });
+
+    it('forwards Temporal cancellation to a pending canonical stream', async () => {
+        const environment = retryEnvironment(1);
+        const mocks = mockCanonicalClient();
+        let markStarted: (() => void) | undefined;
+        const started = new Promise<void>((resolve) => {
+            markStarted = resolve;
+        });
+        let observedSignal: AbortSignal | undefined;
+        mocks.streamCanonical.mockImplementation((_payload, options) => {
+            observedSignal = options?.signal;
+            markStarted?.();
+            return new Promise((_resolve, reject) => {
+                observedSignal?.addEventListener('abort', () => reject(observedSignal?.reason), { once: true });
+            });
+        });
+
+        const execution = environment.run(
+            executeCanonicalInteractionFromActivity,
+            mocks.client,
+            canonicalActivityPlan(),
+        );
+        const rejection = expect(execution).rejects.toBeDefined();
+        await started;
+        environment.cancel();
+
+        await rejection;
+        expect(observedSignal?.aborted).toBe(true);
+    });
+});
+
+describe('executeInteraction canonical lifecycle', () => {
     it('rejects user tags that collide with durable predecessor identity before admission', async () => {
         const mocks = mockCanonicalClient();
 
@@ -755,7 +1039,11 @@ describe('executeInteraction canonical lifecycle', () => {
                     }),
             );
 
-            const execution = environment.run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {});
+            const execution = environment.run(
+                executeCanonicalInteractionFromActivity,
+                mocks.client,
+                canonicalActivityPlan(),
+            );
             await vi.advanceTimersByTimeAsync(501);
             expect(heartbeatDetails).toContainEqual({ operation_id: expect.stringMatching(/^workflow-interaction:/) });
 
