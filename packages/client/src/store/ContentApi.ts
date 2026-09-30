@@ -5,6 +5,7 @@ import type {
     ComputedFacetResponse,
     ContentObject,
     ContentObjectItem,
+    GetFileUrlResponse,
     GetRenditionResponse,
 } from '@vertesia/common';
 
@@ -108,6 +109,20 @@ export class ContentApi extends ApiTopic {
         return this.get(`/shared/${projectId}/${id}/renditions/${format}`, {
             query: { max_hw: options?.max_hw },
         });
+    }
+
+    /**
+     * Signed download URL for a shared object's OWN file (its content source) from the owner project's
+     * storage — used to preview a native PDF/image or download the existing file cross-project.
+     * `disposition` 'attachment' forces a download (default 'inline'). Rejects with 404 if the object
+     * isn't shared/authorized or has no content source. Read-only: never generates anything.
+     */
+    getSharedFileUrl(
+        projectId: string,
+        id: string,
+        disposition?: 'inline' | 'attachment',
+    ): Promise<GetFileUrlResponse> {
+        return this.get(`/shared/${projectId}/${id}/file`, { query: { disposition } });
     }
 
     /**

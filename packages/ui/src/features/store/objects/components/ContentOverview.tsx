@@ -68,6 +68,9 @@ interface TextActionsProps {
     isCollaborating?: boolean;
     onToggleCollaborate?: () => void;
     canCollaborate?: boolean;
+    /** Cross-project (external) content: hide generate-export actions (they run a workflow that would
+     *  write in the owner project). Client-side download of text stays available. */
+    crossProject?: boolean;
 }
 
 interface TextPanelProps {
@@ -75,6 +78,8 @@ interface TextPanelProps {
     text: string | undefined;
     isTextCropped: boolean;
     textContainerRef: RefObject<HTMLDivElement | null>;
+    /** Cross-project file resolver, forwarded to the document viewer for embedded assets. */
+    resolveUrl?: (source: UniversalDocumentSource, disposition: 'inline' | 'attachment') => Promise<string>;
 }
 
 interface OfficePdfPreviewPanelProps {
@@ -181,12 +186,33 @@ enum PanelView {
     Transcript = 'transcript',
 }
 
+/**
+ * File access for the document/image viewers. When `crossProject` is true the content lives in
+ * another project, so previews resolve their signed URLs through `resolveUrl` (the read-only shared
+ * endpoints) instead of the current-project client.
+ */
+export interface CrossProjectAccess {
+    crossProject: boolean;
+    resolveUrl?: (source: UniversalDocumentSource, disposition: 'inline' | 'attachment') => Promise<string>;
+}
+
 interface ContentOverviewProps {
     object: ContentObject;
     loadText?: boolean;
     refetch?: () => Promise<unknown>;
     canEditProperties?: boolean;
     canCollaborate?: boolean;
+    /**
+     * The project the content lives in. When set and different from the current session project, the
+     * view is cross-project (external): every write/generate action is force-disabled and file access
+     * is routed through `resolveUrl` instead of the current-project client.
+     */
+    contentProjectId?: string;
+    /**
+     * Cross-project file resolver for the document/image viewers. Required to preview files when
+     * `contentProjectId` points at another project (the current-project client can't reach them).
+     */
+    resolveUrl?: (source: UniversalDocumentSource, disposition: 'inline' | 'attachment') => Promise<string>;
 }
 export function ContentOverview({
     object,
@@ -194,16 +220,25 @@ export function ContentOverview({
     refetch,
     canEditProperties = true,
     canCollaborate = false,
+    contentProjectId,
+    resolveUrl,
 }: ContentOverviewProps) {
     const toast = useToast();
     const { t } = useUITranslation();
     const { project, store } = useUserSession();
     const navigate = useNavigate();
+    // Cross-project (external) content: force read-only and route file access through the shared
+    // endpoints. Deriving by comparison (not trusting a raw boolean) means that passing the current
+    // project's own id correctly resolves to a normal, non-cross-project view.
+    const crossProject = !!contentProjectId && contentProjectId !== project?.id;
+    const access: CrossProjectAccess = { crossProject, resolveUrl };
+    const effectiveCanEditProperties = canEditProperties && !crossProject;
+    const effectiveCanCollaborate = canCollaborate && !crossProject;
     const documentRootId = object.revision?.root || object.id;
     const editingScopeKey = project?.id ? createDocumentEditingScopeKey(project.id, documentRootId) : undefined;
     const [activeObject, setActiveObject] = useState(object);
     const [isCollaborating, setIsCollaborating] = useState(() =>
-        editingScopeKey ? isDocumentEditingScopeOpen(editingScopeKey) : false,
+        !crossProject && editingScopeKey ? isDocumentEditingScopeOpen(editingScopeKey) : false,
     );
     const sendMessageRef = useRef<SendAgentMessageFn | null>(null);
     const latestDocumentIdRef = useRef(object.id);
@@ -299,9 +334,10 @@ export function ContentOverview({
                         loadText={loadText ?? false}
                         handleCopyContent={handleCopyContent}
                         refetch={refetch}
-                        canCollaborate={canCollaborate}
+                        canCollaborate={effectiveCanCollaborate}
                         isCollaborating={isCollaborating}
                         onToggleCollaborate={toggleCollaboration}
+                        access={access}
                     />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
@@ -310,7 +346,7 @@ export function ContentOverview({
                         object={activeObject}
                         refetch={refetch ?? (() => Promise.resolve())}
                         handleCopyContent={handleCopyContent}
-                        canEditProperties={canEditProperties}
+                        canEditProperties={effectiveCanEditProperties}
                     />
                 </ResizablePanel>
             </ResizablePanelGroup>
@@ -432,6 +468,7 @@ interface DataPanelProps {
     canCollaborate: boolean;
     isCollaborating: boolean;
     onToggleCollaborate: () => void;
+    access: CrossProjectAccess;
 }
 
 /**
@@ -472,9 +509,30 @@ function DataPanelContent({
     canCollaborate,
     isCollaborating,
     onToggleCollaborate,
+    access,
 }: DataPanelProps & { defaultView?: IntakeDefaultView }) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
+    const { crossProject, resolveUrl } = access;
+    // Cross-project preview URL for the image panel (ImagePanel can't reach the owner project's client,
+    // so pre-resolve through the shared resolver and hand it a direct URL). PDFs resolve lazily inside
+    // the document viewer via `resolveUrl`, so they don't need this.
+    const { data: crossProjectFileUrl } = useFetch(
+        () =>
+            crossProject && resolveUrl
+                ? resolveUrl(
+                      {
+                          id: object.id,
+                          title: object.name,
+                          fileName: object.content?.name || object.name,
+                          contentType: object.content?.type,
+                          sourcePath: object.content?.source,
+                      },
+                      'inline',
+                  ).catch(() => undefined)
+                : Promise.resolve(undefined),
+        [crossProject, object.id],
+    );
     const isImage = object?.metadata?.type === ContentNature.Image;
     const isVideo = object?.metadata?.type === ContentNature.Video;
     const isAudio = object?.metadata?.type === ContentNature.Audio;
@@ -525,6 +583,7 @@ function DataPanelContent({
     // Text editing state
     const [isEditing, setIsEditing] = useState(false);
     const canEdit = !!(
+        !crossProject &&
         object.content?.type &&
         !object.is_locked &&
         object.user_permissions?.can_write !== false &&
@@ -678,7 +737,7 @@ function DataPanelContent({
                                 PDF
                             </Button>
                         )}
-                        {isPreviewableAsPdfDoc && (
+                        {isPreviewableAsPdfDoc && !crossProject && (
                             <Button
                                 variant={currentPanel === PanelView.Pdf ? 'primary' : 'ghost'}
                                 size="sm"
@@ -695,10 +754,14 @@ function DataPanelContent({
                             </Button>
                         )}
                     </div>
-                    <div className="flex items-center gap-1">
-                        <PdfActions object={object} />
-                        <GroundedActions objectId={object.id} available={groundedAvailable} />
-                    </div>
+                    {/* Grounded extraction and the side-by-side MagicPDF read by id from the CURRENT
+                        project, so they're hidden for cross-project (external) content in v1. */}
+                    {!crossProject && (
+                        <div className="flex items-center gap-1">
+                            <PdfActions object={object} />
+                            <GroundedActions objectId={object.id} available={groundedAvailable} />
+                        </div>
+                    )}
                 </div>
                 {currentPanel === PanelView.Text && !showProcessingPanel && !isEditing && (
                     <TextActions
@@ -713,6 +776,7 @@ function DataPanelContent({
                         isCollaborating={isCollaborating}
                         onToggleCollaborate={onToggleCollaborate}
                         canCollaborate={textActionAccess.canCollaborate}
+                        crossProject={crossProject}
                     />
                 )}
                 {currentPanel === PanelView.Pdf && isPreviewableAsPdfDoc && (pdfRendition || officePdfUrl) && (
@@ -721,7 +785,10 @@ function DataPanelContent({
             </div>
             {currentPanel === PanelView.Image && (
                 <div className={getPanelVisibility(true)}>
-                    <ImagePanel object={object} />
+                    <ImagePanel
+                        object={crossProject ? undefined : object}
+                        url={crossProject ? crossProjectFileUrl : undefined}
+                    />
                 </div>
             )}
             {currentPanel === PanelView.Video && (
@@ -741,10 +808,10 @@ function DataPanelContent({
             )}
             {isPdf && keepPdfPreviewMounted && (
                 <div className={getPanelVisibility(showPdfPreviewPanel)}>
-                    <PdfPreviewPanel object={object} />
+                    <PdfPreviewPanel object={object} resolveUrl={resolveUrl} />
                 </div>
             )}
-            {isPreviewableAsPdfDoc && keepPdfPreviewMounted && (
+            {isPreviewableAsPdfDoc && !crossProject && keepPdfPreviewMounted && (
                 <div className={getPanelVisibility(showPdfPreviewPanel)}>
                     <OfficePdfPreviewPanel
                         object={object}
@@ -778,6 +845,7 @@ function DataPanelContent({
                             text={displayText}
                             isTextCropped={isTextCropped}
                             textContainerRef={textContainerRef}
+                            resolveUrl={resolveUrl}
                         />
                     </div>
                 )}
@@ -807,6 +875,7 @@ function TextActions({
     isCollaborating,
     onToggleCollaborate,
     canCollaborate,
+    crossProject,
 }: TextActionsProps) {
     const { client, project } = useUserSession();
     const toast = useToast();
@@ -929,7 +998,7 @@ function TextActions({
                                 </div>
                             </MenuItem>
                         )}
-                        {isMarkdown && text && (
+                        {isMarkdown && text && !crossProject && (
                             <>
                                 <MenuItem onClick={handleExportDocx}>
                                     <div className="flex items-center gap-2">
@@ -987,7 +1056,7 @@ function TextActions({
     );
 }
 
-const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextPanelProps) => {
+const TextPanel = memo(({ object, text, isTextCropped, textContainerRef, resolveUrl }: TextPanelProps) => {
     const { t } = useUITranslation();
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
     const content = object.content;
@@ -1024,6 +1093,7 @@ const TextPanel = memo(({ object, text, isTextCropped, textContainerRef }: TextP
                     className="h-full"
                     bodyClassName="overflow-auto"
                     markdownComponents={createMarkdownComponents()}
+                    resolveUrl={resolveUrl}
                 />
             </div>
         </>
@@ -1192,7 +1262,13 @@ function OfficePdfActions({ object, pdfRendition, officePdfUrl }: OfficePdfActio
     );
 }
 
-function PdfPreviewPanel({ object }: { object: ContentObject }) {
+function PdfPreviewPanel({
+    object,
+    resolveUrl,
+}: {
+    object: ContentObject;
+    resolveUrl?: (source: UniversalDocumentSource, disposition: 'inline' | 'attachment') => Promise<string>;
+}) {
     const source: UniversalDocumentSource = {
         id: object.id,
         title: object.name,
@@ -1203,7 +1279,7 @@ function PdfPreviewPanel({ object }: { object: ContentObject }) {
 
     return (
         <div className="h-full">
-            <UniversalDocumentViewer source={source} className="h-full" showHeader={false} />
+            <UniversalDocumentViewer source={source} className="h-full" showHeader={false} resolveUrl={resolveUrl} />
         </div>
     );
 }
