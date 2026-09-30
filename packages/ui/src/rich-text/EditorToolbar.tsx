@@ -166,6 +166,15 @@ function getSelectionAnchor(editor: Editor, selection: Selection) {
     };
 }
 
+function getEnclosingDialog(editor: Editor): HTMLElement | undefined {
+    try {
+        return editor.view.dom.closest<HTMLElement>('[role="dialog"]') ?? undefined;
+    } catch {
+        // The editor view is not mounted yet.
+        return undefined;
+    }
+}
+
 interface SelectionCommentProps {
     editor: Editor;
     selection: Selection;
@@ -189,6 +198,9 @@ function SelectionComment({
 }: SelectionCommentProps) {
     const { t } = useUITranslation();
     const portalContainer = usePortalContainer();
+    // A modal (Radix Dialog) traps focus inside its content element: portaling outside it would let the trap
+    // steal focus back from the textarea, so mount inside the enclosing dialog when there is one.
+    const portalRoot = useMemo(() => getEnclosingDialog(editor) ?? portalContainer, [editor, portalContainer]);
     const { refs, floatingStyles } = useFloating({
         placement: 'right-start',
         strategy: 'fixed',
@@ -202,7 +214,7 @@ function SelectionComment({
     }, [anchor, refs]);
 
     return (
-        <FloatingPortal root={portalContainer}>
+        <FloatingPortal root={portalRoot}>
             <div ref={refs.setFloating} style={floatingStyles} className="pointer-events-auto z-100">
                 {composing ? (
                     <div
@@ -679,7 +691,9 @@ export function EditorToolbar({
             ) : null}
 
             {showList && pending.length > 0 ? (
-                <ul className="max-h-48 shrink-0 space-y-1.5 overflow-y-auto border-b border-mixer-muted/15 px-3 py-2">
+                // Stacked above the floating selection-comment button (z-100) so it slides beneath the list when
+                // the selection scrolls up under it.
+                <ul className="relative z-101 max-h-48 shrink-0 space-y-1.5 overflow-y-auto border-b border-mixer-muted/15 bg-background px-3 py-2">
                     {pending.map((entry) => (
                         <li
                             key={entry.id}
