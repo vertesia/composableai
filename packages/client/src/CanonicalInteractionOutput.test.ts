@@ -1,3 +1,4 @@
+import { createConversationDocument } from '@llumiverse/conversation';
 import {
     type ConversationAcceptedOutputFragment,
     ExecutionRunStatus,
@@ -7,7 +8,9 @@ import {
 import { describe, expect, it } from 'vitest';
 import {
     CanonicalInteractionOutput,
+    canonicalReference,
     enhanceExperimentalCanonicalInteractionExecutionResult,
+    referenceInitialState,
 } from './CanonicalInteractionOutput.js';
 
 const recordedAt = '2026-09-30T00:00:00.000Z';
@@ -132,5 +135,53 @@ describe('CanonicalInteractionOutput', () => {
         expect(() => enhanceExperimentalCanonicalInteractionExecutionResult(result(invalid))).toThrow(
             'inconsistent canonical references',
         );
+    });
+
+    it('builds a continuation from coherent DEBUG reference or document history', () => {
+        const referenced = result(fragment());
+        referenced.run.retention = RunDataStorageLevel.DEBUG;
+        referenced.history = {
+            status: 'reference',
+            reference: {
+                run_id: referenced.run.id,
+                conversation: { conversation_id: 'conversation-1', revision: 1 },
+            },
+        };
+
+        const reference = canonicalReference(referenced);
+        expect(reference).toEqual(referenced.history.reference);
+        expect(reference).not.toBe(referenced.history.reference);
+        expect(referenceInitialState(referenced, 'handoff:1')).toEqual({
+            type: 'reference',
+            operation_id: 'handoff:1',
+            reference,
+        });
+
+        const reloaded = result(fragment());
+        reloaded.run.retention = RunDataStorageLevel.DEBUG;
+        reloaded.history = {
+            status: 'document',
+            conversation: createConversationDocument({ id: 'conversation-reloaded', created_at: recordedAt }),
+        };
+        expect(referenceInitialState(reloaded, 'handoff:2')).toEqual({
+            type: 'reference',
+            operation_id: 'handoff:2',
+            reference: {
+                run_id: reloaded.run.id,
+                conversation: { conversation_id: 'conversation-reloaded', revision: 0 },
+            },
+        });
+
+        const incoherent = result(fragment());
+        incoherent.run.retention = RunDataStorageLevel.DEBUG;
+        incoherent.history = {
+            status: 'reference',
+            reference: {
+                run_id: 'different-run',
+                conversation: { conversation_id: 'conversation-1', revision: 1 },
+            },
+        };
+        expect(() => canonicalReference(incoherent)).toThrow('does not match the result run');
+        expect(() => canonicalReference(result(fragment()))).toThrow('does not contain DEBUG-retained history');
     });
 });

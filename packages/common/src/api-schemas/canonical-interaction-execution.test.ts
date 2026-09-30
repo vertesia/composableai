@@ -1,9 +1,28 @@
-import { describe, expect, it } from 'vitest';
+import type { JsonObjectSchema } from '@llumiverse/conversation/schemas';
+import { Ajv2020 } from 'ajv/dist/2020.js';
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import { z } from 'zod';
 import {
     ExperimentalCanonicalInteractionExecutionRequestSchema,
     ExperimentalCanonicalInteractionHeadersSchema,
     ExperimentalCanonicalInteractionHistorySchema,
+    ExperimentalCanonicalInteractionResultSchemaInputSchema,
+    ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
 } from './canonical-interaction-execution.js';
+import { ApiSchemaComponents } from './registry.js';
+
+function emittedComponent(schema: z.ZodType, name: string): Record<string, unknown> {
+    const emitted = z.toJSONSchema(schema, {
+        io: 'input',
+        target: 'draft-2020-12',
+        unrepresentable: 'any',
+    });
+    const component = emitted.$defs?.[name];
+    if (!component || typeof component !== 'object' || Array.isArray(component)) {
+        throw new Error(`Missing emitted component ${name}`);
+    }
+    return component;
+}
 
 describe('experimental canonical interaction execution schemas', () => {
     it('requires the exact opt-in API version header', () => {
@@ -32,6 +51,181 @@ describe('experimental canonical interaction execution schemas', () => {
             retention: 'RESTRICTED',
             return_policy: { history: 'document' },
         });
+    });
+
+    it('requires a run-bound exact reference and stable handoff operation identity', () => {
+        expect(
+            ExperimentalCanonicalInteractionExecutionRequestSchema.parse({
+                initial_state: {
+                    type: 'reference',
+                    reference: {
+                        run_id: 'run-1',
+                        conversation: { conversation_id: 'conversation-1', revision: 7 },
+                    },
+                    operation_id: 'continue-1',
+                },
+                retention: 'DEBUG',
+                return_policy: { history: 'reference' },
+            }),
+        ).toMatchObject({
+            initial_state: {
+                type: 'reference',
+                reference: {
+                    run_id: 'run-1',
+                    conversation: { conversation_id: 'conversation-1', revision: 7 },
+                },
+                operation_id: 'continue-1',
+            },
+        });
+        expect(
+            ExperimentalCanonicalInteractionExecutionRequestSchema.safeParse({
+                initial_state: {
+                    type: 'reference',
+                    reference: { conversation: { conversation_id: 'conversation-1', revision: 7 } },
+                    operation_id: 'continue-1',
+                },
+                retention: 'DEBUG',
+                return_policy: { history: 'reference' },
+            }).success,
+        ).toBe(false);
+        expect(
+            ExperimentalCanonicalInteractionExecutionRequestSchema.safeParse({
+                initial_state: {
+                    type: 'reference',
+                    reference: {
+                        run_id: 'run-1',
+                        conversation: { conversation_id: 'conversation-1', revision: 7 },
+                    },
+                    operation_id: 'continue-1',
+                },
+                retention: 'STANDARD',
+                return_policy: { history: 'reference' },
+            }).success,
+        ).toBe(false);
+    });
+
+    it('publishes named initial-state branches with an exact discriminator mapping for generated clients', () => {
+        expect(ApiSchemaComponents.ExperimentalCanonicalInteractionInitialState).toMatchObject({
+            oneOf: [
+                { $ref: '#/components/schemas/ExperimentalCanonicalInteractionNewState' },
+                { $ref: '#/components/schemas/ExperimentalCanonicalInteractionDocumentState' },
+                { $ref: '#/components/schemas/ExperimentalCanonicalInteractionReferenceState' },
+            ],
+            discriminator: {
+                propertyName: 'type',
+                mapping: {
+                    new: '#/components/schemas/ExperimentalCanonicalInteractionNewState',
+                    document: '#/components/schemas/ExperimentalCanonicalInteractionDocumentState',
+                    reference: '#/components/schemas/ExperimentalCanonicalInteractionReferenceState',
+                },
+            },
+        });
+        expect(ApiSchemaComponents.ExperimentalCanonicalInteractionNewState).toMatchObject({
+            properties: { type: { const: 'new' } },
+        });
+        expect(ApiSchemaComponents.ExperimentalCanonicalInteractionDocumentState).toMatchObject({
+            properties: { type: { const: 'document' } },
+        });
+        expect(ApiSchemaComponents.ExperimentalCanonicalInteractionReferenceState).toMatchObject({
+            properties: { type: { const: 'reference' } },
+        });
+    });
+
+    it.each([
+        ['unnamed', ExperimentalCanonicalInteractionExecutionRequestSchema, {}],
+        ['named', ExperimentalCanonicalNamedInteractionExecutionRequestSchema, { interaction: 'test-interaction' }],
+    ])('enforces DEBUG reference retention in Zod and the published %s schema', (_label, schema, extra) => {
+        const referenceRequest = {
+            ...extra,
+            initial_state: {
+                type: 'reference' as const,
+                reference: {
+                    run_id: 'run-1',
+                    conversation: { conversation_id: 'conversation-1', revision: 7 },
+                },
+                operation_id: 'continue-1',
+            },
+            return_policy: { history: 'reference' as const },
+        };
+
+        expect(schema.safeParse({ ...referenceRequest, retention: 'DEBUG' }).success).toBe(true);
+        expect(schema.safeParse({ ...referenceRequest, retention: 'STANDARD' }).success).toBe(false);
+
+        const name = schema.meta()?.id;
+        if (!name) throw new Error('Canonical interaction request schema has no component id');
+        const emitted = emittedComponent(schema, name);
+        expect(emitted).toMatchObject({
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+                initial_state: { $ref: '#/$defs/ExperimentalCanonicalInteractionInitialState' },
+            },
+            allOf: [
+                {
+                    if: {
+                        properties: {
+                            initial_state: {
+                                properties: { type: { const: 'reference' } },
+                                required: ['type'],
+                            },
+                        },
+                        required: ['initial_state'],
+                    },
+                    // biome-ignore lint/suspicious/noThenProperty: JSON Schema's conditional keyword is literally `then`.
+                    then: {
+                        properties: { retention: { const: 'DEBUG' } },
+                        required: ['retention'],
+                    },
+                },
+            ],
+        });
+        expect(emitted).not.toHaveProperty('anyOf');
+    });
+
+    it('publishes result_schema as a portable arbitrary object while retaining exact JSON values', () => {
+        const resultSchema = {
+            type: 'object',
+            properties: {
+                enabled: { type: 'boolean' },
+                nullable: { type: ['string', 'null'] },
+                nested: { anyOf: [{ type: 'array', items: { type: 'number' } }, false] },
+            },
+            additionalProperties: false,
+            'x-vertesia-test': { enabled: true, nullable: null, values: [1, false, { nested: 'value' }] },
+        };
+        const parsed = ExperimentalCanonicalInteractionExecutionRequestSchema.parse({
+            initial_state: { type: 'new' },
+            retention: 'STANDARD',
+            return_policy: { history: 'none' },
+            result_schema: resultSchema,
+        });
+
+        expect(parsed.result_schema).toEqual(resultSchema);
+        const componentName = ExperimentalCanonicalInteractionResultSchemaInputSchema.meta()?.id;
+        if (!componentName) throw new Error('Portable result schema input has no component id');
+        expect(emittedComponent(ExperimentalCanonicalInteractionResultSchemaInputSchema, componentName)).toEqual({
+            anyOf: [{ $ref: '#/$defs/ConversationJsonObject' }, { type: 'null' }],
+        });
+
+        for (const invalid of [['not', 'an', 'object'], 'string', 1, true]) {
+            expect(ExperimentalCanonicalInteractionResultSchemaInputSchema.safeParse(invalid).success).toBe(false);
+        }
+        expect(ExperimentalCanonicalInteractionResultSchemaInputSchema.safeParse(null).success).toBe(true);
+
+        expectTypeOf<z.infer<typeof ExperimentalCanonicalInteractionResultSchemaInputSchema>>().toEqualTypeOf<z.infer<
+            typeof JsonObjectSchema
+        > | null>();
+
+        const ajv = new Ajv2020({ strictSchema: false, allErrors: true });
+        const validate = ajv.compile({
+            components: { schemas: ApiSchemaComponents },
+            $ref: '#/components/schemas/ExperimentalCanonicalInteractionResultSchemaInput',
+        });
+        expect(validate(resultSchema)).toBe(true);
+        expect(validate(null)).toBe(true);
+        for (const invalid of [['not', 'an', 'object'], 'string', 1, true]) {
+            expect(validate(invalid)).toBe(false);
+        }
     });
 
     it('rejects legacy run_data and unknown request fields instead of silently changing retention', () => {
@@ -64,8 +258,20 @@ describe('experimental canonical interaction execution schemas', () => {
         expect(
             ExperimentalCanonicalInteractionHistorySchema.safeParse({
                 status: 'reference',
-                conversation: { conversation_id: 'conversation-1' },
+                reference: {
+                    run_id: 'run-1',
+                    conversation: { conversation_id: 'conversation-1' },
+                },
             }).success,
         ).toBe(false);
+        expect(
+            ExperimentalCanonicalInteractionHistorySchema.safeParse({
+                status: 'reference',
+                reference: {
+                    run_id: 'run-1',
+                    conversation: { conversation_id: 'conversation-1', revision: 1 },
+                },
+            }).success,
+        ).toBe(true);
     });
 });

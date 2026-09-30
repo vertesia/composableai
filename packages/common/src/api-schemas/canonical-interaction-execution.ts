@@ -1,14 +1,15 @@
-import { JSONSchemaSchema } from '@llumiverse/common/schemas';
 import {
     ConversationAcceptedOutputFragmentSchema,
     ConversationDocumentSchema,
     ConversationRefSchema,
+    IdentifierSchema,
     JsonObjectSchema,
     TimestampSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
+import { RunDataStorageLevel } from '../interaction-values.js';
 import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE, VERSION_HEADER } from '../versions.js';
-import { ExecutionRunStatusSchema, InteractionExecutionErrorSchema, SchemaRefSchema } from './interaction.js';
+import { ExecutionRunStatusSchema, InteractionExecutionErrorSchema } from './interaction.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
 export const ExperimentalCanonicalInteractionHeadersSchema = z
@@ -17,16 +18,42 @@ export const ExperimentalCanonicalInteractionHeadersSchema = z
     })
     .meta({ id: 'ExperimentalCanonicalInteractionHeaders' });
 
+export const ExperimentalCanonicalInteractionConversationReferenceSchema = z
+    .strictObject({
+        run_id: z.string().min(1),
+        conversation: ConversationRefSchema,
+    })
+    .meta({ id: 'ExperimentalCanonicalInteractionConversationReference' });
+
+export const ExperimentalCanonicalInteractionNewStateSchema = z
+    .strictObject({ type: z.literal('new') })
+    .meta({ id: 'ExperimentalCanonicalInteractionNewState' });
+
+export const ExperimentalCanonicalInteractionDocumentStateSchema = z
+    .strictObject({
+        type: z.literal('document'),
+        document: ConversationDocumentSchema,
+    })
+    .meta({ id: 'ExperimentalCanonicalInteractionDocumentState' });
+
+export const ExperimentalCanonicalInteractionReferenceStateSchema = z
+    .strictObject({
+        type: z.literal('reference'),
+        reference: ExperimentalCanonicalInteractionConversationReferenceSchema,
+        operation_id: IdentifierSchema,
+    })
+    .meta({ id: 'ExperimentalCanonicalInteractionReferenceState' });
+
 export const ExperimentalCanonicalInteractionInitialStateSchema = z
     .discriminatedUnion('type', [
-        z.strictObject({ type: z.literal('new') }),
-        z.strictObject({ type: z.literal('document'), document: ConversationDocumentSchema }),
+        ExperimentalCanonicalInteractionNewStateSchema,
+        ExperimentalCanonicalInteractionDocumentStateSchema,
+        ExperimentalCanonicalInteractionReferenceStateSchema,
     ])
     .meta({
         id: 'ExperimentalCanonicalInteractionInitialState',
         type: 'object',
         required: ['type'],
-        discriminator: { propertyName: 'type' },
     });
 
 export const ExperimentalCanonicalInteractionReturnPolicySchema = z
@@ -38,22 +65,80 @@ export const ExperimentalCanonicalInteractionExecutionConfigurationSchema =
         id: 'ExperimentalCanonicalInteractionExecutionConfiguration',
     });
 
-export const ExperimentalCanonicalInteractionExecutionRequestSchema = z
-    .strictObject({
-        initial_state: ExperimentalCanonicalInteractionInitialStateSchema,
-        retention: RunDataStorageLevelSchema,
-        return_policy: ExperimentalCanonicalInteractionReturnPolicySchema,
-        data: JsonObjectSchema.optional(),
-        config: ExperimentalCanonicalInteractionExecutionConfigurationSchema.optional(),
-        result_schema: z.union([JSONSchemaSchema, SchemaRefSchema, z.null()]).optional(),
-        tags: z.array(z.string()).optional(),
-    })
-    .meta({ id: 'ExperimentalCanonicalInteractionExecutionRequest' });
+/**
+ * Portable wire carrier for an inline JSON Schema or a stored schema reference.
+ *
+ * The server validates the inline-object branch with llumiverse's authoritative JSONSchemaSchema
+ * before it reserves a canonical execution. Publishing the recursive implementation schema here
+ * would generate an unusable Java model because its `additionalProperties` JSON Schema keyword
+ * collides with the generated model's own additional-properties storage field.
+ */
+export const ExperimentalCanonicalInteractionResultSchemaInputSchema = z
+    .nullable(JsonObjectSchema)
+    .meta({ id: 'ExperimentalCanonicalInteractionResultSchemaInput' });
 
-export const ExperimentalCanonicalNamedInteractionExecutionRequestSchema =
-    ExperimentalCanonicalInteractionExecutionRequestSchema.extend({
+const canonicalExecutionRequestFields = {
+    initial_state: ExperimentalCanonicalInteractionInitialStateSchema,
+    retention: RunDataStorageLevelSchema,
+    return_policy: ExperimentalCanonicalInteractionReturnPolicySchema,
+    data: JsonObjectSchema.optional(),
+    config: ExperimentalCanonicalInteractionExecutionConfigurationSchema.optional(),
+    result_schema: ExperimentalCanonicalInteractionResultSchemaInputSchema.optional(),
+    tags: z.array(z.string()).optional(),
+};
+
+const referenceDebugRetentionJsonSchema = {
+    allOf: [
+        {
+            if: {
+                properties: {
+                    initial_state: {
+                        properties: { type: { const: 'reference' } },
+                        required: ['type'],
+                    },
+                },
+                required: ['initial_state'],
+            },
+            // biome-ignore lint/suspicious/noThenProperty: JSON Schema's conditional keyword is literally `then`.
+            then: {
+                properties: { retention: { const: RunDataStorageLevel.DEBUG } },
+                required: ['retention'],
+            },
+        },
+    ],
+} as const;
+
+function requireDebugRetentionForReference(
+    value: { initial_state: { type: string }; retention: RunDataStorageLevel },
+    context: z.core.$RefinementCtx,
+): void {
+    if (value.initial_state.type === 'reference' && value.retention !== RunDataStorageLevel.DEBUG) {
+        context.addIssue({
+            code: 'custom',
+            message: 'Canonical reference continuation requires DEBUG retention',
+            path: ['retention'],
+        });
+    }
+}
+
+export const ExperimentalCanonicalInteractionExecutionRequestSchema = z
+    .strictObject(canonicalExecutionRequestFields)
+    .superRefine(requireDebugRetentionForReference)
+    .meta({
+        id: 'ExperimentalCanonicalInteractionExecutionRequest',
+        ...referenceDebugRetentionJsonSchema,
+    });
+
+export const ExperimentalCanonicalNamedInteractionExecutionRequestSchema = z
+    .strictObject({
+        ...canonicalExecutionRequestFields,
         interaction: z.string().min(1),
-    }).meta({ id: 'ExperimentalCanonicalNamedInteractionExecutionRequest' });
+    })
+    .superRefine(requireDebugRetentionForReference)
+    .meta({
+        id: 'ExperimentalCanonicalNamedInteractionExecutionRequest',
+        ...referenceDebugRetentionJsonSchema,
+    });
 
 export const ExperimentalCanonicalInteractionDocumentHistorySchema = z
     .strictObject({
@@ -65,7 +150,7 @@ export const ExperimentalCanonicalInteractionDocumentHistorySchema = z
 export const ExperimentalCanonicalInteractionReferenceHistorySchema = z
     .strictObject({
         status: z.literal('reference'),
-        conversation: ConversationRefSchema,
+        reference: ExperimentalCanonicalInteractionConversationReferenceSchema,
     })
     .meta({ id: 'ExperimentalCanonicalInteractionReferenceHistory' });
 

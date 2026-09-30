@@ -1449,9 +1449,6 @@ const CONTENT_TYPE_CATALOG_SCHEMAS: {
     readonly ContentObjectTypeItemArray: typeof ContentObjectTypeItemArraySchema;
     readonly ContentObjectTypeCatalogEntry: typeof ContentObjectTypeCatalogEntrySchema;
     readonly ContentObjectTypeCatalogEntryArray: typeof ContentObjectTypeCatalogEntryArraySchema;
-    readonly InCodeTypeDefinition: typeof InCodeTypeDefinitionSchema;
-    readonly CreateContentObjectTypePayload: typeof CreateContentObjectTypePayloadSchema;
-    readonly UpdateContentObjectTypePayload: typeof UpdateContentObjectTypePayloadSchema;
     readonly ContentObjectType: typeof ContentObjectTypeSchema;
     readonly ContentObjectTypeCatalogQuery: typeof ContentObjectTypeCatalogQuerySchema;
     readonly ContentObjectTypeListQuery: typeof ContentObjectTypeListQuerySchema;
@@ -2479,12 +2476,22 @@ type CanonicalInteractionSchemaMap = {
 
 const CANONICAL_INTERACTION_SCHEMAS: CanonicalInteractionSchemaMap = {
     ExperimentalCanonicalInteractionHeaders: CanonicalInteractionSchemas.ExperimentalCanonicalInteractionHeadersSchema,
+    ExperimentalCanonicalInteractionConversationReference:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionConversationReferenceSchema,
+    ExperimentalCanonicalInteractionNewState:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionNewStateSchema,
+    ExperimentalCanonicalInteractionDocumentState:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionDocumentStateSchema,
+    ExperimentalCanonicalInteractionReferenceState:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionReferenceStateSchema,
     ExperimentalCanonicalInteractionInitialState:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionInitialStateSchema,
     ExperimentalCanonicalInteractionReturnPolicy:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionReturnPolicySchema,
     ExperimentalCanonicalInteractionExecutionConfiguration:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionConfigurationSchema,
+    ExperimentalCanonicalInteractionResultSchemaInput:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionResultSchemaInputSchema,
     ExperimentalCanonicalInteractionExecutionRequest:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionRequestSchema,
     ExperimentalCanonicalNamedInteractionExecutionRequest:

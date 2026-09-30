@@ -1893,13 +1893,25 @@ export type UnavailableRunConversation = {
 };
 export type RunConversationResponse = AvailableRunConversation | UnavailableRunConversation;
 export type ExperimentalCanonicalInteractionInitialState =
-    | {
-          type: 'new';
-      }
-    | {
-          type: 'document';
-          document: ConversationDocument;
-      };
+    | ExperimentalCanonicalInteractionNewState
+    | ExperimentalCanonicalInteractionDocumentState
+    | ExperimentalCanonicalInteractionReferenceState;
+export type ExperimentalCanonicalInteractionNewState = {
+    type: 'new';
+};
+export type ExperimentalCanonicalInteractionDocumentState = {
+    type: 'document';
+    document: ConversationDocument;
+};
+export type ExperimentalCanonicalInteractionReferenceState = {
+    type: 'reference';
+    reference: ExperimentalCanonicalInteractionConversationReference;
+    operation_id: string;
+};
+export type ExperimentalCanonicalInteractionConversationReference = {
+    run_id: string;
+    conversation: ConversationRef;
+};
 export type ExperimentalCanonicalInteractionHeaders = {
     'x-api-version': '=20260930';
 };
@@ -1921,13 +1933,14 @@ export type ExperimentalCanonicalInteractionExecutionConfiguration = {
     prompt_cache_schema_suffix?: boolean | undefined;
     http_timeout?: HttpTimeoutOptions | undefined;
 };
+export type ExperimentalCanonicalInteractionResultSchemaInput = JsonObject | null;
 export type ExperimentalCanonicalInteractionExecutionRequest = {
     initial_state: ExperimentalCanonicalInteractionInitialState;
     retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
     return_policy: ExperimentalCanonicalInteractionReturnPolicy;
     data?: JsonObject | undefined;
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
-    result_schema?: JSONSchema | SchemaRef | null | undefined;
+    result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     tags?: string[] | undefined;
 };
 export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
@@ -1936,7 +1949,7 @@ export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
     return_policy: ExperimentalCanonicalInteractionReturnPolicy;
     data?: JsonObject | undefined;
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
-    result_schema?: JSONSchema | SchemaRef | null | undefined;
+    result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     tags?: string[] | undefined;
     interaction: string;
 };
@@ -1946,7 +1959,7 @@ export type ExperimentalCanonicalInteractionDocumentHistory = {
 };
 export type ExperimentalCanonicalInteractionReferenceHistory = {
     status: 'reference';
-    conversation: ConversationRef;
+    reference: ExperimentalCanonicalInteractionConversationReference;
 };
 export type ExperimentalCanonicalInteractionUnavailableHistory = {
     status: 'unavailable';
@@ -11978,9 +11991,14 @@ export interface ApiComponentTypes {
     DelegationGrant: DelegationGrant;
     DelegationGrantArray: DelegationGrantArray;
     ExperimentalCanonicalInteractionHeaders: ExperimentalCanonicalInteractionHeaders;
+    ExperimentalCanonicalInteractionConversationReference: ExperimentalCanonicalInteractionConversationReference;
+    ExperimentalCanonicalInteractionNewState: ExperimentalCanonicalInteractionNewState;
+    ExperimentalCanonicalInteractionDocumentState: ExperimentalCanonicalInteractionDocumentState;
+    ExperimentalCanonicalInteractionReferenceState: ExperimentalCanonicalInteractionReferenceState;
     ExperimentalCanonicalInteractionInitialState: ExperimentalCanonicalInteractionInitialState;
     ExperimentalCanonicalInteractionReturnPolicy: ExperimentalCanonicalInteractionReturnPolicy;
     ExperimentalCanonicalInteractionExecutionConfiguration: ExperimentalCanonicalInteractionExecutionConfiguration;
+    ExperimentalCanonicalInteractionResultSchemaInput: ExperimentalCanonicalInteractionResultSchemaInput;
     ExperimentalCanonicalInteractionExecutionRequest: ExperimentalCanonicalInteractionExecutionRequest;
     ExperimentalCanonicalNamedInteractionExecutionRequest: ExperimentalCanonicalNamedInteractionExecutionRequest;
     ExperimentalCanonicalInteractionDocumentHistory: ExperimentalCanonicalInteractionDocumentHistory;

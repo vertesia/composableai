@@ -813,6 +813,30 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionInitialStateSchema
         >
     >;
+    ExperimentalCanonicalInteractionNewState: Same<
+        W.ExperimentalCanonicalInteractionNewState,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionNewStateSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionDocumentState: Same<
+        W.ExperimentalCanonicalInteractionDocumentState,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionDocumentStateSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionReferenceState: Same<
+        W.ExperimentalCanonicalInteractionReferenceState,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReferenceStateSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionConversationReference: Same<
+        W.ExperimentalCanonicalInteractionConversationReference,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionConversationReferenceSchema
+        >
+    >;
     ExperimentalCanonicalInteractionHeaders: Same<
         W.ExperimentalCanonicalInteractionHeaders,
         z.infer<
@@ -829,6 +853,12 @@ interface Checks {
         W.ExperimentalCanonicalInteractionExecutionConfiguration,
         z.infer<
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionConfigurationSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionResultSchemaInput: Same<
+        W.ExperimentalCanonicalInteractionResultSchemaInput,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionResultSchemaInputSchema
         >
     >;
     ExperimentalCanonicalInteractionExecutionRequest: Same<
@@ -9617,6 +9647,30 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionHeadersSchema
         >
     >;
+    'component:ExperimentalCanonicalInteractionConversationReference': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionConversationReference'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionConversationReferenceSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionNewState': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionNewState'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionNewStateSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionDocumentState': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionDocumentState'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionDocumentStateSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionReferenceState': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionReferenceState'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReferenceStateSchema
+        >
+    >;
     'component:ExperimentalCanonicalInteractionInitialState': Same<
         W.ApiComponentTypes['ExperimentalCanonicalInteractionInitialState'],
         z.infer<
@@ -9633,6 +9687,12 @@ interface Checks {
         W.ApiComponentTypes['ExperimentalCanonicalInteractionExecutionConfiguration'],
         z.infer<
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionConfigurationSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionResultSchemaInput': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionResultSchemaInput'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionResultSchemaInputSchema
         >
     >;
     'component:ExperimentalCanonicalInteractionExecutionRequest': Same<
@@ -9958,9 +10018,14 @@ const checks: Checks = {
     UnavailableRunConversation: true,
     RunConversationResponse: true,
     ExperimentalCanonicalInteractionInitialState: true,
+    ExperimentalCanonicalInteractionNewState: true,
+    ExperimentalCanonicalInteractionDocumentState: true,
+    ExperimentalCanonicalInteractionReferenceState: true,
+    ExperimentalCanonicalInteractionConversationReference: true,
     ExperimentalCanonicalInteractionHeaders: true,
     ExperimentalCanonicalInteractionReturnPolicy: true,
     ExperimentalCanonicalInteractionExecutionConfiguration: true,
+    ExperimentalCanonicalInteractionResultSchemaInput: true,
     ExperimentalCanonicalInteractionExecutionRequest: true,
     ExperimentalCanonicalNamedInteractionExecutionRequest: true,
     ExperimentalCanonicalInteractionDocumentHistory: true,
@@ -12256,9 +12321,14 @@ const checks: Checks = {
     'component:DelegationGrant': true,
     'component:DelegationGrantArray': true,
     'component:ExperimentalCanonicalInteractionHeaders': true,
+    'component:ExperimentalCanonicalInteractionConversationReference': true,
+    'component:ExperimentalCanonicalInteractionNewState': true,
+    'component:ExperimentalCanonicalInteractionDocumentState': true,
+    'component:ExperimentalCanonicalInteractionReferenceState': true,
     'component:ExperimentalCanonicalInteractionInitialState': true,
     'component:ExperimentalCanonicalInteractionReturnPolicy': true,
     'component:ExperimentalCanonicalInteractionExecutionConfiguration': true,
+    'component:ExperimentalCanonicalInteractionResultSchemaInput': true,
     'component:ExperimentalCanonicalInteractionExecutionRequest': true,
     'component:ExperimentalCanonicalNamedInteractionExecutionRequest': true,
     'component:ExperimentalCanonicalInteractionDocumentHistory': true,
@@ -12281,6 +12351,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2545);
+        expect(Object.keys(checks)).toHaveLength(2555);
     });
 });

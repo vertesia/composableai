@@ -1,10 +1,16 @@
 import type * as Wire from './wire-types.generated.js';
 
 export type ExperimentalCanonicalInteractionInitialState = Wire.ExperimentalCanonicalInteractionInitialState;
+export type ExperimentalCanonicalInteractionNewState = Wire.ExperimentalCanonicalInteractionNewState;
+export type ExperimentalCanonicalInteractionDocumentState = Wire.ExperimentalCanonicalInteractionDocumentState;
+export type ExperimentalCanonicalInteractionReferenceState = Wire.ExperimentalCanonicalInteractionReferenceState;
+export type ExperimentalCanonicalInteractionConversationReference =
+    Wire.ExperimentalCanonicalInteractionConversationReference;
 export type ExperimentalCanonicalInteractionHeaders = Wire.ExperimentalCanonicalInteractionHeaders;
 export type ExperimentalCanonicalInteractionReturnPolicy = Wire.ExperimentalCanonicalInteractionReturnPolicy;
 export type ExperimentalCanonicalInteractionExecutionConfiguration =
     Wire.ExperimentalCanonicalInteractionExecutionConfiguration;
+export type ExperimentalCanonicalInteractionResultSchemaInput = Wire.ExperimentalCanonicalInteractionResultSchemaInput;
 export type ExperimentalCanonicalInteractionExecutionRequest = Wire.ExperimentalCanonicalInteractionExecutionRequest;
 export type ExperimentalCanonicalNamedInteractionExecutionRequest =
     Wire.ExperimentalCanonicalNamedInteractionExecutionRequest;

@@ -1591,6 +1591,36 @@
     ],
     "additionalProperties": false
   },
+  "ExperimentalCanonicalInteractionConversationReference": {
+    "type": "object",
+    "properties": {
+      "run_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "conversation": {
+        "$ref": "#/components/schemas/ConversationRef"
+      }
+    },
+    "required": [
+      "run_id",
+      "conversation"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalInteractionNewState": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "new"
+      }
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false
+  },
   "ConversationDocumentV0": {
     "type": "object",
     "properties": {
@@ -2258,12 +2288,7 @@
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
       "status": {
-        "type": "string",
-        "enum": [
-          "completed",
-          "failed",
-          "cancelled"
-        ]
+        "$ref": "#/components/schemas/ConversationGenerationStatus"
       },
       "finish_reason": {
         "type": "string"
@@ -2310,6 +2335,14 @@
       "request_receipt"
     ],
     "additionalProperties": false
+  },
+  "ConversationGenerationStatus": {
+    "type": "string",
+    "enum": [
+      "completed",
+      "failed",
+      "cancelled"
+    ]
   },
   "ConversationGenerationTimestamps": {
     "type": "object",
@@ -2742,12 +2775,7 @@
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
       "status": {
-        "type": "string",
-        "enum": [
-          "completed",
-          "failed",
-          "cancelled"
-        ]
+        "$ref": "#/components/schemas/ConversationGenerationStatus"
       },
       "finish_reason": {
         "type": "string"
@@ -3579,37 +3607,54 @@
       "type"
     ]
   },
+  "ExperimentalCanonicalInteractionDocumentState": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "document"
+      },
+      "document": {
+        "$ref": "#/components/schemas/ConversationDocumentV0"
+      }
+    },
+    "required": [
+      "type",
+      "document"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalInteractionReferenceState": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "reference"
+      },
+      "reference": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionConversationReference"
+      },
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "type",
+      "reference",
+      "operation_id"
+    ],
+    "additionalProperties": false
+  },
   "ExperimentalCanonicalInteractionInitialState": {
     "oneOf": [
       {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "new"
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionNewState"
       },
       {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "document"
-          },
-          "document": {
-            "$ref": "#/components/schemas/ConversationDocumentV0"
-          }
-        },
-        "required": [
-          "type",
-          "document"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionDocumentState"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionReferenceState"
       }
     ],
     "type": "object",
@@ -3617,7 +3662,12 @@
       "type"
     ],
     "discriminator": {
-      "propertyName": "type"
+      "propertyName": "type",
+      "mapping": {
+        "new": "#/components/schemas/ExperimentalCanonicalInteractionNewState",
+        "document": "#/components/schemas/ExperimentalCanonicalInteractionDocumentState",
+        "reference": "#/components/schemas/ExperimentalCanonicalInteractionReferenceState"
+      }
     }
   },
   "ExperimentalCanonicalInteractionReturnPolicy": {
@@ -5588,6 +5638,16 @@
     },
     "additionalProperties": false
   },
+  "ExperimentalCanonicalInteractionResultSchemaInput": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
+      {
+        "type": "null"
+      }
+    ]
+  },
   "RunDataStorageLevel": {
     "type": "string",
     "enum": [
@@ -5595,61 +5655,6 @@
       "RESTRICTED",
       "DEBUG"
     ]
-  },
-  "JSONSchema": {
-    "type": "object",
-    "properties": {
-      "type": {},
-      "description": {
-        "type": "string"
-      },
-      "properties": {
-        "$ref": "#/components/schemas/JSONSchemaProperties"
-      },
-      "items": {
-        "$ref": "#/components/schemas/JSONSchema"
-      },
-      "format": {
-        "type": "string"
-      },
-      "editor": {},
-      "default": {},
-      "additionalProperties": {
-        "anyOf": [
-          {
-            "type": "boolean"
-          },
-          {
-            "$ref": "#/components/schemas/JSONSchema"
-          }
-        ]
-      },
-      "required": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      }
-    }
-  },
-  "JSONSchemaProperties": {
-    "type": "object",
-    "additionalProperties": {
-      "$ref": "#/components/schemas/JSONSchema"
-    }
-  },
-  "SchemaRef": {
-    "type": "object",
-    "properties": {
-      "$uri": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "$uri"
-    ],
-    "additionalProperties": false,
-    "description": "Schema can be stored or specified as a reference to an external schema. We only support \"store:\" references for now"
   },
   "ExperimentalCanonicalInteractionExecutionRequest": {
     "type": "object",
@@ -5670,17 +5675,7 @@
         "$ref": "#/components/schemas/ExperimentalCanonicalInteractionExecutionConfiguration"
       },
       "result_schema": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/JSONSchema"
-          },
-          {
-            "$ref": "#/components/schemas/SchemaRef"
-          },
-          {
-            "type": "null"
-          }
-        ]
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionResultSchemaInput"
       },
       "tags": {
         "type": "array",
@@ -5694,7 +5689,38 @@
       "retention",
       "return_policy"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "initial_state": {
+              "properties": {
+                "type": {
+                  "const": "reference"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            }
+          },
+          "required": [
+            "initial_state"
+          ]
+        },
+        "then": {
+          "properties": {
+            "retention": {
+              "const": "DEBUG"
+            }
+          },
+          "required": [
+            "retention"
+          ]
+        }
+      }
+    ]
   },
   "ExperimentalCanonicalNamedInteractionExecutionRequest": {
     "type": "object",
@@ -5715,17 +5741,7 @@
         "$ref": "#/components/schemas/ExperimentalCanonicalInteractionExecutionConfiguration"
       },
       "result_schema": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/JSONSchema"
-          },
-          {
-            "$ref": "#/components/schemas/SchemaRef"
-          },
-          {
-            "type": "null"
-          }
-        ]
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionResultSchemaInput"
       },
       "tags": {
         "type": "array",
@@ -5744,7 +5760,38 @@
       "return_policy",
       "interaction"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "initial_state": {
+              "properties": {
+                "type": {
+                  "const": "reference"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            }
+          },
+          "required": [
+            "initial_state"
+          ]
+        },
+        "then": {
+          "properties": {
+            "retention": {
+              "const": "DEBUG"
+            }
+          },
+          "required": [
+            "retention"
+          ]
+        }
+      }
+    ]
   },
   "ExperimentalCanonicalInteractionDocumentHistory": {
     "type": "object",
@@ -5770,13 +5817,13 @@
         "type": "string",
         "const": "reference"
       },
-      "conversation": {
-        "$ref": "#/components/schemas/ConversationRef"
+      "reference": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalInteractionConversationReference"
       }
     },
     "required": [
       "status",
-      "conversation"
+      "reference"
     ],
     "additionalProperties": false
   },
@@ -6129,12 +6176,7 @@
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
       "status": {
-        "type": "string",
-        "enum": [
-          "completed",
-          "failed",
-          "cancelled"
-        ]
+        "$ref": "#/components/schemas/ConversationGenerationStatus"
       },
       "finish_reason": {
         "type": "string"
@@ -9255,6 +9297,48 @@
     },
     "additionalProperties": false,
     "description": "Fast pre-conversion type identification (the \"sniff\") for untyped documents. The sniff classifies a document from cheap local evidence (first/last page text, a low-res first-page image, office docProps) BEFORE any conversion, so a high-confidence match can apply the type's intake policy — including skipping conversion — without paying for it first."
+  },
+  "JSONSchemaProperties": {
+    "type": "object",
+    "additionalProperties": {
+      "$ref": "#/components/schemas/JSONSchema"
+    }
+  },
+  "JSONSchema": {
+    "type": "object",
+    "properties": {
+      "type": {},
+      "description": {
+        "type": "string"
+      },
+      "properties": {
+        "$ref": "#/components/schemas/JSONSchemaProperties"
+      },
+      "items": {
+        "$ref": "#/components/schemas/JSONSchema"
+      },
+      "format": {
+        "type": "string"
+      },
+      "editor": {},
+      "default": {},
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "$ref": "#/components/schemas/JSONSchema"
+          }
+        ]
+      },
+      "required": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
   },
   "IntakePageScope": {
     "type": "string",
@@ -13833,6 +13917,19 @@
       "handlebars",
       "text"
     ]
+  },
+  "SchemaRef": {
+    "type": "object",
+    "properties": {
+      "$uri": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "$uri"
+    ],
+    "additionalProperties": false,
+    "description": "Schema can be stored or specified as a reference to an external schema. We only support \"store:\" references for now"
   },
   "CachePolicy": {
     "type": "object",

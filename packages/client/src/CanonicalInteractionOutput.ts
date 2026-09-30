@@ -2,7 +2,9 @@ import { cloneSemanticallyValidAcceptedOutputFragment } from '@llumiverse/conver
 import type {
     ConversationOutputAsset,
     ConversationOutputBlock,
+    ExperimentalCanonicalInteractionConversationReference,
     ExperimentalCanonicalInteractionExecutionResult,
+    ExperimentalCanonicalInteractionInitialState,
 } from '@vertesia/common';
 
 type AcceptedOutput = Extract<ExperimentalCanonicalInteractionExecutionResult['output'], { status: 'accepted' }>;
@@ -16,6 +18,45 @@ export type CanonicalInteractionMediaBlock = Extract<
 export interface CanonicalInteractionMedia<T extends CanonicalInteractionMediaBlock = CanonicalInteractionMediaBlock> {
     block: T;
     asset: ConversationOutputAsset;
+}
+
+type CanonicalReferenceInitialState = Extract<ExperimentalCanonicalInteractionInitialState, { type: 'reference' }>;
+
+/** Return the exact server-owned reference represented by retained DEBUG history. */
+export function canonicalReference(
+    result: ExperimentalCanonicalInteractionExecutionResult,
+): ExperimentalCanonicalInteractionConversationReference {
+    if (result.run.retention !== 'DEBUG') {
+        throw new Error('Canonical interaction result does not contain DEBUG-retained history');
+    }
+    if (result.history.status === 'reference') {
+        if (result.history.reference.run_id !== result.run.id) {
+            throw new Error('Canonical interaction history reference does not match the result run');
+        }
+        return structuredClone(result.history.reference);
+    }
+    if (result.history.status === 'document') {
+        return {
+            run_id: result.run.id,
+            conversation: {
+                conversation_id: result.history.conversation.id,
+                revision: result.history.conversation.revision,
+            },
+        };
+    }
+    throw new Error('Canonical interaction result does not contain retained canonical history');
+}
+
+/** Build a linear continuation state from an actual server-retained reference or document. */
+export function referenceInitialState(
+    result: ExperimentalCanonicalInteractionExecutionResult,
+    operationId: string,
+): CanonicalReferenceInitialState {
+    return {
+        type: 'reference',
+        reference: canonicalReference(result),
+        operation_id: operationId,
+    };
 }
 
 /** Read-only conveniences over canonical accepted output; no legacy CompletionResult projection. */

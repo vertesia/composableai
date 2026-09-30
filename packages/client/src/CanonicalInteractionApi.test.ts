@@ -7,6 +7,7 @@ import {
     VERSION_HEADER,
 } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
+import { referenceInitialState } from './CanonicalInteractionOutput.js';
 import { VertesiaClient } from './client.js';
 import { INTERACTION_EXECUTION_TIMEOUT_MS } from './execute.js';
 
@@ -83,5 +84,38 @@ describe('experimental canonical interaction API client', () => {
 
         expect(timeout).toHaveBeenCalledWith(INTERACTION_EXECUTION_TIMEOUT_MS);
         timeout.mockRestore();
+    });
+
+    it('sends an exact server-issued reference as the canonical continuation state', async () => {
+        const requests: Request[] = [];
+        const referenced: ExperimentalCanonicalInteractionExecutionResult = {
+            ...response,
+            run: { ...response.run, retention: RunDataStorageLevel.DEBUG },
+            history: {
+                status: 'reference',
+                reference: {
+                    run_id: response.run.id,
+                    conversation: { conversation_id: 'conversation-1', revision: 7 },
+                },
+            },
+        };
+        const continuation: ExperimentalCanonicalInteractionExecutionRequest = {
+            initial_state: referenceInitialState(referenced, 'handoff:operation-1'),
+            retention: RunDataStorageLevel.DEBUG,
+            return_policy: { history: 'reference' },
+        };
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json(response)),
+            onRequest: (wireRequest) => requests.push(wireRequest.clone()),
+        });
+
+        await client.interactions.executeCanonical('interaction-1', continuation);
+
+        expect(await requests[0].json()).toEqual(continuation);
+        expect(requests[0].headers.get(VERSION_HEADER)).toBe(
+            EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+        );
     });
 });

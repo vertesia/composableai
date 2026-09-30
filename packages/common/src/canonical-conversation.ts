@@ -41,6 +41,7 @@ export type ConversationGeneratedAssetProvenance = z.infer<typeof Canonical.Gene
 export type ConversationGeneratedTurnProvenance = z.infer<typeof Canonical.GeneratedTurnProvenanceSchema>;
 export type ConversationGeneration = z.infer<typeof Canonical.GenerationSchema>;
 export type ConversationGenerationCost = z.infer<typeof Canonical.GenerationCostSchema>;
+export type ConversationGenerationStatus = z.infer<typeof Canonical.GenerationStatusSchema>;
 export type ConversationGenerationTimestamps = z.infer<typeof Canonical.GenerationTimestampsSchema>;
 export type ConversationGenerationUsage = z.infer<typeof Canonical.GenerationUsageSchema>;
 export type ConversationIdentifier = z.infer<typeof Canonical.IdentifierSchema>;

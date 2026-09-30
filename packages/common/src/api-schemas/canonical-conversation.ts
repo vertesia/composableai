@@ -41,6 +41,7 @@ export const CANONICAL_CONVERSATION_SCHEMAS = {
     ConversationGeneratedTurnProvenance: Canonical.GeneratedTurnProvenanceSchema,
     ConversationGeneration: Canonical.GenerationSchema,
     ConversationGenerationCost: Canonical.GenerationCostSchema,
+    ConversationGenerationStatus: Canonical.GenerationStatusSchema,
     ConversationGenerationTimestamps: Canonical.GenerationTimestampsSchema,
     ConversationGenerationUsage: Canonical.GenerationUsageSchema,
     ConversationIdentifier: Canonical.IdentifierSchema,
