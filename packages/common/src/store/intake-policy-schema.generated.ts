@@ -1420,11 +1420,16 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 size: {
                     type: 'string',
-                    enum: ['1024x1024', '1024x1536', '1536x1024', 'auto'],
+                },
+                width: {
+                    type: 'number',
+                },
+                height: {
+                    type: 'number',
                 },
                 image_quality: {
                     type: 'string',
-                    enum: ['low', 'medium', 'high', 'auto'],
+                    enum: ['low', 'medium', 'high', 'xhigh', 'max', 'auto'],
                 },
                 background: {
                     type: 'string',
@@ -1434,8 +1439,84 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['png', 'webp', 'jpeg'],
                 },
+                n: {
+                    type: 'number',
+                },
+                output_compression: {
+                    type: 'number',
+                },
+                moderation: {
+                    type: 'string',
+                    enum: ['auto', 'low'],
+                },
+                input_fidelity: {
+                    type: 'string',
+                    enum: ['low', 'high'],
+                },
+                partial_images: {
+                    type: 'number',
+                },
             },
             additionalProperties: false,
+        },
+        OpenAiImageGenerationMask: {
+            type: 'object',
+            properties: {
+                file_id: {
+                    type: 'string',
+                },
+                image_url: {
+                    type: 'string',
+                },
+            },
+        },
+        OpenAiImageGenerationOptions: {
+            type: 'object',
+            properties: {
+                model: {
+                    type: 'string',
+                },
+                force: {
+                    type: 'boolean',
+                },
+                action: {
+                    type: 'string',
+                    enum: ['auto', 'generate', 'edit'],
+                },
+                size: {
+                    type: 'string',
+                },
+                quality: {
+                    type: 'string',
+                    enum: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'],
+                },
+                background: {
+                    type: 'string',
+                    enum: ['auto', 'opaque', 'transparent'],
+                },
+                output_format: {
+                    type: 'string',
+                    enum: ['png', 'jpeg', 'webp'],
+                },
+                output_compression: {
+                    type: 'number',
+                },
+                moderation: {
+                    type: 'string',
+                    enum: ['auto', 'low'],
+                },
+                input_fidelity: {
+                    type: 'string',
+                    enum: ['low', 'high'],
+                },
+                partial_images: {
+                    type: 'number',
+                },
+                input_image_mask: {
+                    $ref: '#/$defs/OpenAiImageGenerationMask',
+                },
+            },
+            required: ['model'],
         },
         OpenAiTextOptions: {
             type: 'object',
@@ -1443,6 +1524,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'openai-text',
+                },
+                image_generation: {
+                    $ref: '#/$defs/OpenAiImageGenerationOptions',
                 },
                 max_tokens: {
                     type: 'number',
@@ -1498,6 +1582,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'openai-thinking',
+                },
+                image_generation: {
+                    $ref: '#/$defs/OpenAiImageGenerationOptions',
                 },
                 max_tokens: {
                     type: 'number',
