@@ -238,6 +238,7 @@ const MAX_PROJECTED_MEDIA_CHUNKS = 16_384;
 const MAX_WORKFLOW_INVOCATION_KEY_LENGTH = 128;
 const WORKFLOW_INTERACTION_TAG_PREFIX = 'workflow-interaction:';
 const WORKFLOW_PREDECESSOR_TAG_PREFIX = 'workflow-predecessor:';
+const REQUIRED_TOOL_CALL_MISSING_ERROR_CODE = 'RequiredToolCallMissingError';
 const WORKFLOW_INVOCATION_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 const WORKFLOW_RESERVED_TAG_PREFIXES = [WORKFLOW_PREDECESSOR_TAG_PREFIX, WORKFLOW_INTERACTION_TAG_PREFIX] as const;
 
@@ -297,17 +298,28 @@ function predecessorFromTags(tags: readonly string[] | undefined): string | unde
     return values[0] === 'initial' ? undefined : values[0];
 }
 
-export class CanonicalInteractionExecutionError extends Error {
+export class CanonicalInteractionExecutionError extends ApplicationFailure {
     readonly errorCode?: string;
     readonly retryable?: boolean;
+
+    override get name(): string {
+        return 'CanonicalInteractionExecutionError';
+    }
 
     constructor(
         interactionName: string,
         readonly result: EnhancedExperimentalCanonicalInteractionExecutionResult,
     ) {
         const source = result.run.error;
-        super(`Interaction Execution failed ${interactionName}: ${source?.message || 'Unknown error'}`);
-        this.name = 'CanonicalInteractionExecutionError';
+        const type =
+            source?.code === REQUIRED_TOOL_CALL_MISSING_ERROR_CODE
+                ? REQUIRED_TOOL_CALL_MISSING_ERROR_CODE
+                : 'CanonicalInteractionExecutionError';
+        super(
+            `Interaction Execution failed ${interactionName}: ${source?.message || 'Unknown error'}`,
+            type,
+            source?.retryable === false,
+        );
         this.retryable = source?.retryable;
         this.errorCode = source?.code;
     }
@@ -640,6 +652,14 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                 : error instanceof LlumiverseError
                   ? error.retryable !== false
                   : undefined;
+
+        if (executionError.errorCode === REQUIRED_TOOL_CALL_MISSING_ERROR_CODE) {
+            throw ApplicationFailure.create({
+                message: `Non-retryable Interaction Execution failed ${interactionName}: ${executionError.message}`,
+                type: REQUIRED_TOOL_CALL_MISSING_ERROR_CODE,
+                nonRetryable: true,
+            });
+        }
 
         if (isRetryable !== undefined) {
             if (isRetryable) {

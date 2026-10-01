@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { ApplicationFailure } from '@temporalio/activity';
+import { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { ServerError } from '@vertesia/api-fetch-client';
 import type { EnhancedExperimentalCanonicalInteractionExecutionResult, VertesiaClient } from '@vertesia/client';
@@ -243,7 +243,7 @@ function canonicalActivityPlan(
 }
 
 async function mockInteractionError(
-    error: Error & { statusCode?: number; status?: number; code?: number; retryable?: boolean },
+    error: Error & { statusCode?: number; status?: number; code?: number; retryable?: boolean; errorCode?: string },
 ): Promise<void> {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const { client: mockClient, streamCanonical } = mockCanonicalClient();
@@ -456,6 +456,35 @@ describe('executeInteraction retryability', () => {
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
     });
+
+    it('preserves required-tool recovery type through the compatibility activity wrapper', async () => {
+        await mockInteractionError(
+            Object.assign(new Error('required tool call missing'), {
+                retryable: false,
+                errorCode: 'RequiredToolCallMissingError',
+            }),
+        );
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            type: 'RequiredToolCallMissingError',
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+    });
+
+    it('does not classify a forbidden tool call as recoverable', async () => {
+        await mockInteractionError(
+            Object.assign(new Error('forbidden tool call'), {
+                retryable: false,
+                errorCode: 'CANONICAL_FORBIDDEN_TOOL_CALL',
+            }),
+        );
+
+        const failure = testEnv.run(executeInteraction, createPayload());
+        await expect(failure).rejects.toMatchObject({ nonRetryable: true } satisfies Partial<ApplicationFailure>);
+        await failure.catch((error: unknown) => {
+            expect(error).not.toMatchObject({ type: 'RequiredToolCallMissingError' });
+        });
+    });
 });
 
 const retryEnvironment = (attempt: number) =>
@@ -466,6 +495,49 @@ const retryEnvironment = (attempt: number) =>
     });
 
 describe('executeCanonicalInteractionFromActivity', () => {
+    it.each([
+        ['RequiredToolCallMissingError', 'RequiredToolCallMissingError'],
+        ['CANONICAL_FORBIDDEN_TOOL_CALL', 'CanonicalInteractionExecutionError'],
+    ] as const)('exposes direct canonical failure code %s under safe error name %s', async (code, expectedName) => {
+        const failed = canonicalResult({
+            generationStatus: 'failed',
+            error: { message: 'Canonical tool-selection failure', code, retryable: false },
+        });
+        const mocks = mockCanonicalClient(failed);
+
+        const execution = retryEnvironment(1).run(
+            executeCanonicalInteractionFromActivity,
+            mocks.client,
+            canonicalActivityPlan(),
+        );
+        await expect(execution).rejects.toMatchObject({
+            type: expectedName,
+            errorCode: code,
+            retryable: false,
+        });
+    });
+
+    it.each([
+        ['RequiredToolCallMissingError', 'RequiredToolCallMissingError'],
+        ['CANONICAL_FORBIDDEN_TOOL_CALL', 'CanonicalInteractionExecutionError'],
+    ] as const)('preserves direct canonical failure %s through Temporal conversion as %s', (code, expectedType) => {
+        const failure = new CanonicalInteractionExecutionError(
+            'sys:CanonicalActivity',
+            canonicalResult({
+                generationStatus: 'failed',
+                error: { message: 'Canonical tool-selection failure', code, retryable: false },
+            }),
+        );
+
+        const temporalFailure = ApplicationFailure.fromError(failure);
+        expect(temporalFailure).toBe(failure);
+        expect(temporalFailure).toMatchObject({
+            name: 'CanonicalInteractionExecutionError',
+            type: expectedType,
+            nonRetryable: true,
+        });
+    });
+
     it('rejects caller-supplied workflow identity before recovery, admission, or transport', async () => {
         const mocks = mockCanonicalClient();
         const request = {
