@@ -2,7 +2,7 @@
 
 import type { JSONSchema } from '@llumiverse/common';
 import { z } from 'zod';
-import type { CompositeAppMenuNavItem } from '../apps.js';
+import { COMPOSITE_APP_EXPORT_FORMAT, type CompositeAppMenuNavItem } from '../apps.js';
 import type { PlatformEvent } from '../platform-event.js';
 import type { InCodeProcessDefinition } from '../store/process.js';
 import { SystemRolesSchema } from './apikey.js';
@@ -1035,3 +1035,192 @@ export const CompositeAppConfigPayloadSchema = z
             .optional(),
     })
     .meta({ id: 'CompositeAppConfigPayload' });
+
+// CompositeApp configuration export. Normalized against the published contract rather than dumped
+// from storage, so it stays importable; what was dropped is reported in `normalization`.
+
+export const CompositeAppExportSectionSchema = z.enum(['card', 'branding', 'header', 'sidebar']).meta({
+    id: 'CompositeAppExportSection',
+    description:
+        'One independently exportable section of a composite app configuration. These mirror the four ' +
+        'panels of the composite app settings page, each of which is already saved on its own:\n' +
+        "- 'card': the App Portal card overrides\n" +
+        "- 'branding': logo, message banner, switcher visibility and theme\n" +
+        "- 'header': the header menu\n" +
+        "- 'sidebar': the sidebar menu, configured app list, home override and sidebar display options",
+});
+
+export const CompositeAppExportRequestSchema = z
+    .strictObject({
+        sections: z
+            .array(CompositeAppExportSectionSchema)
+            .min(1)
+            .meta({ description: 'Which sections to export. At least one is required.' }),
+    })
+    .meta({
+        id: 'CompositeAppExportRequest',
+        description: 'Selects which sections of the composite app configuration to export.',
+    });
+
+export const CompositeAppExportBrandingSchema = z
+    .strictObject({
+        logo: CompositeAppLogoOverridesSchema.optional(),
+        message: CompositeAppMessageOverridesSchema.optional(),
+        switchers: CompositeAppSwitchersOverridesSchema.optional(),
+        theme: CompositeAppThemeOverridesSchema.optional(),
+    })
+    .meta({
+        id: 'CompositeAppExportBranding',
+        description: "The 'branding' section: the fields the UI overrides panel saves together.",
+    });
+
+export const CompositeAppExportSidebarSchema = z
+    .strictObject({
+        menu: z.array(CompositeAppMenuSectionSchema).optional(),
+        apps: z.array(CompositeAppEntrySchema).optional(),
+        homePlugin: z.union([CompositeAppHomePluginSchema, z.null()]).optional(),
+        sidebar: CompositeAppSidebarOverridesSchema.optional(),
+    })
+    .meta({
+        id: 'CompositeAppExportSidebar',
+        description: "The 'sidebar' section: the fields the sidebar menu editor saves together.",
+    });
+
+export const CompositeAppExportSectionsSchema = z
+    .strictObject({
+        card: CompositeAppCardOverridesSchema.optional(),
+        branding: CompositeAppExportBrandingSchema.optional(),
+        header: z.array(CompositeAppHeaderItemSchema).optional(),
+        sidebar: CompositeAppExportSidebarSchema.optional(),
+    })
+    .meta({
+        id: 'CompositeAppExportSections',
+        description:
+            'The exported sections. Only the requested sections are present, so a file exported with two ' +
+            'sections cannot silently import four.',
+    });
+
+export const CompositeAppExportAppRefSchema = z
+    .strictObject({
+        name: z.string().meta({ description: 'The app name as referenced by the exported configuration.' }),
+        title: z.string().meta({ description: 'Manifest title, when the manifest was found.' }).optional(),
+        manifest_found: z
+            .boolean()
+            .meta({ description: 'Whether an app manifest with this name exists on the platform at all.' }),
+        installed: z.boolean().meta({ description: 'Whether that app is installed in the source project.' }),
+        manifest_visibility: z
+            .enum(['public', 'private', 'vertesia'])
+            .meta({
+                description:
+                    'Manifest visibility. A private manifest belongs to one account and cannot be referenced ' +
+                    'from a project in another account.',
+            })
+            .optional(),
+        manifest_account: z
+            .string()
+            .meta({ description: 'The account owning the manifest, when it is account-scoped.' })
+            .optional(),
+        used_by: z.array(z.string()).meta({
+            description:
+                'Where this reference appears, as locator strings: "apps[]", "homePlugin", or ' + '"menu:<navItemId>".',
+        }),
+    })
+    .meta({
+        id: 'CompositeAppExportAppRef',
+        description:
+            'A resolved app reference. Carried alongside the sections so an import wizard can tell a name ' +
+            'that is merely uninstalled from one that names no manifest at all.',
+    });
+
+export const CompositeAppExportPrincipalRefSchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'The user or group id as stored in the configuration.' }),
+        label: z
+            .string()
+            .meta({
+                description:
+                    'Human-readable identity — email for a user, name for a group — resolved in the source ' +
+                    'project so an import wizard can present something a person can act on. A label is a ' +
+                    'display aid for matching, never an identity: it must not be used to grant access without ' +
+                    'explicit confirmation.',
+            })
+            .optional(),
+        found: z.boolean().meta({ description: 'Whether the principal still resolves in the source project.' }),
+        used_by: z.array(z.string()).meta({
+            description: 'Where this reference appears: "menu:<navItemId>" or "header:<itemId>".',
+        }),
+    })
+    .meta({
+        id: 'CompositeAppExportPrincipalRef',
+        description: 'A resolved user or group reference taken from a nav-item or header-item permission gate.',
+    });
+
+export const CompositeAppExportReferencesSchema = z
+    .strictObject({
+        apps: z.array(CompositeAppExportAppRefSchema).meta({ description: 'Every distinct app name referenced.' }),
+        users: z
+            .array(CompositeAppExportPrincipalRefSchema)
+            .meta({ description: 'Every distinct user id referenced by a permission gate.' }),
+        groups: z
+            .array(CompositeAppExportPrincipalRefSchema)
+            .meta({ description: 'Every distinct group id referenced by a permission gate.' }),
+        roles: z.array(z.string()).meta({
+            description:
+                'Every distinct role name referenced. Roles are portable as-is — the same names exist in ' +
+                'every project — and are listed for confirmation rather than remapping.',
+        }),
+    })
+    .meta({
+        id: 'CompositeAppExportReferences',
+        description:
+            'Project-scoped values the exported sections point at, resolved against the source project. An ' +
+            'import into another project has to remap these rather than copy them.',
+    });
+
+export const CompositeAppExportNormalizationSchema = z
+    .strictObject({
+        dropped_fields: z.array(z.string()).meta({
+            description:
+                'Fields present in the stored document that the published contract does not accept, dropped ' +
+                'from this export. Reported rather than discarded silently.',
+        }),
+        notes: z.array(z.string()).meta({ description: 'Human-readable notes about what normalization changed.' }),
+    })
+    .meta({
+        id: 'CompositeAppExportNormalization',
+        description: 'What the export changed to make the stored configuration valid against the published contract.',
+    });
+
+export const CompositeAppExportSourceSchema = z
+    .strictObject({
+        project_id: z.string().meta({ description: 'The project the configuration was exported from.' }),
+        project_name: z.string().meta({ description: 'Its display name at export time.' }).optional(),
+        account_id: z
+            .string()
+            .meta({
+                description:
+                    'The account owning that project. An import into a project in a different account cannot ' +
+                    'reference private manifests or carry principal ids across.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'CompositeAppExportSource', description: 'Where an exported configuration came from.' });
+
+export const CompositeAppExportSchema = z
+    .strictObject({
+        format: z.literal(COMPOSITE_APP_EXPORT_FORMAT).meta({
+            description: 'Format discriminator and version. Importers must reject a format they do not know.',
+        }),
+        exported_at: z.string().meta({ format: 'date-time', description: 'When the export was produced.' }),
+        source: CompositeAppExportSourceSchema,
+        sections: CompositeAppExportSectionsSchema,
+        references: CompositeAppExportReferencesSchema,
+        normalization: CompositeAppExportNormalizationSchema,
+    })
+    .meta({
+        id: 'CompositeAppExport',
+        description:
+            'A portable composite app configuration. Sections are the top-level structure so selectivity is ' +
+            'structural rather than a filter applied afterwards, and `references` resolves the project-scoped ' +
+            'values an import has to remap.',
+    });
