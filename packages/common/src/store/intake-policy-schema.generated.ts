@@ -1471,6 +1471,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                 },
             },
+            additionalProperties: false,
         },
         OpenAiImageGenerationOptions: {
             type: 'object',
@@ -1521,6 +1522,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
             },
             required: ['model'],
+            additionalProperties: false,
         },
         OpenAiTextOptions: {
             type: 'object',
