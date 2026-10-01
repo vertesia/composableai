@@ -22,6 +22,8 @@ import type {
     AgentRunArtifactsQuerySchema,
     AgentRunArtifactUploadHeadersSchema,
     AgentRunDetailsQuerySchema,
+    AgentRunFileSchema,
+    AgentRunFilesResponseSchema,
     AgentRunSchema,
     AgentRunUpdatesQuerySchema,
     AgentRunUpdatesResponseSchema,
@@ -34,9 +36,11 @@ import type {
     ListAgentRunsQuerySchema,
     PostAgentRunUpdatePayloadSchema,
     PostAgentRunUpdateResponseSchema,
+    RegisterAgentRunFilePayloadSchema,
     SearchAgentRunsQuerySchema,
     SearchAgentRunsResponseSchema,
     SignalAgentResponseSchema,
+    StartAgentRunPayloadSchema,
     StreamAgentRunQuerySchema,
     TerminateAgentRunResponseSchema,
     UpdateAgentArtifactContentPayloadSchema,
@@ -193,6 +197,12 @@ export type AgentRunResponse<TData = Record<string, unknown>, TProperties = Reco
     | AutonomousRunResponse<TData, TProperties>
     | SupervisedRunResponse
     | ProgrammaticRunResponse;
+
+/** Files attached to a run before its first turn. */
+export type AgentRunFile = z.infer<typeof AgentRunFileSchema>;
+export type AgentRunFilesResponse = z.infer<typeof AgentRunFilesResponseSchema>;
+export type RegisterAgentRunFilePayload = z.infer<typeof RegisterAgentRunFilePayloadSchema>;
+export type StartAgentRunPayload = z.infer<typeof StartAgentRunPayloadSchema>;
 
 type CreateAgentRunWire = z.infer<typeof CreateAgentRunPayloadSchema>;
 export type CreateAgentRunPayload<TData = Record<string, unknown>, TProperties = Record<string, unknown>> = Omit<
