@@ -64,6 +64,31 @@ export interface AgentRunStreamMessagesOptions {
     onHistoryError?: (error: unknown) => void;
 }
 
+export type AgentStreamMessageCallback = (message: AgentMessage, exitFn?: (payload: unknown) => void) => void;
+
+/**
+ * Replaces the built-in agent history and SSE transport for one client instance.
+ *
+ * Implementations own the full stream lifecycle. Call `onHistoryLoaded` once before replaying
+ * those historical messages through `onMessage`, then deliver live messages through `onMessage`.
+ * Honor `signal`, release transport resources when it aborts, provide an exit function to
+ * `onMessage`, and resolve with the payload passed to that function. Rejections propagate without
+ * falling back to the built-in transport.
+ *
+ * The provider also owns authentication for its transport. Ordinary REST requests continue to use
+ * the client's configured API key or auth callback; a host provider can use the same credential
+ * source, but the client does not pass credentials into this interface.
+ */
+export interface AgentStreamProvider {
+    streamMessages(
+        id: string,
+        onMessage?: AgentStreamMessageCallback,
+        since?: number,
+        signal?: AbortSignal,
+        options?: AgentRunStreamMessagesOptions,
+    ): Promise<unknown>;
+}
+
 /**
  * `#` and `?` are URL delimiters, not path content: either one truncates the path before the
  * request is built. Nothing else is escaped — `%` keeps its existing rejection at upload.
@@ -73,7 +98,10 @@ export function escapeArtifactPathDelimiters(path: string): string {
 }
 
 export class AgentsApi extends ApiTopic {
-    constructor(parent: ClientBase) {
+    constructor(
+        parent: ClientBase,
+        private readonly streamProvider?: AgentStreamProvider,
+    ) {
         super(parent, '/api/v1/agents');
     }
 
@@ -318,11 +346,15 @@ export class AgentsApi extends ApiTopic {
      */
     async streamMessages(
         id: string,
-        onMessage?: (message: AgentMessage, exitFn?: (payload: unknown) => void) => void,
+        onMessage?: AgentStreamMessageCallback,
         since?: number,
         signal?: AbortSignal,
         options?: AgentRunStreamMessagesOptions,
     ): Promise<unknown> {
+        if (this.streamProvider) {
+            return this.streamProvider.streamMessages(id, onMessage, since, signal, options);
+        }
+
         let resolveFn: (value: unknown) => void = () => {};
         let rejectFn: (reason?: unknown) => void = () => {};
         const promise = new Promise<unknown>((resolve, reject) => {
