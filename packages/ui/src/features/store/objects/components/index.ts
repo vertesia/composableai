@@ -8,3 +8,4 @@ export * from './SaveVersionConfirmModal';
 export * from './SelectDocument';
 export * from './SelectDocumentModal';
 export * from './useDownloadFile';
+export * from './VectorSearchWidget';
