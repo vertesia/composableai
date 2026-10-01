@@ -1498,7 +1498,17 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     minLength: 1,
                 },
+<<<<<<< HEAD
                 response_format: {
+=======
+            },
+            additionalProperties: false,
+        },
+        OpenAiImageGenerationOptions: {
+            type: 'object',
+            properties: {
+                model: {
+>>>>>>> 73621be1 (feat: publish OpenAI image generation contracts (#2384))
                     type: 'string',
                     enum: ['mp3', 'wav', 'opus', 'aac', 'flac', 'pcm'],
                 },
@@ -1511,6 +1521,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                 },
             },
+<<<<<<< HEAD
+=======
+            required: ['model'],
+>>>>>>> 73621be1 (feat: publish OpenAI image generation contracts (#2384))
             additionalProperties: false,
         },
         OpenAiTextOptions: {
