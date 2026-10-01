@@ -9,7 +9,7 @@ import {
 } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
+import { forgetRejectedScopeSelection, readScopeSelection, type ScopeSelection } from '../scopeSelection';
 import { generateAuthState } from './authState';
 import {
     authReturnUrl,
@@ -91,27 +91,6 @@ function renewExpiredCentralAuthSession(): boolean {
     return true;
 }
 
-function clearRejectedPersistedScope(accountId?: string, projectId?: string) {
-    if (!accountId) return;
-
-    const projectKey = `${LastSelectedProjectId_KEY}-${accountId}`;
-    if (projectId) {
-        const persistedProjectMatches = localStorage.getItem(projectKey) === projectId;
-        if (persistedProjectMatches) {
-            localStorage.removeItem(projectKey);
-        }
-        if (persistedProjectMatches && localStorage.getItem(LastSelectedAccountId_KEY) === accountId) {
-            localStorage.removeItem(LastSelectedAccountId_KEY);
-        }
-        return;
-    }
-
-    if (localStorage.getItem(LastSelectedAccountId_KEY) === accountId) {
-        localStorage.removeItem(LastSelectedAccountId_KEY);
-        localStorage.removeItem(projectKey);
-    }
-}
-
 interface ComposableTokenResponse {
     rawToken: string;
     token: AuthTokenPayload;
@@ -143,12 +122,10 @@ export function resolveAuthSelection(currentUrl: URL): { accountId?: string; pro
     const defaults = hasUrlScope ? undefined : Env.defaultAuthSelection;
     const urlAccount = currentUrl.searchParams.get('a') ?? defaults?.accountId;
     const urlProject = currentUrl.searchParams.get('p') ?? defaults?.projectId;
-    const accountId =
-        urlAccount ??
-        (urlProject === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);
-    const projectId = urlProject ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${accountId}`) ?? undefined;
+    // A project alone identifies its account, so the stored selection only fills in a missing project.
+    const stored = urlProject === undefined ? readScopeSelection(urlAccount) : undefined;
 
-    return { accountId, projectId };
+    return { accountId: urlAccount ?? stored?.accountId, projectId: urlProject ?? stored?.projectId };
 }
 
 function decodeToken(token: string): AuthTokenPayload {
@@ -486,6 +463,17 @@ export function getCurrentVertesiaToken(): string | undefined {
     return AUTH_TOKEN_RAW;
 }
 
+/**
+ * The scope a call without an explicit selection keeps: the token this tab already holds, when it is
+ * in the requested account, and otherwise the stored selection.
+ */
+function currentScopeSelection(accountId?: string): ScopeSelection {
+    if (AUTH_TOKEN?.account?.id && (!accountId || AUTH_TOKEN.account.id === accountId)) {
+        return { accountId: AUTH_TOKEN.account.id, projectId: AUTH_TOKEN.project?.id };
+    }
+    return readScopeSelection(accountId);
+}
+
 export async function getComposableToken(
     accountId?: string,
     projectId?: string,
@@ -493,11 +481,9 @@ export async function getComposableToken(
     forceRefresh = false,
     useInternalAuth = false,
 ): Promise<ComposableTokenResponse> {
-    const selectedAccount =
-        accountId ??
-        (projectId === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);
-    const selectedProject =
-        projectId ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ?? undefined;
+    const stored = projectId === undefined ? currentScopeSelection(accountId) : undefined;
+    const selectedAccount = accountId ?? stored?.accountId;
+    const selectedProject = projectId ?? stored?.projectId;
     const devAuthToken = Env.isLocalDev ? Env.devAuthToken : undefined;
     const suppliedToken = devAuthToken ?? initToken ?? AUTH_TOKEN_RAW;
 
@@ -573,8 +559,8 @@ export async function getComposableToken(
         ) {
             AUTH_TOKEN_RAW = undefined;
             AUTH_TOKEN = undefined;
-            if (error instanceof RequestedScopeUnavailableError) {
-                clearRejectedPersistedScope(selectedAccount, selectedProject);
+            if (error instanceof RequestedScopeUnavailableError && selectedAccount) {
+                forgetRejectedScopeSelection(selectedAccount, selectedProject);
             }
         }
         // An expired Central Auth session presents as a rejected credential: the JWT we sent STS to
