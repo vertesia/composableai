@@ -337,6 +337,7 @@ describe('getComposableToken', () => {
 describe('resolveAuthSelection', () => {
     beforeEach(() => {
         localStorage.clear();
+        sessionStorage.clear();
         localStorage.setItem('composableai.lastSelectedAccountId', 'stored-account');
         localStorage.setItem('composableai.lastSelectedProjectId-stored-account', 'stored-project');
         localStorage.setItem('composableai.lastSelectedProjectId-url-account', 'account-project');
@@ -371,6 +372,16 @@ describe('resolveAuthSelection', () => {
         expect(resolveAuthSelection(new URL('https://app.example.test/'))).toEqual({
             accountId: 'stored-account',
             projectId: 'stored-project',
+        });
+    });
+
+    it("reloads into this tab's selection rather than the last one made in another tab", async () => {
+        sessionStorage.setItem('composableai.tabAccountId', 'tab-account');
+        sessionStorage.setItem('composableai.tabProjectId', 'tab-project');
+        const { resolveAuthSelection } = await importComposableAuth();
+        expect(resolveAuthSelection(new URL('https://app.example.test/'))).toEqual({
+            accountId: 'tab-account',
+            projectId: 'tab-project',
         });
     });
 });

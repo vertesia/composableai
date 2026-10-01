@@ -1,6 +1,7 @@
 import type { VertesiaClient } from '@vertesia/client';
 import { type AuthTokenPayload, PrincipalType } from '@vertesia/common';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as composable from './auth/composable';
 import { UserSession } from './UserSession';
 
 const projectToken: AuthTokenPayload = {
@@ -100,5 +101,58 @@ describe('UserSession.signOut', () => {
         signOutClone();
         expect(cloneLogout).toHaveBeenCalledOnce();
         expect(logout).toHaveBeenCalledOnce();
+    });
+});
+
+describe('UserSession token scope', () => {
+    function sessionWithRefreshedToken(next: AuthTokenPayload) {
+        const rawToken = encodeToken(next);
+        vi.spyOn(composable, 'getComposableToken').mockResolvedValue({ rawToken, token: next, error: false });
+        const reload = vi.fn();
+        vi.stubGlobal('location', { reload });
+        const { session } = createSession(async () => ({}));
+        return { session, rawToken, reload };
+    }
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+    });
+
+    it('adopts a refreshed token in the same scope', async () => {
+        const { session, rawToken, reload } = sessionWithRefreshedToken({ ...projectToken, exp: 4102444900 });
+
+        await expect(session.rawAuthToken).resolves.toBe(rawToken);
+        expect(session.authToken?.exp).toBe(4102444900);
+        expect(reload).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['project', { ...projectToken, project: { id: 'other-project', name: 'Other', account: 'test-account' } }],
+        ['account', { ...projectToken, account: { id: 'other-account', name: 'Other' } }],
+    ])('reloads instead of sending a token for another %s', async (_scope, next) => {
+        const { session, reload } = sessionWithRefreshedToken(next);
+
+        await expect(session.rawAuthToken).rejects.toThrow(/changed/);
+        expect(reload).toHaveBeenCalledOnce();
+        expect(session.authToken?.project?.id).toBe('test-project');
+    });
+
+    it('reloads instead of publishing a forced refresh for another project', async () => {
+        const next = { ...projectToken, project: { id: 'other-project', name: 'Other', account: 'test-account' } };
+        const { session, reload } = sessionWithRefreshedToken(next);
+
+        await expect(session.refreshAuthToken()).rejects.toThrow(/changed/);
+        expect(reload).toHaveBeenCalledOnce();
+        expect(session.setSession).not.toHaveBeenCalled();
+    });
+
+    it('lets an account-only session gain a project without reloading', async () => {
+        const { session, reload } = sessionWithRefreshedToken(projectToken);
+        session.authToken = { ...projectToken, project: undefined };
+
+        await session.rawAuthToken;
+        expect(session.authToken?.project?.id).toBe('test-project');
+        expect(reload).not.toHaveBeenCalled();
     });
 });

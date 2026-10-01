@@ -138,6 +138,7 @@
         "./styles/typography.css": "./src/css/typography.css",
         "./styles/tooltips.css": "./src/css/custom-tooltips.css",
         "./styles/base.css": "./src/css/base.css",
+        "./styles/markdown.css": "./src/widgets/markdown/markdown.css",
         "./css/index.css": "./src/css/index.css",
         "./css/color.css": "./src/css/color.css",
         "./css/theme.css": "./src/css/theme.css",
@@ -145,6 +146,7 @@
         "./css/typography.css": "./src/css/typography.css",
         "./css/custom-tooltips.css": "./src/css/custom-tooltips.css",
         "./css/base.css": "./src/css/base.css",
+        "./css/markdown.css": "./src/widgets/markdown/markdown.css",
         "./router": {
             "types": "./lib/router/index.d.ts",
             "default": "./lib/router/index.js"
