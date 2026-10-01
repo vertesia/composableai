@@ -1,7 +1,7 @@
 import type { AuthTokenPayload } from '@vertesia/common';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
+import { rememberScopeSelection } from './scopeSelection';
 import { UserSession, UserSessionContext } from './UserSession';
 
 function decodeJwtPayload(token: string): AuthTokenPayload {
@@ -30,11 +30,7 @@ export function DevSessionProvider({ children, token }: DevSessionProviderProps)
             next.authToken = decodeJwtPayload(token);
             next.client.withAuthCallback(() => Promise.resolve(`Bearer ${token}`));
 
-            localStorage.setItem(LastSelectedAccountId_KEY, next.authToken.account.id);
-            localStorage.setItem(
-                `${LastSelectedProjectId_KEY}-${next.authToken.account.id}`,
-                next.authToken.project?.id ?? '',
-            );
+            rememberScopeSelection(next.authToken.account.id, next.authToken.project?.id);
         } catch (error: unknown) {
             next.authError = error instanceof Error ? error : new Error(String(error));
         }
