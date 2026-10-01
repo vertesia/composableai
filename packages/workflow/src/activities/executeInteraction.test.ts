@@ -494,6 +494,12 @@ const retryEnvironment = (attempt: number) =>
         workflowExecution: { workflowId: 'workflow-id', runId: 'workflow-run-id' },
     });
 
+const ROOT_AGENT_ACCEPTANCE = {
+    version: 1,
+    subject_agent_run_id: 'agent-run-id',
+    scope: 'root',
+} as const;
+
 describe('executeCanonicalInteractionFromActivity', () => {
     it.each([
         ['RequiredToolCallMissingError', 'RequiredToolCallMissingError'],
@@ -606,6 +612,7 @@ describe('executeCanonicalInteractionFromActivity', () => {
             request,
             invocation_key: 'initial-agent-turn',
             agent_run_id: 'agent-run-id',
+            agent_acceptance: ROOT_AGENT_ACCEPTANCE,
         });
 
         expect(mocks.requestSlot).toHaveBeenCalledWith({
@@ -617,6 +624,7 @@ describe('executeCanonicalInteractionFromActivity', () => {
             rate_limit_id: expect.stringContaining(':invocation-key:18:initial-agent-turn'),
         });
         const sent = mocks.streamCanonical.mock.calls[0][0];
+        expect(sent.agent_acceptance).toEqual({ ...ROOT_AGENT_ACCEPTANCE, activity_id: 'activity-id' });
         expect(sent.request).toMatchObject({
             interaction: request.interaction,
             initial_state: request.initial_state,
@@ -646,6 +654,28 @@ describe('executeCanonicalInteractionFromActivity', () => {
             }),
         });
         expect(Object.hasOwn(request, 'workflow')).toBe(false);
+    });
+
+    it('derives the activity id for a scoped workstream acceptance target without mutating the caller', async () => {
+        const mocks = mockCanonicalClient();
+        const target = {
+            version: 1,
+            subject_agent_run_id: 'child-agent-run-id',
+            scope: 'workstream:launch-1',
+            workstream_id: 'implementation',
+        } as const;
+
+        await retryEnvironment(1).run(
+            executeCanonicalInteractionFromActivity,
+            mocks.client,
+            canonicalActivityPlan({}, { agent_acceptance: target }),
+        );
+
+        expect(mocks.streamCanonical.mock.calls[0][0].agent_acceptance).toEqual({
+            ...target,
+            activity_id: 'activity-id',
+        });
+        expect(target).not.toHaveProperty('activity_id');
     });
 
     it.each([
@@ -725,7 +755,10 @@ describe('executeCanonicalInteractionFromActivity', () => {
         const mocks = mockCanonicalClient();
         const connectionLost = new Error('connection lost after dispatch');
         mocks.streamCanonical.mockRejectedValueOnce(connectionLost).mockResolvedValueOnce(acceptedStream());
-        const plan = canonicalActivityPlan({}, { service_tier_policy: 'flex_then_default' });
+        const plan = canonicalActivityPlan(
+            {},
+            { service_tier_policy: 'flex_then_default', agent_acceptance: ROOT_AGENT_ACCEPTANCE },
+        );
 
         await expect(retryEnvironment(1).run(executeCanonicalInteractionFromActivity, mocks.client, plan)).rejects.toBe(
             connectionLost,
@@ -738,6 +771,8 @@ describe('executeCanonicalInteractionFromActivity', () => {
         const reopened = mocks.streamCanonical.mock.calls[1][0];
         expect(reopened.operation_id).toBe(initial.operation_id);
         expect(reopened.request).toEqual(initial.request);
+        expect(reopened.agent_acceptance).toEqual(initial.agent_acceptance);
+        expect(reopened.agent_acceptance).toEqual({ ...ROOT_AGENT_ACCEPTANCE, activity_id: 'activity-id' });
         expect(reopened.request.config?.model_options).toMatchObject({ service_tier: 'flex' });
         expect(mocks.requestSlot).toHaveBeenCalledTimes(2);
         expect(mocks.requestSlot.mock.calls[0][0].rate_limit_id).toBe(mocks.requestSlot.mock.calls[1][0].rate_limit_id);
@@ -763,7 +798,10 @@ describe('executeCanonicalInteractionFromActivity', () => {
             retryEnvironment(3).run(
                 executeCanonicalInteractionFromActivity,
                 mocks.client,
-                canonicalActivityPlan({}, { service_tier_policy: 'flex_then_default' }),
+                canonicalActivityPlan(
+                    {},
+                    { service_tier_policy: 'flex_then_default', agent_acceptance: ROOT_AGENT_ACCEPTANCE },
+                ),
             ),
         ).resolves.toBe(accepted);
 
@@ -775,6 +813,10 @@ describe('executeCanonicalInteractionFromActivity', () => {
         expect(mocks.streamCanonical.mock.calls[0][0].request.tags).toContain(
             'workflow-service-tier-policy:flex_then_default',
         );
+        expect(mocks.streamCanonical.mock.calls[0][0].agent_acceptance).toEqual({
+            ...ROOT_AGENT_ACCEPTANCE,
+            activity_id: 'activity-id',
+        });
     });
 
     it('creates one deterministic default-tier successor only after confirming the failed flex terminal', async () => {
@@ -801,7 +843,10 @@ describe('executeCanonicalInteractionFromActivity', () => {
             .mockResolvedValueOnce(accepted)
             .mockResolvedValueOnce(failed)
             .mockResolvedValueOnce(accepted);
-        const plan = canonicalActivityPlan({}, { service_tier_policy: 'flex_then_default' });
+        const plan = canonicalActivityPlan(
+            {},
+            { service_tier_policy: 'flex_then_default', agent_acceptance: ROOT_AGENT_ACCEPTANCE },
+        );
 
         await expect(
             retryEnvironment(1).run(executeCanonicalInteractionFromActivity, mocks.client, plan),
@@ -823,6 +868,9 @@ describe('executeCanonicalInteractionFromActivity', () => {
         expect(successor.request.config?.model_options).toMatchObject({ service_tier: 'default' });
         expect(successor.request.tags).toContain(`workflow-predecessor:${failed.run.id}`);
         expect(recovered).toEqual(successor);
+        for (const [payload] of mocks.streamCanonical.mock.calls) {
+            expect(payload.agent_acceptance).toEqual({ ...ROOT_AGENT_ACCEPTANCE, activity_id: 'activity-id' });
+        }
         expect(mocks.requestSlot).toHaveBeenCalledTimes(2);
     });
 
@@ -873,6 +921,7 @@ describe('executeCanonicalInteractionFromActivity', () => {
 
         expect(wrapperMocks.requestSlot.mock.calls[0][0]).toEqual(directMocks.requestSlot.mock.calls[0][0]);
         expect(wrapperMocks.streamCanonical.mock.calls[0][0]).toEqual(directMocks.streamCanonical.mock.calls[0][0]);
+        expect(Object.hasOwn(wrapperMocks.streamCanonical.mock.calls[0][0], 'agent_acceptance')).toBe(false);
     });
 
     it('reuses the exact operation and forwards a changed canonical tool catalog for conflict rejection', async () => {
@@ -1513,6 +1562,14 @@ describe('executeInteraction canonical lifecycle', () => {
         const result = canonicalResult({
             blocks: [
                 { id: 'json-block', type: 'json', value: { answer: 42 } },
+                {
+                    id: 'tool-call-block',
+                    type: 'tool_call',
+                    call_id: 'call-1',
+                    tool_name: 'lookup',
+                    arguments: { type: 'json', value: { query: 'record' } },
+                    executor: 'application',
+                },
                 { id: 'image-block', type: 'image', asset_id: 'image-asset' },
             ],
             assets: {

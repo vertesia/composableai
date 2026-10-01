@@ -2960,6 +2960,14 @@ interface Checks {
             typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryPageSchema
         >
     >;
+    ExperimentalAgentConversationTranscriptQuery: Same<
+        W.ExperimentalAgentConversationTranscriptQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationTranscriptQuerySchema>
+    >;
+    ExperimentalAgentConversationTranscriptPage: Same<
+        W.ExperimentalAgentConversationTranscriptPage,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationTranscriptPageSchema>
+    >;
     ExperimentalAgentConversationStreamEnvelope: Same<
         W.ExperimentalAgentConversationStreamEnvelope,
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamEnvelopeSchema>
@@ -8269,6 +8277,14 @@ interface Checks {
             typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryPageSchema
         >
     >;
+    'component:ExperimentalAgentConversationTranscriptQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationTranscriptQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationTranscriptQuerySchema>
+    >;
+    'component:ExperimentalAgentConversationTranscriptPage': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationTranscriptPage'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationTranscriptPageSchema>
+    >;
     'component:ExperimentalAgentConversationStreamEnvelope': Same<
         W.ApiComponentTypes['ExperimentalAgentConversationStreamEnvelope'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamEnvelopeSchema>
@@ -10921,6 +10937,8 @@ const checks: Checks = {
     ExperimentalAgentConversationAcceptedOutput: true,
     ExperimentalAgentConversationAcceptedOutputHistoryQuery: true,
     ExperimentalAgentConversationAcceptedOutputHistoryPage: true,
+    ExperimentalAgentConversationTranscriptQuery: true,
+    ExperimentalAgentConversationTranscriptPage: true,
     ExperimentalAgentConversationStreamEnvelope: true,
     AgentRunDetailsQuery: true,
     AgentRunAccessQuery: true,
@@ -12308,6 +12326,8 @@ const checks: Checks = {
     'component:ExperimentalAgentConversationAcceptedOutput': true,
     'component:ExperimentalAgentConversationAcceptedOutputHistoryQuery': true,
     'component:ExperimentalAgentConversationAcceptedOutputHistoryPage': true,
+    'component:ExperimentalAgentConversationTranscriptQuery': true,
+    'component:ExperimentalAgentConversationTranscriptPage': true,
     'component:ExperimentalAgentConversationStreamEnvelope': true,
     'component:UpdateAgentRunStatusPayload': true,
     'component:AgentRunFeedbackRating': true,
@@ -12760,6 +12780,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2626);
+        expect(Object.keys(checks)).toHaveLength(2630);
     });
 });

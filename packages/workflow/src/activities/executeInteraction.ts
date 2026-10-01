@@ -23,6 +23,7 @@ import {
     type DSLActivitySpec,
     ExecutionRunStatus,
     type ExecutionRunWorkflow,
+    type ExperimentalCanonicalAgentAcceptanceTarget,
     type ExperimentalCanonicalNamedInteractionExecutionRequest,
     type InteractionExecutionConfiguration,
     RunDataStorageLevel,
@@ -263,6 +264,12 @@ export type CanonicalInteractionActivityRequest = Omit<
     'workflow'
 >;
 
+type CanonicalInteractionActivityAgentAcceptanceTarget = ExperimentalCanonicalAgentAcceptanceTarget extends infer Target
+    ? Target extends ExperimentalCanonicalAgentAcceptanceTarget
+        ? Omit<Target, 'activity_id'>
+        : never
+    : never;
+
 export interface CanonicalInteractionActivityPlan {
     request: CanonicalInteractionActivityRequest;
     /** Stable caller-owned key used as one input to the host-derived operation and rate-limit identities. */
@@ -273,6 +280,8 @@ export interface CanonicalInteractionActivityPlan {
     include_previous_error?: boolean;
     /** Agent run attribution carried by the trusted workflow activity. */
     agent_run_id?: string;
+    /** Authenticated agent subject whose scoped head must be durable before acceptance is returned. */
+    agent_acceptance?: CanonicalInteractionActivityAgentAcceptanceTarget;
 }
 
 interface CanonicalRetryState {
@@ -528,7 +537,9 @@ export async function projectCanonicalCompletionResults(
     const output = requireCanonicalInteractionOutput(result);
     const completion: CompletionResult[] = [];
     for (const [index, block] of output.blocks.entries()) {
-        if (block.type === 'text') {
+        if (block.type === 'tool_call') {
+            // Tool calls are workflow control records projected separately from CompletionResult output.
+        } else if (block.type === 'text') {
             completion.push({ type: 'text', value: block.text });
         } else if (block.type === 'reasoning') {
             completion.push({ type: 'thoughts', value: block.text });
@@ -738,6 +749,9 @@ export async function executeCanonicalInteractionFromActivity(
     }
     const info = activityInfo();
     const execution = activityWorkflowExecution(info);
+    const agentAcceptance = plan.agent_acceptance
+        ? { ...structuredClone(plan.agent_acceptance), activity_id: info.activityId }
+        : undefined;
     const baseRateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
     const rateLimitId = invocationKey
         ? `${baseRateLimitId}:invocation-key:${invocationKey.length}:${invocationKey}`
@@ -819,7 +833,11 @@ export async function executeCanonicalInteractionFromActivity(
         heartbeatTimer.unref?.();
         try {
             return await client.runs.streamCanonical(
-                { operation_id: operationId, request },
+                {
+                    operation_id: operationId,
+                    request,
+                    ...(agentAcceptance === undefined ? {} : { agent_acceptance: agentAcceptance }),
+                },
                 {
                     signal: cancellationSignal,
                     on_envelope: (envelope) => {

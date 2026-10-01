@@ -43252,6 +43252,934 @@
     "additionalProperties": false,
     "description": "A bounded page of exact accepted-output references pinned to one retained canonical snapshot."
   },
+  "ExperimentalAgentConversationTranscriptQuery": {
+    "type": "object",
+    "properties": {
+      "conversation_scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "snapshot_conversation_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "snapshot_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "after_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      }
+    },
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "required": [
+            "snapshot_conversation_id"
+          ]
+        },
+        "then": {
+          "required": [
+            "snapshot_revision"
+          ]
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "snapshot_revision"
+          ]
+        },
+        "then": {
+          "required": [
+            "snapshot_conversation_id"
+          ]
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "after_turn_id"
+          ]
+        },
+        "then": {
+          "required": [
+            "snapshot_conversation_id",
+            "snapshot_revision"
+          ]
+        }
+      }
+    ],
+    "description": "Selects a bounded canonical transcript window from one exact conversation snapshot."
+  },
+  "ConversationTranscriptFragment": {
+    "type": "object",
+    "properties": {
+      "format": {
+        "type": "string",
+        "const": "llumiverse.conversation-transcript"
+      },
+      "schema_version": {
+        "type": "number",
+        "const": 0
+      },
+      "experimental_revision": {
+        "type": "string",
+        "const": "2026-09-30.adoption.1"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "turns": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptTurn"
+        }
+      },
+      "generations": {
+        "$ref": "#/components/schemas/ConversationTranscriptGenerationMap"
+      },
+      "assets": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ConversationTranscriptAsset"
+        }
+      },
+      "completeness": {
+        "$ref": "#/components/schemas/ConversationTranscriptCompleteness"
+      }
+    },
+    "required": [
+      "format",
+      "schema_version",
+      "experimental_revision",
+      "source",
+      "turns",
+      "generations",
+      "assets",
+      "completeness"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptUserTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "kind": {
+        "type": "string",
+        "const": "user"
+      },
+      "blocks": {
+        "maxItems": 1000,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptUserBlock"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "kind",
+      "blocks"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptAgentTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "kind": {
+        "type": "string",
+        "const": "agent"
+      },
+      "generation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "blocks": {
+        "maxItems": 1000,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptAgentBlock"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "kind",
+      "blocks"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptToolCallBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "tool_call"
+      },
+      "call_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "tool_name": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "executor": {
+        "type": "string",
+        "enum": [
+          "application",
+          "provider"
+        ]
+      },
+      "arguments": {
+        "$ref": "#/components/schemas/ConversationTranscriptToolArguments"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "call_id",
+      "tool_name",
+      "executor",
+      "arguments"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptJsonToolArguments": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "json"
+      },
+      "value": {
+        "$ref": "#/components/schemas/ConversationJsonValue"
+      }
+    },
+    "required": [
+      "type",
+      "value"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptInvalidToolArguments": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "invalid"
+      },
+      "raw": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "type",
+      "raw"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptToolTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "kind": {
+        "type": "string",
+        "const": "tool"
+      },
+      "blocks": {
+        "minItems": 1,
+        "maxItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptToolResultBlock"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "kind",
+      "blocks"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptToolResultBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "tool_result"
+      },
+      "call_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "success",
+          "error",
+          "cancelled",
+          "denied",
+          "unknown"
+        ]
+      },
+      "content": {
+        "maxItems": 1000,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptRenderableBlock"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "call_id",
+      "status",
+      "content"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptProgramTurn": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationTurnStatus"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationTurnTimestamps"
+      },
+      "kind": {
+        "type": "string",
+        "const": "program"
+      },
+      "blocks": {
+        "maxItems": 1000,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptProgramBlock"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "status",
+      "timestamps",
+      "kind",
+      "blocks"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptProgramBlock": {
+    "$ref": "#/components/schemas/ConversationTranscriptRenderableBlock"
+  },
+  "ConversationTranscriptGenerationMap": {
+    "type": "object",
+    "propertyNames": {
+      "$ref": "#/components/schemas/ConversationIdentifier"
+    },
+    "additionalProperties": {
+      "$ref": "#/components/schemas/ConversationTranscriptGeneration"
+    },
+    "maxProperties": 100
+  },
+  "ConversationTranscriptExecutedGeneration": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "record_source": {
+        "type": "string",
+        "const": "executed"
+      },
+      "purpose": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "requested_model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "resolved_model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "provider": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationGenerationStatus"
+      },
+      "finish_reason": {
+        "type": "string"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationGenerationTimestamps"
+      },
+      "usage": {
+        "$ref": "#/components/schemas/ConversationOutputGenerationUsage"
+      }
+    },
+    "required": [
+      "id",
+      "record_source",
+      "purpose",
+      "requested_model",
+      "provider",
+      "protocol",
+      "status",
+      "timestamps"
+    ],
+    "additionalProperties": false,
+    "description": "Safe recorded generation metadata. Usage is historical generation accounting, not context measurement."
+  },
+  "ConversationTranscriptImportedGeneration": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "record_source": {
+        "type": "string",
+        "const": "imported"
+      },
+      "purpose": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "requested_model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "resolved_model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "provider": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "status": {
+        "$ref": "#/components/schemas/ConversationGenerationStatus"
+      },
+      "finish_reason": {
+        "type": "string"
+      },
+      "timestamps": {
+        "$ref": "#/components/schemas/ConversationGenerationTimestamps"
+      },
+      "usage": {
+        "$ref": "#/components/schemas/ConversationOutputGenerationUsage"
+      }
+    },
+    "required": [
+      "id",
+      "record_source",
+      "status",
+      "timestamps"
+    ],
+    "additionalProperties": false,
+    "description": "Safe recorded imported generation metadata. Recorded usage remains imported and is not billed execution."
+  },
+  "ConversationTranscriptAsset": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "kind": {
+        "$ref": "#/components/schemas/ConversationAssetKind"
+      },
+      "mime_type": {
+        "type": "string",
+        "minLength": 1
+      },
+      "storage": {
+        "$ref": "#/components/schemas/ConversationAssetStorage"
+      },
+      "byte_length": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "content_hash": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "media": {
+        "$ref": "#/components/schemas/ConversationAssetMediaMetadata"
+      },
+      "created_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      }
+    },
+    "required": [
+      "id",
+      "kind",
+      "mime_type",
+      "storage",
+      "created_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptCompleteness": {
+    "type": "object",
+    "properties": {
+      "gap_before": {
+        "type": "boolean"
+      },
+      "gap_after": {
+        "type": "boolean"
+      },
+      "semantic_content": {
+        "type": "string",
+        "enum": [
+          "complete",
+          "partial"
+        ]
+      },
+      "metadata": {
+        "type": "string",
+        "const": "omitted"
+      },
+      "provenance": {
+        "type": "string",
+        "const": "omitted"
+      },
+      "native_replay": {
+        "type": "string",
+        "const": "omitted"
+      },
+      "omitted_turns": {
+        "maxItems": 1000,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptTurnOmission"
+        }
+      },
+      "omitted_generations": {
+        "maxItems": 1000,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptGenerationOmission"
+        }
+      },
+      "omitted_blocks": {
+        "maxItems": 1000,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptBlockOmission"
+        }
+      },
+      "omitted_assets": {
+        "maxItems": 1000,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationTranscriptAssetOmission"
+        }
+      }
+    },
+    "required": [
+      "gap_before",
+      "gap_after",
+      "semantic_content",
+      "metadata",
+      "provenance",
+      "native_replay",
+      "omitted_turns",
+      "omitted_generations",
+      "omitted_blocks",
+      "omitted_assets"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptTurnOmission": {
+    "type": "object",
+    "properties": {
+      "turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "reason": {
+        "$ref": "#/components/schemas/ConversationTranscriptTurnOmissionReason"
+      }
+    },
+    "required": [
+      "turn_id",
+      "reason"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptTurnOmissionReason": {
+    "type": "string",
+    "enum": [
+      "compacted",
+      "not_retained",
+      "internal_program"
+    ]
+  },
+  "ConversationTranscriptGenerationOmission": {
+    "type": "object",
+    "properties": {
+      "generation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "reason": {
+        "$ref": "#/components/schemas/ConversationTranscriptGenerationOmissionReason"
+      }
+    },
+    "required": [
+      "generation_id",
+      "reason"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptGenerationOmissionReason": {
+    "type": "string",
+    "enum": [
+      "compacted",
+      "not_retained",
+      "not_supplied"
+    ]
+  },
+  "ConversationTranscriptBlockOmission": {
+    "type": "object",
+    "properties": {
+      "turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "block_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "reason": {
+        "$ref": "#/components/schemas/ConversationTranscriptBlockOmissionReason"
+      }
+    },
+    "required": [
+      "turn_id",
+      "block_id",
+      "reason"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptBlockOmissionReason": {
+    "type": "string",
+    "enum": [
+      "native_replay",
+      "unsupported_extension",
+      "unsupported_external_reference",
+      "model_visible_arguments_unavailable",
+      "referenced_asset_unavailable",
+      "referenced_asset_kind_mismatch"
+    ]
+  },
+  "ConversationTranscriptAssetOmission": {
+    "type": "object",
+    "properties": {
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "reason": {
+        "$ref": "#/components/schemas/ConversationTranscriptAssetOmissionReason"
+      }
+    },
+    "required": [
+      "asset_id",
+      "reason"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationTranscriptAssetOmissionReason": {
+    "type": "string",
+    "enum": [
+      "not_supplied",
+      "kind_mismatch"
+    ]
+  },
+  "ConversationTranscriptTurn": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptUserTurn"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptAgentTurn"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptToolTurn"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptProgramTurn"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "user": "#/components/schemas/ConversationTranscriptUserTurn",
+        "agent": "#/components/schemas/ConversationTranscriptAgentTurn",
+        "tool": "#/components/schemas/ConversationTranscriptToolTurn",
+        "program": "#/components/schemas/ConversationTranscriptProgramTurn"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ]
+  },
+  "ConversationTranscriptUserBlock": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTextBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationJsonBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImageBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDocumentBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationAudioBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationVideoBlock"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "text": "#/components/schemas/ConversationTextBlock",
+        "json": "#/components/schemas/ConversationJsonBlock",
+        "image": "#/components/schemas/ConversationImageBlock",
+        "document": "#/components/schemas/ConversationDocumentBlock",
+        "audio": "#/components/schemas/ConversationAudioBlock",
+        "video": "#/components/schemas/ConversationVideoBlock"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationTranscriptAgentBlock": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTextBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationJsonBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImageBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDocumentBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationAudioBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationVideoBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationReasoningBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptToolCallBlock"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "text": "#/components/schemas/ConversationTextBlock",
+        "json": "#/components/schemas/ConversationJsonBlock",
+        "image": "#/components/schemas/ConversationImageBlock",
+        "document": "#/components/schemas/ConversationDocumentBlock",
+        "audio": "#/components/schemas/ConversationAudioBlock",
+        "video": "#/components/schemas/ConversationVideoBlock",
+        "reasoning": "#/components/schemas/ConversationReasoningBlock",
+        "tool_call": "#/components/schemas/ConversationTranscriptToolCallBlock"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationTranscriptToolArguments": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptJsonToolArguments"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptInvalidToolArguments"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "json": "#/components/schemas/ConversationTranscriptJsonToolArguments",
+        "invalid": "#/components/schemas/ConversationTranscriptInvalidToolArguments"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationTranscriptRenderableBlock": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTextBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationJsonBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationImageBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationDocumentBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationAudioBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationVideoBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationReasoningBlock"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "text": "#/components/schemas/ConversationTextBlock",
+        "json": "#/components/schemas/ConversationJsonBlock",
+        "image": "#/components/schemas/ConversationImageBlock",
+        "document": "#/components/schemas/ConversationDocumentBlock",
+        "audio": "#/components/schemas/ConversationAudioBlock",
+        "video": "#/components/schemas/ConversationVideoBlock",
+        "reasoning": "#/components/schemas/ConversationReasoningBlock"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationTranscriptGeneration": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptExecutedGeneration"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptImportedGeneration"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "record_source",
+      "mapping": {
+        "executed": "#/components/schemas/ConversationTranscriptExecutedGeneration",
+        "imported": "#/components/schemas/ConversationTranscriptImportedGeneration"
+      }
+    },
+    "type": "object",
+    "required": [
+      "record_source"
+    ]
+  },
+  "ExperimentalAgentConversationTranscriptPage": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "agent_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "snapshot": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "fragment": {
+        "$ref": "#/components/schemas/ConversationTranscriptFragment"
+      },
+      "next_after_turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "api_version",
+      "agent_run_id",
+      "scope",
+      "snapshot",
+      "fragment"
+    ],
+    "additionalProperties": false,
+    "description": "A bounded safe canonical transcript fragment pinned to one retained conversation snapshot."
+  },
   "ExperimentalAgentConversationStreamEnvelope": {
     "oneOf": [
       {

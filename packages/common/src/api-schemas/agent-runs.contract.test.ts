@@ -1,3 +1,4 @@
+import { createConversationTranscriptFragment } from '@llumiverse/conversation';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import type {
     AgentRunEvaluation,
@@ -15,8 +16,9 @@ import type {
     AgentRunFeedbackResponseSchema,
     ExperimentalAgentConversationAcceptedOutputHistoryPageSchema,
     ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema,
+    ExperimentalAgentConversationTranscriptQuerySchema,
 } from './agent-runs.js';
-import { AgentRunAccessQuerySchema } from './agent-runs.js';
+import { AgentRunAccessQuerySchema, ExperimentalAgentConversationTranscriptPageSchema } from './agent-runs.js';
 import { validateApiRequest, validateApiResponse } from './registry.js';
 
 const turnEvaluation: TurnEvaluationEvent = {
@@ -489,6 +491,69 @@ describe('agent canonical conversation stream API contracts', () => {
         expect(
             validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', { after_revision: 1 }).valid,
         ).toBe(false);
+    });
+
+    it('publishes a pinned bounded transcript contract and enforces paired cursors', () => {
+        const fragment = createConversationTranscriptFragment({
+            source: { conversation_id: 'conversation:transcript', revision: 3 },
+            turns: [
+                {
+                    id: 'turn:user',
+                    kind: 'user',
+                    authority: 'ordinary',
+                    status: 'completed',
+                    timestamps: { recorded_at: '2026-10-01T00:00:00.000Z' },
+                    model_visibility: 'include',
+                    provenance: { type: 'received' },
+                    blocks: [{ id: 'block:user', type: 'text', text: 'hello', format: 'plain' }],
+                },
+            ],
+            generations: [],
+            assets: [],
+            window: { gap_before: false, gap_after: true, omitted_turns: [], omitted_generations: [] },
+        });
+        const page = {
+            api_version: '=20260930' as const,
+            agent_run_id: 'agent:contract',
+            scope: 'root' as const,
+            snapshot: fragment.source,
+            fragment,
+            next_after_turn_id: 'turn:user',
+        };
+
+        expect(
+            validateApiRequest('ExperimentalAgentConversationTranscriptQuery', {
+                snapshot_conversation_id: fragment.source.conversation_id,
+                snapshot_revision: fragment.source.revision,
+                after_turn_id: 'turn:user',
+                limit: 100,
+            }).valid,
+        ).toBe(true);
+        expect(validateApiResponse('ExperimentalAgentConversationTranscriptPage', page).valid).toBe(true);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationTranscriptQuery', { after_turn_id: 'turn:user' }).valid,
+        ).toBe(false);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationTranscriptQuery', {
+                snapshot_conversation_id: fragment.source.conversation_id,
+            }).valid,
+        ).toBe(false);
+        expect(validateApiRequest('ExperimentalAgentConversationTranscriptQuery', { limit: 101 }).valid).toBe(false);
+        expect(
+            ExperimentalAgentConversationTranscriptPageSchema.safeParse({
+                ...page,
+                snapshot: { ...fragment.source, revision: fragment.source.revision + 1 },
+            }).success,
+        ).toBe(false);
+    });
+
+    it('derives transcript request and page types from their runtime schemas', () => {
+        expectTypeOf<import('../store/agent-run.js').ExperimentalAgentConversationTranscriptQuery>().toEqualTypeOf<
+            import('zod').z.infer<typeof ExperimentalAgentConversationTranscriptQuerySchema>
+        >();
+        expectTypeOf<import('../store/agent-run.js').ExperimentalAgentConversationTranscriptPage>().toEqualTypeOf<
+            import('zod').z.infer<typeof ExperimentalAgentConversationTranscriptPageSchema>
+        >();
     });
 
     it('derives history request and page types from their runtime schemas', () => {

@@ -136,6 +136,57 @@ export type ConversationApplicationToolExecutionReceipt = z.infer<
 export type ConversationExecutedToolTurn = z.infer<typeof Canonical.ExecutedToolTurnSchema>;
 export type ConversationToolExecutionRequest = z.infer<typeof Canonical.ConversationToolExecutionRequestSchema>;
 export type ConversationToolExecutionResult = z.infer<typeof Canonical.ConversationToolExecutionResultSchema>;
+export type ConversationTranscriptJsonToolArguments = z.infer<
+    typeof Canonical.ConversationTranscriptJsonToolArgumentsSchema
+>;
+export type ConversationTranscriptInvalidToolArguments = z.infer<
+    typeof Canonical.ConversationTranscriptInvalidToolArgumentsSchema
+>;
+export type ConversationTranscriptToolArguments = z.infer<typeof Canonical.ConversationTranscriptToolArgumentsSchema>;
+export type ConversationTranscriptToolCallBlock = z.infer<typeof Canonical.ConversationTranscriptToolCallBlockSchema>;
+export type ConversationTranscriptRenderableBlock = z.infer<
+    typeof Canonical.ConversationTranscriptRenderableBlockSchema
+>;
+export type ConversationTranscriptToolResultBlock = z.infer<
+    typeof Canonical.ConversationTranscriptToolResultBlockSchema
+>;
+export type ConversationTranscriptUserBlock = z.infer<typeof Canonical.ConversationTranscriptUserBlockSchema>;
+export type ConversationTranscriptAgentBlock = z.infer<typeof Canonical.ConversationTranscriptAgentBlockSchema>;
+export type ConversationTranscriptProgramBlock = z.infer<typeof Canonical.ConversationTranscriptProgramBlockSchema>;
+export type ConversationTranscriptUserTurn = z.infer<typeof Canonical.ConversationTranscriptUserTurnSchema>;
+export type ConversationTranscriptAgentTurn = z.infer<typeof Canonical.ConversationTranscriptAgentTurnSchema>;
+export type ConversationTranscriptToolTurn = z.infer<typeof Canonical.ConversationTranscriptToolTurnSchema>;
+export type ConversationTranscriptProgramTurn = z.infer<typeof Canonical.ConversationTranscriptProgramTurnSchema>;
+export type ConversationTranscriptTurn = z.infer<typeof Canonical.ConversationTranscriptTurnSchema>;
+export type ConversationTranscriptAsset = z.infer<typeof Canonical.ConversationTranscriptAssetSchema>;
+export type ConversationTranscriptExecutedGeneration = z.infer<
+    typeof Canonical.ConversationTranscriptExecutedGenerationSchema
+>;
+export type ConversationTranscriptImportedGeneration = z.infer<
+    typeof Canonical.ConversationTranscriptImportedGenerationSchema
+>;
+export type ConversationTranscriptGeneration = z.infer<typeof Canonical.ConversationTranscriptGenerationSchema>;
+export type ConversationTranscriptGenerationMap = z.infer<typeof Canonical.ConversationTranscriptGenerationMapSchema>;
+export type ConversationTranscriptTurnOmissionReason = z.infer<
+    typeof Canonical.ConversationTranscriptTurnOmissionReasonSchema
+>;
+export type ConversationTranscriptTurnOmission = z.infer<typeof Canonical.ConversationTranscriptTurnOmissionSchema>;
+export type ConversationTranscriptBlockOmissionReason = z.infer<
+    typeof Canonical.ConversationTranscriptBlockOmissionReasonSchema
+>;
+export type ConversationTranscriptBlockOmission = z.infer<typeof Canonical.ConversationTranscriptBlockOmissionSchema>;
+export type ConversationTranscriptAssetOmissionReason = z.infer<
+    typeof Canonical.ConversationTranscriptAssetOmissionReasonSchema
+>;
+export type ConversationTranscriptAssetOmission = z.infer<typeof Canonical.ConversationTranscriptAssetOmissionSchema>;
+export type ConversationTranscriptGenerationOmissionReason = z.infer<
+    typeof Canonical.ConversationTranscriptGenerationOmissionReasonSchema
+>;
+export type ConversationTranscriptGenerationOmission = z.infer<
+    typeof Canonical.ConversationTranscriptGenerationOmissionSchema
+>;
+export type ConversationTranscriptCompleteness = z.infer<typeof Canonical.ConversationTranscriptCompletenessSchema>;
+export type ConversationTranscriptFragment = z.infer<typeof Canonical.ConversationTranscriptFragmentSchema>;
 export type ConversationStreamIdentity = z.infer<typeof Canonical.ConversationStreamIdentitySchema>;
 export type ConversationStreamCursor = z.infer<typeof Canonical.ConversationStreamCursorSchema>;
 export type ConversationNativeStreamPathSegment = z.infer<typeof Canonical.NativeStreamPathSegmentSchema>;

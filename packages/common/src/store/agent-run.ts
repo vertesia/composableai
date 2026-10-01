@@ -339,6 +339,10 @@ export type ExperimentalAgentConversationAcceptedOutputHistoryQuery =
 export type ExperimentalAgentConversationAcceptedOutputHistoryPage =
     Wire.ExperimentalAgentConversationAcceptedOutputHistoryPage;
 
+export type ExperimentalAgentConversationTranscriptQuery = Wire.ExperimentalAgentConversationTranscriptQuery;
+
+export type ExperimentalAgentConversationTranscriptPage = Wire.ExperimentalAgentConversationTranscriptPage;
+
 export type ExperimentalAgentConversationStreamEnvelope = Wire.ExperimentalAgentConversationStreamEnvelope;
 
 export type AgentRunDetailsQuery = Wire.AgentRunDetailsQuery;

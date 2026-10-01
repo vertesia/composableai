@@ -11,6 +11,7 @@ import {
     ConversationStreamTransformationProofSchema,
     ConversationToolExecutionRequestSchema,
     ConversationToolExecutionResultSchema,
+    ConversationTranscriptFragmentSchema,
 } from '@llumiverse/conversation/schemas';
 import { describe, expect, it } from 'vitest';
 import { validateApiResponse } from '../api-contract/index.js';
@@ -49,6 +50,7 @@ describe('run conversation wire contract', () => {
             ConversationStreamResponseMappingSchema,
             ConversationStreamTransformationProofSchema,
             ConversationStreamDecodeEvidenceSchema,
+            ConversationTranscriptFragmentSchema,
         ]) {
             const emitted = schema.toJSONSchema({ target: 'draft-2020-12', io: 'input' });
             for (const name of Object.keys(emitted.$defs ?? {})) definitions.add(name);

@@ -2009,6 +2009,8 @@ const AGENT_RUN_SCHEMAS = {
         AgentRunSchemas.ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema,
     ExperimentalAgentConversationAcceptedOutputHistoryPage:
         AgentRunSchemas.ExperimentalAgentConversationAcceptedOutputHistoryPageSchema,
+    ExperimentalAgentConversationTranscriptQuery: AgentRunSchemas.ExperimentalAgentConversationTranscriptQuerySchema,
+    ExperimentalAgentConversationTranscriptPage: AgentRunSchemas.ExperimentalAgentConversationTranscriptPageSchema,
     ExperimentalAgentConversationStreamEnvelope: AgentRunSchemas.ExperimentalAgentConversationStreamEnvelopeSchema,
     UpdateAgentRunStatusPayload: AgentRunSchemas.UpdateAgentRunStatusPayloadSchema,
     AgentRunFeedbackRating: AgentRunSchemas.AgentRunFeedbackRatingSchema,
@@ -2783,6 +2785,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AgentRunAccessQuery',
     'ExperimentalAgentConversationAcceptedOutputHistoryQuery',
     'ExperimentalAgentConversationAcceptedOutputHistoryPage',
+    'ExperimentalAgentConversationTranscriptQuery',
+    'ExperimentalAgentConversationTranscriptPage',
     'AvailableRunConversation',
     'UnavailableRunConversation',
     'UpdateInteractionConfigurationPayload',

@@ -52,6 +52,7 @@ import type {
     ConversationStreamTransformationProof,
     ConversationToolExecutionRequest,
     ConversationToolExecutionResult,
+    ConversationTranscriptFragment,
     ExecutedToolTurn,
     JsonObject,
     NativeStreamPathSegment,
@@ -6965,6 +6966,23 @@ export type ExperimentalAgentConversationAcceptedOutputHistoryPage = {
     items: ExperimentalAgentConversationAcceptedOutput[];
     next_after_revision?: number | undefined;
 };
+export type ExperimentalAgentConversationTranscriptQuery = {
+    conversation_scope?: CanonicalConversationHeadScope | undefined;
+    workstream_id?: string | undefined;
+    snapshot_conversation_id?: string | undefined;
+    snapshot_revision?: number | undefined;
+    after_turn_id?: string | undefined;
+    limit?: number | undefined;
+};
+export type ExperimentalAgentConversationTranscriptPage = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    snapshot: ConversationRef;
+    fragment: ConversationTranscriptFragment;
+    next_after_turn_id?: string | undefined;
+};
 export type ExperimentalAgentConversationStreamEnvelope =
     | ExperimentalAgentConversationEvent
     | ExperimentalAgentConversationPreviewUnavailable
@@ -11852,6 +11870,8 @@ export interface ApiComponentTypes {
     ExperimentalAgentConversationAcceptedOutput: ExperimentalAgentConversationAcceptedOutput;
     ExperimentalAgentConversationAcceptedOutputHistoryQuery: ExperimentalAgentConversationAcceptedOutputHistoryQuery;
     ExperimentalAgentConversationAcceptedOutputHistoryPage: ExperimentalAgentConversationAcceptedOutputHistoryPage;
+    ExperimentalAgentConversationTranscriptQuery: ExperimentalAgentConversationTranscriptQuery;
+    ExperimentalAgentConversationTranscriptPage: ExperimentalAgentConversationTranscriptPage;
     ExperimentalAgentConversationStreamEnvelope: ExperimentalAgentConversationStreamEnvelope;
     UpdateAgentRunStatusPayload: UpdateAgentRunStatusPayloadWire;
     AgentRunFeedbackRating: AgentRunFeedbackRating;

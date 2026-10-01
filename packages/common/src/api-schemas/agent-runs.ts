@@ -5,6 +5,8 @@ import {
     ConversationOutputReceiptSchema,
     ConversationRefSchema,
     ConversationStreamEventSchema,
+    ConversationTranscriptFragmentSchema,
+    IdentifierSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
 import { AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH, AGENT_RUN_FEEDBACK_ID_MAX_LENGTH } from '../store/agent-run-values.js';
@@ -1687,6 +1689,84 @@ export const ExperimentalAgentConversationAcceptedOutputHistoryPageSchema = z
     .meta({
         id: 'ExperimentalAgentConversationAcceptedOutputHistoryPage',
         description: 'A bounded page of exact accepted-output references pinned to one retained canonical snapshot.',
+    });
+
+export const ExperimentalAgentConversationTranscriptQuerySchema = z
+    .strictObject({
+        conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
+        workstream_id: z.string().min(1).max(512).optional(),
+        snapshot_conversation_id: z.string().min(1).max(512).optional(),
+        snapshot_revision: z.number().int().min(0).safe().optional(),
+        after_turn_id: IdentifierSchema.optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+    })
+    .superRefine((value, context) => {
+        if ((value.snapshot_conversation_id === undefined) !== (value.snapshot_revision === undefined)) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Snapshot conversation and revision must be provided together',
+                path:
+                    value.snapshot_conversation_id === undefined ? ['snapshot_conversation_id'] : ['snapshot_revision'],
+            });
+        }
+        if (
+            value.after_turn_id !== undefined &&
+            (value.snapshot_conversation_id === undefined || value.snapshot_revision === undefined)
+        ) {
+            context.addIssue({
+                code: 'custom',
+                message: 'A transcript cursor requires an exact pinned snapshot',
+                path: ['after_turn_id'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationTranscriptQuery',
+        description: 'Selects a bounded canonical transcript window from one exact conversation snapshot.',
+        allOf: [
+            {
+                if: { required: ['snapshot_conversation_id'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_revision'] },
+            },
+            {
+                if: { required: ['snapshot_revision'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_conversation_id'] },
+            },
+            {
+                if: { required: ['after_turn_id'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_conversation_id', 'snapshot_revision'] },
+            },
+        ],
+    });
+
+export const ExperimentalAgentConversationTranscriptPageSchema = z
+    .strictObject({
+        api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+        agent_run_id: z.string().min(1).max(512),
+        scope: CanonicalConversationHeadScopeSchema,
+        workstream_id: z.string().min(1).max(512).optional(),
+        snapshot: ConversationRefSchema,
+        fragment: ConversationTranscriptFragmentSchema,
+        next_after_turn_id: IdentifierSchema.optional(),
+    })
+    .superRefine((value, context) => {
+        if (
+            value.fragment.source.conversation_id !== value.snapshot.conversation_id ||
+            value.fragment.source.revision !== value.snapshot.revision
+        ) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Transcript fragment source must match its pinned snapshot',
+                path: ['fragment', 'source'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationTranscriptPage',
+        description: 'A bounded safe canonical transcript fragment pinned to one retained conversation snapshot.',
     });
 
 export const ExperimentalAgentConversationStreamEnvelopeSchema = z

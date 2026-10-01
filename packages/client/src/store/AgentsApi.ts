@@ -28,6 +28,8 @@ import {
     type ErrorAnalyticsResponse,
     type ExperimentalAgentConversationAcceptedOutputHistoryPage,
     type ExperimentalAgentConversationAcceptedOutputHistoryQuery,
+    type ExperimentalAgentConversationTranscriptPage,
+    type ExperimentalAgentConversationTranscriptQuery,
     type ExperimentalCanonicalInteractionOutput,
     type FirstResponseBehaviorAnalyticsResponse,
     type IngestAgentEventsPayload,
@@ -195,6 +197,23 @@ export class AgentsApi extends ApiTopic {
         options?: CanonicalInteractionRequestOptions,
     ): Promise<ExperimentalAgentConversationAcceptedOutputHistoryPage> {
         return this.get(`/${encodeURIComponent(id)}/conversation/accepted-outputs`, {
+            query,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /**
+     * Load one bounded canonical transcript window. Continue while `next_after_turn_id` is present,
+     * including pages whose visible fragment is empty because all scanned program turns were internal.
+     */
+    getConversationTranscript(
+        id: string,
+        query: ExperimentalAgentConversationTranscriptQuery = {},
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentConversationTranscriptPage> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/transcript`, {
             query,
             headers: canonicalInteractionHeaders(options?.headers),
             signal: options?.signal,
