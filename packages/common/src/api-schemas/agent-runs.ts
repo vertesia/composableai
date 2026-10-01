@@ -1004,6 +1004,10 @@ export const ListAgentRunsQuerySchema = z
         id: z.string().meta({ description: 'Filter by agent run ID' }).optional(),
         status: z.array(AgentRunStatusSchema).meta({ description: 'Filter by status (single or multiple)' }).optional(),
         interaction: z.string().meta({ description: 'Filter by interaction ID or code' }).optional(),
+        interactions: z
+            .array(z.string())
+            .meta({ description: 'Filter by one or more stored interaction references' })
+            .optional(),
         started_by: z.string().meta({ description: 'Filter by user who started the run' }).optional(),
         since: z
             .string()

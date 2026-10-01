@@ -152,6 +152,7 @@ export class AgentsApi extends ApiTopic {
             params.status = Array.isArray(query.status) ? query.status.join(',') : query.status;
         }
         if (query?.interaction) params.interaction = query.interaction;
+        if (query?.interactions?.length) params.interactions = query.interactions.join(',');
         if (query?.started_by) params.started_by = query.started_by;
         if (query?.since) params.since = query.since;
         if (query?.until) params.until = query.until;
