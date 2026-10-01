@@ -3976,6 +3976,9 @@
         "type": "string",
         "const": "openai-thinking"
       },
+      "image_generation": {
+        "$ref": "#/components/schemas/OpenAiImageGenerationOptions"
+      },
       "max_tokens": {
         "type": "number"
       },
@@ -4032,8 +4035,6 @@
     },
     "additionalProperties": false
   },
-<<<<<<< HEAD
-=======
   "OpenAiImageGenerationOptions": {
     "type": "object",
     "properties": {
@@ -4124,7 +4125,6 @@
     },
     "additionalProperties": false
   },
->>>>>>> 73621be1 (feat: publish OpenAI image generation contracts (#2384))
   "ReasoningEffort": {
     "type": "string",
     "enum": [
@@ -4143,6 +4143,9 @@
       "_option_id": {
         "type": "string",
         "const": "openai-text"
+      },
+      "image_generation": {
+        "$ref": "#/components/schemas/OpenAiImageGenerationOptions"
       },
       "max_tokens": {
         "type": "number"
@@ -4381,13 +4384,13 @@
         "const": "openai-gpt-image"
       },
       "size": {
-        "type": "string",
-        "enum": [
-          "1024x1024",
-          "1024x1536",
-          "1536x1024",
-          "auto"
-        ]
+        "type": "string"
+      },
+      "width": {
+        "type": "number"
+      },
+      "height": {
+        "type": "number"
       },
       "image_quality": {
         "type": "string",
@@ -4395,6 +4398,8 @@
           "low",
           "medium",
           "high",
+          "xhigh",
+          "max",
           "auto"
         ]
       },
@@ -4413,6 +4418,31 @@
           "webp",
           "jpeg"
         ]
+      },
+      "n": {
+        "type": "number"
+      },
+      "output_compression": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
+      },
+      "moderation": {
+        "type": "string",
+        "enum": [
+          "auto",
+          "low"
+        ]
+      },
+      "input_fidelity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "high"
+        ]
+      },
+      "partial_images": {
+        "type": "number"
       }
     },
     "additionalProperties": false

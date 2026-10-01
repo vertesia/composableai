@@ -1470,11 +1470,16 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 size: {
                     type: 'string',
-                    enum: ['1024x1024', '1024x1536', '1536x1024', 'auto'],
+                },
+                width: {
+                    type: 'number',
+                },
+                height: {
+                    type: 'number',
                 },
                 image_quality: {
                     type: 'string',
-                    enum: ['low', 'medium', 'high', 'auto'],
+                    enum: ['low', 'medium', 'high', 'xhigh', 'max', 'auto'],
                 },
                 background: {
                     type: 'string',
@@ -1484,7 +1489,89 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['png', 'webp', 'jpeg'],
                 },
+                n: {
+                    type: 'number',
+                },
+                output_compression: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100,
+                },
+                moderation: {
+                    type: 'string',
+                    enum: ['auto', 'low'],
+                },
+                input_fidelity: {
+                    type: 'string',
+                    enum: ['low', 'high'],
+                },
+                partial_images: {
+                    type: 'number',
+                },
             },
+            additionalProperties: false,
+        },
+        OpenAiImageGenerationMask: {
+            type: 'object',
+            properties: {
+                file_id: {
+                    type: 'string',
+                },
+                image_url: {
+                    type: 'string',
+                },
+            },
+            additionalProperties: false,
+        },
+        OpenAiImageGenerationOptions: {
+            type: 'object',
+            properties: {
+                model: {
+                    type: 'string',
+                },
+                force: {
+                    type: 'boolean',
+                },
+                action: {
+                    type: 'string',
+                    enum: ['auto', 'generate', 'edit'],
+                },
+                size: {
+                    type: 'string',
+                },
+                quality: {
+                    type: 'string',
+                    enum: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'],
+                },
+                background: {
+                    type: 'string',
+                    enum: ['auto', 'opaque', 'transparent'],
+                },
+                output_format: {
+                    type: 'string',
+                    enum: ['png', 'jpeg', 'webp'],
+                },
+                output_compression: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100,
+                },
+                moderation: {
+                    type: 'string',
+                    enum: ['auto', 'low'],
+                },
+                input_fidelity: {
+                    type: 'string',
+                    enum: ['low', 'high'],
+                },
+                partial_images: {
+                    type: 'number',
+                },
+                input_image_mask: {
+                    $ref: '#/$defs/OpenAiImageGenerationMask',
+                },
+            },
+            required: ['model'],
             additionalProperties: false,
         },
         OpenAiSpeechOptions: {
@@ -1498,17 +1585,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     minLength: 1,
                 },
-<<<<<<< HEAD
                 response_format: {
-=======
-            },
-            additionalProperties: false,
-        },
-        OpenAiImageGenerationOptions: {
-            type: 'object',
-            properties: {
-                model: {
->>>>>>> 73621be1 (feat: publish OpenAI image generation contracts (#2384))
                     type: 'string',
                     enum: ['mp3', 'wav', 'opus', 'aac', 'flac', 'pcm'],
                 },
@@ -1521,10 +1598,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                 },
             },
-<<<<<<< HEAD
-=======
-            required: ['model'],
->>>>>>> 73621be1 (feat: publish OpenAI image generation contracts (#2384))
             additionalProperties: false,
         },
         OpenAiTextOptions: {
@@ -1533,6 +1606,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'openai-text',
+                },
+                image_generation: {
+                    $ref: '#/$defs/OpenAiImageGenerationOptions',
                 },
                 max_tokens: {
                     type: 'number',
@@ -1592,6 +1668,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'openai-thinking',
+                },
+                image_generation: {
+                    $ref: '#/$defs/OpenAiImageGenerationOptions',
                 },
                 max_tokens: {
                     type: 'number',

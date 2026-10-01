@@ -1,13 +1,10 @@
 export type {
-<<<<<<< HEAD
     AudioResult,
     OpenAiAudioOptions,
-    OpenAiSpeechOptions,
-    OpenAiTranscriptionOptions,
-=======
     OpenAiImageGenerationMask,
     OpenAiImageGenerationOptions,
->>>>>>> 73621be1 (feat: publish OpenAI image generation contracts (#2384))
+    OpenAiSpeechOptions,
+    OpenAiTranscriptionOptions,
     VertexAIGeminiOmniVideoOptions,
     VideoResult,
 } from '@llumiverse/common';
