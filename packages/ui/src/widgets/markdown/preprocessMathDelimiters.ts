@@ -5,7 +5,7 @@
  * distinguishes LaTeX math (`$x = \frac{1}{2}$`) from currency (`$2,847,500`).
  *
  * Uses a three-pass priority algorithm over `$` positions:
- *   1. Commit pairs matching LaTeX patterns (highest priority)
+ *   1. Commit pairs matching LaTeX patterns, unless they read as an amount followed by prose
  *   2. Pair remaining positions; escape currency patterns
  *   3. Escape lone `$` adjacent to committed LaTeX pairs
  *
@@ -56,9 +56,16 @@ function hasCurrencyPattern(content: string): boolean {
     if (RE_LEADING_SPACE.test(content)) return true;
     if (RE_TRAILING_SPACE.test(content)) return true;
     if (RE_TRAILING_OPERATOR.test(content) && !RE_ION_NOTATION.test(content)) return true;
+    return hasAmountShape(content);
+}
+
+/**
+ * Returns true if content between `$...$` reads as an amount followed by prose. This outranks LaTeX
+ * signals: markdown between two amounts (`[plan_a]`, a link URL, `{estimate}`) can look like math.
+ */
+function hasAmountShape(content: string): boolean {
     if (RE_AMOUNT_THEN_PROSE.test(content)) return true;
-    if (RE_LEADING_AMOUNT.test(content) && hasUnbalancedBrackets(content)) return true;
-    return false;
+    return RE_LEADING_AMOUNT.test(content) && hasUnbalancedBrackets(content);
 }
 
 /**
@@ -134,7 +141,7 @@ function processTextSegment(text: string, replacements: DollarReplacements): str
     for (let i = 0; i < positions.length - 1; i++) {
         if (committed.has(i)) continue;
         const content = adjacentContent[i];
-        if (content !== null && hasLatexPattern(content)) {
+        if (content !== null && hasLatexPattern(content) && !hasAmountShape(content)) {
             committed.add(i);
             committed.add(i + 1);
             latexSpans.push([positions[i], positions[i + 1]]);

@@ -183,8 +183,10 @@ export function MarkdownRenderer({
 
     // Remark plugins (markdown parsing)
     // Order matters: GFM first, then directive (must precede handler),
-    // then definition-list/supersub, then math, then user plugins.
+    // then definition-list/supersub, then math, then masked-dollar restore (so user plugins never
+    // see the mask), then user plugins.
     const remarkPluginsArray = React.useMemo(() => {
+        const restoreMaskedDollars: RemarkPluginList = mask ? [[remarkRestoreMaskedDollars, { mask }]] : [];
         const result: RemarkPluginList = [
             remarkGfm,
             remarkDirective,
@@ -193,11 +195,9 @@ export function MarkdownRenderer({
             remarkDefinitionList,
             remarkSupersub,
             remarkMath,
+            ...restoreMaskedDollars,
             ...remarkPlugins,
         ];
-        if (mask) {
-            result.push([remarkRestoreMaskedDollars, { mask }]);
-        }
         if (removeComments) {
             result.push(remarkRemoveComments);
         }
