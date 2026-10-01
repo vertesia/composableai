@@ -1,11 +1,10 @@
 /**
- * Undoes the length-preserving mode of `preprocessMathDelimiters` after parsing.
+ * Undoes `maskMathDelimiters` after parsing.
  *
- * `MASKED_DOLLAR` becomes `$` again in text, link and image fields. Inside inline math, the masked
- * `\$` becomes `\text{\textdollar}`, matching what the escaping mode feeds KaTeX.
+ * The mask becomes `$` again in text, link and image fields. Inside inline math, a masked `\$`
+ * becomes `\text{\textdollar}`, matching what `preprocessMathDelimiters` feeds KaTeX.
  */
 import { visit } from 'unist-util-visit';
-import { MASKED_DOLLAR } from './preprocessMathDelimiters';
 
 type RemarkTree = Parameters<typeof visit>[0];
 
@@ -18,17 +17,21 @@ interface MaskableNode {
     data?: { hChildren?: { type: string; value?: unknown }[] };
 }
 
-const MASKED_DOLLAR_REGEX = new RegExp(MASKED_DOLLAR, 'g');
-const MASKED_ESCAPED_DOLLAR_REGEX = new RegExp(`\\\\${MASKED_DOLLAR}`, 'g');
+export interface RemarkRestoreMaskedDollarsOptions {
+    /** The stand-in returned by `maskMathDelimiters` */
+    mask: string;
+}
+
 const MASKABLE_FIELDS = ['value', 'url', 'title', 'alt'] as const;
 
-export function remarkRestoreMaskedDollars() {
+export function remarkRestoreMaskedDollars({ mask }: RemarkRestoreMaskedDollarsOptions) {
+    const maskedEscapedDollar = `\\${mask}`;
     return (tree: RemarkTree) => {
         visit(tree, (node) => {
             const maskable = node as MaskableNode;
             if (maskable.type === 'inlineMath') {
                 if (typeof maskable.value !== 'string') return;
-                const value = maskable.value.replace(MASKED_ESCAPED_DOLLAR_REGEX, '\\text{\\textdollar}');
+                const value = maskable.value.split(maskedEscapedDollar).join('\\text{\\textdollar}');
                 maskable.value = value;
                 // remark-math copies the value into the hast text child at parse time
                 for (const child of maskable.data?.hChildren ?? []) {
@@ -38,7 +41,7 @@ export function remarkRestoreMaskedDollars() {
             }
             for (const field of MASKABLE_FIELDS) {
                 const value = maskable[field];
-                if (typeof value === 'string') maskable[field] = value.replace(MASKED_DOLLAR_REGEX, '$');
+                if (typeof value === 'string') maskable[field] = value.split(mask).join('$');
             }
         });
     };

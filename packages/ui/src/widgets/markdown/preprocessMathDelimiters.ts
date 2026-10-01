@@ -31,17 +31,10 @@ const RE_LEADING_SPACE = /^\s/; // space after opening $
 const RE_TRAILING_SPACE = /\s$/; // space before closing $
 const RE_TRAILING_OPERATOR = /[+*/-]$/; // ends with bare operator
 const RE_ION_NOTATION = /\^[+-]$/; // except ^+ or ^- (ion notation)
-const RE_LEADING_AMOUNT = /^\d/; // opens on a figure, as in $49,137,431.65
-// standalone word: not a \command, not glued to a coefficient or variable ($2xy$, $2ab + 3cd$)
-const RE_PROSE_WORD = /(?<![\\\w])[a-zA-Z]{2,}(?!\w)/g;
-const MIN_PROSE_WORDS = 2;
-
-/**
- * Same-length stand-in for a `$` the preprocessor disambiguated, used when source offsets must be
- * preserved. It is a currency symbol (Unicode Sc), so markdown flanking rules treat it like `$`;
- * `remarkRestoreMaskedDollars` turns it back into `$` after parsing.
- */
-export const MASKED_DOLLAR = '\u20B0';
+// A span that opens on an amount ($10, $49,137,431.65, $500K) and then reads as prose:
+// the amount is closed off by punctuation before a word ($10) vs ($20), **$10,710** in lost ... **$),
+const RE_AMOUNT_THEN_PROSE = /^\d[\d,]*(?:\.\d+)?[kKmMbB]?[)\]*_,;:.!?]+\s+[a-zA-Z]{2,}(?!\w)/;
+const RE_LEADING_AMOUNT = /^\d/;
 
 /**
  * Returns true if content between `$...$` contains LaTeX structural patterns.
@@ -63,8 +56,23 @@ function hasCurrencyPattern(content: string): boolean {
     if (RE_LEADING_SPACE.test(content)) return true;
     if (RE_TRAILING_SPACE.test(content)) return true;
     if (RE_TRAILING_OPERATOR.test(content) && !RE_ION_NOTATION.test(content)) return true;
-    if (RE_LEADING_AMOUNT.test(content) && (content.match(RE_PROSE_WORD)?.length ?? 0) >= MIN_PROSE_WORDS) return true;
+    if (RE_AMOUNT_THEN_PROSE.test(content)) return true;
+    if (RE_LEADING_AMOUNT.test(content) && hasUnbalancedBrackets(content)) return true;
     return false;
+}
+
+/**
+ * True when `(`/`[` and `)`/`]` do not pair up, as in `10) equals (` between two parenthesized
+ * amounts. Openers and closers are counted together so half-open intervals like `[0, 1)` balance.
+ */
+function hasUnbalancedBrackets(content: string): boolean {
+    let depth = 0;
+    for (const char of content) {
+        if (char === '(' || char === '[') depth++;
+        else if (char === ')' || char === ']') depth--;
+        if (depth < 0) return true;
+    }
+    return depth !== 0;
 }
 
 /**
@@ -103,7 +111,6 @@ interface DollarReplacements {
 }
 
 const ESCAPING: DollarReplacements = { currency: '\\$', escapedInLatex: '\\text{\\textdollar}' };
-const MASKING: DollarReplacements = { currency: MASKED_DOLLAR, escapedInLatex: `\\${MASKED_DOLLAR}` };
 
 /**
  * Classify `$` positions in a text segment, escape currency dollar signs,
@@ -230,30 +237,11 @@ function processSkippingInlineCode(text: string, replacements: DollarReplacement
     return parts.join('');
 }
 
-export interface PreprocessMathDelimitersOptions {
-    /**
-     * Keep the output the same length as the input, so parser offsets still index into the
-     * original markdown. Disambiguated `$` become `MASKED_DOLLAR` instead of `\$`; pair with
-     * `remarkRestoreMaskedDollars`. Input that already contains `MASKED_DOLLAR` is returned as is.
-     */
-    preserveLength?: boolean;
-}
-
 /**
- * Preprocess markdown to disambiguate `$` math delimiters from currency signs.
- *
- * Classification priority: LaTeX (preserve) > currency (escape) > uncertain (preserve).
- * Skips fenced code blocks and inline code spans.
+ * Disambiguate `$` outside fenced code blocks, applying `replacements` to the `$` signs that must
+ * not reach remark-math as delimiters.
  */
-export function preprocessMathDelimiters(markdown: string, options: PreprocessMathDelimitersOptions = {}): string {
-    if (!markdown?.includes('$')) {
-        return markdown;
-    }
-    if (options.preserveLength && markdown.includes(MASKED_DOLLAR)) {
-        return markdown;
-    }
-    const replacements = options.preserveLength ? MASKING : ESCAPING;
-
+function disambiguateDollars(markdown: string, replacements: DollarReplacements): string {
     const parts: string[] = [];
     let lastIndex = 0;
 
@@ -265,4 +253,56 @@ export function preprocessMathDelimiters(markdown: string, options: PreprocessMa
 
     parts.push(processSkippingInlineCode(markdown.slice(lastIndex), replacements));
     return parts.join('');
+}
+
+/**
+ * Preprocess markdown to disambiguate `$` math delimiters from currency signs.
+ *
+ * Classification priority: LaTeX (preserve) > currency (escape) > uncertain (preserve).
+ * Skips fenced code blocks and inline code spans.
+ */
+export function preprocessMathDelimiters(markdown: string): string {
+    if (!markdown?.includes('$')) {
+        return markdown;
+    }
+    return disambiguateDollars(markdown, ESCAPING);
+}
+
+// Mask candidates: currency symbols first (Unicode Sc, so markdown flanking rules treat them like
+// `$`), then the private use area. All are a single UTF-16 code unit, like `$`.
+const MASK_CANDIDATE_RANGES: [number, number][] = [
+    [0x20a0, 0x20c0],
+    [0xe000, 0xf8ff],
+];
+
+function pickMask(markdown: string): string | undefined {
+    for (const [first, last] of MASK_CANDIDATE_RANGES) {
+        for (let code = first; code <= last; code++) {
+            const candidate = String.fromCharCode(code);
+            if (!markdown.includes(candidate)) return candidate;
+        }
+    }
+    return undefined;
+}
+
+export interface MaskedMathDelimiters {
+    markdown: string;
+    /** Stand-in used for disambiguated `$`; undefined when nothing was masked */
+    mask?: string;
+}
+
+/**
+ * Length-preserving variant of `preprocessMathDelimiters`, for when parser offsets must still
+ * index into the original markdown. Disambiguated `$` become `mask`, a character absent from the
+ * input, instead of `\$`; pass it to `remarkRestoreMaskedDollars` to turn it back after parsing.
+ */
+export function maskMathDelimiters(markdown: string): MaskedMathDelimiters {
+    if (!markdown?.includes('$')) {
+        return { markdown };
+    }
+    const mask = pickMask(markdown);
+    if (!mask) {
+        return { markdown };
+    }
+    return { markdown: disambiguateDollars(markdown, { currency: mask, escapedInLatex: `\\${mask}` }), mask };
 }

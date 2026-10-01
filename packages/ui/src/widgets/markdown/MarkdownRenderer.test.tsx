@@ -51,21 +51,25 @@ describe('MarkdownRenderer colon text', () => {
     });
 });
 
-describe('MarkdownRenderer math delimiters', () => {
-    const currency = 'Totals ($49,137,431.65) equal the sub-totals ($49,137,431.65).';
+describe.each([false, true])(
+    'MarkdownRenderer math delimiters (preserveSourcePositions=%s)',
+    (preserveSourcePositions) => {
+        it.each([
+            'Totals ($49,137,431.65) equal the sub-totals ($49,137,431.65).',
+            'Totals ($10) vs ($20).',
+            'Totals ($10) equals ($20).',
+            'The fee is ($10), not ($20).',
+            'Pfennig \u20B0 aside, totals ($10) vs ($20).',
+        ])('renders currency as text: %s', (text) => {
+            const { container } = render(
+                <MarkdownRenderer preserveSourcePositions={preserveSourcePositions}>{text}</MarkdownRenderer>,
+            );
 
-    it.each([false, true])('renders currency as text when preserveSourcePositions=%s', (preserveSourcePositions) => {
-        const { container } = render(
-            <MarkdownRenderer preserveSourcePositions={preserveSourcePositions}>{currency}</MarkdownRenderer>,
-        );
+            expect(container.querySelector('code')).toBeNull();
+            expect(container.querySelector('p')?.textContent).toBe(text);
+        });
 
-        expect(container.querySelector('code')).toBeNull();
-        expect(container.querySelector('p')?.textContent).toBe(currency);
-    });
-
-    it.each([false, true])(
-        'renders math, \\$ in math and currency in links when preserveSourcePositions=%s',
-        (preserveSourcePositions) => {
+        it('renders math, \\$ in math and currency in links', () => {
             const { container } = render(
                 <MarkdownRenderer preserveSourcePositions={preserveSourcePositions}>
                     {'Cost $500M and $600M where $P = \\$2$, see [$100M and $200M](https://example.com/$100M)'}
@@ -78,6 +82,6 @@ describe('MarkdownRenderer math delimiters', () => {
             expect(container.querySelector('p')?.textContent).toContain('Cost $500M and $600M where');
             expect(container.querySelector('a')?.textContent).toBe('$100M and $200M');
             expect(container.querySelector('a')?.getAttribute('href')).toBe('https://example.com/$100M');
-        },
-    );
-});
+        });
+    },
+);
