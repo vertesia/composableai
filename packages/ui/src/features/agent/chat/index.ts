@@ -45,6 +45,18 @@ export {
     type ConfirmationWidgetProps,
 } from './AskUserWidget';
 export type { BudgetPause } from './budgetPause';
+export { CanonicalAgentDraft, CanonicalAgentOutput } from './CanonicalAgentOutput';
+export {
+    type CanonicalAcceptedAgentOutput,
+    type CanonicalAgentContentState,
+    type CanonicalAgentDraftSnapshot,
+    type CanonicalAgentHistoryWindow,
+    type CanonicalAgentLiveContent,
+    canonicalAgentContentReducer,
+    exactCanonicalAcceptedOutput,
+    initialCanonicalAgentContentState,
+} from './canonicalAgentContent';
+export { type UseCanonicalAgentContentOptions, useCanonicalAgentContent } from './hooks/useCanonicalAgentContent';
 export * from './JumpingDots';
 export {
     type AgentMessageFilter,

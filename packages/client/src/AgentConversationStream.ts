@@ -1,5 +1,8 @@
 import { conversationOutputReceiptsEqual } from '@llumiverse/conversation/output-runtime';
-import { ConversationStreamAccumulatorRuntime } from '@llumiverse/conversation/streaming-runtime';
+import {
+    ConversationStreamAccumulatorRuntime,
+    type ConversationStreamDraftSnapshot,
+} from '@llumiverse/conversation/streaming-runtime';
 import type {
     CanonicalConversationHeadScope,
     ConversationStreamEvent,
@@ -29,14 +32,25 @@ export interface AgentConversationStreamSessionOptions {
     on_update: (update: AgentConversationStreamUpdate) => void | Promise<void>;
 }
 
+interface AgentConversationDraftState {
+    /**
+     * Immutable display projection owned by the canonical stream accumulator after this update. The SDK producer
+     * always supplies it; optionality keeps the experimental callback extension source-compatible for custom
+     * consumers compiled against the prior update shape.
+     */
+    draft_snapshot?: readonly Readonly<ConversationStreamDraftSnapshot>[];
+}
+
 export type AgentConversationStreamUpdate =
-    | ExperimentalAgentConversationPreviewUnavailable
-    | ExperimentalAgentConversationEvent
-    | {
+    | (ExperimentalAgentConversationPreviewUnavailable & AgentConversationDraftState)
+    | (ExperimentalAgentConversationEvent & AgentConversationDraftState)
+    | ({
           type: 'accepted_output';
           envelope: ExperimentalAgentConversationAcceptedOutput;
           output: CanonicalInteractionOutput<unknown>;
-      };
+      } & AgentConversationDraftState);
+
+const EMPTY_DRAFT_SNAPSHOT: readonly Readonly<ConversationStreamDraftSnapshot>[] = Object.freeze([]);
 
 export interface AgentConversationStreamTransport {
     connect(onEnvelope: (envelope: unknown) => void, signal: AbortSignal): Promise<void>;
@@ -237,7 +251,7 @@ export async function consumeAgentConversationStream(
                 if (envelope.type === 'preview_unavailable') {
                     accumulator = undefined;
                     activeExecutionRunId = undefined;
-                    await publish(envelope);
+                    await publish({ ...envelope, draft_snapshot: EMPTY_DRAFT_SNAPSHOT });
                     continue;
                 }
                 if (envelope.type === 'accepted_output') {
@@ -256,7 +270,12 @@ export async function consumeAgentConversationStream(
                         );
                     }
                     lastAcceptedReceipt = structuredClone(envelope.receipt);
-                    await publish({ type: 'accepted_output', envelope, output });
+                    await publish({
+                        type: 'accepted_output',
+                        envelope,
+                        output,
+                        draft_snapshot: accumulator?.draft_snapshot() ?? EMPTY_DRAFT_SNAPSHOT,
+                    });
                     continue;
                 }
 
@@ -267,7 +286,10 @@ export async function consumeAgentConversationStream(
                         accumulator = undefined;
                         activeExecutionRunId = undefined;
                     }
-                    await publish(envelope);
+                    await publish({
+                        ...envelope,
+                        draft_snapshot: accumulator?.draft_snapshot() ?? EMPTY_DRAFT_SNAPSHOT,
+                    });
                     continue;
                 }
                 if (accumulator && event.type === 'draft_started' && event.sequence === 0) {
@@ -280,6 +302,7 @@ export async function consumeAgentConversationStream(
                         ...(envelope.workstream_id === undefined ? {} : { workstream_id: envelope.workstream_id }),
                         type: 'preview_unavailable',
                         reason: 'sequence_gap',
+                        draft_snapshot: EMPTY_DRAFT_SNAPSHOT,
                     });
                 }
                 if (!accumulator) {
@@ -291,6 +314,7 @@ export async function consumeAgentConversationStream(
                             ...(envelope.workstream_id === undefined ? {} : { workstream_id: envelope.workstream_id }),
                             type: 'preview_unavailable',
                             reason: 'sequence_gap',
+                            draft_snapshot: EMPTY_DRAFT_SNAPSHOT,
                         });
                         throw new AgentConversationStreamProtocolError(
                             'Agent conversation stream cannot consume a draft without its exact prefix',
@@ -311,6 +335,7 @@ export async function consumeAgentConversationStream(
                         ...(envelope.workstream_id === undefined ? {} : { workstream_id: envelope.workstream_id }),
                         type: 'preview_unavailable',
                         reason: 'sequence_gap',
+                        draft_snapshot: EMPTY_DRAFT_SNAPSHOT,
                     });
                     throw new AgentConversationStreamProtocolError(
                         'Agent conversation stream changed execution within one provisional draft',
@@ -328,13 +353,14 @@ export async function consumeAgentConversationStream(
                         ...(envelope.workstream_id === undefined ? {} : { workstream_id: envelope.workstream_id }),
                         type: 'preview_unavailable',
                         reason: 'sequence_gap',
+                        draft_snapshot: EMPTY_DRAFT_SNAPSHOT,
                     });
                     throw new AgentConversationStreamProtocolError(
                         'Agent conversation stream canonical event sequence is invalid',
                         { cause },
                     );
                 }
-                await publish(envelope);
+                await publish({ ...envelope, draft_snapshot: accumulator.draft_snapshot() });
             }
         };
 

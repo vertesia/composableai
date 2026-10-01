@@ -125,6 +125,16 @@ describe('CanonicalInteractionOutput', () => {
         expect(output.text()).toBe('Answer');
     });
 
+    it('compares a caller receipt against the exact cloned accepted fragment', () => {
+        const source = fragment();
+        const output = new CanonicalInteractionOutput(source);
+        const matching = structuredClone(source.receipt);
+
+        expect(output.matchesReceipt(matching)).toBe(true);
+        matching.accepted_turn_ids = ['different-turn'];
+        expect(output.matchesReceipt(matching)).toBe(false);
+    });
+
     it('validates and clones accepted wire fragments while enhancing the result', () => {
         const enhanced = enhanceExperimentalCanonicalInteractionExecutionResult(result(fragment()));
         expect(enhanced.canonicalOutput?.text()).toBe('Answer');

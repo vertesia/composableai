@@ -1,7 +1,11 @@
-import { cloneSemanticallyValidAcceptedOutputFragment } from '@llumiverse/conversation/output-runtime';
+import {
+    cloneSemanticallyValidAcceptedOutputFragment,
+    conversationOutputReceiptsEqual,
+} from '@llumiverse/conversation/output-runtime';
 import type {
     ConversationOutputAsset,
     ConversationOutputBlock,
+    ConversationOutputReceipt,
     ExperimentalCanonicalInteractionConversationReference,
     ExperimentalCanonicalInteractionExecutionResult,
     ExperimentalCanonicalInteractionInitialState,
@@ -73,6 +77,10 @@ export class CanonicalInteractionOutput<T = unknown> {
 
     get isEmpty(): boolean {
         return this.blocks.length === 0;
+    }
+
+    matchesReceipt(receipt: ConversationOutputReceipt): boolean {
+        return conversationOutputReceiptsEqual(this.fragment.receipt, receipt);
     }
 
     texts(): string[] {

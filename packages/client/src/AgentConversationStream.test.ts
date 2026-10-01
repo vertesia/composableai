@@ -38,21 +38,31 @@ function draftStarted(streamId = STREAM_ID): ConversationStreamEvent {
     return { ...eventBase(0, streamId), type: 'draft_started', origin: 'live_transport' };
 }
 
-function draftFinished(streamId = STREAM_ID): ConversationStreamEvent {
-    return { ...eventBase(1, streamId), type: 'draft_finished', outcome: 'completed', finish_reason: 'stop' };
+function draftFinished(streamId = STREAM_ID, sequence = 1): ConversationStreamEvent {
+    return { ...eventBase(sequence, streamId), type: 'draft_finished', outcome: 'completed', finish_reason: 'stop' };
 }
 
 function streamTerminated(streamId: string): ConversationStreamEvent {
     return { ...eventBase(1, streamId), type: 'stream_terminated', outcome: 'failed' };
 }
 
-function draftTextDelta(sequence: number): ConversationStreamEvent {
+function draftTextDelta(sequence: number, streamId = STREAM_ID): ConversationStreamEvent {
     return {
-        ...eventBase(sequence),
+        ...eventBase(sequence, streamId),
         type: 'draft_text_delta',
         draft_block_id: 'block:text',
         native_position: { protocol: 'test', path: ['parts', 0] },
         text: 'suffix',
+    };
+}
+
+function draftTextBlockStarted(sequence: number, streamId = STREAM_ID): ConversationStreamEvent {
+    return {
+        ...eventBase(sequence, streamId),
+        type: 'draft_block_started',
+        draft_block_id: 'block:text',
+        native_position: { protocol: 'test', path: ['parts', 0] },
+        block: { type: 'text' },
     };
 }
 
@@ -155,6 +165,43 @@ function acceptedEnvelope(receipt: ConversationOutputReceipt): ExperimentalAgent
 }
 
 describe('agent conversation canonical stream consumer', () => {
+    it('publishes immutable canonical draft snapshots after each typed event', async () => {
+        const abort = new AbortController();
+        const transport: AgentConversationStreamTransport = {
+            connect: vi.fn(async (emit, signal) => {
+                emit(preview());
+                emit(envelope(draftStarted()));
+                emit(envelope(draftTextBlockStarted(1)));
+                emit(envelope(draftTextDelta(2)));
+                await new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }));
+            }),
+            retrieveAcceptedOutput: vi.fn(),
+        };
+        const snapshots: Array<readonly { text?: string }[]> = [];
+
+        await consumeAgentConversationStream(transport, {
+            agent_run_id: AGENT_RUN_ID,
+            signal: abort.signal,
+            on_update: (update) => {
+                if (update.type !== 'conversation_event') return;
+                expect(update.draft_snapshot).toBeDefined();
+                snapshots.push(update.draft_snapshot ?? []);
+                if (update.event.type === 'draft_text_delta') abort.abort();
+            },
+        });
+
+        expect(snapshots).toHaveLength(3);
+        expect(snapshots[0]).toEqual([]);
+        expect(snapshots[1]).toEqual([
+            expect.objectContaining({ draft_block_id: 'block:text', type: 'text', text: '' }),
+        ]);
+        expect(snapshots[2]).toEqual([
+            expect.objectContaining({ draft_block_id: 'block:text', type: 'text', text: 'suffix' }),
+        ]);
+        expect(Object.isFrozen(snapshots[2])).toBe(true);
+        expect(Object.isFrozen(snapshots[2]?.[0])).toBe(true);
+    });
+
     it('clears preview on reconnect and resolves accepted output through its exact receipt', async () => {
         const output = acceptedOutput();
         const connections: ExperimentalAgentConversationStreamEnvelope[][] = [
@@ -418,8 +465,9 @@ describe('agent conversation canonical stream consumer', () => {
             connect: vi.fn(async (emit, signal) => {
                 emit(preview());
                 emit(envelope(draftStarted('stream:new')));
+                emit(envelope(draftTextBlockStarted(1, 'stream:new')));
                 emit(acceptedEnvelope(output.fragment.receipt));
-                emit(envelope(draftFinished('stream:new')));
+                emit(envelope(draftTextDelta(2, 'stream:new')));
                 await new Promise<void>((resolve) => {
                     if (signal.aborted) resolve();
                     else signal.addEventListener('abort', () => resolve(), { once: true });
@@ -428,17 +476,29 @@ describe('agent conversation canonical stream consumer', () => {
             retrieveAcceptedOutput: vi.fn(async () => output),
         };
         const updates: string[] = [];
+        let acceptedDraftBlockId: string | undefined;
 
         await consumeAgentConversationStream(transport, {
             agent_run_id: AGENT_RUN_ID,
             signal: abort.signal,
             on_update: (update) => {
                 updates.push(update.type === 'conversation_event' ? update.event.type : update.type);
-                if (update.type === 'conversation_event' && update.event.type === 'draft_finished') abort.abort();
+                if (update.type === 'accepted_output') {
+                    expect(update.draft_snapshot).toBeDefined();
+                    acceptedDraftBlockId = update.draft_snapshot?.[0]?.draft_block_id;
+                }
+                if (update.type === 'conversation_event' && update.event.type === 'draft_text_delta') abort.abort();
             },
         });
 
-        expect(updates).toEqual(['preview_unavailable', 'draft_started', 'accepted_output', 'draft_finished']);
+        expect(updates).toEqual([
+            'preview_unavailable',
+            'draft_started',
+            'draft_block_started',
+            'accepted_output',
+            'draft_text_delta',
+        ]);
+        expect(acceptedDraftBlockId).toBe('block:text');
     });
 
     it('does not let a stale terminal clear a newer stream for the same execution', async () => {
