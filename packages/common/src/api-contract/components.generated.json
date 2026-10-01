@@ -3567,7 +3567,9 @@
         ]
       },
       "output_compression": {
-        "type": "number"
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
       },
       "moderation": {
         "type": "string",
@@ -3771,7 +3773,9 @@
         "type": "number"
       },
       "output_compression": {
-        "type": "number"
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 100
       },
       "moderation": {
         "type": "string",

@@ -184,3 +184,29 @@ describe('the JSONSchema closure is published open, because a JSON Schema is ope
         expect(validateApiRequest('JSONSchema', { required: 'status' }).valid).toBe(false);
     });
 });
+
+describe('image compression wire contract', () => {
+    it.each([-1, 101, 0.5])('rejects compression %s for direct and Responses images', (output_compression) => {
+        for (const model_options of [
+            { _option_id: 'openai-gpt-image', output_compression },
+            { _option_id: 'openai-text', image_generation: { model: 'gpt-image-2', output_compression } },
+        ]) {
+            const payload = { interaction: 'Generate', config: { model: 'gpt-image-2', model_options } };
+            expect(ModelOptionsSchema.safeParse(model_options).success).toBe(false);
+            expect(validateApiRequest('RunCreatePayload', payload).valid).toBe(false);
+            expect(compile('ModelOptions')(model_options)).toBe(false);
+        }
+    });
+
+    it.each([0, 100])('preserves compression boundary %s through generated contracts', (output_compression) => {
+        for (const model_options of [
+            { _option_id: 'openai-gpt-image', output_compression },
+            { _option_id: 'openai-text', image_generation: { model: 'gpt-image-2', output_compression } },
+        ]) {
+            const payload = { interaction: 'Generate', config: { model: 'gpt-image-2', model_options } };
+            expect(ModelOptionsSchema.safeParse(model_options).success).toBe(true);
+            expect(validateApiRequest('RunCreatePayload', payload).valid).toBe(true);
+            expect(compile('ModelOptions')(model_options)).toBe(true);
+        }
+    });
+});

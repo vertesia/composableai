@@ -1443,7 +1443,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'number',
                 },
                 output_compression: {
-                    type: 'number',
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100,
                 },
                 moderation: {
                     type: 'string',
@@ -1500,7 +1502,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['png', 'jpeg', 'webp'],
                 },
                 output_compression: {
-                    type: 'number',
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100,
                 },
                 moderation: {
                     type: 'string',
