@@ -901,7 +901,7 @@ export function DocumentEditingWorkspace({
     }, [agentRunId, draftPath, isEditingLocked, isSendingChanges, messageRef, t, toast]);
 
     return (
-        <div className="flex h-full min-h-0 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-mixer-muted/20 px-4">
                 <div className="min-w-0">
                     <div className="truncate font-semibold">{object.name || object.content?.name}</div>
@@ -1224,7 +1224,9 @@ export function DocumentEditingPanel({
             size="full"
             noCloseButton
             disableCloseOnClickOutside
-            className="gap-0 overflow-hidden p-0"
+            // Flex instead of DialogContent's default grid: its implicit `auto` track grows to the content's
+            // min-content width, so wide agent output would push the chat pane out of view.
+            className="flex flex-col gap-0 overflow-hidden p-0"
             description={t('agent.documentEditingWelcome')}
         >
             <DocumentEditingWorkspace
