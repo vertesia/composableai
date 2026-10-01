@@ -1931,6 +1931,20 @@ export type ExperimentalCanonicalInteractionHeaders = {
 export type ExperimentalCanonicalInteractionReturnPolicy = {
     history: 'document' | 'reference' | 'none';
 };
+export type ExperimentalCanonicalInteractionAutoTurnSelection = {
+    mode: 'auto';
+};
+export type ExperimentalCanonicalInteractionNoneTurnSelection = {
+    mode: 'none';
+};
+export type ExperimentalCanonicalInteractionRequiredTurnSelection = {
+    mode: 'required';
+    tool_name?: string | undefined;
+};
+export type ExperimentalCanonicalInteractionTurnSelection =
+    | ExperimentalCanonicalInteractionAutoTurnSelection
+    | ExperimentalCanonicalInteractionNoneTurnSelection
+    | ExperimentalCanonicalInteractionRequiredTurnSelection;
 export type ExperimentalCanonicalInteractionExecutionConfiguration = {
     id?: string | undefined;
     inference_profile?: InferenceProfileId | null | undefined;
@@ -1962,6 +1976,7 @@ export type ExperimentalCanonicalInteractionExecutionRequest = {
     data?: JsonObject | undefined;
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
+    turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
     tags?: string[] | undefined;
     workflow?: ExecutionRunWorkflow | undefined;
 };
@@ -1972,6 +1987,7 @@ export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
     data?: JsonObject | undefined;
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
+    turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
     tags?: string[] | undefined;
     workflow?: ExecutionRunWorkflow | undefined;
     interaction: string;
@@ -6917,6 +6933,23 @@ export type ExperimentalAgentConversationAcceptedOutput = {
     source: ConversationRef;
     receipt: ConversationOutputReceipt;
 };
+export type ExperimentalAgentConversationAcceptedOutputHistoryQuery = {
+    conversation_scope?: CanonicalConversationHeadScope | undefined;
+    workstream_id?: string | undefined;
+    snapshot_conversation_id?: string | undefined;
+    snapshot_revision?: number | undefined;
+    after_revision?: number | undefined;
+    limit?: number | undefined;
+};
+export type ExperimentalAgentConversationAcceptedOutputHistoryPage = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    snapshot: ConversationRef;
+    items: ExperimentalAgentConversationAcceptedOutput[];
+    next_after_revision?: number | undefined;
+};
 export type ExperimentalAgentConversationStreamEnvelope =
     | ExperimentalAgentConversationEvent
     | ExperimentalAgentConversationPreviewUnavailable
@@ -11798,6 +11831,8 @@ export interface ApiComponentTypes {
     ExperimentalAgentConversationEvent: ExperimentalAgentConversationEvent;
     ExperimentalAgentConversationPreviewUnavailable: ExperimentalAgentConversationPreviewUnavailable;
     ExperimentalAgentConversationAcceptedOutput: ExperimentalAgentConversationAcceptedOutput;
+    ExperimentalAgentConversationAcceptedOutputHistoryQuery: ExperimentalAgentConversationAcceptedOutputHistoryQuery;
+    ExperimentalAgentConversationAcceptedOutputHistoryPage: ExperimentalAgentConversationAcceptedOutputHistoryPage;
     ExperimentalAgentConversationStreamEnvelope: ExperimentalAgentConversationStreamEnvelope;
     UpdateAgentRunStatusPayload: UpdateAgentRunStatusPayloadWire;
     AgentRunFeedbackRating: AgentRunFeedbackRating;
@@ -12195,6 +12230,10 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalInteractionReferenceState: ExperimentalCanonicalInteractionReferenceState;
     ExperimentalCanonicalInteractionInitialState: ExperimentalCanonicalInteractionInitialState;
     ExperimentalCanonicalInteractionReturnPolicy: ExperimentalCanonicalInteractionReturnPolicy;
+    ExperimentalCanonicalInteractionAutoTurnSelection: ExperimentalCanonicalInteractionAutoTurnSelection;
+    ExperimentalCanonicalInteractionNoneTurnSelection: ExperimentalCanonicalInteractionNoneTurnSelection;
+    ExperimentalCanonicalInteractionRequiredTurnSelection: ExperimentalCanonicalInteractionRequiredTurnSelection;
+    ExperimentalCanonicalInteractionTurnSelection: ExperimentalCanonicalInteractionTurnSelection;
     ExperimentalCanonicalInteractionExecutionConfiguration: ExperimentalCanonicalInteractionExecutionConfiguration;
     ExperimentalCanonicalInteractionResultSchemaInput: ExperimentalCanonicalInteractionResultSchemaInput;
     ExperimentalCanonicalInteractionInlinePrompt: ExperimentalCanonicalInteractionInlinePrompt;

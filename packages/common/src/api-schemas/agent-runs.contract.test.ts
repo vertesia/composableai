@@ -13,6 +13,8 @@ import type {
     AgentRunFeedbackEntrySchema,
     AgentRunFeedbackPayloadSchema,
     AgentRunFeedbackResponseSchema,
+    ExperimentalAgentConversationAcceptedOutputHistoryPageSchema,
+    ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema,
 } from './agent-runs.js';
 import { validateApiRequest, validateApiResponse } from './registry.js';
 
@@ -417,6 +419,75 @@ describe('agent canonical conversation stream API contracts', () => {
                 },
             }).valid,
         ).toBe(false);
+    });
+
+    it('publishes a bounded exact-snapshot accepted-output history contract', () => {
+        const receipt = {
+            id: 'operation:accepted',
+            conversation_id: 'conversation:contract',
+            base_revision: 0,
+            result_revision: 1,
+            recorded_at: '2026-10-01T00:00:00.000Z',
+            accepted_turn_ids: ['turn:accepted'],
+            accepted_generation_ids: ['generation:accepted'],
+            accepted_asset_ids: [],
+        };
+        const item = {
+            api_version: '=20260930' as const,
+            agent_run_id: 'agent:contract',
+            scope: 'root' as const,
+            type: 'accepted_output' as const,
+            source: { conversation_id: receipt.conversation_id, revision: receipt.result_revision },
+            receipt,
+        };
+        const page = {
+            api_version: '=20260930' as const,
+            agent_run_id: 'agent:contract',
+            scope: 'root' as const,
+            snapshot: { conversation_id: receipt.conversation_id, revision: 2 },
+            items: [item],
+            next_after_revision: 1,
+        };
+
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', {
+                snapshot_conversation_id: receipt.conversation_id,
+                snapshot_revision: 2,
+                after_revision: 0,
+                limit: 100,
+            }).valid,
+        ).toBe(true);
+        expect(validateApiResponse('ExperimentalAgentConversationAcceptedOutputHistoryPage', page).valid).toBe(true);
+    });
+
+    it('rejects incomplete snapshot pins and out-of-bounds history pages', () => {
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', {
+                snapshot_conversation_id: 'conversation:contract',
+            }).valid,
+        ).toBe(false);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', {
+                snapshot_revision: 1,
+            }).valid,
+        ).toBe(false);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', { limit: 101 }).valid,
+        ).toBe(false);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', { after_revision: 1 }).valid,
+        ).toBe(false);
+    });
+
+    it('derives history request and page types from their runtime schemas', () => {
+        expectTypeOf<
+            import('../store/agent-run.js').ExperimentalAgentConversationAcceptedOutputHistoryQuery
+        >().toEqualTypeOf<
+            import('zod').z.infer<typeof ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema>
+        >();
+        expectTypeOf<
+            import('../store/agent-run.js').ExperimentalAgentConversationAcceptedOutputHistoryPage
+        >().toEqualTypeOf<import('zod').z.infer<typeof ExperimentalAgentConversationAcceptedOutputHistoryPageSchema>>();
     });
 });
 

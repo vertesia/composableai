@@ -8,6 +8,7 @@ import {
     ExperimentalCanonicalInteractionHistorySchema,
     ExperimentalCanonicalInteractionInlinePromptSchema,
     ExperimentalCanonicalInteractionResultSchemaInputSchema,
+    ExperimentalCanonicalInteractionTurnSelectionSchema,
     ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
 } from './canonical-interaction-execution.js';
 import { ApiSchemaComponents } from './registry.js';
@@ -51,6 +52,60 @@ describe('experimental canonical interaction execution schemas', () => {
             initial_state: { type: 'new' },
             retention: 'RESTRICTED',
             return_policy: { history: 'document' },
+        });
+    });
+
+    it.each([
+        { mode: 'auto' as const },
+        { mode: 'none' as const },
+        { mode: 'required' as const },
+        { mode: 'required' as const, tool_name: 'lookup' },
+    ])('accepts the strict provider-neutral turn selection $mode', (turnSelection) => {
+        const request = {
+            initial_state: { type: 'new' as const },
+            retention: 'STANDARD' as const,
+            return_policy: { history: 'none' as const },
+            turn_selection: turnSelection,
+        };
+
+        expect(ExperimentalCanonicalInteractionExecutionRequestSchema.parse(request).turn_selection).toEqual(
+            turnSelection,
+        );
+    });
+
+    it.each([
+        { mode: 'any' },
+        { mode: 'auto', tool_name: 'lookup' },
+        { mode: 'none', tool_name: 'lookup' },
+        { mode: 'required', tool_name: '' },
+        { mode: 'required', unknown: true },
+    ])('rejects unsupported or ambiguous turn selection %#', (turnSelection) => {
+        expect(ExperimentalCanonicalInteractionTurnSelectionSchema.safeParse(turnSelection).success).toBe(false);
+    });
+
+    it('emits a strict discriminated turn-selection component for generated clients', () => {
+        expect(ApiSchemaComponents.ExperimentalCanonicalInteractionTurnSelection).toEqual({
+            description: 'Per-turn tool selection. Omission preserves the effective interaction and model defaults.',
+            oneOf: [
+                { $ref: '#/components/schemas/ExperimentalCanonicalInteractionAutoTurnSelection' },
+                { $ref: '#/components/schemas/ExperimentalCanonicalInteractionNoneTurnSelection' },
+                { $ref: '#/components/schemas/ExperimentalCanonicalInteractionRequiredTurnSelection' },
+            ],
+            type: 'object',
+            required: ['mode'],
+            discriminator: {
+                propertyName: 'mode',
+                mapping: {
+                    auto: '#/components/schemas/ExperimentalCanonicalInteractionAutoTurnSelection',
+                    none: '#/components/schemas/ExperimentalCanonicalInteractionNoneTurnSelection',
+                    required: '#/components/schemas/ExperimentalCanonicalInteractionRequiredTurnSelection',
+                },
+            },
+        });
+        expect(ApiSchemaComponents.ExperimentalCanonicalInteractionExecutionRequest).toMatchObject({
+            properties: {
+                turn_selection: { $ref: '#/components/schemas/ExperimentalCanonicalInteractionTurnSelection' },
+            },
         });
     });
 

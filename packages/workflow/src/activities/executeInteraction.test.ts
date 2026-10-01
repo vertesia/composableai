@@ -978,6 +978,23 @@ describe('executeInteraction canonical lifecycle', () => {
         expect(mocks.streamCanonical).toHaveBeenCalledOnce();
     });
 
+    it('preserves persisted typed-stream retryability for workflow retry classification', async () => {
+        const failed = canonicalResult({
+            id: 'failed-stream-run',
+            status: ExecutionRunStatus.failed,
+            acceptedOutput: false,
+            error: { message: 'Canonical provider stream failed', code: 'PROVIDER_STREAM_FAILED', retryable: true },
+        });
+        const mocks = mockCanonicalClient(failed);
+        mocks.streamCanonical.mockResolvedValue(terminatedStream(failed.run.id));
+
+        await expect(
+            retryEnvironment(1).run(executeInteractionFromActivity, mocks.client, 'testInteraction', {}, {}),
+        ).rejects.toMatchObject({ retryable: true, errorCode: 'PROVIDER_STREAM_FAILED' });
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+        expect(mocks.retrieveCanonical).toHaveBeenCalledWith(failed.run.id);
+    });
+
     it.each([ExecutionRunStatus.failed, ExecutionRunStatus.completed, ExecutionRunStatus.processing])(
         'advances after response_accepted confirms canonical failure with host status %s',
         async (runStatus) => {

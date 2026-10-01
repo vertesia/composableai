@@ -849,6 +849,30 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReturnPolicySchema
         >
     >;
+    ExperimentalCanonicalInteractionAutoTurnSelection: Same<
+        W.ExperimentalCanonicalInteractionAutoTurnSelection,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionAutoTurnSelectionSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionNoneTurnSelection: Same<
+        W.ExperimentalCanonicalInteractionNoneTurnSelection,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionNoneTurnSelectionSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionRequiredTurnSelection: Same<
+        W.ExperimentalCanonicalInteractionRequiredTurnSelection,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRequiredTurnSelectionSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionTurnSelection: Same<
+        W.ExperimentalCanonicalInteractionTurnSelection,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionTurnSelectionSchema
+        >
+    >;
     ExperimentalCanonicalInteractionExecutionConfiguration: Same<
         W.ExperimentalCanonicalInteractionExecutionConfiguration,
         z.infer<
@@ -2917,6 +2941,18 @@ interface Checks {
     ExperimentalAgentConversationAcceptedOutput: Same<
         W.ExperimentalAgentConversationAcceptedOutput,
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputSchema>
+    >;
+    ExperimentalAgentConversationAcceptedOutputHistoryQuery: Same<
+        W.ExperimentalAgentConversationAcceptedOutputHistoryQuery,
+        z.infer<
+            typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema
+        >
+    >;
+    ExperimentalAgentConversationAcceptedOutputHistoryPage: Same<
+        W.ExperimentalAgentConversationAcceptedOutputHistoryPage,
+        z.infer<
+            typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryPageSchema
+        >
     >;
     ExperimentalAgentConversationStreamEnvelope: Same<
         W.ExperimentalAgentConversationStreamEnvelope,
@@ -8207,6 +8243,18 @@ interface Checks {
         W.ApiComponentTypes['ExperimentalAgentConversationAcceptedOutput'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputSchema>
     >;
+    'component:ExperimentalAgentConversationAcceptedOutputHistoryQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationAcceptedOutputHistoryQuery'],
+        z.infer<
+            typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema
+        >
+    >;
+    'component:ExperimentalAgentConversationAcceptedOutputHistoryPage': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationAcceptedOutputHistoryPage'],
+        z.infer<
+            typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryPageSchema
+        >
+    >;
     'component:ExperimentalAgentConversationStreamEnvelope': Same<
         W.ApiComponentTypes['ExperimentalAgentConversationStreamEnvelope'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamEnvelopeSchema>
@@ -9809,6 +9857,30 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReturnPolicySchema
         >
     >;
+    'component:ExperimentalCanonicalInteractionAutoTurnSelection': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionAutoTurnSelection'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionAutoTurnSelectionSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionNoneTurnSelection': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionNoneTurnSelection'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionNoneTurnSelectionSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionRequiredTurnSelection': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionRequiredTurnSelection'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRequiredTurnSelectionSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionTurnSelection': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionTurnSelection'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionTurnSelectionSchema
+        >
+    >;
     'component:ExperimentalCanonicalInteractionExecutionConfiguration': Same<
         W.ApiComponentTypes['ExperimentalCanonicalInteractionExecutionConfiguration'],
         z.infer<
@@ -10270,6 +10342,10 @@ const checks: Checks = {
     ExperimentalCanonicalInteractionConversationReference: true,
     ExperimentalCanonicalInteractionHeaders: true,
     ExperimentalCanonicalInteractionReturnPolicy: true,
+    ExperimentalCanonicalInteractionAutoTurnSelection: true,
+    ExperimentalCanonicalInteractionNoneTurnSelection: true,
+    ExperimentalCanonicalInteractionRequiredTurnSelection: true,
+    ExperimentalCanonicalInteractionTurnSelection: true,
     ExperimentalCanonicalInteractionExecutionConfiguration: true,
     ExperimentalCanonicalInteractionResultSchemaInput: true,
     ExperimentalCanonicalInteractionInlinePrompt: true,
@@ -10822,6 +10898,8 @@ const checks: Checks = {
     ExperimentalAgentConversationEvent: true,
     ExperimentalAgentConversationPreviewUnavailable: true,
     ExperimentalAgentConversationAcceptedOutput: true,
+    ExperimentalAgentConversationAcceptedOutputHistoryQuery: true,
+    ExperimentalAgentConversationAcceptedOutputHistoryPage: true,
     ExperimentalAgentConversationStreamEnvelope: true,
     AgentRunDetailsQuery: true,
     AgentRunArtifactsQuery: true,
@@ -12205,6 +12283,8 @@ const checks: Checks = {
     'component:ExperimentalAgentConversationEvent': true,
     'component:ExperimentalAgentConversationPreviewUnavailable': true,
     'component:ExperimentalAgentConversationAcceptedOutput': true,
+    'component:ExperimentalAgentConversationAcceptedOutputHistoryQuery': true,
+    'component:ExperimentalAgentConversationAcceptedOutputHistoryPage': true,
     'component:ExperimentalAgentConversationStreamEnvelope': true,
     'component:UpdateAgentRunStatusPayload': true,
     'component:AgentRunFeedbackRating': true,
@@ -12602,6 +12682,10 @@ const checks: Checks = {
     'component:ExperimentalCanonicalInteractionReferenceState': true,
     'component:ExperimentalCanonicalInteractionInitialState': true,
     'component:ExperimentalCanonicalInteractionReturnPolicy': true,
+    'component:ExperimentalCanonicalInteractionAutoTurnSelection': true,
+    'component:ExperimentalCanonicalInteractionNoneTurnSelection': true,
+    'component:ExperimentalCanonicalInteractionRequiredTurnSelection': true,
+    'component:ExperimentalCanonicalInteractionTurnSelection': true,
     'component:ExperimentalCanonicalInteractionExecutionConfiguration': true,
     'component:ExperimentalCanonicalInteractionResultSchemaInput': true,
     'component:ExperimentalCanonicalInteractionInlinePrompt': true,
@@ -12652,6 +12736,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2610);
+        expect(Object.keys(checks)).toHaveLength(2622);
     });
 });

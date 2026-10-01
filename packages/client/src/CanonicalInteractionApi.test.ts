@@ -118,4 +118,22 @@ describe('experimental canonical interaction API client', () => {
             EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
         );
     });
+
+    it('preserves strict canonical turn selection in the request body', async () => {
+        const requests: Request[] = [];
+        const selected: ExperimentalCanonicalInteractionExecutionRequest = {
+            ...request,
+            turn_selection: { mode: 'required', tool_name: 'lookup' },
+        };
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json(response)),
+            onRequest: (wireRequest) => requests.push(wireRequest.clone()),
+        });
+
+        await client.interactions.executeCanonical('interaction-1', selected);
+
+        expect(await requests[0].json()).toEqual(selected);
+    });
 });

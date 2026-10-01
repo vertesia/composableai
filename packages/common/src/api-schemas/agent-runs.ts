@@ -1613,6 +1613,73 @@ export const ExperimentalAgentConversationAcceptedOutputSchema = z
         description: 'Reference to the latest exact durable accepted output for the requested canonical scope.',
     });
 
+export const ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema = z
+    .strictObject({
+        conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
+        workstream_id: z.string().min(1).max(512).optional(),
+        snapshot_conversation_id: z.string().min(1).max(512).optional(),
+        snapshot_revision: z.number().int().min(0).safe().optional(),
+        after_revision: z.number().int().min(0).safe().optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+    })
+    .superRefine((value, context) => {
+        if ((value.snapshot_conversation_id === undefined) !== (value.snapshot_revision === undefined)) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Snapshot conversation and revision must be provided together',
+                path:
+                    value.snapshot_conversation_id === undefined ? ['snapshot_conversation_id'] : ['snapshot_revision'],
+            });
+        }
+        if (
+            value.after_revision !== undefined &&
+            (value.snapshot_conversation_id === undefined || value.snapshot_revision === undefined)
+        ) {
+            context.addIssue({
+                code: 'custom',
+                message: 'A history cursor requires an exact pinned snapshot',
+                path: ['after_revision'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationAcceptedOutputHistoryQuery',
+        description:
+            'Selects a bounded page of accepted-output references from one exact canonical conversation snapshot.',
+        allOf: [
+            {
+                if: { required: ['snapshot_conversation_id'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_revision'] },
+            },
+            {
+                if: { required: ['snapshot_revision'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_conversation_id'] },
+            },
+            {
+                if: { required: ['after_revision'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_conversation_id', 'snapshot_revision'] },
+            },
+        ],
+    });
+
+export const ExperimentalAgentConversationAcceptedOutputHistoryPageSchema = z
+    .strictObject({
+        api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+        agent_run_id: z.string().min(1).max(512),
+        scope: CanonicalConversationHeadScopeSchema,
+        workstream_id: z.string().min(1).max(512).optional(),
+        snapshot: ConversationRefSchema,
+        items: z.array(ExperimentalAgentConversationAcceptedOutputSchema).max(100),
+        next_after_revision: z.number().int().min(0).safe().optional(),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationAcceptedOutputHistoryPage',
+        description: 'A bounded page of exact accepted-output references pinned to one retained canonical snapshot.',
+    });
+
 export const ExperimentalAgentConversationStreamEnvelopeSchema = z
     .discriminatedUnion('type', [
         ExperimentalAgentConversationEventSchema,

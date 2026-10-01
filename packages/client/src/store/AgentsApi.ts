@@ -26,6 +26,8 @@ import {
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
     type ErrorAnalyticsResponse,
+    type ExperimentalAgentConversationAcceptedOutputHistoryPage,
+    type ExperimentalAgentConversationAcceptedOutputHistoryQuery,
     type ExperimentalCanonicalInteractionOutput,
     type FirstResponseBehaviorAnalyticsResponse,
     type IngestAgentEventsPayload,
@@ -181,6 +183,23 @@ export class AgentsApi extends ApiTopic {
             throw new Error('Canonical accepted output receipt does not match the requested receipt');
         }
         return output;
+    }
+
+    /**
+     * List accepted-output references from one exact retained canonical snapshot. Continue while
+     * `next_after_revision` is present even when a page has no items: imported outputs remain excluded.
+     */
+    listConversationAcceptedOutputs(
+        id: string,
+        query: ExperimentalAgentConversationAcceptedOutputHistoryQuery = {},
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentConversationAcceptedOutputHistoryPage> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/accepted-outputs`, {
+            query,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
     }
 
     /** Subscribe to live canonical drafts and exact durable accepted output for one agent-run scope. */

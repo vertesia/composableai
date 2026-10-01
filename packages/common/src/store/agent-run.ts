@@ -333,6 +333,12 @@ export type ExperimentalAgentConversationPreviewUnavailable = Wire.ExperimentalA
 
 export type ExperimentalAgentConversationAcceptedOutput = Wire.ExperimentalAgentConversationAcceptedOutput;
 
+export type ExperimentalAgentConversationAcceptedOutputHistoryQuery =
+    Wire.ExperimentalAgentConversationAcceptedOutputHistoryQuery;
+
+export type ExperimentalAgentConversationAcceptedOutputHistoryPage =
+    Wire.ExperimentalAgentConversationAcceptedOutputHistoryPage;
+
 export type ExperimentalAgentConversationStreamEnvelope = Wire.ExperimentalAgentConversationStreamEnvelope;
 
 export type AgentRunDetailsQuery = Wire.AgentRunDetailsQuery;

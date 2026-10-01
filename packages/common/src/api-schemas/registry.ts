@@ -2004,6 +2004,10 @@ const AGENT_RUN_SCHEMAS = {
     ExperimentalAgentConversationPreviewUnavailable:
         AgentRunSchemas.ExperimentalAgentConversationPreviewUnavailableSchema,
     ExperimentalAgentConversationAcceptedOutput: AgentRunSchemas.ExperimentalAgentConversationAcceptedOutputSchema,
+    ExperimentalAgentConversationAcceptedOutputHistoryQuery:
+        AgentRunSchemas.ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema,
+    ExperimentalAgentConversationAcceptedOutputHistoryPage:
+        AgentRunSchemas.ExperimentalAgentConversationAcceptedOutputHistoryPageSchema,
     ExperimentalAgentConversationStreamEnvelope: AgentRunSchemas.ExperimentalAgentConversationStreamEnvelopeSchema,
     UpdateAgentRunStatusPayload: AgentRunSchemas.UpdateAgentRunStatusPayloadSchema,
     AgentRunFeedbackRating: AgentRunSchemas.AgentRunFeedbackRatingSchema,
@@ -2515,6 +2519,14 @@ const CANONICAL_INTERACTION_SCHEMAS: CanonicalInteractionSchemaMap = {
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionInitialStateSchema,
     ExperimentalCanonicalInteractionReturnPolicy:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionReturnPolicySchema,
+    ExperimentalCanonicalInteractionAutoTurnSelection:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionAutoTurnSelectionSchema,
+    ExperimentalCanonicalInteractionNoneTurnSelection:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionNoneTurnSelectionSchema,
+    ExperimentalCanonicalInteractionRequiredTurnSelection:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionRequiredTurnSelectionSchema,
+    ExperimentalCanonicalInteractionTurnSelection:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionTurnSelectionSchema,
     ExperimentalCanonicalInteractionExecutionConfiguration:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionConfigurationSchema,
     ExperimentalCanonicalInteractionResultSchemaInput:
@@ -2765,6 +2777,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AppendRunConversationProgramTurnResponse',
     'AppendRunConversationToolResultsPayload',
     'AppendRunConversationToolResultsResponse',
+    'ExperimentalAgentConversationAcceptedOutputHistoryQuery',
+    'ExperimentalAgentConversationAcceptedOutputHistoryPage',
     'AvailableRunConversation',
     'UnavailableRunConversation',
     'UpdateInteractionConfigurationPayload',

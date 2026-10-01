@@ -65,6 +65,52 @@ export const ExperimentalCanonicalInteractionReturnPolicySchema = z
     .strictObject({ history: z.enum(['document', 'reference', 'none']) })
     .meta({ id: 'ExperimentalCanonicalInteractionReturnPolicy' });
 
+export const ExperimentalCanonicalInteractionAutoTurnSelectionSchema = z
+    .strictObject({ mode: z.literal('auto') })
+    .meta({
+        id: 'ExperimentalCanonicalInteractionAutoTurnSelection',
+        description: 'Override the effective model-turn tool choice with provider automatic selection.',
+    });
+
+export const ExperimentalCanonicalInteractionNoneTurnSelectionSchema = z
+    .strictObject({ mode: z.literal('none') })
+    .meta({
+        id: 'ExperimentalCanonicalInteractionNoneTurnSelection',
+        description: "Select the provider's no-tool mode for this model turn.",
+    });
+
+export const ExperimentalCanonicalInteractionRequiredTurnSelectionSchema = z
+    .strictObject({
+        mode: z.literal('required'),
+        tool_name: IdentifierSchema.optional(),
+    })
+    .meta({
+        id: 'ExperimentalCanonicalInteractionRequiredTurnSelection',
+        description: "Select the provider's required-tool mode, optionally for the exact named active tool.",
+    });
+
+/** Provider-neutral selection policy for exactly one canonical model turn. */
+export const ExperimentalCanonicalInteractionTurnSelectionSchema = z
+    .discriminatedUnion('mode', [
+        ExperimentalCanonicalInteractionAutoTurnSelectionSchema,
+        ExperimentalCanonicalInteractionNoneTurnSelectionSchema,
+        ExperimentalCanonicalInteractionRequiredTurnSelectionSchema,
+    ])
+    .meta({
+        id: 'ExperimentalCanonicalInteractionTurnSelection',
+        description: 'Per-turn tool selection. Omission preserves the effective interaction and model defaults.',
+        type: 'object',
+        required: ['mode'],
+        discriminator: {
+            propertyName: 'mode',
+            mapping: {
+                auto: '#/components/schemas/ExperimentalCanonicalInteractionAutoTurnSelection',
+                none: '#/components/schemas/ExperimentalCanonicalInteractionNoneTurnSelection',
+                required: '#/components/schemas/ExperimentalCanonicalInteractionRequiredTurnSelection',
+            },
+        },
+    });
+
 export const ExperimentalCanonicalInteractionExecutionConfigurationSchema =
     InteractionExecutionConfigurationSchema.omit({ run_data: true }).meta({
         id: 'ExperimentalCanonicalInteractionExecutionConfiguration',
@@ -101,6 +147,7 @@ const canonicalExecutionRequestFields = {
     data: JsonObjectSchema.optional(),
     config: ExperimentalCanonicalInteractionExecutionConfigurationSchema.optional(),
     result_schema: ExperimentalCanonicalInteractionResultSchemaInputSchema.optional(),
+    turn_selection: ExperimentalCanonicalInteractionTurnSelectionSchema.optional(),
     tags: z.array(z.string()).optional(),
     workflow: ExecutionRunWorkflowSchema.optional(),
 };

@@ -212,6 +212,93 @@ describe('AgentsApi canonical conversation transport', () => {
         await expect(pending).resolves.toMatchObject({ fragment: { receipt: fragment.receipt } });
     });
 
+    it('lists a page of accepted-output references pinned to an exact snapshot', async () => {
+        const requests: Request[] = [];
+        const fragment = acceptedOutput();
+        const page = {
+            api_version: EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+            agent_run_id: 'run/with delimiter',
+            scope: 'workstream:launch-1',
+            workstream_id: 'node-1',
+            snapshot: { conversation_id: fragment.receipt.conversation_id, revision: 4 },
+            items: [
+                {
+                    api_version: EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+                    agent_run_id: 'run/with delimiter',
+                    scope: 'workstream:launch-1',
+                    workstream_id: 'node-1',
+                    type: 'accepted_output',
+                    source: fragment.source,
+                    receipt: fragment.receipt,
+                },
+            ],
+        } as const;
+        const client = new ZenoClient({
+            serverUrl: 'https://store.test',
+            apikey: 'token',
+            fetch: (async (input: Request | string, init?: RequestInit) => {
+                const request = input instanceof Request ? input : new Request(input, init);
+                requests.push(request);
+                return Response.json(page);
+            }) as typeof fetch,
+        });
+
+        await expect(
+            client.agents.listConversationAcceptedOutputs(
+                'run/with delimiter',
+                {
+                    conversation_scope: 'workstream:launch-1',
+                    workstream_id: 'node-1',
+                    snapshot_conversation_id: fragment.receipt.conversation_id,
+                    snapshot_revision: 4,
+                    after_revision: 1,
+                    limit: 50,
+                },
+                { headers: { 'x-trace': 'accepted-output-history' } },
+            ),
+        ).resolves.toEqual(page);
+
+        expect(requests).toHaveLength(1);
+        const request = requests[0];
+        const url = new URL(request.url);
+        expect(url.pathname).toBe('/api/v1/agents/run%2Fwith%20delimiter/conversation/accepted-outputs');
+        expect(Object.fromEntries(url.searchParams)).toEqual({
+            conversation_scope: 'workstream:launch-1',
+            workstream_id: 'node-1',
+            snapshot_conversation_id: fragment.receipt.conversation_id,
+            snapshot_revision: '4',
+            after_revision: '1',
+            limit: '50',
+        });
+        expect(request.headers.get('x-api-version')).toBe(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE);
+        expect(request.headers.get('x-trace')).toBe('accepted-output-history');
+    });
+
+    it('omits unknown child scope and snapshot selection on the first history page', async () => {
+        const requests: Request[] = [];
+        const client = new ZenoClient({
+            serverUrl: 'https://store.test',
+            apikey: 'token',
+            fetch: (async (input: Request | string, init?: RequestInit) => {
+                const request = input instanceof Request ? input : new Request(input, init);
+                requests.push(request);
+                return Response.json({
+                    api_version: EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+                    agent_run_id: 'child-run',
+                    scope: 'workstream:child-launch',
+                    workstream_id: 'child-node',
+                    snapshot: { conversation_id: 'conversation:child', revision: 0 },
+                    items: [],
+                });
+            }) as typeof fetch,
+        });
+
+        await client.agents.listConversationAcceptedOutputs('child-run');
+
+        const url = new URL(requests[0].url);
+        expect([...url.searchParams]).toEqual([]);
+    });
+
     it('streams typed live resets and reconciles accepted output through the exact receipt endpoint', async () => {
         const fragment = acceptedOutput();
         const abort = new AbortController();
