@@ -87,6 +87,15 @@ export function clearPendingSignin(): void {
 }
 
 /**
+ * Whether the current sign-in went through a tenant. The key's presence is the marker, not its
+ * value: a tenant with neither a label nor a name stores an empty string, and a sign-in outside a
+ * tenant removes the key.
+ */
+export function isTenantSignIn(): boolean {
+    return localStorage.getItem('tenantName') !== null;
+}
+
+/**
  * Clears the persisted sign-in records (last-successful-login and pending) and
  * signs out of Firebase. Best-effort: sign-out errors (e.g. no active session)
  * are swallowed.
