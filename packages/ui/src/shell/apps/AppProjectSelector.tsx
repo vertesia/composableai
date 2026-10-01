@@ -1,6 +1,6 @@
 import type { ProjectRef, RequireAtLeastOne } from '@vertesia/common';
 import { errorMessage, SelectBox, useFetch } from '@vertesia/ui/core';
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from '@vertesia/ui/session';
+import { rememberScopeSelection, useUserSession } from '@vertesia/ui/session';
 import { useState } from 'react';
 
 interface AppProjectSelectorProps {
@@ -23,8 +23,7 @@ export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSel
             }
         }
         // default on change
-        localStorage.setItem(LastSelectedAccountId_KEY, project.account);
-        localStorage.setItem(`${LastSelectedProjectId_KEY}-${project.account}`, project.id);
+        rememberScopeSelection(project.account, project.id);
         window.location.reload();
     };
 

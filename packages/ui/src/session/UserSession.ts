@@ -11,6 +11,7 @@ import { gatewayFetch, loadGatewaySession, logoutGatewaySession, usesGatewaySess
 import { getAppOAuthToken, revokeAppOAuthSession } from './auth/oauth';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
+import { forgetTabScopeSelection, rememberScopeSelection } from './scopeSelection';
 
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
@@ -142,12 +143,7 @@ class UserSession {
             `Logging in as ${this.authToken?.name} with account ${this.authToken?.account.name} (${this.authToken?.account.id}, and project ${this.authToken?.project?.name} (${this.authToken?.project?.id})`,
         );
 
-        //store selected account in local storage
-        localStorage.setItem(LastSelectedAccountId_KEY, this.authToken.account.id);
-        localStorage.setItem(
-            `${LastSelectedProjectId_KEY}-${this.authToken.account.id}`,
-            this.authToken.project?.id ?? '',
-        );
+        rememberScopeSelection(this.authToken.account.id, this.authToken.project?.id);
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
@@ -254,6 +250,8 @@ class UserSession {
                 localStorage.removeItem(`${LastSelectedProjectId_KEY}-${this.account.id}`);
             }
         }
+        // The next load picks the target account's last project, not this tab's current one.
+        forgetTabScopeSelection();
 
         const url = mountRootUrl();
         url.searchParams.set('a', targetAccountId);
@@ -262,7 +260,7 @@ class UserSession {
 
     async switchProject(targetProjectId: string) {
         if (this.account) {
-            localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.account.id}`, targetProjectId);
+            rememberScopeSelection(this.account.id, targetProjectId);
         }
 
         const url = mountRootUrl();
