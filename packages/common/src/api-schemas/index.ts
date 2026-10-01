@@ -12,11 +12,13 @@
 export * from './account.js';
 export * from './adapter.js';
 export * from './agent-communication.js';
+export * from './agent-conversation-migration.js';
 export * from './agent-runs.js';
 export * from './analytics.js';
 export * from './apikey.js';
 export * from './app-runtime.js';
 export * from './bulk-operation.js';
+export * from './canonical-conversation-resume.js';
 export * from './canonical-interaction-execution.js';
 export * from './canonical-interaction-stream.js';
 export * from './content.js';
@@ -38,6 +40,7 @@ export {
     CanonicalPendingApplicationToolCallSchema,
     CanonicalScopedGenerationEvidenceSchema,
     ConversationAcceptedGenerationEvidenceSchema,
+    ConversationStateSchema,
     SchemaRefSchema,
 } from './interaction.js';
 export * from './oauth-server.js';

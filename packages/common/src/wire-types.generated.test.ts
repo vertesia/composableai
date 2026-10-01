@@ -33,6 +33,28 @@ interface Checks {
         W.ACEUpdatePayload,
         z.infer<typeof import('./api-schemas/access-control.js').ACEUpdatePayloadSchema>
     >;
+    AgentConversationArchiveSource: Same<
+        W.AgentConversationArchiveSource,
+        z.infer<typeof import('./api-schemas/agent-conversation-migration.js').AgentConversationArchiveSourceSchema>
+    >;
+    AgentConversationNativeArchiveAttestation: Same<
+        W.AgentConversationNativeArchiveAttestation,
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').AgentConversationNativeArchiveAttestationSchema
+        >
+    >;
+    ImportAgentRunConversationArchivePayload: Same<
+        W.ImportAgentRunConversationArchivePayload,
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').ImportAgentRunConversationArchivePayloadSchema
+        >
+    >;
+    ImportAgentRunConversationArchiveResponse: Same<
+        W.ImportAgentRunConversationArchiveResponse,
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').ImportAgentRunConversationArchiveResponseSchema
+        >
+    >;
     AnalyticsAxis: Same<W.AnalyticsAxis, z.infer<typeof import('./api-schemas/analytics.js').AnalyticsAxisSchema>>;
     RunAnalyticsQuery: Same<
         W.RunAnalyticsQuery,
@@ -794,6 +816,42 @@ interface Checks {
     WebsiteCredentialMetadataUpdate: Same<
         W.WebsiteCredentialMetadataUpdate,
         z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialMetadataUpdateSchema>
+    >;
+    ExperimentalCanonicalAsyncCompletionOptions: Same<
+        W.ExperimentalCanonicalAsyncCompletionOptions,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalAsyncCompletionOptionsSchema
+        >
+    >;
+    ExperimentalCanonicalResumeAccepted: Same<
+        W.ExperimentalCanonicalResumeAccepted,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeAcceptedSchema
+        >
+    >;
+    ExperimentalCanonicalResumeTelemetry: Same<
+        W.ExperimentalCanonicalResumeTelemetry,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeTelemetrySchema
+        >
+    >;
+    ExperimentalCanonicalToolResultsPayload: Same<
+        W.ExperimentalCanonicalToolResultsPayload,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalToolResultsPayloadSchema
+        >
+    >;
+    ExperimentalCanonicalUserMessagePayload: Same<
+        W.ExperimentalCanonicalUserMessagePayload,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalUserMessagePayloadSchema
+        >
+    >;
+    ExperimentalCanonicalResumeInputAppend: Same<
+        W.ExperimentalCanonicalResumeInputAppend,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeInputAppendSchema
+        >
     >;
     AvailableRunConversation: Same<
         W.AvailableRunConversation,
@@ -10019,6 +10077,64 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionResultSchema
         >
     >;
+    'component:AgentConversationArchiveSource': Same<
+        W.ApiComponentTypes['AgentConversationArchiveSource'],
+        z.infer<typeof import('./api-schemas/agent-conversation-migration.js').AgentConversationArchiveSourceSchema>
+    >;
+    'component:AgentConversationNativeArchiveAttestation': Same<
+        W.ApiComponentTypes['AgentConversationNativeArchiveAttestation'],
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').AgentConversationNativeArchiveAttestationSchema
+        >
+    >;
+    'component:ImportAgentRunConversationArchivePayload': Same<
+        W.ApiComponentTypes['ImportAgentRunConversationArchivePayload'],
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').ImportAgentRunConversationArchivePayloadSchema
+        >
+    >;
+    'component:ImportAgentRunConversationArchiveResponse': Same<
+        W.ApiComponentTypes['ImportAgentRunConversationArchiveResponse'],
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').ImportAgentRunConversationArchiveResponseSchema
+        >
+    >;
+    'component:ExperimentalCanonicalResumeInputAppend': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalResumeInputAppend'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeInputAppendSchema
+        >
+    >;
+    'component:ExperimentalCanonicalAsyncCompletionOptions': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalAsyncCompletionOptions'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalAsyncCompletionOptionsSchema
+        >
+    >;
+    'component:ExperimentalCanonicalResumeAccepted': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalResumeAccepted'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeAcceptedSchema
+        >
+    >;
+    'component:ExperimentalCanonicalResumeTelemetry': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalResumeTelemetry'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeTelemetrySchema
+        >
+    >;
+    'component:ExperimentalCanonicalToolResultsPayload': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalToolResultsPayload'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalToolResultsPayloadSchema
+        >
+    >;
+    'component:ExperimentalCanonicalUserMessagePayload': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalUserMessagePayload'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalUserMessagePayloadSchema
+        >
+    >;
     'component:ExperimentalCanonicalAgentAcceptanceTarget': Same<
         W.ApiComponentTypes['ExperimentalCanonicalAgentAcceptanceTarget'],
         z.infer<
@@ -10176,6 +10292,10 @@ const checks: Checks = {
     AccessControlEntry: true,
     ACECreatePayload: true,
     ACEUpdatePayload: true,
+    AgentConversationArchiveSource: true,
+    AgentConversationNativeArchiveAttestation: true,
+    ImportAgentRunConversationArchivePayload: true,
+    ImportAgentRunConversationArchiveResponse: true,
     AnalyticsAxis: true,
     RunAnalyticsQuery: true,
     RunAnalyticsGroupBy: true,
@@ -10392,6 +10512,12 @@ const checks: Checks = {
     WebsiteCredentialFillRequest: true,
     WebsiteCredentialFillResponse: true,
     WebsiteCredentialMetadataUpdate: true,
+    ExperimentalCanonicalAsyncCompletionOptions: true,
+    ExperimentalCanonicalResumeAccepted: true,
+    ExperimentalCanonicalResumeTelemetry: true,
+    ExperimentalCanonicalToolResultsPayload: true,
+    ExperimentalCanonicalUserMessagePayload: true,
+    ExperimentalCanonicalResumeInputAppend: true,
     AvailableRunConversation: true,
     UnavailableRunConversation: true,
     RunConversationResponse: true,
@@ -12773,6 +12899,16 @@ const checks: Checks = {
     'component:ExperimentalCanonicalInteractionUnavailableOutput': true,
     'component:ExperimentalCanonicalInteractionOutput': true,
     'component:ExperimentalCanonicalInteractionExecutionResult': true,
+    'component:AgentConversationArchiveSource': true,
+    'component:AgentConversationNativeArchiveAttestation': true,
+    'component:ImportAgentRunConversationArchivePayload': true,
+    'component:ImportAgentRunConversationArchiveResponse': true,
+    'component:ExperimentalCanonicalResumeInputAppend': true,
+    'component:ExperimentalCanonicalAsyncCompletionOptions': true,
+    'component:ExperimentalCanonicalResumeAccepted': true,
+    'component:ExperimentalCanonicalResumeTelemetry': true,
+    'component:ExperimentalCanonicalToolResultsPayload': true,
+    'component:ExperimentalCanonicalUserMessagePayload': true,
     'component:ExperimentalCanonicalAgentAcceptanceTarget': true,
     'component:ExperimentalCanonicalInteractionStreamRequest': true,
     'component:ExperimentalCanonicalInteractionStreamOpened': true,
@@ -12810,6 +12946,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2636);
+        expect(Object.keys(checks)).toHaveLength(2656);
     });
 });

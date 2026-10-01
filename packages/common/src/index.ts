@@ -7,6 +7,7 @@ export type {
     VideoResult,
 } from '@llumiverse/common';
 export * from './access-control.js';
+export type * from './agent-conversation-migration.js';
 export * from './analytics.js';
 /**
  * Schema-derived API types. MUST stay `export type` — tsc erases it, so `lib/index.js` never
@@ -26,6 +27,7 @@ export * from './ask-user.js';
 export * from './audit-trail.js';
 export * from './browser-credentials.js';
 export * from './canonical-conversation.js';
+export type * from './canonical-conversation-resume.js';
 export * from './canonical-generation-evidence.js';
 export type * from './canonical-interaction-execution.js';
 export type * from './canonical-interaction-stream.js';

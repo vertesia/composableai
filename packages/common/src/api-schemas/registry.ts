@@ -101,6 +101,7 @@ import {
 } from './account.js';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
 import * as AgentCommunicationSchemas from './agent-communication.js';
+import * as ArchiveImportSchemas from './agent-conversation-migration.js';
 import * as AgentRunSchemas from './agent-runs.js';
 import {
     AnalyticsAxisSchema,
@@ -253,6 +254,7 @@ import {
     BulkOperationResultSchema,
 } from './bulk-operation.js';
 import { CANONICAL_CONVERSATION_SCHEMAS } from './canonical-conversation.js';
+import * as CanonicalResumeSchemas from './canonical-conversation-resume.js';
 import * as CanonicalInteractionSchemas from './canonical-interaction-execution.js';
 import * as CanonicalInteractionStreamSchemas from './canonical-interaction-stream.js';
 import {
@@ -2568,6 +2570,23 @@ type CanonicalInteractionStreamSchemaMap = {
         : never]: (typeof CanonicalInteractionStreamSchemas)[Key];
 };
 
+const AGENT_CONVERSATION_MIGRATION_SCHEMAS = {
+    AgentConversationArchiveSource: ArchiveImportSchemas.AgentConversationArchiveSourceSchema,
+    AgentConversationNativeArchiveAttestation: ArchiveImportSchemas.AgentConversationNativeArchiveAttestationSchema,
+    ImportAgentRunConversationArchivePayload: ArchiveImportSchemas.ImportAgentRunConversationArchivePayloadSchema,
+    ImportAgentRunConversationArchiveResponse: ArchiveImportSchemas.ImportAgentRunConversationArchiveResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const CANONICAL_RESUME_SCHEMAS = {
+    ExperimentalCanonicalResumeInputAppend: CanonicalResumeSchemas.ExperimentalCanonicalResumeInputAppendSchema,
+    ExperimentalCanonicalAsyncCompletionOptions:
+        CanonicalResumeSchemas.ExperimentalCanonicalAsyncCompletionOptionsSchema,
+    ExperimentalCanonicalResumeAccepted: CanonicalResumeSchemas.ExperimentalCanonicalResumeAcceptedSchema,
+    ExperimentalCanonicalResumeTelemetry: CanonicalResumeSchemas.ExperimentalCanonicalResumeTelemetrySchema,
+    ExperimentalCanonicalToolResultsPayload: CanonicalResumeSchemas.ExperimentalCanonicalToolResultsPayloadSchema,
+    ExperimentalCanonicalUserMessagePayload: CanonicalResumeSchemas.ExperimentalCanonicalUserMessagePayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const CANONICAL_INTERACTION_STREAM_SCHEMAS: CanonicalInteractionStreamSchemaMap = {
     ExperimentalCanonicalAgentAcceptanceTarget:
         CanonicalInteractionStreamSchemas.ExperimentalCanonicalAgentAcceptanceTargetSchema,
@@ -2623,6 +2642,8 @@ const RUN_BUDGET_SCHEMAS = {
 };
 
 const API_SCHEMA_GROUPS = [
+    AGENT_CONVERSATION_MIGRATION_SCHEMAS,
+    CANONICAL_RESUME_SCHEMAS,
     CANONICAL_TOOL_EXECUTION_SCHEMAS,
     CANONICAL_INTERACTION_SCHEMAS,
     CANONICAL_INTERACTION_STREAM_SCHEMAS,
@@ -2694,7 +2715,9 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof CANONICAL_TOOL_EXECUTION_SCHEMAS &
+type ApiSchemaMap = typeof AGENT_CONVERSATION_MIGRATION_SCHEMAS &
+    typeof CANONICAL_RESUME_SCHEMAS &
+    typeof CANONICAL_TOOL_EXECUTION_SCHEMAS &
     typeof CANONICAL_INTERACTION_SCHEMAS &
     typeof CANONICAL_INTERACTION_STREAM_SCHEMAS &
     typeof CANONICAL_CONVERSATION_STREAM_SCHEMAS &
@@ -2774,6 +2797,8 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    ...Object.keys(AGENT_CONVERSATION_MIGRATION_SCHEMAS),
+    ...Object.keys(CANONICAL_RESUME_SCHEMAS),
     ...Object.entries(CANONICAL_INTERACTION_SCHEMAS)
         .filter(([, schema]) => schema.def.type === 'object')
         .map(([name]) => name),

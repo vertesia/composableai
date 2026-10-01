@@ -56,12 +56,15 @@ import type {
     ExecutedToolTurn,
     JsonObject,
     JsonValue,
+    NativeConversationImportReport,
     NativeStreamPathSegment,
     NativeStreamPosition,
     OperationReceipt,
     PendingApplicationToolCall,
+    ReceivedTurnProvenance,
     ToolCallSourceRef,
     ToolDefinition,
+    UserContentBlock,
 } from '@llumiverse/conversation';
 import type { AccessControlPrincipalType, AccessControlResourceType, Permission } from './access-control-values.js';
 import type { AccountType, BillingMethod, QuotaTier } from './account-values.js';
@@ -172,6 +175,64 @@ export type ACEUpdatePayload = {
     tags?: string[] | undefined | undefined;
     expires_at?: string | undefined | undefined;
 };
+export type AgentConversationArchiveSource = {
+    subject_run_id: string;
+    owner_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workflow_id: string;
+    first_workflow_run_id: string;
+    content_hash: string;
+    byte_length: number;
+    storage_generation: string;
+    immutable_storage_version: string | null;
+};
+export type AgentConversationNativeArchiveAttestation = {
+    evidence: 'owner_attested';
+    protocol:
+        | 'openai.chat.completions'
+        | 'openai.responses'
+        | 'anthropic.messages'
+        | 'google.generate_content'
+        | 'aws.bedrock.converse';
+    provider: string;
+    model: string | null;
+    completeness: 'complete' | 'fragment' | 'unknown';
+    recorded_at: string;
+    evidence_note: string;
+    tool_definitions: ToolDefinition[];
+};
+export type ImportAgentRunConversationArchivePayload =
+    | {
+          type: 'source';
+      }
+    | {
+          type: 'attested_native';
+          expected_source: AgentConversationArchiveSource;
+          attestation: AgentConversationNativeArchiveAttestation;
+      };
+export type ImportAgentRunConversationArchiveResponse =
+    | {
+          api_version: '=20260930';
+          source: AgentConversationArchiveSource;
+          continuation_readiness: 'not_validated';
+          status: 'initialized';
+          head: ConversationRef;
+          report?: NativeConversationImportReport | undefined;
+      }
+    | {
+          api_version: '=20260930';
+          source: AgentConversationArchiveSource;
+          continuation_readiness: 'not_validated';
+          status: 'already_initialized';
+          head: ConversationRef;
+          report?: NativeConversationImportReport | undefined;
+      }
+    | {
+          api_version: '=20260930';
+          source: AgentConversationArchiveSource;
+          continuation_readiness: 'not_validated';
+          status: 'attestation_required';
+      };
 /**
  * The five run-analytics contract types, inferred from `./api-schemas/analytics.js`. Their
  * documentation moved with them — a doc comment here would be published on TOP of the schema's
@@ -1896,6 +1957,146 @@ export type WebsiteCredentialMetadataUpdate = {
     notes?: string | undefined;
     totp?: WebsiteCredentialTotpMetadata | undefined;
     expires_at?: string | undefined;
+};
+export type ExperimentalCanonicalAsyncCompletionOptions = {
+    run_id: string;
+    stream?: boolean | undefined;
+    streaming?: StreamingOptions | undefined;
+    heartbeat_interval_ms?: number | undefined;
+    task_token: string;
+    activity_id: string;
+    canonical_state: CanonicalContinuationState;
+    agent_acceptance: ExperimentalCanonicalAgentAcceptanceTarget;
+    canonical_output_reference: 'conversation_output_authority_v1';
+    telemetry?: ExperimentalCanonicalResumeTelemetry | undefined;
+};
+export type ExperimentalCanonicalResumeAccepted = {
+    status: 'accepted';
+    run_id: string;
+    activity_id: string;
+};
+export type ExperimentalCanonicalResumeTelemetry = {
+    callType: LlmCallTypeWire;
+    attemptNumber?: number | undefined;
+    inferenceStartTime: number;
+    context: {
+        interaction_id: string;
+        environment_id: string;
+        environment_type: string;
+        model: string;
+        parent_run_id?: string | undefined;
+        ancestor_run_ids?: string[] | undefined;
+        include_thoughts?: boolean | undefined;
+    };
+};
+export type ExperimentalCanonicalToolResultsPayload = {
+    run: ExecutionRunDocRef;
+    config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
+    result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
+    turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
+    asyncCompletion: {
+        run_id: string;
+        stream?: boolean | undefined;
+        streaming?: StreamingOptions | undefined;
+        heartbeat_interval_ms?: number | undefined;
+        task_token: string;
+        activity_id: string;
+        canonical_state: {
+            head: ConversationRef;
+            scope: CanonicalConversationHeadScope;
+            output_receipt?: ConversationOutputReceipt | undefined;
+            materialized_input: ConversationMaterializedInput;
+            tool_call_sources?: Record<string, ToolCallSourceRef> | undefined;
+            pending_tool_calls?: PendingApplicationToolCall[] | undefined;
+        };
+        agent_acceptance: ExperimentalCanonicalAgentAcceptanceTarget;
+        canonical_output_reference: 'conversation_output_authority_v1';
+        telemetry?: ExperimentalCanonicalResumeTelemetry | undefined;
+    };
+    input_append?:
+        | {
+              expected_revision: number;
+              operation_id: string;
+              recorded_at: string;
+              records: {
+                  tool_definitions?: Readonly<ToolDefinition[]> | undefined;
+                  active_tool_definition_ids?: Readonly<string[]> | undefined;
+              };
+          }
+        | undefined;
+};
+export type ExperimentalCanonicalUserMessagePayload = {
+    run: ExecutionRunDocRef;
+    config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
+    result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
+    turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
+    asyncCompletion: ExperimentalCanonicalAsyncCompletionOptions;
+    input_append: {
+        expected_revision: number;
+        operation_id: string;
+        recorded_at: string;
+        records: {
+            turns: Readonly<
+                {
+                    id: string;
+                    actor_id?: string | undefined;
+                    status: 'completed' | 'interrupted' | 'failed';
+                    timestamps: {
+                        recorded_at: string;
+                        started_at?: string | undefined;
+                        completed_at?: string | undefined;
+                    };
+                    execution_id?: string | undefined;
+                    exchange_id?: string | undefined;
+                    parent_turn_id?: string | undefined;
+                    model_visibility: 'include';
+                    metadata?: Record<string, JsonValue> | undefined;
+                    kind: 'user';
+                    authority: 'ordinary';
+                    blocks: UserContentBlock[];
+                    provenance: ReceivedTurnProvenance;
+                }[]
+            >;
+            assets?: Readonly<Asset[]> | undefined;
+            tool_definitions?: Readonly<ToolDefinition[]> | undefined;
+            context_entries?: Readonly<ContextEntry[]> | undefined;
+            active_tool_definition_ids?: Readonly<string[]> | undefined;
+        };
+    };
+};
+export type ExperimentalCanonicalResumeInputAppend = {
+    expected_revision: number;
+    operation_id: string;
+    recorded_at: string;
+    records: {
+        turns?:
+            | Readonly<
+                  {
+                      id: string;
+                      actor_id?: string | undefined;
+                      status: 'completed' | 'interrupted' | 'failed';
+                      timestamps: {
+                          recorded_at: string;
+                          started_at?: string | undefined;
+                          completed_at?: string | undefined;
+                      };
+                      execution_id?: string | undefined;
+                      exchange_id?: string | undefined;
+                      parent_turn_id?: string | undefined;
+                      model_visibility: 'include';
+                      metadata?: Record<string, JsonValue> | undefined;
+                      kind: 'user';
+                      authority: 'ordinary';
+                      blocks: UserContentBlock[];
+                      provenance: ReceivedTurnProvenance;
+                  }[]
+              >
+            | undefined;
+        assets?: Readonly<Asset[]> | undefined;
+        tool_definitions?: Readonly<ToolDefinition[]> | undefined;
+        context_entries?: Readonly<ContextEntry[]> | undefined;
+        active_tool_definition_ids?: Readonly<string[]> | undefined;
+    };
 };
 export type AvailableRunConversation = {
     status: 'available';
@@ -6410,14 +6611,31 @@ export type RunBudgetCapabilityQuery = {
     model: string;
     service_tier?: string | undefined;
 };
-export type AppendRunConversationProgramTurnPayload = {
-    conversation_id: string;
-    expected_revision: number;
-    operation_id: string;
-    recorded_at: string;
-    purpose: 'controller_corrective';
-    text: string;
-};
+export type AppendRunConversationProgramTurnPayload =
+    | {
+          conversation_id: string;
+          expected_revision: number;
+          operation_id: string;
+          recorded_at: string;
+          purpose: 'controller_corrective';
+          text: string;
+      }
+    | {
+          conversation_id: string;
+          expected_revision: number;
+          operation_id: string;
+          recorded_at: string;
+          purpose: 'terminal_result';
+          result:
+              | {
+                    type: 'text';
+                    text: string;
+                }
+              | {
+                    type: 'json';
+                    value: JsonValue;
+                };
+      };
 export type AppendRunConversationProgramTurnResponse = {
     conversation: ConversationRef;
     operation_receipt: OperationReceipt;
@@ -12317,6 +12535,16 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalInteractionUnavailableOutput: ExperimentalCanonicalInteractionUnavailableOutput;
     ExperimentalCanonicalInteractionOutput: ExperimentalCanonicalInteractionOutput;
     ExperimentalCanonicalInteractionExecutionResult: ExperimentalCanonicalInteractionExecutionResult;
+    AgentConversationArchiveSource: AgentConversationArchiveSource;
+    AgentConversationNativeArchiveAttestation: AgentConversationNativeArchiveAttestation;
+    ImportAgentRunConversationArchivePayload: ImportAgentRunConversationArchivePayload;
+    ImportAgentRunConversationArchiveResponse: ImportAgentRunConversationArchiveResponse;
+    ExperimentalCanonicalResumeInputAppend: ExperimentalCanonicalResumeInputAppend;
+    ExperimentalCanonicalAsyncCompletionOptions: ExperimentalCanonicalAsyncCompletionOptions;
+    ExperimentalCanonicalResumeAccepted: ExperimentalCanonicalResumeAccepted;
+    ExperimentalCanonicalResumeTelemetry: ExperimentalCanonicalResumeTelemetry;
+    ExperimentalCanonicalToolResultsPayload: ExperimentalCanonicalToolResultsPayload;
+    ExperimentalCanonicalUserMessagePayload: ExperimentalCanonicalUserMessagePayload;
     ExperimentalCanonicalAgentAcceptanceTarget: ExperimentalCanonicalAgentAcceptanceTarget;
     ExperimentalCanonicalInteractionStreamRequest: ExperimentalCanonicalInteractionStreamRequest;
     ExperimentalCanonicalInteractionStreamOpened: ExperimentalCanonicalInteractionStreamOpened;

@@ -14,6 +14,9 @@ import type {
     ExperimentalCanonicalInteractionStreamEnvelope,
     ExperimentalCanonicalInteractionStreamRequest,
     ExperimentalCanonicalNamedInteractionExecutionRequest,
+    ExperimentalCanonicalResumeAccepted,
+    ExperimentalCanonicalToolResultsPayload,
+    ExperimentalCanonicalUserMessagePayload,
     FindPayload,
     FindRunResult,
     InteractionExecutionResult,
@@ -271,11 +274,31 @@ export class RunsApi extends ApiTopic {
         });
     }
 
-    /**
-     *
-     * @param payload
-     * @returns
-     */
+    /** Resume through the exact experimental contract; content is acknowledged separately by Temporal. */
+    sendCanonicalUserMessage(
+        payload: ExperimentalCanonicalUserMessagePayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalCanonicalResumeAccepted> {
+        return this.post('/user-message', {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    sendCanonicalToolResults(
+        payload: ExperimentalCanonicalToolResultsPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalCanonicalResumeAccepted> {
+        return this.post('/tool-results', {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
     sendUserMessage(payload: UserMessagePayload, options?: ResumeRequestOptions): Promise<ExecutionResponse> {
         return this.post(`/user-message`, {
             payload,

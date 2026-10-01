@@ -1,5 +1,9 @@
 import { conversationOutputReceiptsEqual } from '@llumiverse/conversation/output-runtime';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
+    ImportAgentRunConversationArchivePayload,
+    ImportAgentRunConversationArchiveResponse,
+} from '@vertesia/common';
 import {
     type ActiveWorkstreamsQueryResult,
     type AgentArtifactContentResponse,
@@ -109,6 +113,20 @@ export function escapeArtifactPathDelimiters(path: string): string {
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/agents');
+    }
+
+    /** Explicit initialize-only migration of an authorized terminal historical archive. */
+    importConversationArchive(
+        id: string,
+        payload: ImportAgentRunConversationArchivePayload = { type: 'source' },
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ImportAgentRunConversationArchiveResponse> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/import`, {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
     }
 
     /** @internal Publish the first durable operational canonical head for a workflow. */

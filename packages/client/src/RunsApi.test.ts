@@ -2,6 +2,9 @@ import {
     type AppendRunConversationProgramTurnPayload,
     type AppendRunConversationToolResultsPayload,
     EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+    type ExperimentalCanonicalAsyncCompletionOptions,
+    type ExperimentalCanonicalToolResultsPayload,
+    type ExperimentalCanonicalUserMessagePayload,
     type ToolResultsPayload,
     type UserMessagePayload,
 } from '@vertesia/common';
@@ -123,5 +126,99 @@ describe('RunsApi canonical retrieval', () => {
         expect(request.headers.get('x-api-version')).toBe(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE);
         expect(request.headers.get('x-trace')).toBe('program');
         await expect(request.json()).resolves.toEqual(payload);
+    });
+});
+
+describe('RunsApi exact-version canonical resume', () => {
+    it('negotiates both existing paths without sending host state or altering stable requests', async () => {
+        const requests: Request[] = [];
+        const accepted = { status: 'accepted', run_id: 'execution:1', activity_id: 'activity:resume' };
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json(accepted)),
+            onRequest: (request) => requests.push(request),
+        });
+        client.withApiVersion('=1');
+        const at = '2026-10-01T00:00:00.000Z';
+        const asyncCompletion = {
+            run_id: 'temporal-current-after-can',
+            task_token: 'task-token-base64url',
+            activity_id: 'activity:resume',
+            canonical_state: { head: { conversation_id: 'conversation:resume', revision: 4 }, scope: 'root' },
+            agent_acceptance: {
+                version: 1,
+                subject_agent_run_id: 'agent:owner',
+                scope: 'root',
+                activity_id: 'activity:resume',
+            },
+            canonical_output_reference: 'conversation_output_authority_v1',
+        } satisfies ExperimentalCanonicalAsyncCompletionOptions;
+        const resume = { run: { id: 'execution:1', account: 'account:1', project: 'project:1' }, asyncCompletion };
+        const user = {
+            ...resume,
+            config: { environment: 'environment:1', model: 'model:1' },
+            turn_selection: { mode: 'auto' },
+            input_append: {
+                expected_revision: 4,
+                operation_id: 'input:user',
+                recorded_at: at,
+                records: {
+                    turns: [
+                        {
+                            id: 'user:1',
+                            kind: 'user',
+                            authority: 'ordinary',
+                            model_visibility: 'include',
+                            status: 'completed',
+                            timestamps: { recorded_at: at },
+                            provenance: { type: 'received' },
+                            blocks: [{ id: 'text:user', type: 'text', text: 'Continue.', format: 'plain' }],
+                        },
+                    ],
+                    context_entries: [{ id: 'context:user', type: 'source_turn', turn_id: 'user:1' }],
+                },
+            },
+        } satisfies ExperimentalCanonicalUserMessagePayload;
+        const tools = {
+            ...resume,
+            asyncCompletion: {
+                ...asyncCompletion,
+                canonical_state: {
+                    ...asyncCompletion.canonical_state,
+                    materialized_input: { operation_id: 'input:tools', result_revision: 4 },
+                },
+            },
+        } satisfies ExperimentalCanonicalToolResultsPayload;
+        const options = { headers: { 'X-Api-Version': '=1', 'x-vertesia-required-tool-name': 'write_artifact' } };
+        expect(await client.runs.sendCanonicalUserMessage(user, options)).toEqual(accepted);
+        expect(await client.runs.sendCanonicalToolResults(tools, options)).toEqual(accepted);
+        await client.runs.sendUserMessage({} as UserMessagePayload);
+        expect(requests.map((request) => new URL(request.url).pathname)).toEqual([
+            '/api/v1/runs/user-message',
+            '/api/v1/runs/tool-results',
+            '/api/v1/runs/user-message',
+        ]);
+        for (const request of requests.slice(0, 2)) {
+            expect(request.headers.get('x-api-version')).toBe(
+                EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+            );
+            expect(request.headers.get('x-vertesia-required-tool-name')).toBe('write_artifact');
+            const body = await request.json();
+            expect(body.asyncCompletion).not.toHaveProperty('current_state');
+            expect(body.asyncCompletion).not.toHaveProperty('output');
+            for (const key of [
+                'results',
+                'tools',
+                'conversation',
+                'strip_options',
+                'options',
+                'environment',
+                'message',
+            ]) {
+                expect(body).not.toHaveProperty(key);
+            }
+        }
+        expect(requests[2]?.headers.get('x-api-version')).toBe('=1');
     });
 });

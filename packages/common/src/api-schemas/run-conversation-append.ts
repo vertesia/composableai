@@ -6,8 +6,10 @@ import {
     ConversationRefSchema,
     ExecutedToolTurnSchema,
     IdentifierSchema,
+    JsonBlockSchema,
     NonnegativeSafeIntegerSchema,
     OperationReceiptSchema,
+    TextBlockSchema,
     TimestampSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
@@ -40,20 +42,48 @@ export const AppendRunConversationToolResultsResponseSchema = z
             'Acknowledges the committed operation at the current canonical head. An exact retry after a later append advances the head returns a revision conflict so callers reconcile without repeating tool execution.',
     });
 
-/**
- * Append one controller-owned ordinary program instruction. Callers provide intent text only;
- * the server owns turn authority, provenance, visibility, identifiers, and block construction.
- */
+/** The server constructs all authority, identifiers and provenance for program results. */
+const programAppendIdentity = {
+    conversation_id: IdentifierSchema,
+    expected_revision: NonnegativeSafeIntegerSchema,
+    operation_id: IdentifierSchema,
+    recorded_at: TimestampSchema,
+};
+
 export const AppendRunConversationProgramTurnPayloadSchema = z
-    .strictObject({
-        conversation_id: IdentifierSchema,
-        expected_revision: NonnegativeSafeIntegerSchema,
-        operation_id: IdentifierSchema,
-        recorded_at: TimestampSchema,
-        purpose: z.literal('controller_corrective'),
-        text: z.string().min(1).max(MAX_APPEND_RUN_CONVERSATION_PROGRAM_TEXT_CODE_UNITS),
-    })
-    .meta({ id: 'AppendRunConversationProgramTurnPayload' });
+    .discriminatedUnion('purpose', [
+        z.strictObject({
+            ...programAppendIdentity,
+            purpose: z.literal('controller_corrective'),
+            text: z.string().min(1).max(MAX_APPEND_RUN_CONVERSATION_PROGRAM_TEXT_CODE_UNITS),
+        }),
+        z.strictObject({
+            ...programAppendIdentity,
+            purpose: z.literal('terminal_result'),
+            result: z
+                .discriminatedUnion('type', [
+                    TextBlockSchema.pick({ type: true, text: true }).extend({
+                        text: z.string().min(1).max(MAX_APPEND_RUN_CONVERSATION_PROGRAM_TEXT_CODE_UNITS),
+                    }),
+                    JsonBlockSchema.pick({ type: true, value: true }),
+                ])
+                .meta({
+                    type: 'object',
+                    required: ['type'],
+                    discriminator: { propertyName: 'type' },
+                    // Closedness belongs to the selected strict branch, not the propertyless union wrapper.
+                    additionalProperties: true,
+                }),
+        }),
+    ])
+    .meta({
+        id: 'AppendRunConversationProgramTurnPayload',
+        type: 'object',
+        required: ['purpose'],
+        discriminator: { propertyName: 'purpose' },
+        // Each strict branch rejects extras; closing this propertyless wrapper rejects all valid fields.
+        additionalProperties: true,
+    });
 
 export const AppendRunConversationProgramTurnResponseSchema = z
     .strictObject({
