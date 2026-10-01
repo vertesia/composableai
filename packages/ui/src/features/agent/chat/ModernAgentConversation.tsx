@@ -55,9 +55,15 @@ import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AgentRunFeedbackProvider } from './AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { findBudgetPause, findRunBudgetRemaining } from './budgetPause';
+import { CanonicalAgentTranscript } from './CanonicalAgentTranscript.js';
+import { resolveCanonicalAgentConversationSource } from './canonicalAgentConversationAuthority.js';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
+import { useCanonicalAgentAuthority } from './hooks/useCanonicalAgentAuthority.js';
+import { useCanonicalAgentContent } from './hooks/useCanonicalAgentContent.js';
+import { useCanonicalAgentScroll } from './hooks/useCanonicalAgentScroll.js';
+import { useCanonicalAgentTranscript } from './hooks/useCanonicalAgentTranscript.js';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
 import { useFileProcessing } from './hooks/useFileProcessing.js';
 import { ImageLightboxProvider } from './ImageLightbox';
@@ -1773,6 +1779,66 @@ function ModernAgentConversationInner({
             .map(({ workstream }) => workstream);
     }, [messageDerivedWorkstreams, queriedActiveWorkstreams, queriedCompletedWorkstreams]);
 
+    // Only durable query entries establish child scope; display-derived workstreams can be synthetic.
+    const canonicalSelection = useMemo(
+        () =>
+            resolveCanonicalAgentConversationSource(
+                agentRunId,
+                activeWorkstream,
+                [...queriedActiveWorkstreams, ...queriedCompletedWorkstreams].flatMap((workstream) =>
+                    workstream.launch_id
+                        ? [{ workstream_id: workstream.workstream_id, launch_id: workstream.launch_id }]
+                        : [],
+                ),
+            ),
+        [agentRunId, activeWorkstream, queriedActiveWorkstreams, queriedCompletedWorkstreams],
+    );
+    const [canonicalActivityVersion, setCanonicalActivityVersion] = useState(0);
+    const canonicalAuthority = useCanonicalAgentAuthority(
+        client,
+        canonicalSelection,
+        messages.length + canonicalActivityVersion,
+    );
+    const canonicalDescriptor = canonicalAuthority.phase === 'canonical' ? canonicalAuthority.descriptor : undefined;
+    const canonicalContent = useCanonicalAgentContent(client, {
+        enabled: canonicalDescriptor !== undefined,
+        loadAcceptedHistory: false,
+        conversationId: canonicalDescriptor?.head.conversation_id,
+        agentRunId,
+        scope: canonicalSelection.status === 'selected' ? canonicalSelection.scope : undefined,
+        workstreamId: canonicalSelection.status === 'selected' ? canonicalSelection.workstream_id : undefined,
+    });
+    const latestCanonicalReceipt = canonicalContent.live.accepted_outputs.at(-1)?.envelope.receipt.id;
+    useEffect(() => {
+        if (latestCanonicalReceipt) setCanonicalActivityVersion((version) => version + 1);
+    }, [latestCanonicalReceipt]);
+    const canonicalTranscript = useCanonicalAgentTranscript(client, canonicalDescriptor);
+    const canonicalLiveVersion = [
+        canonicalTranscript.tail?.snapshot.revision ?? -1,
+        latestCanonicalReceipt ?? '',
+        canonicalContent.live.draft_turn_id ?? '',
+        Math.floor(
+            canonicalContent.live.draft_snapshot.reduce((length, draft) => length + (draft.text?.length ?? 0), 0) / 200,
+        ),
+    ].join(':');
+    const canonicalHistoryVersion = canonicalTranscript.pages
+        .map(
+            (page) =>
+                `${page.snapshot.revision}:${page.next_after_turn_id ?? ''}:${page.fragment.turns.at(-1)?.id ?? ''}`,
+        )
+        .join('|');
+    const canonicalScroll = useCanonicalAgentScroll(
+        canonicalDescriptor !== undefined,
+        canonicalSelection.key,
+        canonicalLiveVersion,
+        canonicalHistoryVersion,
+    );
+    const browseCanonicalHistory = useCallback(async () => {
+        canonicalScroll.preserveHistoryPosition();
+        await canonicalTranscript.loadNext();
+    }, [canonicalScroll.preserveHistoryPosition, canonicalTranscript.loadNext]);
+    const permitsLegacyContent = canonicalAuthority.content_authority === 'legacy';
+
     const composerActiveWorkstreams = useMemo(
         () => panelWorkstreams.filter((ws) => isActiveWorkstreamStatus(ws.status)),
         [panelWorkstreams],
@@ -1800,8 +1866,10 @@ function ModernAgentConversationInner({
         return undefined;
     }, [activeWorkstreamDisplayName, placeholder, t]);
 
-    const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
-    const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
+    const canShowPlaybackToggle =
+        permitsLegacyContent && showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
+    const isPlaybackEnabled =
+        permitsLegacyContent && (enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled));
     const hasBudgetOverride = Boolean(onBudgetRequest || renderBudgetRequest);
     const transcriptSourceMessages = useMemo(() => {
         // Passive artifact autosaves are surfaced by the editor's own save indicator, not the chat.
@@ -2843,8 +2911,9 @@ function ModernAgentConversationInner({
             showPlaybackButton={canShowPlaybackToggle}
             isPlaybackEnabled={isPlaybackEnabled}
             onTogglePlayback={handleTogglePlayback}
-            onDownload={downloadConversation}
-            onExportFixture={exportReplayFixture}
+            onDownload={permitsLegacyContent ? downloadConversation : undefined}
+            disableLegacyExport={!permitsLegacyContent}
+            onExportFixture={permitsLegacyContent ? exportReplayFixture : undefined}
             resetWorkflow={resetWorkflow}
             onClone={onClone}
             onShowDetails={onShowDetails}
@@ -2858,6 +2927,11 @@ function ModernAgentConversationInner({
     const conversationAreaJsx = (
         <div
             ref={conversationRef}
+            data-agent-content-authority={canonicalAuthority.content_authority}
+            data-agent-source-phase={canonicalAuthority.phase}
+            data-agent-source-status={
+                'source_status' in canonicalAuthority ? canonicalAuthority.source_status : undefined
+            }
             data-agent-playback-enabled={isPlaybackEnabled || undefined}
             data-agent-playback-cursor={isPlaybackEnabled ? clampedPlaybackCursor : undefined}
             data-agent-live-message-count={messages.length}
@@ -2892,53 +2966,135 @@ function ModernAgentConversationInner({
                 </div>
             )}
 
-            {messages.length === 0 && !effectiveIsCompleted && pendingStartMessage && pendingStartTimestamp ? (
+            {canonicalDescriptor && (
+                <div
+                    ref={canonicalScroll.containerRef}
+                    data-canonical-scroll-container="true"
+                    className="min-h-0 flex-1 overflow-y-auto p-4"
+                >
+                    {!hideWorkstreamTabs && panelWorkstreams.length > 0 && (
+                        <div className="mb-3 flex flex-wrap gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setActiveWorkstream('all')}
+                                aria-pressed={activeWorkstream === 'all' || activeWorkstream === 'main'}
+                            >
+                                {t('agent.backToMainAgent')}
+                            </Button>
+                            {panelWorkstreams.map((workstream) => (
+                                <Button
+                                    key={workstream.launch_id ?? workstream.workstream_id}
+                                    variant="outline"
+                                    aria-pressed={
+                                        activeWorkstream === workstream.launch_id ||
+                                        activeWorkstream === workstream.workstream_id
+                                    }
+                                    onClick={() =>
+                                        setActiveWorkstream(workstream.launch_id ?? workstream.workstream_id)
+                                    }
+                                >
+                                    {getWorkstreamDisplayName(workstream.workstream_id, workstream.interaction)}
+                                </Button>
+                            ))}
+                        </div>
+                    )}
+                    {canonicalAuthority.phase === 'canonical' &&
+                    (canonicalAuthority.source_status === 'inconsistent' ||
+                        canonicalAuthority.source_status === 'refresh_error') ? (
+                        <MessageBox status="info">{t('agent.canonical.sourceUnavailable')}</MessageBox>
+                    ) : null}
+                    <CanonicalAgentTranscript
+                        transcript={canonicalTranscript}
+                        live={canonicalContent.live}
+                        loadNext={browseCanonicalHistory}
+                        hideToolCalls={hideToolCallsInViewMode?.includes(viewMode)}
+                        artifactRunId={agentRunId}
+                        onArtifactOpen={showArtifacts ? handleOpenArtifact : undefined}
+                    />
+                    <div ref={canonicalScroll.bottomRef} data-canonical-bottom="true" className="h-2" />
+                </div>
+            )}
+            {canonicalAuthority.content_authority === 'none' && (
+                <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                    <MessageBox status={canonicalAuthority.phase === 'resolving' ? 'info' : 'error'}>
+                        {t(
+                            canonicalAuthority.phase === 'resolving'
+                                ? 'agent.canonical.loading'
+                                : 'agent.canonical.sourceUnavailable',
+                        )}
+                    </MessageBox>
+                    {activeWorkstream !== 'all' && activeWorkstream !== 'main' && (
+                        <Button variant="outline" onClick={() => setActiveWorkstream('all')}>
+                            {t('agent.backToMainAgent')}
+                        </Button>
+                    )}
+                </div>
+            )}
+            {permitsLegacyContent &&
+            messages.length === 0 &&
+            !effectiveIsCompleted &&
+            pendingStartMessage &&
+            pendingStartTimestamp ? (
                 <PendingStartConversation message={pendingStartMessage} startedAt={pendingStartTimestamp} />
             ) : (
-                <AgentRunFeedbackProvider agentRunId={agentRunId}>
-                    <AllMessagesMixed
-                        messages={renderedMessages}
-                        workstreamSourceMessages={renderedWorkstreamSourceMessages}
-                        bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
-                        isCompleted={displayedIsCompleted}
-                        plan={getActivePlan.plan}
-                        workstreamStatus={getActivePlan.workstreamStatus}
-                        showPlanPanel={showRightPanelProp && showSlidingPanel}
-                        onTogglePlanPanel={handleTogglePlanPanel}
-                        plans={plans}
-                        activePlanIndex={activePlanIndex}
-                        onChangePlan={handleChangePlan}
-                        taskLabels={taskLabels}
-                        streamingMessages={displayedStreamingMessages}
-                        onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
-                        onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
-                        messageItemClassNames={messageItemClassNames}
-                        messageStyleOverrides={messageStyleOverrides}
-                        toolCallGroupClassNames={toolCallGroupClassNames}
-                        hideToolCallsInViewMode={hideToolCallsInViewMode}
-                        streamingMessageClassNames={streamingMessageClassNames}
-                        batchProgressPanelClassNames={batchProgressPanelClassNames}
-                        artifactRunId={agentRunId}
-                        agentRunId={agentRunId}
-                        viewMode={viewMode}
-                        hideWorkstreamTabs={hideWorkstreamTabs}
-                        workingIndicatorClassName={workingIndicatorClassName}
-                        messageListClassName={messageListClassName}
-                        StoreLinkComponent={effectiveStoreLinkComponent}
-                        CollectionLinkComponent={CollectionLinkComponent}
-                        prependFriendlyMessage={prependFriendlyMessage}
-                        initialRequestData={initialRequestData}
-                        initialRequestSchema={initialRequestSchema}
-                        initialRequestTitle={initialRequestTitle}
-                        initialRequestTemplate={initialRequestTemplate}
-                        showInitialRequest={initialHistoryStatus === 'empty' && messages.length === 0}
-                        hiddenMessageTypes={hiddenMessageTypes}
-                        disableAutoScroll={!isPlaybackLive}
-                        renderRequestInputControls={!shouldShowRequestInputOverlay}
-                        activeWorkstream={activeWorkstream}
-                        onActiveWorkstreamChange={setActiveWorkstream}
-                    />
-                </AgentRunFeedbackProvider>
+                (permitsLegacyContent ||
+                    (!shouldShowRequestInputOverlay &&
+                        renderedMessages.some((message) => message.type === AgentMessageType.REQUEST_INPUT))) && (
+                    <AgentRunFeedbackProvider agentRunId={agentRunId}>
+                        <AllMessagesMixed
+                            messages={
+                                permitsLegacyContent
+                                    ? renderedMessages
+                                    : renderedMessages.filter(
+                                          (message) => message.type === AgentMessageType.REQUEST_INPUT,
+                                      )
+                            }
+                            workstreamSourceMessages={permitsLegacyContent ? renderedWorkstreamSourceMessages : []}
+                            bottomRef={bottomRef as React.RefObject<HTMLDivElement>}
+                            isCompleted={displayedIsCompleted}
+                            plan={getActivePlan.plan}
+                            workstreamStatus={getActivePlan.workstreamStatus}
+                            showPlanPanel={showRightPanelProp && showSlidingPanel}
+                            onTogglePlanPanel={handleTogglePlanPanel}
+                            plans={plans}
+                            activePlanIndex={activePlanIndex}
+                            onChangePlan={handleChangePlan}
+                            taskLabels={taskLabels}
+                            streamingMessages={
+                                permitsLegacyContent ? displayedStreamingMessages : EMPTY_STREAMING_MESSAGES
+                            }
+                            onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
+                            onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
+                            messageItemClassNames={messageItemClassNames}
+                            messageStyleOverrides={messageStyleOverrides}
+                            toolCallGroupClassNames={toolCallGroupClassNames}
+                            hideToolCallsInViewMode={hideToolCallsInViewMode}
+                            streamingMessageClassNames={streamingMessageClassNames}
+                            batchProgressPanelClassNames={batchProgressPanelClassNames}
+                            artifactRunId={agentRunId}
+                            agentRunId={agentRunId}
+                            viewMode={viewMode}
+                            hideWorkstreamTabs={hideWorkstreamTabs}
+                            workingIndicatorClassName={workingIndicatorClassName}
+                            messageListClassName={messageListClassName}
+                            StoreLinkComponent={effectiveStoreLinkComponent}
+                            CollectionLinkComponent={CollectionLinkComponent}
+                            prependFriendlyMessage={permitsLegacyContent ? prependFriendlyMessage : undefined}
+                            initialRequestData={initialRequestData}
+                            initialRequestSchema={initialRequestSchema}
+                            initialRequestTitle={initialRequestTitle}
+                            initialRequestTemplate={initialRequestTemplate}
+                            showInitialRequest={
+                                permitsLegacyContent && initialHistoryStatus === 'empty' && messages.length === 0
+                            }
+                            hiddenMessageTypes={hiddenMessageTypes}
+                            disableAutoScroll={!isPlaybackLive}
+                            renderRequestInputControls={!shouldShowRequestInputOverlay}
+                            activeWorkstream={activeWorkstream}
+                            onActiveWorkstreamChange={setActiveWorkstream}
+                        />
+                    </AgentRunFeedbackProvider>
+                )
             )}
 
             {shouldShowRequestInputOverlay && !(hasBudgetOverride && shouldShowBudgetPauseOverlay) ? (
@@ -3161,6 +3317,7 @@ function ModernAgentConversationInner({
                                     // Workstreams
                                     activeWorkstreams={panelWorkstreams}
                                     hideWorkstreams={hideWorkstreamTabs}
+                                    disableLegacyExport={!permitsLegacyContent}
                                     // Documents
                                     openDocuments={openDocuments}
                                     activeDocumentId={activeDocumentId}

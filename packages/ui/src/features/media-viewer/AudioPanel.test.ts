@@ -1,4 +1,4 @@
-import { act, render } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 import type { AudioResult } from '@vertesia/common';
 import { createElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -38,12 +38,43 @@ const audio: AudioResult = {
 };
 
 afterEach(() => {
+    cleanup();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     client.files.getDownloadUrl.mockReset();
 });
 
 describe('AudioPanel cancellation', () => {
+    it('wraps canonical PCM audio in a playable WAV using typed asset metadata', async () => {
+        const pcm = new Uint8Array([1, 0, 2, 0]);
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, arrayBuffer: async () => pcm.buffer }));
+        const createObjectURL = vi.fn((_blob: Blob) => 'blob:canonical-audio');
+        const revokeObjectURL = vi.fn();
+        vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
+        const view = render(
+            createElement(AudioPanel, {
+                url: '/sample.pcm',
+                media: {
+                    container: 'raw',
+                    codec: 'pcm',
+                    sample_rate: 24000,
+                    channels: 1,
+                    sample_encoding: 'int16',
+                    byte_order: 'little',
+                },
+            }),
+        );
+        await waitFor(() =>
+            expect(view.container.querySelector('audio')?.getAttribute('src')).toBe('blob:canonical-audio'),
+        );
+        const wav = createObjectURL.mock.calls[0]?.[0];
+        expect(wav).toBeInstanceOf(Blob);
+        expect(wav?.type).toBe('audio/wav');
+        expect(wav?.size).toBe(48);
+        view.unmount();
+        expect(revokeObjectURL).toHaveBeenCalledWith('blob:canonical-audio');
+    });
+
     it('aborts an in-flight PCM download on unmount without reporting an error', async () => {
         let downloadSignal: AbortSignal | undefined;
         const fetchMock = vi.fn(

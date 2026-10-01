@@ -11,6 +11,14 @@ import {
     ToolDefinitionSchema,
     ToolUseSchema,
 } from '@llumiverse/common/schemas';
+import {
+    ConversationMaterializedInputSchema,
+    ConversationOutputGenerationSchema,
+    ConversationOutputReceiptSchema,
+    ConversationRefSchema,
+    PendingApplicationToolCallSchema,
+    ToolCallSourceRefSchema,
+} from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
 import {
     AgentSearchScope,
@@ -1688,6 +1696,13 @@ export const ConversationStateSchema = z
         environment: z.string().meta({ description: 'The execution environment with provider info for LLM calls.' }),
         options: StatelessExecutionOptionsSchema.meta({ description: 'The options to use on the next call.' }),
         tool_use: z.array(ToolUseSchema).meta({ description: 'The tools to call next.' }).optional(),
+        post_checkpoint_pending_tool_ids: z
+            .array(z.string().min(1))
+            .meta({
+                description:
+                    'Pending tool-call IDs preserved by the latest semantic checkpoint. This readiness marker prevents a second checkpoint before those exact calls are answered.',
+            })
+            .optional(),
         tool_approval_mode: AgentToolApprovalModeSchema.meta({
             description: 'Effective side-effecting tool approval mode for this interactive conversation.',
         }).optional(),
@@ -1937,6 +1952,69 @@ export const UpdateExecutionRunPayloadSchema = z
 
 export const ExecutionRunRefArraySchema = z.array(ExecutionRunRefSchema).meta({ id: 'ExecutionRunRefArray' });
 
+/**
+ * Bounded canonical authority carried across the async Studio/Temporal acknowledgement boundary.
+ * The document remains in the scoped durable head store; legacy ConversationState stays unchanged.
+ */
+export const CanonicalConversationHeadScopeSchema = z
+    .union([z.literal('root'), z.string().regex(/^workstream:[A-Za-z0-9_-]{1,128}$/)])
+    .meta({ id: 'CanonicalConversationHeadScope' });
+
+export const CanonicalConversationHeadScopeQuerySchema = z
+    .strictObject({
+        conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
+    })
+    .meta({ id: 'CanonicalConversationHeadScopeQuery' });
+
+/**
+ * Exact accepted-generation metadata without response content, history, provider replay, or an
+ * agent-specific head scope. Consumers must enforce the receipt/generation cross-record binding.
+ */
+export const ConversationAcceptedGenerationEvidenceSchema = z
+    .strictObject({
+        receipt: ConversationOutputReceiptSchema,
+        generation: ConversationOutputGenerationSchema,
+    })
+    .meta({ id: 'ConversationAcceptedGenerationEvidence' });
+
+/** Accepted-generation metadata bound to one canonical agent-run head scope. */
+export const CanonicalScopedGenerationEvidenceSchema = ConversationAcceptedGenerationEvidenceSchema.extend({
+    scope: CanonicalConversationHeadScopeSchema,
+}).meta({ id: 'CanonicalScopedGenerationEvidence' });
+
+/** Ordered, bounded application call identity carried by Temporal without canonical arguments. */
+export const CanonicalPendingApplicationToolCallSchema = PendingApplicationToolCallSchema.meta({
+    id: 'CanonicalPendingApplicationToolCall',
+});
+
+export const CanonicalContinuationStateSchema = z
+    .strictObject({
+        head: ConversationRefSchema,
+        scope: CanonicalConversationHeadScopeSchema,
+        output_receipt: ConversationOutputReceiptSchema.meta({
+            description:
+                'Exact immutable accepted-response receipt that currently supplies workflow-visible output. ' +
+                'Its conversation may precede head after an input-only append or semantic checkpoint.',
+        }).optional(),
+        materialized_input: ConversationMaterializedInputSchema.optional(),
+        tool_call_sources: z.record(z.string().min(1), ToolCallSourceRefSchema).optional(),
+        pending_tool_calls: z.array(CanonicalPendingApplicationToolCallSchema).max(256).optional(),
+    })
+    .meta({ id: 'CanonicalContinuationState' });
+
+/** Async Temporal acknowledgement that keeps the strict legacy state and canonical authority distinct. */
+export const CanonicalAsyncCompletionResultSchema = z
+    .strictObject({
+        state: ConversationStateSchema,
+        canonical_state: CanonicalContinuationStateSchema.optional(),
+        generation_evidence: CanonicalScopedGenerationEvidenceSchema.meta({
+            description:
+                'Exact accepted generation supplying current finish, usage, and model-call control metadata. ' +
+                'This is independent of canonical_state.output_receipt, which supplies workflow-visible output.',
+        }).optional(),
+    })
+    .meta({ id: 'CanonicalAsyncCompletionResult' });
+
 export const AsyncCompletionOptionsSchema = z
     .strictObject({
         run_id: z.string().meta({ description: 'Workflow run ID for message context' }),
@@ -1962,6 +2040,17 @@ export const AsyncCompletionOptionsSchema = z
             description:
                 'Current conversation state to merge with execution result. The platform stores the conversation and completes the activity with merged state. Required when task_token is provided.',
         }).optional(),
+        canonical_state: CanonicalContinuationStateSchema.meta({
+            description:
+                'Canonical conversation authority for async acknowledgement. References an exact scoped durable head without embedding the full document in legacy current_state.',
+        }).optional(),
+        canonical_output_reference: z
+            .literal('conversation_output_receipt_v1')
+            .meta({
+                description:
+                    'Private workflow opt-in that replaces returned response content with output_receipt authority.',
+            })
+            .optional(),
         heartbeat_interval_ms: z
             .number()
             .meta({
@@ -2501,6 +2590,7 @@ const resumeConversationFields = {
     tools: z.array(ToolDefinitionSchema),
     strip_options: ConversationStripOptionsSchema.optional(),
     asyncCompletion: AsyncCompletionOptionsSchema.optional(),
+    materialized_input: ConversationMaterializedInputSchema.optional(),
 };
 
 export const ToolResultsPayloadSchema = z
@@ -2511,6 +2601,9 @@ export const UserMessagePayloadSchema = z
     .strictObject({
         ...resumeConversationFields,
         message: z.string(),
+        execution_purpose: z.enum(['conversation', 'checkpoint_summary']).optional(),
+        operation_id: z.string().min(1).optional(),
+        artifact_storage_id: z.string().min(1).optional(),
         /**
          * Tool results still owed to the model when the user message is sent.
          *

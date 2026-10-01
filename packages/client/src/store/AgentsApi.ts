@@ -1,4 +1,9 @@
+import { conversationOutputReceiptsEqual } from '@llumiverse/conversation/output-runtime';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type {
+    ImportAgentRunConversationArchivePayload,
+    ImportAgentRunConversationArchiveResponse,
+} from '@vertesia/common';
 import {
     type ActiveWorkstreamsQueryResult,
     type AgentArtifactContentResponse,
@@ -13,10 +18,25 @@ import {
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
     type AllocateAgentRunBudgetPayload,
+    type AppendRunConversationProgramTurnPayload,
+    type AppendRunConversationProgramTurnResponse,
+    type AppendRunConversationToolResultsPayload,
+    type AppendRunConversationToolResultsResponse,
     type BindRunWorkflowPayload,
+    type CanonicalConversationHeadScope,
+    type ConversationDocumentV0,
+    type ConversationOutputReceipt,
+    type ConversationRef,
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
     type ErrorAnalyticsResponse,
+    type ExperimentalAgentConversationAcceptedOutputHistoryPage,
+    type ExperimentalAgentConversationAcceptedOutputHistoryQuery,
+    type ExperimentalAgentConversationSourceDescriptor,
+    type ExperimentalAgentConversationStreamQuery,
+    type ExperimentalAgentConversationTranscriptPage,
+    type ExperimentalAgentConversationTranscriptQuery,
+    type ExperimentalCanonicalInteractionOutput,
     type FirstResponseBehaviorAnalyticsResponse,
     type IngestAgentEventsPayload,
     type IngestAgentEventsResponse,
@@ -29,6 +49,7 @@ import {
     type ProcessRun,
     type ProcessState,
     type PromptSizeAnalyticsResponse,
+    type PublishAgentRunConversationHeadPayload,
     parseMessage,
     type RecordAgentRunPayload,
     type RecordProcessRunPayload,
@@ -55,6 +76,14 @@ import {
     type WorkflowRunWithDetails,
     type WorkflowToolParametersQuery,
 } from '@vertesia/common';
+import {
+    AgentConversationStreamProtocolError,
+    type AgentConversationStreamSessionOptions,
+    type AgentConversationStreamUpdate,
+    consumeAgentConversationStream,
+} from '../AgentConversationStream.js';
+import { type CanonicalInteractionRequestOptions, canonicalInteractionHeaders } from '../CanonicalInteractionApi.js';
+import { CanonicalInteractionOutput } from '../CanonicalInteractionOutput.js';
 import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
 import { fetchSignedUrl } from './signed-url.js';
@@ -67,6 +96,12 @@ export interface AgentRunStreamMessagesOptions {
     onHistoryError?: (error: unknown) => void;
 }
 
+export type AgentConversationStreamRequestOptions = Omit<
+    AgentConversationStreamSessionOptions,
+    'agent_run_id' | 'on_update'
+> &
+    CanonicalInteractionRequestOptions;
+
 /**
  * `#` and `?` are URL delimiters, not path content: either one truncates the path before the
  * request is built. Nothing else is escaped — `%` keeps its existing rejection at upload.
@@ -78,6 +113,236 @@ export function escapeArtifactPathDelimiters(path: string): string {
 export class AgentsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/agents');
+    }
+
+    /** Explicit initialize-only migration of an authorized terminal historical archive. */
+    importConversationArchive(
+        id: string,
+        payload: ImportAgentRunConversationArchivePayload = { type: 'source' },
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ImportAgentRunConversationArchiveResponse> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/import`, {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** @internal Publish the first durable operational canonical head for a workflow. */
+    initializeConversationHead(
+        id: string,
+        document: ConversationDocumentV0,
+        expectedHead?: ConversationRef,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<ConversationRef> {
+        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
+            query: { conversation_scope: scope },
+            payload: {
+                document,
+                ...(expectedHead === undefined ? {} : { expected_head: expectedHead }),
+            } satisfies PublishAgentRunConversationHeadPayload,
+        });
+    }
+
+    /** @internal Load only a revision recorded as committed for this agent run. */
+    getConversationHead(
+        id: string,
+        conversation: ConversationRef,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<ConversationDocumentV0> {
+        return this.get(
+            `/${encodeURIComponent(id)}/conversation/${encodeURIComponent(conversation.conversation_id)}` +
+                `/revisions/${conversation.revision}`,
+            { query: { conversation_scope: scope } },
+        );
+    }
+
+    /** @internal Load the latest committed operational head for retry-ledger checks. */
+    getCurrentConversationHead(
+        id: string,
+        conversationId: string,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<ConversationDocumentV0> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/${encodeURIComponent(conversationId)}/head`, {
+            query: { conversation_scope: scope },
+        });
+    }
+
+    /** @internal Discover the latest committed operational head for one owner/scope. */
+    discoverCurrentConversationHead(
+        id: string,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<ConversationDocumentV0> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/head`, {
+            query: { conversation_scope: scope },
+        });
+    }
+
+    /** Load output from one exact committed canonical response and verify its complete receipt. */
+    async retrieveConversationAcceptedOutput<T = unknown>(
+        id: string,
+        expectedReceipt: ConversationOutputReceipt,
+        scope: CanonicalConversationHeadScope = 'root',
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<CanonicalInteractionOutput<T>> {
+        const receipt = structuredClone(expectedReceipt);
+        const response = await this.get<ExperimentalCanonicalInteractionOutput>(
+            `/${encodeURIComponent(id)}/conversation/${encodeURIComponent(receipt.conversation_id)}` +
+                `/revisions/${receipt.result_revision}/accepted-output/${encodeURIComponent(receipt.id)}`,
+            {
+                query: { conversation_scope: scope },
+                headers: canonicalInteractionHeaders(options?.headers),
+                signal: options?.signal,
+                timeoutMs: options?.timeoutMs,
+            },
+        );
+        if (response.status !== 'accepted') {
+            throw new Error('Canonical accepted output endpoint returned unavailable output');
+        }
+        const output = new CanonicalInteractionOutput<T>(response.fragment);
+        if (!conversationOutputReceiptsEqual(output.fragment.receipt, receipt)) {
+            throw new Error('Canonical accepted output receipt does not match the requested receipt');
+        }
+        return output;
+    }
+
+    /**
+     * List accepted-output references from one exact retained canonical snapshot. Continue while
+     * `next_after_revision` is present even when a page has no items: imported outputs remain excluded.
+     */
+    listConversationAcceptedOutputs(
+        id: string,
+        query: ExperimentalAgentConversationAcceptedOutputHistoryQuery = {},
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentConversationAcceptedOutputHistoryPage> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/accepted-outputs`, {
+            query,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /**
+     * Load one bounded canonical transcript window. Continue while `next_after_turn_id` is present,
+     * including pages whose visible fragment is empty because all scanned program turns were internal.
+     */
+    getConversationTranscript(
+        id: string,
+        query: ExperimentalAgentConversationTranscriptQuery = {},
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentConversationTranscriptPage> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/transcript`, {
+            query,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Describe the exact canonical source contract for one authorized agent-run scope. */
+    getConversationSource(
+        id: string,
+        query: ExperimentalAgentConversationStreamQuery = {},
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentConversationSourceDescriptor> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/source`, {
+            query,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Subscribe to live canonical drafts and exact durable accepted output for one agent-run scope. */
+    streamCanonicalConversation(
+        id: string,
+        onUpdate: (update: AgentConversationStreamUpdate) => void | Promise<void>,
+        options: AgentConversationStreamRequestOptions = {},
+    ): Promise<void> {
+        const scope = options.scope;
+        return consumeAgentConversationStream(
+            {
+                connect: async (onEnvelope, signal) => {
+                    const controller = new AbortController();
+                    const abort = () => controller.abort(signal.reason);
+                    if (signal.aborted) abort();
+                    else signal.addEventListener('abort', abort, { once: true });
+                    try {
+                        await this.sseRequest(
+                            'GET',
+                            `/${encodeURIComponent(id)}/conversation/stream`,
+                            {
+                                query: {
+                                    ...(scope === undefined ? {} : { conversation_scope: scope }),
+                                    ...(options.workstream_id === undefined
+                                        ? {}
+                                        : { workstream_id: options.workstream_id }),
+                                },
+                                headers: canonicalInteractionHeaders(options.headers),
+                                signal: controller.signal,
+                                timeoutMs: options.timeoutMs,
+                            },
+                            (event) => {
+                                if (event.type !== 'event') return;
+                                try {
+                                    onEnvelope(JSON.parse(event.data));
+                                } catch (cause) {
+                                    controller.abort(cause);
+                                    if (cause instanceof AgentConversationStreamProtocolError) throw cause;
+                                    throw new AgentConversationStreamProtocolError(
+                                        'Agent conversation stream emitted invalid JSON',
+                                        { cause },
+                                    );
+                                }
+                            },
+                        );
+                    } finally {
+                        signal.removeEventListener('abort', abort);
+                    }
+                },
+                retrieveAcceptedOutput: (envelope, signal) =>
+                    this.retrieveConversationAcceptedOutput(id, envelope.receipt, envelope.scope, {
+                        headers: options.headers,
+                        signal,
+                        timeoutMs: options.timeoutMs,
+                    }),
+            },
+            {
+                agent_run_id: id,
+                scope,
+                workstream_id: options.workstream_id,
+                max_reconnects: options.max_reconnects,
+                reconnect_delay_ms: options.reconnect_delay_ms,
+                signal: options.signal,
+                on_update: onUpdate,
+            },
+        );
+    }
+
+    /** @internal Append verified application tool results to the durable operational head. */
+    appendConversationToolResults(
+        id: string,
+        payload: AppendRunConversationToolResultsPayload,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<AppendRunConversationToolResultsResponse> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/tool-results`, {
+            payload,
+            query: { conversation_scope: scope },
+        });
+    }
+
+    /** @internal Append one server-owned ordinary controller instruction to the durable operational head. */
+    appendConversationProgramTurn(
+        id: string,
+        payload: AppendRunConversationProgramTurnPayload,
+        scope: CanonicalConversationHeadScope = 'root',
+    ): Promise<AppendRunConversationProgramTurnResponse> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/program-turns`, {
+            payload,
+            query: { conversation_scope: scope },
+        });
     }
 
     // ========================================================================
@@ -128,6 +393,13 @@ export class AgentsApi extends ApiTopic {
         id: string,
     ): Promise<AgentRunResponse<TData, TProperties>> {
         return this.get(`/${id}`);
+    }
+
+    /** @internal Retrieve an AgentRun only when the caller has control authority over it. */
+    retrieveRunForControl<TData = Record<string, unknown>, TProperties = Record<string, unknown>>(
+        id: string,
+    ): Promise<AgentRunResponse<TData, TProperties>> {
+        return this.get(`/${id}`, { query: { access: 'control' } });
     }
 
     retrieveProcess(id: string): Promise<ProcessRun> {

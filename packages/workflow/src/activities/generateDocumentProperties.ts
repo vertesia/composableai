@@ -13,7 +13,11 @@ import {
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { md5 } from '../utils/blobs.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
+import {
+    executeInteractionFromActivity,
+    type InteractionExecutionParams,
+    requireCanonicalInteractionOutput,
+} from './executeInteraction.js';
 
 const INT_EXTRACT_INFORMATION = 'sys:ExtractInformation';
 
@@ -285,8 +289,8 @@ export async function generateDocumentProperties(
         throw error;
     }
 
-    log.debug(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.id });
-    const extracted = infoRes.result.object<JSONObject>() ?? {};
+    log.debug(`Extracted information from object ${objectId} with type ${type.name}`, { runId: infoRes.run.id });
+    const extracted = requireCanonicalInteractionOutput(infoRes).object<JSONObject>() ?? {};
     const existing =
         doc.properties && typeof doc.properties === 'object' && !Array.isArray(doc.properties)
             ? (doc.properties as Record<string, unknown>)
@@ -297,9 +301,11 @@ export async function generateDocumentProperties(
         {
             properties,
             generation_run_info: {
-                id: infoRes.id,
+                id: infoRes.run.id,
                 date: new Date().toISOString(),
-                model: infoRes.modelId ?? '',
+                model:
+                    requireCanonicalInteractionOutput(infoRes).fragment.generation.resolved_model ??
+                    requireCanonicalInteractionOutput(infoRes).fragment.generation.requested_model,
                 extraction_fingerprint: extractionFingerprint,
             },
         },

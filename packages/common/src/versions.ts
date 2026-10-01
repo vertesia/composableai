@@ -39,3 +39,15 @@ export const CURRENT_API_VERSION = ApiVersions.REQUEST_CONTRACT_ENFORCEMENT_V1;
 
 /** The current API version formatted for the {@link VERSION_HEADER} wire value. */
 export const CURRENT_API_VERSION_HEADER_VALUE = String(CURRENT_API_VERSION);
+
+/**
+ * Exact opt-in version for the experimental canonical interaction execution contract.
+ *
+ * This is deliberately outside {@link ApiVersions}: adding it to the stable milestone enum would
+ * promote it to range-based routing and make current clients select the experimental wire shape.
+ */
+export const EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION = 20260930 as const;
+
+/** Exact-match header value required by the experimental canonical interaction routes. */
+export const EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE =
+    `=${EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION}` as const;

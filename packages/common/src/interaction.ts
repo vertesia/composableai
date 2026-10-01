@@ -214,6 +214,27 @@ export type AsyncCompletionMode = Wire.AsyncCompletionMode;
  */
 export type StreamingOptions = Wire.StreamingOptions;
 
+/** Exact scoped canonical authority carried beside the legacy async conversation state. */
+export type CanonicalContinuationState = Wire.CanonicalContinuationState;
+
+/** Ordered application tool-call identity carried without model-visible or exact arguments. */
+export type CanonicalPendingApplicationToolCall = Wire.CanonicalPendingApplicationToolCall;
+
+/** Validated scope for one authoritative canonical agent-run head. */
+export type CanonicalConversationHeadScope = Wire.CanonicalConversationHeadScope;
+
+/** Query envelope selecting one canonical agent-run head scope. */
+export type CanonicalConversationHeadScopeQuery = Wire.CanonicalConversationHeadScopeQuery;
+
+/** Exact accepted-generation metadata reusable outside agent-run scoped state. */
+export type ConversationAcceptedGenerationEvidence = Wire.ConversationAcceptedGenerationEvidence;
+
+/** Accepted-generation metadata explicitly bound to one canonical agent-run head scope. */
+export type CanonicalScopedGenerationEvidence = Wire.CanonicalScopedGenerationEvidence;
+
+/** Async activity acknowledgement with canonical authority kept outside legacy ConversationState. */
+export type CanonicalAsyncCompletionResult = Wire.CanonicalAsyncCompletionResult;
+
 /**
  * Options for async completion and/or streaming LLM responses
  */

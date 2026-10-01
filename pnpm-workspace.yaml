@@ -1,5 +1,6 @@
 packages:
   - llumiverse/common
+  - llumiverse/conversation
   - packages/*
   - libraries/*
   - libraries/koa-stack/*

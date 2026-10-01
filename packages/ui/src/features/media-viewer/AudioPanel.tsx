@@ -4,6 +4,7 @@ import {
     type AudioResult,
     ContentNature,
     type ContentObject,
+    type ConversationAsset,
 } from '@vertesia/common';
 import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
@@ -20,6 +21,8 @@ interface AudioPanelProps {
     object?: ContentObject;
     /** Audio result metadata used to make raw PCM playable in browser media controls. */
     audio?: AudioResult;
+    /** Typed canonical asset metadata, retained independently of opaque provider metadata. */
+    media?: ConversationAsset['media'];
     /** Extra classes for the wrapper. */
     className?: string;
 }
@@ -29,7 +32,7 @@ export interface PcmFormat {
     channels: number;
 }
 
-function pcmFormat(audio?: AudioResult): PcmFormat | undefined {
+function pcmFormat(audio?: ConversationAsset['media']): PcmFormat | undefined {
     if (
         audio?.container !== 'raw' ||
         audio.codec !== 'pcm' ||
@@ -77,7 +80,7 @@ export function pcm16LeToWav(pcm: ArrayBuffer, format: PcmFormat): Blob {
  * Renders an audio player from a direct URL, a storage source path, or a Vertesia ContentObject.
  * Resolution priority: `url` > `source` > `object`. Duration is shown only in object mode.
  */
-export function AudioPanel({ url, source, object, audio, className }: AudioPanelProps) {
+export function AudioPanel({ url, source, object, audio, media, className }: AudioPanelProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const [audioUrl, setAudioUrl] = useState<string | undefined>(url);
@@ -98,7 +101,7 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
 
         const setPlayableUrl = async (downloadUrl: string) => {
             signal.throwIfAborted();
-            const format = pcmFormat(audio);
+            const format = pcmFormat(media ?? audio);
             if (!format) {
                 if (!signal.aborted) setAudioUrl(downloadUrl);
                 return;
@@ -158,7 +161,7 @@ export function AudioPanel({ url, source, object, audio, className }: AudioPanel
                 URL.revokeObjectURL(generatedUrl);
             }
         };
-    }, [url, source, object, audio, audioRendition, isOriginalWebSupported, client]);
+    }, [url, source, object, audio, media, audioRendition, isOriginalWebSupported, client]);
 
     if (showsObjectFallbackEmpty) {
         return (

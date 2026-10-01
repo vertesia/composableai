@@ -31,6 +31,41 @@ import type {
     ToolUse,
     VideoResult,
 } from '@llumiverse/common';
+import type {
+    ApplicationToolExecutionReceipt,
+    Asset,
+    ContextEntry,
+    ConversationAcceptedOutputFragment,
+    ConversationDocument,
+    ConversationMaterializedInput,
+    ConversationOutputGeneration,
+    ConversationOutputReceipt,
+    ConversationRef,
+    ConversationStreamCursor,
+    ConversationStreamDecodeEvidence,
+    ConversationStreamDraftBlock,
+    ConversationStreamEvent,
+    ConversationStreamFailureDiagnostic,
+    ConversationStreamIdentity,
+    ConversationStreamReconciliation,
+    ConversationStreamResponseMapping,
+    ConversationStreamTransformationProof,
+    ConversationToolExecutionRequest,
+    ConversationToolExecutionResult,
+    ConversationTranscriptFragment,
+    ExecutedToolTurn,
+    JsonObject,
+    JsonValue,
+    NativeConversationImportReport,
+    NativeStreamPathSegment,
+    NativeStreamPosition,
+    OperationReceipt,
+    PendingApplicationToolCall,
+    ReceivedTurnProvenance,
+    ToolCallSourceRef,
+    ToolDefinition,
+    UserContentBlock,
+} from '@llumiverse/conversation';
 import type { AccessControlPrincipalType, AccessControlResourceType, Permission } from './access-control-values.js';
 import type { AccountType, BillingMethod, QuotaTier } from './account-values.js';
 import type { ApiKeyTypes } from './apikey-values.js';
@@ -140,6 +175,64 @@ export type ACEUpdatePayload = {
     tags?: string[] | undefined | undefined;
     expires_at?: string | undefined | undefined;
 };
+export type AgentConversationArchiveSource = {
+    subject_run_id: string;
+    owner_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workflow_id: string;
+    first_workflow_run_id: string;
+    content_hash: string;
+    byte_length: number;
+    storage_generation: string;
+    immutable_storage_version: string | null;
+};
+export type AgentConversationNativeArchiveAttestation = {
+    evidence: 'owner_attested';
+    protocol:
+        | 'openai.chat.completions'
+        | 'openai.responses'
+        | 'anthropic.messages'
+        | 'google.generate_content'
+        | 'aws.bedrock.converse';
+    provider: string;
+    model: string | null;
+    completeness: 'complete' | 'fragment' | 'unknown';
+    recorded_at: string;
+    evidence_note: string;
+    tool_definitions: ToolDefinition[];
+};
+export type ImportAgentRunConversationArchivePayload =
+    | {
+          type: 'source';
+      }
+    | {
+          type: 'attested_native';
+          expected_source: AgentConversationArchiveSource;
+          attestation: AgentConversationNativeArchiveAttestation;
+      };
+export type ImportAgentRunConversationArchiveResponse =
+    | {
+          api_version: '=20260930';
+          source: AgentConversationArchiveSource;
+          continuation_readiness: 'not_validated';
+          status: 'initialized';
+          head: ConversationRef;
+          report?: NativeConversationImportReport | undefined;
+      }
+    | {
+          api_version: '=20260930';
+          source: AgentConversationArchiveSource;
+          continuation_readiness: 'not_validated';
+          status: 'already_initialized';
+          head: ConversationRef;
+          report?: NativeConversationImportReport | undefined;
+      }
+    | {
+          api_version: '=20260930';
+          source: AgentConversationArchiveSource;
+          continuation_readiness: 'not_validated';
+          status: 'attestation_required';
+      };
 /**
  * The five run-analytics contract types, inferred from `./api-schemas/analytics.js`. Their
  * documentation moved with them — a doc comment here would be published on TOP of the schema's
@@ -1865,6 +1958,341 @@ export type WebsiteCredentialMetadataUpdate = {
     totp?: WebsiteCredentialTotpMetadata | undefined;
     expires_at?: string | undefined;
 };
+export type ExperimentalCanonicalAsyncCompletionOptions = {
+    run_id: string;
+    stream?: boolean | undefined;
+    streaming?: StreamingOptions | undefined;
+    heartbeat_interval_ms?: number | undefined;
+    task_token: string;
+    activity_id: string;
+    canonical_state: CanonicalContinuationState;
+    agent_acceptance: ExperimentalCanonicalAgentAcceptanceTarget;
+    canonical_output_reference: 'conversation_output_authority_v1';
+    telemetry?: ExperimentalCanonicalResumeTelemetry | undefined;
+};
+export type ExperimentalCanonicalResumeAccepted = {
+    status: 'accepted';
+    run_id: string;
+    activity_id: string;
+};
+export type ExperimentalCanonicalResumeTelemetry = {
+    callType: LlmCallTypeWire;
+    attemptNumber?: number | undefined;
+    inferenceStartTime: number;
+    context: {
+        interaction_id: string;
+        environment_id: string;
+        environment_type: string;
+        model: string;
+        parent_run_id?: string | undefined;
+        ancestor_run_ids?: string[] | undefined;
+        include_thoughts?: boolean | undefined;
+    };
+};
+export type ExperimentalCanonicalToolResultsPayload = {
+    run: ExecutionRunDocRef;
+    config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
+    result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
+    turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
+    asyncCompletion: {
+        run_id: string;
+        stream?: boolean | undefined;
+        streaming?: StreamingOptions | undefined;
+        heartbeat_interval_ms?: number | undefined;
+        task_token: string;
+        activity_id: string;
+        canonical_state: {
+            head: ConversationRef;
+            scope: CanonicalConversationHeadScope;
+            output_receipt?: ConversationOutputReceipt | undefined;
+            materialized_input: ConversationMaterializedInput;
+            tool_call_sources?: Record<string, ToolCallSourceRef> | undefined;
+            pending_tool_calls?: PendingApplicationToolCall[] | undefined;
+        };
+        agent_acceptance: ExperimentalCanonicalAgentAcceptanceTarget;
+        canonical_output_reference: 'conversation_output_authority_v1';
+        telemetry?: ExperimentalCanonicalResumeTelemetry | undefined;
+    };
+    input_append?:
+        | {
+              expected_revision: number;
+              operation_id: string;
+              recorded_at: string;
+              records: {
+                  tool_definitions?: Readonly<ToolDefinition[]> | undefined;
+                  active_tool_definition_ids?: Readonly<string[]> | undefined;
+              };
+          }
+        | undefined;
+};
+export type ExperimentalCanonicalUserMessagePayload = {
+    run: ExecutionRunDocRef;
+    config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
+    result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
+    turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
+    asyncCompletion: ExperimentalCanonicalAsyncCompletionOptions;
+    input_append: {
+        expected_revision: number;
+        operation_id: string;
+        recorded_at: string;
+        records: {
+            turns: Readonly<
+                {
+                    id: string;
+                    actor_id?: string | undefined;
+                    status: 'completed' | 'interrupted' | 'failed';
+                    timestamps: {
+                        recorded_at: string;
+                        started_at?: string | undefined;
+                        completed_at?: string | undefined;
+                    };
+                    execution_id?: string | undefined;
+                    exchange_id?: string | undefined;
+                    parent_turn_id?: string | undefined;
+                    model_visibility: 'include';
+                    metadata?: Record<string, JsonValue> | undefined;
+                    kind: 'user';
+                    authority: 'ordinary';
+                    blocks: UserContentBlock[];
+                    provenance: ReceivedTurnProvenance;
+                }[]
+            >;
+            assets?: Readonly<Asset[]> | undefined;
+            tool_definitions?: Readonly<ToolDefinition[]> | undefined;
+            context_entries?: Readonly<ContextEntry[]> | undefined;
+            active_tool_definition_ids?: Readonly<string[]> | undefined;
+        };
+    };
+};
+export type ExperimentalCanonicalResumeInputAppend = {
+    expected_revision: number;
+    operation_id: string;
+    recorded_at: string;
+    records: {
+        turns?:
+            | Readonly<
+                  {
+                      id: string;
+                      actor_id?: string | undefined;
+                      status: 'completed' | 'interrupted' | 'failed';
+                      timestamps: {
+                          recorded_at: string;
+                          started_at?: string | undefined;
+                          completed_at?: string | undefined;
+                      };
+                      execution_id?: string | undefined;
+                      exchange_id?: string | undefined;
+                      parent_turn_id?: string | undefined;
+                      model_visibility: 'include';
+                      metadata?: Record<string, JsonValue> | undefined;
+                      kind: 'user';
+                      authority: 'ordinary';
+                      blocks: UserContentBlock[];
+                      provenance: ReceivedTurnProvenance;
+                  }[]
+              >
+            | undefined;
+        assets?: Readonly<Asset[]> | undefined;
+        tool_definitions?: Readonly<ToolDefinition[]> | undefined;
+        context_entries?: Readonly<ContextEntry[]> | undefined;
+        active_tool_definition_ids?: Readonly<string[]> | undefined;
+    };
+};
+export type AvailableRunConversation = {
+    status: 'available';
+    conversation: ConversationDocument;
+};
+export type UnavailableRunConversation = {
+    status: 'unavailable';
+    reason: 'not_recorded' | 'retention_policy' | 'pruned';
+    retention?: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel] | undefined;
+};
+export type RunConversationResponse = AvailableRunConversation | UnavailableRunConversation;
+export type ExperimentalCanonicalInteractionInitialState =
+    | ExperimentalCanonicalInteractionNewState
+    | ExperimentalCanonicalInteractionDocumentState
+    | ExperimentalCanonicalInteractionReferenceState;
+export type ExperimentalCanonicalInteractionNewState = {
+    type: 'new';
+};
+export type ExperimentalCanonicalInteractionDocumentState = {
+    type: 'document';
+    document: ConversationDocument;
+};
+export type ExperimentalCanonicalInteractionReferenceState = {
+    type: 'reference';
+    reference: ExperimentalCanonicalInteractionConversationReference;
+    operation_id: string;
+};
+export type ExperimentalCanonicalInteractionConversationReference = {
+    run_id: string;
+    conversation: ConversationRef;
+};
+export type ExperimentalCanonicalInteractionHeaders = {
+    'x-api-version': '=20260930';
+};
+export type ExperimentalCanonicalInteractionReturnPolicy = {
+    history: 'document' | 'reference' | 'none';
+};
+export type ExperimentalCanonicalInteractionAutoTurnSelection = {
+    mode: 'auto';
+};
+export type ExperimentalCanonicalInteractionNoneTurnSelection = {
+    mode: 'none';
+};
+export type ExperimentalCanonicalInteractionRequiredTurnSelection = {
+    mode: 'required';
+    tool_name?: string | undefined;
+};
+export type ExperimentalCanonicalInteractionTurnSelection =
+    | ExperimentalCanonicalInteractionAutoTurnSelection
+    | ExperimentalCanonicalInteractionNoneTurnSelection
+    | ExperimentalCanonicalInteractionRequiredTurnSelection;
+export type ExperimentalCanonicalInteractionExecutionConfiguration = {
+    id?: string | undefined;
+    inference_profile?: InferenceProfileId | null | undefined;
+    inherit_model_config?: boolean | undefined;
+    environment?: string | undefined;
+    model?: string | undefined;
+    do_validate?: boolean | undefined;
+    configMode?: (typeof ConfigModes)[keyof typeof ConfigModes] | undefined;
+    model_options?: ModelOptions | undefined;
+    prompt_cache_key?: string | undefined;
+    prompt_cache_mode?: PromptCacheMode | undefined;
+    prompt_cache_ttl_seconds?: number | undefined;
+    prompt_cache_schema_suffix?: boolean | undefined;
+    http_timeout?: HttpTimeoutOptions | undefined;
+};
+export type ExperimentalCanonicalInteractionResultSchemaInput = JsonObject | null;
+export type ExperimentalCanonicalInteractionInlinePrompt = {
+    role: (typeof PromptRole)[keyof typeof PromptRole];
+    content: string;
+    content_type: TemplateTypeWire;
+    name?: string | undefined;
+    externalId?: string | undefined;
+    schema?: JsonObject | undefined;
+};
+export type ExperimentalCanonicalInteractionExecutionRequest = {
+    initial_state: ExperimentalCanonicalInteractionInitialState;
+    retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
+    return_policy: ExperimentalCanonicalInteractionReturnPolicy;
+    data?: JsonValue | undefined;
+    config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
+    result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
+    turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
+    tags?: string[] | undefined;
+    workflow?: ExecutionRunWorkflow | undefined;
+};
+export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
+    initial_state: ExperimentalCanonicalInteractionInitialState;
+    retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
+    return_policy: ExperimentalCanonicalInteractionReturnPolicy;
+    data?: JsonValue | undefined;
+    config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
+    result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
+    turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
+    tags?: string[] | undefined;
+    workflow?: ExecutionRunWorkflow | undefined;
+    interaction: string;
+    prompts?: ExperimentalCanonicalInteractionInlinePrompt[] | undefined;
+};
+export type ExperimentalCanonicalInteractionDocumentHistory = {
+    status: 'document';
+    conversation: ConversationDocument;
+};
+export type ExperimentalCanonicalInteractionReferenceHistory = {
+    status: 'reference';
+    reference: ExperimentalCanonicalInteractionConversationReference;
+};
+export type ExperimentalCanonicalInteractionUnavailableHistory = {
+    status: 'unavailable';
+    reason: 'not_requested' | 'not_recorded' | 'retention_policy' | 'pruned';
+    retention?: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel] | undefined;
+};
+export type ExperimentalCanonicalInteractionHistory =
+    | ExperimentalCanonicalInteractionDocumentHistory
+    | ExperimentalCanonicalInteractionReferenceHistory
+    | ExperimentalCanonicalInteractionUnavailableHistory;
+export type ExperimentalCanonicalInteractionRun = {
+    id: string;
+    status: ExecutionRunStatusWire;
+    interaction?: string | undefined;
+    created_at: string;
+    updated_at: string;
+    retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
+    error?: InteractionExecutionError | undefined;
+};
+export type ExperimentalCanonicalInteractionAcceptedOutput = {
+    status: 'accepted';
+    fragment: ConversationAcceptedOutputFragment;
+};
+export type ExperimentalCanonicalInteractionUnavailableOutput = {
+    status: 'unavailable';
+    reason: 'no_accepted_response' | 'not_recorded' | 'pruned';
+};
+export type ExperimentalCanonicalInteractionOutput =
+    | ExperimentalCanonicalInteractionAcceptedOutput
+    | ExperimentalCanonicalInteractionUnavailableOutput;
+export type ExperimentalCanonicalInteractionExecutionResult = {
+    run: ExperimentalCanonicalInteractionRun;
+    output: ExperimentalCanonicalInteractionOutput;
+    history: ExperimentalCanonicalInteractionHistory;
+};
+export type ExperimentalCanonicalAgentAcceptanceTarget =
+    | {
+          version: 1;
+          subject_agent_run_id: string;
+          activity_id: string;
+          scope: 'root';
+      }
+    | {
+          version: 1;
+          subject_agent_run_id: string;
+          activity_id: string;
+          scope: string;
+          workstream_id: string;
+      };
+export type ExperimentalCanonicalInteractionStreamRequest = {
+    operation_id: string;
+    request: ExperimentalCanonicalNamedInteractionExecutionRequest;
+    resume_after?: ConversationStreamCursor | undefined;
+    agent_acceptance?: ExperimentalCanonicalAgentAcceptanceTarget | undefined;
+};
+export type ExperimentalCanonicalInteractionStreamOpened = {
+    api_version: '=20260930';
+    run_id: string;
+    operation_id: string;
+    stream_id: string;
+    type: 'stream_opened';
+};
+export type ExperimentalCanonicalInteractionStreamResumed = {
+    api_version: '=20260930';
+    run_id: string;
+    operation_id: string;
+    stream_id: string;
+    type: 'stream_resumed';
+    resumed_after: ConversationStreamCursor;
+};
+export type ExperimentalCanonicalInteractionAcceptedRecoveryOpened = {
+    api_version: '=20260930';
+    run_id: string;
+    operation_id: string;
+    stream_id: string;
+    type: 'accepted_recovery_opened';
+    replaces_stream_id: string;
+};
+export type ExperimentalCanonicalInteractionConversationEvent = {
+    api_version: '=20260930';
+    type: 'conversation_event';
+    run_id: string;
+    host_status: 'provisional' | 'accepted' | 'terminated';
+    event: ConversationStreamEvent;
+};
+export type ExperimentalCanonicalInteractionStreamEnvelope =
+    | ExperimentalCanonicalInteractionStreamOpened
+    | ExperimentalCanonicalInteractionStreamResumed
+    | ExperimentalCanonicalInteractionAcceptedRecoveryOpened
+    | ExperimentalCanonicalInteractionConversationEvent;
 export type FindPayload = {
     query: {
         [k: string]: unknown;
@@ -4191,6 +4619,40 @@ export type StreamingOptions = {
     redis_channel: string;
     workstream_id?: string | undefined;
 };
+/** Exact scoped canonical authority carried beside the legacy async conversation state. */
+export type CanonicalContinuationState = {
+    head: ConversationRef;
+    scope: CanonicalConversationHeadScope;
+    output_receipt?: ConversationOutputReceipt | undefined;
+    materialized_input?: ConversationMaterializedInput | undefined;
+    tool_call_sources?: Record<string, ToolCallSourceRef> | undefined;
+    pending_tool_calls?: PendingApplicationToolCall[] | undefined;
+};
+/** Ordered application tool-call identity carried without model-visible or exact arguments. */
+export type CanonicalPendingApplicationToolCall = PendingApplicationToolCall;
+/** Validated scope for one authoritative canonical agent-run head. */
+export type CanonicalConversationHeadScope = 'root' | string;
+/** Query envelope selecting one canonical agent-run head scope. */
+export type CanonicalConversationHeadScopeQuery = {
+    conversation_scope?: CanonicalConversationHeadScope | undefined;
+};
+/** Exact accepted-generation metadata reusable outside agent-run scoped state. */
+export type ConversationAcceptedGenerationEvidence = {
+    receipt: ConversationOutputReceipt;
+    generation: ConversationOutputGeneration;
+};
+/** Accepted-generation metadata explicitly bound to one canonical agent-run head scope. */
+export type CanonicalScopedGenerationEvidence = {
+    receipt: ConversationOutputReceipt;
+    generation: ConversationOutputGeneration;
+    scope: CanonicalConversationHeadScope;
+};
+/** Async activity acknowledgement with canonical authority kept outside legacy ConversationState. */
+export type CanonicalAsyncCompletionResult = {
+    state: ConversationStateWire;
+    canonical_state?: CanonicalContinuationState | undefined;
+    generation_evidence?: CanonicalScopedGenerationEvidence | undefined;
+};
 /**
  * Options for async completion and/or streaming LLM responses
  */
@@ -4201,6 +4663,8 @@ export type AsyncCompletionOptions = {
     task_token?: string | undefined;
     activity_id?: string | undefined;
     current_state?: ConversationStateWire | undefined;
+    canonical_state?: CanonicalContinuationState | undefined;
+    canonical_output_reference?: 'conversation_output_receipt_v1' | undefined;
     heartbeat_interval_ms?: number | undefined;
     telemetry?: StreamingTelemetryContext | undefined;
     result_storage?: ResultStorageOptions | undefined;
@@ -4272,6 +4736,7 @@ export type ToolResultsPayload = {
     }[];
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
+    materialized_input?: ConversationMaterializedInput | undefined;
     results: ToolResult[];
 };
 export type UserMessagePayload = {
@@ -4288,7 +4753,11 @@ export type UserMessagePayload = {
     }[];
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
+    materialized_input?: ConversationMaterializedInput | undefined;
     message: string;
+    execution_purpose?: 'conversation' | 'checkpoint_summary' | undefined;
+    operation_id?: string | undefined;
+    artifact_storage_id?: string | undefined;
     results?: ToolResult[] | undefined;
 };
 export type RunSource = {
@@ -6142,6 +6611,55 @@ export type RunBudgetCapabilityQuery = {
     model: string;
     service_tier?: string | undefined;
 };
+export type AppendRunConversationProgramTurnPayload =
+    | {
+          conversation_id: string;
+          expected_revision: number;
+          operation_id: string;
+          recorded_at: string;
+          purpose: 'controller_corrective';
+          text: string;
+      }
+    | {
+          conversation_id: string;
+          expected_revision: number;
+          operation_id: string;
+          recorded_at: string;
+          purpose: 'terminal_result';
+          result:
+              | {
+                    type: 'text';
+                    text: string;
+                }
+              | {
+                    type: 'json';
+                    value: JsonValue;
+                };
+      };
+export type AppendRunConversationProgramTurnResponse = {
+    conversation: ConversationRef;
+    operation_receipt: OperationReceipt;
+    applied: boolean;
+};
+export type AppendRunConversationToolResultsPayload = {
+    conversation_id: string;
+    expected_revision: number;
+    operation_id: string;
+    recorded_at: string;
+    turns: Readonly<ExecutedToolTurn[]>;
+    assets?: Readonly<Asset[]> | undefined;
+    execution_receipts: Readonly<ApplicationToolExecutionReceipt[]>;
+    context_entries: Readonly<ContextEntry[]>;
+};
+export type AppendRunConversationToolResultsResponse = {
+    conversation: ConversationRef;
+    operation_receipt: OperationReceipt;
+    applied: boolean;
+};
+export type PublishAgentRunConversationHeadPayload = {
+    document: ConversationDocument;
+    expected_head?: ConversationRef | undefined;
+};
 /**
  * The run ref is used to identify a run document in the storage
  */
@@ -6620,10 +7138,107 @@ export type StreamAgentRunQuery = {
     since?: number | undefined;
     skipHistory?: boolean | undefined;
 };
+export type ExperimentalAgentConversationStreamQuery = {
+    conversation_scope?: CanonicalConversationHeadScope | undefined;
+    workstream_id?: string | undefined;
+};
+export type ExperimentalAgentConversationSourceUninitialized = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    status: 'uninitialized';
+};
+export type ExperimentalAgentConversationSourceInitialized = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    status: 'initialized';
+    contract_version: 'canonical-conversation-v1';
+    head: {
+        format: 'llumiverse.conversation';
+        schema_version: 0;
+        experimental_revision: '2026-09-30.adoption.1';
+        conversation_id: string;
+        revision: number;
+    };
+};
+export type ExperimentalAgentConversationSourceDescriptor =
+    | ExperimentalAgentConversationSourceUninitialized
+    | ExperimentalAgentConversationSourceInitialized;
+export type ExperimentalAgentConversationEvent = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    type: 'conversation_event';
+    execution_run_id: string;
+    event: ConversationStreamEvent;
+};
+export type ExperimentalAgentConversationPreviewUnavailable = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    type: 'preview_unavailable';
+    reason: 'live_only' | 'late_join' | 'sequence_gap' | 'queue_overflow';
+};
+export type ExperimentalAgentConversationAcceptedOutput = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    type: 'accepted_output';
+    source: ConversationRef;
+    receipt: ConversationOutputReceipt;
+};
+export type ExperimentalAgentConversationAcceptedOutputHistoryQuery = {
+    conversation_scope?: CanonicalConversationHeadScope | undefined;
+    workstream_id?: string | undefined;
+    snapshot_conversation_id?: string | undefined;
+    snapshot_revision?: number | undefined;
+    after_revision?: number | undefined;
+    limit?: number | undefined;
+};
+export type ExperimentalAgentConversationAcceptedOutputHistoryPage = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    snapshot: ConversationRef;
+    items: ExperimentalAgentConversationAcceptedOutput[];
+    next_after_revision?: number | undefined;
+};
+export type ExperimentalAgentConversationTranscriptQuery = {
+    conversation_scope?: CanonicalConversationHeadScope | undefined;
+    workstream_id?: string | undefined;
+    snapshot_conversation_id?: string | undefined;
+    snapshot_revision?: number | undefined;
+    window?: 'start' | 'tail' | undefined;
+    after_turn_id?: string | undefined;
+    limit?: number | undefined;
+};
+export type ExperimentalAgentConversationTranscriptPage = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    snapshot: ConversationRef;
+    fragment: ConversationTranscriptFragment;
+    next_after_turn_id?: string | undefined;
+};
+export type ExperimentalAgentConversationStreamEnvelope =
+    | ExperimentalAgentConversationEvent
+    | ExperimentalAgentConversationPreviewUnavailable
+    | ExperimentalAgentConversationAcceptedOutput;
 export type AgentRunDetailsQuery = {
     from?: string | undefined;
     include_history?: boolean | undefined;
     hydrate_payloads?: boolean | undefined;
+};
+export type AgentRunAccessQuery = {
+    access?: 'control' | undefined;
 };
 export type AgentRunArtifactsQuery = {
     visibility?: 'user' | 'internal' | 'all' | undefined;
@@ -9669,6 +10284,8 @@ export type AgentRunWire = {
     run_kind: 'agent';
     parent_run_id?: string | undefined;
     workstream_id?: string | undefined;
+    canonical_conversation_owner_run_id?: string | undefined;
+    canonical_conversation_scope?: CanonicalConversationHeadScope | undefined;
     run_type: 'autonomous';
     account: string;
     project: string;
@@ -9979,6 +10596,7 @@ export type ConversationStateWire = {
     environment: string;
     options: StatelessExecutionOptions;
     tool_use?: ToolUse[] | undefined;
+    post_checkpoint_pending_tool_ids?: string[] | undefined;
     tool_approval_mode?: AgentToolApprovalMode | undefined;
     tool_approval_grants?: ToolApprovalGrantMap | undefined;
     pending_tool_approval_results?: PendingToolApprovalResults | undefined;
@@ -10370,6 +10988,8 @@ export type AutonomousRunResponseWire = {
     run_kind: 'agent';
     parent_run_id?: string | undefined;
     workstream_id?: string | undefined;
+    canonical_conversation_owner_run_id?: string | undefined;
+    canonical_conversation_scope?: CanonicalConversationHeadScope | undefined;
     run_type: 'autonomous';
     account: string;
     project: string;
@@ -10440,6 +11060,8 @@ export type RecordAgentRunPayloadWire = {
     evaluate?: boolean | undefined;
     parent_run_id?: string | undefined;
     workstream_id?: string | undefined;
+    canonical_conversation_owner_run_id?: string | undefined;
+    canonical_conversation_scope?: CanonicalConversationHeadScope | undefined;
     schedule_id?: string | undefined;
     visibility?: ConversationVisibility | undefined;
     data?:
@@ -10821,6 +11443,7 @@ export interface ApiComponentTypes {
         role: (typeof PromptRole)[keyof typeof PromptRole];
         content: string;
         tool_use_id?: string | undefined;
+        tool_result_status?: 'success' | 'error' | 'cancelled' | 'denied' | undefined;
         thought_signature?: string | undefined;
         files?:
             | {
@@ -10829,13 +11452,7 @@ export interface ApiComponentTypes {
               }[]
             | undefined;
     };
-    ToolDefinition: {
-        name: string;
-        description?: string | undefined;
-        input_schema: {
-            [k: string]: unknown;
-        };
-    };
+    ToolDefinition: ToolDefinition;
     ToolUse: ToolUse;
     TextResult: TextResult;
     JsonResult: JsonResult;
@@ -10985,6 +11602,13 @@ export interface ApiComponentTypes {
     ExecuteInteractionByEndpointQuery: ExecuteInteractionByEndpointQueryWire;
     ExecuteInteractionByEndpointHeaders: ExecuteInteractionByEndpointHeadersWire;
     AsyncCompletionMode: AsyncCompletionMode;
+    CanonicalAsyncCompletionResult: CanonicalAsyncCompletionResult;
+    CanonicalScopedGenerationEvidence: CanonicalScopedGenerationEvidence;
+    CanonicalConversationHeadScope: CanonicalConversationHeadScope;
+    CanonicalConversationHeadScopeQuery: CanonicalConversationHeadScopeQuery;
+    CanonicalContinuationState: CanonicalContinuationState;
+    CanonicalPendingApplicationToolCall: CanonicalPendingApplicationToolCall;
+    ConversationAcceptedGenerationEvidence: ConversationAcceptedGenerationEvidence;
     AsyncCompletionOptions: AsyncCompletionOptions;
     AsyncExecutionPayload: AsyncExecutionPayload;
     AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayload;
@@ -11041,12 +11665,12 @@ export interface ApiComponentTypes {
     ContentObjectTypeItemArray: ContentObjectTypeItemArray;
     ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntry;
     ContentObjectTypeCatalogEntryArray: ContentObjectTypeCatalogEntryArray;
-    InCodeTypeDefinition: InCodeTypeDefinition;
-    CreateContentObjectTypePayload: CreateContentObjectTypePayload;
-    UpdateContentObjectTypePayload: UpdateContentObjectTypePayload;
     ContentObjectType: ContentObjectType;
     ContentObjectTypeCatalogQuery: ContentObjectTypeCatalogQuery;
     ContentObjectTypeListQuery: ContentObjectTypeListQuery;
+    InCodeTypeDefinition: InCodeTypeDefinition;
+    CreateContentObjectTypePayload: CreateContentObjectTypePayload;
+    UpdateContentObjectTypePayload: UpdateContentObjectTypePayload;
     DeleteCountResult: DeleteCountResult;
     MigrationListResponse: MigrationListResponse;
     RunMigrationPayload: RunMigrationPayload;
@@ -11478,12 +12102,25 @@ export interface ApiComponentTypes {
     SupervisedRunResponse: SupervisedRunResponseWire;
     AgentRunInternals: AgentRunInternalsWire;
     AgentRunDetailsQuery: AgentRunDetailsQuery;
+    AgentRunAccessQuery: AgentRunAccessQuery;
     ListAgentRunsQuery: ListAgentRunsQuery;
     RecordAgentRunPayload: RecordAgentRunPayloadWire;
     RecordRunPayload: RecordRunPayloadWire;
     AgentRunUpdatesQuery: AgentRunUpdatesQuery;
     SearchAgentRunsQuery: SearchAgentRunsQuery;
     StreamAgentRunQuery: StreamAgentRunQuery;
+    ExperimentalAgentConversationStreamQuery: ExperimentalAgentConversationStreamQuery;
+    ExperimentalAgentConversationSourceUninitialized: ExperimentalAgentConversationSourceUninitialized;
+    ExperimentalAgentConversationSourceInitialized: ExperimentalAgentConversationSourceInitialized;
+    ExperimentalAgentConversationSourceDescriptor: ExperimentalAgentConversationSourceDescriptor;
+    ExperimentalAgentConversationEvent: ExperimentalAgentConversationEvent;
+    ExperimentalAgentConversationPreviewUnavailable: ExperimentalAgentConversationPreviewUnavailable;
+    ExperimentalAgentConversationAcceptedOutput: ExperimentalAgentConversationAcceptedOutput;
+    ExperimentalAgentConversationAcceptedOutputHistoryQuery: ExperimentalAgentConversationAcceptedOutputHistoryQuery;
+    ExperimentalAgentConversationAcceptedOutputHistoryPage: ExperimentalAgentConversationAcceptedOutputHistoryPage;
+    ExperimentalAgentConversationTranscriptQuery: ExperimentalAgentConversationTranscriptQuery;
+    ExperimentalAgentConversationTranscriptPage: ExperimentalAgentConversationTranscriptPage;
+    ExperimentalAgentConversationStreamEnvelope: ExperimentalAgentConversationStreamEnvelope;
     UpdateAgentRunStatusPayload: UpdateAgentRunStatusPayloadWire;
     AgentRunFeedbackRating: AgentRunFeedbackRating;
     AgentRunFeedbackReasonCode: AgentRunFeedbackReasonCode;
@@ -11873,6 +12510,67 @@ export interface ApiComponentTypes {
     CreateDelegationGrantPayload: CreateDelegationGrantPayload;
     DelegationGrant: DelegationGrant;
     DelegationGrantArray: DelegationGrantArray;
+    ExperimentalCanonicalInteractionHeaders: ExperimentalCanonicalInteractionHeaders;
+    ExperimentalCanonicalInteractionConversationReference: ExperimentalCanonicalInteractionConversationReference;
+    ExperimentalCanonicalInteractionNewState: ExperimentalCanonicalInteractionNewState;
+    ExperimentalCanonicalInteractionDocumentState: ExperimentalCanonicalInteractionDocumentState;
+    ExperimentalCanonicalInteractionReferenceState: ExperimentalCanonicalInteractionReferenceState;
+    ExperimentalCanonicalInteractionInitialState: ExperimentalCanonicalInteractionInitialState;
+    ExperimentalCanonicalInteractionReturnPolicy: ExperimentalCanonicalInteractionReturnPolicy;
+    ExperimentalCanonicalInteractionAutoTurnSelection: ExperimentalCanonicalInteractionAutoTurnSelection;
+    ExperimentalCanonicalInteractionNoneTurnSelection: ExperimentalCanonicalInteractionNoneTurnSelection;
+    ExperimentalCanonicalInteractionRequiredTurnSelection: ExperimentalCanonicalInteractionRequiredTurnSelection;
+    ExperimentalCanonicalInteractionTurnSelection: ExperimentalCanonicalInteractionTurnSelection;
+    ExperimentalCanonicalInteractionExecutionConfiguration: ExperimentalCanonicalInteractionExecutionConfiguration;
+    ExperimentalCanonicalInteractionResultSchemaInput: ExperimentalCanonicalInteractionResultSchemaInput;
+    ExperimentalCanonicalInteractionInlinePrompt: ExperimentalCanonicalInteractionInlinePrompt;
+    ExperimentalCanonicalInteractionExecutionRequest: ExperimentalCanonicalInteractionExecutionRequest;
+    ExperimentalCanonicalNamedInteractionExecutionRequest: ExperimentalCanonicalNamedInteractionExecutionRequest;
+    ExperimentalCanonicalInteractionDocumentHistory: ExperimentalCanonicalInteractionDocumentHistory;
+    ExperimentalCanonicalInteractionReferenceHistory: ExperimentalCanonicalInteractionReferenceHistory;
+    ExperimentalCanonicalInteractionUnavailableHistory: ExperimentalCanonicalInteractionUnavailableHistory;
+    ExperimentalCanonicalInteractionHistory: ExperimentalCanonicalInteractionHistory;
+    ExperimentalCanonicalInteractionRun: ExperimentalCanonicalInteractionRun;
+    ExperimentalCanonicalInteractionAcceptedOutput: ExperimentalCanonicalInteractionAcceptedOutput;
+    ExperimentalCanonicalInteractionUnavailableOutput: ExperimentalCanonicalInteractionUnavailableOutput;
+    ExperimentalCanonicalInteractionOutput: ExperimentalCanonicalInteractionOutput;
+    ExperimentalCanonicalInteractionExecutionResult: ExperimentalCanonicalInteractionExecutionResult;
+    AgentConversationArchiveSource: AgentConversationArchiveSource;
+    AgentConversationNativeArchiveAttestation: AgentConversationNativeArchiveAttestation;
+    ImportAgentRunConversationArchivePayload: ImportAgentRunConversationArchivePayload;
+    ImportAgentRunConversationArchiveResponse: ImportAgentRunConversationArchiveResponse;
+    ExperimentalCanonicalResumeInputAppend: ExperimentalCanonicalResumeInputAppend;
+    ExperimentalCanonicalAsyncCompletionOptions: ExperimentalCanonicalAsyncCompletionOptions;
+    ExperimentalCanonicalResumeAccepted: ExperimentalCanonicalResumeAccepted;
+    ExperimentalCanonicalResumeTelemetry: ExperimentalCanonicalResumeTelemetry;
+    ExperimentalCanonicalToolResultsPayload: ExperimentalCanonicalToolResultsPayload;
+    ExperimentalCanonicalUserMessagePayload: ExperimentalCanonicalUserMessagePayload;
+    ExperimentalCanonicalAgentAcceptanceTarget: ExperimentalCanonicalAgentAcceptanceTarget;
+    ExperimentalCanonicalInteractionStreamRequest: ExperimentalCanonicalInteractionStreamRequest;
+    ExperimentalCanonicalInteractionStreamOpened: ExperimentalCanonicalInteractionStreamOpened;
+    ExperimentalCanonicalInteractionStreamResumed: ExperimentalCanonicalInteractionStreamResumed;
+    ExperimentalCanonicalInteractionAcceptedRecoveryOpened: ExperimentalCanonicalInteractionAcceptedRecoveryOpened;
+    ExperimentalCanonicalInteractionConversationEvent: ExperimentalCanonicalInteractionConversationEvent;
+    ExperimentalCanonicalInteractionStreamEnvelope: ExperimentalCanonicalInteractionStreamEnvelope;
+    ConversationStreamIdentity: ConversationStreamIdentity;
+    ConversationStreamCursor: ConversationStreamCursor;
+    ConversationNativeStreamPathSegment: NativeStreamPathSegment;
+    ConversationNativeStreamPosition: NativeStreamPosition;
+    ConversationStreamDraftBlock: ConversationStreamDraftBlock;
+    ConversationStreamFailureDiagnostic: ConversationStreamFailureDiagnostic;
+    ConversationStreamReconciliation: ConversationStreamReconciliation;
+    ConversationStreamTransformationProof: ConversationStreamTransformationProof;
+    ConversationStreamResponseMapping: ConversationStreamResponseMapping;
+    ConversationStreamDecodeEvidence: ConversationStreamDecodeEvidence;
+    ConversationStreamEvent: ConversationStreamEvent;
+    ConversationToolExecutionRequest: ConversationToolExecutionRequest;
+    ConversationToolExecutionResult: ConversationToolExecutionResult;
+    RunConversationResponse: RunConversationResponse;
+    AppendRunConversationProgramTurnPayload: AppendRunConversationProgramTurnPayload;
+    AppendRunConversationProgramTurnResponse: AppendRunConversationProgramTurnResponse;
+    AppendRunConversationToolResultsPayload: AppendRunConversationToolResultsPayload;
+    AppendRunConversationToolResultsResponse: AppendRunConversationToolResultsResponse;
+    PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayload;
     RunBudgetOwner: RunBudgetOwner;
     RunBudgetUsage: RunBudgetUsage;
     ReadRunBudgetUsagePayload: ReadRunBudgetUsagePayload;

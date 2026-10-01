@@ -12,11 +12,15 @@
 export * from './account.js';
 export * from './adapter.js';
 export * from './agent-communication.js';
+export * from './agent-conversation-migration.js';
 export * from './agent-runs.js';
 export * from './analytics.js';
 export * from './apikey.js';
 export * from './app-runtime.js';
 export * from './bulk-operation.js';
+export * from './canonical-conversation-resume.js';
+export * from './canonical-interaction-execution.js';
+export * from './canonical-interaction-stream.js';
 export * from './content.js';
 export * from './content-query.js';
 export * from './cost-analytics.js';
@@ -28,6 +32,17 @@ export * from './environment.js';
 export * from './events.js';
 export * from './indexing.js';
 export * from './integrations.js';
+export {
+    CanonicalAsyncCompletionResultSchema,
+    CanonicalContinuationStateSchema,
+    CanonicalConversationHeadScopeQuerySchema,
+    CanonicalConversationHeadScopeSchema,
+    CanonicalPendingApplicationToolCallSchema,
+    CanonicalScopedGenerationEvidenceSchema,
+    ConversationAcceptedGenerationEvidenceSchema,
+    ConversationStateSchema,
+    SchemaRefSchema,
+} from './interaction.js';
 export * from './oauth-server.js';
 export * from './parameters.js';
 export * from './process.js';
@@ -35,6 +50,8 @@ export * from './process-agent-policy.js';
 export * from './quota.js';
 export * from './registry.js';
 export * from './run-budget.js';
+export * from './run-conversation.js';
+export * from './run-conversation-append.js';
 export * from './secrets.js';
 export { CreateContentObjectTypePayloadSchema, InteractionExecutionConfigurationSchema } from './store.js';
 export * from './view-execution.js';

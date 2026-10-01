@@ -173,9 +173,10 @@ interface WorkstreamsTabProps {
     workstreams: WorkstreamInfo[];
     messages: AgentMessage[];
     runId?: string;
+    disableLegacyExport?: boolean;
 }
 
-function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
+function WorkstreamsTab({ workstreams, messages, runId, disableLegacyExport }: WorkstreamsTabProps) {
     const { t } = useUITranslation();
     const { client } = useUserSession();
     const toast = useToast();
@@ -325,6 +326,7 @@ function WorkstreamsTab({ workstreams, messages, runId }: WorkstreamsTabProps) {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-7 px-2 text-xs text-muted hover:text-foreground"
+                                                    disabled={disableLegacyExport}
                                                     onClick={() => downloadConversation(childRunId)}
                                                 >
                                                     <DownloadCloudIcon className="size-3 me-1" />
@@ -366,6 +368,7 @@ export interface AgentRightPanelProps {
     activeWorkstreams?: WorkstreamInfo[];
     messages?: AgentMessage[];
     hideWorkstreams?: boolean;
+    disableLegacyExport?: boolean;
 
     // Documents
     openDocuments?: OpenDocument[];
@@ -408,6 +411,7 @@ function AgentRightPanelComponent({
     // Workstreams
     activeWorkstreams = [],
     messages = [],
+    disableLegacyExport = false,
     hideWorkstreams = false,
 
     // Documents
@@ -513,7 +517,12 @@ function AgentRightPanelComponent({
             ),
             content: withTabBoundary(
                 t('agent.workstreams'),
-                <WorkstreamsTab workstreams={activeWorkstreams} messages={messages} runId={runId} />,
+                <WorkstreamsTab
+                    workstreams={activeWorkstreams}
+                    messages={messages}
+                    runId={runId}
+                    disableLegacyExport={disableLegacyExport}
+                />,
             ),
             is_allowed: !hideWorkstreams,
         },

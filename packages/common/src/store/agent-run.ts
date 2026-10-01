@@ -13,7 +13,12 @@
  */
 
 import type { ReasoningEffort } from '@llumiverse/common';
-import type { ConversationVisibility, InteractionExecutionConfiguration, RunSource } from '../interaction.js';
+import type {
+    CanonicalConversationHeadScope,
+    ConversationVisibility,
+    InteractionExecutionConfiguration,
+    RunSource,
+} from '../interaction.js';
 import type { EventRef } from '../platform-event.js';
 import type * as Wire from '../wire-types.generated.js';
 import type { AgentToolApprovalMode } from './agent-approval.js';
@@ -207,6 +212,10 @@ export interface RecordAgentRunPayload<TData = Record<string, unknown>> extends 
     parent_run_id?: string;
     /** Workstream this run occupies inside its parent run (the process node id). */
     workstream_id?: string;
+    /** Run that durably owns this recorded child's canonical conversation. */
+    canonical_conversation_owner_run_id?: string;
+    /** Exact canonical head scope assigned to this recorded child. */
+    canonical_conversation_scope?: CanonicalConversationHeadScope;
     interaction: string;
     title?: string;
     topic?: string;
@@ -316,7 +325,35 @@ export type AgentRunUpdatesQuery = Wire.AgentRunUpdatesQuery;
 
 export type StreamAgentRunQuery = Wire.StreamAgentRunQuery;
 
+export type ExperimentalAgentConversationStreamQuery = Wire.ExperimentalAgentConversationStreamQuery;
+
+export type ExperimentalAgentConversationSourceUninitialized = Wire.ExperimentalAgentConversationSourceUninitialized;
+
+export type ExperimentalAgentConversationSourceInitialized = Wire.ExperimentalAgentConversationSourceInitialized;
+
+export type ExperimentalAgentConversationSourceDescriptor = Wire.ExperimentalAgentConversationSourceDescriptor;
+
+export type ExperimentalAgentConversationEvent = Wire.ExperimentalAgentConversationEvent;
+
+export type ExperimentalAgentConversationPreviewUnavailable = Wire.ExperimentalAgentConversationPreviewUnavailable;
+
+export type ExperimentalAgentConversationAcceptedOutput = Wire.ExperimentalAgentConversationAcceptedOutput;
+
+export type ExperimentalAgentConversationAcceptedOutputHistoryQuery =
+    Wire.ExperimentalAgentConversationAcceptedOutputHistoryQuery;
+
+export type ExperimentalAgentConversationAcceptedOutputHistoryPage =
+    Wire.ExperimentalAgentConversationAcceptedOutputHistoryPage;
+
+export type ExperimentalAgentConversationTranscriptQuery = Wire.ExperimentalAgentConversationTranscriptQuery;
+
+export type ExperimentalAgentConversationTranscriptPage = Wire.ExperimentalAgentConversationTranscriptPage;
+
+export type ExperimentalAgentConversationStreamEnvelope = Wire.ExperimentalAgentConversationStreamEnvelope;
+
 export type AgentRunDetailsQuery = Wire.AgentRunDetailsQuery;
+
+export type AgentRunAccessQuery = Wire.AgentRunAccessQuery;
 
 export type AgentRunArtifactsQuery = Wire.AgentRunArtifactsQuery;
 
