@@ -3594,7 +3594,8 @@
     },
     "required": [
       "model"
-    ]
+    ],
+    "additionalProperties": false
   },
   "OpenAiImageGenerationMask": {
     "type": "object",
@@ -3605,7 +3606,8 @@
       "image_url": {
         "type": "string"
       }
-    }
+    },
+    "additionalProperties": false
   },
   "ReasoningEffort": {
     "type": "string",
