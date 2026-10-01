@@ -238,9 +238,15 @@ const MAX_PROJECTED_MEDIA_CHUNKS = 16_384;
 const MAX_WORKFLOW_INVOCATION_KEY_LENGTH = 128;
 const WORKFLOW_INTERACTION_TAG_PREFIX = 'workflow-interaction:';
 const WORKFLOW_PREDECESSOR_TAG_PREFIX = 'workflow-predecessor:';
+const WORKFLOW_SERVICE_TIER_POLICY_TAG_PREFIX = 'workflow-service-tier-policy:';
+const FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY = 'flex_then_default' as const;
 const REQUIRED_TOOL_CALL_MISSING_ERROR_CODE = 'RequiredToolCallMissingError';
 const WORKFLOW_INVOCATION_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
-const WORKFLOW_RESERVED_TAG_PREFIXES = [WORKFLOW_PREDECESSOR_TAG_PREFIX, WORKFLOW_INTERACTION_TAG_PREFIX] as const;
+const WORKFLOW_RESERVED_TAG_PREFIXES = [
+    WORKFLOW_PREDECESSOR_TAG_PREFIX,
+    WORKFLOW_INTERACTION_TAG_PREFIX,
+    WORKFLOW_SERVICE_TIER_POLICY_TAG_PREFIX,
+] as const;
 
 type CanonicalWorkflowRequest = ExperimentalCanonicalNamedInteractionExecutionRequest & {
     workflow: ExecutionRunWorkflow;
@@ -261,6 +267,8 @@ export interface CanonicalInteractionActivityPlan {
     request: CanonicalInteractionActivityRequest;
     /** Stable caller-owned key used as one input to the host-derived operation and rate-limit identities. */
     invocation_key?: string;
+    /** Start this logical invocation on Flex and use Default only for successors of confirmed terminal failures. */
+    service_tier_policy?: typeof FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY;
     /** Include a confirmed predecessor failure in the next request's `data.previous_error`. */
     include_previous_error?: boolean;
     /** Agent run attribution carried by the trusted workflow activity. */
@@ -724,6 +732,10 @@ export async function executeCanonicalInteractionFromActivity(
             `Interaction invocation_key must match ${WORKFLOW_INVOCATION_KEY_PATTERN} and contain at most ${MAX_WORKFLOW_INVOCATION_KEY_LENGTH} characters`,
         );
     }
+    const serviceTierPolicy = (plan as { service_tier_policy?: unknown }).service_tier_policy;
+    if (serviceTierPolicy !== undefined && serviceTierPolicy !== FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY) {
+        throw new Error(`Unsupported canonical interaction service_tier_policy: ${String(serviceTierPolicy)}`);
+    }
     const info = activityInfo();
     const execution = activityWorkflowExecution(info);
     const baseRateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
@@ -731,7 +743,14 @@ export async function executeCanonicalInteractionFromActivity(
         ? `${baseRateLimitId}:invocation-key:${invocationKey.length}:${invocationKey}`
         : baseRateLimitId;
     const operationTag = workflowInteractionTag(rateLimitId);
-    const baseTags = ['workflow', operationTag, ...(userTags ?? [])];
+    const baseTags = [
+        'workflow',
+        operationTag,
+        ...(serviceTierPolicy === FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY
+            ? [`${WORKFLOW_SERVICE_TIER_POLICY_TAG_PREFIX}${serviceTierPolicy}`]
+            : []),
+        ...(userTags ?? []),
+    ];
     const workflow: ExecutionRunWorkflow = {
         run_id: execution.runId,
         workflow_id: execution.workflowId,
@@ -758,10 +777,23 @@ export async function executeCanonicalInteractionFromActivity(
                       ...(requestData ?? {}),
                       ...(includePreviousError ? { previous_error: previousError } : {}),
                   };
+        const effectiveRequestFields =
+            serviceTierPolicy === FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY
+                ? {
+                      ...requestFields,
+                      config: {
+                          ...(requestFields.config ?? {}),
+                          model_options: {
+                              ...(requestFields.config?.model_options ?? {}),
+                              service_tier: predecessorRunId === undefined ? 'flex' : 'default',
+                          } as ModelOptions,
+                      },
+                  }
+                : requestFields;
         return {
             operationId: workflowInteractionOperationId(rateLimitId, predecessorRunId),
             request: {
-                ...requestFields,
+                ...effectiveRequestFields,
                 ...(data === undefined ? {} : { data: data as CanonicalWorkflowRequest['data'] }),
                 tags: [...baseTags, workflowPredecessorTag(predecessorRunId)],
                 workflow,

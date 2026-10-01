@@ -957,6 +957,12 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionResultSchema
         >
     >;
+    ExperimentalCanonicalAgentAcceptanceTarget: Same<
+        W.ExperimentalCanonicalAgentAcceptanceTarget,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalAgentAcceptanceTargetSchema
+        >
+    >;
     ExperimentalCanonicalInteractionStreamRequest: Same<
         W.ExperimentalCanonicalInteractionStreamRequest,
         z.infer<
@@ -2961,6 +2967,10 @@ interface Checks {
     AgentRunDetailsQuery: Same<
         W.AgentRunDetailsQuery,
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunDetailsQuerySchema>
+    >;
+    AgentRunAccessQuery: Same<
+        W.AgentRunAccessQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunAccessQuerySchema>
     >;
     AgentRunArtifactsQuery: Same<
         W.AgentRunArtifactsQuery,
@@ -8203,6 +8213,10 @@ interface Checks {
         W.ApiComponentTypes['AgentRunDetailsQuery'],
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunDetailsQuerySchema>
     >;
+    'component:AgentRunAccessQuery': Same<
+        W.ApiComponentTypes['AgentRunAccessQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunAccessQuerySchema>
+    >;
     'component:ListAgentRunsQuery': Same<
         W.ApiComponentTypes['ListAgentRunsQuery'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ListAgentRunsQuerySchema>
@@ -9965,6 +9979,12 @@ interface Checks {
             typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionResultSchema
         >
     >;
+    'component:ExperimentalCanonicalAgentAcceptanceTarget': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalAgentAcceptanceTarget'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalAgentAcceptanceTargetSchema
+        >
+    >;
     'component:ExperimentalCanonicalInteractionStreamRequest': Same<
         W.ApiComponentTypes['ExperimentalCanonicalInteractionStreamRequest'],
         z.infer<
@@ -10360,6 +10380,7 @@ const checks: Checks = {
     ExperimentalCanonicalInteractionUnavailableOutput: true,
     ExperimentalCanonicalInteractionOutput: true,
     ExperimentalCanonicalInteractionExecutionResult: true,
+    ExperimentalCanonicalAgentAcceptanceTarget: true,
     ExperimentalCanonicalInteractionStreamRequest: true,
     ExperimentalCanonicalInteractionStreamOpened: true,
     ExperimentalCanonicalInteractionStreamResumed: true,
@@ -10902,6 +10923,7 @@ const checks: Checks = {
     ExperimentalAgentConversationAcceptedOutputHistoryPage: true,
     ExperimentalAgentConversationStreamEnvelope: true,
     AgentRunDetailsQuery: true,
+    AgentRunAccessQuery: true,
     AgentRunArtifactsQuery: true,
     AgentRunArtifactUploadHeaders: true,
     AgentRunArtifactQuery: true,
@@ -12273,6 +12295,7 @@ const checks: Checks = {
     'component:SupervisedRunResponse': true,
     'component:AgentRunInternals': true,
     'component:AgentRunDetailsQuery': true,
+    'component:AgentRunAccessQuery': true,
     'component:ListAgentRunsQuery': true,
     'component:RecordAgentRunPayload': true,
     'component:RecordRunPayload': true,
@@ -12700,6 +12723,7 @@ const checks: Checks = {
     'component:ExperimentalCanonicalInteractionUnavailableOutput': true,
     'component:ExperimentalCanonicalInteractionOutput': true,
     'component:ExperimentalCanonicalInteractionExecutionResult': true,
+    'component:ExperimentalCanonicalAgentAcceptanceTarget': true,
     'component:ExperimentalCanonicalInteractionStreamRequest': true,
     'component:ExperimentalCanonicalInteractionStreamOpened': true,
     'component:ExperimentalCanonicalInteractionStreamResumed': true,
@@ -12736,6 +12760,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2622);
+        expect(Object.keys(checks)).toHaveLength(2626);
     });
 });

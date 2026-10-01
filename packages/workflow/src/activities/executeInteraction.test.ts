@@ -553,6 +553,36 @@ describe('executeCanonicalInteractionFromActivity', () => {
         expect(mocks.streamCanonical).not.toHaveBeenCalled();
     });
 
+    it('rejects an unsupported service tier policy before recovery, admission, or transport', async () => {
+        const mocks = mockCanonicalClient();
+        const malformed = {
+            ...canonicalActivityPlan(),
+            service_tier_policy: 'future-policy',
+        } as unknown as CanonicalInteractionActivityPlan;
+
+        await expect(
+            retryEnvironment(2).run(executeCanonicalInteractionFromActivity, mocks.client, malformed),
+        ).rejects.toThrow('Unsupported canonical interaction service_tier_policy: future-policy');
+        expect(mocks.search).not.toHaveBeenCalled();
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+    });
+
+    it('rejects caller tags that spoof service tier policy identity', async () => {
+        const mocks = mockCanonicalClient();
+
+        await expect(
+            retryEnvironment(1).run(
+                executeCanonicalInteractionFromActivity,
+                mocks.client,
+                canonicalActivityPlan({ tags: ['workflow-service-tier-policy:flex_then_default'] }),
+            ),
+        ).rejects.toThrow('Interaction tags may not use reserved prefix workflow-service-tier-policy:');
+        expect(mocks.search).not.toHaveBeenCalled();
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+    });
+
     it('forwards every canonical request field while deriving protected execution identities', async () => {
         const mocks = mockCanonicalClient();
         const document = canonicalToolDocument();
@@ -616,6 +646,184 @@ describe('executeCanonicalInteractionFromActivity', () => {
             }),
         });
         expect(Object.hasOwn(request, 'workflow')).toBe(false);
+    });
+
+    it.each([
+        { policy: undefined, expectedTier: 'flex_auto' },
+        { policy: 'flex_then_default' as const, expectedTier: 'flex' },
+    ])(
+        'forwards the logical tier as $expectedTier with service tier policy $policy',
+        async ({ policy, expectedTier }) => {
+            const mocks = mockCanonicalClient();
+            const request = canonicalActivityRequest({
+                config: {
+                    model_options: {
+                        _option_id: 'openai-text',
+                        service_tier: 'flex_auto',
+                        temperature: 0.25,
+                    },
+                },
+            });
+
+            await retryEnvironment(1).run(
+                executeCanonicalInteractionFromActivity,
+                mocks.client,
+                canonicalActivityPlan(request, { service_tier_policy: policy }),
+            );
+
+            expect(mocks.streamCanonical.mock.calls[0][0].request.config?.model_options).toMatchObject({
+                _option_id: 'openai-text',
+                service_tier: expectedTier,
+                temperature: 0.25,
+            });
+            expect(
+                mocks.streamCanonical.mock.calls[0][0].request.tags?.includes(
+                    'workflow-service-tier-policy:flex_then_default',
+                ),
+            ).toBe(policy !== undefined);
+            expect(request.config?.model_options).toMatchObject({ service_tier: 'flex_auto' });
+        },
+    );
+
+    it('binds service tier policy drift into the same operation request fingerprint', async () => {
+        const request = canonicalActivityRequest({
+            config: { model_options: { _option_id: 'openai-text', service_tier: 'flex' } },
+        });
+        const initial = mockCanonicalClient();
+        await retryEnvironment(1).run(executeCanonicalInteractionFromActivity, initial.client, { request });
+        const initialPayload = initial.streamCanonical.mock.calls[0][0];
+
+        const accepted = canonicalResult({ id: 'accepted-flex-run' });
+        const retry = mockCanonicalClient(accepted);
+        retry.search.mockResolvedValue([{ id: accepted.run.id, tags: ['workflow-predecessor:initial'] }]);
+        retry.retrieveCanonical.mockResolvedValue(accepted);
+        const conflict = new ServerError(
+            'Canonical request does not match the accepted operation',
+            new Request('https://studio.test/api/v1/runs/canonical-stream'),
+            409,
+            { errorCode: 'canonical_request_mismatch' },
+        );
+        retry.streamCanonical.mockRejectedValue(conflict);
+        const changedPlan: CanonicalInteractionActivityPlan = {
+            request,
+            service_tier_policy: 'flex_then_default',
+        };
+
+        await expect(
+            retryEnvironment(2).run(executeCanonicalInteractionFromActivity, retry.client, changedPlan),
+        ).rejects.toBe(conflict);
+
+        const changedPayload = retry.streamCanonical.mock.calls[0][0];
+        expect(changedPayload.operation_id).toBe(initialPayload.operation_id);
+        expect(changedPayload.request.config).toEqual(initialPayload.request.config);
+        expect(initialPayload.request.tags).not.toContain('workflow-service-tier-policy:flex_then_default');
+        expect(changedPayload.request.tags).toContain('workflow-service-tier-policy:flex_then_default');
+        expect(retry.requestSlot).not.toHaveBeenCalled();
+    });
+
+    it('reopens an ambiguous flex attempt with the same operation and request', async () => {
+        const mocks = mockCanonicalClient();
+        const connectionLost = new Error('connection lost after dispatch');
+        mocks.streamCanonical.mockRejectedValueOnce(connectionLost).mockResolvedValueOnce(acceptedStream());
+        const plan = canonicalActivityPlan({}, { service_tier_policy: 'flex_then_default' });
+
+        await expect(retryEnvironment(1).run(executeCanonicalInteractionFromActivity, mocks.client, plan)).rejects.toBe(
+            connectionLost,
+        );
+        await expect(
+            retryEnvironment(2).run(executeCanonicalInteractionFromActivity, mocks.client, plan),
+        ).resolves.toBeDefined();
+
+        const initial = mocks.streamCanonical.mock.calls[0][0];
+        const reopened = mocks.streamCanonical.mock.calls[1][0];
+        expect(reopened.operation_id).toBe(initial.operation_id);
+        expect(reopened.request).toEqual(initial.request);
+        expect(reopened.request.config?.model_options).toMatchObject({ service_tier: 'flex' });
+        expect(mocks.requestSlot).toHaveBeenCalledTimes(2);
+        expect(mocks.requestSlot.mock.calls[0][0].rate_limit_id).toBe(mocks.requestSlot.mock.calls[1][0].rate_limit_id);
+    });
+
+    it('resumes an active default-tier successor without another admission', async () => {
+        const failed = canonicalResult({
+            id: 'failed-flex-run',
+            status: ExecutionRunStatus.failed,
+            acceptedOutput: false,
+            error: { message: 'flex capacity unavailable', code: 'FLEX_UNAVAILABLE', retryable: true },
+        });
+        const active = canonicalResult({ id: 'active-default-run', status: ExecutionRunStatus.processing });
+        const accepted = canonicalResult({ id: active.run.id });
+        const mocks = mockCanonicalClient(accepted);
+        mocks.search.mockResolvedValue([{ id: active.run.id, tags: [`workflow-predecessor:${failed.run.id}`] }]);
+        mocks.retrieveCanonical
+            .mockResolvedValueOnce(active)
+            .mockResolvedValueOnce(failed)
+            .mockResolvedValueOnce(accepted);
+
+        await expect(
+            retryEnvironment(3).run(
+                executeCanonicalInteractionFromActivity,
+                mocks.client,
+                canonicalActivityPlan({}, { service_tier_policy: 'flex_then_default' }),
+            ),
+        ).resolves.toBe(accepted);
+
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+        expect(mocks.streamCanonical.mock.calls[0][0].request.config?.model_options).toMatchObject({
+            service_tier: 'default',
+        });
+        expect(mocks.streamCanonical.mock.calls[0][0].request.tags).toContain(
+            'workflow-service-tier-policy:flex_then_default',
+        );
+    });
+
+    it('creates one deterministic default-tier successor only after confirming the failed flex terminal', async () => {
+        const failed = canonicalResult({
+            id: 'failed-flex-run',
+            status: ExecutionRunStatus.failed,
+            acceptedOutput: false,
+            error: { message: 'flex capacity unavailable', code: 'FLEX_UNAVAILABLE', retryable: true },
+        });
+        const accepted = canonicalResult({ id: 'accepted-default-run' });
+        const mocks = mockCanonicalClient(accepted);
+        mocks.search
+            .mockResolvedValueOnce([{ id: failed.run.id, tags: ['workflow-predecessor:initial'] }])
+            .mockResolvedValueOnce([{ id: accepted.run.id, tags: [`workflow-predecessor:${failed.run.id}`] }]);
+        mocks.streamCanonical
+            .mockResolvedValueOnce(terminatedStream(failed.run.id))
+            .mockResolvedValueOnce(terminatedStream(failed.run.id))
+            .mockResolvedValueOnce(acceptedStream(accepted.run.id));
+        mocks.retrieveCanonical
+            .mockResolvedValueOnce(failed)
+            .mockResolvedValueOnce(failed)
+            .mockResolvedValueOnce(failed)
+            .mockResolvedValueOnce(accepted)
+            .mockResolvedValueOnce(accepted)
+            .mockResolvedValueOnce(failed)
+            .mockResolvedValueOnce(accepted);
+        const plan = canonicalActivityPlan({}, { service_tier_policy: 'flex_then_default' });
+
+        await expect(
+            retryEnvironment(1).run(executeCanonicalInteractionFromActivity, mocks.client, plan),
+        ).rejects.toBeInstanceOf(CanonicalInteractionExecutionError);
+        await expect(
+            retryEnvironment(2).run(executeCanonicalInteractionFromActivity, mocks.client, plan),
+        ).resolves.toBe(accepted);
+        await expect(
+            retryEnvironment(3).run(executeCanonicalInteractionFromActivity, mocks.client, plan),
+        ).resolves.toBe(accepted);
+
+        const first = mocks.streamCanonical.mock.calls[0][0];
+        const confirmed = mocks.streamCanonical.mock.calls[1][0];
+        const successor = mocks.streamCanonical.mock.calls[2][0];
+        const recovered = mocks.streamCanonical.mock.calls[3][0];
+        expect(confirmed.operation_id).toBe(first.operation_id);
+        expect(confirmed.request.config?.model_options).toMatchObject({ service_tier: 'flex' });
+        expect(successor.operation_id).not.toBe(first.operation_id);
+        expect(successor.request.config?.model_options).toMatchObject({ service_tier: 'default' });
+        expect(successor.request.tags).toContain(`workflow-predecessor:${failed.run.id}`);
+        expect(recovered).toEqual(successor);
+        expect(mocks.requestSlot).toHaveBeenCalledTimes(2);
     });
 
     it('keeps the compatibility wrapper request and identity byte-for-byte equivalent', async () => {

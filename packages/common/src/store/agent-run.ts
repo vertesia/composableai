@@ -343,6 +343,8 @@ export type ExperimentalAgentConversationStreamEnvelope = Wire.ExperimentalAgent
 
 export type AgentRunDetailsQuery = Wire.AgentRunDetailsQuery;
 
+export type AgentRunAccessQuery = Wire.AgentRunAccessQuery;
+
 export type AgentRunArtifactsQuery = Wire.AgentRunArtifactsQuery;
 
 export type AgentRunArtifactUploadHeaders = Wire.AgentRunArtifactUploadHeaders;

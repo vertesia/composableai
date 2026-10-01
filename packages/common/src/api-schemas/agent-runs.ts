@@ -1479,6 +1479,15 @@ export const ListAgentRunsQuerySchema = z
     })
     .meta({ id: 'ListAgentRunsQuery' });
 
+export const AgentRunAccessQuerySchema = z
+    .strictObject({
+        access: z.literal('control').optional(),
+    })
+    .meta({
+        id: 'AgentRunAccessQuery',
+        description: 'Optionally requires control authorization while retrieving an agent run.',
+    });
+
 export const AgentRunUpdatesQuerySchema = z
     .object({
         since: z.number().optional(),

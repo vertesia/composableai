@@ -2228,6 +2228,9 @@
       "authority": {
         "$ref": "#/components/schemas/ConversationAuthority"
       },
+      "presentation": {
+        "$ref": "#/components/schemas/ConversationProgramTurnPresentation"
+      },
       "blocks": {
         "type": "array",
         "items": {
@@ -2249,6 +2252,13 @@
       "provenance"
     ],
     "additionalProperties": false
+  },
+  "ConversationProgramTurnPresentation": {
+    "type": "string",
+    "enum": [
+      "internal",
+      "transcript"
+    ]
   },
   "ConversationExecutedGeneration": {
     "type": "object",
@@ -6655,6 +6665,67 @@
     ],
     "additionalProperties": false
   },
+  "ExperimentalCanonicalAgentAcceptanceTarget": {
+    "anyOf": [
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "subject_agent_run_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "activity_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "scope": {
+            "type": "string",
+            "const": "root"
+          }
+        },
+        "required": [
+          "version",
+          "subject_agent_run_id",
+          "activity_id",
+          "scope"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "subject_agent_run_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "activity_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "scope": {
+            "type": "string",
+            "pattern": "^workstream:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+          },
+          "workstream_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          }
+        },
+        "required": [
+          "version",
+          "subject_agent_run_id",
+          "activity_id",
+          "scope",
+          "workstream_id"
+        ],
+        "additionalProperties": false
+      }
+    ],
+    "description": "Authenticated agent-run target whose scoped durable canonical head must be committed before acceptance is delivered."
+  },
   "ConversationStreamCursor": {
     "type": "object",
     "properties": {
@@ -6686,6 +6757,9 @@
       },
       "resume_after": {
         "$ref": "#/components/schemas/ConversationStreamCursor"
+      },
+      "agent_acceptance": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalAgentAcceptanceTarget"
       }
     },
     "required": [
@@ -42598,6 +42672,17 @@
         "type": "boolean"
       }
     }
+  },
+  "AgentRunAccessQuery": {
+    "type": "object",
+    "properties": {
+      "access": {
+        "type": "string",
+        "const": "control"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Optionally requires control authorization while retrieving an agent run."
   },
   "ListAgentRunsEvaluationSeverity": {
     "type": "string",

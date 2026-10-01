@@ -7,11 +7,36 @@ import { z } from 'zod';
 import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE } from '../versions.js';
 import { ExperimentalCanonicalNamedInteractionExecutionRequestSchema } from './canonical-interaction-execution.js';
 
+const agentAcceptanceBase = {
+    version: z.literal(1),
+    subject_agent_run_id: IdentifierSchema,
+    activity_id: IdentifierSchema,
+};
+
+export const ExperimentalCanonicalAgentAcceptanceTargetSchema = z
+    .union([
+        z.strictObject({
+            ...agentAcceptanceBase,
+            scope: z.literal('root'),
+        }),
+        z.strictObject({
+            ...agentAcceptanceBase,
+            scope: z.string().regex(/^workstream:[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/),
+            workstream_id: IdentifierSchema,
+        }),
+    ])
+    .meta({
+        id: 'ExperimentalCanonicalAgentAcceptanceTarget',
+        description:
+            'Authenticated agent-run target whose scoped durable canonical head must be committed before acceptance is delivered.',
+    });
+
 export const ExperimentalCanonicalInteractionStreamRequestSchema = z
     .strictObject({
         operation_id: IdentifierSchema,
         request: ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
         resume_after: ConversationStreamCursorSchema.optional(),
+        agent_acceptance: ExperimentalCanonicalAgentAcceptanceTargetSchema.optional(),
     })
     .superRefine((value, context) => {
         if (

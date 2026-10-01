@@ -1,6 +1,7 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import {
+    ExperimentalCanonicalAgentAcceptanceTargetSchema,
     ExperimentalCanonicalInteractionAcceptedRecoveryOpenedSchema,
     ExperimentalCanonicalInteractionConversationEventSchema,
     ExperimentalCanonicalInteractionStreamEnvelopeSchema,
@@ -112,6 +113,46 @@ describe('experimental canonical interaction stream schemas', () => {
                 request: namedRequest(reference),
             }).success,
         ).toBe(false);
+    });
+
+    it('strictly distinguishes root and workstream agent acceptance targets in Zod and JSON Schema', () => {
+        const root = {
+            version: 1 as const,
+            subject_agent_run_id: 'agent:root',
+            scope: 'root' as const,
+            activity_id: 'activity:start',
+        };
+        const workstream = {
+            ...root,
+            subject_agent_run_id: 'agent:child',
+            scope: 'workstream:node-1' as const,
+            workstream_id: 'node-1',
+        };
+        const validate = ajvComponent('ExperimentalCanonicalAgentAcceptanceTarget');
+
+        expect(ExperimentalCanonicalAgentAcceptanceTargetSchema.parse(root)).toEqual(root);
+        expect(ExperimentalCanonicalAgentAcceptanceTargetSchema.parse(workstream)).toEqual(workstream);
+        expect(validate(root)).toBe(true);
+        expect(validate(workstream)).toBe(true);
+
+        for (const invalid of [
+            { ...root, workstream_id: 'main' },
+            { ...workstream, workstream_id: undefined },
+            { ...workstream, scope: 'workstream:../../other' },
+            { ...root, version: 2 },
+            { ...root, storage_id: 'caller-selected' },
+        ]) {
+            expect(ExperimentalCanonicalAgentAcceptanceTargetSchema.safeParse(invalid).success).toBe(false);
+            expect(validate(invalid)).toBe(false);
+        }
+
+        expect(
+            ExperimentalCanonicalInteractionStreamRequestSchema.parse({
+                operation_id: 'operation:stream',
+                request: namedRequest(),
+                agent_acceptance: workstream,
+            }).agent_acceptance,
+        ).toEqual(workstream);
     });
 
     it('requires the literal API version on every host envelope', () => {

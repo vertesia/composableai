@@ -90,6 +90,7 @@ export type ConversationProcessingState = z.infer<typeof Canonical.ProcessingSta
 export type ConversationProcessorConfiguration = z.infer<typeof Canonical.ProcessorConfigurationSchema>;
 export type ConversationProgramContentBlock = z.infer<typeof Canonical.ProgramContentBlockSchema>;
 export type ConversationProgramTurn = z.infer<typeof Canonical.ProgramTurnSchema>;
+export type ConversationProgramTurnPresentation = z.infer<typeof Canonical.ProgramTurnPresentationSchema>;
 export type ConversationReasoningBlock = z.infer<typeof Canonical.ReasoningBlockSchema>;
 export type ConversationReceivedAssetProvenance = z.infer<typeof Canonical.ReceivedAssetProvenanceSchema>;
 export type ConversationReceivedTurnProvenance = z.infer<typeof Canonical.ReceivedTurnProvenanceSchema>;

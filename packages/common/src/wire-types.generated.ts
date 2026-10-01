@@ -2035,10 +2035,25 @@ export type ExperimentalCanonicalInteractionExecutionResult = {
     output: ExperimentalCanonicalInteractionOutput;
     history: ExperimentalCanonicalInteractionHistory;
 };
+export type ExperimentalCanonicalAgentAcceptanceTarget =
+    | {
+          version: 1;
+          subject_agent_run_id: string;
+          activity_id: string;
+          scope: 'root';
+      }
+    | {
+          version: 1;
+          subject_agent_run_id: string;
+          activity_id: string;
+          scope: string;
+          workstream_id: string;
+      };
 export type ExperimentalCanonicalInteractionStreamRequest = {
     operation_id: string;
     request: ExperimentalCanonicalNamedInteractionExecutionRequest;
     resume_after?: ConversationStreamCursor | undefined;
+    agent_acceptance?: ExperimentalCanonicalAgentAcceptanceTarget | undefined;
 };
 export type ExperimentalCanonicalInteractionStreamOpened = {
     api_version: '=20260930';
@@ -6959,6 +6974,9 @@ export type AgentRunDetailsQuery = {
     include_history?: boolean | undefined;
     hydrate_payloads?: boolean | undefined;
 };
+export type AgentRunAccessQuery = {
+    access?: 'control' | undefined;
+};
 export type AgentRunArtifactsQuery = {
     visibility?: 'user' | 'internal' | 'all' | undefined;
 };
@@ -11821,6 +11839,7 @@ export interface ApiComponentTypes {
     SupervisedRunResponse: SupervisedRunResponseWire;
     AgentRunInternals: AgentRunInternalsWire;
     AgentRunDetailsQuery: AgentRunDetailsQuery;
+    AgentRunAccessQuery: AgentRunAccessQuery;
     ListAgentRunsQuery: ListAgentRunsQuery;
     RecordAgentRunPayload: RecordAgentRunPayloadWire;
     RecordRunPayload: RecordRunPayloadWire;
@@ -12248,6 +12267,7 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalInteractionUnavailableOutput: ExperimentalCanonicalInteractionUnavailableOutput;
     ExperimentalCanonicalInteractionOutput: ExperimentalCanonicalInteractionOutput;
     ExperimentalCanonicalInteractionExecutionResult: ExperimentalCanonicalInteractionExecutionResult;
+    ExperimentalCanonicalAgentAcceptanceTarget: ExperimentalCanonicalAgentAcceptanceTarget;
     ExperimentalCanonicalInteractionStreamRequest: ExperimentalCanonicalInteractionStreamRequest;
     ExperimentalCanonicalInteractionStreamOpened: ExperimentalCanonicalInteractionStreamOpened;
     ExperimentalCanonicalInteractionStreamResumed: ExperimentalCanonicalInteractionStreamResumed;

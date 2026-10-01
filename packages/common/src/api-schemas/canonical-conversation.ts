@@ -90,6 +90,7 @@ export const CANONICAL_CONVERSATION_SCHEMAS = {
     ConversationProcessorConfiguration: Canonical.ProcessorConfigurationSchema,
     ConversationProgramContentBlock: Canonical.ProgramContentBlockSchema,
     ConversationProgramTurn: Canonical.ProgramTurnSchema,
+    ConversationProgramTurnPresentation: Canonical.ProgramTurnPresentationSchema,
     ConversationReasoningBlock: Canonical.ReasoningBlockSchema,
     ConversationReceivedAssetProvenance: Canonical.ReceivedAssetProvenanceSchema,
     ConversationReceivedTurnProvenance: Canonical.ReceivedTurnProvenanceSchema,

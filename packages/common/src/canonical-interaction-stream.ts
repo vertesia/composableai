@@ -6,6 +6,7 @@ import type * as Wire from './wire-types.generated.js';
  */
 export const CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE = 'canonical_stream_recovery_pending';
 
+export type ExperimentalCanonicalAgentAcceptanceTarget = Wire.ExperimentalCanonicalAgentAcceptanceTarget;
 export type ExperimentalCanonicalInteractionStreamRequest = Wire.ExperimentalCanonicalInteractionStreamRequest;
 export type ExperimentalCanonicalInteractionStreamOpened = Wire.ExperimentalCanonicalInteractionStreamOpened;
 export type ExperimentalCanonicalInteractionStreamResumed = Wire.ExperimentalCanonicalInteractionStreamResumed;

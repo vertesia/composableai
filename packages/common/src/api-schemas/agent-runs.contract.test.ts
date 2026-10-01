@@ -16,6 +16,7 @@ import type {
     ExperimentalAgentConversationAcceptedOutputHistoryPageSchema,
     ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema,
 } from './agent-runs.js';
+import { AgentRunAccessQuerySchema } from './agent-runs.js';
 import { validateApiRequest, validateApiResponse } from './registry.js';
 
 const turnEvaluation: TurnEvaluationEvent = {
@@ -80,6 +81,17 @@ const turnEvaluation: TurnEvaluationEvent = {
     ],
     toolsTruncated: 0,
 };
+
+describe('agent run access query contract', () => {
+    it('keeps legacy omission and accepts only the explicit control authority selector', () => {
+        expect(AgentRunAccessQuerySchema.parse({})).toEqual({});
+        expect(AgentRunAccessQuerySchema.parse({ access: 'control' })).toEqual({ access: 'control' });
+        expect(validateApiRequest('AgentRunAccessQuery', {})).toMatchObject({ valid: true });
+        expect(validateApiRequest('AgentRunAccessQuery', { access: 'control' })).toMatchObject({ valid: true });
+        expect(validateApiRequest('AgentRunAccessQuery', { access: 'read' }).valid).toBe(false);
+        expect(validateApiRequest('AgentRunAccessQuery', { access: 'control', extra: true }).valid).toBe(false);
+    });
+});
 
 describe('agent run evaluation API contracts', () => {
     it('derives the public types from the runtime schemas', () => {

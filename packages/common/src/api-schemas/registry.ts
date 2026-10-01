@@ -1993,6 +1993,7 @@ const AGENT_RUN_SCHEMAS = {
     SupervisedRunResponse: AgentRunSchemas.SupervisedRunResponseSchema,
     AgentRunInternals: AgentRunSchemas.AgentRunInternalsSchema,
     AgentRunDetailsQuery: AgentRunSchemas.AgentRunDetailsQuerySchema,
+    AgentRunAccessQuery: AgentRunSchemas.AgentRunAccessQuerySchema,
     ListAgentRunsQuery: AgentRunSchemas.ListAgentRunsQuerySchema,
     RecordAgentRunPayload: AgentRunSchemas.RecordAgentRunPayloadSchema,
     RecordRunPayload: AgentRunSchemas.RecordRunPayloadSchema,
@@ -2561,6 +2562,8 @@ type CanonicalInteractionStreamSchemaMap = {
 };
 
 const CANONICAL_INTERACTION_STREAM_SCHEMAS: CanonicalInteractionStreamSchemaMap = {
+    ExperimentalCanonicalAgentAcceptanceTarget:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalAgentAcceptanceTargetSchema,
     ExperimentalCanonicalInteractionStreamRequest:
         CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionStreamRequestSchema,
     ExperimentalCanonicalInteractionStreamOpened:
@@ -2777,6 +2780,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AppendRunConversationProgramTurnResponse',
     'AppendRunConversationToolResultsPayload',
     'AppendRunConversationToolResultsResponse',
+    'AgentRunAccessQuery',
     'ExperimentalAgentConversationAcceptedOutputHistoryQuery',
     'ExperimentalAgentConversationAcceptedOutputHistoryPage',
     'AvailableRunConversation',
