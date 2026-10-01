@@ -2936,6 +2936,18 @@ interface Checks {
         W.ExperimentalAgentConversationStreamQuery,
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamQuerySchema>
     >;
+    ExperimentalAgentConversationSourceUninitialized: Same<
+        W.ExperimentalAgentConversationSourceUninitialized,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceUninitializedSchema>
+    >;
+    ExperimentalAgentConversationSourceInitialized: Same<
+        W.ExperimentalAgentConversationSourceInitialized,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceInitializedSchema>
+    >;
+    ExperimentalAgentConversationSourceDescriptor: Same<
+        W.ExperimentalAgentConversationSourceDescriptor,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceDescriptorSchema>
+    >;
     ExperimentalAgentConversationEvent: Same<
         W.ExperimentalAgentConversationEvent,
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationEventSchema>
@@ -8253,6 +8265,18 @@ interface Checks {
         W.ApiComponentTypes['ExperimentalAgentConversationStreamQuery'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamQuerySchema>
     >;
+    'component:ExperimentalAgentConversationSourceUninitialized': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationSourceUninitialized'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceUninitializedSchema>
+    >;
+    'component:ExperimentalAgentConversationSourceInitialized': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationSourceInitialized'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceInitializedSchema>
+    >;
+    'component:ExperimentalAgentConversationSourceDescriptor': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationSourceDescriptor'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceDescriptorSchema>
+    >;
     'component:ExperimentalAgentConversationEvent': Same<
         W.ApiComponentTypes['ExperimentalAgentConversationEvent'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationEventSchema>
@@ -10932,6 +10956,9 @@ const checks: Checks = {
     AgentRunUpdatesQuery: true,
     StreamAgentRunQuery: true,
     ExperimentalAgentConversationStreamQuery: true,
+    ExperimentalAgentConversationSourceUninitialized: true,
+    ExperimentalAgentConversationSourceInitialized: true,
+    ExperimentalAgentConversationSourceDescriptor: true,
     ExperimentalAgentConversationEvent: true,
     ExperimentalAgentConversationPreviewUnavailable: true,
     ExperimentalAgentConversationAcceptedOutput: true,
@@ -12321,6 +12348,9 @@ const checks: Checks = {
     'component:SearchAgentRunsQuery': true,
     'component:StreamAgentRunQuery': true,
     'component:ExperimentalAgentConversationStreamQuery': true,
+    'component:ExperimentalAgentConversationSourceUninitialized': true,
+    'component:ExperimentalAgentConversationSourceInitialized': true,
+    'component:ExperimentalAgentConversationSourceDescriptor': true,
     'component:ExperimentalAgentConversationEvent': true,
     'component:ExperimentalAgentConversationPreviewUnavailable': true,
     'component:ExperimentalAgentConversationAcceptedOutput': true,
@@ -12780,6 +12810,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2630);
+        expect(Object.keys(checks)).toHaveLength(2636);
     });
 });

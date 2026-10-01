@@ -5835,7 +5835,7 @@
         "$ref": "#/components/schemas/ExperimentalCanonicalInteractionReturnPolicy"
       },
       "data": {
-        "$ref": "#/components/schemas/ConversationJsonObject"
+        "$ref": "#/components/schemas/ConversationJsonValue"
       },
       "config": {
         "$ref": "#/components/schemas/ExperimentalCanonicalInteractionExecutionConfiguration"
@@ -5907,7 +5907,7 @@
         "$ref": "#/components/schemas/ExperimentalCanonicalInteractionReturnPolicy"
       },
       "data": {
-        "$ref": "#/components/schemas/ConversationJsonObject"
+        "$ref": "#/components/schemas/ConversationJsonValue"
       },
       "config": {
         "$ref": "#/components/schemas/ExperimentalCanonicalInteractionExecutionConfiguration"
@@ -42983,6 +42983,132 @@
       }
     },
     "description": "Selects one canonical agent-run scope and optional live workstream delivery filter."
+  },
+  "ExperimentalAgentConversationSourceUninitialized": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "agent_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "status": {
+        "type": "string",
+        "const": "uninitialized"
+      }
+    },
+    "required": [
+      "api_version",
+      "agent_run_id",
+      "scope",
+      "status"
+    ],
+    "additionalProperties": false,
+    "description": "No committed canonical conversation locator exists yet for the authorized scope."
+  },
+  "ExperimentalAgentConversationSourceInitialized": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "agent_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "status": {
+        "type": "string",
+        "const": "initialized"
+      },
+      "contract_version": {
+        "type": "string",
+        "const": "canonical-conversation-v1"
+      },
+      "head": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "llumiverse.conversation"
+          },
+          "schema_version": {
+            "type": "number",
+            "const": 0
+          },
+          "experimental_revision": {
+            "type": "string",
+            "const": "2026-09-30.adoption.1"
+          },
+          "conversation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          }
+        },
+        "required": [
+          "format",
+          "schema_version",
+          "experimental_revision",
+          "conversation_id",
+          "revision"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "api_version",
+      "agent_run_id",
+      "scope",
+      "status",
+      "contract_version",
+      "head"
+    ],
+    "additionalProperties": false,
+    "description": "Exact public canonical source descriptor derived from the committed scoped head locator. Initialization does not assert that a provider response was accepted; snapshot storage details remain private."
+  },
+  "ExperimentalAgentConversationSourceDescriptor": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationSourceUninitialized"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationSourceInitialized"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "status"
+    ],
+    "discriminator": {
+      "propertyName": "status",
+      "mapping": {
+        "uninitialized": "#/components/schemas/ExperimentalAgentConversationSourceUninitialized",
+        "initialized": "#/components/schemas/ExperimentalAgentConversationSourceInitialized"
+      }
+    }
   },
   "ExperimentalAgentConversationEvent": {
     "type": "object",

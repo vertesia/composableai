@@ -28,6 +28,8 @@ import {
     type ErrorAnalyticsResponse,
     type ExperimentalAgentConversationAcceptedOutputHistoryPage,
     type ExperimentalAgentConversationAcceptedOutputHistoryQuery,
+    type ExperimentalAgentConversationSourceDescriptor,
+    type ExperimentalAgentConversationStreamQuery,
     type ExperimentalAgentConversationTranscriptPage,
     type ExperimentalAgentConversationTranscriptQuery,
     type ExperimentalCanonicalInteractionOutput,
@@ -214,6 +216,20 @@ export class AgentsApi extends ApiTopic {
         options?: CanonicalInteractionRequestOptions,
     ): Promise<ExperimentalAgentConversationTranscriptPage> {
         return this.get(`/${encodeURIComponent(id)}/conversation/transcript`, {
+            query,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Describe the exact canonical source contract for one authorized agent-run scope. */
+    getConversationSource(
+        id: string,
+        query: ExperimentalAgentConversationStreamQuery = {},
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentConversationSourceDescriptor> {
+        return this.get(`/${encodeURIComponent(id)}/conversation/source`, {
             query,
             headers: canonicalInteractionHeaders(options?.headers),
             signal: options?.signal,

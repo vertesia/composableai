@@ -656,6 +656,64 @@ describe('executeCanonicalInteractionFromActivity', () => {
         expect(Object.hasOwn(request, 'workflow')).toBe(false);
     });
 
+    it.each([
+        ['string', 'memory:input'],
+        ['zero', 0],
+        ['false', false],
+        ['null', null],
+        ['array', ['first', 2, false, null, { nested: true }]],
+    ])('preserves exact canonical JSON request data without object coercion: %s', async (_label, data) => {
+        const mocks = mockCanonicalClient();
+
+        await retryEnvironment(1).run(
+            executeCanonicalInteractionFromActivity,
+            mocks.client,
+            canonicalActivityPlan({ data }),
+        );
+
+        expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+        expect(mocks.streamCanonical.mock.calls[0][0].request).toHaveProperty('data', data);
+    });
+
+    it('reopens a scalar accepted operation with the exact request identity', async () => {
+        const data = 'memory:input';
+        const initial = mockCanonicalClient();
+        await retryEnvironment(1).run(
+            executeCanonicalInteractionFromActivity,
+            initial.client,
+            canonicalActivityPlan({ data }, { invocation_key: 'scalar-input' }),
+        );
+        const original = initial.streamCanonical.mock.calls[0][0];
+
+        const accepted = canonicalResult({ id: 'accepted-run' });
+        const retry = mockCanonicalClient(accepted);
+        retry.search.mockResolvedValue([{ id: accepted.run.id, tags: ['workflow-predecessor:initial'] }]);
+        retry.retrieveCanonical.mockResolvedValue(accepted);
+        await retryEnvironment(2).run(
+            executeCanonicalInteractionFromActivity,
+            retry.client,
+            canonicalActivityPlan({ data }, { invocation_key: 'scalar-input' }),
+        );
+
+        expect(retry.requestSlot).not.toHaveBeenCalled();
+        expect(retry.streamCanonical.mock.calls[0][0]).toEqual(original);
+    });
+
+    it('rejects previous-error injection into non-object data before recovery, admission, or transport', async () => {
+        const mocks = mockCanonicalClient();
+
+        await expect(
+            retryEnvironment(2).run(
+                executeCanonicalInteractionFromActivity,
+                mocks.client,
+                canonicalActivityPlan({ data: ['not', 'an', 'object'] }, { include_previous_error: true }),
+            ),
+        ).rejects.toThrow('Canonical include_previous_error requires object or undefined request data');
+        expect(mocks.search).not.toHaveBeenCalled();
+        expect(mocks.requestSlot).not.toHaveBeenCalled();
+        expect(mocks.streamCanonical).not.toHaveBeenCalled();
+    });
+
     it('derives the activity id for a scoped workstream acceptance target without mutating the caller', async () => {
         const mocks = mockCanonicalClient();
         const target = {

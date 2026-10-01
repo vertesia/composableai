@@ -2,6 +2,7 @@
 
 import { ExecutionTokenUsageSchema, ReasoningEffortSchema } from '@llumiverse/common/schemas';
 import {
+    ConversationDocumentSchema,
     ConversationOutputReceiptSchema,
     ConversationRefSchema,
     ConversationStreamEventSchema,
@@ -1541,6 +1542,61 @@ export const ExperimentalAgentConversationStreamQuerySchema = z
     .meta({
         id: 'ExperimentalAgentConversationStreamQuery',
         description: 'Selects one canonical agent-run scope and optional live workstream delivery filter.',
+    });
+
+const agentConversationSourceBaseShape = {
+    api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+    agent_run_id: z.string().min(1).max(512),
+    scope: CanonicalConversationHeadScopeSchema,
+    workstream_id: z.string().min(1).max(512).optional(),
+};
+
+export const ExperimentalAgentConversationSourceUninitializedSchema = z
+    .strictObject({
+        ...agentConversationSourceBaseShape,
+        status: z.literal('uninitialized'),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationSourceUninitialized',
+        description: 'No committed canonical conversation locator exists yet for the authorized scope.',
+    });
+
+export const ExperimentalAgentConversationSourceInitializedSchema = z
+    .strictObject({
+        ...agentConversationSourceBaseShape,
+        status: z.literal('initialized'),
+        contract_version: z.literal('canonical-conversation-v1'),
+        head: z.strictObject({
+            format: ConversationDocumentSchema.shape.format,
+            schema_version: ConversationDocumentSchema.shape.schema_version,
+            experimental_revision: ConversationDocumentSchema.shape.experimental_revision,
+            conversation_id: ConversationRefSchema.shape.conversation_id,
+            revision: ConversationRefSchema.shape.revision,
+        }),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationSourceInitialized',
+        description:
+            'Exact public canonical source descriptor derived from the committed scoped head locator. ' +
+            'Initialization does not assert that a provider response was accepted; snapshot storage details remain private.',
+    });
+
+export const ExperimentalAgentConversationSourceDescriptorSchema = z
+    .discriminatedUnion('status', [
+        ExperimentalAgentConversationSourceUninitializedSchema,
+        ExperimentalAgentConversationSourceInitializedSchema,
+    ])
+    .meta({
+        id: 'ExperimentalAgentConversationSourceDescriptor',
+        type: 'object',
+        required: ['status'],
+        discriminator: {
+            propertyName: 'status',
+            mapping: {
+                uninitialized: '#/components/schemas/ExperimentalAgentConversationSourceUninitialized',
+                initialized: '#/components/schemas/ExperimentalAgentConversationSourceInitialized',
+            },
+        },
     });
 
 const agentConversationStreamBaseShape = {

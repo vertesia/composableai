@@ -55,6 +55,7 @@ import type {
     ConversationTranscriptFragment,
     ExecutedToolTurn,
     JsonObject,
+    JsonValue,
     NativeStreamPathSegment,
     NativeStreamPosition,
     OperationReceipt,
@@ -1974,7 +1975,7 @@ export type ExperimentalCanonicalInteractionExecutionRequest = {
     initial_state: ExperimentalCanonicalInteractionInitialState;
     retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
     return_policy: ExperimentalCanonicalInteractionReturnPolicy;
-    data?: JsonObject | undefined;
+    data?: JsonValue | undefined;
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
@@ -1985,7 +1986,7 @@ export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
     initial_state: ExperimentalCanonicalInteractionInitialState;
     retention: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel];
     return_policy: ExperimentalCanonicalInteractionReturnPolicy;
-    data?: JsonObject | undefined;
+    data?: JsonValue | undefined;
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
@@ -6923,6 +6924,31 @@ export type ExperimentalAgentConversationStreamQuery = {
     conversation_scope?: CanonicalConversationHeadScope | undefined;
     workstream_id?: string | undefined;
 };
+export type ExperimentalAgentConversationSourceUninitialized = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    status: 'uninitialized';
+};
+export type ExperimentalAgentConversationSourceInitialized = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    status: 'initialized';
+    contract_version: 'canonical-conversation-v1';
+    head: {
+        format: 'llumiverse.conversation';
+        schema_version: 0;
+        experimental_revision: '2026-09-30.adoption.1';
+        conversation_id: string;
+        revision: number;
+    };
+};
+export type ExperimentalAgentConversationSourceDescriptor =
+    | ExperimentalAgentConversationSourceUninitialized
+    | ExperimentalAgentConversationSourceInitialized;
 export type ExperimentalAgentConversationEvent = {
     api_version: '=20260930';
     agent_run_id: string;
@@ -11865,6 +11891,9 @@ export interface ApiComponentTypes {
     SearchAgentRunsQuery: SearchAgentRunsQuery;
     StreamAgentRunQuery: StreamAgentRunQuery;
     ExperimentalAgentConversationStreamQuery: ExperimentalAgentConversationStreamQuery;
+    ExperimentalAgentConversationSourceUninitialized: ExperimentalAgentConversationSourceUninitialized;
+    ExperimentalAgentConversationSourceInitialized: ExperimentalAgentConversationSourceInitialized;
+    ExperimentalAgentConversationSourceDescriptor: ExperimentalAgentConversationSourceDescriptor;
     ExperimentalAgentConversationEvent: ExperimentalAgentConversationEvent;
     ExperimentalAgentConversationPreviewUnavailable: ExperimentalAgentConversationPreviewUnavailable;
     ExperimentalAgentConversationAcceptedOutput: ExperimentalAgentConversationAcceptedOutput;

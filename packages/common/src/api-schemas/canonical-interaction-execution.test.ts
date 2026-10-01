@@ -1,4 +1,4 @@
-import type { JsonObjectSchema } from '@llumiverse/conversation/schemas';
+import type { JsonObjectSchema, JsonValueSchema } from '@llumiverse/conversation/schemas';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
@@ -53,6 +53,60 @@ describe('experimental canonical interaction execution schemas', () => {
             retention: 'RESTRICTED',
             return_policy: { history: 'document' },
         });
+    });
+
+    it.each([
+        ['string', 'memory:input'],
+        ['zero', 0],
+        ['false', false],
+        ['null', null],
+        ['array', ['first', 2, false, null, { nested: true }]],
+        ['object', { prompt: 'continue', nested: [1, null] }],
+    ])('accepts and preserves canonical JSON interaction data: %s', (_label, data) => {
+        const request = {
+            initial_state: { type: 'new' as const },
+            retention: 'STANDARD' as const,
+            return_policy: { history: 'none' as const },
+            data,
+        };
+
+        expect(ExperimentalCanonicalInteractionExecutionRequestSchema.parse(request).data).toEqual(data);
+        expect(
+            ExperimentalCanonicalNamedInteractionExecutionRequestSchema.parse({
+                ...request,
+                interaction: 'test-interaction',
+            }).data,
+        ).toEqual(data);
+
+        const ajv = new Ajv2020({ strictSchema: false, allErrors: true });
+        const validate = ajv.compile({
+            components: { schemas: ApiSchemaComponents },
+            $ref: '#/components/schemas/ExperimentalCanonicalInteractionExecutionRequest',
+        });
+        expect(validate(request), JSON.stringify(validate.errors)).toBe(true);
+    });
+
+    it('publishes canonical interaction data as the authoritative recursive JSON value', () => {
+        expect(ApiSchemaComponents.ExperimentalCanonicalInteractionExecutionRequest).toMatchObject({
+            properties: { data: { $ref: '#/components/schemas/ConversationJsonValue' } },
+        });
+        expect(ApiSchemaComponents.ExperimentalCanonicalNamedInteractionExecutionRequest).toMatchObject({
+            properties: { data: { $ref: '#/components/schemas/ConversationJsonValue' } },
+        });
+        expectTypeOf<z.infer<typeof ExperimentalCanonicalInteractionExecutionRequestSchema>['data']>().toEqualTypeOf<
+            z.infer<typeof JsonValueSchema> | undefined
+        >();
+
+        for (const invalid of [Number.NaN, Number.POSITIVE_INFINITY, 1n, new Date('2026-10-01T00:00:00.000Z')]) {
+            expect(
+                ExperimentalCanonicalInteractionExecutionRequestSchema.safeParse({
+                    initial_state: { type: 'new' },
+                    retention: 'STANDARD',
+                    return_policy: { history: 'none' },
+                    data: invalid,
+                }).success,
+            ).toBe(false);
+        }
     });
 
     it.each([

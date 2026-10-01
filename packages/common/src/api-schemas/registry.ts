@@ -2001,6 +2001,11 @@ const AGENT_RUN_SCHEMAS = {
     SearchAgentRunsQuery: AgentRunSchemas.SearchAgentRunsQuerySchema,
     StreamAgentRunQuery: AgentRunSchemas.StreamAgentRunQuerySchema,
     ExperimentalAgentConversationStreamQuery: AgentRunSchemas.ExperimentalAgentConversationStreamQuerySchema,
+    ExperimentalAgentConversationSourceUninitialized:
+        AgentRunSchemas.ExperimentalAgentConversationSourceUninitializedSchema,
+    ExperimentalAgentConversationSourceInitialized:
+        AgentRunSchemas.ExperimentalAgentConversationSourceInitializedSchema,
+    ExperimentalAgentConversationSourceDescriptor: AgentRunSchemas.ExperimentalAgentConversationSourceDescriptorSchema,
     ExperimentalAgentConversationEvent: AgentRunSchemas.ExperimentalAgentConversationEventSchema,
     ExperimentalAgentConversationPreviewUnavailable:
         AgentRunSchemas.ExperimentalAgentConversationPreviewUnavailableSchema,
@@ -2787,6 +2792,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ExperimentalAgentConversationAcceptedOutputHistoryPage',
     'ExperimentalAgentConversationTranscriptQuery',
     'ExperimentalAgentConversationTranscriptPage',
+    'ExperimentalAgentConversationSourceUninitialized',
+    'ExperimentalAgentConversationSourceInitialized',
     'AvailableRunConversation',
     'UnavailableRunConversation',
     'UpdateInteractionConfigurationPayload',

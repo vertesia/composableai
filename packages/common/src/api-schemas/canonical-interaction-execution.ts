@@ -4,6 +4,7 @@ import {
     ConversationRefSchema,
     IdentifierSchema,
     JsonObjectSchema,
+    JsonValueSchema,
     TimestampSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
@@ -144,7 +145,7 @@ const canonicalExecutionRequestFields = {
     initial_state: ExperimentalCanonicalInteractionInitialStateSchema,
     retention: RunDataStorageLevelSchema,
     return_policy: ExperimentalCanonicalInteractionReturnPolicySchema,
-    data: JsonObjectSchema.optional(),
+    data: JsonValueSchema.optional(),
     config: ExperimentalCanonicalInteractionExecutionConfigurationSchema.optional(),
     result_schema: ExperimentalCanonicalInteractionResultSchemaInputSchema.optional(),
     turn_selection: ExperimentalCanonicalInteractionTurnSelectionSchema.optional(),

@@ -327,6 +327,12 @@ export type StreamAgentRunQuery = Wire.StreamAgentRunQuery;
 
 export type ExperimentalAgentConversationStreamQuery = Wire.ExperimentalAgentConversationStreamQuery;
 
+export type ExperimentalAgentConversationSourceUninitialized = Wire.ExperimentalAgentConversationSourceUninitialized;
+
+export type ExperimentalAgentConversationSourceInitialized = Wire.ExperimentalAgentConversationSourceInitialized;
+
+export type ExperimentalAgentConversationSourceDescriptor = Wire.ExperimentalAgentConversationSourceDescriptor;
+
 export type ExperimentalAgentConversationEvent = Wire.ExperimentalAgentConversationEvent;
 
 export type ExperimentalAgentConversationPreviewUnavailable = Wire.ExperimentalAgentConversationPreviewUnavailable;

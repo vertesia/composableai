@@ -408,6 +408,49 @@ describe('agent canonical conversation stream API contracts', () => {
         execution_run_id: 'execution:contract',
     };
 
+    it('publishes strict initialized and uninitialized canonical source descriptors', () => {
+        const base = {
+            api_version: '=20260930' as const,
+            agent_run_id: 'agent:contract',
+            scope: 'root' as const,
+        };
+        expect(
+            validateApiResponse('ExperimentalAgentConversationSourceDescriptor', {
+                ...base,
+                status: 'uninitialized',
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ExperimentalAgentConversationSourceDescriptor', {
+                ...base,
+                status: 'initialized',
+                contract_version: 'canonical-conversation-v1',
+                head: {
+                    format: 'llumiverse.conversation',
+                    schema_version: 0,
+                    experimental_revision: '2026-09-30.adoption.1',
+                    conversation_id: 'conversation:contract',
+                    revision: 3,
+                },
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ExperimentalAgentConversationSourceDescriptor', {
+                ...base,
+                status: 'initialized',
+                contract_version: 'canonical-conversation-v1',
+                head: {
+                    format: 'llumiverse.conversation',
+                    schema_version: 0,
+                    experimental_revision: 'unsupported',
+                    conversation_id: 'conversation:contract',
+                    revision: 3,
+                    content_hash: 'sha256:private',
+                },
+            }).valid,
+        ).toBe(false);
+    });
+
     it('publishes live draft events but excludes response acceptance from the generated component', () => {
         expect(
             validateApiResponse('ExperimentalAgentConversationEvent', {

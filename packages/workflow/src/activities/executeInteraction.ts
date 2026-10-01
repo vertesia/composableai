@@ -725,6 +725,14 @@ export async function executeCanonicalInteractionFromActivity(
         throw new Error('Canonical activity execution derives workflow identity from the active Temporal activity');
     }
     const { data: requestData, tags: userTags, workflow: _callerWorkflow, ...requestFields } = suppliedRequest;
+    const stableRequestData = requestData === undefined ? undefined : structuredClone(requestData);
+    if (
+        plan.include_previous_error &&
+        stableRequestData !== undefined &&
+        (stableRequestData === null || typeof stableRequestData !== 'object' || Array.isArray(stableRequestData))
+    ) {
+        throw new Error('Canonical include_previous_error requires object or undefined request data');
+    }
     const interactionName = requestFields.interaction;
     const reservedTagPrefix = WORKFLOW_RESERVED_TAG_PREFIXES.find((prefix) =>
         userTags?.some((tag) => tag.startsWith(prefix)),
@@ -784,13 +792,9 @@ export async function executeCanonicalInteractionFromActivity(
         previousError: CanonicalRetryState['previous_error'],
     ): { operationId: string; request: CanonicalWorkflowRequest } => {
         const includePreviousError = plan.include_previous_error && previousError !== undefined;
-        const data =
-            requestData === undefined && !includePreviousError
-                ? undefined
-                : {
-                      ...(requestData ?? {}),
-                      ...(includePreviousError ? { previous_error: previousError } : {}),
-                  };
+        const data = includePreviousError
+            ? { ...(stableRequestData as Record<string, unknown> | undefined), previous_error: previousError }
+            : stableRequestData;
         const effectiveRequestFields =
             serviceTierPolicy === FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY
                 ? {
