@@ -74,6 +74,37 @@ describe('AgentsApi canonical transcript', () => {
         expect(requests[0].headers.get('x-request-id')).toBe('request-1');
     });
 
+    it('forwards a tail window and exact revision-zero snapshot without inventing a cursor', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.test',
+            storeUrl: 'https://store.test',
+            fetch: (async (input: Request | string) => {
+                const request = input instanceof Request ? input : new Request(input);
+                requests.push(request);
+                return Response.json(page);
+            }) as typeof fetch,
+        });
+
+        await client.agents.getConversationTranscript('child/run', {
+            conversation_scope: 'workstream:launch-1',
+            workstream_id: 'node-1',
+            window: 'tail',
+            snapshot_conversation_id: 'conversation:one',
+            snapshot_revision: 0,
+            limit: 50,
+        });
+        expect(Object.fromEntries(new URL(requests[0].url).searchParams)).toEqual({
+            conversation_scope: 'workstream:launch-1',
+            workstream_id: 'node-1',
+            window: 'tail',
+            snapshot_conversation_id: 'conversation:one',
+            snapshot_revision: '0',
+            limit: '50',
+        });
+        expect(requests[0].headers.get('x-api-version')).toBe('=20260930');
+    });
+
     it('omits snapshot and cursor fields on an initial root transcript request', async () => {
         const urls: URL[] = [];
         const client = new VertesiaClient({

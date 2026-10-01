@@ -39,6 +39,7 @@ export interface CanonicalAgentHistoryWindow {
 export interface CanonicalAgentLiveContent {
     status: 'idle' | 'connecting' | 'ready' | 'error';
     draft_snapshot: CanonicalAgentDraftSnapshot;
+    draft_turn_id?: string;
     accepted_outputs: readonly CanonicalAcceptedAgentOutput[];
     /** Earlier live accepted outputs were discarded to enforce the local window bound. */
     accepted_gap_before: boolean;
@@ -251,6 +252,7 @@ export function canonicalAgentContentReducer(
                 ...state.live,
                 status: 'ready',
                 draft_snapshot: update.draft_snapshot ?? EMPTY_DRAFT_SNAPSHOT,
+                draft_turn_id: update.event.draft_turn_id,
                 reconnect_gap: update.event.type === 'stream_terminated' ? state.live.reconnect_gap : undefined,
                 error: undefined,
             },
@@ -293,6 +295,7 @@ export function canonicalAgentContentReducer(
             ...state.live,
             status: 'ready',
             draft_snapshot: accepted.draft_snapshot,
+            draft_turn_id: undefined,
             accepted_outputs: bounded.live,
             accepted_gap_before: state.live.accepted_gap_before || bounded.liveOverflow,
             error: undefined,

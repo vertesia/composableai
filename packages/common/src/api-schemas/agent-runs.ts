@@ -1753,10 +1753,20 @@ export const ExperimentalAgentConversationTranscriptQuerySchema = z
         workstream_id: z.string().min(1).max(512).optional(),
         snapshot_conversation_id: z.string().min(1).max(512).optional(),
         snapshot_revision: z.number().int().min(0).safe().optional(),
+        window: z.enum(['start', 'tail']).optional().meta({
+            description: 'Source-turn window: start (the default) pages forward; tail ends at the exact snapshot head.',
+        }),
         after_turn_id: IdentifierSchema.optional(),
         limit: z.number().int().min(1).max(100).optional(),
     })
     .superRefine((value, context) => {
+        if (value.window === 'tail' && value.after_turn_id !== undefined) {
+            context.addIssue({
+                code: 'custom',
+                message: 'A tail window cannot use a forward cursor',
+                path: ['after_turn_id'],
+            });
+        }
         if ((value.snapshot_conversation_id === undefined) !== (value.snapshot_revision === undefined)) {
             context.addIssue({
                 code: 'custom',
@@ -1780,6 +1790,11 @@ export const ExperimentalAgentConversationTranscriptQuerySchema = z
         id: 'ExperimentalAgentConversationTranscriptQuery',
         description: 'Selects a bounded canonical transcript window from one exact conversation snapshot.',
         allOf: [
+            {
+                if: { properties: { window: { const: 'tail' } }, required: ['window'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { not: { required: ['after_turn_id'] } },
+            },
             {
                 if: { required: ['snapshot_conversation_id'] },
                 // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.

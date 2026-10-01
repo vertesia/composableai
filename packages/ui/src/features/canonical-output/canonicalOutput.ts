@@ -1,7 +1,9 @@
 import type { ConversationAsset } from '@vertesia/common';
 
 /** Resolve only browser-displayable canonical asset locations; provider replay metadata is intentionally absent. */
-export function canonicalAssetSource(asset: ConversationAsset | undefined): string | undefined {
+export function canonicalAssetSource(
+    asset: Pick<ConversationAsset, 'storage' | 'mime_type' | 'media'> | undefined,
+): string | undefined {
     if (!asset) return undefined;
     if (asset.storage.type === 'inline_base64') {
         return `data:${asset.mime_type};base64,${asset.storage.data}`;

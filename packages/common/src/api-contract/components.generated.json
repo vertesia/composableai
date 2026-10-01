@@ -43399,6 +43399,14 @@
         "minimum": 0,
         "maximum": 9007199254740991
       },
+      "window": {
+        "type": "string",
+        "enum": [
+          "start",
+          "tail"
+        ],
+        "description": "Source-turn window: start (the default) pages forward; tail ends at the exact snapshot head."
+      },
       "after_turn_id": {
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
@@ -43410,6 +43418,25 @@
     },
     "additionalProperties": false,
     "allOf": [
+      {
+        "if": {
+          "properties": {
+            "window": {
+              "const": "tail"
+            }
+          },
+          "required": [
+            "window"
+          ]
+        },
+        "then": {
+          "not": {
+            "required": [
+              "after_turn_id"
+            ]
+          }
+        }
+      },
       {
         "if": {
           "required": [

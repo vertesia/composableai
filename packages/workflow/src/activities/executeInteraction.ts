@@ -318,15 +318,13 @@ function predecessorFromTags(tags: readonly string[] | undefined): string | unde
 export class CanonicalInteractionExecutionError extends ApplicationFailure {
     readonly errorCode?: string;
     readonly retryable?: boolean;
+    readonly result: EnhancedExperimentalCanonicalInteractionExecutionResult;
 
     override get name(): string {
         return 'CanonicalInteractionExecutionError';
     }
 
-    constructor(
-        interactionName: string,
-        readonly result: EnhancedExperimentalCanonicalInteractionExecutionResult,
-    ) {
+    constructor(interactionName: string, result: EnhancedExperimentalCanonicalInteractionExecutionResult) {
         const source = result.run.error;
         const type =
             source?.code === REQUIRED_TOOL_CALL_MISSING_ERROR_CODE
@@ -337,6 +335,13 @@ export class CanonicalInteractionExecutionError extends ApplicationFailure {
             type,
             source?.retryable === false,
         );
+        this.result = result;
+        Object.defineProperty(this, 'result', {
+            configurable: false,
+            enumerable: false,
+            value: result,
+            writable: false,
+        });
         this.retryable = source?.retryable;
         this.errorCode = source?.code;
     }
@@ -678,6 +683,13 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                 type: REQUIRED_TOOL_CALL_MISSING_ERROR_CODE,
                 nonRetryable: true,
             });
+        }
+
+        // The canonical activity helper has already classified this failure for Temporal. Preserve its stable type
+        // and retryability after the compatibility wrapper's policy overrides above have had a chance to apply.
+        // CanonicalInteractionExecutionError does not put its retained result in ApplicationFailure details.
+        if (isCanonicalInteractionExecutionError(error)) {
+            throw error;
         }
 
         if (isRetryable !== undefined) {

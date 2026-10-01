@@ -1,12 +1,22 @@
 import { readFileSync } from 'node:fs';
 import { CONVERSATION_STREAM_MAX_EVENT_BYTES } from '@llumiverse/conversation/streaming-runtime';
-import { describe, expect, it } from 'vitest';
-import { ExperimentalAgentConversationStreamEnvelopeSchema } from '../api-schemas/agent-runs.js';
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import {
+    ExperimentalAgentConversationSourceDescriptorSchema,
+    ExperimentalAgentConversationStreamEnvelopeSchema,
+    ExperimentalAgentConversationTranscriptPageSchema,
+} from '../api-schemas/agent-runs.js';
 import { ExperimentalCanonicalInteractionStreamEnvelopeSchema } from '../api-schemas/canonical-interaction-stream.js';
+import type {
+    ExperimentalAgentConversationSourceDescriptor,
+    ExperimentalAgentConversationTranscriptPage,
+} from '../store/agent-run.js';
 import {
     EXPERIMENTAL_CANONICAL_INTERACTION_STREAM_MAX_ENVELOPE_BYTES,
     parseConversationStreamEvent,
+    parseExperimentalAgentConversationSourceDescriptor,
     parseExperimentalAgentConversationStreamEnvelope,
+    parseExperimentalAgentConversationTranscriptPage,
     parseExperimentalCanonicalInteractionStreamEnvelope,
 } from './index.js';
 
@@ -209,5 +219,166 @@ describe('agent conversation stream browser runtime validator', () => {
                 receipt,
             }),
         ).toThrow('source does not match');
+    });
+});
+
+describe('canonical agent transcript and source browser validators', () => {
+    const source = { conversation_id: 'conversation:runtime', revision: 0 };
+    const turn = {
+        id: 'turn:user',
+        kind: 'user' as const,
+        status: 'completed' as const,
+        timestamps: { recorded_at: '2026-10-01T00:00:00.000Z' },
+        blocks: [{ id: 'block:user', type: 'text' as const, text: 'hello', format: 'plain' as const }],
+    };
+    const page: ExperimentalAgentConversationTranscriptPage = {
+        api_version: API_VERSION,
+        agent_run_id: RUN_ID,
+        scope: 'root',
+        snapshot: source,
+        fragment: {
+            format: 'llumiverse.conversation-transcript',
+            schema_version: 0,
+            experimental_revision: '2026-09-30.adoption.1',
+            source,
+            turns: [turn],
+            generations: {},
+            assets: {},
+            completeness: {
+                gap_before: false,
+                gap_after: false,
+                semantic_content: 'complete',
+                metadata: 'omitted',
+                provenance: 'omitted',
+                native_replay: 'omitted',
+                omitted_turns: [],
+                omitted_generations: [],
+                omitted_blocks: [],
+                omitted_assets: [],
+            },
+        },
+    };
+    const initialized = {
+        api_version: API_VERSION,
+        agent_run_id: RUN_ID,
+        scope: 'root' as const,
+        status: 'initialized' as const,
+        contract_version: 'canonical-conversation-v1' as const,
+        head: {
+            format: 'llumiverse.conversation' as const,
+            schema_version: 0 as const,
+            experimental_revision: '2026-09-30.adoption.1' as const,
+            ...source,
+        },
+    };
+
+    it('accepts schema-derived exact transcript pages and both source descriptor variants', () => {
+        expect(ExperimentalAgentConversationTranscriptPageSchema.safeParse(page).success).toBe(true);
+        expect(parseExperimentalAgentConversationTranscriptPage(page)).toBe(page);
+        const variants = [
+            { api_version: API_VERSION, agent_run_id: RUN_ID, scope: 'root', status: 'uninitialized' },
+            initialized,
+            { ...initialized, scope: 'workstream:launch-1', workstream_id: 'node-1' },
+        ];
+        for (const descriptor of variants) {
+            expect(ExperimentalAgentConversationSourceDescriptorSchema.safeParse(descriptor).success).toBe(true);
+            expect(parseExperimentalAgentConversationSourceDescriptor(descriptor)).toBe(descriptor);
+        }
+        expectTypeOf<
+            ReturnType<typeof parseExperimentalAgentConversationTranscriptPage>
+        >().toEqualTypeOf<ExperimentalAgentConversationTranscriptPage>();
+        expectTypeOf<
+            ReturnType<typeof parseExperimentalAgentConversationSourceDescriptor>
+        >().toEqualTypeOf<ExperimentalAgentConversationSourceDescriptor>();
+    });
+
+    it.each([
+        { ...page, api_version: '=unsupported' },
+        { ...page, snapshot: { ...source, revision: 1 } },
+        { ...page, fragment: { ...page.fragment, schema_version: 1 } },
+        { ...page, fragment: { ...page.fragment, experimental_revision: 'unsupported' } },
+        { ...page, fragment: { ...page.fragment, turns: [{ ...turn, kind: 'unknown' }] } },
+        { ...page, fragment: { ...page.fragment, turns: [{ ...turn, blocks: [{ ...turn.blocks[0], text: 42 }] }] } },
+        {
+            ...page,
+            fragment: {
+                ...page.fragment,
+                turns: [{ ...turn, blocks: [{ id: 'block:bad', type: 'json' }] }],
+            },
+        },
+        {
+            ...page,
+            fragment: { ...page.fragment, turns: [{ ...turn, blocks: [{ ...turn.blocks[0], provider_native: {} }] }] },
+        },
+        {
+            ...page,
+            fragment: {
+                ...page.fragment,
+                turns: [
+                    {
+                        ...turn,
+                        kind: 'tool',
+                        blocks: [
+                            {
+                                id: 'block:tool',
+                                type: 'tool_result',
+                                call_id: 'call:one',
+                                status: 'success',
+                                content: [{ id: 'block:nested', type: 'text', text: {}, format: 'plain' }],
+                            },
+                        ],
+                    },
+                ],
+            },
+        },
+    ])('rejects malformed exact transcript and nested turn/block input %#', (input) => {
+        expect(ExperimentalAgentConversationTranscriptPageSchema.safeParse(input).success).toBe(false);
+        expect(() => parseExperimentalAgentConversationTranscriptPage(input)).toThrow(TypeError);
+    });
+
+    it.each([
+        { ...initialized, api_version: '=unsupported' },
+        { ...initialized, contract_version: 'legacy' },
+        { ...initialized, head: { ...initialized.head, schema_version: 1 } },
+        { ...initialized, head: { ...initialized.head, experimental_revision: 'unsupported' } },
+        { ...initialized, head: { ...initialized.head, revision: -1 } },
+        { ...initialized, storage_path: 'private/snapshot.json' },
+    ])('rejects malformed exact source descriptors %#', (input) => {
+        expect(ExperimentalAgentConversationSourceDescriptorSchema.safeParse(input).success).toBe(false);
+        expect(() => parseExperimentalAgentConversationSourceDescriptor(input)).toThrow(TypeError);
+    });
+
+    it('permits a bounded transcript text larger than one provisional stream event', () => {
+        const largePage = {
+            ...page,
+            fragment: {
+                ...page.fragment,
+                turns: [
+                    {
+                        ...turn,
+                        blocks: [
+                            {
+                                ...turn.blocks[0],
+                                text: 'x'.repeat(CONVERSATION_STREAM_MAX_EVENT_BYTES + 1),
+                            },
+                        ],
+                    },
+                ],
+            },
+        };
+        expect(parseExperimentalAgentConversationTranscriptPage(largePage)).toBe(largePage);
+    });
+
+    it('rejects transcript accessors before evaluating them', () => {
+        let reads = 0;
+        const input = Object.defineProperty({}, 'fragment', {
+            enumerable: true,
+            get() {
+                reads += 1;
+                return page.fragment;
+            },
+        });
+        expect(() => parseExperimentalAgentConversationTranscriptPage(input)).toThrow('bounded JSON preflight');
+        expect(reads).toBe(0);
     });
 });

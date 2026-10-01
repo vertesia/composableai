@@ -19,6 +19,9 @@ import {
 export interface UseCanonicalAgentContentOptions {
     /** Internal opt-in. Disabled mode performs no canonical history or stream I/O. */
     enabled: boolean;
+    /** Transcript callers load persisted turns directly and only need this live suffix. */
+    loadAcceptedHistory?: boolean;
+    conversationId?: string;
     agentRunId: string;
     scope?: CanonicalConversationHeadScope;
     workstreamId?: string;
@@ -38,7 +41,7 @@ interface CanonicalHistoryCursor {
 }
 
 function sessionKey(options: UseCanonicalAgentContentOptions): string {
-    return `${options.agentRunId}\u0000${options.scope ?? ''}\u0000${options.workstreamId ?? ''}`;
+    return `${options.agentRunId}\u0000${options.scope ?? ''}\u0000${options.workstreamId ?? ''}\u0000${options.conversationId ?? ''}`;
 }
 
 function validateHistoryPage(
@@ -156,7 +159,7 @@ async function loadHistoryWindow(
 }
 
 export function useCanonicalAgentContent(client: VertesiaClient, options: UseCanonicalAgentContentOptions) {
-    const { agentRunId, enabled, scope, workstreamId } = options;
+    const { agentRunId, enabled, scope, workstreamId, loadAcceptedHistory = true, conversationId } = options;
     const [state, dispatch] = useReducer(canonicalAgentContentReducer, undefined, initialCanonicalAgentContentState);
     const stateRef = useRef(state);
     const sessionRef = useRef<CanonicalAgentContentSession | undefined>(undefined);
@@ -164,7 +167,13 @@ export function useCanonicalAgentContent(client: VertesiaClient, options: UseCan
 
     useEffect(() => {
         dispatch({ type: 'reset' });
-        const request = { enabled, agentRunId, scope, workstreamId } satisfies UseCanonicalAgentContentOptions;
+        const request = {
+            enabled,
+            agentRunId,
+            scope,
+            workstreamId,
+            conversationId,
+        } satisfies UseCanonicalAgentContentOptions;
         const key = sessionKey(request);
         if (!enabled) {
             sessionRef.current = undefined;
@@ -178,16 +187,33 @@ export function useCanonicalAgentContent(client: VertesiaClient, options: UseCan
         const dispatchIfCurrent = (action: CanonicalAgentContentAction) => {
             if (isCurrent()) dispatch(action);
         };
-        dispatch({ type: 'history_loading' });
+        if (loadAcceptedHistory) dispatch({ type: 'history_loading' });
         dispatch({ type: 'stream_connecting' });
 
-        void loadHistoryWindow(client, request, controller.signal, dispatchIfCurrent).catch((error: unknown) => {
-            if (isCurrent()) dispatch({ type: 'history_error', error });
-        });
+        if (loadAcceptedHistory)
+            void loadHistoryWindow(client, request, controller.signal, dispatchIfCurrent).catch((error: unknown) => {
+                if (isCurrent()) dispatch({ type: 'history_error', error });
+            });
         void client.agents
             .streamCanonicalConversation(
                 agentRunId,
                 (update) => {
+                    const envelope = update.type === 'accepted_output' ? update.envelope : update;
+                    if (
+                        envelope.api_version !== '=20260930' ||
+                        envelope.agent_run_id !== agentRunId ||
+                        (scope !== undefined && envelope.scope !== scope) ||
+                        envelope.workstream_id !== workstreamId ||
+                        (conversationId !== undefined &&
+                            update.type === 'accepted_output' &&
+                            update.envelope.source.conversation_id !== conversationId)
+                    ) {
+                        dispatchIfCurrent({
+                            type: 'stream_error',
+                            error: new Error('Canonical live output changed its exact source'),
+                        });
+                        return;
+                    }
                     dispatchIfCurrent({ type: 'stream_update', update });
                 },
                 {
@@ -204,10 +230,16 @@ export function useCanonicalAgentContent(client: VertesiaClient, options: UseCan
             controller.abort();
             if (sessionRef.current === session) sessionRef.current = undefined;
         };
-    }, [agentRunId, client, enabled, scope, workstreamId]);
+    }, [agentRunId, client, enabled, loadAcceptedHistory, scope, workstreamId, conversationId]);
 
     const loadNextHistory = useCallback(async (): Promise<void> => {
-        const request = { enabled, agentRunId, scope, workstreamId } satisfies UseCanonicalAgentContentOptions;
+        const request = {
+            enabled,
+            agentRunId,
+            scope,
+            workstreamId,
+            conversationId,
+        } satisfies UseCanonicalAgentContentOptions;
         const session = sessionRef.current;
         const history = stateRef.current.history;
         if (
@@ -238,9 +270,9 @@ export function useCanonicalAgentContent(client: VertesiaClient, options: UseCan
         } finally {
             session.loadingNext = false;
         }
-    }, [agentRunId, client, enabled, scope, workstreamId]);
+    }, [agentRunId, client, enabled, scope, workstreamId, conversationId]);
 
-    const currentKey = sessionKey({ enabled, agentRunId, scope, workstreamId });
+    const currentKey = sessionKey({ enabled, agentRunId, scope, workstreamId, conversationId });
     const session = sessionRef.current;
     const presentedState =
         enabled && session?.key === currentKey && session.client === client

@@ -9,7 +9,11 @@ import {
     preflightJsonInput,
 } from '@llumiverse/conversation/streaming-runtime';
 import type { ExperimentalCanonicalInteractionStreamEnvelope } from '../canonical-interaction-stream.js';
-import type { ExperimentalAgentConversationStreamEnvelope } from '../store/agent-run.js';
+import type {
+    ExperimentalAgentConversationSourceDescriptor,
+    ExperimentalAgentConversationStreamEnvelope,
+    ExperimentalAgentConversationTranscriptPage,
+} from '../store/agent-run.js';
 import validateCanonicalStreamWireValue from './canonical-stream-validator.generated.js';
 
 /** Fixed host wrapper budget above the canonical event's independently enforced byte limit. */
@@ -21,20 +25,27 @@ interface CanonicalStreamWireValues {
     ConversationStreamEvent: ConversationStreamEvent;
     ExperimentalCanonicalInteractionStreamEnvelope: ExperimentalCanonicalInteractionStreamEnvelope;
     ExperimentalAgentConversationStreamEnvelope: ExperimentalAgentConversationStreamEnvelope;
+    ExperimentalAgentConversationTranscriptPage: ExperimentalAgentConversationTranscriptPage;
+    ExperimentalAgentConversationSourceDescriptor: ExperimentalAgentConversationSourceDescriptor;
 }
 
 function parseCanonicalStreamWireValue<K extends keyof CanonicalStreamWireValues>(
     kind: K,
     input: unknown,
 ): CanonicalStreamWireValues[K] {
-    const preflight = preflightJsonInput(input, {
-        max_depth: 64,
-        max_nodes: 100_000,
-        max_bytes: EXPERIMENTAL_CANONICAL_INTERACTION_STREAM_MAX_ENVELOPE_BYTES,
-        max_string_bytes: EXPERIMENTAL_CANONICAL_INTERACTION_STREAM_MAX_ENVELOPE_BYTES,
-        max_array_length: 100_000,
-        max_object_properties: 1_024,
-    });
+    // Transcript projection uses the canonical JSON defaults, including its larger bounded snapshot budget.
+    // Stream wire values retain the smaller per-event limit.
+    const preflight =
+        kind === 'ExperimentalAgentConversationTranscriptPage'
+            ? preflightJsonInput(input)
+            : preflightJsonInput(input, {
+                  max_depth: 64,
+                  max_nodes: 100_000,
+                  max_bytes: EXPERIMENTAL_CANONICAL_INTERACTION_STREAM_MAX_ENVELOPE_BYTES,
+                  max_string_bytes: EXPERIMENTAL_CANONICAL_INTERACTION_STREAM_MAX_ENVELOPE_BYTES,
+                  max_array_length: 100_000,
+                  max_object_properties: 1_024,
+              });
     if (!preflight.success) throw new TypeError(`${kind} failed bounded JSON preflight`);
     if (!validateCanonicalStreamWireValue({ kind, value: input })) {
         throw new TypeError(`${kind} failed canonical API schema validation`);
@@ -82,6 +93,25 @@ export function parseExperimentalAgentConversationStreamEnvelope(
         throw new TypeError('Agent conversation stream accepted output source does not match its receipt');
     }
     return envelope;
+}
+
+export function parseExperimentalAgentConversationTranscriptPage(
+    input: unknown,
+): ExperimentalAgentConversationTranscriptPage {
+    const page = parseCanonicalStreamWireValue('ExperimentalAgentConversationTranscriptPage', input);
+    if (
+        page.fragment.source.conversation_id !== page.snapshot.conversation_id ||
+        page.fragment.source.revision !== page.snapshot.revision
+    ) {
+        throw new TypeError('Agent conversation transcript source does not match its pinned snapshot');
+    }
+    return page;
+}
+
+export function parseExperimentalAgentConversationSourceDescriptor(
+    input: unknown,
+): ExperimentalAgentConversationSourceDescriptor {
+    return parseCanonicalStreamWireValue('ExperimentalAgentConversationSourceDescriptor', input);
 }
 
 export const CanonicalConversationStreamRuntimeValidators: ConversationStreamRuntimeValidators = Object.freeze({

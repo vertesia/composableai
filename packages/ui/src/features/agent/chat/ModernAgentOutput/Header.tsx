@@ -43,6 +43,7 @@ export interface HeaderProps {
     isPlaybackEnabled?: boolean;
     onTogglePlayback?: () => void;
     onDownload?: () => void;
+    disableLegacyExport?: boolean;
     onExportFixture?: () => void;
     // onCopyRunId?: () => void;
     resetWorkflow?: () => void;
@@ -95,6 +96,7 @@ export default function Header({
     isPlaybackEnabled = false,
     onTogglePlayback,
     onDownload,
+    disableLegacyExport = false,
     onExportFixture,
     // onCopyRunId,
     resetWorkflow,
@@ -251,6 +253,7 @@ export default function Header({
                 isTerminal={isTerminal}
                 onClose={onClose}
                 onDownload={onDownload}
+                disableLegacyExport={disableLegacyExport}
                 onExportFixture={onExportFixture}
                 resetWorkflow={resetWorkflow}
                 onExportPdf={onExportPdf}
@@ -319,6 +322,7 @@ function MoreDropdown({
     isTerminal,
     onClose,
     onDownload,
+    disableLegacyExport = false,
     onExportFixture,
     resetWorkflow,
     onExportPdf,
@@ -333,6 +337,7 @@ function MoreDropdown({
     isTerminal: boolean;
     onClose?: () => void;
     onDownload?: () => void;
+    disableLegacyExport?: boolean;
     onExportFixture?: () => void;
     onCopyRunId?: () => void;
     resetWorkflow?: () => void;
@@ -432,17 +437,19 @@ function MoreDropdown({
                         <InfoIcon className="size-3.5 text-muted" /> {t('agent.details')}
                     </MenuItem>
                 )}
-                <MenuItem
-                    onClick={() => {
-                        if (onDownload) {
-                            onDownload();
-                        } else {
-                            void getConversationUrl(client, agentRunId).then((r) => window.open(r, '_blank'));
-                        }
-                    }}
-                >
-                    <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.downloadConversation')}
-                </MenuItem>
+                {!disableLegacyExport && (
+                    <MenuItem
+                        onClick={() => {
+                            if (onDownload) {
+                                onDownload();
+                            } else {
+                                void getConversationUrl(client, agentRunId).then((r) => window.open(r, '_blank'));
+                            }
+                        }}
+                    >
+                        <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.downloadConversation')}
+                    </MenuItem>
+                )}
                 {onExportPdf && (
                     <MenuItem onClick={onExportPdf}>
                         <DownloadCloudIcon className="size-3.5 text-muted" /> {t('agent.exportAsPdf')}

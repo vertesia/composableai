@@ -16,9 +16,12 @@ import type {
     AgentRunFeedbackResponseSchema,
     ExperimentalAgentConversationAcceptedOutputHistoryPageSchema,
     ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema,
+} from './agent-runs.js';
+import {
+    AgentRunAccessQuerySchema,
+    ExperimentalAgentConversationTranscriptPageSchema,
     ExperimentalAgentConversationTranscriptQuerySchema,
 } from './agent-runs.js';
-import { AgentRunAccessQuerySchema, ExperimentalAgentConversationTranscriptPageSchema } from './agent-runs.js';
 import { validateApiRequest, validateApiResponse } from './registry.js';
 
 const turnEvaluation: TurnEvaluationEvent = {
@@ -588,6 +591,31 @@ describe('agent canonical conversation stream API contracts', () => {
                 snapshot: { ...fragment.source, revision: fragment.source.revision + 1 },
             }).success,
         ).toBe(false);
+    });
+
+    it('enforces start and tail window rules in both the authored and published query contracts', () => {
+        const pin = { snapshot_conversation_id: 'conversation:tail', snapshot_revision: 0 };
+        for (const query of [
+            {},
+            { window: 'start' },
+            { window: 'tail' },
+            { ...pin, window: 'tail', limit: 1 },
+            { ...pin, window: 'start', after_turn_id: 'turn:one' },
+        ]) {
+            expect(ExperimentalAgentConversationTranscriptQuerySchema.safeParse(query).success).toBe(true);
+            expect(validateApiRequest('ExperimentalAgentConversationTranscriptQuery', query).valid).toBe(true);
+        }
+        for (const query of [
+            { ...pin, window: 'tail', after_turn_id: 'turn:one' },
+            { window: 'tail', snapshot_revision: 0 },
+            { window: 'tail', snapshot_conversation_id: pin.snapshot_conversation_id },
+            { window: 'newest' },
+            { window: 'tail', limit: 0 },
+            { window: 'tail', limit: 101 },
+        ]) {
+            expect(ExperimentalAgentConversationTranscriptQuerySchema.safeParse(query).success).toBe(false);
+            expect(validateApiRequest('ExperimentalAgentConversationTranscriptQuery', query).valid).toBe(false);
+        }
     });
 
     it('derives transcript request and page types from their runtime schemas', () => {

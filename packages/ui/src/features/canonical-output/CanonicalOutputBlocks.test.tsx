@@ -105,6 +105,55 @@ afterEach(() => {
 });
 
 describe('CanonicalAcceptedOutput', () => {
+    it('honors markdown links, tables and fenced code using the shared safe renderer', () => {
+        const { container } = renderAcceptedOutput(
+            fragment([
+                {
+                    id: 'markdown',
+                    type: 'text',
+                    format: 'markdown',
+                    text: '**Summary**\n\n[Source](https://example.com/report)\n\n| Name | Count |\n| --- | --- |\n| Items | 2 |\n\n```typescript\nconst count = 2;\n```',
+                },
+            ]),
+        );
+        expect(container.querySelector('strong')?.textContent).toBe('Summary');
+        expect(screen.getByRole('link', { name: 'Source' }).getAttribute('href')).toBe('https://example.com/report');
+        expect(screen.getByRole('table')).toBeTruthy();
+        expect(container.querySelector('pre code')?.textContent).toContain('const count = 2;');
+    });
+
+    it('keeps plain text literal even when it contains markdown or HTML syntax', () => {
+        const text = '**literal** [not a link](https://example.com) <script>alert(1)</script>';
+        const { container } = renderAcceptedOutput(fragment([{ id: 'plain', type: 'text', format: 'plain', text }]));
+        expect(container.querySelector('pre')?.textContent).toBe(text);
+        expect(container.querySelector('strong, a, script')).toBeNull();
+    });
+
+    it('renders explicit code literally without interpreting embedded fence or link syntax', () => {
+        const text = 'const label = "**literal**";\n~~~~\n[unsafe](javascript:alert(1))';
+        const { container } = renderAcceptedOutput(
+            fragment([{ id: 'code', type: 'text', format: 'code', language: 'typescript', text }]),
+        );
+        expect(container.querySelector('pre code')?.textContent).toBe(`${text}\n`);
+        expect(container.querySelector('pre code')?.className).toContain('language-typescript');
+        expect(container.querySelector('strong, a')).toBeNull();
+    });
+
+    it('strips unsafe markdown URL schemes and never mounts raw script markup', () => {
+        const { container } = renderAcceptedOutput(
+            fragment([
+                {
+                    id: 'unsafe',
+                    type: 'text',
+                    format: 'markdown',
+                    text: '[unsafe](javascript:alert%281%29)\n\n<script>alert(1)</script>',
+                },
+            ]),
+        );
+        expect(container.querySelector('a')?.getAttribute('href') ?? '').not.toMatch(/^javascript:/i);
+        expect(container.querySelector('script')).toBeNull();
+    });
+
     it('renders canonical text, JSON, and media blocks directly', () => {
         const image: ConversationOutputAsset = {
             id: 'asset-1',

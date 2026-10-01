@@ -6997,6 +6997,7 @@ export type ExperimentalAgentConversationTranscriptQuery = {
     workstream_id?: string | undefined;
     snapshot_conversation_id?: string | undefined;
     snapshot_revision?: number | undefined;
+    window?: 'start' | 'tail' | undefined;
     after_turn_id?: string | undefined;
     limit?: number | undefined;
 };

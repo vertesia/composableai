@@ -457,7 +457,71 @@ describe('executeInteraction retryability', () => {
         } satisfies Partial<ApplicationFailure>);
     });
 
-    it('preserves required-tool recovery type through the compatibility activity wrapper', async () => {
+    it.each([
+        ['retryable', true, false],
+        ['non-retryable', false, true],
+        ['unspecified', undefined, false],
+    ] as const)(
+        'preserves a canonical %s failure without serializing its retained result as details',
+        async (_label, retryable, nonRetryable) => {
+            const failed = canonicalResult({
+                id: 'private-retained-run-id',
+                status: ExecutionRunStatus.failed,
+                generationStatus: 'failed',
+                acceptedOutput: false,
+                error: {
+                    message: 'canonical execution failed',
+                    code: 'PROVIDER_STREAM_FAILED',
+                    ...(retryable === undefined ? {} : { retryable }),
+                },
+            });
+            const canonicalError = new CanonicalInteractionExecutionError('testInteraction', failed);
+            await mockInteractionError(canonicalError);
+
+            let caught: unknown;
+            try {
+                await testEnv.run(executeInteraction, createPayload());
+                expect.unreachable('expected canonical interaction failure');
+            } catch (error) {
+                caught = error;
+            }
+
+            expect(caught).toBe(canonicalError);
+            expect(caught).toMatchObject({
+                name: 'CanonicalInteractionExecutionError',
+                type: 'CanonicalInteractionExecutionError',
+                nonRetryable,
+            } satisfies Partial<ApplicationFailure>);
+            expect((caught as ApplicationFailure).details).toBeUndefined();
+            expect(canonicalError.result).toBe(failed);
+            expect(Object.keys(canonicalError)).not.toContain('result');
+            expect(JSON.stringify(canonicalError)).not.toContain('private-retained-run-id');
+        },
+    );
+
+    it('applies input-validation policy before preserving a canonical failure', async () => {
+        const failed = canonicalResult({
+            status: ExecutionRunStatus.failed,
+            generationStatus: 'failed',
+            acceptedOutput: false,
+            error: {
+                message: 'Failed to validate merged prompt schema',
+                code: 'PROVIDER_STREAM_FAILED',
+                retryable: true,
+            },
+        });
+        const canonicalError = new CanonicalInteractionExecutionError('testInteraction', failed);
+        await mockInteractionError(canonicalError);
+
+        const failure = testEnv.run(executeInteraction, createPayload());
+        await expect(failure).rejects.not.toBe(canonicalError);
+        await expect(failure).rejects.toMatchObject({
+            type: 'ActivityParamInvalidError',
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+    });
+
+    it('preserves required-tool recovery type for generic compatibility activity failures', async () => {
         await mockInteractionError(
             Object.assign(new Error('required tool call missing'), {
                 retryable: false,
@@ -466,6 +530,28 @@ describe('executeInteraction retryability', () => {
         );
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            type: 'RequiredToolCallMissingError',
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+    });
+
+    it('applies required-tool policy before preserving a canonical failure', async () => {
+        const failed = canonicalResult({
+            status: ExecutionRunStatus.failed,
+            generationStatus: 'failed',
+            acceptedOutput: false,
+            error: {
+                message: 'required tool call missing',
+                code: 'RequiredToolCallMissingError',
+                retryable: true,
+            },
+        });
+        const canonicalError = new CanonicalInteractionExecutionError('testInteraction', failed);
+        await mockInteractionError(canonicalError);
+
+        const failure = testEnv.run(executeInteraction, createPayload());
+        await expect(failure).rejects.not.toBe(canonicalError);
+        await expect(failure).rejects.toMatchObject({
             type: 'RequiredToolCallMissingError',
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
