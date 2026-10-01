@@ -18,6 +18,7 @@ import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import { normalizeDirectives } from './normalizeDirectives';
 import { preprocessMathDelimiters } from './preprocessMathDelimiters';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';
+import { remarkRestoreMaskedDollars } from './remarkRestoreMaskedDollars';
 
 type MarkdownTree = Parameters<typeof visit>[0];
 type MarkdownNode = { value?: unknown };
@@ -27,7 +28,7 @@ type RehypePluginList = NonNullable<React.ComponentProps<typeof Markdown>['rehyp
 type RehypePlugin = RehypePluginList[number];
 
 // A `$` that the math preprocessor left unescaped — the only way remark-math can produce a math
-// node. Currency is escaped to `\$` by `preprocessMathDelimiters`, so it does not match.
+// node. Currency is escaped to `\$` (or masked) by `preprocessMathDelimiters`, so it does not match.
 const MATH_DELIMITER_REGEX = /(?:^|[^\\])\$/;
 const NO_REHYPE_PLUGINS: RehypePluginList = [];
 
@@ -145,7 +146,8 @@ export interface MarkdownRendererProps {
     onProposalSubmit?: (response: string) => void;
     /**
      * Keep parser source positions aligned with `children` by skipping source-changing
-     * normalization. Editing surfaces use this when node offsets are part of an anchor.
+     * normalization; math delimiters are still disambiguated, in a length-preserving way.
+     * Editing surfaces use this when node offsets are part of an anchor.
      */
     preserveSourcePositions?: boolean;
 }
@@ -173,7 +175,7 @@ export function MarkdownRenderer({
     const normalizedMarkdown = React.useMemo(
         () =>
             preserveSourcePositions
-                ? children
+                ? preprocessMathDelimiters(children, { preserveLength: true })
                 : normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))),
         [children, preserveSourcePositions],
     );
@@ -192,11 +194,14 @@ export function MarkdownRenderer({
             remarkMath,
             ...remarkPlugins,
         ];
+        if (preserveSourcePositions) {
+            result.push(remarkRestoreMaskedDollars);
+        }
         if (removeComments) {
             result.push(remarkRemoveComments);
         }
         return result;
-    }, [remarkPlugins, removeComments]);
+    }, [remarkPlugins, removeComments, preserveSourcePositions]);
 
     // Rehype plugins (HTML processing, including KaTeX for math)
     const rehypePluginsArray = useRehypePlugins(normalizedMarkdown);

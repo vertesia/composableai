@@ -50,3 +50,34 @@ describe('MarkdownRenderer colon text', () => {
         expect(container.querySelector('hr.md-pagebreak')).not.toBeNull();
     });
 });
+
+describe('MarkdownRenderer math delimiters', () => {
+    const currency = 'Totals ($49,137,431.65) equal the sub-totals ($49,137,431.65).';
+
+    it.each([false, true])('renders currency as text when preserveSourcePositions=%s', (preserveSourcePositions) => {
+        const { container } = render(
+            <MarkdownRenderer preserveSourcePositions={preserveSourcePositions}>{currency}</MarkdownRenderer>,
+        );
+
+        expect(container.querySelector('code')).toBeNull();
+        expect(container.querySelector('p')?.textContent).toBe(currency);
+    });
+
+    it.each([false, true])(
+        'renders math, \\$ in math and currency in links when preserveSourcePositions=%s',
+        (preserveSourcePositions) => {
+            const { container } = render(
+                <MarkdownRenderer preserveSourcePositions={preserveSourcePositions}>
+                    {'Cost $500M and $600M where $P = \\$2$, see [$100M and $200M](https://example.com/$100M)'}
+                </MarkdownRenderer>,
+            );
+
+            const math = container.querySelectorAll('code');
+            expect(math).toHaveLength(1);
+            expect(math[0].textContent).toBe('P = \\text{\\textdollar}2');
+            expect(container.querySelector('p')?.textContent).toContain('Cost $500M and $600M where');
+            expect(container.querySelector('a')?.textContent).toBe('$100M and $200M');
+            expect(container.querySelector('a')?.getAttribute('href')).toBe('https://example.com/$100M');
+        },
+    );
+});

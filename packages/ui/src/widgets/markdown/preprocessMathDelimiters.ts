@@ -32,7 +32,16 @@ const RE_TRAILING_SPACE = /\s$/; // space before closing $
 const RE_TRAILING_OPERATOR = /[+*/-]$/; // ends with bare operator
 const RE_ION_NOTATION = /\^[+-]$/; // except ^+ or ^- (ion notation)
 const RE_LEADING_AMOUNT = /^\d/; // opens on a figure, as in $49,137,431.65
-const RE_PROSE_WORD = /(?<![\\a-zA-Z])[a-zA-Z]{2,}/; // a word that is not a \command
+// standalone word: not a \command, not glued to a coefficient or variable ($2xy$, $2ab + 3cd$)
+const RE_PROSE_WORD = /(?<![\\\w])[a-zA-Z]{2,}(?!\w)/g;
+const MIN_PROSE_WORDS = 2;
+
+/**
+ * Same-length stand-in for a `$` the preprocessor disambiguated, used when source offsets must be
+ * preserved. It is a currency symbol (Unicode Sc), so markdown flanking rules treat it like `$`;
+ * `remarkRestoreMaskedDollars` turns it back into `$` after parsing.
+ */
+export const MASKED_DOLLAR = '\u20B0';
 
 /**
  * Returns true if content between `$...$` contains LaTeX structural patterns.
@@ -54,7 +63,7 @@ function hasCurrencyPattern(content: string): boolean {
     if (RE_LEADING_SPACE.test(content)) return true;
     if (RE_TRAILING_SPACE.test(content)) return true;
     if (RE_TRAILING_OPERATOR.test(content) && !RE_ION_NOTATION.test(content)) return true;
-    if (RE_LEADING_AMOUNT.test(content) && RE_PROSE_WORD.test(content)) return true;
+    if (RE_LEADING_AMOUNT.test(content) && (content.match(RE_PROSE_WORD)?.length ?? 0) >= MIN_PROSE_WORDS) return true;
     return false;
 }
 
@@ -86,11 +95,21 @@ function inlineMathContent(text: string, openPos: number, closePos: number): str
     return content;
 }
 
+interface DollarReplacements {
+    /** Replaces a currency `$` so remark-math does not pair it */
+    currency: string;
+    /** Replaces `\$` inside a LaTeX span */
+    escapedInLatex: string;
+}
+
+const ESCAPING: DollarReplacements = { currency: '\\$', escapedInLatex: '\\text{\\textdollar}' };
+const MASKING: DollarReplacements = { currency: MASKED_DOLLAR, escapedInLatex: `\\${MASKED_DOLLAR}` };
+
 /**
  * Classify `$` positions in a text segment, escape currency dollar signs,
  * and normalize `\$` inside LaTeX spans for remark-math compatibility.
  */
-function processTextSegment(text: string): string {
+function processTextSegment(text: string, replacements: DollarReplacements): string {
     const positions = findSingleDollarPositions(text);
     if (positions.length < 2) return text;
 
@@ -176,14 +195,14 @@ function processTextSegment(text: string): string {
 
         if (escPos < spanOpen) {
             if (escPos > segStart) parts.push(text.slice(segStart, escPos));
-            parts.push('\\$');
+            parts.push(replacements.currency);
             segStart = escPos + 1;
             escIdx++;
         } else {
             const [open, close] = latexSpans[spanIdx];
             if (open > segStart) parts.push(text.slice(segStart, open));
             const spanContent = text.slice(open, close + 1);
-            parts.push(spanContent.replace(ESCAPED_DOLLAR_REGEX, '\\text{\\textdollar}'));
+            parts.push(spanContent.replace(ESCAPED_DOLLAR_REGEX, replacements.escapedInLatex));
             segStart = close + 1;
             while (escIdx < escapePositions.length && escapePositions[escIdx] <= close) escIdx++;
             spanIdx++;
@@ -197,18 +216,27 @@ function processTextSegment(text: string): string {
 /**
  * Process text segments outside inline code spans.
  */
-function processSkippingInlineCode(text: string): string {
+function processSkippingInlineCode(text: string, replacements: DollarReplacements): string {
     const parts: string[] = [];
     let lastIndex = 0;
 
     for (const match of text.matchAll(INLINE_CODE_REGEX)) {
-        parts.push(processTextSegment(text.slice(lastIndex, match.index)));
+        parts.push(processTextSegment(text.slice(lastIndex, match.index), replacements));
         parts.push(match[0]);
         lastIndex = match.index + match[0].length;
     }
 
-    parts.push(processTextSegment(text.slice(lastIndex)));
+    parts.push(processTextSegment(text.slice(lastIndex), replacements));
     return parts.join('');
+}
+
+export interface PreprocessMathDelimitersOptions {
+    /**
+     * Keep the output the same length as the input, so parser offsets still index into the
+     * original markdown. Disambiguated `$` become `MASKED_DOLLAR` instead of `\$`; pair with
+     * `remarkRestoreMaskedDollars`. Input that already contains `MASKED_DOLLAR` is returned as is.
+     */
+    preserveLength?: boolean;
 }
 
 /**
@@ -217,20 +245,24 @@ function processSkippingInlineCode(text: string): string {
  * Classification priority: LaTeX (preserve) > currency (escape) > uncertain (preserve).
  * Skips fenced code blocks and inline code spans.
  */
-export function preprocessMathDelimiters(markdown: string): string {
+export function preprocessMathDelimiters(markdown: string, options: PreprocessMathDelimitersOptions = {}): string {
     if (!markdown?.includes('$')) {
         return markdown;
     }
+    if (options.preserveLength && markdown.includes(MASKED_DOLLAR)) {
+        return markdown;
+    }
+    const replacements = options.preserveLength ? MASKING : ESCAPING;
 
     const parts: string[] = [];
     let lastIndex = 0;
 
     for (const match of markdown.matchAll(FENCED_CODE_BLOCK_REGEX)) {
-        parts.push(processSkippingInlineCode(markdown.slice(lastIndex, match.index)));
+        parts.push(processSkippingInlineCode(markdown.slice(lastIndex, match.index), replacements));
         parts.push(match[0]);
         lastIndex = match.index + match[0].length;
     }
 
-    parts.push(processSkippingInlineCode(markdown.slice(lastIndex)));
+    parts.push(processSkippingInlineCode(markdown.slice(lastIndex), replacements));
     return parts.join('');
 }

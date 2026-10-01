@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { preprocessMathDelimiters } from './preprocessMathDelimiters';
+import { MASKED_DOLLAR, preprocessMathDelimiters } from './preprocessMathDelimiters';
 
 describe('preprocessMathDelimiters', () => {
     it('preserves LaTeX patterns (commands, subscripts, superscripts, braces)', () => {
@@ -37,6 +37,13 @@ describe('preprocessMathDelimiters', () => {
         expect(preprocessMathDelimiters('**−$10,710** in lost revenue with a **−$6,154.50** net drop')).toBe(
             '**−\\$10,710** in lost revenue with a **−\\$6,154.50** net drop',
         );
+    });
+
+    it('preserves number-leading math whose letters are variables, not prose words', () => {
+        expect(preprocessMathDelimiters('$2xy$')).toBe('$2xy$');
+        expect(preprocessMathDelimiters('$2ab + 3cd$')).toBe('$2ab + 3cd$');
+        expect(preprocessMathDelimiters('so $2xy + 3ab$ holds')).toBe('so $2xy + 3ab$ holds');
+        expect(preprocessMathDelimiters('$3 \\cdot ab$')).toBe('$3 \\cdot ab$');
     });
 
     it('preserves uncertain content as fallback', () => {
@@ -97,5 +104,28 @@ describe('preprocessMathDelimiters', () => {
         expect(result).toContain('$sales = x*e^{y}$');
         expect(result).toContain('$$variance = x*v/2*e^(y-y`)$$');
         expect(result).toContain('\\$500M');
+    });
+
+    describe('preserveLength', () => {
+        const preserve = (markdown: string) => preprocessMathDelimiters(markdown, { preserveLength: true });
+
+        it('masks currency with a same-length stand-in instead of escaping it', () => {
+            const input = 'between $100M and $500M, summed ($49,137,431.65) equals the sub-totals ($49,137,431.65).';
+            const result = preserve(input);
+            expect(result).toHaveLength(input.length);
+            expect(result).not.toContain('$');
+            expect(result.replaceAll(MASKED_DOLLAR, '$')).toBe(input);
+        });
+
+        it('masks \\$ inside LaTeX spans without changing length', () => {
+            const input = 'where $P = \\$2,847,500$ end';
+            expect(preserve(input)).toBe(`where $P = \\${MASKED_DOLLAR}2,847,500$ end`);
+        });
+
+        it('leaves LaTeX and input already containing the stand-in untouched', () => {
+            expect(preserve('$x = \\frac{1}{2}$')).toBe('$x = \\frac{1}{2}$');
+            const input = `${MASKED_DOLLAR} then $100M and $500M`;
+            expect(preserve(input)).toBe(input);
+        });
     });
 });
