@@ -92,9 +92,35 @@ class UserSession {
             if (!token) {
                 throw new Error('No token available');
             }
-            this.authToken = jwtDecode(token) as unknown as AuthTokenPayload;
+            this.adoptToken(token);
             return token;
         });
+    }
+
+    /**
+     * Adopt a token refreshed for this session. A token for another account or project means the
+     * scope moved under the rendered view, which would then mix data from both: reload so the view
+     * starts over in one scope, and fail the call so nothing is sent with the other scope's token.
+     */
+    private adoptToken(token: string): AuthTokenPayload {
+        const next = jwtDecode<AuthTokenPayload>(token);
+        const current = this.authToken;
+        // An account-only session gaining a project rendered no project data, so it has nothing to mix.
+        const projectChanged = !!current?.project && current.project.id !== next.project?.id;
+        if (current && (current.account?.id !== next.account?.id || projectChanged)) {
+            Env.logger.warn('Auth token scope changed under the session; reloading', {
+                vertesia: {
+                    account_id: current.account?.id,
+                    project_id: current.project?.id,
+                    next_account_id: next.account?.id,
+                    next_project_id: next.project?.id,
+                },
+            });
+            location.reload();
+            throw new Error('The session account or project changed; reloading');
+        }
+        this.authToken = next;
+        return next;
     }
 
     /**
@@ -118,9 +144,9 @@ class UserSession {
         if (!token) {
             throw new Error('No token available');
         }
-        this.authToken = jwtDecode(token) as unknown as AuthTokenPayload;
+        const payload = this.adoptToken(token);
         this.setSession?.(this.clone());
-        return this.authToken;
+        return payload;
     }
 
     signOut() {
