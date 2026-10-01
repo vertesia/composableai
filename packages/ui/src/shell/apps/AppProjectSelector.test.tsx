@@ -50,11 +50,11 @@ vi.mock('@vertesia/ui/core', () => ({
 const { AppProjectSelector } = await import('./AppProjectSelector');
 
 describe('AppProjectSelector', () => {
-    const reload = vi.fn();
+    const assign = vi.fn();
 
     beforeEach(() => {
         session.project = { id: 'project-a' };
-        vi.stubGlobal('location', { reload });
+        vi.stubGlobal('location', { href: 'https://app.example.test/apps/app?tab=runs', assign });
     });
 
     afterEach(() => {
@@ -76,12 +76,12 @@ describe('AppProjectSelector', () => {
         expect(select().value).toBe('project-b');
     });
 
-    it('reloads into the picked project', () => {
+    it('loads the page in the picked project, overriding configured defaults through the URL', () => {
         render(<AppProjectSelector app={{ name: 'app' }} />);
         fireEvent.change(select(), { target: { value: 'project-b' } });
 
         expect(rememberScopeSelection).toHaveBeenCalledWith('account-1', 'project-b');
-        expect(reload).toHaveBeenCalledOnce();
+        expect(assign).toHaveBeenCalledWith('https://app.example.test/apps/app?tab=runs&a=account-1&p=project-b');
     });
 
     it('does nothing when the current project is picked again', () => {
@@ -91,7 +91,7 @@ describe('AppProjectSelector', () => {
         fireEvent.change(select(), { target: { value: 'project-a' } });
 
         expect(onChange).not.toHaveBeenCalled();
-        expect(reload).not.toHaveBeenCalled();
+        expect(assign).not.toHaveBeenCalled();
     });
 
     it('keeps showing the session project when a handler takes over the switch', () => {
@@ -100,7 +100,7 @@ describe('AppProjectSelector', () => {
         fireEvent.change(select(), { target: { value: 'project-b' } });
 
         expect(onChange).toHaveBeenCalledWith(projects[1]);
-        expect(reload).not.toHaveBeenCalled();
+        expect(assign).not.toHaveBeenCalled();
         expect(select().value).toBe('project-a');
     });
 
@@ -109,6 +109,6 @@ describe('AppProjectSelector', () => {
         fireEvent.change(select(), { target: { value: 'project-b' } });
 
         expect(rememberScopeSelection).toHaveBeenCalledWith('account-1', 'project-b');
-        expect(reload).toHaveBeenCalledOnce();
+        expect(assign).toHaveBeenCalledOnce();
     });
 });

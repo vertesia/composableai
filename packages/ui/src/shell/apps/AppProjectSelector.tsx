@@ -11,7 +11,7 @@ interface AppProjectSelectorProps {
 
 /**
  * Picks the project an app runs in. The selection always shows the session's project: picking
- * another one reloads the page into it (unless `onChange` handles the switch itself), so the view
+ * another one loads the page in it (unless `onChange` handles the switch itself), so the view
  * never renders one project's data under another project's name.
  */
 export function AppProjectSelector({ app, onChange, placeholder = 'Select Project' }: AppProjectSelectorProps) {
@@ -29,7 +29,11 @@ export function AppProjectSelector({ app, onChange, placeholder = 'Select Projec
             return;
         }
         rememberScopeSelection(selected.account, selected.id);
-        location.reload();
+        // Explicit URL scope, so the pick also overrides configured workspace defaults on the next load.
+        const url = new URL(location.href);
+        url.searchParams.set('a', selected.account);
+        url.searchParams.set('p', selected.id);
+        location.assign(url.toString());
     };
 
     if (error) {
