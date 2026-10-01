@@ -16361,6 +16361,16 @@
           }
         ]
       },
+      "actor_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
       "details.pipeline": {
         "anyOf": [
           {
@@ -16419,7 +16429,8 @@
     "enum": [
       "resource_id",
       "request_id",
-      "principal_id"
+      "principal_id",
+      "actor_id"
     ]
   },
   "AuditAggregationOperation": {
@@ -16450,6 +16461,7 @@
       "provider",
       "project_id",
       "principal_id",
+      "actor_id",
       "details.pipeline",
       "details.verdict",
       "details.workflow_type",

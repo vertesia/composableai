@@ -40,6 +40,7 @@ export const AuditAggregationDimensionMapSchema = z
         provider: z.string().nullable().optional(),
         project_id: z.string().nullable().optional(),
         principal_id: z.string().nullable().optional(),
+        actor_id: z.string().nullable().optional(),
         'details.pipeline': z.string().nullable().optional(),
         'details.verdict': z.string().nullable().optional(),
         'details.workflow_type': z.string().nullable().optional(),
@@ -49,7 +50,7 @@ export const AuditAggregationDimensionMapSchema = z
     .meta({ id: 'AuditAggregationDimensionMap' });
 
 export const AuditAggregationDistinctFieldSchema = z
-    .enum(['resource_id', 'request_id', 'principal_id'])
+    .enum(['resource_id', 'request_id', 'principal_id', 'actor_id'])
     .meta({ id: 'AuditAggregationDistinctField' });
 
 export const AuditAggregationOperationSchema = z
