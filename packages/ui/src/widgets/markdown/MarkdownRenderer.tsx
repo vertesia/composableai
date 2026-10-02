@@ -16,8 +16,9 @@ import { MarkdownImage, type MarkdownImageProps } from './MarkdownImage';
 import { MarkdownLink, type MarkdownLinkProps } from './MarkdownLink';
 import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import { normalizeDirectives } from './normalizeDirectives';
-import { preprocessMathDelimiters } from './preprocessMathDelimiters';
+import { maskMathDelimiters, preprocessMathDelimiters } from './preprocessMathDelimiters';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';
+import { remarkRestoreMaskedDollars } from './remarkRestoreMaskedDollars';
 
 type MarkdownTree = Parameters<typeof visit>[0];
 type MarkdownNode = { value?: unknown };
@@ -27,7 +28,8 @@ type RehypePluginList = NonNullable<React.ComponentProps<typeof Markdown>['rehyp
 type RehypePlugin = RehypePluginList[number];
 
 // A `$` that the math preprocessor left unescaped — the only way remark-math can produce a math
-// node. Currency is escaped to `\$` by `preprocessMathDelimiters`, so it does not match.
+// node. Currency is escaped to `\$` by `preprocessMathDelimiters` (or masked by
+// `maskMathDelimiters`), so it does not match.
 const MATH_DELIMITER_REGEX = /(?:^|[^\\])\$/;
 const NO_REHYPE_PLUGINS: RehypePluginList = [];
 
@@ -145,7 +147,8 @@ export interface MarkdownRendererProps {
     onProposalSubmit?: (response: string) => void;
     /**
      * Keep parser source positions aligned with `children` by skipping source-changing
-     * normalization. Editing surfaces use this when node offsets are part of an anchor.
+     * normalization; math delimiters are still disambiguated, in a length-preserving way.
+     * Editing surfaces use this when node offsets are part of an anchor.
      */
     preserveSourcePositions?: boolean;
 }
@@ -170,18 +173,20 @@ export function MarkdownRenderer({
     preserveSourcePositions = false,
 }: MarkdownRendererProps) {
     const codeBlockRegistry = useCodeBlockRendererRegistry();
-    const normalizedMarkdown = React.useMemo(
+    const { markdown: normalizedMarkdown, mask } = React.useMemo(
         () =>
             preserveSourcePositions
-                ? children
-                : normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))),
+                ? maskMathDelimiters(children)
+                : { markdown: normalizeDirectives(normalizeCustomSchemeLinks(preprocessMathDelimiters(children))) },
         [children, preserveSourcePositions],
     );
 
     // Remark plugins (markdown parsing)
     // Order matters: GFM first, then directive (must precede handler),
-    // then definition-list/supersub, then math, then user plugins.
+    // then definition-list/supersub, then math, then masked-dollar restore (so user plugins never
+    // see the mask), then user plugins.
     const remarkPluginsArray = React.useMemo(() => {
+        const restoreMaskedDollars: RemarkPluginList = mask ? [[remarkRestoreMaskedDollars, { mask }]] : [];
         const result: RemarkPluginList = [
             remarkGfm,
             remarkDirective,
@@ -190,13 +195,14 @@ export function MarkdownRenderer({
             remarkDefinitionList,
             remarkSupersub,
             remarkMath,
+            ...restoreMaskedDollars,
             ...remarkPlugins,
         ];
         if (removeComments) {
             result.push(remarkRemoveComments);
         }
         return result;
-    }, [remarkPlugins, removeComments]);
+    }, [remarkPlugins, removeComments, mask]);
 
     // Rehype plugins (HTML processing, including KaTeX for math)
     const rehypePluginsArray = useRehypePlugins(normalizedMarkdown);
