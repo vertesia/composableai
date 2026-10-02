@@ -5630,6 +5630,8 @@ export type Project = {
     configuration: ProjectConfiguration;
     integrations?: Record<string, unknown> | undefined;
     plugins: string[];
+    annotations?: string[] | undefined;
+    last_activity_at?: string | undefined;
     created_by: string;
     updated_by: string;
     created_at: string;
