@@ -55,6 +55,7 @@ export const AUDIT_AGGREGATION_DIMENSIONS = [
     'provider',
     'project_id',
     'principal_id',
+    'actor_id',
     'details.pipeline',
     'details.verdict',
     'details.workflow_type',
