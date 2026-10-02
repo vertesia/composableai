@@ -209,6 +209,14 @@ import {
 } from './apps.js';
 import {
     AuditActionSchema,
+    AuditAdoptionActiveDaysSchema,
+    AuditAdoptionBucketSchema,
+    AuditAdoptionFilterSchema,
+    AuditAdoptionHistorySchema,
+    AuditAdoptionPeriodSchema,
+    AuditAdoptionProjectSchema,
+    AuditAdoptionQuerySchema,
+    AuditAdoptionResponseSchema,
     AuditAggregationDetailFieldSchema,
     AuditAggregationDetailFilterSchema,
     AuditAggregationDimensionMapSchema,
@@ -2116,6 +2124,14 @@ const REMOTE_MCP_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const AUDIT_TRAIL_SCHEMAS = {
+    AuditAdoptionActiveDays: AuditAdoptionActiveDaysSchema,
+    AuditAdoptionBucket: AuditAdoptionBucketSchema,
+    AuditAdoptionFilter: AuditAdoptionFilterSchema,
+    AuditAdoptionHistory: AuditAdoptionHistorySchema,
+    AuditAdoptionPeriod: AuditAdoptionPeriodSchema,
+    AuditAdoptionProject: AuditAdoptionProjectSchema,
+    AuditAdoptionQuery: AuditAdoptionQuerySchema,
+    AuditAdoptionResponse: AuditAdoptionResponseSchema,
     // The audit trail: the events the endpoint pages through and the aggregation it
     // computes over them.
     AuditMeter: AuditMeterSchema,
@@ -3418,6 +3434,14 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AuditAggregationFilter',
     'AuditTrailResponse',
     'AuditAggregationQuery',
+    'AuditAdoptionActiveDays',
+    'AuditAdoptionBucket',
+    'AuditAdoptionFilter',
+    'AuditAdoptionHistory',
+    'AuditAdoptionPeriod',
+    'AuditAdoptionProject',
+    'AuditAdoptionQuery',
+    'AuditAdoptionResponse',
     'ViewSortClause',
     'ViewResultMedia',
     'ViewBoardColumn',

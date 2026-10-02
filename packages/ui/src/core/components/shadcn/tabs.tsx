@@ -46,6 +46,7 @@ const TabsContext = React.createContext<{
 });
 
 interface TabsProps {
+    orientation?: 'horizontal' | 'vertical';
     current?: string | (() => string);
     tabs: Tab[];
     defaultValue?: string;
@@ -61,6 +62,7 @@ interface TabsProps {
 }
 
 const Tabs = ({
+    orientation = 'horizontal',
     tabs,
     defaultValue,
     current,
@@ -176,6 +178,7 @@ const Tabs = ({
             }}
         >
             <TabsPrimitive.Root
+                orientation={orientation}
                 defaultValue={value || visibleTabs[0]?.name}
                 value={value}
                 onValueChange={handleValueChange}

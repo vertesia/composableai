@@ -1,5 +1,7 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    AuditAdoptionQuery,
+    AuditAdoptionResponse,
     AuditAggregationQuery,
     AuditAggregationResponse,
     AuditTrailQuery,
@@ -32,5 +34,9 @@ export default class AuditTrailApi extends ApiTopic {
 
     aggregate(query: AuditAggregationQuery): Promise<AuditAggregationResponse> {
         return this.post('/aggregate', { payload: query });
+    }
+
+    adoption(query: AuditAdoptionQuery): Promise<AuditAdoptionResponse> {
+        return this.post('/adoption', { payload: query });
     }
 }

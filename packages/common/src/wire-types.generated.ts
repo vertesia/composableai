@@ -1748,6 +1748,60 @@ export type AuditAggregationResponse = {
     from: string;
     to: string;
 };
+export type AuditAdoptionFilter = {
+    actions?: AuditActionWire[] | undefined;
+    resourceTypes?: string[] | undefined;
+    eventCategories?: EventCategory[] | undefined;
+};
+export type AuditAdoptionQuery = {
+    projectId?: string | undefined;
+    from?: string | undefined;
+    to?: string | undefined;
+    filter?: AuditAdoptionFilter | undefined;
+};
+export type AuditAdoptionPeriod = {
+    from: string;
+    to: string;
+};
+export type AuditAdoptionBucket = {
+    from: string;
+    to: string;
+    partial: boolean;
+    active_users: number;
+};
+export type AuditAdoptionActiveDays = {
+    days: number;
+    users: number;
+};
+export type AuditAdoptionProject = {
+    project_id: string;
+    project_name: string | null;
+    active_users: number;
+    active_user_days: number;
+};
+export type AuditAdoptionHistory = {
+    earliest_observed_at: string | null;
+    coverage_from: string | null;
+    completeness: 'unknown' | 'insufficient' | 'verified';
+    retention_unavailable_reason: 'no_previous_users' | 'insufficient_history' | null;
+};
+export type AuditAdoptionResponse = {
+    period: AuditAdoptionPeriod;
+    previous_period: AuditAdoptionPeriod;
+    resolution: 'day' | 'week';
+    active_users: number;
+    previous_active_users: number;
+    retained_users: number;
+    observed_retention: number | null;
+    returning_user_share: number | null;
+    repeat_user_share: number | null;
+    median_active_days: number | null;
+    active_projects: number | null;
+    timeline: AuditAdoptionBucket[];
+    active_day_distribution: AuditAdoptionActiveDays[];
+    top_projects: AuditAdoptionProject[];
+    history: AuditAdoptionHistory;
+};
 export type WebsiteCredentialCapability = 'password' | 'totp' | 'oauth';
 export type WebsiteCredentialTotpAlgorithm = 'SHA1' | 'SHA256' | 'SHA512';
 export type WebsiteCredentialWebsite = {
@@ -11601,6 +11655,14 @@ export interface ApiComponentTypes {
     OAuthAuthStatusArray: OAuthAuthStatusArray;
     SetMcpApiKeyRequest: SetMcpApiKeyRequest;
     McpApiKeyStatus: McpApiKeyStatus;
+    AuditAdoptionActiveDays: AuditAdoptionActiveDays;
+    AuditAdoptionBucket: AuditAdoptionBucket;
+    AuditAdoptionFilter: AuditAdoptionFilter;
+    AuditAdoptionHistory: AuditAdoptionHistory;
+    AuditAdoptionPeriod: AuditAdoptionPeriod;
+    AuditAdoptionProject: AuditAdoptionProject;
+    AuditAdoptionQuery: AuditAdoptionQuery;
+    AuditAdoptionResponse: AuditAdoptionResponse;
     AuditMeter: AuditMeter;
     KnownAuditAction: KnownAuditActionWire;
     EventCategory: EventCategory;
