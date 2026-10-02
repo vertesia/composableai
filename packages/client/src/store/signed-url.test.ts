@@ -202,3 +202,74 @@ describe('Retry-After request budget', () => {
         },
     );
 });
+
+describe('signed transfer cancellation', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+        vi.useRealTimers();
+    });
+
+    it('aborts a stalled PUT at the total deadline without retrying', async () => {
+        const fetch = vi.fn(
+            (_url: string, init: RequestInit) =>
+                new Promise<Response>((_resolve, reject) => {
+                    init.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+                }),
+        );
+        vi.stubGlobal('fetch', fetch);
+        await expect(
+            fetchSignedUrl('https://storage.test/image', { method: 'PUT', body: 'image', timeoutMs: 10 }),
+        ).rejects.toMatchObject({ name: 'TimeoutError' });
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(fetch.mock.calls[0][1].signal?.aborted).toBe(true);
+    });
+
+    it('cancels buffering and releases the stream reader', async () => {
+        const controller = new AbortController();
+        const cancel = vi.fn();
+        const stream = new ReadableStream({ cancel });
+        const fetch = vi.fn();
+        vi.stubGlobal('fetch', fetch);
+        const pending = fetchSignedUrl('https://storage.test/image', {
+            method: 'PUT',
+            body: stream,
+            signal: controller.signal,
+        });
+        const assertion = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+        controller.abort();
+        await assertion;
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(stream.locked).toBe(false);
+        expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it('interrupts Retry-After backoff and cleans its timer without another request', async () => {
+        vi.useFakeTimers();
+        const controller = new AbortController();
+        const response = new Response('retry', { status: 503, headers: { 'Retry-After': '30' } });
+        if (!response.body) throw new Error('Missing response body');
+        const cancel = vi.spyOn(response.body, 'cancel');
+        const fetch = vi.fn().mockResolvedValue(response);
+        vi.stubGlobal('fetch', fetch);
+        const pending = fetchSignedUrl('https://storage.test/image', { signal: controller.signal });
+        const assertion = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+        await vi.advanceTimersByTimeAsync(1);
+        controller.abort();
+        await assertion;
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(fetch).toHaveBeenCalledTimes(1);
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('does not start a cancelled request', async () => {
+        const controller = new AbortController();
+        controller.abort();
+        const fetch = vi.fn();
+        vi.stubGlobal('fetch', fetch);
+        await expect(fetchSignedUrl('https://storage.test/image', { signal: controller.signal })).rejects.toMatchObject(
+            { name: 'AbortError' },
+        );
+        expect(fetch).not.toHaveBeenCalled();
+    });
+});
