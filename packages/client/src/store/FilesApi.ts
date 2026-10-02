@@ -273,7 +273,7 @@ export class FilesApi extends ApiTopic {
             console.error('Failed to upload file', { err, url, id, path });
             throw err;
         });
-        await res.body?.cancel().catch(() => undefined);
+        void res.body?.cancel().catch(() => undefined);
         if (!res.ok) {
             console.log(res);
             throw new Error(`Failed to upload file: ${res.statusText}`);
