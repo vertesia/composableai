@@ -174,8 +174,8 @@ export class FilesApi extends ApiTopic {
      * @param payload - Array of file descriptors (name, optional mime_type, optional id)
      * @returns Array of upload URL responses
      */
-    bulkGetUploadUrls(payload: BulkUploadUrlsPayload): Promise<BulkUploadUrlsResponse> {
-        return this.post('/bulk-upload-urls', { payload });
+    bulkGetUploadUrls(payload: BulkUploadUrlsPayload, signal?: AbortSignal): Promise<BulkUploadUrlsResponse> {
+        return this.post('/bulk-upload-urls', { payload, signal });
     }
 
     /**
@@ -187,14 +187,17 @@ export class FilesApi extends ApiTopic {
     async bulkUpload(
         sources: (StreamSource | File)[],
         concurrency = 10,
+        options?: UploadOptions,
     ): Promise<{ source: string; name: string; type?: string; etag?: string }[]> {
+        const signal = uploadSignal(options);
+        signal.throwIfAborted();
         const fileDescriptors = sources.map((s) => ({
             name: s.name,
             mime_type: getUploadMimeTypeHint(s.type),
             id: s instanceof StreamSource ? s.id : undefined,
         }));
 
-        const { files } = await this.bulkGetUploadUrls({ files: fileDescriptors });
+        const { files } = await this.bulkGetUploadUrls({ files: fileDescriptors }, signal);
 
         // Upload with concurrency limit using chunked Promise.all
         const results: { source: string; name: string; type?: string; etag?: string }[] = new Array(sources.length);
@@ -210,10 +213,13 @@ export class FilesApi extends ApiTopic {
 
                     const res = await fetchSignedUrl(url, {
                         method: 'PUT',
+                        signal,
+                        timeoutMs: options?.timeoutMs,
                         body: isStream ? source.stream : source,
                         headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
                     });
 
+                    await res.body?.cancel().catch(() => undefined);
                     if (!res.ok) {
                         throw new Error(`Failed to upload file ${source.name}: ${res.statusText}`);
                     }

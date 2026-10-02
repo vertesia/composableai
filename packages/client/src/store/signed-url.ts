@@ -25,13 +25,12 @@ const MAX_RETRY_AFTER_MS = 60_000;
 export interface UploadOptions {
     /** Cancels signing, transfer, and retries. */
     signal?: AbortSignal;
-    /** Total transfer deadline in milliseconds, including buffering and retries. No deadline unless supplied. */
+    /** Total transfer deadline in milliseconds, including buffering and retries. Defaults to fifteen minutes. */
     timeoutMs?: number;
 }
 
 export function uploadSignal(options: UploadOptions = {}): AbortSignal {
-    if (options.timeoutMs === undefined) return options.signal ?? new AbortController().signal;
-    const timeout = AbortSignal.timeout(options.timeoutMs);
+    const timeout = AbortSignal.timeout(options.timeoutMs ?? 15 * 60_000);
     return options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
 }
 

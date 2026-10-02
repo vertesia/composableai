@@ -85,3 +85,37 @@ it.each([
     else await expect(pending).rejects.toThrow('Failed to upload file');
     expect(cancel).toHaveBeenCalledTimes(1);
 });
+
+it('cancels an active bulk transfer before starting the next file', async () => {
+    const controller = new AbortController();
+    let transferSignal: AbortSignal | null | undefined;
+    const transfer = vi.fn((_url: string, init: RequestInit) => {
+        transferSignal = init.signal;
+        return new Promise<Response>((_resolve, reject) => {
+            init.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+        });
+    });
+    vi.stubGlobal('fetch', transfer);
+    const requests: Request[] = [];
+    const client = new ZenoClient({
+        serverUrl: 'https://api.example.com',
+        fetch: vi.fn(async () =>
+            Response.json({
+                files: [
+                    { id: 'first', path: 'first.png', url: 'https://storage.example.com/first' },
+                    { id: 'second', path: 'second.png', url: 'https://storage.example.com/second' },
+                ],
+            }),
+        ),
+        onRequest: (request) => requests.push(request),
+    });
+    const files = ['first', 'second'].map((name) => new File(['image'], `${name}.png`, { type: 'image/png' }));
+    const pending = client.files.bulkUpload(files, 1, { signal: controller.signal });
+    const assertion = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    await vi.waitFor(() => expect(transferSignal).toBeDefined());
+    controller.abort();
+    await assertion;
+    expect(transferSignal?.aborted).toBe(true);
+    expect(requests[0].signal.aborted).toBe(true);
+    expect(transfer).toHaveBeenCalledTimes(1);
+});

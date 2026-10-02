@@ -233,8 +233,7 @@ describe('signed transfer cancellation', () => {
         await vi.advanceTimersByTimeAsync(5 * 60_000);
         expect(fetch).toHaveBeenCalledTimes(1);
         expect(fetch.mock.calls[0][1].signal?.aborted).toBe(false);
-        if (timeoutMs === undefined) expect(timeout).not.toHaveBeenCalled();
-        else expect(timeout).toHaveBeenCalledWith(15 * 60_000);
+        expect(timeout).toHaveBeenCalledWith(15 * 60_000);
         complete?.(new Response(null, { status: 204 }));
         await expect(pending).resolves.toMatchObject({ status: 204 });
     });
