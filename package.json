@@ -32,6 +32,6 @@
         "typescript": "catalog:",
         "vite": "catalog:"
     },
-    "packageManager": "pnpm@12.4.2",
+    "packageManager": "pnpm@12.7.0",
     "gitHead": "8732631fd8099bdcab4f5375da2309f3cff34e19"
 }
