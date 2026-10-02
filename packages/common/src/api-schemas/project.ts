@@ -211,7 +211,7 @@ export const ProjectSchema = z
  *
  * `.partial()` keeps both update contracts tied to the corresponding response contract, so a field
  * added to either source schema is available to its update payload without a hand-written twin.
- * `annotation` and `last_activity_at` are vertesia-managed, so they are read-only.
+ * `annotations` and `last_activity_at` are vertesia-managed, so they are read-only.
  */
 export const UpdateProjectPayloadSchema = ProjectSchema.omit({ annotations: true, last_activity_at: true })
     .partial()
