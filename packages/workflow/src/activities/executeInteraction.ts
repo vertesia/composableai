@@ -281,7 +281,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                     const stream = Readable.from([buffer]);
                     const source = new NodeStreamSource(stream, filename, mimeType);
 
-                    const file = await client.files.uploadFile(source);
+                    const file = await client.files.uploadFile(source, { timeoutMs: 15 * 60_000 });
                     return { ...item, value: file };
                 }),
             );
