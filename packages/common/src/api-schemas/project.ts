@@ -194,10 +194,7 @@ export const ProjectSchema = z
         configuration: ProjectConfigurationSchema,
         integrations: z.record(z.string(), z.unknown()).optional(),
         plugins: z.array(z.string()),
-        annotation: z
-            .array(z.string())
-            .meta({ description: "Classification labels, seeded from the owning account's `account_type`." })
-            .optional(),
+        annotations: z.array(z.string()).meta({ description: 'Classification labels' }).optional(),
         last_activity_at: z
             .string()
             .meta({ format: 'date-time', description: 'When the project last saw activity. Not yet populated.' })
@@ -214,9 +211,9 @@ export const ProjectSchema = z
  *
  * `.partial()` keeps both update contracts tied to the corresponding response contract, so a field
  * added to either source schema is available to its update payload without a hand-written twin.
- * `annotation` and `last_activity_at` are server-managed, so they are read-only.
+ * `annotation` and `last_activity_at` are vertesia-managed, so they are read-only.
  */
-export const UpdateProjectPayloadSchema = ProjectSchema.omit({ annotation: true, last_activity_at: true })
+export const UpdateProjectPayloadSchema = ProjectSchema.omit({ annotations: true, last_activity_at: true })
     .partial()
     .meta({ id: 'UpdateProjectPayload' });
 
