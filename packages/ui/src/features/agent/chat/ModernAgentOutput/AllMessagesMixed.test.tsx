@@ -1312,7 +1312,7 @@ describe('AllMessagesMixed summary view', () => {
         fireEvent.click(workedRow);
 
         expect(screen.getByRole('button', { name: /Running production build preflight/ })).not.toBeNull();
-        expect(screen.queryByRole('button', { name: /\$ cd \/home\/daytona\/src/ })).toBeNull();
+        expect(screen.queryByRole('button', { name: /\$ cd ~\/src/ })).toBeNull();
 
         fireEvent.click(screen.getByRole('button', { name: /Running production build preflight/ }));
 
