@@ -19,6 +19,8 @@ import {
     type InteractionExecutionConfiguration,
     type RunSearchPayload,
 } from '@vertesia/common';
+import mime from 'mime';
+import sharp from 'sharp';
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
@@ -253,34 +255,52 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                 completionResult.map(async (item, index) => {
                     if (item.type === 'image') {
                         const image = item.value;
-                        // Extract base64 data and create buffer
-                        const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '');
-                        const buffer = Buffer.from(base64Data, 'base64');
-
-                        // Generate filename
+                        // Storage and remote references must never be decoded as bytes.
+                        if (/^[a-z][a-z\d+.-]*:/i.test(image) && !/^data:/i.test(image)) {
+                            return item;
+                        }
+                        let buffer: Buffer;
+                        let mimeType: string;
+                        if (/^data:/i.test(image)) {
+                            const response = await fetch(image);
+                            buffer = Buffer.from(await response.arrayBuffer());
+                            mimeType = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() ?? '';
+                        } else {
+                            if (!/^[a-z\d+/]+={0,2}$/i.test(image)) {
+                                throw new Error('Invalid inline image');
+                            }
+                            buffer = Buffer.from(image, 'base64');
+                            const { format } = await sharp(buffer).metadata();
+                            mimeType = format ? (mime.getType(format) ?? '') : '';
+                        }
+                        const extension = mime.getExtension(mimeType);
+                        if (!buffer.length || !mimeType.startsWith('image/') || !extension) {
+                            throw new Error('Unsupported inline image type');
+                        }
                         const { runId } = activityWorkflowExecution();
                         const { activityId } = activityInfo();
-                        const filename = `generated-image-${runId}-${activityId}-${index}.png`;
-
-                        // Create a readable stream from the buffer
-                        const stream = Readable.from(buffer);
-
-                        const source = new NodeStreamSource(stream, filename, 'image/png');
+                        const filename = `generated-image-${runId}-${activityId}-${index}.${extension}`;
+                        const stream = Readable.from([buffer]);
+                        const source = new NodeStreamSource(stream, filename, mimeType);
 
                         const file = await client.files.uploadFile(source);
-                        return { type: 'image', value: file } as CompletionResult;
+                        return { ...item, value: file };
                     }
                     return item;
                 }),
             );
             completionResult = uploadedImages;
         }
-
-        return projectResult(payload, params, res, {
-            runId: res.id,
-            status: res.status,
-            result: completionResult,
-        });
+        return projectResult(
+            payload,
+            params,
+            { ...res, result: completionResult },
+            {
+                runId: res.id,
+                status: res.status,
+                result: completionResult,
+            },
+        );
     } catch (error: unknown) {
         // Preserve admission failures raised before executeByName and the provider failures
         // normalized by executeInteractionFromActivity.
