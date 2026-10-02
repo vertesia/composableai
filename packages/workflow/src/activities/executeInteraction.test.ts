@@ -1,8 +1,11 @@
+import type { CompletionResult } from '@llumiverse/common';
 import type { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { ServerError } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
+import type { NodeStreamSource } from '@vertesia/client/node';
 import { ContentEventName, type DSLActivityExecutionPayload, ExecutionRunStatus } from '@vertesia/common';
+import sharp from 'sharp';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
 import { type ExecuteInteractionParams, executeInteraction } from './executeInteraction.js';
@@ -57,6 +60,71 @@ async function mockInteractionError(
         params: createPayload().params,
     } as unknown as ActivityContext<ExecuteInteractionParams>);
 }
+
+describe('executeInteraction image results', () => {
+    async function executeImages(images: CompletionResult[], uploadFile = vi.fn()) {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const client = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }),
+                executeByName: vi
+                    .fn()
+                    .mockResolvedValue({ id: 'run', status: ExecutionRunStatus.completed, result: images }),
+            },
+            files: { uploadFile },
+        } as unknown as VertesiaClient;
+        vi.mocked(setupActivity).mockResolvedValue({
+            client,
+            params: createPayload().params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+        return testEnv.run(executeInteraction, createPayload());
+    }
+
+    it('retains storage and HTTP image references without uploading', async () => {
+        const images: CompletionResult[] = [
+            'gs://bucket/image.png',
+            's3://bucket/image.jpg',
+            'https://example.com/image.webp',
+        ].map((value) => ({ type: 'image', value }));
+        const uploadFile = vi.fn();
+        await expect(executeImages(images, uploadFile)).resolves.toMatchObject({ result: images });
+        expect(uploadFile).not.toHaveBeenCalled();
+    });
+
+    it.each(['png', 'jpeg', 'webp'] as const)('uploads inline %s with matching bytes and metadata', async (format) => {
+        const bytes = await sharp({ create: { width: 1, height: 1, channels: 3, background: 'white' } })
+            .toFormat(format)
+            .toBuffer();
+        const uploaded: { type?: string; name: string; bytes: Buffer }[] = [];
+        const uploadFile = vi.fn(async (source: NodeStreamSource) => {
+            const chunks: Uint8Array[] = [];
+            const reader = source.stream.getReader();
+            for (;;) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+            }
+            uploaded.push({ type: source.type, name: source.name, bytes: Buffer.concat(chunks) });
+            return 'gs://bucket/uploaded';
+        });
+        const result = await executeImages(
+            [
+                { type: 'image', value: `data:image/${format};charset=binary;base64,${bytes.toString('base64')}` },
+                { type: 'image', value: bytes.toString('base64') },
+            ],
+            uploadFile,
+        );
+        expect(result).toMatchObject({
+            result: [{ value: 'gs://bucket/uploaded' }, { value: 'gs://bucket/uploaded' }],
+        });
+        expect(uploaded).toHaveLength(2);
+        for (const source of uploaded) {
+            expect(source.bytes).toEqual(bytes);
+            expect(source.type).toBe(`image/${format}`);
+            expect(source.name).toMatch(new RegExp(`\\.${format === 'jpeg' ? 'jpg' : format}$`));
+        }
+    });
+});
 
 describe('executeInteraction retryability', () => {
     it('should durably retry before executing when the LLM limiter returns a delay', async () => {
