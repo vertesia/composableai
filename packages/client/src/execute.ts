@@ -61,7 +61,7 @@ export async function executeInteraction<P = unknown>(
         if (response.status === ExecutionRunStatus.failed) {
             return response;
         }
-        await handleStreaming(client, response.id, onChunk);
+        return handleStreaming<P>(client, response.id, onChunk);
     }
     return response;
 }
@@ -102,13 +102,17 @@ export async function executeInteractionByName<P = unknown>(
         if (response.status === ExecutionRunStatus.failed) {
             return response;
         }
-        await handleStreaming(client, response.id, onChunk);
+        return handleStreaming<P>(client, response.id, onChunk);
     }
     return response;
 }
 
-function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk: string) => void) {
-    return new Promise((resolve, reject) => {
+function handleStreaming<P>(
+    client: VertesiaClient,
+    runId: string,
+    onChunk: (chunk: string) => void,
+): Promise<InteractionExecutionResult<P>> {
+    return new Promise<InteractionExecutionResult<P>>((resolve, reject) => {
         void (async () => {
             try {
                 const EventSourceImpl = await EventSourceProvider();
@@ -130,6 +134,7 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
                             onChunk?.(data);
                         }
                     } catch (err) {
+                        sse.close();
                         reject(err);
                     }
                 });
@@ -140,6 +145,12 @@ function handleStreaming(client: VertesiaClient, runId: string, onChunk: (chunk:
                         resolve(msg);
                     } catch (err) {
                         reject(err);
+                    }
+                });
+                sse.addEventListener('error', () => {
+                    if (sse.readyState === EventSourceImpl.CLOSED) {
+                        sse.close();
+                        reject(new Error('Interaction result stream closed before completion'));
                     }
                 });
             } catch (err) {
