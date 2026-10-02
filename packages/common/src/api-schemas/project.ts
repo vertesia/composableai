@@ -194,7 +194,7 @@ export const ProjectSchema = z
         configuration: ProjectConfigurationSchema,
         integrations: z.record(z.string(), z.unknown()).optional(),
         plugins: z.array(z.string()),
-        annotations: z.array(z.string()).meta({ description: 'Classification labels' }).optional(),
+        annotations: z.array(z.string()).meta({ description: 'Classification annotations' }).optional(),
         last_activity_at: z
             .string()
             .meta({ format: 'date-time', description: 'When the project last saw activity. Not yet populated.' })

@@ -4846,12 +4846,12 @@
           "type": "string"
         }
       },
-      "annotation": {
+      "annotations": {
         "type": "array",
         "items": {
           "type": "string"
         },
-        "description": "Classification labels, seeded from the owning account's `account_type`."
+        "description": "Classification labels"
       },
       "last_activity_at": {
         "type": "string",
