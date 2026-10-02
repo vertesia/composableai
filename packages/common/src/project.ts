@@ -424,6 +424,8 @@ export interface SwapAliasRequest {
     backend?: ElasticsearchBackend;
     /** ES alias name. If not provided, the Go service derives it from the tenant ID. */
     alias?: string;
+    /** Delete superseded versioned indices after the target has been validated. */
+    cleanup?: boolean;
 }
 
 export interface SwapAliasResult {
