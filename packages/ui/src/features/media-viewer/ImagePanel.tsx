@@ -59,12 +59,11 @@ function ImagePanelContent({ url, source, object, className, onRetry }: ImagePan
 
                 if (!object) return;
 
-                const isImage =
-                    object.metadata?.type === ContentNature.Image || object.content?.type?.startsWith('image/');
+                const mime = object.content?.type?.split(';', 1)[0].trim().toLowerCase();
+                const isImage = object.metadata?.type === ContentNature.Image || mime?.startsWith('image/');
                 if (!isImage) return;
 
-                const isOriginalWebSupported =
-                    object.content?.type && WEB_SUPPORTED_IMAGE_FORMATS.includes(object.content.type);
+                const isOriginalWebSupported = mime && WEB_SUPPORTED_IMAGE_FORMATS.includes(mime);
 
                 try {
                     const rendition = await client.objects.getRendition(object.id, {
@@ -83,6 +82,8 @@ function ImagePanelContent({ url, source, object, className, onRetry }: ImagePan
                 if (isOriginalWebSupported && object.content?.source) {
                     const downloadUrl = await client.files.getDownloadUrl(object.content.source);
                     if (active) setImageUrl(downloadUrl.url);
+                } else if (active) {
+                    setFailed(true);
                 }
             } catch {
                 if (active) setFailed(true);

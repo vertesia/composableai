@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ContentObject } from '@vertesia/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImagePanel } from './ImagePanel.js';
 
@@ -16,6 +17,33 @@ afterEach(() => {
 });
 
 describe('image preview lifecycle', () => {
+    it('loads a parameterized MIME original when no rendition is available', async () => {
+        rendition.mockResolvedValue({ status: 'missing' });
+        const object = {
+            id: 'image',
+            content: { source: 'gs://bucket/image.png', type: 'IMAGE/PNG; charset=binary' },
+        } as ContentObject;
+        render(<ImagePanel object={object} />);
+        await screen.findByRole('img', { name: 'intakePolicy.option.image' });
+        expect(download).toHaveBeenCalledWith('gs://bucket/image.png');
+    });
+
+    it('shows a recoverable error when no preview can be resolved', async () => {
+        rendition
+            .mockResolvedValueOnce({ status: 'missing' })
+            .mockResolvedValueOnce({ status: 'found', renditions: ['https://example.com/preview.jpg'] });
+        const object = {
+            id: 'image',
+            content: { source: 'gs://bucket/image.tiff', type: 'image/tiff' },
+        } as ContentObject;
+        render(<ImagePanel object={object} />);
+        await screen.findByRole('alert');
+        fireEvent.click(screen.getByRole('button', { name: 'agent.retry' }));
+        expect((await screen.findByRole('img', { name: 'intakePolicy.option.image' })).getAttribute('src')).toBe(
+            'https://example.com/preview.jpg',
+        );
+    });
+
     it('updates direct URLs when the image changes', () => {
         const { rerender } = render(<ImagePanel url="data:image/png;base64,YQ==" />);
         rerender(<ImagePanel url="data:image/webp;base64,Yg==" />);
@@ -45,7 +73,7 @@ describe('image preview lifecycle', () => {
         render(<ImagePanel source="gs://bucket/image.png" />);
         await screen.findByRole('alert');
         fireEvent.click(screen.getByRole('button', { name: 'agent.retry' }));
-        await screen.findByRole('img');
+        await screen.findByRole('img', { name: 'intakePolicy.option.image' });
         expect(download).toHaveBeenCalledTimes(2);
     });
 
@@ -54,7 +82,9 @@ describe('image preview lifecycle', () => {
         fireEvent.error(screen.getByRole('img'));
         expect(screen.getByRole('alert')).toBeTruthy();
         fireEvent.click(screen.getByRole('button', { name: 'agent.retry' }));
-        expect((await screen.findByRole('img')).getAttribute('src')).toBe('https://example.com/image.png');
+        expect((await screen.findByRole('img', { name: 'intakePolicy.option.image' })).getAttribute('src')).toBe(
+            'https://example.com/image.png',
+        );
     });
 
     it('recovers a replacement image after the previous image failed', () => {
