@@ -132,7 +132,7 @@ function createDocumentEditingPrompt(
         'the artifact back to the canonical document with the Save to document button, which enforces the base ETag.',
         '',
         'You may use execute_shell to regenerate charts, diagrams, and other derived assets. Write generated files',
-        "under '/home/daytona/out/' so they sync back to the run, then reference them from Markdown with a run-local",
+        "under '~/out/' so they sync back to the run, then reference them from Markdown with a run-local",
         "link such as 'artifact:out/chart.png'. Saving the document persists and rewrites those links automatically.",
         '',
         'Images: never inline image data as base64 data URIs — it bloats the document and cannot be reliably edited.',

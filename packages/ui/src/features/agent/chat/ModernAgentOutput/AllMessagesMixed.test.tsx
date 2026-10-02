@@ -1295,7 +1295,7 @@ describe('AllMessagesMixed summary view', () => {
                 }),
                 makeMessage({
                     timestamp: 3_000,
-                    message: '$ cd /home/daytona/src && pnpm run build completed successfully',
+                    message: '$ cd ~/src && pnpm run build completed successfully',
                     details: {
                         activity_group_id: 'activity-8',
                         tool: 'execute_shell',
@@ -1316,7 +1316,7 @@ describe('AllMessagesMixed summary view', () => {
 
         fireEvent.click(screen.getByRole('button', { name: /Running production build preflight/ }));
 
-        expect(screen.getByText('$ cd /home/daytona/src && pnpm run build completed successfully')).not.toBeNull();
+        expect(screen.getByText('$ cd ~/src && pnpm run build completed successfully')).not.toBeNull();
         expect(screen.getByText('Build output')).not.toBeNull();
         expect(screen.queryByText('Success')).toBeNull();
     });
