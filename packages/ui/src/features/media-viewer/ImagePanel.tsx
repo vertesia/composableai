@@ -1,5 +1,6 @@
 import { ContentNature, type ContentObject, ImageRenditionFormat } from '@vertesia/common';
-import { Spinner } from '@vertesia/ui/core';
+import { Button, Spinner } from '@vertesia/ui/core';
+import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { useEffect, useState } from 'react';
 import { WEB_SUPPORTED_IMAGE_FORMATS } from './formats.js';
@@ -19,12 +20,27 @@ interface ImagePanelProps {
  * Renders an image from a direct URL, a storage source path, or a Vertesia ContentObject.
  * Resolution priority: `url` > `source` > `object`.
  */
-export function ImagePanel({ url, source, object, className }: ImagePanelProps) {
+export function ImagePanel(props: ImagePanelProps) {
+    const [attempt, setAttempt] = useState(0);
+    const identity =
+        props.url ??
+        props.source ??
+        `${props.object?.id}:${props.object?.content?.source}:${props.object?.content?.etag}`;
+    return (
+        <ImagePanelContent key={`${identity}:${attempt}`} {...props} onRetry={() => setAttempt((value) => value + 1)} />
+    );
+}
+
+function ImagePanelContent({ url, source, object, className, onRetry }: ImagePanelProps & { onRetry: () => void }) {
+    const { t } = useUITranslation();
+    const [failed, setFailed] = useState(false);
     const { client } = useUserSession();
     const [imageUrl, setImageUrl] = useState<string | undefined>(url);
     const [isLoading, setIsLoading] = useState<boolean>(!url && (!!source || !!object));
 
     useEffect(() => {
+        let active = true;
+        setFailed(false);
         if (url) {
             setImageUrl(url);
             setIsLoading(false);
@@ -37,13 +53,14 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
             try {
                 if (source) {
                     const downloadUrl = await client.files.getDownloadUrl(source);
-                    setImageUrl(downloadUrl.url);
+                    if (active) setImageUrl(downloadUrl.url);
                     return;
                 }
 
                 if (!object) return;
 
-                const isImage = object.metadata?.type === ContentNature.Image;
+                const isImage =
+                    object.metadata?.type === ContentNature.Image || object.content?.type?.startsWith('image/');
                 if (!isImage) return;
 
                 const isOriginalWebSupported =
@@ -56,7 +73,7 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
                         sign_url: true,
                     });
                     if (rendition.status === 'found' && rendition.renditions?.length) {
-                        setImageUrl(rendition.renditions[0]);
+                        if (active) setImageUrl(rendition.renditions[0]);
                         return;
                     }
                 } catch {
@@ -65,10 +82,12 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
 
                 if (isOriginalWebSupported && object.content?.source) {
                     const downloadUrl = await client.files.getDownloadUrl(object.content.source);
-                    setImageUrl(downloadUrl.url);
+                    if (active) setImageUrl(downloadUrl.url);
                 }
+            } catch {
+                if (active) setFailed(true);
             } finally {
-                setIsLoading(false);
+                if (active) setIsLoading(false);
             }
         };
 
@@ -78,6 +97,9 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
         } else {
             setIsLoading(false);
         }
+        return () => {
+            active = false;
+        };
     }, [url, source, object, client]);
 
     if (isLoading) {
@@ -88,9 +110,27 @@ export function ImagePanel({ url, source, object, className }: ImagePanelProps) 
         );
     }
 
+    if (failed) {
+        return (
+            <div role="alert" className={`flex flex-col items-center gap-2 p-4 ${className ?? ''}`.trim()}>
+                <p>{t('store.failedToLoadDocument')}</p>
+                <Button variant="outline" onClick={onRetry}>
+                    {t('agent.retry')}
+                </Button>
+            </div>
+        );
+    }
+
     if (!imageUrl) {
         return null;
     }
 
-    return <img src={imageUrl} alt={object?.name} className={`w-full object-contain ${className ?? ''}`.trim()} />;
+    return (
+        <img
+            src={imageUrl}
+            alt={object?.name ?? t('intakePolicy.option.image')}
+            onError={() => setFailed(true)}
+            className={`w-full object-contain ${className ?? ''}`.trim()}
+        />
+    );
 }
