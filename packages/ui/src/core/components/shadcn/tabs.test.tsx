@@ -69,11 +69,12 @@ describe('vertical Tabs', () => {
         window.history.replaceState(null, '', '/');
         render(
             <Tabs tabs={TABS} defaultValue="first" orientation="vertical" updateHash={false}>
-                <TabsBar direction="vertical" />
+                <TabsBar />
                 <TabsPanel />
             </Tabs>,
         );
         expect(screen.getByRole('tablist').getAttribute('aria-orientation')).toBe('vertical');
+        expect(screen.getByRole('tablist').className).toContain('flex-col');
         const first = screen.getByRole('tab', { name: 'First' });
         const second = screen.getByRole('tab', { name: 'Second' });
         first.focus();

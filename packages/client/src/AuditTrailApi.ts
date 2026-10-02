@@ -36,7 +36,7 @@ export default class AuditTrailApi extends ApiTopic {
         return this.post('/aggregate', { payload: query });
     }
 
-    adoption(query: AuditAdoptionQuery): Promise<AuditAdoptionResponse> {
+    adoption(query: AuditAdoptionQuery = {}): Promise<AuditAdoptionResponse> {
         return this.post('/adoption', { payload: query });
     }
 }
