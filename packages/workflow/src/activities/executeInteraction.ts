@@ -248,48 +248,43 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
 
         let completionResult: CompletionResult[] = res.result;
 
-        // Handle image uploads if the result contains base64 images
-        const imageResults = completionResult.filter((r) => r.type === 'image');
-        if (imageResults.length > 0) {
-            const uploadedImages = await Promise.all(
+        if (completionResult.some((item) => item.type === 'image')) {
+            completionResult = await Promise.all(
                 completionResult.map(async (item, index) => {
-                    if (item.type === 'image') {
-                        const image = item.value;
-                        // Storage and remote references must never be decoded as bytes.
-                        if (/^[a-z][a-z\d+.-]*:/i.test(image) && !/^data:/i.test(image)) {
-                            return item;
-                        }
-                        let buffer: Buffer;
-                        let mimeType: string;
-                        if (/^data:/i.test(image)) {
-                            const response = await fetch(image);
-                            buffer = Buffer.from(await response.arrayBuffer());
-                            mimeType = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() ?? '';
-                        } else {
-                            if (!/^[a-z\d+/]+={0,2}$/i.test(image)) {
-                                throw new Error('Invalid inline image');
-                            }
-                            buffer = Buffer.from(image, 'base64');
-                            const { format } = await sharp(buffer).metadata();
-                            mimeType = format ? (mime.getType(format) ?? '') : '';
-                        }
-                        const extension = mime.getExtension(mimeType);
-                        if (!buffer.length || !mimeType.startsWith('image/') || !extension) {
-                            throw new Error('Unsupported inline image type');
-                        }
-                        const { runId } = activityWorkflowExecution();
-                        const { activityId } = activityInfo();
-                        const filename = `generated-image-${runId}-${activityId}-${index}.${extension}`;
-                        const stream = Readable.from([buffer]);
-                        const source = new NodeStreamSource(stream, filename, mimeType);
-
-                        const file = await client.files.uploadFile(source);
-                        return { ...item, value: file };
+                    if (item.type !== 'image') return item;
+                    const image = item.value;
+                    // Storage and remote references must never be decoded as bytes.
+                    if (/^[a-z][a-z\d+.-]*:/i.test(image) && !/^data:/i.test(image)) {
+                        return item;
                     }
-                    return item;
+                    let buffer: Buffer;
+                    let mimeType: string;
+                    if (/^data:/i.test(image)) {
+                        const response = await fetch(image);
+                        buffer = Buffer.from(await response.arrayBuffer());
+                        mimeType = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() ?? '';
+                    } else {
+                        if (!/^[a-z\d+/]+={0,2}$/i.test(image)) {
+                            throw new Error('Invalid inline image');
+                        }
+                        buffer = Buffer.from(image, 'base64');
+                        const { format } = await sharp(buffer).metadata();
+                        mimeType = format ? (mime.getType(format) ?? '') : '';
+                    }
+                    const extension = mime.getExtension(mimeType);
+                    if (!buffer.length || !mimeType.startsWith('image/') || !extension) {
+                        throw new Error('Unsupported inline image type');
+                    }
+                    const { runId } = activityWorkflowExecution();
+                    const { activityId } = activityInfo();
+                    const filename = `generated-image-${runId}-${activityId}-${index}.${extension}`;
+                    const stream = Readable.from([buffer]);
+                    const source = new NodeStreamSource(stream, filename, mimeType);
+
+                    const file = await client.files.uploadFile(source);
+                    return { ...item, value: file };
                 }),
             );
-            completionResult = uploadedImages;
         }
         return projectResult(
             payload,
