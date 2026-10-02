@@ -151,10 +151,15 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         for (const name of ['UpdateProjectPayload', 'UpdateProjectConfigurationPayload']) {
             expect(Object.keys(ApiSchemaComponents), name).toContain(name);
         }
-        // `.partial()` of the root, not a restatement: same properties, none required.
+        // `.partial()` of the root, not a restatement: same properties minus the server-managed
+        // read-only ones, none required.
+        const readOnly = ['annotation', 'last_activity_at'];
         const project = ApiSchemaComponents.Project as JsonObject;
         const partial = ApiSchemaComponents.UpdateProjectPayload as JsonObject;
-        expect(Object.keys(partial.properties as JsonObject)).toEqual(Object.keys(project.properties as JsonObject));
+        expect(Object.keys(project.properties as JsonObject)).toEqual(expect.arrayContaining(readOnly));
+        expect(Object.keys(partial.properties as JsonObject)).toEqual(
+            Object.keys(project.properties as JsonObject).filter((key) => !readOnly.includes(key)),
+        );
         expect(partial.required).toBeUndefined();
         expect(partial.additionalProperties).toBe(false);
     });
