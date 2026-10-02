@@ -1,10 +1,28 @@
+import { render, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-// Avoid loading the real (heavy, DOM-driven) mermaid library — the module calls
-// mermaid.initialize() at import time. We only exercise the pure makeSvgResponsive helper.
-vi.mock('mermaid', () => ({ default: { initialize: vi.fn(), render: vi.fn() } }));
+// Avoid loading the real (heavy, DOM-driven) mermaid library; the component only needs
+// initialize() and render().
+const { initialize, renderMermaid } = vi.hoisted(() => ({
+    initialize: vi.fn(),
+    renderMermaid: vi.fn(async () => ({ svg: '<svg width="1" height="1"></svg>' })),
+}));
+vi.mock('mermaid', () => ({ default: { initialize, render: renderMermaid } }));
 
-import { makeSvgResponsive } from './MermaidDiagram';
+import { MermaidDiagram, makeSvgResponsive } from './MermaidDiagram';
+
+describe('MermaidDiagram', () => {
+    // Diagram source is untrusted: strict mode drops `click` links (e.g. javascript: hrefs)
+    // and sanitizes the SVG before it reaches dangerouslySetInnerHTML.
+    it('initializes Mermaid in strict security mode with HTML labels', async () => {
+        render(<MermaidDiagram code="flowchart TD; A-->B" />);
+        await waitFor(() => expect(initialize).toHaveBeenCalled());
+        expect(initialize.mock.calls[0][0]).toMatchObject({
+            securityLevel: 'strict',
+            flowchart: { htmlLabels: true },
+        });
+    });
+});
 
 const RESPONSIVE_STYLE = 'width:100%;height:auto;display:block;max-width:100%;';
 
