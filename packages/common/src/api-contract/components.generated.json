@@ -4851,7 +4851,7 @@
         "items": {
           "type": "string"
         },
-        "description": "Classification labels"
+        "description": "Classification annotations"
       },
       "last_activity_at": {
         "type": "string",
