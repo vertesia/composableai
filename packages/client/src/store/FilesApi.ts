@@ -19,7 +19,7 @@ import type {
     SetFileMetadataPayload,
 } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
-import { fetchSignedUrl } from './signed-url.js';
+import { fetchSignedUrl, type UploadOptions, uploadSignal } from './signed-url.js';
 import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 
 export const MEMORIES_PREFIX = 'memories';
@@ -99,8 +99,9 @@ export class FilesApi extends ApiTopic {
      * @param uri
      * @returns
      */
-    getMetadata(uri: string): Promise<FileMetadataResponse> {
+    getMetadata(uri: string, signal?: AbortSignal): Promise<FileMetadataResponse> {
         return this.get('/metadata', {
+            signal,
             query: {
                 file: uri,
             },
@@ -149,9 +150,10 @@ export class FilesApi extends ApiTopic {
         return this.get('/list', { query: { prefix } });
     }
 
-    getUploadUrl(payload: GetUploadUrlPayload): Promise<GetFileUrlResponse> {
+    getUploadUrl(payload: GetUploadUrlPayload, signal?: AbortSignal): Promise<GetFileUrlResponse> {
         return this.post('/upload-url', {
             payload,
+            signal,
             retryPolicy: FILE_SIGNING_RETRY_POLICY,
         });
     }
@@ -172,8 +174,8 @@ export class FilesApi extends ApiTopic {
      * @param payload - Array of file descriptors (name, optional mime_type, optional id)
      * @returns Array of upload URL responses
      */
-    bulkGetUploadUrls(payload: BulkUploadUrlsPayload): Promise<BulkUploadUrlsResponse> {
-        return this.post('/bulk-upload-urls', { payload });
+    bulkGetUploadUrls(payload: BulkUploadUrlsPayload, signal?: AbortSignal): Promise<BulkUploadUrlsResponse> {
+        return this.post('/bulk-upload-urls', { payload, signal });
     }
 
     /**
@@ -185,14 +187,17 @@ export class FilesApi extends ApiTopic {
     async bulkUpload(
         sources: (StreamSource | File)[],
         concurrency = 10,
+        options?: UploadOptions,
     ): Promise<{ source: string; name: string; type?: string; etag?: string }[]> {
+        const signal = uploadSignal(options);
+        signal.throwIfAborted();
         const fileDescriptors = sources.map((s) => ({
             name: s.name,
             mime_type: getUploadMimeTypeHint(s.type),
             id: s instanceof StreamSource ? s.id : undefined,
         }));
 
-        const { files } = await this.bulkGetUploadUrls({ files: fileDescriptors });
+        const { files } = await this.bulkGetUploadUrls({ files: fileDescriptors }, signal);
 
         // Upload with concurrency limit using chunked Promise.all
         const results: { source: string; name: string; type?: string; etag?: string }[] = new Array(sources.length);
@@ -208,10 +213,13 @@ export class FilesApi extends ApiTopic {
 
                     const res = await fetchSignedUrl(url, {
                         method: 'PUT',
+                        signal,
+                        timeoutMs: options?.timeoutMs,
                         body: isStream ? source.stream : source,
                         headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
                     });
 
+                    void res.body?.cancel().catch(() => undefined);
                     if (!res.ok) {
                         throw new Error(`Failed to upload file ${source.name}: ${res.statusText}`);
                     }
@@ -230,8 +238,8 @@ export class FilesApi extends ApiTopic {
      * @param source
      * @returns the uploaded file id
      */
-    async uploadFile(source: StreamSource | File): Promise<string> {
-        return (await this.uploadFileWithPath(source)).id;
+    async uploadFile(source: StreamSource | File, options?: UploadOptions): Promise<string> {
+        return (await this.uploadFileWithPath(source, options)).id;
     }
 
     /**
@@ -242,17 +250,27 @@ export class FilesApi extends ApiTopic {
      * @param source
      * @returns the uploaded file id and storage path
      */
-    async uploadFileWithPath(source: StreamSource | File): Promise<{ id: string; path: string }> {
+    async uploadFileWithPath(
+        source: StreamSource | File,
+        options?: UploadOptions,
+    ): Promise<{ id: string; path: string }> {
+        const signal = uploadSignal(options);
+        signal.throwIfAborted();
         const isStream = source instanceof StreamSource;
-        const { url, id, path, mime_type } = await this.getUploadUrl({
-            id: isStream ? source.id : undefined,
-            name: source.name,
-            mime_type: getUploadMimeTypeHint(source.type),
-        });
+        const { url, id, path, mime_type } = await this.getUploadUrl(
+            {
+                id: isStream ? source.id : undefined,
+                name: source.name,
+                mime_type: getUploadMimeTypeHint(source.type),
+            },
+            signal,
+        );
         const sourceMimeType = resolveUploadMimeType(source.type, mime_type) || 'application/gzip';
 
         const res = await fetchSignedUrl(url, {
             method: 'PUT',
+            signal,
+            timeoutMs: options?.timeoutMs,
             body: isStream ? source.stream : source,
             headers: {
                 'Content-Type': sourceMimeType,
@@ -261,6 +279,7 @@ export class FilesApi extends ApiTopic {
             console.error('Failed to upload file', { err, url, id, path });
             throw err;
         });
+        void res.body?.cancel().catch(() => undefined);
         if (!res.ok) {
             console.log(res);
             throw new Error(`Failed to upload file: ${res.statusText}`);
