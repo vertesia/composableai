@@ -209,8 +209,8 @@ export async function fetchSignedUrl(url: string, options: SignedUrlFetchOptions
             // Do not retry earlier than requested or park the caller beyond the retry budget.
             // Returning the response also avoids overflowing JavaScript's timer range.
             if ((retryAfterMs(res) ?? 0) > MAX_RETRY_AFTER_MS) return res;
-            // Retryable status: drain the body so the connection can be reused, then back off.
-            await res.body?.cancel().catch(() => undefined);
+            // Release the unused body without letting cleanup delay retry or cancellation.
+            void res.body?.cancel().catch(() => undefined);
             await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs, res), signal);
         } catch (err) {
             signal.throwIfAborted();

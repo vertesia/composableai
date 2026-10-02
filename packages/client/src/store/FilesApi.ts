@@ -219,7 +219,7 @@ export class FilesApi extends ApiTopic {
                         headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
                     });
 
-                    await res.body?.cancel().catch(() => undefined);
+                    void res.body?.cancel().catch(() => undefined);
                     if (!res.ok) {
                         throw new Error(`Failed to upload file ${source.name}: ${res.statusText}`);
                     }
@@ -279,7 +279,7 @@ export class FilesApi extends ApiTopic {
             console.error('Failed to upload file', { err, url, id, path });
             throw err;
         });
-        await res.body?.cancel().catch(() => undefined);
+        void res.body?.cancel().catch(() => undefined);
         if (!res.ok) {
             console.log(res);
             throw new Error(`Failed to upload file: ${res.statusText}`);

@@ -307,7 +307,7 @@ export class ObjectsApi extends ApiTopic {
             console.error('Failed to upload file', err);
             throw err;
         });
-        await res.body?.cancel().catch(() => undefined);
+        void res.body?.cancel().catch(() => undefined);
         if (!res.ok) {
             console.error('Failed to upload file', { status: res.status, statusText: res.statusText, url });
             throw new Error(`Failed to upload file: ${res.statusText}`);

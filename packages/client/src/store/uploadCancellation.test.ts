@@ -119,3 +119,33 @@ it('cancels an active bulk transfer before starting the next file', async () => 
     expect(requests[0].signal.aborted).toBe(true);
     expect(transfer).toHaveBeenCalledTimes(1);
 });
+
+it.each(['file', 'object'] as const)(
+    'does not block a completed %s upload on stalled response cleanup',
+    async (kind) => {
+        const cancel = vi.fn(() => new Promise<void>(() => undefined));
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue(new Response(new ReadableStream({ cancel }), { status: 200 })),
+        );
+        const client = new ZenoClient({
+            serverUrl: 'https://api.example.com',
+            fetch: vi.fn(async () =>
+                Response.json({ id: 'file', path: 'image.png', url: 'https://storage.example.com/image' }),
+            ),
+        });
+        const source = new StreamSource(
+            new ReadableStream({
+                start(c) {
+                    c.close();
+                },
+            }),
+            'image.png',
+            'image/png',
+        );
+        const result = await (kind === 'file' ? client.files.uploadFile(source) : client.objects.upload(source));
+        if (kind === 'file') expect(result).toBe('file');
+        else expect(result).toMatchObject({ source: 'file', type: 'image/png' });
+        expect(cancel).toHaveBeenCalledTimes(1);
+    },
+);

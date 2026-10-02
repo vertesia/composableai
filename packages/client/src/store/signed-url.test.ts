@@ -327,3 +327,22 @@ describe('signed transfer cancellation', () => {
         expect(fetch).not.toHaveBeenCalled();
     });
 });
+
+it('does not let stalled response cleanup block a storage retry', async () => {
+    const cancel = vi.fn(() => new Promise<void>(() => undefined));
+    const retry = new Response(new ReadableStream({ cancel }), { status: 503 });
+    const fetch = vi
+        .fn()
+        .mockResolvedValueOnce(retry)
+        .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetch);
+    try {
+        await expect(
+            fetchSignedUrl('https://storage.test/image', { baseDelayMs: 0, maxDelayMs: 0 }),
+        ).resolves.toMatchObject({ status: 204 });
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(fetch).toHaveBeenCalledTimes(2);
+    } finally {
+        vi.unstubAllGlobals();
+    }
+});
