@@ -1,11 +1,16 @@
 import {
+    ConversationDocumentSchema,
     ConversationStreamCursorSchema,
     ConversationStreamEventSchema,
     IdentifierSchema,
+    ToolCallSourceRefSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
+import { RunDataStorageLevel } from '../interaction-values.js';
 import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE } from '../versions.js';
+import { ExperimentalAgentRoutingControlSelectorSchema } from './agent-routing-control.js';
 import { ExperimentalCanonicalNamedInteractionExecutionRequestSchema } from './canonical-interaction-execution.js';
+import { AsyncCompletionOptionsSchema } from './interaction.js';
 
 const agentAcceptanceBase = {
     version: z.literal(1),
@@ -31,7 +36,7 @@ export const ExperimentalCanonicalAgentAcceptanceTargetSchema = z
             'Authenticated agent-run target whose scoped durable canonical head must be committed before acceptance is delivered.',
     });
 
-export const ExperimentalCanonicalInteractionStreamRequestSchema = z
+const ordinaryCanonicalInteractionStreamRequestSchema = z
     .strictObject({
         operation_id: IdentifierSchema,
         request: ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
@@ -49,7 +54,77 @@ export const ExperimentalCanonicalInteractionStreamRequestSchema = z
                 path: ['request', 'initial_state', 'operation_id'],
             });
         }
+    });
+
+type SchemaOutput<Schema extends z.ZodType> = z.output<Schema>;
+
+/** The existing named authoring validator/refinements remain authoritative inside this constrained initial branch. */
+const initialAgentExecutionConstraintsSchema = z
+    .object({
+        initial_state: z.strictObject({ type: z.literal('document'), document: ConversationDocumentSchema }),
+        retention: z.literal(RunDataStorageLevel.DEBUG),
+        return_policy: z.strictObject({ history: z.literal('none') }),
     })
+    // This is a narrowing conjunct, not the object-authority branch. The named validator rejects unknown fields.
+    .meta({ additionalProperties: true });
+// Keep the existing named validator intact; a schema-derived output boundary avoids expanding its recursive
+// document graph in every exported request declaration. This does not replace any runtime validation.
+const initialAgentExecutionRequestSchema: z.ZodType<
+    SchemaOutput<typeof ExperimentalCanonicalNamedInteractionExecutionRequestSchema> &
+        Pick<
+            SchemaOutput<typeof initialAgentExecutionConstraintsSchema>,
+            'initial_state' | 'retention' | 'return_policy'
+        >
+> = z.intersection(ExperimentalCanonicalNamedInteractionExecutionRequestSchema, initialAgentExecutionConstraintsSchema);
+
+/** Initial activity membership is distinct from ordinary authoring and has no fabricated ExecutionRun or head. */
+export const ExperimentalCanonicalInitialAgentStreamRequestSchema = z
+    .strictObject({
+        kind: z.literal('initial_agent'),
+        operation_id: IdentifierSchema,
+        resume_after: ConversationStreamCursorSchema.optional(),
+        request: initialAgentExecutionRequestSchema,
+        agent_acceptance: ExperimentalCanonicalAgentAcceptanceTargetSchema,
+        activity_delivery: z.strictObject({
+            activity_id: AsyncCompletionOptionsSchema.shape.activity_id.unwrap().min(1),
+            run_id: AsyncCompletionOptionsSchema.shape.run_id.min(1),
+            task_token: AsyncCompletionOptionsSchema.shape.task_token.unwrap().min(1),
+        }),
+    })
+    .meta({ id: 'ExperimentalCanonicalInitialAgentStreamRequest' });
+
+/** Parent references and prompt text nominate facts for verification, never permission or a generation target. */
+export const ExperimentalCanonicalToolApprovalReviewStreamRequestSchema = z
+    .strictObject({
+        kind: z.literal('tool_approval_review'),
+        operation_id: IdentifierSchema,
+        parent: z.strictObject({ execution_run_id: IdentifierSchema, generation_request_id: IdentifierSchema }),
+        source: ToolCallSourceRefSchema,
+        control: ExperimentalAgentRoutingControlSelectorSchema,
+        request: z.strictObject({
+            interaction: z.literal('sys:ToolApprovalReviewer'),
+            data: z.strictObject({
+                approval_request_json: z.string().max(64 * 1024),
+                intent_json: z.string().max(64 * 1024),
+            }),
+        }),
+        agent_acceptance: ExperimentalCanonicalAgentAcceptanceTargetSchema,
+        activity_delivery: ExperimentalCanonicalInitialAgentStreamRequestSchema.shape.activity_delivery,
+        resume_after: ConversationStreamCursorSchema.optional(),
+    })
+    .meta({ id: 'ExperimentalCanonicalToolApprovalReviewStreamRequest' });
+
+// The old branch deliberately has no new discriminator: its strict wire bytes and validator are unchanged.
+export const ExperimentalCanonicalInteractionStreamRequestSchema: z.ZodType<
+    | SchemaOutput<typeof ordinaryCanonicalInteractionStreamRequestSchema>
+    | SchemaOutput<typeof ExperimentalCanonicalInitialAgentStreamRequestSchema>
+    | SchemaOutput<typeof ExperimentalCanonicalToolApprovalReviewStreamRequestSchema>
+> = z
+    .union([
+        ordinaryCanonicalInteractionStreamRequestSchema,
+        ExperimentalCanonicalInitialAgentStreamRequestSchema,
+        ExperimentalCanonicalToolApprovalReviewStreamRequestSchema,
+    ])
     .meta({ id: 'ExperimentalCanonicalInteractionStreamRequest' });
 
 const streamControlShape = {

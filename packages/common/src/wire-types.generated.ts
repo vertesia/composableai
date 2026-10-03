@@ -24,6 +24,7 @@ import type {
     PromptCacheDiagnostic,
     PromptCacheMode,
     PromptRole,
+    Providers,
     ReasoningEffort,
     StatelessExecutionOptions,
     TextFallbackOptions,
@@ -34,10 +35,15 @@ import type {
 import type {
     ApplicationToolExecutionReceipt,
     Asset,
+    AssetKind,
+    AssetMediaMetadata,
+    AssetProvenance,
+    AssetStorage,
     ContextEntry,
     ConversationAcceptedOutputFragment,
     ConversationDocument,
     ConversationMaterializedInput,
+    ConversationModelSwitchPlan,
     ConversationOutputGeneration,
     ConversationOutputReceipt,
     ConversationRef,
@@ -54,6 +60,12 @@ import type {
     ConversationToolExecutionResult,
     ConversationTranscriptFragment,
     ExecutedToolTurn,
+    JsonMinificationApplication,
+    JsonMinificationMeasuredProjection,
+    JsonMinificationMeasurement,
+    JsonMinificationNoOpReason,
+    JsonMinificationProposal,
+    JsonMinificationTransform,
     JsonObject,
     JsonValue,
     NativeConversationImportReport,
@@ -175,6 +187,89 @@ export type ACEUpdatePayload = {
     tags?: string[] | undefined | undefined;
     expires_at?: string | undefined | undefined;
 };
+export type ExperimentalPublishAgentAssetPayload = {
+    operation_id: string;
+    artifact_path: string;
+};
+export type ExperimentalPublishedAgentAsset = {
+    id: string;
+    kind: AssetKind;
+    mime_type: string;
+    storage: AssetStorage;
+    provenance: AssetProvenance;
+    byte_length: number;
+    content_hash: string;
+    media?: AssetMediaMetadata | undefined;
+    created_at: string;
+    metadata?: Record<string, JsonValue> | undefined;
+};
+export type ExperimentalAgentAssetPublication = {
+    api_version: '=20260930';
+    subject_agent_run_id: string;
+    operation_id: string;
+    asset: ExperimentalPublishedAgentAsset;
+    published_at: string;
+};
+export type ExperimentalExtractAgentAssetPayload = {
+    operation_id: string;
+    transform: 'document_text/v1';
+};
+export type ExperimentalAgentAssetDerivationSource = {
+    publication_operation_id: string;
+    asset_id: string;
+    content_hash: string;
+};
+export type ExperimentalAgentAssetDerivationTransform = {
+    id: 'vertesia.document_text';
+    version: '1';
+    configuration_fingerprint: string;
+};
+export type ExperimentalAgentAssetDerivation = {
+    version: 1;
+    subject_agent_run_id: string;
+    operation_id: string;
+    source: ExperimentalAgentAssetDerivationSource;
+    transform: ExperimentalAgentAssetDerivationTransform;
+    output: ExperimentalAgentAssetPublication;
+};
+export type ExperimentalAgentAssetExtractionPending = {
+    api_version: '=20260930';
+    subject_agent_run_id: string;
+    operation_id: string;
+    source_operation_id: string;
+    status: 'pending';
+};
+export type ExperimentalAgentAssetExtractionAvailable = {
+    api_version: '=20260930';
+    subject_agent_run_id: string;
+    operation_id: string;
+    source_operation_id: string;
+    status: 'available';
+    derivation: ExperimentalAgentAssetDerivation;
+};
+export type ExperimentalAgentAssetExtractionFailed = {
+    api_version: '=20260930';
+    subject_agent_run_id: string;
+    operation_id: string;
+    source_operation_id: string;
+    status: 'failed';
+    reason: 'unsupported_format' | 'extraction_failed' | 'source_unavailable' | 'cancelled';
+    message: string;
+};
+export type ExperimentalAgentAssetExtraction =
+    | ExperimentalAgentAssetExtractionPending
+    | ExperimentalAgentAssetExtractionAvailable
+    | ExperimentalAgentAssetExtractionFailed;
+export type ExperimentalClaimAgentAssetExtractionPayload = {
+    expected_run_id: string;
+};
+export type ExperimentalAgentAssetExtractionClaim = {
+    api_version: '=20260930';
+    subject_agent_run_id: string;
+    operation_id: string;
+    workflow_id: string;
+    run_id: string;
+};
 export type AgentConversationArchiveSource = {
     subject_run_id: string;
     owner_run_id: string;
@@ -232,6 +327,252 @@ export type ImportAgentRunConversationArchiveResponse =
           source: AgentConversationArchiveSource;
           continuation_readiness: 'not_validated';
           status: 'attestation_required';
+      };
+export type ExperimentalAgentProcessingActivityEvidence = {
+    version: 1;
+    kind: 'native_processing_activity';
+    subject_agent_run_id: string;
+    owner_agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    source: ConversationRef;
+    job_id: string;
+    workflow_run_id: string;
+    activity_id: string;
+    task_token: string;
+};
+export type ExperimentalClaimAgentProcessingPayload = {
+    version: 1;
+    kind: 'native_processing_activity';
+    subject_agent_run_id: string;
+    owner_agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    source: ConversationRef;
+    job_id: string;
+    workflow_run_id: string;
+    activity_id: string;
+    task_token: string;
+};
+export type ExperimentalAgentProcessingClaim = {
+    api_version: '=20260930';
+    subject_agent_run_id: string;
+    owner_agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    source: ConversationRef;
+    job_id: string;
+    job_fingerprint: string;
+    workflow_id: string;
+    workflow_run_id: string;
+    activity_id: string;
+    attempt: number;
+    processing_attempt_id: string;
+    disposition: 'runnable' | 'stale_optional' | 'blocked' | 'already_superseded';
+};
+export type ExperimentalAgentRestartAdmissionExecution = {
+    workflow_id: string;
+    first_run_id: string;
+    execution_run_id: string;
+    namespace: string;
+    task_queue: string;
+    workflow_type: 'ExecuteAdmittedAgentRestartWorkflowV2';
+    start_fingerprint: string;
+};
+export type ExperimentalAgentRestartAdmissionPayload = {
+    version: 2;
+    token: string;
+};
+export type ExperimentalAgentRestartAdmissionResponse = {
+    version: 2;
+    status: 'admitted';
+    token: string;
+    policy_id: string;
+    execution: ExperimentalAgentRestartAdmissionExecution;
+};
+export type ExperimentalAgentWorkstreamRestartAdmissionPayload = {
+    version: 1;
+    workflow_id: string;
+    run_id: string;
+    activity_id: string;
+    task_token: string;
+};
+export type ExperimentalAgentWorkstreamRestartAdmissionResponse = {
+    version: 1;
+    kind: 'workstream_restart';
+    status: 'admitted';
+    subject_agent_run_id: string;
+    owner_agent_run_id: string;
+    scope: string;
+    launch_id: string;
+    workstream_id: string;
+    namespace_origin_first_run_id: string;
+    execution: {
+        workflow_id: string;
+        execution_run_id: string;
+        first_run_id: string;
+        namespace: string;
+        task_queue: string;
+        workflow_type: 'ExecuteConversationWorkflow';
+        start_fingerprint: string;
+    };
+    source: {
+        execution_run_id: string;
+        source_first_run_id: string;
+        head: ConversationRef;
+        document_fingerprint: string;
+        accepted_output_fingerprint: string;
+        generation_admission: ExperimentalAgentGenerationAdmissionReceipt;
+        virtual_generation?: ExperimentalCanonicalVirtualGenerationBinding | undefined;
+    };
+};
+export type ExperimentalAgentWorkstreamTerminalPayload = {
+    version: 1;
+    subject_agent_run_id: string;
+    workflow_id: string;
+    chain_first_run_id: string;
+};
+export type ExperimentalAgentWorkstreamTerminalResponse = {
+    version: 1;
+    outcome: 'running' | 'projected' | 'already_projected' | 'not_current';
+};
+export type ExperimentalAdmitAgentGenerationInitialPayload = {
+    operation: 'initial';
+    request: ExperimentalCanonicalInitialAgentStreamRequest;
+};
+export type ExperimentalAdmitAgentGenerationPayload =
+    | ExperimentalAdmitAgentGenerationInitialPayload
+    | ExperimentalAdmitAgentGenerationToolApprovalReviewPayload
+    | ExperimentalAdmitAgentGenerationUserPayload
+    | ExperimentalAdmitAgentGenerationToolsPayload
+    | ExperimentalAdmitAgentGenerationCheckpointPayload;
+export type ExperimentalAdmitAgentGenerationUserPayload = {
+    operation: 'user';
+    request: ExperimentalCanonicalUserMessagePayload;
+};
+export type ExperimentalAdmitAgentGenerationToolsPayload = {
+    operation: 'tools';
+    request: ExperimentalCanonicalToolResultsPayload;
+};
+export type ExperimentalAdmitAgentGenerationCheckpointPayload = {
+    operation: 'checkpoint_summary';
+    request: ExperimentalCanonicalCheckpointSummaryPayload;
+};
+export type ExperimentalAgentRoutingIntent =
+    | {
+          model?: string | undefined;
+          effort?: ReasoningEffort | null | undefined;
+      }
+    | {
+          inference_profile: InferenceProfileId;
+          effort?: ReasoningEffort | null | undefined;
+      };
+export type ExperimentalAgentRoutingControlChange =
+    | {
+          model: string;
+          effort?: ReasoningEffort | null | undefined;
+      }
+    | {
+          effort: ReasoningEffort | null;
+      }
+    | {
+          inference_profile: InferenceProfileId;
+          effort?: ReasoningEffort | null | undefined;
+      };
+export type ExperimentalAgentRoutingControlBinding = {
+    account_id: string;
+    project_id: string;
+    subject_agent_run_id: string;
+    owner_agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    namespace_origin_first_run_id: string;
+};
+export type ExperimentalUpdateAgentRoutingControlPayload = {
+    operation_id: string;
+    expected_revision: number;
+    recorded_at: string;
+    change: ExperimentalAgentRoutingControlChange;
+};
+export type ExperimentalAgentRoutingControlReceipt =
+    | ExperimentalAgentRoutingInitialReceipt
+    | ExperimentalAgentRoutingChangeReceipt;
+export type ExperimentalAgentRoutingInitialReceipt = {
+    version: 2;
+    origin_execution: ExperimentalAgentRoutingOriginExecution;
+    owner: ExperimentalAgentRoutingControlBinding;
+    operation_id: string;
+    recorded_at: string;
+    payload_fingerprint: string;
+    base_revision: number;
+    result_revision: number;
+    intent: ExperimentalAgentRoutingIntent;
+    kind: 'initial';
+};
+export type ExperimentalAgentRoutingChangeReceipt = {
+    version: 2;
+    origin_execution: ExperimentalAgentRoutingOriginExecution;
+    owner: ExperimentalAgentRoutingControlBinding;
+    operation_id: string;
+    recorded_at: string;
+    payload_fingerprint: string;
+    base_revision: number;
+    result_revision: number;
+    intent: ExperimentalAgentRoutingIntent;
+    kind: 'change';
+    previous_receipt_id: string;
+    change: ExperimentalAgentRoutingControlChange;
+};
+export type ExperimentalAgentRoutingControlSelector = {
+    operation_id: string;
+    revision: number;
+};
+export type ExperimentalAgentRoutingControlQuery = {
+    access: 'control';
+    routing_control_operation_id?: string | undefined;
+};
+export type ExperimentalAgentRoutingControlResponse = {
+    api_version: '=20260930';
+    routing_control: ExperimentalAgentRoutingControlReceipt;
+};
+export type ExperimentalAgentRoutingOriginExecution = {
+    workflow_id: string;
+    first_run_id: string;
+};
+export type ExperimentalAgentRoutingExecutionBinding = {
+    workflow_id: string;
+    chain_first_run_id: string;
+};
+export type ExperimentalAgentGenerationAdmissionPayload = {
+    request_id: string;
+    control: ExperimentalAgentRoutingControlSelector;
+    input_fingerprint: string;
+};
+export type ExperimentalAgentGenerationAdmissionReceipt = {
+    version: 1;
+    request_id: string;
+    input_fingerprint: string;
+    admitted_at: string;
+    execution: ExperimentalAgentRoutingExecutionBinding;
+    routing_control: ExperimentalAgentRoutingControlReceipt;
+};
+export type ExperimentalAgentRoutingStatusPayload =
+    | {
+          kind: 'routing_control_change';
+          command: ExperimentalUpdateAgentRoutingControlPayload;
+      }
+    | {
+          request_id: string;
+          control: ExperimentalAgentRoutingControlSelector;
+          input_fingerprint: string;
+          kind: 'generation_admission';
+      };
+export type ExperimentalAgentRoutingStatusResponse =
+    | {
+          api_version: '=20260930';
+          routing_control: ExperimentalAgentRoutingControlReceipt;
+          kind: 'routing_control_change';
+      }
+    | {
+          kind: 'generation_admission';
+          api_version: '=20260930';
+          generation_admission: ExperimentalAgentGenerationAdmissionReceipt;
       };
 /**
  * The five run-analytics contract types, inferred from `./api-schemas/analytics.js`. Their
@@ -1794,7 +2135,7 @@ export type AuditTrailResponse = {
 export type AuditAggregationResolution = 'hour' | 'day' | 'week' | 'month';
 export type AuditAggregationDetailField = 'pipeline' | 'verdict' | 'workflow_type' | 'rule_id';
 export type AuditAggregationOperation = 'count' | 'count_distinct' | 'sum_meter' | 'average_meter';
-export type AuditAggregationDistinctField = 'resource_id' | 'request_id';
+export type AuditAggregationDistinctField = 'resource_id' | 'request_id' | 'principal_id' | 'actor_id';
 export type AuditAggregationGroup = {
     dimension: AuditAggregationDimensionWire;
     resolution?: AuditAggregationResolution | undefined;
@@ -1815,6 +2156,7 @@ export type AuditAggregationFilter = {
     resourceTypes?: string[] | undefined;
     eventCategories?: EventCategory[] | undefined;
     providers?: string[] | undefined;
+    principalTypes?: string[] | undefined;
     success?: boolean | undefined;
     details?: AuditAggregationDetailFilter[] | undefined;
 };
@@ -1994,25 +2336,8 @@ export type ExperimentalCanonicalToolResultsPayload = {
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
-    asyncCompletion: {
-        run_id: string;
-        stream?: boolean | undefined;
-        streaming?: StreamingOptions | undefined;
-        heartbeat_interval_ms?: number | undefined;
-        task_token: string;
-        activity_id: string;
-        canonical_state: {
-            head: ConversationRef;
-            scope: CanonicalConversationHeadScope;
-            output_receipt?: ConversationOutputReceipt | undefined;
-            materialized_input: ConversationMaterializedInput;
-            tool_call_sources?: Record<string, ToolCallSourceRef> | undefined;
-            pending_tool_calls?: PendingApplicationToolCall[] | undefined;
-        };
-        agent_acceptance: ExperimentalCanonicalAgentAcceptanceTarget;
-        canonical_output_reference: 'conversation_output_authority_v1';
-        telemetry?: ExperimentalCanonicalResumeTelemetry | undefined;
-    };
+    asyncCompletion: ExperimentalCanonicalAsyncCompletionOptions;
+    continuation_anchor: ExperimentalCanonicalContinuationAnchor;
     input_append?:
         | {
               expected_revision: number;
@@ -2098,6 +2423,84 @@ export type ExperimentalCanonicalResumeInputAppend = {
         active_tool_definition_ids?: Readonly<string[]> | undefined;
     };
 };
+export type ExperimentalCanonicalContinuationAnchor =
+    | {
+          kind: 'materialized_tool_input';
+          materialized_input: ConversationMaterializedInput;
+      }
+    | {
+          kind: 'accepted_output';
+          output_receipt: ConversationOutputReceipt;
+      };
+export type ExperimentalCanonicalCheckpointSummarySource = {
+    subject_agent_run_id: string;
+    conversation: ConversationRef;
+    scope: CanonicalConversationHeadScope;
+};
+export type ExperimentalCanonicalCheckpointSummaryPayload = {
+    kind: 'checkpoint_summary';
+    run: ExecutionRunDocRef;
+    operation_id: string;
+    source: ExperimentalCanonicalCheckpointSummarySource;
+    control: ExperimentalAgentRoutingControlSelector;
+    asyncCompletion: {
+        run_id: string;
+        heartbeat_interval_ms?: number | undefined;
+        task_token: string;
+        activity_id: string;
+    };
+};
+export type ExperimentalCanonicalUserMessageRequest =
+    | ExperimentalCanonicalUserMessagePayload
+    | ExperimentalCanonicalCheckpointSummaryPayload;
+export type InitialAuthoringMedia = {
+    name: string;
+    mime_type: string;
+    data_base64: string;
+    byte_length: number;
+    content_hash: string;
+};
+export type InitialAuthoringSegment = {
+    role: (typeof PromptRole)[keyof typeof PromptRole];
+    content: string;
+    files: InitialAuthoringMedia[];
+    tool_use_id?: string | undefined;
+    tool_result_status?: 'success' | 'error' | 'cancelled' | 'denied' | undefined;
+    thought_signature?: string | undefined;
+};
+export type InitialAuthoringInputRecord = {
+    version: 1;
+    run_id: string;
+    account_id: string;
+    project_id: string;
+    retention: (typeof RunDataStorageLevel)['DEBUG'];
+    subject_agent_run_id: string;
+    owner_agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    scheduled_semantic_fingerprint: string;
+    initializer_source: ConversationRef;
+    input_operation_id: string;
+    base_revision: number;
+    recorded_at: string;
+    definition_fingerprint: string;
+    parameters_fingerprint: string;
+    authoring_model?: string | undefined;
+    rendered_at: string;
+    segments: InitialAuthoringSegment[];
+    records_fingerprint: string;
+};
+export type ExperimentalInitialAuthoringViewQuery = {
+    view: 'initial_authoring';
+};
+export type AvailableInitialAuthoringView = {
+    status: 'available';
+    input: InitialAuthoringInputRecord;
+};
+export type UnavailableInitialAuthoringView = {
+    status: 'unavailable';
+    reason: 'not_recorded' | 'retention_policy';
+};
+export type ExperimentalInitialAuthoringViewResponse = AvailableInitialAuthoringView | UnavailableInitialAuthoringView;
 export type AvailableRunConversation = {
     status: 'available';
     conversation: ConversationDocument;
@@ -2108,6 +2511,10 @@ export type UnavailableRunConversation = {
     retention?: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel] | undefined;
 };
 export type RunConversationResponse = AvailableRunConversation | UnavailableRunConversation;
+export type ExperimentalCanonicalInitialAuthoringResponse = {
+    execution_run_id: string;
+    source: ConversationRef;
+};
 export type ExperimentalCanonicalInteractionInitialState =
     | ExperimentalCanonicalInteractionNewState
     | ExperimentalCanonicalInteractionDocumentState
@@ -2130,6 +2537,9 @@ export type ExperimentalCanonicalInteractionConversationReference = {
 };
 export type ExperimentalCanonicalInteractionHeaders = {
     'x-api-version': '=20260930';
+};
+export type ExperimentalCanonicalInteractionRetrievalQuery = {
+    history?: 'none' | undefined;
 };
 export type ExperimentalCanonicalInteractionReturnPolicy = {
     history: 'document' | 'reference' | 'none';
@@ -2180,6 +2590,7 @@ export type ExperimentalCanonicalInteractionExecutionRequest = {
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
+    model_switch?: ExperimentalCanonicalInteractionModelSwitchBinding | undefined;
     tags?: string[] | undefined;
     workflow?: ExecutionRunWorkflow | undefined;
 };
@@ -2191,10 +2602,25 @@ export type ExperimentalCanonicalNamedInteractionExecutionRequest = {
     config?: ExperimentalCanonicalInteractionExecutionConfiguration | undefined;
     result_schema?: ExperimentalCanonicalInteractionResultSchemaInput | undefined;
     turn_selection?: ExperimentalCanonicalInteractionTurnSelection | undefined;
+    model_switch?: ExperimentalCanonicalInteractionModelSwitchBinding | undefined;
     tags?: string[] | undefined;
     workflow?: ExecutionRunWorkflow | undefined;
     interaction: string;
     prompts?: ExperimentalCanonicalInteractionInlinePrompt[] | undefined;
+};
+export type ExperimentalCanonicalInteractionModelSwitchBinding = {
+    plan: ConversationModelSwitchPlan;
+    request_fingerprint: string;
+};
+export type ExperimentalCanonicalInteractionModelSwitchPrepareRequest = {
+    request: ExperimentalCanonicalNamedInteractionExecutionRequest;
+    operation: 'execute' | 'stream';
+    measurement_policy?: 'exact_only' | 'identified_estimate' | undefined;
+};
+export type ExperimentalCanonicalInteractionModelSwitchPrepareResult = {
+    plan: ConversationModelSwitchPlan;
+    request_fingerprint: string;
+    operation: 'execute' | 'stream';
 };
 export type ExperimentalCanonicalInteractionDocumentHistory = {
     status: 'document';
@@ -2237,6 +2663,23 @@ export type ExperimentalCanonicalInteractionExecutionResult = {
     run: ExperimentalCanonicalInteractionRun;
     output: ExperimentalCanonicalInteractionOutput;
     history: ExperimentalCanonicalInteractionHistory;
+    generation_admission?: ExperimentalAgentGenerationAdmissionReceipt | undefined;
+    virtual_generation?: ExperimentalCanonicalVirtualGenerationBinding | undefined;
+};
+export type ExperimentalCanonicalVirtualGenerationBinding = {
+    version: 1;
+    parent_request_id: string;
+    plan_fingerprint: string;
+    child_environment_id: string;
+    child_model: string;
+    child_provider: (typeof Providers)[keyof typeof Providers];
+    configured_occurrence: number;
+    child_identity: string;
+    child_request_id: string;
+    response_operation_id: string;
+    generation_id: string;
+    turn_id: string;
+    source: ConversationRef;
 };
 export type ExperimentalCanonicalAgentAcceptanceTarget =
     | {
@@ -2252,12 +2695,36 @@ export type ExperimentalCanonicalAgentAcceptanceTarget =
           scope: string;
           workstream_id: string;
       };
-export type ExperimentalCanonicalInteractionStreamRequest = {
+export type ExperimentalCanonicalInitialAgentStreamRequest = {
+    kind: 'initial_agent';
     operation_id: string;
-    request: ExperimentalCanonicalNamedInteractionExecutionRequest;
     resume_after?: ConversationStreamCursor | undefined;
-    agent_acceptance?: ExperimentalCanonicalAgentAcceptanceTarget | undefined;
+    request: ExperimentalCanonicalNamedInteractionExecutionRequest & {
+        initial_state: {
+            type: 'document';
+            document: ConversationDocument;
+        };
+        retention: (typeof RunDataStorageLevel)['DEBUG'];
+        return_policy: {
+            history: 'none';
+        };
+    };
+    agent_acceptance: ExperimentalCanonicalAgentAcceptanceTarget;
+    activity_delivery: {
+        activity_id: string;
+        run_id: string;
+        task_token: string;
+    };
 };
+export type ExperimentalCanonicalInteractionStreamRequest =
+    | {
+          operation_id: string;
+          request: ExperimentalCanonicalNamedInteractionExecutionRequest;
+          resume_after?: ConversationStreamCursor | undefined;
+          agent_acceptance?: ExperimentalCanonicalAgentAcceptanceTarget | undefined;
+      }
+    | ExperimentalCanonicalInitialAgentStreamRequest
+    | ExperimentalCanonicalToolApprovalReviewStreamRequest;
 export type ExperimentalCanonicalInteractionStreamOpened = {
     api_version: '=20260930';
     run_id: string;
@@ -2293,6 +2760,34 @@ export type ExperimentalCanonicalInteractionStreamEnvelope =
     | ExperimentalCanonicalInteractionStreamResumed
     | ExperimentalCanonicalInteractionAcceptedRecoveryOpened
     | ExperimentalCanonicalInteractionConversationEvent;
+export type ExperimentalCanonicalToolApprovalReviewStreamRequest = {
+    kind: 'tool_approval_review';
+    operation_id: string;
+    parent: {
+        execution_run_id: string;
+        generation_request_id: string;
+    };
+    source: ToolCallSourceRef;
+    control: ExperimentalAgentRoutingControlSelector;
+    request: {
+        interaction: 'sys:ToolApprovalReviewer';
+        data: {
+            approval_request_json: string;
+            intent_json: string;
+        };
+    };
+    agent_acceptance: ExperimentalCanonicalAgentAcceptanceTarget;
+    activity_delivery: {
+        activity_id: string;
+        run_id: string;
+        task_token: string;
+    };
+    resume_after?: ConversationStreamCursor | undefined;
+};
+export type ExperimentalAdmitAgentGenerationToolApprovalReviewPayload = {
+    operation: 'tool_approval_review';
+    request: ExperimentalCanonicalToolApprovalReviewStreamRequest;
+};
 export type FindPayload = {
     query: {
         [k: string]: unknown;
@@ -6098,6 +6593,8 @@ export type Project = {
     configuration: ProjectConfiguration;
     integrations?: Record<string, unknown> | undefined;
     plugins: string[];
+    annotations?: string[] | undefined;
+    last_activity_at?: string | undefined;
     created_by: string;
     updated_by: string;
     created_at: string;
@@ -6659,6 +7156,23 @@ export type AppendRunConversationToolResultsResponse = {
 export type PublishAgentRunConversationHeadPayload = {
     document: ConversationDocument;
     expected_head?: ConversationRef | undefined;
+};
+export type ExperimentalAgentProcessingHeadPayload = {
+    kind: 'processing_job_head';
+    expected_head: ConversationRef;
+    document: ConversationDocument;
+    processing_authority: ExperimentalAgentProcessingActivityEvidence;
+};
+export type ExperimentalCanonicalVersionedHeadPayload =
+    | ExperimentalCanonicalInitialAgentStreamRequest
+    | ExperimentalAgentProcessingHeadPayload
+    | ExperimentalCanonicalInitialRenderedInputHeadPayload;
+export type ExperimentalCanonicalInitialRenderedInputHeadPayload = {
+    kind: 'initial_rendered_input';
+    activity: {
+        request: ExperimentalCanonicalInitialAgentStreamRequest;
+        execution_run_id: string;
+    };
 };
 /**
  * The run ref is used to identify a run document in the storage
@@ -11189,6 +11703,8 @@ export type AuditAggregationDimensionMap = {
     event_category?: string | null | undefined;
     provider?: string | null | undefined;
     project_id?: string | null | undefined;
+    principal_id?: string | null | undefined;
+    actor_id?: string | null | undefined;
     'details.pipeline'?: string | null | undefined;
     'details.verdict'?: string | null | undefined;
     'details.workflow_type'?: string | null | undefined;
@@ -11202,6 +11718,8 @@ export type AuditAggregationDimensionWire =
     | 'event_category'
     | 'provider'
     | 'project_id'
+    | 'principal_id'
+    | 'actor_id'
     | 'details.pipeline'
     | 'details.verdict'
     | 'details.workflow_type'
@@ -12511,6 +13029,7 @@ export interface ApiComponentTypes {
     DelegationGrant: DelegationGrant;
     DelegationGrantArray: DelegationGrantArray;
     ExperimentalCanonicalInteractionHeaders: ExperimentalCanonicalInteractionHeaders;
+    ExperimentalCanonicalInteractionRetrievalQuery: ExperimentalCanonicalInteractionRetrievalQuery;
     ExperimentalCanonicalInteractionConversationReference: ExperimentalCanonicalInteractionConversationReference;
     ExperimentalCanonicalInteractionNewState: ExperimentalCanonicalInteractionNewState;
     ExperimentalCanonicalInteractionDocumentState: ExperimentalCanonicalInteractionDocumentState;
@@ -12526,6 +13045,9 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalInteractionInlinePrompt: ExperimentalCanonicalInteractionInlinePrompt;
     ExperimentalCanonicalInteractionExecutionRequest: ExperimentalCanonicalInteractionExecutionRequest;
     ExperimentalCanonicalNamedInteractionExecutionRequest: ExperimentalCanonicalNamedInteractionExecutionRequest;
+    ExperimentalCanonicalInteractionModelSwitchBinding: ExperimentalCanonicalInteractionModelSwitchBinding;
+    ExperimentalCanonicalInteractionModelSwitchPrepareRequest: ExperimentalCanonicalInteractionModelSwitchPrepareRequest;
+    ExperimentalCanonicalInteractionModelSwitchPrepareResult: ExperimentalCanonicalInteractionModelSwitchPrepareResult;
     ExperimentalCanonicalInteractionDocumentHistory: ExperimentalCanonicalInteractionDocumentHistory;
     ExperimentalCanonicalInteractionReferenceHistory: ExperimentalCanonicalInteractionReferenceHistory;
     ExperimentalCanonicalInteractionUnavailableHistory: ExperimentalCanonicalInteractionUnavailableHistory;
@@ -12535,10 +13057,44 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalInteractionUnavailableOutput: ExperimentalCanonicalInteractionUnavailableOutput;
     ExperimentalCanonicalInteractionOutput: ExperimentalCanonicalInteractionOutput;
     ExperimentalCanonicalInteractionExecutionResult: ExperimentalCanonicalInteractionExecutionResult;
+    ExperimentalCanonicalVirtualGenerationBinding: ExperimentalCanonicalVirtualGenerationBinding;
     AgentConversationArchiveSource: AgentConversationArchiveSource;
     AgentConversationNativeArchiveAttestation: AgentConversationNativeArchiveAttestation;
     ImportAgentRunConversationArchivePayload: ImportAgentRunConversationArchivePayload;
     ImportAgentRunConversationArchiveResponse: ImportAgentRunConversationArchiveResponse;
+    ExperimentalAgentRestartAdmissionExecution: ExperimentalAgentRestartAdmissionExecution;
+    ExperimentalAgentRestartAdmissionPayload: ExperimentalAgentRestartAdmissionPayload;
+    ExperimentalAgentRestartAdmissionResponse: ExperimentalAgentRestartAdmissionResponse;
+    ExperimentalAgentWorkstreamRestartAdmissionPayload: ExperimentalAgentWorkstreamRestartAdmissionPayload;
+    ExperimentalAgentWorkstreamRestartAdmissionResponse: ExperimentalAgentWorkstreamRestartAdmissionResponse;
+    ExperimentalAgentWorkstreamTerminalPayload: ExperimentalAgentWorkstreamTerminalPayload;
+    ExperimentalAgentWorkstreamTerminalResponse: ExperimentalAgentWorkstreamTerminalResponse;
+    ExperimentalAdmitAgentGenerationPayload: ExperimentalAdmitAgentGenerationPayload;
+    ExperimentalAdmitAgentGenerationUserPayload: ExperimentalAdmitAgentGenerationUserPayload;
+    ExperimentalAdmitAgentGenerationToolsPayload: ExperimentalAdmitAgentGenerationToolsPayload;
+    ExperimentalAdmitAgentGenerationToolApprovalReviewPayload: ExperimentalAdmitAgentGenerationToolApprovalReviewPayload;
+    ExperimentalAdmitAgentGenerationInitialPayload: ExperimentalAdmitAgentGenerationInitialPayload;
+    ExperimentalAdmitAgentGenerationCheckpointPayload: ExperimentalAdmitAgentGenerationCheckpointPayload;
+    ExperimentalAgentRoutingOriginExecution: ExperimentalAgentRoutingOriginExecution;
+    ExperimentalAgentRoutingExecutionBinding: ExperimentalAgentRoutingExecutionBinding;
+    ExperimentalAgentGenerationAdmissionPayload: ExperimentalAgentGenerationAdmissionPayload;
+    ExperimentalAgentGenerationAdmissionReceipt: ExperimentalAgentGenerationAdmissionReceipt;
+    ExperimentalAgentRoutingStatusPayload: ExperimentalAgentRoutingStatusPayload;
+    ExperimentalAgentRoutingStatusResponse: ExperimentalAgentRoutingStatusResponse;
+    ExperimentalAgentRoutingIntent: ExperimentalAgentRoutingIntent;
+    ExperimentalAgentRoutingControlChange: ExperimentalAgentRoutingControlChange;
+    ExperimentalAgentRoutingControlBinding: ExperimentalAgentRoutingControlBinding;
+    ExperimentalUpdateAgentRoutingControlPayload: ExperimentalUpdateAgentRoutingControlPayload;
+    ExperimentalAgentRoutingControlReceipt: ExperimentalAgentRoutingControlReceipt;
+    ExperimentalAgentRoutingInitialReceipt: ExperimentalAgentRoutingInitialReceipt;
+    ExperimentalAgentRoutingChangeReceipt: ExperimentalAgentRoutingChangeReceipt;
+    ExperimentalAgentRoutingControlSelector: ExperimentalAgentRoutingControlSelector;
+    ExperimentalAgentRoutingControlQuery: ExperimentalAgentRoutingControlQuery;
+    ExperimentalAgentRoutingControlResponse: ExperimentalAgentRoutingControlResponse;
+    ExperimentalCanonicalCheckpointSummarySource: ExperimentalCanonicalCheckpointSummarySource;
+    ExperimentalCanonicalCheckpointSummaryPayload: ExperimentalCanonicalCheckpointSummaryPayload;
+    ExperimentalCanonicalUserMessageRequest: ExperimentalCanonicalUserMessageRequest;
+    ExperimentalCanonicalContinuationAnchor: ExperimentalCanonicalContinuationAnchor;
     ExperimentalCanonicalResumeInputAppend: ExperimentalCanonicalResumeInputAppend;
     ExperimentalCanonicalAsyncCompletionOptions: ExperimentalCanonicalAsyncCompletionOptions;
     ExperimentalCanonicalResumeAccepted: ExperimentalCanonicalResumeAccepted;
@@ -12546,6 +13102,8 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalToolResultsPayload: ExperimentalCanonicalToolResultsPayload;
     ExperimentalCanonicalUserMessagePayload: ExperimentalCanonicalUserMessagePayload;
     ExperimentalCanonicalAgentAcceptanceTarget: ExperimentalCanonicalAgentAcceptanceTarget;
+    ExperimentalCanonicalToolApprovalReviewStreamRequest: ExperimentalCanonicalToolApprovalReviewStreamRequest;
+    ExperimentalCanonicalInitialAgentStreamRequest: ExperimentalCanonicalInitialAgentStreamRequest;
     ExperimentalCanonicalInteractionStreamRequest: ExperimentalCanonicalInteractionStreamRequest;
     ExperimentalCanonicalInteractionStreamOpened: ExperimentalCanonicalInteractionStreamOpened;
     ExperimentalCanonicalInteractionStreamResumed: ExperimentalCanonicalInteractionStreamResumed;
@@ -12565,16 +13123,49 @@ export interface ApiComponentTypes {
     ConversationStreamEvent: ConversationStreamEvent;
     ConversationToolExecutionRequest: ConversationToolExecutionRequest;
     ConversationToolExecutionResult: ConversationToolExecutionResult;
+    ExperimentalCanonicalInitialAuthoringResponse: ExperimentalCanonicalInitialAuthoringResponse;
+    ExperimentalCanonicalInitialRenderedInputHeadPayload: ExperimentalCanonicalInitialRenderedInputHeadPayload;
     RunConversationResponse: RunConversationResponse;
+    InitialAuthoringMedia: InitialAuthoringMedia;
+    InitialAuthoringSegment: InitialAuthoringSegment;
+    InitialAuthoringInputRecord: InitialAuthoringInputRecord;
+    ExperimentalInitialAuthoringViewQuery: ExperimentalInitialAuthoringViewQuery;
+    AvailableInitialAuthoringView: AvailableInitialAuthoringView;
+    UnavailableInitialAuthoringView: UnavailableInitialAuthoringView;
+    ExperimentalInitialAuthoringViewResponse: ExperimentalInitialAuthoringViewResponse;
     AppendRunConversationProgramTurnPayload: AppendRunConversationProgramTurnPayload;
     AppendRunConversationProgramTurnResponse: AppendRunConversationProgramTurnResponse;
     AppendRunConversationToolResultsPayload: AppendRunConversationToolResultsPayload;
     AppendRunConversationToolResultsResponse: AppendRunConversationToolResultsResponse;
     PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayload;
+    ExperimentalAgentProcessingHeadPayload: ExperimentalAgentProcessingHeadPayload;
+    ExperimentalCanonicalVersionedHeadPayload: ExperimentalCanonicalVersionedHeadPayload;
     RunBudgetOwner: RunBudgetOwner;
     RunBudgetUsage: RunBudgetUsage;
     ReadRunBudgetUsagePayload: ReadRunBudgetUsagePayload;
     RunBudgetTotals: RunBudgetTotals;
     RunBudgetCapability: RunBudgetCapability;
     RunBudgetCapabilityQuery: RunBudgetCapabilityQuery;
+    ConversationJsonMinificationTransform: JsonMinificationTransform;
+    ConversationJsonMinificationMeasuredProjection: JsonMinificationMeasuredProjection;
+    ConversationJsonMinificationMeasurement: JsonMinificationMeasurement;
+    ConversationJsonMinificationProposal: JsonMinificationProposal;
+    ConversationJsonMinificationNoOpReason: JsonMinificationNoOpReason;
+    ConversationJsonMinificationApplication: JsonMinificationApplication;
+    ExperimentalPublishAgentAssetPayload: ExperimentalPublishAgentAssetPayload;
+    ExperimentalPublishedAgentAsset: ExperimentalPublishedAgentAsset;
+    ExperimentalAgentAssetPublication: ExperimentalAgentAssetPublication;
+    ExperimentalExtractAgentAssetPayload: ExperimentalExtractAgentAssetPayload;
+    ExperimentalAgentAssetDerivationSource: ExperimentalAgentAssetDerivationSource;
+    ExperimentalAgentAssetDerivationTransform: ExperimentalAgentAssetDerivationTransform;
+    ExperimentalAgentAssetDerivation: ExperimentalAgentAssetDerivation;
+    ExperimentalAgentAssetExtractionPending: ExperimentalAgentAssetExtractionPending;
+    ExperimentalAgentAssetExtractionAvailable: ExperimentalAgentAssetExtractionAvailable;
+    ExperimentalAgentAssetExtractionFailed: ExperimentalAgentAssetExtractionFailed;
+    ExperimentalAgentAssetExtraction: ExperimentalAgentAssetExtraction;
+    ExperimentalClaimAgentAssetExtractionPayload: ExperimentalClaimAgentAssetExtractionPayload;
+    ExperimentalAgentAssetExtractionClaim: ExperimentalAgentAssetExtractionClaim;
+    ExperimentalAgentProcessingActivityEvidence: ExperimentalAgentProcessingActivityEvidence;
+    ExperimentalClaimAgentProcessingPayload: ExperimentalClaimAgentProcessingPayload;
+    ExperimentalAgentProcessingClaim: ExperimentalAgentProcessingClaim;
 }

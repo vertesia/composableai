@@ -33,6 +33,32 @@ describe('RunsApi resume request options', () => {
 });
 
 describe('RunsApi canonical retrieval', () => {
+    it('reads exact-version initial authoring evidence with encoded ID, query, and cancellation', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json({ status: 'unavailable', reason: 'not_recorded' })),
+            onRequest: (request) => requests.push(request),
+        });
+        const cancellation = new AbortController();
+        expect(
+            await client.runs.retrieveInitialAuthoringInput('run/1', {
+                headers: { 'X-Api-Version': '=1', 'x-trace': 'initial-view' },
+                signal: cancellation.signal,
+            }),
+        ).toEqual({ status: 'unavailable', reason: 'not_recorded' });
+        const request = requests[0];
+        if (!request) throw new Error('Expected an initial authoring inspection request');
+        expect(new URL(request.url).pathname).toBe('/api/v1/runs/run%2F1/conversation');
+        expect(new URL(request.url).searchParams.get('view')).toBe('initial_authoring');
+        expect(request.headers.get('x-api-version')).toBe(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE);
+        expect(request.headers.get('x-trace')).toBe('initial-view');
+        expect(request.method).toBe('GET');
+        cancellation.abort();
+        expect(request.signal.aborted).toBe(true);
+    });
+
     it('uses the dedicated endpoint and preserves the unavailable result', async () => {
         const requests: Request[] = [];
         const response = { status: 'unavailable', reason: 'retention_policy', retention: 'STANDARD' };
@@ -188,6 +214,10 @@ describe('RunsApi exact-version canonical resume', () => {
                     ...asyncCompletion.canonical_state,
                     materialized_input: { operation_id: 'input:tools', result_revision: 4 },
                 },
+            },
+            continuation_anchor: {
+                kind: 'materialized_tool_input',
+                materialized_input: { operation_id: 'input:tools', result_revision: 4 },
             },
         } satisfies ExperimentalCanonicalToolResultsPayload;
         const options = { headers: { 'X-Api-Version': '=1', 'x-vertesia-required-tool-name': 'write_artifact' } };

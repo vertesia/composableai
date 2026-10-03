@@ -1,3 +1,4 @@
+import { createConversationDocument } from '@llumiverse/conversation';
 import { ConnectionError, ServerError } from '@vertesia/api-fetch-client';
 import type {
     ConversationStreamEvent,
@@ -392,6 +393,44 @@ describe('canonical interaction stream SDK session', () => {
             conflict,
         );
         expect(transport.connect).toHaveBeenCalledOnce();
+    });
+
+    it('preserves sealed initial tags while ordinary streams retain session decoration', async () => {
+        const requests: Request[] = [];
+        const body = [opened(), wrapped(accepted(STREAM_ID, 0))]
+            .map((envelope) => `data: ${JSON.stringify(envelope)}\n\n`)
+            .join('');
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            sessionTags: ['session:late'],
+            fetch: vi.fn(async () => new Response(body, { headers: { 'content-type': 'text/event-stream' } })),
+            onRequest: (wire) => requests.push(wire.clone()),
+        });
+        const initial: ExperimentalCanonicalInteractionStreamRequest = {
+            kind: 'initial_agent',
+            operation_id: request.operation_id,
+            request: {
+                interaction: 'stream-test',
+                initial_state: {
+                    type: 'document',
+                    document: createConversationDocument({
+                        id: 'conversation:initial',
+                        created_at: '2026-10-03T00:00:00Z',
+                    }),
+                },
+                retention: RunDataStorageLevel.DEBUG,
+                return_policy: { history: 'none' },
+                tags: ['scheduled:one'],
+            },
+            agent_acceptance: { version: 1, subject_agent_run_id: 'subject', scope: 'root', activity_id: 'activity' },
+            activity_delivery: { activity_id: 'activity', run_id: 'actual:run', task_token: 'opaque-token' },
+        };
+        await client.runs.streamCanonical(initial);
+        await client.runs.streamCanonical({ ...request, request: { ...request.request, tags: ['ordinary:one'] } });
+        expect(await requests[0].json()).toEqual(initial);
+        expect((await requests[1].json()).request.tags).toEqual(['session:late', 'ordinary:one']);
+        expect(initial.request.tags).toEqual(['scheduled:one']);
     });
 
     it('uses the exact versioned endpoint and parses the finite accepted event', async () => {

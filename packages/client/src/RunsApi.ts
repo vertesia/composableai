@@ -10,13 +10,20 @@ import type {
     ExecutionRun,
     ExecutionRunDocRef,
     ExecutionRunRef,
+    ExperimentalCanonicalCheckpointSummaryPayload,
+    ExperimentalCanonicalInitialAgentStreamRequest,
+    ExperimentalCanonicalInitialAuthoringResponse,
     ExperimentalCanonicalInteractionExecutionResult,
+    ExperimentalCanonicalInteractionModelSwitchPrepareRequest,
+    ExperimentalCanonicalInteractionModelSwitchPrepareResult,
+    ExperimentalCanonicalInteractionRetrievalQuery,
     ExperimentalCanonicalInteractionStreamEnvelope,
     ExperimentalCanonicalInteractionStreamRequest,
     ExperimentalCanonicalNamedInteractionExecutionRequest,
     ExperimentalCanonicalResumeAccepted,
     ExperimentalCanonicalToolResultsPayload,
     ExperimentalCanonicalUserMessagePayload,
+    ExperimentalInitialAuthoringViewResponse,
     FindPayload,
     FindRunResult,
     InteractionExecutionResult,
@@ -103,10 +110,11 @@ export class RunsApi extends ApiTopic {
     /** Retrieve the explicitly versioned experimental canonical execution envelope. */
     async retrieveCanonical<T = unknown>(
         id: string,
-        options?: CanonicalInteractionRequestOptions,
+        options?: CanonicalInteractionRequestOptions & ExperimentalCanonicalInteractionRetrievalQuery,
     ): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult<T>> {
         const result = await this.get<ExperimentalCanonicalInteractionExecutionResult>(`/${encodeURIComponent(id)}`, {
             headers: canonicalInteractionHeaders(options?.headers),
+            ...(options?.history === 'none' ? { query: { history: options.history } } : {}),
             signal: options?.signal,
             timeoutMs: options?.timeoutMs,
         });
@@ -116,6 +124,32 @@ export class RunsApi extends ApiTopic {
     /** Retrieve a retained canonical history, or the explicit reason it is unavailable. */
     retrieveConversation(id: string): Promise<RunConversationResponse> {
         return this.get(`/${encodeURIComponent(id)}/conversation`);
+    }
+
+    /** Targetless immutable authoring capture after the separately acknowledged initial source. */
+    prepareCanonicalInitialAuthoring(
+        request: ExperimentalCanonicalInitialAgentStreamRequest,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalCanonicalInitialAuthoringResponse> {
+        return this.post('/canonical-initial-authoring', {
+            payload: request,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Read DEBUG-retained initial authoring facts through the exact-version contract. */
+    retrieveInitialAuthoringInput(
+        id: string,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalInitialAuthoringViewResponse> {
+        return this.get(`/${encodeURIComponent(id)}/conversation`, {
+            headers: canonicalInteractionHeaders(options?.headers),
+            query: { view: 'initial_authoring' },
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
     }
 
     /** Durably append canonical tool results before the next model preparation. */
@@ -204,13 +238,35 @@ export class RunsApi extends ApiTopic {
         return enhanceExperimentalCanonicalInteractionExecutionResult<T>(result);
     }
 
+    /** Dry, revision-bound compatibility report for an exact prospective canonical reference request. */
+    async prepareCanonicalModelSwitch(
+        payload: ExperimentalCanonicalInteractionModelSwitchPrepareRequest,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalCanonicalInteractionModelSwitchPrepareResult> {
+        const sessionTags = (this.client as VertesiaClient).sessionTags;
+        if (sessionTags) {
+            const tags = (Array.isArray(sessionTags) ? sessionTags : [sessionTags]).concat(payload.request.tags ?? []);
+            payload = { ...payload, request: { ...payload.request, tags } };
+        }
+        return this.post<ExperimentalCanonicalInteractionModelSwitchPrepareResult>('/canonical-model-switch/prepare', {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            timeoutMs: options?.timeoutMs ?? INTERACTION_EXECUTION_TIMEOUT_MS,
+            signal: options?.signal,
+        });
+    }
+
     /** Stream one explicitly versioned canonical interaction run with bounded reconnect validation. */
     async streamCanonical(
         payload: ExperimentalCanonicalInteractionStreamRequest,
         options: CanonicalInteractionStreamSessionOptions & CanonicalInteractionRequestOptions = {},
     ): Promise<CanonicalInteractionStreamResult> {
         const sessionTags = (this.client as VertesiaClient).sessionTags;
-        if (sessionTags) {
+        // Membership-authorized initial/reviewer requests are sealed; session decoration cannot add unscheduled fields.
+        if (
+            sessionTags &&
+            !('kind' in payload && (payload.kind === 'initial_agent' || payload.kind === 'tool_approval_review'))
+        ) {
             const tags = (Array.isArray(sessionTags) ? sessionTags : [sessionTags]).concat(payload.request.tags ?? []);
             payload = { ...payload, request: { ...payload.request, tags } };
         }
@@ -277,6 +333,19 @@ export class RunsApi extends ApiTopic {
     /** Resume through the exact experimental contract; content is acknowledged separately by Temporal. */
     sendCanonicalUserMessage(
         payload: ExperimentalCanonicalUserMessagePayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalCanonicalResumeAccepted> {
+        return this.post('/user-message', {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Derive a checkpoint summary through the existing token-bearing native operation; the owner head is unchanged. */
+    sendCanonicalCheckpointSummary(
+        payload: ExperimentalCanonicalCheckpointSummaryPayload,
         options?: CanonicalInteractionRequestOptions,
     ): Promise<ExperimentalCanonicalResumeAccepted> {
         return this.post('/user-message', {

@@ -7,3 +7,9 @@ export type ExperimentalCanonicalToolResultsPayload = Wire.ExperimentalCanonical
 export type ExperimentalCanonicalUserMessagePayload = Wire.ExperimentalCanonicalUserMessagePayload;
 
 export type ExperimentalCanonicalResumeInputAppend = Wire.ExperimentalCanonicalResumeInputAppend;
+
+export type ExperimentalCanonicalContinuationAnchor = Wire.ExperimentalCanonicalContinuationAnchor;
+
+export type ExperimentalCanonicalCheckpointSummarySource = Wire.ExperimentalCanonicalCheckpointSummarySource;
+export type ExperimentalCanonicalCheckpointSummaryPayload = Wire.ExperimentalCanonicalCheckpointSummaryPayload;
+export type ExperimentalCanonicalUserMessageRequest = Wire.ExperimentalCanonicalUserMessageRequest;

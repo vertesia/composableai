@@ -1,13 +1,19 @@
 export type {
     AudioResult,
     OpenAiAudioOptions,
+    OpenAiImageGenerationMask,
+    OpenAiImageGenerationOptions,
     OpenAiSpeechOptions,
     OpenAiTranscriptionOptions,
     VertexAIGeminiOmniVideoOptions,
     VideoResult,
 } from '@llumiverse/common';
 export * from './access-control.js';
+export type * from './agent-assets.js';
 export type * from './agent-conversation-migration.js';
+export type * from './agent-processing.js';
+export type * from './agent-restart-admission.js';
+export type * from './agent-routing-control.js';
 export * from './analytics.js';
 /**
  * Schema-derived API types. MUST stay `export type` — tsc erases it, so `lib/index.js` never
@@ -29,6 +35,7 @@ export * from './browser-credentials.js';
 export * from './canonical-conversation.js';
 export type * from './canonical-conversation-resume.js';
 export * from './canonical-generation-evidence.js';
+export type * from './canonical-initial-authoring.js';
 export type * from './canonical-interaction-execution.js';
 export type * from './canonical-interaction-stream.js';
 export { CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE } from './canonical-interaction-stream.js';

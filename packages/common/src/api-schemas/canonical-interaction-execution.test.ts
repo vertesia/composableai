@@ -1,3 +1,5 @@
+import { Providers } from '@llumiverse/common';
+import { createConversationDocument, prepareModelSwitch } from '@llumiverse/conversation';
 import type { JsonObjectSchema, JsonValueSchema } from '@llumiverse/conversation/schemas';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, expectTypeOf, it } from 'vitest';
@@ -7,6 +9,7 @@ import {
     ExperimentalCanonicalInteractionHeadersSchema,
     ExperimentalCanonicalInteractionHistorySchema,
     ExperimentalCanonicalInteractionInlinePromptSchema,
+    ExperimentalCanonicalInteractionModelSwitchPrepareRequestSchema,
     ExperimentalCanonicalInteractionResultSchemaInputSchema,
     ExperimentalCanonicalInteractionTurnSelectionSchema,
     ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
@@ -27,6 +30,66 @@ function emittedComponent(schema: z.ZodType, name: string): Record<string, unkno
 }
 
 describe('experimental canonical interaction execution schemas', () => {
+    it('publishes a reference-only dry switch binding and rejects reuse as a new or changed prepare request', async () => {
+        const document = createConversationDocument({ id: 'conversation:switch', created_at: '2026-10-03T00:00:00Z' });
+        const plan = await prepareModelSwitch(
+            document,
+            {
+                source: { conversation_id: document.id, revision: document.revision },
+                expected_context_revision: document.context.revision,
+                target: {
+                    provider: Providers.openai,
+                    protocol: 'openai.responses',
+                    model: 'gpt-5.4',
+                    adapter_version: '1',
+                },
+            },
+            {
+                project: async () => ({ status: 'unsupported', reason: 'Fixture dry projection unavailable' }),
+                hasUnsettledGeneration: async () => false,
+            },
+        );
+        const request = {
+            interaction: 'interaction:switch',
+            initial_state: {
+                type: 'reference' as const,
+                reference: { run_id: 'run:source', conversation: plan.source },
+                operation_id: 'operation:switch',
+            },
+            retention: 'DEBUG' as const,
+            return_policy: { history: 'reference' as const },
+        };
+        const binding = { plan, request_fingerprint: 'sha256:prospective-request' };
+        const bound = { ...request, model_switch: binding };
+        const prospective = { request, operation: 'execute' as const };
+        expect(ExperimentalCanonicalNamedInteractionExecutionRequestSchema.safeParse(bound).success).toBe(true);
+        expect(ExperimentalCanonicalInteractionModelSwitchPrepareRequestSchema.safeParse(prospective).success).toBe(
+            true,
+        );
+        expect(
+            ExperimentalCanonicalInteractionModelSwitchPrepareRequestSchema.safeParse({
+                request: bound,
+                operation: 'execute',
+            }).success,
+        ).toBe(false);
+
+        const ajv = new Ajv2020({ strictSchema: false, allErrors: true });
+        const validateBound = ajv.compile({
+            components: { schemas: ApiSchemaComponents },
+            $ref: '#/components/schemas/ExperimentalCanonicalNamedInteractionExecutionRequest',
+        });
+        const validatePrepare = ajv.compile({
+            components: { schemas: ApiSchemaComponents },
+            $ref: '#/components/schemas/ExperimentalCanonicalInteractionModelSwitchPrepareRequest',
+        });
+        expect(validateBound(bound), JSON.stringify(validateBound.errors)).toBe(true);
+        expect(validatePrepare(prospective), JSON.stringify(validatePrepare.errors)).toBe(true);
+        expect(validatePrepare({ request: bound, operation: 'execute' })).toBe(false);
+        const newRequest = { ...bound, initial_state: { type: 'new' as const } };
+        expect(ExperimentalCanonicalNamedInteractionExecutionRequestSchema.safeParse(newRequest).success).toBe(false);
+        expect(validateBound(newRequest)).toBe(false);
+    });
+
     it('requires the exact opt-in API version header', () => {
         expect(
             ExperimentalCanonicalInteractionHeadersSchema.parse({

@@ -142,18 +142,7 @@ function synthesizeDiscriminator(node: JsonObject, ctx: HoistContext): void {
     }
 }
 
-/**
- * Definition entries in an order that lets a discriminator be synthesized.
- *
- * A union's `discriminator` is read off its MEMBERS, so a union hoisted before them registers
- * without one. That is invisible until the same union is registered twice — once as a root, where
- * Zod happens to emit its members first, and once inside a component that references it, where it
- * does not — at which point the two shapes disagree and `register` reports a conflict on a
- * component nobody wrote twice.
- *
- * A discriminated union's branches are objects, never unions themselves, so hoisting non-unions
- * first is enough to make the result independent of the order Zod emitted `$defs` in.
- */
+/** Keep stable definition ordering; discriminator synthesis now runs after all definitions are hoisted. */
 function inHoistOrder(block: JsonObject): [string, unknown][] {
     const entries = Object.entries(block);
     const isUnion = (schema: unknown) =>
@@ -217,8 +206,6 @@ function walk(value: unknown, ctx: HoistContext, isRoot: boolean): unknown {
                     ? Object.fromEntries(Object.entries(child).map(([p, s]) => [p, walk(s, ctx, false)]))
                     : walk(child, ctx, false);
         }
-
-        synthesizeDiscriminator(out, ctx);
 
         // A nested schema carrying its own $id is a named component: hoist it and leave a reference.
         if (typeof $id === 'string' && !isRoot) {
@@ -325,6 +312,17 @@ export function toOpenApiComponents(
         }
         register(name, adapted, ctx);
     }
+
+    // Shared definitions must be compared before derived discriminator metadata is added.
+    // Resolve every union against the complete graph, independent of discovery order.
+    const synthesized = new WeakSet<JsonObject>();
+    const synthesizeCompleteGraph = (node: JsonObject): void => {
+        if (synthesized.has(node)) return;
+        synthesized.add(node);
+        eachSubschema(node, synthesizeCompleteGraph);
+        synthesizeDiscriminator(node, ctx);
+    };
+    for (const schema of Object.values(ctx.components)) synthesizeCompleteGraph(schema);
 
     const strict = options.strictComponents;
     if (strict) {
@@ -445,7 +443,15 @@ function isOnlyStringType(schema: JsonObject): boolean {
  * at another component, which is governed by its own listing.
  */
 function closeObjects(node: JsonObject): void {
-    if (typeof node[REF] !== 'string' && node.type === 'object' && node.additionalProperties === undefined) {
+    // Discriminator synthesis annotates unions as objects, but their properties live in the
+    // branches. Closing that property-less container would reject every branch's fields.
+    const unionContainer = (Array.isArray(node.oneOf) || Array.isArray(node.anyOf)) && node.properties === undefined;
+    if (
+        typeof node[REF] !== 'string' &&
+        node.type === 'object' &&
+        node.additionalProperties === undefined &&
+        !unionContainer
+    ) {
         node.additionalProperties = false;
     }
     eachSubschema(node, closeObjects);

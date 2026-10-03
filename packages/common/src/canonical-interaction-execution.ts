@@ -7,6 +7,7 @@ export type ExperimentalCanonicalInteractionReferenceState = Wire.ExperimentalCa
 export type ExperimentalCanonicalInteractionConversationReference =
     Wire.ExperimentalCanonicalInteractionConversationReference;
 export type ExperimentalCanonicalInteractionHeaders = Wire.ExperimentalCanonicalInteractionHeaders;
+export type ExperimentalCanonicalInteractionRetrievalQuery = Wire.ExperimentalCanonicalInteractionRetrievalQuery;
 export type ExperimentalCanonicalInteractionReturnPolicy = Wire.ExperimentalCanonicalInteractionReturnPolicy;
 export type ExperimentalCanonicalInteractionAutoTurnSelection = Wire.ExperimentalCanonicalInteractionAutoTurnSelection;
 export type ExperimentalCanonicalInteractionNoneTurnSelection = Wire.ExperimentalCanonicalInteractionNoneTurnSelection;
@@ -20,6 +21,12 @@ export type ExperimentalCanonicalInteractionInlinePrompt = Wire.ExperimentalCano
 export type ExperimentalCanonicalInteractionExecutionRequest = Wire.ExperimentalCanonicalInteractionExecutionRequest;
 export type ExperimentalCanonicalNamedInteractionExecutionRequest =
     Wire.ExperimentalCanonicalNamedInteractionExecutionRequest;
+export type ExperimentalCanonicalInteractionModelSwitchBinding =
+    Wire.ExperimentalCanonicalInteractionModelSwitchBinding;
+export type ExperimentalCanonicalInteractionModelSwitchPrepareRequest =
+    Wire.ExperimentalCanonicalInteractionModelSwitchPrepareRequest;
+export type ExperimentalCanonicalInteractionModelSwitchPrepareResult =
+    Wire.ExperimentalCanonicalInteractionModelSwitchPrepareResult;
 export type ExperimentalCanonicalInteractionDocumentHistory = Wire.ExperimentalCanonicalInteractionDocumentHistory;
 export type ExperimentalCanonicalInteractionReferenceHistory = Wire.ExperimentalCanonicalInteractionReferenceHistory;
 export type ExperimentalCanonicalInteractionUnavailableHistory =
@@ -30,3 +37,5 @@ export type ExperimentalCanonicalInteractionAcceptedOutput = Wire.ExperimentalCa
 export type ExperimentalCanonicalInteractionUnavailableOutput = Wire.ExperimentalCanonicalInteractionUnavailableOutput;
 export type ExperimentalCanonicalInteractionOutput = Wire.ExperimentalCanonicalInteractionOutput;
 export type ExperimentalCanonicalInteractionExecutionResult = Wire.ExperimentalCanonicalInteractionExecutionResult;
+
+export type ExperimentalCanonicalVirtualGenerationBinding = Wire.ExperimentalCanonicalVirtualGenerationBinding;

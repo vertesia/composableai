@@ -1,11 +1,15 @@
 import {
     AppendConversationRecordsOptionsSchema,
+    ConversationMaterializedInputSchema,
+    ConversationOutputReceiptSchema,
     ConversationRecordBatchSchema,
+    ConversationRefSchema,
     IdentifierSchema,
     ReceivedTurnProvenanceSchema,
     UserTurnSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
+import { ExperimentalAgentRoutingControlSelectorSchema } from './agent-routing-control.js';
 import {
     ExperimentalCanonicalInteractionExecutionConfigurationSchema,
     ExperimentalCanonicalInteractionResultSchemaInputSchema,
@@ -15,6 +19,7 @@ import { ExperimentalCanonicalAgentAcceptanceTargetSchema } from './canonical-in
 import {
     AsyncCompletionOptionsSchema,
     CanonicalContinuationStateSchema,
+    CanonicalConversationHeadScopeSchema,
     StreamingTelemetryContextSchema,
     UserMessagePayloadSchema,
 } from './interaction.js';
@@ -76,15 +81,29 @@ const resume = {
     turn_selection: ExperimentalCanonicalInteractionTurnSelectionSchema.optional(),
 };
 
+/** An explicit continuation anchor selects retained proof; invalid tool proof never falls back to output. */
+export const ExperimentalCanonicalContinuationAnchorSchema = z
+    .discriminatedUnion('kind', [
+        z.strictObject({
+            kind: z.literal('materialized_tool_input'),
+            materialized_input: ConversationMaterializedInputSchema,
+        }),
+        z.strictObject({ kind: z.literal('accepted_output'), output_receipt: ConversationOutputReceiptSchema }),
+    ])
+    .meta({
+        id: 'ExperimentalCanonicalContinuationAnchor',
+        type: 'object',
+        required: ['kind'],
+        discriminator: { propertyName: 'kind' },
+        additionalProperties: true,
+    });
+
 /** Tool outcomes are already retained under materialized_input; no tool/result content mirror travels here. */
 export const ExperimentalCanonicalToolResultsPayloadSchema = z
     .strictObject({
         ...resume,
-        asyncCompletion: ExperimentalCanonicalAsyncCompletionOptionsSchema.extend({
-            canonical_state: CanonicalContinuationStateSchema.extend({
-                materialized_input: CanonicalContinuationStateSchema.shape.materialized_input.unwrap(),
-            }),
-        }),
+        asyncCompletion: ExperimentalCanonicalAsyncCompletionOptionsSchema,
+        continuation_anchor: ExperimentalCanonicalContinuationAnchorSchema,
         input_append: ExperimentalCanonicalResumeInputAppendSchema.extend({
             records: ExperimentalCanonicalResumeInputAppendSchema.shape.records.omit({
                 turns: true,
@@ -115,3 +134,38 @@ export const ExperimentalCanonicalResumeAcceptedSchema = z
         activity_id: IdentifierSchema,
     })
     .meta({ id: 'ExperimentalCanonicalResumeAccepted' });
+
+/** A server-derived summary reads this exact authorized source; it never selects an active publication target. */
+export const ExperimentalCanonicalCheckpointSummarySourceSchema = z
+    .strictObject({
+        subject_agent_run_id: IdentifierSchema,
+        conversation: ConversationRefSchema,
+        scope: CanonicalConversationHeadScopeSchema,
+    })
+    .meta({ id: 'ExperimentalCanonicalCheckpointSummarySource' });
+
+/** Token-bearing derivation callback without active owner-head acceptance or an output mirror. */
+export const ExperimentalCanonicalCheckpointSummaryPayloadSchema = z
+    .strictObject({
+        kind: z.literal('checkpoint_summary'),
+        run: UserMessagePayloadSchema.shape.run,
+        operation_id: IdentifierSchema,
+        source: ExperimentalCanonicalCheckpointSummarySourceSchema,
+        control: ExperimentalAgentRoutingControlSelectorSchema,
+        asyncCompletion: AsyncCompletionOptionsSchema.pick({
+            run_id: true,
+            heartbeat_interval_ms: true,
+        }).extend({
+            task_token: z
+                .string()
+                .min(1)
+                .max(64 * 1024),
+            activity_id: IdentifierSchema,
+        }),
+    })
+    .meta({ id: 'ExperimentalCanonicalCheckpointSummaryPayload' });
+
+/** Ordinary native user append and derived summary are disjoint strict shapes; the existing branch is unchanged. */
+export const ExperimentalCanonicalUserMessageRequestSchema = z
+    .union([ExperimentalCanonicalUserMessagePayloadSchema, ExperimentalCanonicalCheckpointSummaryPayloadSchema])
+    .meta({ id: 'ExperimentalCanonicalUserMessageRequest', additionalProperties: true });

@@ -1,6 +1,9 @@
+import { Providers } from '@llumiverse/common';
 import {
+    ContentHashSchema,
     ConversationAcceptedOutputFragmentSchema,
     ConversationDocumentSchema,
+    ConversationModelSwitchPlanSchema,
     ConversationRefSchema,
     IdentifierSchema,
     JsonObjectSchema,
@@ -10,6 +13,7 @@ import {
 import { z } from 'zod';
 import { RunDataStorageLevel } from '../interaction-values.js';
 import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE, VERSION_HEADER } from '../versions.js';
+import { ExperimentalAgentGenerationAdmissionReceiptSchema } from './agent-routing-control.js';
 import {
     ExecutionRunStatusSchema,
     ExecutionRunWorkflowSchema,
@@ -23,6 +27,11 @@ export const ExperimentalCanonicalInteractionHeadersSchema = z
         [VERSION_HEADER]: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
     })
     .meta({ id: 'ExperimentalCanonicalInteractionHeaders' });
+
+/** Retrieval-only projection. Omission preserves the run's retained history policy. */
+export const ExperimentalCanonicalInteractionRetrievalQuerySchema = z
+    .strictObject({ history: z.literal('none').optional() })
+    .meta({ id: 'ExperimentalCanonicalInteractionRetrievalQuery' });
 
 export const ExperimentalCanonicalInteractionConversationReferenceSchema = z
     .strictObject({
@@ -65,6 +74,14 @@ export const ExperimentalCanonicalInteractionInitialStateSchema = z
 export const ExperimentalCanonicalInteractionReturnPolicySchema = z
     .strictObject({ history: z.enum(['document', 'reference', 'none']) })
     .meta({ id: 'ExperimentalCanonicalInteractionReturnPolicy' });
+
+/** Dry retained-source plan plus the exact prospective route/request it was prepared for. */
+export const ExperimentalCanonicalInteractionModelSwitchBindingSchema = z
+    .strictObject({
+        plan: ConversationModelSwitchPlanSchema,
+        request_fingerprint: ContentHashSchema,
+    })
+    .meta({ id: 'ExperimentalCanonicalInteractionModelSwitchBinding' });
 
 export const ExperimentalCanonicalInteractionAutoTurnSelectionSchema = z
     .strictObject({ mode: z.literal('auto') })
@@ -149,6 +166,7 @@ const canonicalExecutionRequestFields = {
     config: ExperimentalCanonicalInteractionExecutionConfigurationSchema.optional(),
     result_schema: ExperimentalCanonicalInteractionResultSchemaInputSchema.optional(),
     turn_selection: ExperimentalCanonicalInteractionTurnSelectionSchema.optional(),
+    model_switch: ExperimentalCanonicalInteractionModelSwitchBindingSchema.optional(),
     tags: z.array(z.string()).optional(),
     workflow: ExecutionRunWorkflowSchema.optional(),
 };
@@ -169,6 +187,24 @@ const referenceDebugRetentionJsonSchema = {
             then: {
                 properties: { retention: { const: RunDataStorageLevel.DEBUG } },
                 required: ['retention'],
+            },
+        },
+    ],
+} as const;
+
+const modelSwitchReferenceJsonSchema = {
+    allOf: [
+        {
+            if: { required: ['model_switch'] },
+            // biome-ignore lint/suspicious/noThenProperty: JSON Schema's conditional keyword is literally `then`.
+            then: {
+                properties: {
+                    initial_state: {
+                        properties: { type: { const: 'reference' } },
+                        required: ['type'],
+                    },
+                },
+                required: ['initial_state'],
             },
         },
     ],
@@ -201,6 +237,19 @@ function requireDebugRetentionForReference(
     }
 }
 
+function requireReferenceForModelSwitch(
+    value: { initial_state: { type: string }; model_switch?: unknown },
+    context: z.core.$RefinementCtx,
+): void {
+    if (value.model_switch !== undefined && value.initial_state.type !== 'reference') {
+        context.addIssue({
+            code: 'custom',
+            message: 'A model-switch plan requires a retained reference request',
+            path: ['model_switch'],
+        });
+    }
+}
+
 function requireDraftPromptsForTemporaryInteraction(
     value: { interaction: string; prompts?: unknown[] },
     context: z.core.$RefinementCtx,
@@ -223,10 +272,13 @@ function requireDraftPromptsForTemporaryInteraction(
 
 export const ExperimentalCanonicalInteractionExecutionRequestSchema = z
     .strictObject(canonicalExecutionRequestFields)
-    .superRefine(requireDebugRetentionForReference)
+    .superRefine((value, context) => {
+        requireDebugRetentionForReference(value, context);
+        requireReferenceForModelSwitch(value, context);
+    })
     .meta({
         id: 'ExperimentalCanonicalInteractionExecutionRequest',
-        ...referenceDebugRetentionJsonSchema,
+        allOf: [...referenceDebugRetentionJsonSchema.allOf, ...modelSwitchReferenceJsonSchema.allOf],
     });
 
 export const ExperimentalCanonicalNamedInteractionExecutionRequestSchema = z
@@ -240,12 +292,69 @@ export const ExperimentalCanonicalNamedInteractionExecutionRequestSchema = z
     })
     .superRefine((value, context) => {
         requireDebugRetentionForReference(value, context);
+        requireReferenceForModelSwitch(value, context);
         requireDraftPromptsForTemporaryInteraction(value, context);
     })
     .meta({
         id: 'ExperimentalCanonicalNamedInteractionExecutionRequest',
-        allOf: [...referenceDebugRetentionJsonSchema.allOf, ...namedDraftPromptJsonSchema.allOf],
+        allOf: [
+            ...referenceDebugRetentionJsonSchema.allOf,
+            ...modelSwitchReferenceJsonSchema.allOf,
+            ...namedDraftPromptJsonSchema.allOf,
+        ],
     });
+
+/** Authenticated, transport-free planning for one exact prospective retained-reference request. */
+export const ExperimentalCanonicalInteractionModelSwitchPrepareRequestSchema = z
+    .strictObject({
+        request: ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
+        operation: z.enum(['execute', 'stream']),
+        measurement_policy: z.enum(['exact_only', 'identified_estimate']).optional(),
+    })
+    .superRefine((value, context) => {
+        if (value.request.initial_state.type !== 'reference') {
+            context.addIssue({
+                code: 'custom',
+                message: 'Model-switch planning requires a retained reference request',
+                path: ['request', 'initial_state'],
+            });
+        }
+        if (value.request.model_switch !== undefined) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Prospective model-switch request must not contain a prior plan',
+                path: ['request', 'model_switch'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalCanonicalInteractionModelSwitchPrepareRequest',
+        allOf: [
+            {
+                properties: {
+                    request: {
+                        properties: {
+                            initial_state: {
+                                properties: { type: { const: 'reference' } },
+                                required: ['type'],
+                            },
+                        },
+                        required: ['initial_state'],
+                        not: { required: ['model_switch'] },
+                    },
+                },
+                required: ['request'],
+            },
+        ],
+    });
+
+export const ExperimentalCanonicalInteractionModelSwitchPrepareResultSchema = z
+    .strictObject({
+        plan: ConversationModelSwitchPlanSchema,
+        request_fingerprint: ContentHashSchema,
+        operation: z.enum(['execute', 'stream']),
+    })
+    .meta({ id: 'ExperimentalCanonicalInteractionModelSwitchPrepareResult' });
 
 export const ExperimentalCanonicalInteractionDocumentHistorySchema = z
     .strictObject({
@@ -333,10 +442,32 @@ export const ExperimentalCanonicalInteractionOutputSchema = z
         },
     });
 
+/** A host-verified parent/child link. This data is not a capability or a caller-supplied admission proof. */
+export const ExperimentalCanonicalVirtualGenerationBindingSchema = z
+    .strictObject({
+        version: z.literal(1),
+        parent_request_id: z.string().min(1).max(4096),
+        plan_fingerprint: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+        child_environment_id: z.string().min(1).max(1024),
+        child_model: z.string().min(1).max(1024),
+        child_provider: z.enum(Providers),
+        configured_occurrence: z.number().int().nonnegative().max(255),
+        child_identity: z.string().min(1).max(4096),
+        child_request_id: z.string().min(1).max(4096),
+        response_operation_id: z.string().min(1).max(4096),
+        generation_id: z.string().min(1).max(4096),
+        turn_id: z.string().min(1).max(4096),
+        source: ConversationRefSchema,
+    })
+    .meta({ id: 'ExperimentalCanonicalVirtualGenerationBinding' });
+
 export const ExperimentalCanonicalInteractionExecutionResultSchema = z
     .strictObject({
         run: ExperimentalCanonicalInteractionRunSchema,
         output: ExperimentalCanonicalInteractionOutputSchema,
         history: ExperimentalCanonicalInteractionHistorySchema,
+        // Optional for standalone interactions; native agent host callbacks require this exact reserved receipt.
+        generation_admission: ExperimentalAgentGenerationAdmissionReceiptSchema.optional(),
+        virtual_generation: ExperimentalCanonicalVirtualGenerationBindingSchema.optional(),
     })
     .meta({ id: 'ExperimentalCanonicalInteractionExecutionResult' });

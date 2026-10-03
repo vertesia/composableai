@@ -1,0 +1,2971 @@
+{
+  "purpose": "Synthetic offline public wire component examples; no live processing or authorization claims.",
+  "cases": [
+    {
+      "name": "edit_record",
+      "component": "ConversationEditRecordRef",
+      "value": {
+        "id": "entry:original",
+        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "anchor_before_entry",
+      "component": "ConversationEditAnchor",
+      "value": {
+        "kind": "before_entry",
+        "entry_id": "entry:original"
+      }
+    },
+    {
+      "name": "anchor_after_entry",
+      "component": "ConversationEditAnchor",
+      "value": {
+        "kind": "after_entry",
+        "entry_id": "entry:original"
+      }
+    },
+    {
+      "name": "anchor_head",
+      "component": "ConversationEditAnchor",
+      "value": {
+        "kind": "head"
+      }
+    },
+    {
+      "name": "anchor_tail",
+      "component": "ConversationEditAnchor",
+      "value": {
+        "kind": "tail"
+      }
+    },
+    {
+      "name": "placement_contiguous",
+      "component": "ConversationEditPlacement",
+      "value": {
+        "mode": "first_selected",
+        "causal_order": "contiguous"
+      }
+    },
+    {
+      "name": "placement_explicit_disjoint",
+      "component": "ConversationEditPlacement",
+      "value": {
+        "mode": "first_selected",
+        "causal_order": "explicit_disjoint"
+      }
+    },
+    {
+      "name": "edit_protect",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect"
+      }
+    },
+    {
+      "name": "edit_insert_before_entry",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "insert",
+        "anchor": {
+          "kind": "before_entry",
+          "entry_id": "entry:original"
+        }
+      }
+    },
+    {
+      "name": "edit_insert_after_entry",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "insert",
+        "anchor": {
+          "kind": "after_entry",
+          "entry_id": "entry:original"
+        }
+      }
+    },
+    {
+      "name": "edit_insert_head",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "insert",
+        "anchor": {
+          "kind": "head"
+        }
+      }
+    },
+    {
+      "name": "edit_insert_tail",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "insert",
+        "anchor": {
+          "kind": "tail"
+        }
+      }
+    },
+    {
+      "name": "edit_replace_semantic",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "replace",
+        "fidelity": "semantic",
+        "placement": {
+          "mode": "first_selected",
+          "causal_order": "contiguous"
+        }
+      }
+    },
+    {
+      "name": "edit_replace_heuristic",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "replace",
+        "fidelity": "heuristic",
+        "placement": {
+          "mode": "first_selected",
+          "causal_order": "explicit_disjoint"
+        }
+      }
+    },
+    {
+      "name": "tool_selection_unchanged",
+      "component": "ConversationAcceptedToolSelection",
+      "value": {
+        "kind": "unchanged"
+      }
+    },
+    {
+      "name": "tool_selection_empty",
+      "component": "ConversationAcceptedToolSelection",
+      "value": {
+        "kind": "replace",
+        "definition_ids": []
+      }
+    },
+    {
+      "name": "tool_selection_selected",
+      "component": "ConversationAcceptedToolSelection",
+      "value": {
+        "kind": "replace",
+        "definition_ids": [
+          "tool:one"
+        ]
+      }
+    },
+    {
+      "name": "proposal_exclude",
+      "component": "ConversationContextChangeProposal",
+      "value": {
+        "kind": "exclude"
+      }
+    },
+    {
+      "name": "proposal_compaction",
+      "component": "ConversationContextChangeProposal",
+      "value": {
+        "kind": "replace_with_compaction",
+        "compaction_id": "compaction:fixture",
+        "strategy": {
+          "id": "processor:summary",
+          "version": "1",
+          "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "replacement_turns": [
+          {
+            "id": "turn:summary",
+            "kind": "program",
+            "authority": "ordinary",
+            "status": "completed",
+            "timestamps": {
+              "recorded_at": "2026-10-02T00:00:00.000Z"
+            },
+            "model_visibility": "include",
+            "provenance": {
+              "type": "inserted",
+              "operation_id": "operation:compaction"
+            },
+            "blocks": [
+              {
+                "id": "block:summary",
+                "type": "text",
+                "text": "Synthetic offline summary.",
+                "format": "plain"
+              }
+            ]
+          }
+        ],
+        "fidelity": "semantic",
+        "retained_asset_ids": [],
+        "generation_ids": [],
+        "accepted_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "placement": {
+          "mode": "first_selected",
+          "causal_order": "contiguous"
+        }
+      }
+    },
+    {
+      "name": "selection_entries",
+      "component": "ConversationProcessingJobSelection",
+      "value": {
+        "kind": "entries",
+        "entry_ids": [
+          "entry:original"
+        ],
+        "selected_block_ids": {
+          "turn:original": [
+            "block:original"
+          ]
+        },
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "type": "source_turn",
+            "turn_id": "turn:original",
+            "block_ids": [
+              "block:original"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "selection_predecessor",
+      "component": "ConversationProcessingJobSelection",
+      "value": {
+        "kind": "predecessor_output",
+        "job_id": "job:previous"
+      }
+    },
+    {
+      "name": "job_on_append",
+      "component": "ConversationProcessingJob",
+      "value": {
+        "id": "job:fixture",
+        "source_operation_id": "operation:append",
+        "enqueue_revision": 1,
+        "policy_revision": 0,
+        "stage_index": 0,
+        "processor_index": 0,
+        "processor_id": "processor:summary",
+        "processor_version": "1",
+        "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "configuration": {
+          "zero": 0,
+          "disabled": false,
+          "nullable": null,
+          "list": []
+        },
+        "scope": "on_append",
+        "required": false,
+        "failure_behavior": "skip_with_diagnostic",
+        "selection": {
+          "kind": "entries",
+          "entry_ids": [
+            "entry:original"
+          ],
+          "selected_block_ids": {
+            "turn:original": [
+              "block:original"
+            ]
+          },
+          "selected_entries": [
+            {
+              "id": "entry:original",
+              "type": "source_turn",
+              "turn_id": "turn:original",
+              "block_ids": [
+                "block:original"
+              ]
+            }
+          ]
+        },
+        "selection_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "job_on_budget",
+      "component": "ConversationProcessingJob",
+      "value": {
+        "id": "job:fixture",
+        "source_operation_id": "operation:append",
+        "enqueue_revision": 1,
+        "policy_revision": 0,
+        "stage_index": 0,
+        "processor_index": 0,
+        "processor_id": "processor:summary",
+        "processor_version": "1",
+        "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "configuration": {
+          "zero": 0,
+          "disabled": false,
+          "nullable": null,
+          "list": []
+        },
+        "scope": "on_budget",
+        "required": false,
+        "failure_behavior": "skip_with_diagnostic",
+        "selection": {
+          "kind": "entries",
+          "entry_ids": [
+            "entry:original"
+          ],
+          "selected_block_ids": {
+            "turn:original": [
+              "block:original"
+            ]
+          },
+          "selected_entries": [
+            {
+              "id": "entry:original",
+              "type": "source_turn",
+              "turn_id": "turn:original",
+              "block_ids": [
+                "block:original"
+              ]
+            }
+          ]
+        },
+        "selection_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "job_manual",
+      "component": "ConversationProcessingJob",
+      "value": {
+        "id": "job:fixture",
+        "source_operation_id": "operation:append",
+        "enqueue_revision": 1,
+        "policy_revision": 0,
+        "stage_index": 0,
+        "processor_index": 0,
+        "processor_id": "processor:summary",
+        "processor_version": "1",
+        "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "configuration": {
+          "zero": 0,
+          "disabled": false,
+          "nullable": null,
+          "list": []
+        },
+        "scope": "manual",
+        "required": false,
+        "failure_behavior": "skip_with_diagnostic",
+        "selection": {
+          "kind": "entries",
+          "entry_ids": [
+            "entry:original"
+          ],
+          "selected_block_ids": {
+            "turn:original": [
+              "block:original"
+            ]
+          },
+          "selected_entries": [
+            {
+              "id": "entry:original",
+              "type": "source_turn",
+              "turn_id": "turn:original",
+              "block_ids": [
+                "block:original"
+              ]
+            }
+          ]
+        },
+        "selection_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "resolved_input",
+      "component": "ConversationProcessingResolvedInput",
+      "value": {
+        "job_id": "job:fixture",
+        "source_revision": 1,
+        "context_revision": 0,
+        "entry_ids": [
+          "entry:original"
+        ],
+        "selected_block_ids": {
+          "turn:original": [
+            "block:original"
+          ]
+        },
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "type": "source_turn",
+            "turn_id": "turn:original",
+            "block_ids": [
+              "block:original"
+            ]
+          }
+        ],
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "context_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "source_turn_ids": [
+          "turn:original"
+        ],
+        "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "attempt_receipt",
+      "component": "ConversationProcessingAttemptReceipt",
+      "value": {
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "started_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "output_proposal",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "kind": "proposal",
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "proposal": {
+          "kind": "replace_with_compaction",
+          "compaction_id": "compaction:fixture",
+          "strategy": {
+            "id": "processor:summary",
+            "version": "1",
+            "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "replacement_turns": [
+            {
+              "id": "turn:summary",
+              "kind": "program",
+              "authority": "ordinary",
+              "status": "completed",
+              "timestamps": {
+                "recorded_at": "2026-10-02T00:00:00.000Z"
+              },
+              "model_visibility": "include",
+              "provenance": {
+                "type": "inserted",
+                "operation_id": "operation:compaction"
+              },
+              "blocks": [
+                {
+                  "id": "block:summary",
+                  "type": "text",
+                  "text": "Synthetic offline summary.",
+                  "format": "plain"
+                }
+              ]
+            }
+          ],
+          "fidelity": "semantic",
+          "retained_asset_ids": [],
+          "generation_ids": [],
+          "accepted_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "placement": {
+            "mode": "first_selected",
+            "causal_order": "contiguous"
+          }
+        }
+      }
+    },
+    {
+      "name": "output_no_op",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "kind": "no_op",
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "reason": "already_ready"
+      }
+    },
+    {
+      "name": "output_failed",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "kind": "failed",
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "diagnostic": "Synthetic failed processor."
+      }
+    },
+    {
+      "name": "output_unknown_outcome",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "kind": "unknown_outcome",
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "diagnostic": "Synthetic unknown outcome.",
+        "recovery_operation_id": "operation:recovery"
+      }
+    },
+    {
+      "name": "output_no_op_without_attempt",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "kind": "no_op",
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "reason": "already_ready"
+      }
+    },
+    {
+      "name": "completion_applied",
+      "component": "ConversationProcessingCompletionReceipt",
+      "value": {
+        "job_id": "job:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "status": "applied",
+        "result_revision": 2,
+        "inserted_entry_ids": [
+          "entry:summary"
+        ],
+        "context_change_operation_id": "operation:compaction",
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "completion_no_op",
+      "component": "ConversationProcessingCompletionReceipt",
+      "value": {
+        "job_id": "job:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "status": "no_op",
+        "result_revision": 2,
+        "inserted_entry_ids": [
+          "entry:summary"
+        ],
+        "context_change_operation_id": "operation:compaction",
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "completion_skipped",
+      "component": "ConversationProcessingCompletionReceipt",
+      "value": {
+        "job_id": "job:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "status": "skipped",
+        "result_revision": 2,
+        "inserted_entry_ids": [
+          "entry:summary"
+        ],
+        "context_change_operation_id": "operation:compaction",
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "completion_blocked",
+      "component": "ConversationProcessingCompletionReceipt",
+      "value": {
+        "job_id": "job:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "status": "blocked",
+        "result_revision": 2,
+        "inserted_entry_ids": [
+          "entry:summary"
+        ],
+        "context_change_operation_id": "operation:compaction",
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "supersession",
+      "component": "ConversationProcessingSupersessionReceipt",
+      "value": {
+        "job_id": "job:fixture",
+        "policy_operation_id": "operation:new-policy",
+        "reason": "policy_changed",
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "coverage_ready",
+      "component": "ConversationProcessingReadinessCoverage",
+      "value": {
+        "context_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "policy_revision": 0,
+        "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "measurement": {
+          "input_tokens": 0,
+          "tokenizer_id": "tokenizer:fixture",
+          "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "required_job_ids": [],
+        "status": "ready",
+        "evaluated_at_revision": 2,
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "coverage_pending",
+      "component": "ConversationProcessingReadinessCoverage",
+      "value": {
+        "context_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "policy_revision": 0,
+        "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "measurement": {
+          "input_tokens": 0,
+          "tokenizer_id": "tokenizer:fixture",
+          "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "required_job_ids": [],
+        "status": "pending",
+        "evaluated_at_revision": 2,
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "coverage_blocked",
+      "component": "ConversationProcessingReadinessCoverage",
+      "value": {
+        "context_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "policy_revision": 0,
+        "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "measurement": {
+          "input_tokens": 0,
+          "tokenizer_id": "tokenizer:fixture",
+          "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "required_job_ids": [],
+        "status": "blocked",
+        "evaluated_at_revision": 2,
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "budget",
+      "component": "ConversationProcessingBudget",
+      "value": {
+        "max_input_tokens": 4096,
+        "output_reserve_tokens": 0
+      }
+    },
+    {
+      "name": "operation_policy",
+      "component": "ConversationProcessingOperation",
+      "value": {
+        "phase": "policy",
+        "job_id": "job:fixture",
+        "policy_revision": 0,
+        "result_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "superseded_job_ids": []
+      }
+    },
+    {
+      "name": "operation_queue",
+      "component": "ConversationProcessingOperation",
+      "value": {
+        "phase": "queue",
+        "job_id": "job:fixture",
+        "policy_revision": 0,
+        "result_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "superseded_job_ids": []
+      }
+    },
+    {
+      "name": "operation_resolve",
+      "component": "ConversationProcessingOperation",
+      "value": {
+        "phase": "resolve",
+        "job_id": "job:fixture",
+        "policy_revision": 0,
+        "result_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "superseded_job_ids": []
+      }
+    },
+    {
+      "name": "operation_attempt",
+      "component": "ConversationProcessingOperation",
+      "value": {
+        "phase": "attempt",
+        "job_id": "job:fixture",
+        "policy_revision": 0,
+        "result_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "superseded_job_ids": []
+      }
+    },
+    {
+      "name": "operation_output",
+      "component": "ConversationProcessingOperation",
+      "value": {
+        "phase": "output",
+        "job_id": "job:fixture",
+        "policy_revision": 0,
+        "result_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "superseded_job_ids": []
+      }
+    },
+    {
+      "name": "operation_complete",
+      "component": "ConversationProcessingOperation",
+      "value": {
+        "phase": "complete",
+        "job_id": "job:fixture",
+        "policy_revision": 0,
+        "result_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "superseded_job_ids": []
+      }
+    },
+    {
+      "name": "operation_coverage",
+      "component": "ConversationProcessingOperation",
+      "value": {
+        "phase": "coverage",
+        "job_id": "job:fixture",
+        "policy_revision": 0,
+        "result_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "superseded_job_ids": []
+      }
+    },
+    {
+      "name": "receipt_edit",
+      "component": "ConversationOperationReceipt",
+      "value": {
+        "id": "operation:fixture",
+        "conversation_id": "conversation:fixture",
+        "payload_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base_revision": 0,
+        "result_revision": 1,
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "accepted_context_entry_ids": [
+          "entry:original"
+        ],
+        "accepted_context_entries": [
+          {
+            "id": "entry:original",
+            "type": "source_turn",
+            "turn_id": "turn:original",
+            "block_ids": [
+              "block:original"
+            ]
+          }
+        ],
+        "accepted_tool_selection": {
+          "kind": "replace",
+          "definition_ids": []
+        },
+        "operation_kind": "conversation_edit",
+        "conversation_edit": {
+          "version": 1,
+          "source": {
+            "conversation_id": "conversation:fixture",
+            "revision": 0
+          },
+          "source_context_revision": 0,
+          "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "selected_entries": [
+            {
+              "id": "entry:original",
+              "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "removed_entry_ids": [],
+          "created_entries": [],
+          "created_turns": [],
+          "created_assets": [],
+          "protected_entry_ids": [
+            "entry:original"
+          ],
+          "unprotected_entry_ids": [],
+          "kind": "replace",
+          "fidelity": "semantic",
+          "placement": {
+            "mode": "first_selected",
+            "causal_order": "contiguous"
+          }
+        }
+      }
+    },
+    {
+      "name": "receipt_processing",
+      "component": "ConversationOperationReceipt",
+      "value": {
+        "id": "operation:fixture",
+        "conversation_id": "conversation:fixture",
+        "payload_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base_revision": 0,
+        "result_revision": 1,
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "accepted_context_entry_ids": [
+          "entry:original"
+        ],
+        "accepted_context_entries": [
+          {
+            "id": "entry:original",
+            "type": "source_turn",
+            "turn_id": "turn:original",
+            "block_ids": [
+              "block:original"
+            ]
+          }
+        ],
+        "accepted_tool_selection": {
+          "kind": "replace",
+          "definition_ids": []
+        },
+        "operation_kind": "processing",
+        "processing_operation": {
+          "phase": "policy",
+          "policy_revision": 0,
+          "superseded_job_ids": [
+            "job:fixture"
+          ]
+        }
+      }
+    },
+    {
+      "name": "processing_state",
+      "component": "ConversationProcessingState",
+      "value": {
+        "enabled": false,
+        "policy_revision": 0,
+        "processors": [
+          {
+            "id": "processor:summary",
+            "version": "1",
+            "scope": "on_budget",
+            "config": {
+              "zero": 0,
+              "disabled": false,
+              "nullable": null
+            },
+            "required": false,
+            "failure_behavior": "skip_with_diagnostic"
+          }
+        ],
+        "budget": {
+          "max_input_tokens": 4096,
+          "output_reserve_tokens": 0
+        },
+        "jobs": {
+          "job:fixture": {
+            "id": "job:fixture",
+            "source_operation_id": "operation:append",
+            "enqueue_revision": 1,
+            "policy_revision": 0,
+            "stage_index": 0,
+            "processor_index": 0,
+            "processor_id": "processor:summary",
+            "processor_version": "1",
+            "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "configuration": {
+              "zero": 0,
+              "disabled": false,
+              "nullable": null,
+              "list": []
+            },
+            "scope": "on_append",
+            "required": false,
+            "failure_behavior": "skip_with_diagnostic",
+            "selection": {
+              "kind": "entries",
+              "entry_ids": [
+                "entry:original"
+              ],
+              "selected_block_ids": {
+                "turn:original": [
+                  "block:original"
+                ]
+              },
+              "selected_entries": [
+                {
+                  "id": "entry:original",
+                  "type": "source_turn",
+                  "turn_id": "turn:original",
+                  "block_ids": [
+                    "block:original"
+                  ]
+                }
+              ]
+            },
+            "selection_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        },
+        "resolved_inputs": {
+          "job:fixture": {
+            "job_id": "job:fixture",
+            "source_revision": 1,
+            "context_revision": 0,
+            "entry_ids": [
+              "entry:original"
+            ],
+            "selected_block_ids": {
+              "turn:original": [
+                "block:original"
+              ]
+            },
+            "selected_entries": [
+              {
+                "id": "entry:original",
+                "type": "source_turn",
+                "turn_id": "turn:original",
+                "block_ids": [
+                  "block:original"
+                ]
+              }
+            ],
+            "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "context_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "source_turn_ids": [
+              "turn:original"
+            ],
+            "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "recorded_at": "2026-10-02T00:00:00.000Z"
+          }
+        },
+        "attempts": {
+          "job:fixture": {
+            "job_id": "job:fixture",
+            "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "attempt_token": "attempt:fixture",
+            "started_at": "2026-10-02T00:00:00.000Z"
+          }
+        },
+        "outputs": {
+          "job:fixture": {
+            "kind": "proposal",
+            "job_id": "job:fixture",
+            "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "attempt_token": "attempt:fixture",
+            "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0
+            },
+            "recorded_at": "2026-10-02T00:00:00.000Z",
+            "proposal": {
+              "kind": "replace_with_compaction",
+              "compaction_id": "compaction:fixture",
+              "strategy": {
+                "id": "processor:summary",
+                "version": "1",
+                "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "replacement_turns": [
+                {
+                  "id": "turn:summary",
+                  "kind": "program",
+                  "authority": "ordinary",
+                  "status": "completed",
+                  "timestamps": {
+                    "recorded_at": "2026-10-02T00:00:00.000Z"
+                  },
+                  "model_visibility": "include",
+                  "provenance": {
+                    "type": "inserted",
+                    "operation_id": "operation:compaction"
+                  },
+                  "blocks": [
+                    {
+                      "id": "block:summary",
+                      "type": "text",
+                      "text": "Synthetic offline summary.",
+                      "format": "plain"
+                    }
+                  ]
+                }
+              ],
+              "fidelity": "semantic",
+              "retained_asset_ids": [],
+              "generation_ids": [],
+              "accepted_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "placement": {
+                "mode": "first_selected",
+                "causal_order": "contiguous"
+              }
+            }
+          }
+        },
+        "completions": {
+          "job:fixture": {
+            "job_id": "job:fixture",
+            "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "status": "applied",
+            "result_revision": 2,
+            "inserted_entry_ids": [
+              "entry:summary"
+            ],
+            "context_change_operation_id": "operation:compaction",
+            "recorded_at": "2026-10-02T00:00:00.000Z"
+          }
+        },
+        "supersessions": {
+          "job:fixture": {
+            "job_id": "job:fixture",
+            "policy_operation_id": "operation:new-policy",
+            "reason": "policy_changed",
+            "recorded_at": "2026-10-02T00:00:00.000Z"
+          }
+        },
+        "coverage": {
+          "context_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "policy_revision": 0,
+          "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "measurement": {
+            "input_tokens": 0,
+            "tokenizer_id": "tokenizer:fixture",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "required_job_ids": [],
+          "status": "ready",
+          "evaluated_at_revision": 2,
+          "recorded_at": "2026-10-02T00:00:00.000Z"
+        },
+        "coverage_receipts": {
+          "coverage:fixture": {
+            "context_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "policy_revision": 0,
+            "target_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "measurement": {
+              "input_tokens": 0,
+              "tokenizer_id": "tokenizer:fixture",
+              "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "required_job_ids": [],
+            "status": "ready",
+            "evaluated_at_revision": 2,
+            "recorded_at": "2026-10-02T00:00:00.000Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "d2_ConversationEditOperationV1",
+      "component": "ConversationEditOperationV1",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect"
+      }
+    },
+    {
+      "name": "d2_ConversationSliceEditOperation",
+      "component": "ConversationSliceEditOperation",
+      "value": {
+        "version": 2,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect",
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "remainder_turn_ids": [
+          "turn:remainder"
+        ],
+        "source_protected_entry_ids": [],
+        "source_entry_positions": [
+          0
+        ],
+        "source_topology_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "d2_ConversationSourceBlockSlice",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "text_range",
+          "range": {
+            "start_code_point": 1,
+            "end_code_point": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "d2_ConversationJsonSourceRegion",
+      "component": "ConversationJsonSourceRegion",
+      "value": {
+        "pointer": "/a~1b",
+        "excluded_pointers": [
+          "/a~1b/1"
+        ]
+      }
+    },
+    {
+      "name": "d2_ConversationJsonInverseMapping",
+      "component": "ConversationJsonInverseMapping",
+      "value": {
+        "root_source_pointer": "",
+        "arrays": [
+          {
+            "target_pointer": "",
+            "source_pointer": "",
+            "runs": [
+              {
+                "target_start": 0,
+                "source_start": 1,
+                "length": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "d2_ConversationDerivedBlockLineageGroup",
+      "component": "ConversationDerivedBlockLineageGroup",
+      "value": {
+        "target_block_ids": [
+          "block:derived"
+        ],
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "transform": "text_slice",
+        "fidelity": "value_preserving"
+      }
+    },
+    {
+      "name": "d2_ConversationDerivedBlockLineage",
+      "component": "ConversationDerivedBlockLineage",
+      "value": {
+        "version": 1,
+        "groups": [
+          {
+            "target_block_ids": [
+              "block:derived"
+            ],
+            "source_slices": [
+              {
+                "source": {
+                  "conversation_id": "conversation:fixture",
+                  "revision": 0
+                },
+                "turn_id": "turn:source",
+                "block_id": "block:source",
+                "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "selection": {
+                  "kind": "text_range",
+                  "range": {
+                    "start_code_point": 1,
+                    "end_code_point": 3
+                  }
+                }
+              }
+            ],
+            "transform": "text_slice",
+            "fidelity": "value_preserving"
+          }
+        ]
+      }
+    },
+    {
+      "name": "d2_versioned_edit",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 2,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect",
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "remainder_turn_ids": [
+          "turn:remainder"
+        ],
+        "source_protected_entry_ids": [],
+        "source_entry_positions": [
+          0
+        ],
+        "source_topology_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "d2_selection_0",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "whole"
+        }
+      }
+    },
+    {
+      "name": "d2_selection_1",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "json_region",
+          "region": {
+            "pointer": "/a~1b",
+            "excluded_pointers": [
+              "/a~1b/0"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "d2_selection_2",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "media_range",
+          "range": {
+            "type": "image_region",
+            "coordinate_space": "normalized",
+            "x": 0,
+            "y": 0,
+            "width": 0.5,
+            "height": 1
+          },
+          "asset_id": "asset:source",
+          "asset_metadata_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "verified_content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "d2_selection_3",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "media_range",
+          "range": {
+            "type": "page_range",
+            "from_page": 1,
+            "through_page": 2
+          },
+          "asset_id": "asset:source",
+          "asset_metadata_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "verified_content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "d2_selection_4",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "media_range",
+          "range": {
+            "type": "time_range",
+            "start_seconds": 0,
+            "end_seconds": 1
+          },
+          "asset_id": "asset:source",
+          "asset_metadata_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "verified_content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "d2_transform_block_copy_value_preserving",
+      "component": "ConversationDerivedBlockLineageGroup",
+      "value": {
+        "target_block_ids": [
+          "block:derived"
+        ],
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "transform": "block_copy",
+        "fidelity": "value_preserving"
+      }
+    },
+    {
+      "name": "d2_transform_json_projection_value_preserving",
+      "component": "ConversationDerivedBlockLineageGroup",
+      "value": {
+        "target_block_ids": [
+          "block:derived"
+        ],
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "transform": "json_projection",
+        "fidelity": "value_preserving",
+        "inverse": {
+          "root_source_pointer": "",
+          "arrays": []
+        }
+      }
+    },
+    {
+      "name": "d2_transform_media_reference_value_preserving",
+      "component": "ConversationDerivedBlockLineageGroup",
+      "value": {
+        "target_block_ids": [
+          "block:derived"
+        ],
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "transform": "media_reference",
+        "fidelity": "value_preserving"
+      }
+    },
+    {
+      "name": "d2_transform_authored_replacement_semantic",
+      "component": "ConversationDerivedBlockLineageGroup",
+      "value": {
+        "target_block_ids": [
+          "block:derived"
+        ],
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "transform": "authored_replacement",
+        "fidelity": "semantic"
+      }
+    },
+    {
+      "name": "d2_transform_authored_replacement_heuristic",
+      "component": "ConversationDerivedBlockLineageGroup",
+      "value": {
+        "target_block_ids": [
+          "block:derived"
+        ],
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "transform": "authored_replacement",
+        "fidelity": "heuristic"
+      }
+    },
+    {
+      "name": "budget_policy_exact_only",
+      "component": "ConversationProcessingBudget",
+      "value": {
+        "max_input_tokens": 4096,
+        "output_reserve_tokens": 0,
+        "measurement_policy": "exact_only"
+      }
+    },
+    {
+      "name": "budget_policy_identified_estimate",
+      "component": "ConversationProcessingBudget",
+      "value": {
+        "max_input_tokens": 4096,
+        "output_reserve_tokens": 0,
+        "measurement_policy": "identified_estimate"
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "name": "anchor_before_entry_unknown",
+      "component": "ConversationEditAnchor",
+      "value": {
+        "kind": "future",
+        "entry_id": "entry:original"
+      }
+    },
+    {
+      "name": "anchor_before_entry_missing",
+      "component": "ConversationEditAnchor",
+      "value": {
+        "entry_id": "entry:original"
+      }
+    },
+    {
+      "name": "edit_replace_semantic_unknown",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "future",
+        "fidelity": "semantic",
+        "placement": {
+          "mode": "first_selected",
+          "causal_order": "contiguous"
+        }
+      }
+    },
+    {
+      "name": "edit_replace_semantic_missing",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "fidelity": "semantic",
+        "placement": {
+          "mode": "first_selected",
+          "causal_order": "contiguous"
+        }
+      }
+    },
+    {
+      "name": "tool_selection_empty_unknown",
+      "component": "ConversationAcceptedToolSelection",
+      "value": {
+        "kind": "future",
+        "definition_ids": []
+      }
+    },
+    {
+      "name": "tool_selection_empty_missing",
+      "component": "ConversationAcceptedToolSelection",
+      "value": {
+        "definition_ids": []
+      }
+    },
+    {
+      "name": "proposal_compaction_unknown",
+      "component": "ConversationContextChangeProposal",
+      "value": {
+        "kind": "future",
+        "compaction_id": "compaction:fixture",
+        "strategy": {
+          "id": "processor:summary",
+          "version": "1",
+          "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "replacement_turns": [
+          {
+            "id": "turn:summary",
+            "kind": "program",
+            "authority": "ordinary",
+            "status": "completed",
+            "timestamps": {
+              "recorded_at": "2026-10-02T00:00:00.000Z"
+            },
+            "model_visibility": "include",
+            "provenance": {
+              "type": "inserted",
+              "operation_id": "operation:compaction"
+            },
+            "blocks": [
+              {
+                "id": "block:summary",
+                "type": "text",
+                "text": "Synthetic offline summary.",
+                "format": "plain"
+              }
+            ]
+          }
+        ],
+        "fidelity": "semantic",
+        "retained_asset_ids": [],
+        "generation_ids": [],
+        "accepted_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "placement": {
+          "mode": "first_selected",
+          "causal_order": "contiguous"
+        }
+      }
+    },
+    {
+      "name": "proposal_compaction_missing",
+      "component": "ConversationContextChangeProposal",
+      "value": {
+        "compaction_id": "compaction:fixture",
+        "strategy": {
+          "id": "processor:summary",
+          "version": "1",
+          "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "replacement_turns": [
+          {
+            "id": "turn:summary",
+            "kind": "program",
+            "authority": "ordinary",
+            "status": "completed",
+            "timestamps": {
+              "recorded_at": "2026-10-02T00:00:00.000Z"
+            },
+            "model_visibility": "include",
+            "provenance": {
+              "type": "inserted",
+              "operation_id": "operation:compaction"
+            },
+            "blocks": [
+              {
+                "id": "block:summary",
+                "type": "text",
+                "text": "Synthetic offline summary.",
+                "format": "plain"
+              }
+            ]
+          }
+        ],
+        "fidelity": "semantic",
+        "retained_asset_ids": [],
+        "generation_ids": [],
+        "accepted_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "placement": {
+          "mode": "first_selected",
+          "causal_order": "contiguous"
+        }
+      }
+    },
+    {
+      "name": "selection_predecessor_unknown",
+      "component": "ConversationProcessingJobSelection",
+      "value": {
+        "kind": "future",
+        "job_id": "job:previous"
+      }
+    },
+    {
+      "name": "selection_predecessor_missing",
+      "component": "ConversationProcessingJobSelection",
+      "value": {
+        "job_id": "job:previous"
+      }
+    },
+    {
+      "name": "output_proposal_unknown",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "kind": "future",
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "proposal": {
+          "kind": "replace_with_compaction",
+          "compaction_id": "compaction:fixture",
+          "strategy": {
+            "id": "processor:summary",
+            "version": "1",
+            "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "replacement_turns": [
+            {
+              "id": "turn:summary",
+              "kind": "program",
+              "authority": "ordinary",
+              "status": "completed",
+              "timestamps": {
+                "recorded_at": "2026-10-02T00:00:00.000Z"
+              },
+              "model_visibility": "include",
+              "provenance": {
+                "type": "inserted",
+                "operation_id": "operation:compaction"
+              },
+              "blocks": [
+                {
+                  "id": "block:summary",
+                  "type": "text",
+                  "text": "Synthetic offline summary.",
+                  "format": "plain"
+                }
+              ]
+            }
+          ],
+          "fidelity": "semantic",
+          "retained_asset_ids": [],
+          "generation_ids": [],
+          "accepted_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "placement": {
+            "mode": "first_selected",
+            "causal_order": "contiguous"
+          }
+        }
+      }
+    },
+    {
+      "name": "output_proposal_missing",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "proposal": {
+          "kind": "replace_with_compaction",
+          "compaction_id": "compaction:fixture",
+          "strategy": {
+            "id": "processor:summary",
+            "version": "1",
+            "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "replacement_turns": [
+            {
+              "id": "turn:summary",
+              "kind": "program",
+              "authority": "ordinary",
+              "status": "completed",
+              "timestamps": {
+                "recorded_at": "2026-10-02T00:00:00.000Z"
+              },
+              "model_visibility": "include",
+              "provenance": {
+                "type": "inserted",
+                "operation_id": "operation:compaction"
+              },
+              "blocks": [
+                {
+                  "id": "block:summary",
+                  "type": "text",
+                  "text": "Synthetic offline summary.",
+                  "format": "plain"
+                }
+              ]
+            }
+          ],
+          "fidelity": "semantic",
+          "retained_asset_ids": [],
+          "generation_ids": [],
+          "accepted_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "placement": {
+            "mode": "first_selected",
+            "causal_order": "contiguous"
+          }
+        }
+      }
+    },
+    {
+      "name": "output_failed_unknown",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "kind": "future",
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "diagnostic": "Synthetic failed processor."
+      }
+    },
+    {
+      "name": "output_failed_missing",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "diagnostic": "Synthetic failed processor."
+      }
+    },
+    {
+      "name": "anchor_before_entry_missing_entry_id",
+      "component": "ConversationEditAnchor",
+      "value": {
+        "kind": "before_entry"
+      }
+    },
+    {
+      "name": "edit_replace_semantic_missing_placement",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "replace",
+        "fidelity": "semantic"
+      }
+    },
+    {
+      "name": "edit_replace_semantic_missing_fidelity",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "replace",
+        "placement": {
+          "mode": "first_selected",
+          "causal_order": "contiguous"
+        }
+      }
+    },
+    {
+      "name": "tool_selection_empty_missing_definition_ids",
+      "component": "ConversationAcceptedToolSelection",
+      "value": {
+        "kind": "replace"
+      }
+    },
+    {
+      "name": "proposal_compaction_missing_replacement_turns",
+      "component": "ConversationContextChangeProposal",
+      "value": {
+        "kind": "replace_with_compaction",
+        "compaction_id": "compaction:fixture",
+        "strategy": {
+          "id": "processor:summary",
+          "version": "1",
+          "configuration_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "fidelity": "semantic",
+        "retained_asset_ids": [],
+        "generation_ids": [],
+        "accepted_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "placement": {
+          "mode": "first_selected",
+          "causal_order": "contiguous"
+        }
+      }
+    },
+    {
+      "name": "selection_predecessor_missing_job_id",
+      "component": "ConversationProcessingJobSelection",
+      "value": {
+        "kind": "predecessor_output"
+      }
+    },
+    {
+      "name": "output_failed_missing_diagnostic",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "kind": "failed",
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "output_no_op_missing_reason",
+      "component": "ConversationProcessingOutputReceipt",
+      "value": {
+        "kind": "no_op",
+        "job_id": "job:fixture",
+        "resolved_input_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "attempt_token": "attempt:fixture",
+        "output_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "total_tokens": 0
+        },
+        "recorded_at": "2026-10-02T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "operation_policy_unknown_phase",
+      "component": "ConversationProcessingOperation",
+      "value": {
+        "phase": "future",
+        "job_id": "job:fixture",
+        "policy_revision": 0,
+        "result_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "superseded_job_ids": []
+      }
+    },
+    {
+      "name": "receipt_processing_unknown_operation_kind",
+      "component": "ConversationOperationReceipt",
+      "value": {
+        "id": "operation:fixture",
+        "conversation_id": "conversation:fixture",
+        "payload_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base_revision": 0,
+        "result_revision": 1,
+        "recorded_at": "2026-10-02T00:00:00.000Z",
+        "accepted_context_entry_ids": [
+          "entry:original"
+        ],
+        "accepted_context_entries": [
+          {
+            "id": "entry:original",
+            "type": "source_turn",
+            "turn_id": "turn:original",
+            "block_ids": [
+              "block:original"
+            ]
+          }
+        ],
+        "accepted_tool_selection": {
+          "kind": "replace",
+          "definition_ids": []
+        },
+        "operation_kind": "future",
+        "processing_operation": {
+          "phase": "policy",
+          "policy_revision": 0,
+          "superseded_job_ids": [
+            "job:fixture"
+          ]
+        }
+      }
+    },
+    {
+      "name": "d2_strict_ConversationEditOperationV1",
+      "component": "ConversationEditOperationV1",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "d2_strict_ConversationSliceEditOperation",
+      "component": "ConversationSliceEditOperation",
+      "value": {
+        "version": 2,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect",
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "remainder_turn_ids": [
+          "turn:remainder"
+        ],
+        "source_protected_entry_ids": [],
+        "source_entry_positions": [
+          0
+        ],
+        "source_topology_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "d2_strict_ConversationSourceBlockSlice",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "text_range",
+          "range": {
+            "start_code_point": 1,
+            "end_code_point": 3
+          }
+        },
+        "unexpected": true
+      }
+    },
+    {
+      "name": "d2_strict_ConversationJsonSourceRegion",
+      "component": "ConversationJsonSourceRegion",
+      "value": {
+        "pointer": "/a~1b",
+        "excluded_pointers": [
+          "/a~1b/1"
+        ],
+        "unexpected": true
+      }
+    },
+    {
+      "name": "d2_strict_ConversationJsonInverseMapping",
+      "component": "ConversationJsonInverseMapping",
+      "value": {
+        "root_source_pointer": "",
+        "arrays": [
+          {
+            "target_pointer": "",
+            "source_pointer": "",
+            "runs": [
+              {
+                "target_start": 0,
+                "source_start": 1,
+                "length": 1
+              }
+            ]
+          }
+        ],
+        "unexpected": true
+      }
+    },
+    {
+      "name": "d2_strict_ConversationDerivedBlockLineageGroup",
+      "component": "ConversationDerivedBlockLineageGroup",
+      "value": {
+        "target_block_ids": [
+          "block:derived"
+        ],
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "transform": "text_slice",
+        "fidelity": "value_preserving",
+        "unexpected": true
+      }
+    },
+    {
+      "name": "d2_strict_ConversationDerivedBlockLineage",
+      "component": "ConversationDerivedBlockLineage",
+      "value": {
+        "version": 1,
+        "groups": [
+          {
+            "target_block_ids": [
+              "block:derived"
+            ],
+            "source_slices": [
+              {
+                "source": {
+                  "conversation_id": "conversation:fixture",
+                  "revision": 0
+                },
+                "turn_id": "turn:source",
+                "block_id": "block:source",
+                "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "selection": {
+                  "kind": "text_range",
+                  "range": {
+                    "start_code_point": 1,
+                    "end_code_point": 3
+                  }
+                }
+              }
+            ],
+            "transform": "text_slice",
+            "fidelity": "value_preserving"
+          }
+        ],
+        "unexpected": true
+      }
+    },
+    {
+      "name": "d2_missing_source_entry_positions",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 2,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect",
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "remainder_turn_ids": [
+          "turn:remainder"
+        ],
+        "source_protected_entry_ids": [],
+        "source_topology_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "d2_missing_source_topology_fingerprint",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 2,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect",
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "remainder_turn_ids": [
+          "turn:remainder"
+        ],
+        "source_protected_entry_ids": [],
+        "source_entry_positions": [
+          0
+        ]
+      }
+    },
+    {
+      "name": "d2_missing_source_slices",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 2,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect",
+        "remainder_turn_ids": [
+          "turn:remainder"
+        ],
+        "source_protected_entry_ids": [],
+        "source_entry_positions": [
+          0
+        ],
+        "source_topology_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "d2_unknown_transform",
+      "component": "ConversationDerivedBlockLineageGroup",
+      "value": {
+        "target_block_ids": [
+          "block:derived"
+        ],
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "transform": "unknown",
+        "fidelity": "value_preserving"
+      }
+    },
+    {
+      "name": "d2_unknown_kind",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "guess"
+        }
+      }
+    },
+    {
+      "name": "d2_missing_text_bound",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "text_range",
+          "range": {
+            "start_code_point": 1
+          }
+        }
+      }
+    },
+    {
+      "name": "d2_unknown_media_type",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "media_range",
+          "range": {
+            "type": "crop"
+          },
+          "asset_id": "asset:source",
+          "asset_metadata_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "verified_content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "d2_bad_json_escape",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "json_region",
+          "region": {
+            "pointer": "/a~3",
+            "excluded_pointers": []
+          }
+        }
+      }
+    },
+    {
+      "name": "d2_missing_inverse",
+      "component": "ConversationDerivedBlockLineageGroup",
+      "value": {
+        "target_block_ids": [
+          "block:derived"
+        ],
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "transform": "json_projection",
+        "fidelity": "value_preserving"
+      }
+    },
+    {
+      "name": "d2_wrong_numeric_version",
+      "component": "ConversationEditOperation",
+      "value": {
+        "version": 3,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "source_context_revision": 0,
+        "source_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selected_entries": [
+          {
+            "id": "entry:original",
+            "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "removed_entry_ids": [],
+        "created_entries": [],
+        "created_turns": [],
+        "created_assets": [],
+        "protected_entry_ids": [
+          "entry:original"
+        ],
+        "unprotected_entry_ids": [],
+        "kind": "protect",
+        "source_slices": [
+          {
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 0
+            },
+            "turn_id": "turn:source",
+            "block_id": "block:source",
+            "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "selection": {
+              "kind": "text_range",
+              "range": {
+                "start_code_point": 1,
+                "end_code_point": 3
+              }
+            }
+          }
+        ],
+        "remainder_turn_ids": [
+          "turn:remainder"
+        ],
+        "source_protected_entry_ids": [],
+        "source_entry_positions": [
+          0
+        ],
+        "source_topology_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "name": "d2_wrong_lineage_version",
+      "component": "ConversationDerivedBlockLineage",
+      "value": {
+        "version": 3,
+        "groups": [
+          {
+            "target_block_ids": [
+              "block:derived"
+            ],
+            "source_slices": [
+              {
+                "source": {
+                  "conversation_id": "conversation:fixture",
+                  "revision": 0
+                },
+                "turn_id": "turn:source",
+                "block_id": "block:source",
+                "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "selection": {
+                  "kind": "text_range",
+                  "range": {
+                    "start_code_point": 1,
+                    "end_code_point": 3
+                  }
+                }
+              }
+            ],
+            "transform": "text_slice",
+            "fidelity": "value_preserving"
+          }
+        ]
+      }
+    },
+    {
+      "name": "d2_string_lineage_version",
+      "component": "ConversationDerivedBlockLineage",
+      "value": {
+        "version": "1",
+        "groups": [
+          {
+            "target_block_ids": [
+              "block:derived"
+            ],
+            "source_slices": [
+              {
+                "source": {
+                  "conversation_id": "conversation:fixture",
+                  "revision": 0
+                },
+                "turn_id": "turn:source",
+                "block_id": "block:source",
+                "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "selection": {
+                  "kind": "text_range",
+                  "range": {
+                    "start_code_point": 1,
+                    "end_code_point": 3
+                  }
+                }
+              }
+            ],
+            "transform": "text_slice",
+            "fidelity": "value_preserving"
+          }
+        ]
+      }
+    },
+    {
+      "name": "d2_media_wrong_variant_field",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "media_range",
+          "range": {
+            "type": "image_region",
+            "coordinate_space": "normalized",
+            "x": 0,
+            "y": 0,
+            "width": 0.5,
+            "height": 1,
+            "from_page": 1
+          },
+          "asset_id": "asset:source",
+          "asset_metadata_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "verified_content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "d2_media_extra_field",
+      "component": "ConversationSourceBlockSlice",
+      "value": {
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 0
+        },
+        "turn_id": "turn:source",
+        "block_id": "block:source",
+        "block_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "selection": {
+          "kind": "media_range",
+          "range": {
+            "type": "page_range",
+            "from_page": 1,
+            "through_page": 2,
+            "extra": "invalid"
+          },
+          "asset_id": "asset:source",
+          "asset_metadata_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "verified_content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      }
+    },
+    {
+      "name": "budget_policy_null",
+      "component": "ConversationProcessingBudget",
+      "value": {
+        "max_input_tokens": 4096,
+        "output_reserve_tokens": 0,
+        "measurement_policy": null
+      }
+    },
+    {
+      "name": "budget_policy_non_string",
+      "component": "ConversationProcessingBudget",
+      "value": {
+        "max_input_tokens": 4096,
+        "output_reserve_tokens": 0,
+        "measurement_policy": 17
+      }
+    },
+    {
+      "name": "budget_policy_unknown",
+      "component": "ConversationProcessingBudget",
+      "value": {
+        "max_input_tokens": 4096,
+        "output_reserve_tokens": 0,
+        "measurement_policy": "future_policy"
+      }
+    }
+  ]
+}

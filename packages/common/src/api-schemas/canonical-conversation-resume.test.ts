@@ -55,6 +55,10 @@ const tools = {
             materialized_input: { operation_id: 'input:tools', result_revision: 4 },
         },
     },
+    continuation_anchor: {
+        kind: 'materialized_tool_input',
+        materialized_input: { operation_id: 'input:tools', result_revision: 4 },
+    },
 } satisfies ExperimentalCanonicalToolResultsPayload;
 
 describe('exact-version canonical resume contracts', () => {
@@ -94,9 +98,9 @@ describe('exact-version canonical resume contracts', () => {
         }
     });
 
-    it('requires a persisted materialized input reference for tool resumes', () => {
+    it('requires an explicit retained continuation anchor without permitting user turns on context resumes', () => {
         expect(
-            validateApiRequest('ExperimentalCanonicalToolResultsPayload', { ...tools, asyncCompletion }),
+            validateApiRequest('ExperimentalCanonicalToolResultsPayload', { ...tools, continuation_anchor: undefined }),
         ).toMatchObject({ valid: false });
         expect(
             validateApiRequest('ExperimentalCanonicalToolResultsPayload', {
@@ -133,5 +137,47 @@ describe('exact-version canonical resume contracts', () => {
         expect(validateApiResponse('ExperimentalCanonicalResumeAccepted', { ...accepted, result: [] })).toMatchObject({
             valid: false,
         });
+    });
+});
+
+describe('retained accepted-output continuation contract', () => {
+    const receipt = {
+        id: 'accepted:1',
+        conversation_id: 'conversation:resume',
+        base_revision: 2,
+        result_revision: 3,
+        recorded_at: at,
+        accepted_turn_ids: ['agent:1'],
+        accepted_generation_ids: ['generation:1'],
+    };
+    const context = {
+        ...resume,
+        continuation_anchor: { kind: 'accepted_output', output_receipt: receipt },
+    } satisfies ExperimentalCanonicalToolResultsPayload;
+    it('permits an accepted-output anchor after a separately retained program turn', () => {
+        expect(validateApiRequest('ExperimentalCanonicalToolResultsPayload', context)).toEqual({
+            valid: true,
+            data: context,
+        });
+    });
+    it.each([
+        {},
+        { kind: 'accepted_output' },
+        { kind: 'materialized_tool_input' },
+        {
+            kind: 'accepted_output',
+            output_receipt: receipt,
+            materialized_input: { operation_id: 'other', result_revision: 3 },
+        },
+        {
+            kind: 'materialized_tool_input',
+            materialized_input: { operation_id: 'input:tools', result_revision: 4 },
+            output_receipt: receipt,
+        },
+        { kind: 'accepted_output', output_receipt: { ...receipt, accepted_generation_ids: [] } },
+    ])('rejects malformed or mixed continuation anchor %j at the installed AJV boundary', (continuation_anchor) => {
+        expect(
+            validateApiRequest('ExperimentalCanonicalToolResultsPayload', { ...context, continuation_anchor }),
+        ).toMatchObject({ valid: false });
     });
 });

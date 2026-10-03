@@ -72,6 +72,22 @@ describe('experimental canonical interaction API client', () => {
         ]);
     });
 
+    it('requests output-only retrieval explicitly and preserves omitted query behavior', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json(response)),
+            onRequest: (wireRequest) => requests.push(wireRequest),
+        });
+        await client.runs.retrieveCanonical('run/1', { history: 'none' });
+        await client.runs.retrieveCanonical('run/1');
+        expect(requests.map((wireRequest) => new URL(wireRequest.url).search)).toEqual(['?history=none', '']);
+        expect(requests.map((wireRequest) => wireRequest.headers.get(VERSION_HEADER))).toEqual(
+            Array(2).fill(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+        );
+    });
+
     it('uses the long inference timeout for canonical run creation by default', async () => {
         const timeout = vi.spyOn(AbortSignal, 'timeout');
         const client = new VertesiaClient({

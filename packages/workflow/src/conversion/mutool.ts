@@ -2,13 +2,16 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { log } from '@temporalio/activity';
 import tmp from 'tmp';
+import { type CanonicalTextExtractionOptions, extractCanonicalTextFromBuffer } from './boundedTextExtraction.js';
 
 /**
  * Convert a pdf file to text
  * TODO: pass file reference instead of Buffer
  */
 
-export function mutoolPdfToText(buffer: Buffer): Promise<string> {
+export async function mutoolPdfToText(buffer: Buffer, canonical?: CanonicalTextExtractionOptions): Promise<string> {
+    if (canonical !== undefined)
+        return (await extractCanonicalTextFromBuffer(buffer, 'application/pdf', canonical)).text;
     const inputFile = tmp.fileSync({ postfix: '.pdf' });
     const targetFileName = tmp.tmpNameSync({ postfix: '.txt' });
 

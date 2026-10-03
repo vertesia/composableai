@@ -11,14 +11,27 @@
  */
 export * from './account.js';
 export * from './adapter.js';
+export * from './agent-assets.js';
 export * from './agent-communication.js';
 export * from './agent-conversation-migration.js';
+export {
+    ExperimentalAdmitAgentGenerationCheckpointPayloadSchema,
+    ExperimentalAdmitAgentGenerationInitialPayloadSchema,
+    ExperimentalAdmitAgentGenerationPayloadSchema,
+    ExperimentalAdmitAgentGenerationToolApprovalReviewPayloadSchema,
+    ExperimentalAdmitAgentGenerationToolsPayloadSchema,
+    ExperimentalAdmitAgentGenerationUserPayloadSchema,
+} from './agent-generation.js';
+export * from './agent-processing.js';
+export * from './agent-restart-admission.js';
+export * from './agent-routing-control.js';
 export * from './agent-runs.js';
 export * from './analytics.js';
 export * from './apikey.js';
 export * from './app-runtime.js';
 export * from './bulk-operation.js';
 export * from './canonical-conversation-resume.js';
+export * from './canonical-initial-authoring.js';
 export * from './canonical-interaction-execution.js';
 export * from './canonical-interaction-stream.js';
 export * from './content.js';
@@ -31,8 +44,11 @@ export * from './embeddings.js';
 export * from './environment.js';
 export * from './events.js';
 export * from './indexing.js';
+export { InferenceProfileSnapshotSchema } from './inference-profile.js';
 export * from './integrations.js';
 export {
+    AgentResourceReferenceSchema,
+    AsyncConversationExecutionPayloadSchema,
     CanonicalAsyncCompletionResultSchema,
     CanonicalContinuationStateSchema,
     CanonicalConversationHeadScopeQuerySchema,
@@ -41,7 +57,9 @@ export {
     CanonicalScopedGenerationEvidenceSchema,
     ConversationAcceptedGenerationEvidenceSchema,
     ConversationStateSchema,
+    ModelSourceSchema,
     SchemaRefSchema,
+    TextArtifactReferenceSchema,
 } from './interaction.js';
 export * from './oauth-server.js';
 export * from './parameters.js';

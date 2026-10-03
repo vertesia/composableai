@@ -43,6 +43,12 @@ import {
     ConversationStreamTransformationProofSchema,
     ConversationToolExecutionRequestSchema,
     ConversationToolExecutionResultSchema,
+    JsonMinificationApplicationSchema,
+    JsonMinificationMeasuredProjectionSchema,
+    JsonMinificationMeasurementSchema,
+    JsonMinificationNoOpReasonSchema,
+    JsonMinificationProposalSchema,
+    JsonMinificationTransformSchema,
     NativeStreamPathSegmentSchema,
     NativeStreamPositionSchema,
 } from '@llumiverse/conversation/schemas';
@@ -100,8 +106,13 @@ import {
     UpdateAccountPayloadSchema,
 } from './account.js';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
+import * as AgentAssetSchemas from './agent-assets.js';
 import * as AgentCommunicationSchemas from './agent-communication.js';
 import * as ArchiveImportSchemas from './agent-conversation-migration.js';
+import * as GenerationSchemas from './agent-generation.js';
+import * as AgentProcessingSchemas from './agent-processing.js';
+import * as RestartAdmissionSchemas from './agent-restart-admission.js';
+import * as RoutingControlSchemas from './agent-routing-control.js';
 import * as AgentRunSchemas from './agent-runs.js';
 import {
     AnalyticsAxisSchema,
@@ -255,6 +266,7 @@ import {
 } from './bulk-operation.js';
 import { CANONICAL_CONVERSATION_SCHEMAS } from './canonical-conversation.js';
 import * as CanonicalResumeSchemas from './canonical-conversation-resume.js';
+import { ExperimentalCanonicalInitialAuthoringResponseSchema } from './canonical-initial-authoring.js';
 import * as CanonicalInteractionSchemas from './canonical-interaction-execution.js';
 import * as CanonicalInteractionStreamSchemas from './canonical-interaction-stream.js';
 import {
@@ -754,12 +766,24 @@ import {
 } from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import * as RunBudgetSchemas from './run-budget.js';
-import { RunConversationResponseSchema } from './run-conversation.js';
+import {
+    AvailableInitialAuthoringViewSchema,
+    ExperimentalInitialAuthoringViewQuerySchema,
+    ExperimentalInitialAuthoringViewResponseSchema,
+    InitialAuthoringInputRecordSchema,
+    InitialAuthoringMediaSchema,
+    InitialAuthoringSegmentSchema,
+    RunConversationResponseSchema,
+    UnavailableInitialAuthoringViewSchema,
+} from './run-conversation.js';
 import {
     AppendRunConversationProgramTurnPayloadSchema,
     AppendRunConversationProgramTurnResponseSchema,
     AppendRunConversationToolResultsPayloadSchema,
     AppendRunConversationToolResultsResponseSchema,
+    ExperimentalAgentProcessingHeadPayloadSchema,
+    ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema,
+    ExperimentalCanonicalVersionedHeadPayloadSchema,
     PublishAgentRunConversationHeadPayloadSchema,
 } from './run-conversation-append.js';
 import * as SecretSchemas from './secrets.js';
@@ -2517,6 +2541,8 @@ type CanonicalInteractionSchemaMap = {
 
 const CANONICAL_INTERACTION_SCHEMAS: CanonicalInteractionSchemaMap = {
     ExperimentalCanonicalInteractionHeaders: CanonicalInteractionSchemas.ExperimentalCanonicalInteractionHeadersSchema,
+    ExperimentalCanonicalInteractionRetrievalQuery:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionRetrievalQuerySchema,
     ExperimentalCanonicalInteractionConversationReference:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionConversationReferenceSchema,
     ExperimentalCanonicalInteractionNewState:
@@ -2547,6 +2573,12 @@ const CANONICAL_INTERACTION_SCHEMAS: CanonicalInteractionSchemaMap = {
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionRequestSchema,
     ExperimentalCanonicalNamedInteractionExecutionRequest:
         CanonicalInteractionSchemas.ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
+    ExperimentalCanonicalInteractionModelSwitchBinding:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionModelSwitchBindingSchema,
+    ExperimentalCanonicalInteractionModelSwitchPrepareRequest:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionModelSwitchPrepareRequestSchema,
+    ExperimentalCanonicalInteractionModelSwitchPrepareResult:
+        CanonicalInteractionSchemas.ExperimentalCanonicalInteractionModelSwitchPrepareResultSchema,
     ExperimentalCanonicalInteractionDocumentHistory:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionDocumentHistorySchema,
     ExperimentalCanonicalInteractionReferenceHistory:
@@ -2562,6 +2594,8 @@ const CANONICAL_INTERACTION_SCHEMAS: CanonicalInteractionSchemaMap = {
     ExperimentalCanonicalInteractionOutput: CanonicalInteractionSchemas.ExperimentalCanonicalInteractionOutputSchema,
     ExperimentalCanonicalInteractionExecutionResult:
         CanonicalInteractionSchemas.ExperimentalCanonicalInteractionExecutionResultSchema,
+    ExperimentalCanonicalVirtualGenerationBinding:
+        CanonicalInteractionSchemas.ExperimentalCanonicalVirtualGenerationBindingSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 type CanonicalInteractionStreamSchemaMap = {
@@ -2577,7 +2611,67 @@ const AGENT_CONVERSATION_MIGRATION_SCHEMAS = {
     ImportAgentRunConversationArchiveResponse: ArchiveImportSchemas.ImportAgentRunConversationArchiveResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const AGENT_RESTART_ADMISSION_SCHEMAS = {
+    ExperimentalAgentRestartAdmissionExecution:
+        RestartAdmissionSchemas.ExperimentalAgentRestartAdmissionExecutionSchema,
+    ExperimentalAgentRestartAdmissionPayload: RestartAdmissionSchemas.ExperimentalAgentRestartAdmissionPayloadSchema,
+    ExperimentalAgentRestartAdmissionResponse: RestartAdmissionSchemas.ExperimentalAgentRestartAdmissionResponseSchema,
+    ExperimentalAgentWorkstreamRestartAdmissionPayload:
+        RestartAdmissionSchemas.ExperimentalAgentWorkstreamRestartAdmissionPayloadSchema,
+    ExperimentalAgentWorkstreamRestartAdmissionResponse:
+        RestartAdmissionSchemas.ExperimentalAgentWorkstreamRestartAdmissionResponseSchema,
+    ExperimentalAgentWorkstreamTerminalPayload:
+        RestartAdmissionSchemas.ExperimentalAgentWorkstreamTerminalPayloadSchema,
+    ExperimentalAgentWorkstreamTerminalResponse:
+        RestartAdmissionSchemas.ExperimentalAgentWorkstreamTerminalResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+type AgentRoutingControlSchemas = typeof RoutingControlSchemas & typeof GenerationSchemas;
+type AgentRoutingControlSchemaMap = {
+    readonly [Key in keyof AgentRoutingControlSchemas as Key extends `${infer Name}Schema`
+        ? Name
+        : never]: AgentRoutingControlSchemas[Key];
+};
+const AGENT_ROUTING_CONTROL_SCHEMAS: AgentRoutingControlSchemaMap = {
+    ExperimentalAdmitAgentGenerationPayload: GenerationSchemas.ExperimentalAdmitAgentGenerationPayloadSchema,
+    ExperimentalAdmitAgentGenerationUserPayload: GenerationSchemas.ExperimentalAdmitAgentGenerationUserPayloadSchema,
+    ExperimentalAdmitAgentGenerationToolsPayload: GenerationSchemas.ExperimentalAdmitAgentGenerationToolsPayloadSchema,
+    ExperimentalAdmitAgentGenerationToolApprovalReviewPayload:
+        GenerationSchemas.ExperimentalAdmitAgentGenerationToolApprovalReviewPayloadSchema,
+    ExperimentalAdmitAgentGenerationInitialPayload:
+        GenerationSchemas.ExperimentalAdmitAgentGenerationInitialPayloadSchema,
+    ExperimentalAdmitAgentGenerationCheckpointPayload:
+        GenerationSchemas.ExperimentalAdmitAgentGenerationCheckpointPayloadSchema,
+
+    ExperimentalAgentRoutingOriginExecution: RoutingControlSchemas.ExperimentalAgentRoutingOriginExecutionSchema,
+    ExperimentalAgentRoutingExecutionBinding: RoutingControlSchemas.ExperimentalAgentRoutingExecutionBindingSchema,
+    ExperimentalAgentGenerationAdmissionPayload:
+        RoutingControlSchemas.ExperimentalAgentGenerationAdmissionPayloadSchema,
+    ExperimentalAgentGenerationAdmissionReceipt:
+        RoutingControlSchemas.ExperimentalAgentGenerationAdmissionReceiptSchema,
+    ExperimentalAgentRoutingStatusPayload: RoutingControlSchemas.ExperimentalAgentRoutingStatusPayloadSchema,
+    ExperimentalAgentRoutingStatusResponse: RoutingControlSchemas.ExperimentalAgentRoutingStatusResponseSchema,
+
+    ExperimentalAgentRoutingIntent: RoutingControlSchemas.ExperimentalAgentRoutingIntentSchema,
+    ExperimentalAgentRoutingControlChange: RoutingControlSchemas.ExperimentalAgentRoutingControlChangeSchema,
+    ExperimentalAgentRoutingControlBinding: RoutingControlSchemas.ExperimentalAgentRoutingControlBindingSchema,
+    ExperimentalUpdateAgentRoutingControlPayload:
+        RoutingControlSchemas.ExperimentalUpdateAgentRoutingControlPayloadSchema,
+    ExperimentalAgentRoutingControlReceipt: RoutingControlSchemas.ExperimentalAgentRoutingControlReceiptSchema,
+    ExperimentalAgentRoutingInitialReceipt: RoutingControlSchemas.ExperimentalAgentRoutingInitialReceiptSchema,
+    ExperimentalAgentRoutingChangeReceipt: RoutingControlSchemas.ExperimentalAgentRoutingChangeReceiptSchema,
+    ExperimentalAgentRoutingControlSelector: RoutingControlSchemas.ExperimentalAgentRoutingControlSelectorSchema,
+    ExperimentalAgentRoutingControlQuery: RoutingControlSchemas.ExperimentalAgentRoutingControlQuerySchema,
+    ExperimentalAgentRoutingControlResponse: RoutingControlSchemas.ExperimentalAgentRoutingControlResponseSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const CANONICAL_RESUME_SCHEMAS = {
+    ExperimentalCanonicalCheckpointSummarySource:
+        CanonicalResumeSchemas.ExperimentalCanonicalCheckpointSummarySourceSchema,
+    ExperimentalCanonicalCheckpointSummaryPayload:
+        CanonicalResumeSchemas.ExperimentalCanonicalCheckpointSummaryPayloadSchema,
+    ExperimentalCanonicalUserMessageRequest: CanonicalResumeSchemas.ExperimentalCanonicalUserMessageRequestSchema,
+    ExperimentalCanonicalContinuationAnchor: CanonicalResumeSchemas.ExperimentalCanonicalContinuationAnchorSchema,
     ExperimentalCanonicalResumeInputAppend: CanonicalResumeSchemas.ExperimentalCanonicalResumeInputAppendSchema,
     ExperimentalCanonicalAsyncCompletionOptions:
         CanonicalResumeSchemas.ExperimentalCanonicalAsyncCompletionOptionsSchema,
@@ -2590,6 +2684,10 @@ const CANONICAL_RESUME_SCHEMAS = {
 const CANONICAL_INTERACTION_STREAM_SCHEMAS: CanonicalInteractionStreamSchemaMap = {
     ExperimentalCanonicalAgentAcceptanceTarget:
         CanonicalInteractionStreamSchemas.ExperimentalCanonicalAgentAcceptanceTargetSchema,
+    ExperimentalCanonicalToolApprovalReviewStreamRequest:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalToolApprovalReviewStreamRequestSchema,
+    ExperimentalCanonicalInitialAgentStreamRequest:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalInitialAgentStreamRequestSchema,
     ExperimentalCanonicalInteractionStreamRequest:
         CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionStreamRequestSchema,
     ExperimentalCanonicalInteractionStreamOpened:
@@ -2623,13 +2721,44 @@ const CANONICAL_TOOL_EXECUTION_SCHEMAS = {
     ConversationToolExecutionResult: ConversationToolExecutionResultSchema,
 } as const;
 
-const RUN_CONVERSATION_SCHEMAS = {
+type RunConversationSchemaMap = {
+    ExperimentalCanonicalInitialAuthoringResponse: typeof ExperimentalCanonicalInitialAuthoringResponseSchema;
+    ExperimentalCanonicalInitialRenderedInputHeadPayload: typeof ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema;
+    RunConversationResponse: typeof RunConversationResponseSchema;
+    InitialAuthoringMedia: typeof InitialAuthoringMediaSchema;
+    InitialAuthoringSegment: typeof InitialAuthoringSegmentSchema;
+    InitialAuthoringInputRecord: typeof InitialAuthoringInputRecordSchema;
+    ExperimentalInitialAuthoringViewQuery: typeof ExperimentalInitialAuthoringViewQuerySchema;
+    AvailableInitialAuthoringView: typeof AvailableInitialAuthoringViewSchema;
+    UnavailableInitialAuthoringView: typeof UnavailableInitialAuthoringViewSchema;
+    ExperimentalInitialAuthoringViewResponse: typeof ExperimentalInitialAuthoringViewResponseSchema;
+    AppendRunConversationProgramTurnPayload: typeof AppendRunConversationProgramTurnPayloadSchema;
+    AppendRunConversationProgramTurnResponse: typeof AppendRunConversationProgramTurnResponseSchema;
+    AppendRunConversationToolResultsPayload: typeof AppendRunConversationToolResultsPayloadSchema;
+    AppendRunConversationToolResultsResponse: typeof AppendRunConversationToolResultsResponseSchema;
+    PublishAgentRunConversationHeadPayload: typeof PublishAgentRunConversationHeadPayloadSchema;
+    ExperimentalAgentProcessingHeadPayload: typeof ExperimentalAgentProcessingHeadPayloadSchema;
+    ExperimentalCanonicalVersionedHeadPayload: typeof ExperimentalCanonicalVersionedHeadPayloadSchema;
+};
+
+const RUN_CONVERSATION_SCHEMAS: RunConversationSchemaMap = {
+    ExperimentalCanonicalInitialAuthoringResponse: ExperimentalCanonicalInitialAuthoringResponseSchema,
+    ExperimentalCanonicalInitialRenderedInputHeadPayload: ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema,
     RunConversationResponse: RunConversationResponseSchema,
+    InitialAuthoringMedia: InitialAuthoringMediaSchema,
+    InitialAuthoringSegment: InitialAuthoringSegmentSchema,
+    InitialAuthoringInputRecord: InitialAuthoringInputRecordSchema,
+    ExperimentalInitialAuthoringViewQuery: ExperimentalInitialAuthoringViewQuerySchema,
+    AvailableInitialAuthoringView: AvailableInitialAuthoringViewSchema,
+    UnavailableInitialAuthoringView: UnavailableInitialAuthoringViewSchema,
+    ExperimentalInitialAuthoringViewResponse: ExperimentalInitialAuthoringViewResponseSchema,
     AppendRunConversationProgramTurnPayload: AppendRunConversationProgramTurnPayloadSchema,
     AppendRunConversationProgramTurnResponse: AppendRunConversationProgramTurnResponseSchema,
     AppendRunConversationToolResultsPayload: AppendRunConversationToolResultsPayloadSchema,
     AppendRunConversationToolResultsResponse: AppendRunConversationToolResultsResponseSchema,
     PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayloadSchema,
+    ExperimentalAgentProcessingHeadPayload: ExperimentalAgentProcessingHeadPayloadSchema,
+    ExperimentalCanonicalVersionedHeadPayload: ExperimentalCanonicalVersionedHeadPayloadSchema,
 } as const;
 
 const RUN_BUDGET_SCHEMAS = {
@@ -2641,9 +2770,52 @@ const RUN_BUDGET_SCHEMAS = {
     RunBudgetCapabilityQuery: RunBudgetSchemas.RunBudgetCapabilityQuerySchema,
 };
 
+const JSON_MINIFICATION_SCHEMAS = {
+    ConversationJsonMinificationTransform: JsonMinificationTransformSchema,
+    ConversationJsonMinificationMeasuredProjection: JsonMinificationMeasuredProjectionSchema,
+    ConversationJsonMinificationMeasurement: JsonMinificationMeasurementSchema,
+    ConversationJsonMinificationProposal: JsonMinificationProposalSchema,
+    ConversationJsonMinificationNoOpReason: JsonMinificationNoOpReasonSchema,
+    ConversationJsonMinificationApplication: JsonMinificationApplicationSchema,
+};
+
+const AGENT_ASSET_SCHEMAS = {
+    ExperimentalPublishAgentAssetPayload: AgentAssetSchemas.ExperimentalPublishAgentAssetPayloadSchema,
+    ExperimentalPublishedAgentAsset: AgentAssetSchemas.ExperimentalPublishedAgentAssetSchema,
+    ExperimentalAgentAssetPublication: AgentAssetSchemas.ExperimentalAgentAssetPublicationSchema,
+    ExperimentalExtractAgentAssetPayload: AgentAssetSchemas.ExperimentalExtractAgentAssetPayloadSchema,
+    ExperimentalAgentAssetDerivationSource: AgentAssetSchemas.ExperimentalAgentAssetDerivationSourceSchema,
+    ExperimentalAgentAssetDerivationTransform: AgentAssetSchemas.ExperimentalAgentAssetDerivationTransformSchema,
+    ExperimentalAgentAssetDerivation: AgentAssetSchemas.ExperimentalAgentAssetDerivationSchema,
+    ExperimentalAgentAssetExtractionPending: AgentAssetSchemas.ExperimentalAgentAssetExtractionPendingSchema,
+    ExperimentalAgentAssetExtractionAvailable: AgentAssetSchemas.ExperimentalAgentAssetExtractionAvailableSchema,
+    ExperimentalAgentAssetExtractionFailed: AgentAssetSchemas.ExperimentalAgentAssetExtractionFailedSchema,
+    ExperimentalAgentAssetExtraction: AgentAssetSchemas.ExperimentalAgentAssetExtractionSchema,
+    ExperimentalClaimAgentAssetExtractionPayload: AgentAssetSchemas.ExperimentalClaimAgentAssetExtractionPayloadSchema,
+    ExperimentalAgentAssetExtractionClaim: AgentAssetSchemas.ExperimentalAgentAssetExtractionClaimSchema,
+};
+
+type AgentProcessingSchemaMap = {
+    ExperimentalAgentProcessingActivityEvidence: typeof AgentProcessingSchemas.ExperimentalAgentProcessingActivityEvidenceSchema;
+    ExperimentalClaimAgentProcessingPayload: typeof AgentProcessingSchemas.ExperimentalClaimAgentProcessingPayloadSchema;
+    ExperimentalAgentProcessingClaim: typeof AgentProcessingSchemas.ExperimentalAgentProcessingClaimSchema;
+};
+
+const AGENT_PROCESSING_SCHEMAS: AgentProcessingSchemaMap = {
+    ExperimentalAgentProcessingActivityEvidence:
+        AgentProcessingSchemas.ExperimentalAgentProcessingActivityEvidenceSchema,
+    ExperimentalClaimAgentProcessingPayload: AgentProcessingSchemas.ExperimentalClaimAgentProcessingPayloadSchema,
+    ExperimentalAgentProcessingClaim: AgentProcessingSchemas.ExperimentalAgentProcessingClaimSchema,
+};
+
 const API_SCHEMA_GROUPS = [
+    AGENT_ASSET_SCHEMAS,
+    AGENT_PROCESSING_SCHEMAS,
+    JSON_MINIFICATION_SCHEMAS,
+    AGENT_RESTART_ADMISSION_SCHEMAS,
     AGENT_CONVERSATION_MIGRATION_SCHEMAS,
     CANONICAL_RESUME_SCHEMAS,
+    AGENT_ROUTING_CONTROL_SCHEMAS,
     CANONICAL_TOOL_EXECUTION_SCHEMAS,
     CANONICAL_INTERACTION_SCHEMAS,
     CANONICAL_INTERACTION_STREAM_SCHEMAS,
@@ -2715,8 +2887,13 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof AGENT_CONVERSATION_MIGRATION_SCHEMAS &
+type ApiSchemaMap = typeof JSON_MINIFICATION_SCHEMAS &
+    typeof AGENT_PROCESSING_SCHEMAS &
+    typeof AGENT_CONVERSATION_MIGRATION_SCHEMAS &
+    typeof AGENT_RESTART_ADMISSION_SCHEMAS &
     typeof CANONICAL_RESUME_SCHEMAS &
+    typeof AGENT_ASSET_SCHEMAS &
+    typeof AGENT_ROUTING_CONTROL_SCHEMAS &
     typeof CANONICAL_TOOL_EXECUTION_SCHEMAS &
     typeof CANONICAL_INTERACTION_SCHEMAS &
     typeof CANONICAL_INTERACTION_STREAM_SCHEMAS &
@@ -2797,8 +2974,12 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    ...Object.keys(AGENT_PROCESSING_SCHEMAS),
+    ...Object.keys(AGENT_RESTART_ADMISSION_SCHEMAS),
     ...Object.keys(AGENT_CONVERSATION_MIGRATION_SCHEMAS),
     ...Object.keys(CANONICAL_RESUME_SCHEMAS),
+    ...Object.keys(AGENT_ASSET_SCHEMAS),
+    ...Object.keys(AGENT_ROUTING_CONTROL_SCHEMAS),
     ...Object.entries(CANONICAL_INTERACTION_SCHEMAS)
         .filter(([, schema]) => schema.def.type === 'object')
         .map(([name]) => name),
@@ -2808,10 +2989,13 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     ...Object.entries(CANONICAL_CONVERSATION_SCHEMAS)
         .filter(([, schema]) => schema.def.type === 'object')
         .map(([name]) => name),
+    'ExperimentalCanonicalInitialAuthoringResponse',
+    'ExperimentalCanonicalInitialRenderedInputHeadPayload',
     'AppendRunConversationProgramTurnPayload',
     'AppendRunConversationProgramTurnResponse',
     'AppendRunConversationToolResultsPayload',
     'AppendRunConversationToolResultsResponse',
+    'ExperimentalAgentProcessingHeadPayload',
     'AgentRunAccessQuery',
     'ExperimentalAgentConversationAcceptedOutputHistoryQuery',
     'ExperimentalAgentConversationAcceptedOutputHistoryPage',
@@ -2821,6 +3005,12 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ExperimentalAgentConversationSourceInitialized',
     'AvailableRunConversation',
     'UnavailableRunConversation',
+    'InitialAuthoringMedia',
+    'InitialAuthoringSegment',
+    'InitialAuthoringInputRecord',
+    'ExperimentalInitialAuthoringViewQuery',
+    'AvailableInitialAuthoringView',
+    'UnavailableInitialAuthoringView',
     'UpdateInteractionConfigurationPayload',
     'InteractionConfigurationRecord',
     'InteractionConfigurationResult',
@@ -3018,6 +3208,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // `JSONSchema` is deliberately absent: it is OPEN by design and by long-standing publication —
     // a JSON Schema carries keywords the type never enumerated. `JSONSchemaProperties` is a map.
     // Derive membership so new provider schemas inherit this enforcement check automatically.
+    'OpenAiImageGenerationOptions',
+    'OpenAiImageGenerationMask',
     ...ModelOptionsSchema.options.map((schema) => {
         const id = schema.meta()?.id;
         if (!id) throw new Error('Model option schemas must declare a component id');

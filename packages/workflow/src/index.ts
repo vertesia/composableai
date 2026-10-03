@@ -23,6 +23,14 @@ export * from './activities/rateLimiter.js';
 export * from './activities/renditions/generateImageRendition.js';
 export * from './activities/renditions/generateVideoRendition.js';
 export * from './activities/setDocumentStatus.js';
+// Bounded conversion is an activity-side utility, not a registered Temporal activity.
+export {
+    CANONICAL_TEXT_EXTRACTION_LIMITS,
+    CanonicalTextExtractionError,
+    type CanonicalTextExtractionOptions,
+    type CanonicalTextExtractionResult,
+    extractCanonicalTextFromBuffer,
+} from './conversion/boundedTextExtraction.js';
 export * from './conversion/image.js';
 //TODO remove this - it is only for backward compat - iot is used from old workflows
 export { dslWorkflow } from './dsl/dsl-workflow.js';

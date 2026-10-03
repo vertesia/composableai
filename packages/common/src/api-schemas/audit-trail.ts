@@ -39,6 +39,8 @@ export const AuditAggregationDimensionMapSchema = z
         event_category: z.string().nullable().optional(),
         provider: z.string().nullable().optional(),
         project_id: z.string().nullable().optional(),
+        principal_id: z.string().nullable().optional(),
+        actor_id: z.string().nullable().optional(),
         'details.pipeline': z.string().nullable().optional(),
         'details.verdict': z.string().nullable().optional(),
         'details.workflow_type': z.string().nullable().optional(),
@@ -48,7 +50,7 @@ export const AuditAggregationDimensionMapSchema = z
     .meta({ id: 'AuditAggregationDimensionMap' });
 
 export const AuditAggregationDistinctFieldSchema = z
-    .enum(['resource_id', 'request_id'])
+    .enum(['resource_id', 'request_id', 'principal_id', 'actor_id'])
     .meta({ id: 'AuditAggregationDistinctField' });
 
 export const AuditAggregationOperationSchema = z
@@ -164,6 +166,10 @@ export const AuditAggregationFilterSchema = z
         resourceTypes: z.array(z.string()).optional(),
         eventCategories: z.array(EventCategorySchema).optional(),
         providers: z.array(z.string()).optional(),
+        principalTypes: z
+            .array(z.string())
+            .meta({ description: 'Restrict events to top-level actor categories such as user or apikey.' })
+            .optional(),
         success: z.boolean().optional(),
         details: z.array(AuditAggregationDetailFilterSchema).optional(),
     })

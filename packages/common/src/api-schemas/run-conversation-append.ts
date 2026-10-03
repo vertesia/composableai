@@ -13,6 +13,9 @@ import {
     TimestampSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
+import type * as Wire from '../wire-types.generated.js';
+import { ExperimentalAgentProcessingActivityEvidenceSchema } from './agent-processing.js';
+import { ExperimentalCanonicalInitialAgentStreamRequestSchema } from './canonical-interaction-stream.js';
 
 export const MAX_APPEND_RUN_CONVERSATION_PROGRAM_TEXT_CODE_UNITS = 64 * 1024;
 
@@ -104,3 +107,43 @@ export const PublishAgentRunConversationHeadPayloadSchema = z
         expected_head: ConversationRefSchema.optional(),
     })
     .meta({ id: 'PublishAgentRunConversationHeadPayload' });
+
+/** Exact-version guarded processing successor; ordinary head publication remains a separate contract. */
+export const ExperimentalAgentProcessingHeadPayloadSchema = z
+    .strictObject({
+        kind: z.literal('processing_job_head'),
+        expected_head: ConversationRefSchema,
+        document: ConversationDocumentSchema,
+        processing_authority: ExperimentalAgentProcessingActivityEvidenceSchema,
+    })
+    .meta({ id: 'ExperimentalAgentProcessingHeadPayload' });
+
+/** Original scheduled initial request and exact host run only; the service reads immutable rendered input. */
+export const ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema = z
+    .strictObject({
+        kind: z.literal('initial_rendered_input'),
+        activity: z.strictObject({
+            request: ExperimentalCanonicalInitialAgentStreamRequestSchema,
+            execution_run_id: IdentifierSchema,
+        }),
+    })
+    .meta({ id: 'ExperimentalCanonicalInitialRenderedInputHeadPayload' });
+
+/** Only the exact experimental version accepts these activity-authorized head operations. */
+export const ExperimentalCanonicalVersionedHeadPayloadSchema: z.ZodType<
+    | Wire.ExperimentalCanonicalInitialAgentStreamRequest
+    | Wire.ExperimentalAgentProcessingHeadPayload
+    | Wire.ExperimentalCanonicalInitialRenderedInputHeadPayload
+> = z
+    .discriminatedUnion('kind', [
+        ExperimentalCanonicalInitialAgentStreamRequestSchema,
+        ExperimentalAgentProcessingHeadPayloadSchema,
+        ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema,
+    ])
+    .meta({
+        id: 'ExperimentalCanonicalVersionedHeadPayload',
+        type: 'object',
+        required: ['kind'],
+        discriminator: { propertyName: 'kind' },
+        additionalProperties: true,
+    });

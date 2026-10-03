@@ -1,6 +1,27 @@
 import { conversationOutputReceiptsEqual } from '@llumiverse/conversation/output-runtime';
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    ExperimentalAdmitAgentGenerationPayload,
+    ExperimentalAgentAssetExtraction,
+    ExperimentalAgentAssetExtractionClaim,
+    ExperimentalAgentAssetPublication,
+    ExperimentalAgentGenerationAdmissionReceipt,
+    ExperimentalAgentProcessingClaim,
+    ExperimentalAgentProcessingHeadPayload,
+    ExperimentalAgentRestartAdmissionPayload,
+    ExperimentalAgentRestartAdmissionResponse,
+    ExperimentalAgentRoutingControlResponse,
+    ExperimentalAgentWorkstreamRestartAdmissionPayload,
+    ExperimentalAgentWorkstreamRestartAdmissionResponse,
+    ExperimentalAgentWorkstreamTerminalPayload,
+    ExperimentalAgentWorkstreamTerminalResponse,
+    ExperimentalCanonicalInitialAgentStreamRequest,
+    ExperimentalCanonicalInitialRenderedInputHeadPayload,
+    ExperimentalClaimAgentAssetExtractionPayload,
+    ExperimentalClaimAgentProcessingPayload,
+    ExperimentalExtractAgentAssetPayload,
+    ExperimentalPublishAgentAssetPayload,
+    ExperimentalUpdateAgentRoutingControlPayload,
     ImportAgentRunConversationArchivePayload,
     ImportAgentRunConversationArchiveResponse,
 } from '@vertesia/common';
@@ -115,6 +136,48 @@ export class AgentsApi extends ApiTopic {
         super(parent, '/api/v1/agents');
     }
 
+    /** The service independently observes closure; this nomination cannot supply terminal status. */
+    projectWorkstreamTerminal(
+        subjectId: string,
+        payload: ExperimentalAgentWorkstreamTerminalPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentWorkstreamTerminalResponse> {
+        return this.post(`/${encodeURIComponent(subjectId)}/workstream/terminal`, {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Prove the actual retained workstream child entry; never supplies a caller source or target. */
+    admitWorkstreamRestartExecution(
+        ownerId: string,
+        payload: ExperimentalAgentWorkstreamRestartAdmissionPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentWorkstreamRestartAdmissionResponse> {
+        return this.post(`/${encodeURIComponent(ownerId)}/workstream/restart/admission`, {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Validate and admit the actual delivery of a previously sealed restart intent. */
+    admitRestartExecution(
+        id: string,
+        payload: ExperimentalAgentRestartAdmissionPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentRestartAdmissionResponse> {
+        return this.post(`/${encodeURIComponent(id)}/restart/admission`, {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
     /** Explicit initialize-only migration of an authorized terminal historical archive. */
     importConversationArchive(
         id: string,
@@ -142,6 +205,67 @@ export class AgentsApi extends ApiTopic {
                 document,
                 ...(expectedHead === undefined ? {} : { expected_head: expectedHead }),
             } satisfies PublishAgentRunConversationHeadPayload,
+        });
+    }
+
+    /** @internal Verify scheduled startup and atomically publish its exact source and initial current proof. */
+    initializeCanonicalInitialConversationHead(
+        id: string,
+        initialRequest: ExperimentalCanonicalInitialAgentStreamRequest,
+        scope: CanonicalConversationHeadScope = 'root',
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ConversationRef> {
+        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
+            query: { conversation_scope: scope },
+            payload: initialRequest,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** @internal Independently bind and ACK the retained initial rendered input before target reservation. */
+    acceptCanonicalInitialRenderedInputHead(
+        id: string,
+        payload: ExperimentalCanonicalInitialRenderedInputHeadPayload,
+        scope: CanonicalConversationHeadScope,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ConversationRef> {
+        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
+            query: { conversation_scope: scope },
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** @internal Verify the actual scheduled processing task and exact durable job before archive I/O. */
+    claimCanonicalProcessingJob(
+        id: string,
+        payload: ExperimentalClaimAgentProcessingPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentProcessingClaim> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/processing/claim`, {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** @internal Publish one semantically verified processing successor at the exact versioned head. */
+    publishCanonicalProcessingHead(
+        id: string,
+        payload: ExperimentalAgentProcessingHeadPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ConversationRef> {
+        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
+            query: { conversation_scope: payload.processing_authority.scope },
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
         });
     }
 
@@ -545,6 +669,51 @@ export class AgentsApi extends ApiTopic {
      */
     updateStatus(id: string, update: UpdateAgentRunStatusPayload): Promise<AgentRun | ProcessRun> {
         return this.post(`/${id}/status`, { payload: update });
+    }
+
+    /** Commit one owner-authenticated routing command; the returned receipt is the durable authority. */
+    updateRoutingControl(
+        id: string,
+        command: ExperimentalUpdateAgentRoutingControlPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentRoutingControlResponse> {
+        return this.post(`/${encodeURIComponent(id)}/status`, {
+            payload: command,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Admit only independently verified native activity input before resolving its generation target. */
+    admitGeneration(
+        id: string,
+        payload: ExperimentalAdmitAgentGenerationPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentGenerationAdmissionReceipt> {
+        return this.post(`/${encodeURIComponent(id)}/generation-admission`, {
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Read the current control or an immutable historical operation, including after completion. */
+    getRoutingControl(
+        id: string,
+        operationId?: string,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentRoutingControlResponse> {
+        return this.get(`/${encodeURIComponent(id)}`, {
+            query: {
+                access: 'control',
+                ...(operationId === undefined ? {} : { routing_control_operation_id: operationId }),
+            },
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
     }
 
     /**
@@ -1183,6 +1352,89 @@ export class AgentsApi extends ApiTopic {
         }
 
         return result;
+    }
+
+    /** Publish bytes verified from the recorded run's uploaded artifact generation. */
+    publishAsset(
+        id: string,
+        payload: ExperimentalPublishAgentAssetPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentAssetPublication> {
+        return this.post(`/${encodeURIComponent(id)}/assets`, {
+            ...options,
+            headers: canonicalInteractionHeaders(options?.headers),
+            payload,
+        });
+    }
+
+    getAsset(
+        id: string,
+        operationId: string,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentAssetPublication> {
+        return this.get(`/${encodeURIComponent(id)}/assets/${encodeURIComponent(operationId)}`, {
+            ...options,
+            headers: canonicalInteractionHeaders(options?.headers),
+        });
+    }
+
+    /** Dispatch/recover one immutable extraction of a retained original publication. */
+    extractAsset(
+        id: string,
+        sourceOperationId: string,
+        payload: ExperimentalExtractAgentAssetPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentAssetExtraction> {
+        return this.post(`/${encodeURIComponent(id)}/assets/${encodeURIComponent(sourceOperationId)}/extractions`, {
+            ...options,
+            headers: canonicalInteractionHeaders(options?.headers),
+            payload,
+        });
+    }
+
+    /** Claim the sealed extraction's actual first execution before any worker source I/O. */
+    claimAssetExtraction(
+        id: string,
+        sourceOperationId: string,
+        operationId: string,
+        payload: ExperimentalClaimAgentAssetExtractionPayload,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentAssetExtractionClaim> {
+        return this.post(
+            `/${encodeURIComponent(id)}/assets/${encodeURIComponent(sourceOperationId)}/extractions/${encodeURIComponent(operationId)}/claim`,
+            { ...options, headers: canonicalInteractionHeaders(options?.headers), payload },
+        );
+    }
+
+    getAssetExtraction(
+        id: string,
+        sourceOperationId: string,
+        operationId: string,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentAssetExtraction> {
+        return this.get(
+            `/${encodeURIComponent(id)}/assets/${encodeURIComponent(sourceOperationId)}/extractions/${encodeURIComponent(operationId)}`,
+            {
+                ...options,
+                headers: canonicalInteractionHeaders(options?.headers),
+            },
+        );
+    }
+
+    /** Download by publication selector; caller-supplied locators never select bytes. */
+    downloadAsset(
+        id: string,
+        operationId: string,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ReadableStream<Uint8Array>> {
+        return this.get(`/${encodeURIComponent(id)}/assets/${encodeURIComponent(operationId)}/content`, {
+            ...options,
+            headers: canonicalInteractionHeaders(options?.headers),
+            reader: (response) => {
+                if (!response.body) throw new Error('Canonical asset download has no response body');
+                return response.body;
+            },
+        });
     }
 
     /**

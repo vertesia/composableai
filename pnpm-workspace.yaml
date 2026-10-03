@@ -75,21 +75,18 @@ overrides:
   "browserslist@<4.28.7": 4.28.8
   # GHSA-gqvv-2mrq-wpjv, GHSA-g6gw-c38x-mqfc, and GHSA-crvj-82cr-hjcx.
   "hono@<4.13.8": 4.13.8
-  # GHSA-mh99-v99m-4gvg. Each major line is floored on its own backport rather than forced to
-  # 5.0.8, which would be a cross-major jump for its consumers (mocha, @hono/vite-dev-server).
-  # 2.1.4 needs the minimumReleaseAgeExclude entry above. Note the advisory still declares
-  # `>=5.0.8` as its only patched range, so `pnpm audit` may keep reporting the 2.x copy until
-  # GHSA re-scopes it — 2.1.4 does carry the fix (EXPANSION_MAX_LENGTH, CVE-2026-14257).
-  "brace-expansion@>=2.0.0 <2.1.4": 2.1.4
-  "brace-expansion@>=3.0.0 <5.0.9": 5.0.9
+  # Brace-expansion security floors preserve consumer major versions. New versions remain
+  # subject to the normal three-day release age.
+  "brace-expansion@>=2.0.0 <2.1.7": 2.1.7
+  "brace-expansion@>=3.0.0 <5.0.12": 5.0.12
   diff@>=6.0.0 <8.0.3: ^8.0.3
-  dompurify@<=3.4.12: ^3.4.13
+  dompurify@<=3.4.15: ^3.4.16
   # GHSA-7p8r-x3mc-p8w7, GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc,
   # GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp, GHSA-qw65-cvwx-89v3, and GHSA-58mr-gqgx-xq4g.
-  "fast-uri@>=3.0.0 <3.1.7": 3.1.7
-  # Tilde (not caret) so @firebase/firestore stays on its ~1.9 line and @temporalio/* on 1.14.
-  "@grpc/grpc-js@<1.9.16": ~1.9.16
-  "@grpc/grpc-js@>=1.14.0 <1.14.4": ~1.14.4
+  "fast-uri@>=3.0.0 <3.1.8": 3.1.8
+  # Floor vulnerable grpc-js consumers on patched versions, subject to normal release age.
+  "@grpc/grpc-js@<1.13.6": 1.13.6
+  "@grpc/grpc-js@>=1.14.0 <1.14.5": 1.14.5
   form-data@>=4.0.0 <4.0.6: ^4.0.6
   # GHSA-fxqj-rqcc-2cmp: incomplete fix of GHSA-6g55-p6wh-862q (attacker-controlled
   # sourceMappingURL reads arbitrary .map files when `from` is unset).
@@ -106,6 +103,7 @@ overrides:
   "qs@<6.16.0": 6.16.0
   serialize-javascript@<=7.0.2: ^7.0.3
   serialize-javascript@>=5.0.0 <7.0.5: ^7.0.5
+  serialize-javascript@>=7.1.1 <7.1.2: 7.1.2
   shell-quote@<=1.8.4: 1.9.0
   # GHSA-r5fr-rjxr-66jc and GHSA-f23m-r3pf-42rh: template injection and prototype pollution.
   "lodash-es@<4.18.1": 4.18.1

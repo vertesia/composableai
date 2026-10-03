@@ -1,0 +1,17 @@
+import type * as Wire from './wire-types.generated.js';
+
+export type ExperimentalPublishAgentAssetPayload = Wire.ExperimentalPublishAgentAssetPayload;
+export type ExperimentalPublishedAgentAsset = Wire.ExperimentalPublishedAgentAsset;
+export type ExperimentalAgentAssetPublication = Wire.ExperimentalAgentAssetPublication;
+
+export type ExperimentalExtractAgentAssetPayload = Wire.ExperimentalExtractAgentAssetPayload;
+export type ExperimentalAgentAssetDerivationSource = Wire.ExperimentalAgentAssetDerivationSource;
+export type ExperimentalAgentAssetDerivationTransform = Wire.ExperimentalAgentAssetDerivationTransform;
+export type ExperimentalAgentAssetDerivation = Wire.ExperimentalAgentAssetDerivation;
+export type ExperimentalAgentAssetExtractionPending = Wire.ExperimentalAgentAssetExtractionPending;
+export type ExperimentalAgentAssetExtractionAvailable = Wire.ExperimentalAgentAssetExtractionAvailable;
+export type ExperimentalAgentAssetExtractionFailed = Wire.ExperimentalAgentAssetExtractionFailed;
+export type ExperimentalAgentAssetExtraction = Wire.ExperimentalAgentAssetExtraction;
+
+export type ExperimentalClaimAgentAssetExtractionPayload = Wire.ExperimentalClaimAgentAssetExtractionPayload;
+export type ExperimentalAgentAssetExtractionClaim = Wire.ExperimentalAgentAssetExtractionClaim;

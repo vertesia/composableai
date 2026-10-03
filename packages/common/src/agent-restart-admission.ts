@@ -1,0 +1,12 @@
+import type * as Wire from './wire-types.generated.js';
+
+export type ExperimentalAgentRestartAdmissionExecution = Wire.ExperimentalAgentRestartAdmissionExecution;
+export type ExperimentalAgentRestartAdmissionPayload = Wire.ExperimentalAgentRestartAdmissionPayload;
+export type ExperimentalAgentRestartAdmissionResponse = Wire.ExperimentalAgentRestartAdmissionResponse;
+
+export type ExperimentalAgentWorkstreamRestartAdmissionPayload =
+    Wire.ExperimentalAgentWorkstreamRestartAdmissionPayload;
+export type ExperimentalAgentWorkstreamRestartAdmissionResponse =
+    Wire.ExperimentalAgentWorkstreamRestartAdmissionResponse;
+export type ExperimentalAgentWorkstreamTerminalPayload = Wire.ExperimentalAgentWorkstreamTerminalPayload;
+export type ExperimentalAgentWorkstreamTerminalResponse = Wire.ExperimentalAgentWorkstreamTerminalResponse;
