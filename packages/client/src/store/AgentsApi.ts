@@ -522,8 +522,9 @@ export class AgentsApi extends ApiTopic {
     /** @internal Retrieve an AgentRun only when the caller has control authority over it. */
     retrieveRunForControl<TData = Record<string, unknown>, TProperties = Record<string, unknown>>(
         id: string,
+        options?: CanonicalInteractionRequestOptions,
     ): Promise<AgentRunResponse<TData, TProperties>> {
-        return this.get(`/${id}`, { query: { access: 'control' } });
+        return this.get(`/${id}`, { ...options, query: { access: 'control' } });
     }
 
     retrieveProcess(id: string): Promise<ProcessRun> {

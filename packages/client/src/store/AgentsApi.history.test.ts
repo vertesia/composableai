@@ -27,6 +27,38 @@ describe('agent history cursor transport', () => {
         }
     });
 
+    it('carries cancellation into the scoped control read', async () => {
+        const controller = new AbortController();
+        let observed: AbortSignal | undefined;
+        let fetchCalls = 0;
+        let markStarted: (() => void) | undefined;
+        const started = new Promise<void>((resolve) => {
+            markStarted = resolve;
+        });
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.test',
+            storeUrl: 'https://store.test',
+            fetch: (async (input: Request | string, init?: RequestInit) => {
+                fetchCalls++;
+                const signal = input instanceof Request ? input.signal : init?.signal;
+                if (!signal) throw new Error('Scoped control read did not pass an abort signal');
+                observed = signal;
+                markStarted?.();
+                return new Promise<Response>((_resolve, reject) => {
+                    const rejectAbort = () => reject(new DOMException('Read cancelled', 'AbortError'));
+                    if (signal.aborted) rejectAbort();
+                    else signal.addEventListener('abort', rejectAbort, { once: true });
+                });
+            }) as typeof fetch,
+        });
+        const request = client.agents.retrieveRunForControl('agent', { signal: controller.signal, timeoutMs: 3_000 });
+        await started;
+        controller.abort();
+        await expect(request).rejects.toMatchObject({ status: 0, payload: { name: 'AbortError' } });
+        expect(observed?.aborted).toBe(true);
+        expect(fetchCalls).toBe(1);
+    });
+
     it('requests control authorization only through the explicit AgentRun helper', async () => {
         const urls: URL[] = [];
         const response = { id: 'agent', run_kind: 'agent', run_type: 'autonomous' };
