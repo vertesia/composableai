@@ -87,5 +87,14 @@ export type AuditAggregationRow = Wire.AuditAggregationRow;
 
 export type AuditAggregationResponse = Wire.AuditAggregationResponse;
 
+export type AuditAdoptionFilter = Wire.AuditAdoptionFilter;
+export type AuditAdoptionQuery = Wire.AuditAdoptionQuery;
+export type AuditAdoptionPeriod = Wire.AuditAdoptionPeriod;
+export type AuditAdoptionBucket = Wire.AuditAdoptionBucket;
+export type AuditAdoptionActiveDays = Wire.AuditAdoptionActiveDays;
+export type AuditAdoptionProject = Wire.AuditAdoptionProject;
+export type AuditAdoptionHistory = Wire.AuditAdoptionHistory;
+export type AuditAdoptionResponse = Wire.AuditAdoptionResponse;
+
 /** Billable audit actions for cost analytics queries */
 export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];

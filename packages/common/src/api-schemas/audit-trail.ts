@@ -247,3 +247,102 @@ export const AuditTrailQuerySchema = z
         offset: z.number().meta({ description: 'Pagination: offset' }).optional(),
     })
     .meta({ id: 'AuditTrailQuery' });
+
+export const AuditAdoptionFilterSchema = z
+    .strictObject({
+        actions: z.array(AuditActionSchema).max(32).optional(),
+        resourceTypes: z.array(z.string().max(128)).max(16).optional(),
+        eventCategories: z.array(EventCategorySchema).max(6).optional(),
+    })
+    .meta({ id: 'AuditAdoptionFilter' });
+
+export const AuditAdoptionQuerySchema = z
+    .strictObject({
+        projectId: z.string().optional(),
+        from: z
+            .string()
+            .meta({ format: 'date-time', description: 'Inclusive start; defaults to 30 days before to.' })
+            .optional(),
+        to: z
+            .string()
+            .meta({ format: 'date-time', description: 'Exclusive end; defaults to now. Maximum duration: 366 days.' })
+            .optional(),
+        filter: AuditAdoptionFilterSchema.optional(),
+    })
+    .meta({
+        id: 'AuditAdoptionQuery',
+        description:
+            'Productive direct authenticated user activity, including user OAuth/MCP calls. Scope is enforced by the server.',
+    });
+
+export const AuditAdoptionPeriodSchema = z
+    .strictObject({
+        from: z.string().meta({ format: 'date-time' }),
+        to: z.string().meta({ format: 'date-time' }),
+    })
+    .meta({ id: 'AuditAdoptionPeriod' });
+
+export const AuditAdoptionBucketSchema = z
+    .strictObject({
+        from: z.string().meta({ format: 'date-time' }),
+        to: z.string().meta({ format: 'date-time' }),
+        partial: z.boolean(),
+        active_users: z.number().int().nonnegative(),
+    })
+    .meta({ id: 'AuditAdoptionBucket' });
+
+export const AuditAdoptionActiveDaysSchema = z
+    .strictObject({
+        days: z.number().int().min(1).max(367),
+        users: z.number().int().nonnegative(),
+    })
+    .meta({ id: 'AuditAdoptionActiveDays' });
+
+export const AuditAdoptionProjectSchema = z
+    .strictObject({
+        project_id: z.string(),
+        project_name: z.string().nullable(),
+        active_users: z.number().int().nonnegative(),
+        active_user_days: z.number().int().nonnegative(),
+    })
+    .meta({ id: 'AuditAdoptionProject' });
+
+export const AuditAdoptionHistorySchema = z
+    .strictObject({
+        earliest_observed_at: z.string().meta({ format: 'date-time' }).nullable(),
+        coverage_from: z
+            .string()
+            .meta({
+                format: 'date-time',
+                description:
+                    'Authoritative complete-history boundary, if known. Earliest observation is not a coverage boundary.',
+            })
+            .nullable(),
+        completeness: z.enum(['unknown', 'insufficient', 'verified']),
+        retention_unavailable_reason: z.enum(['no_previous_users', 'insufficient_history']).nullable(),
+    })
+    .meta({ id: 'AuditAdoptionHistory' });
+
+export const AuditAdoptionResponseSchema = z
+    .strictObject({
+        period: AuditAdoptionPeriodSchema,
+        previous_period: AuditAdoptionPeriodSchema,
+        resolution: z.enum(['day', 'week']),
+        active_users: z.number().int().nonnegative(),
+        previous_active_users: z.number().int().nonnegative(),
+        retained_users: z.number().int().nonnegative(),
+        observed_retention: z.number().min(0).max(1).nullable(),
+        returning_user_share: z.number().min(0).max(1).nullable(),
+        repeat_user_share: z.number().min(0).max(1).nullable(),
+        median_active_days: z.number().nonnegative().nullable(),
+        active_projects: z.number().int().nonnegative().nullable(),
+        timeline: z.array(AuditAdoptionBucketSchema),
+        active_day_distribution: z.array(AuditAdoptionActiveDaysSchema),
+        top_projects: z.array(AuditAdoptionProjectSchema).max(10),
+        history: AuditAdoptionHistorySchema,
+    })
+    .meta({
+        id: 'AuditAdoptionResponse',
+        description:
+            'Distinct user adoption sets over two equal-duration half-open periods. Ratios use available audit history, not guaranteed historical coverage. No user identities are returned.',
+    });
