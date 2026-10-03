@@ -84,6 +84,12 @@ describe('experimental canonical interaction execution schemas', () => {
         });
         expect(validateBound(bound), JSON.stringify(validateBound.errors)).toBe(true);
         expect(validatePrepare(prospective), JSON.stringify(validatePrepare.errors)).toBe(true);
+        const providerCount = { ...prospective, measurement_mode: 'provider' as const };
+        expect(ExperimentalCanonicalInteractionModelSwitchPrepareRequestSchema.safeParse(providerCount).success).toBe(
+            true,
+        );
+        expect(validatePrepare(providerCount), JSON.stringify(validatePrepare.errors)).toBe(true);
+        expect(validatePrepare({ ...prospective, measurement_mode: 'silent-provider-call' })).toBe(false);
         expect(validatePrepare({ request: bound, operation: 'execute' })).toBe(false);
         const newRequest = { ...bound, initial_state: { type: 'new' as const } };
         expect(ExperimentalCanonicalNamedInteractionExecutionRequestSchema.safeParse(newRequest).success).toBe(false);

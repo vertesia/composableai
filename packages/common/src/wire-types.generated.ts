@@ -2616,6 +2616,7 @@ export type ExperimentalCanonicalInteractionModelSwitchPrepareRequest = {
     request: ExperimentalCanonicalNamedInteractionExecutionRequest;
     operation: 'execute' | 'stream';
     measurement_policy?: 'exact_only' | 'identified_estimate' | undefined;
+    measurement_mode?: 'local' | 'provider' | undefined;
 };
 export type ExperimentalCanonicalInteractionModelSwitchPrepareResult = {
     plan: ConversationModelSwitchPlan;

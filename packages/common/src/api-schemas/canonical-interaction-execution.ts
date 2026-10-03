@@ -310,6 +310,8 @@ export const ExperimentalCanonicalInteractionModelSwitchPrepareRequestSchema = z
         request: ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
         operation: z.enum(['execute', 'stream']),
         measurement_policy: z.enum(['exact_only', 'identified_estimate']).optional(),
+        /** Explicit provider counting may contact the configured token-count endpoint; the default is local-only. */
+        measurement_mode: z.enum(['local', 'provider']).optional(),
     })
     .superRefine((value, context) => {
         if (value.request.initial_state.type !== 'reference') {

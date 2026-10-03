@@ -9531,6 +9531,13 @@
           "identified_estimate"
         ]
       },
+      "measurement_mode": {
+        "type": "string",
+        "enum": [
+          "local",
+          "provider"
+        ]
+      },
       "options_fingerprint": {
         "$ref": "#/components/schemas/ConversationContentHash"
       },
@@ -12016,6 +12023,13 @@
         "enum": [
           "exact_only",
           "identified_estimate"
+        ]
+      },
+      "measurement_mode": {
+        "type": "string",
+        "enum": [
+          "local",
+          "provider"
         ]
       }
     },
