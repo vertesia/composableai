@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { validateApiRequest } from '../api-contract/index.js';
 import {
     AppendRunConversationProgramTurnPayloadSchema,
-    ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema,
-    ExperimentalCanonicalVersionedHeadPayloadSchema,
     MAX_APPEND_RUN_CONVERSATION_PROGRAM_TEXT_CODE_UNITS,
 } from './run-conversation-append.js';
 
@@ -100,96 +98,6 @@ describe('installed program append contract', () => {
             { ...terminal, purpose: 'unknown' },
         ]) {
             expect(validate(value)).toMatchObject({ valid: false });
-        }
-    });
-});
-
-describe('guarded tool catalog head contract', () => {
-    const value = {
-        kind: 'tool_catalog_selection',
-        request: {
-            run: { id: 'execution:catalog', account: 'account:catalog', project: 'project:catalog' },
-            asyncCompletion: {
-                run_id: 'run:catalog',
-                activity_id: 'activity:catalog',
-                task_token: 'opaque:catalog',
-                canonical_state: {
-                    head: { conversation_id: 'conversation:catalog', revision: 2 },
-                    scope: 'root',
-                },
-                agent_acceptance: {
-                    version: 1,
-                    subject_agent_run_id: 'subject:catalog',
-                    scope: 'root',
-                    activity_id: 'activity:catalog',
-                },
-                canonical_output_reference: 'conversation_output_authority_v1',
-            },
-            continuation_anchor: {
-                kind: 'materialized_tool_input',
-                materialized_input: { operation_id: 'input:catalog', result_revision: 2 },
-            },
-        },
-    };
-    const validate = (input: unknown) =>
-        validateApiRequest('ExperimentalCanonicalToolCatalogSelectionHeadPayload', input);
-    it('accepts only the original scheduled tools nomination on the existing strict head union', () => {
-        expect(ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema.parse(value)).toEqual(value);
-        expect(ExperimentalCanonicalVersionedHeadPayloadSchema.parse(value)).toEqual(value);
-        expect(validate(value)).toEqual({ valid: true, data: value });
-    });
-    it('accepts a bounded exact retained selection constraint but grants no caller-owned recovery flag', () => {
-        const constrained = {
-            ...value,
-            retained_selection: {
-                operation_id: 'catalog:one',
-                result_revision: 3,
-                receipt_fingerprint: `sha256:${'a'.repeat(64)}`,
-            },
-        };
-        expect(ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema.parse(constrained)).toEqual(constrained);
-        expect(validate(constrained)).toEqual({ valid: true, data: constrained });
-        for (const malformed of [
-            { ...constrained, recovery: true },
-            { ...constrained, retained_selection: true },
-            { ...constrained, retained_selection: { ...constrained.retained_selection, operation_id: '' } },
-            { ...constrained, retained_selection: { ...constrained.retained_selection, result_revision: -1 } },
-            {
-                ...constrained,
-                retained_selection: { ...constrained.retained_selection, receipt_fingerprint: 'unbound' },
-            },
-            { ...constrained, retained_selection: { ...constrained.retained_selection, target: {} } },
-        ]) {
-            expect(() => ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema.parse(malformed)).toThrow();
-            expect(validate(malformed)).toMatchObject({ valid: false });
-        }
-    });
-    it.each(['catalog_intent', 'tool_definitions', 'active_tool_definition_ids', 'target', 'config'])(
-        'rejects caller-owned %s at both transport levels',
-        (field) => {
-            for (const malformed of [
-                { ...value, [field]: [] },
-                { ...value, request: { ...value.request, [field]: [] } },
-            ]) {
-                expect(() => ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema.parse(malformed)).toThrow();
-                expect(validate(malformed)).toMatchObject({ valid: false });
-            }
-        },
-    );
-    it('preserves required actual token, activity and original scope bindings', () => {
-        for (const malformed of [
-            {
-                ...value,
-                request: { ...value.request, asyncCompletion: { ...value.request.asyncCompletion, task_token: '' } },
-            },
-            {
-                ...value,
-                request: { ...value.request, asyncCompletion: { ...value.request.asyncCompletion, activity_id: '' } },
-            },
-            { ...value, request: { ...value.request, continuation_anchor: { kind: 'materialized_tool_input' } } },
-        ]) {
-            expect(() => ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema.parse(malformed)).toThrow();
-            expect(validate(malformed)).toMatchObject({ valid: false });
         }
     });
 });

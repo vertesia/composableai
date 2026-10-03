@@ -20,3 +20,5 @@ export type ExperimentalCanonicalToolApprovalReviewStreamRequest =
     Wire.ExperimentalCanonicalToolApprovalReviewStreamRequest;
 export type ExperimentalAdmitAgentGenerationToolApprovalReviewPayload =
     Wire.ExperimentalAdmitAgentGenerationToolApprovalReviewPayload;
+
+export type ExperimentalCanonicalInitialIngestionAccepted = Wire.ExperimentalCanonicalInitialIngestionAccepted;

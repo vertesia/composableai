@@ -23,3 +23,5 @@ export type ExperimentalAgentGenerationAdmissionPayload = Wire.ExperimentalAgent
 export type ExperimentalAgentGenerationAdmissionReceipt = Wire.ExperimentalAgentGenerationAdmissionReceipt;
 export type ExperimentalAgentRoutingStatusPayload = Wire.ExperimentalAgentRoutingStatusPayload;
 export type ExperimentalAgentRoutingStatusResponse = Wire.ExperimentalAgentRoutingStatusResponse;
+
+export type ExperimentalCanonicalIngestionSourceBinding = Wire.ExperimentalCanonicalIngestionSourceBinding;

@@ -1661,6 +1661,9 @@
       "admitted_at": {
         "$ref": "#/components/schemas/ConversationTimestamp"
       },
+      "ingestion_source": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionSourceBinding"
+      },
       "execution": {
         "$ref": "#/components/schemas/ExperimentalAgentRoutingExecutionBinding"
       },
@@ -1675,6 +1678,493 @@
       "admitted_at",
       "execution",
       "routing_control"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalIngestionSourceBinding": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "number",
+        "const": 1
+      },
+      "accepted_source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "accepted_anchor": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "accepted_input"
+              },
+              "receipt": {
+                "$ref": "#/components/schemas/ConversationOperationReceipt"
+              }
+            },
+            "required": [
+              "kind",
+              "receipt"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "retained_output"
+              },
+              "receipt": {
+                "$ref": "#/components/schemas/ConversationOutputReceipt"
+              }
+            },
+            "required": [
+              "kind",
+              "receipt"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "effective_source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "document_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "processing_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      }
+    },
+    "required": [
+      "version",
+      "accepted_source",
+      "accepted_anchor",
+      "effective_source",
+      "document_fingerprint",
+      "processing_fingerprint"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationOperationReceipt": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "conversation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "payload_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "base_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "result_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "accepted_turn_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_generation_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_asset_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_tool_definition_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_execution_receipt_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_context_entry_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_context_entries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationContextEntry"
+        }
+      },
+      "accepted_tool_selection": {
+        "$ref": "#/components/schemas/ConversationAcceptedToolSelection"
+      },
+      "operation_kind": {
+        "type": "string",
+        "enum": [
+          "context_change",
+          "conversation_edit",
+          "conversation_delete",
+          "processing"
+        ]
+      },
+      "context_change": {
+        "$ref": "#/components/schemas/ConversationContextChangeOperation"
+      },
+      "conversation_edit": {
+        "$ref": "#/components/schemas/ConversationEditOperation"
+      },
+      "conversation_delete": {
+        "$ref": "#/components/schemas/ConversationDeleteOperation"
+      },
+      "processing_operation": {
+        "$ref": "#/components/schemas/ConversationProcessingOperation"
+      }
+    },
+    "required": [
+      "id",
+      "conversation_id",
+      "payload_fingerprint",
+      "base_revision",
+      "result_revision",
+      "recorded_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationSourceTurnContextEntry": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "source_turn"
+      },
+      "turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "turn_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationReplacementTurnContextEntry": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "replacement_turn"
+      },
+      "compaction_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "turn_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "compaction_id",
+      "turn_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationContextChangeOperation": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "exclude",
+          "replace_with_compaction"
+        ]
+      },
+      "removed_entry_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "inserted_entry_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "source_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "placement": {
+        "$ref": "#/components/schemas/ConversationContextChangePlacement"
+      },
+      "selected_block_ids": {
+        "$ref": "#/components/schemas/ConversationSelectedContextBlocks"
+      },
+      "remainder_entry_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      }
+    },
+    "required": [
+      "kind",
+      "removed_entry_ids",
+      "inserted_entry_ids",
+      "source_fingerprint"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationContextChangePlacement": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "enum": [
+          "first_selected",
+          "per_selected_range"
+        ]
+      },
+      "causal_order": {
+        "type": "string",
+        "enum": [
+          "contiguous",
+          "explicit_disjoint_summary",
+          "preserved_disjoint_ranges"
+        ]
+      }
+    },
+    "required": [
+      "mode",
+      "causal_order"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationSelectedContextBlocks": {
+    "type": "object",
+    "propertyNames": {
+      "$ref": "#/components/schemas/ConversationIdentifier"
+    },
+    "additionalProperties": {
+      "minItems": 1,
+      "type": "array",
+      "items": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    }
+  },
+  "ConversationEditPlacement": {
+    "type": "object",
+    "properties": {
+      "mode": {
+        "type": "string",
+        "const": "first_selected"
+      },
+      "causal_order": {
+        "type": "string",
+        "enum": [
+          "contiguous",
+          "explicit_disjoint"
+        ]
+      }
+    },
+    "required": [
+      "mode",
+      "causal_order"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationDeleteOperation": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "number",
+        "const": 1
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "source_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "dependency_policy": {
+        "type": "string",
+        "const": "reject"
+      },
+      "deleted_turns": {
+        "minItems": 1,
+        "maxItems": 4096,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationDeletedTurnRef"
+        }
+      }
+    },
+    "required": [
+      "version",
+      "source",
+      "source_fingerprint",
+      "dependency_policy",
+      "deleted_turns"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationDeletedTurnRef": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "id",
+      "fingerprint",
+      "block_ids",
+      "accepted_operation_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationProcessingOperation": {
+    "type": "object",
+    "properties": {
+      "phase": {
+        "type": "string",
+        "enum": [
+          "policy",
+          "queue",
+          "resolve",
+          "attempt",
+          "output",
+          "complete",
+          "coverage"
+        ]
+      },
+      "job_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "policy_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "result_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "transform_application": {
+        "$ref": "#/components/schemas/ConversationJsonMinificationApplication"
+      },
+      "superseded_job_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      }
+    },
+    "required": [
+      "phase",
+      "policy_revision"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationOutputReceipt": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "conversation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "base_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "result_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "accepted_turn_ids": {
+        "minItems": 1,
+        "maxItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_generation_ids": {
+        "minItems": 1,
+        "maxItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "accepted_asset_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      }
+    },
+    "required": [
+      "id",
+      "conversation_id",
+      "base_revision",
+      "result_revision",
+      "recorded_at",
+      "accepted_turn_ids",
+      "accepted_generation_ids"
     ],
     "additionalProperties": false
   },
@@ -1978,6 +2468,645 @@
       "source"
     ],
     "additionalProperties": false
+  },
+  "ConversationContextEntry": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationSourceTurnContextEntry"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationReplacementTurnContextEntry"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "source_turn": "#/components/schemas/ConversationSourceTurnContextEntry",
+        "replacement_turn": "#/components/schemas/ConversationReplacementTurnContextEntry"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ]
+  },
+  "ConversationAcceptedToolSelection": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "unchanged"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "replace"
+          },
+          "definition_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "definition_ids"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "ConversationEditOperation": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/ConversationEditOperationV1"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationSliceEditOperation"
+      }
+    ]
+  },
+  "ConversationEditOperationV1": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "source": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "source_context_revision": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "source_fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          },
+          "selected_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "removed_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "created_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "protected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "unprotected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "const": "protect"
+          }
+        },
+        "required": [
+          "version",
+          "source",
+          "source_context_revision",
+          "source_fingerprint",
+          "selected_entries",
+          "removed_entry_ids",
+          "created_entries",
+          "created_turns",
+          "created_assets",
+          "protected_entry_ids",
+          "unprotected_entry_ids",
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "source": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "source_context_revision": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "source_fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          },
+          "selected_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "removed_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "created_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "protected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "unprotected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "const": "insert"
+          },
+          "anchor": {
+            "$ref": "#/components/schemas/ConversationEditAnchor"
+          }
+        },
+        "required": [
+          "version",
+          "source",
+          "source_context_revision",
+          "source_fingerprint",
+          "selected_entries",
+          "removed_entry_ids",
+          "created_entries",
+          "created_turns",
+          "created_assets",
+          "protected_entry_ids",
+          "unprotected_entry_ids",
+          "kind",
+          "anchor"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 1
+          },
+          "source": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "source_context_revision": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "source_fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          },
+          "selected_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "removed_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "created_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "protected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "unprotected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "kind": {
+            "type": "string",
+            "const": "replace"
+          },
+          "fidelity": {
+            "type": "string",
+            "enum": [
+              "heuristic",
+              "semantic"
+            ]
+          },
+          "placement": {
+            "$ref": "#/components/schemas/ConversationEditPlacement"
+          }
+        },
+        "required": [
+          "version",
+          "source",
+          "source_context_revision",
+          "source_fingerprint",
+          "selected_entries",
+          "removed_entry_ids",
+          "created_entries",
+          "created_turns",
+          "created_assets",
+          "protected_entry_ids",
+          "unprotected_entry_ids",
+          "kind",
+          "fidelity",
+          "placement"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "ConversationEditAnchor": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "before_entry"
+          },
+          "entry_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          }
+        },
+        "required": [
+          "kind",
+          "entry_id"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "after_entry"
+          },
+          "entry_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          }
+        },
+        "required": [
+          "kind",
+          "entry_id"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "head"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "tail"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "ConversationSliceEditOperation": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 2
+          },
+          "source": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "source_context_revision": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "source_fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          },
+          "selected_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "removed_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "created_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "protected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "unprotected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "source_slices": {
+            "minItems": 1,
+            "maxItems": 4096,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationSourceBlockSlice"
+            }
+          },
+          "remainder_turn_ids": {
+            "maxItems": 4096,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "source_protected_entry_ids": {
+            "maxItems": 4096,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "source_entry_positions": {
+            "minItems": 1,
+            "maxItems": 4096,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+            }
+          },
+          "source_topology_fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          },
+          "kind": {
+            "type": "string",
+            "const": "protect"
+          }
+        },
+        "required": [
+          "version",
+          "source",
+          "source_context_revision",
+          "source_fingerprint",
+          "selected_entries",
+          "removed_entry_ids",
+          "created_entries",
+          "created_turns",
+          "created_assets",
+          "protected_entry_ids",
+          "unprotected_entry_ids",
+          "source_slices",
+          "remainder_turn_ids",
+          "source_protected_entry_ids",
+          "source_entry_positions",
+          "source_topology_fingerprint",
+          "kind"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "number",
+            "const": 2
+          },
+          "source": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "source_context_revision": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "source_fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          },
+          "selected_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "removed_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "created_entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "created_assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationEditRecordRef"
+            }
+          },
+          "protected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "unprotected_entry_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "source_slices": {
+            "minItems": 1,
+            "maxItems": 4096,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationSourceBlockSlice"
+            }
+          },
+          "remainder_turn_ids": {
+            "maxItems": 4096,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "source_protected_entry_ids": {
+            "maxItems": 4096,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "source_entry_positions": {
+            "minItems": 1,
+            "maxItems": 4096,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+            }
+          },
+          "source_topology_fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          },
+          "kind": {
+            "type": "string",
+            "const": "replace"
+          },
+          "fidelity": {
+            "type": "string",
+            "enum": [
+              "heuristic",
+              "semantic"
+            ]
+          },
+          "placement": {
+            "$ref": "#/components/schemas/ConversationEditPlacement"
+          }
+        },
+        "required": [
+          "version",
+          "source",
+          "source_context_revision",
+          "source_fingerprint",
+          "selected_entries",
+          "removed_entry_ids",
+          "created_entries",
+          "created_turns",
+          "created_assets",
+          "protected_entry_ids",
+          "unprotected_entry_ids",
+          "source_slices",
+          "remainder_turn_ids",
+          "source_protected_entry_ids",
+          "source_entry_positions",
+          "source_topology_fingerprint",
+          "kind",
+          "fidelity",
+          "placement"
+        ],
+        "additionalProperties": false
+      }
+    ]
   },
   "ExperimentalAgentRoutingControlReceipt": {
     "oneOf": [
@@ -5100,58 +6229,6 @@
       "scope"
     ]
   },
-  "ConversationOutputReceipt": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "conversation_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "base_revision": {
-        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-      },
-      "result_revision": {
-        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-      },
-      "recorded_at": {
-        "$ref": "#/components/schemas/ConversationTimestamp"
-      },
-      "accepted_turn_ids": {
-        "minItems": 1,
-        "maxItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "accepted_generation_ids": {
-        "minItems": 1,
-        "maxItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "accepted_asset_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      }
-    },
-    "required": [
-      "id",
-      "conversation_id",
-      "base_revision",
-      "result_revision",
-      "recorded_at",
-      "accepted_turn_ids",
-      "accepted_generation_ids"
-    ],
-    "additionalProperties": false
-  },
   "ConversationMaterializedInput": {
     "type": "object",
     "properties": {
@@ -5666,66 +6743,6 @@
     ],
     "additionalProperties": false
   },
-  "ConversationSourceTurnContextEntry": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "type": {
-        "type": "string",
-        "const": "source_turn"
-      },
-      "turn_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "block_ids": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      }
-    },
-    "required": [
-      "id",
-      "type",
-      "turn_id"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationReplacementTurnContextEntry": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "type": {
-        "type": "string",
-        "const": "replacement_turn"
-      },
-      "compaction_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "turn_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "block_ids": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      }
-    },
-    "required": [
-      "id",
-      "type",
-      "compaction_id",
-      "turn_id"
-    ],
-    "additionalProperties": false
-  },
   "ModelOptions": {
     "anyOf": [
       {
@@ -5962,27 +6979,6 @@
         "video": "#/components/schemas/ConversationVideoBlock",
         "external_reference": "#/components/schemas/ConversationExternalReferenceBlock",
         "extension": "#/components/schemas/ConversationExtensionBlock"
-      }
-    },
-    "type": "object",
-    "required": [
-      "type"
-    ]
-  },
-  "ConversationContextEntry": {
-    "oneOf": [
-      {
-        "$ref": "#/components/schemas/ConversationSourceTurnContextEntry"
-      },
-      {
-        "$ref": "#/components/schemas/ConversationReplacementTurnContextEntry"
-      }
-    ],
-    "discriminator": {
-      "propertyName": "type",
-      "mapping": {
-        "source_turn": "#/components/schemas/ConversationSourceTurnContextEntry",
-        "replacement_turn": "#/components/schemas/ConversationReplacementTurnContextEntry"
       }
     },
     "type": "object",
@@ -8371,313 +9367,6 @@
     ],
     "additionalProperties": false
   },
-  "ConversationOperationReceipt": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "conversation_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "payload_fingerprint": {
-        "$ref": "#/components/schemas/ConversationContentHash"
-      },
-      "base_revision": {
-        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-      },
-      "result_revision": {
-        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-      },
-      "recorded_at": {
-        "$ref": "#/components/schemas/ConversationTimestamp"
-      },
-      "accepted_turn_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "accepted_generation_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "accepted_asset_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "accepted_tool_definition_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "accepted_execution_receipt_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "accepted_context_entry_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "accepted_context_entries": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationContextEntry"
-        }
-      },
-      "accepted_tool_selection": {
-        "$ref": "#/components/schemas/ConversationAcceptedToolSelection"
-      },
-      "operation_kind": {
-        "type": "string",
-        "enum": [
-          "context_change",
-          "conversation_edit",
-          "conversation_delete",
-          "processing"
-        ]
-      },
-      "context_change": {
-        "$ref": "#/components/schemas/ConversationContextChangeOperation"
-      },
-      "conversation_edit": {
-        "$ref": "#/components/schemas/ConversationEditOperation"
-      },
-      "conversation_delete": {
-        "$ref": "#/components/schemas/ConversationDeleteOperation"
-      },
-      "processing_operation": {
-        "$ref": "#/components/schemas/ConversationProcessingOperation"
-      }
-    },
-    "required": [
-      "id",
-      "conversation_id",
-      "payload_fingerprint",
-      "base_revision",
-      "result_revision",
-      "recorded_at"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationContextChangeOperation": {
-    "type": "object",
-    "properties": {
-      "kind": {
-        "type": "string",
-        "enum": [
-          "exclude",
-          "replace_with_compaction"
-        ]
-      },
-      "removed_entry_ids": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "inserted_entry_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "source_fingerprint": {
-        "$ref": "#/components/schemas/ConversationContentHash"
-      },
-      "placement": {
-        "$ref": "#/components/schemas/ConversationContextChangePlacement"
-      },
-      "selected_block_ids": {
-        "$ref": "#/components/schemas/ConversationSelectedContextBlocks"
-      },
-      "remainder_entry_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      }
-    },
-    "required": [
-      "kind",
-      "removed_entry_ids",
-      "inserted_entry_ids",
-      "source_fingerprint"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationContextChangePlacement": {
-    "type": "object",
-    "properties": {
-      "mode": {
-        "type": "string",
-        "enum": [
-          "first_selected",
-          "per_selected_range"
-        ]
-      },
-      "causal_order": {
-        "type": "string",
-        "enum": [
-          "contiguous",
-          "explicit_disjoint_summary",
-          "preserved_disjoint_ranges"
-        ]
-      }
-    },
-    "required": [
-      "mode",
-      "causal_order"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationSelectedContextBlocks": {
-    "type": "object",
-    "propertyNames": {
-      "$ref": "#/components/schemas/ConversationIdentifier"
-    },
-    "additionalProperties": {
-      "minItems": 1,
-      "type": "array",
-      "items": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      }
-    }
-  },
-  "ConversationEditPlacement": {
-    "type": "object",
-    "properties": {
-      "mode": {
-        "type": "string",
-        "const": "first_selected"
-      },
-      "causal_order": {
-        "type": "string",
-        "enum": [
-          "contiguous",
-          "explicit_disjoint"
-        ]
-      }
-    },
-    "required": [
-      "mode",
-      "causal_order"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationDeleteOperation": {
-    "type": "object",
-    "properties": {
-      "version": {
-        "type": "number",
-        "const": 1
-      },
-      "source": {
-        "$ref": "#/components/schemas/ConversationRef"
-      },
-      "source_fingerprint": {
-        "$ref": "#/components/schemas/ConversationContentHash"
-      },
-      "dependency_policy": {
-        "type": "string",
-        "const": "reject"
-      },
-      "deleted_turns": {
-        "minItems": 1,
-        "maxItems": 4096,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationDeletedTurnRef"
-        }
-      }
-    },
-    "required": [
-      "version",
-      "source",
-      "source_fingerprint",
-      "dependency_policy",
-      "deleted_turns"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationDeletedTurnRef": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "fingerprint": {
-        "$ref": "#/components/schemas/ConversationContentHash"
-      },
-      "block_ids": {
-        "minItems": 1,
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      },
-      "accepted_operation_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      }
-    },
-    "required": [
-      "id",
-      "fingerprint",
-      "block_ids",
-      "accepted_operation_id"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationProcessingOperation": {
-    "type": "object",
-    "properties": {
-      "phase": {
-        "type": "string",
-        "enum": [
-          "policy",
-          "queue",
-          "resolve",
-          "attempt",
-          "output",
-          "complete",
-          "coverage"
-        ]
-      },
-      "job_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "policy_revision": {
-        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-      },
-      "result_fingerprint": {
-        "$ref": "#/components/schemas/ConversationContentHash"
-      },
-      "transform_application": {
-        "$ref": "#/components/schemas/ConversationJsonMinificationApplication"
-      },
-      "superseded_job_ids": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ConversationIdentifier"
-        }
-      }
-    },
-    "required": [
-      "phase",
-      "policy_revision"
-    ],
-    "additionalProperties": false
-  },
   "ConversationExecutionReceipt": {
     "type": "object",
     "properties": {
@@ -10483,624 +11172,6 @@
       "record_source"
     ]
   },
-  "ConversationAcceptedToolSelection": {
-    "oneOf": [
-      {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "const": "unchanged"
-          }
-        },
-        "required": [
-          "kind"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "const": "replace"
-          },
-          "definition_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          }
-        },
-        "required": [
-          "kind",
-          "definition_ids"
-        ],
-        "additionalProperties": false
-      }
-    ]
-  },
-  "ConversationEditOperation": {
-    "anyOf": [
-      {
-        "$ref": "#/components/schemas/ConversationEditOperationV1"
-      },
-      {
-        "$ref": "#/components/schemas/ConversationSliceEditOperation"
-      }
-    ]
-  },
-  "ConversationEditOperationV1": {
-    "oneOf": [
-      {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "number",
-            "const": 1
-          },
-          "source": {
-            "$ref": "#/components/schemas/ConversationRef"
-          },
-          "source_context_revision": {
-            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-          },
-          "source_fingerprint": {
-            "$ref": "#/components/schemas/ConversationContentHash"
-          },
-          "selected_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "removed_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "created_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_turns": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_assets": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "protected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "unprotected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "kind": {
-            "type": "string",
-            "const": "protect"
-          }
-        },
-        "required": [
-          "version",
-          "source",
-          "source_context_revision",
-          "source_fingerprint",
-          "selected_entries",
-          "removed_entry_ids",
-          "created_entries",
-          "created_turns",
-          "created_assets",
-          "protected_entry_ids",
-          "unprotected_entry_ids",
-          "kind"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "number",
-            "const": 1
-          },
-          "source": {
-            "$ref": "#/components/schemas/ConversationRef"
-          },
-          "source_context_revision": {
-            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-          },
-          "source_fingerprint": {
-            "$ref": "#/components/schemas/ConversationContentHash"
-          },
-          "selected_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "removed_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "created_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_turns": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_assets": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "protected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "unprotected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "kind": {
-            "type": "string",
-            "const": "insert"
-          },
-          "anchor": {
-            "$ref": "#/components/schemas/ConversationEditAnchor"
-          }
-        },
-        "required": [
-          "version",
-          "source",
-          "source_context_revision",
-          "source_fingerprint",
-          "selected_entries",
-          "removed_entry_ids",
-          "created_entries",
-          "created_turns",
-          "created_assets",
-          "protected_entry_ids",
-          "unprotected_entry_ids",
-          "kind",
-          "anchor"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "number",
-            "const": 1
-          },
-          "source": {
-            "$ref": "#/components/schemas/ConversationRef"
-          },
-          "source_context_revision": {
-            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-          },
-          "source_fingerprint": {
-            "$ref": "#/components/schemas/ConversationContentHash"
-          },
-          "selected_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "removed_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "created_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_turns": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_assets": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "protected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "unprotected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "kind": {
-            "type": "string",
-            "const": "replace"
-          },
-          "fidelity": {
-            "type": "string",
-            "enum": [
-              "heuristic",
-              "semantic"
-            ]
-          },
-          "placement": {
-            "$ref": "#/components/schemas/ConversationEditPlacement"
-          }
-        },
-        "required": [
-          "version",
-          "source",
-          "source_context_revision",
-          "source_fingerprint",
-          "selected_entries",
-          "removed_entry_ids",
-          "created_entries",
-          "created_turns",
-          "created_assets",
-          "protected_entry_ids",
-          "unprotected_entry_ids",
-          "kind",
-          "fidelity",
-          "placement"
-        ],
-        "additionalProperties": false
-      }
-    ]
-  },
-  "ConversationEditAnchor": {
-    "oneOf": [
-      {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "const": "before_entry"
-          },
-          "entry_id": {
-            "$ref": "#/components/schemas/ConversationIdentifier"
-          }
-        },
-        "required": [
-          "kind",
-          "entry_id"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "const": "after_entry"
-          },
-          "entry_id": {
-            "$ref": "#/components/schemas/ConversationIdentifier"
-          }
-        },
-        "required": [
-          "kind",
-          "entry_id"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "const": "head"
-          }
-        },
-        "required": [
-          "kind"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "kind": {
-            "type": "string",
-            "const": "tail"
-          }
-        },
-        "required": [
-          "kind"
-        ],
-        "additionalProperties": false
-      }
-    ]
-  },
-  "ConversationSliceEditOperation": {
-    "oneOf": [
-      {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "number",
-            "const": 2
-          },
-          "source": {
-            "$ref": "#/components/schemas/ConversationRef"
-          },
-          "source_context_revision": {
-            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-          },
-          "source_fingerprint": {
-            "$ref": "#/components/schemas/ConversationContentHash"
-          },
-          "selected_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "removed_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "created_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_turns": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_assets": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "protected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "unprotected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "source_slices": {
-            "minItems": 1,
-            "maxItems": 4096,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationSourceBlockSlice"
-            }
-          },
-          "remainder_turn_ids": {
-            "maxItems": 4096,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "source_protected_entry_ids": {
-            "maxItems": 4096,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "source_entry_positions": {
-            "minItems": 1,
-            "maxItems": 4096,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-            }
-          },
-          "source_topology_fingerprint": {
-            "$ref": "#/components/schemas/ConversationContentHash"
-          },
-          "kind": {
-            "type": "string",
-            "const": "protect"
-          }
-        },
-        "required": [
-          "version",
-          "source",
-          "source_context_revision",
-          "source_fingerprint",
-          "selected_entries",
-          "removed_entry_ids",
-          "created_entries",
-          "created_turns",
-          "created_assets",
-          "protected_entry_ids",
-          "unprotected_entry_ids",
-          "source_slices",
-          "remainder_turn_ids",
-          "source_protected_entry_ids",
-          "source_entry_positions",
-          "source_topology_fingerprint",
-          "kind"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "number",
-            "const": 2
-          },
-          "source": {
-            "$ref": "#/components/schemas/ConversationRef"
-          },
-          "source_context_revision": {
-            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-          },
-          "source_fingerprint": {
-            "$ref": "#/components/schemas/ConversationContentHash"
-          },
-          "selected_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "removed_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "created_entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_turns": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "created_assets": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationEditRecordRef"
-            }
-          },
-          "protected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "unprotected_entry_ids": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "source_slices": {
-            "minItems": 1,
-            "maxItems": 4096,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationSourceBlockSlice"
-            }
-          },
-          "remainder_turn_ids": {
-            "maxItems": 4096,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "source_protected_entry_ids": {
-            "maxItems": 4096,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationIdentifier"
-            }
-          },
-          "source_entry_positions": {
-            "minItems": 1,
-            "maxItems": 4096,
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-            }
-          },
-          "source_topology_fingerprint": {
-            "$ref": "#/components/schemas/ConversationContentHash"
-          },
-          "kind": {
-            "type": "string",
-            "const": "replace"
-          },
-          "fidelity": {
-            "type": "string",
-            "enum": [
-              "heuristic",
-              "semantic"
-            ]
-          },
-          "placement": {
-            "$ref": "#/components/schemas/ConversationEditPlacement"
-          }
-        },
-        "required": [
-          "version",
-          "source",
-          "source_context_revision",
-          "source_fingerprint",
-          "selected_entries",
-          "removed_entry_ids",
-          "created_entries",
-          "created_turns",
-          "created_assets",
-          "protected_entry_ids",
-          "unprotected_entry_ids",
-          "source_slices",
-          "remainder_turn_ids",
-          "source_protected_entry_ids",
-          "source_entry_positions",
-          "source_topology_fingerprint",
-          "kind",
-          "fidelity",
-          "placement"
-        ],
-        "additionalProperties": false
-      }
-    ]
-  },
   "ConversationProcessingJobSelection": {
     "oneOf": [
       {
@@ -12742,6 +12813,36 @@
       }
     ]
   },
+  "ExperimentalCanonicalInitialIngestionAccepted": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "type": {
+        "type": "string",
+        "const": "ingestion_accepted"
+      },
+      "run_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "accepted_source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      }
+    },
+    "required": [
+      "api_version",
+      "type",
+      "run_id",
+      "operation_id",
+      "accepted_source"
+    ],
+    "additionalProperties": false
+  },
   "ExperimentalCanonicalInteractionStreamOpened": {
     "type": "object",
     "properties": {
@@ -14010,6 +14111,9 @@
   "ExperimentalCanonicalInteractionStreamEnvelope": {
     "oneOf": [
       {
+        "$ref": "#/components/schemas/ExperimentalCanonicalInitialIngestionAccepted"
+      },
+      {
         "$ref": "#/components/schemas/ExperimentalCanonicalInteractionStreamOpened"
       },
       {
@@ -14029,6 +14133,7 @@
     "discriminator": {
       "propertyName": "type",
       "mapping": {
+        "ingestion_accepted": "#/components/schemas/ExperimentalCanonicalInitialIngestionAccepted",
         "stream_opened": "#/components/schemas/ExperimentalCanonicalInteractionStreamOpened",
         "stream_resumed": "#/components/schemas/ExperimentalCanonicalInteractionStreamResumed",
         "accepted_recovery_opened": "#/components/schemas/ExperimentalCanonicalInteractionAcceptedRecoveryOpened",
@@ -14173,74 +14278,6 @@
     "required": [
       "execution_run_id",
       "source"
-    ],
-    "additionalProperties": false
-  },
-  "ExperimentalCanonicalInitialRenderedInputHeadPayload": {
-    "type": "object",
-    "properties": {
-      "kind": {
-        "type": "string",
-        "const": "initial_rendered_input"
-      },
-      "activity": {
-        "type": "object",
-        "properties": {
-          "request": {
-            "$ref": "#/components/schemas/ExperimentalCanonicalInitialAgentStreamRequest"
-          },
-          "execution_run_id": {
-            "$ref": "#/components/schemas/ConversationIdentifier"
-          }
-        },
-        "required": [
-          "request",
-          "execution_run_id"
-        ],
-        "additionalProperties": false
-      }
-    },
-    "required": [
-      "kind",
-      "activity"
-    ],
-    "additionalProperties": false
-  },
-  "ExperimentalCanonicalToolCatalogSelectionHeadPayload": {
-    "type": "object",
-    "properties": {
-      "kind": {
-        "type": "string",
-        "const": "tool_catalog_selection"
-      },
-      "request": {
-        "$ref": "#/components/schemas/ExperimentalCanonicalToolResultsPayload"
-      },
-      "retained_selection": {
-        "type": "object",
-        "properties": {
-          "operation_id": {
-            "$ref": "#/components/schemas/ConversationIdentifier"
-          },
-          "result_revision": {
-            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-          },
-          "receipt_fingerprint": {
-            "type": "string",
-            "pattern": "^sha256:[a-f0-9]{64}$"
-          }
-        },
-        "required": [
-          "operation_id",
-          "result_revision",
-          "receipt_fingerprint"
-        ],
-        "additionalProperties": false
-      }
-    },
-    "required": [
-      "kind",
-      "request"
     ],
     "additionalProperties": false
   },
@@ -14785,68 +14822,623 @@
     "additionalProperties": false,
     "description": "Acknowledges the committed operation at the current canonical head. An exact retry after a later append advances the head returns a revision conflict so callers reconcile without repeating tool execution."
   },
-  "PublishAgentRunConversationHeadPayload": {
+  "ExperimentalCanonicalIngestionProjection": {
     "type": "object",
     "properties": {
-      "document": {
-        "$ref": "#/components/schemas/ConversationDocumentV0"
+      "version": {
+        "type": "number",
+        "const": 1
       },
-      "expected_head": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "execution_run_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "account_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "project_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "subject_agent_run_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "owner_agent_run_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "admission_request_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "scheduled_semantic_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "target_reference": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          }
+        },
+        "required": [
+          "key",
+          "fingerprint"
+        ],
+        "additionalProperties": false
+      },
+      "source": {
         "$ref": "#/components/schemas/ConversationRef"
+      },
+      "source_document_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "source_processing_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "context_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "concrete_target": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionConcreteTarget"
+      },
+      "target_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "request_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "attempt_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "input_operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "response_operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "virtual_child": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "virtual_candidate",
+              "virtual_mediation"
+            ]
+          },
+          "environment_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "configured_occurrence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "plan_fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          }
+        },
+        "required": [
+          "purpose",
+          "environment_id",
+          "configured_occurrence",
+          "plan_fingerprint"
+        ],
+        "additionalProperties": false
+      },
+      "coverage_operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "measurement_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "count": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionCount"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
       }
     },
     "required": [
-      "document"
-    ]
-  },
-  "ExperimentalAgentProcessingHeadPayload": {
-    "type": "object",
-    "properties": {
-      "kind": {
-        "type": "string",
-        "const": "processing_job_head"
-      },
-      "expected_head": {
-        "$ref": "#/components/schemas/ConversationRef"
-      },
-      "document": {
-        "$ref": "#/components/schemas/ConversationDocumentV0"
-      },
-      "processing_authority": {
-        "$ref": "#/components/schemas/ExperimentalAgentProcessingActivityEvidence"
-      }
-    },
-    "required": [
-      "kind",
-      "expected_head",
-      "document",
-      "processing_authority"
+      "version",
+      "id",
+      "execution_run_id",
+      "account_id",
+      "project_id",
+      "subject_agent_run_id",
+      "owner_agent_run_id",
+      "scope",
+      "admission_request_id",
+      "scheduled_semantic_fingerprint",
+      "target_reference",
+      "source",
+      "source_document_fingerprint",
+      "source_processing_fingerprint",
+      "context_fingerprint",
+      "concrete_target",
+      "target_fingerprint",
+      "request_id",
+      "attempt_id",
+      "input_operation_id",
+      "response_operation_id",
+      "coverage_operation_id",
+      "measurement_fingerprint",
+      "count",
+      "recorded_at"
     ],
     "additionalProperties": false
   },
-  "ExperimentalCanonicalVersionedHeadPayload": {
+  "ExperimentalCanonicalIngestionConcreteTarget": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "protocol": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "model": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "adapter_version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "provider",
+      "protocol",
+      "model",
+      "adapter_version"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalIngestionCount": {
+    "type": "object",
+    "properties": {
+      "measurement": {
+        "$ref": "#/components/schemas/ConversationContextMeasurement"
+      },
+      "counted_request_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "readiness": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "output_reserve_tokens": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "context_limit": {
+            "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+          }
+        },
+        "required": [
+          "profile",
+          "output_reserve_tokens",
+          "context_limit"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "measurement",
+      "counted_request_fingerprint",
+      "readiness"
+    ],
+    "additionalProperties": false
+  },
+  "AvailableCanonicalIngestionPreparationView": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "const": "preparation_available"
+      },
+      "projection": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionProjection"
+      },
+      "initial_ingestion_source": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionSourceBinding"
+      }
+    },
+    "required": [
+      "status",
+      "projection"
+    ],
+    "additionalProperties": false
+  },
+  "UnavailableCanonicalIngestionPreparationView": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "const": "preparation_unavailable"
+      },
+      "reason": {
+        "type": "string",
+        "const": "not_recorded"
+      }
+    },
+    "required": [
+      "status",
+      "reason"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalIngestionRecovery": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "number",
+        "const": 1
+      },
+      "execution_run_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "account_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "project_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "subject_agent_run_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "owner_agent_run_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "admission_request_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "scheduled_semantic_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "target_reference": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          }
+        },
+        "required": [
+          "key",
+          "fingerprint"
+        ],
+        "additionalProperties": false
+      },
+      "runtime": {
+        "type": "object",
+        "properties": {
+          "conversation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "request_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "attempt_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "input_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "response_operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "request_id",
+          "attempt_id",
+          "input_operation_id",
+          "response_operation_id",
+          "purpose"
+        ],
+        "additionalProperties": false
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "request_receipt_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "virtual_child": {
+        "type": "object",
+        "properties": {
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "virtual_candidate",
+              "virtual_mediation"
+            ]
+          },
+          "environment_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "configured_occurrence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 255
+          },
+          "plan_fingerprint": {
+            "$ref": "#/components/schemas/ConversationContentHash"
+          }
+        },
+        "required": [
+          "purpose",
+          "environment_id",
+          "configured_occurrence",
+          "plan_fingerprint"
+        ],
+        "additionalProperties": false
+      },
+      "accepted_output": {
+        "$ref": "#/components/schemas/ConversationOutputReceipt"
+      },
+      "accepted_output_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "prepared_record_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "native_request_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "context_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "tool_set_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "concrete_target": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionConcreteTarget"
+      },
+      "target_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      }
+    },
+    "required": [
+      "version",
+      "execution_run_id",
+      "account_id",
+      "project_id",
+      "subject_agent_run_id",
+      "owner_agent_run_id",
+      "scope",
+      "admission_request_id",
+      "scheduled_semantic_fingerprint",
+      "target_reference",
+      "runtime",
+      "source",
+      "request_receipt_id",
+      "prepared_record_fingerprint",
+      "native_request_fingerprint",
+      "context_fingerprint",
+      "tool_set_fingerprint",
+      "concrete_target",
+      "target_fingerprint",
+      "recorded_at"
+    ],
+    "additionalProperties": false
+  },
+  "AvailableCanonicalIngestionRecoveryView": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "const": "recovery_available"
+      },
+      "recovery": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionRecovery"
+      }
+    },
+    "required": [
+      "status",
+      "recovery"
+    ],
+    "additionalProperties": false
+  },
+  "UnavailableCanonicalIngestionRecoveryView": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "const": "recovery_unavailable"
+      },
+      "reason": {
+        "type": "string",
+        "const": "not_recorded"
+      }
+    },
+    "required": [
+      "status",
+      "reason"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalIngestionPreparationViewQuery": {
+    "type": "object",
+    "properties": {
+      "view": {
+        "type": "string",
+        "const": "ingestion_preparation"
+      },
+      "target_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 8192
+      },
+      "projection_id": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      }
+    },
+    "required": [
+      "view",
+      "target_key",
+      "projection_id"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalIngestionPreparationViewResponse": {
     "oneOf": [
       {
-        "$ref": "#/components/schemas/ExperimentalCanonicalInitialAgentStreamRequest"
+        "$ref": "#/components/schemas/AvailableCanonicalIngestionPreparationView"
       },
       {
-        "$ref": "#/components/schemas/ExperimentalAgentProcessingHeadPayload"
-      },
-      {
-        "$ref": "#/components/schemas/ExperimentalCanonicalInitialRenderedInputHeadPayload"
-      },
-      {
-        "$ref": "#/components/schemas/ExperimentalCanonicalToolCatalogSelectionHeadPayload"
+        "$ref": "#/components/schemas/UnavailableCanonicalIngestionPreparationView"
       }
     ],
+    "discriminator": {
+      "propertyName": "status",
+      "mapping": {
+        "preparation_available": "#/components/schemas/AvailableCanonicalIngestionPreparationView",
+        "preparation_unavailable": "#/components/schemas/UnavailableCanonicalIngestionPreparationView"
+      }
+    },
     "type": "object",
     "required": [
-      "kind"
+      "status"
+    ]
+  },
+  "ExperimentalCanonicalIngestionRecoveryViewQuery": {
+    "type": "object",
+    "properties": {
+      "view": {
+        "type": "string",
+        "const": "ingestion_recovery"
+      },
+      "target_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 8192
+      },
+      "request_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "view",
+      "target_key",
+      "request_id"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalCanonicalIngestionRecoveryViewResponse": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/AvailableCanonicalIngestionRecoveryView"
+      },
+      {
+        "$ref": "#/components/schemas/UnavailableCanonicalIngestionRecoveryView"
+      }
     ],
     "discriminator": {
-      "propertyName": "kind"
+      "propertyName": "status",
+      "mapping": {
+        "recovery_available": "#/components/schemas/AvailableCanonicalIngestionRecoveryView",
+        "recovery_unavailable": "#/components/schemas/UnavailableCanonicalIngestionRecoveryView"
+      }
     },
-    "additionalProperties": true
+    "type": "object",
+    "required": [
+      "status"
+    ]
+  },
+  "ExperimentalRunConversationInspectionQuery": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ExperimentalInitialAuthoringViewQuery"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionPreparationViewQuery"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionRecoveryViewQuery"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "view",
+      "mapping": {
+        "initial_authoring": "#/components/schemas/ExperimentalInitialAuthoringViewQuery",
+        "ingestion_preparation": "#/components/schemas/ExperimentalCanonicalIngestionPreparationViewQuery",
+        "ingestion_recovery": "#/components/schemas/ExperimentalCanonicalIngestionRecoveryViewQuery"
+      }
+    },
+    "type": "object",
+    "required": [
+      "view"
+    ]
+  },
+  "ExperimentalRunConversationInspectionResponse": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/AvailableInitialAuthoringView"
+      },
+      {
+        "$ref": "#/components/schemas/UnavailableInitialAuthoringView"
+      },
+      {
+        "$ref": "#/components/schemas/AvailableCanonicalIngestionPreparationView"
+      },
+      {
+        "$ref": "#/components/schemas/UnavailableCanonicalIngestionPreparationView"
+      },
+      {
+        "$ref": "#/components/schemas/AvailableCanonicalIngestionRecoveryView"
+      },
+      {
+        "$ref": "#/components/schemas/UnavailableCanonicalIngestionRecoveryView"
+      }
+    ],
+    "x-vertesia-inspection-view-responses": {
+      "initial_authoring": {
+        "$ref": "#/components/schemas/ExperimentalInitialAuthoringViewResponse"
+      },
+      "ingestion_preparation": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionPreparationViewResponse"
+      },
+      "ingestion_recovery": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionRecoveryViewResponse"
+      }
+    },
+    "discriminator": {
+      "propertyName": "status",
+      "mapping": {
+        "available": "#/components/schemas/AvailableInitialAuthoringView",
+        "unavailable": "#/components/schemas/UnavailableInitialAuthoringView",
+        "preparation_available": "#/components/schemas/AvailableCanonicalIngestionPreparationView",
+        "preparation_unavailable": "#/components/schemas/UnavailableCanonicalIngestionPreparationView",
+        "recovery_available": "#/components/schemas/AvailableCanonicalIngestionRecoveryView",
+        "recovery_unavailable": "#/components/schemas/UnavailableCanonicalIngestionRecoveryView"
+      }
+    },
+    "type": "object",
+    "required": [
+      "status"
+    ]
   },
   "RunBudgetOwner": {
     "type": "object",
@@ -27233,6 +27825,9 @@
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
       },
+      "processing": {
+        "$ref": "#/components/schemas/ConversationProcessingPolicy"
+      },
       "result_schema": {
         "anyOf": [
           {
@@ -27431,6 +28026,29 @@
       "interaction",
       "type"
     ]
+  },
+  "ConversationProcessingPolicy": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "processors": {
+        "maxItems": 32,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationProcessorConfiguration"
+        }
+      },
+      "budget": {
+        "$ref": "#/components/schemas/ConversationProcessingBudget"
+      }
+    },
+    "required": [
+      "enabled",
+      "processors"
+    ],
+    "additionalProperties": false
   },
   "ProcessAgentToolPhase": {
     "type": "object",

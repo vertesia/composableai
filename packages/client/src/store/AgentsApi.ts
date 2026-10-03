@@ -7,7 +7,6 @@ import type {
     ExperimentalAgentAssetPublication,
     ExperimentalAgentGenerationAdmissionReceipt,
     ExperimentalAgentProcessingClaim,
-    ExperimentalAgentProcessingHeadPayload,
     ExperimentalAgentRestartAdmissionPayload,
     ExperimentalAgentRestartAdmissionResponse,
     ExperimentalAgentRoutingControlResponse,
@@ -16,8 +15,6 @@ import type {
     ExperimentalAgentWorkstreamTerminalPayload,
     ExperimentalAgentWorkstreamTerminalResponse,
     ExperimentalCanonicalInitialAgentStreamRequest,
-    ExperimentalCanonicalInitialRenderedInputHeadPayload,
-    ExperimentalCanonicalToolCatalogSelectionHeadPayload,
     ExperimentalClaimAgentAssetExtractionPayload,
     ExperimentalClaimAgentProcessingPayload,
     ExperimentalExtractAgentAssetPayload,
@@ -71,7 +68,6 @@ import {
     type ProcessRun,
     type ProcessState,
     type PromptSizeAnalyticsResponse,
-    type PublishAgentRunConversationHeadPayload,
     parseMessage,
     type RecordAgentRunPayload,
     type RecordProcessRunPayload,
@@ -193,22 +189,6 @@ export class AgentsApi extends ApiTopic {
         });
     }
 
-    /** @internal Publish the first durable operational canonical head for a workflow. */
-    initializeConversationHead(
-        id: string,
-        document: ConversationDocumentV0,
-        expectedHead?: ConversationRef,
-        scope: CanonicalConversationHeadScope = 'root',
-    ): Promise<ConversationRef> {
-        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
-            query: { conversation_scope: scope },
-            payload: {
-                document,
-                ...(expectedHead === undefined ? {} : { expected_head: expectedHead }),
-            } satisfies PublishAgentRunConversationHeadPayload,
-        });
-    }
-
     /** @internal Verify scheduled startup and atomically publish its exact source and initial current proof. */
     initializeCanonicalInitialConversationHead(
         id: string,
@@ -225,38 +205,6 @@ export class AgentsApi extends ApiTopic {
         });
     }
 
-    /** @internal Independently bind and ACK the retained initial rendered input before target reservation. */
-    acceptCanonicalInitialRenderedInputHead(
-        id: string,
-        payload: ExperimentalCanonicalInitialRenderedInputHeadPayload,
-        scope: CanonicalConversationHeadScope,
-        options?: CanonicalInteractionRequestOptions,
-    ): Promise<ConversationRef> {
-        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
-            query: { conversation_scope: scope },
-            payload,
-            headers: canonicalInteractionHeaders(options?.headers),
-            signal: options?.signal,
-            timeoutMs: options?.timeoutMs,
-        });
-    }
-
-    /** @internal Publish only a service-verified successful catalog grant at the exact guarded head. */
-    publishCanonicalToolCatalogSelection(
-        id: string,
-        payload: ExperimentalCanonicalToolCatalogSelectionHeadPayload,
-        scope: CanonicalConversationHeadScope,
-        options?: CanonicalInteractionRequestOptions,
-    ): Promise<ConversationRef> {
-        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
-            query: { conversation_scope: scope },
-            payload,
-            headers: canonicalInteractionHeaders(options?.headers),
-            signal: options?.signal,
-            timeoutMs: options?.timeoutMs,
-        });
-    }
-
     /** @internal Verify the actual scheduled processing task and exact durable job before archive I/O. */
     claimCanonicalProcessingJob(
         id: string,
@@ -264,21 +212,6 @@ export class AgentsApi extends ApiTopic {
         options?: CanonicalInteractionRequestOptions,
     ): Promise<ExperimentalAgentProcessingClaim> {
         return this.post(`/${encodeURIComponent(id)}/conversation/processing/claim`, {
-            payload,
-            headers: canonicalInteractionHeaders(options?.headers),
-            signal: options?.signal,
-            timeoutMs: options?.timeoutMs,
-        });
-    }
-
-    /** @internal Publish one semantically verified processing successor at the exact versioned head. */
-    publishCanonicalProcessingHead(
-        id: string,
-        payload: ExperimentalAgentProcessingHeadPayload,
-        options?: CanonicalInteractionRequestOptions,
-    ): Promise<ConversationRef> {
-        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
-            query: { conversation_scope: payload.processing_authority.scope },
             payload,
             headers: canonicalInteractionHeaders(options?.headers),
             signal: options?.signal,

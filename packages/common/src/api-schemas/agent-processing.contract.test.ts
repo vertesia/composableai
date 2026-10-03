@@ -9,11 +9,6 @@ import {
     ExperimentalClaimAgentProcessingPayloadSchema,
 } from './agent-processing.js';
 import { ApiSchemaComponents } from './registry.js';
-import {
-    ExperimentalAgentProcessingHeadPayloadSchema,
-    ExperimentalCanonicalVersionedHeadPayloadSchema,
-    PublishAgentRunConversationHeadPayloadSchema,
-} from './run-conversation-append.js';
 
 const document = createConversationDocument({ id: 'conversation:processing-head', created_at: '2026-10-03T00:00:00Z' });
 const authority = {
@@ -28,21 +23,14 @@ const authority = {
     activity_id: 'activity:one',
     task_token: 'opaque-token',
 } as const;
-const head = {
-    kind: 'processing_job_head',
-    expected_head: { conversation_id: document.id, revision: document.revision },
-    document,
-    processing_authority: authority,
-} as const;
-
 function validator(name: string) {
     const ajv = new Ajv2020({ strictSchema: false, allErrors: true });
     addFormats.default(ajv);
     return ajv.compile({ components: { schemas: ApiSchemaComponents }, $ref: `#/components/schemas/${name}` });
 }
 
-describe('versioned processing head wire', () => {
-    test('published Zod and AJV accept the exact processing branch and retained ordinary body', () => {
+describe('published native processing evidence', () => {
+    test('published Zod and AJV accept the exact claim and disposition evidence', () => {
         expect(ExperimentalAgentProcessingActivityEvidenceSchema.parse(authority)).toEqual(authority);
         expect(ExperimentalClaimAgentProcessingPayloadSchema.parse(authority)).toEqual(authority);
         const claim = {
@@ -76,42 +64,5 @@ describe('versioned processing head wire', () => {
         expect(validator('ExperimentalAgentProcessingClaim')({ ...claim, disposition: undefined })).toBe(false);
         expect(validator('ExperimentalClaimAgentProcessingPayload')(authority)).toBe(true);
         expect(validator('ExperimentalAgentProcessingClaim')(claim)).toBe(true);
-        expect(ExperimentalAgentProcessingHeadPayloadSchema.parse(head)).toEqual(head);
-        expect(ExperimentalCanonicalVersionedHeadPayloadSchema.parse(head)).toEqual(head);
-        expect(validator('ExperimentalAgentProcessingHeadPayload')(head)).toBe(true);
-        expect(validator('ExperimentalCanonicalVersionedHeadPayload')(head)).toBe(true);
-        const initial = {
-            kind: 'initial_agent',
-            operation_id: 'initial:activity:one',
-            request: {
-                interaction: 'agent:test',
-                initial_state: { type: 'document', document },
-                retention: 'DEBUG',
-                return_policy: { history: 'none' },
-            },
-            agent_acceptance: {
-                version: 1,
-                subject_agent_run_id: 'subject:one',
-                activity_id: 'activity:one',
-                scope: 'root',
-            },
-            activity_delivery: { activity_id: 'activity:one', run_id: 'actual:run', task_token: 'opaque-token' },
-        };
-        expect(ExperimentalCanonicalVersionedHeadPayloadSchema.safeParse(initial).success).toBe(true);
-        expect(validator('ExperimentalCanonicalVersionedHeadPayload')(initial)).toBe(true);
-        const ordinary = { document };
-        expect(PublishAgentRunConversationHeadPayloadSchema.parse(ordinary)).toEqual(ordinary);
-        expect(validator('PublishAgentRunConversationHeadPayload')(ordinary)).toBe(true);
-    });
-
-    test.each([
-        ['missing branch', { expected_head: head.expected_head, document, processing_authority: authority }],
-        ['unknown branch', { ...head, kind: 'arbitrary' }],
-        ['missing authority', { kind: head.kind, expected_head: head.expected_head, document }],
-        ['extra field', { ...head, claimed_ready: true }],
-        ['missing token', { ...head, processing_authority: { ...authority, task_token: undefined } }],
-    ])('%s rejects the same bytes in Zod and emitted AJV', (_name, value) => {
-        expect(ExperimentalCanonicalVersionedHeadPayloadSchema.safeParse(value).success).toBe(false);
-        expect(validator('ExperimentalCanonicalVersionedHeadPayload')(value)).toBe(false);
     });
 });

@@ -4,12 +4,3 @@ export type AppendRunConversationProgramTurnPayload = Wire.AppendRunConversation
 export type AppendRunConversationProgramTurnResponse = Wire.AppendRunConversationProgramTurnResponse;
 export type AppendRunConversationToolResultsPayload = Wire.AppendRunConversationToolResultsPayload;
 export type AppendRunConversationToolResultsResponse = Wire.AppendRunConversationToolResultsResponse;
-export type PublishAgentRunConversationHeadPayload = Wire.PublishAgentRunConversationHeadPayload;
-export type ExperimentalAgentProcessingHeadPayload = Wire.ExperimentalAgentProcessingHeadPayload;
-export type ExperimentalCanonicalVersionedHeadPayload = Wire.ExperimentalCanonicalVersionedHeadPayload;
-
-export type ExperimentalCanonicalInitialRenderedInputHeadPayload =
-    Wire.ExperimentalCanonicalInitialRenderedInputHeadPayload;
-
-export type ExperimentalCanonicalToolCatalogSelectionHeadPayload =
-    Wire.ExperimentalCanonicalToolCatalogSelectionHeadPayload;

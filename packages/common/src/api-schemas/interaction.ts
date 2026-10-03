@@ -17,6 +17,7 @@ import {
     ConversationOutputReceiptSchema,
     ConversationRefSchema,
     PendingApplicationToolCallSchema,
+    ProcessingStateSchema,
     ToolCallSourceRefSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
@@ -2243,6 +2244,17 @@ export const ConversationEnrichmentFields = {
         .optional(),
 };
 
+/** Workflow-selected automatic processing configuration, fixed in the initial scheduled source.
+ * Jobs, revisions, attempts, receipts and coverage are host-owned durable evidence, never configuration.
+ */
+export const ConversationProcessingPolicySchema = z
+    .strictObject({
+        enabled: ProcessingStateSchema.shape.enabled,
+        processors: ProcessingStateSchema.shape.processors.max(32),
+        budget: ProcessingStateSchema.shape.budget,
+    })
+    .meta({ id: 'ConversationProcessingPolicy' });
+
 export const AsyncConversationExecutionPayloadSchema = z
     .object({
         interaction: z.string().meta({
@@ -2266,6 +2278,7 @@ export const AsyncConversationExecutionPayloadSchema = z
             })
             .optional(),
         config: InteractionExecutionConfigurationSchema.optional(),
+        processing: ConversationProcessingPolicySchema.optional(),
         result_schema: z.union([JSONSchemaSchema, SchemaRefSchema, z.null()]).optional(),
         do_validate: z.boolean().optional(),
         tags: z.array(z.string()).optional(),

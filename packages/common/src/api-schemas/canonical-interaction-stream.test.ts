@@ -2,6 +2,7 @@ import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import {
     ExperimentalCanonicalAgentAcceptanceTargetSchema,
+    ExperimentalCanonicalInitialIngestionAcceptedSchema,
     ExperimentalCanonicalInteractionAcceptedRecoveryOpenedSchema,
     ExperimentalCanonicalInteractionConversationEventSchema,
     ExperimentalCanonicalInteractionStreamEnvelopeSchema,
@@ -249,6 +250,7 @@ describe('experimental canonical interaction stream schemas', () => {
     it('publishes named branches and a complete exact discriminator mapping', () => {
         expect(ApiSchemaComponents.ExperimentalCanonicalInteractionStreamEnvelope).toMatchObject({
             oneOf: [
+                { $ref: '#/components/schemas/ExperimentalCanonicalInitialIngestionAccepted' },
                 { $ref: '#/components/schemas/ExperimentalCanonicalInteractionStreamOpened' },
                 { $ref: '#/components/schemas/ExperimentalCanonicalInteractionStreamResumed' },
                 { $ref: '#/components/schemas/ExperimentalCanonicalInteractionAcceptedRecoveryOpened' },
@@ -257,6 +259,7 @@ describe('experimental canonical interaction stream schemas', () => {
             discriminator: {
                 propertyName: 'type',
                 mapping: {
+                    ingestion_accepted: '#/components/schemas/ExperimentalCanonicalInitialIngestionAccepted',
                     stream_opened: '#/components/schemas/ExperimentalCanonicalInteractionStreamOpened',
                     stream_resumed: '#/components/schemas/ExperimentalCanonicalInteractionStreamResumed',
                     accepted_recovery_opened:
@@ -316,5 +319,32 @@ describe('experimental canonical interaction stream schemas', () => {
         ]) {
             expect(ApiSchemaComponents).toHaveProperty(name);
         }
+    });
+});
+
+describe('initial targetless ingestion envelope contract', () => {
+    it('registers only a strict input ACK, never response/target/admission data', () => {
+        const ack = {
+            api_version: API_VERSION,
+            type: 'ingestion_accepted',
+            run_id: 'run:initial',
+            operation_id: 'operation:initial',
+            accepted_source: { conversation_id: 'conversation:initial', revision: 1 },
+        };
+        expect(ExperimentalCanonicalInitialIngestionAcceptedSchema.parse(ack)).toEqual(ack);
+        expect(ExperimentalCanonicalInteractionStreamEnvelopeSchema.parse(ack)).toEqual(ack);
+        const validate = ajvComponent('ExperimentalCanonicalInitialIngestionAccepted');
+        expect(validate(ack)).toBe(true);
+        expect(ajvComponent('ExperimentalCanonicalInteractionStreamEnvelope')(ack)).toBe(true);
+        for (const field of ['target', 'generation_admission', 'event', 'cursor', 'stream_id', 'response_accepted']) {
+            expect(validate({ ...ack, [field]: {} })).toBe(false);
+            expect(ExperimentalCanonicalInitialIngestionAcceptedSchema.safeParse({ ...ack, [field]: {} }).success).toBe(
+                false,
+            );
+        }
+        expect(validate({ ...ack, api_version: '=wrong' })).toBe(false);
+        expect(
+            ExperimentalCanonicalInitialIngestionAcceptedSchema.safeParse({ ...ack, api_version: '=wrong' }).success,
+        ).toBe(false);
     });
 });

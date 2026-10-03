@@ -266,6 +266,7 @@ import {
 } from './bulk-operation.js';
 import { CANONICAL_CONVERSATION_SCHEMAS } from './canonical-conversation.js';
 import * as CanonicalResumeSchemas from './canonical-conversation-resume.js';
+import * as CanonicalIngestionReadinessSchemas from './canonical-ingestion-readiness.js';
 import { ExperimentalCanonicalInitialAuthoringResponseSchema } from './canonical-initial-authoring.js';
 import * as CanonicalInteractionSchemas from './canonical-interaction-execution.js';
 import * as CanonicalInteractionStreamSchemas from './canonical-interaction-stream.js';
@@ -547,6 +548,7 @@ import {
     ComputeRunFacetPayloadSchema,
     ComputeRunFacetsResponseSchema,
     ConversationAcceptedGenerationEvidenceSchema,
+    ConversationProcessingPolicySchema,
     ConversationStateSchema,
     ConversationStripOptionsSchema,
     ConversationVisibilitySchema,
@@ -781,11 +783,6 @@ import {
     AppendRunConversationProgramTurnResponseSchema,
     AppendRunConversationToolResultsPayloadSchema,
     AppendRunConversationToolResultsResponseSchema,
-    ExperimentalAgentProcessingHeadPayloadSchema,
-    ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema,
-    ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema,
-    ExperimentalCanonicalVersionedHeadPayloadSchema,
-    PublishAgentRunConversationHeadPayloadSchema,
 } from './run-conversation-append.js';
 import * as SecretSchemas from './secrets.js';
 import {
@@ -1392,6 +1389,7 @@ const EXECUTION_REQUEST_SCHEMAS: {
     AsyncExecutionPayload: typeof AsyncExecutionPayloadSchema;
     AsyncInteractionExecutionPayload: typeof AsyncInteractionExecutionPayloadSchema;
     AsyncConversationExecutionPayload: typeof AsyncConversationExecutionPayloadSchema;
+    ConversationProcessingPolicy: typeof ConversationProcessingPolicySchema;
     AsyncExecutionResult: typeof AsyncExecutionResultSchema;
     RateLimitRequestPayload: typeof RateLimitRequestPayloadSchema;
     RateLimitRequestResponse: typeof RateLimitRequestResponseSchema;
@@ -1434,6 +1432,7 @@ const EXECUTION_REQUEST_SCHEMAS: {
     AsyncExecutionPayload: AsyncExecutionPayloadSchema,
     AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayloadSchema,
     AsyncConversationExecutionPayload: AsyncConversationExecutionPayloadSchema,
+    ConversationProcessingPolicy: ConversationProcessingPolicySchema,
     AsyncExecutionResult: AsyncExecutionResultSchema,
     // The execution rate limiter.
     RateLimitRequestPayload: RateLimitRequestPayloadSchema,
@@ -2648,6 +2647,8 @@ const AGENT_ROUTING_CONTROL_SCHEMAS: AgentRoutingControlSchemaMap = {
     ExperimentalAgentRoutingExecutionBinding: RoutingControlSchemas.ExperimentalAgentRoutingExecutionBindingSchema,
     ExperimentalAgentGenerationAdmissionPayload:
         RoutingControlSchemas.ExperimentalAgentGenerationAdmissionPayloadSchema,
+    ExperimentalCanonicalIngestionSourceBinding:
+        RoutingControlSchemas.ExperimentalCanonicalIngestionSourceBindingSchema,
     ExperimentalAgentGenerationAdmissionReceipt:
         RoutingControlSchemas.ExperimentalAgentGenerationAdmissionReceiptSchema,
     ExperimentalAgentRoutingStatusPayload: RoutingControlSchemas.ExperimentalAgentRoutingStatusPayloadSchema,
@@ -2691,6 +2692,8 @@ const CANONICAL_INTERACTION_STREAM_SCHEMAS: CanonicalInteractionStreamSchemaMap 
         CanonicalInteractionStreamSchemas.ExperimentalCanonicalInitialAgentStreamRequestSchema,
     ExperimentalCanonicalInteractionStreamRequest:
         CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionStreamRequestSchema,
+    ExperimentalCanonicalInitialIngestionAccepted:
+        CanonicalInteractionStreamSchemas.ExperimentalCanonicalInitialIngestionAcceptedSchema,
     ExperimentalCanonicalInteractionStreamOpened:
         CanonicalInteractionStreamSchemas.ExperimentalCanonicalInteractionStreamOpenedSchema,
     ExperimentalCanonicalInteractionStreamResumed:
@@ -2724,8 +2727,6 @@ const CANONICAL_TOOL_EXECUTION_SCHEMAS = {
 
 type RunConversationSchemaMap = {
     ExperimentalCanonicalInitialAuthoringResponse: typeof ExperimentalCanonicalInitialAuthoringResponseSchema;
-    ExperimentalCanonicalInitialRenderedInputHeadPayload: typeof ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema;
-    ExperimentalCanonicalToolCatalogSelectionHeadPayload: typeof ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema;
     RunConversationResponse: typeof RunConversationResponseSchema;
     InitialAuthoringMedia: typeof InitialAuthoringMediaSchema;
     InitialAuthoringSegment: typeof InitialAuthoringSegmentSchema;
@@ -2738,15 +2739,41 @@ type RunConversationSchemaMap = {
     AppendRunConversationProgramTurnResponse: typeof AppendRunConversationProgramTurnResponseSchema;
     AppendRunConversationToolResultsPayload: typeof AppendRunConversationToolResultsPayloadSchema;
     AppendRunConversationToolResultsResponse: typeof AppendRunConversationToolResultsResponseSchema;
-    PublishAgentRunConversationHeadPayload: typeof PublishAgentRunConversationHeadPayloadSchema;
-    ExperimentalAgentProcessingHeadPayload: typeof ExperimentalAgentProcessingHeadPayloadSchema;
-    ExperimentalCanonicalVersionedHeadPayload: typeof ExperimentalCanonicalVersionedHeadPayloadSchema;
 };
+
+const CANONICAL_INGESTION_READINESS_SCHEMAS = {
+    AvailableCanonicalIngestionPreparationView:
+        CanonicalIngestionReadinessSchemas.AvailableCanonicalIngestionPreparationViewSchema,
+    UnavailableCanonicalIngestionPreparationView:
+        CanonicalIngestionReadinessSchemas.UnavailableCanonicalIngestionPreparationViewSchema,
+    AvailableCanonicalIngestionRecoveryView:
+        CanonicalIngestionReadinessSchemas.AvailableCanonicalIngestionRecoveryViewSchema,
+    UnavailableCanonicalIngestionRecoveryView:
+        CanonicalIngestionReadinessSchemas.UnavailableCanonicalIngestionRecoveryViewSchema,
+
+    ExperimentalCanonicalIngestionConcreteTarget:
+        CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionConcreteTargetSchema,
+    ExperimentalCanonicalIngestionCount: CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionCountSchema,
+    ExperimentalCanonicalIngestionProjection:
+        CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionProjectionSchema,
+    ExperimentalCanonicalIngestionPreparationViewQuery:
+        CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionPreparationViewQuerySchema,
+    ExperimentalCanonicalIngestionPreparationViewResponse:
+        CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionPreparationViewResponseSchema,
+    ExperimentalCanonicalIngestionRecovery:
+        CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionRecoverySchema,
+    ExperimentalCanonicalIngestionRecoveryViewQuery:
+        CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionRecoveryViewQuerySchema,
+    ExperimentalCanonicalIngestionRecoveryViewResponse:
+        CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionRecoveryViewResponseSchema,
+    ExperimentalRunConversationInspectionQuery:
+        CanonicalIngestionReadinessSchemas.ExperimentalRunConversationInspectionQuerySchema,
+    ExperimentalRunConversationInspectionResponse:
+        CanonicalIngestionReadinessSchemas.ExperimentalRunConversationInspectionResponseSchema,
+} as const;
 
 const RUN_CONVERSATION_SCHEMAS: RunConversationSchemaMap = {
     ExperimentalCanonicalInitialAuthoringResponse: ExperimentalCanonicalInitialAuthoringResponseSchema,
-    ExperimentalCanonicalInitialRenderedInputHeadPayload: ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema,
-    ExperimentalCanonicalToolCatalogSelectionHeadPayload: ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema,
     RunConversationResponse: RunConversationResponseSchema,
     InitialAuthoringMedia: InitialAuthoringMediaSchema,
     InitialAuthoringSegment: InitialAuthoringSegmentSchema,
@@ -2759,9 +2786,6 @@ const RUN_CONVERSATION_SCHEMAS: RunConversationSchemaMap = {
     AppendRunConversationProgramTurnResponse: AppendRunConversationProgramTurnResponseSchema,
     AppendRunConversationToolResultsPayload: AppendRunConversationToolResultsPayloadSchema,
     AppendRunConversationToolResultsResponse: AppendRunConversationToolResultsResponseSchema,
-    PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayloadSchema,
-    ExperimentalAgentProcessingHeadPayload: ExperimentalAgentProcessingHeadPayloadSchema,
-    ExperimentalCanonicalVersionedHeadPayload: ExperimentalCanonicalVersionedHeadPayloadSchema,
 } as const;
 
 const RUN_BUDGET_SCHEMAS = {
@@ -2824,6 +2848,7 @@ const API_SCHEMA_GROUPS = [
     CANONICAL_INTERACTION_STREAM_SCHEMAS,
     CANONICAL_CONVERSATION_STREAM_SCHEMAS,
     RUN_CONVERSATION_SCHEMAS,
+    CANONICAL_INGESTION_READINESS_SCHEMAS,
     RUN_BUDGET_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
@@ -2902,6 +2927,7 @@ type ApiSchemaMap = typeof JSON_MINIFICATION_SCHEMAS &
     typeof CANONICAL_INTERACTION_STREAM_SCHEMAS &
     typeof CANONICAL_CONVERSATION_STREAM_SCHEMAS &
     typeof RUN_CONVERSATION_SCHEMAS &
+    typeof CANONICAL_INGESTION_READINESS_SCHEMAS &
     typeof RUN_BUDGET_SCHEMAS &
     typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
@@ -2977,6 +3003,7 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    ...Object.keys(CANONICAL_INGESTION_READINESS_SCHEMAS),
     ...Object.keys(AGENT_PROCESSING_SCHEMAS),
     ...Object.keys(AGENT_RESTART_ADMISSION_SCHEMAS),
     ...Object.keys(AGENT_CONVERSATION_MIGRATION_SCHEMAS),
@@ -2992,14 +3019,12 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     ...Object.entries(CANONICAL_CONVERSATION_SCHEMAS)
         .filter(([, schema]) => schema.def.type === 'object')
         .map(([name]) => name),
+    'ConversationProcessingPolicy',
     'ExperimentalCanonicalInitialAuthoringResponse',
-    'ExperimentalCanonicalInitialRenderedInputHeadPayload',
-    'ExperimentalCanonicalToolCatalogSelectionHeadPayload',
     'AppendRunConversationProgramTurnPayload',
     'AppendRunConversationProgramTurnResponse',
     'AppendRunConversationToolResultsPayload',
     'AppendRunConversationToolResultsResponse',
-    'ExperimentalAgentProcessingHeadPayload',
     'AgentRunAccessQuery',
     'ExperimentalAgentConversationAcceptedOutputHistoryQuery',
     'ExperimentalAgentConversationAcceptedOutputHistoryPage',

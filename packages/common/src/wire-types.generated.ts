@@ -40,6 +40,7 @@ import type {
     AssetProvenance,
     AssetStorage,
     ContextEntry,
+    ContextMeasurement,
     ConversationAcceptedOutputFragment,
     ConversationDocument,
     ConversationMaterializedInput,
@@ -73,6 +74,8 @@ import type {
     NativeStreamPosition,
     OperationReceipt,
     PendingApplicationToolCall,
+    ProcessingBudget,
+    ProcessorConfiguration,
     ReceivedTurnProvenance,
     ToolCallSourceRef,
     ToolDefinition,
@@ -549,6 +552,7 @@ export type ExperimentalAgentGenerationAdmissionReceipt = {
     request_id: string;
     input_fingerprint: string;
     admitted_at: string;
+    ingestion_source?: ExperimentalCanonicalIngestionSourceBinding | undefined;
     execution: ExperimentalAgentRoutingExecutionBinding;
     routing_control: ExperimentalAgentRoutingControlReceipt;
 };
@@ -574,6 +578,22 @@ export type ExperimentalAgentRoutingStatusResponse =
           api_version: '=20260930';
           generation_admission: ExperimentalAgentGenerationAdmissionReceipt;
       };
+export type ExperimentalCanonicalIngestionSourceBinding = {
+    version: 1;
+    accepted_source: ConversationRef;
+    accepted_anchor:
+        | {
+              kind: 'accepted_input';
+              receipt: OperationReceipt;
+          }
+        | {
+              kind: 'retained_output';
+              receipt: ConversationOutputReceipt;
+          };
+    effective_source: ConversationRef;
+    document_fingerprint: string;
+    processing_fingerprint: string;
+};
 /**
  * The five run-analytics contract types, inferred from `./api-schemas/analytics.js`. Their
  * documentation moved with them — a doc comment here would be published on TOP of the schema's
@@ -2511,6 +2531,145 @@ export type UnavailableRunConversation = {
     retention?: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel] | undefined;
 };
 export type RunConversationResponse = AvailableRunConversation | UnavailableRunConversation;
+export type ExperimentalCanonicalIngestionConcreteTarget = {
+    provider: string;
+    protocol: string;
+    model: string;
+    adapter_version: string;
+};
+export type ExperimentalCanonicalIngestionCount = {
+    measurement: ContextMeasurement;
+    counted_request_fingerprint: string;
+    readiness: {
+        profile: string;
+        output_reserve_tokens: number;
+        context_limit: number;
+    };
+};
+export type ExperimentalCanonicalIngestionProjection = {
+    version: 1;
+    id: string;
+    execution_run_id: string;
+    account_id: string;
+    project_id: string;
+    subject_agent_run_id: string;
+    owner_agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    admission_request_id: string;
+    scheduled_semantic_fingerprint: string;
+    target_reference: {
+        key: string;
+        fingerprint: string;
+    };
+    source: ConversationRef;
+    source_document_fingerprint: string;
+    source_processing_fingerprint: string;
+    context_fingerprint: string;
+    concrete_target: ExperimentalCanonicalIngestionConcreteTarget;
+    target_fingerprint: string;
+    request_id: string;
+    attempt_id: string;
+    input_operation_id: string;
+    response_operation_id: string;
+    virtual_child?:
+        | {
+              purpose: 'virtual_candidate' | 'virtual_mediation';
+              environment_id: string;
+              configured_occurrence: number;
+              plan_fingerprint: string;
+          }
+        | undefined;
+    coverage_operation_id: string;
+    measurement_fingerprint: string;
+    count: ExperimentalCanonicalIngestionCount;
+    recorded_at: string;
+};
+export type ExperimentalCanonicalIngestionPreparationViewQuery = {
+    view: 'ingestion_preparation';
+    target_key: string;
+    projection_id: string;
+};
+export type ExperimentalCanonicalIngestionPreparationViewResponse =
+    | AvailableCanonicalIngestionPreparationView
+    | UnavailableCanonicalIngestionPreparationView;
+export type ExperimentalRunConversationInspectionQuery =
+    | ExperimentalInitialAuthoringViewQuery
+    | ExperimentalCanonicalIngestionPreparationViewQuery
+    | ExperimentalCanonicalIngestionRecoveryViewQuery;
+export type ExperimentalRunConversationInspectionResponse =
+    | AvailableInitialAuthoringView
+    | UnavailableInitialAuthoringView
+    | AvailableCanonicalIngestionPreparationView
+    | UnavailableCanonicalIngestionPreparationView
+    | AvailableCanonicalIngestionRecoveryView
+    | UnavailableCanonicalIngestionRecoveryView;
+export type ExperimentalCanonicalIngestionRecovery = {
+    version: 1;
+    execution_run_id: string;
+    account_id: string;
+    project_id: string;
+    subject_agent_run_id: string;
+    owner_agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    admission_request_id: string;
+    scheduled_semantic_fingerprint: string;
+    target_reference: {
+        key: string;
+        fingerprint: string;
+    };
+    runtime: {
+        conversation_id: string;
+        request_id: string;
+        attempt_id: string;
+        input_operation_id: string;
+        response_operation_id: string;
+        purpose: string;
+    };
+    source: ConversationRef;
+    request_receipt_id: string;
+    virtual_child?:
+        | {
+              purpose: 'virtual_candidate' | 'virtual_mediation';
+              environment_id: string;
+              configured_occurrence: number;
+              plan_fingerprint: string;
+          }
+        | undefined;
+    accepted_output?: ConversationOutputReceipt | undefined;
+    accepted_output_fingerprint?: string | undefined;
+    prepared_record_fingerprint: string;
+    native_request_fingerprint: string;
+    context_fingerprint: string;
+    tool_set_fingerprint: string;
+    concrete_target: ExperimentalCanonicalIngestionConcreteTarget;
+    target_fingerprint: string;
+    recorded_at: string;
+};
+export type ExperimentalCanonicalIngestionRecoveryViewQuery = {
+    view: 'ingestion_recovery';
+    target_key: string;
+    request_id: string;
+};
+export type ExperimentalCanonicalIngestionRecoveryViewResponse =
+    | AvailableCanonicalIngestionRecoveryView
+    | UnavailableCanonicalIngestionRecoveryView;
+export type AvailableCanonicalIngestionPreparationView = {
+    status: 'preparation_available';
+    projection: ExperimentalCanonicalIngestionProjection;
+    initial_ingestion_source?: ExperimentalCanonicalIngestionSourceBinding | undefined;
+};
+export type UnavailableCanonicalIngestionPreparationView = {
+    status: 'preparation_unavailable';
+    reason: 'not_recorded';
+};
+export type AvailableCanonicalIngestionRecoveryView = {
+    status: 'recovery_available';
+    recovery: ExperimentalCanonicalIngestionRecovery;
+};
+export type UnavailableCanonicalIngestionRecoveryView = {
+    status: 'recovery_unavailable';
+    reason: 'not_recorded';
+};
 export type ExperimentalCanonicalInitialAuthoringResponse = {
     execution_run_id: string;
     source: ConversationRef;
@@ -2757,6 +2916,7 @@ export type ExperimentalCanonicalInteractionConversationEvent = {
     event: ConversationStreamEvent;
 };
 export type ExperimentalCanonicalInteractionStreamEnvelope =
+    | ExperimentalCanonicalInitialIngestionAccepted
     | ExperimentalCanonicalInteractionStreamOpened
     | ExperimentalCanonicalInteractionStreamResumed
     | ExperimentalCanonicalInteractionAcceptedRecoveryOpened
@@ -2788,6 +2948,13 @@ export type ExperimentalCanonicalToolApprovalReviewStreamRequest = {
 export type ExperimentalAdmitAgentGenerationToolApprovalReviewPayload = {
     operation: 'tool_approval_review';
     request: ExperimentalCanonicalToolApprovalReviewStreamRequest;
+};
+export type ExperimentalCanonicalInitialIngestionAccepted = {
+    api_version: '=20260930';
+    type: 'ingestion_accepted';
+    run_id: string;
+    operation_id: string;
+    accepted_source: ConversationRef;
 };
 export type FindPayload = {
     query: {
@@ -5012,6 +5179,11 @@ export type InitialToolCall = {
         | undefined;
     on_error?: 'fail' | 'continue' | undefined;
 };
+export type ConversationProcessingPolicy = {
+    enabled: boolean;
+    processors: ProcessorConfiguration[];
+    budget?: ProcessingBudget | undefined;
+};
 export type AsyncConversationExecutionPayload = {
     interaction: string;
     title?: string | undefined;
@@ -5022,6 +5194,7 @@ export type AsyncConversationExecutionPayload = {
     app_version?: string | undefined;
     data?: unknown | undefined;
     config?: InteractionExecutionConfiguration | undefined;
+    processing?: ConversationProcessingPolicy | undefined;
     result_schema?: JSONSchema | SchemaRef | null | undefined;
     do_validate?: boolean | undefined;
     tags?: string[] | undefined;
@@ -7153,39 +7326,6 @@ export type AppendRunConversationToolResultsResponse = {
     conversation: ConversationRef;
     operation_receipt: OperationReceipt;
     applied: boolean;
-};
-export type PublishAgentRunConversationHeadPayload = {
-    document: ConversationDocument;
-    expected_head?: ConversationRef | undefined;
-};
-export type ExperimentalAgentProcessingHeadPayload = {
-    kind: 'processing_job_head';
-    expected_head: ConversationRef;
-    document: ConversationDocument;
-    processing_authority: ExperimentalAgentProcessingActivityEvidence;
-};
-export type ExperimentalCanonicalVersionedHeadPayload =
-    | ExperimentalCanonicalInitialAgentStreamRequest
-    | ExperimentalAgentProcessingHeadPayload
-    | ExperimentalCanonicalInitialRenderedInputHeadPayload
-    | ExperimentalCanonicalToolCatalogSelectionHeadPayload;
-export type ExperimentalCanonicalInitialRenderedInputHeadPayload = {
-    kind: 'initial_rendered_input';
-    activity: {
-        request: ExperimentalCanonicalInitialAgentStreamRequest;
-        execution_run_id: string;
-    };
-};
-export type ExperimentalCanonicalToolCatalogSelectionHeadPayload = {
-    kind: 'tool_catalog_selection';
-    request: ExperimentalCanonicalToolResultsPayload;
-    retained_selection?:
-        | {
-              operation_id: string;
-              result_revision: number;
-              receipt_fingerprint: string;
-          }
-        | undefined;
 };
 /**
  * The run ref is used to identify a run document in the storage
@@ -12144,6 +12284,7 @@ export interface ApiComponentTypes {
     AsyncExecutionPayload: AsyncExecutionPayload;
     AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayload;
     AsyncConversationExecutionPayload: AsyncConversationExecutionPayload;
+    ConversationProcessingPolicy: ConversationProcessingPolicy;
     AsyncExecutionResult: AsyncExecutionResult;
     RateLimitRequestPayload: RateLimitRequestPayload;
     RateLimitRequestResponse: RateLimitRequestResponse;
@@ -13091,6 +13232,7 @@ export interface ApiComponentTypes {
     ExperimentalAgentRoutingOriginExecution: ExperimentalAgentRoutingOriginExecution;
     ExperimentalAgentRoutingExecutionBinding: ExperimentalAgentRoutingExecutionBinding;
     ExperimentalAgentGenerationAdmissionPayload: ExperimentalAgentGenerationAdmissionPayload;
+    ExperimentalCanonicalIngestionSourceBinding: ExperimentalCanonicalIngestionSourceBinding;
     ExperimentalAgentGenerationAdmissionReceipt: ExperimentalAgentGenerationAdmissionReceipt;
     ExperimentalAgentRoutingStatusPayload: ExperimentalAgentRoutingStatusPayload;
     ExperimentalAgentRoutingStatusResponse: ExperimentalAgentRoutingStatusResponse;
@@ -13118,6 +13260,7 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalToolApprovalReviewStreamRequest: ExperimentalCanonicalToolApprovalReviewStreamRequest;
     ExperimentalCanonicalInitialAgentStreamRequest: ExperimentalCanonicalInitialAgentStreamRequest;
     ExperimentalCanonicalInteractionStreamRequest: ExperimentalCanonicalInteractionStreamRequest;
+    ExperimentalCanonicalInitialIngestionAccepted: ExperimentalCanonicalInitialIngestionAccepted;
     ExperimentalCanonicalInteractionStreamOpened: ExperimentalCanonicalInteractionStreamOpened;
     ExperimentalCanonicalInteractionStreamResumed: ExperimentalCanonicalInteractionStreamResumed;
     ExperimentalCanonicalInteractionAcceptedRecoveryOpened: ExperimentalCanonicalInteractionAcceptedRecoveryOpened;
@@ -13136,9 +13279,21 @@ export interface ApiComponentTypes {
     ConversationStreamEvent: ConversationStreamEvent;
     ConversationToolExecutionRequest: ConversationToolExecutionRequest;
     ConversationToolExecutionResult: ConversationToolExecutionResult;
+    AvailableCanonicalIngestionPreparationView: AvailableCanonicalIngestionPreparationView;
+    UnavailableCanonicalIngestionPreparationView: UnavailableCanonicalIngestionPreparationView;
+    AvailableCanonicalIngestionRecoveryView: AvailableCanonicalIngestionRecoveryView;
+    UnavailableCanonicalIngestionRecoveryView: UnavailableCanonicalIngestionRecoveryView;
+    ExperimentalCanonicalIngestionConcreteTarget: ExperimentalCanonicalIngestionConcreteTarget;
+    ExperimentalCanonicalIngestionCount: ExperimentalCanonicalIngestionCount;
+    ExperimentalCanonicalIngestionProjection: ExperimentalCanonicalIngestionProjection;
+    ExperimentalCanonicalIngestionPreparationViewQuery: ExperimentalCanonicalIngestionPreparationViewQuery;
+    ExperimentalCanonicalIngestionPreparationViewResponse: ExperimentalCanonicalIngestionPreparationViewResponse;
+    ExperimentalCanonicalIngestionRecovery: ExperimentalCanonicalIngestionRecovery;
+    ExperimentalCanonicalIngestionRecoveryViewQuery: ExperimentalCanonicalIngestionRecoveryViewQuery;
+    ExperimentalCanonicalIngestionRecoveryViewResponse: ExperimentalCanonicalIngestionRecoveryViewResponse;
+    ExperimentalRunConversationInspectionQuery: ExperimentalRunConversationInspectionQuery;
+    ExperimentalRunConversationInspectionResponse: ExperimentalRunConversationInspectionResponse;
     ExperimentalCanonicalInitialAuthoringResponse: ExperimentalCanonicalInitialAuthoringResponse;
-    ExperimentalCanonicalInitialRenderedInputHeadPayload: ExperimentalCanonicalInitialRenderedInputHeadPayload;
-    ExperimentalCanonicalToolCatalogSelectionHeadPayload: ExperimentalCanonicalToolCatalogSelectionHeadPayload;
     RunConversationResponse: RunConversationResponse;
     InitialAuthoringMedia: InitialAuthoringMedia;
     InitialAuthoringSegment: InitialAuthoringSegment;
@@ -13151,9 +13306,6 @@ export interface ApiComponentTypes {
     AppendRunConversationProgramTurnResponse: AppendRunConversationProgramTurnResponse;
     AppendRunConversationToolResultsPayload: AppendRunConversationToolResultsPayload;
     AppendRunConversationToolResultsResponse: AppendRunConversationToolResultsResponse;
-    PublishAgentRunConversationHeadPayload: PublishAgentRunConversationHeadPayload;
-    ExperimentalAgentProcessingHeadPayload: ExperimentalAgentProcessingHeadPayload;
-    ExperimentalCanonicalVersionedHeadPayload: ExperimentalCanonicalVersionedHeadPayload;
     RunBudgetOwner: RunBudgetOwner;
     RunBudgetUsage: RunBudgetUsage;
     ReadRunBudgetUsagePayload: ReadRunBudgetUsagePayload;

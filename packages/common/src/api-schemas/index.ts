@@ -31,6 +31,7 @@ export * from './apikey.js';
 export * from './app-runtime.js';
 export * from './bulk-operation.js';
 export * from './canonical-conversation-resume.js';
+export * from './canonical-ingestion-readiness.js';
 export * from './canonical-initial-authoring.js';
 export * from './canonical-interaction-execution.js';
 export * from './canonical-interaction-stream.js';
@@ -56,6 +57,7 @@ export {
     CanonicalPendingApplicationToolCallSchema,
     CanonicalScopedGenerationEvidenceSchema,
     ConversationAcceptedGenerationEvidenceSchema,
+    ConversationProcessingPolicySchema,
     ConversationStateSchema,
     ModelSourceSchema,
     SchemaRefSchema,

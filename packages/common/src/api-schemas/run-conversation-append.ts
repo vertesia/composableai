@@ -2,7 +2,6 @@ import {
     ApplicationToolExecutionReceiptSchema,
     AssetSchema,
     ContextEntrySchema,
-    ConversationDocumentSchema,
     ConversationRefSchema,
     ExecutedToolTurnSchema,
     IdentifierSchema,
@@ -13,10 +12,6 @@ import {
     TimestampSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
-import type * as Wire from '../wire-types.generated.js';
-import { ExperimentalAgentProcessingActivityEvidenceSchema } from './agent-processing.js';
-import { ExperimentalCanonicalToolResultsPayloadSchema } from './canonical-conversation-resume.js';
-import { ExperimentalCanonicalInitialAgentStreamRequestSchema } from './canonical-interaction-stream.js';
 
 export const MAX_APPEND_RUN_CONVERSATION_PROGRAM_TEXT_CODE_UNITS = 64 * 1024;
 
@@ -99,70 +94,4 @@ export const AppendRunConversationProgramTurnResponseSchema = z
         id: 'AppendRunConversationProgramTurnResponse',
         description:
             'Acknowledges the committed operation at the current canonical head. An exact retry after a later append advances the head returns a revision conflict so callers reconcile without duplicating the program turn.',
-    });
-
-/** Internal agent-run head publication envelope. The artifact locator remains server-private. */
-export const PublishAgentRunConversationHeadPayloadSchema = z
-    .strictObject({
-        document: ConversationDocumentSchema,
-        expected_head: ConversationRefSchema.optional(),
-    })
-    .meta({ id: 'PublishAgentRunConversationHeadPayload' });
-
-/** Exact-version guarded processing successor; ordinary head publication remains a separate contract. */
-export const ExperimentalAgentProcessingHeadPayloadSchema = z
-    .strictObject({
-        kind: z.literal('processing_job_head'),
-        expected_head: ConversationRefSchema,
-        document: ConversationDocumentSchema,
-        processing_authority: ExperimentalAgentProcessingActivityEvidenceSchema,
-    })
-    .meta({ id: 'ExperimentalAgentProcessingHeadPayload' });
-
-/** Original scheduled initial request and exact host run only; the service reads immutable rendered input. */
-export const ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema = z
-    .strictObject({
-        kind: z.literal('initial_rendered_input'),
-        activity: z.strictObject({
-            request: ExperimentalCanonicalInitialAgentStreamRequestSchema,
-            execution_run_id: IdentifierSchema,
-        }),
-    })
-    .meta({ id: 'ExperimentalCanonicalInitialRenderedInputHeadPayload' });
-
-/** Scheduled tools delivery only. Definitions, grants and successor source are selected by the service. */
-export const ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema = z
-    .strictObject({
-        kind: z.literal('tool_catalog_selection'),
-        request: ExperimentalCanonicalToolResultsPayloadSchema,
-        // Constraint nomination only: actual schedule and retained receipt supply authority independently.
-        retained_selection: z
-            .strictObject({
-                operation_id: IdentifierSchema,
-                result_revision: NonnegativeSafeIntegerSchema,
-                receipt_fingerprint: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-            })
-            .optional(),
-    })
-    .meta({ id: 'ExperimentalCanonicalToolCatalogSelectionHeadPayload' });
-
-/** Only the exact experimental version accepts these activity-authorized head operations. */
-export const ExperimentalCanonicalVersionedHeadPayloadSchema: z.ZodType<
-    | Wire.ExperimentalCanonicalInitialAgentStreamRequest
-    | Wire.ExperimentalAgentProcessingHeadPayload
-    | Wire.ExperimentalCanonicalInitialRenderedInputHeadPayload
-    | Wire.ExperimentalCanonicalToolCatalogSelectionHeadPayload
-> = z
-    .discriminatedUnion('kind', [
-        ExperimentalCanonicalInitialAgentStreamRequestSchema,
-        ExperimentalAgentProcessingHeadPayloadSchema,
-        ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema,
-        ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema,
-    ])
-    .meta({
-        id: 'ExperimentalCanonicalVersionedHeadPayload',
-        type: 'object',
-        required: ['kind'],
-        discriminator: { propertyName: 'kind' },
-        additionalProperties: true,
     });

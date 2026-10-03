@@ -2,16 +2,24 @@ import { createHash } from 'node:crypto';
 import { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { ServerError } from '@vertesia/api-fetch-client';
-import type { EnhancedExperimentalCanonicalInteractionExecutionResult, VertesiaClient } from '@vertesia/client';
+import type {
+    CanonicalInteractionStreamSessionOptions,
+    EnhancedExperimentalCanonicalInteractionExecutionResult,
+    VertesiaClient,
+} from '@vertesia/client';
 import {
     CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE,
     ContentEventName,
     type ConversationDocumentV0,
     type DSLActivityExecutionPayload,
+    EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
     ExecutionRunStatus,
     RunDataStorageLevel,
 } from '@vertesia/common';
-import { ExperimentalCanonicalNamedInteractionExecutionRequestSchema } from '@vertesia/common/api-schemas';
+import {
+    ExperimentalCanonicalInitialIngestionAcceptedSchema,
+    ExperimentalCanonicalNamedInteractionExecutionRequestSchema,
+} from '@vertesia/common/api-schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
 import {
@@ -1506,6 +1514,42 @@ describe('executeInteraction canonical lifecycle', () => {
             expect(mocks.streamCanonical.mock.calls[1][0].request.data).toMatchObject({
                 previous_error: { message: 'provider failed', code: 'PROVIDER_FAILED', retryable: false },
             });
+        },
+    );
+
+    it.each([1, 2])(
+        'rejects a targetless ingestion ACK instead of accepting a response on attempt %s',
+        async (attempt) => {
+            const environment = retryEnvironment(attempt);
+            const heartbeatDetails: unknown[] = [];
+            environment.on('heartbeat', (details) => heartbeatDetails.push(details));
+            const accepted = canonicalResult({ id: 'accepted-run' });
+            const mocks = mockCanonicalClient(accepted);
+            if (attempt > 1) {
+                mocks.search.mockResolvedValue([{ id: accepted.run.id, tags: ['workflow-predecessor:initial'] }]);
+            }
+            const ack = ExperimentalCanonicalInitialIngestionAcceptedSchema.parse({
+                api_version: EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE,
+                type: 'ingestion_accepted',
+                run_id: accepted.run.id,
+                operation_id: 'input-operation',
+                accepted_source: { conversation_id: 'input-source', revision: 1 },
+            });
+            mocks.streamCanonical.mockImplementation(
+                (_request: unknown, options?: CanonicalInteractionStreamSessionOptions) => {
+                    options?.on_envelope?.(ack);
+                    return Promise.resolve(acceptedStream(accepted.run.id));
+                },
+            );
+
+            await expect(
+                environment.run(executeCanonicalInteractionFromActivity, mocks.client, canonicalActivityPlan()),
+            ).rejects.toThrow('cannot accept an initial ingestion ACK');
+            expect(heartbeatDetails).toEqual([]);
+            expect(mocks.streamCanonical).toHaveBeenCalledOnce();
+            // A retry may inspect its historical row first, but the ACK never causes an accepted output read.
+            expect(mocks.retrieveCanonical).toHaveBeenCalledTimes(attempt > 1 ? 1 : 0);
+            expect(mocks.requestSlot).toHaveBeenCalledTimes(attempt > 1 ? 0 : 1);
         },
     );
 

@@ -1,14 +1,10 @@
 import { createConversationDocument } from '@llumiverse/conversation';
-import type {
-    ExperimentalAgentProcessingClaim,
-    ExperimentalAgentProcessingHeadPayload,
-    ExperimentalClaimAgentProcessingPayload,
-} from '@vertesia/common';
+import type { ExperimentalAgentProcessingClaim, ExperimentalClaimAgentProcessingPayload } from '@vertesia/common';
 import { describe, expect, it } from 'vitest';
 import { ZenoClient } from './client.js';
 
 describe('native processing exact-version SDK', () => {
-    it('carries the scheduled claim and guarded successor to distinct exact-version operations', async () => {
+    it('carries the published scheduled claim on its exact-version operation', async () => {
         const requests: Request[] = [];
         const source = createConversationDocument({
             id: 'conversation:processing',
@@ -41,12 +37,6 @@ describe('native processing exact-version SDK', () => {
             processing_attempt_id: `native:${'b'.repeat(64)}`,
             disposition: 'stale_optional',
         } satisfies ExperimentalAgentProcessingClaim;
-        const head = {
-            kind: 'processing_job_head',
-            expected_head: evidence.source,
-            document: source,
-            processing_authority: evidence,
-        } satisfies ExperimentalAgentProcessingHeadPayload;
         const client = new ZenoClient({
             serverUrl: 'https://store.test',
             apikey: 'existing-owner-token',
@@ -60,22 +50,13 @@ describe('native processing exact-version SDK', () => {
         await expect(
             client.agents.claimCanonicalProcessingJob('owner/one', evidence, { signal: controller.signal }),
         ).resolves.toEqual(claim);
-        await expect(
-            client.agents.publishCanonicalProcessingHead('owner/one', head, { signal: controller.signal }),
-        ).resolves.toEqual(evidence.source);
-        expect(requests.map((request) => new URL(request.url).pathname)).toEqual([
-            '/api/v1/agents/owner%2Fone/conversation/processing/claim',
-            '/api/v1/agents/owner%2Fone/conversation/head',
-        ]);
-        expect(requests.map((request) => request.method)).toEqual(['POST', 'PUT']);
-        expect(requests.map((request) => request.headers.get('x-api-version'))).toEqual(['=20260930', '=20260930']);
-        expect(requests.map((request) => request.headers.get('authorization'))).toEqual([
-            'Bearer existing-owner-token',
-            'Bearer existing-owner-token',
-        ]);
-        expect(new URL(requests[1].url).searchParams.get('conversation_scope')).toBe('workstream:child');
-        await expect(requests[0].json()).resolves.toEqual(evidence);
-        await expect(requests[1].json()).resolves.toEqual(head);
+        expect(requests).toHaveLength(1);
+        const sent = requests[0];
+        expect(new URL(sent.url).pathname).toBe('/api/v1/agents/owner%2Fone/conversation/processing/claim');
+        expect(sent.method).toBe('POST');
+        expect(sent.headers.get('x-api-version')).toBe('=20260930');
+        expect(sent.headers.get('authorization')).toBe('Bearer existing-owner-token');
+        await expect(sent.json()).resolves.toEqual(evidence);
         controller.abort();
         expect(requests.every((request) => request.signal.aborted)).toBe(true);
     });

@@ -10,8 +10,10 @@ import {
     RunDataStorageLevel,
     VERSION_HEADER,
 } from '@vertesia/common';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, expectTypeOf, it, vi } from 'vitest';
 import {
+    type CanonicalInitialInteractionStreamResult,
+    type CanonicalInteractionStreamResult,
     type CanonicalInteractionStreamTransport,
     consumeCanonicalInteractionStream,
 } from './CanonicalInteractionStream.js';
@@ -21,7 +23,9 @@ const API_VERSION = EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE;
 const RUN_ID = '507f1f77bcf86cd799439011';
 const STREAM_ID = 'stream:sdk';
 
-const request: ExperimentalCanonicalInteractionStreamRequest = {
+const request: Exclude<ExperimentalCanonicalInteractionStreamRequest, { kind: 'initial_agent' }> & {
+    kind?: 'tool_approval_review';
+} = {
     operation_id: 'operation:sdk',
     request: {
         interaction: 'stream-test',
@@ -452,5 +456,145 @@ describe('canonical interaction stream SDK session', () => {
         expect(new URL(requests[0].url).pathname).toBe('/api/v1/runs/canonical-stream');
         expect(requests[0].headers.get(VERSION_HEADER)).toBe(API_VERSION);
         expect(await requests[0].json()).toEqual(request);
+    });
+});
+
+function initialIngestionRequest(): Extract<ExperimentalCanonicalInteractionStreamRequest, { kind: 'initial_agent' }> {
+    return {
+        kind: 'initial_agent',
+        operation_id: request.operation_id,
+        request: {
+            interaction: 'stream-test',
+            initial_state: {
+                type: 'document',
+                document: createConversationDocument({
+                    id: 'conversation:initial',
+                    created_at: '2026-10-04T00:00:00Z',
+                }),
+            },
+            retention: RunDataStorageLevel.DEBUG,
+            return_policy: { history: 'none' },
+        },
+        agent_acceptance: { version: 1, subject_agent_run_id: 'subject', scope: 'root', activity_id: 'activity' },
+        activity_delivery: { activity_id: 'activity', run_id: 'actual:run', task_token: 'opaque-token' },
+    };
+}
+
+describe('initial-only targetless ingestion delivery', () => {
+    const ack = () => ({
+        api_version: API_VERSION,
+        type: 'ingestion_accepted' as const,
+        run_id: RUN_ID,
+        operation_id: request.operation_id,
+        accepted_source: { conversation_id: 'conversation:initial', revision: 1 },
+    });
+    it('accepts an input ACK without inventing model stream/cursor/response authority', async () => {
+        const envelope = ack();
+        const transport = {
+            connect: vi.fn(async (_request, onEnvelope) => onEnvelope(envelope)),
+        } satisfies CanonicalInteractionStreamTransport;
+        const result = await consumeCanonicalInteractionStream(transport, initialIngestionRequest(), {
+            on_envelope: () => {
+                envelope.accepted_source.revision = 99;
+            },
+        });
+        expect(result).toEqual({ run_id: RUN_ID, operation_id: request.operation_id, terminal_event: ack() });
+        expect(result).not.toHaveProperty('stream_id');
+        expect(result).not.toHaveProperty('cursor');
+        expect(result).not.toHaveProperty('retained_events');
+        expect(transport.connect).toHaveBeenCalledOnce();
+    });
+    it('rejects ordinary, wrong-operation and model-event mixed ACKs without reconnect', async () => {
+        for (const [payload, envelopes] of [
+            [request, [ack()]],
+            [initialIngestionRequest(), [{ ...ack(), operation_id: 'other' }]],
+            [initialIngestionRequest(), [opened(), ack()]],
+            [initialIngestionRequest(), [ack(), opened()]],
+        ] satisfies Array<
+            [ExperimentalCanonicalInteractionStreamRequest, ExperimentalCanonicalInteractionStreamEnvelope[]]
+        >) {
+            const transport = {
+                connect: vi.fn(async (_request, onEnvelope) => {
+                    for (const envelope of envelopes) onEnvelope(envelope);
+                }),
+            } satisfies CanonicalInteractionStreamTransport;
+            await expect(consumeCanonicalInteractionStream(transport, payload)).rejects.toThrow('protocol failed');
+            expect(transport.connect).toHaveBeenCalledOnce();
+        }
+    });
+    it('recovers delivery-only ACK after connection error without making another provider stream', async () => {
+        const transport = {
+            connect: vi.fn(async (_request, onEnvelope) => {
+                onEnvelope(ack());
+                throw new Error('socket closed after input ACK');
+            }),
+        } satisfies CanonicalInteractionStreamTransport;
+        const result = await consumeCanonicalInteractionStream(transport, initialIngestionRequest());
+        expect(result.terminal_event.type).toBe('ingestion_accepted');
+        expect(transport.connect).toHaveBeenCalledOnce();
+    });
+});
+
+describe('stream request overloads preserve input ACK versus model response typing', () => {
+    it('keeps initial and union callers broad, ordinary callers model-only, for consumer and SDK', async () => {
+        const initial = initialIngestionRequest();
+        const ordinary: Exclude<ExperimentalCanonicalInteractionStreamRequest, { kind: 'initial_agent' }> & {
+            kind?: 'tool_approval_review';
+        } = request;
+        const envelopes = (payload: ExperimentalCanonicalInteractionStreamRequest) =>
+            'kind' in payload && payload.kind === 'initial_agent'
+                ? [
+                      {
+                          api_version: API_VERSION,
+                          type: 'ingestion_accepted' as const,
+                          run_id: RUN_ID,
+                          operation_id: payload.operation_id,
+                          accepted_source: { conversation_id: 'conversation:initial', revision: 1 },
+                      },
+                  ]
+                : [opened(), wrapped(accepted(STREAM_ID, 0))];
+        const transport: CanonicalInteractionStreamTransport = {
+            connect: async (payload, onEnvelope) => {
+                for (const envelope of envelopes(payload)) onEnvelope(envelope);
+            },
+        };
+        const initialConsumer = consumeCanonicalInteractionStream(transport, initial);
+        const ordinaryConsumer = consumeCanonicalInteractionStream(transport, ordinary);
+        expectTypeOf(initialConsumer).toEqualTypeOf<Promise<CanonicalInitialInteractionStreamResult>>();
+        expectTypeOf(ordinaryConsumer).toEqualTypeOf<Promise<CanonicalInteractionStreamResult>>();
+        const consumeUnion = (payload: ExperimentalCanonicalInteractionStreamRequest) => {
+            const result = consumeCanonicalInteractionStream(transport, payload);
+            expectTypeOf(result).toEqualTypeOf<Promise<CanonicalInitialInteractionStreamResult>>();
+            return result;
+        };
+        expect((await initialConsumer).terminal_event.type).toBe('ingestion_accepted');
+        expect((await ordinaryConsumer).terminal_event.type).toBe('response_accepted');
+        expect((await consumeUnion(initial)).terminal_event.type).toBe('ingestion_accepted');
+        expect((await consumeUnion(ordinary)).terminal_event.type).toBe('response_accepted');
+
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async (wire, init) => {
+                const payload: ExperimentalCanonicalInteractionStreamRequest = await new Request(wire, init).json();
+                const body = envelopes(payload)
+                    .map((envelope) => `data: ${JSON.stringify(envelope)}\n\n`)
+                    .join('');
+                return new Response(body, { headers: { 'content-type': 'text/event-stream' } });
+            }),
+        });
+        const initialSdk = client.runs.streamCanonical(initial);
+        const ordinarySdk = client.runs.streamCanonical(ordinary);
+        expectTypeOf(initialSdk).toEqualTypeOf<Promise<CanonicalInitialInteractionStreamResult>>();
+        expectTypeOf(ordinarySdk).toEqualTypeOf<Promise<CanonicalInteractionStreamResult>>();
+        const sdkUnion = (payload: ExperimentalCanonicalInteractionStreamRequest) => {
+            const result = client.runs.streamCanonical(payload);
+            expectTypeOf(result).toEqualTypeOf<Promise<CanonicalInitialInteractionStreamResult>>();
+            return result;
+        };
+        expect((await initialSdk).terminal_event.type).toBe('ingestion_accepted');
+        expect((await ordinarySdk).terminal_event.type).toBe('response_accepted');
+        expect((await sdkUnion(initial)).terminal_event.type).toBe('ingestion_accepted');
+        expect((await sdkUnion(ordinary)).terminal_event.type).toBe('response_accepted');
     });
 });

@@ -11,6 +11,8 @@ import type {
     ExecutionRunDocRef,
     ExecutionRunRef,
     ExperimentalCanonicalCheckpointSummaryPayload,
+    ExperimentalCanonicalIngestionPreparationViewResponse,
+    ExperimentalCanonicalIngestionRecoveryViewResponse,
     ExperimentalCanonicalInitialAgentStreamRequest,
     ExperimentalCanonicalInitialAuthoringResponse,
     ExperimentalCanonicalInteractionExecutionResult,
@@ -43,6 +45,7 @@ import {
     enhanceExperimentalCanonicalInteractionExecutionResult,
 } from './CanonicalInteractionOutput.js';
 import {
+    type CanonicalInitialInteractionStreamResult,
     CanonicalInteractionStreamProtocolError,
     type CanonicalInteractionStreamResult,
     type CanonicalInteractionStreamSessionOptions,
@@ -147,6 +150,34 @@ export class RunsApi extends ApiTopic {
         return this.get(`/${encodeURIComponent(id)}/conversation`, {
             headers: canonicalInteractionHeaders(options?.headers),
             query: { view: 'initial_authoring' },
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Bounded exact-target derivative inspection; these facts do not grant generation or head authority. */
+    retrieveCanonicalIngestionPreparation(
+        id: string,
+        reference: { target_key: string; projection_id: string },
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalCanonicalIngestionPreparationViewResponse> {
+        return this.get(`/${encodeURIComponent(id)}/conversation`, {
+            headers: canonicalInteractionHeaders(options?.headers),
+            query: { view: 'ingestion_preparation', ...reference },
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Exact verified retained preparation descriptor, never current source/permission authority. */
+    retrieveCanonicalIngestionRecovery(
+        id: string,
+        reference: { target_key: string; request_id: string },
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalCanonicalIngestionRecoveryViewResponse> {
+        return this.get(`/${encodeURIComponent(id)}/conversation`, {
+            headers: canonicalInteractionHeaders(options?.headers),
+            query: { view: 'ingestion_recovery', ...reference },
             signal: options?.signal,
             timeoutMs: options?.timeoutMs,
         });
@@ -257,10 +288,24 @@ export class RunsApi extends ApiTopic {
     }
 
     /** Stream one explicitly versioned canonical interaction run with bounded reconnect validation. */
+    streamCanonical(
+        payload: Extract<ExperimentalCanonicalInteractionStreamRequest, { kind: 'initial_agent' }>,
+        options?: CanonicalInteractionStreamSessionOptions & CanonicalInteractionRequestOptions,
+    ): Promise<CanonicalInitialInteractionStreamResult>;
+    streamCanonical(
+        payload: Exclude<ExperimentalCanonicalInteractionStreamRequest, { kind: 'initial_agent' }> & {
+            kind?: 'tool_approval_review';
+        },
+        options?: CanonicalInteractionStreamSessionOptions & CanonicalInteractionRequestOptions,
+    ): Promise<CanonicalInteractionStreamResult>;
+    streamCanonical(
+        payload: ExperimentalCanonicalInteractionStreamRequest,
+        options?: CanonicalInteractionStreamSessionOptions & CanonicalInteractionRequestOptions,
+    ): Promise<CanonicalInitialInteractionStreamResult>;
     async streamCanonical(
         payload: ExperimentalCanonicalInteractionStreamRequest,
         options: CanonicalInteractionStreamSessionOptions & CanonicalInteractionRequestOptions = {},
-    ): Promise<CanonicalInteractionStreamResult> {
+    ): Promise<CanonicalInitialInteractionStreamResult> {
         const sessionTags = (this.client as VertesiaClient).sessionTags;
         // Membership-authorized initial/reviewer requests are sealed; session decoration cannot add unscheduled fields.
         if (

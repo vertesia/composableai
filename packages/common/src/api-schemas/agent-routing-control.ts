@@ -1,4 +1,12 @@
-import { IdentifierSchema, NonnegativeSafeIntegerSchema, TimestampSchema } from '@llumiverse/conversation/schemas';
+import {
+    ContentHashSchema,
+    ConversationOutputReceiptSchema,
+    ConversationRefSchema,
+    IdentifierSchema,
+    NonnegativeSafeIntegerSchema,
+    OperationReceiptSchema,
+    TimestampSchema,
+} from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
 import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE } from '../versions.js';
 import { AgentRunAccessQuerySchema, UpdateAgentRunStatusPayloadSchema } from './agent-runs.js';
@@ -119,6 +127,20 @@ export const ExperimentalAgentGenerationAdmissionPayloadSchema = z
         input_fingerprint: id,
     })
     .meta({ id: 'ExperimentalAgentGenerationAdmissionPayload' });
+/** Server-authored immutable ingestion lineage data. It grants neither readiness nor current execution. */
+export const ExperimentalCanonicalIngestionSourceBindingSchema = z
+    .strictObject({
+        version: z.literal(1),
+        accepted_source: ConversationRefSchema,
+        accepted_anchor: z.discriminatedUnion('kind', [
+            z.strictObject({ kind: z.literal('accepted_input'), receipt: OperationReceiptSchema }),
+            z.strictObject({ kind: z.literal('retained_output'), receipt: ConversationOutputReceiptSchema }),
+        ]),
+        effective_source: ConversationRefSchema,
+        document_fingerprint: ContentHashSchema,
+        processing_fingerprint: ContentHashSchema,
+    })
+    .meta({ id: 'ExperimentalCanonicalIngestionSourceBinding' });
 /** A request identity admits one immutable intent on one actual execution; a new chain cannot reuse it. */
 export const ExperimentalAgentGenerationAdmissionReceiptSchema = z
     .strictObject({
@@ -126,6 +148,8 @@ export const ExperimentalAgentGenerationAdmissionReceiptSchema = z
         request_id: id,
         input_fingerprint: id,
         admitted_at: TimestampSchema,
+        // Required by fresh ordinary services; absence is only retained/other-purpose compatibility.
+        ingestion_source: ExperimentalCanonicalIngestionSourceBindingSchema.optional(),
         execution: ExperimentalAgentRoutingExecutionBindingSchema,
         routing_control: ExperimentalAgentRoutingControlReceiptSchema,
     })

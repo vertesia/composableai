@@ -6,6 +6,7 @@ import type {
     ConversationStreamCursor,
     ConversationStreamEvent,
     ConversationStreamIdentity,
+    ExperimentalCanonicalInitialIngestionAccepted,
     ExperimentalCanonicalInteractionConversationEvent,
     ExperimentalCanonicalInteractionStreamEnvelope,
     ExperimentalCanonicalInteractionStreamRequest,
@@ -28,6 +29,16 @@ export interface CanonicalInteractionStreamResult {
     cursor: ConversationStreamCursor;
     retained_events: readonly ConversationStreamEvent[];
 }
+
+export interface CanonicalInitialIngestionStreamResult {
+    run_id: string;
+    operation_id: string;
+    terminal_event: ExperimentalCanonicalInitialIngestionAccepted;
+    // Ingestion has no model stream, cursor, generation or provider draft events.
+}
+export type CanonicalInitialInteractionStreamResult =
+    | CanonicalInteractionStreamResult
+    | CanonicalInitialIngestionStreamResult;
 
 export interface CanonicalInteractionStreamSessionOptions {
     retained_events?: readonly ConversationStreamEvent[];
@@ -98,11 +109,28 @@ function reconnectLimit(value: number | undefined): number {
  * One bounded canonical stream delivery session. Provider events become authoritative only when the host emits the
  * accepted terminal after its persistence barrier; provisional draft events remain delivery-only observations.
  */
+export function consumeCanonicalInteractionStream(
+    transport: CanonicalInteractionStreamTransport,
+    request: Extract<ExperimentalCanonicalInteractionStreamRequest, { kind: 'initial_agent' }>,
+    options?: CanonicalInteractionStreamSessionOptions,
+): Promise<CanonicalInitialInteractionStreamResult>;
+export function consumeCanonicalInteractionStream(
+    transport: CanonicalInteractionStreamTransport,
+    request: Exclude<ExperimentalCanonicalInteractionStreamRequest, { kind: 'initial_agent' }> & {
+        kind?: 'tool_approval_review';
+    },
+    options?: CanonicalInteractionStreamSessionOptions,
+): Promise<CanonicalInteractionStreamResult>;
+export function consumeCanonicalInteractionStream(
+    transport: CanonicalInteractionStreamTransport,
+    request: ExperimentalCanonicalInteractionStreamRequest,
+    options?: CanonicalInteractionStreamSessionOptions,
+): Promise<CanonicalInitialInteractionStreamResult>;
 export async function consumeCanonicalInteractionStream(
     transport: CanonicalInteractionStreamTransport,
     request: ExperimentalCanonicalInteractionStreamRequest,
     options: CanonicalInteractionStreamSessionOptions = {},
-): Promise<CanonicalInteractionStreamResult> {
+): Promise<CanonicalInitialInteractionStreamResult> {
     const retained = options.retained_events;
     if ((request.resume_after === undefined) !== (retained === undefined)) {
         throw new Error('External canonical stream resume requires both resume_after and retained_events');
@@ -126,6 +154,7 @@ export async function consumeCanonicalInteractionStream(
     let activeStreamId = accumulator?.identity.stream_id;
     let runId: string | undefined;
     let terminal: CanonicalInteractionStreamTerminalEvent | undefined;
+    let ingestion: ExperimentalCanonicalInitialIngestionAccepted | undefined;
     let reconnects = 0;
     const maxReconnects = reconnectLimit(options.max_reconnects);
     const notifyEnvelope = (envelope: ExperimentalCanonicalInteractionStreamEnvelope): void => {
@@ -138,7 +167,7 @@ export async function consumeCanonicalInteractionStream(
         }
     };
 
-    while (!terminal) {
+    while (!terminal && !ingestion) {
         let controlSeen = false;
         let connectionStreamId: string | undefined;
         let acceptedRecovery = false;
@@ -149,6 +178,25 @@ export async function consumeCanonicalInteractionStream(
             await transport.connect(wireRequest, (input) => {
                 try {
                     const envelope = parseExperimentalCanonicalInteractionStreamEnvelope(input);
+                    if (envelope.type === 'ingestion_accepted') {
+                        if (
+                            !('kind' in request) ||
+                            request.kind !== 'initial_agent' ||
+                            envelope.operation_id !== request.operation_id ||
+                            controlSeen ||
+                            accumulator ||
+                            cursor ||
+                            terminal ||
+                            ingestion ||
+                            (runId !== undefined && envelope.run_id !== runId)
+                        )
+                            throw new Error('Initial ingestion ACK conflicts with the request or model stream');
+                        ingestion = structuredClone(envelope);
+                        runId = envelope.run_id;
+                        notifyEnvelope(envelope);
+                        return;
+                    }
+                    if (ingestion) throw new Error('Initial ingestion ACK cannot be followed by model events');
                     if (runId !== undefined && envelope.run_id !== runId) {
                         throw new Error('Canonical interaction stream changed run identity');
                     }
@@ -241,7 +289,7 @@ export async function consumeCanonicalInteractionStream(
             ) {
                 throw error;
             }
-            if (terminal) break;
+            if (terminal || ingestion) break;
             if (error instanceof Error && error.name === 'AbortError') throw error;
             if (options.signal?.aborted) throw error;
             const status =
@@ -254,14 +302,15 @@ export async function consumeCanonicalInteractionStream(
             continue;
         }
 
-        if (terminal) break;
+        if (terminal || ingestion) break;
         if (reconnects >= maxReconnects) {
             throw new Error('Canonical interaction stream ended before a terminal event');
         }
         reconnects += 1;
     }
 
-    if (!runId || !accumulator || !cursor) {
+    if (ingestion) return { run_id: ingestion.run_id, operation_id: ingestion.operation_id, terminal_event: ingestion };
+    if (!terminal || !runId || !accumulator || !cursor) {
         throw new Error('Canonical interaction stream terminal state is incomplete');
     }
     return {

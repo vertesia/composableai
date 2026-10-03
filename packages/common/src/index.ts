@@ -35,6 +35,7 @@ export * from './browser-credentials.js';
 export * from './canonical-conversation.js';
 export type * from './canonical-conversation-resume.js';
 export * from './canonical-generation-evidence.js';
+export type * from './canonical-ingestion-readiness.js';
 export type * from './canonical-initial-authoring.js';
 export type * from './canonical-interaction-execution.js';
 export type * from './canonical-interaction-stream.js';

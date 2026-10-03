@@ -1,5 +1,6 @@
 import {
     ConversationDocumentSchema,
+    ConversationRefSchema,
     ConversationStreamCursorSchema,
     ConversationStreamEventSchema,
     IdentifierSchema,
@@ -248,8 +249,21 @@ export const ExperimentalCanonicalInteractionConversationEventSchema = z
         ...hostStatusJsonSchema,
     });
 
+/** Initial-only delivery ACK. No response, admission, target, stream cursor or provider event is invented.
+ * The actual Temporal completion carries the private authenticated pending receipt separately. */
+export const ExperimentalCanonicalInitialIngestionAcceptedSchema = z
+    .strictObject({
+        api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+        type: z.literal('ingestion_accepted'),
+        run_id: IdentifierSchema,
+        operation_id: IdentifierSchema,
+        accepted_source: ConversationRefSchema,
+    })
+    .meta({ id: 'ExperimentalCanonicalInitialIngestionAccepted' });
+
 export const ExperimentalCanonicalInteractionStreamEnvelopeSchema = z
     .discriminatedUnion('type', [
+        ExperimentalCanonicalInitialIngestionAcceptedSchema,
         ExperimentalCanonicalInteractionStreamOpenedSchema,
         ExperimentalCanonicalInteractionStreamResumedSchema,
         ExperimentalCanonicalInteractionAcceptedRecoveryOpenedSchema,
@@ -262,6 +276,7 @@ export const ExperimentalCanonicalInteractionStreamEnvelopeSchema = z
         discriminator: {
             propertyName: 'type',
             mapping: {
+                ingestion_accepted: '#/components/schemas/ExperimentalCanonicalInitialIngestionAccepted',
                 stream_opened: '#/components/schemas/ExperimentalCanonicalInteractionStreamOpened',
                 stream_resumed: '#/components/schemas/ExperimentalCanonicalInteractionStreamResumed',
                 accepted_recovery_opened: '#/components/schemas/ExperimentalCanonicalInteractionAcceptedRecoveryOpened',

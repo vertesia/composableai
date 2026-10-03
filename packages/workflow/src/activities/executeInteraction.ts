@@ -14,6 +14,7 @@ import type {
     EnhancedExperimentalCanonicalInteractionExecutionResult,
     VertesiaClient,
 } from '@vertesia/client';
+import { CanonicalInteractionStreamProtocolError } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import {
     CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE,
@@ -857,6 +858,13 @@ export async function executeCanonicalInteractionFromActivity(
                 {
                     signal: cancellationSignal,
                     on_envelope: (envelope) => {
+                        // This activity executes ordinary interactions, never targetless initial ingestion.
+                        // A durable input ACK cannot stand in for a model stream or accepted response.
+                        if (envelope.type === 'ingestion_accepted') {
+                            throw new CanonicalInteractionStreamProtocolError(
+                                'Canonical interaction activity cannot accept an initial ingestion ACK',
+                            );
+                        }
                         activityContext.heartbeat({
                             operation_id: operationId,
                             run_id: envelope.run_id,
