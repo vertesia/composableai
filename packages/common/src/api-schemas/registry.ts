@@ -783,6 +783,7 @@ import {
     AppendRunConversationToolResultsResponseSchema,
     ExperimentalAgentProcessingHeadPayloadSchema,
     ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema,
+    ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema,
     ExperimentalCanonicalVersionedHeadPayloadSchema,
     PublishAgentRunConversationHeadPayloadSchema,
 } from './run-conversation-append.js';
@@ -2724,6 +2725,7 @@ const CANONICAL_TOOL_EXECUTION_SCHEMAS = {
 type RunConversationSchemaMap = {
     ExperimentalCanonicalInitialAuthoringResponse: typeof ExperimentalCanonicalInitialAuthoringResponseSchema;
     ExperimentalCanonicalInitialRenderedInputHeadPayload: typeof ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema;
+    ExperimentalCanonicalToolCatalogSelectionHeadPayload: typeof ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema;
     RunConversationResponse: typeof RunConversationResponseSchema;
     InitialAuthoringMedia: typeof InitialAuthoringMediaSchema;
     InitialAuthoringSegment: typeof InitialAuthoringSegmentSchema;
@@ -2744,6 +2746,7 @@ type RunConversationSchemaMap = {
 const RUN_CONVERSATION_SCHEMAS: RunConversationSchemaMap = {
     ExperimentalCanonicalInitialAuthoringResponse: ExperimentalCanonicalInitialAuthoringResponseSchema,
     ExperimentalCanonicalInitialRenderedInputHeadPayload: ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema,
+    ExperimentalCanonicalToolCatalogSelectionHeadPayload: ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema,
     RunConversationResponse: RunConversationResponseSchema,
     InitialAuthoringMedia: InitialAuthoringMediaSchema,
     InitialAuthoringSegment: InitialAuthoringSegmentSchema,
@@ -2991,6 +2994,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
         .map(([name]) => name),
     'ExperimentalCanonicalInitialAuthoringResponse',
     'ExperimentalCanonicalInitialRenderedInputHeadPayload',
+    'ExperimentalCanonicalToolCatalogSelectionHeadPayload',
     'AppendRunConversationProgramTurnPayload',
     'AppendRunConversationProgramTurnResponse',
     'AppendRunConversationToolResultsPayload',

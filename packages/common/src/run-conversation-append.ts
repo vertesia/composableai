@@ -10,3 +10,6 @@ export type ExperimentalCanonicalVersionedHeadPayload = Wire.ExperimentalCanonic
 
 export type ExperimentalCanonicalInitialRenderedInputHeadPayload =
     Wire.ExperimentalCanonicalInitialRenderedInputHeadPayload;
+
+export type ExperimentalCanonicalToolCatalogSelectionHeadPayload =
+    Wire.ExperimentalCanonicalToolCatalogSelectionHeadPayload;

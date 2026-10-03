@@ -7166,13 +7166,25 @@ export type ExperimentalAgentProcessingHeadPayload = {
 export type ExperimentalCanonicalVersionedHeadPayload =
     | ExperimentalCanonicalInitialAgentStreamRequest
     | ExperimentalAgentProcessingHeadPayload
-    | ExperimentalCanonicalInitialRenderedInputHeadPayload;
+    | ExperimentalCanonicalInitialRenderedInputHeadPayload
+    | ExperimentalCanonicalToolCatalogSelectionHeadPayload;
 export type ExperimentalCanonicalInitialRenderedInputHeadPayload = {
     kind: 'initial_rendered_input';
     activity: {
         request: ExperimentalCanonicalInitialAgentStreamRequest;
         execution_run_id: string;
     };
+};
+export type ExperimentalCanonicalToolCatalogSelectionHeadPayload = {
+    kind: 'tool_catalog_selection';
+    request: ExperimentalCanonicalToolResultsPayload;
+    retained_selection?:
+        | {
+              operation_id: string;
+              result_revision: number;
+              receipt_fingerprint: string;
+          }
+        | undefined;
 };
 /**
  * The run ref is used to identify a run document in the storage
@@ -13125,6 +13137,7 @@ export interface ApiComponentTypes {
     ConversationToolExecutionResult: ConversationToolExecutionResult;
     ExperimentalCanonicalInitialAuthoringResponse: ExperimentalCanonicalInitialAuthoringResponse;
     ExperimentalCanonicalInitialRenderedInputHeadPayload: ExperimentalCanonicalInitialRenderedInputHeadPayload;
+    ExperimentalCanonicalToolCatalogSelectionHeadPayload: ExperimentalCanonicalToolCatalogSelectionHeadPayload;
     RunConversationResponse: RunConversationResponse;
     InitialAuthoringMedia: InitialAuthoringMedia;
     InitialAuthoringSegment: InitialAuthoringSegment;

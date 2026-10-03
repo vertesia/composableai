@@ -15,6 +15,7 @@ import {
 import { z } from 'zod';
 import type * as Wire from '../wire-types.generated.js';
 import { ExperimentalAgentProcessingActivityEvidenceSchema } from './agent-processing.js';
+import { ExperimentalCanonicalToolResultsPayloadSchema } from './canonical-conversation-resume.js';
 import { ExperimentalCanonicalInitialAgentStreamRequestSchema } from './canonical-interaction-stream.js';
 
 export const MAX_APPEND_RUN_CONVERSATION_PROGRAM_TEXT_CODE_UNITS = 64 * 1024;
@@ -129,16 +130,34 @@ export const ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema = z
     })
     .meta({ id: 'ExperimentalCanonicalInitialRenderedInputHeadPayload' });
 
+/** Scheduled tools delivery only. Definitions, grants and successor source are selected by the service. */
+export const ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema = z
+    .strictObject({
+        kind: z.literal('tool_catalog_selection'),
+        request: ExperimentalCanonicalToolResultsPayloadSchema,
+        // Constraint nomination only: actual schedule and retained receipt supply authority independently.
+        retained_selection: z
+            .strictObject({
+                operation_id: IdentifierSchema,
+                result_revision: NonnegativeSafeIntegerSchema,
+                receipt_fingerprint: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+            })
+            .optional(),
+    })
+    .meta({ id: 'ExperimentalCanonicalToolCatalogSelectionHeadPayload' });
+
 /** Only the exact experimental version accepts these activity-authorized head operations. */
 export const ExperimentalCanonicalVersionedHeadPayloadSchema: z.ZodType<
     | Wire.ExperimentalCanonicalInitialAgentStreamRequest
     | Wire.ExperimentalAgentProcessingHeadPayload
     | Wire.ExperimentalCanonicalInitialRenderedInputHeadPayload
+    | Wire.ExperimentalCanonicalToolCatalogSelectionHeadPayload
 > = z
     .discriminatedUnion('kind', [
         ExperimentalCanonicalInitialAgentStreamRequestSchema,
         ExperimentalAgentProcessingHeadPayloadSchema,
         ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema,
+        ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema,
     ])
     .meta({
         id: 'ExperimentalCanonicalVersionedHeadPayload',

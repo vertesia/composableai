@@ -14192,6 +14192,44 @@
     ],
     "additionalProperties": false
   },
+  "ExperimentalCanonicalToolCatalogSelectionHeadPayload": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "tool_catalog_selection"
+      },
+      "request": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalToolResultsPayload"
+      },
+      "retained_selection": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "result_revision": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          },
+          "receipt_fingerprint": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "operation_id",
+          "result_revision",
+          "receipt_fingerprint"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "kind",
+      "request"
+    ],
+    "additionalProperties": false
+  },
   "AvailableRunConversation": {
     "type": "object",
     "properties": {
@@ -14782,6 +14820,9 @@
       },
       {
         "$ref": "#/components/schemas/ExperimentalCanonicalInitialRenderedInputHeadPayload"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalCanonicalToolCatalogSelectionHeadPayload"
       }
     ],
     "type": "object",

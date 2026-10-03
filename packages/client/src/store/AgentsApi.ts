@@ -17,6 +17,7 @@ import type {
     ExperimentalAgentWorkstreamTerminalResponse,
     ExperimentalCanonicalInitialAgentStreamRequest,
     ExperimentalCanonicalInitialRenderedInputHeadPayload,
+    ExperimentalCanonicalToolCatalogSelectionHeadPayload,
     ExperimentalClaimAgentAssetExtractionPayload,
     ExperimentalClaimAgentProcessingPayload,
     ExperimentalExtractAgentAssetPayload,
@@ -240,6 +241,22 @@ export class AgentsApi extends ApiTopic {
         });
     }
 
+    /** @internal Publish only a service-verified successful catalog grant at the exact guarded head. */
+    publishCanonicalToolCatalogSelection(
+        id: string,
+        payload: ExperimentalCanonicalToolCatalogSelectionHeadPayload,
+        scope: CanonicalConversationHeadScope,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ConversationRef> {
+        return this.put(`/${encodeURIComponent(id)}/conversation/head`, {
+            query: { conversation_scope: scope },
+            payload,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
     /** @internal Verify the actual scheduled processing task and exact durable job before archive I/O. */
     claimCanonicalProcessingJob(
         id: string,
@@ -274,11 +291,12 @@ export class AgentsApi extends ApiTopic {
         id: string,
         conversation: ConversationRef,
         scope: CanonicalConversationHeadScope = 'root',
+        options?: CanonicalInteractionRequestOptions,
     ): Promise<ConversationDocumentV0> {
         return this.get(
             `/${encodeURIComponent(id)}/conversation/${encodeURIComponent(conversation.conversation_id)}` +
                 `/revisions/${conversation.revision}`,
-            { query: { conversation_scope: scope } },
+            { ...options, query: { conversation_scope: scope } },
         );
     }
 
@@ -287,8 +305,10 @@ export class AgentsApi extends ApiTopic {
         id: string,
         conversationId: string,
         scope: CanonicalConversationHeadScope = 'root',
+        options?: CanonicalInteractionRequestOptions,
     ): Promise<ConversationDocumentV0> {
         return this.get(`/${encodeURIComponent(id)}/conversation/${encodeURIComponent(conversationId)}/head`, {
+            ...options,
             query: { conversation_scope: scope },
         });
     }

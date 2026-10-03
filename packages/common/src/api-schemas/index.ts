@@ -60,6 +60,7 @@ export {
     ModelSourceSchema,
     SchemaRefSchema,
     TextArtifactReferenceSchema,
+    ToolReferenceSchema,
 } from './interaction.js';
 export * from './oauth-server.js';
 export * from './parameters.js';

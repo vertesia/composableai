@@ -3111,6 +3111,12 @@ interface Checks {
             typeof import('./api-schemas/run-conversation-append.js').ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema
         >
     >;
+    ExperimentalCanonicalToolCatalogSelectionHeadPayload: Same<
+        W.ExperimentalCanonicalToolCatalogSelectionHeadPayload,
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema
+        >
+    >;
     ExecutionRunDocRef: Same<
         W.ExecutionRunDocRef,
         z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunDocRefSchema>
@@ -10767,6 +10773,12 @@ interface Checks {
             typeof import('./api-schemas/run-conversation-append.js').ExperimentalCanonicalInitialRenderedInputHeadPayloadSchema
         >
     >;
+    'component:ExperimentalCanonicalToolCatalogSelectionHeadPayload': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalToolCatalogSelectionHeadPayload'],
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').ExperimentalCanonicalToolCatalogSelectionHeadPayloadSchema
+        >
+    >;
     'component:RunConversationResponse': Same<
         W.ApiComponentTypes['RunConversationResponse'],
         z.infer<typeof import('./api-schemas/run-conversation.js').RunConversationResponseSchema>
@@ -11757,6 +11769,7 @@ const checks: Checks = {
     ExperimentalAgentProcessingHeadPayload: true,
     ExperimentalCanonicalVersionedHeadPayload: true,
     ExperimentalCanonicalInitialRenderedInputHeadPayload: true,
+    ExperimentalCanonicalToolCatalogSelectionHeadPayload: true,
     ExecutionRunDocRef: true,
     FindRunResult: true,
     FindRunResultArray: true,
@@ -13702,6 +13715,7 @@ const checks: Checks = {
     'component:ConversationToolExecutionResult': true,
     'component:ExperimentalCanonicalInitialAuthoringResponse': true,
     'component:ExperimentalCanonicalInitialRenderedInputHeadPayload': true,
+    'component:ExperimentalCanonicalToolCatalogSelectionHeadPayload': true,
     'component:RunConversationResponse': true,
     'component:InitialAuthoringMedia': true,
     'component:InitialAuthoringSegment': true,
@@ -13750,6 +13764,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2796);
+        expect(Object.keys(checks)).toHaveLength(2798);
     });
 });
