@@ -10641,6 +10641,8 @@ export type KnownAuditActionWire =
     | 'credentials_totp_generation'
     | 'publish'
     | 'unpublish'
+    | 'search'
+    | 'read'
     | 'inference'
     | 'embedding'
     | 'image_generation'

@@ -15,6 +15,9 @@ export const AUDIT_ACTIONS = [
     'credentials_totp_generation',
     'publish',
     'unpublish',
+    // Content access (retrieval is not proof of a human reading the document)
+    'search',
+    'read',
     // Billable operations
     'inference',
     'embedding',
