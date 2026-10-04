@@ -347,10 +347,16 @@ export const AuditAdoptionResponseSchema = z
             'Distinct user adoption sets over two equal-duration half-open periods. Ratios use available audit history, not guaranteed historical coverage. No user identities are returned.',
     });
 
-export const AuditUsageQuerySchema = AuditAdoptionQuerySchema.omit({ filter: true }).meta({
-    id: 'AuditUsageQuery',
-    description: 'Usage trends for an authorized account or project over a half-open interval of at most 366 days.',
-});
+export const AuditUsageQuerySchema = AuditAdoptionQuerySchema.omit({ filter: true })
+    .extend({
+        resolution: z.enum(['day', 'week', 'month']).optional().meta({
+            description: 'UTC calendar buckets. Weeks start Monday. Omitted: daily up to 200 dates, otherwise weekly.',
+        }),
+    })
+    .meta({
+        id: 'AuditUsageQuery',
+        description: 'Usage trends for an authorized account or project over a half-open interval of at most 366 days.',
+    });
 
 export const AuditUsageCountsSchema = z
     .strictObject({
@@ -380,7 +386,7 @@ export const AuditUsageBucketSchema = z
 export const AuditUsageResponseSchema = z
     .strictObject({
         period: AuditAdoptionPeriodSchema,
-        resolution: z.enum(['day', 'week']),
+        resolution: z.enum(['day', 'week', 'month']),
         totals: AuditUsageCountsSchema,
         timeline: z.array(AuditUsageBucketSchema),
     })

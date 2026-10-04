@@ -1806,6 +1806,7 @@ export type AuditUsageQuery = {
     projectId?: string | undefined;
     from?: string | undefined;
     to?: string | undefined;
+    resolution?: 'day' | 'week' | 'month' | undefined;
 };
 export type AuditUsageCounts = {
     active_users: number;
@@ -1825,7 +1826,7 @@ export type AuditUsageBucket = {
 };
 export type AuditUsageResponse = {
     period: AuditAdoptionPeriod;
-    resolution: 'day' | 'week';
+    resolution: 'day' | 'week' | 'month';
     totals: AuditUsageCounts;
     timeline: AuditUsageBucket[];
 };

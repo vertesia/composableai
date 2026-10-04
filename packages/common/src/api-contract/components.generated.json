@@ -16646,6 +16646,15 @@
         "type": "string",
         "format": "date-time",
         "description": "Exclusive end; defaults to now. Maximum duration: 366 days."
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week",
+          "month"
+        ],
+        "description": "UTC calendar buckets. Weeks start Monday. Omitted: daily up to 200 dates, otherwise weekly."
       }
     },
     "additionalProperties": false,
@@ -16744,7 +16753,8 @@
         "type": "string",
         "enum": [
           "day",
-          "week"
+          "week",
+          "month"
         ]
       },
       "totals": {
