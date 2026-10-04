@@ -19,3 +19,6 @@ export type AvailableCanonicalIngestionPreparationView = Wire.AvailableCanonical
 export type UnavailableCanonicalIngestionPreparationView = Wire.UnavailableCanonicalIngestionPreparationView;
 export type AvailableCanonicalIngestionRecoveryView = Wire.AvailableCanonicalIngestionRecoveryView;
 export type UnavailableCanonicalIngestionRecoveryView = Wire.UnavailableCanonicalIngestionRecoveryView;
+
+export type ExperimentalCanonicalIngestionBudgetQueueViewQuery =
+    Wire.ExperimentalCanonicalIngestionBudgetQueueViewQuery;

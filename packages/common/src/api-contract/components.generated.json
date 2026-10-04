@@ -15456,6 +15456,33 @@
     ],
     "additionalProperties": false
   },
+  "ExperimentalCanonicalIngestionBudgetQueueViewQuery": {
+    "type": "object",
+    "properties": {
+      "view": {
+        "type": "string",
+        "const": "ingestion_budget_queue"
+      },
+      "target_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 8192
+      },
+      "queue_operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "processor_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "view",
+      "target_key",
+      "queue_operation_id",
+      "processor_id"
+    ],
+    "additionalProperties": false
+  },
   "ExperimentalCanonicalIngestionPreparationViewQuery": {
     "type": "object",
     "properties": {
@@ -15554,6 +15581,9 @@
       },
       {
         "$ref": "#/components/schemas/ExperimentalCanonicalIngestionRecoveryViewQuery"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionBudgetQueueViewQuery"
       }
     ],
     "discriminator": {
@@ -15561,7 +15591,8 @@
       "mapping": {
         "initial_authoring": "#/components/schemas/ExperimentalInitialAuthoringViewQuery",
         "ingestion_preparation": "#/components/schemas/ExperimentalCanonicalIngestionPreparationViewQuery",
-        "ingestion_recovery": "#/components/schemas/ExperimentalCanonicalIngestionRecoveryViewQuery"
+        "ingestion_recovery": "#/components/schemas/ExperimentalCanonicalIngestionRecoveryViewQuery",
+        "ingestion_budget_queue": "#/components/schemas/ExperimentalCanonicalIngestionBudgetQueueViewQuery"
       }
     },
     "type": "object",
@@ -15595,6 +15626,9 @@
         "$ref": "#/components/schemas/ExperimentalInitialAuthoringViewResponse"
       },
       "ingestion_preparation": {
+        "$ref": "#/components/schemas/ExperimentalCanonicalIngestionPreparationViewResponse"
+      },
+      "ingestion_budget_queue": {
         "$ref": "#/components/schemas/ExperimentalCanonicalIngestionPreparationViewResponse"
       },
       "ingestion_recovery": {

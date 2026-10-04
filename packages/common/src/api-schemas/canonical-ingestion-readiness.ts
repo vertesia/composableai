@@ -76,6 +76,18 @@ export const ExperimentalCanonicalIngestionPreparationViewQuerySchema = z
         projection_id: ContentHashSchema,
     })
     .meta({ id: 'ExperimentalCanonicalIngestionPreparationViewQuery' });
+/** Scoped lookup of an existing derivative by its irreversible durable queue identity. Returned count
+ * metadata remains evidence only; the publisher independently verifies actual job/policy/current task.
+ */
+export const ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema = z
+    .strictObject({
+        view: z.literal('ingestion_budget_queue'),
+        target_key: ExperimentalCanonicalIngestionProjectionSchema.shape.target_reference.shape.key,
+        queue_operation_id: IdentifierSchema,
+        processor_id: IdentifierSchema,
+    })
+    .meta({ id: 'ExperimentalCanonicalIngestionBudgetQueueViewQuery' });
+
 export const AvailableCanonicalIngestionPreparationViewSchema = z
     .strictObject({
         status: z.literal('preparation_available'),
@@ -156,6 +168,7 @@ export const ExperimentalRunConversationInspectionQuerySchema = z
         ExperimentalInitialAuthoringViewQuerySchema,
         ExperimentalCanonicalIngestionPreparationViewQuerySchema,
         ExperimentalCanonicalIngestionRecoveryViewQuerySchema,
+        ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema,
     ])
     .meta({ id: 'ExperimentalRunConversationInspectionQuery' });
 /** One flat status discriminator avoids nested generated-client union wrappers. The existing view
@@ -173,6 +186,9 @@ export const ExperimentalRunConversationInspectionResponseSchema = z
         'x-vertesia-inspection-view-responses': {
             initial_authoring: { $ref: '#/components/schemas/ExperimentalInitialAuthoringViewResponse' },
             ingestion_preparation: {
+                $ref: '#/components/schemas/ExperimentalCanonicalIngestionPreparationViewResponse',
+            },
+            ingestion_budget_queue: {
                 $ref: '#/components/schemas/ExperimentalCanonicalIngestionPreparationViewResponse',
             },
             ingestion_recovery: { $ref: '#/components/schemas/ExperimentalCanonicalIngestionRecoveryViewResponse' },

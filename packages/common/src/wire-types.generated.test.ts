@@ -1205,6 +1205,12 @@ interface Checks {
             typeof import('./api-schemas/canonical-ingestion-readiness.js').UnavailableCanonicalIngestionRecoveryViewSchema
         >
     >;
+    ExperimentalCanonicalIngestionBudgetQueueViewQuery: Same<
+        W.ExperimentalCanonicalIngestionBudgetQueueViewQuery,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema
+        >
+    >;
     ExperimentalCanonicalInitialAuthoringResponse: Same<
         W.ExperimentalCanonicalInitialAuthoringResponse,
         z.infer<
@@ -10893,6 +10899,12 @@ interface Checks {
             typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionProjectionSchema
         >
     >;
+    'component:ExperimentalCanonicalIngestionBudgetQueueViewQuery': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionBudgetQueueViewQuery'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema
+        >
+    >;
     'component:ExperimentalCanonicalIngestionPreparationViewQuery': Same<
         W.ApiComponentTypes['ExperimentalCanonicalIngestionPreparationViewQuery'],
         z.infer<
@@ -11415,6 +11427,7 @@ const checks: Checks = {
     UnavailableCanonicalIngestionPreparationView: true,
     AvailableCanonicalIngestionRecoveryView: true,
     UnavailableCanonicalIngestionRecoveryView: true,
+    ExperimentalCanonicalIngestionBudgetQueueViewQuery: true,
     ExperimentalCanonicalInitialAuthoringResponse: true,
     ExperimentalCanonicalInteractionInitialState: true,
     ExperimentalCanonicalInteractionNewState: true,
@@ -13883,6 +13896,7 @@ const checks: Checks = {
     'component:ExperimentalCanonicalIngestionConcreteTarget': true,
     'component:ExperimentalCanonicalIngestionCount': true,
     'component:ExperimentalCanonicalIngestionProjection': true,
+    'component:ExperimentalCanonicalIngestionBudgetQueueViewQuery': true,
     'component:ExperimentalCanonicalIngestionPreparationViewQuery': true,
     'component:ExperimentalCanonicalIngestionPreparationViewResponse': true,
     'component:ExperimentalCanonicalIngestionRecovery': true,
@@ -13936,6 +13950,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2822);
+        expect(Object.keys(checks)).toHaveLength(2824);
     });
 });

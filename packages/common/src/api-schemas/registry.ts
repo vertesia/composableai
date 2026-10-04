@@ -2756,6 +2756,8 @@ const CANONICAL_INGESTION_READINESS_SCHEMAS = {
     ExperimentalCanonicalIngestionCount: CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionCountSchema,
     ExperimentalCanonicalIngestionProjection:
         CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionProjectionSchema,
+    ExperimentalCanonicalIngestionBudgetQueueViewQuery:
+        CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema,
     ExperimentalCanonicalIngestionPreparationViewQuery:
         CanonicalIngestionReadinessSchemas.ExperimentalCanonicalIngestionPreparationViewQuerySchema,
     ExperimentalCanonicalIngestionPreparationViewResponse:

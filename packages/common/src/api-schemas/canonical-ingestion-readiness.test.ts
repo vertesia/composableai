@@ -3,6 +3,7 @@ import addFormats from 'ajv-formats';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
+    ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema,
     ExperimentalCanonicalIngestionPreparationViewResponseSchema,
     ExperimentalCanonicalIngestionRecoverySchema,
     ExperimentalCanonicalIngestionRecoveryViewQuerySchema,
@@ -277,5 +278,36 @@ describe('named flat inspection response leaves', () => {
             { status, reason: 'not_recorded', admission: {} },
         ])
             expect(check(invalid)).toBe(false);
+    });
+});
+
+// Query data is a bounded nomination only. Current membership and exact durable queue/count replay remain host checks.
+describe('existing target budget queue inspection reference', () => {
+    const query = {
+        view: 'ingestion_budget_queue',
+        target_key: 'existing-target',
+        queue_operation_id: 'actual-queue',
+        processor_id: 'externalize-text',
+    };
+    it('keeps the fourth flat view strict in runtime and generated AJV without new response statuses', () => {
+        const check = validator('ExperimentalCanonicalIngestionBudgetQueueViewQuery');
+        expect(ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema.parse(query)).toEqual(query);
+        expect(ExperimentalRunConversationInspectionQuerySchema.parse(query)).toEqual(query);
+        expect(check(query)).toBe(true);
+        expect(ExperimentalRunConversationInspectionResponseSchema.options).toHaveLength(6);
+        for (const invalid of [
+            { ...query, projection_id: hash },
+            { ...query, source: recovery.source },
+            { ...query, target: recovery.concrete_target },
+            { ...query, admission: {} },
+            { ...query, view: 'ingestion_recovery' },
+            { ...query, processor_id: '' },
+        ]) {
+            expect(ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema.safeParse(invalid).success).toBe(false);
+            expect(check(invalid)).toBe(false);
+        }
+        const { queue_operation_id: _queue, ...missing } = query;
+        expect(ExperimentalRunConversationInspectionQuerySchema.safeParse(missing).success).toBe(false);
+        expect(check(missing)).toBe(false);
     });
 });

@@ -2595,7 +2595,8 @@ export type ExperimentalCanonicalIngestionPreparationViewResponse =
 export type ExperimentalRunConversationInspectionQuery =
     | ExperimentalInitialAuthoringViewQuery
     | ExperimentalCanonicalIngestionPreparationViewQuery
-    | ExperimentalCanonicalIngestionRecoveryViewQuery;
+    | ExperimentalCanonicalIngestionRecoveryViewQuery
+    | ExperimentalCanonicalIngestionBudgetQueueViewQuery;
 export type ExperimentalRunConversationInspectionResponse =
     | AvailableInitialAuthoringView
     | UnavailableInitialAuthoringView
@@ -2669,6 +2670,12 @@ export type AvailableCanonicalIngestionRecoveryView = {
 export type UnavailableCanonicalIngestionRecoveryView = {
     status: 'recovery_unavailable';
     reason: 'not_recorded';
+};
+export type ExperimentalCanonicalIngestionBudgetQueueViewQuery = {
+    view: 'ingestion_budget_queue';
+    target_key: string;
+    queue_operation_id: string;
+    processor_id: string;
 };
 export type ExperimentalCanonicalInitialAuthoringResponse = {
     execution_run_id: string;
@@ -13286,6 +13293,7 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalIngestionConcreteTarget: ExperimentalCanonicalIngestionConcreteTarget;
     ExperimentalCanonicalIngestionCount: ExperimentalCanonicalIngestionCount;
     ExperimentalCanonicalIngestionProjection: ExperimentalCanonicalIngestionProjection;
+    ExperimentalCanonicalIngestionBudgetQueueViewQuery: ExperimentalCanonicalIngestionBudgetQueueViewQuery;
     ExperimentalCanonicalIngestionPreparationViewQuery: ExperimentalCanonicalIngestionPreparationViewQuery;
     ExperimentalCanonicalIngestionPreparationViewResponse: ExperimentalCanonicalIngestionPreparationViewResponse;
     ExperimentalCanonicalIngestionRecovery: ExperimentalCanonicalIngestionRecovery;

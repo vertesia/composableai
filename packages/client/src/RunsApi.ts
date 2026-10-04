@@ -169,6 +169,20 @@ export class RunsApi extends ApiTopic {
         });
     }
 
+    /** Scoped existing-count lookup; the reference nominates data only, never job/readiness authority. */
+    retrieveCanonicalIngestionBudgetQueue(
+        id: string,
+        reference: { target_key: string; queue_operation_id: string; processor_id: string },
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalCanonicalIngestionPreparationViewResponse> {
+        return this.get(`/${encodeURIComponent(id)}/conversation`, {
+            headers: canonicalInteractionHeaders(options?.headers),
+            query: { view: 'ingestion_budget_queue', ...reference },
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
     /** Exact verified retained preparation descriptor, never current source/permission authority. */
     retrieveCanonicalIngestionRecovery(
         id: string,
