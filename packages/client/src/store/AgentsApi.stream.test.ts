@@ -383,4 +383,54 @@ describe('AgentsApi.streamMessages reconnection', () => {
 
         await expect(done).resolves.toBeNull();
     });
+    it.each(['agent', 'workflow'] as const)('cancels the %s stream during reconnection', async (kind) => {
+        const harness = createHarness();
+        const abort = new AbortController();
+        const done =
+            kind === 'agent'
+                ? harness.client.agents.streamMessages(AGENT_RUN_ID, undefined, undefined, abort.signal)
+                : harness.client.workflows.streamMessages(
+                      'workflow-1',
+                      AGENT_RUN_ID,
+                      undefined,
+                      undefined,
+                      abort.signal,
+                  );
+        await settle();
+        FakeEventSource.instances[0].fail();
+        abort.abort();
+        await settle();
+        await expect(done).resolves.toBeNull();
+        await settle(BACKOFF_CEILING_MS);
+        expect(FakeEventSource.instances).toHaveLength(1);
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('cancels polling without leaving timers or connections', async () => {
+        const harness = createHarness();
+        const abort = new AbortController();
+        const done = harness.client.agents.streamMessages(AGENT_RUN_ID, undefined, undefined, abort.signal);
+        await settle();
+        for (let i = 0; i < 11; i++) await failCurrentConnection();
+        abort.abort();
+        await settle();
+        await expect(done).resolves.toBeNull();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('delivers every message in a poll batch with a shared timestamp', async () => {
+        const harness = createHarness();
+        harness.setHistory([{ t: AgentMessageType.UPDATE, m: 'history', ts: 1000 }]);
+        harness.setPollResponse(() => [
+            { t: AgentMessageType.UPDATE, m: 'answer', ts: 2000 },
+            { t: AgentMessageType.COMPLETE, m: 'complete', w: 'main', ts: 2000 },
+        ]);
+        const received: string[] = [];
+        const done = harness.client.agents.streamMessages(AGENT_RUN_ID, (message) => received.push(message.message));
+        await settle();
+        for (let i = 0; i < 11; i++) await failCurrentConnection();
+        await expect(done).resolves.toBeNull();
+        expect(received).toEqual(['history', 'answer', 'complete']);
+        expect(vi.getTimerCount()).toBe(0);
+    });
 });
