@@ -3209,6 +3209,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AgentProjectConfiguration',
     'AgentCheckpointConfiguration',
     'AgentBudgetConfiguration',
+    ...Object.keys(RUN_BUDGET_SCHEMAS),
     // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
     'HttpTimeoutOptions',
     // The intake policy tree. Every object in it is published closed today, including the inline

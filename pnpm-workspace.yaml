@@ -24,14 +24,16 @@ minimumReleaseAgeExclude:
   - js-yaml@5.2.2
   - js-yaml@4.3.1
   - mermaid@11.16.1
-  # GHSA-mh99-v99m-4gvg backport to the 2.x line, published 2026-07-30. Version-scoped exception
-  # so we take the fix now rather than waiting out the 3-day cooldown.
-  - brace-expansion@2.1.4
+  # Security fixes published inside the 3-day cooldown.
+  - brace-expansion@2.1.7 || 5.0.12
+  - fast-uri@3.1.8
+  - "@grpc/grpc-js@1.13.6 || 1.14.5"
+  - serialize-javascript@7.1.2
   # GHSA-8j4g-w8fx-2239 (ReDoS in CORS middleware) fix, published 2026-08-03. Version-scoped
   # exception so we take the fix now rather than waiting out the 3-day cooldown.
   - hono@4.12.34
-  # Renovate security update: dompurify@3.4.13
-  - dompurify@3.4.13
+  # Renovate security update: dompurify@3.4.13 || 3.4.16
+  - dompurify@3.4.13 || 3.4.16
 catalog:
   # Keep this synchronized with Studio and Llumiverse: each repository generates schemas from
   # its own local workspace and lockfile, so an override in another repository cannot control it.
@@ -75,8 +77,8 @@ overrides:
   "browserslist@<4.28.7": 4.28.8
   # GHSA-gqvv-2mrq-wpjv, GHSA-g6gw-c38x-mqfc, and GHSA-crvj-82cr-hjcx.
   "hono@<4.13.8": 4.13.8
-  # Brace-expansion security floors preserve consumer major versions. New versions remain
-  # subject to the normal three-day release age.
+  # Brace-expansion denial-of-service floors preserve consumer major versions; new releases
+  # remain subject to the strict three-day release age.
   "brace-expansion@>=2.0.0 <2.1.7": 2.1.7
   "brace-expansion@>=3.0.0 <5.0.12": 5.0.12
   diff@>=6.0.0 <8.0.3: ^8.0.3
@@ -84,7 +86,8 @@ overrides:
   # GHSA-7p8r-x3mc-p8w7, GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc,
   # GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp, GHSA-qw65-cvwx-89v3, and GHSA-58mr-gqgx-xq4g.
   "fast-uri@>=3.0.0 <3.1.8": 3.1.8
-  # Floor vulnerable grpc-js consumers on patched versions, subject to normal release age.
+  # Floor vulnerable grpc-js 1.x consumers on patched, range-compatible releases
+  # subject to the strict three-day release age.
   "@grpc/grpc-js@<1.13.6": 1.13.6
   "@grpc/grpc-js@>=1.14.0 <1.14.5": 1.14.5
   form-data@>=4.0.0 <4.0.6: ^4.0.6

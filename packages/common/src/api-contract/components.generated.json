@@ -15455,7 +15455,8 @@
     "required": [
       "workflow_id",
       "first_run_id"
-    ]
+    ],
+    "additionalProperties": false
   },
   "RunBudgetUsage": {
     "type": "object",
@@ -15477,7 +15478,8 @@
       "input",
       "cached_input",
       "output"
-    ]
+    ],
+    "additionalProperties": false
   },
   "ReadRunBudgetUsagePayload": {
     "type": "object",
@@ -15506,7 +15508,8 @@
       "project_id",
       "agent_run_id",
       "owner"
-    ]
+    ],
+    "additionalProperties": false
   },
   "RunBudgetTotals": {
     "type": "object",
@@ -15545,7 +15548,8 @@
       "estimated_nano_usd",
       "unmeasured_calls",
       "missing_usage_calls"
-    ]
+    ],
+    "additionalProperties": false
   },
   "RunBudgetCapability": {
     "type": "object",
@@ -15568,7 +15572,8 @@
     "required": [
       "supported",
       "source"
-    ]
+    ],
+    "additionalProperties": false
   },
   "RunBudgetCapabilityQuery": {
     "type": "object",
@@ -15588,6 +15593,7 @@
     "required": [
       "model"
     ],
+    "additionalProperties": false,
     "description": "Selected model and requested serving tier for run budget admission."
   },
   "CreateDelegationGrantPayload": {
