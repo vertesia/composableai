@@ -1802,6 +1802,33 @@ export type AuditAdoptionResponse = {
     top_projects: AuditAdoptionProject[];
     history: AuditAdoptionHistory;
 };
+export type AuditUsageQuery = {
+    projectId?: string | undefined;
+    from?: string | undefined;
+    to?: string | undefined;
+};
+export type AuditUsageCounts = {
+    active_users: number;
+    agent_runs: number;
+    agent_users: number;
+    direct_calls: number;
+    direct_call_users: number;
+    content_objects: number;
+    user_content_objects: number;
+    other_content_objects: number;
+};
+export type AuditUsageBucket = {
+    from: string;
+    to: string;
+    partial: boolean;
+    counts: AuditUsageCounts;
+};
+export type AuditUsageResponse = {
+    period: AuditAdoptionPeriod;
+    resolution: 'day' | 'week';
+    totals: AuditUsageCounts;
+    timeline: AuditUsageBucket[];
+};
 export type WebsiteCredentialCapability = 'password' | 'totp' | 'oauth';
 export type WebsiteCredentialTotpAlgorithm = 'SHA1' | 'SHA256' | 'SHA512';
 export type WebsiteCredentialWebsite = {
@@ -11665,6 +11692,10 @@ export interface ApiComponentTypes {
     AuditAdoptionProject: AuditAdoptionProject;
     AuditAdoptionQuery: AuditAdoptionQuery;
     AuditAdoptionResponse: AuditAdoptionResponse;
+    AuditUsageQuery: AuditUsageQuery;
+    AuditUsageCounts: AuditUsageCounts;
+    AuditUsageBucket: AuditUsageBucket;
+    AuditUsageResponse: AuditUsageResponse;
     AuditMeter: AuditMeter;
     KnownAuditAction: KnownAuditActionWire;
     EventCategory: EventCategory;

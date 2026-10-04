@@ -95,6 +95,10 @@ export type AuditAdoptionActiveDays = Wire.AuditAdoptionActiveDays;
 export type AuditAdoptionProject = Wire.AuditAdoptionProject;
 export type AuditAdoptionHistory = Wire.AuditAdoptionHistory;
 export type AuditAdoptionResponse = Wire.AuditAdoptionResponse;
+export type AuditUsageQuery = Wire.AuditUsageQuery;
+export type AuditUsageCounts = Wire.AuditUsageCounts;
+export type AuditUsageBucket = Wire.AuditUsageBucket;
+export type AuditUsageResponse = Wire.AuditUsageResponse;
 
 /** Billable audit actions for cost analytics queries */
 export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];

@@ -16631,6 +16631,141 @@
     "additionalProperties": false,
     "description": "Distinct user adoption sets over two equal-duration half-open periods. Ratios use available audit history, not guaranteed historical coverage. No user identities are returned."
   },
+  "AuditUsageQuery": {
+    "type": "object",
+    "properties": {
+      "projectId": {
+        "type": "string"
+      },
+      "from": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Inclusive start; defaults to 30 days before to."
+      },
+      "to": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Exclusive end; defaults to now. Maximum duration: 366 days."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Usage trends for an authorized account or project over a half-open interval of at most 366 days."
+  },
+  "AuditUsageCounts": {
+    "type": "object",
+    "properties": {
+      "active_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "agent_runs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "agent_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "direct_calls": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "direct_call_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "content_objects": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "user_content_objects": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "other_content_objects": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "active_users",
+      "agent_runs",
+      "agent_users",
+      "direct_calls",
+      "direct_call_users",
+      "content_objects",
+      "user_content_objects",
+      "other_content_objects"
+    ],
+    "additionalProperties": false,
+    "description": "Distinct users and objects; user-initiated run operations and standalone inference audit events."
+  },
+  "AuditUsageBucket": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "to": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "partial": {
+        "type": "boolean"
+      },
+      "counts": {
+        "$ref": "#/components/schemas/AuditUsageCounts"
+      }
+    },
+    "required": [
+      "from",
+      "to",
+      "partial",
+      "counts"
+    ],
+    "additionalProperties": false
+  },
+  "AuditUsageResponse": {
+    "type": "object",
+    "properties": {
+      "period": {
+        "$ref": "#/components/schemas/AuditAdoptionPeriod"
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week"
+        ]
+      },
+      "totals": {
+        "$ref": "#/components/schemas/AuditUsageCounts"
+      },
+      "timeline": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditUsageBucket"
+        }
+      }
+    },
+    "required": [
+      "period",
+      "resolution",
+      "totals",
+      "timeline"
+    ],
+    "additionalProperties": false,
+    "description": "UTC usage trends. Period-wide distinct users are not sums of bucket populations. No user identities are returned."
+  },
   "AuditMeter": {
     "type": "object",
     "properties": {

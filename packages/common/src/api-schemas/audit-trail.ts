@@ -346,3 +346,46 @@ export const AuditAdoptionResponseSchema = z
         description:
             'Distinct user adoption sets over two equal-duration half-open periods. Ratios use available audit history, not guaranteed historical coverage. No user identities are returned.',
     });
+
+export const AuditUsageQuerySchema = AuditAdoptionQuerySchema.omit({ filter: true }).meta({
+    id: 'AuditUsageQuery',
+    description: 'Usage trends for an authorized account or project over a half-open interval of at most 366 days.',
+});
+
+export const AuditUsageCountsSchema = z
+    .strictObject({
+        active_users: z.number().int().nonnegative(),
+        agent_runs: z.number().int().nonnegative(),
+        agent_users: z.number().int().nonnegative(),
+        direct_calls: z.number().int().nonnegative(),
+        direct_call_users: z.number().int().nonnegative(),
+        content_objects: z.number().int().nonnegative(),
+        user_content_objects: z.number().int().nonnegative(),
+        other_content_objects: z.number().int().nonnegative(),
+    })
+    .meta({
+        id: 'AuditUsageCounts',
+        description: 'Distinct users and objects; user-initiated run operations and standalone inference audit events.',
+    });
+
+export const AuditUsageBucketSchema = z
+    .strictObject({
+        from: z.string().meta({ format: 'date-time' }),
+        to: z.string().meta({ format: 'date-time' }),
+        partial: z.boolean(),
+        counts: AuditUsageCountsSchema,
+    })
+    .meta({ id: 'AuditUsageBucket' });
+
+export const AuditUsageResponseSchema = z
+    .strictObject({
+        period: AuditAdoptionPeriodSchema,
+        resolution: z.enum(['day', 'week']),
+        totals: AuditUsageCountsSchema,
+        timeline: z.array(AuditUsageBucketSchema),
+    })
+    .meta({
+        id: 'AuditUsageResponse',
+        description:
+            'UTC usage trends. Period-wide distinct users are not sums of bucket populations. No user identities are returned.',
+    });

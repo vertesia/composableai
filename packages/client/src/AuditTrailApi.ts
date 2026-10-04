@@ -6,6 +6,8 @@ import type {
     AuditAggregationResponse,
     AuditTrailQuery,
     AuditTrailResponse,
+    AuditUsageQuery,
+    AuditUsageResponse,
 } from '@vertesia/common';
 
 export default class AuditTrailApi extends ApiTopic {
@@ -38,5 +40,9 @@ export default class AuditTrailApi extends ApiTopic {
 
     adoption(query: AuditAdoptionQuery = {}): Promise<AuditAdoptionResponse> {
         return this.post('/adoption', { payload: query });
+    }
+
+    usage(query: AuditUsageQuery = {}): Promise<AuditUsageResponse> {
+        return this.post('/usage', { payload: query });
     }
 }

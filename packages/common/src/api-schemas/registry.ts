@@ -234,6 +234,10 @@ import {
     AuditTrailEventSchema,
     AuditTrailQuerySchema,
     AuditTrailResponseSchema,
+    AuditUsageBucketSchema,
+    AuditUsageCountsSchema,
+    AuditUsageQuerySchema,
+    AuditUsageResponseSchema,
     EventCategorySchema,
     KnownAuditActionSchema,
 } from './audit-trail.js';
@@ -2132,6 +2136,10 @@ const AUDIT_TRAIL_SCHEMAS = {
     AuditAdoptionProject: AuditAdoptionProjectSchema,
     AuditAdoptionQuery: AuditAdoptionQuerySchema,
     AuditAdoptionResponse: AuditAdoptionResponseSchema,
+    AuditUsageQuery: AuditUsageQuerySchema,
+    AuditUsageCounts: AuditUsageCountsSchema,
+    AuditUsageBucket: AuditUsageBucketSchema,
+    AuditUsageResponse: AuditUsageResponseSchema,
     // The audit trail: the events the endpoint pages through and the aggregation it
     // computes over them.
     AuditMeter: AuditMeterSchema,
@@ -3442,6 +3450,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AuditAdoptionProject',
     'AuditAdoptionQuery',
     'AuditAdoptionResponse',
+    'AuditUsageQuery',
+    'AuditUsageCounts',
+    'AuditUsageBucket',
+    'AuditUsageResponse',
     'ViewSortClause',
     'ViewResultMedia',
     'ViewBoardColumn',

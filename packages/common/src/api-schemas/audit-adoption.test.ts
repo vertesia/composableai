@@ -1,8 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { AuditAdoptionQuerySchema, AuditAdoptionResponseSchema } from './audit-trail.js';
+import {
+    AuditAdoptionQuerySchema,
+    AuditAdoptionResponseSchema,
+    AuditUsageCountsSchema,
+    AuditUsageQuerySchema,
+} from './audit-trail.js';
 import { ApiSchemaComponents } from './registry.js';
 
 describe('audit adoption contracts', () => {
+    it('registers usage trends with no activity filters or caller-selected account', () => {
+        for (const name of ['AuditUsageQuery', 'AuditUsageCounts', 'AuditUsageBucket', 'AuditUsageResponse']) {
+            expect(ApiSchemaComponents[name]).toMatchObject({ type: 'object', additionalProperties: false });
+        }
+        expect(AuditUsageQuerySchema.safeParse({ filter: { actions: ['create'] } }).success).toBe(false);
+        expect(AuditUsageQuerySchema.safeParse({ accountId: 'other' }).success).toBe(false);
+        expect(AuditUsageQuerySchema.safeParse({ projectId: 'p', from: '2026-01-01T00:00:00Z' }).success).toBe(true);
+        expect(AuditUsageCountsSchema.safeParse({ active_users: -1 }).success).toBe(false);
+    });
     it('registers closed canonical schemas without an actor or coverage configuration input', () => {
         for (const name of ['AuditAdoptionQuery', 'AuditAdoptionResponse', 'AuditAdoptionHistory']) {
             expect(ApiSchemaComponents[name]).toMatchObject({ type: 'object', additionalProperties: false });

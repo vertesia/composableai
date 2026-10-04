@@ -787,6 +787,22 @@ interface Checks {
         W.AuditAdoptionResponse,
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionResponseSchema>
     >;
+    AuditUsageQuery: Same<
+        W.AuditUsageQuery,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageQuerySchema>
+    >;
+    AuditUsageCounts: Same<
+        W.AuditUsageCounts,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageCountsSchema>
+    >;
+    AuditUsageBucket: Same<
+        W.AuditUsageBucket,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageBucketSchema>
+    >;
+    AuditUsageResponse: Same<
+        W.AuditUsageResponse,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageResponseSchema>
+    >;
     WebsiteCredentialCapability: Same<
         W.WebsiteCredentialCapability,
         z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialCapabilitySchema>
@@ -8429,6 +8445,22 @@ interface Checks {
         W.ApiComponentTypes['AuditAdoptionResponse'],
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionResponseSchema>
     >;
+    'component:AuditUsageQuery': Same<
+        W.ApiComponentTypes['AuditUsageQuery'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageQuerySchema>
+    >;
+    'component:AuditUsageCounts': Same<
+        W.ApiComponentTypes['AuditUsageCounts'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageCountsSchema>
+    >;
+    'component:AuditUsageBucket': Same<
+        W.ApiComponentTypes['AuditUsageBucket'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageBucketSchema>
+    >;
+    'component:AuditUsageResponse': Same<
+        W.ApiComponentTypes['AuditUsageResponse'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageResponseSchema>
+    >;
     'component:AuditMeter': Same<
         W.ApiComponentTypes['AuditMeter'],
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditMeterSchema>
@@ -9786,6 +9818,10 @@ const checks: Checks = {
     AuditAdoptionProject: true,
     AuditAdoptionHistory: true,
     AuditAdoptionResponse: true,
+    AuditUsageQuery: true,
+    AuditUsageCounts: true,
+    AuditUsageBucket: true,
+    AuditUsageResponse: true,
     WebsiteCredentialCapability: true,
     WebsiteCredentialTotpAlgorithm: true,
     WebsiteCredentialWebsite: true,
@@ -11803,6 +11839,10 @@ const checks: Checks = {
     'component:AuditAdoptionProject': true,
     'component:AuditAdoptionQuery': true,
     'component:AuditAdoptionResponse': true,
+    'component:AuditUsageQuery': true,
+    'component:AuditUsageCounts': true,
+    'component:AuditUsageBucket': true,
+    'component:AuditUsageResponse': true,
     'component:AuditMeter': true,
     'component:KnownAuditAction': true,
     'component:EventCategory': true,
@@ -12091,6 +12131,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2521);
+        expect(Object.keys(checks)).toHaveLength(2529);
     });
 });
