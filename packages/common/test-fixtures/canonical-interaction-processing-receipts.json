@@ -1751,6 +1751,355 @@
         "output_reserve_tokens": 0,
         "measurement_policy": "identified_estimate"
       }
+    },
+    {
+      "name": "receipt_retrieval_requirements_absent",
+      "component": "ConversationOperationReceipt",
+      "value": {
+        "id": "append:retrieval-requirements",
+        "conversation_id": "conversation:fixture",
+        "payload_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base_revision": 1,
+        "result_revision": 2,
+        "recorded_at": "2026-10-05T00:00:00.000Z"
+      }
+    },
+    {
+      "name": "receipt_retrieval_requirements_empty",
+      "component": "ConversationOperationReceipt",
+      "value": {
+        "id": "append:retrieval-requirements",
+        "conversation_id": "conversation:fixture",
+        "payload_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base_revision": 1,
+        "result_revision": 2,
+        "recorded_at": "2026-10-05T00:00:00.000Z",
+        "accepted_retrieval_requirements": []
+      }
+    },
+    {
+      "name": "receipt_retrieval_requirements_structured",
+      "component": "ConversationOperationReceipt",
+      "value": {
+        "id": "append:retrieval-requirements",
+        "conversation_id": "conversation:fixture",
+        "payload_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base_revision": 1,
+        "result_revision": 2,
+        "recorded_at": "2026-10-05T00:00:00.000Z",
+        "accepted_retrieval_requirements": [
+          {
+            "id": "requirement:archive",
+            "asset_id": "asset:archive",
+            "retrieval": {
+              "capability": "read_artifact",
+              "version": 1,
+              "tool_definition_id": "definition:read-artifact",
+              "arguments": {
+                "path": "canonical-tool-results/v1/tool/call/result.json",
+                "start_byte": 17,
+                "byte_count": 29,
+                "options": {
+                  "custom": null,
+                  "labels": [
+                    "résumé",
+                    true,
+                    3
+                  ]
+                }
+              }
+            },
+            "accepted_asset_operation_id": "append:original-assets"
+          },
+          {
+            "id": "requirement:future",
+            "asset_id": "asset:future",
+            "retrieval": {
+              "capability": "future:canonical-reader",
+              "version": 2,
+              "arguments": {
+                "opaque_option": {
+                  "new_field": "kept",
+                  "optional": null
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "retrieval_requirement_accepted_asset_binding",
+      "component": "ConversationContextRetrievalRequirement",
+      "value": {
+        "id": "requirement:archive",
+        "asset_id": "asset:archive",
+        "retrieval": {
+          "capability": "read_artifact",
+          "version": 1,
+          "tool_definition_id": "definition:read-artifact",
+          "arguments": {
+            "path": "canonical-tool-results/v1/tool/call/result.json",
+            "start_byte": 17,
+            "byte_count": 29,
+            "options": {
+              "custom": null,
+              "labels": [
+                "résumé",
+                true,
+                3
+              ]
+            }
+          }
+        },
+        "accepted_asset_operation_id": "append:original-assets"
+      }
+    },
+    {
+      "name": "retrieval_requirement_future_capability_optional_binding",
+      "component": "ConversationContextRetrievalRequirement",
+      "value": {
+        "id": "requirement:future",
+        "asset_id": "asset:future",
+        "retrieval": {
+          "capability": "future:canonical-reader",
+          "version": 2,
+          "arguments": {
+            "opaque_option": {
+              "new_field": "kept",
+              "optional": null
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "execution_receipt_retrieval_metadata_absent",
+      "component": "ConversationExecutionReceipt",
+      "value": {
+        "id": "execution:read-artifact",
+        "call_id": "call:read-artifact",
+        "executor": "application",
+        "host_execution_id": "activity:read-artifact",
+        "attempt_id": "attempt:read-artifact:1",
+        "status": "success",
+        "result_turn_id": "turn:read-artifact",
+        "result_fingerprint": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "recorded_at": "2026-10-05T00:00:00.000Z",
+        "call_source": {
+          "conversation": {
+            "conversation_id": "conversation:fixture",
+            "revision": 3
+          },
+          "turn_id": "turn:accepted-call",
+          "block_id": "block:accepted-call",
+          "call_id": "call:read-artifact",
+          "call_fingerprint": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        }
+      }
+    },
+    {
+      "name": "execution_receipt_retrieval_byte_excerpt",
+      "component": "ConversationExecutionReceipt",
+      "value": {
+        "id": "execution:read-artifact",
+        "call_id": "call:read-artifact",
+        "executor": "application",
+        "host_execution_id": "activity:read-artifact",
+        "attempt_id": "attempt:read-artifact:1",
+        "status": "success",
+        "result_turn_id": "turn:read-artifact",
+        "result_fingerprint": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "recorded_at": "2026-10-05T00:00:00.000Z",
+        "call_source": {
+          "conversation": {
+            "conversation_id": "conversation:fixture",
+            "revision": 3
+          },
+          "turn_id": "turn:accepted-call",
+          "block_id": "block:accepted-call",
+          "call_id": "call:read-artifact",
+          "call_fingerprint": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "metadata": {
+          "retrieval_excerpt": {
+            "version": 1,
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 3
+            },
+            "asset_id": "asset:archive",
+            "accepted_asset_operation_id": "append:original-assets",
+            "external_reference_block_id": "reference:original-result",
+            "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "byte_start": 17,
+            "byte_end_exclusive": 46,
+            "tool_definition_id": "definition:read-artifact",
+            "projection": {
+              "kind": "json_byte_excerpt"
+            },
+            "returned_block_id": "returned:excerpt",
+            "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        }
+      }
+    },
+    {
+      "name": "execution_receipt_retrieval_line_excerpt",
+      "component": "ConversationExecutionReceipt",
+      "value": {
+        "id": "execution:read-artifact",
+        "call_id": "call:read-artifact",
+        "executor": "application",
+        "host_execution_id": "activity:read-artifact",
+        "attempt_id": "attempt:read-artifact:1",
+        "status": "success",
+        "result_turn_id": "turn:read-artifact",
+        "result_fingerprint": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "recorded_at": "2026-10-05T00:00:00.000Z",
+        "call_source": {
+          "conversation": {
+            "conversation_id": "conversation:fixture",
+            "revision": 3
+          },
+          "turn_id": "turn:accepted-call",
+          "block_id": "block:accepted-call",
+          "call_id": "call:read-artifact",
+          "call_fingerprint": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "metadata": {
+          "retrieval_excerpt": {
+            "version": 1,
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 3
+            },
+            "asset_id": "asset:archive",
+            "accepted_asset_operation_id": "append:original-assets",
+            "external_reference_block_id": "reference:original-result",
+            "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "byte_start": 17,
+            "byte_end_exclusive": 46,
+            "tool_definition_id": "definition:read-artifact",
+            "projection": {
+              "kind": "rendered_line_excerpt",
+              "start_line": 2,
+              "end_line": 4,
+              "line_numbers": true
+            },
+            "returned_block_id": "returned:excerpt",
+            "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          }
+        }
+      }
+    },
+    {
+      "name": "retrieval_excerpt_bytes_exact_identity",
+      "component": "ConversationToolRetrievalExcerpt",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 3
+        },
+        "asset_id": "asset:archive",
+        "accepted_asset_operation_id": "append:original-assets",
+        "external_reference_block_id": "reference:original-result",
+        "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "byte_start": 17,
+        "byte_end_exclusive": 46,
+        "tool_definition_id": "definition:read-artifact",
+        "projection": {
+          "kind": "json_byte_excerpt"
+        },
+        "returned_block_id": "returned:excerpt",
+        "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "name": "retrieval_excerpt_lines_exact_identity",
+      "component": "ConversationToolRetrievalExcerpt",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 3
+        },
+        "asset_id": "asset:archive",
+        "accepted_asset_operation_id": "append:original-assets",
+        "external_reference_block_id": "reference:original-result",
+        "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "byte_start": 17,
+        "byte_end_exclusive": 46,
+        "tool_definition_id": "definition:read-artifact",
+        "projection": {
+          "kind": "rendered_line_excerpt",
+          "start_line": 2,
+          "end_line": 4,
+          "line_numbers": true
+        },
+        "returned_block_id": "returned:excerpt",
+        "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "name": "retrieval_metadata_byte_excerpt",
+      "component": "ConversationToolExecutionMetadata",
+      "value": {
+        "retrieval_excerpt": {
+          "version": 1,
+          "source": {
+            "conversation_id": "conversation:fixture",
+            "revision": 3
+          },
+          "asset_id": "asset:archive",
+          "accepted_asset_operation_id": "append:original-assets",
+          "external_reference_block_id": "reference:original-result",
+          "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "byte_start": 17,
+          "byte_end_exclusive": 46,
+          "tool_definition_id": "definition:read-artifact",
+          "projection": {
+            "kind": "json_byte_excerpt"
+          },
+          "returned_block_id": "returned:excerpt",
+          "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      }
+    },
+    {
+      "name": "retrieval_metadata_line_excerpt",
+      "component": "ConversationToolExecutionMetadata",
+      "value": {
+        "retrieval_excerpt": {
+          "version": 1,
+          "source": {
+            "conversation_id": "conversation:fixture",
+            "revision": 3
+          },
+          "asset_id": "asset:archive",
+          "accepted_asset_operation_id": "append:original-assets",
+          "external_reference_block_id": "reference:original-result",
+          "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "byte_start": 17,
+          "byte_end_exclusive": 46,
+          "tool_definition_id": "definition:read-artifact",
+          "projection": {
+            "kind": "rendered_line_excerpt",
+            "start_line": 2,
+            "end_line": 4,
+            "line_numbers": true
+          },
+          "returned_block_id": "returned:excerpt",
+          "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      }
     }
   ],
   "invalid": [
@@ -2965,6 +3314,430 @@
         "max_input_tokens": 4096,
         "output_reserve_tokens": 0,
         "measurement_policy": "future_policy"
+      }
+    },
+    {
+      "name": "receipt_retrieval_requirements_null",
+      "component": "ConversationOperationReceipt",
+      "value": {
+        "id": "append:retrieval-requirements",
+        "conversation_id": "conversation:fixture",
+        "payload_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base_revision": 1,
+        "result_revision": 2,
+        "recorded_at": "2026-10-05T00:00:00.000Z",
+        "accepted_retrieval_requirements": null
+      }
+    },
+    {
+      "name": "receipt_retrieval_requirements_not_array",
+      "component": "ConversationOperationReceipt",
+      "value": {
+        "id": "append:retrieval-requirements",
+        "conversation_id": "conversation:fixture",
+        "payload_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "base_revision": 1,
+        "result_revision": 2,
+        "recorded_at": "2026-10-05T00:00:00.000Z",
+        "accepted_retrieval_requirements": {
+          "id": "requirement:archive",
+          "asset_id": "asset:archive",
+          "retrieval": {
+            "capability": "read_artifact",
+            "version": 1,
+            "tool_definition_id": "definition:read-artifact",
+            "arguments": {
+              "path": "canonical-tool-results/v1/tool/call/result.json",
+              "start_byte": 17,
+              "byte_count": 29,
+              "options": {
+                "custom": null,
+                "labels": [
+                  "résumé",
+                  true,
+                  3
+                ]
+              }
+            }
+          },
+          "accepted_asset_operation_id": "append:original-assets"
+        }
+      }
+    },
+    {
+      "name": "requirement_missing_asset_id",
+      "component": "ConversationContextRetrievalRequirement",
+      "value": {
+        "id": "requirement:archive",
+        "retrieval": {
+          "capability": "read_artifact",
+          "version": 1,
+          "tool_definition_id": "definition:read-artifact",
+          "arguments": {
+            "path": "canonical-tool-results/v1/tool/call/result.json",
+            "start_byte": 17,
+            "byte_count": 29,
+            "options": {
+              "custom": null,
+              "labels": [
+                "résumé",
+                true,
+                3
+              ]
+            }
+          }
+        },
+        "accepted_asset_operation_id": "append:original-assets"
+      }
+    },
+    {
+      "name": "requirement_unknown_field",
+      "component": "ConversationContextRetrievalRequirement",
+      "value": {
+        "id": "requirement:archive",
+        "asset_id": "asset:archive",
+        "retrieval": {
+          "capability": "read_artifact",
+          "version": 1,
+          "tool_definition_id": "definition:read-artifact",
+          "arguments": {
+            "path": "canonical-tool-results/v1/tool/call/result.json",
+            "start_byte": 17,
+            "byte_count": 29,
+            "options": {
+              "custom": null,
+              "labels": [
+                "résumé",
+                true,
+                3
+              ]
+            }
+          }
+        },
+        "accepted_asset_operation_id": "append:original-assets",
+        "caller_authority": true
+      }
+    },
+    {
+      "name": "requirement_missing_retrieval_arguments",
+      "component": "ConversationContextRetrievalRequirement",
+      "value": {
+        "id": "requirement:archive",
+        "asset_id": "asset:archive",
+        "retrieval": {
+          "capability": "read_artifact",
+          "version": 1,
+          "tool_definition_id": "definition:read-artifact"
+        },
+        "accepted_asset_operation_id": "append:original-assets"
+      }
+    },
+    {
+      "name": "requirement_null_accepted_asset_operation",
+      "component": "ConversationContextRetrievalRequirement",
+      "value": {
+        "id": "requirement:archive",
+        "asset_id": "asset:archive",
+        "retrieval": {
+          "capability": "read_artifact",
+          "version": 1,
+          "tool_definition_id": "definition:read-artifact",
+          "arguments": {
+            "path": "canonical-tool-results/v1/tool/call/result.json",
+            "start_byte": 17,
+            "byte_count": 29,
+            "options": {
+              "custom": null,
+              "labels": [
+                "résumé",
+                true,
+                3
+              ]
+            }
+          }
+        },
+        "accepted_asset_operation_id": null
+      }
+    },
+    {
+      "name": "requirement_unknown_capability_object_field",
+      "component": "ConversationContextRetrievalRequirement",
+      "value": {
+        "id": "requirement:archive",
+        "asset_id": "asset:archive",
+        "retrieval": {
+          "capability": "read_artifact",
+          "version": 1,
+          "tool_definition_id": "definition:read-artifact",
+          "arguments": {
+            "path": "canonical-tool-results/v1/tool/call/result.json",
+            "start_byte": 17,
+            "byte_count": 29,
+            "options": {
+              "custom": null,
+              "labels": [
+                "résumé",
+                true,
+                3
+              ]
+            }
+          },
+          "caller_authority": true
+        },
+        "accepted_asset_operation_id": "append:original-assets"
+      }
+    },
+    {
+      "name": "excerpt_missing_returned_block_fingerprint",
+      "component": "ConversationToolRetrievalExcerpt",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 3
+        },
+        "asset_id": "asset:archive",
+        "accepted_asset_operation_id": "append:original-assets",
+        "external_reference_block_id": "reference:original-result",
+        "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "byte_start": 17,
+        "byte_end_exclusive": 46,
+        "tool_definition_id": "definition:read-artifact",
+        "projection": {
+          "kind": "json_byte_excerpt"
+        },
+        "returned_block_id": "returned:excerpt"
+      }
+    },
+    {
+      "name": "excerpt_missing_tool_definition",
+      "component": "ConversationToolRetrievalExcerpt",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 3
+        },
+        "asset_id": "asset:archive",
+        "accepted_asset_operation_id": "append:original-assets",
+        "external_reference_block_id": "reference:original-result",
+        "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "byte_start": 17,
+        "byte_end_exclusive": 46,
+        "projection": {
+          "kind": "json_byte_excerpt"
+        },
+        "returned_block_id": "returned:excerpt",
+        "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "name": "excerpt_unknown_projection",
+      "component": "ConversationToolRetrievalExcerpt",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 3
+        },
+        "asset_id": "asset:archive",
+        "accepted_asset_operation_id": "append:original-assets",
+        "external_reference_block_id": "reference:original-result",
+        "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "byte_start": 17,
+        "byte_end_exclusive": 46,
+        "tool_definition_id": "definition:read-artifact",
+        "projection": {
+          "kind": "future_excerpt"
+        },
+        "returned_block_id": "returned:excerpt",
+        "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "name": "excerpt_lines_missing_start_line",
+      "component": "ConversationToolRetrievalExcerpt",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 3
+        },
+        "asset_id": "asset:archive",
+        "accepted_asset_operation_id": "append:original-assets",
+        "external_reference_block_id": "reference:original-result",
+        "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "byte_start": 17,
+        "byte_end_exclusive": 46,
+        "tool_definition_id": "definition:read-artifact",
+        "projection": {
+          "kind": "rendered_line_excerpt",
+          "end_line": 4,
+          "line_numbers": true
+        },
+        "returned_block_id": "returned:excerpt",
+        "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "name": "excerpt_unknown_field",
+      "component": "ConversationToolRetrievalExcerpt",
+      "value": {
+        "version": 1,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 3
+        },
+        "asset_id": "asset:archive",
+        "accepted_asset_operation_id": "append:original-assets",
+        "external_reference_block_id": "reference:original-result",
+        "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "byte_start": 17,
+        "byte_end_exclusive": 46,
+        "tool_definition_id": "definition:read-artifact",
+        "projection": {
+          "kind": "json_byte_excerpt"
+        },
+        "returned_block_id": "returned:excerpt",
+        "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "caller_authority": true
+      }
+    },
+    {
+      "name": "excerpt_wrong_version",
+      "component": "ConversationToolRetrievalExcerpt",
+      "value": {
+        "version": 2,
+        "source": {
+          "conversation_id": "conversation:fixture",
+          "revision": 3
+        },
+        "asset_id": "asset:archive",
+        "accepted_asset_operation_id": "append:original-assets",
+        "external_reference_block_id": "reference:original-result",
+        "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "byte_start": 17,
+        "byte_end_exclusive": 46,
+        "tool_definition_id": "definition:read-artifact",
+        "projection": {
+          "kind": "json_byte_excerpt"
+        },
+        "returned_block_id": "returned:excerpt",
+        "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    {
+      "name": "retrieval_metadata_unknown_field",
+      "component": "ConversationToolExecutionMetadata",
+      "value": {
+        "retrieval_excerpt": {
+          "version": 1,
+          "source": {
+            "conversation_id": "conversation:fixture",
+            "revision": 3
+          },
+          "asset_id": "asset:archive",
+          "accepted_asset_operation_id": "append:original-assets",
+          "external_reference_block_id": "reference:original-result",
+          "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "byte_start": 17,
+          "byte_end_exclusive": 46,
+          "tool_definition_id": "definition:read-artifact",
+          "projection": {
+            "kind": "json_byte_excerpt"
+          },
+          "returned_block_id": "returned:excerpt",
+          "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "caller_authority": true
+      }
+    },
+    {
+      "name": "retrieval_metadata_null_excerpt",
+      "component": "ConversationToolExecutionMetadata",
+      "value": {
+        "retrieval_excerpt": null
+      }
+    },
+    {
+      "name": "execution_receipt_null_metadata",
+      "component": "ConversationExecutionReceipt",
+      "value": {
+        "id": "execution:read-artifact",
+        "call_id": "call:read-artifact",
+        "executor": "application",
+        "host_execution_id": "activity:read-artifact",
+        "attempt_id": "attempt:read-artifact:1",
+        "status": "success",
+        "result_turn_id": "turn:read-artifact",
+        "result_fingerprint": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "recorded_at": "2026-10-05T00:00:00.000Z",
+        "call_source": {
+          "conversation": {
+            "conversation_id": "conversation:fixture",
+            "revision": 3
+          },
+          "turn_id": "turn:accepted-call",
+          "block_id": "block:accepted-call",
+          "call_id": "call:read-artifact",
+          "call_fingerprint": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "metadata": null
+      }
+    },
+    {
+      "name": "execution_receipt_unknown_retrieval_metadata",
+      "component": "ConversationExecutionReceipt",
+      "value": {
+        "id": "execution:read-artifact",
+        "call_id": "call:read-artifact",
+        "executor": "application",
+        "host_execution_id": "activity:read-artifact",
+        "attempt_id": "attempt:read-artifact:1",
+        "status": "success",
+        "result_turn_id": "turn:read-artifact",
+        "result_fingerprint": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "recorded_at": "2026-10-05T00:00:00.000Z",
+        "call_source": {
+          "conversation": {
+            "conversation_id": "conversation:fixture",
+            "revision": 3
+          },
+          "turn_id": "turn:accepted-call",
+          "block_id": "block:accepted-call",
+          "call_id": "call:read-artifact",
+          "call_fingerprint": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "metadata": {
+          "retrieval_excerpt": {
+            "version": 1,
+            "source": {
+              "conversation_id": "conversation:fixture",
+              "revision": 3
+            },
+            "asset_id": "asset:archive",
+            "accepted_asset_operation_id": "append:original-assets",
+            "external_reference_block_id": "reference:original-result",
+            "reference_fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "byte_start": 17,
+            "byte_end_exclusive": 46,
+            "tool_definition_id": "definition:read-artifact",
+            "projection": {
+              "kind": "json_byte_excerpt"
+            },
+            "returned_block_id": "returned:excerpt",
+            "returned_block_fingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+          },
+          "caller_authority": true
+        }
       }
     }
   ]
