@@ -496,7 +496,10 @@ async function readBoundedMedia(
     return bytes;
 }
 
-async function materializeCanonicalAsset(client: VertesiaClient, asset: ConversationOutputAsset): Promise<Uint8Array> {
+export async function materializeCanonicalAsset(
+    client: VertesiaClient,
+    asset: ConversationOutputAsset,
+): Promise<Uint8Array> {
     let bytes: Uint8Array;
     if (asset.storage.type === 'inline_base64') {
         const estimatedByteLength = Math.floor((asset.storage.data.length * 3) / 4);

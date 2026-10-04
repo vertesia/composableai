@@ -12,6 +12,7 @@
 export * from './account.js';
 export * from './adapter.js';
 export * from './agent-assets.js';
+export { AgentBudgetConfigurationSchema } from './agent-budget.js';
 export * from './agent-communication.js';
 export * from './agent-conversation-migration.js';
 export {
@@ -49,6 +50,7 @@ export { InferenceProfileSnapshotSchema } from './inference-profile.js';
 export * from './integrations.js';
 export {
     AgentResourceReferenceSchema,
+    AgentToolApprovalModeSchema,
     AsyncConversationExecutionPayloadSchema,
     CanonicalAsyncCompletionResultSchema,
     CanonicalContinuationStateSchema,
@@ -59,10 +61,18 @@ export {
     ConversationAcceptedGenerationEvidenceSchema,
     ConversationProcessingPolicySchema,
     ConversationStateSchema,
+    ExecutionRunDocRefSchema,
     ModelSourceSchema,
+    PendingMcpConnectionSchema,
+    PlanSchema,
+    ResolvedInteractionExecutionInfoSchema,
     SchemaRefSchema,
     TextArtifactReferenceSchema,
+    ToolApprovalGrantMapSchema,
     ToolReferenceSchema,
+    UsedSkillSchema,
+    UserChannelSchema,
+    WorkflowAncestorSchema,
 } from './interaction.js';
 export * from './oauth-server.js';
 export * from './parameters.js';
