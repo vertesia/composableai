@@ -361,8 +361,23 @@ export const AuditUsageQuerySchema = AuditAdoptionQuerySchema.omit({ filter: tru
 export const AuditUsageCountsSchema = z
     .strictObject({
         active_users: z.number().int().nonnegative(),
-        agent_runs: z.number().int().nonnegative(),
-        agent_users: z.number().int().nonnegative(),
+        agent_runs: z
+            .number()
+            .int()
+            .nonnegative()
+            .meta({ description: 'All audited run creations and marked restarts, including automated runs.' }),
+        user_agent_runs: z
+            .number()
+            .int()
+            .nonnegative()
+            .meta({ description: 'Run operations initiated directly by authenticated users, including OAuth/MCP.' }),
+        automated_agent_runs: z.number().int().nonnegative().meta({
+            description: 'Other run operations, including schedules, delegated agents, services and API keys.',
+        }),
+        agent_users: z.number().int().nonnegative().meta({
+            description:
+                'Distinct identifiable user initiators or owners of run operations, including scheduled and delegated runs.',
+        }),
         direct_calls: z.number().int().nonnegative(),
         direct_call_users: z.number().int().nonnegative(),
         content_objects: z.number().int().nonnegative(),
@@ -371,7 +386,8 @@ export const AuditUsageCountsSchema = z
     })
     .meta({
         id: 'AuditUsageCounts',
-        description: 'Distinct users and objects; user-initiated run operations and standalone inference audit events.',
+        description:
+            'Direct productive users, run initiators/owners, all run operations and standalone inference audit events.',
     });
 
 export const AuditUsageBucketSchema = z

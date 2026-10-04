@@ -1811,6 +1811,8 @@ export type AuditUsageQuery = {
 export type AuditUsageCounts = {
     active_users: number;
     agent_runs: number;
+    user_agent_runs: number;
+    automated_agent_runs: number;
     agent_users: number;
     direct_calls: number;
     direct_call_users: number;

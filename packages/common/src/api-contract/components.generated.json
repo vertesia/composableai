@@ -16673,12 +16673,26 @@
       "agent_runs": {
         "type": "integer",
         "minimum": 0,
-        "maximum": 9007199254740991
+        "maximum": 9007199254740991,
+        "description": "All audited run creations and marked restarts, including automated runs."
+      },
+      "user_agent_runs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Run operations initiated directly by authenticated users, including OAuth/MCP."
+      },
+      "automated_agent_runs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Other run operations, including schedules, delegated agents, services and API keys."
       },
       "agent_users": {
         "type": "integer",
         "minimum": 0,
-        "maximum": 9007199254740991
+        "maximum": 9007199254740991,
+        "description": "Distinct identifiable user initiators or owners of run operations, including scheduled and delegated runs."
       },
       "direct_calls": {
         "type": "integer",
@@ -16709,6 +16723,8 @@
     "required": [
       "active_users",
       "agent_runs",
+      "user_agent_runs",
+      "automated_agent_runs",
       "agent_users",
       "direct_calls",
       "direct_call_users",
@@ -16717,7 +16733,7 @@
       "other_content_objects"
     ],
     "additionalProperties": false,
-    "description": "Distinct users and objects; user-initiated run operations and standalone inference audit events."
+    "description": "Direct productive users, run initiators/owners, all run operations and standalone inference audit events."
   },
   "AuditUsageBucket": {
     "type": "object",
