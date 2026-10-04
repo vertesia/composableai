@@ -128,4 +128,48 @@ describe('EventsApi.subscribeDeliveries', () => {
 
         subscription.close();
     });
+    it('reconnects from the latest cursor instead of the initial query cursor', async () => {
+        vi.useFakeTimers();
+        const subscription = createClient().events.subscribeDeliveries({
+            since_event_id: 'initial',
+            on_delivery: () => {},
+        });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            FakeEventSource.instances[0].emit('heartbeat', { type: 'heartbeat', cursor: 'latest' }, 'latest');
+            FakeEventSource.instances[0].onerror?.(new Event('error'));
+            await vi.advanceTimersByTimeAsync(1100);
+            expect(FakeEventSource.instances).toHaveLength(2);
+            expect(new URL(FakeEventSource.urls[1]).searchParams.get('since_event_id')).toBe('latest');
+        } finally {
+            subscription.close();
+            vi.useRealTimers();
+        }
+    });
+
+    it('exhausts retries when auth refresh fails after a stable connection', async () => {
+        vi.useFakeTimers();
+        const client = createClient();
+        let authCalls = 0;
+        client.withAuthCallback(async () => {
+            if (++authCalls > 1) throw new Error('Refresh unavailable');
+            return 'Bearer token';
+        });
+        const onError = vi.fn();
+        const subscription = client.events.subscribeDeliveries({ max_reconnect_attempts: 2, on_error: onError });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            FakeEventSource.instances[0].onopen?.(new Event('open'));
+            await vi.advanceTimersByTimeAsync(6000);
+            FakeEventSource.instances[0].onerror?.(new Event('error'));
+            await vi.advanceTimersByTimeAsync(5000);
+            expect(authCalls).toBe(3);
+            expect(subscription.closed).toBe(true);
+            expect(onError).toHaveBeenCalledOnce();
+            expect(vi.getTimerCount()).toBe(0);
+        } finally {
+            subscription.close();
+            vi.useRealTimers();
+        }
+    });
 });
