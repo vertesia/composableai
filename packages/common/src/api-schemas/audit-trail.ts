@@ -41,6 +41,10 @@ export const AuditAggregationDimensionMapSchema = z
         project_id: z.string().nullable().optional(),
         principal_id: z.string().nullable().optional(),
         actor_id: z.string().nullable().optional(),
+        user_id: z.string().nullable().optional().meta({
+            description:
+                'Originating user identity, including delegated and scheduled activity with a recorded user owner. Non-user principals without a user origin are excluded.',
+        }),
         'details.pipeline': z.string().nullable().optional(),
         'details.verdict': z.string().nullable().optional(),
         'details.workflow_type': z.string().nullable().optional(),
@@ -50,7 +54,7 @@ export const AuditAggregationDimensionMapSchema = z
     .meta({ id: 'AuditAggregationDimensionMap' });
 
 export const AuditAggregationDistinctFieldSchema = z
-    .enum(['resource_id', 'request_id', 'principal_id', 'actor_id'])
+    .enum(['resource_id', 'request_id', 'principal_id', 'actor_id', 'user_id'])
     .meta({ id: 'AuditAggregationDistinctField' });
 
 export const AuditAggregationOperationSchema = z

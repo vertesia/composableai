@@ -1701,7 +1701,7 @@ export type AuditTrailResponse = {
 export type AuditAggregationResolution = 'hour' | 'day' | 'week' | 'month';
 export type AuditAggregationDetailField = 'pipeline' | 'verdict' | 'workflow_type' | 'rule_id';
 export type AuditAggregationOperation = 'count' | 'count_distinct' | 'sum_meter' | 'average_meter';
-export type AuditAggregationDistinctField = 'resource_id' | 'request_id' | 'principal_id' | 'actor_id';
+export type AuditAggregationDistinctField = 'resource_id' | 'request_id' | 'principal_id' | 'actor_id' | 'user_id';
 export type AuditAggregationGroup = {
     dimension: AuditAggregationDimensionWire;
     resolution?: AuditAggregationResolution | undefined;
@@ -10658,6 +10658,7 @@ export type AuditAggregationDimensionMap = {
     project_id?: string | null | undefined;
     principal_id?: string | null | undefined;
     actor_id?: string | null | undefined;
+    user_id?: string | null | undefined;
     'details.pipeline'?: string | null | undefined;
     'details.verdict'?: string | null | undefined;
     'details.workflow_type'?: string | null | undefined;
@@ -10673,6 +10674,7 @@ export type AuditAggregationDimensionWire =
     | 'project_id'
     | 'principal_id'
     | 'actor_id'
+    | 'user_id'
     | 'details.pipeline'
     | 'details.verdict'
     | 'details.workflow_type'

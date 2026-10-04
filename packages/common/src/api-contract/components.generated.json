@@ -16898,6 +16898,17 @@
           }
         ]
       },
+      "user_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Originating user identity, including delegated and scheduled activity with a recorded user owner. Non-user principals without a user origin are excluded."
+      },
       "details.pipeline": {
         "anyOf": [
           {
@@ -16957,7 +16968,8 @@
       "resource_id",
       "request_id",
       "principal_id",
-      "actor_id"
+      "actor_id",
+      "user_id"
     ]
   },
   "AuditAggregationOperation": {
@@ -16989,6 +17001,7 @@
       "project_id",
       "principal_id",
       "actor_id",
+      "user_id",
       "details.pipeline",
       "details.verdict",
       "details.workflow_type",
