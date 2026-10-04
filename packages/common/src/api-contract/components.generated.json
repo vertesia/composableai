@@ -9417,6 +9417,9 @@
       },
       "call_source": {
         "$ref": "#/components/schemas/ConversationToolCallSourceRef"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationToolExecutionMetadata"
       }
     },
     "required": [
@@ -9426,6 +9429,148 @@
       "status",
       "result_fingerprint",
       "recorded_at"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationToolExecutionMetadata": {
+    "type": "object",
+    "properties": {
+      "retrieval_excerpt": {
+        "$ref": "#/components/schemas/ConversationToolRetrievalExcerpt"
+      }
+    },
+    "required": [
+      "retrieval_excerpt"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationToolRetrievalExcerpt": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "number",
+        "const": 1
+      },
+      "source": {
+        "type": "object",
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "revision": {
+            "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "revision"
+        ],
+        "additionalProperties": false
+      },
+      "asset_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "accepted_asset_operation_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "external_reference_block_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "reference_fingerprint": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "content_hash": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "byte_start": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "byte_end_exclusive": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "tool_definition_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "projection": {
+        "$ref": "#/components/schemas/ConversationToolRetrievalProjection"
+      },
+      "returned_block_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "returned_block_fingerprint": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "required": [
+      "version",
+      "source",
+      "asset_id",
+      "accepted_asset_operation_id",
+      "external_reference_block_id",
+      "reference_fingerprint",
+      "content_hash",
+      "byte_start",
+      "byte_end_exclusive",
+      "tool_definition_id",
+      "projection",
+      "returned_block_id",
+      "returned_block_fingerprint"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationToolRetrievalByteProjection": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "json_byte_excerpt"
+      }
+    },
+    "required": [
+      "kind"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationToolRetrievalLineProjection": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "rendered_line_excerpt"
+      },
+      "start_line": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "end_line": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "line_numbers": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "kind",
+      "start_line",
+      "end_line",
+      "line_numbers"
     ],
     "additionalProperties": false
   },
@@ -11180,6 +11325,27 @@
       "record_source"
     ]
   },
+  "ConversationToolRetrievalProjection": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ConversationToolRetrievalByteProjection"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationToolRetrievalLineProjection"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "json_byte_excerpt": "#/components/schemas/ConversationToolRetrievalByteProjection",
+        "rendered_line_excerpt": "#/components/schemas/ConversationToolRetrievalLineProjection"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ]
+  },
   "ConversationProcessingJobSelection": {
     "oneOf": [
       {
@@ -11921,6 +12087,9 @@
       },
       "call_source": {
         "$ref": "#/components/schemas/ConversationToolCallSourceRef"
+      },
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationToolExecutionMetadata"
       }
     },
     "required": [

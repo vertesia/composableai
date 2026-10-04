@@ -62,6 +62,11 @@ interface CanonicalConversationSchemaMap {
     ConversationDocumentBlock: typeof Canonical.DocumentBlockSchema;
     ConversationDocumentV0: typeof Canonical.ConversationDocumentSchema;
     ConversationExecutedGeneration: typeof Canonical.ExecutedGenerationSchema;
+    ConversationToolRetrievalByteProjection: typeof Canonical.ToolRetrievalByteProjectionSchema;
+    ConversationToolRetrievalLineProjection: typeof Canonical.ToolRetrievalLineProjectionSchema;
+    ConversationToolRetrievalProjection: typeof Canonical.ToolRetrievalProjectionSchema;
+    ConversationToolRetrievalExcerpt: typeof Canonical.ToolRetrievalExcerptSchema;
+    ConversationToolExecutionMetadata: typeof Canonical.ToolExecutionMetadataSchema;
     ConversationExecutionReceipt: typeof Canonical.ExecutionReceiptSchema;
     ConversationExtensionBlock: typeof Canonical.ExtensionBlockSchema;
     ConversationExternalAssetStorage: typeof Canonical.ExternalAssetStorageSchema;
@@ -275,6 +280,11 @@ export const CANONICAL_CONVERSATION_SCHEMAS: CanonicalConversationSchemaMap = {
     ConversationDocumentBlock: Canonical.DocumentBlockSchema,
     ConversationDocumentV0: Canonical.ConversationDocumentSchema,
     ConversationExecutedGeneration: Canonical.ExecutedGenerationSchema,
+    ConversationToolRetrievalByteProjection: Canonical.ToolRetrievalByteProjectionSchema,
+    ConversationToolRetrievalLineProjection: Canonical.ToolRetrievalLineProjectionSchema,
+    ConversationToolRetrievalProjection: Canonical.ToolRetrievalProjectionSchema,
+    ConversationToolRetrievalExcerpt: Canonical.ToolRetrievalExcerptSchema,
+    ConversationToolExecutionMetadata: Canonical.ToolExecutionMetadataSchema,
     ConversationExecutionReceipt: Canonical.ExecutionReceiptSchema,
     ConversationExtensionBlock: Canonical.ExtensionBlockSchema,
     ConversationExternalAssetStorage: Canonical.ExternalAssetStorageSchema,
