@@ -110,6 +110,29 @@ describe('exact-version canonical resume contracts', () => {
         ).toMatchObject({ valid: false });
     });
 
+    it('rejects retrieval requirements on user and catalogue appends whose host cannot accept them', () => {
+        expect(
+            validateApiRequest('ExperimentalCanonicalUserMessagePayload', {
+                ...user,
+                input_append: {
+                    ...user.input_append,
+                    records: { ...user.input_append.records, retrieval_requirements: [] },
+                },
+            }),
+        ).toMatchObject({ valid: false });
+        expect(
+            validateApiRequest('ExperimentalCanonicalToolResultsPayload', {
+                ...tools,
+                input_append: {
+                    expected_revision: 4,
+                    operation_id: 'catalogue:selection',
+                    recorded_at: at,
+                    records: { retrieval_requirements: [] },
+                },
+            }),
+        ).toMatchObject({ valid: false });
+    });
+
     it('rejects caller fingerprints, generated evidence and elevated user authority', () => {
         const records = user.input_append.records;
         const turn = records.turns[0];

@@ -25,6 +25,7 @@ const MAX_RETRY_AFTER_MS = 60_000;
 export interface SignedUrlFetchOptions {
     method?: string;
     headers?: Record<string, string>;
+    signal?: AbortSignal;
     body?: BodyInit | null;
     /** Total number of attempts, including the first. Defaults to 4. */
     attempts?: number;
@@ -36,8 +37,19 @@ export interface SignedUrlFetchOptions {
     retryableStatuses?: ReadonlySet<number>;
 }
 
-function sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+    signal?.throwIfAborted();
+    return new Promise((resolve, reject) => {
+        const onAbort = () => {
+            clearTimeout(timer);
+            reject(signal?.reason);
+        };
+        const timer = setTimeout(() => {
+            signal?.removeEventListener('abort', onAbort);
+            resolve();
+        }, ms);
+        signal?.addEventListener('abort', onAbort, { once: true });
+    });
 }
 
 function retryAfterMs(res: Response): number | undefined {
@@ -153,19 +165,27 @@ export async function fetchSignedUrl(url: string, options: SignedUrlFetchOptions
     const {
         method = 'GET',
         headers,
+        signal,
         attempts = DEFAULT_ATTEMPTS,
         baseDelayMs = DEFAULT_BASE_DELAY_MS,
         maxDelayMs = DEFAULT_MAX_DELAY_MS,
         retryableStatuses = DEFAULT_RETRYABLE_STATUSES,
     } = options;
 
+    signal?.throwIfAborted();
     const body = await toReplayableBody(options.body);
+    signal?.throwIfAborted();
 
     let lastError: unknown;
     for (let attempt = 0; attempt < attempts; attempt++) {
+        signal?.throwIfAborted();
         const isLastAttempt = attempt === attempts - 1;
         try {
-            const res = await fetch(url, { method, headers, body });
+            const res = await fetch(url, { method, headers, body, signal });
+            if (signal?.aborted) {
+                await res.body?.cancel(signal.reason).catch(() => undefined);
+                signal.throwIfAborted();
+            }
             if (res.ok || !retryableStatuses.has(res.status) || isLastAttempt) {
                 return res;
             }
@@ -174,13 +194,14 @@ export async function fetchSignedUrl(url: string, options: SignedUrlFetchOptions
             if ((retryAfterMs(res) ?? 0) > MAX_RETRY_AFTER_MS) return res;
             // Retryable status: drain the body so the connection can be reused, then back off.
             await res.body?.cancel().catch(() => undefined);
-            await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs, res));
+            await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs, res), signal);
         } catch (err) {
+            signal?.throwIfAborted();
             lastError = err;
             if (isLastAttempt) {
                 throw err;
             }
-            await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs));
+            await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs), signal);
         }
     }
 

@@ -42,6 +42,18 @@ describe('fetchSignedUrl', () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    it('does not retry an aborted signed image transfer', async () => {
+        const controller = new AbortController();
+        fetchMock.mockImplementation(async () => {
+            controller.abort(new DOMException('download cancelled', 'AbortError'));
+            return response(503, 'retry later');
+        });
+        await expect(fetchSignedUrl('https://storage/image.png', { signal: controller.signal })).rejects.toMatchObject({
+            name: 'AbortError',
+        });
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
     it('retries on a 503 and succeeds', async () => {
         fetchMock
             .mockResolvedValueOnce(response(503, 'try later'))

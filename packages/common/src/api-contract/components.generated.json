@@ -1812,6 +1812,12 @@
           "$ref": "#/components/schemas/ConversationContextEntry"
         }
       },
+      "accepted_retrieval_requirements": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationContextRetrievalRequirement"
+        }
+      },
       "accepted_tool_selection": {
         "$ref": "#/components/schemas/ConversationAcceptedToolSelection"
       },
@@ -1904,6 +1910,52 @@
       "type",
       "compaction_id",
       "turn_id"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationContextRetrievalRequirement": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "retrieval": {
+        "$ref": "#/components/schemas/ConversationRetrievalCapability"
+      },
+      "accepted_asset_operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "id",
+      "asset_id",
+      "retrieval"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationRetrievalCapability": {
+    "type": "object",
+    "properties": {
+      "capability": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "version": {
+        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+      },
+      "arguments": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
+      "tool_definition_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "capability",
+      "version",
+      "arguments"
     ],
     "additionalProperties": false
   },
@@ -6634,29 +6686,6 @@
     ],
     "additionalProperties": false
   },
-  "ConversationRetrievalCapability": {
-    "type": "object",
-    "properties": {
-      "capability": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "version": {
-        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
-      },
-      "arguments": {
-        "$ref": "#/components/schemas/ConversationJsonObject"
-      },
-      "tool_definition_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      }
-    },
-    "required": [
-      "capability",
-      "version",
-      "arguments"
-    ],
-    "additionalProperties": false
-  },
   "ConversationExtensionBlock": {
     "type": "object",
     "properties": {
@@ -9614,29 +9643,6 @@
       "active_tool_definition_ids",
       "protected_entry_ids",
       "retrieval_requirements"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationContextRetrievalRequirement": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "asset_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "retrieval": {
-        "$ref": "#/components/schemas/ConversationRetrievalCapability"
-      },
-      "accepted_asset_operation_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      }
-    },
-    "required": [
-      "id",
-      "asset_id",
-      "retrieval"
     ],
     "additionalProperties": false
   },
@@ -14964,6 +14970,13 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ConversationContextEntry"
+        }
+      },
+      "retrieval_requirements": {
+        "readOnly": true,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationContextRetrievalRequirement"
         }
       }
     },

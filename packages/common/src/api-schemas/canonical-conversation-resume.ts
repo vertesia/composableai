@@ -58,7 +58,11 @@ export const ExperimentalCanonicalResumeInputAppendSchema = AppendConversationRe
     payload_fingerprint: true,
 })
     .extend({
-        records: ConversationRecordBatchSchema.omit({ generations: true, execution_receipts: true }).extend({
+        records: ConversationRecordBatchSchema.omit({
+            generations: true,
+            execution_receipts: true,
+            retrieval_requirements: true,
+        }).extend({
             turns: z
                 .array(
                     UserTurnSchema.extend({
@@ -105,10 +109,9 @@ export const ExperimentalCanonicalToolResultsPayloadSchema = z
         asyncCompletion: ExperimentalCanonicalAsyncCompletionOptionsSchema,
         continuation_anchor: ExperimentalCanonicalContinuationAnchorSchema,
         input_append: ExperimentalCanonicalResumeInputAppendSchema.extend({
-            records: ExperimentalCanonicalResumeInputAppendSchema.shape.records.omit({
-                turns: true,
-                assets: true,
-                context_entries: true,
+            records: ExperimentalCanonicalResumeInputAppendSchema.shape.records.pick({
+                tool_definitions: true,
+                active_tool_definition_ids: true,
             }),
         }).optional(),
     })

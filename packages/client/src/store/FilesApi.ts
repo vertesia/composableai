@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase, type IRequestParams, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
 import type {
     BucketCreateAccessStatusResponse,
     BucketReadAccessStatusResponse,
@@ -30,6 +30,21 @@ const FILE_SIGNING_RETRY_POLICY: IRequestRetryPolicy = {
     methods: ['POST'],
     statuses: [502, 503, 504],
 };
+
+/** Bounds signing and signed-object transfer by one caller-owned download deadline. */
+export interface FileDownloadOptions {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+}
+
+function downloadSignal(options?: FileDownloadOptions): AbortSignal | undefined {
+    if (options?.timeoutMs === undefined) return options?.signal;
+    if (!Number.isSafeInteger(options.timeoutMs) || options.timeoutMs <= 0) {
+        throw new RangeError('File download timeout must be a positive safe integer');
+    }
+    const timeout = AbortSignal.timeout(options.timeoutMs);
+    return options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+}
 
 function fileLocationForError(location: string): string {
     try {
@@ -157,9 +172,14 @@ export class FilesApi extends ApiTopic {
     }
 
     // Strictly typed: provide either simple args or a full payload via a separate method
-    getDownloadUrl(file: string, name?: string, disposition?: 'inline' | 'attachment'): Promise<GetFileUrlResponse> {
+    getDownloadUrl(
+        file: string,
+        name?: string,
+        disposition?: 'inline' | 'attachment',
+        options?: Pick<IRequestParams, 'signal'>,
+    ): Promise<GetFileUrlResponse> {
         const payload: GetFileUrlPayload = { file, name, disposition };
-        return this.post('/download-url', { payload });
+        return this.post('/download-url', { payload, signal: options?.signal });
     }
 
     getDownloadUrlWithOptions(payload: GetFileUrlPayload): Promise<GetFileUrlResponse> {
@@ -274,15 +294,24 @@ export class FilesApi extends ApiTopic {
      * @param location can be a relative path in the project, a reference to a cloud storage, or a accessible HTTPS URL (typically signed URL)
      * @returns ReadableStream
      */
-    async downloadFile(location: string): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
+    async downloadFile(
+        location: string,
+        options?: FileDownloadOptions,
+    ): Promise<ReadableStream<Uint8Array<ArrayBuffer>>> {
+        const signal = downloadSignal(options);
+        signal?.throwIfAborted();
         //if start with HTTPS, no download url needed - assume it's signed already
         const needSign = !location.startsWith('https:');
-        const { url } = needSign ? await this.getDownloadUrl(location) : { url: location };
+        const { url } = needSign
+            ? await this.getDownloadUrl(location, undefined, undefined, { signal })
+            : { url: location };
+        signal?.throwIfAborted();
 
         let res: Response;
         try {
-            res = await fetchSignedUrl(url, { method: 'GET' });
+            res = await fetchSignedUrl(url, { method: 'GET', signal });
         } catch (error: unknown) {
+            signal?.throwIfAborted();
             throw new FileDownloadError(location, undefined, undefined, error);
         }
 
@@ -364,9 +393,13 @@ export class FilesApi extends ApiTopic {
      * @param name - Artifact name
      * @returns ReadableStream of the artifact content
      */
-    async downloadArtifact(runId: string, name: string): Promise<ReadableStream<Uint8Array>> {
+    async downloadArtifact(
+        runId: string,
+        name: string,
+        options?: FileDownloadOptions,
+    ): Promise<ReadableStream<Uint8Array>> {
         const artifactPath = getAgentArtifactPath(runId, name);
-        return this.downloadFile(artifactPath);
+        return this.downloadFile(artifactPath, options);
     }
 
     /**

@@ -41,6 +41,7 @@ import type {
     AssetStorage,
     ContextEntry,
     ContextMeasurement,
+    ContextRetrievalRequirement,
     ConversationAcceptedOutputFragment,
     ConversationDocument,
     ConversationMaterializedInput,
@@ -7328,6 +7329,7 @@ export type AppendRunConversationToolResultsPayload = {
     assets?: Readonly<Asset[]> | undefined;
     execution_receipts: Readonly<ApplicationToolExecutionReceipt[]>;
     context_entries: Readonly<ContextEntry[]>;
+    retrieval_requirements?: Readonly<ContextRetrievalRequirement[]> | undefined;
 };
 export type AppendRunConversationToolResultsResponse = {
     conversation: ConversationRef;

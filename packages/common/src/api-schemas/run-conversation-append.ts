@@ -2,6 +2,7 @@ import {
     ApplicationToolExecutionReceiptSchema,
     AssetSchema,
     ContextEntrySchema,
+    ContextRetrievalRequirementSchema,
     ConversationRefSchema,
     ExecutedToolTurnSchema,
     IdentifierSchema,
@@ -26,6 +27,7 @@ export const AppendRunConversationToolResultsPayloadSchema = z
         assets: z.array(AssetSchema).readonly().optional(),
         execution_receipts: z.array(ApplicationToolExecutionReceiptSchema).min(1).readonly(),
         context_entries: z.array(ContextEntrySchema).min(1).readonly(),
+        retrieval_requirements: z.array(ContextRetrievalRequirementSchema).readonly().optional(),
     })
     .meta({ id: 'AppendRunConversationToolResultsPayload' });
 
