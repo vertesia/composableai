@@ -175,7 +175,7 @@ export async function extractCanonicalTextFromBuffer(
         if (!Number.isSafeInteger(pages) || pages < 1) throw new CanonicalTextExtractionError('invalid_document');
         if (pages > CANONICAL_TEXT_EXTRACTION_LIMITS.pages) throw new CanonicalTextExtractionError('limit_exceeded');
         const output = await decodePdfCommand(
-            ['convert', '-F', 'text', '-o', '-', path, `1-${pages}`],
+            ['draw', '-F', 'txt', '-q', path, `1-${pages}`],
             CANONICAL_TEXT_EXTRACTION_LIMITS.output_bytes,
             deadline,
             ownedOptions,

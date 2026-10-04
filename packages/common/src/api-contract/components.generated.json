@@ -1944,6 +1944,14 @@
         "items": {
           "$ref": "#/components/schemas/ConversationIdentifier"
         }
+      },
+      "discarded_replay_block_ids": {
+        "minItems": 1,
+        "maxItems": 4096,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
       }
     },
     "required": [

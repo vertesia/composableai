@@ -82,6 +82,14 @@ describe('bounded canonical document text extraction', () => {
         const result = await extractCanonicalTextFromBuffer(pdf('Canonical bounded PDF'), 'application/pdf');
         expect(result.pages).toBe(1);
         expect(result.text).toContain('Canonical bounded PDF');
+        expect(vi.mocked(spawn).mock.calls.find((call) => call[1]?.[0] === 'draw')?.[1]).toEqual([
+            'draw',
+            '-F',
+            'txt',
+            '-q',
+            expect.stringMatching(/input\.pdf$/),
+            '1-1',
+        ]);
         expect(result.backend.id).toBe('mutool');
         expect(result.backend.version).toMatch(/^mutool version \d+\.\d+(?:\.\d+)?$/);
     });
@@ -133,7 +141,7 @@ it('bounds actual decoded PDF output independently of source size and page count
     await expect(extractCanonicalTextFromBuffer(input, 'application/pdf')).rejects.toMatchObject({
         reason: 'limit_exceeded',
     });
-    expect(vi.mocked(spawn).mock.calls.map((call) => call[1]?.[0])).toEqual(['-v', 'info', 'convert']);
+    expect(vi.mocked(spawn).mock.calls.map((call) => call[1]?.[0])).toEqual(['-v', 'info', 'draw']);
 });
 
 it('rejects oversized source bytes before starting a decoder', async () => {
