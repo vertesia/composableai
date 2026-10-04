@@ -6,7 +6,7 @@ import {
 } from '@vertesia/api-fetch-client';
 import { APP_VERSION_HEADER, type BulkOperationPayload, type BulkOperationResponse } from '@vertesia/common';
 import { warnUnknownOptions } from '../unknown-options.js';
-import { AgentsApi } from './AgentsApi.js';
+import { type AgentStreamProvider, AgentsApi } from './AgentsApi.js';
 import { CollectionsApi } from './CollectionsApi.js';
 import { CostApi } from './CostApi.js';
 import { DataApi } from './DataApi.js';
@@ -38,6 +38,8 @@ export interface ZenoClientProps {
     retryPolicy?: IRequestRetryPolicy;
     timeout?: number | false | null;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
+    /** Replaces the built-in agent history and SSE transport for this client instance. */
+    agentStreamProvider?: AgentStreamProvider;
 }
 
 /** Exhaustive in both directions — see the same table in `../client.ts`. */
@@ -50,6 +52,7 @@ const KNOWN_STORE_OPTIONS: Record<keyof Required<ZenoClientProps>, true> = {
     retryPolicy: true,
     timeout: true,
     fetch: true,
+    agentStreamProvider: true,
 };
 
 function ensureDefined(serverUrl: string | undefined) {
@@ -60,6 +63,8 @@ function ensureDefined(serverUrl: string | undefined) {
 }
 
 export class ZenoClient extends AbstractFetchClient<ZenoClient> {
+    agents: AgentsApi;
+
     constructor(opts: ZenoClientProps = {}) {
         warnUnknownOptions('ZenoClient', opts, KNOWN_STORE_OPTIONS);
         super(ensureDefined(opts.serverUrl), opts.fetch);
@@ -81,6 +86,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
                 return err;
             }
         };
+        this.agents = new AgentsApi(this, opts.agentStreamProvider);
     }
 
     withApiVersion(version: string | number | null) {
@@ -119,7 +125,6 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
         };
     }
 
-    agents = new AgentsApi(this);
     cost = new CostApi(this);
     objects = new ObjectsApi(this);
     types = new TypesApi(this);
