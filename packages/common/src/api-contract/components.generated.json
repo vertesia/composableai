@@ -43078,6 +43078,10 @@
         "type": "string",
         "description": "Filter by agent run ID"
       },
+      "agent_only": {
+        "type": "boolean",
+        "description": "Restrict usage to agent runs and their attributed nested/background inference. Excludes standalone interactions and non-agent workflows. Defaults to false."
+      },
       "interaction_id": {
         "type": "string",
         "description": "Filter by interaction id: stored ObjectId or namespaced in-code id"

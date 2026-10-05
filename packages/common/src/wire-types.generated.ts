@@ -2125,6 +2125,7 @@ export type CostAnalyticsQuery = {
     workflow_run_id?: string | undefined;
     run_id?: string | undefined;
     agent_run_id?: string | undefined;
+    agent_only?: boolean | undefined;
     interaction_id?: string | undefined;
     principal_id?: string | undefined;
     account_id?: string | undefined;
