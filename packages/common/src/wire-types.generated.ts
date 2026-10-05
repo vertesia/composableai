@@ -7908,6 +7908,30 @@ export type ExperimentalAgentConversationStreamEnvelope =
     | ExperimentalAgentConversationEvent
     | ExperimentalAgentConversationPreviewUnavailable
     | ExperimentalAgentConversationAcceptedOutput;
+export type ExperimentalAgentConversationRunStatus = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    type: 'run_status';
+    status: AgentRunStatus;
+    activity_state?: ConversationActivityState | undefined;
+    first_workflow_run_id?: string | undefined;
+    updated_at: string;
+    control_page?: ExperimentalAgentControlPage | undefined;
+};
+export type ExperimentalAgentRunStreamEnvelope =
+    | ExperimentalAgentConversationEvent
+    | ExperimentalAgentConversationPreviewUnavailable
+    | ExperimentalAgentConversationAcceptedOutput
+    | ExperimentalAgentConversationRunStatus
+    | ExperimentalAgentRunControlNotification;
+export type ExperimentalAgentRunUpdatesResponse = {
+    run: ExperimentalAgentConversationRunStatus;
+    source: ExperimentalAgentConversationSourceDescriptor;
+    controls: ExperimentalAgentRunControlNotification[];
+    control_page: ExperimentalAgentControlPage;
+};
 export type AgentRunDetailsQuery = {
     from?: string | undefined;
     include_history?: boolean | undefined;
@@ -8085,6 +8109,139 @@ export type CreateRunPayload =
 export type RestartAgentRunPayload = {
     nd_restart_count?: number | undefined;
 };
+export type ExperimentalAgentRunControlEvent = {
+    version: 1;
+    event: 'user_input_received';
+    event_id: string;
+    ack?: string | undefined;
+    editing_action?:
+        | {
+              operation_id: string;
+              resource: ExperimentalAgentEditingResource;
+          }
+        | undefined;
+    request_input_response?:
+        | {
+              request_id: string;
+          }
+        | undefined;
+};
+export type ExperimentalAgentRunControlNotification = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    workstream_id?: string | undefined;
+    type: 'run_control';
+    timestamp: number;
+    control: ExperimentalAgentRunControlEvent;
+};
+export type ExperimentalAgentEditingResource =
+    | {
+          kind: 'store_document';
+          document_id: string;
+      }
+    | {
+          kind: 'agent_artifact';
+          run_id: string;
+          path: string;
+      };
+export type ExperimentalAgentDocumentEditingAction =
+    | {
+          operation_id: string;
+          resource:
+              | {
+                    kind: 'store_document';
+                    document_id: string;
+                    name?: string | undefined;
+                }
+              | {
+                    kind: 'agent_artifact';
+                    run_id: string;
+                    path: string;
+                };
+          anchor: {
+              block_id: string;
+              block_type:
+                  | 'heading'
+                  | 'paragraph'
+                  | 'list'
+                  | 'list_item'
+                  | 'blockquote'
+                  | 'code_block'
+                  | 'table'
+                  | 'separator';
+              exact_text: string;
+          };
+          base_version?: string | undefined;
+          applied?: boolean | undefined;
+          updated_document_id?: string | undefined;
+          action: 'edit';
+          user_change: {
+              before: string;
+              after: string;
+          };
+          comment?: string | undefined;
+      }
+    | {
+          operation_id: string;
+          resource:
+              | {
+                    kind: 'store_document';
+                    document_id: string;
+                    name?: string | undefined;
+                }
+              | {
+                    kind: 'agent_artifact';
+                    run_id: string;
+                    path: string;
+                };
+          anchor: {
+              block_id: string;
+              block_type:
+                  | 'heading'
+                  | 'paragraph'
+                  | 'list'
+                  | 'list_item'
+                  | 'blockquote'
+                  | 'code_block'
+                  | 'table'
+                  | 'separator';
+              exact_text: string;
+          };
+          base_version?: string | undefined;
+          applied?: boolean | undefined;
+          updated_document_id?: string | undefined;
+          action: 'comment';
+          comment: string;
+          user_change?:
+              | {
+                    before: string;
+                    after: string;
+                }
+              | undefined;
+      };
+export type ExperimentalAgentUserInputMetadata = {
+    client_message_id?: string | undefined;
+    display_message?: string | undefined;
+    editing_action?: ExperimentalAgentDocumentEditingAction | undefined;
+    request_input_response?:
+        | {
+              request_id: string;
+          }
+        | undefined;
+};
+export type ExperimentalAgentControlPage = {
+    after: number;
+    has_more: boolean;
+    gap_before: boolean;
+};
+export type ExperimentalAgentRunUpdatesQuery = {
+    conversation_scope?: CanonicalConversationHeadScope | undefined;
+    workstream_id?: string | undefined;
+    control_after?: number | undefined;
+    control_limit?: number | undefined;
+};
+export type ExperimentalAgentRunStreamQuery = ExperimentalAgentRunUpdatesQuery;
 export type CreateCollectionPayload = {
     description?: string | undefined;
     skip_head_sync?: boolean | undefined;
@@ -12802,6 +12959,17 @@ export interface ApiComponentTypes {
     ExperimentalAgentConversationTranscriptQuery: ExperimentalAgentConversationTranscriptQuery;
     ExperimentalAgentConversationTranscriptPage: ExperimentalAgentConversationTranscriptPage;
     ExperimentalAgentConversationStreamEnvelope: ExperimentalAgentConversationStreamEnvelope;
+    ExperimentalAgentEditingResource: ExperimentalAgentEditingResource;
+    ExperimentalAgentDocumentEditingAction: ExperimentalAgentDocumentEditingAction;
+    ExperimentalAgentUserInputMetadata: ExperimentalAgentUserInputMetadata;
+    ExperimentalAgentControlPage: ExperimentalAgentControlPage;
+    ExperimentalAgentRunUpdatesQuery: ExperimentalAgentRunUpdatesQuery;
+    ExperimentalAgentRunStreamQuery: ExperimentalAgentRunUpdatesQuery;
+    ExperimentalAgentRunControlEvent: ExperimentalAgentRunControlEvent;
+    ExperimentalAgentRunControlNotification: ExperimentalAgentRunControlNotification;
+    ExperimentalAgentConversationRunStatus: ExperimentalAgentConversationRunStatus;
+    ExperimentalAgentRunStreamEnvelope: ExperimentalAgentRunStreamEnvelope;
+    ExperimentalAgentRunUpdatesResponse: ExperimentalAgentRunUpdatesResponse;
     UpdateAgentRunStatusPayload: UpdateAgentRunStatusPayloadWire;
     AgentRunFeedbackRating: AgentRunFeedbackRating;
     AgentRunFeedbackReasonCode: AgentRunFeedbackReasonCode;

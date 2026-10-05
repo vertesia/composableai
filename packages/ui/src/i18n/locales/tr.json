@@ -54,6 +54,7 @@
     "agent.canceling": "İptal ediliyor",
     "agent.cancelWorkflow": "İş akışını iptal et",
     "agent.canonical.browseEarlier": "Önceki konuşmaya göz at",
+    "agent.canonical.controlGap": "Önceki giriş onaylarının geçmişi eksik.",
     "agent.canonical.draft": "Canlı taslak",
     "agent.canonical.gap": "Konuşmanın bir kısmı bu pencerenin dışında veya kullanılamıyor.",
     "agent.canonical.historyGap": "Bu pencereler arasındaki konuşma içeriği gösterilmiyor.",

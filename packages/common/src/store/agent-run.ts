@@ -350,6 +350,9 @@ export type ExperimentalAgentConversationTranscriptQuery = Wire.ExperimentalAgen
 export type ExperimentalAgentConversationTranscriptPage = Wire.ExperimentalAgentConversationTranscriptPage;
 
 export type ExperimentalAgentConversationStreamEnvelope = Wire.ExperimentalAgentConversationStreamEnvelope;
+export type ExperimentalAgentConversationRunStatus = Wire.ExperimentalAgentConversationRunStatus;
+export type ExperimentalAgentRunStreamEnvelope = Wire.ExperimentalAgentRunStreamEnvelope;
+export type ExperimentalAgentRunUpdatesResponse = Wire.ExperimentalAgentRunUpdatesResponse;
 
 export type AgentRunDetailsQuery = Wire.AgentRunDetailsQuery;
 
@@ -469,3 +472,18 @@ export type CreateProcessRunWithDefinitionPayload = Wire.CreateProcessRunWithDef
 export type CreateRunPayload = Wire.CreateRunPayload;
 
 export type RestartAgentRunPayload = Wire.RestartAgentRunPayload;
+
+export type ExperimentalAgentRunControlEvent = Wire.ExperimentalAgentRunControlEvent;
+export type ExperimentalAgentRunControlNotification = Wire.ExperimentalAgentRunControlNotification;
+
+export type ExperimentalAgentEditingResource = Wire.ExperimentalAgentEditingResource;
+
+export type ExperimentalAgentDocumentEditingAction = Wire.ExperimentalAgentDocumentEditingAction;
+
+export type ExperimentalAgentUserInputMetadata = Wire.ExperimentalAgentUserInputMetadata;
+
+export type ExperimentalAgentControlPage = Wire.ExperimentalAgentControlPage;
+
+export type ExperimentalAgentRunUpdatesQuery = Wire.ExperimentalAgentRunUpdatesQuery;
+
+export type ExperimentalAgentRunStreamQuery = Wire.ExperimentalAgentRunStreamQuery;

@@ -54,6 +54,7 @@
     "agent.canceling": "취소 중",
     "agent.cancelWorkflow": "워크플로 취소",
     "agent.canonical.browseEarlier": "이전 대화 살펴보기",
+    "agent.canonical.controlGap": "이전 입력 확인 기록이 불완전합니다.",
     "agent.canonical.draft": "실시간 초안",
     "agent.canonical.gap": "일부 대화 내용은 이 창 밖에 있거나 사용할 수 없습니다.",
     "agent.canonical.historyGap": "이 창들 사이의 대화 내용은 표시되지 않습니다.",

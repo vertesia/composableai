@@ -50159,6 +50159,7 @@
         "maxLength": 512
       }
     },
+    "additionalProperties": false,
     "description": "Selects one canonical agent-run scope and optional live workstream delivery filter."
   },
   "ExperimentalAgentConversationSourceUninitialized": {
@@ -50710,6 +50711,9 @@
   "ConversationTranscriptUserTurn": {
     "type": "object",
     "properties": {
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
       "id": {
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
@@ -50743,6 +50747,9 @@
   "ConversationTranscriptAgentTurn": {
     "type": "object",
     "properties": {
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
       "id": {
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
@@ -50850,6 +50857,9 @@
   "ConversationTranscriptToolTurn": {
     "type": "object",
     "properties": {
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
       "id": {
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
@@ -50924,6 +50934,9 @@
   "ConversationTranscriptProgramTurn": {
     "type": "object",
     "properties": {
+      "metadata": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
       "id": {
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
@@ -51121,7 +51134,10 @@
       },
       "metadata": {
         "type": "string",
-        "const": "omitted"
+        "enum": [
+          "omitted",
+          "partial"
+        ]
       },
       "provenance": {
         "type": "string",
@@ -51534,6 +51550,670 @@
         "accepted_output": "#/components/schemas/ExperimentalAgentConversationAcceptedOutput"
       }
     }
+  },
+  "ExperimentalAgentEditingResource": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "store_document"
+          },
+          "document_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "kind",
+          "document_id"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "agent_artifact"
+          },
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          }
+        },
+        "required": [
+          "kind",
+          "run_id",
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    ],
+    "type": "object",
+    "required": [
+      "kind"
+    ],
+    "discriminator": {
+      "propertyName": "kind"
+    }
+  },
+  "ExperimentalAgentDocumentEditingAction": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "resource": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "store_document"
+                  },
+                  "document_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096
+                  }
+                },
+                "required": [
+                  "kind",
+                  "document_id"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "agent_artifact"
+                  },
+                  "run_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096
+                  }
+                },
+                "required": [
+                  "kind",
+                  "run_id",
+                  "path"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "anchor": {
+            "type": "object",
+            "properties": {
+              "block_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "block_type": {
+                "type": "string",
+                "enum": [
+                  "heading",
+                  "paragraph",
+                  "list",
+                  "list_item",
+                  "blockquote",
+                  "code_block",
+                  "table",
+                  "separator"
+                ]
+              },
+              "exact_text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 524288
+              }
+            },
+            "required": [
+              "block_id",
+              "block_type",
+              "exact_text"
+            ],
+            "additionalProperties": false
+          },
+          "base_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "applied": {
+            "type": "boolean"
+          },
+          "updated_document_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "action": {
+            "type": "string",
+            "const": "edit"
+          },
+          "user_change": {
+            "type": "object",
+            "properties": {
+              "before": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 524288
+              },
+              "after": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 524288
+              }
+            },
+            "required": [
+              "before",
+              "after"
+            ],
+            "additionalProperties": false
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 524288
+          }
+        },
+        "required": [
+          "operation_id",
+          "resource",
+          "anchor",
+          "action",
+          "user_change"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "resource": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "store_document"
+                  },
+                  "document_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096
+                  }
+                },
+                "required": [
+                  "kind",
+                  "document_id"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "const": "agent_artifact"
+                  },
+                  "run_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096
+                  }
+                },
+                "required": [
+                  "kind",
+                  "run_id",
+                  "path"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "anchor": {
+            "type": "object",
+            "properties": {
+              "block_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              },
+              "block_type": {
+                "type": "string",
+                "enum": [
+                  "heading",
+                  "paragraph",
+                  "list",
+                  "list_item",
+                  "blockquote",
+                  "code_block",
+                  "table",
+                  "separator"
+                ]
+              },
+              "exact_text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 524288
+              }
+            },
+            "required": [
+              "block_id",
+              "block_type",
+              "exact_text"
+            ],
+            "additionalProperties": false
+          },
+          "base_version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "applied": {
+            "type": "boolean"
+          },
+          "updated_document_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "action": {
+            "type": "string",
+            "const": "comment"
+          },
+          "comment": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 524288
+          },
+          "user_change": {
+            "type": "object",
+            "properties": {
+              "before": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 524288
+              },
+              "after": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 524288
+              }
+            },
+            "required": [
+              "before",
+              "after"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "operation_id",
+          "resource",
+          "anchor",
+          "action",
+          "comment"
+        ],
+        "additionalProperties": false
+      }
+    ],
+    "type": "object",
+    "required": [
+      "action"
+    ],
+    "discriminator": {
+      "propertyName": "action"
+    }
+  },
+  "ExperimentalAgentUserInputMetadata": {
+    "type": "object",
+    "properties": {
+      "client_message_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "display_message": {
+        "type": "string",
+        "maxLength": 524288
+      },
+      "editing_action": {
+        "$ref": "#/components/schemas/ExperimentalAgentDocumentEditingAction"
+      },
+      "request_input_response": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "request_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "additionalProperties": false
+  },
+  "ExperimentalAgentControlPage": {
+    "type": "object",
+    "properties": {
+      "after": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "format": "int64"
+      },
+      "has_more": {
+        "type": "boolean"
+      },
+      "gap_before": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "after",
+      "has_more",
+      "gap_before"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalAgentRunUpdatesQuery": {
+    "type": "object",
+    "properties": {
+      "conversation_scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "control_after": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "format": "int64"
+      },
+      "control_limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 100
+      }
+    },
+    "additionalProperties": false
+  },
+  "ExperimentalAgentRunStreamQuery": {
+    "$ref": "#/components/schemas/ExperimentalAgentRunUpdatesQuery"
+  },
+  "ExperimentalAgentRunControlEvent": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "number",
+        "const": 1
+      },
+      "event": {
+        "type": "string",
+        "const": "user_input_received"
+      },
+      "event_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "ack": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "editing_action": {
+        "type": "object",
+        "properties": {
+          "operation_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          },
+          "resource": {
+            "$ref": "#/components/schemas/ExperimentalAgentEditingResource"
+          }
+        },
+        "required": [
+          "operation_id",
+          "resource"
+        ],
+        "additionalProperties": false
+      },
+      "request_input_response": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "required": [
+          "request_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "version",
+      "event",
+      "event_id"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalAgentRunControlNotification": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "agent_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "type": {
+        "type": "string",
+        "const": "run_control"
+      },
+      "timestamp": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "format": "int64"
+      },
+      "control": {
+        "$ref": "#/components/schemas/ExperimentalAgentRunControlEvent"
+      }
+    },
+    "required": [
+      "api_version",
+      "agent_run_id",
+      "scope",
+      "type",
+      "timestamp",
+      "control"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalAgentConversationRunStatus": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "agent_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "workstream_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "type": {
+        "type": "string",
+        "const": "run_status"
+      },
+      "status": {
+        "$ref": "#/components/schemas/AgentRunStatus"
+      },
+      "activity_state": {
+        "$ref": "#/components/schemas/ConversationActivityState"
+      },
+      "first_workflow_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+      },
+      "control_page": {
+        "$ref": "#/components/schemas/ExperimentalAgentControlPage"
+      }
+    },
+    "required": [
+      "api_version",
+      "agent_run_id",
+      "scope",
+      "type",
+      "status",
+      "updated_at"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalAgentRunStreamEnvelope": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationEvent"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationPreviewUnavailable"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationAcceptedOutput"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationRunStatus"
+      },
+      {
+        "$ref": "#/components/schemas/ExperimentalAgentRunControlNotification"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "conversation_event": "#/components/schemas/ExperimentalAgentConversationEvent",
+        "preview_unavailable": "#/components/schemas/ExperimentalAgentConversationPreviewUnavailable",
+        "accepted_output": "#/components/schemas/ExperimentalAgentConversationAcceptedOutput",
+        "run_status": "#/components/schemas/ExperimentalAgentConversationRunStatus",
+        "run_control": "#/components/schemas/ExperimentalAgentRunControlNotification"
+      }
+    }
+  },
+  "ExperimentalAgentRunUpdatesResponse": {
+    "type": "object",
+    "properties": {
+      "run": {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationRunStatus"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ExperimentalAgentConversationSourceDescriptor"
+      },
+      "controls": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ExperimentalAgentRunControlNotification"
+        }
+      },
+      "control_page": {
+        "$ref": "#/components/schemas/ExperimentalAgentControlPage"
+      }
+    },
+    "required": [
+      "run",
+      "source",
+      "controls",
+      "control_page"
+    ],
+    "additionalProperties": false,
+    "description": "Current lifecycle and exact canonical source; no copied message content."
   },
   "UpdateAgentRunStatusPayload": {
     "type": "object",

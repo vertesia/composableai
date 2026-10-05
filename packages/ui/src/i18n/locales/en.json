@@ -62,6 +62,7 @@
     "agent.canceled": "Canceled",
     "agent.canceling": "Canceling",
     "agent.canonical.browseEarlier": "Browse earlier conversation",
+    "agent.canonical.controlGap": "Earlier input acknowledgement history is incomplete.",
     "agent.canonical.draft": "Live draft",
     "agent.canonical.gap": "Some conversation content is outside this window or unavailable.",
     "agent.canonical.historyGap": "Conversation content between these windows is not displayed.",

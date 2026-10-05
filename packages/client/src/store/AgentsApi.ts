@@ -10,6 +10,7 @@ import type {
     ExperimentalAgentRestartAdmissionPayload,
     ExperimentalAgentRestartAdmissionResponse,
     ExperimentalAgentRoutingControlResponse,
+    ExperimentalAgentRunUpdatesQuery,
     ExperimentalAgentWorkstreamRestartAdmissionPayload,
     ExperimentalAgentWorkstreamRestartAdmissionResponse,
     ExperimentalAgentWorkstreamTerminalPayload,
@@ -55,6 +56,7 @@ import {
     type ExperimentalAgentConversationStreamQuery,
     type ExperimentalAgentConversationTranscriptPage,
     type ExperimentalAgentConversationTranscriptQuery,
+    type ExperimentalAgentRunUpdatesResponse,
     type ExperimentalCanonicalInteractionOutput,
     type FirstResponseBehaviorAnalyticsResponse,
     type IngestAgentEventsPayload,
@@ -94,6 +96,7 @@ import {
     type WorkflowRunWithDetails,
     type WorkflowToolParametersQuery,
 } from '@vertesia/common';
+import { parseExperimentalAgentRunUpdatesResponse } from '@vertesia/common/canonical-stream-runtime';
 import {
     AgentConversationStreamProtocolError,
     type AgentConversationStreamSessionOptions,
@@ -318,6 +321,22 @@ export class AgentsApi extends ApiTopic {
         });
     }
 
+    /** Negotiated lifecycle polling; canonical source references own content, with no message mirrors. */
+    async retrieveCanonicalUpdates(
+        id: string,
+        query: ExperimentalAgentRunUpdatesQuery = {},
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentRunUpdatesResponse> {
+        return parseExperimentalAgentRunUpdatesResponse(
+            await this.get(`/${encodeURIComponent(id)}/updates`, {
+                query,
+                headers: canonicalInteractionHeaders(options?.headers),
+                signal: options?.signal,
+                timeoutMs: options?.timeoutMs,
+            }),
+        );
+    }
+
     /** Describe the exact canonical source contract for one authorized agent-run scope. */
     getConversationSource(
         id: string,
@@ -341,7 +360,7 @@ export class AgentsApi extends ApiTopic {
         const scope = options.scope;
         return consumeAgentConversationStream(
             {
-                connect: async (onEnvelope, signal) => {
+                connect: async (onEnvelope, signal, controlAfter) => {
                     const controller = new AbortController();
                     const abort = () => controller.abort(signal.reason);
                     if (signal.aborted) abort();
@@ -349,10 +368,13 @@ export class AgentsApi extends ApiTopic {
                     try {
                         await this.sseRequest(
                             'GET',
-                            `/${encodeURIComponent(id)}/conversation/stream`,
+                            options.on_run_status || options.on_run_control
+                                ? `/${encodeURIComponent(id)}/stream`
+                                : `/${encodeURIComponent(id)}/conversation/stream`,
                             {
                                 query: {
                                     ...(scope === undefined ? {} : { conversation_scope: scope }),
+                                    ...(controlAfter === undefined ? {} : { control_after: controlAfter }),
                                     ...(options.workstream_id === undefined
                                         ? {}
                                         : { workstream_id: options.workstream_id }),
@@ -394,6 +416,8 @@ export class AgentsApi extends ApiTopic {
                 reconnect_delay_ms: options.reconnect_delay_ms,
                 signal: options.signal,
                 on_update: onUpdate,
+                on_run_control: options.on_run_control,
+                on_run_status: options.on_run_status,
             },
         );
     }

@@ -58,6 +58,7 @@
     "agent.canceling": "جار الإلغاء",
     "agent.cancelWorkflow": "إلغاء سير العمل",
     "agent.canonical.browseEarlier": "تصفح المحادثة السابقة",
+    "agent.canonical.controlGap": "سجل تأكيدات المدخلات السابقة غير مكتمل.",
     "agent.canonical.draft": "مسودة مباشرة",
     "agent.canonical.gap": "بعض محتوى المحادثة خارج هذه النافذة أو غير متاح.",
     "agent.canonical.historyGap": "لا يتم عرض محتوى المحادثة بين هذه النوافذ.",

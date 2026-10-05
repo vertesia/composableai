@@ -18,6 +18,12 @@ const componentNames = [
     'ConversationStreamEvent',
     'ExperimentalCanonicalInteractionStreamEnvelope',
     'ExperimentalAgentConversationStreamEnvelope',
+    'ExperimentalAgentEditingResource',
+    'ExperimentalAgentDocumentEditingAction',
+    'ExperimentalAgentUserInputMetadata',
+    'ExperimentalAgentRunControlEvent',
+    'ExperimentalAgentRunStreamEnvelope',
+    'ExperimentalAgentRunUpdatesResponse',
     'ExperimentalAgentConversationTranscriptPage',
     'ExperimentalAgentConversationSourceDescriptor',
 ] as const;

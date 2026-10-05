@@ -1030,3 +1030,176 @@ describe('useAgentStream', () => {
         expect(result.current.serverFileUpdates.has('staged-upload')).toBe(true);
     });
 });
+
+describe('canonical mode retires legacy conversational content from host notification UI state', () => {
+    it('filters live and historical mirrors while retaining actual progress, local ACK and edit metadata', async () => {
+        const streamMessages: StreamMessagesMock = vi.fn(() => new Promise(() => {}));
+        const fixture = createClient(streamMessages);
+        const forwarded = vi.fn();
+        const { result, unmount } = renderHook(() => useAgentStream(fixture, 'agent-run-1', forwarded, true));
+        await waitFor(() => expect(streamMessages).toHaveBeenCalledOnce());
+        const call = streamMessages.mock.calls[0];
+        const callback = call[1];
+        const options = call[4];
+        if (!callback || !options?.onHistoryLoaded)
+            throw new Error('Missing actual host notification stream consumers');
+        const content = createMessage(AgentMessageType.ANSWER, 1, 'legacy answer mirror');
+        const progress = createMessage(AgentMessageType.UPDATE, 2, 'actual host progress');
+        await act(async () => {
+            options.onHistoryLoaded?.([content, progress]);
+            callback(createMessage(AgentMessageType.QUESTION, 3, 'legacy input echo'));
+            callback(createMessage(AgentMessageType.COMPLETE, 4, 'legacy completed output'));
+            callback(progress);
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.QUESTION, 5, 'local input'),
+                workstream_id: undefined,
+                details: {
+                    _optimistic: true,
+                    _messageId: 'client:one',
+                    _deliveryStatus: 'received',
+                    editing_action: { operation_id: 'edit:one' },
+                    request_input_response: { request_id: 'input:one' },
+                },
+            });
+        });
+        await act(async () =>
+            result.current.consumeCanonicalControl({
+                api_version: '=20260930',
+                agent_run_id: 'agent-run-1',
+                scope: 'workstream:foreign',
+                workstream_id: 'foreign',
+                type: 'run_control',
+                timestamp: 6,
+                control: { version: 1, event: 'user_input_received', event_id: 'control:foreign', ack: 'client:one' },
+            }),
+        );
+        expect(result.current.messages[1].details?._deliveryStatus).toBe('received');
+        await act(async () =>
+            result.current.consumeCanonicalControl({
+                api_version: '=20260930',
+                agent_run_id: 'agent-run-1',
+                scope: 'root',
+                type: 'run_control',
+                timestamp: 6,
+                control: {
+                    version: 1,
+                    event: 'user_input_received',
+                    event_id: 'control:one',
+                    ack: 'client:one',
+                    editing_action: {
+                        operation_id: 'edit:one',
+                        resource: { kind: 'store_document', document_id: 'document:one' },
+                    },
+                    request_input_response: { request_id: 'input:one' },
+                },
+            }),
+        );
+        expect(result.current.messages.map((message) => message.message)).toEqual([
+            'actual host progress',
+            'local input',
+        ]);
+        expect(result.current.messages[1].details).toMatchObject({
+            _deliveryStatus: 'consumed',
+            editing_action: { operation_id: 'edit:one' },
+            request_input_response: { request_id: 'input:one' },
+        });
+        expect(forwarded).not.toHaveBeenCalledWith(content);
+        expect(result.current.streamingMessages.size).toBe(0);
+        unmount();
+    });
+});
+
+it('keeps root and literal main workstream canonical ACKs distinct for the same local client ID', async () => {
+    const streamMessages: StreamMessagesMock = vi.fn(() => new Promise(() => {}));
+    const fixture = createClient(streamMessages);
+    const { result, unmount } = renderHook(() => useAgentStream(fixture, 'agent-run-1', undefined, true));
+    await waitFor(() => expect(streamMessages).toHaveBeenCalledOnce());
+    await act(async () => {
+        for (const workstream of [undefined, 'main'])
+            result.current.addOptimisticMessage({
+                ...createMessage(AgentMessageType.QUESTION, workstream === undefined ? 1 : 2, workstream ?? 'root'),
+                workstream_id: workstream,
+                details: { _optimistic: true, _messageId: 'client:shared', _deliveryStatus: 'received' },
+            });
+    });
+    await act(async () =>
+        result.current.consumeCanonicalControl({
+            api_version: '=20260930',
+            agent_run_id: 'agent-run-1',
+            scope: 'root',
+            type: 'run_control',
+            timestamp: 3,
+            control: { version: 1, event: 'user_input_received', event_id: 'root', ack: 'client:shared' },
+        }),
+    );
+    expect(result.current.messages.map((message) => [message.workstream_id, message.details?._deliveryStatus])).toEqual(
+        [
+            [undefined, 'consumed'],
+            ['main', 'received'],
+        ],
+    );
+    await act(async () =>
+        result.current.consumeCanonicalControl({
+            api_version: '=20260930',
+            agent_run_id: 'agent-run-1',
+            scope: 'root',
+            workstream_id: 'main',
+            type: 'run_control',
+            timestamp: 4,
+            control: { version: 1, event: 'user_input_received', event_id: 'wrong-root', ack: 'client:shared' },
+        }),
+    );
+    expect(result.current.messages[1].details?._deliveryStatus).toBe('received');
+    await act(async () =>
+        result.current.consumeCanonicalControl({
+            api_version: '=20260930',
+            agent_run_id: 'agent-run-1',
+            scope: 'workstream:launch-main',
+            workstream_id: 'main',
+            type: 'run_control',
+            timestamp: 5,
+            control: { version: 1, event: 'user_input_received', event_id: 'main', ack: 'client:shared' },
+        }),
+    );
+    expect(result.current.messages.map((message) => message.details?._deliveryStatus)).toEqual([
+        'consumed',
+        'consumed',
+    ]);
+    unmount();
+});
+
+it('hands filtered compatibility delivery cursors once without restoring content callbacks or stale socket effects', async () => {
+    const streamMessages: StreamMessagesMock = vi.fn(() => new Promise(() => {}));
+    const client = createClient(streamMessages);
+    const content = vi.fn();
+    const cursor = vi.fn();
+    const { result, unmount } = renderHook(() => useAgentStream(client, 'agent-run-1', content, true, cursor));
+    await waitFor(() => expect(streamMessages).toHaveBeenCalledOnce());
+    const first = streamMessages.mock.calls[0][1];
+    if (!first) throw new Error('Missing actual compatibility notification consumer');
+    act(() => {
+        first(createMessage(AgentMessageType.ANSWER, 100, 'not canonical content authority'));
+        first(createMessage(AgentMessageType.COMPLETE, 200, 'not canonical output authority'));
+        first(createMessage(AgentMessageType.ANSWER, 100, 'replayed old answer'));
+    });
+    expect(content).not.toHaveBeenCalled();
+    expect(cursor.mock.calls).toEqual([[100], [200]]);
+    expect(result.current.messages).toEqual([]);
+    act(() => result.current.reconnect());
+    await waitFor(() => expect(streamMessages).toHaveBeenCalledTimes(2));
+    expect(streamMessages.mock.calls[1][2]).toBe(200);
+    const second = streamMessages.mock.calls[1][1];
+    if (!second) throw new Error('Missing reconnected compatibility notification consumer');
+    act(() => {
+        first(createMessage(AgentMessageType.ANSWER, 400, 'stale replaced connection'));
+        second(createMessage(AgentMessageType.COMPLETE, 200, 'replayed completion'));
+        second(createMessage(AgentMessageType.UPDATE, 300, 'actual host progress'));
+    });
+    expect(cursor.mock.calls).toEqual([[100], [200], [300]]);
+    expect(content).toHaveBeenCalledExactlyOnceWith(
+        createMessage(AgentMessageType.UPDATE, 300, 'actual host progress'),
+    );
+    unmount();
+    act(() => second(createMessage(AgentMessageType.ANSWER, 500, 'unmounted connection')));
+    expect(cursor.mock.calls).toEqual([[100], [200], [300]]);
+});

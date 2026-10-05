@@ -10,12 +10,16 @@ import type {
     ExperimentalAgentConversationAcceptedOutput,
     ExperimentalAgentConversationEvent,
     ExperimentalAgentConversationPreviewUnavailable,
-    ExperimentalAgentConversationStreamEnvelope,
+    ExperimentalAgentConversationRunStatus,
+    ExperimentalAgentRunControlNotification,
+    ExperimentalAgentRunStreamEnvelope,
 } from '@vertesia/common';
 import {
     CanonicalConversationStreamRuntimeValidators,
     EXPERIMENTAL_CANONICAL_INTERACTION_STREAM_MAX_ENVELOPE_BYTES,
+    experimentalAgentRunControlIdentity,
     parseExperimentalAgentConversationStreamEnvelope,
+    parseExperimentalAgentRunStreamEnvelope,
 } from '@vertesia/common/canonical-stream-runtime';
 import type { CanonicalInteractionOutput } from './CanonicalInteractionOutput.js';
 
@@ -30,6 +34,9 @@ export interface AgentConversationStreamSessionOptions {
     reconnect_delay_ms?: number;
     signal?: AbortSignal;
     on_update: (update: AgentConversationStreamUpdate) => void | Promise<void>;
+    /** Negotiated run-stream extension; ordinary conversation consumers never receive lifecycle events. */
+    on_run_control?: (notification: ExperimentalAgentRunControlNotification) => void | Promise<void>;
+    on_run_status?: (status: ExperimentalAgentConversationRunStatus) => void | Promise<void>;
 }
 
 interface AgentConversationDraftState {
@@ -53,7 +60,7 @@ export type AgentConversationStreamUpdate =
 const EMPTY_DRAFT_SNAPSHOT: readonly Readonly<ConversationStreamDraftSnapshot>[] = Object.freeze([]);
 
 export interface AgentConversationStreamTransport {
-    connect(onEnvelope: (envelope: unknown) => void, signal: AbortSignal): Promise<void>;
+    connect(onEnvelope: (envelope: unknown) => void, signal: AbortSignal, controlAfter?: number): Promise<void>;
     retrieveAcceptedOutput(
         envelope: ExperimentalAgentConversationAcceptedOutput,
         signal: AbortSignal,
@@ -82,7 +89,7 @@ export class AgentConversationStreamDisconnectedError extends Error {
 }
 
 interface QueuedEnvelope {
-    envelope: ExperimentalAgentConversationStreamEnvelope;
+    envelope: ExperimentalAgentRunStreamEnvelope;
     bytes: number;
 }
 
@@ -90,14 +97,20 @@ class BoundedEnvelopeQueue {
     private readonly items: QueuedEnvelope[] = [];
     private readonly waiters: Array<(item: QueuedEnvelope | undefined) => void> = [];
     private queuedBytes = 0;
+    private queuedControls = 0;
+    private queuedControlBytes = 0;
     private closed = false;
+
+    constructor(private readonly includeRunStatus = false) {}
 
     push(input: unknown): void {
         if (this.closed)
             throw new AgentConversationStreamProtocolError('Agent conversation stream emitted after close');
-        let parsed: ExperimentalAgentConversationStreamEnvelope;
+        let parsed: ExperimentalAgentRunStreamEnvelope;
         try {
-            parsed = parseExperimentalAgentConversationStreamEnvelope(input);
+            parsed = this.includeRunStatus
+                ? parseExperimentalAgentRunStreamEnvelope(input)
+                : parseExperimentalAgentConversationStreamEnvelope(input);
         } catch (cause) {
             throw new AgentConversationStreamProtocolError('Agent conversation stream emitted an invalid envelope', {
                 cause,
@@ -115,17 +128,30 @@ class BoundedEnvelopeQueue {
             waiter({ envelope, bytes });
             return;
         }
-        if (this.items.length >= MAX_QUEUED_ENVELOPES || this.queuedBytes + bytes > MAX_QUEUED_BYTES) {
-            throw new AgentConversationStreamProtocolError('Agent conversation stream consumer queue overflowed');
+        if (envelope.type === 'run_control') {
+            // One strict, identifier-only host page. Canonical content keeps its original independent bound.
+            if (this.queuedControls >= 100 || this.queuedControlBytes + bytes > 6 * 1024 * 1024)
+                throw new AgentConversationStreamProtocolError('Agent run control consumer queue overflowed');
+            this.queuedControls += 1;
+            this.queuedControlBytes += bytes;
+        } else {
+            if (
+                this.items.length - this.queuedControls >= MAX_QUEUED_ENVELOPES ||
+                this.queuedBytes + bytes > MAX_QUEUED_BYTES
+            )
+                throw new AgentConversationStreamProtocolError('Agent conversation stream consumer queue overflowed');
+            this.queuedBytes += bytes;
         }
         this.items.push({ envelope, bytes });
-        this.queuedBytes += bytes;
     }
 
     async next(): Promise<QueuedEnvelope | undefined> {
         const item = this.items.shift();
         if (item) {
-            this.queuedBytes -= item.bytes;
+            if (item.envelope.type === 'run_control') {
+                this.queuedControls -= 1;
+                this.queuedControlBytes -= item.bytes;
+            } else this.queuedBytes -= item.bytes;
             return item;
         }
         if (this.closed) return undefined;
@@ -198,13 +224,29 @@ export async function consumeAgentConversationStream(
     const maxReconnects = reconnectLimit(options.max_reconnects);
     const reconnectDelayMs = reconnectDelay(options.reconnect_delay_ms);
     let reconnects = 0;
+    const receivedControls = new Map<string, string>();
+    let controlAfter: number | undefined;
+    let pendingHostConsumer: Promise<void> | undefined;
+    let sessionConsumerFailure: AgentConversationStreamConsumerError | undefined;
+    let activeConnectionController: AbortController | undefined;
+    const ownConsumerFailure = (message: string, cause: unknown): AgentConversationStreamConsumerError => {
+        const failure = new AgentConversationStreamConsumerError(message, { cause });
+        // Callback ownership survives teardown of the connection which handed it.
+        sessionConsumerFailure ??= failure;
+        activeConnectionController?.abort(sessionConsumerFailure);
+        return failure;
+    };
     let lastAcceptedReceipt: ExperimentalAgentConversationAcceptedOutput['receipt'] | undefined;
 
     while (!options.signal?.aborted) {
+        if (sessionConsumerFailure) throw sessionConsumerFailure;
         const controller = new AbortController();
+        activeConnectionController = controller;
         const abortFromCaller = () => controller.abort(options.signal?.reason);
         options.signal?.addEventListener('abort', abortFromCaller, { once: true });
-        const queue = new BoundedEnvelopeQueue();
+        const queue = new BoundedEnvelopeQueue(
+            options.on_run_status !== undefined || options.on_run_control !== undefined,
+        );
         let firstEnvelope = true;
         let accumulator: ConversationStreamAccumulatorRuntime | undefined;
         let activeExecutionRunId: string | undefined;
@@ -222,7 +264,7 @@ export async function consumeAgentConversationStream(
         const processEnvelopes = async (): Promise<void> => {
             while (true) {
                 const queued = await queue.next();
-                if (!queued) return;
+                if (!queued || !connectionActive) return;
                 const envelope = queued.envelope;
                 if (envelope.agent_run_id !== options.agent_run_id) {
                     throw new AgentConversationStreamProtocolError('Agent conversation stream changed run');
@@ -252,6 +294,53 @@ export async function consumeAgentConversationStream(
                     accumulator = undefined;
                     activeExecutionRunId = undefined;
                     await publish({ ...envelope, draft_snapshot: EMPTY_DRAFT_SNAPSHOT });
+                    continue;
+                }
+                if (envelope.type === 'run_control') {
+                    // An earlier connection may have handed one callback to the consumer already.
+                    // Preserve that ownership/order, while unhanded old queue entries remain retryable.
+                    if (pendingHostConsumer) await pendingHostConsumer;
+                    if (!connectionActive) return;
+                    const identity = envelope.control.event_id;
+                    const fingerprint = experimentalAgentRunControlIdentity(envelope);
+                    const prior = receivedControls.get(identity);
+                    if (prior !== undefined) {
+                        if (prior !== fingerprint)
+                            throw new AgentConversationStreamProtocolError('Agent run control identity changed');
+                        controlAfter = Math.max(controlAfter ?? 0, envelope.timestamp);
+                        continue;
+                    }
+                    if (receivedControls.size >= 25_000)
+                        throw new AgentConversationStreamProtocolError(
+                            'Agent run control session exceeds its retained notification bound',
+                        );
+                    const handed = (async () => {
+                        try {
+                            await options.on_run_control?.(envelope);
+                        } catch (cause) {
+                            throw ownConsumerFailure('Agent run control consumer failed', cause);
+                        }
+                    })();
+                    pendingHostConsumer = handed;
+                    receivedControls.set(identity, fingerprint);
+                    controlAfter = Math.max(controlAfter ?? 0, envelope.timestamp);
+                    await handed;
+                    if (pendingHostConsumer === handed) pendingHostConsumer = undefined;
+                    continue;
+                }
+                if (envelope.type === 'run_status') {
+                    if (pendingHostConsumer) await pendingHostConsumer;
+                    if (!connectionActive) return;
+                    const handed = (async () => {
+                        try {
+                            await options.on_run_status?.(envelope);
+                        } catch (cause) {
+                            throw ownConsumerFailure('Agent run status consumer failed', cause);
+                        }
+                    })();
+                    pendingHostConsumer = handed;
+                    await handed;
+                    if (pendingHostConsumer === handed) pendingHostConsumer = undefined;
                     continue;
                 }
                 if (envelope.type === 'accepted_output') {
@@ -375,7 +464,7 @@ export async function consumeAgentConversationStream(
             });
         let transportFailure: unknown;
         try {
-            const connect = transport.connect((envelope) => queue.push(envelope), controller.signal);
+            const connect = transport.connect((envelope) => queue.push(envelope), controller.signal, controlAfter);
             await new Promise<void>((resolve, reject) => {
                 const settled = () => controller.signal.removeEventListener('abort', aborted);
                 const aborted = () => {
@@ -413,9 +502,11 @@ export async function consumeAgentConversationStream(
                 ]);
             }
             connectionActive = false;
+            if (activeConnectionController === controller) activeConnectionController = undefined;
             options.signal?.removeEventListener('abort', abortFromCaller);
         }
 
+        if (sessionConsumerFailure) throw sessionConsumerFailure;
         if (processingFailure instanceof AgentConversationStreamProtocolError) throw processingFailure;
         if (processingFailure instanceof AgentConversationStreamConsumerError) throw processingFailure;
         if (options.signal?.aborted) return;
@@ -427,4 +518,5 @@ export async function consumeAgentConversationStream(
         reconnects += 1;
         await waitForReconnect(reconnectDelayMs, options.signal);
     }
+    if (sessionConsumerFailure) throw sessionConsumerFailure;
 }

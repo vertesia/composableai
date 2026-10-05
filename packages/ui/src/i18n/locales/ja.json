@@ -54,6 +54,7 @@
     "agent.canceling": "キャンセル中",
     "agent.cancelWorkflow": "ワークフローをキャンセル",
     "agent.canonical.browseEarlier": "以前の会話を閲覧",
+    "agent.canonical.controlGap": "以前の入力確認の履歴は不完全です。",
     "agent.canonical.draft": "ライブ下書き",
     "agent.canonical.gap": "会話の一部はこの表示範囲外にあるか、利用できません。",
     "agent.canonical.historyGap": "これらの表示範囲の間にある会話の内容は表示されていません。",

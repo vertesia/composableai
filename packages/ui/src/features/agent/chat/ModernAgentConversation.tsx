@@ -57,6 +57,7 @@ import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { findBudgetPause, findRunBudgetRemaining } from './budgetPause';
 import { CanonicalAgentTranscript } from './CanonicalAgentTranscript.js';
 import { resolveCanonicalAgentConversationSource } from './canonicalAgentConversationAuthority.js';
+import { canonicalPendingUserInputs } from './canonicalPendingUserInput.js';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
@@ -680,6 +681,10 @@ export interface ModernAgentConversationProps extends AgentBudgetRequestOverride
     sendMessageRef?: React.MutableRefObject<SendAgentMessageFn | null>;
     /** Called for each live message delivered after the conversation stream connects. */
     onMessage?: (message: AgentMessage) => void;
+    /** Compatibility notification delivery cursor, including content mirrors omitted from canonical rendering. */
+    onLegacyNotificationDelivered?: (timestamp: number) => void;
+    /** Content-free canonical host acknowledgement, including editing and request-input receipt metadata. */
+    onRunControl?: (notification: import('@vertesia/common').ExperimentalAgentRunControlNotification) => void;
     /** Called when the main agent turn starts or reaches an idle/terminal state. */
     onAgentWorkingChange?: (isWorking: boolean) => void;
     /** Called when processingFiles state changes (for external progress display) */
@@ -1516,6 +1521,8 @@ function ModernAgentConversationInner({
     fileUploadRef,
     sendMessageRef,
     onMessage,
+    onLegacyNotificationDelivered,
+    onRunControl,
     onAgentWorkingChange,
     onProcessingFilesChange,
     processingFiles: processingFilesProp,
@@ -1566,22 +1573,40 @@ function ModernAgentConversationInner({
     const { client } = useUserSession();
     const toast = useToast();
 
+    const [canonicalStreamRun, setCanonicalStreamRun] = useState<string>();
+    const [canonicalRunStatus, setCanonicalRunStatus] =
+        useState<import('@vertesia/common').ExperimentalAgentConversationRunStatus>();
+    const canonicalContentEnabled = canonicalStreamRun === agentRunId;
+
     // ────────────────────────────────────────────
     // Extracted hooks
     // ────────────────────────────────────────────
     const {
         messages,
         streamingMessages,
-        isCompleted,
+        isCompleted: legacyIsCompleted,
         initialHistoryStatus,
         debugChunkFlash,
         addOptimisticMessage,
         updateOptimisticMessageStatus,
+        consumeCanonicalControl,
         reconnect: reconnectStream,
-        agentRunStatus,
-        workflowRunId,
+        agentRunStatus: legacyAgentRunStatus,
+        workflowRunId: legacyWorkflowRunId,
         serverFileUpdates,
-    } = useAgentStream(client, agentRunId, onMessage);
+    } = useAgentStream(client, agentRunId, onMessage, canonicalContentEnabled, onLegacyNotificationDelivered);
+    const currentCanonicalStatus = canonicalRunStatus?.agent_run_id === agentRunId ? canonicalRunStatus : undefined;
+    const agentRunStatus = canonicalContentEnabled
+        ? (currentCanonicalStatus?.status.toUpperCase() ?? null)
+        : legacyAgentRunStatus;
+    const workflowRunId = canonicalContentEnabled
+        ? (currentCanonicalStatus?.first_workflow_run_id ?? null)
+        : legacyWorkflowRunId;
+    const isCompleted = canonicalContentEnabled
+        ? Boolean(
+              currentCanonicalStatus && ['completed', 'failed', 'cancelled'].includes(currentCanonicalStatus.status),
+          )
+        : legacyIsCompleted;
 
     const {
         plans,
@@ -1800,9 +1825,21 @@ function ModernAgentConversationInner({
         messages.length + canonicalActivityVersion,
     );
     const canonicalDescriptor = canonicalAuthority.phase === 'canonical' ? canonicalAuthority.descriptor : undefined;
+    useEffect(() => {
+        if (canonicalDescriptor) setCanonicalStreamRun(agentRunId);
+    }, [canonicalDescriptor, agentRunId]);
     const canonicalContent = useCanonicalAgentContent(client, {
         enabled: canonicalDescriptor !== undefined,
         loadAcceptedHistory: false,
+        onRunStatus: setCanonicalRunStatus,
+        onSourceChanged: () => setCanonicalActivityVersion((version) => version + 1),
+        onRunControl: (notification) => {
+            consumeCanonicalControl(notification);
+            const response = notification.control.request_input_response;
+            if (response) markRequestInputIdAnsweredForSession(agentRunId, response.request_id);
+            onRunControl?.(notification);
+            setCanonicalActivityVersion((version) => version + 1);
+        },
         conversationId: canonicalDescriptor?.head.conversation_id,
         agentRunId,
         scope: canonicalSelection.status === 'selected' ? canonicalSelection.scope : undefined,
@@ -2421,7 +2458,6 @@ function ModernAgentConversationInner({
                 workflow_run_id: agentRunId,
                 type: AgentMessageType.QUESTION,
                 message: messageContent,
-                workstream_id: 'main',
                 details: {
                     _optimistic: true,
                     _messageId: messageId,
@@ -3003,9 +3039,13 @@ function ModernAgentConversationInner({
                         canonicalAuthority.source_status === 'refresh_error') ? (
                         <MessageBox status="info">{t('agent.canonical.sourceUnavailable')}</MessageBox>
                     ) : null}
+                    {canonicalContent.controlDeliveryGap && (
+                        <MessageBox status="info">{t('agent.canonical.controlGap')}</MessageBox>
+                    )}
                     <CanonicalAgentTranscript
                         transcript={canonicalTranscript}
                         live={canonicalContent.live}
+                        pendingInputs={canonicalPendingUserInputs(messages, canonicalDescriptor?.workstream_id)}
                         loadNext={browseCanonicalHistory}
                         hideToolCalls={hideToolCallsInViewMode?.includes(viewMode)}
                         artifactRunId={agentRunId}

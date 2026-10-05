@@ -3448,6 +3448,18 @@ interface Checks {
         W.ExperimentalAgentConversationStreamEnvelope,
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamEnvelopeSchema>
     >;
+    ExperimentalAgentConversationRunStatus: Same<
+        W.ExperimentalAgentConversationRunStatus,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationRunStatusSchema>
+    >;
+    ExperimentalAgentRunStreamEnvelope: Same<
+        W.ExperimentalAgentRunStreamEnvelope,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunStreamEnvelopeSchema>
+    >;
+    ExperimentalAgentRunUpdatesResponse: Same<
+        W.ExperimentalAgentRunUpdatesResponse,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunUpdatesResponseSchema>
+    >;
     AgentRunDetailsQuery: Same<
         W.AgentRunDetailsQuery,
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunDetailsQuerySchema>
@@ -3535,6 +3547,38 @@ interface Checks {
     RestartAgentRunPayload: Same<
         W.RestartAgentRunPayload,
         z.infer<typeof import('./api-schemas/workflow-runs.js').RestartAgentRunPayloadSchema>
+    >;
+    ExperimentalAgentRunControlEvent: Same<
+        W.ExperimentalAgentRunControlEvent,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunControlEventSchema>
+    >;
+    ExperimentalAgentRunControlNotification: Same<
+        W.ExperimentalAgentRunControlNotification,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunControlNotificationSchema>
+    >;
+    ExperimentalAgentEditingResource: Same<
+        W.ExperimentalAgentEditingResource,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentEditingResourceSchema>
+    >;
+    ExperimentalAgentDocumentEditingAction: Same<
+        W.ExperimentalAgentDocumentEditingAction,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentDocumentEditingActionSchema>
+    >;
+    ExperimentalAgentUserInputMetadata: Same<
+        W.ExperimentalAgentUserInputMetadata,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentUserInputMetadataSchema>
+    >;
+    ExperimentalAgentControlPage: Same<
+        W.ExperimentalAgentControlPage,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentControlPageSchema>
+    >;
+    ExperimentalAgentRunUpdatesQuery: Same<
+        W.ExperimentalAgentRunUpdatesQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunUpdatesQuerySchema>
+    >;
+    ExperimentalAgentRunStreamQuery: Same<
+        W.ExperimentalAgentRunStreamQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunStreamQuerySchema>
     >;
     CreateCollectionPayload: Same<
         W.CreateCollectionPayload,
@@ -8781,6 +8825,50 @@ interface Checks {
         W.ApiComponentTypes['ExperimentalAgentConversationStreamEnvelope'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamEnvelopeSchema>
     >;
+    'component:ExperimentalAgentEditingResource': Same<
+        W.ApiComponentTypes['ExperimentalAgentEditingResource'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentEditingResourceSchema>
+    >;
+    'component:ExperimentalAgentDocumentEditingAction': Same<
+        W.ApiComponentTypes['ExperimentalAgentDocumentEditingAction'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentDocumentEditingActionSchema>
+    >;
+    'component:ExperimentalAgentUserInputMetadata': Same<
+        W.ApiComponentTypes['ExperimentalAgentUserInputMetadata'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentUserInputMetadataSchema>
+    >;
+    'component:ExperimentalAgentControlPage': Same<
+        W.ApiComponentTypes['ExperimentalAgentControlPage'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentControlPageSchema>
+    >;
+    'component:ExperimentalAgentRunUpdatesQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunUpdatesQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunUpdatesQuerySchema>
+    >;
+    'component:ExperimentalAgentRunStreamQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunStreamQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunStreamQuerySchema>
+    >;
+    'component:ExperimentalAgentRunControlEvent': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunControlEvent'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunControlEventSchema>
+    >;
+    'component:ExperimentalAgentRunControlNotification': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunControlNotification'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunControlNotificationSchema>
+    >;
+    'component:ExperimentalAgentConversationRunStatus': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationRunStatus'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationRunStatusSchema>
+    >;
+    'component:ExperimentalAgentRunStreamEnvelope': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunStreamEnvelope'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunStreamEnvelopeSchema>
+    >;
+    'component:ExperimentalAgentRunUpdatesResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunUpdatesResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunUpdatesResponseSchema>
+    >;
     'component:UpdateAgentRunStatusPayload': Same<
         W.ApiComponentTypes['UpdateAgentRunStatusPayload'],
         z.infer<typeof import('./api-schemas/agent-runs.js').UpdateAgentRunStatusPayloadSchema>
@@ -12010,6 +12098,9 @@ const checks: Checks = {
     ExperimentalAgentConversationTranscriptQuery: true,
     ExperimentalAgentConversationTranscriptPage: true,
     ExperimentalAgentConversationStreamEnvelope: true,
+    ExperimentalAgentConversationRunStatus: true,
+    ExperimentalAgentRunStreamEnvelope: true,
+    ExperimentalAgentRunUpdatesResponse: true,
     AgentRunDetailsQuery: true,
     AgentRunAccessQuery: true,
     AgentRunArtifactsQuery: true,
@@ -12032,6 +12123,14 @@ const checks: Checks = {
     CreateProcessRunWithDefinitionPayload: true,
     CreateRunPayload: true,
     RestartAgentRunPayload: true,
+    ExperimentalAgentRunControlEvent: true,
+    ExperimentalAgentRunControlNotification: true,
+    ExperimentalAgentEditingResource: true,
+    ExperimentalAgentDocumentEditingAction: true,
+    ExperimentalAgentUserInputMetadata: true,
+    ExperimentalAgentControlPage: true,
+    ExperimentalAgentRunUpdatesQuery: true,
+    ExperimentalAgentRunStreamQuery: true,
     CreateCollectionPayload: true,
     Collection: true,
     CollectionMembersUpdateResult: true,
@@ -13403,6 +13502,17 @@ const checks: Checks = {
     'component:ExperimentalAgentConversationTranscriptQuery': true,
     'component:ExperimentalAgentConversationTranscriptPage': true,
     'component:ExperimentalAgentConversationStreamEnvelope': true,
+    'component:ExperimentalAgentEditingResource': true,
+    'component:ExperimentalAgentDocumentEditingAction': true,
+    'component:ExperimentalAgentUserInputMetadata': true,
+    'component:ExperimentalAgentControlPage': true,
+    'component:ExperimentalAgentRunUpdatesQuery': true,
+    'component:ExperimentalAgentRunStreamQuery': true,
+    'component:ExperimentalAgentRunControlEvent': true,
+    'component:ExperimentalAgentRunControlNotification': true,
+    'component:ExperimentalAgentConversationRunStatus': true,
+    'component:ExperimentalAgentRunStreamEnvelope': true,
+    'component:ExperimentalAgentRunUpdatesResponse': true,
     'component:UpdateAgentRunStatusPayload': true,
     'component:AgentRunFeedbackRating': true,
     'component:AgentRunFeedbackReasonCode': true,
@@ -13950,6 +14060,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2824);
+        expect(Object.keys(checks)).toHaveLength(2846);
     });
 });

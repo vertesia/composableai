@@ -54,6 +54,7 @@
     "agent.canceling": "正在取消",
     "agent.cancelWorkflow": "取消工作流",
     "agent.canonical.browseEarlier": "浏览较早的对话",
+    "agent.canonical.controlGap": "早先输入的确认历史不完整。",
     "agent.canonical.draft": "实时草稿",
     "agent.canonical.gap": "部分对话内容在此窗口之外或不可用。",
     "agent.canonical.historyGap": "这些窗口之间的对话内容未显示。",

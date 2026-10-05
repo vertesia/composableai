@@ -3,8 +3,11 @@ import type {
     CanonicalConversationHeadScope,
     ExperimentalAgentConversationAcceptedOutputHistoryPage,
     ExperimentalAgentConversationAcceptedOutputHistoryQuery,
+    ExperimentalAgentConversationRunStatus,
+    ExperimentalAgentRunControlNotification,
 } from '@vertesia/common';
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { experimentalAgentRunControlIdentity } from '@vertesia/common/canonical-stream-runtime';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import {
     CANONICAL_AGENT_HISTORY_MAX_EMPTY_PAGES_PER_REQUEST,
     CANONICAL_AGENT_HISTORY_MAX_EXACT_FETCHES,
@@ -22,6 +25,9 @@ export interface UseCanonicalAgentContentOptions {
     /** Transcript callers load persisted turns directly and only need this live suffix. */
     loadAcceptedHistory?: boolean;
     conversationId?: string;
+    onRunControl?: (notification: ExperimentalAgentRunControlNotification) => void;
+    onSourceChanged?: () => void;
+    onRunStatus?: (status: ExperimentalAgentConversationRunStatus) => void;
     agentRunId: string;
     scope?: CanonicalConversationHeadScope;
     workstreamId?: string;
@@ -160,8 +166,15 @@ async function loadHistoryWindow(
 
 export function useCanonicalAgentContent(client: VertesiaClient, options: UseCanonicalAgentContentOptions) {
     const { agentRunId, enabled, scope, workstreamId, loadAcceptedHistory = true, conversationId } = options;
+    const [controlGapSession, setControlGapSession] = useState<CanonicalAgentContentSession | undefined>();
     const [state, dispatch] = useReducer(canonicalAgentContentReducer, undefined, initialCanonicalAgentContentState);
     const stateRef = useRef(state);
+    const onRunStatusRef = useRef(options.onRunStatus);
+    onRunStatusRef.current = options.onRunStatus;
+    const onRunControlRef = useRef(options.onRunControl);
+    onRunControlRef.current = options.onRunControl;
+    const onSourceChangedRef = useRef(options.onSourceChanged);
+    onSourceChangedRef.current = options.onSourceChanged;
     const sessionRef = useRef<CanonicalAgentContentSession | undefined>(undefined);
     stateRef.current = state;
 
@@ -187,6 +200,100 @@ export function useCanonicalAgentContent(client: VertesiaClient, options: UseCan
         const dispatchIfCurrent = (action: CanonicalAgentContentAction) => {
             if (isCurrent()) dispatch(action);
         };
+        let statusTimer: ReturnType<typeof setTimeout> | undefined;
+        const controls = new Map<string, string>();
+        let latestSource: string | undefined;
+        let pinnedScope = scope;
+        let pinnedWorkstream = workstreamId;
+        let routePinned = false;
+        const assertHostRoute = (route: {
+            agent_run_id: string;
+            scope: CanonicalConversationHeadScope;
+            workstream_id?: string;
+        }) => {
+            if (
+                route.agent_run_id !== agentRunId ||
+                (pinnedScope !== undefined && route.scope !== pinnedScope) ||
+                (routePinned
+                    ? route.workstream_id !== pinnedWorkstream
+                    : workstreamId !== undefined && route.workstream_id !== workstreamId)
+            )
+                throw new Error('Canonical run host event changed its authorized route');
+            pinnedScope = route.scope;
+            pinnedWorkstream = route.workstream_id;
+            routePinned = true;
+        };
+        let latestStatus: ExperimentalAgentConversationRunStatus | undefined;
+        const observeStatus = (status: ExperimentalAgentConversationRunStatus) => {
+            if (!isCurrent()) return;
+            assertHostRoute(status);
+            if (status.control_page?.gap_before) setControlGapSession(session);
+            const timestamp = Date.parse(status.updated_at);
+            const previousTimestamp = latestStatus ? Date.parse(latestStatus.updated_at) : -1;
+            const terminal = (value: ExperimentalAgentConversationRunStatus) =>
+                ['completed', 'failed', 'cancelled'].includes(value.status);
+            if (
+                timestamp < previousTimestamp ||
+                (timestamp === previousTimestamp && latestStatus && terminal(latestStatus) && !terminal(status))
+            )
+                return;
+            if (latestStatus && JSON.stringify(latestStatus) === JSON.stringify(status)) return;
+            latestStatus = status;
+            onRunStatusRef.current?.(status);
+        };
+        const observeControl = (notification: ExperimentalAgentRunControlNotification) => {
+            if (!isCurrent()) return;
+            assertHostRoute(notification);
+            const identity = notification.control.event_id;
+            const fingerprint = experimentalAgentRunControlIdentity(notification);
+            const prior = controls.get(identity);
+            if (prior !== undefined) {
+                if (prior !== fingerprint) throw new Error('Canonical run control identity changed');
+                return;
+            }
+            if (controls.size >= 25_000) throw new Error('Canonical run control session exceeds its retained bound');
+            onRunControlRef.current?.(notification);
+            controls.set(identity, fingerprint);
+        };
+        let controlAfter = 0;
+        let moreControls = false;
+        const pollStatus = async (): Promise<void> => {
+            try {
+                const update = await client.agents.retrieveCanonicalUpdates(
+                    agentRunId,
+                    { conversation_scope: scope, workstream_id: workstreamId, control_after: controlAfter },
+                    { signal: controller.signal },
+                );
+                if (!isCurrent()) return;
+                observeStatus(update.run);
+                if (update.control_page.gap_before) setControlGapSession(session);
+                for (const control of update.controls) observeControl(control);
+                controlAfter = update.control_page.after;
+                moreControls = update.control_page.has_more;
+                const sourceIdentity = JSON.stringify(update.source);
+                if (sourceIdentity !== latestSource) {
+                    latestSource = sourceIdentity;
+                    onSourceChangedRef.current?.();
+                }
+                if (
+                    conversationId !== undefined &&
+                    (update.source.status !== 'initialized' || update.source.head.conversation_id !== conversationId)
+                ) {
+                    throw new Error('Canonical run lifecycle lost its exact source descriptor');
+                }
+            } catch (error: unknown) {
+                if (isCurrent()) dispatch({ type: 'stream_error', error });
+            } finally {
+                if (isCurrent())
+                    statusTimer = setTimeout(
+                        () => {
+                            void pollStatus();
+                        },
+                        moreControls ? 0 : 5000,
+                    );
+            }
+        };
+        if (onRunStatusRef.current || onRunControlRef.current) void pollStatus();
         if (loadAcceptedHistory) dispatch({ type: 'history_loading' });
         dispatch({ type: 'stream_connecting' });
 
@@ -220,6 +327,8 @@ export function useCanonicalAgentContent(client: VertesiaClient, options: UseCan
                     scope,
                     workstream_id: workstreamId,
                     signal: controller.signal,
+                    ...(onRunStatusRef.current || onRunControlRef.current ? { on_run_status: observeStatus } : {}),
+                    ...(onRunControlRef.current ? { on_run_control: observeControl } : {}),
                 },
             )
             .catch((error: unknown) => {
@@ -227,6 +336,7 @@ export function useCanonicalAgentContent(client: VertesiaClient, options: UseCan
             });
 
         return () => {
+            if (statusTimer !== undefined) clearTimeout(statusTimer);
             controller.abort();
             if (sessionRef.current === session) sessionRef.current = undefined;
         };
@@ -278,5 +388,10 @@ export function useCanonicalAgentContent(client: VertesiaClient, options: UseCan
         enabled && session?.key === currentKey && session.client === client
             ? state
             : initialCanonicalAgentContentState();
-    return { ...presentedState, loadNextHistory };
+    return {
+        ...presentedState,
+        loadNextHistory,
+        controlDeliveryGap:
+            enabled && session?.key === currentKey && session.client === client && controlGapSession === session,
+    };
 }

@@ -9,6 +9,8 @@ import {
 } from '../../canonical-output/CanonicalOutputBlocks.js';
 import { CanonicalAgentDraft } from './CanonicalAgentOutput.js';
 import type { CanonicalAgentContentState } from './canonicalAgentContent.js';
+import { type CanonicalPendingUserInput, canonicalUserMetadata } from './canonicalPendingUserInput.js';
+import { DocumentEditingActionCard, parseMarkdownEditingAction } from './DocumentEditingActionCard.js';
 import type { CanonicalAgentTranscriptState } from './hooks/useCanonicalAgentTranscript.js';
 
 function TranscriptTurn({
@@ -20,16 +22,31 @@ function TranscriptTurn({
     assets: ConversationTranscriptFragment['assets'];
 } & CanonicalOutputOptions) {
     const { t } = useUITranslation();
+    const metadata = turn.kind === 'user' ? canonicalUserMetadata(turn.metadata) : undefined;
+    const editing = parseMarkdownEditingAction(metadata?.editing_action);
+    const displayMessage = editing ? undefined : metadata?.display_message;
+    // Human authoring replaces only leading host guidance; later text/media stay accepted contributions.
+    const replacesLeadingInstruction = editing !== undefined || displayMessage !== undefined;
+    const authoredBlocks =
+        replacesLeadingInstruction && turn.blocks[0]?.type === 'text' ? turn.blocks.slice(1) : turn.blocks;
     const blocks = options.hideToolCalls
-        ? turn.blocks.filter((block) => block.type !== 'tool_call' && block.type !== 'tool_result')
-        : turn.blocks;
-    if (options.hideToolCalls && (turn.kind === 'tool' || blocks.length === 0)) return null;
+        ? authoredBlocks.filter((block) => block.type !== 'tool_call' && block.type !== 'tool_result')
+        : authoredBlocks;
+    if (
+        options.hideToolCalls &&
+        (turn.kind === 'tool' || (blocks.length === 0 && !editing && displayMessage === undefined))
+    )
+        return null;
     return (
         <article
             className="min-w-0 max-w-full space-y-2 rounded-md border border-border p-3"
             data-canonical-turn-id={turn.id}
         >
             <div className="text-sm font-medium">{t(`agent.canonical.role.${turn.kind}`)}</div>
+            {editing && <DocumentEditingActionCard action={editing} />}
+            {displayMessage !== undefined && (
+                <div className="whitespace-pre-wrap wrap-break-word">{displayMessage}</div>
+            )}
             {blocks.map((block) => {
                 if (block.type === 'tool_call')
                     return (
@@ -38,7 +55,7 @@ function TranscriptTurn({
                             {block.arguments.type === 'json' ? (
                                 <JSONCode data={block.arguments.value} />
                             ) : (
-                                <pre className="whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                                <pre className="whitespace-pre-wrap wrap-break-word [overflow-wrap:anywhere]">
                                     {block.arguments.raw}
                                 </pre>
                             )}
@@ -62,11 +79,13 @@ export function CanonicalAgentTranscript({
     transcript,
     live,
     loadNext,
+    pendingInputs = [],
     ...options
 }: {
     transcript: CanonicalAgentTranscriptState;
     live: CanonicalAgentContentState['live'];
     loadNext: () => Promise<void>;
+    pendingInputs?: readonly CanonicalPendingUserInput[];
 } & CanonicalOutputOptions) {
     const { t } = useUITranslation();
     const draftSnapshot = options.hideToolCalls
@@ -75,6 +94,15 @@ export function CanonicalAgentTranscript({
     const snapshot = transcript.tail?.snapshot;
     const persistedPages = [...transcript.pages, ...(transcript.tail ? [transcript.tail] : [])];
     const covered = new Set(persistedPages.flatMap((page) => page.fragment.turns.map((turn) => turn.id)));
+    const acceptedInputIds = new Set(
+        persistedPages.flatMap((page) =>
+            page.fragment.turns.flatMap((turn) => {
+                const metadata = turn.kind === 'user' ? canonicalUserMetadata(turn.metadata) : undefined;
+                return metadata?.client_message_id ? [metadata.client_message_id] : [];
+            }),
+        ),
+    );
+    const pending = pendingInputs.filter((input) => !acceptedInputIds.has(input.client_message_id));
     const uncovered = live.accepted_outputs.filter(
         (item) =>
             (!snapshot || item.envelope.source.conversation_id === snapshot.conversation_id) &&
@@ -152,6 +180,23 @@ export function CanonicalAgentTranscript({
                         {t(transcript.pages.length ? 'agent.canonical.loadMore' : 'agent.canonical.browseEarlier')}
                     </Button>
                 )}
+            {pending.map((input) => {
+                const edit = parseMarkdownEditingAction(input.editing_action);
+                return (
+                    <article
+                        key={input.client_message_id}
+                        data-canonical-pending-input={input.client_message_id}
+                        className="min-w-0 max-w-full space-y-2 rounded-md border border-border p-3"
+                    >
+                        <div className="text-sm font-medium">{t('agent.canonical.role.user')}</div>
+                        {edit ? (
+                            <DocumentEditingActionCard action={edit} />
+                        ) : (
+                            <div className="whitespace-pre-wrap wrap-break-word">{input.text}</div>
+                        )}
+                    </article>
+                );
+            })}
             {suffix.map((item) => (
                 <article
                     key={item.envelope.receipt.id}
@@ -180,7 +225,7 @@ export function CanonicalAgentTranscript({
             {draftSnapshot.length > 0 && !covered.has(live.draft_turn_id ?? '') && (
                 <div
                     data-canonical-live-draft="true"
-                    className="min-w-0 max-w-full [&_pre]:break-words [&_pre]:[overflow-wrap:anywhere]"
+                    className="min-w-0 max-w-full [&_pre]:wrap-break-word [&_pre]:[overflow-wrap:anywhere]"
                 >
                     <div className="text-sm text-muted-foreground">{t('agent.canonical.draft')}</div>
                     <CanonicalAgentDraft snapshot={draftSnapshot} />

@@ -6,6 +6,7 @@ import type {
 import {
     CONVERSATION_STREAM_MAX_EVENT_BYTES,
     type ConversationStreamRuntimeValidators,
+    canonicalJsonContentString,
     preflightJsonInput,
 } from '@llumiverse/conversation/streaming-runtime';
 import type { ExperimentalCanonicalInteractionStreamEnvelope } from '../canonical-interaction-stream.js';
@@ -13,6 +14,13 @@ import type {
     ExperimentalAgentConversationSourceDescriptor,
     ExperimentalAgentConversationStreamEnvelope,
     ExperimentalAgentConversationTranscriptPage,
+    ExperimentalAgentDocumentEditingAction,
+    ExperimentalAgentEditingResource,
+    ExperimentalAgentRunControlEvent,
+    ExperimentalAgentRunControlNotification,
+    ExperimentalAgentRunStreamEnvelope,
+    ExperimentalAgentRunUpdatesResponse,
+    ExperimentalAgentUserInputMetadata,
 } from '../store/agent-run.js';
 import validateCanonicalStreamWireValue from './canonical-stream-validator.generated.js';
 
@@ -25,6 +33,12 @@ interface CanonicalStreamWireValues {
     ConversationStreamEvent: ConversationStreamEvent;
     ExperimentalCanonicalInteractionStreamEnvelope: ExperimentalCanonicalInteractionStreamEnvelope;
     ExperimentalAgentConversationStreamEnvelope: ExperimentalAgentConversationStreamEnvelope;
+    ExperimentalAgentEditingResource: ExperimentalAgentEditingResource;
+    ExperimentalAgentDocumentEditingAction: ExperimentalAgentDocumentEditingAction;
+    ExperimentalAgentUserInputMetadata: ExperimentalAgentUserInputMetadata;
+    ExperimentalAgentRunControlEvent: ExperimentalAgentRunControlEvent;
+    ExperimentalAgentRunStreamEnvelope: ExperimentalAgentRunStreamEnvelope;
+    ExperimentalAgentRunUpdatesResponse: ExperimentalAgentRunUpdatesResponse;
     ExperimentalAgentConversationTranscriptPage: ExperimentalAgentConversationTranscriptPage;
     ExperimentalAgentConversationSourceDescriptor: ExperimentalAgentConversationSourceDescriptor;
 }
@@ -36,7 +50,10 @@ function parseCanonicalStreamWireValue<K extends keyof CanonicalStreamWireValues
     // Transcript projection uses the canonical JSON defaults, including its larger bounded snapshot budget.
     // Stream wire values retain the smaller per-event limit.
     const preflight =
-        kind === 'ExperimentalAgentConversationTranscriptPage'
+        kind === 'ExperimentalAgentConversationTranscriptPage' ||
+        kind === 'ExperimentalAgentRunUpdatesResponse' ||
+        kind === 'ExperimentalAgentDocumentEditingAction' ||
+        kind === 'ExperimentalAgentUserInputMetadata'
             ? preflightJsonInput(input)
             : preflightJsonInput(input, {
                   max_depth: 64,
@@ -95,6 +112,49 @@ export function parseExperimentalAgentConversationStreamEnvelope(
     return envelope;
 }
 
+export function parseExperimentalAgentRunStreamEnvelope(input: unknown): ExperimentalAgentRunStreamEnvelope {
+    const envelope = parseCanonicalStreamWireValue('ExperimentalAgentRunStreamEnvelope', input);
+    if (envelope.type !== 'run_status' && envelope.type !== 'run_control')
+        parseExperimentalAgentConversationStreamEnvelope(envelope);
+    return envelope;
+}
+
+export function parseExperimentalAgentRunControlEvent(input: unknown): ExperimentalAgentRunControlEvent {
+    return parseCanonicalStreamWireValue('ExperimentalAgentRunControlEvent', input);
+}
+
+export function parseExperimentalAgentRunUpdatesResponse(input: unknown): ExperimentalAgentRunUpdatesResponse {
+    const response = parseCanonicalStreamWireValue('ExperimentalAgentRunUpdatesResponse', input);
+    if (
+        response.run.agent_run_id !== response.source.agent_run_id ||
+        response.run.scope !== response.source.scope ||
+        response.run.workstream_id !== response.source.workstream_id
+    ) {
+        throw new TypeError('Canonical run updates changed their authorized source route');
+    }
+    if (
+        response.controls.some(
+            (control) =>
+                control.agent_run_id !== response.run.agent_run_id ||
+                control.scope !== response.run.scope ||
+                control.workstream_id !== response.run.workstream_id,
+        )
+    ) {
+        throw new TypeError('Canonical run control changed its authorized source route');
+    }
+    const ids = response.controls.map((control) => control.control.event_id);
+    if (new Set(ids).size !== ids.length) throw new TypeError('Canonical run updates repeat a control identity');
+    let prior = 0;
+    for (const control of response.controls) {
+        if (control.timestamp <= prior) throw new TypeError('Canonical run updates changed control delivery order');
+        prior = control.timestamp;
+    }
+    if (response.controls.length && response.control_page.after !== prior)
+        throw new TypeError('Canonical run updates changed their control page cursor');
+
+    return response;
+}
+
 export function parseExperimentalAgentConversationTranscriptPage(
     input: unknown,
 ): ExperimentalAgentConversationTranscriptPage {
@@ -119,3 +179,23 @@ export const CanonicalConversationStreamRuntimeValidators: ConversationStreamRun
     cursor: parseConversationStreamCursor,
     event: parseConversationStreamEvent,
 });
+
+/** Delivery retries may allocate another timestamp; the exact route and control JSON are immutable. */
+export function experimentalAgentRunControlIdentity(notification: ExperimentalAgentRunControlNotification): string {
+    const { timestamp: _deliveryTimestamp, ...semantic } = notification;
+    return canonicalJsonContentString(semantic);
+}
+
+export { canonicalJsonContentString };
+
+export function parseExperimentalAgentEditingResource(input: unknown): ExperimentalAgentEditingResource {
+    return parseCanonicalStreamWireValue('ExperimentalAgentEditingResource', input);
+}
+
+export function parseExperimentalAgentDocumentEditingAction(input: unknown): ExperimentalAgentDocumentEditingAction {
+    return parseCanonicalStreamWireValue('ExperimentalAgentDocumentEditingAction', input);
+}
+
+export function parseExperimentalAgentUserInputMetadata(input: unknown): ExperimentalAgentUserInputMetadata {
+    return parseCanonicalStreamWireValue('ExperimentalAgentUserInputMetadata', input);
+}

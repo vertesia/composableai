@@ -56,6 +56,7 @@
     "agent.canceling": "Отмена",
     "agent.cancelWorkflow": "Отменить рабочий процесс",
     "agent.canonical.browseEarlier": "Просмотреть более ранний разговор",
+    "agent.canonical.controlGap": "История подтверждений предыдущих вводов неполна.",
     "agent.canonical.draft": "Текущий черновик",
     "agent.canonical.gap": "Часть разговора находится вне этого окна или недоступна.",
     "agent.canonical.historyGap": "Содержимое разговора между этими окнами не отображается.",

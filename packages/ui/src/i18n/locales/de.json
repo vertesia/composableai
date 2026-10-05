@@ -54,6 +54,7 @@
     "agent.canceling": "Wird abgebrochen",
     "agent.cancelWorkflow": "Workflow abbrechen",
     "agent.canonical.browseEarlier": "Frühere Unterhaltung durchsuchen",
+    "agent.canonical.controlGap": "Der Verlauf früherer Eingangsbestätigungen ist unvollständig.",
     "agent.canonical.draft": "Live-Entwurf",
     "agent.canonical.gap": "Ein Teil der Unterhaltung liegt außerhalb dieses Fensters oder ist nicht verfügbar.",
     "agent.canonical.historyGap": "Der Gesprächsinhalt zwischen diesen Fenstern wird nicht angezeigt.",

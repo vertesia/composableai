@@ -2390,9 +2390,9 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.addOptimisticMessage).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'follow up',
-                workstream_id: 'main',
             }),
         );
+        expect(mocks.addOptimisticMessage.mock.calls[0][0]).not.toHaveProperty('workstream_id');
     });
 
     it('uses message-derived workstreams for panel history while the composer only counts active workstreams', async () => {

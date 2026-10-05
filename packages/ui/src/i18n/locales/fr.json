@@ -55,6 +55,7 @@
     "agent.canceling": "Annulation",
     "agent.cancelWorkflow": "Annuler le workflow",
     "agent.canonical.browseEarlier": "Parcourir le début de la conversation",
+    "agent.canonical.controlGap": "L’historique des confirmations des entrées précédentes est incomplet.",
     "agent.canonical.draft": "Brouillon en direct",
     "agent.canonical.gap": "Une partie de la conversation est hors de cette fenêtre ou indisponible.",
     "agent.canonical.historyGap": "Le contenu de la conversation entre ces fenêtres n’est pas affiché.",

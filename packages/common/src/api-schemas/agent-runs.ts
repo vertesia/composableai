@@ -1840,6 +1840,176 @@ export const ExperimentalAgentConversationTranscriptPageSchema = z
         description: 'A bounded safe canonical transcript fragment pinned to one retained conversation snapshot.',
     });
 
+export const ExperimentalAgentEditingResourceSchema = z
+    .discriminatedUnion('kind', [
+        z.strictObject({ kind: z.literal('store_document'), document_id: z.string().min(1).max(512) }),
+        z.strictObject({
+            kind: z.literal('agent_artifact'),
+            run_id: z.string().min(1).max(512),
+            path: z.string().min(1).max(4_096),
+        }),
+    ])
+    .meta({
+        id: 'ExperimentalAgentEditingResource',
+        type: 'object',
+        required: ['kind'],
+        discriminator: { propertyName: 'kind' },
+    });
+
+const agentDocumentEditingShape = {
+    operation_id: z.string().min(1).max(512),
+    resource: z.discriminatedUnion('kind', [
+        z.strictObject({
+            kind: z.literal('store_document'),
+            document_id: z.string().min(1).max(512),
+            name: z.string().min(1).max(4_096).optional(),
+        }),
+        z.strictObject({
+            kind: z.literal('agent_artifact'),
+            run_id: z.string().min(1).max(512),
+            path: z.string().min(1).max(4_096),
+        }),
+    ]),
+    anchor: z.strictObject({
+        block_id: z.string().min(1).max(512),
+        block_type: z.enum([
+            'heading',
+            'paragraph',
+            'list',
+            'list_item',
+            'blockquote',
+            'code_block',
+            'table',
+            'separator',
+        ]),
+        exact_text: z
+            .string()
+            .min(1)
+            .max(512 * 1024),
+    }),
+    base_version: z.string().min(1).max(512).optional(),
+    applied: z.boolean().optional(),
+    updated_document_id: z.string().min(1).max(512).optional(),
+};
+const agentDocumentUserChange = z.strictObject({
+    before: z
+        .string()
+        .min(1)
+        .max(512 * 1024),
+    after: z
+        .string()
+        .min(1)
+        .max(512 * 1024),
+});
+export const ExperimentalAgentDocumentEditingActionSchema = z
+    .discriminatedUnion('action', [
+        z.strictObject({
+            ...agentDocumentEditingShape,
+            action: z.literal('edit'),
+            user_change: agentDocumentUserChange,
+            comment: z
+                .string()
+                .min(1)
+                .max(512 * 1024)
+                .optional(),
+        }),
+        z.strictObject({
+            ...agentDocumentEditingShape,
+            action: z.literal('comment'),
+            comment: z
+                .string()
+                .min(1)
+                .max(512 * 1024),
+            user_change: agentDocumentUserChange.optional(),
+        }),
+    ])
+    .meta({
+        id: 'ExperimentalAgentDocumentEditingAction',
+        type: 'object',
+        required: ['action'],
+        discriminator: { propertyName: 'action' },
+    });
+
+export const ExperimentalAgentUserInputMetadataSchema = z
+    .strictObject({
+        client_message_id: z.string().min(1).max(512).optional(),
+        display_message: z
+            .string()
+            .max(512 * 1024)
+            .optional(),
+        editing_action: ExperimentalAgentDocumentEditingActionSchema.optional(),
+        request_input_response: z.strictObject({ request_id: z.string().min(1).max(512) }).optional(),
+    })
+    .meta({ id: 'ExperimentalAgentUserInputMetadata' });
+
+/** Host acknowledgement carries identities only; accepted turn metadata owns editing content. */
+export const ExperimentalAgentRunControlEventSchema = z
+    .strictObject({
+        version: z.literal(1),
+        event: z.literal('user_input_received'),
+        event_id: z.string().min(1).max(512),
+        ack: z.string().min(1).max(512).optional(),
+        editing_action: z
+            .strictObject({
+                operation_id: z.string().min(1).max(512),
+                resource: ExperimentalAgentEditingResourceSchema,
+            })
+            .optional(),
+        request_input_response: z.strictObject({ request_id: z.string().min(1).max(512) }).optional(),
+    })
+    .meta({ id: 'ExperimentalAgentRunControlEvent' });
+
+export const ExperimentalAgentRunControlNotificationSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('run_control'),
+        timestamp: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).meta({ format: 'int64' }),
+        control: ExperimentalAgentRunControlEventSchema,
+    })
+    .meta({ id: 'ExperimentalAgentRunControlNotification' });
+
+export const ExperimentalAgentControlPageSchema = z
+    .strictObject({
+        after: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).meta({ format: 'int64' }),
+        has_more: z.boolean(),
+        gap_before: z.boolean(),
+    })
+    .meta({ id: 'ExperimentalAgentControlPage' });
+
+export const ExperimentalAgentRunUpdatesQuerySchema = ExperimentalAgentConversationStreamQuerySchema.extend({
+    control_after: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).meta({ format: 'int64' }).optional(),
+    control_limit: z.number().int().min(1).max(100).optional(),
+}).meta({ id: 'ExperimentalAgentRunUpdatesQuery' });
+
+export const ExperimentalAgentRunStreamQuerySchema = ExperimentalAgentRunUpdatesQuerySchema.meta({
+    id: 'ExperimentalAgentRunStreamQuery',
+});
+
+/** Status is a projection of the existing run row, never conversational content or output authority. */
+export const ExperimentalAgentConversationRunStatusSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('run_status'),
+        status: AgentRunStatusSchema,
+        activity_state: ConversationActivityStateSchema.optional(),
+        first_workflow_run_id: z.string().min(1).max(512).optional(),
+        updated_at: z.iso.datetime(),
+        control_page: ExperimentalAgentControlPageSchema.optional(),
+    })
+    .meta({ id: 'ExperimentalAgentConversationRunStatus' });
+
+export const ExperimentalAgentRunUpdatesResponseSchema = z
+    .strictObject({
+        run: ExperimentalAgentConversationRunStatusSchema,
+        source: ExperimentalAgentConversationSourceDescriptorSchema,
+        controls: z.array(ExperimentalAgentRunControlNotificationSchema).max(100),
+        control_page: ExperimentalAgentControlPageSchema,
+    })
+    .meta({
+        id: 'ExperimentalAgentRunUpdatesResponse',
+        description: 'Current lifecycle and exact canonical source; no copied message content.',
+    });
+
 export const ExperimentalAgentConversationStreamEnvelopeSchema = z
     .discriminatedUnion('type', [
         ExperimentalAgentConversationEventSchema,
@@ -1882,6 +2052,28 @@ export const RecordAgentRunPayloadSchema = z
 export const RecordRunPayloadSchema = z
     .union([RecordAgentRunPayloadSchema, RecordProcessRunPayloadSchema])
     .meta({ id: 'RecordRunPayload' });
+
+export const ExperimentalAgentRunStreamEnvelopeSchema = z
+    .discriminatedUnion('type', [
+        ...ExperimentalAgentConversationStreamEnvelopeSchema.options,
+        ExperimentalAgentConversationRunStatusSchema,
+        ExperimentalAgentRunControlNotificationSchema,
+    ])
+    .meta({
+        id: 'ExperimentalAgentRunStreamEnvelope',
+        type: 'object',
+        required: ['type'],
+        discriminator: {
+            propertyName: 'type',
+            mapping: {
+                conversation_event: '#/components/schemas/ExperimentalAgentConversationEvent',
+                preview_unavailable: '#/components/schemas/ExperimentalAgentConversationPreviewUnavailable',
+                accepted_output: '#/components/schemas/ExperimentalAgentConversationAcceptedOutput',
+                run_status: '#/components/schemas/ExperimentalAgentConversationRunStatus',
+                run_control: '#/components/schemas/ExperimentalAgentRunControlNotification',
+            },
+        },
+    });
 
 export const UpdateAgentRunStatusPayloadSchema = z
     .strictObject({

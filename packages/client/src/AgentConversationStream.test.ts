@@ -7,10 +7,17 @@ import {
 import type {
     ConversationOutputReceipt,
     ConversationStreamEvent,
+    ExperimentalAgentConversationRunStatus,
     ExperimentalAgentConversationStreamEnvelope,
+    ExperimentalAgentRunControlNotification,
 } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
-import { type AgentConversationStreamTransport, consumeAgentConversationStream } from './AgentConversationStream.js';
+import {
+    AgentConversationStreamDisconnectedError,
+    AgentConversationStreamProtocolError,
+    type AgentConversationStreamTransport,
+    consumeAgentConversationStream,
+} from './AgentConversationStream.js';
 import { CanonicalInteractionOutput } from './CanonicalInteractionOutput.js';
 
 const API_VERSION = '=20260930' as const;
@@ -624,4 +631,422 @@ describe('agent conversation canonical stream consumer', () => {
         ).rejects.toMatchObject({ name: 'AgentConversationStreamConsumerError', cause: failure });
         expect(transport.connect).toHaveBeenCalledOnce();
     });
+});
+
+function controlNotification(): ExperimentalAgentRunControlNotification {
+    return {
+        api_version: API_VERSION,
+        agent_run_id: AGENT_RUN_ID,
+        scope: 'root',
+        type: 'run_control',
+        timestamp: Date.parse(RECORDED_AT),
+        control: {
+            version: 1,
+            event: 'user_input_received',
+            event_id: 'control:input:one',
+            ack: 'client:input:one',
+            editing_action: {
+                operation_id: 'edit:one',
+                resource: { kind: 'store_document', document_id: 'document:one' },
+            },
+            request_input_response: { request_id: 'request-input:one' },
+        },
+    };
+}
+
+describe('negotiated canonical agent host envelopes', () => {
+    it('keeps content, lifecycle and control consumers separate and deduplicates exact controls across reconnect', async () => {
+        const abort = new AbortController();
+        const control = controlNotification();
+        const status: ExperimentalAgentConversationRunStatus = {
+            api_version: API_VERSION,
+            agent_run_id: AGENT_RUN_ID,
+            scope: 'root',
+            type: 'run_status',
+            status: 'running',
+            activity_state: 'working',
+            updated_at: RECORDED_AT,
+        };
+        const output = acceptedOutput();
+        let connects = 0;
+        const transport: AgentConversationStreamTransport = {
+            connect: vi.fn(async (emit) => {
+                emit(preview());
+                emit({ ...control, timestamp: control.timestamp + connects });
+                emit(status);
+                if (++connects === 2) emit(acceptedEnvelope(output.fragment.receipt));
+            }),
+            retrieveAcceptedOutput: vi.fn(async () => output),
+        };
+        const onControl = vi.fn();
+        const onStatus = vi.fn();
+        const content: string[] = [];
+        await consumeAgentConversationStream(transport, {
+            agent_run_id: AGENT_RUN_ID,
+            signal: abort.signal,
+            max_reconnects: 1,
+            reconnect_delay_ms: 0,
+            on_run_control: onControl,
+            on_run_status: onStatus,
+            on_update: (update) => {
+                content.push(update.type);
+                if (update.type === 'accepted_output') abort.abort();
+            },
+        });
+        expect(connects).toBe(2);
+        expect(onControl).toHaveBeenCalledExactlyOnceWith(control);
+        expect(onStatus).toHaveBeenCalledTimes(2);
+        expect(content).toEqual(['preview_unavailable', 'preview_unavailable', 'accepted_output']);
+        expect(transport.retrieveAcceptedOutput).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ receipt: output.fragment.receipt }),
+            expect.any(AbortSignal),
+        );
+    });
+
+    it.each(['foreign-route', 'changed-control', 'content-control', 'unnegotiated'] as const)(
+        'rejects %s without acquiring output authority',
+        async (mutation) => {
+            const first = controlNotification();
+            const changed = structuredClone(first);
+            const transport: AgentConversationStreamTransport = {
+                connect: vi.fn(async (emit) => {
+                    emit(preview());
+                    if (mutation === 'changed-control') {
+                        emit(first);
+                        changed.control.ack = 'foreign:ack';
+                    }
+                    if (mutation === 'foreign-route') changed.agent_run_id = 'foreign:run';
+                    if (mutation === 'content-control') {
+                        emit({ ...changed, message: 'invented content' });
+                        return;
+                    }
+                    emit(changed);
+                }),
+                retrieveAcceptedOutput: vi.fn(),
+            };
+            await expect(
+                consumeAgentConversationStream(transport, {
+                    agent_run_id: AGENT_RUN_ID,
+                    max_reconnects: 0,
+                    on_update: vi.fn(),
+                    ...(mutation === 'unnegotiated' ? {} : { on_run_control: vi.fn() }),
+                }),
+            ).rejects.toThrow();
+            expect(transport.retrieveAcceptedOutput).not.toHaveBeenCalled();
+        },
+    );
+
+    it('surfaces control consumer failure and aborts the actual transport', async () => {
+        let deliveredSignal: AbortSignal | undefined;
+        const failure = new Error('editing consumer rejected receipt');
+        const transport: AgentConversationStreamTransport = {
+            connect: vi.fn(async (emit, signal) => {
+                deliveredSignal = signal;
+                emit(preview());
+                emit(controlNotification());
+                await new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }));
+            }),
+            retrieveAcceptedOutput: vi.fn(),
+        };
+        await expect(
+            consumeAgentConversationStream(transport, {
+                agent_run_id: AGENT_RUN_ID,
+                max_reconnects: 0,
+                on_update: vi.fn(),
+                on_run_control: () => {
+                    throw failure;
+                },
+            }),
+        ).rejects.toMatchObject({ name: 'AgentConversationStreamConsumerError', cause: failure });
+        expect(deliveredSignal?.aborted).toBe(true);
+        expect(transport.retrieveAcceptedOutput).not.toHaveBeenCalled();
+    });
+});
+
+describe('bounded negotiated control backlog and reconnect cursor', () => {
+    it('accepts one 100-control burst, reconnects with the actual delivery cursor, and propagates explicit retention gaps', async () => {
+        const abort = new AbortController();
+        let connects = 0;
+        const cursors: (number | undefined)[] = [];
+        const observed: string[] = [];
+        const gaps: boolean[] = [];
+        const transport: AgentConversationStreamTransport = {
+            connect: vi.fn(async (emit, _signal, after) => {
+                cursors.push(after);
+                emit(preview());
+                const start = connects++ === 0 ? 1 : 101;
+                const end = start === 1 ? 100 : 105;
+                for (let i = start; i <= end; i++)
+                    emit({
+                        ...controlNotification(),
+                        timestamp: i,
+                        control: { ...controlNotification().control, event_id: `control:${i}`, ack: `client:${i}` },
+                    });
+                emit({
+                    api_version: API_VERSION,
+                    agent_run_id: AGENT_RUN_ID,
+                    scope: 'root',
+                    type: 'run_status',
+                    status: 'running',
+                    updated_at: RECORDED_AT,
+                    control_page: { after: end, has_more: false, gap_before: start === 101 },
+                });
+            }),
+            retrieveAcceptedOutput: vi.fn(),
+        };
+        await consumeAgentConversationStream(transport, {
+            agent_run_id: AGENT_RUN_ID,
+            signal: abort.signal,
+            max_reconnects: 1,
+            reconnect_delay_ms: 0,
+            on_update: () => {},
+            on_run_control: (value) => {
+                observed.push(value.control.event_id);
+            },
+            on_run_status: (value) => {
+                gaps.push(value.control_page?.gap_before ?? false);
+                if (connects === 2) abort.abort();
+            },
+        });
+        expect(cursors).toEqual([undefined, 100]);
+        expect(observed).toEqual(Array.from({ length: 105 }, (_, index) => `control:${index + 1}`));
+        expect(new Set(observed).size).toBe(105);
+        expect(gaps).toEqual([false, true]);
+        expect(transport.retrieveAcceptedOutput).not.toHaveBeenCalled();
+    });
+    it('still rejects more than one unconsumed control page without permitting a content queue expansion', async () => {
+        const transport: AgentConversationStreamTransport = {
+            connect: vi.fn(async (emit) => {
+                emit(preview());
+                for (let i = 0; i < 102; i++)
+                    emit({
+                        ...controlNotification(),
+                        timestamp: i + 1,
+                        control: { ...controlNotification().control, event_id: `control:${i}` },
+                    });
+            }),
+            retrieveAcceptedOutput: vi.fn(),
+        };
+        await expect(
+            consumeAgentConversationStream(transport, {
+                agent_run_id: AGENT_RUN_ID,
+                max_reconnects: 0,
+                on_update: () => {},
+                on_run_control: () => {},
+            }),
+        ).rejects.toMatchObject({
+            name: AgentConversationStreamDisconnectedError.name,
+            cause: {
+                name: AgentConversationStreamProtocolError.name,
+                message: 'Agent run control consumer queue overflowed',
+            },
+        });
+        expect(transport.connect).toHaveBeenCalledOnce();
+    });
+});
+
+it('reconnects from only handed controls and recovers the buffered suffix without duplicate callback effects', async () => {
+    const abort = new AbortController();
+    let releaseFirst = () => {};
+    const firstConsumer = new Promise<void>((resolve) => {
+        releaseFirst = resolve;
+    });
+    const observed: string[] = [];
+    const cursors: (number | undefined)[] = [];
+    const control = (index: number) => ({
+        ...controlNotification(),
+        timestamp: index,
+        control: { ...controlNotification().control, event_id: `buffered:${index}` },
+    });
+    let connections = 0;
+    const transport: AgentConversationStreamTransport = {
+        connect: vi.fn(async (emit, _signal, after) => {
+            cursors.push(after);
+            emit(preview());
+            if (++connections === 1) {
+                emit(control(1));
+                emit(control(2));
+                emit(control(3));
+            } else {
+                expect(after).toBe(1); // Controls 2/3 were queued, never handed by the first connection.
+                emit(control(1));
+                emit(control(2));
+                emit(control(3));
+                releaseFirst();
+            }
+        }),
+        retrieveAcceptedOutput: vi.fn(),
+    };
+    await consumeAgentConversationStream(transport, {
+        agent_run_id: AGENT_RUN_ID,
+        signal: abort.signal,
+        max_reconnects: 1,
+        reconnect_delay_ms: 0,
+        on_update: () => {},
+        on_run_control: async (value) => {
+            observed.push(value.control.event_id);
+            if (value.control.event_id === 'buffered:1') await firstConsumer;
+            if (value.control.event_id === 'buffered:3') abort.abort();
+        },
+    });
+    expect(cursors).toEqual([undefined, 1]);
+    expect(observed).toEqual(['buffered:1', 'buffered:2', 'buffered:3']);
+    expect(transport.retrieveAcceptedOutput).not.toHaveBeenCalled();
+});
+
+it('terminates an otherwise idle reconnected socket when its already handed prior control consumer fails', async () => {
+    const failure = new Error('Actual handed control callback failed');
+    let release = () => {};
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const cursors: (number | undefined)[] = [];
+    const signals: AbortSignal[] = [];
+    let connects = 0;
+    const consume = vi.fn(async () => {
+        await gate;
+        throw failure;
+    });
+    const transport: AgentConversationStreamTransport = {
+        connect: vi.fn(async (emit, signal, after) => {
+            cursors.push(after);
+            signals.push(signal);
+            if (++connects === 1) {
+                emit(preview());
+                emit(controlNotification());
+                return;
+            }
+            // No new control arrives to await the old callback: its failure must abort this active socket itself.
+            release();
+            await new Promise<void>((resolve) => {
+                if (signal.aborted) resolve();
+                else signal.addEventListener('abort', () => resolve(), { once: true });
+            });
+        }),
+        retrieveAcceptedOutput: vi.fn(),
+    };
+    await expect(
+        consumeAgentConversationStream(transport, {
+            agent_run_id: AGENT_RUN_ID,
+            max_reconnects: 1,
+            reconnect_delay_ms: 0,
+            on_update: () => {},
+            on_run_control: consume,
+        }),
+    ).rejects.toMatchObject({ name: 'AgentConversationStreamConsumerError', cause: failure });
+    expect(cursors).toEqual([undefined, controlNotification().timestamp]);
+    expect(signals).toHaveLength(2);
+    expect(signals[1].aborted).toBe(true);
+    expect(consume).toHaveBeenCalledOnce();
+    expect(transport.retrieveAcceptedOutput).not.toHaveBeenCalled();
+});
+
+it('terminates an otherwise idle reconnected socket when its already handed prior status consumer fails', async () => {
+    const failure = new Error('Actual handed status callback failed');
+    let release = () => {};
+    const gate = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const cursors: (number | undefined)[] = [];
+    const signals: AbortSignal[] = [];
+    let connects = 0;
+    const consume = vi.fn(async () => {
+        await gate;
+        throw failure;
+    });
+    const transport: AgentConversationStreamTransport = {
+        connect: vi.fn(async (emit, signal, after) => {
+            cursors.push(after);
+            signals.push(signal);
+            if (++connects === 1) {
+                emit(preview());
+                emit({
+                    api_version: API_VERSION,
+                    agent_run_id: AGENT_RUN_ID,
+                    scope: 'root',
+                    type: 'run_status',
+                    status: 'running',
+                    updated_at: RECORDED_AT,
+                });
+                return;
+            }
+            // No new envelope arrives to surface the old status callback failure: its failure must abort this active socket itself.
+            release();
+            await new Promise<void>((resolve) => {
+                if (signal.aborted) resolve();
+                else signal.addEventListener('abort', () => resolve(), { once: true });
+            });
+        }),
+        retrieveAcceptedOutput: vi.fn(),
+    };
+    await expect(
+        consumeAgentConversationStream(transport, {
+            agent_run_id: AGENT_RUN_ID,
+            max_reconnects: 1,
+            reconnect_delay_ms: 0,
+            on_update: () => {},
+            on_run_status: consume,
+        }),
+    ).rejects.toMatchObject({ name: 'AgentConversationStreamConsumerError', cause: failure });
+    expect(cursors).toEqual([undefined, undefined]);
+    expect(signals).toHaveLength(2);
+    expect(signals[1].aborted).toBe(true);
+    expect(consume).toHaveBeenCalledOnce();
+    expect(transport.retrieveAcceptedOutput).not.toHaveBeenCalled();
+});
+
+it('orders a handed status before later control and status effects across reconnect without handing it twice', async () => {
+    const abort = new AbortController();
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    const observed: string[] = [];
+    let connections = 0;
+    const status = () => ({
+        api_version: API_VERSION,
+        agent_run_id: AGENT_RUN_ID,
+        scope: 'root' as const,
+        type: 'run_status' as const,
+        status: 'running' as const,
+        updated_at: RECORDED_AT,
+    });
+    const transport: AgentConversationStreamTransport = {
+        connect: vi.fn(async (emit) => {
+            emit(preview());
+            if (++connections === 1) emit(status());
+            else {
+                emit(controlNotification());
+                emit(status());
+                expect(observed).toEqual(['status:first:handed']);
+                release();
+            }
+        }),
+        retrieveAcceptedOutput: vi.fn(),
+    };
+    let statuses = 0;
+    await consumeAgentConversationStream(transport, {
+        agent_run_id: AGENT_RUN_ID,
+        signal: abort.signal,
+        max_reconnects: 1,
+        reconnect_delay_ms: 0,
+        on_update: () => {},
+        on_run_status: async () => {
+            if (++statuses === 1) {
+                observed.push('status:first:handed');
+                await held;
+                observed.push('status:first:completed');
+            } else {
+                observed.push('status:second');
+                abort.abort();
+            }
+        },
+        on_run_control: () => {
+            observed.push('control:second');
+        },
+    });
+    expect(observed).toEqual(['status:first:handed', 'status:first:completed', 'control:second', 'status:second']);
+    expect(statuses).toBe(2);
+    expect(transport.connect).toHaveBeenCalledTimes(2);
+    expect(transport.retrieveAcceptedOutput).not.toHaveBeenCalled();
 });

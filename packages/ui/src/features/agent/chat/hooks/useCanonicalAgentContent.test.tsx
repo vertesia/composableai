@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
+import type { AgentConversationStreamSessionOptions } from '@vertesia/client';
 import { type AgentConversationStreamUpdate, CanonicalInteractionOutput, type VertesiaClient } from '@vertesia/client';
 import type {
     CanonicalConversationHeadScope,
@@ -6,6 +7,8 @@ import type {
     ExperimentalAgentConversationAcceptedOutput,
     ExperimentalAgentConversationAcceptedOutputHistoryPage,
     ExperimentalAgentConversationAcceptedOutputHistoryQuery,
+    ExperimentalAgentRunControlNotification,
+    ExperimentalAgentRunUpdatesResponse,
 } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
 import { type UseCanonicalAgentContentOptions, useCanonicalAgentContent } from './useCanonicalAgentContent.js';
@@ -32,16 +35,18 @@ function createClient(pages: ExperimentalAgentConversationAcceptedOutputHistoryP
             _options?: { signal?: AbortSignal },
         ) => pages.shift() ?? historyPage(),
     );
+    const streamOptions: Array<Omit<AgentConversationStreamSessionOptions, 'agent_run_id' | 'on_update'>> = [];
     const streamSignals: AbortSignal[] = [];
     const streamCallbacks: Array<(update: AgentConversationStreamUpdate) => void | Promise<void>> = [];
     const streamCanonicalConversation = vi.fn(
         async (
             _id: string,
             onUpdate: (update: AgentConversationStreamUpdate) => void | Promise<void>,
-            options?: { signal?: AbortSignal },
+            options?: Omit<AgentConversationStreamSessionOptions, 'agent_run_id' | 'on_update'>,
         ) => {
             const signal = options?.signal;
             if (!signal) return;
+            streamOptions.push(options ?? {});
             streamSignals.push(signal);
             streamCallbacks.push(onUpdate);
             await new Promise<void>((resolve) => {
@@ -50,14 +55,39 @@ function createClient(pages: ExperimentalAgentConversationAcceptedOutputHistoryP
             });
         },
     );
+    const retrieveCanonicalUpdates = vi.fn(
+        async (): Promise<ExperimentalAgentRunUpdatesResponse> => ({
+            run: {
+                api_version: '=20260930',
+                agent_run_id: 'agent-1',
+                scope: 'root',
+                type: 'run_status',
+                status: 'running',
+                activity_state: 'working',
+                updated_at: '2026-10-01T00:00:00.000Z',
+            },
+            source: { api_version: '=20260930', agent_run_id: 'agent-1', scope: 'root', status: 'uninitialized' },
+            controls: [],
+            control_page: { after: 0, has_more: false, gap_before: false },
+        }),
+    );
     const client = {
         agents: {
             listConversationAcceptedOutputs,
+            retrieveCanonicalUpdates,
             retrieveConversationAcceptedOutput: vi.fn(),
             streamCanonicalConversation,
         },
     } as unknown as VertesiaClient;
-    return { client, listConversationAcceptedOutputs, streamCanonicalConversation, streamSignals, streamCallbacks };
+    return {
+        client,
+        listConversationAcceptedOutputs,
+        streamCanonicalConversation,
+        streamSignals,
+        streamCallbacks,
+        streamOptions,
+        retrieveCanonicalUpdates,
+    };
 }
 
 const RECORDED_AT = '2026-10-01T00:00:00.000Z';
@@ -293,5 +323,228 @@ describe('useCanonicalAgentContent', () => {
             expect.objectContaining({ after_revision: 2, snapshot_conversation_id: 'conversation-1' }),
             expect.objectContaining({ after_revision: 3, snapshot_conversation_id: 'conversation-1' }),
         ]);
+    });
+});
+
+describe('canonical agent lifecycle and control UI consumption', () => {
+    it('uses actual negotiated callbacks and poll snapshot without admitting host events as content', async () => {
+        const fixture = createClient([]);
+        const notification: ExperimentalAgentRunControlNotification = {
+            api_version: '=20260930',
+            agent_run_id: 'agent-1',
+            scope: 'root',
+            type: 'run_control',
+            timestamp: 1790812800000,
+            control: {
+                version: 1,
+                event: 'user_input_received',
+                event_id: 'control:one',
+                ack: 'client:one',
+                editing_action: {
+                    operation_id: 'edit:one',
+                    resource: { kind: 'store_document', document_id: 'document:one' },
+                },
+                request_input_response: { request_id: 'input:one' },
+            },
+        };
+        const snapshot: ExperimentalAgentRunUpdatesResponse = {
+            run: {
+                api_version: '=20260930',
+                agent_run_id: 'agent-1',
+                scope: 'root',
+                type: 'run_status',
+                status: 'running',
+                activity_state: 'idle',
+                updated_at: RECORDED_AT,
+            },
+            source: {
+                api_version: '=20260930',
+                agent_run_id: 'agent-1',
+                scope: 'root',
+                status: 'initialized',
+                contract_version: 'canonical-conversation-v1',
+                head: {
+                    format: 'llumiverse.conversation',
+                    schema_version: 0,
+                    experimental_revision: '2026-09-30.adoption.1',
+                    conversation_id: 'conversation-1',
+                    revision: 3,
+                },
+            },
+            controls: [notification],
+            control_page: { after: notification.timestamp, has_more: false, gap_before: false },
+        };
+        fixture.retrieveCanonicalUpdates.mockResolvedValue(snapshot);
+        const status = vi.fn();
+        const control = vi.fn();
+        const sourceChanged = vi.fn();
+        const { result, unmount } = renderHook(() =>
+            useCanonicalAgentContent(fixture.client, {
+                enabled: true,
+                loadAcceptedHistory: false,
+                conversationId: 'conversation-1',
+                agentRunId: 'agent-1',
+                onRunStatus: status,
+                onRunControl: control,
+                onSourceChanged: sourceChanged,
+            }),
+        );
+        await waitFor(() => expect(control).toHaveBeenCalledExactlyOnceWith(notification));
+        expect(status).toHaveBeenCalledExactlyOnceWith(snapshot.run);
+        expect(sourceChanged).toHaveBeenCalledOnce();
+        const callbacks = fixture.streamOptions[0];
+        if (!callbacks?.on_run_control || !callbacks.on_run_status)
+            throw new Error('Actual canonical hook did not negotiate control and status callbacks');
+        const onControl = callbacks.on_run_control;
+        const onStatus = callbacks.on_run_status;
+        await act(async () => {
+            await onControl({ ...notification, timestamp: notification.timestamp + 1000 });
+            await onStatus(snapshot.run);
+            await onStatus({
+                ...snapshot.run,
+                status: 'completed',
+                updated_at: '2026-10-01T00:00:01.000Z',
+            });
+            await onStatus(snapshot.run);
+        });
+        expect(control).toHaveBeenCalledOnce();
+        expect(status).toHaveBeenCalledTimes(2);
+        expect(status.mock.calls[1][0].status).toBe('completed');
+        expect(result.current.live.accepted_outputs).toEqual([]);
+        expect(result.current.live.draft_snapshot).toEqual([]);
+        expect(fixture.listConversationAcceptedOutputs).not.toHaveBeenCalled();
+        unmount();
+        expect(fixture.streamSignals[0].aborted).toBe(true);
+    });
+
+    it('surfaces bounded poll and SSE retention gaps only in the authenticated active session', async () => {
+        const first = createClient([]);
+        const initial = await first.retrieveCanonicalUpdates();
+        first.retrieveCanonicalUpdates.mockClear();
+        first.retrieveCanonicalUpdates.mockResolvedValue({
+            ...initial,
+            control_page: { after: 10, has_more: false, gap_before: true },
+        });
+        const second = createClient([]);
+        const options: UseCanonicalAgentContentOptions = {
+            enabled: true,
+            loadAcceptedHistory: false,
+            agentRunId: 'agent-1',
+            onRunControl: vi.fn(),
+        };
+        const renderedGaps: boolean[] = [];
+        const { result, rerender, unmount } = renderHook(
+            ({ client }: { client: VertesiaClient }) => {
+                const content = useCanonicalAgentContent(client, options);
+                renderedGaps.push(content.controlDeliveryGap);
+                return content;
+            },
+            { initialProps: { client: first.client } },
+        );
+        await waitFor(() => expect(result.current.controlDeliveryGap).toBe(true));
+        await waitFor(() => expect(first.streamOptions).toHaveLength(1));
+        const staleStatus = first.streamOptions[0].on_run_status;
+        if (!staleStatus) throw new Error('Control-only consumer must negotiate retention status');
+        expect(first.listConversationAcceptedOutputs).not.toHaveBeenCalled();
+        renderedGaps.length = 0;
+        rerender({ client: second.client });
+        expect(renderedGaps[0]).toBe(false);
+        expect(result.current.controlDeliveryGap).toBe(false);
+        await waitFor(() => expect(second.streamOptions).toHaveLength(1));
+        const status = second.streamOptions[0].on_run_status;
+        if (!status) throw new Error('Missing active canonical status consumer');
+        await act(async () => {
+            await staleStatus({ ...initial.run, control_page: { after: 11, has_more: false, gap_before: true } });
+        });
+        expect(result.current.controlDeliveryGap).toBe(false);
+        // A foreign route cannot taint the active session's retention state.
+        expect(() =>
+            status({
+                ...initial.run,
+                agent_run_id: 'foreign:agent',
+                control_page: { after: 12, has_more: false, gap_before: true },
+            }),
+        ).toThrow('route');
+        expect(result.current.controlDeliveryGap).toBe(false);
+        await act(async () =>
+            status({
+                ...initial.run,
+                control_page: { after: 13, has_more: false, gap_before: true },
+            }),
+        );
+        expect(result.current.controlDeliveryGap).toBe(true);
+        await act(async () =>
+            status({
+                ...initial.run,
+                updated_at: '2026-10-01T00:00:01.000Z',
+                control_page: { after: 14, has_more: false, gap_before: false },
+            }),
+        );
+        expect(result.current.controlDeliveryGap).toBe(true); // Later pages cannot erase a known retention gap.
+        expect(second.listConversationAcceptedOutputs).not.toHaveBeenCalled();
+        unmount();
+        expect(second.streamSignals[0].aborted).toBe(true);
+    });
+
+    it('accepts valid uninitialized lifecycle status before a conversation is pinned, retaining the pinned-source guard', async () => {
+        const beforeHead = createClient([]);
+        const status = vi.fn();
+        const { result, unmount } = renderHook(() =>
+            useCanonicalAgentContent(beforeHead.client, {
+                enabled: true,
+                loadAcceptedHistory: false,
+                agentRunId: 'agent-1',
+                onRunStatus: status,
+            }),
+        );
+        await waitFor(() => expect(status).toHaveBeenCalledOnce());
+        await act(async () => undefined);
+        expect(result.current.live.error).toBeUndefined();
+        expect(result.current.live.accepted_outputs).toEqual([]);
+        expect(beforeHead.listConversationAcceptedOutputs).not.toHaveBeenCalled();
+        unmount();
+        const pinned = createClient([]);
+        const mounted = renderHook(() =>
+            useCanonicalAgentContent(pinned.client, {
+                enabled: true,
+                loadAcceptedHistory: false,
+                agentRunId: 'agent-1',
+                conversationId: 'conversation-1',
+                onRunStatus: vi.fn(),
+            }),
+        );
+        await waitFor(() =>
+            expect(mounted.result.current.live.error).toMatchObject({
+                message: 'Canonical run lifecycle lost its exact source descriptor',
+            }),
+        );
+        mounted.unmount();
+    });
+
+    it('rejects changed exact control identity and foreign route through the actual UI callback', async () => {
+        const fixture = createClient([]);
+        const { unmount } = renderHook(() =>
+            useCanonicalAgentContent(fixture.client, {
+                enabled: true,
+                loadAcceptedHistory: false,
+                agentRunId: 'agent-1',
+                onRunControl: vi.fn(),
+            }),
+        );
+        await waitFor(() => expect(fixture.streamOptions).toHaveLength(1));
+        const callback = fixture.streamOptions[0].on_run_control;
+        if (!callback) throw new Error('Missing canonical control consumer');
+        const event: ExperimentalAgentRunControlNotification = {
+            api_version: '=20260930',
+            agent_run_id: 'agent-1',
+            scope: 'root',
+            type: 'run_control',
+            timestamp: 1,
+            control: { version: 1, event: 'user_input_received', event_id: 'one', ack: 'client:one' },
+        };
+        await callback(event);
+        expect(() => callback({ ...event, control: { ...event.control, ack: 'foreign:ack' } })).toThrow('identity');
+        expect(() => callback({ ...event, agent_run_id: 'foreign:agent' })).toThrow('route');
+        unmount();
     });
 });
