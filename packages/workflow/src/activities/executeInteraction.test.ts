@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { CompletionResult } from '@llumiverse/common';
 import { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { ServerError } from '@vertesia/api-fetch-client';
@@ -7,6 +8,7 @@ import type {
     EnhancedExperimentalCanonicalInteractionExecutionResult,
     VertesiaClient,
 } from '@vertesia/client';
+import type { NodeStreamSource } from '@vertesia/client/node';
 import {
     CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE,
     ContentEventName,
@@ -263,6 +265,150 @@ async function mockInteractionError(
         params: createPayload().params,
     } as unknown as ActivityContext<ExecuteInteractionParams>);
 }
+
+describe('executeInteraction image results', () => {
+    async function executeImages(
+        images: CompletionResult[],
+        uploadFile = vi.fn(),
+        projection?: DSLActivityExecutionPayload<ExecuteInteractionParams>['activity']['projection'],
+    ) {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        // Explicit import fixture: normalize legacy encodings before the canonical runtime boundary.
+        const assets: Record<string, Record<string, unknown>> = {};
+        const blocks = images.map((image, index) => {
+            const assetId = `image-${index}`;
+            const value = String(image.value);
+            const reference = /^[a-z][a-z\d+.-]*:/i.test(value) && !/^data:/i.test(value);
+            const dataUrl = /^data:([^;,]+)(?:;[^,]*)?,(.*)$/s.exec(value);
+            const mimeType = dataUrl?.[1] ?? 'image/png';
+            const bytes = reference ? undefined : Buffer.from(dataUrl?.[2] ?? value, 'base64');
+            assets[assetId] = {
+                id: assetId,
+                kind: 'image',
+                mime_type: mimeType,
+                storage: reference
+                    ? { type: 'external', resolver: 'url', locator: { url: value } }
+                    : { type: 'inline_base64', data: bytes?.toString('base64') },
+                provenance: { type: 'generated', generation_id: 'generation-id' },
+                ...(bytes
+                    ? {
+                          byte_length: bytes.byteLength,
+                          content_hash: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
+                      }
+                    : {}),
+                created_at: '2026-01-01T00:00:00.000Z',
+            };
+            return { id: `block-${index}`, type: 'image', asset_id: assetId };
+        });
+        const mocks = mockCanonicalClient(canonicalResult({ blocks, assets }));
+        mocks.uploadFile.mockImplementation(uploadFile);
+        mocks.retrieve.mockResolvedValue({ id: 'run-id', result: images });
+        const payload = createPayload();
+        payload.activity.projection = projection;
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mocks.client,
+            inputType: 'objectIds',
+            params: payload.params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+        return testEnv.run(executeInteraction, payload);
+    }
+
+    it('retains storage and HTTP image references without uploading', async () => {
+        const images: CompletionResult[] = [
+            'gs://bucket/image.png',
+            's3://bucket/image.jpg',
+            'https://example.com/image.webp',
+        ].map((value) => ({ type: 'image', value }));
+        const uploadFile = vi.fn();
+        await expect(executeImages(images, uploadFile)).resolves.toMatchObject({ result: images });
+        expect(uploadFile).not.toHaveBeenCalled();
+    });
+
+    it.each(['png', 'jpeg', 'webp'] as const)(
+        'uploads data-URL %s with matching bytes and metadata',
+        async (format) => {
+            const bytes = Buffer.from([0, 1, 2, 253, 254, 255]);
+            const uploadFile = vi.fn(async (source: NodeStreamSource) => {
+                expect(source.type).toBe(`image/${format}`);
+                expect(source.name).toMatch(new RegExp(`\\.${format === 'jpeg' ? 'jpg' : format}$`));
+                expect(Buffer.from(await new Response(source.stream).arrayBuffer())).toEqual(bytes);
+                return 'gs://bucket/uploaded';
+            });
+            await expect(
+                executeImages(
+                    [
+                        {
+                            type: 'image',
+                            value: `data:image/${format};charset=binary;base64,${bytes.toString('base64')}`,
+                        },
+                    ],
+                    uploadFile,
+                ),
+            ).resolves.toMatchObject({ result: [{ type: 'image', value: 'gs://bucket/uploaded' }] });
+            expect(uploadFile).toHaveBeenCalledTimes(1);
+        },
+    );
+
+    it.each(['base64', 'base64url', 'line-wrapped'] as const)(
+        'preserves legacy %s decoding and PNG metadata',
+        async (encoding) => {
+            const bytes = Buffer.from([0, 1, 2, 253, 254, 255]);
+            const raw = bytes.toString(encoding === 'base64url' ? 'base64url' : 'base64');
+            const value = encoding === 'line-wrapped' ? `${raw.slice(0, 4)}\n${raw.slice(4)}` : raw;
+            const uploadFile = vi.fn(async (source: NodeStreamSource) => {
+                expect(source.type).toBe('image/png');
+                expect(source.name).toMatch(/\.png$/);
+                expect(Buffer.from(await new Response(source.stream).arrayBuffer())).toEqual(bytes);
+                return 'gs://bucket/uploaded';
+            });
+            await expect(executeImages([{ type: 'image', value }], uploadFile)).resolves.toMatchObject({
+                result: [{ type: 'image', value: 'gs://bucket/uploaded' }],
+            });
+            expect(uploadFile).toHaveBeenCalledTimes(1);
+        },
+    );
+
+    it.each(['missing', 'corrupt'] as const)('rejects %s inline integrity before upload', async (evidence) => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const bytes = Buffer.from([1, 2, 3]);
+        const result = canonicalResult({
+            blocks: [{ id: 'image-block', type: 'image', asset_id: 'image-asset' }],
+            assets: {
+                'image-asset': {
+                    id: 'image-asset',
+                    kind: 'image',
+                    mime_type: 'image/png',
+                    storage: { type: 'inline_base64', data: bytes.toString('base64') },
+                    provenance: { type: 'generated', generation_id: 'generation-id' },
+                    created_at: '2026-01-01T00:00:00.000Z',
+                    ...(evidence === 'corrupt'
+                        ? { byte_length: bytes.length, content_hash: `sha256:${'0'.repeat(64)}` }
+                        : {}),
+                },
+            },
+        });
+        const mocks = mockCanonicalClient(result);
+        const payload = createPayload();
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mocks.client,
+            inputType: 'objectIds',
+            params: payload.params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+        await expect(testEnv.run(executeInteraction, payload)).rejects.toThrow(
+            evidence === 'missing' ? 'lacks byte integrity evidence' : 'failed byte integrity verification',
+        );
+        expect(mocks.uploadFile).not.toHaveBeenCalled();
+    });
+
+    it('projects uploaded canonical content instead of stale legacy inline content', async () => {
+        const image: CompletionResult = { type: 'image', value: 'data:image/jpeg;base64,AAEC' };
+        const uploadFile = vi.fn().mockResolvedValue('gs://bucket/uploaded');
+        await expect(executeImages([image], uploadFile, { images: '${#.result}' })).resolves.toEqual({
+            images: [{ type: 'image', value: 'gs://bucket/uploaded' }],
+        });
+        expect(uploadFile).toHaveBeenCalledTimes(1);
+    });
+});
 
 describe('executeInteraction retryability', () => {
     it('should durably retry before executing when the LLM limiter returns a delay', async () => {

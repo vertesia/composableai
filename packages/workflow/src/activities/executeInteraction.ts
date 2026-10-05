@@ -30,6 +30,7 @@ import {
     RunDataStorageLevel,
     type RunSearchPayload,
 } from '@vertesia/common';
+import mime from 'mime';
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
@@ -556,12 +557,21 @@ export async function projectCanonicalCompletionResults(
             completion.push({ type: 'json', value: block.value });
         } else if (block.type === 'image') {
             const asset = output.asset(block.asset_id);
+            if (
+                asset.storage.type === 'external' &&
+                asset.storage.resolver === 'url' &&
+                typeof asset.storage.locator.url === 'string'
+            ) {
+                completion.push({ type: 'image', value: asset.storage.locator.url });
+                continue;
+            }
             const bytes = await materializeCanonicalAsset(client, asset);
+            const extension = mime.getExtension(asset.mime_type) ?? 'png';
             const execution = activityWorkflowExecution();
             const info = activityInfo();
-            const filename = `generated-image-${execution.runId}-${info.activityId}-${index}.png`;
+            const filename = `generated-image-${execution.runId}-${info.activityId}-${index}.${extension}`;
             const file = await client.files.uploadFile(
-                new NodeStreamSource(Readable.from(bytes), filename, asset.mime_type),
+                new NodeStreamSource(Readable.from([bytes]), filename, asset.mime_type),
             );
             completion.push({ type: 'image', value: file });
         } else if (block.type === 'audio' || block.type === 'video') {
