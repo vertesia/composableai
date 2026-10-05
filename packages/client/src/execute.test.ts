@@ -5,6 +5,8 @@ import { executeInteractionByName } from './execute.js';
 
 class TestEventSource extends EventTarget {
     static instances: TestEventSource[] = [];
+    static CONNECTING = 0;
+    static OPEN = 1;
     static CLOSED = 2;
     readyState = 1;
     close = vi.fn();
@@ -42,6 +44,41 @@ describe('interaction streaming completion', () => {
         await rejected;
         expect(sse.close).toHaveBeenCalledOnce();
     });
+    it.each(['execute', 'executeByName'] as const)(
+        'completes after a transient stream error through %s',
+        async (method) => {
+            vi.stubGlobal('EventSource', TestEventSource);
+            const client = new VertesiaClient({
+                serverUrl: 'https://api.example.com',
+                storeUrl: 'https://api.example.com',
+                apikey: 'test-token',
+                fetch: vi
+                    .fn()
+                    .mockResolvedValue(new Response(JSON.stringify({ id: 'run', status: ExecutionRunStatus.created }))),
+            });
+            const onChunk = vi.fn();
+            const promise = client.interactions[method]('image-interaction', {}, onChunk);
+            await vi.waitFor(() => expect(TestEventSource.instances).toHaveLength(1));
+            const sse = TestEventSource.instances[0];
+            sse.readyState = TestEventSource.CONNECTING;
+            sse.dispatchEvent(new Event('error'));
+            expect(sse.close).not.toHaveBeenCalled();
+
+            sse.readyState = TestEventSource.OPEN;
+            sse.emit('message', 'resumed chunk');
+            sse.emit('close', {
+                id: 'run',
+                status: ExecutionRunStatus.completed,
+                result: [{ type: 'image', value: 's3://bucket/image.jpg' }],
+            });
+
+            const result = await promise;
+            expect(result.status).toBe(ExecutionRunStatus.completed);
+            expect(result.result.images()).toEqual(['s3://bucket/image.jpg']);
+            expect(onChunk).toHaveBeenCalledExactlyOnceWith('resumed chunk');
+            expect(sse.close).toHaveBeenCalledOnce();
+        },
+    );
     it.each(['execute', 'executeByName'] as const)('returns enhanced image results through %s', async (method) => {
         vi.stubGlobal('EventSource', TestEventSource);
         const client = new VertesiaClient({
