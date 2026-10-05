@@ -16246,6 +16246,554 @@
     "additionalProperties": false,
     "description": "Whether an API key is configured for an MCP tool collection"
   },
+  "AuditAdoptionActiveDays": {
+    "type": "object",
+    "properties": {
+      "days": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 367
+      },
+      "users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "days",
+      "users"
+    ],
+    "additionalProperties": false
+  },
+  "AuditAdoptionBucket": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "to": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "partial": {
+        "type": "boolean"
+      },
+      "active_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "from",
+      "to",
+      "partial",
+      "active_users"
+    ],
+    "additionalProperties": false
+  },
+  "KnownAuditAction": {
+    "type": "string",
+    "enum": [
+      "create",
+      "update",
+      "delete",
+      "bulk_create",
+      "bulk_change_type",
+      "bulk_update",
+      "bulk_delete",
+      "attach",
+      "detach",
+      "credentials_fill",
+      "credentials_totp_generation",
+      "publish",
+      "unpublish",
+      "search",
+      "read",
+      "inference",
+      "embedding",
+      "image_generation",
+      "document_processed"
+    ]
+  },
+  "EventCategory": {
+    "type": "string",
+    "enum": [
+      "content",
+      "workflow",
+      "security",
+      "billing",
+      "system",
+      "external"
+    ]
+  },
+  "AuditAction": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/KnownAuditAction"
+      },
+      {
+        "type": "string"
+      }
+    ]
+  },
+  "AuditAdoptionFilter": {
+    "type": "object",
+    "properties": {
+      "actions": {
+        "maxItems": 32,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditAction"
+        }
+      },
+      "resourceTypes": {
+        "maxItems": 16,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "eventCategories": {
+        "maxItems": 6,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/EventCategory"
+        }
+      }
+    },
+    "additionalProperties": false
+  },
+  "AuditAdoptionHistory": {
+    "type": "object",
+    "properties": {
+      "earliest_observed_at": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "coverage_from": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "date-time",
+            "description": "Authoritative complete-history boundary, if known. Earliest observation is not a coverage boundary."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "completeness": {
+        "type": "string",
+        "enum": [
+          "unknown",
+          "insufficient",
+          "verified"
+        ]
+      },
+      "retention_unavailable_reason": {
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "no_previous_users",
+              "insufficient_history"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "earliest_observed_at",
+      "coverage_from",
+      "completeness",
+      "retention_unavailable_reason"
+    ],
+    "additionalProperties": false
+  },
+  "AuditAdoptionPeriod": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "to": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "from",
+      "to"
+    ],
+    "additionalProperties": false
+  },
+  "AuditAdoptionProject": {
+    "type": "object",
+    "properties": {
+      "project_id": {
+        "type": "string"
+      },
+      "project_name": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "active_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "active_user_days": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "project_id",
+      "project_name",
+      "active_users",
+      "active_user_days"
+    ],
+    "additionalProperties": false
+  },
+  "AuditAdoptionQuery": {
+    "type": "object",
+    "properties": {
+      "projectId": {
+        "type": "string"
+      },
+      "from": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Inclusive start; defaults to 30 days before to."
+      },
+      "to": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Exclusive end; defaults to now. Maximum duration: 366 days."
+      },
+      "filter": {
+        "$ref": "#/components/schemas/AuditAdoptionFilter"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Productive direct authenticated user activity, including user OAuth/MCP calls. Scope is enforced by the server."
+  },
+  "AuditAdoptionResponse": {
+    "type": "object",
+    "properties": {
+      "period": {
+        "$ref": "#/components/schemas/AuditAdoptionPeriod"
+      },
+      "previous_period": {
+        "$ref": "#/components/schemas/AuditAdoptionPeriod"
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week"
+        ]
+      },
+      "active_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "previous_active_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "retained_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "observed_retention": {
+        "anyOf": [
+          {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "returning_user_share": {
+        "anyOf": [
+          {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "repeat_user_share": {
+        "anyOf": [
+          {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "median_active_days": {
+        "anyOf": [
+          {
+            "type": "number",
+            "minimum": 0
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "active_projects": {
+        "anyOf": [
+          {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "timeline": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditAdoptionBucket"
+        }
+      },
+      "active_day_distribution": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditAdoptionActiveDays"
+        }
+      },
+      "top_projects": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditAdoptionProject"
+        }
+      },
+      "history": {
+        "$ref": "#/components/schemas/AuditAdoptionHistory"
+      }
+    },
+    "required": [
+      "period",
+      "previous_period",
+      "resolution",
+      "active_users",
+      "previous_active_users",
+      "retained_users",
+      "observed_retention",
+      "returning_user_share",
+      "repeat_user_share",
+      "median_active_days",
+      "active_projects",
+      "timeline",
+      "active_day_distribution",
+      "top_projects",
+      "history"
+    ],
+    "additionalProperties": false,
+    "description": "Distinct user adoption sets over two equal-duration half-open periods. Ratios use available audit history, not guaranteed historical coverage. No user identities are returned."
+  },
+  "AuditUsageQuery": {
+    "type": "object",
+    "properties": {
+      "projectId": {
+        "type": "string"
+      },
+      "from": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Inclusive start; defaults to 30 days before to."
+      },
+      "to": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Exclusive end; defaults to now. Maximum duration: 366 days."
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week",
+          "month"
+        ],
+        "description": "UTC calendar buckets. Weeks start Monday. Omitted: daily up to 200 dates, otherwise weekly."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Usage trends for an authorized account or project over a half-open interval of at most 366 days."
+  },
+  "AuditUsageCounts": {
+    "type": "object",
+    "properties": {
+      "active_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "agent_runs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "All audited run creations and marked restarts, including automated runs."
+      },
+      "user_agent_runs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Run operations initiated directly by authenticated users, including OAuth/MCP."
+      },
+      "automated_agent_runs": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Other run operations, including schedules, delegated agents, services and API keys."
+      },
+      "agent_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "description": "Distinct identifiable user initiators or owners of run operations, including scheduled and delegated runs."
+      },
+      "direct_calls": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "direct_call_users": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "content_objects": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "user_content_objects": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      },
+      "other_content_objects": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "active_users",
+      "agent_runs",
+      "user_agent_runs",
+      "automated_agent_runs",
+      "agent_users",
+      "direct_calls",
+      "direct_call_users",
+      "content_objects",
+      "user_content_objects",
+      "other_content_objects"
+    ],
+    "additionalProperties": false,
+    "description": "Direct productive users, run initiators/owners, all run operations and standalone inference audit events."
+  },
+  "AuditUsageBucket": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "to": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "partial": {
+        "type": "boolean"
+      },
+      "counts": {
+        "$ref": "#/components/schemas/AuditUsageCounts"
+      }
+    },
+    "required": [
+      "from",
+      "to",
+      "partial",
+      "counts"
+    ],
+    "additionalProperties": false
+  },
+  "AuditUsageResponse": {
+    "type": "object",
+    "properties": {
+      "period": {
+        "$ref": "#/components/schemas/AuditAdoptionPeriod"
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week",
+          "month"
+        ]
+      },
+      "totals": {
+        "$ref": "#/components/schemas/AuditUsageCounts"
+      },
+      "timeline": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditUsageBucket"
+        }
+      }
+    },
+    "required": [
+      "period",
+      "resolution",
+      "totals",
+      "timeline"
+    ],
+    "additionalProperties": false,
+    "description": "UTC usage trends. Period-wide distinct users are not sums of bucket populations. No user identities are returned."
+  },
   "AuditMeter": {
     "type": "object",
     "properties": {
@@ -16266,39 +16814,6 @@
     ],
     "additionalProperties": false,
     "description": "Generic metering entry attached to audit events. Used for cost attribution, usage tracking, and billing.\n\nExamples:   { category: \"tokens\", type: \"input\", quantity: 1234 }   { category: \"tokens\", type: \"output\", quantity: 567 }   { category: \"compute\", type: \"duration_ms\", quantity: 2100 }   { category: \"processing\", type: \"pages\", quantity: 12 }"
-  },
-  "KnownAuditAction": {
-    "type": "string",
-    "enum": [
-      "create",
-      "update",
-      "delete",
-      "bulk_create",
-      "bulk_change_type",
-      "bulk_update",
-      "bulk_delete",
-      "attach",
-      "detach",
-      "credentials_fill",
-      "credentials_totp_generation",
-      "publish",
-      "unpublish",
-      "inference",
-      "embedding",
-      "image_generation",
-      "document_processed"
-    ]
-  },
-  "EventCategory": {
-    "type": "string",
-    "enum": [
-      "content",
-      "workflow",
-      "security",
-      "billing",
-      "system",
-      "external"
-    ]
   },
   "AuditAggregationDimensionMap": {
     "type": "object",
@@ -16383,6 +16898,17 @@
           }
         ]
       },
+      "user_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Originating user identity, including delegated and scheduled activity with a recorded user owner. Non-user principals without a user origin are excluded."
+      },
       "details.pipeline": {
         "anyOf": [
           {
@@ -16442,7 +16968,8 @@
       "resource_id",
       "request_id",
       "principal_id",
-      "actor_id"
+      "actor_id",
+      "user_id"
     ]
   },
   "AuditAggregationOperation": {
@@ -16474,6 +17001,7 @@
       "project_id",
       "principal_id",
       "actor_id",
+      "user_id",
       "details.pipeline",
       "details.verdict",
       "details.workflow_type",
@@ -16488,16 +17016,6 @@
       "verdict",
       "workflow_type",
       "rule_id"
-    ]
-  },
-  "AuditAction": {
-    "anyOf": [
-      {
-        "$ref": "#/components/schemas/KnownAuditAction"
-      },
-      {
-        "type": "string"
-      }
     ]
   },
   "AuditAggregationRow": {
@@ -42559,6 +43077,10 @@
       "agent_run_id": {
         "type": "string",
         "description": "Filter by agent run ID"
+      },
+      "agent_only": {
+        "type": "boolean",
+        "description": "Restrict usage to agent runs and their attributed nested/background inference. Excludes standalone interactions and non-agent workflows. Defaults to false."
       },
       "interaction_id": {
         "type": "string",

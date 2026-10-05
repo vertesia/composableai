@@ -30,6 +30,12 @@ describe('cost analytics API contracts', () => {
         expect(validateApiRequest('CostAnalyticsQuery', { from: 1_786_060_800_000 }).valid).toBe(true);
     });
 
+    it('accepts the optional agent-only scope through the published component', () => {
+        expect(validateApiRequest('CostAnalyticsQuery', { agent_only: true }).valid).toBe(true);
+        expect(validateApiRequest('CostAnalyticsQuery', { agent_only: false }).valid).toBe(true);
+        expect(validateApiRequest('CostAnalyticsQuery', { agent_only: 'agents' }).valid).toBe(false);
+    });
+
     it('rejects undeclared request fields through the published component', () => {
         expect(validateApiRequest('CostRunPriceQuery', { run_id: 'run-1', hidden_filter: true }).valid).toBe(false);
     });
