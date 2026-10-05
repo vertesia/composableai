@@ -210,7 +210,7 @@ describe('signed transfer cancellation', () => {
         vi.useRealTimers();
     });
 
-    it.each([undefined, 15 * 60_000])('keeps a five-minute transfer active with timeoutMs=%s', async (timeoutMs) => {
+    it.each([undefined, 15 * 60_000])('keeps a transfer active with timeoutMs=%s', async (timeoutMs) => {
         vi.useFakeTimers();
         const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation((milliseconds) => {
             const controller = new AbortController();
@@ -230,10 +230,11 @@ describe('signed transfer cancellation', () => {
         );
         vi.stubGlobal('fetch', fetch);
         const pending = fetchSignedUrl('https://storage.test/image', { method: 'PUT', body: 'image', timeoutMs });
-        await vi.advanceTimersByTimeAsync(5 * 60_000);
+        await vi.advanceTimersByTimeAsync(timeoutMs === undefined ? 16 * 60_000 : 5 * 60_000);
         expect(fetch).toHaveBeenCalledTimes(1);
         expect(fetch.mock.calls[0][1].signal?.aborted).toBe(false);
-        expect(timeout).toHaveBeenCalledWith(15 * 60_000);
+        if (timeoutMs === undefined) expect(timeout).not.toHaveBeenCalled();
+        else expect(timeout).toHaveBeenCalledWith(timeoutMs);
         complete?.(new Response(null, { status: 204 }));
         await expect(pending).resolves.toMatchObject({ status: 204 });
     });
