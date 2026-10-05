@@ -60,7 +60,7 @@ export { canGenerateRendition };
 import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 import type { ZenoClient } from './client.js';
-import { fetchSignedUrl, type UploadOptions, uploadSignal } from './signed-url.js';
+import { fetchSignedUrl } from './signed-url.js';
 import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 
 /**
@@ -90,10 +90,9 @@ export class ObjectsApi extends ApiTopic {
         return new AnalyzeDocApi(this, objectId);
     }
 
-    getUploadUrl(payload: GetUploadUrlPayload, signal?: AbortSignal): Promise<GetFileUrlResponse> {
+    getUploadUrl(payload: GetUploadUrlPayload): Promise<GetFileUrlResponse> {
         return this.post('/upload-url', {
             payload,
-            signal,
         });
     }
 
@@ -281,25 +280,19 @@ export class ObjectsApi extends ApiTopic {
         return this.get(`/${id}/text`);
     }
 
-    async upload(source: StreamSource | File, options?: UploadOptions) {
-        const signal = uploadSignal(options);
-        signal.throwIfAborted();
+    async upload(source: StreamSource | File) {
         const isStream = source instanceof StreamSource;
         // get a signed URL to upload the file a computed mimeType and the file object id.
-        const { url, id, mime_type } = await this.getUploadUrl(
-            {
-                id: isStream ? source.id : undefined,
-                name: source.name,
-                mime_type: getUploadMimeTypeHint(source.type),
-            },
-            signal,
-        );
+        const { url, id, mime_type } = await this.getUploadUrl({
+            id: isStream ? source.id : undefined,
+            name: source.name,
+            mime_type: getUploadMimeTypeHint(source.type),
+        });
         const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
 
         // upload the file content to the signed URL
         const res = await fetchSignedUrl(url, {
             method: 'PUT',
-            signal,
             body: isStream ? source.stream : source,
             headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
         }).catch((err) => {
@@ -328,19 +321,17 @@ export class ObjectsApi extends ApiTopic {
 
     async create(
         payload: ContentObjectWritePayload,
-        options?: UploadOptions & {
+        options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
-        const signal = uploadSignal(options);
-        signal.throwIfAborted();
         const { content, ...payloadWithoutContent } = payload;
         const createPayload: CreateContentObjectPayload = {
             ...payloadWithoutContent,
         };
         if (content instanceof StreamSource || content instanceof File) {
-            createPayload.content = await this.upload(content, { signal });
+            createPayload.content = await this.upload(content);
         } else {
             createPayload.content = content;
         }
@@ -355,7 +346,6 @@ export class ObjectsApi extends ApiTopic {
 
         return await this.post('/', {
             payload: createPayload,
-            signal,
             headers: headers,
         });
     }
@@ -372,14 +362,12 @@ export class ObjectsApi extends ApiTopic {
     async createFromExternalSource(
         uri: string,
         payload: CreateContentObjectPayload = {},
-        options?: UploadOptions & {
+        options?: {
             collection_id?: string;
             processing_priority?: ContentObjectProcessingPriority;
         },
     ): Promise<ContentObject> {
-        const signal = uploadSignal(options);
-        signal.throwIfAborted();
-        const metadata = await this.client.files.getMetadata(uri, signal);
+        const metadata = await this.client.files.getMetadata(uri);
         const createPayload: CreateContentObjectPayload = {
             ...payload,
             content: {
@@ -400,7 +388,6 @@ export class ObjectsApi extends ApiTopic {
 
         return await this.post('/', {
             payload: createPayload,
-            signal,
             headers: headers,
         });
     }

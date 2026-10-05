@@ -22,23 +22,7 @@ const DEFAULT_BASE_DELAY_MS = 500;
 const DEFAULT_MAX_DELAY_MS = 8_000;
 const MAX_RETRY_AFTER_MS = 60_000;
 
-export interface UploadOptions {
-    /** Cancels signing, transfer, and retries. */
-    signal?: AbortSignal;
-    /**
-     * Total upload deadline in milliseconds, including signing, buffering, retries, and object registration.
-     * No deadline unless supplied. API retry waits can delay rejection after the signal expires.
-     */
-    timeoutMs?: number;
-}
-
-export function uploadSignal(options: UploadOptions = {}): AbortSignal {
-    if (options.timeoutMs === undefined) return options.signal ?? new AbortController().signal;
-    const timeout = AbortSignal.timeout(options.timeoutMs);
-    return options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
-}
-
-export interface SignedUrlFetchOptions extends UploadOptions {
+export interface SignedUrlFetchOptions {
     method?: string;
     headers?: Record<string, string>;
     body?: BodyInit | null;
@@ -52,23 +36,8 @@ export interface SignedUrlFetchOptions extends UploadOptions {
     retryableStatuses?: ReadonlySet<number>;
 }
 
-function sleep(ms: number, signal: AbortSignal): Promise<void> {
-    signal.throwIfAborted();
-    return new Promise((resolve, reject) => {
-        const finish = () => {
-            clearTimeout(timer);
-            signal.removeEventListener('abort', abort);
-        };
-        const abort = () => {
-            finish();
-            reject(signal.reason);
-        };
-        const timer = setTimeout(() => {
-            finish();
-            resolve();
-        }, ms);
-        signal.addEventListener('abort', abort, { once: true });
-    });
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function retryAfterMs(res: Response): number | undefined {
@@ -140,22 +109,16 @@ function chunkToBlobPart(chunk: unknown): BlobPart {
  * The stream is drained manually (rather than `new Response(stream).blob()`) so that
  * string chunks are encoded to bytes — see {@link chunkToBlobPart}.
  */
-async function toReplayableBody(body: BodyInit | null | undefined, signal: AbortSignal): Promise<BodyInit | undefined> {
+async function toReplayableBody(body: BodyInit | null | undefined): Promise<BodyInit | undefined> {
     if (body == null) {
         return undefined;
     }
     if (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream) {
         const reader = (body as ReadableStream<unknown>).getReader();
         const parts: BlobPart[] = [];
-        const abort = () => {
-            void reader.cancel(signal.reason).catch(() => undefined);
-        };
-        signal.addEventListener('abort', abort, { once: true });
         try {
-            signal.throwIfAborted();
             for (;;) {
                 const { done, value } = await reader.read();
-                signal.throwIfAborted();
                 if (done) {
                     break;
                 }
@@ -165,11 +128,10 @@ async function toReplayableBody(body: BodyInit | null | undefined, signal: Abort
                 parts.push(chunkToBlobPart(value));
             }
         } catch (err) {
-            // Signal the producer to stop and release its resources before propagating.
+            // Ask the producer to stop without letting cleanup hide the original error.
             void reader.cancel(err).catch(() => undefined);
             throw err;
         } finally {
-            signal.removeEventListener('abort', abort);
             reader.releaseLock();
         }
         return new Blob(parts);
@@ -197,32 +159,28 @@ export async function fetchSignedUrl(url: string, options: SignedUrlFetchOptions
         retryableStatuses = DEFAULT_RETRYABLE_STATUSES,
     } = options;
 
-    const signal = uploadSignal(options);
-    signal.throwIfAborted();
-    const body = await toReplayableBody(options.body, signal);
+    const body = await toReplayableBody(options.body);
 
     let lastError: unknown;
     for (let attempt = 0; attempt < attempts; attempt++) {
         const isLastAttempt = attempt === attempts - 1;
         try {
-            signal.throwIfAborted();
-            const res = await fetch(url, { method, headers, body, signal });
+            const res = await fetch(url, { method, headers, body });
             if (res.ok || !retryableStatuses.has(res.status) || isLastAttempt) {
                 return res;
             }
             // Do not retry earlier than requested or park the caller beyond the retry budget.
             // Returning the response also avoids overflowing JavaScript's timer range.
             if ((retryAfterMs(res) ?? 0) > MAX_RETRY_AFTER_MS) return res;
-            // Release the unused body without letting cleanup delay retry or cancellation.
+            // Release the unused body without letting cleanup delay the next attempt.
             void res.body?.cancel().catch(() => undefined);
-            await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs, res), signal);
+            await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs, res));
         } catch (err) {
-            signal.throwIfAborted();
             lastError = err;
             if (isLastAttempt) {
                 throw err;
             }
-            await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs), signal);
+            await sleep(backoffMs(attempt, baseDelayMs, maxDelayMs));
         }
     }
 
