@@ -547,6 +547,7 @@ export function IntakePolicyEditor({
         <div className="flex h-full min-h-0 w-full flex-col gap-2">
             <IntakeSummary policy={summaryPolicy} />
             <Tabs
+                orientation="vertical"
                 tabs={leadingTabs ? [...leadingTabs, ...policyTabs] : policyTabs}
                 current={activeTab}
                 onTabChange={onTabChange}
@@ -554,7 +555,7 @@ export function IntakePolicyEditor({
                 fullHeight
                 className="px-0 min-h-0 flex-1 flex-row!"
             >
-                <TabsBar className="py-2 w-48 shrink-0" direction="vertical" />
+                <TabsBar className="py-2 w-48 shrink-0" />
                 <TabsPanel className="min-h-0 min-w-0 flex-1 overflow-auto pb-0!" />
             </Tabs>
         </div>

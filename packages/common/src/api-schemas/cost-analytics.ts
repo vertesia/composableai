@@ -66,6 +66,14 @@ export const CostAnalyticsQuerySchema = z
         workflow_run_id: z.string().meta({ description: 'Filter by Temporal workflow run ID' }).optional(),
         run_id: z.string().meta({ description: 'Filter by interaction execution run ID' }).optional(),
         agent_run_id: z.string().meta({ description: 'Filter by agent run ID' }).optional(),
+        agent_only: z
+            .boolean()
+            .meta({
+                description:
+                    'Restrict usage to agent runs and their attributed nested/background inference. ' +
+                    'Excludes standalone interactions and non-agent workflows. Defaults to false.',
+            })
+            .optional(),
         interaction_id: z
             .string()
             .meta({ description: 'Filter by interaction id: stored ObjectId or namespaced in-code id' })

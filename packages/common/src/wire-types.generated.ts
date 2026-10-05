@@ -1701,7 +1701,7 @@ export type AuditTrailResponse = {
 export type AuditAggregationResolution = 'hour' | 'day' | 'week' | 'month';
 export type AuditAggregationDetailField = 'pipeline' | 'verdict' | 'workflow_type' | 'rule_id';
 export type AuditAggregationOperation = 'count' | 'count_distinct' | 'sum_meter' | 'average_meter';
-export type AuditAggregationDistinctField = 'resource_id' | 'request_id' | 'principal_id' | 'actor_id';
+export type AuditAggregationDistinctField = 'resource_id' | 'request_id' | 'principal_id' | 'actor_id' | 'user_id';
 export type AuditAggregationGroup = {
     dimension: AuditAggregationDimensionWire;
     resolution?: AuditAggregationResolution | undefined;
@@ -1747,6 +1747,90 @@ export type AuditAggregationResponse = {
     rows: AuditAggregationRow[];
     from: string;
     to: string;
+};
+export type AuditAdoptionFilter = {
+    actions?: AuditActionWire[] | undefined;
+    resourceTypes?: string[] | undefined;
+    eventCategories?: EventCategory[] | undefined;
+};
+export type AuditAdoptionQuery = {
+    projectId?: string | undefined;
+    from?: string | undefined;
+    to?: string | undefined;
+    filter?: AuditAdoptionFilter | undefined;
+};
+export type AuditAdoptionPeriod = {
+    from: string;
+    to: string;
+};
+export type AuditAdoptionBucket = {
+    from: string;
+    to: string;
+    partial: boolean;
+    active_users: number;
+};
+export type AuditAdoptionActiveDays = {
+    days: number;
+    users: number;
+};
+export type AuditAdoptionProject = {
+    project_id: string;
+    project_name: string | null;
+    active_users: number;
+    active_user_days: number;
+};
+export type AuditAdoptionHistory = {
+    earliest_observed_at: string | null;
+    coverage_from: string | null;
+    completeness: 'unknown' | 'insufficient' | 'verified';
+    retention_unavailable_reason: 'no_previous_users' | 'insufficient_history' | null;
+};
+export type AuditAdoptionResponse = {
+    period: AuditAdoptionPeriod;
+    previous_period: AuditAdoptionPeriod;
+    resolution: 'day' | 'week';
+    active_users: number;
+    previous_active_users: number;
+    retained_users: number;
+    observed_retention: number | null;
+    returning_user_share: number | null;
+    repeat_user_share: number | null;
+    median_active_days: number | null;
+    active_projects: number | null;
+    timeline: AuditAdoptionBucket[];
+    active_day_distribution: AuditAdoptionActiveDays[];
+    top_projects: AuditAdoptionProject[];
+    history: AuditAdoptionHistory;
+};
+export type AuditUsageQuery = {
+    projectId?: string | undefined;
+    from?: string | undefined;
+    to?: string | undefined;
+    resolution?: 'day' | 'week' | 'month' | undefined;
+};
+export type AuditUsageCounts = {
+    active_users: number;
+    agent_runs: number;
+    user_agent_runs: number;
+    automated_agent_runs: number;
+    agent_users: number;
+    direct_calls: number;
+    direct_call_users: number;
+    content_objects: number;
+    user_content_objects: number;
+    other_content_objects: number;
+};
+export type AuditUsageBucket = {
+    from: string;
+    to: string;
+    partial: boolean;
+    counts: AuditUsageCounts;
+};
+export type AuditUsageResponse = {
+    period: AuditAdoptionPeriod;
+    resolution: 'day' | 'week' | 'month';
+    totals: AuditUsageCounts;
+    timeline: AuditUsageBucket[];
 };
 export type WebsiteCredentialCapability = 'password' | 'totp' | 'oauth';
 export type WebsiteCredentialTotpAlgorithm = 'SHA1' | 'SHA256' | 'SHA512';
@@ -2041,6 +2125,7 @@ export type CostAnalyticsQuery = {
     workflow_run_id?: string | undefined;
     run_id?: string | undefined;
     agent_run_id?: string | undefined;
+    agent_only?: boolean | undefined;
     interaction_id?: string | undefined;
     principal_id?: string | undefined;
     account_id?: string | undefined;
@@ -10559,6 +10644,8 @@ export type KnownAuditActionWire =
     | 'credentials_totp_generation'
     | 'publish'
     | 'unpublish'
+    | 'search'
+    | 'read'
     | 'inference'
     | 'embedding'
     | 'image_generation'
@@ -10572,6 +10659,7 @@ export type AuditAggregationDimensionMap = {
     project_id?: string | null | undefined;
     principal_id?: string | null | undefined;
     actor_id?: string | null | undefined;
+    user_id?: string | null | undefined;
     'details.pipeline'?: string | null | undefined;
     'details.verdict'?: string | null | undefined;
     'details.workflow_type'?: string | null | undefined;
@@ -10587,6 +10675,7 @@ export type AuditAggregationDimensionWire =
     | 'project_id'
     | 'principal_id'
     | 'actor_id'
+    | 'user_id'
     | 'details.pipeline'
     | 'details.verdict'
     | 'details.workflow_type'
@@ -11603,6 +11692,18 @@ export interface ApiComponentTypes {
     OAuthAuthStatusArray: OAuthAuthStatusArray;
     SetMcpApiKeyRequest: SetMcpApiKeyRequest;
     McpApiKeyStatus: McpApiKeyStatus;
+    AuditAdoptionActiveDays: AuditAdoptionActiveDays;
+    AuditAdoptionBucket: AuditAdoptionBucket;
+    AuditAdoptionFilter: AuditAdoptionFilter;
+    AuditAdoptionHistory: AuditAdoptionHistory;
+    AuditAdoptionPeriod: AuditAdoptionPeriod;
+    AuditAdoptionProject: AuditAdoptionProject;
+    AuditAdoptionQuery: AuditAdoptionQuery;
+    AuditAdoptionResponse: AuditAdoptionResponse;
+    AuditUsageQuery: AuditUsageQuery;
+    AuditUsageCounts: AuditUsageCounts;
+    AuditUsageBucket: AuditUsageBucket;
+    AuditUsageResponse: AuditUsageResponse;
     AuditMeter: AuditMeter;
     KnownAuditAction: KnownAuditActionWire;
     EventCategory: EventCategory;
