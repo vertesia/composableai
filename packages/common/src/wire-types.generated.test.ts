@@ -981,6 +981,54 @@ interface Checks {
         W.AuditAggregationResponse,
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationResponseSchema>
     >;
+    AuditAdoptionFilter: Same<
+        W.AuditAdoptionFilter,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionFilterSchema>
+    >;
+    AuditAdoptionQuery: Same<
+        W.AuditAdoptionQuery,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionQuerySchema>
+    >;
+    AuditAdoptionPeriod: Same<
+        W.AuditAdoptionPeriod,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionPeriodSchema>
+    >;
+    AuditAdoptionBucket: Same<
+        W.AuditAdoptionBucket,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionBucketSchema>
+    >;
+    AuditAdoptionActiveDays: Same<
+        W.AuditAdoptionActiveDays,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionActiveDaysSchema>
+    >;
+    AuditAdoptionProject: Same<
+        W.AuditAdoptionProject,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionProjectSchema>
+    >;
+    AuditAdoptionHistory: Same<
+        W.AuditAdoptionHistory,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionHistorySchema>
+    >;
+    AuditAdoptionResponse: Same<
+        W.AuditAdoptionResponse,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionResponseSchema>
+    >;
+    AuditUsageQuery: Same<
+        W.AuditUsageQuery,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageQuerySchema>
+    >;
+    AuditUsageCounts: Same<
+        W.AuditUsageCounts,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageCountsSchema>
+    >;
+    AuditUsageBucket: Same<
+        W.AuditUsageBucket,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageBucketSchema>
+    >;
+    AuditUsageResponse: Same<
+        W.AuditUsageResponse,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageResponseSchema>
+    >;
     WebsiteCredentialCapability: Same<
         W.WebsiteCredentialCapability,
         z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialCapabilitySchema>
@@ -9317,6 +9365,54 @@ interface Checks {
         W.ApiComponentTypes['McpApiKeyStatus'],
         z.infer<typeof import('./api-schemas/apps.js').McpApiKeyStatusSchema>
     >;
+    'component:AuditAdoptionActiveDays': Same<
+        W.ApiComponentTypes['AuditAdoptionActiveDays'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionActiveDaysSchema>
+    >;
+    'component:AuditAdoptionBucket': Same<
+        W.ApiComponentTypes['AuditAdoptionBucket'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionBucketSchema>
+    >;
+    'component:AuditAdoptionFilter': Same<
+        W.ApiComponentTypes['AuditAdoptionFilter'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionFilterSchema>
+    >;
+    'component:AuditAdoptionHistory': Same<
+        W.ApiComponentTypes['AuditAdoptionHistory'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionHistorySchema>
+    >;
+    'component:AuditAdoptionPeriod': Same<
+        W.ApiComponentTypes['AuditAdoptionPeriod'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionPeriodSchema>
+    >;
+    'component:AuditAdoptionProject': Same<
+        W.ApiComponentTypes['AuditAdoptionProject'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionProjectSchema>
+    >;
+    'component:AuditAdoptionQuery': Same<
+        W.ApiComponentTypes['AuditAdoptionQuery'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionQuerySchema>
+    >;
+    'component:AuditAdoptionResponse': Same<
+        W.ApiComponentTypes['AuditAdoptionResponse'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionResponseSchema>
+    >;
+    'component:AuditUsageQuery': Same<
+        W.ApiComponentTypes['AuditUsageQuery'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageQuerySchema>
+    >;
+    'component:AuditUsageCounts': Same<
+        W.ApiComponentTypes['AuditUsageCounts'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageCountsSchema>
+    >;
+    'component:AuditUsageBucket': Same<
+        W.ApiComponentTypes['AuditUsageBucket'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageBucketSchema>
+    >;
+    'component:AuditUsageResponse': Same<
+        W.ApiComponentTypes['AuditUsageResponse'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditUsageResponseSchema>
+    >;
     'component:AuditMeter': Same<
         W.ApiComponentTypes['AuditMeter'],
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditMeterSchema>
@@ -11471,6 +11567,18 @@ const checks: Checks = {
     AuditAggregationQuery: true,
     AuditAggregationRow: true,
     AuditAggregationResponse: true,
+    AuditAdoptionFilter: true,
+    AuditAdoptionQuery: true,
+    AuditAdoptionPeriod: true,
+    AuditAdoptionBucket: true,
+    AuditAdoptionActiveDays: true,
+    AuditAdoptionProject: true,
+    AuditAdoptionHistory: true,
+    AuditAdoptionResponse: true,
+    AuditUsageQuery: true,
+    AuditUsageCounts: true,
+    AuditUsageBucket: true,
+    AuditUsageResponse: true,
     WebsiteCredentialCapability: true,
     WebsiteCredentialTotpAlgorithm: true,
     WebsiteCredentialWebsite: true,
@@ -13625,6 +13733,18 @@ const checks: Checks = {
     'component:OAuthAuthStatusArray': true,
     'component:SetMcpApiKeyRequest': true,
     'component:McpApiKeyStatus': true,
+    'component:AuditAdoptionActiveDays': true,
+    'component:AuditAdoptionBucket': true,
+    'component:AuditAdoptionFilter': true,
+    'component:AuditAdoptionHistory': true,
+    'component:AuditAdoptionPeriod': true,
+    'component:AuditAdoptionProject': true,
+    'component:AuditAdoptionQuery': true,
+    'component:AuditAdoptionResponse': true,
+    'component:AuditUsageQuery': true,
+    'component:AuditUsageCounts': true,
+    'component:AuditUsageBucket': true,
+    'component:AuditUsageResponse': true,
     'component:AuditMeter': true,
     'component:KnownAuditAction': true,
     'component:EventCategory': true,
@@ -14060,6 +14180,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2846);
+        expect(Object.keys(checks)).toHaveLength(2870);
     });
 });

@@ -15,6 +15,9 @@ export const AUDIT_ACTIONS = [
     'credentials_totp_generation',
     'publish',
     'unpublish',
+    // Content access (retrieval is not proof of a human reading the document)
+    'search',
+    'read',
     // Billable operations
     'inference',
     'embedding',
@@ -56,6 +59,7 @@ export const AUDIT_AGGREGATION_DIMENSIONS = [
     'project_id',
     'principal_id',
     'actor_id',
+    'user_id',
     'details.pipeline',
     'details.verdict',
     'details.workflow_type',
@@ -86,6 +90,19 @@ export type AuditAggregationQuery = Wire.AuditAggregationQuery;
 export type AuditAggregationRow = Wire.AuditAggregationRow;
 
 export type AuditAggregationResponse = Wire.AuditAggregationResponse;
+
+export type AuditAdoptionFilter = Wire.AuditAdoptionFilter;
+export type AuditAdoptionQuery = Wire.AuditAdoptionQuery;
+export type AuditAdoptionPeriod = Wire.AuditAdoptionPeriod;
+export type AuditAdoptionBucket = Wire.AuditAdoptionBucket;
+export type AuditAdoptionActiveDays = Wire.AuditAdoptionActiveDays;
+export type AuditAdoptionProject = Wire.AuditAdoptionProject;
+export type AuditAdoptionHistory = Wire.AuditAdoptionHistory;
+export type AuditAdoptionResponse = Wire.AuditAdoptionResponse;
+export type AuditUsageQuery = Wire.AuditUsageQuery;
+export type AuditUsageCounts = Wire.AuditUsageCounts;
+export type AuditUsageBucket = Wire.AuditUsageBucket;
+export type AuditUsageResponse = Wire.AuditUsageResponse;
 
 /** Billable audit actions for cost analytics queries */
 export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];
