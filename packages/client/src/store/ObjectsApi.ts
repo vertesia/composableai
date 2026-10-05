@@ -300,7 +300,6 @@ export class ObjectsApi extends ApiTopic {
         const res = await fetchSignedUrl(url, {
             method: 'PUT',
             signal,
-            timeoutMs: options?.timeoutMs,
             body: isStream ? source.stream : source,
             headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
         }).catch((err) => {
@@ -341,7 +340,7 @@ export class ObjectsApi extends ApiTopic {
             ...payloadWithoutContent,
         };
         if (content instanceof StreamSource || content instanceof File) {
-            createPayload.content = await this.upload(content, { signal, timeoutMs: options?.timeoutMs });
+            createPayload.content = await this.upload(content, { signal });
         } else {
             createPayload.content = content;
         }

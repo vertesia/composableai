@@ -5,6 +5,7 @@ import { ZenoClient } from './client.js';
 afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
 });
 
 describe('upload API cancellation', () => {
@@ -115,3 +116,55 @@ it.each(['file', 'object'] as const)(
         expect(cancel).toHaveBeenCalledTimes(1);
     },
 );
+
+it('uses one explicit deadline across signing, PUT, and object registration', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockImplementation((milliseconds) => {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(new DOMException('Deadline exceeded', 'TimeoutError')), milliseconds);
+        return controller.signal;
+    });
+    const delayed = (response: Response, signal: AbortSignal | null | undefined, milliseconds: number) =>
+        new Promise<Response>((resolve, reject) => {
+            const timer = setTimeout(() => resolve(response), milliseconds);
+            signal?.addEventListener(
+                'abort',
+                () => {
+                    clearTimeout(timer);
+                    reject(signal.reason);
+                },
+                { once: true },
+            );
+        });
+    let registration: Request | undefined;
+    const client = new ZenoClient({
+        serverUrl: 'https://api.example.com',
+        fetch: vi.fn(async (input: RequestInfo) => {
+            if (!(input instanceof Request)) throw new Error('Expected an API Request');
+            if (input.url.endsWith('/upload-url')) {
+                return delayed(
+                    Response.json({ id: 'file', url: 'https://storage.example.com/file' }),
+                    input.signal,
+                    20,
+                );
+            }
+            registration = input;
+            return delayed(Response.json({ id: 'object' }), input.signal, 40);
+        }),
+    });
+    const transfer = vi.fn((_url: string, init: RequestInit) =>
+        delayed(new Response(null, { status: 204 }), init.signal, 40),
+    );
+    vi.stubGlobal('fetch', transfer);
+    const pending = client.objects.create({ content: new File(['image'], 'image.png') }, { timeoutMs: 90 });
+    const assertion = expect(pending).rejects.toMatchObject({ status: 0, payload: { name: 'TimeoutError' } });
+    await vi.advanceTimersByTimeAsync(89);
+    expect(registration).toBeDefined();
+    expect(registration?.signal.aborted).toBe(false);
+    expect(transfer).toHaveBeenCalledTimes(1);
+    expect(timeout).toHaveBeenCalledExactlyOnceWith(90);
+    await vi.advanceTimersByTimeAsync(1);
+    await assertion;
+    expect(registration?.signal.aborted).toBe(true);
+});

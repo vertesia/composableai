@@ -264,7 +264,6 @@ export class FilesApi extends ApiTopic {
         const res = await fetchSignedUrl(url, {
             method: 'PUT',
             signal,
-            timeoutMs: options?.timeoutMs,
             body: isStream ? source.stream : source,
             headers: {
                 'Content-Type': sourceMimeType,

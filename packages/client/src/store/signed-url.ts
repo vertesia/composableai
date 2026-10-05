@@ -25,7 +25,10 @@ const MAX_RETRY_AFTER_MS = 60_000;
 export interface UploadOptions {
     /** Cancels signing, transfer, and retries. */
     signal?: AbortSignal;
-    /** Total transfer deadline in milliseconds, including buffering and retries. No deadline unless supplied. */
+    /**
+     * Total upload deadline in milliseconds, including signing, buffering, retries, and object registration.
+     * No deadline unless supplied. API retry waits can delay rejection after the signal expires.
+     */
     timeoutMs?: number;
 }
 
