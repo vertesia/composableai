@@ -1,6 +1,6 @@
-import { validateApiRequest, validateApiResponse } from '@vertesia/common/api-contract';
 import { describe, expect, it } from 'vitest';
 import type { ExperimentalUpdateAgentRoutingControlPayload } from '../agent-routing-control.js';
+import { validateApiRequest, validateApiResponse } from '../api-contract/index.js';
 import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE } from '../versions.js';
 import {
     ExperimentalAgentRoutingChangeReceiptSchema,
