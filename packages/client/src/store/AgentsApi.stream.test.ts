@@ -134,6 +134,12 @@ async function failCurrentConnection() {
     await settle(BACKOFF_CEILING_MS);
 }
 
+function streamWithSignal(client: VertesiaClient, kind: 'agent' | 'workflow', signal: AbortSignal) {
+    return kind === 'agent'
+        ? client.agents.streamMessages(AGENT_RUN_ID, undefined, undefined, signal)
+        : client.workflows.streamMessages('workflow-1', AGENT_RUN_ID, undefined, undefined, signal);
+}
+
 describe('AgentsApi.streamMessages reconnection', () => {
     let logs: string[];
     let warnings: string[];
@@ -382,5 +388,107 @@ describe('AgentsApi.streamMessages reconnection', () => {
         await settle(6000);
 
         await expect(done).resolves.toBeNull();
+    });
+
+    it.each([
+        ['agent', 'reconnection', 1],
+        ['workflow', 'reconnection', 1],
+        ['agent', 'polling', 11],
+    ] as const)('cancels the %s stream during %s', async (kind, _phase, failures) => {
+        const { client } = createHarness();
+        const abort = new AbortController();
+        const done = streamWithSignal(client, kind, abort.signal);
+        await settle();
+        for (let i = 1; i < failures; i++) await failCurrentConnection();
+        FakeEventSource.instances[FakeEventSource.instances.length - 1].fail();
+        await settle();
+        abort.abort();
+        await expect(done).resolves.toBeNull();
+        expect(vi.getTimerCount()).toBe(0);
+        await settle(BACKOFF_CEILING_MS);
+        expect(FakeEventSource.instances).toHaveLength(failures);
+        expect(FakeEventSource.instances.every((sse) => sse.readyState === FakeEventSource.CLOSED)).toBe(true);
+    });
+
+    it.each([
+        ['agent', 'resolve'],
+        ['agent', 'reject'],
+        ['workflow', 'resolve'],
+        ['workflow', 'reject'],
+    ] as const)('keeps the %s stream closed when pending authentication later %ss', async (kind, outcome) => {
+        const harness = createHarness();
+        const abort = new AbortController();
+        const removeListener = vi.spyOn(abort.signal, 'removeEventListener');
+        const done = streamWithSignal(harness.client, kind, abort.signal);
+        await settle();
+
+        const credential = Promise.withResolvers<string>();
+        const authenticate = vi.fn(() => credential.promise);
+        harness.client.withAuthCallback(authenticate);
+        await failCurrentConnection();
+        expect(authenticate).toHaveBeenCalledTimes(1);
+        expect(removeListener).not.toHaveBeenCalled();
+
+        abort.abort();
+        await expect(done).resolves.toBeNull();
+        expect(removeListener).toHaveBeenCalledExactlyOnceWith('abort', expect.any(Function));
+
+        if (outcome === 'resolve') {
+            credential.resolve('Bearer refreshed-token');
+        } else {
+            credential.reject(new Error('Authentication failed'));
+        }
+        await settle();
+        expect(vi.getTimerCount()).toBe(0);
+        await settle(BACKOFF_CEILING_MS);
+        expect(authenticate).toHaveBeenCalledTimes(1);
+        expect(FakeEventSource.instances).toHaveLength(1);
+        expect(FakeEventSource.instances[0].readyState).toBe(FakeEventSource.CLOSED);
+    });
+
+    it.each(['SSE', 'authentication'] as const)(
+        'cleans up exhausted workflow retries after %s failures',
+        async (kind) => {
+            const harness = createHarness();
+            const abort = new AbortController();
+            const removeListener = vi.spyOn(abort.signal, 'removeEventListener');
+            const done = streamWithSignal(harness.client, 'workflow', abort.signal);
+            const rejected = expect(done).rejects.toThrow(
+                kind === 'SSE' ? 'SSE connection failed after 10 reconnection attempts' : 'Authentication failed',
+            );
+            await settle();
+
+            const authenticate = vi.fn().mockRejectedValue(new Error('Authentication failed'));
+            if (kind === 'authentication') harness.client.withAuthCallback(authenticate);
+            await failCurrentConnection();
+            expect(removeListener).not.toHaveBeenCalled();
+            for (let i = 0; i < 10; i++) {
+                await (kind === 'SSE' ? failCurrentConnection() : settle(BACKOFF_CEILING_MS));
+            }
+
+            await rejected;
+            expect(removeListener).toHaveBeenCalledExactlyOnceWith('abort', expect.any(Function));
+            expect(vi.getTimerCount()).toBe(0);
+            await settle(BACKOFF_CEILING_MS);
+            expect(FakeEventSource.instances).toHaveLength(kind === 'SSE' ? 11 : 1);
+            expect(FakeEventSource.instances.every((sse) => sse.readyState === FakeEventSource.CLOSED)).toBe(true);
+            expect(authenticate).toHaveBeenCalledTimes(kind === 'authentication' ? 10 : 0);
+        },
+    );
+
+    it('delivers every message in a poll batch with a shared timestamp', async () => {
+        const harness = createHarness();
+        harness.setHistory([{ t: AgentMessageType.UPDATE, m: 'history', ts: 1000 }]);
+        harness.setPollResponse(() => [
+            { t: AgentMessageType.UPDATE, m: 'answer', ts: 2000 },
+            { t: AgentMessageType.COMPLETE, m: 'complete', w: 'main', ts: 2000 },
+        ]);
+        const received: string[] = [];
+        const done = harness.client.agents.streamMessages(AGENT_RUN_ID, (message) => received.push(message.message));
+        await settle();
+        for (let i = 0; i < 11; i++) await failCurrentConnection();
+        await expect(done).resolves.toBeNull();
+        expect(received).toEqual(['history', 'answer', 'complete']);
+        expect(vi.getTimerCount()).toBe(0);
     });
 });
