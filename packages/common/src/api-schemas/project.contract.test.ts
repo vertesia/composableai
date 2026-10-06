@@ -475,3 +475,14 @@ describe('gate 5 — runtime enforcement uses the published components', () => {
         }
     });
 });
+
+describe('project JSON repair policy', () => {
+    it('accepts boolean updates and rejects invalid values through the enforced contract', () => {
+        for (const json_repair_enabled of [true, false]) {
+            expect(validateApiRequest('UpdateProjectConfigurationPayload', { json_repair_enabled }).valid).toBe(true);
+        }
+        expect(validateApiRequest('UpdateProjectConfigurationPayload', { json_repair_enabled: 'false' }).valid).toBe(
+            false,
+        );
+    });
+});

@@ -5649,6 +5649,10 @@
       "storage_bucket": {
         "type": "string"
       },
+      "json_repair_enabled": {
+        "type": "boolean",
+        "description": "Allow conservative JSON syntax repair for structured output executions in this project. Defaults to true when unspecified. Disabling repair still allows complete JSON wrapper extraction."
+      },
       "agent_streaming_enabled": {
         "type": "boolean",
         "description": "Enable real-time streaming of agent LLM responses to clients. When enabled, LLM responses are streamed chunk-by-chunk via Redis pub/sub. Defaults to true if not specified."
@@ -5875,6 +5879,10 @@
       },
       "storage_bucket": {
         "type": "string"
+      },
+      "json_repair_enabled": {
+        "type": "boolean",
+        "description": "Allow conservative JSON syntax repair for structured output executions in this project. Defaults to true when unspecified. Disabling repair still allows complete JSON wrapper extraction."
       },
       "agent_streaming_enabled": {
         "type": "boolean",
@@ -9074,6 +9082,10 @@
       },
       "result_schema": {
         "$ref": "#/components/schemas/JSONSchema"
+      },
+      "jsonRepair": {
+        "type": "boolean",
+        "description": "Allow conservative JSON syntax repair during result-schema validation for this execution. Overrides the driver default. Complete JSON wrappers may still be extracted when disabled."
       },
       "prompt_cache_schema_suffix": {
         "type": "boolean",

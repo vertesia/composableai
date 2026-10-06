@@ -5637,6 +5637,7 @@ export type ProjectConfiguration = {
     };
     datacenter?: string | undefined;
     storage_bucket?: string | undefined;
+    json_repair_enabled?: boolean | undefined;
     agent_streaming_enabled?: boolean | undefined;
     agent?: AgentProjectConfiguration | undefined;
     indexing?: ProjectIndexingConfiguration | undefined;
@@ -5881,6 +5882,7 @@ export type UpdateProjectConfigurationPayload = {
         | undefined;
     datacenter?: string | undefined | undefined;
     storage_bucket?: string | undefined | undefined;
+    json_repair_enabled?: boolean | undefined | undefined;
     agent_streaming_enabled?: boolean | undefined | undefined;
     agent?: AgentProjectConfiguration | undefined | undefined;
     indexing?: ProjectIndexingConfiguration | undefined | undefined;
