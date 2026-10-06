@@ -450,6 +450,14 @@ export const ProjectConfigurationSchema = z
         }),
         datacenter: z.string().optional(),
         storage_bucket: z.string().optional(),
+        json_repair_enabled: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Allow conservative JSON syntax repair for structured output executions in this project. ' +
+                    'Defaults to true when unspecified. Disabling repair still allows complete JSON wrapper extraction.',
+            }),
         agent_streaming_enabled: z
             .boolean()
             .optional()

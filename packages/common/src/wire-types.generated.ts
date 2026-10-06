@@ -14,6 +14,7 @@ import type {
     HttpTimeoutOptions,
     ImageResult,
     JSONObject,
+    JSONOutputDiagnostic,
     JSONSchema,
     JSONValue,
     JsonResult,
@@ -5636,6 +5637,7 @@ export type ProjectConfiguration = {
     };
     datacenter?: string | undefined;
     storage_bucket?: string | undefined;
+    json_repair_enabled?: boolean | undefined;
     agent_streaming_enabled?: boolean | undefined;
     agent?: AgentProjectConfiguration | undefined;
     indexing?: ProjectIndexingConfiguration | undefined;
@@ -5880,6 +5882,7 @@ export type UpdateProjectConfigurationPayload = {
         | undefined;
     datacenter?: string | undefined | undefined;
     storage_bucket?: string | undefined | undefined;
+    json_repair_enabled?: boolean | undefined | undefined;
     agent_streaming_enabled?: boolean | undefined | undefined;
     agent?: AgentProjectConfiguration | undefined | undefined;
     indexing?: ProjectIndexingConfiguration | undefined | undefined;
@@ -10269,6 +10272,7 @@ export type ExecutionResponse = {
     token_usage?: ExecutionTokenUsage | undefined;
     service_tier?: string | undefined;
     prompt_cache_diagnostic?: PromptCacheDiagnostic | undefined;
+    json_output_diagnostic?: JSONOutputDiagnostic | undefined;
     tool_use?: ToolUse[] | undefined;
     finish_reason?: string | undefined;
     error?:
@@ -10935,6 +10939,7 @@ export interface ApiComponentTypes {
     ToolUse: ToolUse;
     TextResult: TextResult;
     JsonResult: JsonResult;
+    JSONOutputDiagnostic: JSONOutputDiagnostic;
     ImageResult: ImageResult;
     VideoResult: VideoResult;
     CompletionResult: CompletionResult;

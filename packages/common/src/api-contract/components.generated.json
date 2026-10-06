@@ -5649,6 +5649,10 @@
       "storage_bucket": {
         "type": "string"
       },
+      "json_repair_enabled": {
+        "type": "boolean",
+        "description": "Allow conservative JSON syntax repair for structured output executions in this project. Defaults to true when unspecified. Disabling repair still allows complete JSON wrapper extraction."
+      },
       "agent_streaming_enabled": {
         "type": "boolean",
         "description": "Enable real-time streaming of agent LLM responses to clients. When enabled, LLM responses are streamed chunk-by-chunk via Redis pub/sub. Defaults to true if not specified."
@@ -5875,6 +5879,10 @@
       },
       "storage_bucket": {
         "type": "string"
+      },
+      "json_repair_enabled": {
+        "type": "boolean",
+        "description": "Allow conservative JSON syntax repair for structured output executions in this project. Defaults to true when unspecified. Disabling repair still allows complete JSON wrapper extraction."
       },
       "agent_streaming_enabled": {
         "type": "boolean",
@@ -8868,6 +8876,30 @@
     ],
     "additionalProperties": false
   },
+  "JSONOutputDiagnostic": {
+    "type": "object",
+    "properties": {
+      "extracted": {
+        "type": "boolean"
+      },
+      "repaired": {
+        "type": "boolean"
+      },
+      "original_text": {
+        "type": "string"
+      },
+      "parse_error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "extracted",
+      "repaired",
+      "original_text"
+    ],
+    "additionalProperties": false,
+    "description": "Records structured response recovery. The original text can contain sensitive model output."
+  },
   "ImageResult": {
     "type": "object",
     "properties": {
@@ -9050,6 +9082,10 @@
       },
       "result_schema": {
         "$ref": "#/components/schemas/JSONSchema"
+      },
+      "jsonRepair": {
+        "type": "boolean",
+        "description": "Allow conservative JSON syntax repair during result-schema validation for this execution. Overrides the driver default. Complete JSON wrappers may still be extracted when disabled."
       },
       "prompt_cache_schema_suffix": {
         "type": "boolean",
@@ -15489,6 +15525,9 @@
       },
       "prompt_cache_diagnostic": {
         "$ref": "#/components/schemas/PromptCacheDiagnostic"
+      },
+      "json_output_diagnostic": {
+        "$ref": "#/components/schemas/JSONOutputDiagnostic"
       },
       "tool_use": {
         "type": "array",

@@ -5388,6 +5388,10 @@ interface Checks {
         W.ApiComponentTypes['JsonResult'],
         z.infer<typeof import('@llumiverse/common/schemas').JsonResultSchema>
     >;
+    'component:JSONOutputDiagnostic': Same<
+        W.ApiComponentTypes['JSONOutputDiagnostic'],
+        z.infer<typeof import('@llumiverse/common/schemas').JSONOutputDiagnosticSchema>
+    >;
     'component:ImageResult': Same<
         W.ApiComponentTypes['ImageResult'],
         z.infer<typeof import('@llumiverse/common/schemas').ImageResultSchema>
@@ -11074,6 +11078,7 @@ const checks: Checks = {
     'component:ToolUse': true,
     'component:TextResult': true,
     'component:JsonResult': true,
+    'component:JSONOutputDiagnostic': true,
     'component:ImageResult': true,
     'component:VideoResult': true,
     'component:CompletionResult': true,
@@ -12131,6 +12136,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2529);
+        expect(Object.keys(checks)).toHaveLength(2530);
     });
 });

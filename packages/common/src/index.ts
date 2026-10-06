@@ -1,5 +1,6 @@
 export type {
     AudioResult,
+    JSONOutputDiagnostic,
     OpenAiAudioOptions,
     OpenAiImageGenerationMask,
     OpenAiImageGenerationOptions,
