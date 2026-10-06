@@ -262,4 +262,26 @@ describe('scope-aware permissions', () => {
         expect(accountAdmin.hasAccountPermission(Permission.account_admin)).toBe(true);
         expect(accountAdmin.hasProjectPermission(Permission.account_admin)).toBe(true);
     });
+
+    it('caps merged, account, and project role grants to the OAuth token permissions', () => {
+        const oauthPermissions = new UserPermissions(
+            {
+                sub: 'oauth-client',
+                type: PrincipalType.OAuthAccess,
+                account_roles: [SystemRoles.admin],
+                project_roles: [SystemRoles.admin],
+                permissions: [Permission.project_admin],
+            } as AuthTokenPayload,
+            roles,
+        );
+
+        for (const ungranted of [Permission.account_admin, Permission.account_user_manage]) {
+            expect(oauthPermissions.hasPermission(ungranted)).toBe(false);
+            expect(oauthPermissions.hasAccountPermission(ungranted)).toBe(false);
+            expect(oauthPermissions.hasProjectPermission(ungranted)).toBe(false);
+        }
+        expect(oauthPermissions.hasPermission(Permission.project_admin)).toBe(true);
+        expect(oauthPermissions.hasAccountPermission(Permission.project_admin)).toBe(true);
+        expect(oauthPermissions.hasProjectPermission(Permission.project_admin)).toBe(true);
+    });
 });
