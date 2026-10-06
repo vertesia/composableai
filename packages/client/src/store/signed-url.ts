@@ -36,6 +36,33 @@ export interface SignedUrlFetchOptions {
     retryableStatuses?: ReadonlySet<number>;
 }
 
+const AZURE_BLOB_HOST_SUFFIX = '.blob.core.windows.net';
+
+/** Whether a signed URL points at Azure Blob Storage (a SAS URL on `<account>.blob.core.windows.net`). */
+export function isAzureBlobUrl(url: string): boolean {
+    try {
+        return new URL(url).hostname.toLowerCase().endsWith(AZURE_BLOB_HOST_SUFFIX);
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * The headers for a `PUT` of file content to a signed upload URL.
+ *
+ * Azure's Put Blob rejects a request without `x-ms-blob-type`, so it is added for Azure Blob URLs
+ * only. GCS and S3 requests are left untouched: from a browser every extra header must be allowed
+ * by the bucket's CORS policy, and a header those backends do not expect would fail the preflight.
+ */
+export function signedUrlUploadHeaders(
+    url: string,
+    headers?: Record<string, string>,
+): Record<string, string> | undefined {
+    if (!isAzureBlobUrl(url)) return headers;
+    if (headers && Object.keys(headers).some((name) => name.toLowerCase() === 'x-ms-blob-type')) return headers;
+    return { ...headers, 'x-ms-blob-type': 'BlockBlob' };
+}
+
 function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -145,6 +172,9 @@ async function toReplayableBody(body: BodyInit | null | undefined): Promise<Body
  * `Retry-After` response header up to 60 seconds. Longer delays return the response
  * without retrying so the caller can schedule recovery outside this request.
  *
+ * A `PUT` to an Azure Blob SAS URL gets the `x-ms-blob-type` header it requires (see
+ * {@link signedUrlUploadHeaders}).
+ *
  * The returned `Response` is only guaranteed to be retried while it carries a
  * retryable status; a non-retryable error response (e.g. 403, 404) is returned
  * as-is for the caller to handle.
@@ -160,12 +190,13 @@ export async function fetchSignedUrl(url: string, options: SignedUrlFetchOptions
     } = options;
 
     const body = await toReplayableBody(options.body);
+    const requestHeaders = method.toUpperCase() === 'PUT' ? signedUrlUploadHeaders(url, headers) : headers;
 
     let lastError: unknown;
     for (let attempt = 0; attempt < attempts; attempt++) {
         const isLastAttempt = attempt === attempts - 1;
         try {
-            const res = await fetch(url, { method, headers, body });
+            const res = await fetch(url, { method, headers: requestHeaders, body });
             if (res.ok || !retryableStatuses.has(res.status) || isLastAttempt) {
                 return res;
             }
