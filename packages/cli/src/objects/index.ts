@@ -17,7 +17,7 @@ export function registerObjectsCommand(program: Command) {
     store
         .command('post <file...>')
         .description(
-            'Post a new object to the store. The file can be a s3 or gs uri to attach external blobs to the created object.',
+            'Post a new object to the store. The file can be a s3, gs or az uri to attach external blobs to the created object.',
         )
         .option('--name [name]', 'The name of the object to create. If not specified the file name will be used.')
         .option(
