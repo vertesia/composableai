@@ -1,9 +1,15 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { VertesiaClient } from '@vertesia/client';
-import type { AuthTokenPayload, SystemRoleDefinition } from '@vertesia/common';
+import {
+    type AuthTokenPayload,
+    Permission,
+    PrincipalType,
+    type SystemRoleDefinition,
+    SystemRoles,
+} from '@vertesia/common';
 import { Button } from '@vertesia/ui/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type PermissionLoadingScreenProps, UserPermissionProvider } from './UserPermissionsProvider';
+import { type PermissionLoadingScreenProps, UserPermissionProvider, UserPermissions } from './UserPermissionsProvider';
 
 const session = {
     client: new VertesiaClient({ serverUrl: 'https://studio.example.test', storeUrl: 'https://store.example.test' }),
@@ -163,12 +169,13 @@ describe('role mapping recovery', () => {
         expect(screen.getByRole('alert').textContent).toContain('Access Denied');
     });
 
-    it('uses permissions embedded in the token without fetching mappings', () => {
+    it('loads role mappings even when the token embeds flat permissions', async () => {
         session.authToken = { ...session.authToken, permissions: [] };
-        const fetch = vi.spyOn(session.client.iam.roles, 'listSystem');
+        const fetch = vi.spyOn(session.client.iam.roles, 'listSystem').mockResolvedValue([]);
         renderProvider();
+        await advance(0);
         expect(screen.getByText('Protected workspace')).toBeTruthy();
-        expect(fetch).not.toHaveBeenCalled();
+        expect(fetch).toHaveBeenCalledOnce();
     });
     it.each([401, 403, 500])('supplies working recovery actions to a custom screen for status %s', async (status) => {
         const fetch = vi
@@ -217,5 +224,42 @@ describe('role mapping recovery', () => {
         expect(screen.queryByText('Protected workspace')).toBeNull();
         await advance(1_000);
         expect(screen.getByText('Protected workspace')).toBeTruthy();
+    });
+});
+
+describe('scope-aware permissions', () => {
+    const roles = [
+        {
+            name: SystemRoles.admin,
+            permissions: [Permission.account_admin, Permission.account_user_manage, Permission.project_admin],
+        },
+        { name: SystemRoles.manager, permissions: [Permission.project_admin] },
+    ] as SystemRoleDefinition[];
+
+    function permissions(accountRoles: string[], projectRoles: string[]) {
+        return new UserPermissions(
+            {
+                sub: 'user-a',
+                type: PrincipalType.User,
+                account_roles: accountRoles,
+                project_roles: projectRoles,
+            } as AuthTokenPayload,
+            roles,
+        );
+    }
+
+    it('distinguishes account admin, project full-admin, and project manager', () => {
+        const projectAdmin = permissions([], [SystemRoles.admin]);
+        expect(projectAdmin.hasAccountPermission(Permission.account_admin)).toBe(false);
+        expect(projectAdmin.hasProjectPermission(Permission.account_admin)).toBe(true);
+        expect(projectAdmin.hasProjectPermission(Permission.account_user_manage)).toBe(false);
+
+        const manager = permissions([], [SystemRoles.manager]);
+        expect(manager.hasProjectPermission(Permission.account_admin)).toBe(false);
+        expect(manager.hasProjectPermission(Permission.project_admin)).toBe(true);
+
+        const accountAdmin = permissions([SystemRoles.admin], []);
+        expect(accountAdmin.hasAccountPermission(Permission.account_admin)).toBe(true);
+        expect(accountAdmin.hasProjectPermission(Permission.account_admin)).toBe(true);
     });
 });
