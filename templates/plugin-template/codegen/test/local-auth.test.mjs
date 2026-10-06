@@ -7,6 +7,7 @@ const envEntry = new URL('../../src/ui/env.ts', import.meta.url);
 async function bootstrap({
     origin = 'https://localhost:5173',
     clientId,
+    devAuthToken,
     prod = false,
     hostToken,
     authMode,
@@ -37,6 +38,7 @@ async function bootstrap({
                 PROD: prod,
                 DEV: !prod,
                 VITE_OAUTH_CLIENT_ID: clientId,
+                VITE_VERTESIA_AUTH_TOKEN: devAuthToken,
                 VITE_VERTESIA_STUDIO_URL: 'https://api.dev1.vertesia.io',
                 VITE_VERTESIA_ZENO_URL: 'https://api.dev1.vertesia.io',
                 VITE_VERTESIA_STS_URL: 'https://sts.dev1.vertesia.io',
@@ -57,6 +59,9 @@ async function bootstrap({
                                 : args.path.endsWith('/shell')
                                   ? 'export async function requestIframeHostAuthToken() { return globalThis.fixture.hostToken; }'
                                   : `export const Env = globalThis.fixture.env;
+                                     export function normalizeHostname(host) {
+                                         return host.toLowerCase().replace(/\\.$/, '');
+                                     }
                                      export function isLoopbackHostname(host) {
                                          return host === 'localhost' || host.endsWith('.localhost') ||
                                              host === '127.0.0.1' || host === '[::1]';
@@ -107,7 +112,7 @@ for (const origin of ['http://localhost:5173', 'https://localhost:5173']) {
     test(`${origin} requires a registered client even for built apps`, async () => {
         const app = await bootstrap({ origin, prod: true });
         assert.equal(app.env.oauth, undefined);
-        assert.throws(() => app.validate(), /Set VITE_OAUTH_CLIENT_ID in .env.app.local/);
+        assert.throws(() => app.validate(), /Set VITE_OAUTH_CLIENT_ID.*build environment variables.*rebuild/);
     });
     test(`${origin} uses an explicitly configured development client`, async () => {
         const app = await bootstrap({ origin, clientId: '  my-app-development  ' });
@@ -116,6 +121,28 @@ for (const origin of ['http://localhost:5173', 'https://localhost:5173']) {
         assert.doesNotThrow(() => app.validate());
     });
 }
+
+for (const prod of [false, true]) {
+    test(`trailing-dot localhost requires a registered client (prod=${prod})`, async () => {
+        const app = await bootstrap({ origin: 'https://localhost.:5173', prod });
+        assert.equal(app.env.oauth, undefined);
+        assert.throws(() => app.validate(), /Set VITE_OAUTH_CLIENT_ID/);
+    });
+}
+
+test('development setup guidance explains how to restart with local configuration', async () => {
+    const app = await bootstrap();
+    assert.throws(() => app.validate(), /Update .env.app.local, then restart the dev server/);
+});
+
+test('local development tokens retain precedence and are excluded from production', async () => {
+    const app = await bootstrap({ devAuthToken: 'development-token' });
+    assert.equal(app.env.devAuthToken, 'development-token');
+    assert.doesNotThrow(() => app.validate());
+    const builtApp = await bootstrap({ devAuthToken: 'development-token', prod: true });
+    assert.equal(builtApp.env.devAuthToken, undefined);
+    assert.throws(() => builtApp.validate(), /Set VITE_OAUTH_CLIENT_ID/);
+});
 
 test('independent HTTPS deployments default to CIMD and accept a named client override', async () => {
     const origin = 'https://my-app.vercel.app';

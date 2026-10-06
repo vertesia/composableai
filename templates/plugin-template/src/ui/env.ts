@@ -1,5 +1,5 @@
 import branding from 'virtual:vertesia-branding';
-import { Env, isLoopbackHostname } from '@vertesia/ui/env';
+import { Env, isLoopbackHostname, normalizeHostname } from '@vertesia/ui/env';
 import { requestIframeHostAuthToken } from '@vertesia/ui/shell';
 
 import { appOAuthPermissions } from '../app-permissions.js';
@@ -8,15 +8,18 @@ const appTitle = branding.title ?? branding.name;
 
 document.title = appTitle;
 
-const localOrigin = isLoopbackHostname(window.location.hostname);
+const localOrigin = isLoopbackHostname(normalizeHostname(window.location.hostname));
 const oauthClientId = import.meta.env.VITE_OAUTH_CLIENT_ID?.trim();
 
 export class LocalOAuthConfigurationError extends Error {
     constructor() {
         super(
             'Local sign-in requires a registered public OAuth client. ' +
-                "Set VITE_OAUTH_CLIENT_ID in .env.app.local and register this app's callback URL " +
-                '(VITE_OAUTH_REDIRECT_URI) in Vertesia, then restart the dev server.',
+                "Set VITE_OAUTH_CLIENT_ID and register this app's callback URL " +
+                '(VITE_OAUTH_REDIRECT_URI) in Vertesia. ' +
+                (import.meta.env.DEV
+                    ? 'Update .env.app.local, then restart the dev server.'
+                    : 'Set these build environment variables, then rebuild and redeploy the app.'),
         );
         this.name = 'LocalOAuthConfigurationError';
     }
@@ -63,6 +66,7 @@ Env.init(
         isLocalDev: true,
         isDocker: true,
         type: 'development',
+        devAuthToken: import.meta.env.DEV ? import.meta.env.VITE_VERTESIA_AUTH_TOKEN?.trim() || undefined : undefined,
         endpoints: {
             studio: requiredEnv('VITE_VERTESIA_STUDIO_URL'),
             zeno: requiredEnv('VITE_VERTESIA_ZENO_URL'),
