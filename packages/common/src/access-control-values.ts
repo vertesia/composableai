@@ -78,6 +78,19 @@ export enum Permission {
     studio_access = 'studio:access',
 }
 
+/**
+ * The administrative permission that applies to each authorization boundary.
+ *
+ * Keep the existing permission values for wire and stored-ACE compatibility. New authorization code should select
+ * the permission from the target boundary instead of treating `account_admin` and `project_admin` as interchangeable.
+ */
+export const ADMIN_PERMISSION_BY_SCOPE = {
+    account: Permission.account_admin,
+    project: Permission.project_admin,
+} as const;
+
+export type AdminPermissionScope = keyof typeof ADMIN_PERMISSION_BY_SCOPE;
+
 export enum AccessControlResourceType {
     project = 'project',
     environment = 'environment',
