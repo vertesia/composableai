@@ -14,6 +14,7 @@ import type {
     HttpTimeoutOptions,
     ImageResult,
     JSONObject,
+    JSONOutputDiagnostic,
     JSONSchema,
     JSONValue,
     JsonResult,
@@ -10269,6 +10270,7 @@ export type ExecutionResponse = {
     token_usage?: ExecutionTokenUsage | undefined;
     service_tier?: string | undefined;
     prompt_cache_diagnostic?: PromptCacheDiagnostic | undefined;
+    json_output_diagnostic?: JSONOutputDiagnostic | undefined;
     tool_use?: ToolUse[] | undefined;
     finish_reason?: string | undefined;
     error?:
@@ -10935,6 +10937,7 @@ export interface ApiComponentTypes {
     ToolUse: ToolUse;
     TextResult: TextResult;
     JsonResult: JsonResult;
+    JSONOutputDiagnostic: JSONOutputDiagnostic;
     ImageResult: ImageResult;
     VideoResult: VideoResult;
     CompletionResult: CompletionResult;

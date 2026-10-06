@@ -2,6 +2,7 @@ import {
     CompletionResultSchema,
     ExecutionTokenUsageSchema,
     JSONObjectSchema,
+    JSONOutputDiagnosticSchema,
     JSONSchemaSchema,
     ModalitiesSchema,
     ModelOptionsSchema,
@@ -2533,6 +2534,7 @@ export const ExecutionResponseSchema = z
         token_usage: ExecutionTokenUsageSchema.optional(),
         service_tier: z.string().meta({ description: 'Processing tier actually used by the provider' }).optional(),
         prompt_cache_diagnostic: PromptCacheDiagnosticSchema.optional(),
+        json_output_diagnostic: JSONOutputDiagnosticSchema.optional(),
         tool_use: z.array(ToolUseSchema).optional(),
         finish_reason: z.string().optional(),
         error: z

@@ -8868,6 +8868,30 @@
     ],
     "additionalProperties": false
   },
+  "JSONOutputDiagnostic": {
+    "type": "object",
+    "properties": {
+      "extracted": {
+        "type": "boolean"
+      },
+      "repaired": {
+        "type": "boolean"
+      },
+      "original_text": {
+        "type": "string"
+      },
+      "parse_error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "extracted",
+      "repaired",
+      "original_text"
+    ],
+    "additionalProperties": false,
+    "description": "Records structured response recovery. The original text can contain sensitive model output."
+  },
   "ImageResult": {
     "type": "object",
     "properties": {
@@ -15489,6 +15513,9 @@
       },
       "prompt_cache_diagnostic": {
         "$ref": "#/components/schemas/PromptCacheDiagnostic"
+      },
+      "json_output_diagnostic": {
+        "$ref": "#/components/schemas/JSONOutputDiagnostic"
       },
       "tool_use": {
         "type": "array",

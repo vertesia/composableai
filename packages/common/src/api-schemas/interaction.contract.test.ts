@@ -17,7 +17,7 @@ import {
     ResolvedCatalogInteractionSchema,
     RunClonePayloadSchema,
 } from './interaction.js';
-import { validateApiRequest } from './registry.js';
+import { validateApiRequest, validateApiResponse } from './registry.js';
 
 describe('Responses image tool contract', () => {
     it.each(['openai-text', 'openai-thinking'] as const)('enforces strict nested image settings for %s', (id) => {
@@ -334,5 +334,27 @@ describe('inference workflow attribution', () => {
 describe('background inference telemetry contract', () => {
     it('accepts the background call type in the generated runtime contract', () => {
         expect(validateApiRequest('LlmCallType', 'background').valid).toBe(true);
+    });
+});
+
+describe('execution response JSON recovery diagnostics', () => {
+    it('retains diagnostics on the enforced execution response contract', () => {
+        const response = {
+            result: [{ type: 'json', value: { answer: 'ok' } }],
+            prompt: 'test prompt',
+            json_output_diagnostic: {
+                extracted: false,
+                repaired: true,
+                original_text: '{"answer":"ok",}',
+                parse_error: 'Trailing comma',
+            },
+        };
+        expect(validateApiResponse('ExecutionResponse', response).valid).toBe(true);
+        expect(
+            validateApiResponse('ExecutionResponse', {
+                ...response,
+                json_output_diagnostic: { ...response.json_output_diagnostic, repaired: 'yes' },
+            }).valid,
+        ).toBe(false);
     });
 });
