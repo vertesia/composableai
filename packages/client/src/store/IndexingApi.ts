@@ -161,6 +161,14 @@ export class IndexingApi extends ApiTopic {
     }
 
     /**
+     * Delete every Elasticsearch index of the project (content and agent runs).
+     * Used while deleting the project; the indices are not recreated.
+     */
+    deleteProjectIndices(): Promise<GenericCommandResponse> {
+        return this.post('/internal/delete-project-indices');
+    }
+
+    /**
      * Create a new versioned index for reindexing (without alias)
      * The alias will be swapped after reindexing completes via swapAlias
      */
