@@ -154,7 +154,9 @@ and default workspace settings below. No environment values should be hardcoded 
 
 Central authentication is the default. The 1.6 bootstrap CLI asks for your region and writes
 `VITE_AUTH_SERVER_URL` alongside the Studio, Zeno, and STS URLs in `.env.app`.
-Newly generated apps need no manual authentication URL setup.
+Newly generated apps need no manual authentication URL setup. Local browser sign-in additionally
+requires a registered public development OAuth client; the template no longer falls back to the
+legacy fragment-token broker flow on localhost.
 
 For an existing 1.5 app, add the regional auth setting to its existing `.env.app` when adopting this
 wiring (the CLI does not rewrite an already generated app):
@@ -180,6 +182,21 @@ Restart Vite after changing local settings; rebuild and redeploy after changing 
 `VITE_*` values are public browser configuration, never service-account credentials. Valid gateway
 runtime authentication configuration takes precedence over build settings, and embedded apps retain
 host-token authentication.
+
+For localhost, ask an account admin to create a public OAuth client in **Apps Accessing Vertesia**
+on the selected STS environment, with authorization code + PKCE and `token_endpoint_auth_method=none`.
+Allow the app's requested scopes and register its callback. Configure `.env.app.local`:
+
+```dotenv
+VITE_OAUTH_CLIENT_ID=my-app-development
+VITE_OAUTH_REDIRECT_URI=https://localhost:5173/
+```
+
+For Vercel, keep the template's public CIMD endpoint and routing, or set a separate registered public
+client ID through `VITE_OAUTH_CLIENT_ID` in the deployment's build environment. Register
+`https://your-app.vercel.app/app` as its callback, or set `VITE_OAUTH_REDIRECT_URI` to another
+same-origin callback. No client secret belongs in the browser. See the README's standalone
+authentication section for the complete hosting matrix, scope settings and preview callback rules.
 
 Keep the required `VITE_VERTESIA_STUDIO_URL`, `VITE_VERTESIA_ZENO_URL`, and `VITE_VERTESIA_STS_URL`.
 
@@ -238,7 +255,9 @@ Run the app-owned unit test script (for example, `pnpm test:unit` if your app de
 the ungenerated repository scaffold has no application test suite. If using service hosting, also run `pnpm service:build`. Run the app's Playwright primary-flow suite
 against the deployment under test. Check these cases manually as well:
 
-- Standalone central auth: sign-in and logout use the configured broker and preserve the return path.
+- Standalone OAuth: localhost uses its registered development client; Vercel uses CIMD or its
+  registered deployment client. Sign-in and logout preserve the return path. Missing local client
+  configuration shows setup instructions instead of starting a legacy broker redirect.
 - Standalone Firebase: the branded login appears locally and after deployment; provider sign-in returns
   successfully and STS accepts the token.
 - Embedded: the host handshake still authenticates without an unnecessary standalone redirect.
