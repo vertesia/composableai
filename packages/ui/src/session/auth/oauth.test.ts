@@ -253,7 +253,7 @@ it.each(['http://localhost:5173', 'https://localhost:5173'])(
         expect(browser.location.href).toBe(`${localOrigin}/app/report?a=a&p=p#chart`);
         expect(await callback.getAppOAuthToken()).toBe(token);
         expect(requests.filter((request) => request.url === tokenEndpoint)).toHaveLength(1);
-        expect(requests.every((request) => request.url.startsWith(issuer))).toBe(true);
+        expect(requests.every((request) => new URL(request.url).origin === new URL(issuer).origin)).toBe(true);
     },
 );
 
