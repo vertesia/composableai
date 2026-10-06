@@ -185,6 +185,78 @@ it('supports a registered client ID without fetching a CIMD', async () => {
     expect(requests).toHaveLength(1);
 });
 
+it.each(['http://localhost:5173', 'https://localhost:5173'])(
+    'completes a registered-client PKCE round trip on %s',
+    async (localOrigin) => {
+        const localClientId = 'my-app-development';
+        const redirectUri = `${localOrigin}/`;
+        browser.location.origin = localOrigin;
+        browser.location.href = `${localOrigin}/app/report?a=a&p=p#chart`;
+        const initialize = async () => {
+            vi.resetModules();
+            const { Env } = await import('../../env');
+            Env.init({
+                name: 'local',
+                version: '1',
+                type: 'development',
+                isLocalDev: true,
+                isDocker: false,
+                endpoints: { studio: issuer, zeno: issuer, sts: issuer },
+                oauth: { clientId: localClientId, redirectUri, scopes: ['openid', 'content:read'] },
+            });
+            return import('./oauth');
+        };
+        vi.stubGlobal('fetch', async (input: string | URL, init?: RequestInit) => {
+            const url = String(input);
+            requests.push({ url, init });
+            if (url.endsWith('/.well-known/oauth-authorization-server')) {
+                return Response.json({
+                    issuer,
+                    authorization_endpoint: 'https://auth.dev1.vertesia.io/oauth/authorize',
+                    token_endpoint: tokenEndpoint,
+                });
+            }
+            if (url === tokenEndpoint) {
+                const claims = {
+                    iss: issuer,
+                    client_id: localClientId,
+                    exp: Date.now() / 1000 + 3600,
+                    account: { id: 'a' },
+                    project: { id: 'p' },
+                };
+                return Response.json({
+                    access_token: `e30.${btoa(JSON.stringify(claims))}.signature`,
+                    token_type: 'Bearer',
+                });
+            }
+            throw new Error(`Unexpected request: ${url}`);
+        });
+        const oauth = await initialize();
+        void oauth.getAppOAuthToken();
+        await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+        const authorize = new URL(replace.mock.calls[0][0]);
+        const txn = JSON.parse(storage.get('vertesia.oauth.transaction') ?? '{}');
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txn.verifier));
+        expect(authorize.searchParams.get('client_id')).toBe(localClientId);
+        expect(authorize.searchParams.get('redirect_uri')).toBe(redirectUri);
+        expect(authorize.searchParams.get('code_challenge_method')).toBe('S256');
+        expect(authorize.searchParams.get('code_challenge')).toBe(Buffer.from(digest).toString('base64url'));
+        browser.location.href = `${redirectUri}?code=local-code&state=${authorize.searchParams.get('state')}`;
+        const callback = await initialize();
+        const token = await callback.getAppOAuthToken();
+        const exchange = requests.find((request) => request.url === tokenEndpoint);
+        const body = exchange?.init?.body as URLSearchParams;
+        expect(body.get('client_id')).toBe(localClientId);
+        expect(body.get('redirect_uri')).toBe(redirectUri);
+        expect(body.get('code_verifier')).toBe(txn.verifier);
+        expect(body.has('client_secret')).toBe(false);
+        expect(browser.location.href).toBe(`${localOrigin}/app/report?a=a&p=p#chart`);
+        expect(await callback.getAppOAuthToken()).toBe(token);
+        expect(requests.filter((request) => request.url === tokenEndpoint)).toHaveLength(1);
+        expect(requests.every((request) => request.url.startsWith(issuer))).toBe(true);
+    },
+);
+
 it('prefers an STS fragment token over OAuth', async () => {
     const oauth = await setup();
     storage.set('auth_state', 'state');

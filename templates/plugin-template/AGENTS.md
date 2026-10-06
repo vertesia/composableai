@@ -122,7 +122,9 @@ Rules of thumb:
 - User contributions must be exported from `src/modules/app/resources/<type>/index.ts`
 - Hooks use explicit definitions in `src/modules/app/resources/hooks/index.ts`: lifecycle hooks are `install`/`uninstall`; event hooks use kebab-case names and receive the canonical `{ event, delivery }` envelope
 - Event subscriptions live in `src/modules/app/resources/subscriptions/index.ts` and reference a registered event hook by its local `name`; do not hardcode a deployed hook URL
-- Standalone dev requires HTTPS (Firebase auth): <https://localhost:5173>
+- Standalone local sign-in requires a registered public OAuth client (PKCE, auth method `none`).
+  Set `VITE_OAUTH_CLIENT_ID` in `.env.app.local` and register the callback URL; the default is
+  <https://localhost:5173/>. HTTP loopback callbacks are also supported when local HTTPS is disabled.
 - Set `VITE_APP_NAME` in `.env.app`; use `.env.app.local` for local overrides
 - Icons are SVG strings exported as default from `.ts` files
 
