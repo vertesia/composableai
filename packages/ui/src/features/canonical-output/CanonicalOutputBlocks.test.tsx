@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { CanonicalInteractionOutputFragment } from '@vertesia/client';
-import type { ConversationOutputAsset, ConversationOutputBlock } from '@vertesia/common';
+import type { ConversationAgentContentBlock, ConversationOutputAsset, ConversationOutputBlock } from '@vertesia/common';
 import { useLayoutEffect, useRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../i18n/index.js';
-import { CanonicalAcceptedOutput } from './CanonicalOutputBlocks.js';
+import { CanonicalAcceptedOutput, CanonicalOutputBlocks } from './CanonicalOutputBlocks.js';
 
 const getDownloadUrl = vi.fn();
 const defaultClient = { objects: { getDownloadUrl } };
@@ -310,4 +310,43 @@ describe('CanonicalAcceptedOutput', () => {
 
         expect(committed[firstCommitAfterSwitch]).toBeUndefined();
     });
+});
+
+it('renders a raw shared JSON original reference without inventing a transcript wire or hydrating its bytes', () => {
+    const block = {
+        id: 'original:json',
+        type: 'external_reference',
+        asset_id: 'asset:json',
+        original_type: 'json',
+        description: 'Exact archived JSON original',
+        preview: 'Bounded original JSON preview α',
+        content_hash: `sha256:${'a'.repeat(64)}`,
+        retrieval: {
+            capability: 'read_artifact',
+            version: 1,
+            tool_definition_id: 'read:json',
+            arguments: { asset_id: 'asset:json', path: 'original.json', start_byte: 0, byte_count: 5000 },
+        },
+    } satisfies ConversationAgentContentBlock;
+    const reads = getDownloadUrl.mock.calls.length;
+    const view = render(
+        <I18nProvider lng="en">
+            <CanonicalOutputBlocks
+                blocks={[block]}
+                assets={{
+                    'asset:json': {
+                        mime_type: 'application/json',
+                        storage: {
+                            type: 'external',
+                            resolver: 'vertesia.agent_artifact',
+                            locator: { storage_id: 'agent:one', artifact_path: 'original.json' },
+                        },
+                    },
+                }}
+            />
+        </I18nProvider>,
+    );
+    expect(screen.getByText('Bounded original JSON preview α')).not.toBeNull();
+    expect(view.container.querySelector('img, video, audio')).toBeNull();
+    expect(getDownloadUrl).toHaveBeenCalledTimes(reads);
 });

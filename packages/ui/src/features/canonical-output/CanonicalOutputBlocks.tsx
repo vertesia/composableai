@@ -1,5 +1,9 @@
 import type { CanonicalInteractionOutputFragment } from '@vertesia/client';
-import type { ConversationAgentContentBlock, ConversationAsset } from '@vertesia/common';
+import type {
+    ConversationAgentContentBlock,
+    ConversationAsset,
+    ConversationTranscriptRenderableBlock,
+} from '@vertesia/common';
 import { MessageBox } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -28,7 +32,7 @@ export interface CanonicalOutputOptions {
     onArtifactOpen?: (path: string) => void;
 }
 export interface CanonicalOutputBlocksProps extends CanonicalOutputOptions {
-    blocks: readonly ConversationAgentContentBlock[];
+    blocks: readonly (ConversationAgentContentBlock | ConversationTranscriptRenderableBlock)[];
     assets: Readonly<Record<string, Pick<ConversationAsset, 'storage' | 'mime_type' | 'media'>>>;
 }
 
@@ -70,7 +74,7 @@ function CanonicalOutputBlock({
     artifactRunId,
     onArtifactOpen,
 }: CanonicalOutputOptions & {
-    block: ConversationAgentContentBlock;
+    block: ConversationAgentContentBlock | ConversationTranscriptRenderableBlock;
     assets: Readonly<Record<string, Pick<ConversationAsset, 'storage' | 'mime_type' | 'media'>>>;
 }) {
     const { t } = useUITranslation();

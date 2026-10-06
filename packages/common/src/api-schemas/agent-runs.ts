@@ -2,12 +2,14 @@
 
 import { ExecutionTokenUsageSchema, ReasoningEffortSchema } from '@llumiverse/common/schemas';
 import {
+    ConversationDeletePlanInputSchema,
     ConversationDocumentSchema,
     ConversationOutputReceiptSchema,
     ConversationRefSchema,
     ConversationStreamEventSchema,
     ConversationTranscriptFragmentSchema,
     IdentifierSchema,
+    OperationReceiptSchema,
 } from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
 import { AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH, AGENT_RUN_FEEDBACK_ID_MAX_LENGTH } from '../store/agent-run-values.js';
@@ -2122,3 +2124,78 @@ export const AgentRunInternalsSchema = z
         updated_at: z.string().meta({ format: 'date-time' }),
     })
     .meta({ id: 'AgentRunInternals' });
+
+/** Acceptance time and physical root custody belong to the authenticated publisher. */
+export const ExperimentalAgentConversationDeletePayloadSchema = ConversationDeletePlanInputSchema.omit({
+    version: true,
+    conversation: true,
+    recorded_at: true,
+})
+    .extend({ expected_head: ConversationRefSchema })
+    .meta({ id: 'ExperimentalAgentConversationDeletePayload' });
+
+export const ExperimentalAgentConversationDeleteResponseSchema = z
+    .strictObject({
+        api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+        agent_run_id: IdentifierSchema,
+        scope: CanonicalConversationHeadScopeSchema,
+        head: ConversationRefSchema,
+        applied: z.boolean(),
+        receipt: OperationReceiptSchema,
+    })
+    .meta({ id: 'ExperimentalAgentConversationDeleteResponse' });
+
+/** Host owns physical root/profile/time and all staged cursors. No supplied progress can skip an audit. */
+export const ExperimentalAgentConversationUpgradePayloadSchema = z
+    .discriminatedUnion('action', [
+        z.strictObject({
+            action: z.enum(['begin']),
+            operation_id: IdentifierSchema,
+            expected_head: ConversationRefSchema,
+        }),
+        z.strictObject({ action: z.enum(['advance']), operation_id: IdentifierSchema }),
+        z.strictObject({ action: z.enum(['finish']), operation_id: IdentifierSchema }),
+    ])
+    .meta({
+        id: 'ExperimentalAgentConversationUpgradePayload',
+        type: 'object',
+        required: ['action'],
+        discriminator: { propertyName: 'action' },
+        // Strict branches own closedness; the propertyless union wrapper must admit their fields.
+        additionalProperties: true,
+    });
+const upgradeResponseShape = {
+    api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+    agent_run_id: IdentifierSchema,
+    scope: CanonicalConversationHeadScopeSchema,
+    operation_id: IdentifierSchema,
+    source: ConversationRefSchema,
+    head: ConversationRefSchema,
+};
+export const ExperimentalAgentConversationUpgradeResponseSchema = z
+    .discriminatedUnion('status', [
+        z.strictObject({
+            ...upgradeResponseShape,
+            status: z.enum(['pending']),
+            step: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+        }),
+        z.strictObject({
+            ...upgradeResponseShape,
+            status: z.enum(['ready_to_finish']),
+            step: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+        }),
+        z.strictObject({
+            ...upgradeResponseShape,
+            status: z.enum(['completed']),
+            applied: z.boolean(),
+            receipt: OperationReceiptSchema,
+        }),
+    ])
+    .meta({
+        id: 'ExperimentalAgentConversationUpgradeResponse',
+        type: 'object',
+        required: ['status'],
+        discriminator: { propertyName: 'status' },
+        // Strict branches own closedness; the propertyless union wrapper must admit their fields.
+        additionalProperties: true,
+    });

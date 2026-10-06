@@ -2255,6 +2255,18 @@ export const ConversationProcessingPolicySchema = z
     })
     .meta({ id: 'ConversationProcessingPolicy' });
 
+/** Opt-in model read-on-demand projection. Exact canonical producer capture is independent. */
+export const ConversationToolResultExternalizationPolicySchema = z
+    .strictObject({
+        version: z.literal(1),
+        strategy: z.literal('received_original'),
+    })
+    .meta({
+        id: 'ConversationToolResultExternalizationPolicy',
+        description:
+            'Optional agent tool-result projection strategy. Absent means off. Enabled runs must explicitly permit the builtin read_artifact; exact originals remain archived independently.',
+    });
+
 export const AsyncConversationExecutionPayloadSchema = z
     .object({
         interaction: z.string().meta({
@@ -2279,6 +2291,7 @@ export const AsyncConversationExecutionPayloadSchema = z
             .optional(),
         config: InteractionExecutionConfigurationSchema.optional(),
         processing: ConversationProcessingPolicySchema.optional(),
+        tool_result_externalization: ConversationToolResultExternalizationPolicySchema.optional(),
         result_schema: z.union([JSONSchemaSchema, SchemaRefSchema, z.null()]).optional(),
         do_validate: z.boolean().optional(),
         tags: z.array(z.string()).optional(),

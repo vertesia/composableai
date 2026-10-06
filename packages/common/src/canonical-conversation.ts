@@ -28,6 +28,7 @@ export type ConversationEditOperation = z.infer<typeof Canonical.ConversationEdi
 export type ConversationEditPlacement = z.infer<typeof Canonical.ConversationEditPlacementSchema>;
 export type ConversationEditRecordRef = z.infer<typeof Canonical.ConversationEditRecordRefSchema>;
 export type ConversationDeleteOperation = z.infer<typeof Canonical.ConversationDeleteOperationSchema>;
+export type ConversationIndexedUpgradeOperation = z.infer<typeof Canonical.IndexedConversationUpgradeOperationSchema>;
 export type ConversationDeletedTurn = z.infer<typeof Canonical.ConversationDeletedTurnSchema>;
 export type ConversationDeletedTurnRef = z.infer<typeof Canonical.ConversationDeletedTurnRefSchema>;
 export type ConversationContextChangeOperation = z.infer<typeof Canonical.ContextChangeOperationSchema>;
@@ -184,6 +185,9 @@ export type ConversationTranscriptInvalidToolArguments = z.infer<
 >;
 export type ConversationTranscriptToolArguments = z.infer<typeof Canonical.ConversationTranscriptToolArgumentsSchema>;
 export type ConversationTranscriptToolCallBlock = z.infer<typeof Canonical.ConversationTranscriptToolCallBlockSchema>;
+export type ConversationTranscriptExternalReferenceBlock = z.infer<
+    typeof Canonical.ConversationTranscriptExternalReferenceBlockSchema
+>;
 export type ConversationTranscriptRenderableBlock = z.infer<
     typeof Canonical.ConversationTranscriptRenderableBlockSchema
 >;

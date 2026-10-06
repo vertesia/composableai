@@ -47,6 +47,7 @@ interface CanonicalConversationSchemaMap {
     ConversationEditPlacement: typeof Canonical.ConversationEditPlacementSchema;
     ConversationEditRecordRef: typeof Canonical.ConversationEditRecordRefSchema;
     ConversationDeleteOperation: typeof Canonical.ConversationDeleteOperationSchema;
+    ConversationIndexedUpgradeOperation: typeof Canonical.IndexedConversationUpgradeOperationSchema;
     ConversationDeletedTurn: typeof Canonical.ConversationDeletedTurnSchema;
     ConversationDeletedTurnRef: typeof Canonical.ConversationDeletedTurnRefSchema;
     ConversationContextChangeOperation: typeof Canonical.ContextChangeOperationSchema;
@@ -182,6 +183,7 @@ interface CanonicalConversationSchemaMap {
     ConversationTranscriptInvalidToolArguments: typeof Canonical.ConversationTranscriptInvalidToolArgumentsSchema;
     ConversationTranscriptToolArguments: typeof Canonical.ConversationTranscriptToolArgumentsSchema;
     ConversationTranscriptToolCallBlock: typeof Canonical.ConversationTranscriptToolCallBlockSchema;
+    ConversationTranscriptExternalReferenceBlock: typeof Canonical.ConversationTranscriptExternalReferenceBlockSchema;
     ConversationTranscriptRenderableBlock: typeof Canonical.ConversationTranscriptRenderableBlockSchema;
     ConversationTranscriptToolResultBlock: typeof Canonical.ConversationTranscriptToolResultBlockSchema;
     ConversationTranscriptUserBlock: typeof Canonical.ConversationTranscriptUserBlockSchema;
@@ -265,6 +267,7 @@ export const CANONICAL_CONVERSATION_SCHEMAS: CanonicalConversationSchemaMap = {
     ConversationEditPlacement: Canonical.ConversationEditPlacementSchema,
     ConversationEditRecordRef: Canonical.ConversationEditRecordRefSchema,
     ConversationDeleteOperation: Canonical.ConversationDeleteOperationSchema,
+    ConversationIndexedUpgradeOperation: Canonical.IndexedConversationUpgradeOperationSchema,
     ConversationDeletedTurn: Canonical.ConversationDeletedTurnSchema,
     ConversationDeletedTurnRef: Canonical.ConversationDeletedTurnRefSchema,
     ConversationContextChangeOperation: Canonical.ContextChangeOperationSchema,
@@ -400,6 +403,7 @@ export const CANONICAL_CONVERSATION_SCHEMAS: CanonicalConversationSchemaMap = {
     ConversationTranscriptInvalidToolArguments: Canonical.ConversationTranscriptInvalidToolArgumentsSchema,
     ConversationTranscriptToolArguments: Canonical.ConversationTranscriptToolArgumentsSchema,
     ConversationTranscriptToolCallBlock: Canonical.ConversationTranscriptToolCallBlockSchema,
+    ConversationTranscriptExternalReferenceBlock: Canonical.ConversationTranscriptExternalReferenceBlockSchema,
     ConversationTranscriptRenderableBlock: Canonical.ConversationTranscriptRenderableBlockSchema,
     ConversationTranscriptToolResultBlock: Canonical.ConversationTranscriptToolResultBlockSchema,
     ConversationTranscriptUserBlock: Canonical.ConversationTranscriptUserBlockSchema,

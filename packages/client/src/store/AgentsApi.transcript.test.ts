@@ -120,3 +120,52 @@ describe('AgentsApi canonical transcript', () => {
         expect(urls[0].search).toBe('');
     });
 });
+
+it('round trips archived tool-original cues from the negotiated transcript without resolver or asset hydration', async () => {
+    const response = structuredClone(page);
+    response.fragment.turns = [
+        {
+            id: 'turn:tool',
+            kind: 'tool',
+            status: 'completed',
+            timestamps: { recorded_at: '2026-10-06T00:00:00.000Z' },
+            blocks: [
+                {
+                    id: 'result:one',
+                    type: 'tool_result',
+                    call_id: 'call:one',
+                    status: 'success',
+                    content: [
+                        {
+                            id: 'original:json',
+                            type: 'external_reference',
+                            asset_id: 'asset:original',
+                            original_type: 'json',
+                            content_hash: 'sha256:original',
+                            description: 'Archived JSON original',
+                            preview: '{"nested":[null,true,"ü 😀"]}',
+                        },
+                    ],
+                },
+            ],
+        },
+    ];
+    const urls: string[] = [];
+    const client = new VertesiaClient({
+        serverUrl: 'https://studio.test',
+        storeUrl: 'https://store.test',
+        fetch: (async (input: Request | string) => {
+            urls.push(typeof input === 'string' ? input : input.url);
+            return Response.json(response);
+        }) as typeof fetch,
+    });
+    const retained = await client.agents.getConversationTranscript('child/run', {
+        conversation_scope: 'workstream:launch-1',
+        workstream_id: 'node-1',
+        limit: 1,
+    });
+    expect(retained).toEqual(response);
+    expect(urls).toHaveLength(1);
+    expect(retained.fragment.assets).toEqual({});
+    expect(JSON.stringify(retained)).not.toContain('retrieval');
+});

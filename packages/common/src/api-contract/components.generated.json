@@ -1827,7 +1827,8 @@
           "context_change",
           "conversation_edit",
           "conversation_delete",
-          "processing"
+          "processing",
+          "indexed_upgrade"
         ]
       },
       "context_change": {
@@ -1841,6 +1842,9 @@
       },
       "processing_operation": {
         "$ref": "#/components/schemas/ConversationProcessingOperation"
+      },
+      "indexed_upgrade": {
+        "$ref": "#/components/schemas/ConversationIndexedUpgradeOperation"
       }
     },
     "required": [
@@ -2090,6 +2094,14 @@
         "type": "string",
         "const": "reject"
       },
+      "excluded_context_entry_ids": {
+        "minItems": 1,
+        "maxItems": 4096,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
       "deleted_turns": {
         "minItems": 1,
         "maxItems": 4096,
@@ -2118,6 +2130,13 @@
         "$ref": "#/components/schemas/ConversationContentHash"
       },
       "block_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "call_ids": {
         "minItems": 1,
         "type": "array",
         "items": {
@@ -2173,6 +2192,68 @@
     "required": [
       "phase",
       "policy_revision"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationIndexedUpgradeOperation": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "number",
+        "const": 1
+      },
+      "profile": {
+        "type": "string",
+        "const": "llumiverse.conversation/indexed-upgrade/2026-10-06.v1"
+      },
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "predecessor_root": {
+        "type": "object",
+        "properties": {
+          "content_hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 262144
+          }
+        },
+        "required": [
+          "content_hash",
+          "size_bytes"
+        ],
+        "additionalProperties": false
+      },
+      "completed_progress": {
+        "type": "object",
+        "properties": {
+          "content_hash": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 262144
+          }
+        },
+        "required": [
+          "content_hash",
+          "size_bytes"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "version",
+      "profile",
+      "source",
+      "predecessor_root",
+      "completed_progress"
     ],
     "additionalProperties": false
   },
@@ -8745,6 +8826,13 @@
           "$ref": "#/components/schemas/ConversationIdentifier"
         }
       },
+      "call_ids": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
       "accepted_operation_id": {
         "$ref": "#/components/schemas/ConversationIdentifier"
       },
@@ -14448,6 +14536,58 @@
     ],
     "additionalProperties": false
   },
+  "ConversationTranscriptExternalReferenceBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "external_reference"
+      },
+      "asset_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "original_type": {
+        "type": "string",
+        "enum": [
+          "text",
+          "json",
+          "image",
+          "document",
+          "audio",
+          "video",
+          "tool_call",
+          "tool_result",
+          "reasoning",
+          "native_replay",
+          "extension"
+        ]
+      },
+      "description": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "content_hash": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      },
+      "preview": {
+        "type": "string",
+        "maxLength": 512
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "asset_id",
+      "original_type",
+      "description",
+      "content_hash"
+    ],
+    "additionalProperties": false
+  },
   "ExperimentalCanonicalInitialAuthoringResponse": {
     "type": "object",
     "properties": {
@@ -14924,7 +15064,7 @@
       "applied"
     ],
     "additionalProperties": false,
-    "description": "Acknowledges the committed operation at the current canonical head. An exact retry after a later append advances the head returns a revision conflict so callers reconcile without duplicating the program turn."
+    "description": "Acknowledges the original accepted program operation alongside the observed current head. Exact retained operation/payload retries succeed after later independent advances without duplicating the program turn. Proven stale fresh intents or conflicting payloads still return 409."
   },
   "AppendRunConversationToolResultsPayload": {
     "type": "object",
@@ -15010,7 +15150,7 @@
       "applied"
     ],
     "additionalProperties": false,
-    "description": "Acknowledges the committed operation at the current canonical head. An exact retry after a later append advances the head returns a revision conflict so callers reconcile without repeating tool execution."
+    "description": "Acknowledges the original accepted tool operation alongside the observed current head. Exact retained operation/payload retries succeed after later independent advances without repeating tool execution. Proven stale fresh intents or conflicting payloads still return 409."
   },
   "ExperimentalCanonicalIngestionProjection": {
     "type": "object",
@@ -28058,6 +28198,9 @@
       "processing": {
         "$ref": "#/components/schemas/ConversationProcessingPolicy"
       },
+      "tool_result_externalization": {
+        "$ref": "#/components/schemas/ConversationToolResultExternalizationPolicy"
+      },
       "result_schema": {
         "anyOf": [
           {
@@ -28279,6 +28422,25 @@
       "processors"
     ],
     "additionalProperties": false
+  },
+  "ConversationToolResultExternalizationPolicy": {
+    "type": "object",
+    "properties": {
+      "version": {
+        "type": "number",
+        "const": 1
+      },
+      "strategy": {
+        "type": "string",
+        "const": "received_original"
+      }
+    },
+    "required": [
+      "version",
+      "strategy"
+    ],
+    "additionalProperties": false,
+    "description": "Optional agent tool-result projection strategy. Absent means off. Enabled runs must explicitly permit the builtin read_artifact; exact originals remain archived independently."
   },
   "ProcessAgentToolPhase": {
     "type": "object",
@@ -51858,6 +52020,9 @@
       },
       {
         "$ref": "#/components/schemas/ConversationVideoBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptExternalReferenceBlock"
       }
     ],
     "discriminator": {
@@ -51868,7 +52033,8 @@
         "image": "#/components/schemas/ConversationImageBlock",
         "document": "#/components/schemas/ConversationDocumentBlock",
         "audio": "#/components/schemas/ConversationAudioBlock",
-        "video": "#/components/schemas/ConversationVideoBlock"
+        "video": "#/components/schemas/ConversationVideoBlock",
+        "external_reference": "#/components/schemas/ConversationTranscriptExternalReferenceBlock"
       }
     },
     "type": "object",
@@ -51897,6 +52063,9 @@
         "$ref": "#/components/schemas/ConversationVideoBlock"
       },
       {
+        "$ref": "#/components/schemas/ConversationTranscriptExternalReferenceBlock"
+      },
+      {
         "$ref": "#/components/schemas/ConversationReasoningBlock"
       },
       {
@@ -51912,6 +52081,7 @@
         "document": "#/components/schemas/ConversationDocumentBlock",
         "audio": "#/components/schemas/ConversationAudioBlock",
         "video": "#/components/schemas/ConversationVideoBlock",
+        "external_reference": "#/components/schemas/ConversationTranscriptExternalReferenceBlock",
         "reasoning": "#/components/schemas/ConversationReasoningBlock",
         "tool_call": "#/components/schemas/ConversationTranscriptToolCallBlock"
       }
@@ -51963,6 +52133,9 @@
         "$ref": "#/components/schemas/ConversationVideoBlock"
       },
       {
+        "$ref": "#/components/schemas/ConversationTranscriptExternalReferenceBlock"
+      },
+      {
         "$ref": "#/components/schemas/ConversationReasoningBlock"
       }
     ],
@@ -51975,6 +52148,7 @@
         "document": "#/components/schemas/ConversationDocumentBlock",
         "audio": "#/components/schemas/ConversationAudioBlock",
         "video": "#/components/schemas/ConversationVideoBlock",
+        "external_reference": "#/components/schemas/ConversationTranscriptExternalReferenceBlock",
         "reasoning": "#/components/schemas/ConversationReasoningBlock"
       }
     },
@@ -52043,6 +52217,298 @@
     ],
     "additionalProperties": false,
     "description": "A bounded safe canonical transcript fragment pinned to one retained conversation snapshot."
+  },
+  "ExperimentalAgentConversationUpgradePayload": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "begin"
+            ]
+          },
+          "operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "expected_head": {
+            "$ref": "#/components/schemas/ConversationRef"
+          }
+        },
+        "required": [
+          "action",
+          "operation_id",
+          "expected_head"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "advance"
+            ]
+          },
+          "operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          }
+        },
+        "required": [
+          "action",
+          "operation_id"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "finish"
+            ]
+          },
+          "operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          }
+        },
+        "required": [
+          "action",
+          "operation_id"
+        ],
+        "additionalProperties": false
+      }
+    ],
+    "type": "object",
+    "required": [
+      "action"
+    ],
+    "discriminator": {
+      "propertyName": "action"
+    },
+    "additionalProperties": true
+  },
+  "ExperimentalAgentConversationUpgradeResponse": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "api_version": {
+            "type": "string",
+            "const": "=20260930"
+          },
+          "agent_run_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+          },
+          "operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "head": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending"
+            ]
+          },
+          "step": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "api_version",
+          "agent_run_id",
+          "scope",
+          "operation_id",
+          "source",
+          "head",
+          "status",
+          "step"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "api_version": {
+            "type": "string",
+            "const": "=20260930"
+          },
+          "agent_run_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+          },
+          "operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "head": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready_to_finish"
+            ]
+          },
+          "step": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "api_version",
+          "agent_run_id",
+          "scope",
+          "operation_id",
+          "source",
+          "head",
+          "status",
+          "step"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "api_version": {
+            "type": "string",
+            "const": "=20260930"
+          },
+          "agent_run_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+          },
+          "operation_id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "head": {
+            "$ref": "#/components/schemas/ConversationRef"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "completed"
+            ]
+          },
+          "applied": {
+            "type": "boolean"
+          },
+          "receipt": {
+            "$ref": "#/components/schemas/ConversationOperationReceipt"
+          }
+        },
+        "required": [
+          "api_version",
+          "agent_run_id",
+          "scope",
+          "operation_id",
+          "source",
+          "head",
+          "status",
+          "applied",
+          "receipt"
+        ],
+        "additionalProperties": false
+      }
+    ],
+    "type": "object",
+    "required": [
+      "status"
+    ],
+    "discriminator": {
+      "propertyName": "status"
+    },
+    "additionalProperties": true
+  },
+  "ExperimentalAgentConversationDeletePayload": {
+    "type": "object",
+    "properties": {
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "dependency_policy": {
+        "type": "string",
+        "const": "reject"
+      },
+      "context_policy": {
+        "type": "string",
+        "const": "exclude"
+      },
+      "turn_ids": {
+        "minItems": 1,
+        "maxItems": 4096,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "expected_head": {
+        "$ref": "#/components/schemas/ConversationRef"
+      }
+    },
+    "required": [
+      "operation_id",
+      "dependency_policy",
+      "turn_ids",
+      "expected_head"
+    ],
+    "additionalProperties": false
+  },
+  "ExperimentalAgentConversationDeleteResponse": {
+    "type": "object",
+    "properties": {
+      "api_version": {
+        "type": "string",
+        "const": "=20260930"
+      },
+      "agent_run_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "scope": {
+        "$ref": "#/components/schemas/CanonicalConversationHeadScope"
+      },
+      "head": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "applied": {
+        "type": "boolean"
+      },
+      "receipt": {
+        "$ref": "#/components/schemas/ConversationOperationReceipt"
+      }
+    },
+    "required": [
+      "api_version",
+      "agent_run_id",
+      "scope",
+      "head",
+      "applied",
+      "receipt"
+    ],
+    "additionalProperties": false
   },
   "ExperimentalAgentConversationStreamEnvelope": {
     "oneOf": [

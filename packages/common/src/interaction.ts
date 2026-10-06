@@ -186,6 +186,7 @@ export {
 export type InitialToolCall = Wire.InitialToolCall;
 
 export type ConversationProcessingPolicy = Wire.ConversationProcessingPolicy;
+export type ConversationToolResultExternalizationPolicy = Wire.ConversationToolResultExternalizationPolicy;
 export type AsyncConversationExecutionPayload = Wire.AsyncConversationExecutionPayload;
 
 export type AsyncInteractionExecutionPayload = Wire.AsyncInteractionExecutionPayload;

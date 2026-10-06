@@ -1,7 +1,11 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import { describe, expect, it } from 'vitest';
-import { AsyncConversationExecutionPayloadSchema, ConversationProcessingPolicySchema } from './interaction.js';
+import {
+    AsyncConversationExecutionPayloadSchema,
+    ConversationProcessingPolicySchema,
+    ConversationToolResultExternalizationPolicySchema,
+} from './interaction.js';
 import { ApiSchemaComponents } from './registry.js';
 
 const policy = {
@@ -51,5 +55,29 @@ describe('workflow automatic processing configuration contract', () => {
             expect(ConversationProcessingPolicySchema.safeParse(invalid).success).toBe(false);
             expect(validator('ConversationProcessingPolicy')(invalid)).toBe(false);
         }
+    });
+});
+
+describe('optional canonical received-original model projection policy', () => {
+    const strategy = { version: 1, strategy: 'received_original' };
+    it('keeps projection absent by default and roundtrips the exact optional policy through Zod and AJV', () => {
+        const ordinary = { type: 'conversation', interaction: 'stored-interaction' };
+        expect(AsyncConversationExecutionPayloadSchema.parse(ordinary)).not.toHaveProperty(
+            'tool_result_externalization',
+        );
+        expect(ConversationToolResultExternalizationPolicySchema.parse(strategy)).toEqual(strategy);
+        expect(validator('ConversationToolResultExternalizationPolicy')(strategy)).toBe(true);
+        const enabled = { ...ordinary, tool_result_externalization: strategy };
+        expect(AsyncConversationExecutionPayloadSchema.parse(enabled)).toEqual(enabled);
+        expect(validator('AsyncConversationExecutionPayload')(enabled)).toBe(true);
+    });
+    it.each([
+        { version: 2, strategy: 'received_original' },
+        { version: 1, strategy: 'automatic' },
+        { version: 1, strategy: 'received_original', reader_definition: 'caller-injected' },
+        { version: 1, strategy: 'received_original', archive_receipt: {} },
+    ])('rejects unsupported or authority-bearing strategy %j', (invalid) => {
+        expect(ConversationToolResultExternalizationPolicySchema.safeParse(invalid).success).toBe(false);
+        expect(validator('ConversationToolResultExternalizationPolicy')(invalid)).toBe(false);
     });
 });

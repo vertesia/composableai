@@ -2344,6 +2344,10 @@ interface Checks {
         W.ConversationProcessingPolicy,
         z.infer<typeof import('./api-schemas/interaction.js').ConversationProcessingPolicySchema>
     >;
+    ConversationToolResultExternalizationPolicy: Same<
+        W.ConversationToolResultExternalizationPolicy,
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationToolResultExternalizationPolicySchema>
+    >;
     AsyncConversationExecutionPayload: Same<
         W.AsyncConversationExecutionPayload,
         z.infer<typeof import('./api-schemas/interaction.js').AsyncConversationExecutionPayloadSchema>
@@ -3627,6 +3631,22 @@ interface Checks {
     ExperimentalAgentRunStreamQuery: Same<
         W.ExperimentalAgentRunStreamQuery,
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunStreamQuerySchema>
+    >;
+    ExperimentalAgentConversationDeletePayload: Same<
+        W.ExperimentalAgentConversationDeletePayload,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationDeletePayloadSchema>
+    >;
+    ExperimentalAgentConversationDeleteResponse: Same<
+        W.ExperimentalAgentConversationDeleteResponse,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationDeleteResponseSchema>
+    >;
+    ExperimentalAgentConversationUpgradePayload: Same<
+        W.ExperimentalAgentConversationUpgradePayload,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationUpgradePayloadSchema>
+    >;
+    ExperimentalAgentConversationUpgradeResponse: Same<
+        W.ExperimentalAgentConversationUpgradeResponse,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationUpgradeResponseSchema>
     >;
     CreateCollectionPayload: Same<
         W.CreateCollectionPayload,
@@ -6840,6 +6860,10 @@ interface Checks {
         W.ApiComponentTypes['ConversationProcessingPolicy'],
         z.infer<typeof import('./api-schemas/interaction.js').ConversationProcessingPolicySchema>
     >;
+    'component:ConversationToolResultExternalizationPolicy': Same<
+        W.ApiComponentTypes['ConversationToolResultExternalizationPolicy'],
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationToolResultExternalizationPolicySchema>
+    >;
     'component:AsyncExecutionResult': Same<
         W.ApiComponentTypes['AsyncExecutionResult'],
         z.infer<typeof import('./api-schemas/interaction.js').AsyncExecutionResultSchema>
@@ -8868,6 +8892,22 @@ interface Checks {
     'component:ExperimentalAgentConversationTranscriptPage': Same<
         W.ApiComponentTypes['ExperimentalAgentConversationTranscriptPage'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationTranscriptPageSchema>
+    >;
+    'component:ExperimentalAgentConversationUpgradePayload': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationUpgradePayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationUpgradePayloadSchema>
+    >;
+    'component:ExperimentalAgentConversationUpgradeResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationUpgradeResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationUpgradeResponseSchema>
+    >;
+    'component:ExperimentalAgentConversationDeletePayload': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationDeletePayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationDeletePayloadSchema>
+    >;
+    'component:ExperimentalAgentConversationDeleteResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationDeleteResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationDeleteResponseSchema>
     >;
     'component:ExperimentalAgentConversationStreamEnvelope': Same<
         W.ApiComponentTypes['ExperimentalAgentConversationStreamEnvelope'],
@@ -11131,6 +11171,10 @@ interface Checks {
             typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalRunConversationInspectionResponseSchema
         >
     >;
+    'component:ConversationTranscriptExternalReferenceBlock': Same<
+        W.ApiComponentTypes['ConversationTranscriptExternalReferenceBlock'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationTranscriptExternalReferenceBlockSchema>
+    >;
     'component:ExperimentalCanonicalInitialAuthoringResponse': Same<
         W.ApiComponentTypes['ExperimentalCanonicalInitialAuthoringResponse'],
         z.infer<
@@ -11899,6 +11943,7 @@ const checks: Checks = {
     AgentRunnerOptions: true,
     InitialToolCall: true,
     ConversationProcessingPolicy: true,
+    ConversationToolResultExternalizationPolicy: true,
     AsyncConversationExecutionPayload: true,
     AsyncInteractionExecutionPayload: true,
     AsyncExecutionPayload: true,
@@ -12239,6 +12284,10 @@ const checks: Checks = {
     ExperimentalAgentControlPage: true,
     ExperimentalAgentRunUpdatesQuery: true,
     ExperimentalAgentRunStreamQuery: true,
+    ExperimentalAgentConversationDeletePayload: true,
+    ExperimentalAgentConversationDeleteResponse: true,
+    ExperimentalAgentConversationUpgradePayload: true,
+    ExperimentalAgentConversationUpgradeResponse: true,
     CreateCollectionPayload: true,
     Collection: true,
     CollectionMembersUpdateResult: true,
@@ -13102,6 +13151,7 @@ const checks: Checks = {
     'component:AsyncInteractionExecutionPayload': true,
     'component:AsyncConversationExecutionPayload': true,
     'component:ConversationProcessingPolicy': true,
+    'component:ConversationToolResultExternalizationPolicy': true,
     'component:AsyncExecutionResult': true,
     'component:RateLimitRequestPayload': true,
     'component:RateLimitRequestResponse': true,
@@ -13609,6 +13659,10 @@ const checks: Checks = {
     'component:ExperimentalAgentConversationAcceptedOutputHistoryPage': true,
     'component:ExperimentalAgentConversationTranscriptQuery': true,
     'component:ExperimentalAgentConversationTranscriptPage': true,
+    'component:ExperimentalAgentConversationUpgradePayload': true,
+    'component:ExperimentalAgentConversationUpgradeResponse': true,
+    'component:ExperimentalAgentConversationDeletePayload': true,
+    'component:ExperimentalAgentConversationDeleteResponse': true,
     'component:ExperimentalAgentConversationStreamEnvelope': true,
     'component:ExperimentalAgentEditingResource': true,
     'component:ExperimentalAgentDocumentEditingAction': true,
@@ -14134,6 +14188,7 @@ const checks: Checks = {
     'component:ExperimentalCanonicalIngestionRecoveryViewResponse': true,
     'component:ExperimentalRunConversationInspectionQuery': true,
     'component:ExperimentalRunConversationInspectionResponse': true,
+    'component:ConversationTranscriptExternalReferenceBlock': true,
     'component:ExperimentalCanonicalInitialAuthoringResponse': true,
     'component:RunConversationResponse': true,
     'component:InitialAuthoringMedia': true,
@@ -14180,6 +14235,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2870);
+        expect(Object.keys(checks)).toHaveLength(2881);
     });
 });

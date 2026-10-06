@@ -61,6 +61,7 @@ export {
     ConversationAcceptedGenerationEvidenceSchema,
     ConversationProcessingPolicySchema,
     ConversationStateSchema,
+    ConversationToolResultExternalizationPolicySchema,
     ExecutionRunDocRefSchema,
     ModelSourceSchema,
     PendingMcpConnectionSchema,

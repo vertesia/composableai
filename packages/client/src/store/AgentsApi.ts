@@ -5,6 +5,8 @@ import type {
     ExperimentalAgentAssetExtraction,
     ExperimentalAgentAssetExtractionClaim,
     ExperimentalAgentAssetPublication,
+    ExperimentalAgentConversationUpgradePayload,
+    ExperimentalAgentConversationUpgradeResponse,
     ExperimentalAgentGenerationAdmissionReceipt,
     ExperimentalAgentProcessingClaim,
     ExperimentalAgentRestartAdmissionPayload,
@@ -52,6 +54,8 @@ import {
     type ErrorAnalyticsResponse,
     type ExperimentalAgentConversationAcceptedOutputHistoryPage,
     type ExperimentalAgentConversationAcceptedOutputHistoryQuery,
+    type ExperimentalAgentConversationDeletePayload,
+    type ExperimentalAgentConversationDeleteResponse,
     type ExperimentalAgentConversationSourceDescriptor,
     type ExperimentalAgentConversationStreamQuery,
     type ExperimentalAgentConversationTranscriptPage,
@@ -298,6 +302,40 @@ export class AgentsApi extends ApiTopic {
     ): Promise<ExperimentalAgentConversationAcceptedOutputHistoryPage> {
         return this.get(`/${encodeURIComponent(id)}/conversation/accepted-outputs`, {
             query,
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** One authenticated bounded upgrade operation. Original accepted source and historical roots remain unchanged. */
+    upgradeConversation(
+        id: string,
+        payload: ExperimentalAgentConversationUpgradePayload,
+        scope?: CanonicalConversationHeadScope,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentConversationUpgradeResponse> {
+        return this.post(`/${encodeURIComponent(id)}/conversation/upgrade`, {
+            payload,
+            query: scope === undefined ? undefined : { conversation_scope: scope },
+            headers: canonicalInteractionHeaders(options?.headers),
+            signal: options?.signal,
+            timeoutMs: options?.timeoutMs,
+        });
+    }
+
+    /** Logically delete a finite selection, with optional atomic context exclusion.
+     * Live dependencies must remain valid; original accepted receipts and historical roots are retained.
+     */
+    deleteConversationTurns(
+        id: string,
+        payload: ExperimentalAgentConversationDeletePayload,
+        scope?: CanonicalConversationHeadScope,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<ExperimentalAgentConversationDeleteResponse> {
+        return this.put(`/${encodeURIComponent(id)}/conversation/delete`, {
+            payload,
+            query: scope === undefined ? undefined : { conversation_scope: scope },
             headers: canonicalInteractionHeaders(options?.headers),
             signal: options?.signal,
             timeoutMs: options?.timeoutMs,

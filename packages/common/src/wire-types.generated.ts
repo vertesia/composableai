@@ -60,6 +60,7 @@ import type {
     ConversationStreamTransformationProof,
     ConversationToolExecutionRequest,
     ConversationToolExecutionResult,
+    ConversationTranscriptExternalReferenceBlock,
     ConversationTranscriptFragment,
     ExecutedToolTurn,
     JsonMinificationApplication,
@@ -5277,6 +5278,10 @@ export type ConversationProcessingPolicy = {
     processors: ProcessorConfiguration[];
     budget?: ProcessingBudget | undefined;
 };
+export type ConversationToolResultExternalizationPolicy = {
+    version: 1;
+    strategy: 'received_original';
+};
 export type AsyncConversationExecutionPayload = {
     interaction: string;
     title?: string | undefined;
@@ -5288,6 +5293,7 @@ export type AsyncConversationExecutionPayload = {
     data?: unknown | undefined;
     config?: InteractionExecutionConfiguration | undefined;
     processing?: ConversationProcessingPolicy | undefined;
+    tool_result_externalization?: ConversationToolResultExternalizationPolicy | undefined;
     result_schema?: JSONSchema | SchemaRef | null | undefined;
     do_validate?: boolean | undefined;
     tags?: string[] | undefined;
@@ -8327,6 +8333,67 @@ export type ExperimentalAgentRunUpdatesQuery = {
     control_limit?: number | undefined;
 };
 export type ExperimentalAgentRunStreamQuery = ExperimentalAgentRunUpdatesQuery;
+export type ExperimentalAgentConversationDeletePayload = {
+    operation_id: string;
+    dependency_policy: 'reject';
+    context_policy?: 'exclude' | undefined;
+    turn_ids: string[];
+    expected_head: ConversationRef;
+};
+export type ExperimentalAgentConversationDeleteResponse = {
+    api_version: '=20260930';
+    agent_run_id: string;
+    scope: CanonicalConversationHeadScope;
+    head: ConversationRef;
+    applied: boolean;
+    receipt: OperationReceipt;
+};
+export type ExperimentalAgentConversationUpgradePayload =
+    | {
+          action: 'begin';
+          operation_id: string;
+          expected_head: ConversationRef;
+      }
+    | {
+          action: 'advance';
+          operation_id: string;
+      }
+    | {
+          action: 'finish';
+          operation_id: string;
+      };
+export type ExperimentalAgentConversationUpgradeResponse =
+    | {
+          api_version: '=20260930';
+          agent_run_id: string;
+          scope: CanonicalConversationHeadScope;
+          operation_id: string;
+          source: ConversationRef;
+          head: ConversationRef;
+          status: 'pending';
+          step: number;
+      }
+    | {
+          api_version: '=20260930';
+          agent_run_id: string;
+          scope: CanonicalConversationHeadScope;
+          operation_id: string;
+          source: ConversationRef;
+          head: ConversationRef;
+          status: 'ready_to_finish';
+          step: number;
+      }
+    | {
+          api_version: '=20260930';
+          agent_run_id: string;
+          scope: CanonicalConversationHeadScope;
+          operation_id: string;
+          source: ConversationRef;
+          head: ConversationRef;
+          status: 'completed';
+          applied: boolean;
+          receipt: OperationReceipt;
+      };
 export type CreateCollectionPayload = {
     description?: string | undefined;
     skip_head_sync?: boolean | undefined;
@@ -12540,6 +12607,7 @@ export interface ApiComponentTypes {
     AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayload;
     AsyncConversationExecutionPayload: AsyncConversationExecutionPayload;
     ConversationProcessingPolicy: ConversationProcessingPolicy;
+    ConversationToolResultExternalizationPolicy: ConversationToolResultExternalizationPolicy;
     AsyncExecutionResult: AsyncExecutionResult;
     RateLimitRequestPayload: RateLimitRequestPayload;
     RateLimitRequestResponse: RateLimitRequestResponse;
@@ -13047,6 +13115,10 @@ export interface ApiComponentTypes {
     ExperimentalAgentConversationAcceptedOutputHistoryPage: ExperimentalAgentConversationAcceptedOutputHistoryPage;
     ExperimentalAgentConversationTranscriptQuery: ExperimentalAgentConversationTranscriptQuery;
     ExperimentalAgentConversationTranscriptPage: ExperimentalAgentConversationTranscriptPage;
+    ExperimentalAgentConversationUpgradePayload: ExperimentalAgentConversationUpgradePayload;
+    ExperimentalAgentConversationUpgradeResponse: ExperimentalAgentConversationUpgradeResponse;
+    ExperimentalAgentConversationDeletePayload: ExperimentalAgentConversationDeletePayload;
+    ExperimentalAgentConversationDeleteResponse: ExperimentalAgentConversationDeleteResponse;
     ExperimentalAgentConversationStreamEnvelope: ExperimentalAgentConversationStreamEnvelope;
     ExperimentalAgentEditingResource: ExperimentalAgentEditingResource;
     ExperimentalAgentDocumentEditingAction: ExperimentalAgentDocumentEditingAction;
@@ -13572,6 +13644,7 @@ export interface ApiComponentTypes {
     ExperimentalCanonicalIngestionRecoveryViewResponse: ExperimentalCanonicalIngestionRecoveryViewResponse;
     ExperimentalRunConversationInspectionQuery: ExperimentalRunConversationInspectionQuery;
     ExperimentalRunConversationInspectionResponse: ExperimentalRunConversationInspectionResponse;
+    ConversationTranscriptExternalReferenceBlock: ConversationTranscriptExternalReferenceBlock;
     ExperimentalCanonicalInitialAuthoringResponse: ExperimentalCanonicalInitialAuthoringResponse;
     RunConversationResponse: RunConversationResponse;
     InitialAuthoringMedia: InitialAuthoringMedia;

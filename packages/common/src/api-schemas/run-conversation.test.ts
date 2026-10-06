@@ -13,6 +13,7 @@ import {
     ConversationStreamTransformationProofSchema,
     ConversationToolExecutionRequestSchema,
     ConversationToolExecutionResultSchema,
+    ConversationTranscriptExternalReferenceBlockSchema,
     ConversationTranscriptFragmentSchema,
     JsonMinificationApplicationSchema,
     JsonMinificationMeasuredProjectionSchema,
@@ -21,7 +22,7 @@ import {
     JsonMinificationProposalSchema,
     JsonMinificationTransformSchema,
 } from '@llumiverse/conversation/schemas';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { validateApiRequest, validateApiResponse } from '../api-contract/index.js';
 import { RunDataStorageLevel } from '../interaction-values.js';
 import { CANONICAL_CONVERSATION_SCHEMAS } from './canonical-conversation.js';
@@ -66,6 +67,7 @@ describe('run conversation wire contract', () => {
             ConversationStreamTransformationProofSchema,
             ConversationStreamDecodeEvidenceSchema,
             ConversationTranscriptFragmentSchema,
+            ConversationTranscriptExternalReferenceBlockSchema,
             JsonMinificationTransformSchema,
             JsonMinificationMeasuredProjectionSchema,
             JsonMinificationMeasurementSchema,
@@ -220,4 +222,37 @@ describe('initial authoring inspection contract', () => {
                 .valid,
         ).toBe(false);
     });
+});
+
+it('keeps shared transcript original cues strict in Zod, AJV and exported SDK types', () => {
+    const cue: import('../canonical-conversation.js').ConversationTranscriptExternalReferenceBlock = {
+        id: 'block:original',
+        type: 'external_reference',
+        asset_id: 'asset:original',
+        original_type: 'json',
+        description: 'Archived original',
+        content_hash: 'sha256:original',
+        preview: '{"nested":[null,true]}',
+    };
+    expectTypeOf<typeof cue>().toEqualTypeOf<
+        import('zod').z.infer<typeof ConversationTranscriptExternalReferenceBlockSchema>
+    >();
+    expect(ConversationTranscriptExternalReferenceBlockSchema.parse(JSON.parse(JSON.stringify(cue)))).toEqual(cue);
+    expect(validateApiResponse('ConversationTranscriptExternalReferenceBlock', cue).valid).toBe(true);
+    for (const [name, value] of [
+        ['private resolver', { ...cue, resolver: 'private' }],
+        [
+            'private retrieval',
+            { ...cue, retrieval: { capability: 'read_artifact', version: 1, arguments: { path: 'private' } } },
+        ],
+        ['oversized preview', { ...cue, preview: 'x'.repeat(513) }],
+        ['oversized description', { ...cue, description: 'x'.repeat(513) }],
+        ['missing hash', { ...cue, content_hash: undefined }],
+    ] as const) {
+        expect(ConversationTranscriptExternalReferenceBlockSchema.safeParse(value).success, name).toBe(false);
+        expect(validateApiResponse('ConversationTranscriptExternalReferenceBlock', value).valid, name).toBe(false);
+    }
+    const absent = { ...cue };
+    delete absent.preview;
+    expect(ConversationTranscriptExternalReferenceBlockSchema.parse(absent)).not.toHaveProperty('preview');
 });

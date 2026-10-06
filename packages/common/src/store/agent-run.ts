@@ -487,3 +487,9 @@ export type ExperimentalAgentControlPage = Wire.ExperimentalAgentControlPage;
 export type ExperimentalAgentRunUpdatesQuery = Wire.ExperimentalAgentRunUpdatesQuery;
 
 export type ExperimentalAgentRunStreamQuery = Wire.ExperimentalAgentRunStreamQuery;
+
+export type ExperimentalAgentConversationDeletePayload = Wire.ExperimentalAgentConversationDeletePayload;
+export type ExperimentalAgentConversationDeleteResponse = Wire.ExperimentalAgentConversationDeleteResponse;
+
+export type ExperimentalAgentConversationUpgradePayload = Wire.ExperimentalAgentConversationUpgradePayload;
+export type ExperimentalAgentConversationUpgradeResponse = Wire.ExperimentalAgentConversationUpgradeResponse;

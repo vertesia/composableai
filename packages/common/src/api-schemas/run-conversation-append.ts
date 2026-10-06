@@ -40,7 +40,7 @@ export const AppendRunConversationToolResultsResponseSchema = z
     .meta({
         id: 'AppendRunConversationToolResultsResponse',
         description:
-            'Acknowledges the committed operation at the current canonical head. An exact retry after a later append advances the head returns a revision conflict so callers reconcile without repeating tool execution.',
+            'Acknowledges the original accepted tool operation alongside the observed current head. Exact retained operation/payload retries succeed after later independent advances without repeating tool execution. Proven stale fresh intents or conflicting payloads still return 409.',
     });
 
 /** The server constructs all authority, identifiers and provenance for program results. */
@@ -95,5 +95,5 @@ export const AppendRunConversationProgramTurnResponseSchema = z
     .meta({
         id: 'AppendRunConversationProgramTurnResponse',
         description:
-            'Acknowledges the committed operation at the current canonical head. An exact retry after a later append advances the head returns a revision conflict so callers reconcile without duplicating the program turn.',
+            'Acknowledges the original accepted program operation alongside the observed current head. Exact retained operation/payload retries succeed after later independent advances without duplicating the program turn. Proven stale fresh intents or conflicting payloads still return 409.',
     });

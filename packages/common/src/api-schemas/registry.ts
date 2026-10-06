@@ -43,6 +43,7 @@ import {
     ConversationStreamTransformationProofSchema,
     ConversationToolExecutionRequestSchema,
     ConversationToolExecutionResultSchema,
+    ConversationTranscriptExternalReferenceBlockSchema,
     JsonMinificationApplicationSchema,
     JsonMinificationMeasuredProjectionSchema,
     JsonMinificationMeasurementSchema,
@@ -563,6 +564,7 @@ import {
     ConversationProcessingPolicySchema,
     ConversationStateSchema,
     ConversationStripOptionsSchema,
+    ConversationToolResultExternalizationPolicySchema,
     ConversationVisibilitySchema,
     EmailChannelSchema,
     ExecuteInteractionByEndpointHeadersSchema,
@@ -1402,6 +1404,7 @@ const EXECUTION_REQUEST_SCHEMAS: {
     AsyncInteractionExecutionPayload: typeof AsyncInteractionExecutionPayloadSchema;
     AsyncConversationExecutionPayload: typeof AsyncConversationExecutionPayloadSchema;
     ConversationProcessingPolicy: typeof ConversationProcessingPolicySchema;
+    ConversationToolResultExternalizationPolicy: typeof ConversationToolResultExternalizationPolicySchema;
     AsyncExecutionResult: typeof AsyncExecutionResultSchema;
     RateLimitRequestPayload: typeof RateLimitRequestPayloadSchema;
     RateLimitRequestResponse: typeof RateLimitRequestResponseSchema;
@@ -1445,6 +1448,7 @@ const EXECUTION_REQUEST_SCHEMAS: {
     AsyncInteractionExecutionPayload: AsyncInteractionExecutionPayloadSchema,
     AsyncConversationExecutionPayload: AsyncConversationExecutionPayloadSchema,
     ConversationProcessingPolicy: ConversationProcessingPolicySchema,
+    ConversationToolResultExternalizationPolicy: ConversationToolResultExternalizationPolicySchema,
     AsyncExecutionResult: AsyncExecutionResultSchema,
     // The execution rate limiter.
     RateLimitRequestPayload: RateLimitRequestPayloadSchema,
@@ -2054,6 +2058,10 @@ const AGENT_RUN_SCHEMAS = {
         AgentRunSchemas.ExperimentalAgentConversationAcceptedOutputHistoryPageSchema,
     ExperimentalAgentConversationTranscriptQuery: AgentRunSchemas.ExperimentalAgentConversationTranscriptQuerySchema,
     ExperimentalAgentConversationTranscriptPage: AgentRunSchemas.ExperimentalAgentConversationTranscriptPageSchema,
+    ExperimentalAgentConversationUpgradePayload: AgentRunSchemas.ExperimentalAgentConversationUpgradePayloadSchema,
+    ExperimentalAgentConversationUpgradeResponse: AgentRunSchemas.ExperimentalAgentConversationUpgradeResponseSchema,
+    ExperimentalAgentConversationDeletePayload: AgentRunSchemas.ExperimentalAgentConversationDeletePayloadSchema,
+    ExperimentalAgentConversationDeleteResponse: AgentRunSchemas.ExperimentalAgentConversationDeleteResponseSchema,
     ExperimentalAgentConversationStreamEnvelope: AgentRunSchemas.ExperimentalAgentConversationStreamEnvelopeSchema,
     ExperimentalAgentEditingResource: AgentRunSchemas.ExperimentalAgentEditingResourceSchema,
     ExperimentalAgentDocumentEditingAction: AgentRunSchemas.ExperimentalAgentDocumentEditingActionSchema,
@@ -2761,6 +2769,7 @@ const CANONICAL_TOOL_EXECUTION_SCHEMAS = {
 } as const;
 
 type RunConversationSchemaMap = {
+    ConversationTranscriptExternalReferenceBlock: typeof ConversationTranscriptExternalReferenceBlockSchema;
     ExperimentalCanonicalInitialAuthoringResponse: typeof ExperimentalCanonicalInitialAuthoringResponseSchema;
     RunConversationResponse: typeof RunConversationResponseSchema;
     InitialAuthoringMedia: typeof InitialAuthoringMediaSchema;
@@ -2810,6 +2819,7 @@ const CANONICAL_INGESTION_READINESS_SCHEMAS = {
 } as const;
 
 const RUN_CONVERSATION_SCHEMAS: RunConversationSchemaMap = {
+    ConversationTranscriptExternalReferenceBlock: ConversationTranscriptExternalReferenceBlockSchema,
     ExperimentalCanonicalInitialAuthoringResponse: ExperimentalCanonicalInitialAuthoringResponseSchema,
     RunConversationResponse: RunConversationResponseSchema,
     InitialAuthoringMedia: InitialAuthoringMediaSchema,
@@ -3057,6 +3067,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
         .filter(([, schema]) => schema.def.type === 'object')
         .map(([name]) => name),
     'ConversationProcessingPolicy',
+    'ConversationToolResultExternalizationPolicy',
     'ExperimentalCanonicalInitialAuthoringResponse',
     'AppendRunConversationProgramTurnPayload',
     'AppendRunConversationProgramTurnResponse',
@@ -3079,6 +3090,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ExperimentalAgentConversationAcceptedOutputHistoryPage',
     'ExperimentalAgentConversationTranscriptQuery',
     'ExperimentalAgentConversationTranscriptPage',
+    'ExperimentalAgentConversationUpgradePayload',
+    'ExperimentalAgentConversationUpgradeResponse',
+    'ExperimentalAgentConversationDeletePayload',
+    'ExperimentalAgentConversationDeleteResponse',
     'ExperimentalAgentConversationSourceUninitialized',
     'ExperimentalAgentConversationSourceInitialized',
     'AvailableRunConversation',

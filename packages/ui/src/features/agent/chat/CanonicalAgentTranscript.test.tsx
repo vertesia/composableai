@@ -229,3 +229,59 @@ it.each(['leading-guidance', 'leading-media'] as const)(
         else expect(guidance).not.toBeNull(); // A non-leading accepted text block is never discarded.
     },
 );
+
+it('renders archived JSON/text tool cues from a validated persisted transcript reload without byte hydration', () => {
+    mediaClient.objects.getDownloadUrl.mockClear();
+    const retained = page([]);
+    retained.fragment.turns = [
+        {
+            id: 'turn:archived-tool',
+            kind: 'tool',
+            status: 'completed',
+            timestamps: { recorded_at: '2026-10-06T00:00:00.000Z' },
+            blocks: [
+                {
+                    id: 'result:archived',
+                    type: 'tool_result',
+                    call_id: 'call:archived',
+                    status: 'success',
+                    content: [
+                        {
+                            id: 'original:json',
+                            type: 'external_reference',
+                            asset_id: 'asset:json',
+                            original_type: 'json',
+                            content_hash: 'sha256:json',
+                            description: 'Archived JSON',
+                            preview: '{"nested":[null,true,"ü 😀"]}',
+                        },
+                        {
+                            id: 'original:text',
+                            type: 'external_reference',
+                            asset_id: 'asset:text',
+                            original_type: 'text',
+                            content_hash: 'sha256:text',
+                            description: 'Archived original without preview',
+                        },
+                    ],
+                },
+            ],
+        },
+    ];
+    const parsed = parseExperimentalAgentConversationTranscriptPage(JSON.parse(JSON.stringify(retained)));
+    const view = render(
+        <I18nProvider lng="en">
+            <CanonicalAgentTranscript
+                transcript={{ ...state([]), tail: parsed }}
+                live={live}
+                loadNext={async () => {}}
+            />
+        </I18nProvider>,
+    );
+    expect(screen.getByText('{"nested":[null,true,"ü 😀"]}')).not.toBeNull();
+    expect(screen.getByText('Archived original without preview')).not.toBeNull();
+    expect(view.container.querySelector('[data-canonical-turn-id="turn:archived-tool"]')).not.toBeNull();
+    expect(view.container.querySelector('img,audio,video')).toBeNull();
+    expect(mediaClient.objects.getDownloadUrl).not.toHaveBeenCalled();
+    expect(JSON.stringify(parsed)).not.toContain('retrieval');
+});
