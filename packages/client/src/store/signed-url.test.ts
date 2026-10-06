@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchSignedUrl } from './signed-url.js';
+import { fetchSignedUrl, isAzureBlobUrl, signedUrlUploadHeaders } from './signed-url.js';
 
 function streamOf(chunk: Uint8Array): ReadableStream {
     return new ReadableStream({
@@ -213,4 +213,53 @@ describe('Retry-After request budget', () => {
             }
         },
     );
+});
+
+describe('Azure Blob uploads', () => {
+    const azureUrl = 'https://vertesiastore.blob.core.windows.net/vertesia-store-us3-x/file.pdf?sv=2025-01-05&sig=abc';
+    const gcsUrl = 'https://storage.googleapis.com/store_dev_x/file.pdf?X-Goog-Signature=abc';
+    const s3Url = 'https://vertesia-store-x.s3.us-east-1.amazonaws.com/file.pdf?X-Amz-Signature=abc';
+
+    it('recognizes Azure Blob hosts only', () => {
+        expect(isAzureBlobUrl(azureUrl)).toBe(true);
+        expect(isAzureBlobUrl('https://VertesiaStore.Blob.Core.Windows.Net/c/f')).toBe(true);
+        expect(isAzureBlobUrl(gcsUrl)).toBe(false);
+        expect(isAzureBlobUrl(s3Url)).toBe(false);
+        expect(isAzureBlobUrl('https://blob.core.windows.net.example.com/c/f')).toBe(false);
+        expect(isAzureBlobUrl('not a url')).toBe(false);
+    });
+
+    it('adds x-ms-blob-type for Azure and leaves GCS and S3 headers untouched', () => {
+        const headers = { 'Content-Type': 'application/pdf' };
+        expect(signedUrlUploadHeaders(azureUrl, headers)).toEqual({
+            'Content-Type': 'application/pdf',
+            'x-ms-blob-type': 'BlockBlob',
+        });
+        expect(signedUrlUploadHeaders(azureUrl)).toEqual({ 'x-ms-blob-type': 'BlockBlob' });
+        expect(signedUrlUploadHeaders(gcsUrl, headers)).toBe(headers);
+        expect(signedUrlUploadHeaders(s3Url, headers)).toBe(headers);
+        expect(signedUrlUploadHeaders(s3Url)).toBeUndefined();
+    });
+
+    it('keeps a caller-provided blob type', () => {
+        const headers = { 'X-Ms-Blob-Type': 'AppendBlob' };
+        expect(signedUrlUploadHeaders(azureUrl, headers)).toBe(headers);
+    });
+
+    it('sends the blob type on Azure PUTs only', async () => {
+        const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('ok'));
+        try {
+            await fetchSignedUrl(azureUrl, { method: 'PUT', body: 'x', headers: { 'Content-Type': 'text/plain' } });
+            await fetchSignedUrl(gcsUrl, { method: 'PUT', body: 'x', headers: { 'Content-Type': 'text/plain' } });
+            await fetchSignedUrl(azureUrl);
+            expect(fetch.mock.calls[0][1]?.headers).toEqual({
+                'Content-Type': 'text/plain',
+                'x-ms-blob-type': 'BlockBlob',
+            });
+            expect(fetch.mock.calls[1][1]?.headers).toEqual({ 'Content-Type': 'text/plain' });
+            expect(fetch.mock.calls[2][1]?.headers).toBeUndefined();
+        } finally {
+            fetch.mockRestore();
+        }
+    });
 });
