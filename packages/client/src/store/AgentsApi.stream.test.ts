@@ -406,6 +406,91 @@ describe('AgentsApi.streamMessages reconnection', () => {
         expect(vi.getTimerCount()).toBe(0);
     });
 
+    it.each([
+        ['agent', 'resolve'],
+        ['agent', 'reject'],
+        ['workflow', 'resolve'],
+        ['workflow', 'reject'],
+    ] as const)('keeps the %s stream closed when pending authentication later %ss', async (kind, outcome) => {
+        const harness = createHarness();
+        const abort = new AbortController();
+        const removeListener = vi.spyOn(abort.signal, 'removeEventListener');
+        const done =
+            kind === 'agent'
+                ? harness.client.agents.streamMessages(AGENT_RUN_ID, undefined, undefined, abort.signal)
+                : harness.client.workflows.streamMessages(
+                      'workflow-1',
+                      AGENT_RUN_ID,
+                      undefined,
+                      undefined,
+                      abort.signal,
+                  );
+        await settle();
+
+        const credential = Promise.withResolvers<string>();
+        const authenticate = vi.fn(() => credential.promise);
+        harness.client.withAuthCallback(authenticate);
+        await failCurrentConnection();
+        expect(authenticate).toHaveBeenCalledTimes(1);
+        expect(removeListener).not.toHaveBeenCalled();
+
+        abort.abort();
+        await expect(done).resolves.toBeNull();
+        expect(removeListener).toHaveBeenCalledExactlyOnceWith('abort', expect.any(Function));
+
+        if (outcome === 'resolve') {
+            credential.resolve('Bearer refreshed-token');
+        } else {
+            credential.reject(new Error('Authentication failed'));
+        }
+        await settle();
+        expect(vi.getTimerCount()).toBe(0);
+        await settle(BACKOFF_CEILING_MS);
+        expect(authenticate).toHaveBeenCalledTimes(1);
+        expect(FakeEventSource.instances).toHaveLength(1);
+        expect(FakeEventSource.instances[0].readyState).toBe(FakeEventSource.CLOSED);
+    });
+
+    it.each(['SSE', 'authentication'] as const)(
+        'cleans up exhausted workflow retries after %s failures',
+        async (kind) => {
+            const harness = createHarness();
+            const abort = new AbortController();
+            const removeListener = vi.spyOn(abort.signal, 'removeEventListener');
+            const done = harness.client.workflows.streamMessages(
+                'workflow-1',
+                AGENT_RUN_ID,
+                undefined,
+                undefined,
+                abort.signal,
+            );
+            const rejected = expect(done).rejects.toThrow(
+                kind === 'SSE' ? 'SSE connection failed after 10 reconnection attempts' : 'Authentication failed',
+            );
+            await settle();
+
+            const authenticate = vi.fn().mockRejectedValue(new Error('Authentication failed'));
+            if (kind === 'authentication') harness.client.withAuthCallback(authenticate);
+            await failCurrentConnection();
+            expect(removeListener).not.toHaveBeenCalled();
+            for (let i = 0; i < 10; i++) {
+                if (kind === 'SSE') {
+                    await failCurrentConnection();
+                } else {
+                    await settle(BACKOFF_CEILING_MS);
+                }
+            }
+
+            await rejected;
+            expect(removeListener).toHaveBeenCalledExactlyOnceWith('abort', expect.any(Function));
+            expect(vi.getTimerCount()).toBe(0);
+            await settle(BACKOFF_CEILING_MS);
+            expect(FakeEventSource.instances).toHaveLength(kind === 'SSE' ? 11 : 1);
+            expect(FakeEventSource.instances.every((sse) => sse.readyState === FakeEventSource.CLOSED)).toBe(true);
+            expect(authenticate).toHaveBeenCalledTimes(kind === 'authentication' ? 10 : 0);
+        },
+    );
+
     it('cancels polling without leaving timers or connections', async () => {
         const harness = createHarness();
         const abort = new AbortController();
