@@ -27,6 +27,7 @@ import {
     clearLastSuccessfulLogin,
     clearPendingSignin,
     isInviteRequiredError,
+    isTenantSignIn,
     type LastSuccessfulLogin,
     type ProviderId,
     readLastSuccessfulLogin,
@@ -152,7 +153,14 @@ function SigninScreenImpl({
     useEffect(() => {
         if (!authError) return;
         if (authError instanceof UserNotFoundError) {
-            setMode('signup');
+            // Self-serve signup is for sign-ins outside a tenant. A tenant user without an invite has
+            // no signup form to show, so say an invite is needed rather than restarting the sign-in.
+            if (isTenantSignIn()) {
+                setEmail(authError.email);
+                setMode('blocked');
+            } else {
+                setMode('signup');
+            }
         } else if (authError instanceof RestrictedEnvironmentError) {
             setMode('restricted');
         } else if (authError instanceof RequestedScopeUnavailableError) {
@@ -342,7 +350,7 @@ function SigninScreenImpl({
                 onUseDifferentAccount={useDifferentAccount}
             />
         );
-    } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
+    } else if (mode === 'signup' && !isTenantSignIn()) {
         content = <SignupForm onSignup={onSignup} goBack={startOver} />;
     } else if (mode === 'password' && email) {
         content = (
