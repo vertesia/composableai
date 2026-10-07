@@ -36,6 +36,35 @@ describe('handled transport failures', () => {
         }
     });
 
+    for (const name of ['TypeError', 'TimeoutError']) {
+        it(`uses the parent's current factory for ${name} after topic construction`, async () => {
+            const failure = new Error('transport unavailable');
+            failure.name = name;
+            class QuietClient extends FetchClient {
+                override handleConnectionError(_error: ConnectionError): void {}
+            }
+            class ItemsApi extends ApiTopic {
+                constructor(client: FetchClient) {
+                    super(client, '/items');
+                }
+            }
+            const client = new QuietClient('https://api.example.test', async () => {
+                throw failure;
+            });
+            client.withErrorFactory(() => new Error('old factory'));
+            const topic = new ItemsApi(client);
+            const wrapped = new Error('operation failed');
+            let received: RequestError | undefined;
+            client.withErrorFactory((error) => {
+                received = error;
+                return wrapped;
+            });
+            await assert.rejects(topic.get('/'), (error: unknown) => error === wrapped);
+            assert.ok(received instanceof ConnectionError);
+            assert.equal(received.payload, failure);
+        });
+    }
+
     it('retains plain-text and JSON response detail without request metadata', () => {
         const request = new Request('https://api.example.test/items');
         const plain = new RequestError('non-JSON response', request, 401, {

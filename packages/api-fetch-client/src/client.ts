@@ -118,7 +118,6 @@ export abstract class ApiTopic extends ClientBase {
         // to avoid cloning all customizations
         super(client.getUrl(basePath), client._fetch);
         this.createServerError = client.createServerError;
-        this.errorFactory = client.errorFactory;
         this.verboseErrors = client.verboseErrors;
     }
 
@@ -132,6 +131,10 @@ export abstract class ApiTopic extends ClientBase {
         params: IRequestParamsWithPayload | undefined,
     ): T | Promise<T> {
         return this.client.handleResponse<T>(req, res, params);
+    }
+
+    override throwError(error: RequestError): never {
+        return this.client.throwError(error);
     }
 
     handleConnectionError(error: ConnectionError): void {
