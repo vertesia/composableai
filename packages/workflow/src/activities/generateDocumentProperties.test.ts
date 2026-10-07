@@ -41,9 +41,9 @@ beforeEach(() => {
 
 function mockExtractionResult(properties: Record<string, unknown>) {
     vi.mocked(executeInteractionFromActivity).mockResolvedValue({
-        id: 'run-1',
-        modelId: 'model-1',
-        result: {
+        run: { id: 'run-1' },
+        canonicalOutput: {
+            fragment: { generation: { requested_model: 'model-1' } },
             object: vi.fn(() => properties),
         },
     } as unknown as Awaited<ReturnType<typeof executeInteractionFromActivity>>);

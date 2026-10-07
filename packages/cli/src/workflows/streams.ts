@@ -1,3 +1,4 @@
+import * as readline from 'node:readline';
 import { type AgentMessage, AgentMessageType, type UserInputSignal } from '@vertesia/common';
 import boxen from 'boxen';
 import chalk from 'chalk';
@@ -7,7 +8,6 @@ import gradient from 'gradient-string';
 import logSymbols from 'log-symbols';
 import logUpdate from 'log-update';
 import ora from 'ora';
-import * as readline from 'readline';
 import { getClient } from '../client.js';
 import { type CliOptions, getStringOption, isRecord } from '../utils/options.js';
 

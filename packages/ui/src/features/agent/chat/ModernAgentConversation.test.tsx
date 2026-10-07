@@ -1,5 +1,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { type AgentConversationStreamUpdate, CanonicalInteractionOutput } from '@vertesia/client';
+import type { ExperimentalAgentConversationTranscriptPage } from '@vertesia/common';
 import { type AgentMessage, AgentMessageType, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
 import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,24 +28,47 @@ const mocks = vi.hoisted(() => ({
     getActiveWorkstreams: vi.fn(),
     retrieve: vi.fn(),
     allocateBudget: vi.fn(),
+    realCanonicalAuthority: false,
+    getConversationSource: vi.fn(),
+    getConversationTranscript: vi.fn(),
+    streamCanonicalConversation: vi.fn(),
 }));
 
-vi.mock('@vertesia/ui/session', () => ({
-    useUserSession: () => ({
-        client: {
-            agents: {
-                restart: mocks.restart,
-                sendSignal: mocks.sendSignal,
-                uploadArtifact: mocks.uploadArtifact,
-                getActiveWorkstreams: mocks.getActiveWorkstreams,
-                retrieve: mocks.retrieve,
-                allocateBudget: mocks.allocateBudget,
-            },
+vi.mock('@vertesia/ui/session', () => {
+    const client = {
+        files: { getArtifactDownloadUrl: async () => ({ url: 'https://example.com/report.md' }) },
+        agents: {
+            restart: mocks.restart,
+            sendSignal: mocks.sendSignal,
+            uploadArtifact: mocks.uploadArtifact,
+            getActiveWorkstreams: mocks.getActiveWorkstreams,
+            retrieve: mocks.retrieve,
+            allocateBudget: mocks.allocateBudget,
+            getConversationSource: mocks.getConversationSource,
+            getConversationTranscript: mocks.getConversationTranscript,
+            streamCanonicalConversation: mocks.streamCanonicalConversation,
         },
-        project: undefined,
-        user: undefined,
-    }),
-}));
+    };
+    return { useUserSession: () => ({ client, project: undefined, user: undefined }) };
+});
+
+// Existing legacy behavior tests focus on their provisional presentation. Migration tests below run the real hook.
+vi.mock('./hooks/useCanonicalAgentAuthority.js', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('./hooks/useCanonicalAgentAuthority.js')>();
+    return {
+        ...actual,
+        useCanonicalAgentAuthority: (...args: Parameters<typeof actual.useCanonicalAgentAuthority>) => {
+            const authority = actual.useCanonicalAgentAuthority(...args);
+            if (mocks.realCanonicalAuthority) return authority;
+            return {
+                phase: 'provisional_legacy',
+                content_authority: 'legacy',
+                selection: args[1],
+                source_status: 'uninitialized',
+            };
+        },
+    };
+});
 
 vi.mock('./SkillWidgetProvider', () => ({
     SkillWidgetProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -268,9 +293,199 @@ function latestRightPanelProps() {
         | undefined;
 }
 
+function canonicalSource(status: 'initialized' | 'uninitialized') {
+    const source = { api_version: '=20260930', agent_run_id: 'agent-run-1', scope: 'root', status };
+    return status === 'uninitialized'
+        ? source
+        : {
+              ...source,
+              contract_version: 'canonical-conversation-v1',
+              head: {
+                  format: 'llumiverse.conversation',
+                  schema_version: 0,
+                  experimental_revision: '2026-09-30.adoption.1',
+                  conversation_id: 'canonical-1',
+                  revision: 2,
+              },
+          };
+}
+
+function canonicalTranscriptPage(textPrefix = '', turnPrefix = ''): ExperimentalAgentConversationTranscriptPage {
+    const source = { conversation_id: 'canonical-1', revision: 2 };
+    const timestamps = { recorded_at: '2026-10-01T00:00:00Z' };
+    return {
+        api_version: '=20260930',
+        agent_run_id: 'agent-run-1',
+        scope: 'root',
+        snapshot: source,
+        fragment: {
+            format: 'llumiverse.conversation-transcript',
+            schema_version: 0,
+            experimental_revision: '2026-09-30.adoption.1',
+            source,
+            turns: [
+                {
+                    id: `${turnPrefix}user-1`,
+                    kind: 'user',
+                    status: 'completed',
+                    timestamps,
+                    blocks: [
+                        { id: 'text-user', type: 'text', text: `${textPrefix}Persisted user prompt`, format: 'plain' },
+                    ],
+                },
+                {
+                    id: `${turnPrefix}agent-1`,
+                    kind: 'agent',
+                    status: 'completed',
+                    timestamps,
+                    blocks: [
+                        {
+                            id: 'text-agent',
+                            type: 'text',
+                            text: `${textPrefix}Persisted agent answer`,
+                            format: 'plain',
+                        },
+                    ],
+                },
+                {
+                    id: `${turnPrefix}tool-1`,
+                    kind: 'tool',
+                    status: 'completed',
+                    timestamps,
+                    blocks: [
+                        {
+                            id: 'result-1',
+                            type: 'tool_result',
+                            call_id: 'call-1',
+                            status: 'success',
+                            content: [
+                                {
+                                    id: 'result-text',
+                                    type: 'text',
+                                    text: `${textPrefix}Persisted tool result`,
+                                    format: 'plain',
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    id: `${turnPrefix}program-1`,
+                    kind: 'program',
+                    status: 'completed',
+                    timestamps,
+                    blocks: [
+                        {
+                            id: 'program-text',
+                            type: 'text',
+                            text: `${textPrefix}Persisted program instruction`,
+                            format: 'plain',
+                        },
+                    ],
+                },
+            ],
+            assets: {},
+            generations: {},
+            completeness: {
+                gap_before: false,
+                gap_after: false,
+                semantic_content: 'complete',
+                metadata: 'omitted',
+                provenance: 'omitted',
+                native_replay: 'omitted',
+                omitted_turns: [],
+                omitted_blocks: [],
+                omitted_assets: [],
+                omitted_generations: [],
+            },
+        },
+    };
+}
+
+function canonicalAcceptedUpdate(
+    revision: number,
+    text: string,
+    turnId = `live-turn-${revision}`,
+): AgentConversationStreamUpdate {
+    const source = { conversation_id: 'canonical-1', revision };
+    const receipt = {
+        id: `receipt-${revision}`,
+        conversation_id: source.conversation_id,
+        base_revision: revision - 1,
+        result_revision: revision,
+        recorded_at: '2026-10-01T00:00:00Z',
+        accepted_turn_ids: [turnId],
+        accepted_generation_ids: [`generation-${revision}`],
+        accepted_asset_ids: [],
+    };
+    const timestamps = { recorded_at: receipt.recorded_at, completed_at: receipt.recorded_at };
+    const output = new CanonicalInteractionOutput({
+        format: 'llumiverse.conversation-output',
+        schema_version: 0,
+        experimental_revision: '2026-09-30.adoption.1',
+        source,
+        receipt,
+        turn: {
+            id: turnId,
+            kind: 'agent',
+            authority: 'ordinary',
+            status: 'completed',
+            timestamps,
+            model_visibility: 'include',
+            generation_id: `generation-${revision}`,
+            provenance: { type: 'generated' },
+            blocks: [{ id: `text-${revision}`, type: 'text', text, format: 'plain' }],
+        },
+        generation: {
+            id: `generation-${revision}`,
+            record_source: 'executed',
+            request_id: `request-${revision}`,
+            attempt_id: `attempt-${revision}`,
+            purpose: 'interaction',
+            requested_model: 'model-1',
+            provider: 'provider-1',
+            protocol: 'provider.protocol',
+            adapter_version: 'adapter-1',
+            status: 'completed',
+            timestamps,
+            source: { conversation_id: source.conversation_id, revision: revision - 1 },
+        },
+        assets: {},
+        completeness: {
+            history: 'omitted',
+            native_replay: 'omitted',
+            metadata: 'omitted',
+            semantic_content: 'complete',
+            omitted_block_ids: [],
+            omitted_asset_ids: [],
+        },
+    });
+    return {
+        type: 'accepted_output',
+        envelope: {
+            api_version: '=20260930',
+            agent_run_id: 'agent-run-1',
+            scope: 'root',
+            type: 'accepted_output',
+            source,
+            receipt,
+        },
+        output,
+        draft_snapshot: [],
+    };
+}
+
 describe('ModernAgentConversation send handling', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.realCanonicalAuthority = false;
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('uninitialized'));
+        mocks.getConversationTranscript.mockResolvedValue(canonicalTranscriptPage());
+        mocks.streamCanonicalConversation.mockImplementation(async (_id, _callback, options) => {
+            await new Promise<void>((resolve) =>
+                options.signal.addEventListener('abort', () => resolve(), { once: true }),
+            );
+        });
         window.sessionStorage.clear();
         mocks.restart.mockResolvedValue({ id: 'agent-run-1' });
         mocks.sendSignal.mockResolvedValue({});
@@ -308,6 +523,616 @@ describe('ModernAgentConversation send handling', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+    });
+
+    it('resolves source before showing semantics, then atomically adopts persisted canonical roles and preserves composer', async () => {
+        mocks.realCanonicalAuthority = true;
+        let resolveSource: ((source: ReturnType<typeof canonicalSource>) => void) | undefined;
+        mocks.getConversationSource.mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    resolveSource = resolve;
+                }),
+        );
+        const legacyMessages = [createMessage(AgentMessageType.QUESTION, 'Legacy prompt')];
+        mockStreamState({ messages: legacyMessages, isCompleted: false, agentRunStatus: 'RUNNING' });
+        const props = {
+            agentRunId: 'agent-run-1',
+            title: 'Agent',
+            showRightPanel: false,
+            hideMessageInput: false,
+            enablePlayback: true,
+        };
+        const view = renderConversation(props);
+        expect(screen.queryByTestId('rendered-message-count')).toBeNull();
+        expect(screen.queryByTestId('agent-test-playback-controls')).toBeNull();
+        fireEvent.change(screen.getByRole('textbox', { name: 'composer draft' }), { target: { value: 'keep draft' } });
+        await act(async () => {
+            resolveSource?.(canonicalSource('uninitialized'));
+        });
+        await screen.findByTestId('rendered-message-count');
+        expect(screen.getByTestId('rendered-message-count').textContent).toBe('1');
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        mockStreamState({
+            messages: [...legacyMessages, createMessage(AgentMessageType.ANSWER, 'Legacy answer')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(<ModernAgentConversation {...props} />);
+        await screen.findByText('Persisted agent answer');
+        expect(screen.getByText('Persisted user prompt')).toBeTruthy();
+        expect(screen.getByText('Persisted tool result')).toBeTruthy();
+        expect(screen.getByText('Persisted program instruction')).toBeTruthy();
+        expect(screen.queryByTestId('rendered-message-count')).toBeNull();
+        expect(screen.queryByTestId('agent-test-playback-controls')).toBeNull();
+        expect((screen.getByRole('textbox', { name: 'composer draft' }) as HTMLTextAreaElement).value).toBe(
+            'keep draft',
+        );
+        expect(mocks.getConversationTranscript).toHaveBeenCalledWith(
+            'agent-run-1',
+            expect.objectContaining({
+                conversation_scope: 'root',
+                snapshot_conversation_id: 'canonical-1',
+                snapshot_revision: 2,
+                limit: 50,
+            }),
+            expect.objectContaining({ signal: expect.any(AbortSignal) }),
+        );
+        const header = mocks.headerProps.mock.calls.at(-1)?.[0];
+        expect(header.disableLegacyExport).toBe(true);
+        expect(header.onExportFixture).toBeUndefined();
+        expect(header.onExportPdf).toEqual(expect.any(Function));
+    });
+
+    it('mounts canonical live suffix without duplicates, rejects a foreign live source and prints the authoritative DOM', async () => {
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.ANSWER, 'Legacy answer')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+        renderConversation({ hideHeader: false, hideMessageInput: false, enablePlayback: true });
+        await screen.findByText('Persisted agent answer');
+        const callback = mocks.streamCanonicalConversation.mock.calls.at(-1)?.[1] as
+            | ((update: AgentConversationStreamUpdate) => void)
+            | undefined;
+        expect(callback).toEqual(expect.any(Function));
+        await act(async () => {
+            callback?.(canonicalAcceptedUpdate(2, 'Persisted agent answer', 'agent-1'));
+            callback?.(canonicalAcceptedUpdate(3, 'Accepted live answer'));
+            callback?.(canonicalAcceptedUpdate(3, 'Accepted live answer'));
+        });
+        expect(screen.getAllByText('Persisted agent answer')).toHaveLength(1);
+        expect(screen.getAllByText('Accepted live answer')).toHaveLength(1);
+        const printRoot = document.querySelector('[data-agent-content-authority="canonical"]');
+        expect(printRoot?.textContent).toContain('Persisted user prompt');
+        expect(printRoot?.textContent).toContain('Accepted live answer');
+        expect(printRoot?.textContent).not.toContain('Legacy answer');
+        const foreign = canonicalAcceptedUpdate(4, 'Foreign response');
+        if (foreign.type === 'accepted_output') foreign.envelope.agent_run_id = 'other-agent';
+        await act(async () => {
+            callback?.(foreign);
+        });
+        expect(screen.queryByText('Foreign response')).toBeNull();
+        expect(screen.getByText('Live preview is unavailable.')).toBeTruthy();
+    });
+
+    it('refreshes revision-zero content with persisted user, agent, tool and program turns without a reload', async () => {
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue({
+            ...canonicalSource('initialized'),
+            head: {
+                format: 'llumiverse.conversation',
+                schema_version: 0,
+                experimental_revision: '2026-09-30.adoption.1',
+                conversation_id: 'canonical-1',
+                revision: 0,
+            },
+        });
+        const empty = canonicalTranscriptPage();
+        mocks.getConversationTranscript.mockResolvedValue({
+            ...empty,
+            snapshot: { ...empty.snapshot, revision: 0 },
+            fragment: { ...empty.fragment, source: { ...empty.fragment.source, revision: 0 }, turns: [] },
+        });
+        mockStreamState({ messages: [], isCompleted: false, agentRunStatus: 'RUNNING' });
+        const props = { agentRunId: 'agent-run-1', hideHeader: true, hideMessageInput: true, showRightPanel: false };
+        renderConversation(props);
+        await waitFor(() =>
+            expect(mocks.getConversationTranscript).toHaveBeenCalledWith(
+                'agent-run-1',
+                expect.objectContaining({ window: 'tail', snapshot_revision: 0 }),
+                expect.any(Object),
+            ),
+        );
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        mocks.getConversationTranscript.mockResolvedValue(canonicalTranscriptPage());
+        const callback = mocks.streamCanonicalConversation.mock.calls.at(-1)?.[1] as
+            | ((update: AgentConversationStreamUpdate) => void)
+            | undefined;
+        await act(async () => {
+            callback?.(canonicalAcceptedUpdate(2, 'Persisted agent answer', 'agent-1'));
+        });
+        await screen.findByText('Persisted user prompt');
+        expect(screen.getByText('Persisted agent answer')).toBeTruthy();
+        expect(screen.getByText('Persisted tool result')).toBeTruthy();
+        expect(screen.getByText('Persisted program instruction')).toBeTruthy();
+        const next = canonicalTranscriptPage('Next ', 'next-');
+        next.snapshot.revision = 3;
+        next.fragment.source.revision = 3;
+        mocks.getConversationSource.mockResolvedValue({
+            ...canonicalSource('initialized'),
+            head: {
+                format: 'llumiverse.conversation',
+                schema_version: 0,
+                experimental_revision: '2026-09-30.adoption.1',
+                conversation_id: 'canonical-1',
+                revision: 3,
+            },
+        });
+        mocks.getConversationTranscript.mockResolvedValue(next);
+        await act(async () => {
+            callback?.(canonicalAcceptedUpdate(3, 'Next Persisted agent answer', 'next-agent-1'));
+        });
+        await screen.findByText('Next Persisted user prompt');
+        expect(screen.getByText('Next Persisted agent answer')).toBeTruthy();
+        expect(screen.getByText('Next Persisted program instruction')).toBeTruthy();
+        expect(screen.getByText('Next Persisted tool result')).toBeTruthy();
+        expect(screen.queryByTestId('rendered-message-count')).toBeNull();
+    });
+
+    it('keeps latest accepted output through long-history head refresh, then dedupes it when tail coverage arrives', async () => {
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        const oldTail = canonicalTranscriptPage();
+        oldTail.fragment.turns = Array.from({ length: 50 }, (_, index) => ({
+            id: `old-${index}`,
+            kind: 'user' as const,
+            status: 'completed' as const,
+            timestamps: { recorded_at: '2026-10-01T00:00:00Z' },
+            blocks: [{ id: `old-text-${index}`, type: 'text', text: `Older turn ${index}`, format: 'plain' }],
+        }));
+        oldTail.fragment.completeness.gap_before = true;
+        mocks.getConversationTranscript.mockResolvedValue(oldTail);
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.QUESTION, 'Legacy request')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+        const props = { agentRunId: 'agent-run-1', hideHeader: true, hideMessageInput: true, showRightPanel: false };
+        const view = renderConversation(props);
+        await screen.findByText('Older turn 49');
+        const callback = mocks.streamCanonicalConversation.mock.calls.at(-1)?.[1] as
+            | ((update: AgentConversationStreamUpdate) => void)
+            | undefined;
+        await act(async () => {
+            callback?.(canonicalAcceptedUpdate(3, 'Latest accepted response'));
+        });
+        expect(screen.getAllByText('Latest accepted response')).toHaveLength(1);
+        const newer = {
+            ...oldTail,
+            snapshot: { ...oldTail.snapshot, revision: 3 },
+            fragment: { ...oldTail.fragment, source: { ...oldTail.fragment.source, revision: 3 } },
+        };
+        mocks.getConversationSource.mockResolvedValue({
+            ...canonicalSource('initialized'),
+            head: {
+                format: 'llumiverse.conversation',
+                schema_version: 0,
+                experimental_revision: '2026-09-30.adoption.1',
+                conversation_id: 'canonical-1',
+                revision: 3,
+            },
+        });
+        mocks.getConversationTranscript.mockResolvedValue(newer);
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'Legacy request'),
+                createMessage(AgentMessageType.ANSWER, 'Legacy answer'),
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(<ModernAgentConversation {...props} />);
+        await waitFor(() =>
+            expect(mocks.getConversationTranscript).toHaveBeenLastCalledWith(
+                'agent-run-1',
+                expect.objectContaining({ window: 'tail', snapshot_revision: 3 }),
+                expect.any(Object),
+            ),
+        );
+        expect(screen.getAllByText('Latest accepted response')).toHaveLength(1);
+        const accepted = canonicalAcceptedUpdate(3, 'Latest accepted response');
+        const covered = canonicalTranscriptPage();
+        covered.snapshot.revision = 4;
+        covered.fragment.source.revision = 4;
+        if (accepted.type === 'accepted_output')
+            covered.fragment.turns = [
+                {
+                    id: accepted.output.fragment.turn.id,
+                    kind: 'agent',
+                    status: 'completed',
+                    timestamps: { recorded_at: '2026-10-01T00:00:00Z' },
+                    blocks: [
+                        { id: 'persisted-latest', type: 'text', text: 'Latest accepted response', format: 'plain' },
+                    ],
+                },
+            ];
+        mocks.getConversationSource.mockResolvedValue({
+            ...canonicalSource('initialized'),
+            head: {
+                format: 'llumiverse.conversation',
+                schema_version: 0,
+                experimental_revision: '2026-09-30.adoption.1',
+                conversation_id: 'canonical-1',
+                revision: 4,
+            },
+        });
+        mocks.getConversationTranscript.mockResolvedValue(covered);
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.QUESTION, 'Legacy request'),
+                createMessage(AgentMessageType.ANSWER, 'Legacy answer'),
+                createMessage(AgentMessageType.IDLE, 'Idle'),
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+        view.rerender(<ModernAgentConversation {...props} />);
+        await waitFor(() => {
+            expect(document.querySelector('[data-canonical-turn-id="live-turn-3"]')).not.toBeNull();
+            expect(document.querySelector('[data-canonical-live-output]')).toBeNull();
+            expect(document.querySelector('[data-canonical-outside-history]')).toBeNull();
+        });
+        expect(screen.getAllByText('Latest accepted response')).toHaveLength(1);
+    });
+
+    it('separates uncovered older acceptance and the gap between browsed history and the latest fifty turns', async () => {
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        const tail = canonicalTranscriptPage('Later ', 'later-');
+        tail.fragment.turns = [
+            ...Array.from({ length: 46 }, (_, index) => ({
+                id: `tail-${index}`,
+                kind: 'user' as const,
+                status: 'completed' as const,
+                timestamps: { recorded_at: '2026-10-01T00:00:00Z' },
+                blocks: [
+                    {
+                        id: `tail-text-${index}`,
+                        type: 'text' as const,
+                        text: `Later turn ${index}`,
+                        format: 'plain' as const,
+                    },
+                ],
+            })),
+            ...tail.fragment.turns,
+        ];
+        tail.fragment.completeness.gap_before = true;
+        const prefix = canonicalTranscriptPage('Earlier ', 'earlier-');
+        prefix.next_after_turn_id = 'earlier-program-1';
+        prefix.fragment.completeness.gap_after = true;
+        mocks.getConversationTranscript.mockImplementation(async (_id, query) =>
+            query.window === 'tail' ? tail : prefix,
+        );
+        mockStreamState({
+            messages: [createMessage(AgentMessageType.QUESTION, 'Legacy request')],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+        renderConversation();
+        await screen.findByText('Later Persisted user prompt');
+        const callback = mocks.streamCanonicalConversation.mock.calls.at(-1)?.[1] as
+            | ((update: AgentConversationStreamUpdate) => void)
+            | undefined;
+        await act(async () => {
+            callback?.(canonicalAcceptedUpdate(1, 'Older accepted response'));
+        });
+        const separate = document.querySelector('[data-canonical-outside-history]');
+        expect(separate?.textContent).toContain('Older accepted response');
+        expect(separate?.textContent).toContain('Accepted responses outside the displayed conversation');
+        expect(document.querySelector('[data-canonical-live-output]')).toBeNull();
+        expect(screen.getByText('Later Persisted tool result')).toBeTruthy();
+        fireEvent.click(screen.getByRole('button', { name: 'Browse earlier conversation' }));
+        await screen.findByText('Earlier Persisted user prompt');
+        expect(document.querySelector('[data-canonical-history-gap]')?.textContent).toContain(
+            'Conversation content between these windows is not displayed.',
+        );
+        expect(screen.getByText('Later Persisted user prompt')).toBeTruthy();
+        expect(screen.getByText('Older accepted response')).toBeTruthy();
+    });
+
+    it('honors configured canonical tool visibility without hiding ordinary user or agent text', async () => {
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        const page = canonicalTranscriptPage();
+        const agent = page.fragment.turns.find((turn) => turn.kind === 'agent');
+        agent?.blocks.push({
+            id: 'tool-call',
+            type: 'tool_call',
+            call_id: 'call-1',
+            tool_name: 'lookup_record',
+            executor: 'application',
+            arguments: { type: 'json', value: { id: 'record-1' } },
+        });
+        mocks.getConversationTranscript.mockResolvedValue(page);
+        mockStreamState({ messages: [], isCompleted: false, agentRunStatus: 'RUNNING' });
+        const view = renderConversation({ viewMode: 'sliding', hideToolCallsInViewMode: ['sliding'] });
+        await screen.findByText('Persisted agent answer');
+        expect(screen.getByText('Persisted user prompt')).toBeTruthy();
+        expect(screen.queryByText('Tool call: lookup_record')).toBeNull();
+        expect(screen.queryByText('Persisted tool result')).toBeNull();
+        const callback = mocks.streamCanonicalConversation.mock.calls.at(-1)?.[1] as
+            | ((update: AgentConversationStreamUpdate) => void)
+            | undefined;
+        await act(async () => {
+            for (const revision of [1, 3]) {
+                const update = canonicalAcceptedUpdate(revision, `Accepted ordinary text ${revision}`);
+                if (update.type === 'accepted_output') {
+                    const fragment = update.output.fragment;
+                    update.output = new CanonicalInteractionOutput({
+                        ...fragment,
+                        turn: {
+                            ...fragment.turn,
+                            blocks: [
+                                ...fragment.turn.blocks,
+                                {
+                                    id: `accepted-tool-${revision}`,
+                                    type: 'tool_call',
+                                    call_id: `call-${revision}`,
+                                    tool_name: `hidden_accepted_tool_${revision}`,
+                                    executor: 'application',
+                                    arguments: { type: 'json', value: { secret: 'tool payload' } },
+                                },
+                            ],
+                        },
+                    });
+                }
+                callback?.(update);
+            }
+            callback?.({
+                api_version: '=20260930',
+                agent_run_id: 'agent-run-1',
+                scope: 'root',
+                type: 'conversation_event',
+                execution_run_id: 'execution-1',
+                event: {
+                    format: 'llumiverse.conversation',
+                    schema_version: 0,
+                    experimental_revision: '2026-09-30.adoption.1',
+                    stream_id: 'stream-1',
+                    request_id: 'request-4',
+                    attempt_id: 'attempt-4',
+                    response_operation_id: 'response-4',
+                    generation_id: 'generation-4',
+                    draft_turn_id: 'draft-turn-4',
+                    event_id: 'stream-1#1',
+                    sequence: 1,
+                    draft_block_id: 'draft-text',
+                    native_position: { protocol: 'test', path: ['parts', 0] },
+                    type: 'draft_text_delta',
+                    text: 'Ordinary draft text',
+                },
+                draft_snapshot: [
+                    {
+                        draft_block_id: 'draft-text',
+                        native_position: { protocol: 'test', path: ['parts', 0] },
+                        type: 'text',
+                        text: 'Ordinary draft text',
+                        finished: false,
+                    },
+                    {
+                        draft_block_id: 'draft-tool',
+                        native_position: { protocol: 'test', path: ['parts', 1] },
+                        type: 'tool_call',
+                        tool_name: 'hidden_draft_tool',
+                        text: 'Draft tool payload',
+                        finished: false,
+                    },
+                ],
+            });
+        });
+        expect(screen.getByText('Accepted ordinary text 1')).toBeTruthy();
+        expect(screen.getByText('Accepted ordinary text 3')).toBeTruthy();
+        expect(screen.getByText('Ordinary draft text')).toBeTruthy();
+        expect(screen.queryByText('Tool call: hidden_accepted_tool_1')).toBeNull();
+        expect(screen.queryByText('Tool call: hidden_accepted_tool_3')).toBeNull();
+        expect(screen.queryByText('hidden_draft_tool')).toBeNull();
+        expect(screen.queryByText('Draft tool payload')).toBeNull();
+        view.rerender(
+            <ModernAgentConversation
+                agentRunId="agent-run-1"
+                title="Agent"
+                viewMode="stacked"
+                hideToolCallsInViewMode={['sliding']}
+            />,
+        );
+        await screen.findByText('Tool call: lookup_record');
+        expect(screen.getByText('Persisted tool result')).toBeTruthy();
+    });
+
+    it('opens canonical Markdown artifacts through the existing side panel callback', async () => {
+        mocks.useAgentPlans.mockReturnValue({
+            plans: [],
+            activePlanIndex: 0,
+            setActivePlanIndex: vi.fn(),
+            workstreamStatusMap: new Map(),
+            showInput: true,
+            showSlidingPanel: true,
+            setShowSlidingPanel: vi.fn(),
+        });
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        const page = canonicalTranscriptPage();
+        const agent = page.fragment.turns.find((turn) => turn.kind === 'agent');
+        if (agent)
+            agent.blocks = [
+                {
+                    id: 'artifact-link',
+                    type: 'text',
+                    format: 'markdown',
+                    text: '[Canonical report](artifact:files/report.md)',
+                },
+            ];
+        mocks.getConversationTranscript.mockResolvedValue(page);
+        mockStreamState({ messages: [], isCompleted: false, agentRunStatus: 'RUNNING' });
+        renderConversation({ showRightPanel: true, showArtifacts: true });
+        fireEvent.click(await screen.findByRole('link', { name: 'Canonical report' }));
+        await waitFor(() =>
+            expect(latestRightPanelProps()).toEqual(
+                expect.objectContaining({
+                    activeTab: 'artifacts',
+                    selectedArtifactPath: 'files/report.md',
+                }),
+            ),
+        );
+    });
+
+    it('follows canonical live output only at the bottom and cancels pending following on unmount', async () => {
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        mockStreamState({ messages: [], isCompleted: false, agentRunStatus: 'RUNNING' });
+        const view = renderConversation();
+        await screen.findByText('Persisted agent answer');
+        const container = document.querySelector('[data-canonical-scroll-container]') as HTMLDivElement;
+        expect(container.querySelector('[data-canonical-bottom]')).not.toBeNull();
+        Object.defineProperties(container, {
+            scrollHeight: { configurable: true, writable: true, value: 1000 },
+            clientHeight: { configurable: true, writable: true, value: 200 },
+        });
+        const callback = mocks.streamCanonicalConversation.mock.calls.at(-1)?.[1] as
+            | ((update: AgentConversationStreamUpdate) => void)
+            | undefined;
+        const schedule = vi.spyOn(window, 'setTimeout');
+        const cancel = vi.spyOn(window, 'clearTimeout');
+        try {
+            container.scrollTop = 800;
+            fireEvent.scroll(container);
+            Object.defineProperty(container, 'scrollHeight', { configurable: true, writable: true, value: 1400 });
+            await act(async () => {
+                callback?.(canonicalAcceptedUpdate(3, 'Live scrolling response'));
+            });
+            await waitFor(() => expect(container.scrollTop).toBe(1200));
+            container.scrollTop = 100;
+            fireEvent.scroll(container);
+            Object.defineProperty(container, 'scrollHeight', { configurable: true, writable: true, value: 1600 });
+            await act(async () => {
+                callback?.(canonicalAcceptedUpdate(4, 'Live growth while reading'));
+            });
+            expect(container.scrollTop).toBe(100);
+            container.scrollTop = 1400;
+            fireEvent.scroll(container);
+            Object.defineProperty(container, 'scrollHeight', { configurable: true, writable: true, value: 1800 });
+            await act(async () => {
+                callback?.(canonicalAcceptedUpdate(5, 'Resume following'));
+            });
+            await waitFor(() => expect(container.scrollTop).toBe(1600));
+            schedule.mockClear();
+            await act(async () => {
+                callback?.(canonicalAcceptedUpdate(6, 'Pending following'));
+            });
+            const index = schedule.mock.calls.findIndex((call) => Number(call[1]) <= 100);
+            expect(index).toBeGreaterThanOrEqual(0);
+            const scheduled = schedule.mock.results[index]?.value;
+            view.unmount();
+            expect(cancel).toHaveBeenCalledWith(scheduled);
+            expect(container.scrollTop).toBe(1600);
+        } finally {
+            schedule.mockRestore();
+            cancel.mockRestore();
+        }
+    });
+
+    it('preserves canonical reading position when browsing a pinned earlier history page', async () => {
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        const tail = canonicalTranscriptPage();
+        tail.fragment.completeness.gap_before = true;
+        const older = canonicalTranscriptPage('Earlier ', 'earlier-');
+        mocks.getConversationTranscript.mockImplementation(async (_id, query) => {
+            if (query.window === 'tail') return tail;
+            const log = document.querySelector('[data-canonical-scroll-container]');
+            if (log) Object.defineProperty(log, 'scrollHeight', { configurable: true, writable: true, value: 2500 });
+            return older;
+        });
+        mockStreamState({ messages: [], isCompleted: false, agentRunStatus: 'RUNNING' });
+        renderConversation();
+        await screen.findByText('Persisted agent answer');
+        const container = document.querySelector('[data-canonical-scroll-container]') as HTMLDivElement;
+        Object.defineProperties(container, {
+            scrollHeight: { configurable: true, writable: true, value: 2000 },
+            clientHeight: { configurable: true, writable: true, value: 200 },
+        });
+        container.scrollTop = 1000;
+        fireEvent.scroll(container);
+        fireEvent.click(screen.getByRole('button', { name: 'Browse earlier conversation' }));
+        await screen.findByText('Earlier Persisted user prompt');
+        expect(container.scrollTop).toBe(1500);
+        expect(screen.getByText('Persisted agent answer')).toBeTruthy();
+    });
+
+    it('cannot downgrade latched canonical content when a later source is uninitialized or fails', async () => {
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('initialized'));
+        mockStreamState({ messages: [createMessage(AgentMessageType.ANSWER, 'Legacy answer')] });
+        const view = renderConversation();
+        await screen.findByText('Persisted agent answer');
+        mocks.getConversationSource.mockResolvedValue(canonicalSource('uninitialized'));
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.ANSWER, 'Legacy answer'),
+                createMessage(AgentMessageType.IDLE, 'Idle'),
+            ],
+        });
+        view.rerender(
+            <ModernAgentConversation agentRunId="agent-run-1" hideHeader hideMessageInput showRightPanel={false} />,
+        );
+        await screen.findByText('Conversation source is unavailable.');
+        expect(screen.getByText('Persisted agent answer')).toBeTruthy();
+        expect(screen.queryByTestId('rendered-message-count')).toBeNull();
+        mocks.getConversationSource.mockRejectedValue(new Error('offline'));
+        mockStreamState({
+            messages: [
+                createMessage(AgentMessageType.ANSWER, 'Legacy answer'),
+                createMessage(AgentMessageType.IDLE, 'Idle'),
+                createMessage(AgentMessageType.IDLE, 'Idle again'),
+            ],
+        });
+        view.rerender(
+            <ModernAgentConversation agentRunId="agent-run-1" hideHeader hideMessageInput showRightPanel={false} />,
+        );
+        await waitFor(() =>
+            expect(document.querySelector('[data-agent-source-status="refresh_error"]')).not.toBeNull(),
+        );
+        expect(screen.getByText('Persisted agent answer')).toBeTruthy();
+        expect(screen.queryByTestId('rendered-message-count')).toBeNull();
+    });
+
+    it('fails closed on an incompatible source contract while request input remains actionable', async () => {
+        mocks.realCanonicalAuthority = true;
+        mocks.getConversationSource.mockResolvedValue({
+            ...canonicalSource('initialized'),
+            contract_version: 'future',
+        });
+        mockStreamState({
+            messages: [
+                {
+                    ...createMessage(AgentMessageType.REQUEST_INPUT, 'Choose a region.'),
+                    details: {
+                        request_id: 'request-canonical',
+                        ux: { type: 'options', options: [{ label: 'Europe', value: 'eu' }] },
+                    },
+                },
+            ],
+            isCompleted: false,
+            agentRunStatus: 'RUNNING',
+        });
+        renderConversation({ hideMessageInput: false });
+        await screen.findByText('Conversation source is unavailable.');
+        expect(screen.queryByText('Persisted agent answer')).toBeNull();
+        expect(mocks.getConversationTranscript).not.toHaveBeenCalled();
+        expect(screen.getByText('Choose a region.')).toBeTruthy();
     });
 
     it('does not allocate budget again when playback returns to the same live pause', async () => {
@@ -1565,9 +2390,9 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.addOptimisticMessage).toHaveBeenCalledWith(
             expect.objectContaining({
                 message: 'follow up',
-                workstream_id: 'main',
             }),
         );
+        expect(mocks.addOptimisticMessage.mock.calls[0][0]).not.toHaveProperty('workstream_id');
     });
 
     it('uses message-derived workstreams for panel history while the composer only counts active workstreams', async () => {

@@ -1,9 +1,20 @@
 // Runtime schemas for the agent runs API domain.
 
 import { ExecutionTokenUsageSchema, ReasoningEffortSchema } from '@llumiverse/common/schemas';
+import {
+    ConversationDeletePlanInputSchema,
+    ConversationDocumentSchema,
+    ConversationOutputReceiptSchema,
+    ConversationRefSchema,
+    ConversationStreamEventSchema,
+    ConversationTranscriptFragmentSchema,
+    IdentifierSchema,
+    OperationReceiptSchema,
+} from '@llumiverse/conversation/schemas';
 import { z } from 'zod';
 import { AGENT_RUN_FEEDBACK_COMMENT_MAX_LENGTH, AGENT_RUN_FEEDBACK_ID_MAX_LENGTH } from '../store/agent-run-values.js';
 import type { AgentMessageType, FileProcessingStatus } from '../store/workflow.js';
+import { EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE } from '../versions.js';
 import { type AgentEvent, AgentEventType, LlmCallType, TelemetryToolType } from '../workflow-analytics.js';
 import * as AppLifecycleSchemas from './app-lifecycle.js';
 import {
@@ -20,6 +31,7 @@ import {
     AgentResourceReferenceSchema,
     AgentSearchScopeSchema,
     AgentToolApprovalModeSchema,
+    CanonicalConversationHeadScopeSchema,
     ConversationEnrichmentFields,
     ConversationVisibilitySchema,
     InitialToolCallSchema,
@@ -748,6 +760,13 @@ export const AutonomousRunResponseSchema = z
             .string()
             .meta({ description: 'Workstream this run occupies inside its parent run (the process node id).' })
             .optional(),
+        canonical_conversation_owner_run_id: z
+            .string()
+            .meta({ description: 'Run that durably owns this recorded child agent canonical conversation.' })
+            .optional(),
+        canonical_conversation_scope: CanonicalConversationHeadScopeSchema.meta({
+            description: 'Exact canonical head scope assigned to this recorded child agent.',
+        }).optional(),
         run_type: z.literal('autonomous'),
         account: z.string().meta({ description: 'Account ID' }),
         project: z.string().meta({ description: 'Project ID' }),
@@ -902,6 +921,13 @@ export const AgentRunSchema = z
             .string()
             .meta({ description: 'Workstream this run occupies inside its parent run (the process node id).' })
             .optional(),
+        canonical_conversation_owner_run_id: z
+            .string()
+            .meta({ description: 'Run that durably owns this recorded child agent canonical conversation.' })
+            .optional(),
+        canonical_conversation_scope: CanonicalConversationHeadScopeSchema.meta({
+            description: 'Exact canonical head scope assigned to this recorded child agent.',
+        }).optional(),
         run_type: z.literal('autonomous').meta({ description: 'Public-facing runtime mode' }),
         account: z.string().meta({ description: 'Account ID' }),
         project: z.string().meta({ description: 'Project ID' }),
@@ -1458,6 +1484,15 @@ export const ListAgentRunsQuerySchema = z
     })
     .meta({ id: 'ListAgentRunsQuery' });
 
+export const AgentRunAccessQuerySchema = z
+    .strictObject({
+        access: z.literal('control').optional(),
+    })
+    .meta({
+        id: 'AgentRunAccessQuery',
+        description: 'Optionally requires control authorization while retrieving an agent run.',
+    });
+
 export const AgentRunUpdatesQuerySchema = z
     .object({
         since: z.number().optional(),
@@ -1501,6 +1536,502 @@ export const StreamAgentRunQuerySchema = AgentRunUpdatesQuerySchema.extend({
     skipHistory: z.boolean().optional(),
 }).meta({ id: 'StreamAgentRunQuery' });
 
+export const ExperimentalAgentConversationStreamQuerySchema = z
+    .strictObject({
+        conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
+        workstream_id: z.string().min(1).max(512).optional(),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationStreamQuery',
+        description: 'Selects one canonical agent-run scope and optional live workstream delivery filter.',
+    });
+
+const agentConversationSourceBaseShape = {
+    api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+    agent_run_id: z.string().min(1).max(512),
+    scope: CanonicalConversationHeadScopeSchema,
+    workstream_id: z.string().min(1).max(512).optional(),
+};
+
+export const ExperimentalAgentConversationSourceUninitializedSchema = z
+    .strictObject({
+        ...agentConversationSourceBaseShape,
+        status: z.literal('uninitialized'),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationSourceUninitialized',
+        description: 'No committed canonical conversation locator exists yet for the authorized scope.',
+    });
+
+export const ExperimentalAgentConversationSourceInitializedSchema = z
+    .strictObject({
+        ...agentConversationSourceBaseShape,
+        status: z.literal('initialized'),
+        contract_version: z.literal('canonical-conversation-v1'),
+        head: z.strictObject({
+            format: ConversationDocumentSchema.shape.format,
+            schema_version: ConversationDocumentSchema.shape.schema_version,
+            experimental_revision: ConversationDocumentSchema.shape.experimental_revision,
+            conversation_id: ConversationRefSchema.shape.conversation_id,
+            revision: ConversationRefSchema.shape.revision,
+        }),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationSourceInitialized',
+        description:
+            'Exact public canonical source descriptor derived from the committed scoped head locator. ' +
+            'Initialization does not assert that a provider response was accepted; snapshot storage details remain private.',
+    });
+
+export const ExperimentalAgentConversationSourceDescriptorSchema = z
+    .discriminatedUnion('status', [
+        ExperimentalAgentConversationSourceUninitializedSchema,
+        ExperimentalAgentConversationSourceInitializedSchema,
+    ])
+    .meta({
+        id: 'ExperimentalAgentConversationSourceDescriptor',
+        type: 'object',
+        required: ['status'],
+        discriminator: {
+            propertyName: 'status',
+            mapping: {
+                uninitialized: '#/components/schemas/ExperimentalAgentConversationSourceUninitialized',
+                initialized: '#/components/schemas/ExperimentalAgentConversationSourceInitialized',
+            },
+        },
+    });
+
+const agentConversationStreamBaseShape = {
+    api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+    agent_run_id: z.string().min(1).max(512),
+    scope: CanonicalConversationHeadScopeSchema,
+    workstream_id: z.string().min(1).max(512).optional(),
+};
+
+export const ExperimentalAgentConversationEventSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('conversation_event'),
+        execution_run_id: z.string().min(1).max(512),
+        event: ConversationStreamEventSchema,
+    })
+    .superRefine((value, context) => {
+        if (value.event.type === 'response_accepted') {
+            context.addIssue({
+                code: 'custom',
+                message: 'Accepted output is delivered as an exact durable output reference',
+                path: ['event', 'type'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationEvent',
+        description:
+            'One verified live canonical conversation event. Accepted output uses a durable reference envelope.',
+        allOf: [
+            {
+                not: {
+                    properties: {
+                        event: {
+                            properties: { type: { const: 'response_accepted' } },
+                            required: ['type'],
+                        },
+                    },
+                    required: ['event'],
+                },
+            },
+        ],
+    });
+
+export const ExperimentalAgentConversationPreviewUnavailableSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('preview_unavailable'),
+        reason: z.enum(['live_only', 'late_join', 'sequence_gap', 'queue_overflow']),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationPreviewUnavailable',
+        description: 'Clears provisional preview state when an exact live event prefix is unavailable.',
+    });
+
+export const ExperimentalAgentConversationAcceptedOutputSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('accepted_output'),
+        source: ConversationRefSchema,
+        receipt: ConversationOutputReceiptSchema,
+    })
+    .superRefine((value, context) => {
+        if (value.source.conversation_id !== value.receipt.conversation_id) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Accepted output source conversation must match its receipt',
+                path: ['source', 'conversation_id'],
+            });
+        }
+        if (value.source.revision !== value.receipt.result_revision) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Accepted output source revision must match its receipt',
+                path: ['source', 'revision'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationAcceptedOutput',
+        description: 'Reference to the latest exact durable accepted output for the requested canonical scope.',
+    });
+
+export const ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema = z
+    .strictObject({
+        conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
+        workstream_id: z.string().min(1).max(512).optional(),
+        snapshot_conversation_id: z.string().min(1).max(512).optional(),
+        snapshot_revision: z.number().int().min(0).safe().optional(),
+        after_revision: z.number().int().min(0).safe().optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+    })
+    .superRefine((value, context) => {
+        if ((value.snapshot_conversation_id === undefined) !== (value.snapshot_revision === undefined)) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Snapshot conversation and revision must be provided together',
+                path:
+                    value.snapshot_conversation_id === undefined ? ['snapshot_conversation_id'] : ['snapshot_revision'],
+            });
+        }
+        if (
+            value.after_revision !== undefined &&
+            (value.snapshot_conversation_id === undefined || value.snapshot_revision === undefined)
+        ) {
+            context.addIssue({
+                code: 'custom',
+                message: 'A history cursor requires an exact pinned snapshot',
+                path: ['after_revision'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationAcceptedOutputHistoryQuery',
+        description:
+            'Selects a bounded page of accepted-output references from one exact canonical conversation snapshot.',
+        allOf: [
+            {
+                if: { required: ['snapshot_conversation_id'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_revision'] },
+            },
+            {
+                if: { required: ['snapshot_revision'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_conversation_id'] },
+            },
+            {
+                if: { required: ['after_revision'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_conversation_id', 'snapshot_revision'] },
+            },
+        ],
+    });
+
+export const ExperimentalAgentConversationAcceptedOutputHistoryPageSchema = z
+    .strictObject({
+        api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+        agent_run_id: z.string().min(1).max(512),
+        scope: CanonicalConversationHeadScopeSchema,
+        workstream_id: z.string().min(1).max(512).optional(),
+        snapshot: ConversationRefSchema,
+        items: z.array(ExperimentalAgentConversationAcceptedOutputSchema).max(100),
+        next_after_revision: z.number().int().min(0).safe().optional(),
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationAcceptedOutputHistoryPage',
+        description: 'A bounded page of exact accepted-output references pinned to one retained canonical snapshot.',
+    });
+
+export const ExperimentalAgentConversationTranscriptQuerySchema = z
+    .strictObject({
+        conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
+        workstream_id: z.string().min(1).max(512).optional(),
+        snapshot_conversation_id: z.string().min(1).max(512).optional(),
+        snapshot_revision: z.number().int().min(0).safe().optional(),
+        window: z.enum(['start', 'tail']).optional().meta({
+            description: 'Source-turn window: start (the default) pages forward; tail ends at the exact snapshot head.',
+        }),
+        after_turn_id: IdentifierSchema.optional(),
+        limit: z.number().int().min(1).max(100).optional(),
+    })
+    .superRefine((value, context) => {
+        if (value.window === 'tail' && value.after_turn_id !== undefined) {
+            context.addIssue({
+                code: 'custom',
+                message: 'A tail window cannot use a forward cursor',
+                path: ['after_turn_id'],
+            });
+        }
+        if ((value.snapshot_conversation_id === undefined) !== (value.snapshot_revision === undefined)) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Snapshot conversation and revision must be provided together',
+                path:
+                    value.snapshot_conversation_id === undefined ? ['snapshot_conversation_id'] : ['snapshot_revision'],
+            });
+        }
+        if (
+            value.after_turn_id !== undefined &&
+            (value.snapshot_conversation_id === undefined || value.snapshot_revision === undefined)
+        ) {
+            context.addIssue({
+                code: 'custom',
+                message: 'A transcript cursor requires an exact pinned snapshot',
+                path: ['after_turn_id'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationTranscriptQuery',
+        description: 'Selects a bounded canonical transcript window from one exact conversation snapshot.',
+        allOf: [
+            {
+                if: { properties: { window: { const: 'tail' } }, required: ['window'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { not: { required: ['after_turn_id'] } },
+            },
+            {
+                if: { required: ['snapshot_conversation_id'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_revision'] },
+            },
+            {
+                if: { required: ['snapshot_revision'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_conversation_id'] },
+            },
+            {
+                if: { required: ['after_turn_id'] },
+                // biome-ignore lint/suspicious/noThenProperty: `then` is the required JSON Schema conditional keyword.
+                then: { required: ['snapshot_conversation_id', 'snapshot_revision'] },
+            },
+        ],
+    });
+
+export const ExperimentalAgentConversationTranscriptPageSchema = z
+    .strictObject({
+        api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+        agent_run_id: z.string().min(1).max(512),
+        scope: CanonicalConversationHeadScopeSchema,
+        workstream_id: z.string().min(1).max(512).optional(),
+        snapshot: ConversationRefSchema,
+        fragment: ConversationTranscriptFragmentSchema,
+        next_after_turn_id: IdentifierSchema.optional(),
+    })
+    .superRefine((value, context) => {
+        if (
+            value.fragment.source.conversation_id !== value.snapshot.conversation_id ||
+            value.fragment.source.revision !== value.snapshot.revision
+        ) {
+            context.addIssue({
+                code: 'custom',
+                message: 'Transcript fragment source must match its pinned snapshot',
+                path: ['fragment', 'source'],
+            });
+        }
+    })
+    .meta({
+        id: 'ExperimentalAgentConversationTranscriptPage',
+        description: 'A bounded safe canonical transcript fragment pinned to one retained conversation snapshot.',
+    });
+
+export const ExperimentalAgentEditingResourceSchema = z
+    .discriminatedUnion('kind', [
+        z.strictObject({ kind: z.literal('store_document'), document_id: z.string().min(1).max(512) }),
+        z.strictObject({
+            kind: z.literal('agent_artifact'),
+            run_id: z.string().min(1).max(512),
+            path: z.string().min(1).max(4_096),
+        }),
+    ])
+    .meta({
+        id: 'ExperimentalAgentEditingResource',
+        type: 'object',
+        required: ['kind'],
+        discriminator: { propertyName: 'kind' },
+    });
+
+const agentDocumentEditingShape = {
+    operation_id: z.string().min(1).max(512),
+    resource: z.discriminatedUnion('kind', [
+        z.strictObject({
+            kind: z.literal('store_document'),
+            document_id: z.string().min(1).max(512),
+            name: z.string().min(1).max(4_096).optional(),
+        }),
+        z.strictObject({
+            kind: z.literal('agent_artifact'),
+            run_id: z.string().min(1).max(512),
+            path: z.string().min(1).max(4_096),
+        }),
+    ]),
+    anchor: z.strictObject({
+        block_id: z.string().min(1).max(512),
+        block_type: z.enum([
+            'heading',
+            'paragraph',
+            'list',
+            'list_item',
+            'blockquote',
+            'code_block',
+            'table',
+            'separator',
+        ]),
+        exact_text: z
+            .string()
+            .min(1)
+            .max(512 * 1024),
+    }),
+    base_version: z.string().min(1).max(512).optional(),
+    applied: z.boolean().optional(),
+    updated_document_id: z.string().min(1).max(512).optional(),
+};
+const agentDocumentUserChange = z.strictObject({
+    before: z
+        .string()
+        .min(1)
+        .max(512 * 1024),
+    after: z
+        .string()
+        .min(1)
+        .max(512 * 1024),
+});
+export const ExperimentalAgentDocumentEditingActionSchema = z
+    .discriminatedUnion('action', [
+        z.strictObject({
+            ...agentDocumentEditingShape,
+            action: z.literal('edit'),
+            user_change: agentDocumentUserChange,
+            comment: z
+                .string()
+                .min(1)
+                .max(512 * 1024)
+                .optional(),
+        }),
+        z.strictObject({
+            ...agentDocumentEditingShape,
+            action: z.literal('comment'),
+            comment: z
+                .string()
+                .min(1)
+                .max(512 * 1024),
+            user_change: agentDocumentUserChange.optional(),
+        }),
+    ])
+    .meta({
+        id: 'ExperimentalAgentDocumentEditingAction',
+        type: 'object',
+        required: ['action'],
+        discriminator: { propertyName: 'action' },
+    });
+
+export const ExperimentalAgentUserInputMetadataSchema = z
+    .strictObject({
+        client_message_id: z.string().min(1).max(512).optional(),
+        display_message: z
+            .string()
+            .max(512 * 1024)
+            .optional(),
+        editing_action: ExperimentalAgentDocumentEditingActionSchema.optional(),
+        request_input_response: z.strictObject({ request_id: z.string().min(1).max(512) }).optional(),
+    })
+    .meta({ id: 'ExperimentalAgentUserInputMetadata' });
+
+/** Host acknowledgement carries identities only; accepted turn metadata owns editing content. */
+export const ExperimentalAgentRunControlEventSchema = z
+    .strictObject({
+        version: z.literal(1),
+        event: z.literal('user_input_received'),
+        event_id: z.string().min(1).max(512),
+        ack: z.string().min(1).max(512).optional(),
+        editing_action: z
+            .strictObject({
+                operation_id: z.string().min(1).max(512),
+                resource: ExperimentalAgentEditingResourceSchema,
+            })
+            .optional(),
+        request_input_response: z.strictObject({ request_id: z.string().min(1).max(512) }).optional(),
+    })
+    .meta({ id: 'ExperimentalAgentRunControlEvent' });
+
+export const ExperimentalAgentRunControlNotificationSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('run_control'),
+        timestamp: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).meta({ format: 'int64' }),
+        control: ExperimentalAgentRunControlEventSchema,
+    })
+    .meta({ id: 'ExperimentalAgentRunControlNotification' });
+
+export const ExperimentalAgentControlPageSchema = z
+    .strictObject({
+        after: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).meta({ format: 'int64' }),
+        has_more: z.boolean(),
+        gap_before: z.boolean(),
+    })
+    .meta({ id: 'ExperimentalAgentControlPage' });
+
+export const ExperimentalAgentRunUpdatesQuerySchema = ExperimentalAgentConversationStreamQuerySchema.extend({
+    control_after: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER).meta({ format: 'int64' }).optional(),
+    control_limit: z.number().int().min(1).max(100).optional(),
+}).meta({ id: 'ExperimentalAgentRunUpdatesQuery' });
+
+export const ExperimentalAgentRunStreamQuerySchema = ExperimentalAgentRunUpdatesQuerySchema.meta({
+    id: 'ExperimentalAgentRunStreamQuery',
+});
+
+/** Status is a projection of the existing run row, never conversational content or output authority. */
+export const ExperimentalAgentConversationRunStatusSchema = z
+    .strictObject({
+        ...agentConversationStreamBaseShape,
+        type: z.literal('run_status'),
+        status: AgentRunStatusSchema,
+        activity_state: ConversationActivityStateSchema.optional(),
+        first_workflow_run_id: z.string().min(1).max(512).optional(),
+        updated_at: z.iso.datetime(),
+        control_page: ExperimentalAgentControlPageSchema.optional(),
+    })
+    .meta({ id: 'ExperimentalAgentConversationRunStatus' });
+
+export const ExperimentalAgentRunUpdatesResponseSchema = z
+    .strictObject({
+        run: ExperimentalAgentConversationRunStatusSchema,
+        source: ExperimentalAgentConversationSourceDescriptorSchema,
+        controls: z.array(ExperimentalAgentRunControlNotificationSchema).max(100),
+        control_page: ExperimentalAgentControlPageSchema,
+    })
+    .meta({
+        id: 'ExperimentalAgentRunUpdatesResponse',
+        description: 'Current lifecycle and exact canonical source; no copied message content.',
+    });
+
+export const ExperimentalAgentConversationStreamEnvelopeSchema = z
+    .discriminatedUnion('type', [
+        ExperimentalAgentConversationEventSchema,
+        ExperimentalAgentConversationPreviewUnavailableSchema,
+        ExperimentalAgentConversationAcceptedOutputSchema,
+    ])
+    .meta({
+        id: 'ExperimentalAgentConversationStreamEnvelope',
+        type: 'object',
+        required: ['type'],
+        discriminator: {
+            propertyName: 'type',
+            mapping: {
+                conversation_event: '#/components/schemas/ExperimentalAgentConversationEvent',
+                preview_unavailable: '#/components/schemas/ExperimentalAgentConversationPreviewUnavailable',
+                accepted_output: '#/components/schemas/ExperimentalAgentConversationAcceptedOutput',
+            },
+        },
+    });
+
 export const RecordAgentRunPayloadSchema = z
     .strictObject({
         workflow_id: z.string(),
@@ -1511,6 +2042,8 @@ export const RecordAgentRunPayloadSchema = z
         evaluate: AgentEvaluateRequestSchema,
         parent_run_id: z.string().optional(),
         workstream_id: z.string().optional(),
+        canonical_conversation_owner_run_id: z.string().optional(),
+        canonical_conversation_scope: CanonicalConversationHeadScopeSchema.optional(),
         schedule_id: z.string().optional(),
         visibility: ConversationVisibilitySchema.optional(),
         data: z.looseObject({}).optional(),
@@ -1521,6 +2054,28 @@ export const RecordAgentRunPayloadSchema = z
 export const RecordRunPayloadSchema = z
     .union([RecordAgentRunPayloadSchema, RecordProcessRunPayloadSchema])
     .meta({ id: 'RecordRunPayload' });
+
+export const ExperimentalAgentRunStreamEnvelopeSchema = z
+    .discriminatedUnion('type', [
+        ...ExperimentalAgentConversationStreamEnvelopeSchema.options,
+        ExperimentalAgentConversationRunStatusSchema,
+        ExperimentalAgentRunControlNotificationSchema,
+    ])
+    .meta({
+        id: 'ExperimentalAgentRunStreamEnvelope',
+        type: 'object',
+        required: ['type'],
+        discriminator: {
+            propertyName: 'type',
+            mapping: {
+                conversation_event: '#/components/schemas/ExperimentalAgentConversationEvent',
+                preview_unavailable: '#/components/schemas/ExperimentalAgentConversationPreviewUnavailable',
+                accepted_output: '#/components/schemas/ExperimentalAgentConversationAcceptedOutput',
+                run_status: '#/components/schemas/ExperimentalAgentConversationRunStatus',
+                run_control: '#/components/schemas/ExperimentalAgentRunControlNotification',
+            },
+        },
+    });
 
 export const UpdateAgentRunStatusPayloadSchema = z
     .strictObject({
@@ -1569,3 +2124,78 @@ export const AgentRunInternalsSchema = z
         updated_at: z.string().meta({ format: 'date-time' }),
     })
     .meta({ id: 'AgentRunInternals' });
+
+/** Acceptance time and physical root custody belong to the authenticated publisher. */
+export const ExperimentalAgentConversationDeletePayloadSchema = ConversationDeletePlanInputSchema.omit({
+    version: true,
+    conversation: true,
+    recorded_at: true,
+})
+    .extend({ expected_head: ConversationRefSchema })
+    .meta({ id: 'ExperimentalAgentConversationDeletePayload' });
+
+export const ExperimentalAgentConversationDeleteResponseSchema = z
+    .strictObject({
+        api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+        agent_run_id: IdentifierSchema,
+        scope: CanonicalConversationHeadScopeSchema,
+        head: ConversationRefSchema,
+        applied: z.boolean(),
+        receipt: OperationReceiptSchema,
+    })
+    .meta({ id: 'ExperimentalAgentConversationDeleteResponse' });
+
+/** Host owns physical root/profile/time and all staged cursors. No supplied progress can skip an audit. */
+export const ExperimentalAgentConversationUpgradePayloadSchema = z
+    .discriminatedUnion('action', [
+        z.strictObject({
+            action: z.enum(['begin']),
+            operation_id: IdentifierSchema,
+            expected_head: ConversationRefSchema,
+        }),
+        z.strictObject({ action: z.enum(['advance']), operation_id: IdentifierSchema }),
+        z.strictObject({ action: z.enum(['finish']), operation_id: IdentifierSchema }),
+    ])
+    .meta({
+        id: 'ExperimentalAgentConversationUpgradePayload',
+        type: 'object',
+        required: ['action'],
+        discriminator: { propertyName: 'action' },
+        // Strict branches own closedness; the propertyless union wrapper must admit their fields.
+        additionalProperties: true,
+    });
+const upgradeResponseShape = {
+    api_version: z.literal(EXPERIMENTAL_CANONICAL_INTERACTION_API_VERSION_HEADER_VALUE),
+    agent_run_id: IdentifierSchema,
+    scope: CanonicalConversationHeadScopeSchema,
+    operation_id: IdentifierSchema,
+    source: ConversationRefSchema,
+    head: ConversationRefSchema,
+};
+export const ExperimentalAgentConversationUpgradeResponseSchema = z
+    .discriminatedUnion('status', [
+        z.strictObject({
+            ...upgradeResponseShape,
+            status: z.enum(['pending']),
+            step: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+        }),
+        z.strictObject({
+            ...upgradeResponseShape,
+            status: z.enum(['ready_to_finish']),
+            step: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
+        }),
+        z.strictObject({
+            ...upgradeResponseShape,
+            status: z.enum(['completed']),
+            applied: z.boolean(),
+            receipt: OperationReceiptSchema,
+        }),
+    ])
+    .meta({
+        id: 'ExperimentalAgentConversationUpgradeResponse',
+        type: 'object',
+        required: ['status'],
+        discriminator: { propertyName: 'status' },
+        // Strict branches own closedness; the propertyless union wrapper must admit their fields.
+        additionalProperties: true,
+    });

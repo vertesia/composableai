@@ -1,0 +1,423 @@
+{
+  "streams": {
+    "status": {
+      "api_version": "=20260930",
+      "agent_run_id": "agent-run:host-fixture",
+      "scope": "root",
+      "type": "run_status",
+      "status": "running",
+      "activity_state": "idle",
+      "updated_at": "2026-10-01T00:00:00.123456789Z"
+    },
+    "editing_control": {
+      "api_version": "=20260930",
+      "agent_run_id": "agent-run:host-fixture",
+      "scope": "root",
+      "type": "run_control",
+      "timestamp": 1790812800123,
+      "control": {
+        "version": 1,
+        "event": "user_input_received",
+        "event_id": "control:host-fixture",
+        "ack": "client:host-fixture",
+        "editing_action": {
+          "operation_id": "edit:host-fixture",
+          "resource": {
+            "kind": "store_document",
+            "document_id": "document:host-fixture"
+          }
+        },
+        "request_input_response": {
+          "request_id": "input:host-fixture"
+        }
+      }
+    },
+    "minimal_control": {
+      "api_version": "=20260930",
+      "agent_run_id": "agent-run:host-fixture",
+      "scope": "root",
+      "type": "run_control",
+      "timestamp": 1790812800124,
+      "control": {
+        "version": 1,
+        "event": "user_input_received",
+        "event_id": "control:minimal"
+      }
+    },
+    "preview": {
+      "api_version": "=20260930",
+      "agent_run_id": "agent-run:stream-fixture",
+      "scope": "root",
+      "type": "preview_unavailable",
+      "reason": "late_join"
+    },
+    "event": {
+      "api_version": "=20260930",
+      "agent_run_id": "agent-run:stream-fixture",
+      "scope": "workstream:launch_fixture",
+      "workstream_id": "node:stream-fixture",
+      "type": "conversation_event",
+      "execution_run_id": "execution-run:stream-fixture",
+      "event": {
+        "format": "llumiverse.conversation",
+        "schema_version": 0,
+        "experimental_revision": "2026-09-30.adoption.1",
+        "stream_id": "stream:fixture",
+        "request_id": "request:fixture",
+        "attempt_id": "attempt:fixture",
+        "response_operation_id": "response:fixture",
+        "generation_id": "generation:fixture",
+        "draft_turn_id": "turn:draft:fixture",
+        "event_id": "stream:fixture#0",
+        "sequence": 0,
+        "type": "draft_started",
+        "origin": "live_transport"
+      }
+    },
+    "accepted": {
+      "api_version": "=20260930",
+      "agent_run_id": "agent-run:stream-fixture",
+      "scope": "workstream:launch_fixture",
+      "workstream_id": "node:stream-fixture",
+      "type": "accepted_output",
+      "source": {
+        "conversation_id": "conversation:stream-fixture",
+        "revision": 7
+      },
+      "receipt": {
+        "id": "response:fixture",
+        "conversation_id": "conversation:stream-fixture",
+        "base_revision": 6,
+        "result_revision": 7,
+        "recorded_at": "2026-10-01T00:00:00.123456789Z",
+        "accepted_turn_ids": [
+          "turn:accepted:fixture"
+        ],
+        "accepted_generation_ids": [
+          "generation:fixture"
+        ],
+        "accepted_asset_ids": []
+      }
+    }
+  },
+  "updates": {
+    "paged": {
+      "run": {
+        "api_version": "=20260930",
+        "agent_run_id": "agent-run:host-fixture",
+        "scope": "root",
+        "type": "run_status",
+        "status": "running",
+        "activity_state": "idle",
+        "updated_at": "2026-10-01T00:00:00.123456789Z"
+      },
+      "source": {
+        "api_version": "=20260930",
+        "agent_run_id": "agent-run:host-fixture",
+        "scope": "root",
+        "status": "uninitialized"
+      },
+      "controls": [
+        {
+          "api_version": "=20260930",
+          "agent_run_id": "agent-run:host-fixture",
+          "scope": "root",
+          "type": "run_control",
+          "timestamp": 1790812800123,
+          "control": {
+            "version": 1,
+            "event": "user_input_received",
+            "event_id": "control:host-fixture",
+            "ack": "client:host-fixture",
+            "editing_action": {
+              "operation_id": "edit:host-fixture",
+              "resource": {
+                "kind": "store_document",
+                "document_id": "document:host-fixture"
+              }
+            },
+            "request_input_response": {
+              "request_id": "input:host-fixture"
+            }
+          }
+        },
+        {
+          "api_version": "=20260930",
+          "agent_run_id": "agent-run:host-fixture",
+          "scope": "root",
+          "type": "run_control",
+          "timestamp": 1790812800124,
+          "control": {
+            "version": 1,
+            "event": "user_input_received",
+            "event_id": "control:minimal"
+          }
+        }
+      ],
+      "control_page": {
+        "after": 1790812800124,
+        "has_more": true,
+        "gap_before": true
+      }
+    },
+    "empty": {
+      "run": {
+        "api_version": "=20260930",
+        "agent_run_id": "agent-run:host-fixture",
+        "scope": "root",
+        "type": "run_status",
+        "status": "running",
+        "activity_state": "idle",
+        "updated_at": "2026-10-01T00:00:00.123456789Z"
+      },
+      "source": {
+        "api_version": "=20260930",
+        "agent_run_id": "agent-run:host-fixture",
+        "scope": "root",
+        "status": "uninitialized"
+      },
+      "controls": [],
+      "control_page": {
+        "has_more": false,
+        "gap_before": false,
+        "after": 0
+      }
+    }
+  },
+  "invalid": [
+    {
+      "name": "unknown_stream_discriminator",
+      "component": "ExperimentalAgentRunStreamEnvelope",
+      "value": {
+        "api_version": "=20260930",
+        "agent_run_id": "agent-run:host-fixture",
+        "scope": "root",
+        "type": "future_envelope",
+        "status": "running",
+        "activity_state": "idle",
+        "updated_at": "2026-10-01T00:00:00.123456789Z"
+      }
+    },
+    {
+      "name": "missing_stream_discriminator",
+      "component": "ExperimentalAgentRunStreamEnvelope",
+      "value": {
+        "api_version": "=20260930",
+        "agent_run_id": "agent-run:host-fixture",
+        "scope": "root",
+        "status": "running",
+        "activity_state": "idle",
+        "updated_at": "2026-10-01T00:00:00.123456789Z"
+      }
+    },
+    {
+      "name": "missing_control_branch",
+      "component": "ExperimentalAgentRunStreamEnvelope",
+      "value": {
+        "api_version": "=20260930",
+        "agent_run_id": "agent-run:host-fixture",
+        "scope": "root",
+        "type": "run_control",
+        "timestamp": 1790812800123
+      }
+    },
+    {
+      "name": "missing_control_cursor",
+      "component": "ExperimentalAgentRunStreamEnvelope",
+      "value": {
+        "api_version": "=20260930",
+        "agent_run_id": "agent-run:host-fixture",
+        "scope": "root",
+        "type": "run_control",
+        "control": {
+          "version": 1,
+          "event": "user_input_received",
+          "event_id": "control:host-fixture",
+          "ack": "client:host-fixture",
+          "editing_action": {
+            "operation_id": "edit:host-fixture",
+            "resource": {
+              "kind": "store_document",
+              "document_id": "document:host-fixture"
+            }
+          },
+          "request_input_response": {
+            "request_id": "input:host-fixture"
+          }
+        }
+      }
+    },
+    {
+      "name": "missing_control_identity",
+      "component": "ExperimentalAgentRunStreamEnvelope",
+      "value": {
+        "api_version": "=20260930",
+        "agent_run_id": "agent-run:host-fixture",
+        "scope": "root",
+        "type": "run_control",
+        "timestamp": 1790812800123,
+        "control": {
+          "version": 1,
+          "event": "user_input_received",
+          "ack": "client:host-fixture",
+          "editing_action": {
+            "operation_id": "edit:host-fixture",
+            "resource": {
+              "kind": "store_document",
+              "document_id": "document:host-fixture"
+            }
+          },
+          "request_input_response": {
+            "request_id": "input:host-fixture"
+          }
+        }
+      }
+    },
+    {
+      "name": "missing_poll_control_page",
+      "component": "ExperimentalAgentRunUpdatesResponse",
+      "value": {
+        "run": {
+          "api_version": "=20260930",
+          "agent_run_id": "agent-run:host-fixture",
+          "scope": "root",
+          "type": "run_status",
+          "status": "running",
+          "activity_state": "idle",
+          "updated_at": "2026-10-01T00:00:00.123456789Z"
+        },
+        "source": {
+          "api_version": "=20260930",
+          "agent_run_id": "agent-run:host-fixture",
+          "scope": "root",
+          "status": "uninitialized"
+        },
+        "controls": [
+          {
+            "api_version": "=20260930",
+            "agent_run_id": "agent-run:host-fixture",
+            "scope": "root",
+            "type": "run_control",
+            "timestamp": 1790812800123,
+            "control": {
+              "version": 1,
+              "event": "user_input_received",
+              "event_id": "control:host-fixture",
+              "ack": "client:host-fixture",
+              "editing_action": {
+                "operation_id": "edit:host-fixture",
+                "resource": {
+                  "kind": "store_document",
+                  "document_id": "document:host-fixture"
+                }
+              },
+              "request_input_response": {
+                "request_id": "input:host-fixture"
+              }
+            }
+          },
+          {
+            "api_version": "=20260930",
+            "agent_run_id": "agent-run:host-fixture",
+            "scope": "root",
+            "type": "run_control",
+            "timestamp": 1790812800124,
+            "control": {
+              "version": 1,
+              "event": "user_input_received",
+              "event_id": "control:minimal"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "missing_poll_paging_flag",
+      "component": "ExperimentalAgentRunUpdatesResponse",
+      "value": {
+        "run": {
+          "api_version": "=20260930",
+          "agent_run_id": "agent-run:host-fixture",
+          "scope": "root",
+          "type": "run_status",
+          "status": "running",
+          "activity_state": "idle",
+          "updated_at": "2026-10-01T00:00:00.123456789Z"
+        },
+        "source": {
+          "api_version": "=20260930",
+          "agent_run_id": "agent-run:host-fixture",
+          "scope": "root",
+          "status": "uninitialized"
+        },
+        "controls": [
+          {
+            "api_version": "=20260930",
+            "agent_run_id": "agent-run:host-fixture",
+            "scope": "root",
+            "type": "run_control",
+            "timestamp": 1790812800123,
+            "control": {
+              "version": 1,
+              "event": "user_input_received",
+              "event_id": "control:host-fixture",
+              "ack": "client:host-fixture",
+              "editing_action": {
+                "operation_id": "edit:host-fixture",
+                "resource": {
+                  "kind": "store_document",
+                  "document_id": "document:host-fixture"
+                }
+              },
+              "request_input_response": {
+                "request_id": "input:host-fixture"
+              }
+            }
+          },
+          {
+            "api_version": "=20260930",
+            "agent_run_id": "agent-run:host-fixture",
+            "scope": "root",
+            "type": "run_control",
+            "timestamp": 1790812800124,
+            "control": {
+              "version": 1,
+              "event": "user_input_received",
+              "event_id": "control:minimal"
+            }
+          }
+        ],
+        "control_page": {
+          "after": 1790812800124,
+          "gap_before": true
+        }
+      }
+    },
+    {
+      "name": "missing_poll_control_cursor",
+      "component": "ExperimentalAgentRunUpdatesResponse",
+      "value": {
+        "run": {
+          "api_version": "=20260930",
+          "agent_run_id": "agent-run:host-fixture",
+          "scope": "root",
+          "type": "run_status",
+          "status": "running",
+          "activity_state": "idle",
+          "updated_at": "2026-10-01T00:00:00.123456789Z"
+        },
+        "source": {
+          "api_version": "=20260930",
+          "agent_run_id": "agent-run:host-fixture",
+          "scope": "root",
+          "status": "uninitialized"
+        },
+        "controls": [],
+        "control_page": {
+          "has_more": false,
+          "gap_before": false
+        }
+      }
+    }
+  ]
+}

@@ -260,13 +260,27 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         const path = ctx.$router.path;
         for (let route of this.routes) {
             if (route.match(ctx, path)) {
+                // A versioned-only endpoint is also kept in `routes` as its path/method anchor. It must
+                // never become the implicit default when the caller did not select an API version.
+                if (route instanceof EndpointRoute && route.version !== undefined && !apiVersion) {
+                    continue;
+                }
                 if (apiVersion && route instanceof EndpointRoute) {
                     const endpointVersions = this.route_versions[route.key];
                     if (endpointVersions) {
-                        const versionedRoute = apiVersion.match(route, endpointVersions);
+                        const versionedRoute =
+                            route.version === undefined
+                                ? apiVersion.match(route, endpointVersions)
+                                : apiVersion.exact
+                                  ? endpointVersions.find(apiVersion.version)
+                                  : endpointVersions.findLastVersionBefore(apiVersion.version);
                         if (versionedRoute) {
                             route = versionedRoute;
                             ctx.$router.matchedVersion = versionedRoute.version;
+                        } else if (!apiVersion.exact && route.version !== undefined) {
+                            // The range predates every registered version and there is no default route.
+                            // Continue so a separately registered default can still match later.
+                            continue;
                         } else {
                             ctx.throw(
                                 406,
@@ -382,6 +396,14 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
                 list = this.route_versions[route.key] = new EndpointVersions();
             }
             list.add(route as VersionedEndpointRoute);
+            // Version selection historically piggy-backed on an unversioned route with the same key.
+            // Keep one versioned route in the matcher list so version-only endpoints are reachable,
+            // while `_dispatch` above still hides it when no compatible version was requested.
+            if (
+                !this.routes.some((registered) => registered instanceof EndpointRoute && registered.key === route.key)
+            ) {
+                this.routes.push(route);
+            }
         } else {
             this.routes.push(route);
         }

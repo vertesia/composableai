@@ -17,7 +17,7 @@ import type { VertesiaClient } from './client.js';
  * minutes — so the per-request timeout here is long, overriding any short client default. Override
  * via the VERTESIA_INTERACTION_TIMEOUT_MS env var.
  */
-const INTERACTION_EXECUTION_TIMEOUT_MS = (() => {
+export const INTERACTION_EXECUTION_TIMEOUT_MS = (() => {
     const raw = typeof process !== 'undefined' ? process.env?.VERTESIA_INTERACTION_TIMEOUT_MS : undefined;
     const parsed = raw ? Number.parseInt(raw, 10) : NaN;
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 30 * 60 * 1000; // 30 minutes

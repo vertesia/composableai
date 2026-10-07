@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
-import { normalizeParameters } from './parameters.js';
+import { normalizeParameters, type RawApiParameters } from './parameters.js';
 import { ApiSchemaComponents, normalizeApiParameters, validateApiRequest } from './registry.js';
 
 /**
@@ -398,5 +398,92 @@ describe('bound to the published registry', () => {
         expect(undeclared).toEqual(['sort']);
         expect(value).toEqual({});
         expect(validateApiRequest('ListTasksQuery', value)).toMatchObject({ valid: true });
+    });
+});
+
+describe('strict discriminated parameter object unions', () => {
+    const components: Record<string, JsonObject> = {
+        Branches: { oneOf: [{ $ref: '#/components/schemas/Count' }, { $ref: '#/components/schemas/Flag' }] },
+        Count: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['view', 'limit'],
+            properties: {
+                view: { type: 'string', const: 'count' },
+                limit: { type: 'integer' },
+            },
+        },
+        Flag: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['view', 'enabled'],
+            properties: {
+                view: { type: 'string', enum: ['flag'] },
+                enabled: { type: 'boolean' },
+            },
+        },
+    };
+    const read = (raw: RawApiParameters) =>
+        normalizeParameters('Branches', raw, 'query', components.Branches, components);
+    it('selects only the literal branch before applying the existing scalar coercion rules', () => {
+        expect(read({ view: 'count', limit: '25' })).toEqual({ value: { view: 'count', limit: 25 }, undeclared: [] });
+        expect(read({ view: 'flag', enabled: 'false' })).toEqual({
+            value: { view: 'flag', enabled: false },
+            undeclared: [],
+        });
+        expect(read({ view: 'count', limit: ' 25' }).value.limit).toBe(' 25');
+        expect(read({ view: 'count', limit: ['1', '2'] }).value.limit).toEqual(['1', '2']);
+    });
+    it('reports cross-branch and unknown keys without silently selecting another branch', () => {
+        expect(read({ view: 'count', enabled: 'true', extra: 'bad' })).toEqual({
+            value: { view: 'count' },
+            undeclared: ['enabled', 'extra'],
+        });
+    });
+    it('keeps missing, unknown and repeated selectors invalid and never aliases transport arrays', () => {
+        expect(read({ limit: '25' })).toEqual({ value: {}, undeclared: ['limit'] });
+        expect(read({ view: 'unknown', limit: '25' })).toEqual({ value: { view: 'unknown' }, undeclared: ['limit'] });
+        const repeated = ['count', 'flag'];
+        const result = read({ view: repeated });
+        expect(result.value.view).toEqual(repeated);
+        expect(result.value.view).not.toBe(repeated);
+    });
+    it('fails closed on unions without one unique required discriminator or a strict object branch', () => {
+        for (const invalid of [
+            { anyOf: [{ type: 'string' }, components.Count] },
+            { anyOf: [components.Count, components.Count] },
+            { anyOf: [components.Count, { ...components.Flag, additionalProperties: true }] },
+            { anyOf: [components.Count, { ...components.Flag, required: ['enabled'] }] },
+        ]) {
+            expect(() => normalizeParameters('Invalid', {}, 'query', invalid, components)).toThrow(
+                /not an object schema/,
+            );
+        }
+    });
+    it('normalizes all three actual inspection branches and leaves strict validation to the published component', () => {
+        const hash = `sha256:${'a'.repeat(64)}`;
+        const values: RawApiParameters[] = [
+            { view: 'initial_authoring' },
+            { view: 'ingestion_preparation', target_key: 'target', projection_id: hash },
+            { view: 'ingestion_recovery', target_key: 'target', request_id: 'request' },
+        ];
+        for (const raw of values) {
+            const normalized = normalizeApiParameters('ExperimentalRunConversationInspectionQuery', raw, 'query');
+            expect(normalized).toEqual({ value: raw, undeclared: [] });
+            expect(validateApiRequest('ExperimentalRunConversationInspectionQuery', normalized.value).valid).toBe(true);
+        }
+        for (const raw of [{}, { view: 'unknown' }, { view: ['initial_authoring', 'ingestion_recovery'] }]) {
+            const normalized = normalizeApiParameters('ExperimentalRunConversationInspectionQuery', raw, 'query');
+            expect(validateApiRequest('ExperimentalRunConversationInspectionQuery', normalized.value).valid).toBe(
+                false,
+            );
+        }
+        const cross = normalizeApiParameters(
+            'ExperimentalRunConversationInspectionQuery',
+            { view: 'initial_authoring', target_key: 'foreign' },
+            'query',
+        );
+        expect(cross.undeclared).toEqual(['target_key']);
+        expect(cross.value).toEqual({ view: 'initial_authoring' });
     });
 });

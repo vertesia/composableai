@@ -64,9 +64,8 @@ function typeItem(name: string, status?: ContentObjectTypeItem['status']): Conte
 
 function mockSelectionResult(documentType: string) {
     vi.mocked(executeInteractionFromActivity).mockResolvedValue({
-        id: 'run-1',
-        modelId: 'model-1',
-        result: {
+        run: { id: 'run-1' },
+        canonicalOutput: {
             object: vi.fn(() => ({ document_type: documentType })),
         },
     } as unknown as Awaited<ReturnType<typeof executeInteractionFromActivity>>);

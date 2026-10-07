@@ -1,0 +1,648 @@
+{
+  "description": "Wire data only. Winner data never independently grants inference or plan authority. Identical bytes for Zod, exported AJV, Java and Go.",
+  "entries": [
+    {
+      "name": "exact-selected-child-zero",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": true,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "last-bounded-occurrence",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": true,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 255,
+        "child_identity": "virtual_candidate:environment:child:model:child:255",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:255",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:255",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-version",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-parent_request_id",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-plan_fingerprint",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-child_environment_id",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-child_model",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-child_provider",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-configured_occurrence",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-child_identity",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-child_request_id",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-response_operation_id",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-generation_id",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-turn_id",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "missing-source",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child"
+      }
+    },
+    {
+      "name": "wrong-version",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 2,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "negative-occurrence",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": -1,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "fractional-occurrence",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0.5,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "occurrence-over-bound",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 256,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "forged-fingerprint",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "caller-hash",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "empty-child-model",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "null-child-model",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": null,
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "long-parent-request",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        }
+      }
+    },
+    {
+      "name": "unknown-authority-field",
+      "component": "ExperimentalCanonicalVirtualGenerationBinding",
+      "valid": false,
+      "value": {
+        "version": 1,
+        "parent_request_id": "parent:1",
+        "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "child_environment_id": "environment:child",
+        "child_model": "model:child",
+        "child_provider": "openai",
+        "configured_occurrence": 0,
+        "child_identity": "virtual_candidate:environment:child:model:child:0",
+        "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+        "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+        "generation_id": "generation:child",
+        "turn_id": "turn:child",
+        "source": {
+          "conversation_id": "conversation:1",
+          "revision": 2
+        },
+        "capability": "caller-authored"
+      }
+    },
+    {
+      "name": "result-winner-omitted",
+      "component": "ExperimentalCanonicalInteractionExecutionResult",
+      "valid": true,
+      "value": {
+        "run": {
+          "id": "68dd1f100000000000000002",
+          "status": "completed",
+          "interaction": "interaction:canonical-reference",
+          "created_at": "2026-09-30T00:00:00.000Z",
+          "updated_at": "2026-09-30T00:00:01.120Z",
+          "retention": "DEBUG"
+        },
+        "output": {
+          "status": "unavailable",
+          "reason": "no_accepted_response"
+        },
+        "history": {
+          "status": "reference",
+          "reference": {
+            "run_id": "68dd1f100000000000000002",
+            "conversation": {
+              "conversation_id": "conversation:canonical-reference",
+              "revision": 8
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "result-winner-present",
+      "component": "ExperimentalCanonicalInteractionExecutionResult",
+      "valid": true,
+      "value": {
+        "run": {
+          "id": "68dd1f100000000000000002",
+          "status": "completed",
+          "interaction": "interaction:canonical-reference",
+          "created_at": "2026-09-30T00:00:00.000Z",
+          "updated_at": "2026-09-30T00:00:01.120Z",
+          "retention": "DEBUG"
+        },
+        "output": {
+          "status": "unavailable",
+          "reason": "no_accepted_response"
+        },
+        "history": {
+          "status": "reference",
+          "reference": {
+            "run_id": "68dd1f100000000000000002",
+            "conversation": {
+              "conversation_id": "conversation:canonical-reference",
+              "revision": 8
+            }
+          }
+        },
+        "virtual_generation": {
+          "version": 1,
+          "parent_request_id": "parent:1",
+          "plan_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "child_environment_id": "environment:child",
+          "child_model": "model:child",
+          "child_provider": "openai",
+          "configured_occurrence": 0,
+          "child_identity": "virtual_candidate:environment:child:model:child:0",
+          "child_request_id": "parent:1:virtual_candidate:environment:child:model:child:0",
+          "response_operation_id": "parent:1:response:virtual_candidate:environment:child:model:child:0",
+          "generation_id": "generation:child",
+          "turn_id": "turn:child",
+          "source": {
+            "conversation_id": "conversation:1",
+            "revision": 2
+          }
+        }
+      }
+    },
+    {
+      "name": "result-winner-explicit-null",
+      "component": "ExperimentalCanonicalInteractionExecutionResult",
+      "valid": false,
+      "value": {
+        "run": {
+          "id": "68dd1f100000000000000002",
+          "status": "completed",
+          "interaction": "interaction:canonical-reference",
+          "created_at": "2026-09-30T00:00:00.000Z",
+          "updated_at": "2026-09-30T00:00:01.120Z",
+          "retention": "DEBUG"
+        },
+        "output": {
+          "status": "unavailable",
+          "reason": "no_accepted_response"
+        },
+        "history": {
+          "status": "reference",
+          "reference": {
+            "run_id": "68dd1f100000000000000002",
+            "conversation": {
+              "conversation_id": "conversation:canonical-reference",
+              "revision": 8
+            }
+          }
+        },
+        "virtual_generation": null
+      }
+    }
+  ]
+}

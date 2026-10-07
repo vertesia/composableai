@@ -1,0 +1,24 @@
+import type * as Wire from './wire-types.generated.js';
+
+export type ExperimentalCanonicalIngestionConcreteTarget = Wire.ExperimentalCanonicalIngestionConcreteTarget;
+export type ExperimentalCanonicalIngestionCount = Wire.ExperimentalCanonicalIngestionCount;
+export type ExperimentalCanonicalIngestionProjection = Wire.ExperimentalCanonicalIngestionProjection;
+export type ExperimentalCanonicalIngestionPreparationViewQuery =
+    Wire.ExperimentalCanonicalIngestionPreparationViewQuery;
+export type ExperimentalCanonicalIngestionPreparationViewResponse =
+    Wire.ExperimentalCanonicalIngestionPreparationViewResponse;
+export type ExperimentalRunConversationInspectionQuery = Wire.ExperimentalRunConversationInspectionQuery;
+export type ExperimentalRunConversationInspectionResponse = Wire.ExperimentalRunConversationInspectionResponse;
+
+export type ExperimentalCanonicalIngestionRecovery = Wire.ExperimentalCanonicalIngestionRecovery;
+export type ExperimentalCanonicalIngestionRecoveryViewQuery = Wire.ExperimentalCanonicalIngestionRecoveryViewQuery;
+export type ExperimentalCanonicalIngestionRecoveryViewResponse =
+    Wire.ExperimentalCanonicalIngestionRecoveryViewResponse;
+
+export type AvailableCanonicalIngestionPreparationView = Wire.AvailableCanonicalIngestionPreparationView;
+export type UnavailableCanonicalIngestionPreparationView = Wire.UnavailableCanonicalIngestionPreparationView;
+export type AvailableCanonicalIngestionRecoveryView = Wire.AvailableCanonicalIngestionRecoveryView;
+export type UnavailableCanonicalIngestionRecoveryView = Wire.UnavailableCanonicalIngestionRecoveryView;
+
+export type ExperimentalCanonicalIngestionBudgetQueueViewQuery =
+    Wire.ExperimentalCanonicalIngestionBudgetQueueViewQuery;

@@ -5,6 +5,9 @@ import type {
     ComputedFacetResponse,
     ComputeInteractionFacetPayload,
     DeleteByIdResult,
+    ExperimentalCanonicalInteractionExecutionRequest,
+    ExperimentalCanonicalInteractionExecutionResult,
+    ExperimentalCanonicalNamedInteractionExecutionRequest,
     GeneratedInteractionDefinition,
     GeneratedTestDataRecord,
     GenerateInteractionPayload,
@@ -32,8 +35,19 @@ import type {
     ResolvedInteractionExecutionInfo,
     ResolveInteractionQuery,
 } from '@vertesia/common';
+import { type CanonicalInteractionRequestOptions, canonicalInteractionHeaders } from './CanonicalInteractionApi.js';
+import {
+    type EnhancedExperimentalCanonicalInteractionExecutionResult,
+    enhanceExperimentalCanonicalInteractionExecutionResult,
+} from './CanonicalInteractionOutput.js';
 import type { VertesiaClient } from './client.js';
-import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from './execute.js';
+import {
+    checkRateLimit,
+    executeInteraction,
+    executeInteractionAsync,
+    executeInteractionByName,
+    INTERACTION_EXECUTION_TIMEOUT_MS,
+} from './execute.js';
 import { InteractionCatalogApi } from './InteractionCatalogApi.js';
 import { type EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from './InteractionOutput.js';
 
@@ -209,6 +223,24 @@ export default class InteractionsApi extends ApiTopic {
         return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
     }
 
+    /** Execute by interaction ID through the exact-version experimental canonical contract. */
+    async executeCanonical<T = unknown>(
+        id: string,
+        payload: ExperimentalCanonicalInteractionExecutionRequest,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult<T>> {
+        const result = await this.post<ExperimentalCanonicalInteractionExecutionResult>(
+            `/${encodeURIComponent(id)}/execute`,
+            {
+                payload,
+                headers: canonicalInteractionHeaders(options?.headers),
+                signal: options?.signal,
+                timeoutMs: options?.timeoutMs ?? INTERACTION_EXECUTION_TIMEOUT_MS,
+            },
+        );
+        return enhanceExperimentalCanonicalInteractionExecutionResult<T>(result);
+    }
+
     /**
      * Same as execute but uses the interaction name selector instead of the id.
      *
@@ -244,6 +276,28 @@ export default class InteractionsApi extends ApiTopic {
             }
         });
         return enhanceInteractionExecutionResult<ResultT, ParamsT>(r);
+    }
+
+    /** Execute by selector through the exact-version experimental canonical contract. */
+    async executeCanonicalByName<T = unknown>(
+        nameWithTag: string,
+        payload: ExperimentalCanonicalInteractionExecutionRequest,
+        options?: CanonicalInteractionRequestOptions,
+    ): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult<T>> {
+        const namedPayload: ExperimentalCanonicalNamedInteractionExecutionRequest = {
+            ...payload,
+            interaction: nameWithTag,
+        };
+        const result = await (this.client as VertesiaClient).post<ExperimentalCanonicalInteractionExecutionResult>(
+            '/api/v1/execute',
+            {
+                payload: namedPayload,
+                headers: canonicalInteractionHeaders(options?.headers),
+                signal: options?.signal,
+                timeoutMs: options?.timeoutMs ?? INTERACTION_EXECUTION_TIMEOUT_MS,
+            },
+        );
+        return enhanceExperimentalCanonicalInteractionExecutionResult<T>(result);
     }
 
     /**

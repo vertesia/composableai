@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { Readable } from 'node:stream';
 import {
     type CompletionResult,
@@ -6,17 +7,27 @@ import {
     LlumiverseError,
     type ModelOptions,
 } from '@llumiverse/common';
-import { ApplicationFailure, activityInfo, log } from '@temporalio/activity';
+import { ApplicationFailure, activityInfo, Context, log } from '@temporalio/activity';
 import type { RateLimitMetadata } from '@vertesia/api-fetch-client';
-import type { VertesiaClient } from '@vertesia/client';
+import type {
+    CanonicalInteractionOutput,
+    EnhancedExperimentalCanonicalInteractionExecutionResult,
+    VertesiaClient,
+} from '@vertesia/client';
+import { CanonicalInteractionStreamProtocolError } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import {
+    CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE,
+    type ConversationAsset,
+    type ConversationOutputGenerationUsage,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
-    type ExecutionRun,
     ExecutionRunStatus,
     type ExecutionRunWorkflow,
+    type ExperimentalCanonicalAgentAcceptanceTarget,
+    type ExperimentalCanonicalNamedInteractionExecutionRequest,
     type InteractionExecutionConfiguration,
+    RunDataStorageLevel,
     type RunSearchPayload,
 } from '@vertesia/common';
 import mime from 'mime';
@@ -84,7 +95,7 @@ interface ProviderRateLimitedRequestError extends Error {
 }
 
 interface InteractionRateLimitApplicationFailure extends Error {
-    type: 'InteractionRateLimitRetry' | 'ProviderRateLimitRetry';
+    type: 'CanonicalStreamRecoveryPending' | 'InteractionRateLimitRetry' | 'ProviderRateLimitRetry';
     nonRetryable: false;
     nextRetryDelay?: number;
 }
@@ -111,7 +122,9 @@ function isInteractionRateLimitApplicationFailure(error: unknown): error is Inte
     if (!(error instanceof Error)) return false;
     const candidate = error as Partial<InteractionRateLimitApplicationFailure>;
     return (
-        (candidate.type === 'InteractionRateLimitRetry' || candidate.type === 'ProviderRateLimitRetry') &&
+        (candidate.type === 'CanonicalStreamRecoveryPending' ||
+            candidate.type === 'InteractionRateLimitRetry' ||
+            candidate.type === 'ProviderRateLimitRetry') &&
         candidate.nonRetryable === false
     );
 }
@@ -189,6 +202,16 @@ export interface InteractionExecutionParams {
      * activity won't be retried if it fails due to resource exhaustion (429)
      */
     exit_on_resource_exhaustion?: boolean;
+
+    /**
+     * Stable caller-owned identity for one logical interaction invocation within an activity.
+     * Reuse the same key when Temporal retries that invocation and use a distinct key for each
+     * independent call to the same interaction from the same activity.
+     */
+    invocation_key?: string;
+
+    /** Agent run that owns this nested interaction for hierarchy and telemetry attribution. */
+    agent_run_id?: string;
 }
 
 /**
@@ -211,6 +234,367 @@ export interface ExecuteInteractionParams extends InteractionExecutionParams {
 
 export interface ExecuteInteraction extends DSLActivitySpec<ExecuteInteractionParams> {
     name: 'executeInteraction';
+}
+
+const MAX_PROJECTED_MEDIA_BYTES = 50 * 1024 * 1024;
+const MAX_PROJECTED_MEDIA_CHUNKS = 16_384;
+const MAX_WORKFLOW_INVOCATION_KEY_LENGTH = 128;
+const WORKFLOW_INTERACTION_TAG_PREFIX = 'workflow-interaction:';
+const WORKFLOW_PREDECESSOR_TAG_PREFIX = 'workflow-predecessor:';
+const WORKFLOW_SERVICE_TIER_POLICY_TAG_PREFIX = 'workflow-service-tier-policy:';
+const FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY = 'flex_then_default' as const;
+const REQUIRED_TOOL_CALL_MISSING_ERROR_CODE = 'RequiredToolCallMissingError';
+const WORKFLOW_INVOCATION_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
+const WORKFLOW_RESERVED_TAG_PREFIXES = [
+    WORKFLOW_PREDECESSOR_TAG_PREFIX,
+    WORKFLOW_INTERACTION_TAG_PREFIX,
+    WORKFLOW_SERVICE_TIER_POLICY_TAG_PREFIX,
+] as const;
+
+type CanonicalWorkflowRequest = ExperimentalCanonicalNamedInteractionExecutionRequest & {
+    workflow: ExecutionRunWorkflow;
+};
+
+/**
+ * Complete canonical request fields supplied by a workflow activity before host-owned execution identity is attached.
+ *
+ * The executor derives `workflow`, operation, invocation, and rate-limit identities from the active Temporal activity.
+ * Keeping `workflow` out of this input prevents a caller from selecting another durable execution lineage.
+ */
+export type CanonicalInteractionActivityRequest = Omit<
+    ExperimentalCanonicalNamedInteractionExecutionRequest,
+    'workflow'
+>;
+
+type CanonicalInteractionActivityAgentAcceptanceTarget = ExperimentalCanonicalAgentAcceptanceTarget extends infer Target
+    ? Target extends ExperimentalCanonicalAgentAcceptanceTarget
+        ? Omit<Target, 'activity_id'>
+        : never
+    : never;
+
+export interface CanonicalInteractionActivityPlan {
+    request: CanonicalInteractionActivityRequest;
+    /** Stable caller-owned key used as one input to the host-derived operation and rate-limit identities. */
+    invocation_key?: string;
+    /** Start this logical invocation on Flex and use Default only for successors of confirmed terminal failures. */
+    service_tier_policy?: typeof FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY;
+    /** Include a confirmed predecessor failure in the next request's `data.previous_error`. */
+    include_previous_error?: boolean;
+    /** Agent run attribution carried by the trusted workflow activity. */
+    agent_run_id?: string;
+    /** Authenticated agent subject whose scoped head must be durable before acceptance is returned. */
+    agent_acceptance?: CanonicalInteractionActivityAgentAcceptanceTarget;
+}
+
+interface CanonicalRetryState {
+    accepted?: EnhancedExperimentalCanonicalInteractionExecutionResult;
+    active: boolean;
+    operation_predecessor_run_id?: string;
+    previous_error?: EnhancedExperimentalCanonicalInteractionExecutionResult['run']['error'];
+    failed_candidate?: EnhancedExperimentalCanonicalInteractionExecutionResult;
+}
+
+function workflowInteractionTag(rateLimitId: string): string {
+    return `${WORKFLOW_INTERACTION_TAG_PREFIX}${createHash('sha256').update(rateLimitId).digest('hex')}`;
+}
+
+function workflowInteractionOperationId(rateLimitId: string, predecessorRunId?: string): string {
+    return `workflow-interaction:${createHash('sha256')
+        .update(`${rateLimitId}:${predecessorRunId ?? 'initial'}`)
+        .digest('hex')}`;
+}
+
+function workflowPredecessorTag(predecessorRunId?: string): string {
+    return `${WORKFLOW_PREDECESSOR_TAG_PREFIX}${predecessorRunId ?? 'initial'}`;
+}
+
+function predecessorFromTags(tags: readonly string[] | undefined): string | undefined | null {
+    const values =
+        tags
+            ?.filter((tag) => tag.startsWith(WORKFLOW_PREDECESSOR_TAG_PREFIX))
+            .map((tag) => tag.slice(WORKFLOW_PREDECESSOR_TAG_PREFIX.length)) ?? [];
+    if (values.length !== 1 || values[0].length === 0) return null;
+    return values[0] === 'initial' ? undefined : values[0];
+}
+
+export class CanonicalInteractionExecutionError extends ApplicationFailure {
+    readonly errorCode?: string;
+    readonly retryable?: boolean;
+    readonly result: EnhancedExperimentalCanonicalInteractionExecutionResult;
+
+    override get name(): string {
+        return 'CanonicalInteractionExecutionError';
+    }
+
+    constructor(interactionName: string, result: EnhancedExperimentalCanonicalInteractionExecutionResult) {
+        const source = result.run.error;
+        const type =
+            source?.code === REQUIRED_TOOL_CALL_MISSING_ERROR_CODE
+                ? REQUIRED_TOOL_CALL_MISSING_ERROR_CODE
+                : 'CanonicalInteractionExecutionError';
+        super(
+            `Interaction Execution failed ${interactionName}: ${source?.message || 'Unknown error'}`,
+            type,
+            source?.retryable === false,
+        );
+        this.result = result;
+        Object.defineProperty(this, 'result', {
+            configurable: false,
+            enumerable: false,
+            value: result,
+            writable: false,
+        });
+        this.retryable = source?.retryable;
+        this.errorCode = source?.code;
+    }
+}
+
+export function isCanonicalInteractionExecutionError(error: unknown): error is CanonicalInteractionExecutionError {
+    return error instanceof CanonicalInteractionExecutionError;
+}
+
+function canonicalExecutionError(
+    interactionName: string,
+    result: EnhancedExperimentalCanonicalInteractionExecutionResult,
+): CanonicalInteractionExecutionError {
+    return new CanonicalInteractionExecutionError(interactionName, result);
+}
+
+export function requireCanonicalInteractionOutput<T = unknown>(
+    result: EnhancedExperimentalCanonicalInteractionExecutionResult<T>,
+): CanonicalInteractionOutput<T> {
+    if (!result.canonicalOutput) {
+        throw new Error(`Canonical interaction run ${result.run.id} has no accepted output`);
+    }
+    return result.canonicalOutput;
+}
+
+function isCanonicalInteractionSuccess(result: EnhancedExperimentalCanonicalInteractionExecutionResult): boolean {
+    return result.output.status === 'accepted' && !isCanonicalInteractionFailure(result);
+}
+
+function isCanonicalInteractionFailure(result: EnhancedExperimentalCanonicalInteractionExecutionResult): boolean {
+    return result.output.status === 'accepted'
+        ? result.output.fragment.generation.status === 'failed' || result.output.fragment.turn.status === 'failed'
+        : result.run.status === ExecutionRunStatus.failed;
+}
+
+async function inspectCanonicalRetryState(
+    client: VertesiaClient,
+    workflowRunId: string,
+    operationTag: string,
+): Promise<CanonicalRetryState> {
+    const payload: RunSearchPayload = {
+        query: { workflow_run_ids: [workflowRunId], tags: [operationTag] },
+        limit: 100,
+        sort: [{ field: 'created_at', order: 'desc' }],
+    };
+    const refs = (await client.runs.search(payload)) ?? [];
+    const entries: Array<{
+        ref: (typeof refs)[number];
+        result: EnhancedExperimentalCanonicalInteractionExecutionResult;
+    }> = [];
+
+    let accepted:
+        | {
+              ref: (typeof refs)[number];
+              result: EnhancedExperimentalCanonicalInteractionExecutionResult;
+          }
+        | undefined;
+    for (const ref of refs) {
+        const result = await client.runs.retrieveCanonical(ref.id);
+        if (!accepted && isCanonicalInteractionSuccess(result)) accepted = { ref, result };
+        entries.push({ ref, result });
+    }
+    if (refs.length >= 100) {
+        throw new Error('Canonical interaction retry history exceeds the bounded activity recovery window');
+    }
+
+    const resolvePredecessor = async (ref: (typeof refs)[number]) => {
+        const predecessorRunId = predecessorFromTags(ref.tags);
+        if (predecessorRunId === null) {
+            throw ApplicationFailure.create({
+                message: 'Canonical interaction operation lacks predecessor identity',
+                type: 'CanonicalStreamRecoveryPending',
+                nonRetryable: false,
+            });
+        }
+        if (predecessorRunId === undefined) return {};
+        const predecessor =
+            entries.find(({ result }) => result.run.id === predecessorRunId)?.result ??
+            (await client.runs.retrieveCanonical(predecessorRunId));
+        if (!isCanonicalInteractionFailure(predecessor)) {
+            throw ApplicationFailure.create({
+                message: 'Canonical interaction predecessor is not yet durably failed',
+                type: 'CanonicalStreamRecoveryPending',
+                nonRetryable: false,
+            });
+        }
+        return { operation_predecessor_run_id: predecessor.run.id, previous_error: predecessor.run.error };
+    };
+
+    if (accepted) {
+        return { accepted: accepted.result, active: false, ...(await resolvePredecessor(accepted.ref)) };
+    }
+
+    const active = entries.find(
+        ({ result }) =>
+            !isCanonicalInteractionFailure(result) &&
+            (result.run.status === ExecutionRunStatus.created || result.run.status === ExecutionRunStatus.processing),
+    );
+    if (active) return { active: true, ...(await resolvePredecessor(active.ref)) };
+
+    const failed = entries.find(({ result }) => isCanonicalInteractionFailure(result));
+    if (!failed) return { active: false };
+    return {
+        active: false,
+        ...(await resolvePredecessor(failed.ref)),
+        failed_candidate: failed.result,
+    };
+}
+function contentHash(bytes: Uint8Array): string {
+    return `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
+}
+
+function assertAssetIntegrity(asset: ConversationAsset, bytes: Uint8Array): void {
+    if (asset.byte_length === undefined || asset.content_hash === undefined) {
+        throw new Error(`Canonical generated asset ${asset.id} lacks byte integrity evidence`);
+    }
+    if (bytes.byteLength !== asset.byte_length || contentHash(bytes) !== asset.content_hash) {
+        throw new Error(`Canonical generated asset ${asset.id} failed byte integrity verification`);
+    }
+}
+
+async function readBoundedMedia(stream: ReadableStream<Uint8Array>, asset: ConversationAsset): Promise<Uint8Array> {
+    const reader = stream.getReader();
+    const chunks: Uint8Array[] = [];
+    let byteLength = 0;
+    let chunkCount = 0;
+    try {
+        while (true) {
+            const chunk = await reader.read();
+            if (chunk.done) break;
+            chunkCount += 1;
+            byteLength += chunk.value.byteLength;
+            if (chunkCount > MAX_PROJECTED_MEDIA_CHUNKS || byteLength > MAX_PROJECTED_MEDIA_BYTES) {
+                throw new Error(`Canonical generated asset ${asset.id} exceeds the workflow projection limit`);
+            }
+            chunks.push(chunk.value);
+        }
+    } finally {
+        await reader.cancel().catch(() => undefined);
+        reader.releaseLock();
+    }
+    const bytes = new Uint8Array(byteLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.byteLength;
+    }
+    return bytes;
+}
+
+/** Materialize byte custody only; callers retain their received/generated provenance authority checks. */
+export async function materializeCanonicalAsset(client: VertesiaClient, asset: ConversationAsset): Promise<Uint8Array> {
+    let bytes: Uint8Array;
+    if (asset.storage.type === 'inline_base64') {
+        const estimatedByteLength = Math.floor((asset.storage.data.length * 3) / 4);
+        if (estimatedByteLength > MAX_PROJECTED_MEDIA_BYTES) {
+            throw new Error(`Canonical generated asset ${asset.id} exceeds the workflow projection limit`);
+        }
+        bytes = Buffer.from(asset.storage.data, 'base64');
+    } else if (
+        asset.storage.type === 'external' &&
+        asset.storage.resolver === 'url' &&
+        typeof asset.storage.locator.url === 'string'
+    ) {
+        bytes = await readBoundedMedia(await client.files.downloadFile(asset.storage.locator.url), asset);
+    } else {
+        throw new Error(`Canonical generated asset ${asset.id} has no supported workflow media resolver`);
+    }
+    if (bytes.byteLength > MAX_PROJECTED_MEDIA_BYTES) {
+        throw new Error(`Canonical generated asset ${asset.id} exceeds the workflow projection limit`);
+    }
+    assertAssetIntegrity(asset, bytes);
+    return bytes;
+}
+
+function canonicalLegacyTokenUse(usage: ConversationOutputGenerationUsage | undefined) {
+    if (!usage) return undefined;
+    return {
+        ...(usage.input_tokens === undefined ? {} : { prompt: usage.input_tokens }),
+        ...(usage.output_tokens === undefined ? {} : { result: usage.output_tokens }),
+        ...(usage.total_tokens === undefined ? {} : { total: usage.total_tokens }),
+        ...(usage.cache_read_tokens === undefined ? {} : { prompt_cached: usage.cache_read_tokens }),
+        ...(usage.cache_write_tokens === undefined ? {} : { prompt_cache_write: usage.cache_write_tokens }),
+        ...(usage.input_new_tokens === undefined ? {} : { prompt_new: usage.input_new_tokens }),
+    };
+}
+
+/**
+ * Temporary compatibility projection for workflow/tool boundaries that still expose CompletionResult[].
+ * Canonical output remains authoritative; callers must not persist this projection as conversation history.
+ */
+export async function projectCanonicalCompletionResults(
+    client: VertesiaClient,
+    result: EnhancedExperimentalCanonicalInteractionExecutionResult,
+): Promise<CompletionResult[]> {
+    const output = requireCanonicalInteractionOutput(result);
+    const completion: CompletionResult[] = [];
+    for (const [index, block] of output.blocks.entries()) {
+        if (block.type === 'tool_call') {
+            // Tool calls are workflow control records projected separately from CompletionResult output.
+        } else if (block.type === 'text') {
+            completion.push({ type: 'text', value: block.text });
+        } else if (block.type === 'reasoning') {
+            completion.push({ type: 'thoughts', value: block.text });
+        } else if (block.type === 'json') {
+            completion.push({ type: 'json', value: block.value });
+        } else if (block.type === 'image') {
+            const asset = output.asset(block.asset_id);
+            if (
+                asset.storage.type === 'external' &&
+                asset.storage.resolver === 'url' &&
+                typeof asset.storage.locator.url === 'string'
+            ) {
+                completion.push({ type: 'image', value: asset.storage.locator.url });
+                continue;
+            }
+            const bytes = await materializeCanonicalAsset(client, asset);
+            const extension = mime.getExtension(asset.mime_type) ?? 'png';
+            const execution = activityWorkflowExecution();
+            const info = activityInfo();
+            const filename = `generated-image-${execution.runId}-${info.activityId}-${index}.${extension}`;
+            const file = await client.files.uploadFile(
+                new NodeStreamSource(Readable.from([bytes]), filename, asset.mime_type),
+            );
+            completion.push({ type: 'image', value: file });
+        } else if (block.type === 'audio' || block.type === 'video') {
+            const asset = output.asset(block.asset_id);
+            if (
+                asset.storage.type === 'external' &&
+                asset.storage.resolver === 'url' &&
+                typeof asset.storage.locator.url === 'string'
+            ) {
+                completion.push(
+                    block.type === 'audio'
+                        ? { type: 'audio', value: asset.storage.locator.url, mime_type: asset.mime_type }
+                        : { type: 'video', value: asset.storage.locator.url },
+                );
+            } else {
+                const bytes = await materializeCanonicalAsset(client, asset);
+                const value = `data:${asset.mime_type};base64,${Buffer.from(bytes).toString('base64')}`;
+                completion.push(
+                    block.type === 'audio'
+                        ? { type: 'audio', value, mime_type: asset.mime_type }
+                        : { type: 'video', value },
+                );
+            }
+        } else {
+            throw new Error(`Canonical ${block.type} output cannot be projected to the legacy workflow DSL`);
+        }
+    }
+    return completion;
 }
 
 export async function executeInteraction(payload: DSLActivityExecutionPayload<ExecuteInteractionParams>) {
@@ -245,56 +629,25 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             payload.debug_mode,
         );
 
-        let completionResult: CompletionResult[] = res.result;
+        const completionResult = await projectCanonicalCompletionResults(client, res);
+        const fallback = { runId: res.run.id, status: res.run.status, result: completionResult };
+        if (!payload.activity.projection) return fallback;
 
-        // Handle image uploads if the result contains base64 images
-        const imageResults = completionResult.filter((r) => r.type === 'image');
-        if (imageResults.length > 0) {
-            const uploadedImages = await Promise.all(
-                completionResult.map(async (item, index) => {
-                    if (item.type === 'image') {
-                        const image = item.value;
-                        // References already identify an image; decoding them would corrupt it.
-                        if (/^[a-z][a-z\d+.-]*:/i.test(image) && !/^data:/i.test(image)) {
-                            return item;
-                        }
-
-                        let buffer: Buffer;
-                        let mimeType = 'image/png';
-                        if (/^data:/i.test(image)) {
-                            const response = await fetch(image);
-                            buffer = Buffer.from(await response.arrayBuffer());
-                            mimeType =
-                                response.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase() ?? mimeType;
-                        } else {
-                            buffer = Buffer.from(image, 'base64');
-                        }
-
-                        // Generate filename
-                        const { runId } = activityWorkflowExecution();
-                        const { activityId } = activityInfo();
-                        const extension = mime.getExtension(mimeType) ?? 'png';
-                        const filename = `generated-image-${runId}-${activityId}-${index}.${extension}`;
-
-                        // Create a readable stream from the buffer
-                        const stream = Readable.from([buffer]);
-
-                        const source = new NodeStreamSource(stream, filename, mimeType);
-
-                        const file = await client.files.uploadFile(source);
-                        return { ...item, value: file };
-                    }
-                    return item;
-                }),
-            );
-            completionResult = uploadedImages;
-        }
-
-        return projectResult(payload, params, res, {
-            runId: res.id,
-            status: res.status,
+        // Custom DSL projections are an explicit ephemeral compatibility boundary. Retain legacy run metadata while
+        // overlaying authoritative accepted output so NONE retention cannot erase projected content or accounting.
+        const legacyRun = await client.runs.retrieve(res.run.id);
+        const generation = requireCanonicalInteractionOutput(res).fragment.generation;
+        const projectionSource = {
+            ...legacyRun,
+            ...res.run,
+            id: res.run.id,
+            modelId: generation.resolved_model ?? generation.requested_model,
+            finish_reason: generation.finish_reason,
+            token_use: canonicalLegacyTokenUse(generation.usage),
+            execution_time: generation.timestamps.provider_duration_ms ?? legacyRun.execution_time,
             result: completionResult,
-        });
+        };
+        return projectResult(payload, params, projectionSource, fallback);
     } catch (error: unknown) {
         // Preserve admission failures raised before executeByName and the provider failures
         // normalized by executeInteractionFromActivity.
@@ -333,6 +686,21 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                   ? error.retryable !== false
                   : undefined;
 
+        if (executionError.errorCode === REQUIRED_TOOL_CALL_MISSING_ERROR_CODE) {
+            throw ApplicationFailure.create({
+                message: `Non-retryable Interaction Execution failed ${interactionName}: ${executionError.message}`,
+                type: REQUIRED_TOOL_CALL_MISSING_ERROR_CODE,
+                nonRetryable: true,
+            });
+        }
+
+        // The canonical activity helper has already classified this failure for Temporal. Preserve its stable type
+        // and retryability after the compatibility wrapper's policy overrides above have had a chance to apply.
+        // CanonicalInteractionExecutionError does not put its retained result in ApplicationFailure details.
+        if (isCanonicalInteractionExecutionError(error)) {
+            throw error;
+        }
+
         if (isRetryable !== undefined) {
             if (isRetryable) {
                 log.debug('Marking error as retryable', { interactionName, errorCode: executionError.errorCode });
@@ -368,55 +736,258 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
     }
 }
 
+export async function executeCanonicalInteractionFromActivity(
+    client: VertesiaClient,
+    plan: CanonicalInteractionActivityPlan,
+    debug?: boolean,
+): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult> {
+    const suppliedRequest = plan.request as ExperimentalCanonicalNamedInteractionExecutionRequest;
+    if (Object.hasOwn(suppliedRequest, 'workflow')) {
+        throw new Error('Canonical activity execution derives workflow identity from the active Temporal activity');
+    }
+    const { data: requestData, tags: userTags, workflow: _callerWorkflow, ...requestFields } = suppliedRequest;
+    const stableRequestData = requestData === undefined ? undefined : structuredClone(requestData);
+    if (
+        plan.include_previous_error &&
+        stableRequestData !== undefined &&
+        (stableRequestData === null || typeof stableRequestData !== 'object' || Array.isArray(stableRequestData))
+    ) {
+        throw new Error('Canonical include_previous_error requires object or undefined request data');
+    }
+    const interactionName = requestFields.interaction;
+    const reservedTagPrefix = WORKFLOW_RESERVED_TAG_PREFIXES.find((prefix) =>
+        userTags?.some((tag) => tag.startsWith(prefix)),
+    );
+    if (reservedTagPrefix) {
+        throw new Error(`Interaction tags may not use reserved prefix ${reservedTagPrefix}`);
+    }
+    const invocationKey = plan.invocation_key;
+    if (
+        invocationKey !== undefined &&
+        (typeof invocationKey !== 'string' ||
+            invocationKey.length > MAX_WORKFLOW_INVOCATION_KEY_LENGTH ||
+            !WORKFLOW_INVOCATION_KEY_PATTERN.test(invocationKey))
+    ) {
+        throw new Error(
+            `Interaction invocation_key must match ${WORKFLOW_INVOCATION_KEY_PATTERN} and contain at most ${MAX_WORKFLOW_INVOCATION_KEY_LENGTH} characters`,
+        );
+    }
+    const serviceTierPolicy = (plan as { service_tier_policy?: unknown }).service_tier_policy;
+    if (serviceTierPolicy !== undefined && serviceTierPolicy !== FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY) {
+        throw new Error(`Unsupported canonical interaction service_tier_policy: ${String(serviceTierPolicy)}`);
+    }
+    const info = activityInfo();
+    const execution = activityWorkflowExecution(info);
+    const agentAcceptance = plan.agent_acceptance
+        ? { ...structuredClone(plan.agent_acceptance), activity_id: info.activityId }
+        : undefined;
+    const baseRateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
+    const rateLimitId = invocationKey
+        ? `${baseRateLimitId}:invocation-key:${invocationKey.length}:${invocationKey}`
+        : baseRateLimitId;
+    const operationTag = workflowInteractionTag(rateLimitId);
+    const baseTags = [
+        'workflow',
+        operationTag,
+        ...(serviceTierPolicy === FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY
+            ? [`${WORKFLOW_SERVICE_TIER_POLICY_TAG_PREFIX}${serviceTierPolicy}`]
+            : []),
+        ...(userTags ?? []),
+    ];
+    const workflow: ExecutionRunWorkflow = {
+        run_id: execution.runId,
+        workflow_id: execution.workflowId,
+        activity_type: info.activityType,
+        rate_limit_id: rateLimitId,
+        ...(plan.agent_run_id ? { agent_run_id: plan.agent_run_id } : {}),
+    };
+
+    const retryState =
+        info.attempt > 1
+            ? await inspectCanonicalRetryState(client, execution.runId, operationTag)
+            : ({ active: false } satisfies CanonicalRetryState);
+    const canonicalConfig = requestFields.config ?? {};
+
+    const makeRequest = (
+        predecessorRunId: string | undefined,
+        previousError: CanonicalRetryState['previous_error'],
+    ): { operationId: string; request: CanonicalWorkflowRequest } => {
+        const includePreviousError = plan.include_previous_error && previousError !== undefined;
+        const data = includePreviousError
+            ? { ...(stableRequestData as Record<string, unknown> | undefined), previous_error: previousError }
+            : stableRequestData;
+        const effectiveRequestFields =
+            serviceTierPolicy === FLEX_THEN_DEFAULT_SERVICE_TIER_POLICY
+                ? {
+                      ...requestFields,
+                      config: {
+                          ...(requestFields.config ?? {}),
+                          model_options: {
+                              ...(requestFields.config?.model_options ?? {}),
+                              service_tier: predecessorRunId === undefined ? 'flex' : 'default',
+                          } as ModelOptions,
+                      },
+                  }
+                : requestFields;
+        return {
+            operationId: workflowInteractionOperationId(rateLimitId, predecessorRunId),
+            request: {
+                ...effectiveRequestFields,
+                ...(data === undefined ? {} : { data: data as CanonicalWorkflowRequest['data'] }),
+                tags: [...baseTags, workflowPredecessorTag(predecessorRunId)],
+                workflow,
+            },
+        };
+    };
+
+    const dispatch = async (operationId: string, request: CanonicalWorkflowRequest) => {
+        log.debug(`About to execute canonical interaction ${interactionName}`, {
+            operation_id: operationId,
+            config: canonicalConfig,
+            data: request.data,
+            result_schema: request.result_schema,
+            tags: request.tags,
+            workflow,
+        });
+        const activityContext = Context.current();
+        const cancellationSignal = activityContext.cancellationSignal;
+        const heartbeatIntervalMs = Math.max(1, Math.min(10_000, Math.floor((info.heartbeatTimeoutMs ?? 20_000) / 2)));
+        const heartbeatTimer = setInterval(() => {
+            if (!cancellationSignal.aborted) activityContext.heartbeat({ operation_id: operationId });
+        }, heartbeatIntervalMs);
+        heartbeatTimer.unref?.();
+        try {
+            return await client.runs.streamCanonical(
+                {
+                    operation_id: operationId,
+                    request,
+                    ...(agentAcceptance === undefined ? {} : { agent_acceptance: agentAcceptance }),
+                },
+                {
+                    signal: cancellationSignal,
+                    on_envelope: (envelope) => {
+                        // This activity executes ordinary interactions, never targetless initial ingestion.
+                        // A durable input ACK cannot stand in for a model stream or accepted response.
+                        if (envelope.type === 'ingestion_accepted') {
+                            throw new CanonicalInteractionStreamProtocolError(
+                                'Canonical interaction activity cannot accept an initial ingestion ACK',
+                            );
+                        }
+                        activityContext.heartbeat({
+                            operation_id: operationId,
+                            run_id: envelope.run_id,
+                            stream_id:
+                                envelope.type === 'conversation_event' ? envelope.event.stream_id : envelope.stream_id,
+                        });
+                    },
+                },
+            );
+        } catch (error: unknown) {
+            const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
+            if (rateLimitFailure) throw rateLimitFailure;
+            const payload =
+                error && typeof error === 'object' && 'payload' in error ? (error as { payload: unknown }).payload : {};
+            const errorCode =
+                payload !== null && typeof payload === 'object' && 'errorCode' in payload
+                    ? payload.errorCode
+                    : undefined;
+            if (errorCode === CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE) {
+                throw ApplicationFailure.create({
+                    message: `Canonical stream recovery is pending for ${interactionName}`,
+                    type: 'CanonicalStreamRecoveryPending',
+                    nonRetryable: false,
+                });
+            }
+            throw error;
+        } finally {
+            clearInterval(heartbeatTimer);
+        }
+    };
+
+    let predecessorRunId = retryState.operation_predecessor_run_id;
+    let previousError = retryState.previous_error;
+    if (retryState.accepted) {
+        const acceptedRequest = makeRequest(predecessorRunId, previousError);
+        const acceptedStream = await dispatch(acceptedRequest.operationId, acceptedRequest.request);
+        if (acceptedStream.terminal_event.type !== 'response_accepted') {
+            throw ApplicationFailure.create({
+                message: 'Canonical accepted interaction did not recover an accepted terminal',
+                type: 'CanonicalStreamRecoveryPending',
+                nonRetryable: false,
+            });
+        }
+        const recovered = await client.runs.retrieveCanonical(acceptedStream.run_id);
+        if (!isCanonicalInteractionSuccess(recovered)) throw canonicalExecutionError(interactionName, recovered);
+        return recovered;
+    }
+    if (retryState.failed_candidate) {
+        const prior = makeRequest(predecessorRunId, previousError);
+        const priorStream = await dispatch(prior.operationId, prior.request);
+        const confirmed = await client.runs.retrieveCanonical(priorStream.run_id);
+        if (priorStream.terminal_event.type === 'response_accepted' && isCanonicalInteractionSuccess(confirmed)) {
+            return confirmed;
+        }
+        const terminalFailure =
+            isCanonicalInteractionFailure(confirmed) &&
+            (priorStream.terminal_event.type === 'response_accepted' ||
+                priorStream.terminal_event.type === 'stream_terminated');
+        if (!terminalFailure) {
+            throw ApplicationFailure.create({
+                message: 'Canonical interaction failure is not yet terminal',
+                type: 'CanonicalStreamRecoveryPending',
+                nonRetryable: false,
+            });
+        }
+        predecessorRunId = confirmed.run.id;
+        previousError = confirmed.run.error;
+    }
+
+    if (debug && previousError) log.info('Found previous run error', { error: previousError });
+
+    // Recheck admission until a run is visible. requestSlot removes/re-adds the same rate_limit_id atomically, so an
+    // ambiguous retry refreshes one reservation without increasing occupancy. Accepted and active runs skip admission.
+    if (!retryState.active) {
+        const slot = await client.interactions.requestSlot({
+            interaction: interactionName,
+            inference_profile: canonicalConfig.inference_profile,
+            inherit_model_config: canonicalConfig.inherit_model_config,
+            environment_id: canonicalConfig.environment,
+            model_id: canonicalConfig.model,
+            rate_limit_id: rateLimitId,
+        });
+        if (slot.delay_ms > 0) {
+            throw ApplicationFailure.create({
+                message: `Interaction admission delayed for ${slot.delay_ms}ms`,
+                type: 'InteractionRateLimitRetry',
+                nonRetryable: false,
+                nextRetryDelay: slot.delay_ms,
+                details: [{ interactionName, rateLimitId, delayMs: slot.delay_ms }],
+            });
+        }
+    }
+
+    const prepared = makeRequest(predecessorRunId, previousError);
+    const stream = await dispatch(prepared.operationId, prepared.request);
+    const result = await client.runs.retrieveCanonical(stream.run_id);
+
+    if (debug) log.info(`Canonical interaction executed ${interactionName}`, result);
+    if (stream.terminal_event.type !== 'response_accepted' || !isCanonicalInteractionSuccess(result)) {
+        log.error(`Error executing canonical interaction ${interactionName}`, {
+            error: result.run.error,
+            outcome: stream.terminal_event.type === 'stream_terminated' ? stream.terminal_event.outcome : undefined,
+        });
+        throw canonicalExecutionError(interactionName, result);
+    }
+    return result;
+}
+
 export async function executeInteractionFromActivity(
     client: VertesiaClient,
     interactionName: string,
     params: InteractionExecutionParams,
     prompt_data: Record<string, unknown>,
     debug?: boolean,
-) {
-    const userTags = params.tags;
-    const info = activityInfo();
-    const execution = activityWorkflowExecution(info);
-    const runId = execution.runId;
-    let tags = ['workflow'];
-    if (userTags) {
-        tags = tags.concat(userTags);
-    }
-    const workflow: ExecutionRunWorkflow = {
-        run_id: execution.runId,
-        workflow_id: execution.workflowId,
-        activity_type: info.activityType,
-    };
-
-    let previousStudioExecutionRun: ExecutionRun | undefined;
-    if (params.include_previous_error) {
-        //retrieve last failed run if any
-        if (info.attempt > 1) {
-            log.debug('Retrying, searching for previous run', { prev_run_id: runId });
-            const payload: RunSearchPayload = {
-                query: { workflow_run_ids: [runId] },
-                limit: 1,
-            };
-            const previousRuns = await client.runs.search(payload);
-            log.debug('Previous run search completed', { result_count: previousRuns?.length ?? 0 });
-            // `?.[0]` covers both an absent body and an empty array, matching what the previous
-            // `res ? (res[0] ?? undefined) : undefined` did. The optional chaining is kept
-            // deliberately: `search` is *typed* to return an array, but the value comes straight off
-            // an HTTP response, so the type is a claim about the contract rather than a runtime
-            // guarantee — and dropping the guard here would be a behaviour change, not a cleanup.
-            const previousRun = previousRuns?.[0];
-
-            if (previousRun) {
-                log.debug('Found previous run', { prev_run_id: previousRun.id });
-                previousStudioExecutionRun = await client.runs.retrieve(previousRun.id);
-            }
-        }
-    }
-    if (debug && previousStudioExecutionRun?.error) {
-        log.info(`Found  previous run error`, { error: previousStudioExecutionRun?.error });
-    }
-
+): Promise<EnhancedExperimentalCanonicalInteractionExecutionResult> {
     const configDefaults = params.config ?? {};
     const config: InteractionExecutionConfiguration = {
         ...configDefaults,
@@ -426,72 +997,28 @@ export async function executeInteractionFromActivity(
         http_timeout: params.http_timeout ?? configDefaults.http_timeout,
         do_validate: params.validate_result ?? configDefaults.do_validate,
     };
-    const data = {
-        ...prompt_data,
-        previous_error: previousStudioExecutionRun?.error,
-    };
+    const { run_data: retention = RunDataStorageLevel.STANDARD, ...canonicalConfig } = config;
 
-    const result_schema = params.result_schema;
-
-    const rateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
-    const slot = await client.interactions.requestSlot({
-        interaction: interactionName,
-        inference_profile: config.inference_profile,
-        inherit_model_config: config.inherit_model_config,
-        environment_id: config.environment,
-        model_id: config.model,
-        rate_limit_id: rateLimitId,
-    });
-    if (slot.delay_ms > 0) {
-        throw ApplicationFailure.create({
-            message: `Interaction admission delayed for ${slot.delay_ms}ms`,
-            type: 'InteractionRateLimitRetry',
-            nonRetryable: false,
-            nextRetryDelay: slot.delay_ms,
-            details: [{ interactionName, rateLimitId, delayMs: slot.delay_ms }],
-        });
-    }
-    workflow.rate_limit_id = rateLimitId;
-
-    log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags, workflow });
-
-    const res = await client.interactions
-        .executeByName(interactionName, {
-            config,
-            data,
-            result_schema,
-            tags,
-            stream: false,
-            workflow,
-        })
-        .catch((error: unknown) => {
-            // Logged once by the caller's catch (executeInteraction) — do not log here as well.
-            const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
-            throw rateLimitFailure ?? error;
-        });
-
-    if (debug) {
-        log.info(`Interaction executed ${interactionName}`, res);
-    }
-
-    if (res.error || res.status === ExecutionRunStatus.failed) {
-        log.error(`Error executing interaction ${interactionName}`, { error: res.error });
-
-        // Create error with retryability information
-        const errorMessage = `Interaction Execution failed ${interactionName}: ${res.error?.message || 'Unknown error'}`;
-        const error = new Error(errorMessage);
-
-        // Attach retryable property so the catch block can access it
-        const executionError = error as Error & { retryable?: boolean; errorCode?: string };
-        executionError.retryable = res.error?.retryable;
-        executionError.errorCode = res.error?.code;
-
-        throw error;
-    }
-
-    return res;
+    return executeCanonicalInteractionFromActivity(
+        client,
+        {
+            request: {
+                interaction: interactionName,
+                initial_state: { type: 'new' },
+                retention,
+                return_policy: { history: 'none' },
+                data: prompt_data as CanonicalInteractionActivityRequest['data'],
+                config: canonicalConfig,
+                result_schema: params.result_schema as CanonicalInteractionActivityRequest['result_schema'],
+                tags: params.tags,
+            },
+            invocation_key: params.invocation_key,
+            include_previous_error: params.include_previous_error,
+            agent_run_id: params.agent_run_id,
+        },
+        debug,
+    );
 }
-
 /**
  * Returns true for 4xx status codes that indicate permanent client errors.
  * 412 (Precondition Failed) and 429 (Too Many Requests) are excluded because

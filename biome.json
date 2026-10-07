@@ -17,6 +17,7 @@
             "!**/node_modules/**",
             "!**/build/**",
             "!**/bin/**",
+            "!packages/common/src/canonical-stream-runtime/canonical-stream-validator.generated.js",
             ".github/bin/ci-approve*.mjs",
             "!libraries/jst/test/data/**",
             "!packages/tools-admin-ui/index.html",

@@ -14,7 +14,7 @@
       "dependsOn": ["build"],
       "outputs": [],
       "cache": true,
-      "env": ["CI", "RUNNER_OS", "RUNNER_ARCH", "ImageOS", "ImageVersion"]
+      "env": ["CI", "RUNNER_OS", "RUNNER_ARCH", "ImageOS", "ImageVersion", "VITEST_MAX_WORKERS"]
     },
     "typecheck:test": {
       "dependsOn": ["^build"],

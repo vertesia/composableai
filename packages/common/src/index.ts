@@ -9,6 +9,11 @@ export type {
     VideoResult,
 } from '@llumiverse/common';
 export * from './access-control.js';
+export type * from './agent-assets.js';
+export type * from './agent-conversation-migration.js';
+export type * from './agent-processing.js';
+export type * from './agent-restart-admission.js';
+export type * from './agent-routing-control.js';
 export * from './analytics.js';
 /**
  * Schema-derived API types. MUST stay `export type` — tsc erases it, so `lib/index.js` never
@@ -27,6 +32,14 @@ export * from './apps.js';
 export * from './ask-user.js';
 export * from './audit-trail.js';
 export * from './browser-credentials.js';
+export * from './canonical-conversation.js';
+export type * from './canonical-conversation-resume.js';
+export * from './canonical-generation-evidence.js';
+export type * from './canonical-ingestion-readiness.js';
+export type * from './canonical-initial-authoring.js';
+export type * from './canonical-interaction-execution.js';
+export type * from './canonical-interaction-stream.js';
+export { CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE } from './canonical-interaction-stream.js';
 export * from './common.js';
 export * from './content-query.js';
 export * from './cost-analytics.js';
@@ -86,6 +99,7 @@ export type {
     RunBudgetTotals,
     RunBudgetUsage,
 } from './run-budget.js';
+export type * from './run-conversation-append.js';
 export * from './runs.js';
 export * from './schema-for-extraction.js';
 export * from './secrets.js';

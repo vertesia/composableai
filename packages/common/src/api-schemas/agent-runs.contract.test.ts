@@ -1,3 +1,4 @@
+import { createConversationTranscriptFragment } from '@llumiverse/conversation';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import type {
     AgentRunEvaluation,
@@ -13,6 +14,13 @@ import type {
     AgentRunFeedbackEntrySchema,
     AgentRunFeedbackPayloadSchema,
     AgentRunFeedbackResponseSchema,
+    ExperimentalAgentConversationAcceptedOutputHistoryPageSchema,
+    ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema,
+} from './agent-runs.js';
+import {
+    AgentRunAccessQuerySchema,
+    ExperimentalAgentConversationTranscriptPageSchema,
+    ExperimentalAgentConversationTranscriptQuerySchema,
 } from './agent-runs.js';
 import { validateApiRequest, validateApiResponse } from './registry.js';
 
@@ -78,6 +86,17 @@ const turnEvaluation: TurnEvaluationEvent = {
     ],
     toolsTruncated: 0,
 };
+
+describe('agent run access query contract', () => {
+    it('keeps legacy omission and accepts only the explicit control authority selector', () => {
+        expect(AgentRunAccessQuerySchema.parse({})).toEqual({});
+        expect(AgentRunAccessQuerySchema.parse({ access: 'control' })).toEqual({ access: 'control' });
+        expect(validateApiRequest('AgentRunAccessQuery', {})).toMatchObject({ valid: true });
+        expect(validateApiRequest('AgentRunAccessQuery', { access: 'control' })).toMatchObject({ valid: true });
+        expect(validateApiRequest('AgentRunAccessQuery', { access: 'read' }).valid).toBe(false);
+        expect(validateApiRequest('AgentRunAccessQuery', { access: 'control', extra: true }).valid).toBe(false);
+    });
+});
 
 describe('agent run evaluation API contracts', () => {
     it('derives the public types from the runtime schemas', () => {
@@ -368,4 +387,283 @@ describe('run budget allocation contract', () => {
             expect(validateApiRequest('AllocateAgentRunBudgetPayload', payload).valid).toBe(false);
         },
     );
+});
+
+describe('agent canonical conversation stream API contracts', () => {
+    const baseEvent = {
+        format: 'llumiverse.conversation' as const,
+        schema_version: 0 as const,
+        experimental_revision: '2026-09-30.adoption.1' as const,
+        stream_id: 'stream:agent-contract',
+        request_id: 'request:agent-contract',
+        attempt_id: 'attempt:agent-contract',
+        response_operation_id: 'operation:agent-contract',
+        generation_id: 'generation:agent-contract',
+        draft_turn_id: 'turn:draft-agent-contract',
+        event_id: 'stream:agent-contract#0',
+        sequence: 0,
+    };
+    const envelopeBase = {
+        api_version: '=20260930' as const,
+        agent_run_id: 'agent:contract',
+        scope: 'root' as const,
+        type: 'conversation_event' as const,
+        execution_run_id: 'execution:contract',
+    };
+
+    it('publishes strict initialized and uninitialized canonical source descriptors', () => {
+        const base = {
+            api_version: '=20260930' as const,
+            agent_run_id: 'agent:contract',
+            scope: 'root' as const,
+        };
+        expect(
+            validateApiResponse('ExperimentalAgentConversationSourceDescriptor', {
+                ...base,
+                status: 'uninitialized',
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ExperimentalAgentConversationSourceDescriptor', {
+                ...base,
+                status: 'initialized',
+                contract_version: 'canonical-conversation-v1',
+                head: {
+                    format: 'llumiverse.conversation',
+                    schema_version: 0,
+                    experimental_revision: '2026-09-30.adoption.1',
+                    conversation_id: 'conversation:contract',
+                    revision: 3,
+                },
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ExperimentalAgentConversationSourceDescriptor', {
+                ...base,
+                status: 'initialized',
+                contract_version: 'canonical-conversation-v1',
+                head: {
+                    format: 'llumiverse.conversation',
+                    schema_version: 0,
+                    experimental_revision: 'unsupported',
+                    conversation_id: 'conversation:contract',
+                    revision: 3,
+                    content_hash: 'sha256:private',
+                },
+            }).valid,
+        ).toBe(false);
+    });
+
+    it('publishes live draft events but excludes response acceptance from the generated component', () => {
+        expect(
+            validateApiResponse('ExperimentalAgentConversationEvent', {
+                ...envelopeBase,
+                event: { ...baseEvent, type: 'draft_started', origin: 'live_transport' },
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiResponse('ExperimentalAgentConversationEvent', {
+                ...envelopeBase,
+                event: {
+                    ...baseEvent,
+                    type: 'response_accepted',
+                    origin: 'live_transport',
+                    conversation: { conversation_id: 'conversation:contract', revision: 2 },
+                    operation_receipt_id: 'operation:accepted',
+                    committed_turn_id: 'turn:accepted',
+                    turn_status: 'completed',
+                    generation_status: 'completed',
+                    committed_block_ids: ['block:accepted'],
+                    accepted_asset_ids: [],
+                    reconciliations: [],
+                },
+            }).valid,
+        ).toBe(false);
+    });
+
+    it('publishes a bounded exact-snapshot accepted-output history contract', () => {
+        const receipt = {
+            id: 'operation:accepted',
+            conversation_id: 'conversation:contract',
+            base_revision: 0,
+            result_revision: 1,
+            recorded_at: '2026-10-01T00:00:00.000Z',
+            accepted_turn_ids: ['turn:accepted'],
+            accepted_generation_ids: ['generation:accepted'],
+            accepted_asset_ids: [],
+        };
+        const item = {
+            api_version: '=20260930' as const,
+            agent_run_id: 'agent:contract',
+            scope: 'root' as const,
+            type: 'accepted_output' as const,
+            source: { conversation_id: receipt.conversation_id, revision: receipt.result_revision },
+            receipt,
+        };
+        const page = {
+            api_version: '=20260930' as const,
+            agent_run_id: 'agent:contract',
+            scope: 'root' as const,
+            snapshot: { conversation_id: receipt.conversation_id, revision: 2 },
+            items: [item],
+            next_after_revision: 1,
+        };
+
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', {
+                snapshot_conversation_id: receipt.conversation_id,
+                snapshot_revision: 2,
+                after_revision: 0,
+                limit: 100,
+            }).valid,
+        ).toBe(true);
+        expect(validateApiResponse('ExperimentalAgentConversationAcceptedOutputHistoryPage', page).valid).toBe(true);
+    });
+
+    it('rejects incomplete snapshot pins and out-of-bounds history pages', () => {
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', {
+                snapshot_conversation_id: 'conversation:contract',
+            }).valid,
+        ).toBe(false);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', {
+                snapshot_revision: 1,
+            }).valid,
+        ).toBe(false);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', { limit: 101 }).valid,
+        ).toBe(false);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationAcceptedOutputHistoryQuery', { after_revision: 1 }).valid,
+        ).toBe(false);
+    });
+
+    it('publishes a pinned bounded transcript contract and enforces paired cursors', () => {
+        const fragment = createConversationTranscriptFragment({
+            source: { conversation_id: 'conversation:transcript', revision: 3 },
+            turns: [
+                {
+                    id: 'turn:user',
+                    kind: 'user',
+                    authority: 'ordinary',
+                    status: 'completed',
+                    timestamps: { recorded_at: '2026-10-01T00:00:00.000Z' },
+                    model_visibility: 'include',
+                    provenance: { type: 'received' },
+                    blocks: [{ id: 'block:user', type: 'text', text: 'hello', format: 'plain' }],
+                },
+            ],
+            generations: [],
+            assets: [],
+            window: { gap_before: false, gap_after: true, omitted_turns: [], omitted_generations: [] },
+        });
+        const page = {
+            api_version: '=20260930' as const,
+            agent_run_id: 'agent:contract',
+            scope: 'root' as const,
+            snapshot: fragment.source,
+            fragment,
+            next_after_turn_id: 'turn:user',
+        };
+
+        expect(
+            validateApiRequest('ExperimentalAgentConversationTranscriptQuery', {
+                snapshot_conversation_id: fragment.source.conversation_id,
+                snapshot_revision: fragment.source.revision,
+                after_turn_id: 'turn:user',
+                limit: 100,
+            }).valid,
+        ).toBe(true);
+        expect(validateApiResponse('ExperimentalAgentConversationTranscriptPage', page).valid).toBe(true);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationTranscriptQuery', { after_turn_id: 'turn:user' }).valid,
+        ).toBe(false);
+        expect(
+            validateApiRequest('ExperimentalAgentConversationTranscriptQuery', {
+                snapshot_conversation_id: fragment.source.conversation_id,
+            }).valid,
+        ).toBe(false);
+        expect(validateApiRequest('ExperimentalAgentConversationTranscriptQuery', { limit: 101 }).valid).toBe(false);
+        expect(
+            ExperimentalAgentConversationTranscriptPageSchema.safeParse({
+                ...page,
+                snapshot: { ...fragment.source, revision: fragment.source.revision + 1 },
+            }).success,
+        ).toBe(false);
+    });
+
+    it('enforces start and tail window rules in both the authored and published query contracts', () => {
+        const pin = { snapshot_conversation_id: 'conversation:tail', snapshot_revision: 0 };
+        for (const query of [
+            {},
+            { window: 'start' },
+            { window: 'tail' },
+            { ...pin, window: 'tail', limit: 1 },
+            { ...pin, window: 'start', after_turn_id: 'turn:one' },
+        ]) {
+            expect(ExperimentalAgentConversationTranscriptQuerySchema.safeParse(query).success).toBe(true);
+            expect(validateApiRequest('ExperimentalAgentConversationTranscriptQuery', query).valid).toBe(true);
+        }
+        for (const query of [
+            { ...pin, window: 'tail', after_turn_id: 'turn:one' },
+            { window: 'tail', snapshot_revision: 0 },
+            { window: 'tail', snapshot_conversation_id: pin.snapshot_conversation_id },
+            { window: 'newest' },
+            { window: 'tail', limit: 0 },
+            { window: 'tail', limit: 101 },
+        ]) {
+            expect(ExperimentalAgentConversationTranscriptQuerySchema.safeParse(query).success).toBe(false);
+            expect(validateApiRequest('ExperimentalAgentConversationTranscriptQuery', query).valid).toBe(false);
+        }
+    });
+
+    it('derives transcript request and page types from their runtime schemas', () => {
+        expectTypeOf<import('../store/agent-run.js').ExperimentalAgentConversationTranscriptQuery>().toEqualTypeOf<
+            import('zod').z.infer<typeof ExperimentalAgentConversationTranscriptQuerySchema>
+        >();
+        expectTypeOf<import('../store/agent-run.js').ExperimentalAgentConversationTranscriptPage>().toEqualTypeOf<
+            import('zod').z.infer<typeof ExperimentalAgentConversationTranscriptPageSchema>
+        >();
+    });
+
+    it('derives history request and page types from their runtime schemas', () => {
+        expectTypeOf<
+            import('../store/agent-run.js').ExperimentalAgentConversationAcceptedOutputHistoryQuery
+        >().toEqualTypeOf<
+            import('zod').z.infer<typeof ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema>
+        >();
+        expectTypeOf<
+            import('../store/agent-run.js').ExperimentalAgentConversationAcceptedOutputHistoryPage
+        >().toEqualTypeOf<import('zod').z.infer<typeof ExperimentalAgentConversationAcceptedOutputHistoryPageSchema>>();
+    });
+});
+
+describe('recorded child canonical conversation binding contracts', () => {
+    const payload = {
+        interaction: 'sys:ProcessAgentNode',
+        workflow_id: 'process:agent:node:1',
+        first_workflow_run_id: 'temporal-run-1',
+        parent_run_id: '64b000000000000000000001',
+        workstream_id: 'node',
+        canonical_conversation_owner_run_id: '64b000000000000000000001',
+    };
+
+    it('accepts an optional exact workstream scope on a recorded child', () => {
+        expect(
+            validateApiRequest('RecordAgentRunPayload', {
+                ...payload,
+                canonical_conversation_scope: 'workstream:node-1',
+            }).valid,
+        ).toBe(true);
+    });
+
+    it('rejects a malformed canonical scope at the published boundary', () => {
+        expect(
+            validateApiRequest('RecordAgentRunPayload', {
+                ...payload,
+                canonical_conversation_scope: 'node-1',
+            }).valid,
+        ).toBe(false);
+    });
 });

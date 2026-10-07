@@ -1,0 +1,163 @@
+{
+    "requests": {
+        "begin": {
+            "action": "begin",
+            "operation_id": "upgrade:wire",
+            "expected_head": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            }
+        },
+        "advance": {
+            "action": "advance",
+            "operation_id": "upgrade:wire"
+        },
+        "finish": {
+            "action": "finish",
+            "operation_id": "upgrade:wire"
+        }
+    },
+    "responses": {
+        "pending": {
+            "api_version": "=20260930",
+            "agent_run_id": "agent:upgrade-wire",
+            "scope": "workstream:review-1",
+            "operation_id": "upgrade:wire",
+            "source": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "head": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "status": "pending",
+            "step": 17
+        },
+        "ready_to_finish": {
+            "api_version": "=20260930",
+            "agent_run_id": "agent:upgrade-wire",
+            "scope": "workstream:review-1",
+            "operation_id": "upgrade:wire",
+            "source": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "head": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "status": "ready_to_finish",
+            "step": 42
+        },
+        "completed": {
+            "api_version": "=20260930",
+            "agent_run_id": "agent:upgrade-wire",
+            "scope": "workstream:review-1",
+            "operation_id": "upgrade:wire",
+            "source": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "head": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 11
+            },
+            "status": "completed",
+            "applied": false,
+            "receipt": {
+                "id": "upgrade:wire",
+                "conversation_id": "conversation:upgrade-wire",
+                "base_revision": 9,
+                "result_revision": 10,
+                "payload_fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "recorded_at": "2026-10-06T00:00:00.000Z",
+                "accepted_turn_ids": [],
+                "operation_kind": "indexed_upgrade",
+                "indexed_upgrade": {
+                    "version": 1,
+                    "profile": "llumiverse.conversation/indexed-upgrade/2026-10-06.v1",
+                    "source": {
+                        "conversation_id": "conversation:upgrade-wire",
+                        "revision": 9
+                    },
+                    "predecessor_root": {
+                        "content_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                        "size_bytes": 512
+                    },
+                    "completed_progress": {
+                        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                        "size_bytes": 1024
+                    }
+                }
+            }
+        }
+    },
+    "invalid_requests": {
+        "unknown_action": {
+            "action": "future",
+            "operation_id": "upgrade:wire"
+        },
+        "begin_missing_source": {
+            "action": "begin",
+            "operation_id": "upgrade:wire"
+        },
+        "missing_operation": {
+            "action": "advance"
+        },
+        "begin_wrong_source_shape": {
+            "action": "begin",
+            "operation_id": "upgrade:wire",
+            "expected_head": "latest"
+        }
+    },
+    "invalid_responses": {
+        "unknown_status": {
+            "api_version": "=20260930",
+            "agent_run_id": "agent:upgrade-wire",
+            "scope": "workstream:review-1",
+            "operation_id": "upgrade:wire",
+            "source": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "head": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "status": "future",
+            "step": 42
+        },
+        "pending_missing_step": {
+            "api_version": "=20260930",
+            "agent_run_id": "agent:upgrade-wire",
+            "scope": "workstream:review-1",
+            "operation_id": "upgrade:wire",
+            "source": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "head": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "status": "pending"
+        },
+        "completed_missing_receipt": {
+            "api_version": "=20260930",
+            "agent_run_id": "agent:upgrade-wire",
+            "scope": "workstream:review-1",
+            "operation_id": "upgrade:wire",
+            "source": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "head": {
+                "conversation_id": "conversation:upgrade-wire",
+                "revision": 9
+            },
+            "status": "completed",
+            "applied": false
+        }
+    }
+}

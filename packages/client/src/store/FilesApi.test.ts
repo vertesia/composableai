@@ -20,6 +20,33 @@ describe('FilesApi', () => {
         vi.unstubAllGlobals();
     });
 
+    it('aborts the signed artifact request before headers without exposing image bytes or retrying', async () => {
+        const controller = new AbortController();
+        const sign = vi.fn(async () => Response.json({ url: 'https://signed.example/nested.png' }));
+        let requestStarted: (() => void) | undefined;
+        const started = new Promise<void>((resolve) => {
+            requestStarted = resolve;
+        });
+        const signedFetch = vi.fn((_url: string, init: RequestInit) => {
+            requestStarted?.();
+            return new Promise<Response>((_resolve, reject) => {
+                init.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+            });
+        });
+        vi.stubGlobal('fetch', signedFetch);
+        const client = new ZenoClient({ serverUrl: 'https://store.test', apikey: 'test-token', fetch: sign });
+        const pending = client.files.downloadArtifact('agent:1', 'canonical-interaction-images/v1/image.png', {
+            signal: controller.signal,
+            timeoutMs: 10_000,
+        });
+        await started;
+        controller.abort(new DOMException('cancelled before image response', 'AbortError'));
+        await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+        expect(sign).toHaveBeenCalledOnce();
+        expect(signedFetch).toHaveBeenCalledOnce();
+        expect(signedFetch.mock.calls[0]?.[1].signal?.aborted).toBe(true);
+    });
+
     it('retries signed upload URL creation after a transient connection failure', async () => {
         let attempts = 0;
         const fetchSignedUploadUrl = async (): Promise<Response> => {

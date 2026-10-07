@@ -1,3 +1,4 @@
+import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import { type JsonObject, SchemaAdapterError, toOpenApiComponents } from './adapter.js';
 
@@ -495,5 +496,69 @@ describe('hoisting a union and its members', () => {
                 Input: { ...UNION, $defs: MEMBERS },
             }),
         ).not.toThrow();
+    });
+});
+
+describe('strict composed object containers', () => {
+    it.each(['oneOf', 'anyOf'] as const)(
+        'closes inline %s branches without closing their propertyless container',
+        (keyword) => {
+            const branches = ['first', 'second'].map((kind) => ({
+                type: 'object',
+                properties: { kind: { const: kind, type: 'string' }, value: { type: 'string' } },
+                required: ['kind', 'value'],
+            }));
+            const components = toOpenApiComponents(
+                { Payload: { type: 'object', [keyword]: branches } },
+                { strictComponents: new Set(['Payload']) },
+            );
+            expect(components.Payload.additionalProperties).toBeUndefined();
+            const members = components.Payload[keyword];
+            expect(members).toEqual(branches.map((branch) => ({ ...branch, additionalProperties: false })));
+        },
+    );
+
+    it.each(['oneOf', 'anyOf'] as const)('does not close a ref-only %s discriminator container', (keyword) => {
+        const definitions = Object.fromEntries(
+            ['First', 'Second'].map((name) => [
+                name,
+                {
+                    type: 'object',
+                    properties: { kind: { const: name, type: 'string' }, value: { type: 'string' } },
+                    required: ['kind', 'value'],
+                    additionalProperties: false,
+                },
+            ]),
+        );
+        const components = toOpenApiComponents(
+            {
+                Payload: { [keyword]: [{ $ref: '#/$defs/First' }, { $ref: '#/$defs/Second' }], $defs: definitions },
+            },
+            { strictComponents: new Set(['Payload', 'First', 'Second']) },
+        );
+        expect(components.Payload.type).toBe('object');
+        expect(components.Payload.additionalProperties).toBeUndefined();
+        expect(components.First.additionalProperties).toBe(false);
+        expect(components.Second.additionalProperties).toBe(false);
+        const ajv = new Ajv2020({ strict: false });
+        ajv.addSchema({ $id: 'vertesia://union-test', components: { schemas: components } });
+        const validate = ajv.compile({ $ref: 'vertesia://union-test#/components/schemas/Payload' });
+        expect(validate({ kind: 'First', value: 'accepted' })).toBe(true);
+        expect(validate({ kind: 'Second', value: 'accepted', extra: true })).toBe(false);
+        expect(validate({ kind: 'wrong', value: 'accepted' })).toBe(false);
+    });
+
+    it('preserves an explicit closure on a composed container', () => {
+        const components = toOpenApiComponents(
+            {
+                Payload: {
+                    type: 'object',
+                    oneOf: [{ type: 'object' }, { type: 'string' }],
+                    additionalProperties: false,
+                },
+            },
+            { strictComponents: new Set(['Payload']) },
+        );
+        expect(components.Payload.additionalProperties).toBe(false);
     });
 });

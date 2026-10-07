@@ -5,6 +5,7 @@ import {
     executeInteractionFromActivity,
     getInteractionRateLimitFailure,
     type InteractionExecutionParams,
+    requireCanonicalInteractionOutput,
 } from './executeInteraction.js';
 
 const INT_DETECT_LANGUAGE = 'sys:DetectLanguage';
@@ -74,7 +75,7 @@ export async function detectDocumentLanguage(payload: DSLActivityExecutionPayloa
         return { status: 'skipped', message: 'detection-failed' };
     }
 
-    const result = res.result.object<DetectLanguageResult>();
+    const result = requireCanonicalInteractionOutput(res).object<DetectLanguageResult>();
     const languages = Array.isArray(result.languages)
         ? Array.from(
               new Set(
@@ -87,7 +88,7 @@ export async function detectDocumentLanguage(payload: DSLActivityExecutionPayloa
         : [];
 
     if (languages.length === 0) {
-        log.warn(`detectDocumentLanguage: no language detected for ${objectId}`, { runId: res.id });
+        log.warn(`detectDocumentLanguage: no language detected for ${objectId}`, { runId: res.run.id });
         return { status: 'completed', languages: [] };
     }
 
@@ -95,6 +96,6 @@ export async function detectDocumentLanguage(payload: DSLActivityExecutionPayloa
     // workflows anyway for consistency with the other intake writes.
     await client.objects.update(objectId, { metadata: { ...doc.metadata, languages } }, { suppressWorkflows: true });
 
-    log.debug(`detectDocumentLanguage: set languages for ${objectId}`, { languages, runId: res.id });
+    log.debug(`detectDocumentLanguage: set languages for ${objectId}`, { languages, runId: res.run.id });
     return { status: 'completed', languages };
 }

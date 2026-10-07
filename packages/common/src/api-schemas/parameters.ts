@@ -233,7 +233,7 @@ function coerceParameter(raw: string | string[], target: ParameterTarget): unkno
         const items = target.commaDelimited ? occurrences.flatMap((item) => item.split(',')) : occurrences;
         return items.map((item) => coerceScalar(item, target.items));
     }
-    if (Array.isArray(raw)) return raw;
+    if (Array.isArray(raw)) return [...raw];
     return coerceScalar(raw, target);
 }
 
@@ -245,26 +245,80 @@ function coerceParameter(raw: string | string[], target: ParameterTarget): unkno
  * nothing". Reaching the handler with an unchecked query while the spec advertised a checked one is
  * the failure the whole arrangement exists to prevent.
  */
+interface ParameterObject {
+    properties: JsonObject;
+    required: ReadonlySet<string>;
+}
+function objectParameters(schema: JsonObject | undefined): ParameterObject | undefined {
+    if (!schema || declaredType(schema) !== 'object' || !isPlainObject(schema.properties)) return undefined;
+    return {
+        properties: schema.properties,
+        required: new Set(
+            Array.isArray(schema.required)
+                ? schema.required.filter((name): name is string => typeof name === 'string')
+                : [],
+        ),
+    };
+}
+function literalParameter(schema: unknown, components: Readonly<Record<string, JsonObject>>): string | undefined {
+    if (!isPlainObject(schema)) return undefined;
+    const resolved = resolveSchemaRef(schema, components);
+    if (!resolved) return undefined;
+    if (typeof resolved.const === 'string') return resolved.const;
+    return Array.isArray(resolved.enum) && resolved.enum.length === 1 && typeof resolved.enum[0] === 'string'
+        ? resolved.enum[0]
+        : undefined;
+}
+
 function parameterObjectSchema(
     component: string,
     schema: JsonObject | undefined,
     components: Readonly<Record<string, JsonObject>>,
-): { properties: JsonObject; required: ReadonlySet<string> } {
+    raw: RawApiParameters,
+    location: ApiParameterLocation,
+): ParameterObject {
     const resolved = schema ? resolveSchemaRef(schema, components) : undefined;
-    const properties = resolved?.properties;
-    if (!resolved || declaredType(resolved) !== 'object' || !isPlainObject(properties)) {
-        throw new Error(
-            `Component '${component}' is declared as a query or header contract, but it is not an object ` +
-                'schema with properties, so it cannot be expanded into named parameters. Declare it as an ' +
-                'object whose properties are the parameters.',
-        );
+    const object = objectParameters(resolved);
+    if (object) return object;
+    // A flat parameter union must identify exactly one strict object through a required literal.
+    // Do not merge differing branch targets or infer a branch from caller-supplied optional fields.
+    const variants = resolved?.oneOf ?? resolved?.anyOf;
+    if (Array.isArray(variants) && variants.length > 1 && variants.length <= 256 && variants.every(isPlainObject)) {
+        const branches = variants.map((variant) => resolveSchemaRef(variant, components));
+        const objects = branches.map(objectParameters);
+        const first = objects[0];
+        if (
+            first &&
+            branches.every((branch) => branch?.additionalProperties === false) &&
+            objects.every((branch) => branch !== undefined)
+        ) {
+            const selectors = [...first.required].filter((name) => {
+                const values = objects.map((branch) =>
+                    branch?.required.has(name) ? literalParameter(branch.properties[name], components) : undefined,
+                );
+                return values.every((value) => value !== undefined) && new Set(values).size === branches.length;
+            });
+            const name = selectors[0];
+            if (selectors.length === 1 && name !== undefined) {
+                const key = location === 'header' ? name.toLowerCase() : name;
+                const value = Object.hasOwn(raw, key) ? raw[key] : undefined;
+                if (typeof value === 'string') {
+                    const chosen = objects.find(
+                        (branch) => literalParameter(branch?.properties[name], components) === value,
+                    );
+                    if (chosen) return chosen;
+                }
+                // Missing, repeated, or unknown discriminators are request errors, not declaration
+                // errors. Keep the selector for the original component's AJV validator to reject.
+                return { properties: { [name]: { type: 'string' } }, required: new Set([name]) };
+            }
+        }
     }
-    const required = new Set(
-        Array.isArray(resolved.required)
-            ? resolved.required.filter((name): name is string => typeof name === 'string')
-            : [],
+    throw new Error(
+        `Component '${component}' is declared as a query or header contract, but it is not an object ` +
+            'schema with properties, so it cannot be expanded into named parameters. Declare it as an ' +
+            'object or a strict object union with one required unique literal discriminator.',
     );
-    return { properties, required };
 }
 
 /**
@@ -283,7 +337,7 @@ export function normalizeParameters(
     schema: JsonObject | undefined,
     components: Readonly<Record<string, JsonObject>>,
 ): NormalizedApiParameters {
-    const { properties } = parameterObjectSchema(component, schema, components);
+    const { properties } = parameterObjectSchema(component, schema, components, raw, location);
     const caseInsensitive = location === 'header';
 
     const entries: Array<[string, unknown]> = [];

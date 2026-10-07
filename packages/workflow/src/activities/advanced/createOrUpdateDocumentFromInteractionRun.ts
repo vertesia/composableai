@@ -8,6 +8,7 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { ActivityParamNotFoundError, DocumentNotFoundError } from '../../errors.js';
+import { requireCanonicalInteractionOutput } from '../executeInteraction.js';
 
 interface CreateOrUpdateObjectFromInteractionRunParams {
     /**
@@ -47,6 +48,126 @@ export interface CreateOrUpdateObjectFromInteractionRun
     name: 'createOrUpdateDocumentFromInteractionRun';
 }
 
+interface InteractionRunDocumentSource {
+    id: string;
+    inputName?: string;
+    jsonResult: JSONObject | null;
+    modelId: string;
+    recordedAt: string;
+    textResult?: string;
+}
+
+function objectResult(value: unknown, runId: string): JSONObject {
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error(`Canonical run ${runId} produced a non-object JSON output`);
+    }
+    return value as JSONObject;
+}
+
+async function loadOptionalInputName(
+    client: Awaited<ReturnType<typeof setupActivity>>['client'],
+    runId: string,
+): Promise<string | undefined> {
+    try {
+        const run = await client.runs.retrieve<unknown, Record<string, unknown>>(runId);
+        return typeof run.parameters.name === 'string' ? run.parameters.name : undefined;
+    } catch (error: unknown) {
+        // Canonical output remains authoritative and sufficient under restricted retention. The
+        // host projection is consulted only for the optional input name retained by this reusable
+        // activity's legacy naming behavior.
+        log.debug('Interaction input name metadata is unavailable', {
+            runId,
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return undefined;
+    }
+}
+
+function errorStatus(error: unknown): number | undefined {
+    if (error === null || typeof error !== 'object') return undefined;
+    const status = 'status' in error ? error.status : 'statusCode' in error ? error.statusCode : undefined;
+    return typeof status === 'number' ? status : undefined;
+}
+
+async function loadLegacyRunSource(
+    client: Awaited<ReturnType<typeof setupActivity>>['client'],
+    runId: string,
+): Promise<InteractionRunDocumentSource> {
+    const run = await client.runs
+        .retrieve<Record<string, unknown>, Record<string, unknown>>(runId)
+        .catch((error: unknown) => {
+            const message = error instanceof Error ? error.message : String(error);
+            throw new DocumentNotFoundError(`Error fetching run ${runId}: ${message}`);
+        });
+
+    let jsonResult: JSONObject | null = null;
+    try {
+        jsonResult = run.result.object<JSONObject>();
+    } catch (error: unknown) {
+        log.debug('Result is not valid JSON, will use text content instead', {
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+    return {
+        id: run.id,
+        inputName: typeof run.parameters.name === 'string' ? run.parameters.name : undefined,
+        jsonResult,
+        modelId: run.modelId ?? '',
+        recordedAt: new Date().toISOString(),
+        textResult: jsonResult ? undefined : run.result.text(),
+    };
+}
+
+async function loadRunSource(
+    client: Awaited<ReturnType<typeof setupActivity>>['client'],
+    runId: string,
+): Promise<InteractionRunDocumentSource> {
+    let canonical: Awaited<ReturnType<typeof client.runs.retrieveCanonical>>;
+    try {
+        canonical = await client.runs.retrieveCanonical<JSONObject>(runId);
+    } catch (error: unknown) {
+        // A pre-canonical Studio host has no versioned retrieval route. Preserve the old activity
+        // boundary during a mixed-version rollout; other failures remain visible and retryable.
+        if (errorStatus(error) === 404) return loadLegacyRunSource(client, runId);
+        throw error;
+    }
+    if (canonical.output.status !== 'accepted') {
+        // Runs created before canonical output persistence are explicitly reported as not_recorded.
+        // That is the sole stored-result compatibility case; a missing/pruned accepted result from
+        // a canonical run must not be silently replaced by a weaker legacy projection.
+        if (canonical.output.reason === 'not_recorded') return loadLegacyRunSource(client, runId);
+        throw new DocumentNotFoundError(`Canonical output for run ${runId} is unavailable: ${canonical.output.reason}`);
+    }
+
+    const output = requireCanonicalInteractionOutput(canonical);
+    const generation = output.fragment.generation;
+    const turn = output.fragment.turn;
+    if (generation.status !== 'completed' || turn.status !== 'completed') {
+        throw new DocumentNotFoundError(
+            `Canonical output for run ${runId} is not completed: generation=${generation.status}, turn=${turn.status}`,
+        );
+    }
+    const unsupportedBlock = output.blocks.find(
+        (block) => block.type !== 'json' && block.type !== 'text' && block.type !== 'reasoning',
+    );
+    if (unsupportedBlock) {
+        throw new Error(`Canonical ${unsupportedBlock.type} output cannot update a content object`);
+    }
+    const objects = output.objects<unknown>();
+    if (objects.length > 1) {
+        throw new Error(`Canonical run ${runId} produced multiple JSON outputs`);
+    }
+    const jsonResult = objects[0] === undefined ? null : objectResult(objects[0], runId);
+    return {
+        id: canonical.run.id,
+        inputName: await loadOptionalInputName(client, runId),
+        jsonResult,
+        modelId: generation.resolved_model ?? generation.requested_model,
+        recordedAt: generation.timestamps.recorded_at,
+        textResult: jsonResult ? undefined : output.text(),
+    };
+}
+
 export async function createOrUpdateDocumentFromInteractionRun(
     payload: DSLActivityExecutionPayload<CreateOrUpdateObjectFromInteractionRunParams>,
 ) {
@@ -64,12 +185,7 @@ export async function createOrUpdateDocumentFromInteractionRun(
 
     log.debug('Creating document from interaction result', { runId, objectTypeName });
 
-    const run = await client.runs
-        .retrieve<Record<string, unknown>, Record<string, unknown>>(runId)
-        .catch((e: unknown) => {
-            const message = e instanceof Error ? e.message : String(e);
-            throw new DocumentNotFoundError(`Error fetching run ${runId}: ${message}`);
-        });
+    const run = await loadRunSource(client, runId);
 
     const type = objectTypeName
         ? await client.types.getTypeByName(objectTypeName).catch((e: unknown) => {
@@ -78,20 +194,9 @@ export async function createOrUpdateDocumentFromInteractionRun(
           })
         : undefined;
 
-    const result = run.result;
-    const inputData = run.parameters;
+    const { inputName, jsonResult } = run;
 
-    // Try to parse result as JSON, fallback to text if not valid JSON
-    let jsonResult: JSONObject | null = null;
-    try {
-        jsonResult = result.object<JSONObject>();
-    } catch (e) {
-        log.debug('Result is not valid JSON, will use text content instead', {
-            error: e instanceof Error ? e.message : String(e),
-        });
-    }
-
-    const nameValue = jsonResult?.name || jsonResult?.title || inputData.name || params.fallback_name || undefined;
+    const nameValue = jsonResult?.name || jsonResult?.title || inputName || params.fallback_name || undefined;
     const name = typeof nameValue === 'string' ? nameValue : undefined;
 
     // An interaction with no result schema returns prose, which belongs in `text`. Sending
@@ -111,13 +216,13 @@ export async function createOrUpdateDocumentFromInteractionRun(
         name,
         parent: params.parent ?? undefined,
         properties: jsonResult ?? undefined,
-        text: !jsonResult ? result.text() : undefined,
+        text: run.textResult,
         type: type?.id,
         status: ContentObjectStatus.completed,
         generation_run_info: {
             id: run.id,
-            date: new Date().toISOString(),
-            model: run.modelId ?? '',
+            date: run.recordedAt,
+            model: run.modelId,
             target,
         },
     };

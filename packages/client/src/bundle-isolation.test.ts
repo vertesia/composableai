@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 // Build outputs are required; Turbo runs this package's build before its tests.
@@ -10,15 +10,24 @@ const CLIENT_ENTRIES = [
     { label: 'client default entry (.)', file: path('../lib/index.js') },
     { label: 'client node entry (./node)', file: path('../lib/nodejs/index.js') },
 ];
+const CLIENT_LIB = path('../lib');
 
 /** Markers that prove a runtime schema import leaked into a browser artifact. */
-const FORBIDDEN = ['zod', '_zod', 'ZodObject', 'api-schemas', 'toOpenApiComponents', 'ApiSchemaComponents'];
+const FORBIDDEN = ['zod', '_zod', 'ZodObject', 'api-schemas', 'toOpenApiComponents', 'ApiSchemaComponents', 'require('];
 
 function expectNoSchemaRuntime(file: string, label: string): void {
     const contents = readFileSync(file, 'utf8');
     for (const marker of FORBIDDEN) {
         expect(contents, `${label} must not contain '${marker}'`).not.toContain(marker);
     }
+}
+
+function productionModules(directory: string): string[] {
+    return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+        const file = `${directory}/${entry.name}`;
+        if (entry.isDirectory()) return productionModules(file);
+        return entry.isFile() && entry.name.endsWith('.js') ? [file] : [];
+    });
 }
 
 describe('@vertesia/client consumer runtime isolation', () => {
@@ -33,5 +42,13 @@ describe('@vertesia/client consumer runtime isolation', () => {
         // built, and silently passing would let a packaging regression through unnoticed.
         expect(existsSync(file), `${label} not found at ${file} — has the exports map changed?`).toBe(true);
         expect(readFileSync(file, 'utf8'), `${label} must not import api-schemas`).not.toContain('api-schemas');
+    });
+
+    it('does not import the schema-heavy conversation root from any production module', () => {
+        for (const file of productionModules(CLIENT_LIB)) {
+            expect(readFileSync(file, 'utf8'), `${file} must use a schema-free conversation subpath`).not.toMatch(
+                /from ['"]@llumiverse\/conversation['"]/,
+            );
+        }
     });
 });

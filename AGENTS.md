@@ -17,6 +17,14 @@ This Git repository is a mono-repository built on top of pnpm.
 - `packages/**` contains different packages for different purposes, particularly, `packages/cli` is the Vertesia CLI and `packages/client` is the Vertesia JS Client.
 - `llumiverse` is a Git submodule pointing to another Git repository for LLM connectors
 
+# Canonical Conversation Contracts
+
+`llumiverse/conversation` owns shared conversation Zod schemas and schema-derived TypeScript types.
+Import its schema values through `@llumiverse/conversation/schemas` when composing public host
+request/response envelopes in `packages/common/src/api-schemas`; do not copy canonical record fields
+or create competing conversation interfaces. Host schemas retain their existing registry and generated
+wire-type conventions. See `packages/common/README.md` for the schema ownership and validation flow.
+
 # Code Style
 
 - TypeScript strict mode with `noUnusedLocals`/`noUnusedParameters` enabled

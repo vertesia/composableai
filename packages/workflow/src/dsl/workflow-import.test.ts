@@ -1,4 +1,4 @@
-import { TestWorkflowEnvironment } from '@temporalio/testing';
+import type { TestWorkflowEnvironment } from '@temporalio/testing';
 import { bundleWorkflowCode, Worker, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
 import {
     ContentEventName,
@@ -7,6 +7,7 @@ import {
     type DSLWorkflowExecutionPayload,
 } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { createLocalWorkflowTestEnvironment } from '../test-utils/createLocalWorkflowTestEnvironment.js';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from './setup/ActivityContext.js';
 
@@ -32,7 +33,7 @@ describe('DSL Workflow import vars', () => {
     let workflowBundle: WorkflowBundleWithSourceMap;
 
     beforeAll(async () => {
-        testEnv = await TestWorkflowEnvironment.createLocal();
+        testEnv = await createLocalWorkflowTestEnvironment();
         workflowBundle = await bundleWorkflowCode({
             workflowsPath: new URL('./dsl-workflow.ts', import.meta.url).pathname,
         });

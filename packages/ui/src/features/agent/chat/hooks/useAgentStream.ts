@@ -42,6 +42,7 @@ export interface UseAgentStreamResult {
         status: NonNullable<Common.AgentMessageDetails['_deliveryStatus']>,
     ) => void;
     /** Remove optimistic messages matching a predicate */
+    consumeCanonicalControl: (notification: Common.ExperimentalAgentRunControlNotification) => void;
     removeOptimisticMessages: (predicate: (msg: AgentMessage) => boolean) => void;
     /**
      * Re-open the SSE stream for the SAME agentRunId without clearing the existing
@@ -221,10 +222,23 @@ function getStreamingReplacementKeys(message: AgentMessage): string[] {
  * File-processing SYSTEM messages are passed through to the messages array
  * (Option A from the plan) so downstream hooks can react to them.
  */
+export function isLegacyConversationContent(message: AgentMessage): boolean {
+    return (
+        message.type === AgentMessageType.QUESTION ||
+        message.type === AgentMessageType.ANSWER ||
+        message.type === AgentMessageType.COMPLETE ||
+        message.type === AgentMessageType.STREAMING_CHUNK ||
+        (message.type === AgentMessageType.THOUGHT &&
+            (message.details?.display_role === 'tool_preamble' || message.details?.display_role === 'reasoning'))
+    );
+}
+
 export function useAgentStream(
     client: VertesiaClient,
     agentRunId: string,
     onMessage?: (message: AgentMessage) => void,
+    canonicalContent = false,
+    onLegacyNotificationDelivered?: (timestamp: number) => void,
 ): UseAgentStreamResult {
     const [messages, setMessages] = useState<AgentMessage[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
@@ -232,8 +246,12 @@ export function useAgentStream(
         useState<UseAgentStreamResult['initialHistoryStatus']>('loading');
     const [agentRunStatus, setAgentRunStatus] = useState<string | null>(null);
     const [workflowRunId, setWorkflowRunId] = useState<string | null>(null);
+    const canonicalContentRef = useRef(canonicalContent);
+    canonicalContentRef.current = canonicalContent;
     const onMessageRef = useRef(onMessage);
     onMessageRef.current = onMessage;
+    const onLegacyNotificationDeliveredRef = useRef(onLegacyNotificationDelivered);
+    onLegacyNotificationDeliveredRef.current = onLegacyNotificationDelivered;
 
     // Server-side file processing status updates
     const [serverFileUpdates, setServerFileUpdates] = useState<Map<string, ConversationFile>>(new Map());
@@ -374,6 +392,17 @@ export function useAgentStream(
                     // stream. Track replay status once, before the cursor advances below —
                     // every replay-sensitive consumer in this callback must use it.
                     const isReplay = Boolean(message.timestamp && message.timestamp <= lastDeliveredTsRef.current);
+                    // Compatibility delivery position only; content still comes from the canonical source.
+                    // A collapsed consumer can resume old /updates without treating filtered mirrors as unseen.
+                    if (!isReplay) onLegacyNotificationDeliveredRef.current?.(message.timestamp);
+                    if (
+                        canonicalContentRef.current &&
+                        (isLegacyConversationContent(message) || message.details?.canonical_control !== undefined)
+                    ) {
+                        if (message.timestamp && message.timestamp > lastDeliveredTsRef.current)
+                            lastDeliveredTsRef.current = message.timestamp;
+                        return;
+                    }
                     // Only forward genuinely new deliveries so onMessage consumers
                     // never treat replayed events as fresh ones.
                     if (!isReplay) {
@@ -492,7 +521,13 @@ export function useAgentStream(
                     closeOnIdle: false,
                     onHistoryLoaded: (historical) => {
                         if (abortController.signal.aborted) return;
-                        const timelineMessages = historical.filter(shouldStoreTimelineMessage);
+                        const timelineMessages = historical.filter(
+                            (message) =>
+                                shouldStoreTimelineMessage(message) &&
+                                (!canonicalContentRef.current ||
+                                    (!isLegacyConversationContent(message) &&
+                                        message.details?.canonical_control === undefined)),
+                        );
                         let latestFileSnapshot: FileProcessingDetails | undefined;
                         let latestFileSnapshotTs = Number.NEGATIVE_INFINITY;
                         // Advance the watermark synchronously before React processes the
@@ -601,6 +636,20 @@ export function useAgentStream(
         };
     }, [agentRunId, streamNonce, client.agents, flushStreamingChunks, cancelScheduledStreamingFlush]);
 
+    // Clear only legacy content when the service's canonical source is established. Status and tool progress remain.
+    useEffect(() => {
+        if (!canonicalContent) return;
+        setMessages((previous) =>
+            previous.filter(
+                (message) =>
+                    Boolean(message.details?._optimistic) ||
+                    (!isLegacyConversationContent(message) && message.details?.canonical_control === undefined),
+            ),
+        );
+        pendingStreamingChunks.current.clear();
+        setStreamingMessages(new Map());
+    }, [canonicalContent]);
+
     // Flush pending streaming chunks when tab becomes visible.
     useEffect(() => {
         const handleVisibilityChange = () => {
@@ -648,6 +697,25 @@ export function useAgentStream(
         setMessages((prev) => prev.filter((m) => !predicate(m)));
     }, []);
 
+    const consumeCanonicalControl = useCallback(
+        (notification: Common.ExperimentalAgentRunControlNotification) => {
+            const ack = notification.control.ack;
+            if (notification.agent_run_id !== agentRunId || !ack) return;
+            if ((notification.scope === 'root') !== (notification.workstream_id === undefined)) return;
+            // Local delivery state only. The actual accepted user turn is read from canonical storage.
+            setMessages((previous) =>
+                previous.map((message) =>
+                    message.details?._optimistic &&
+                    getClientMessageId(message) === ack &&
+                    message.workstream_id === notification.workstream_id
+                        ? withDeliveryStatus(message, 'consumed')
+                        : message,
+                ),
+            );
+        },
+        [agentRunId],
+    );
+
     return {
         messages,
         streamingMessages,
@@ -657,6 +725,7 @@ export function useAgentStream(
         addOptimisticMessage,
         updateOptimisticMessageStatus,
         removeOptimisticMessages,
+        consumeCanonicalControl,
         reconnect,
         agentRunStatus,
         workflowRunId,

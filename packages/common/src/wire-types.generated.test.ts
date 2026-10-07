@@ -33,6 +33,232 @@ interface Checks {
         W.ACEUpdatePayload,
         z.infer<typeof import('./api-schemas/access-control.js').ACEUpdatePayloadSchema>
     >;
+    ExperimentalPublishAgentAssetPayload: Same<
+        W.ExperimentalPublishAgentAssetPayload,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalPublishAgentAssetPayloadSchema>
+    >;
+    ExperimentalPublishedAgentAsset: Same<
+        W.ExperimentalPublishedAgentAsset,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalPublishedAgentAssetSchema>
+    >;
+    ExperimentalAgentAssetPublication: Same<
+        W.ExperimentalAgentAssetPublication,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetPublicationSchema>
+    >;
+    ExperimentalExtractAgentAssetPayload: Same<
+        W.ExperimentalExtractAgentAssetPayload,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalExtractAgentAssetPayloadSchema>
+    >;
+    ExperimentalAgentAssetDerivationSource: Same<
+        W.ExperimentalAgentAssetDerivationSource,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetDerivationSourceSchema>
+    >;
+    ExperimentalAgentAssetDerivationTransform: Same<
+        W.ExperimentalAgentAssetDerivationTransform,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetDerivationTransformSchema>
+    >;
+    ExperimentalAgentAssetDerivation: Same<
+        W.ExperimentalAgentAssetDerivation,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetDerivationSchema>
+    >;
+    ExperimentalAgentAssetExtractionPending: Same<
+        W.ExperimentalAgentAssetExtractionPending,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionPendingSchema>
+    >;
+    ExperimentalAgentAssetExtractionAvailable: Same<
+        W.ExperimentalAgentAssetExtractionAvailable,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionAvailableSchema>
+    >;
+    ExperimentalAgentAssetExtractionFailed: Same<
+        W.ExperimentalAgentAssetExtractionFailed,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionFailedSchema>
+    >;
+    ExperimentalAgentAssetExtraction: Same<
+        W.ExperimentalAgentAssetExtraction,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionSchema>
+    >;
+    ExperimentalClaimAgentAssetExtractionPayload: Same<
+        W.ExperimentalClaimAgentAssetExtractionPayload,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalClaimAgentAssetExtractionPayloadSchema>
+    >;
+    ExperimentalAgentAssetExtractionClaim: Same<
+        W.ExperimentalAgentAssetExtractionClaim,
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionClaimSchema>
+    >;
+    AgentConversationArchiveSource: Same<
+        W.AgentConversationArchiveSource,
+        z.infer<typeof import('./api-schemas/agent-conversation-migration.js').AgentConversationArchiveSourceSchema>
+    >;
+    AgentConversationNativeArchiveAttestation: Same<
+        W.AgentConversationNativeArchiveAttestation,
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').AgentConversationNativeArchiveAttestationSchema
+        >
+    >;
+    ImportAgentRunConversationArchivePayload: Same<
+        W.ImportAgentRunConversationArchivePayload,
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').ImportAgentRunConversationArchivePayloadSchema
+        >
+    >;
+    ImportAgentRunConversationArchiveResponse: Same<
+        W.ImportAgentRunConversationArchiveResponse,
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').ImportAgentRunConversationArchiveResponseSchema
+        >
+    >;
+    ExperimentalAgentProcessingActivityEvidence: Same<
+        W.ExperimentalAgentProcessingActivityEvidence,
+        z.infer<typeof import('./api-schemas/agent-processing.js').ExperimentalAgentProcessingActivityEvidenceSchema>
+    >;
+    ExperimentalClaimAgentProcessingPayload: Same<
+        W.ExperimentalClaimAgentProcessingPayload,
+        z.infer<typeof import('./api-schemas/agent-processing.js').ExperimentalClaimAgentProcessingPayloadSchema>
+    >;
+    ExperimentalAgentProcessingClaim: Same<
+        W.ExperimentalAgentProcessingClaim,
+        z.infer<typeof import('./api-schemas/agent-processing.js').ExperimentalAgentProcessingClaimSchema>
+    >;
+    ExperimentalAgentRestartAdmissionExecution: Same<
+        W.ExperimentalAgentRestartAdmissionExecution,
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentRestartAdmissionExecutionSchema
+        >
+    >;
+    ExperimentalAgentRestartAdmissionPayload: Same<
+        W.ExperimentalAgentRestartAdmissionPayload,
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentRestartAdmissionPayloadSchema
+        >
+    >;
+    ExperimentalAgentRestartAdmissionResponse: Same<
+        W.ExperimentalAgentRestartAdmissionResponse,
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentRestartAdmissionResponseSchema
+        >
+    >;
+    ExperimentalAgentWorkstreamRestartAdmissionPayload: Same<
+        W.ExperimentalAgentWorkstreamRestartAdmissionPayload,
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentWorkstreamRestartAdmissionPayloadSchema
+        >
+    >;
+    ExperimentalAgentWorkstreamRestartAdmissionResponse: Same<
+        W.ExperimentalAgentWorkstreamRestartAdmissionResponse,
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentWorkstreamRestartAdmissionResponseSchema
+        >
+    >;
+    ExperimentalAgentWorkstreamTerminalPayload: Same<
+        W.ExperimentalAgentWorkstreamTerminalPayload,
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentWorkstreamTerminalPayloadSchema
+        >
+    >;
+    ExperimentalAgentWorkstreamTerminalResponse: Same<
+        W.ExperimentalAgentWorkstreamTerminalResponse,
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentWorkstreamTerminalResponseSchema
+        >
+    >;
+    ExperimentalAdmitAgentGenerationInitialPayload: Same<
+        W.ExperimentalAdmitAgentGenerationInitialPayload,
+        z.infer<typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationInitialPayloadSchema>
+    >;
+    ExperimentalAdmitAgentGenerationPayload: Same<
+        W.ExperimentalAdmitAgentGenerationPayload,
+        z.infer<typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationPayloadSchema>
+    >;
+    ExperimentalAdmitAgentGenerationUserPayload: Same<
+        W.ExperimentalAdmitAgentGenerationUserPayload,
+        z.infer<typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationUserPayloadSchema>
+    >;
+    ExperimentalAdmitAgentGenerationToolsPayload: Same<
+        W.ExperimentalAdmitAgentGenerationToolsPayload,
+        z.infer<typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationToolsPayloadSchema>
+    >;
+    ExperimentalAdmitAgentGenerationCheckpointPayload: Same<
+        W.ExperimentalAdmitAgentGenerationCheckpointPayload,
+        z.infer<
+            typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationCheckpointPayloadSchema
+        >
+    >;
+    ExperimentalAgentRoutingIntent: Same<
+        W.ExperimentalAgentRoutingIntent,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingIntentSchema>
+    >;
+    ExperimentalAgentRoutingControlChange: Same<
+        W.ExperimentalAgentRoutingControlChange,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlChangeSchema>
+    >;
+    ExperimentalAgentRoutingControlBinding: Same<
+        W.ExperimentalAgentRoutingControlBinding,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlBindingSchema>
+    >;
+    ExperimentalUpdateAgentRoutingControlPayload: Same<
+        W.ExperimentalUpdateAgentRoutingControlPayload,
+        z.infer<
+            typeof import('./api-schemas/agent-routing-control.js').ExperimentalUpdateAgentRoutingControlPayloadSchema
+        >
+    >;
+    ExperimentalAgentRoutingControlReceipt: Same<
+        W.ExperimentalAgentRoutingControlReceipt,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlReceiptSchema>
+    >;
+    ExperimentalAgentRoutingInitialReceipt: Same<
+        W.ExperimentalAgentRoutingInitialReceipt,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingInitialReceiptSchema>
+    >;
+    ExperimentalAgentRoutingChangeReceipt: Same<
+        W.ExperimentalAgentRoutingChangeReceipt,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingChangeReceiptSchema>
+    >;
+    ExperimentalAgentRoutingControlSelector: Same<
+        W.ExperimentalAgentRoutingControlSelector,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlSelectorSchema>
+    >;
+    ExperimentalAgentRoutingControlQuery: Same<
+        W.ExperimentalAgentRoutingControlQuery,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlQuerySchema>
+    >;
+    ExperimentalAgentRoutingControlResponse: Same<
+        W.ExperimentalAgentRoutingControlResponse,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlResponseSchema>
+    >;
+    ExperimentalAgentRoutingOriginExecution: Same<
+        W.ExperimentalAgentRoutingOriginExecution,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingOriginExecutionSchema>
+    >;
+    ExperimentalAgentRoutingExecutionBinding: Same<
+        W.ExperimentalAgentRoutingExecutionBinding,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingExecutionBindingSchema>
+    >;
+    ExperimentalAgentGenerationAdmissionPayload: Same<
+        W.ExperimentalAgentGenerationAdmissionPayload,
+        z.infer<
+            typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentGenerationAdmissionPayloadSchema
+        >
+    >;
+    ExperimentalAgentGenerationAdmissionReceipt: Same<
+        W.ExperimentalAgentGenerationAdmissionReceipt,
+        z.infer<
+            typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentGenerationAdmissionReceiptSchema
+        >
+    >;
+    ExperimentalAgentRoutingStatusPayload: Same<
+        W.ExperimentalAgentRoutingStatusPayload,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingStatusPayloadSchema>
+    >;
+    ExperimentalAgentRoutingStatusResponse: Same<
+        W.ExperimentalAgentRoutingStatusResponse,
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingStatusResponseSchema>
+    >;
+    ExperimentalCanonicalIngestionSourceBinding: Same<
+        W.ExperimentalCanonicalIngestionSourceBinding,
+        z.infer<
+            typeof import('./api-schemas/agent-routing-control.js').ExperimentalCanonicalIngestionSourceBindingSchema
+        >
+    >;
     AnalyticsAxis: Same<W.AnalyticsAxis, z.infer<typeof import('./api-schemas/analytics.js').AnalyticsAxisSchema>>;
     RunAnalyticsQuery: Same<
         W.RunAnalyticsQuery,
@@ -842,6 +1068,448 @@ interface Checks {
     WebsiteCredentialMetadataUpdate: Same<
         W.WebsiteCredentialMetadataUpdate,
         z.infer<typeof import('./api-schemas/secrets.js').WebsiteCredentialMetadataUpdateSchema>
+    >;
+    ExperimentalCanonicalAsyncCompletionOptions: Same<
+        W.ExperimentalCanonicalAsyncCompletionOptions,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalAsyncCompletionOptionsSchema
+        >
+    >;
+    ExperimentalCanonicalResumeAccepted: Same<
+        W.ExperimentalCanonicalResumeAccepted,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeAcceptedSchema
+        >
+    >;
+    ExperimentalCanonicalResumeTelemetry: Same<
+        W.ExperimentalCanonicalResumeTelemetry,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeTelemetrySchema
+        >
+    >;
+    ExperimentalCanonicalToolResultsPayload: Same<
+        W.ExperimentalCanonicalToolResultsPayload,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalToolResultsPayloadSchema
+        >
+    >;
+    ExperimentalCanonicalUserMessagePayload: Same<
+        W.ExperimentalCanonicalUserMessagePayload,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalUserMessagePayloadSchema
+        >
+    >;
+    ExperimentalCanonicalResumeInputAppend: Same<
+        W.ExperimentalCanonicalResumeInputAppend,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeInputAppendSchema
+        >
+    >;
+    ExperimentalCanonicalContinuationAnchor: Same<
+        W.ExperimentalCanonicalContinuationAnchor,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalContinuationAnchorSchema
+        >
+    >;
+    ExperimentalCanonicalCheckpointSummarySource: Same<
+        W.ExperimentalCanonicalCheckpointSummarySource,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalCheckpointSummarySourceSchema
+        >
+    >;
+    ExperimentalCanonicalCheckpointSummaryPayload: Same<
+        W.ExperimentalCanonicalCheckpointSummaryPayload,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalCheckpointSummaryPayloadSchema
+        >
+    >;
+    ExperimentalCanonicalUserMessageRequest: Same<
+        W.ExperimentalCanonicalUserMessageRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalUserMessageRequestSchema
+        >
+    >;
+    InitialAuthoringMedia: Same<
+        W.InitialAuthoringMedia,
+        z.infer<typeof import('./api-schemas/run-conversation.js').InitialAuthoringMediaSchema>
+    >;
+    InitialAuthoringSegment: Same<
+        W.InitialAuthoringSegment,
+        z.infer<typeof import('./api-schemas/run-conversation.js').InitialAuthoringSegmentSchema>
+    >;
+    InitialAuthoringInputRecord: Same<
+        W.InitialAuthoringInputRecord,
+        z.infer<typeof import('./api-schemas/run-conversation.js').InitialAuthoringInputRecordSchema>
+    >;
+    ExperimentalInitialAuthoringViewQuery: Same<
+        W.ExperimentalInitialAuthoringViewQuery,
+        z.infer<typeof import('./api-schemas/run-conversation.js').ExperimentalInitialAuthoringViewQuerySchema>
+    >;
+    AvailableInitialAuthoringView: Same<
+        W.AvailableInitialAuthoringView,
+        z.infer<typeof import('./api-schemas/run-conversation.js').AvailableInitialAuthoringViewSchema>
+    >;
+    UnavailableInitialAuthoringView: Same<
+        W.UnavailableInitialAuthoringView,
+        z.infer<typeof import('./api-schemas/run-conversation.js').UnavailableInitialAuthoringViewSchema>
+    >;
+    ExperimentalInitialAuthoringViewResponse: Same<
+        W.ExperimentalInitialAuthoringViewResponse,
+        z.infer<typeof import('./api-schemas/run-conversation.js').ExperimentalInitialAuthoringViewResponseSchema>
+    >;
+    AvailableRunConversation: Same<
+        W.AvailableRunConversation,
+        z.infer<typeof import('./api-schemas/run-conversation.js').AvailableRunConversationSchema>
+    >;
+    UnavailableRunConversation: Same<
+        W.UnavailableRunConversation,
+        z.infer<typeof import('./api-schemas/run-conversation.js').UnavailableRunConversationSchema>
+    >;
+    RunConversationResponse: Same<
+        W.RunConversationResponse,
+        z.infer<typeof import('./api-schemas/run-conversation.js').RunConversationResponseSchema>
+    >;
+    ExperimentalCanonicalIngestionConcreteTarget: Same<
+        W.ExperimentalCanonicalIngestionConcreteTarget,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionConcreteTargetSchema
+        >
+    >;
+    ExperimentalCanonicalIngestionCount: Same<
+        W.ExperimentalCanonicalIngestionCount,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionCountSchema
+        >
+    >;
+    ExperimentalCanonicalIngestionProjection: Same<
+        W.ExperimentalCanonicalIngestionProjection,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionProjectionSchema
+        >
+    >;
+    ExperimentalCanonicalIngestionPreparationViewQuery: Same<
+        W.ExperimentalCanonicalIngestionPreparationViewQuery,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionPreparationViewQuerySchema
+        >
+    >;
+    ExperimentalCanonicalIngestionPreparationViewResponse: Same<
+        W.ExperimentalCanonicalIngestionPreparationViewResponse,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionPreparationViewResponseSchema
+        >
+    >;
+    ExperimentalRunConversationInspectionQuery: Same<
+        W.ExperimentalRunConversationInspectionQuery,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalRunConversationInspectionQuerySchema
+        >
+    >;
+    ExperimentalRunConversationInspectionResponse: Same<
+        W.ExperimentalRunConversationInspectionResponse,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalRunConversationInspectionResponseSchema
+        >
+    >;
+    ExperimentalCanonicalIngestionRecovery: Same<
+        W.ExperimentalCanonicalIngestionRecovery,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionRecoverySchema
+        >
+    >;
+    ExperimentalCanonicalIngestionRecoveryViewQuery: Same<
+        W.ExperimentalCanonicalIngestionRecoveryViewQuery,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionRecoveryViewQuerySchema
+        >
+    >;
+    ExperimentalCanonicalIngestionRecoveryViewResponse: Same<
+        W.ExperimentalCanonicalIngestionRecoveryViewResponse,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionRecoveryViewResponseSchema
+        >
+    >;
+    AvailableCanonicalIngestionPreparationView: Same<
+        W.AvailableCanonicalIngestionPreparationView,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').AvailableCanonicalIngestionPreparationViewSchema
+        >
+    >;
+    UnavailableCanonicalIngestionPreparationView: Same<
+        W.UnavailableCanonicalIngestionPreparationView,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').UnavailableCanonicalIngestionPreparationViewSchema
+        >
+    >;
+    AvailableCanonicalIngestionRecoveryView: Same<
+        W.AvailableCanonicalIngestionRecoveryView,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').AvailableCanonicalIngestionRecoveryViewSchema
+        >
+    >;
+    UnavailableCanonicalIngestionRecoveryView: Same<
+        W.UnavailableCanonicalIngestionRecoveryView,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').UnavailableCanonicalIngestionRecoveryViewSchema
+        >
+    >;
+    ExperimentalCanonicalIngestionBudgetQueueViewQuery: Same<
+        W.ExperimentalCanonicalIngestionBudgetQueueViewQuery,
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema
+        >
+    >;
+    ExperimentalCanonicalInitialAuthoringResponse: Same<
+        W.ExperimentalCanonicalInitialAuthoringResponse,
+        z.infer<
+            typeof import('./api-schemas/canonical-initial-authoring.js').ExperimentalCanonicalInitialAuthoringResponseSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionInitialState: Same<
+        W.ExperimentalCanonicalInteractionInitialState,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionInitialStateSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionNewState: Same<
+        W.ExperimentalCanonicalInteractionNewState,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionNewStateSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionDocumentState: Same<
+        W.ExperimentalCanonicalInteractionDocumentState,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionDocumentStateSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionReferenceState: Same<
+        W.ExperimentalCanonicalInteractionReferenceState,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReferenceStateSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionConversationReference: Same<
+        W.ExperimentalCanonicalInteractionConversationReference,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionConversationReferenceSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionHeaders: Same<
+        W.ExperimentalCanonicalInteractionHeaders,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionHeadersSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionRetrievalQuery: Same<
+        W.ExperimentalCanonicalInteractionRetrievalQuery,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRetrievalQuerySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionReturnPolicy: Same<
+        W.ExperimentalCanonicalInteractionReturnPolicy,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReturnPolicySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionAutoTurnSelection: Same<
+        W.ExperimentalCanonicalInteractionAutoTurnSelection,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionAutoTurnSelectionSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionNoneTurnSelection: Same<
+        W.ExperimentalCanonicalInteractionNoneTurnSelection,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionNoneTurnSelectionSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionRequiredTurnSelection: Same<
+        W.ExperimentalCanonicalInteractionRequiredTurnSelection,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRequiredTurnSelectionSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionTurnSelection: Same<
+        W.ExperimentalCanonicalInteractionTurnSelection,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionTurnSelectionSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionExecutionConfiguration: Same<
+        W.ExperimentalCanonicalInteractionExecutionConfiguration,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionConfigurationSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionResultSchemaInput: Same<
+        W.ExperimentalCanonicalInteractionResultSchemaInput,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionResultSchemaInputSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionInlinePrompt: Same<
+        W.ExperimentalCanonicalInteractionInlinePrompt,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionInlinePromptSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionExecutionRequest: Same<
+        W.ExperimentalCanonicalInteractionExecutionRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionRequestSchema
+        >
+    >;
+    ExperimentalCanonicalNamedInteractionExecutionRequest: Same<
+        W.ExperimentalCanonicalNamedInteractionExecutionRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalNamedInteractionExecutionRequestSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionModelSwitchBinding: Same<
+        W.ExperimentalCanonicalInteractionModelSwitchBinding,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionModelSwitchBindingSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionModelSwitchPrepareRequest: Same<
+        W.ExperimentalCanonicalInteractionModelSwitchPrepareRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionModelSwitchPrepareRequestSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionModelSwitchPrepareResult: Same<
+        W.ExperimentalCanonicalInteractionModelSwitchPrepareResult,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionModelSwitchPrepareResultSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionDocumentHistory: Same<
+        W.ExperimentalCanonicalInteractionDocumentHistory,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionDocumentHistorySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionReferenceHistory: Same<
+        W.ExperimentalCanonicalInteractionReferenceHistory,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReferenceHistorySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionUnavailableHistory: Same<
+        W.ExperimentalCanonicalInteractionUnavailableHistory,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionUnavailableHistorySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionHistory: Same<
+        W.ExperimentalCanonicalInteractionHistory,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionHistorySchema
+        >
+    >;
+    ExperimentalCanonicalInteractionRun: Same<
+        W.ExperimentalCanonicalInteractionRun,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRunSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionAcceptedOutput: Same<
+        W.ExperimentalCanonicalInteractionAcceptedOutput,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionAcceptedOutputSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionUnavailableOutput: Same<
+        W.ExperimentalCanonicalInteractionUnavailableOutput,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionUnavailableOutputSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionOutput: Same<
+        W.ExperimentalCanonicalInteractionOutput,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionOutputSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionExecutionResult: Same<
+        W.ExperimentalCanonicalInteractionExecutionResult,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionResultSchema
+        >
+    >;
+    ExperimentalCanonicalVirtualGenerationBinding: Same<
+        W.ExperimentalCanonicalVirtualGenerationBinding,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalVirtualGenerationBindingSchema
+        >
+    >;
+    ExperimentalCanonicalAgentAcceptanceTarget: Same<
+        W.ExperimentalCanonicalAgentAcceptanceTarget,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalAgentAcceptanceTargetSchema
+        >
+    >;
+    ExperimentalCanonicalInitialAgentStreamRequest: Same<
+        W.ExperimentalCanonicalInitialAgentStreamRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInitialAgentStreamRequestSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionStreamRequest: Same<
+        W.ExperimentalCanonicalInteractionStreamRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamRequestSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionStreamOpened: Same<
+        W.ExperimentalCanonicalInteractionStreamOpened,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamOpenedSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionStreamResumed: Same<
+        W.ExperimentalCanonicalInteractionStreamResumed,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamResumedSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionAcceptedRecoveryOpened: Same<
+        W.ExperimentalCanonicalInteractionAcceptedRecoveryOpened,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionAcceptedRecoveryOpenedSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionConversationEvent: Same<
+        W.ExperimentalCanonicalInteractionConversationEvent,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionConversationEventSchema
+        >
+    >;
+    ExperimentalCanonicalInteractionStreamEnvelope: Same<
+        W.ExperimentalCanonicalInteractionStreamEnvelope,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamEnvelopeSchema
+        >
+    >;
+    ExperimentalCanonicalToolApprovalReviewStreamRequest: Same<
+        W.ExperimentalCanonicalToolApprovalReviewStreamRequest,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalToolApprovalReviewStreamRequestSchema
+        >
+    >;
+    ExperimentalAdmitAgentGenerationToolApprovalReviewPayload: Same<
+        W.ExperimentalAdmitAgentGenerationToolApprovalReviewPayload,
+        z.infer<
+            typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationToolApprovalReviewPayloadSchema
+        >
+    >;
+    ExperimentalCanonicalInitialIngestionAccepted: Same<
+        W.ExperimentalCanonicalInitialIngestionAccepted,
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInitialIngestionAcceptedSchema
+        >
     >;
     FindPayload: Same<W.FindPayload, z.infer<typeof import('./api-schemas/content.js').FindPayloadSchema>>;
     GenericCommandResponse: Same<
@@ -1672,6 +2340,14 @@ interface Checks {
         W.InitialToolCall,
         z.infer<typeof import('./api-schemas/interaction.js').InitialToolCallSchema>
     >;
+    ConversationProcessingPolicy: Same<
+        W.ConversationProcessingPolicy,
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationProcessingPolicySchema>
+    >;
+    ConversationToolResultExternalizationPolicy: Same<
+        W.ConversationToolResultExternalizationPolicy,
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationToolResultExternalizationPolicySchema>
+    >;
     AsyncConversationExecutionPayload: Same<
         W.AsyncConversationExecutionPayload,
         z.infer<typeof import('./api-schemas/interaction.js').AsyncConversationExecutionPayloadSchema>
@@ -1703,6 +2379,34 @@ interface Checks {
     StreamingOptions: Same<
         W.StreamingOptions,
         z.infer<typeof import('./api-schemas/interaction.js').StreamingOptionsSchema>
+    >;
+    CanonicalContinuationState: Same<
+        W.CanonicalContinuationState,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalContinuationStateSchema>
+    >;
+    CanonicalPendingApplicationToolCall: Same<
+        W.CanonicalPendingApplicationToolCall,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalPendingApplicationToolCallSchema>
+    >;
+    CanonicalConversationHeadScope: Same<
+        W.CanonicalConversationHeadScope,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeSchema>
+    >;
+    CanonicalConversationHeadScopeQuery: Same<
+        W.CanonicalConversationHeadScopeQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeQuerySchema>
+    >;
+    ConversationAcceptedGenerationEvidence: Same<
+        W.ConversationAcceptedGenerationEvidence,
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationAcceptedGenerationEvidenceSchema>
+    >;
+    CanonicalScopedGenerationEvidence: Same<
+        W.CanonicalScopedGenerationEvidence,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalScopedGenerationEvidenceSchema>
+    >;
+    CanonicalAsyncCompletionResult: Same<
+        W.CanonicalAsyncCompletionResult,
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalAsyncCompletionResultSchema>
     >;
     AsyncCompletionOptions: Same<
         W.AsyncCompletionOptions,
@@ -2525,6 +3229,26 @@ interface Checks {
         W.RunBudgetCapabilityQuery,
         z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilityQuerySchema>
     >;
+    AppendRunConversationProgramTurnPayload: Same<
+        W.AppendRunConversationProgramTurnPayload,
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationProgramTurnPayloadSchema>
+    >;
+    AppendRunConversationProgramTurnResponse: Same<
+        W.AppendRunConversationProgramTurnResponse,
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationProgramTurnResponseSchema
+        >
+    >;
+    AppendRunConversationToolResultsPayload: Same<
+        W.AppendRunConversationToolResultsPayload,
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsPayloadSchema>
+    >;
+    AppendRunConversationToolResultsResponse: Same<
+        W.AppendRunConversationToolResultsResponse,
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsResponseSchema
+        >
+    >;
     ExecutionRunDocRef: Same<
         W.ExecutionRunDocRef,
         z.infer<typeof import('./api-schemas/interaction.js').ExecutionRunDocRefSchema>
@@ -2724,9 +3448,77 @@ interface Checks {
         W.StreamAgentRunQuery,
         z.infer<typeof import('./api-schemas/agent-runs.js').StreamAgentRunQuerySchema>
     >;
+    ExperimentalAgentConversationStreamQuery: Same<
+        W.ExperimentalAgentConversationStreamQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamQuerySchema>
+    >;
+    ExperimentalAgentConversationSourceUninitialized: Same<
+        W.ExperimentalAgentConversationSourceUninitialized,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceUninitializedSchema>
+    >;
+    ExperimentalAgentConversationSourceInitialized: Same<
+        W.ExperimentalAgentConversationSourceInitialized,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceInitializedSchema>
+    >;
+    ExperimentalAgentConversationSourceDescriptor: Same<
+        W.ExperimentalAgentConversationSourceDescriptor,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceDescriptorSchema>
+    >;
+    ExperimentalAgentConversationEvent: Same<
+        W.ExperimentalAgentConversationEvent,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationEventSchema>
+    >;
+    ExperimentalAgentConversationPreviewUnavailable: Same<
+        W.ExperimentalAgentConversationPreviewUnavailable,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationPreviewUnavailableSchema>
+    >;
+    ExperimentalAgentConversationAcceptedOutput: Same<
+        W.ExperimentalAgentConversationAcceptedOutput,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputSchema>
+    >;
+    ExperimentalAgentConversationAcceptedOutputHistoryQuery: Same<
+        W.ExperimentalAgentConversationAcceptedOutputHistoryQuery,
+        z.infer<
+            typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema
+        >
+    >;
+    ExperimentalAgentConversationAcceptedOutputHistoryPage: Same<
+        W.ExperimentalAgentConversationAcceptedOutputHistoryPage,
+        z.infer<
+            typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryPageSchema
+        >
+    >;
+    ExperimentalAgentConversationTranscriptQuery: Same<
+        W.ExperimentalAgentConversationTranscriptQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationTranscriptQuerySchema>
+    >;
+    ExperimentalAgentConversationTranscriptPage: Same<
+        W.ExperimentalAgentConversationTranscriptPage,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationTranscriptPageSchema>
+    >;
+    ExperimentalAgentConversationStreamEnvelope: Same<
+        W.ExperimentalAgentConversationStreamEnvelope,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamEnvelopeSchema>
+    >;
+    ExperimentalAgentConversationRunStatus: Same<
+        W.ExperimentalAgentConversationRunStatus,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationRunStatusSchema>
+    >;
+    ExperimentalAgentRunStreamEnvelope: Same<
+        W.ExperimentalAgentRunStreamEnvelope,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunStreamEnvelopeSchema>
+    >;
+    ExperimentalAgentRunUpdatesResponse: Same<
+        W.ExperimentalAgentRunUpdatesResponse,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunUpdatesResponseSchema>
+    >;
     AgentRunDetailsQuery: Same<
         W.AgentRunDetailsQuery,
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunDetailsQuerySchema>
+    >;
+    AgentRunAccessQuery: Same<
+        W.AgentRunAccessQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunAccessQuerySchema>
     >;
     AgentRunArtifactsQuery: Same<
         W.AgentRunArtifactsQuery,
@@ -2807,6 +3599,54 @@ interface Checks {
     RestartAgentRunPayload: Same<
         W.RestartAgentRunPayload,
         z.infer<typeof import('./api-schemas/workflow-runs.js').RestartAgentRunPayloadSchema>
+    >;
+    ExperimentalAgentRunControlEvent: Same<
+        W.ExperimentalAgentRunControlEvent,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunControlEventSchema>
+    >;
+    ExperimentalAgentRunControlNotification: Same<
+        W.ExperimentalAgentRunControlNotification,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunControlNotificationSchema>
+    >;
+    ExperimentalAgentEditingResource: Same<
+        W.ExperimentalAgentEditingResource,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentEditingResourceSchema>
+    >;
+    ExperimentalAgentDocumentEditingAction: Same<
+        W.ExperimentalAgentDocumentEditingAction,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentDocumentEditingActionSchema>
+    >;
+    ExperimentalAgentUserInputMetadata: Same<
+        W.ExperimentalAgentUserInputMetadata,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentUserInputMetadataSchema>
+    >;
+    ExperimentalAgentControlPage: Same<
+        W.ExperimentalAgentControlPage,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentControlPageSchema>
+    >;
+    ExperimentalAgentRunUpdatesQuery: Same<
+        W.ExperimentalAgentRunUpdatesQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunUpdatesQuerySchema>
+    >;
+    ExperimentalAgentRunStreamQuery: Same<
+        W.ExperimentalAgentRunStreamQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunStreamQuerySchema>
+    >;
+    ExperimentalAgentConversationDeletePayload: Same<
+        W.ExperimentalAgentConversationDeletePayload,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationDeletePayloadSchema>
+    >;
+    ExperimentalAgentConversationDeleteResponse: Same<
+        W.ExperimentalAgentConversationDeleteResponse,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationDeleteResponseSchema>
+    >;
+    ExperimentalAgentConversationUpgradePayload: Same<
+        W.ExperimentalAgentConversationUpgradePayload,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationUpgradePayloadSchema>
+    >;
+    ExperimentalAgentConversationUpgradeResponse: Same<
+        W.ExperimentalAgentConversationUpgradeResponse,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationUpgradeResponseSchema>
     >;
     CreateCollectionPayload: Same<
         W.CreateCollectionPayload,
@@ -5374,7 +6214,7 @@ interface Checks {
     >;
     'component:ToolDefinition': Same<
         W.ApiComponentTypes['ToolDefinition'],
-        z.infer<typeof import('@llumiverse/common/schemas').ToolDefinitionSchema>
+        z.infer<typeof import('@llumiverse/conversation/schemas').ToolDefinitionSchema>
     >;
     'component:ToolUse': Same<
         W.ApiComponentTypes['ToolUse'],
@@ -5972,6 +6812,34 @@ interface Checks {
         W.ApiComponentTypes['AsyncCompletionMode'],
         z.infer<typeof import('./api-schemas/interaction.js').AsyncCompletionModeSchema>
     >;
+    'component:CanonicalAsyncCompletionResult': Same<
+        W.ApiComponentTypes['CanonicalAsyncCompletionResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalAsyncCompletionResultSchema>
+    >;
+    'component:CanonicalScopedGenerationEvidence': Same<
+        W.ApiComponentTypes['CanonicalScopedGenerationEvidence'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalScopedGenerationEvidenceSchema>
+    >;
+    'component:CanonicalConversationHeadScope': Same<
+        W.ApiComponentTypes['CanonicalConversationHeadScope'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeSchema>
+    >;
+    'component:CanonicalConversationHeadScopeQuery': Same<
+        W.ApiComponentTypes['CanonicalConversationHeadScopeQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalConversationHeadScopeQuerySchema>
+    >;
+    'component:CanonicalContinuationState': Same<
+        W.ApiComponentTypes['CanonicalContinuationState'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalContinuationStateSchema>
+    >;
+    'component:CanonicalPendingApplicationToolCall': Same<
+        W.ApiComponentTypes['CanonicalPendingApplicationToolCall'],
+        z.infer<typeof import('./api-schemas/interaction.js').CanonicalPendingApplicationToolCallSchema>
+    >;
+    'component:ConversationAcceptedGenerationEvidence': Same<
+        W.ApiComponentTypes['ConversationAcceptedGenerationEvidence'],
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationAcceptedGenerationEvidenceSchema>
+    >;
     'component:AsyncCompletionOptions': Same<
         W.ApiComponentTypes['AsyncCompletionOptions'],
         z.infer<typeof import('./api-schemas/interaction.js').AsyncCompletionOptionsSchema>
@@ -5987,6 +6855,14 @@ interface Checks {
     'component:AsyncConversationExecutionPayload': Same<
         W.ApiComponentTypes['AsyncConversationExecutionPayload'],
         z.infer<typeof import('./api-schemas/interaction.js').AsyncConversationExecutionPayloadSchema>
+    >;
+    'component:ConversationProcessingPolicy': Same<
+        W.ApiComponentTypes['ConversationProcessingPolicy'],
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationProcessingPolicySchema>
+    >;
+    'component:ConversationToolResultExternalizationPolicy': Same<
+        W.ApiComponentTypes['ConversationToolResultExternalizationPolicy'],
+        z.infer<typeof import('./api-schemas/interaction.js').ConversationToolResultExternalizationPolicySchema>
     >;
     'component:AsyncExecutionResult': Same<
         W.ApiComponentTypes['AsyncExecutionResult'],
@@ -6193,18 +7069,6 @@ interface Checks {
         W.ApiComponentTypes['ContentObjectTypeCatalogEntryArray'],
         z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeCatalogEntryArraySchema>
     >;
-    'component:InCodeTypeDefinition': Same<
-        W.ApiComponentTypes['InCodeTypeDefinition'],
-        z.infer<typeof import('./api-schemas/store.js').InCodeTypeDefinitionSchema>
-    >;
-    'component:CreateContentObjectTypePayload': Same<
-        W.ApiComponentTypes['CreateContentObjectTypePayload'],
-        z.infer<typeof import('./api-schemas/store.js').CreateContentObjectTypePayloadSchema>
-    >;
-    'component:UpdateContentObjectTypePayload': Same<
-        W.ApiComponentTypes['UpdateContentObjectTypePayload'],
-        z.infer<typeof import('./api-schemas/store.js').UpdateContentObjectTypePayloadSchema>
-    >;
     'component:ContentObjectType': Same<
         W.ApiComponentTypes['ContentObjectType'],
         z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeSchema>
@@ -6216,6 +7080,18 @@ interface Checks {
     'component:ContentObjectTypeListQuery': Same<
         W.ApiComponentTypes['ContentObjectTypeListQuery'],
         z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeListQuerySchema>
+    >;
+    'component:InCodeTypeDefinition': Same<
+        W.ApiComponentTypes['InCodeTypeDefinition'],
+        z.infer<typeof import('./api-schemas/store.js').InCodeTypeDefinitionSchema>
+    >;
+    'component:CreateContentObjectTypePayload': Same<
+        W.ApiComponentTypes['CreateContentObjectTypePayload'],
+        z.infer<typeof import('./api-schemas/store.js').CreateContentObjectTypePayloadSchema>
+    >;
+    'component:UpdateContentObjectTypePayload': Same<
+        W.ApiComponentTypes['UpdateContentObjectTypePayload'],
+        z.infer<typeof import('./api-schemas/store.js').UpdateContentObjectTypePayloadSchema>
     >;
     'component:DeleteCountResult': Same<
         W.ApiComponentTypes['DeleteCountResult'],
@@ -7941,6 +8817,10 @@ interface Checks {
         W.ApiComponentTypes['AgentRunDetailsQuery'],
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunDetailsQuerySchema>
     >;
+    'component:AgentRunAccessQuery': Same<
+        W.ApiComponentTypes['AgentRunAccessQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunAccessQuerySchema>
+    >;
     'component:ListAgentRunsQuery': Same<
         W.ApiComponentTypes['ListAgentRunsQuery'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ListAgentRunsQuerySchema>
@@ -7964,6 +8844,118 @@ interface Checks {
     'component:StreamAgentRunQuery': Same<
         W.ApiComponentTypes['StreamAgentRunQuery'],
         z.infer<typeof import('./api-schemas/agent-runs.js').StreamAgentRunQuerySchema>
+    >;
+    'component:ExperimentalAgentConversationStreamQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationStreamQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamQuerySchema>
+    >;
+    'component:ExperimentalAgentConversationSourceUninitialized': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationSourceUninitialized'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceUninitializedSchema>
+    >;
+    'component:ExperimentalAgentConversationSourceInitialized': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationSourceInitialized'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceInitializedSchema>
+    >;
+    'component:ExperimentalAgentConversationSourceDescriptor': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationSourceDescriptor'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationSourceDescriptorSchema>
+    >;
+    'component:ExperimentalAgentConversationEvent': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationEvent'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationEventSchema>
+    >;
+    'component:ExperimentalAgentConversationPreviewUnavailable': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationPreviewUnavailable'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationPreviewUnavailableSchema>
+    >;
+    'component:ExperimentalAgentConversationAcceptedOutput': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationAcceptedOutput'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputSchema>
+    >;
+    'component:ExperimentalAgentConversationAcceptedOutputHistoryQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationAcceptedOutputHistoryQuery'],
+        z.infer<
+            typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryQuerySchema
+        >
+    >;
+    'component:ExperimentalAgentConversationAcceptedOutputHistoryPage': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationAcceptedOutputHistoryPage'],
+        z.infer<
+            typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationAcceptedOutputHistoryPageSchema
+        >
+    >;
+    'component:ExperimentalAgentConversationTranscriptQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationTranscriptQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationTranscriptQuerySchema>
+    >;
+    'component:ExperimentalAgentConversationTranscriptPage': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationTranscriptPage'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationTranscriptPageSchema>
+    >;
+    'component:ExperimentalAgentConversationUpgradePayload': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationUpgradePayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationUpgradePayloadSchema>
+    >;
+    'component:ExperimentalAgentConversationUpgradeResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationUpgradeResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationUpgradeResponseSchema>
+    >;
+    'component:ExperimentalAgentConversationDeletePayload': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationDeletePayload'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationDeletePayloadSchema>
+    >;
+    'component:ExperimentalAgentConversationDeleteResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationDeleteResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationDeleteResponseSchema>
+    >;
+    'component:ExperimentalAgentConversationStreamEnvelope': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationStreamEnvelope'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationStreamEnvelopeSchema>
+    >;
+    'component:ExperimentalAgentEditingResource': Same<
+        W.ApiComponentTypes['ExperimentalAgentEditingResource'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentEditingResourceSchema>
+    >;
+    'component:ExperimentalAgentDocumentEditingAction': Same<
+        W.ApiComponentTypes['ExperimentalAgentDocumentEditingAction'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentDocumentEditingActionSchema>
+    >;
+    'component:ExperimentalAgentUserInputMetadata': Same<
+        W.ApiComponentTypes['ExperimentalAgentUserInputMetadata'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentUserInputMetadataSchema>
+    >;
+    'component:ExperimentalAgentControlPage': Same<
+        W.ApiComponentTypes['ExperimentalAgentControlPage'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentControlPageSchema>
+    >;
+    'component:ExperimentalAgentRunUpdatesQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunUpdatesQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunUpdatesQuerySchema>
+    >;
+    'component:ExperimentalAgentRunStreamQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunStreamQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunStreamQuerySchema>
+    >;
+    'component:ExperimentalAgentRunControlEvent': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunControlEvent'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunControlEventSchema>
+    >;
+    'component:ExperimentalAgentRunControlNotification': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunControlNotification'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunControlNotificationSchema>
+    >;
+    'component:ExperimentalAgentConversationRunStatus': Same<
+        W.ApiComponentTypes['ExperimentalAgentConversationRunStatus'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentConversationRunStatusSchema>
+    >;
+    'component:ExperimentalAgentRunStreamEnvelope': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunStreamEnvelope'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunStreamEnvelopeSchema>
+    >;
+    'component:ExperimentalAgentRunUpdatesResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentRunUpdatesResponse'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ExperimentalAgentRunUpdatesResponseSchema>
     >;
     'component:UpdateAgentRunStatusPayload': Same<
         W.ApiComponentTypes['UpdateAgentRunStatusPayload'],
@@ -9569,6 +10561,678 @@ interface Checks {
         W.ApiComponentTypes['DelegationGrantArray'],
         z.infer<typeof import('./api-schemas/delegation.js').DelegationGrantArraySchema>
     >;
+    'component:ExperimentalCanonicalInteractionHeaders': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionHeaders'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionHeadersSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionRetrievalQuery': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionRetrievalQuery'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRetrievalQuerySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionConversationReference': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionConversationReference'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionConversationReferenceSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionNewState': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionNewState'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionNewStateSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionDocumentState': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionDocumentState'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionDocumentStateSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionReferenceState': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionReferenceState'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReferenceStateSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionInitialState': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionInitialState'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionInitialStateSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionReturnPolicy': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionReturnPolicy'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReturnPolicySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionAutoTurnSelection': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionAutoTurnSelection'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionAutoTurnSelectionSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionNoneTurnSelection': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionNoneTurnSelection'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionNoneTurnSelectionSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionRequiredTurnSelection': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionRequiredTurnSelection'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRequiredTurnSelectionSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionTurnSelection': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionTurnSelection'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionTurnSelectionSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionExecutionConfiguration': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionExecutionConfiguration'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionConfigurationSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionResultSchemaInput': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionResultSchemaInput'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionResultSchemaInputSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionInlinePrompt': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionInlinePrompt'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionInlinePromptSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionExecutionRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionExecutionRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalNamedInteractionExecutionRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalNamedInteractionExecutionRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalNamedInteractionExecutionRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionModelSwitchBinding': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionModelSwitchBinding'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionModelSwitchBindingSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionModelSwitchPrepareRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionModelSwitchPrepareRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionModelSwitchPrepareRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionModelSwitchPrepareResult': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionModelSwitchPrepareResult'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionModelSwitchPrepareResultSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionDocumentHistory': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionDocumentHistory'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionDocumentHistorySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionReferenceHistory': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionReferenceHistory'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionReferenceHistorySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionUnavailableHistory': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionUnavailableHistory'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionUnavailableHistorySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionHistory': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionHistory'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionHistorySchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionRun': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionRun'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionRunSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionAcceptedOutput': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionAcceptedOutput'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionAcceptedOutputSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionUnavailableOutput': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionUnavailableOutput'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionUnavailableOutputSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionOutput': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionOutput'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionOutputSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionExecutionResult': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionExecutionResult'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalInteractionExecutionResultSchema
+        >
+    >;
+    'component:ExperimentalCanonicalVirtualGenerationBinding': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalVirtualGenerationBinding'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-execution.js').ExperimentalCanonicalVirtualGenerationBindingSchema
+        >
+    >;
+    'component:AgentConversationArchiveSource': Same<
+        W.ApiComponentTypes['AgentConversationArchiveSource'],
+        z.infer<typeof import('./api-schemas/agent-conversation-migration.js').AgentConversationArchiveSourceSchema>
+    >;
+    'component:AgentConversationNativeArchiveAttestation': Same<
+        W.ApiComponentTypes['AgentConversationNativeArchiveAttestation'],
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').AgentConversationNativeArchiveAttestationSchema
+        >
+    >;
+    'component:ImportAgentRunConversationArchivePayload': Same<
+        W.ApiComponentTypes['ImportAgentRunConversationArchivePayload'],
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').ImportAgentRunConversationArchivePayloadSchema
+        >
+    >;
+    'component:ImportAgentRunConversationArchiveResponse': Same<
+        W.ApiComponentTypes['ImportAgentRunConversationArchiveResponse'],
+        z.infer<
+            typeof import('./api-schemas/agent-conversation-migration.js').ImportAgentRunConversationArchiveResponseSchema
+        >
+    >;
+    'component:ExperimentalAgentRestartAdmissionExecution': Same<
+        W.ApiComponentTypes['ExperimentalAgentRestartAdmissionExecution'],
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentRestartAdmissionExecutionSchema
+        >
+    >;
+    'component:ExperimentalAgentRestartAdmissionPayload': Same<
+        W.ApiComponentTypes['ExperimentalAgentRestartAdmissionPayload'],
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentRestartAdmissionPayloadSchema
+        >
+    >;
+    'component:ExperimentalAgentRestartAdmissionResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentRestartAdmissionResponse'],
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentRestartAdmissionResponseSchema
+        >
+    >;
+    'component:ExperimentalAgentWorkstreamRestartAdmissionPayload': Same<
+        W.ApiComponentTypes['ExperimentalAgentWorkstreamRestartAdmissionPayload'],
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentWorkstreamRestartAdmissionPayloadSchema
+        >
+    >;
+    'component:ExperimentalAgentWorkstreamRestartAdmissionResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentWorkstreamRestartAdmissionResponse'],
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentWorkstreamRestartAdmissionResponseSchema
+        >
+    >;
+    'component:ExperimentalAgentWorkstreamTerminalPayload': Same<
+        W.ApiComponentTypes['ExperimentalAgentWorkstreamTerminalPayload'],
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentWorkstreamTerminalPayloadSchema
+        >
+    >;
+    'component:ExperimentalAgentWorkstreamTerminalResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentWorkstreamTerminalResponse'],
+        z.infer<
+            typeof import('./api-schemas/agent-restart-admission.js').ExperimentalAgentWorkstreamTerminalResponseSchema
+        >
+    >;
+    'component:ExperimentalAdmitAgentGenerationPayload': Same<
+        W.ApiComponentTypes['ExperimentalAdmitAgentGenerationPayload'],
+        z.infer<typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationPayloadSchema>
+    >;
+    'component:ExperimentalAdmitAgentGenerationUserPayload': Same<
+        W.ApiComponentTypes['ExperimentalAdmitAgentGenerationUserPayload'],
+        z.infer<typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationUserPayloadSchema>
+    >;
+    'component:ExperimentalAdmitAgentGenerationToolsPayload': Same<
+        W.ApiComponentTypes['ExperimentalAdmitAgentGenerationToolsPayload'],
+        z.infer<typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationToolsPayloadSchema>
+    >;
+    'component:ExperimentalAdmitAgentGenerationToolApprovalReviewPayload': Same<
+        W.ApiComponentTypes['ExperimentalAdmitAgentGenerationToolApprovalReviewPayload'],
+        z.infer<
+            typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationToolApprovalReviewPayloadSchema
+        >
+    >;
+    'component:ExperimentalAdmitAgentGenerationInitialPayload': Same<
+        W.ApiComponentTypes['ExperimentalAdmitAgentGenerationInitialPayload'],
+        z.infer<typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationInitialPayloadSchema>
+    >;
+    'component:ExperimentalAdmitAgentGenerationCheckpointPayload': Same<
+        W.ApiComponentTypes['ExperimentalAdmitAgentGenerationCheckpointPayload'],
+        z.infer<
+            typeof import('./api-schemas/agent-generation.js').ExperimentalAdmitAgentGenerationCheckpointPayloadSchema
+        >
+    >;
+    'component:ExperimentalAgentRoutingOriginExecution': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingOriginExecution'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingOriginExecutionSchema>
+    >;
+    'component:ExperimentalAgentRoutingExecutionBinding': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingExecutionBinding'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingExecutionBindingSchema>
+    >;
+    'component:ExperimentalAgentGenerationAdmissionPayload': Same<
+        W.ApiComponentTypes['ExperimentalAgentGenerationAdmissionPayload'],
+        z.infer<
+            typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentGenerationAdmissionPayloadSchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionSourceBinding': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionSourceBinding'],
+        z.infer<
+            typeof import('./api-schemas/agent-routing-control.js').ExperimentalCanonicalIngestionSourceBindingSchema
+        >
+    >;
+    'component:ExperimentalAgentGenerationAdmissionReceipt': Same<
+        W.ApiComponentTypes['ExperimentalAgentGenerationAdmissionReceipt'],
+        z.infer<
+            typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentGenerationAdmissionReceiptSchema
+        >
+    >;
+    'component:ExperimentalAgentRoutingStatusPayload': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingStatusPayload'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingStatusPayloadSchema>
+    >;
+    'component:ExperimentalAgentRoutingStatusResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingStatusResponse'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingStatusResponseSchema>
+    >;
+    'component:ExperimentalAgentRoutingIntent': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingIntent'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingIntentSchema>
+    >;
+    'component:ExperimentalAgentRoutingControlChange': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingControlChange'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlChangeSchema>
+    >;
+    'component:ExperimentalAgentRoutingControlBinding': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingControlBinding'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlBindingSchema>
+    >;
+    'component:ExperimentalUpdateAgentRoutingControlPayload': Same<
+        W.ApiComponentTypes['ExperimentalUpdateAgentRoutingControlPayload'],
+        z.infer<
+            typeof import('./api-schemas/agent-routing-control.js').ExperimentalUpdateAgentRoutingControlPayloadSchema
+        >
+    >;
+    'component:ExperimentalAgentRoutingControlReceipt': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingControlReceipt'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlReceiptSchema>
+    >;
+    'component:ExperimentalAgentRoutingInitialReceipt': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingInitialReceipt'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingInitialReceiptSchema>
+    >;
+    'component:ExperimentalAgentRoutingChangeReceipt': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingChangeReceipt'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingChangeReceiptSchema>
+    >;
+    'component:ExperimentalAgentRoutingControlSelector': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingControlSelector'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlSelectorSchema>
+    >;
+    'component:ExperimentalAgentRoutingControlQuery': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingControlQuery'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlQuerySchema>
+    >;
+    'component:ExperimentalAgentRoutingControlResponse': Same<
+        W.ApiComponentTypes['ExperimentalAgentRoutingControlResponse'],
+        z.infer<typeof import('./api-schemas/agent-routing-control.js').ExperimentalAgentRoutingControlResponseSchema>
+    >;
+    'component:ExperimentalCanonicalCheckpointSummarySource': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalCheckpointSummarySource'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalCheckpointSummarySourceSchema
+        >
+    >;
+    'component:ExperimentalCanonicalCheckpointSummaryPayload': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalCheckpointSummaryPayload'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalCheckpointSummaryPayloadSchema
+        >
+    >;
+    'component:ExperimentalCanonicalUserMessageRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalUserMessageRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalUserMessageRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalContinuationAnchor': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalContinuationAnchor'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalContinuationAnchorSchema
+        >
+    >;
+    'component:ExperimentalCanonicalResumeInputAppend': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalResumeInputAppend'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeInputAppendSchema
+        >
+    >;
+    'component:ExperimentalCanonicalAsyncCompletionOptions': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalAsyncCompletionOptions'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalAsyncCompletionOptionsSchema
+        >
+    >;
+    'component:ExperimentalCanonicalResumeAccepted': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalResumeAccepted'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeAcceptedSchema
+        >
+    >;
+    'component:ExperimentalCanonicalResumeTelemetry': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalResumeTelemetry'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalResumeTelemetrySchema
+        >
+    >;
+    'component:ExperimentalCanonicalToolResultsPayload': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalToolResultsPayload'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalToolResultsPayloadSchema
+        >
+    >;
+    'component:ExperimentalCanonicalUserMessagePayload': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalUserMessagePayload'],
+        z.infer<
+            typeof import('./api-schemas/canonical-conversation-resume.js').ExperimentalCanonicalUserMessagePayloadSchema
+        >
+    >;
+    'component:ExperimentalCanonicalAgentAcceptanceTarget': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalAgentAcceptanceTarget'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalAgentAcceptanceTargetSchema
+        >
+    >;
+    'component:ExperimentalCanonicalToolApprovalReviewStreamRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalToolApprovalReviewStreamRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalToolApprovalReviewStreamRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInitialAgentStreamRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInitialAgentStreamRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInitialAgentStreamRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionStreamRequest': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionStreamRequest'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamRequestSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInitialIngestionAccepted': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInitialIngestionAccepted'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInitialIngestionAcceptedSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionStreamOpened': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionStreamOpened'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamOpenedSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionStreamResumed': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionStreamResumed'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamResumedSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionAcceptedRecoveryOpened': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionAcceptedRecoveryOpened'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionAcceptedRecoveryOpenedSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionConversationEvent': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionConversationEvent'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionConversationEventSchema
+        >
+    >;
+    'component:ExperimentalCanonicalInteractionStreamEnvelope': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInteractionStreamEnvelope'],
+        z.infer<
+            typeof import('./api-schemas/canonical-interaction-stream.js').ExperimentalCanonicalInteractionStreamEnvelopeSchema
+        >
+    >;
+    'component:ConversationStreamIdentity': Same<
+        W.ApiComponentTypes['ConversationStreamIdentity'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamIdentitySchema>
+    >;
+    'component:ConversationStreamCursor': Same<
+        W.ApiComponentTypes['ConversationStreamCursor'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamCursorSchema>
+    >;
+    'component:ConversationNativeStreamPathSegment': Same<
+        W.ApiComponentTypes['ConversationNativeStreamPathSegment'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').NativeStreamPathSegmentSchema>
+    >;
+    'component:ConversationNativeStreamPosition': Same<
+        W.ApiComponentTypes['ConversationNativeStreamPosition'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').NativeStreamPositionSchema>
+    >;
+    'component:ConversationStreamDraftBlock': Same<
+        W.ApiComponentTypes['ConversationStreamDraftBlock'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamDraftBlockSchema>
+    >;
+    'component:ConversationStreamFailureDiagnostic': Same<
+        W.ApiComponentTypes['ConversationStreamFailureDiagnostic'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamFailureDiagnosticSchema>
+    >;
+    'component:ConversationStreamReconciliation': Same<
+        W.ApiComponentTypes['ConversationStreamReconciliation'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamReconciliationSchema>
+    >;
+    'component:ConversationStreamTransformationProof': Same<
+        W.ApiComponentTypes['ConversationStreamTransformationProof'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamTransformationProofSchema>
+    >;
+    'component:ConversationStreamResponseMapping': Same<
+        W.ApiComponentTypes['ConversationStreamResponseMapping'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamResponseMappingSchema>
+    >;
+    'component:ConversationStreamDecodeEvidence': Same<
+        W.ApiComponentTypes['ConversationStreamDecodeEvidence'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamDecodeEvidenceSchema>
+    >;
+    'component:ConversationStreamEvent': Same<
+        W.ApiComponentTypes['ConversationStreamEvent'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationStreamEventSchema>
+    >;
+    'component:ConversationToolExecutionRequest': Same<
+        W.ApiComponentTypes['ConversationToolExecutionRequest'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationToolExecutionRequestSchema>
+    >;
+    'component:ConversationToolExecutionResult': Same<
+        W.ApiComponentTypes['ConversationToolExecutionResult'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationToolExecutionResultSchema>
+    >;
+    'component:AvailableCanonicalIngestionPreparationView': Same<
+        W.ApiComponentTypes['AvailableCanonicalIngestionPreparationView'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').AvailableCanonicalIngestionPreparationViewSchema
+        >
+    >;
+    'component:UnavailableCanonicalIngestionPreparationView': Same<
+        W.ApiComponentTypes['UnavailableCanonicalIngestionPreparationView'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').UnavailableCanonicalIngestionPreparationViewSchema
+        >
+    >;
+    'component:AvailableCanonicalIngestionRecoveryView': Same<
+        W.ApiComponentTypes['AvailableCanonicalIngestionRecoveryView'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').AvailableCanonicalIngestionRecoveryViewSchema
+        >
+    >;
+    'component:UnavailableCanonicalIngestionRecoveryView': Same<
+        W.ApiComponentTypes['UnavailableCanonicalIngestionRecoveryView'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').UnavailableCanonicalIngestionRecoveryViewSchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionConcreteTarget': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionConcreteTarget'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionConcreteTargetSchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionCount': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionCount'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionCountSchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionProjection': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionProjection'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionProjectionSchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionBudgetQueueViewQuery': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionBudgetQueueViewQuery'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionBudgetQueueViewQuerySchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionPreparationViewQuery': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionPreparationViewQuery'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionPreparationViewQuerySchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionPreparationViewResponse': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionPreparationViewResponse'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionPreparationViewResponseSchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionRecovery': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionRecovery'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionRecoverySchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionRecoveryViewQuery': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionRecoveryViewQuery'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionRecoveryViewQuerySchema
+        >
+    >;
+    'component:ExperimentalCanonicalIngestionRecoveryViewResponse': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalIngestionRecoveryViewResponse'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalCanonicalIngestionRecoveryViewResponseSchema
+        >
+    >;
+    'component:ExperimentalRunConversationInspectionQuery': Same<
+        W.ApiComponentTypes['ExperimentalRunConversationInspectionQuery'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalRunConversationInspectionQuerySchema
+        >
+    >;
+    'component:ExperimentalRunConversationInspectionResponse': Same<
+        W.ApiComponentTypes['ExperimentalRunConversationInspectionResponse'],
+        z.infer<
+            typeof import('./api-schemas/canonical-ingestion-readiness.js').ExperimentalRunConversationInspectionResponseSchema
+        >
+    >;
+    'component:ConversationTranscriptExternalReferenceBlock': Same<
+        W.ApiComponentTypes['ConversationTranscriptExternalReferenceBlock'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').ConversationTranscriptExternalReferenceBlockSchema>
+    >;
+    'component:ExperimentalCanonicalInitialAuthoringResponse': Same<
+        W.ApiComponentTypes['ExperimentalCanonicalInitialAuthoringResponse'],
+        z.infer<
+            typeof import('./api-schemas/canonical-initial-authoring.js').ExperimentalCanonicalInitialAuthoringResponseSchema
+        >
+    >;
+    'component:RunConversationResponse': Same<
+        W.ApiComponentTypes['RunConversationResponse'],
+        z.infer<typeof import('./api-schemas/run-conversation.js').RunConversationResponseSchema>
+    >;
+    'component:InitialAuthoringMedia': Same<
+        W.ApiComponentTypes['InitialAuthoringMedia'],
+        z.infer<typeof import('./api-schemas/run-conversation.js').InitialAuthoringMediaSchema>
+    >;
+    'component:InitialAuthoringSegment': Same<
+        W.ApiComponentTypes['InitialAuthoringSegment'],
+        z.infer<typeof import('./api-schemas/run-conversation.js').InitialAuthoringSegmentSchema>
+    >;
+    'component:InitialAuthoringInputRecord': Same<
+        W.ApiComponentTypes['InitialAuthoringInputRecord'],
+        z.infer<typeof import('./api-schemas/run-conversation.js').InitialAuthoringInputRecordSchema>
+    >;
+    'component:ExperimentalInitialAuthoringViewQuery': Same<
+        W.ApiComponentTypes['ExperimentalInitialAuthoringViewQuery'],
+        z.infer<typeof import('./api-schemas/run-conversation.js').ExperimentalInitialAuthoringViewQuerySchema>
+    >;
+    'component:AvailableInitialAuthoringView': Same<
+        W.ApiComponentTypes['AvailableInitialAuthoringView'],
+        z.infer<typeof import('./api-schemas/run-conversation.js').AvailableInitialAuthoringViewSchema>
+    >;
+    'component:UnavailableInitialAuthoringView': Same<
+        W.ApiComponentTypes['UnavailableInitialAuthoringView'],
+        z.infer<typeof import('./api-schemas/run-conversation.js').UnavailableInitialAuthoringViewSchema>
+    >;
+    'component:ExperimentalInitialAuthoringViewResponse': Same<
+        W.ApiComponentTypes['ExperimentalInitialAuthoringViewResponse'],
+        z.infer<typeof import('./api-schemas/run-conversation.js').ExperimentalInitialAuthoringViewResponseSchema>
+    >;
+    'component:AppendRunConversationProgramTurnPayload': Same<
+        W.ApiComponentTypes['AppendRunConversationProgramTurnPayload'],
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationProgramTurnPayloadSchema>
+    >;
+    'component:AppendRunConversationProgramTurnResponse': Same<
+        W.ApiComponentTypes['AppendRunConversationProgramTurnResponse'],
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationProgramTurnResponseSchema
+        >
+    >;
+    'component:AppendRunConversationToolResultsPayload': Same<
+        W.ApiComponentTypes['AppendRunConversationToolResultsPayload'],
+        z.infer<typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsPayloadSchema>
+    >;
+    'component:AppendRunConversationToolResultsResponse': Same<
+        W.ApiComponentTypes['AppendRunConversationToolResultsResponse'],
+        z.infer<
+            typeof import('./api-schemas/run-conversation-append.js').AppendRunConversationToolResultsResponseSchema
+        >
+    >;
     'component:RunBudgetOwner': Same<
         W.ApiComponentTypes['RunBudgetOwner'],
         z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetOwnerSchema>
@@ -9593,6 +11257,94 @@ interface Checks {
         W.ApiComponentTypes['RunBudgetCapabilityQuery'],
         z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilityQuerySchema>
     >;
+    'component:ConversationJsonMinificationTransform': Same<
+        W.ApiComponentTypes['ConversationJsonMinificationTransform'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').JsonMinificationTransformSchema>
+    >;
+    'component:ConversationJsonMinificationMeasuredProjection': Same<
+        W.ApiComponentTypes['ConversationJsonMinificationMeasuredProjection'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').JsonMinificationMeasuredProjectionSchema>
+    >;
+    'component:ConversationJsonMinificationMeasurement': Same<
+        W.ApiComponentTypes['ConversationJsonMinificationMeasurement'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').JsonMinificationMeasurementSchema>
+    >;
+    'component:ConversationJsonMinificationProposal': Same<
+        W.ApiComponentTypes['ConversationJsonMinificationProposal'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').JsonMinificationProposalSchema>
+    >;
+    'component:ConversationJsonMinificationNoOpReason': Same<
+        W.ApiComponentTypes['ConversationJsonMinificationNoOpReason'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').JsonMinificationNoOpReasonSchema>
+    >;
+    'component:ConversationJsonMinificationApplication': Same<
+        W.ApiComponentTypes['ConversationJsonMinificationApplication'],
+        z.infer<typeof import('@llumiverse/conversation/schemas').JsonMinificationApplicationSchema>
+    >;
+    'component:ExperimentalPublishAgentAssetPayload': Same<
+        W.ApiComponentTypes['ExperimentalPublishAgentAssetPayload'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalPublishAgentAssetPayloadSchema>
+    >;
+    'component:ExperimentalPublishedAgentAsset': Same<
+        W.ApiComponentTypes['ExperimentalPublishedAgentAsset'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalPublishedAgentAssetSchema>
+    >;
+    'component:ExperimentalAgentAssetPublication': Same<
+        W.ApiComponentTypes['ExperimentalAgentAssetPublication'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetPublicationSchema>
+    >;
+    'component:ExperimentalExtractAgentAssetPayload': Same<
+        W.ApiComponentTypes['ExperimentalExtractAgentAssetPayload'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalExtractAgentAssetPayloadSchema>
+    >;
+    'component:ExperimentalAgentAssetDerivationSource': Same<
+        W.ApiComponentTypes['ExperimentalAgentAssetDerivationSource'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetDerivationSourceSchema>
+    >;
+    'component:ExperimentalAgentAssetDerivationTransform': Same<
+        W.ApiComponentTypes['ExperimentalAgentAssetDerivationTransform'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetDerivationTransformSchema>
+    >;
+    'component:ExperimentalAgentAssetDerivation': Same<
+        W.ApiComponentTypes['ExperimentalAgentAssetDerivation'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetDerivationSchema>
+    >;
+    'component:ExperimentalAgentAssetExtractionPending': Same<
+        W.ApiComponentTypes['ExperimentalAgentAssetExtractionPending'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionPendingSchema>
+    >;
+    'component:ExperimentalAgentAssetExtractionAvailable': Same<
+        W.ApiComponentTypes['ExperimentalAgentAssetExtractionAvailable'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionAvailableSchema>
+    >;
+    'component:ExperimentalAgentAssetExtractionFailed': Same<
+        W.ApiComponentTypes['ExperimentalAgentAssetExtractionFailed'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionFailedSchema>
+    >;
+    'component:ExperimentalAgentAssetExtraction': Same<
+        W.ApiComponentTypes['ExperimentalAgentAssetExtraction'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionSchema>
+    >;
+    'component:ExperimentalClaimAgentAssetExtractionPayload': Same<
+        W.ApiComponentTypes['ExperimentalClaimAgentAssetExtractionPayload'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalClaimAgentAssetExtractionPayloadSchema>
+    >;
+    'component:ExperimentalAgentAssetExtractionClaim': Same<
+        W.ApiComponentTypes['ExperimentalAgentAssetExtractionClaim'],
+        z.infer<typeof import('./api-schemas/agent-assets.js').ExperimentalAgentAssetExtractionClaimSchema>
+    >;
+    'component:ExperimentalAgentProcessingActivityEvidence': Same<
+        W.ApiComponentTypes['ExperimentalAgentProcessingActivityEvidence'],
+        z.infer<typeof import('./api-schemas/agent-processing.js').ExperimentalAgentProcessingActivityEvidenceSchema>
+    >;
+    'component:ExperimentalClaimAgentProcessingPayload': Same<
+        W.ApiComponentTypes['ExperimentalClaimAgentProcessingPayload'],
+        z.infer<typeof import('./api-schemas/agent-processing.js').ExperimentalClaimAgentProcessingPayloadSchema>
+    >;
+    'component:ExperimentalAgentProcessingClaim': Same<
+        W.ApiComponentTypes['ExperimentalAgentProcessingClaim'],
+        z.infer<typeof import('./api-schemas/agent-processing.js').ExperimentalAgentProcessingClaimSchema>
+    >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
 }
@@ -9604,6 +11356,55 @@ const checks: Checks = {
     AccessControlEntry: true,
     ACECreatePayload: true,
     ACEUpdatePayload: true,
+    ExperimentalPublishAgentAssetPayload: true,
+    ExperimentalPublishedAgentAsset: true,
+    ExperimentalAgentAssetPublication: true,
+    ExperimentalExtractAgentAssetPayload: true,
+    ExperimentalAgentAssetDerivationSource: true,
+    ExperimentalAgentAssetDerivationTransform: true,
+    ExperimentalAgentAssetDerivation: true,
+    ExperimentalAgentAssetExtractionPending: true,
+    ExperimentalAgentAssetExtractionAvailable: true,
+    ExperimentalAgentAssetExtractionFailed: true,
+    ExperimentalAgentAssetExtraction: true,
+    ExperimentalClaimAgentAssetExtractionPayload: true,
+    ExperimentalAgentAssetExtractionClaim: true,
+    AgentConversationArchiveSource: true,
+    AgentConversationNativeArchiveAttestation: true,
+    ImportAgentRunConversationArchivePayload: true,
+    ImportAgentRunConversationArchiveResponse: true,
+    ExperimentalAgentProcessingActivityEvidence: true,
+    ExperimentalClaimAgentProcessingPayload: true,
+    ExperimentalAgentProcessingClaim: true,
+    ExperimentalAgentRestartAdmissionExecution: true,
+    ExperimentalAgentRestartAdmissionPayload: true,
+    ExperimentalAgentRestartAdmissionResponse: true,
+    ExperimentalAgentWorkstreamRestartAdmissionPayload: true,
+    ExperimentalAgentWorkstreamRestartAdmissionResponse: true,
+    ExperimentalAgentWorkstreamTerminalPayload: true,
+    ExperimentalAgentWorkstreamTerminalResponse: true,
+    ExperimentalAdmitAgentGenerationInitialPayload: true,
+    ExperimentalAdmitAgentGenerationPayload: true,
+    ExperimentalAdmitAgentGenerationUserPayload: true,
+    ExperimentalAdmitAgentGenerationToolsPayload: true,
+    ExperimentalAdmitAgentGenerationCheckpointPayload: true,
+    ExperimentalAgentRoutingIntent: true,
+    ExperimentalAgentRoutingControlChange: true,
+    ExperimentalAgentRoutingControlBinding: true,
+    ExperimentalUpdateAgentRoutingControlPayload: true,
+    ExperimentalAgentRoutingControlReceipt: true,
+    ExperimentalAgentRoutingInitialReceipt: true,
+    ExperimentalAgentRoutingChangeReceipt: true,
+    ExperimentalAgentRoutingControlSelector: true,
+    ExperimentalAgentRoutingControlQuery: true,
+    ExperimentalAgentRoutingControlResponse: true,
+    ExperimentalAgentRoutingOriginExecution: true,
+    ExperimentalAgentRoutingExecutionBinding: true,
+    ExperimentalAgentGenerationAdmissionPayload: true,
+    ExperimentalAgentGenerationAdmissionReceipt: true,
+    ExperimentalAgentRoutingStatusPayload: true,
+    ExperimentalAgentRoutingStatusResponse: true,
+    ExperimentalCanonicalIngestionSourceBinding: true,
     AnalyticsAxis: true,
     RunAnalyticsQuery: true,
     RunAnalyticsGroupBy: true,
@@ -9832,6 +11633,83 @@ const checks: Checks = {
     WebsiteCredentialFillRequest: true,
     WebsiteCredentialFillResponse: true,
     WebsiteCredentialMetadataUpdate: true,
+    ExperimentalCanonicalAsyncCompletionOptions: true,
+    ExperimentalCanonicalResumeAccepted: true,
+    ExperimentalCanonicalResumeTelemetry: true,
+    ExperimentalCanonicalToolResultsPayload: true,
+    ExperimentalCanonicalUserMessagePayload: true,
+    ExperimentalCanonicalResumeInputAppend: true,
+    ExperimentalCanonicalContinuationAnchor: true,
+    ExperimentalCanonicalCheckpointSummarySource: true,
+    ExperimentalCanonicalCheckpointSummaryPayload: true,
+    ExperimentalCanonicalUserMessageRequest: true,
+    InitialAuthoringMedia: true,
+    InitialAuthoringSegment: true,
+    InitialAuthoringInputRecord: true,
+    ExperimentalInitialAuthoringViewQuery: true,
+    AvailableInitialAuthoringView: true,
+    UnavailableInitialAuthoringView: true,
+    ExperimentalInitialAuthoringViewResponse: true,
+    AvailableRunConversation: true,
+    UnavailableRunConversation: true,
+    RunConversationResponse: true,
+    ExperimentalCanonicalIngestionConcreteTarget: true,
+    ExperimentalCanonicalIngestionCount: true,
+    ExperimentalCanonicalIngestionProjection: true,
+    ExperimentalCanonicalIngestionPreparationViewQuery: true,
+    ExperimentalCanonicalIngestionPreparationViewResponse: true,
+    ExperimentalRunConversationInspectionQuery: true,
+    ExperimentalRunConversationInspectionResponse: true,
+    ExperimentalCanonicalIngestionRecovery: true,
+    ExperimentalCanonicalIngestionRecoveryViewQuery: true,
+    ExperimentalCanonicalIngestionRecoveryViewResponse: true,
+    AvailableCanonicalIngestionPreparationView: true,
+    UnavailableCanonicalIngestionPreparationView: true,
+    AvailableCanonicalIngestionRecoveryView: true,
+    UnavailableCanonicalIngestionRecoveryView: true,
+    ExperimentalCanonicalIngestionBudgetQueueViewQuery: true,
+    ExperimentalCanonicalInitialAuthoringResponse: true,
+    ExperimentalCanonicalInteractionInitialState: true,
+    ExperimentalCanonicalInteractionNewState: true,
+    ExperimentalCanonicalInteractionDocumentState: true,
+    ExperimentalCanonicalInteractionReferenceState: true,
+    ExperimentalCanonicalInteractionConversationReference: true,
+    ExperimentalCanonicalInteractionHeaders: true,
+    ExperimentalCanonicalInteractionRetrievalQuery: true,
+    ExperimentalCanonicalInteractionReturnPolicy: true,
+    ExperimentalCanonicalInteractionAutoTurnSelection: true,
+    ExperimentalCanonicalInteractionNoneTurnSelection: true,
+    ExperimentalCanonicalInteractionRequiredTurnSelection: true,
+    ExperimentalCanonicalInteractionTurnSelection: true,
+    ExperimentalCanonicalInteractionExecutionConfiguration: true,
+    ExperimentalCanonicalInteractionResultSchemaInput: true,
+    ExperimentalCanonicalInteractionInlinePrompt: true,
+    ExperimentalCanonicalInteractionExecutionRequest: true,
+    ExperimentalCanonicalNamedInteractionExecutionRequest: true,
+    ExperimentalCanonicalInteractionModelSwitchBinding: true,
+    ExperimentalCanonicalInteractionModelSwitchPrepareRequest: true,
+    ExperimentalCanonicalInteractionModelSwitchPrepareResult: true,
+    ExperimentalCanonicalInteractionDocumentHistory: true,
+    ExperimentalCanonicalInteractionReferenceHistory: true,
+    ExperimentalCanonicalInteractionUnavailableHistory: true,
+    ExperimentalCanonicalInteractionHistory: true,
+    ExperimentalCanonicalInteractionRun: true,
+    ExperimentalCanonicalInteractionAcceptedOutput: true,
+    ExperimentalCanonicalInteractionUnavailableOutput: true,
+    ExperimentalCanonicalInteractionOutput: true,
+    ExperimentalCanonicalInteractionExecutionResult: true,
+    ExperimentalCanonicalVirtualGenerationBinding: true,
+    ExperimentalCanonicalAgentAcceptanceTarget: true,
+    ExperimentalCanonicalInitialAgentStreamRequest: true,
+    ExperimentalCanonicalInteractionStreamRequest: true,
+    ExperimentalCanonicalInteractionStreamOpened: true,
+    ExperimentalCanonicalInteractionStreamResumed: true,
+    ExperimentalCanonicalInteractionAcceptedRecoveryOpened: true,
+    ExperimentalCanonicalInteractionConversationEvent: true,
+    ExperimentalCanonicalInteractionStreamEnvelope: true,
+    ExperimentalCanonicalToolApprovalReviewStreamRequest: true,
+    ExperimentalAdmitAgentGenerationToolApprovalReviewPayload: true,
+    ExperimentalCanonicalInitialIngestionAccepted: true,
     FindPayload: true,
     GenericCommandResponse: true,
     DeleteByIdResult: true,
@@ -10064,6 +11942,8 @@ const checks: Checks = {
     SkillContextTriggers: true,
     AgentRunnerOptions: true,
     InitialToolCall: true,
+    ConversationProcessingPolicy: true,
+    ConversationToolResultExternalizationPolicy: true,
     AsyncConversationExecutionPayload: true,
     AsyncInteractionExecutionPayload: true,
     AsyncExecutionPayload: true,
@@ -10072,6 +11952,13 @@ const checks: Checks = {
     ResultStorageOptions: true,
     AsyncCompletionMode: true,
     StreamingOptions: true,
+    CanonicalContinuationState: true,
+    CanonicalPendingApplicationToolCall: true,
+    CanonicalConversationHeadScope: true,
+    CanonicalConversationHeadScopeQuery: true,
+    ConversationAcceptedGenerationEvidence: true,
+    CanonicalScopedGenerationEvidence: true,
+    CanonicalAsyncCompletionResult: true,
     AsyncCompletionOptions: true,
     AgentResourceType: true,
     AgentResourceAction: true,
@@ -10293,6 +12180,10 @@ const checks: Checks = {
     RunBudgetTotals: true,
     RunBudgetCapability: true,
     RunBudgetCapabilityQuery: true,
+    AppendRunConversationProgramTurnPayload: true,
+    AppendRunConversationProgramTurnResponse: true,
+    AppendRunConversationToolResultsPayload: true,
+    AppendRunConversationToolResultsResponse: true,
     ExecutionRunDocRef: true,
     FindRunResult: true,
     FindRunResultArray: true,
@@ -10348,7 +12239,23 @@ const checks: Checks = {
     AgentRunUpdatesResponse: true,
     AgentRunUpdatesQuery: true,
     StreamAgentRunQuery: true,
+    ExperimentalAgentConversationStreamQuery: true,
+    ExperimentalAgentConversationSourceUninitialized: true,
+    ExperimentalAgentConversationSourceInitialized: true,
+    ExperimentalAgentConversationSourceDescriptor: true,
+    ExperimentalAgentConversationEvent: true,
+    ExperimentalAgentConversationPreviewUnavailable: true,
+    ExperimentalAgentConversationAcceptedOutput: true,
+    ExperimentalAgentConversationAcceptedOutputHistoryQuery: true,
+    ExperimentalAgentConversationAcceptedOutputHistoryPage: true,
+    ExperimentalAgentConversationTranscriptQuery: true,
+    ExperimentalAgentConversationTranscriptPage: true,
+    ExperimentalAgentConversationStreamEnvelope: true,
+    ExperimentalAgentConversationRunStatus: true,
+    ExperimentalAgentRunStreamEnvelope: true,
+    ExperimentalAgentRunUpdatesResponse: true,
     AgentRunDetailsQuery: true,
+    AgentRunAccessQuery: true,
     AgentRunArtifactsQuery: true,
     AgentRunArtifactUploadHeaders: true,
     AgentRunArtifactQuery: true,
@@ -10369,6 +12276,18 @@ const checks: Checks = {
     CreateProcessRunWithDefinitionPayload: true,
     CreateRunPayload: true,
     RestartAgentRunPayload: true,
+    ExperimentalAgentRunControlEvent: true,
+    ExperimentalAgentRunControlNotification: true,
+    ExperimentalAgentEditingResource: true,
+    ExperimentalAgentDocumentEditingAction: true,
+    ExperimentalAgentUserInputMetadata: true,
+    ExperimentalAgentControlPage: true,
+    ExperimentalAgentRunUpdatesQuery: true,
+    ExperimentalAgentRunStreamQuery: true,
+    ExperimentalAgentConversationDeletePayload: true,
+    ExperimentalAgentConversationDeleteResponse: true,
+    ExperimentalAgentConversationUpgradePayload: true,
+    ExperimentalAgentConversationUpgradeResponse: true,
     CreateCollectionPayload: true,
     Collection: true,
     CollectionMembersUpdateResult: true,
@@ -11220,10 +13139,19 @@ const checks: Checks = {
     'component:ExecuteInteractionByEndpointQuery': true,
     'component:ExecuteInteractionByEndpointHeaders': true,
     'component:AsyncCompletionMode': true,
+    'component:CanonicalAsyncCompletionResult': true,
+    'component:CanonicalScopedGenerationEvidence': true,
+    'component:CanonicalConversationHeadScope': true,
+    'component:CanonicalConversationHeadScopeQuery': true,
+    'component:CanonicalContinuationState': true,
+    'component:CanonicalPendingApplicationToolCall': true,
+    'component:ConversationAcceptedGenerationEvidence': true,
     'component:AsyncCompletionOptions': true,
     'component:AsyncExecutionPayload': true,
     'component:AsyncInteractionExecutionPayload': true,
     'component:AsyncConversationExecutionPayload': true,
+    'component:ConversationProcessingPolicy': true,
+    'component:ConversationToolResultExternalizationPolicy': true,
     'component:AsyncExecutionResult': true,
     'component:RateLimitRequestPayload': true,
     'component:RateLimitRequestResponse': true,
@@ -11276,12 +13204,12 @@ const checks: Checks = {
     'component:ContentObjectTypeItemArray': true,
     'component:ContentObjectTypeCatalogEntry': true,
     'component:ContentObjectTypeCatalogEntryArray': true,
-    'component:InCodeTypeDefinition': true,
-    'component:CreateContentObjectTypePayload': true,
-    'component:UpdateContentObjectTypePayload': true,
     'component:ContentObjectType': true,
     'component:ContentObjectTypeCatalogQuery': true,
     'component:ContentObjectTypeListQuery': true,
+    'component:InCodeTypeDefinition': true,
+    'component:CreateContentObjectTypePayload': true,
+    'component:UpdateContentObjectTypePayload': true,
     'component:DeleteCountResult': true,
     'component:MigrationListResponse': true,
     'component:RunMigrationPayload': true,
@@ -11713,12 +13641,40 @@ const checks: Checks = {
     'component:SupervisedRunResponse': true,
     'component:AgentRunInternals': true,
     'component:AgentRunDetailsQuery': true,
+    'component:AgentRunAccessQuery': true,
     'component:ListAgentRunsQuery': true,
     'component:RecordAgentRunPayload': true,
     'component:RecordRunPayload': true,
     'component:AgentRunUpdatesQuery': true,
     'component:SearchAgentRunsQuery': true,
     'component:StreamAgentRunQuery': true,
+    'component:ExperimentalAgentConversationStreamQuery': true,
+    'component:ExperimentalAgentConversationSourceUninitialized': true,
+    'component:ExperimentalAgentConversationSourceInitialized': true,
+    'component:ExperimentalAgentConversationSourceDescriptor': true,
+    'component:ExperimentalAgentConversationEvent': true,
+    'component:ExperimentalAgentConversationPreviewUnavailable': true,
+    'component:ExperimentalAgentConversationAcceptedOutput': true,
+    'component:ExperimentalAgentConversationAcceptedOutputHistoryQuery': true,
+    'component:ExperimentalAgentConversationAcceptedOutputHistoryPage': true,
+    'component:ExperimentalAgentConversationTranscriptQuery': true,
+    'component:ExperimentalAgentConversationTranscriptPage': true,
+    'component:ExperimentalAgentConversationUpgradePayload': true,
+    'component:ExperimentalAgentConversationUpgradeResponse': true,
+    'component:ExperimentalAgentConversationDeletePayload': true,
+    'component:ExperimentalAgentConversationDeleteResponse': true,
+    'component:ExperimentalAgentConversationStreamEnvelope': true,
+    'component:ExperimentalAgentEditingResource': true,
+    'component:ExperimentalAgentDocumentEditingAction': true,
+    'component:ExperimentalAgentUserInputMetadata': true,
+    'component:ExperimentalAgentControlPage': true,
+    'component:ExperimentalAgentRunUpdatesQuery': true,
+    'component:ExperimentalAgentRunStreamQuery': true,
+    'component:ExperimentalAgentRunControlEvent': true,
+    'component:ExperimentalAgentRunControlNotification': true,
+    'component:ExperimentalAgentConversationRunStatus': true,
+    'component:ExperimentalAgentRunStreamEnvelope': true,
+    'component:ExperimentalAgentRunUpdatesResponse': true,
     'component:UpdateAgentRunStatusPayload': true,
     'component:AgentRunFeedbackRating': true,
     'component:AgentRunFeedbackReasonCode': true,
@@ -12120,17 +14076,165 @@ const checks: Checks = {
     'component:CreateDelegationGrantPayload': true,
     'component:DelegationGrant': true,
     'component:DelegationGrantArray': true,
+    'component:ExperimentalCanonicalInteractionHeaders': true,
+    'component:ExperimentalCanonicalInteractionRetrievalQuery': true,
+    'component:ExperimentalCanonicalInteractionConversationReference': true,
+    'component:ExperimentalCanonicalInteractionNewState': true,
+    'component:ExperimentalCanonicalInteractionDocumentState': true,
+    'component:ExperimentalCanonicalInteractionReferenceState': true,
+    'component:ExperimentalCanonicalInteractionInitialState': true,
+    'component:ExperimentalCanonicalInteractionReturnPolicy': true,
+    'component:ExperimentalCanonicalInteractionAutoTurnSelection': true,
+    'component:ExperimentalCanonicalInteractionNoneTurnSelection': true,
+    'component:ExperimentalCanonicalInteractionRequiredTurnSelection': true,
+    'component:ExperimentalCanonicalInteractionTurnSelection': true,
+    'component:ExperimentalCanonicalInteractionExecutionConfiguration': true,
+    'component:ExperimentalCanonicalInteractionResultSchemaInput': true,
+    'component:ExperimentalCanonicalInteractionInlinePrompt': true,
+    'component:ExperimentalCanonicalInteractionExecutionRequest': true,
+    'component:ExperimentalCanonicalNamedInteractionExecutionRequest': true,
+    'component:ExperimentalCanonicalInteractionModelSwitchBinding': true,
+    'component:ExperimentalCanonicalInteractionModelSwitchPrepareRequest': true,
+    'component:ExperimentalCanonicalInteractionModelSwitchPrepareResult': true,
+    'component:ExperimentalCanonicalInteractionDocumentHistory': true,
+    'component:ExperimentalCanonicalInteractionReferenceHistory': true,
+    'component:ExperimentalCanonicalInteractionUnavailableHistory': true,
+    'component:ExperimentalCanonicalInteractionHistory': true,
+    'component:ExperimentalCanonicalInteractionRun': true,
+    'component:ExperimentalCanonicalInteractionAcceptedOutput': true,
+    'component:ExperimentalCanonicalInteractionUnavailableOutput': true,
+    'component:ExperimentalCanonicalInteractionOutput': true,
+    'component:ExperimentalCanonicalInteractionExecutionResult': true,
+    'component:ExperimentalCanonicalVirtualGenerationBinding': true,
+    'component:AgentConversationArchiveSource': true,
+    'component:AgentConversationNativeArchiveAttestation': true,
+    'component:ImportAgentRunConversationArchivePayload': true,
+    'component:ImportAgentRunConversationArchiveResponse': true,
+    'component:ExperimentalAgentRestartAdmissionExecution': true,
+    'component:ExperimentalAgentRestartAdmissionPayload': true,
+    'component:ExperimentalAgentRestartAdmissionResponse': true,
+    'component:ExperimentalAgentWorkstreamRestartAdmissionPayload': true,
+    'component:ExperimentalAgentWorkstreamRestartAdmissionResponse': true,
+    'component:ExperimentalAgentWorkstreamTerminalPayload': true,
+    'component:ExperimentalAgentWorkstreamTerminalResponse': true,
+    'component:ExperimentalAdmitAgentGenerationPayload': true,
+    'component:ExperimentalAdmitAgentGenerationUserPayload': true,
+    'component:ExperimentalAdmitAgentGenerationToolsPayload': true,
+    'component:ExperimentalAdmitAgentGenerationToolApprovalReviewPayload': true,
+    'component:ExperimentalAdmitAgentGenerationInitialPayload': true,
+    'component:ExperimentalAdmitAgentGenerationCheckpointPayload': true,
+    'component:ExperimentalAgentRoutingOriginExecution': true,
+    'component:ExperimentalAgentRoutingExecutionBinding': true,
+    'component:ExperimentalAgentGenerationAdmissionPayload': true,
+    'component:ExperimentalCanonicalIngestionSourceBinding': true,
+    'component:ExperimentalAgentGenerationAdmissionReceipt': true,
+    'component:ExperimentalAgentRoutingStatusPayload': true,
+    'component:ExperimentalAgentRoutingStatusResponse': true,
+    'component:ExperimentalAgentRoutingIntent': true,
+    'component:ExperimentalAgentRoutingControlChange': true,
+    'component:ExperimentalAgentRoutingControlBinding': true,
+    'component:ExperimentalUpdateAgentRoutingControlPayload': true,
+    'component:ExperimentalAgentRoutingControlReceipt': true,
+    'component:ExperimentalAgentRoutingInitialReceipt': true,
+    'component:ExperimentalAgentRoutingChangeReceipt': true,
+    'component:ExperimentalAgentRoutingControlSelector': true,
+    'component:ExperimentalAgentRoutingControlQuery': true,
+    'component:ExperimentalAgentRoutingControlResponse': true,
+    'component:ExperimentalCanonicalCheckpointSummarySource': true,
+    'component:ExperimentalCanonicalCheckpointSummaryPayload': true,
+    'component:ExperimentalCanonicalUserMessageRequest': true,
+    'component:ExperimentalCanonicalContinuationAnchor': true,
+    'component:ExperimentalCanonicalResumeInputAppend': true,
+    'component:ExperimentalCanonicalAsyncCompletionOptions': true,
+    'component:ExperimentalCanonicalResumeAccepted': true,
+    'component:ExperimentalCanonicalResumeTelemetry': true,
+    'component:ExperimentalCanonicalToolResultsPayload': true,
+    'component:ExperimentalCanonicalUserMessagePayload': true,
+    'component:ExperimentalCanonicalAgentAcceptanceTarget': true,
+    'component:ExperimentalCanonicalToolApprovalReviewStreamRequest': true,
+    'component:ExperimentalCanonicalInitialAgentStreamRequest': true,
+    'component:ExperimentalCanonicalInteractionStreamRequest': true,
+    'component:ExperimentalCanonicalInitialIngestionAccepted': true,
+    'component:ExperimentalCanonicalInteractionStreamOpened': true,
+    'component:ExperimentalCanonicalInteractionStreamResumed': true,
+    'component:ExperimentalCanonicalInteractionAcceptedRecoveryOpened': true,
+    'component:ExperimentalCanonicalInteractionConversationEvent': true,
+    'component:ExperimentalCanonicalInteractionStreamEnvelope': true,
+    'component:ConversationStreamIdentity': true,
+    'component:ConversationStreamCursor': true,
+    'component:ConversationNativeStreamPathSegment': true,
+    'component:ConversationNativeStreamPosition': true,
+    'component:ConversationStreamDraftBlock': true,
+    'component:ConversationStreamFailureDiagnostic': true,
+    'component:ConversationStreamReconciliation': true,
+    'component:ConversationStreamTransformationProof': true,
+    'component:ConversationStreamResponseMapping': true,
+    'component:ConversationStreamDecodeEvidence': true,
+    'component:ConversationStreamEvent': true,
+    'component:ConversationToolExecutionRequest': true,
+    'component:ConversationToolExecutionResult': true,
+    'component:AvailableCanonicalIngestionPreparationView': true,
+    'component:UnavailableCanonicalIngestionPreparationView': true,
+    'component:AvailableCanonicalIngestionRecoveryView': true,
+    'component:UnavailableCanonicalIngestionRecoveryView': true,
+    'component:ExperimentalCanonicalIngestionConcreteTarget': true,
+    'component:ExperimentalCanonicalIngestionCount': true,
+    'component:ExperimentalCanonicalIngestionProjection': true,
+    'component:ExperimentalCanonicalIngestionBudgetQueueViewQuery': true,
+    'component:ExperimentalCanonicalIngestionPreparationViewQuery': true,
+    'component:ExperimentalCanonicalIngestionPreparationViewResponse': true,
+    'component:ExperimentalCanonicalIngestionRecovery': true,
+    'component:ExperimentalCanonicalIngestionRecoveryViewQuery': true,
+    'component:ExperimentalCanonicalIngestionRecoveryViewResponse': true,
+    'component:ExperimentalRunConversationInspectionQuery': true,
+    'component:ExperimentalRunConversationInspectionResponse': true,
+    'component:ConversationTranscriptExternalReferenceBlock': true,
+    'component:ExperimentalCanonicalInitialAuthoringResponse': true,
+    'component:RunConversationResponse': true,
+    'component:InitialAuthoringMedia': true,
+    'component:InitialAuthoringSegment': true,
+    'component:InitialAuthoringInputRecord': true,
+    'component:ExperimentalInitialAuthoringViewQuery': true,
+    'component:AvailableInitialAuthoringView': true,
+    'component:UnavailableInitialAuthoringView': true,
+    'component:ExperimentalInitialAuthoringViewResponse': true,
+    'component:AppendRunConversationProgramTurnPayload': true,
+    'component:AppendRunConversationProgramTurnResponse': true,
+    'component:AppendRunConversationToolResultsPayload': true,
+    'component:AppendRunConversationToolResultsResponse': true,
     'component:RunBudgetOwner': true,
     'component:RunBudgetUsage': true,
     'component:ReadRunBudgetUsagePayload': true,
     'component:RunBudgetTotals': true,
     'component:RunBudgetCapability': true,
     'component:RunBudgetCapabilityQuery': true,
+    'component:ConversationJsonMinificationTransform': true,
+    'component:ConversationJsonMinificationMeasuredProjection': true,
+    'component:ConversationJsonMinificationMeasurement': true,
+    'component:ConversationJsonMinificationProposal': true,
+    'component:ConversationJsonMinificationNoOpReason': true,
+    'component:ConversationJsonMinificationApplication': true,
+    'component:ExperimentalPublishAgentAssetPayload': true,
+    'component:ExperimentalPublishedAgentAsset': true,
+    'component:ExperimentalAgentAssetPublication': true,
+    'component:ExperimentalExtractAgentAssetPayload': true,
+    'component:ExperimentalAgentAssetDerivationSource': true,
+    'component:ExperimentalAgentAssetDerivationTransform': true,
+    'component:ExperimentalAgentAssetDerivation': true,
+    'component:ExperimentalAgentAssetExtractionPending': true,
+    'component:ExperimentalAgentAssetExtractionAvailable': true,
+    'component:ExperimentalAgentAssetExtractionFailed': true,
+    'component:ExperimentalAgentAssetExtraction': true,
+    'component:ExperimentalClaimAgentAssetExtractionPayload': true,
+    'component:ExperimentalAgentAssetExtractionClaim': true,
+    'component:ExperimentalAgentProcessingActivityEvidence': true,
+    'component:ExperimentalClaimAgentProcessingPayload': true,
+    'component:ExperimentalAgentProcessingClaim': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2529);
+        expect(Object.keys(checks)).toHaveLength(2881);
     });
 });

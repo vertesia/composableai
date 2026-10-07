@@ -12,7 +12,11 @@ import {
 } from '@vertesia/common';
 import { type ActivityContext, setupActivity } from '../dsl/setup/ActivityContext.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
+import {
+    executeInteractionFromActivity,
+    type InteractionExecutionParams,
+    requireCanonicalInteractionOutput,
+} from './executeInteraction.js';
 
 const INT_SELECT_DOCUMENT_TYPE = 'sys:SelectDocumentType';
 const INT_GENERATE_METADATA_MODEL = 'sys:GenerateMetadataModel';
@@ -240,7 +244,7 @@ export async function generateOrAssignContentType(
         throw error;
     }
 
-    const jsonResult = res.result.object<SelectDocumentTypeResult>();
+    const jsonResult = requireCanonicalInteractionOutput(res).object<SelectDocumentTypeResult>();
 
     log.debug(`Selected Content Type Result: ${JSON.stringify(jsonResult)}`);
 
@@ -274,7 +278,7 @@ export async function generateOrAssignContentType(
     }
 
     if (!selectedType) {
-        log.error('Type not found: ', res.result);
+        log.error('Type not found: ', requireCanonicalInteractionOutput(res).fragment);
         throw new Error(`Type not found: ${jsonResult.document_type}`);
     }
 
@@ -369,7 +373,7 @@ async function generateNewType(
         throw error;
     }
 
-    const jsonResult = genTypeRes.result.object<GeneratedDocumentTypeResult>();
+    const jsonResult = requireCanonicalInteractionOutput(genTypeRes).object<GeneratedDocumentTypeResult>();
 
     if (!jsonResult.document_type) {
         log.error('No name generated for type', genTypeRes);

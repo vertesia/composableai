@@ -18,8 +18,8 @@
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "gen:schemas": "tsx ./scripts/gen-api-components.ts && tsx ./scripts/gen-intake-policy-schema.ts && tsx ./scripts/gen-wire-types.ts && pnpm exec biome format --write ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts",
-        "check:schemas": "! git status --porcelain --untracked-files=normal -- ./src/api-contract/components.generated.json ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts ./src/wire-types.generated.ts ./src/wire-types.generated.test.ts | grep .",
+        "gen:schemas": "tsx ./scripts/gen-api-components.ts && tsx ./scripts/gen-canonical-stream-validator.ts && tsx ./scripts/gen-intake-policy-schema.ts && tsx ./scripts/gen-wire-types.ts && pnpm exec biome format --write ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts",
+        "check:schemas": "! git status --porcelain --untracked-files=normal -- ./src/api-contract/components.generated.json ./src/canonical-stream-runtime/canonical-stream-validator.generated.js ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts ./src/wire-types.generated.ts ./src/wire-types.generated.test.ts | grep .",
         "check:pre-push": "pnpm exec turbo run gen:schemas --filter=@vertesia/common && pnpm run check:schemas"
     },
     "exports": {
@@ -34,6 +34,10 @@
         "./api-contract": {
             "types": "./lib/api-contract/index.d.ts",
             "default": "./lib/api-contract/index.js"
+        },
+        "./canonical-stream-runtime": {
+            "types": "./lib/canonical-stream-runtime/index.d.ts",
+            "default": "./lib/canonical-stream-runtime/index.js"
         },
         "./wire-types": {
             "types": "./lib/wire-types.generated.d.ts",
@@ -50,6 +54,7 @@
     },
     "dependencies": {
         "@llumiverse/common": "workspace:*",
+        "@llumiverse/conversation": "workspace:*",
         "ajv": "^8.20.0",
         "ajv-formats": "^3.0.1",
         "zod": "catalog:"
