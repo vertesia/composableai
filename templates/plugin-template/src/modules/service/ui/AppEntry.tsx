@@ -2,7 +2,7 @@ import branding from 'virtual:vertesia-branding';
 import { type Route, RouterProvider } from '@vertesia/ui/router';
 import { useUserSession } from '@vertesia/ui/session';
 import { IFRAME_APP_CONTENT_SLOT, IFRAME_APP_SLOT_PARAM, StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { setUsePluginAssets } from '../../../ui/assets';
 import { App } from '../../../ui/shell/App';
 import { OrgGate } from '../../../ui/shell/layouts/OrgGate';
@@ -14,13 +14,14 @@ setUsePluginAssets(false);
 
 const appName = import.meta.env.VITE_APP_NAME;
 const appVersion = import.meta.env.VITE_APP_VERSION;
-const globalValues = globalThis as Record<string, unknown>;
-const injectedAuthToken =
-    typeof globalValues.__VERTESIA_AUTH_TOKEN__ === 'string' ? globalValues.__VERTESIA_AUTH_TOKEN__ : undefined;
-const devAuthToken = import.meta.env.DEV ? import.meta.env.VITE_VERTESIA_AUTH_TOKEN : undefined;
-// Candidate validation injects a short-lived token before the application bundle loads. Prefer it
-// over a build-time development token so reloads and deployed Playwright runs use the current run.
-const runtimeAuthToken = injectedAuthToken ?? devAuthToken;
+declare global {
+    interface Window {
+        /** Display-only session; the gateway retains API authorization. */
+        __VERTESIA_SANDBOX_TOKEN__?: string;
+        __VERTESIA_SANDBOX_READY__?: Promise<string>;
+    }
+}
+
 const isCompositeContent =
     new URLSearchParams(window.location.search).get(IFRAME_APP_SLOT_PARAM) === IFRAME_APP_CONTENT_SLOT;
 
@@ -41,16 +42,6 @@ const ProtectedAppRoot = () => (
     </StandaloneApp>
 );
 
-const GatewayAppRoot = runtimeAuthToken ? AppRoot : ProtectedAppRoot;
-
-const routes: Route[] = [
-    { path: 'tenants/:tenantId/live/:agentRunId/app/*', Component: GatewayAppRoot },
-    { path: 'tenants/:tenantId/apps/:appId/app/*', Component: GatewayAppRoot },
-    { path: 'tenants/:tenantId/apps/:appId/versions/:versionId/app/*', Component: GatewayAppRoot },
-    { path: 'app/*', Component: GatewayAppRoot },
-    { path: '*', Component: GatewayAppRoot },
-];
-
 function AppVersionScope({ children }: { children: ReactNode }) {
     const { client } = useUserSession();
 
@@ -62,8 +53,30 @@ function AppVersionScope({ children }: { children: ReactNode }) {
 }
 
 export function AppEntry() {
+    const [hostToken, setHostToken] = useState(window.__VERTESIA_SANDBOX_TOKEN__);
+    useEffect(() => {
+        let mounted = true;
+        void window.__VERTESIA_SANDBOX_READY__?.then((token) => {
+            if (mounted) setHostToken(token);
+        });
+        return () => {
+            mounted = false;
+        };
+    }, []);
+    if (window.__VERTESIA_SANDBOX_READY__ && !hostToken) return null;
+
+    const GatewayAppRoot = hostToken ? AppRoot : ProtectedAppRoot;
+
+    const routes: Route[] = [
+        { path: 'tenants/:tenantId/live/:agentRunId/app/*', Component: GatewayAppRoot },
+        { path: 'tenants/:tenantId/apps/:appId/app/*', Component: GatewayAppRoot },
+        { path: 'tenants/:tenantId/apps/:appId/versions/:versionId/app/*', Component: GatewayAppRoot },
+        { path: 'app/*', Component: GatewayAppRoot },
+        { path: '*', Component: GatewayAppRoot },
+    ];
+
     return (
-        <VertesiaShell branding={branding} preserveSignInPath authToken={runtimeAuthToken} authScreens={appAuthScreens}>
+        <VertesiaShell branding={branding} preserveSignInPath authToken={hostToken} authScreens={appAuthScreens}>
             <AppVersionScope>
                 <OrgGate>
                     <RouterProvider routes={routes} />
