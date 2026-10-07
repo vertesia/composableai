@@ -17,6 +17,8 @@ blockExoticSubdeps: true
 minimumReleaseAge: 4320 # 3 days in minutes, minimumReleaseAge protects against supply chain attacks.
 minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
+  # Match the Hono security floor during the 3-day release cooldown.
+  - hono@4.13.13
   - "@vertesia/*"
   - "@llumiverse/*"
   # Renovate security update: js-yaml@5.2.2
@@ -48,6 +50,10 @@ catalog:
   vite: "8.3.1"
   rolldown: "1.2.11"
 overrides:
+  # GHSA-68fv-2mgg-jv7q: validate indexed source-map section offsets.
+  "source-map-js@<1.2.2": 1.2.2
+  # GHSA-238p-pmpm-9mq7: prevent prototype pollution from bypassing trust restrictions.
+  "katex@<0.18.2": 0.18.9
   # ============================
   # Special Overrides
   # ============================
@@ -104,6 +110,6 @@ overrides:
   serialize-javascript@<=7.0.2: ^7.0.3
   serialize-javascript@>=5.0.0 <7.0.5: ^7.0.5
   serialize-javascript@>=7.1.1 <7.1.2: 7.1.2
-  shell-quote@<=1.8.4: 1.9.0
+  "shell-quote@>=1.8.4 <1.11.0": 1.11.0
   # GHSA-r5fr-rjxr-66jc and GHSA-f23m-r3pf-42rh: template injection and prototype pollution.
   "lodash-es@<4.18.1": 4.18.1
