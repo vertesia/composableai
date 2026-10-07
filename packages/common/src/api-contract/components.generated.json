@@ -9085,7 +9085,7 @@
       },
       "jsonRepair": {
         "type": "boolean",
-        "description": "Allow conservative JSON syntax repair during result-schema validation for this execution. Overrides the driver default. Complete JSON wrappers may still be extracted when disabled."
+        "description": "Allow conservative JSON syntax repair during result-schema validation for this execution. Defaults to enabled. Complete JSON wrappers may still be extracted when disabled."
       },
       "prompt_cache_schema_suffix": {
         "type": "boolean",
