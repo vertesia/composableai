@@ -1,5 +1,5 @@
 import type { McpConnectUxConfig } from '@vertesia/common';
-import { Button, cn, VTooltip } from '@vertesia/ui/core';
+import { Button, cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { ChevronDownIcon, ChevronUpIcon, XIcon } from 'lucide-react';
@@ -109,40 +109,41 @@ function PendingRequestInputOverlay({
 
     const toggleLabel = isCollapsed ? t('agent.showQuestions') : t('agent.hideQuestions');
     const collapseButton = (
-        <VTooltip description={toggleLabel} asChild>
-            <Button
-                variant="ghost"
-                size="icon"
-                className="size-6 shrink-0"
-                aria-label={toggleLabel}
-                aria-expanded={!isCollapsed}
-                aria-controls={contentId}
-                onClick={() => setIsCollapsed((collapsed) => !collapsed)}
-            >
-                {isCollapsed ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
-            </Button>
-        </VTooltip>
+        <Button
+            variant="ghost"
+            size="icon"
+            className="size-6 shrink-0"
+            title={toggleLabel}
+            aria-label={toggleLabel}
+            aria-expanded={!isCollapsed}
+            aria-controls={contentId}
+            onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+        >
+            {isCollapsed ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+        </Button>
     );
 
     return (
         <div className={wrapperClassName} data-agent-request-input-overlay>
-            {mcpConnect ? (
-                <div className="mx-auto w-full max-w-3xl px-3 py-3">
-                    <div className="flex items-start gap-2">
-                        <div className="min-w-0 flex-1 text-sm leading-6 text-foreground/85">{displayText}</div>
-                        {collapseButton}
-                    </div>
-                    <div id={contentId} hidden={isCollapsed}>
-                        <McpRequestInputControls
-                            mcpConnect={mcpConnect}
-                            onMcpConnected={(cfg) => onMcpConnected?.(cfg, getRequestInputResponseMetadata(message))}
-                            onDecline={() => send(t('agent.mcpDeclinedMessage', { name: mcpConnect.name }))}
-                            disabled={isDisabled}
-                        />
-                    </div>
-                </div>
-            ) : (
-                <div className="mx-auto w-full max-w-3xl px-3 py-3">
+            <div className="mx-auto w-full max-w-3xl px-3 py-3">
+                {mcpConnect ? (
+                    <>
+                        <div className="flex items-start gap-2">
+                            <div className="min-w-0 flex-1 text-sm leading-6 text-foreground/85">{displayText}</div>
+                            {collapseButton}
+                        </div>
+                        <div id={contentId} hidden={isCollapsed}>
+                            <McpRequestInputControls
+                                mcpConnect={mcpConnect}
+                                onMcpConnected={(cfg) =>
+                                    onMcpConnected?.(cfg, getRequestInputResponseMetadata(message))
+                                }
+                                onDecline={() => send(t('agent.mcpDeclinedMessage', { name: mcpConnect.name }))}
+                                disabled={isDisabled}
+                            />
+                        </div>
+                    </>
+                ) : (
                     <AskUserWidget
                         question={displayText}
                         options={options}
@@ -163,8 +164,8 @@ function PendingRequestInputOverlay({
                         className="my-0"
                         cardClassName="bg-background/80 shadow-lg shadow-black/5 dark:shadow-none"
                     />
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

@@ -96,7 +96,9 @@ describe('AgentRequestInputOverlay', () => {
             <AgentRequestInputOverlay message={createMcpRequestMessage()} onSendMessage={onSendMessage} />,
         );
 
-        expect(screen.getByRole('button', { name: 'Hide questions' }).textContent).toBe('');
+        expect(screen.getByRole('button', { name: 'Hide questions' }).getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByRole('button', { name: 'Connect' })).not.toBeNull();
+        expect(screen.getByRole('button', { name: 'Decline' })).not.toBeNull();
 
         fireEvent.click(screen.getByRole('button', { name: /decline/i }));
 
@@ -195,6 +197,7 @@ describe('AgentRequestInputOverlay', () => {
         expect(screen.getByText('Approve Write Artifact: quotes.md?')).not.toBeNull();
         expect(screen.queryByText('Approve Write Artifact: name quotes.md?')).toBeNull();
     });
+
     it('collapses questions without submitting and preserves the draft when reopened', () => {
         const onSendMessage = vi.fn();
         renderWithProviders(
@@ -219,7 +222,7 @@ describe('AgentRequestInputOverlay', () => {
 
         expect(toggle.getAttribute('aria-expanded')).toBe('true');
         expect(content?.hidden).toBe(false);
-        expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('Keep this draft');
+        expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('Keep this draft');
         fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
         expect(onSendMessage).toHaveBeenCalledWith('Keep this draft', expect.any(Object));
     });
@@ -249,7 +252,7 @@ describe('AgentRequestInputOverlay', () => {
         const nextMessage = { ...message, details: { ...message.details, request_id: 'next-request' } };
         view.rerender(<AgentRequestInputOverlay message={nextMessage} onSendMessage={onSendMessage} />);
         expect(screen.getByRole('button', { name: 'Hide questions' }).getAttribute('aria-expanded')).toBe('true');
-        expect((screen.getByRole('textbox') as HTMLTextAreaElement).value).toBe('');
+        expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('');
     });
 
     it('allows collapsing disabled MCP requests without resolving them', () => {
