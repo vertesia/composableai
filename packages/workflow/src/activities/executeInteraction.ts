@@ -19,6 +19,7 @@ import {
     type InteractionExecutionConfiguration,
     type RunSearchPayload,
 } from '@vertesia/common';
+import mime from 'mime';
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
@@ -253,22 +254,35 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                 completionResult.map(async (item, index) => {
                     if (item.type === 'image') {
                         const image = item.value;
-                        // Extract base64 data and create buffer
-                        const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '');
-                        const buffer = Buffer.from(base64Data, 'base64');
+                        // References already identify an image; decoding them would corrupt it.
+                        if (/^[a-z][a-z\d+.-]*:/i.test(image) && !/^data:/i.test(image)) {
+                            return item;
+                        }
+
+                        let buffer: Buffer;
+                        let mimeType = 'image/png';
+                        if (/^data:/i.test(image)) {
+                            const response = await fetch(image);
+                            buffer = Buffer.from(await response.arrayBuffer());
+                            mimeType =
+                                response.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase() ?? mimeType;
+                        } else {
+                            buffer = Buffer.from(image, 'base64');
+                        }
 
                         // Generate filename
                         const { runId } = activityWorkflowExecution();
                         const { activityId } = activityInfo();
-                        const filename = `generated-image-${runId}-${activityId}-${index}.png`;
+                        const extension = mime.getExtension(mimeType) ?? 'png';
+                        const filename = `generated-image-${runId}-${activityId}-${index}.${extension}`;
 
                         // Create a readable stream from the buffer
-                        const stream = Readable.from(buffer);
+                        const stream = Readable.from([buffer]);
 
-                        const source = new NodeStreamSource(stream, filename, 'image/png');
+                        const source = new NodeStreamSource(stream, filename, mimeType);
 
                         const file = await client.files.uploadFile(source);
-                        return { type: 'image', value: file } as CompletionResult;
+                        return { ...item, value: file };
                     }
                     return item;
                 }),
@@ -294,7 +308,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         }
         const executionError = toExecutionError(error);
         if (isRenditionPending(executionError)) {
-            log.debug(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
+            log.warn(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
         } else if (executionError.statusCode === 429) {
             log.warn(`Resource exhausted while executing interaction ${interactionName}`, { error: executionError });
         } else {

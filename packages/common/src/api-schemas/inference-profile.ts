@@ -1,5 +1,6 @@
 import { ModelOptionsSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
+import { AgentBudgetConfigurationSchema } from './agent-budget.js';
 
 export const InferenceProfileIdSchema = z
     .string()
@@ -100,6 +101,10 @@ export const InferenceProfileRecordArraySchema = z
 export const UpdateInteractionConfigurationPayloadSchema = z
     .strictObject({
         inference_profile: InferenceProfileIdSchema.nullable(),
+        budget: AgentBudgetConfigurationSchema.nullable().optional().meta({
+            description:
+                'Project-scoped agent budget override. Null restores the code-defined or project default; omission preserves the saved budget.',
+        }),
     })
     .meta({ id: 'UpdateInteractionConfigurationPayload' });
 export const InteractionConfigurationRecordSchema = UpdateInteractionConfigurationPayloadSchema.extend({

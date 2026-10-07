@@ -88,7 +88,7 @@ export function NavbarSeparator({ visible }: NavbarSeparatorProps) {
     if (visible) {
         visibility = visible === 'mobile' ? 'lg:hidden' : 'hidden lg:block';
     }
-    return <div className={`h-6 w-px bg-muted/10 dark:bg-muted/0.1 ${visibility}`} aria-hidden="true" />;
+    return <div className={`h-6 w-px bg-muted/10 ${visibility}`} aria-hidden="true" />;
 }
 
 interface NavbarIconButtonProps {
@@ -98,11 +98,7 @@ interface NavbarIconButtonProps {
 }
 export function NavbarIconButton({ title, icon: Icon, onClick }: NavbarIconButtonProps) {
     return (
-        <button
-            type="button"
-            className="-m-2.5 p-2.5 text-muted dark:text-foreground hover:text-muted"
-            onClick={onClick}
-        >
+        <button type="button" className="-m-2.5 p-2.5 text-muted hover:text-muted" onClick={onClick}>
             <span className="sr-only">{title}</span>
             <Icon className="size-6" aria-hidden="true" title={title} />
         </button>
@@ -123,7 +119,7 @@ interface NavbarLinkProps {
 }
 export function NavbarLink({ href, onClick, children }: NavbarLinkProps) {
     return (
-        <a className="dark:text-foreground" href={href} onClick={onClick}>
+        <a className="text-foreground" href={href} onClick={onClick}>
             {children}
         </a>
     );

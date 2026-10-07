@@ -11,8 +11,8 @@ on:
         description: "The commit SHA of vertesia/llumiverse to update"
         required: true
       branch:
-        # example: "main" or "preview"
-        #   (don't use "refs/heads/main" or "refs/heads/preview")
+        # example: "main" or "release/1.6"
+        #   (don't use "refs/heads/main" or "refs/heads/release/1.6")
         description: "The branch to update the submodule in"
         required: true
         default: "main"
@@ -74,9 +74,8 @@ jobs:
       - name: Validate branch
         run: |
           if [[ "${TARGET_COMPOSABLEAI_BRANCH}" != "main" \
-                && "${TARGET_COMPOSABLEAI_BRANCH}" != "preview" \
                 && ! "${TARGET_COMPOSABLEAI_BRANCH}" =~ ^release/[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid branch '${TARGET_COMPOSABLEAI_BRANCH}'. Only 'main', 'preview', and 'release/X.Y' branches are supported."
+            echo "::error::Invalid branch '${TARGET_COMPOSABLEAI_BRANCH}'. Only 'main' and 'release/X.Y' branches are supported."
             exit 1
           fi
           echo "Branch '${TARGET_COMPOSABLEAI_BRANCH}' is valid."
@@ -439,6 +438,10 @@ jobs:
       pull-requests: read # Inspect source PR labels and resolve contributors.
       actions: read # Inspect workflow failures in the reusable notifier.
     uses: ./.github/workflows/notify-automation.yaml # zizmor: ignore[self-repository] actionlint does not yet support $/ workflow references.
+    # Name the secret so the called job can resolve it from its submodule-sync environment
+    # (actions/runner#1490); without it the job fails with an empty private-key.
+    secrets:
+      APP_VERTESIA_SUBMODULE_SYNC_PEM: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }} # zizmor: ignore[secrets-outside-env] Resolved by the called submodule-sync environment.
     with:
       source_repository: vertesia/llumiverse
       source_sha: ${{ inputs.llumiverse_sha || github.event.client_payload.llumiverse_sha }}

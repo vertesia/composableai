@@ -128,4 +128,45 @@ describe('EventsApi.subscribeDeliveries', () => {
 
         subscription.close();
     });
+
+    it('reconnects from the latest cursor instead of the initial query cursor', async () => {
+        vi.useFakeTimers();
+        const subscription = createClient().events.subscribeDeliveries({ since_event_id: 'initial' });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(new URL(FakeEventSource.urls[0]).searchParams.get('since_event_id')).toBe('initial');
+            FakeEventSource.instances[0].emit('heartbeat', { type: 'heartbeat', cursor: 'latest' }, 'latest');
+            FakeEventSource.instances[0].onerror?.(new Event('error'));
+            await vi.advanceTimersByTimeAsync(1100);
+            expect(FakeEventSource.instances).toHaveLength(2);
+            expect(new URL(FakeEventSource.urls[1]).searchParams.get('since_event_id')).toBe('latest');
+        } finally {
+            subscription.close();
+            vi.useRealTimers();
+        }
+    });
+
+    it('exhausts retries when auth refresh fails after a stable connection', async () => {
+        vi.useFakeTimers();
+        const client = createClient();
+        const error = new Error('Refresh unavailable');
+        const authenticate = vi.fn().mockResolvedValueOnce('Bearer token').mockRejectedValue(error);
+        client.withAuthCallback(authenticate);
+        const onError = vi.fn();
+        const subscription = client.events.subscribeDeliveries({ max_reconnect_attempts: 2, on_error: onError });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            FakeEventSource.instances[0].onopen?.(new Event('open'));
+            await vi.advanceTimersByTimeAsync(6000);
+            FakeEventSource.instances[0].onerror?.(new Event('error'));
+            await vi.advanceTimersByTimeAsync(5000);
+            expect(authenticate).toHaveBeenCalledTimes(3);
+            expect(subscription.closed).toBe(true);
+            expect(onError).toHaveBeenCalledExactlyOnceWith(error);
+            expect(vi.getTimerCount()).toBe(0);
+        } finally {
+            subscription.close();
+            vi.useRealTimers();
+        }
+    });
 });

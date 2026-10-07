@@ -115,14 +115,14 @@ export enum AccessControlPrincipalType {
  * (e.g. tasks), extend this list with the new scope(s) AND extend `RoleDomain`
  * with the new domain.
  */
-export const AbacScopes = ['document', 'collection', 'agent_run', 'task'] as const;
+export const AbacScopes = ['document', 'collection', 'agent_run', 'shared_content', 'task'] as const;
 
 /**
  * Logical grouping of roles by the service area that owns them. Declared as a
  * runtime list so the role schemas can publish it as an enum component; the
  * `RoleDomain` type is inferred from it in `roles/types.ts`.
  */
-export const RoleDomains = ['system', 'content', 'agent_runs', 'tasks'] as const;
+export const RoleDomains = ['system', 'content', 'agent_runs', 'shared_content', 'tasks'] as const;
 
 /** These capabilities are granted only by account roles, never selected-project roles. */
 export const ACCOUNT_SCOPED_PERMISSIONS: readonly Permission[] = [

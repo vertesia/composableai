@@ -25,7 +25,9 @@ it('keeps feedback visible and prevents duplicate requests while tenant discover
     expect(screen.getByRole('textbox')).toBeTruthy();
     expect(screen.getByRole('status')).toBeTruthy();
     expect(button.contains(screen.getByRole('status'))).toBe(false);
-    fireEvent.submit(screen.getByRole('textbox').closest('form')!);
+    const form = screen.getByRole('textbox').closest('form');
+    if (!form) throw new Error('Expected the email field to be inside a form');
+    fireEvent.submit(form);
     expect(resolveTenant).toHaveBeenCalledTimes(1);
     finish();
     await waitFor(() => expect(onProceed).toHaveBeenCalledWith('person@example.com', undefined));

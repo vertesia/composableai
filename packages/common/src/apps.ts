@@ -1,127 +1,4 @@
-import type { z } from 'zod';
-import type {
-    AgentToolApprovalClassSchema,
-    AgentToolDefinitionSchema,
-    AppApiKeyCollectionParamsSchema,
-    AppBuildProgressSchema,
-    AppBuildProgressStatusSchema,
-    AppBuildTriggerSchema,
-    AppDeleteSummarySchema,
-    AppDevelopmentTaskDetailsSchema,
-    AppDevelopmentTaskListSchema,
-    AppDevelopmentTaskSchema,
-    AppInspectionCapabilityReportSchema,
-    AppInspectionIssueSchema,
-    AppInspectionResultSchema,
-    AppInstallationKindSchema,
-    AppInstallationOAuthBindingSchema,
-    AppInstallationPayloadSchema,
-    AppInstallationProjectsQuerySchema,
-    AppInstallationProviderBindingSchema,
-    AppInstallationsQuerySchema,
-    AppListScopeSchema,
-    AppOAuthCollectionParamsSchema,
-    AppOAuthProviderParamsSchema,
-    AppRepoBranchSchema,
-    AppRepoCommitSchema,
-    AppRepoCommitsSchema,
-    AppRepoDocumentCommitSchema,
-    AppRepoRefSchema,
-    AppRepoRefsSchema,
-    AppRepoTreeEntrySchema,
-    AppRepoTreeSchema,
-    AppScaffoldModuleSchema,
-    AppScaffoldProgressSchema,
-    AppScaffoldProgressStatusSchema,
-    AppsQuerySchema,
-    AppToolCollectionSchema,
-    AppVersionGitRefTypeSchema,
-    AppVersionGitSourceSchema,
-    AppVersionKindSchema,
-    AppVersionRecordSchema,
-    AppVersionStateSchema,
-    AppVersionStorageSchema,
-    AppVersionTargetSchema,
-    AppVersionUrlsSchema,
-    DeleteAppVersionResponseSchema,
-    McpApiKeyCredentialSchema,
-    OAuthClientCredentialsSchema,
-    StartAppBuildRequestSchema,
-    StartAppBuildResponseSchema,
-    StartAppDevelopmentTaskRequestSchema,
-    StartAppScaffoldRequestSchema,
-    StartAppScaffoldResponseSchema,
-    UpdateAppInstallationOAuthApprovalPayloadSchema,
-    UpdateAppInstallationToolAllowlistPayloadSchema,
-    UpsertAppVersionRequestSchema,
-    ValidateUrlRequestSchema,
-    ValidateUrlResponseSchema,
-} from './api-schemas/app-lifecycle.js';
-import type {
-    AppEventHookDeliverySchema,
-    AppEventHookPayloadSchema,
-    AppEventSubscriptionDefinitionSchema,
-    AppInstallationListEntrySchema,
-    AppInstallationSchema,
-    AppInstallationWithManifestSchema,
-    AppManifestDataSchema,
-    AppManifestSchema,
-    AppPackageEventHookSchema,
-    AppPackageHooksSchema,
-    AppPackageSchema,
-    AppWidgetInfoSchema,
-    CompositeAppCardOverridesSchema,
-    CompositeAppConfigPayloadSchema,
-    CompositeAppConfigSchema,
-    CompositeAppEntrySchema,
-    CompositeAppHeaderItemKindSchema,
-    CompositeAppHeaderItemSchema,
-    CompositeAppHeaderItemTargetSchema,
-    CompositeAppHeaderOverridesSchema,
-    CompositeAppHomePluginSchema,
-    CompositeAppLogoOverridesSchema,
-    CompositeAppMenuSectionSchema,
-    CompositeAppMessageOverridesSchema,
-    CompositeAppMessageStyleSchema,
-    CompositeAppNavItemPermissionsSchema,
-    CompositeAppSidebarOverridesSchema,
-    CompositeAppSwitchersOverridesSchema,
-    CompositeAppThemeOverridesSchema,
-    CompositeAppUserMenuOverridesSchema,
-    PromoteAppVersionResponseSchema,
-    UpdateAppPayloadSchema,
-} from './api-schemas/app-runtime.js';
-import type {
-    AppAccessControlSchema,
-    AppAvailableInSchema,
-    AppCapabilitiesSchema,
-    AppGitSourceConfigSchema,
-    AppManifestSourceSchema,
-    AppSourceConfigSchema,
-    AppUIConfigSchema,
-    MCPApiKeyConfigSchema,
-    MCPOAuthConfigSchema,
-    MCPToolAnnotationsSchema,
-    MCPToolCollectionObjectSchema,
-    McpApiKeyStatusSchema,
-    McpOAuthConnectResponseSchema,
-    McpOAuthDisconnectResponseSchema,
-    McpOAuthTokenRequestSchema,
-    McpOAuthTokenResponseSchema,
-    OAuthAuthorizeResponseSchema,
-    OAuthAuthStatusSchema,
-    OAuthMetadataResponseSchema,
-    SetMcpApiKeyRequestSchema,
-    ToolCollectionAuthTypeSchema,
-    ToolCollectionObjectSchema,
-    VertesiaSDKToolCollectionObjectSchema,
-} from './api-schemas/apps.js';
-import type { RemoteActivityDefinitionSchema } from './api-schemas/integrations.js';
-import type {
-    ProjectToolInfoSchema,
-    RenderingTemplateDefinitionRefSchema,
-    RenderingTemplateDefinitionSchema,
-} from './api-schemas/project.js';
+import type * as Wire from './wire-types.generated.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
@@ -163,28 +40,28 @@ export interface AppUINavItem {
     preferredSection?: (typeof PREFERRED_SECTIONS)[number];
 }
 
-export type AppUIConfig = z.infer<typeof AppUIConfigSchema>;
+export type AppUIConfig = Wire.AppUIConfig;
 
-export type AppInstallationProjectsQuery = z.infer<typeof AppInstallationProjectsQuerySchema>;
+export type AppInstallationProjectsQuery = Wire.AppInstallationProjectsQuery;
 
-export type AppInstallationsQuery = z.infer<typeof AppInstallationsQuerySchema>;
+export type AppInstallationsQuery = Wire.AppInstallationsQuery;
 
-export type AppListScope = z.infer<typeof AppListScopeSchema>;
+export type AppListScope = Wire.AppListScope;
 
-export type AppsQuery = z.infer<typeof AppsQuerySchema>;
+export type AppsQuery = Wire.AppsQuery;
 
-export type ToolCollectionAuthType = z.infer<typeof ToolCollectionAuthTypeSchema>;
+export type ToolCollectionAuthType = Wire.ToolCollectionAuthType;
 
-export type MCPOAuthConfig = z.infer<typeof MCPOAuthConfigSchema>;
+export type MCPOAuthConfig = Wire.MCPOAuthConfig;
 
 /** Install-time provisioning blueprint for an `auth: 'api_key'` MCP collection. Never holds the key. */
-export type MCPApiKeyConfig = z.infer<typeof MCPApiKeyConfigSchema>;
+export type MCPApiKeyConfig = Wire.MCPApiKeyConfig;
 
-export type MCPToolCollectionObject = z.infer<typeof MCPToolCollectionObjectSchema>;
+export type MCPToolCollectionObject = Wire.MCPToolCollectionObject;
 
-export type VertesiaSDKToolCollectionObject = z.infer<typeof VertesiaSDKToolCollectionObjectSchema>;
+export type VertesiaSDKToolCollectionObject = Wire.VertesiaSDKToolCollectionObject;
 
-export type ToolCollectionObject = z.infer<typeof ToolCollectionObjectSchema>;
+export type ToolCollectionObject = Wire.ToolCollectionObject;
 
 function deriveMCPCollectionId(input: string): string {
     return input
@@ -228,7 +105,7 @@ export function normalizeToolCollection(collection: ToolCollectionObject, vars?:
 /**
  * Metadata hints from MCP tool annotations (per MCP spec).
  */
-export type MCPToolAnnotations = z.infer<typeof MCPToolAnnotationsSchema>;
+export type MCPToolAnnotations = Wire.MCPToolAnnotations;
 
 /**
  * Approval behavior class for a tool exposed to agents.
@@ -238,19 +115,19 @@ export type MCPToolAnnotations = z.infer<typeof MCPToolAnnotationsSchema>;
  * - `control`: affects agent control flow or tool availability, not user data or external systems.
  * - `requires_confirmation`: high-impact action that must ask the user even in interactive full-control mode.
  */
-export type AgentToolApprovalClass = z.infer<typeof AgentToolApprovalClassSchema>;
+export type AgentToolApprovalClass = Wire.AgentToolApprovalClass;
 
 /**
  * Tool definition with optional activation control for agent exposure.
  */
-export type AgentToolDefinition = z.infer<typeof AgentToolDefinitionSchema>;
+export type AgentToolDefinition = Wire.AgentToolDefinition;
 
 /**
  * Definition of a remote activity exposed by a tool server for use in DSL workflows.
  * Remote activities are identified in workflow steps using colon-separated names:
  * `app:<app_name>:<collection>:<activity_name>` (e.g. `app:my-nlp-app:examples:word_count`).
  */
-export type RemoteActivityDefinition = z.infer<typeof RemoteActivityDefinitionSchema>;
+export type RemoteActivityDefinition = Wire.RemoteActivityDefinition;
 
 /**
  * Canonical app capabilities Studio renders/supports. The public type is derived from
@@ -267,7 +144,7 @@ export const APP_CAPABILITIES = [
     'dashboards',
 ] as const;
 
-export type AppCapabilities = z.infer<typeof AppCapabilitiesSchema>;
+export type AppCapabilities = Wire.AppCapabilities;
 
 /**
  * Header carrying the app version a generated-app UI is running, so studio/zeno resolve app-owned
@@ -275,25 +152,25 @@ export type AppCapabilities = z.infer<typeof AppCapabilitiesSchema>;
  * Resolution-time only; never persisted. Set by the generated app template via client.withAppVersion.
  */
 export const APP_VERSION_HEADER = 'x-vertesia-app-version';
-export type AppAvailableIn = z.infer<typeof AppAvailableInSchema>;
+export type AppAvailableIn = Wire.AppAvailableIn;
 
-export type AppVersionKind = z.infer<typeof AppVersionKindSchema>;
-export type AppVersionState = z.infer<typeof AppVersionStateSchema>;
-export type AppVersionTarget = z.infer<typeof AppVersionTargetSchema>;
-export type AppVersionGitRefType = z.infer<typeof AppVersionGitRefTypeSchema>;
-export type AppBuildTrigger = z.infer<typeof AppBuildTriggerSchema>;
+export type AppVersionKind = Wire.AppVersionKind;
+export type AppVersionState = Wire.AppVersionState;
+export type AppVersionTarget = Wire.AppVersionTarget;
+export type AppVersionGitRefType = Wire.AppVersionGitRefType;
+export type AppBuildTrigger = Wire.AppBuildTrigger;
 
-export type AppVersionStorage = z.infer<typeof AppVersionStorageSchema>;
+export type AppVersionStorage = Wire.AppVersionStorage;
 
-export type AppVersionGitSource = z.infer<typeof AppVersionGitSourceSchema>;
+export type AppVersionGitSource = Wire.AppVersionGitSource;
 
-export type AppVersionUrls = z.infer<typeof AppVersionUrlsSchema>;
+export type AppVersionUrls = Wire.AppVersionUrls;
 
-export type AppVersionRecord = z.infer<typeof AppVersionRecordSchema>;
+export type AppVersionRecord = Wire.AppVersionRecord;
 
-export type DeleteAppVersionResponse = z.infer<typeof DeleteAppVersionResponseSchema>;
+export type DeleteAppVersionResponse = Wire.DeleteAppVersionResponse;
 
-export type UpsertAppVersionRequest = z.infer<typeof UpsertAppVersionRequestSchema>;
+export type UpsertAppVersionRequest = Wire.UpsertAppVersionRequest;
 
 export interface AppVersionListQuery {
     app_id?: string;
@@ -302,27 +179,27 @@ export interface AppVersionListQuery {
     limit?: number;
 }
 
-export type PromoteAppVersionResponse = z.infer<typeof PromoteAppVersionResponseSchema>;
+export type PromoteAppVersionResponse = Wire.PromoteAppVersionResponse;
 
-export type StartAppBuildRequest = z.infer<typeof StartAppBuildRequestSchema>;
+export type StartAppBuildRequest = Wire.StartAppBuildRequest;
 
-export type StartAppBuildResponse = z.infer<typeof StartAppBuildResponseSchema>;
+export type StartAppBuildResponse = Wire.StartAppBuildResponse;
 
-export type AppBuildProgressStatus = z.infer<typeof AppBuildProgressStatusSchema>;
+export type AppBuildProgressStatus = Wire.AppBuildProgressStatus;
 
-export type AppBuildProgress = z.infer<typeof AppBuildProgressSchema>;
+export type AppBuildProgress = Wire.AppBuildProgress;
 
-export type AppScaffoldModule = z.infer<typeof AppScaffoldModuleSchema>;
+export type AppScaffoldModule = Wire.AppScaffoldModule;
 
-export type StartAppScaffoldRequest = z.infer<typeof StartAppScaffoldRequestSchema>;
+export type StartAppScaffoldRequest = Wire.StartAppScaffoldRequest;
 
-export type StartAppScaffoldResponse = z.infer<typeof StartAppScaffoldResponseSchema>;
+export type StartAppScaffoldResponse = Wire.StartAppScaffoldResponse;
 
-export type StartAppDevelopmentTaskRequest = z.infer<typeof StartAppDevelopmentTaskRequestSchema>;
+export type StartAppDevelopmentTaskRequest = Wire.StartAppDevelopmentTaskRequest;
 
-export type AppScaffoldProgressStatus = z.infer<typeof AppScaffoldProgressStatusSchema>;
+export type AppScaffoldProgressStatus = Wire.AppScaffoldProgressStatus;
 
-export type AppScaffoldProgress = z.infer<typeof AppScaffoldProgressSchema>;
+export type AppScaffoldProgress = Wire.AppScaffoldProgress;
 
 /**
  * Access control policy for an app installation.
@@ -336,7 +213,7 @@ export type AppScaffoldProgress = z.infer<typeof AppScaffoldProgressSchema>;
  *
  * Declared on the manifest as the app's default. May be overridden per-installation.
  */
-export type AppAccessControl = z.infer<typeof AppAccessControlSchema>;
+export type AppAccessControl = Wire.AppAccessControl;
 
 // QUARANTINED from the tenth batch, and the blocker is not in this file. A `//` comment rather than
 // TSDoc on purpose: this component is still DERIVED, so a doc comment here would be published as its
@@ -351,12 +228,12 @@ export type AppAccessControl = z.infer<typeof AppAccessControlSchema>;
 // in `@llumiverse/common`, not one to work around here.
 //
 // Everything this interface REFERENCES converted: the fields below now carry canonical components.
-export type AppManifestData = z.infer<typeof AppManifestDataSchema>;
-export type UpdateAppPayload = z.infer<typeof UpdateAppPayloadSchema>;
+export type AppManifestData = Wire.AppManifestData;
+export type UpdateAppPayload = Wire.UpdateAppPayload;
 
-export type AppGitSourceConfig = z.infer<typeof AppGitSourceConfigSchema>;
+export type AppGitSourceConfig = Wire.AppGitSourceConfig;
 
-export type AppSourceConfig = z.infer<typeof AppSourceConfigSchema>;
+export type AppSourceConfig = Wire.AppSourceConfig;
 
 /**
  * Deployment-time URL endpoints that can be referenced in app manifest URLs
@@ -403,34 +280,34 @@ function trimTrailingSlashes(value: string): string {
 }
 
 /** One entry in an app git-repo directory listing (see {@link AppRepoTree}). */
-export type AppRepoTreeEntry = z.infer<typeof AppRepoTreeEntrySchema>;
+export type AppRepoTreeEntry = Wire.AppRepoTreeEntry;
 
 /** A non-recursive listing of an app git repo directory at a given ref. */
-export type AppRepoTree = z.infer<typeof AppRepoTreeSchema>;
+export type AppRepoTree = Wire.AppRepoTree;
 
 /** Result of committing one or more uploaded documents to an app repository. */
-export type AppRepoDocumentCommit = z.infer<typeof AppRepoDocumentCommitSchema>;
+export type AppRepoDocumentCommit = Wire.AppRepoDocumentCommit;
 
 /** One commit that inserted or changed a file in an app git repository. */
-export type AppRepoCommit = z.infer<typeof AppRepoCommitSchema>;
+export type AppRepoCommit = Wire.AppRepoCommit;
 
 /** Commit history in an app git repository, optionally filtered to a file. */
-export type AppRepoCommits = z.infer<typeof AppRepoCommitsSchema>;
+export type AppRepoCommits = Wire.AppRepoCommits;
 
 /** A branch or tag in an app git repo, resolved to its latest commit. */
-export type AppRepoRef = z.infer<typeof AppRepoRefSchema>;
+export type AppRepoRef = Wire.AppRepoRef;
 
 /** The branches and tags of an app git repo (see {@link AppRepoRef}). */
-export type AppRepoRefs = z.infer<typeof AppRepoRefsSchema>;
+export type AppRepoRefs = Wire.AppRepoRefs;
 
 /** A mutable app development task represented by an `agent/*` Git branch. */
-export type AppDevelopmentTask = z.infer<typeof AppDevelopmentTaskSchema>;
+export type AppDevelopmentTask = Wire.AppDevelopmentTask;
 
 /** Git-backed development tasks and the branch used for new tasks by default. */
-export type AppDevelopmentTaskList = z.infer<typeof AppDevelopmentTaskListSchema>;
+export type AppDevelopmentTaskList = Wire.AppDevelopmentTaskList;
 
 /** Development task details, including the latest parent assistant run when one exists. */
-export type AppDevelopmentTaskDetails = z.infer<typeof AppDevelopmentTaskDetailsSchema>;
+export type AppDevelopmentTaskDetails = Wire.AppDevelopmentTaskDetails;
 
 /** Request to create a branch from an existing branch, tag, or commit. */
 export interface CreateAppRepoBranchRequest {
@@ -439,7 +316,7 @@ export interface CreateAppRepoBranchRequest {
 }
 
 /** A newly created app repository branch. */
-export type AppRepoBranch = z.infer<typeof AppRepoBranchSchema>;
+export type AppRepoBranch = Wire.AppRepoBranch;
 
 /**
  * Canonical package scopes, including the catch-all `all`. The public type is derived
@@ -463,23 +340,23 @@ export const APP_PACKAGE_SCOPES = [
 ] as const;
 
 export type AppPackageScope = (typeof APP_PACKAGE_SCOPES)[number];
-export type AppPackageEventHook = z.infer<typeof AppPackageEventHookSchema>;
-export type AppPackageHooks = z.infer<typeof AppPackageHooksSchema>;
-export type AppEventHookDelivery = z.infer<typeof AppEventHookDeliverySchema>;
-export type AppEventHookPayload = z.infer<typeof AppEventHookPayloadSchema>;
-export type AppEventSubscriptionDefinition = z.infer<typeof AppEventSubscriptionDefinitionSchema>;
-export type AppPackage = z.infer<typeof AppPackageSchema>;
+export type AppPackageEventHook = Wire.AppPackageEventHook;
+export type AppPackageHooks = Wire.AppPackageHooks;
+export type AppEventHookDelivery = Wire.AppEventHookDelivery;
+export type AppEventHookPayload = Wire.AppEventHookPayload;
+export type AppEventSubscriptionDefinition = Wire.AppEventSubscriptionDefinition;
+export type AppPackage = Wire.AppPackage;
 
 /**
  * A single diagnostic produced while inspecting an app's registration state.
  */
-export type AppInspectionIssue = z.infer<typeof AppInspectionIssueSchema>;
+export type AppInspectionIssue = Wire.AppInspectionIssue;
 
 /**
  * Per-capability report of what an app's promoted package actually exposes,
  * compared against what its manifest declares.
  */
-export type AppInspectionCapabilityReport = z.infer<typeof AppInspectionCapabilityReportSchema>;
+export type AppInspectionCapabilityReport = Wire.AppInspectionCapabilityReport;
 
 /**
  * Result of inspecting an app's registration: the resolved manifest state, what
@@ -488,102 +365,102 @@ export type AppInspectionCapabilityReport = z.infer<typeof AppInspectionCapabili
  * Build › App inspection UI to verify what is registered vs declared, instead of
  * inferring it from failed object/import calls.
  */
-export type AppInspectionResult = z.infer<typeof AppInspectionResultSchema>;
+export type AppInspectionResult = Wire.AppInspectionResult;
 
-export type AppWidgetInfo = z.infer<typeof AppWidgetInfoSchema>;
+export type AppWidgetInfo = Wire.AppWidgetInfo;
 
-export type RenderingTemplateDefinition = z.infer<typeof RenderingTemplateDefinitionSchema>;
+export type RenderingTemplateDefinition = Wire.RenderingTemplateDefinition;
 
-export type RenderingTemplateDefinitionRef = z.infer<typeof RenderingTemplateDefinitionRefSchema>;
+export type RenderingTemplateDefinitionRef = Wire.RenderingTemplateDefinitionRef;
 
-export type AppManifest = z.infer<typeof AppManifestSchema>;
+export type AppManifest = Wire.AppManifest;
 
-export type AppManifestSource = z.infer<typeof AppManifestSourceSchema>;
+export type AppManifestSource = Wire.AppManifestSource;
 
 /**
  * Binding between an MCP collection and an OAuth provider created at install time.
  * Stored on AppInstallation so the runtime can look up the correct OAuth provider by ID,
  * independent of manifest oauth_provider references (which may change).
  */
-export type AppInstallationOAuthBinding = z.infer<typeof AppInstallationOAuthBindingSchema>;
+export type AppInstallationOAuthBinding = Wire.AppInstallationOAuthBinding;
 
 /**
  * Binding between a named OAuth provider and the OAuth provider created for it at install time.
  * Stored on AppInstallation so the runtime can resolve the correct OAuth provider for collections
  * that reference a shared provider via MCPToolCollectionObject.oauth_provider.
  */
-export type AppInstallationProviderBinding = z.infer<typeof AppInstallationProviderBindingSchema>;
+export type AppInstallationProviderBinding = Wire.AppInstallationProviderBinding;
 
-export type AppInstallation = z.infer<typeof AppInstallationSchema>;
+export type AppInstallation = Wire.AppInstallation;
 
-export type AppInstallationWithManifest = z.infer<typeof AppInstallationWithManifestSchema>;
+export type AppInstallationWithManifest = Wire.AppInstallationWithManifest;
 
 /** An installation whose app manifest could not be resolved (the app was deleted or is unpublished). */
 export interface OrphanedAppInstallation extends Omit<AppInstallation, 'manifest'> {
     manifest: null;
 }
 
-export type AppInstallationListEntry = z.infer<typeof AppInstallationListEntrySchema>;
+export type AppInstallationListEntry = Wire.AppInstallationListEntry;
 
-export type OAuthClientCredentials = z.infer<typeof OAuthClientCredentialsSchema>;
+export type OAuthClientCredentials = Wire.OAuthClientCredentials;
 
-export type AppOAuthCollectionParams = z.infer<typeof AppOAuthCollectionParamsSchema>;
+export type AppOAuthCollectionParams = Wire.AppOAuthCollectionParams;
 
 /** One installer-supplied MCP API key. */
-export type McpApiKeyCredential = z.infer<typeof McpApiKeyCredentialSchema>;
+export type McpApiKeyCredential = Wire.McpApiKeyCredential;
 
 /** Installer-supplied MCP API keys, keyed by collection id. */
-export type AppApiKeyCollectionParams = z.infer<typeof AppApiKeyCollectionParamsSchema>;
-export type AppOAuthProviderParams = z.infer<typeof AppOAuthProviderParamsSchema>;
+export type AppApiKeyCollectionParams = Wire.AppApiKeyCollectionParams;
+export type AppOAuthProviderParams = Wire.AppOAuthProviderParams;
 
-export type AppInstallationPayload = z.infer<typeof AppInstallationPayloadSchema>;
+export type AppInstallationPayload = Wire.AppInstallationPayload;
 
-export type UpdateAppInstallationToolAllowlistPayload = z.infer<typeof UpdateAppInstallationToolAllowlistPayloadSchema>;
+export type UpdateAppInstallationToolAllowlistPayload = Wire.UpdateAppInstallationToolAllowlistPayload;
 
-export type AppInstallationKind = z.infer<typeof AppInstallationKindSchema>;
+export type AppInstallationKind = Wire.AppInstallationKind;
 
 /**
  * A description of the tools provided by an app
  */
-export type AppToolCollection = z.infer<typeof AppToolCollectionSchema>;
+export type AppToolCollection = Wire.AppToolCollection;
 
 /**
  * A tool and the app installation that provides it, inferred from `./api-schemas/project.js` — the
  * module that owns it, because it converted with the Projects batch rather than with Apps.
  */
-export type ProjectToolInfo = z.infer<typeof ProjectToolInfoSchema>;
+export type ProjectToolInfo = Wire.ProjectToolInfo;
 
 /**
  * OAuth authentication status for an MCP tool collection
  */
-export type OAuthAuthStatus = z.infer<typeof OAuthAuthStatusSchema>;
+export type OAuthAuthStatus = Wire.OAuthAuthStatus;
 
 /**
  * Response from OAuth authorization endpoint
  */
-export type OAuthAuthorizeResponse = z.infer<typeof OAuthAuthorizeResponseSchema>;
+export type OAuthAuthorizeResponse = Wire.OAuthAuthorizeResponse;
 
 /**
  * Payload for storing the static bearer token of an `auth: 'api_key'` MCP collection.
  * The key is write-only — it is never echoed back by any endpoint.
  */
-export type SetMcpApiKeyRequest = z.infer<typeof SetMcpApiKeyRequestSchema>;
+export type SetMcpApiKeyRequest = Wire.SetMcpApiKeyRequest;
 
 /** Whether an `auth: 'api_key'` MCP collection has a key stored, plus a display-only hint. */
-export type McpApiKeyStatus = z.infer<typeof McpApiKeyStatusSchema>;
+export type McpApiKeyStatus = Wire.McpApiKeyStatus;
 
-export type McpOAuthTokenRequest = z.infer<typeof McpOAuthTokenRequestSchema>;
+export type McpOAuthTokenRequest = Wire.McpOAuthTokenRequest;
 
-export type McpOAuthTokenResponse = z.infer<typeof McpOAuthTokenResponseSchema>;
+export type McpOAuthTokenResponse = Wire.McpOAuthTokenResponse;
 
-export type McpOAuthConnectResponse = z.infer<typeof McpOAuthConnectResponseSchema>;
+export type McpOAuthConnectResponse = Wire.McpOAuthConnectResponse;
 
-export type McpOAuthDisconnectResponse = z.infer<typeof McpOAuthDisconnectResponseSchema>;
+export type McpOAuthDisconnectResponse = Wire.McpOAuthDisconnectResponse;
 
 /**
  * Response from OAuth metadata endpoint
  */
-export type OAuthMetadataResponse = z.infer<typeof OAuthMetadataResponseSchema>;
+export type OAuthMetadataResponse = Wire.OAuthMetadataResponse;
 
 // ============================================================================
 // CompositeApp Shell Configuration Types
@@ -595,24 +472,24 @@ export type OAuthMetadataResponse = z.infer<typeof OAuthMetadataResponseSchema>;
  * Configuration entry for an individual app in the CompositeApp shell.
  * References an app installation by name.
  */
-export type CompositeAppEntry = z.infer<typeof CompositeAppEntrySchema>;
+export type CompositeAppEntry = Wire.CompositeAppEntry;
 
 /**
  * Logo overrides for the CompositeApp shell header.
  * When provided, these URLs replace the default Vertesia logo.
  */
-export type CompositeAppLogoOverrides = z.infer<typeof CompositeAppLogoOverridesSchema>;
+export type CompositeAppLogoOverrides = Wire.CompositeAppLogoOverrides;
 
 /**
  * Message banner overrides for the shell header.
  */
-export type CompositeAppMessageStyle = z.infer<typeof CompositeAppMessageStyleSchema>;
-export type CompositeAppMessageOverrides = z.infer<typeof CompositeAppMessageOverridesSchema>;
+export type CompositeAppMessageStyle = Wire.CompositeAppMessageStyle;
+export type CompositeAppMessageOverrides = Wire.CompositeAppMessageOverrides;
 
 /**
  * Switcher visibility overrides for the CompositeApp header.
  */
-export type CompositeAppSwitchersOverrides = z.infer<typeof CompositeAppSwitchersOverridesSchema>;
+export type CompositeAppSwitchersOverrides = Wire.CompositeAppSwitchersOverrides;
 
 /**
  * Header button visibility overrides for the CompositeApp header.
@@ -621,7 +498,7 @@ export type CompositeAppSwitchersOverrides = z.infer<typeof CompositeAppSwitcher
  * Retained for backward compatibility and to seed the default header menu when no
  * `headerMenu` has been configured yet.
  */
-export type CompositeAppHeaderOverrides = z.infer<typeof CompositeAppHeaderOverridesSchema>;
+export type CompositeAppHeaderOverrides = Wire.CompositeAppHeaderOverrides;
 
 /**
  * User menu overrides for the CompositeApp.
@@ -630,17 +507,17 @@ export type CompositeAppHeaderOverrides = z.infer<typeof CompositeAppHeaderOverr
  * Retained for backward compatibility and to seed the default header menu when no
  * `headerMenu` has been configured yet.
  */
-export type CompositeAppUserMenuOverrides = z.infer<typeof CompositeAppUserMenuOverridesSchema>;
+export type CompositeAppUserMenuOverrides = Wire.CompositeAppUserMenuOverrides;
 
 /**
  * Theme overrides for the CompositeApp.
  */
-export type CompositeAppThemeOverrides = z.infer<typeof CompositeAppThemeOverridesSchema>;
+export type CompositeAppThemeOverrides = Wire.CompositeAppThemeOverrides;
 
 /**
  * Sidebar display overrides for the CompositeApp.
  */
-export type CompositeAppSidebarOverrides = z.infer<typeof CompositeAppSidebarOverridesSchema>;
+export type CompositeAppSidebarOverrides = Wire.CompositeAppSidebarOverrides;
 
 /**
  * Card display overrides for the CompositeApp in the App Portal.
@@ -648,7 +525,7 @@ export type CompositeAppSidebarOverrides = z.infer<typeof CompositeAppSidebarOve
  * Allows customers to customize the app portal card (not otherwise possible if using a
  * shared, Vertesia-managed manifest across accounts).
  */
-export type CompositeAppCardOverrides = z.infer<typeof CompositeAppCardOverridesSchema>;
+export type CompositeAppCardOverrides = Wire.CompositeAppCardOverrides;
 
 // ============================================================================
 // Sidebar Menu Types
@@ -661,7 +538,7 @@ export type CompositeAppCardOverrides = z.infer<typeof CompositeAppCardOverrides
  * access is granted when the user matches ANY list (OR logic).
  * All empty/absent means visible to everyone. Admin users bypass all checks.
  */
-export type CompositeAppNavItemPermissions = z.infer<typeof CompositeAppNavItemPermissionsSchema>;
+export type CompositeAppNavItemPermissions = Wire.CompositeAppNavItemPermissions;
 
 /**
  * A navigable item in the sidebar menu.
@@ -699,9 +576,9 @@ export interface CompositeAppMenuNavItem {
  * A top-level section heading in the sidebar menu.
  * Sections are always at root level and contain nav-items.
  */
-export type CompositeAppMenuSection = z.infer<typeof CompositeAppMenuSectionSchema>;
+export type CompositeAppMenuSection = Wire.CompositeAppMenuSection;
 
-export type CompositeAppHomePlugin = z.infer<typeof CompositeAppHomePluginSchema>;
+export type CompositeAppHomePlugin = Wire.CompositeAppHomePlugin;
 
 // ============================================================================
 // Header Menu Types
@@ -713,10 +590,10 @@ export type CompositeAppHomePlugin = z.infer<typeof CompositeAppHomePluginSchema
  * header and cannot be deleted (only hidden/customized); `custom` items are fully
  * user-defined buttons.
  */
-export type CompositeAppHeaderItemKind = z.infer<typeof CompositeAppHeaderItemKindSchema>;
+export type CompositeAppHeaderItemKind = Wire.CompositeAppHeaderItemKind;
 
 /** Where a header link opens. */
-export type CompositeAppHeaderItemTarget = z.infer<typeof CompositeAppHeaderItemTargetSchema>;
+export type CompositeAppHeaderItemTarget = Wire.CompositeAppHeaderItemTarget;
 
 /**
  * A single button in the CompositeApp header bar.
@@ -726,20 +603,20 @@ export type CompositeAppHeaderItemTarget = z.infer<typeof CompositeAppHeaderItem
  * The `user_menu` item is special — it renders the account dropdown, so its `icon`,
  * `href`, and `target` are ignored.
  */
-export type CompositeAppHeaderItem = z.infer<typeof CompositeAppHeaderItemSchema>;
+export type CompositeAppHeaderItem = Wire.CompositeAppHeaderItem;
 
 /**
  * CompositeApp shell configuration.
  * This is the main configuration interface for storing CompositeApp settings.
  * Used as the MongoDB model for persisting CompositeApp configurations.
  */
-export type CompositeAppConfig = z.infer<typeof CompositeAppConfigSchema>;
+export type CompositeAppConfig = Wire.CompositeAppConfig;
 
-export type CompositeAppConfigPayload = z.infer<typeof CompositeAppConfigPayloadSchema>;
+export type CompositeAppConfigPayload = Wire.CompositeAppConfigPayload;
 
-export type ValidateUrlRequest = z.infer<typeof ValidateUrlRequestSchema>;
+export type ValidateUrlRequest = Wire.ValidateUrlRequest;
 
-export type ValidateUrlResponse = z.infer<typeof ValidateUrlResponseSchema>;
+export type ValidateUrlResponse = Wire.ValidateUrlResponse;
 
 /**
  * Result of DELETE /api/v1/apps/:id. With `?confirm=true` the cascade runs and
@@ -752,6 +629,6 @@ export type ValidateUrlResponse = z.infer<typeof ValidateUrlResponseSchema>;
  * the check fails closed, that surfaced as a 500 raised AFTER the app was
  * already deleted. Deriving the type is what keeps the two from drifting again.
  */
-export type AppDeleteSummary = z.infer<typeof AppDeleteSummarySchema>;
+export type AppDeleteSummary = Wire.AppDeleteSummary;
 
-export type UpdateAppInstallationOAuthApprovalPayload = z.infer<typeof UpdateAppInstallationOAuthApprovalPayloadSchema>;
+export type UpdateAppInstallationOAuthApprovalPayload = Wire.UpdateAppInstallationOAuthApprovalPayload;

@@ -69,6 +69,7 @@ import type {
     UpdateProcessDefinitionPayload,
 } from '../store/process.js';
 import type { ViewNavigationNode } from '../views.js';
+import type { ApiComponentTypes } from '../wire-types.generated.js';
 import {
     ACECreatePayloadSchema,
     ACEUpdatePayloadSchema,
@@ -208,6 +209,14 @@ import {
 } from './apps.js';
 import {
     AuditActionSchema,
+    AuditAdoptionActiveDaysSchema,
+    AuditAdoptionBucketSchema,
+    AuditAdoptionFilterSchema,
+    AuditAdoptionHistorySchema,
+    AuditAdoptionPeriodSchema,
+    AuditAdoptionProjectSchema,
+    AuditAdoptionQuerySchema,
+    AuditAdoptionResponseSchema,
     AuditAggregationDetailFieldSchema,
     AuditAggregationDetailFilterSchema,
     AuditAggregationDimensionMapSchema,
@@ -225,6 +234,10 @@ import {
     AuditTrailEventSchema,
     AuditTrailQuerySchema,
     AuditTrailResponseSchema,
+    AuditUsageBucketSchema,
+    AuditUsageCountsSchema,
+    AuditUsageQuerySchema,
+    AuditUsageResponseSchema,
     EventCategorySchema,
     KnownAuditActionSchema,
 } from './audit-trail.js';
@@ -725,6 +738,7 @@ import {
     RenderPromptResponseSchema,
 } from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
+import * as RunBudgetSchemas from './run-budget.js';
 import * as SecretSchemas from './secrets.js';
 import {
     ColumnLayoutSchema,
@@ -1412,7 +1426,22 @@ const DURABLE_TASK_SCHEMAS = {
     ListTasksQuery: ListTasksQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const CONTENT_TYPE_CATALOG_SCHEMAS = {
+// Keep declaration emit from expanding the nested content-type schemas.
+const CONTENT_TYPE_CATALOG_SCHEMAS: {
+    readonly ColumnLayout: typeof ColumnLayoutSchema;
+    readonly ContentTypeEditingPolicy: typeof ContentTypeEditingPolicySchema;
+    readonly ContentObjectTypeStatus: typeof ContentObjectTypeStatusSchema;
+    readonly ContentObjectTypeItem: typeof ContentObjectTypeItemSchema;
+    readonly ContentObjectTypeItemArray: typeof ContentObjectTypeItemArraySchema;
+    readonly ContentObjectTypeCatalogEntry: typeof ContentObjectTypeCatalogEntrySchema;
+    readonly ContentObjectTypeCatalogEntryArray: typeof ContentObjectTypeCatalogEntryArraySchema;
+    readonly InCodeTypeDefinition: typeof InCodeTypeDefinitionSchema;
+    readonly CreateContentObjectTypePayload: typeof CreateContentObjectTypePayloadSchema;
+    readonly UpdateContentObjectTypePayload: typeof UpdateContentObjectTypePayloadSchema;
+    readonly ContentObjectType: typeof ContentObjectTypeSchema;
+    readonly ContentObjectTypeCatalogQuery: typeof ContentObjectTypeCatalogQuerySchema;
+    readonly ContentObjectTypeListQuery: typeof ContentObjectTypeListQuerySchema;
+} = {
     ColumnLayout: ColumnLayoutSchema,
     ContentTypeEditingPolicy: ContentTypeEditingPolicySchema,
     ContentObjectTypeStatus: ContentObjectTypeStatusSchema,
@@ -1789,6 +1818,9 @@ const PROCESS_RUNTIME_SCHEMAS = {
     AnswerProcessTaskPayload: ProcessSchemas.AnswerProcessTaskPayloadSchema,
     AdvanceProcessPayload: ProcessSchemas.AdvanceProcessPayloadSchema,
     ProcessState: ProcessSchemas.ProcessStateSchema,
+    ProcessTerminalReason: ProcessSchemas.ProcessTerminalReasonSchema,
+    ProcessBudgetState: ProcessSchemas.ProcessBudgetStateSchema,
+    ProcessBudgetSummary: ProcessSchemas.ProcessBudgetSummarySchema,
     WorkflowExecutionStartResultArray: ProcessSchemas.WorkflowExecutionStartResultArraySchema,
     RecordProcessRunPayload: ProcessSchemas.RecordProcessRunPayloadSchema,
     ProcessTestRunStatus: ProcessSchemas.ProcessTestRunStatusSchema,
@@ -1910,6 +1942,7 @@ const AGENT_RUN_SCHEMAS = {
     AgentRunArchiveState: AgentRunSchemas.AgentRunArchiveStateSchema,
     ResourceRef: AgentRunSchemas.ResourceRefSchema,
     SignalAgentResponse: AgentRunSchemas.SignalAgentResponseSchema,
+    AllocateAgentRunBudgetPayload: AgentRunSchemas.AllocateAgentRunBudgetPayloadSchema,
     AutonomousRunResponse: AgentRunSchemas.AutonomousRunResponseSchema,
     AgentRun: AgentRunSchemas.AgentRunSchema,
     CreateAgentRunPayload: AgentRunSchemas.CreateAgentRunPayloadSchema,
@@ -1940,16 +1973,16 @@ const AGENT_RUN_SCHEMAS = {
     AgentRunFeedbackResponse: AgentRunSchemas.AgentRunFeedbackResponseSchema,
     AgentRunFeedbackEntry: AgentRunSchemas.AgentRunFeedbackEntrySchema,
     AgentRunEvaluationRollup: AgentRunSchemas.AgentRunEvaluationRollupSchema,
-    AgentRunJudgeResult: AgentRunSchemas.AgentRunJudgeResultSchema,
+    AgentRunLlmEvaluationResult: AgentRunSchemas.AgentRunLlmEvaluationResultSchema,
     AgentRunContradictionReason: AgentRunSchemas.AgentRunContradictionReasonSchema,
     AgentRunEvaluation: AgentRunSchemas.AgentRunEvaluationSchema,
     TurnTerminalType: AgentRunSchemas.TurnTerminalTypeSchema,
     EvaluationSeverity: AgentRunSchemas.EvaluationSeveritySchema,
     TurnEvaluationFlag: AgentRunSchemas.TurnEvaluationFlagSchema,
     ToolErrorClass: AgentRunSchemas.ToolErrorClassSchema,
-    JudgeGateReason: AgentRunSchemas.JudgeGateReasonSchema,
-    JudgeOutcome: AgentRunSchemas.JudgeOutcomeSchema,
-    JudgeVerdict: AgentRunSchemas.JudgeVerdictSchema,
+    EvaluationGateReason: AgentRunSchemas.EvaluationGateReasonSchema,
+    EvaluationOutcome: AgentRunSchemas.EvaluationOutcomeSchema,
+    EvaluationVerdict: AgentRunSchemas.EvaluationVerdictSchema,
     ListAgentRunsEvaluationSeverity: AgentRunSchemas.ListAgentRunsEvaluationSeveritySchema,
     AgentEvent: AgentRunSchemas.AgentEventSchema,
     IngestAgentEventsPayload: AgentRunSchemas.IngestAgentEventsPayloadSchema,
@@ -2095,6 +2128,18 @@ const REMOTE_MCP_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const AUDIT_TRAIL_SCHEMAS = {
+    AuditAdoptionActiveDays: AuditAdoptionActiveDaysSchema,
+    AuditAdoptionBucket: AuditAdoptionBucketSchema,
+    AuditAdoptionFilter: AuditAdoptionFilterSchema,
+    AuditAdoptionHistory: AuditAdoptionHistorySchema,
+    AuditAdoptionPeriod: AuditAdoptionPeriodSchema,
+    AuditAdoptionProject: AuditAdoptionProjectSchema,
+    AuditAdoptionQuery: AuditAdoptionQuerySchema,
+    AuditAdoptionResponse: AuditAdoptionResponseSchema,
+    AuditUsageQuery: AuditUsageQuerySchema,
+    AuditUsageCounts: AuditUsageCountsSchema,
+    AuditUsageBucket: AuditUsageBucketSchema,
+    AuditUsageResponse: AuditUsageResponseSchema,
     // The audit trail: the events the endpoint pages through and the aggregation it
     // computes over them.
     AuditMeter: AuditMeterSchema,
@@ -2419,7 +2464,16 @@ const DELEGATION_SCHEMAS = {
     DelegationGrant: DelegationGrantSchema,
     DelegationGrantArray: DelegationGrantArraySchema,
 };
+const RUN_BUDGET_SCHEMAS = {
+    RunBudgetOwner: RunBudgetSchemas.RunBudgetOwnerSchema,
+    RunBudgetUsage: RunBudgetSchemas.RunBudgetUsageSchema,
+    ReadRunBudgetUsagePayload: RunBudgetSchemas.ReadRunBudgetUsagePayloadSchema,
+    RunBudgetTotals: RunBudgetSchemas.RunBudgetTotalsSchema,
+    RunBudgetCapability: RunBudgetSchemas.RunBudgetCapabilitySchema,
+    RunBudgetCapabilityQuery: RunBudgetSchemas.RunBudgetCapabilityQuerySchema,
+};
 const API_SCHEMA_GROUPS = [
+    RUN_BUDGET_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2484,7 +2538,8 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
+type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
+    typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
     typeof OAUTH_SCHEMAS &
@@ -2726,6 +2781,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // The agent configuration block under `ProjectConfiguration`, published closed on both sides.
     'AgentProjectConfiguration',
     'AgentCheckpointConfiguration',
+    'AgentBudgetConfiguration',
+    ...Object.keys(RUN_BUDGET_SCHEMAS),
     // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
     'HttpTimeoutOptions',
     // The intake policy tree. Every object in it is published closed today, including the inline
@@ -2754,6 +2811,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // `JSONSchema` is deliberately absent: it is OPEN by design and by long-standing publication —
     // a JSON Schema carries keywords the type never enumerated. `JSONSchemaProperties` is a map.
     // Derive membership so new provider schemas inherit this enforcement check automatically.
+    'OpenAiImageGenerationOptions',
+    'OpenAiImageGenerationMask',
     ...ModelOptionsSchema.options.map((schema) => {
         const id = schema.meta()?.id;
         if (!id) throw new Error('Model option schemas must declare a component id');
@@ -2959,7 +3018,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AgentRunFeedbackCounts',
     'AgentRunFeedbackEntry',
     'AgentRunEvaluationRollup',
-    'AgentRunJudgeResult',
+    'AgentRunLlmEvaluationResult',
     'AgentRunEvaluation',
     'StartContentObjectExportResponse',
     'ExportContentObjectsIncludeOptions',
@@ -2999,6 +3058,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ContentObjectExportArtifactFile',
     'ProcessRunConfig',
     'ProcessHistoryRef',
+    'ProcessBudgetState',
+    'ProcessBudgetSummary',
     'NodeHistoryEntry',
     'ResourceRef',
     'WorkflowRun',
@@ -3033,6 +3094,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'WorkflowActionResponse',
     'AnswerProcessTaskPayload',
     'SignalAgentResponse',
+    'AllocateAgentRunBudgetPayload',
     'AdvanceProcessPayload',
     'BranchDefinition',
     'ParallelCollectDefinition',
@@ -3380,6 +3442,18 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AuditAggregationFilter',
     'AuditTrailResponse',
     'AuditAggregationQuery',
+    'AuditAdoptionActiveDays',
+    'AuditAdoptionBucket',
+    'AuditAdoptionFilter',
+    'AuditAdoptionHistory',
+    'AuditAdoptionPeriod',
+    'AuditAdoptionProject',
+    'AuditAdoptionQuery',
+    'AuditAdoptionResponse',
+    'AuditUsageQuery',
+    'AuditUsageCounts',
+    'AuditUsageBucket',
+    'AuditUsageResponse',
     'ViewSortClause',
     'ViewResultMedia',
     'ViewBoardColumn',
@@ -3657,12 +3731,25 @@ interface ZenoRecursiveComponentTypes {
 /**
  * The wire type a component publishes.
  *
- * `ApiComponentType<'Account'>` is `z.infer<typeof AccountSchema>` — the map is indexed directly
- * rather than dispatched through the groups, which the intersection makes possible.
+ * `ApiComponentType<'Account'>` is the plain type `gen:schemas` writes for `AccountSchema` into
+ * `ApiComponentTypes`, which `wire-types.generated.test.ts` proves identical to its `z.infer`. Indexing
+ * that map rather than `z.infer<ApiSchemaMap[N]>` keeps Zod's inference out of every program that names
+ * a component. A component the generator has not seen yet resolves to `never`, which
+ * `registry-groups.test.ts` rejects.
+ *
+ * It is wrapped in `NoInfer` because `N` always comes from a component-name argument and can never be
+ * recovered from the wire type. Without it, a call whose result has a contextual type — a destructuring
+ * `const { file } = validatedQuery(ctx, 'FileMetadataQuery')`, an `await`, a typed `return` — makes the
+ * checker infer `N` from that context while `N` is still unresolved, which evaluates `z.infer` across
+ * every component in the registry: about 500k types, 1 GB and 2 s of `tsc` in each consuming program.
  */
-export type ApiComponentType<N extends ApiComponentName> = N extends keyof ZenoRecursiveComponentTypes
-    ? ZenoRecursiveComponentTypes[N]
-    : z.infer<ApiSchemaMap[N]>;
+export type ApiComponentType<N extends ApiComponentName> = NoInfer<
+    N extends keyof ZenoRecursiveComponentTypes
+        ? ZenoRecursiveComponentTypes[N]
+        : N extends keyof ApiComponentTypes
+          ? ApiComponentTypes[N]
+          : never
+>;
 
 /**
  * Names a published component from inside a handler signature:

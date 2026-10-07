@@ -1,26 +1,19 @@
-import type { z } from 'zod';
-import type {
-    AnalyticsAxisSchema,
-    RunAnalyticsGroupBySchema,
-    RunAnalyticsQuerySchema,
-    RunAnalyticsResultSchema,
-    TimeResolutionSchema,
-} from './api-schemas/analytics.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * The five run-analytics contract types, inferred from `./api-schemas/analytics.js`. Their
  * documentation moved with them — a doc comment here would be published on TOP of the schema's
  * `description` and the two would drift.
  */
-export type AnalyticsAxis = z.infer<typeof AnalyticsAxisSchema>;
+export type AnalyticsAxis = Wire.AnalyticsAxis;
 
-export type RunAnalyticsQuery = z.infer<typeof RunAnalyticsQuerySchema>;
+export type RunAnalyticsQuery = Wire.RunAnalyticsQuery;
 
-export type RunAnalyticsGroupBy = z.infer<typeof RunAnalyticsGroupBySchema>;
+export type RunAnalyticsGroupBy = Wire.RunAnalyticsGroupBy;
 
-export type TimeResolution = z.infer<typeof TimeResolutionSchema>;
+export type TimeResolution = Wire.TimeResolution;
 
-export type RunAnalyticsResult = z.infer<typeof RunAnalyticsResultSchema>;
+export type RunAnalyticsResult = Wire.RunAnalyticsResult;
 
 /** Entity with status breakdown */
 export interface EntityStatusCounts {

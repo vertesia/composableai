@@ -1,3 +1,4 @@
+import { ModelOptionsSchema } from '@llumiverse/common/schemas';
 import { describe, expect, it } from 'vitest';
 import type { AsyncConversationExecutionPayload } from '../interaction.js';
 import {
@@ -17,6 +18,28 @@ import {
     RunClonePayloadSchema,
 } from './interaction.js';
 import { validateApiRequest } from './registry.js';
+
+describe('Responses image tool contract', () => {
+    it.each(['openai-text', 'openai-thinking'] as const)('enforces strict nested image settings for %s', (id) => {
+        const valid = {
+            _option_id: id,
+            image_generation: {
+                model: 'gpt-image-2',
+                input_image_mask: { file_id: 'file-mask' },
+            },
+        };
+        expect(ModelOptionsSchema.safeParse(valid).success).toBe(true);
+        expect(validateApiRequest('ModelOptions', valid).valid).toBe(true);
+        for (const image_generation of [
+            { ...valid.image_generation, typo: 'unexpected' },
+            { ...valid.image_generation, input_image_mask: { file_id: 'file-mask', typo: 'unexpected' } },
+        ]) {
+            const invalid = { ...valid, image_generation };
+            expect(ModelOptionsSchema.safeParse(invalid).success).toBe(false);
+            expect(validateApiRequest('ModelOptions', invalid).valid).toBe(false);
+        }
+    });
+});
 
 describe('conversation state contract', () => {
     it('publishes the tool catalog storage scope used to resolve tool references', () => {
@@ -114,6 +137,14 @@ describe('AsyncConversationExecutionPayload contract', () => {
         };
 
         expect(AsyncConversationExecutionPayloadSchema.parse(payload)).toMatchObject(payload);
+    });
+
+    it('accepts the final verification opt-in as a boolean only', () => {
+        const payload = { type: 'conversation', interaction: 'sys:GeneralAgent', final_verification: true };
+        expect(validateApiRequest('AsyncConversationExecutionPayload', payload).valid).toBe(true);
+        expect(
+            validateApiRequest('AsyncConversationExecutionPayload', { ...payload, final_verification: 'yes' }).valid,
+        ).toBe(false);
     });
 
     it('rejects a non-string app-version target', () => {

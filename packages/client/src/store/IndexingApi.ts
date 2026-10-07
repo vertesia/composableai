@@ -335,12 +335,14 @@ export class IndexingApi extends ApiTopic {
         targetIndex: string,
         alias?: string,
         backend?: ElasticsearchBackend,
+        cleanup?: boolean,
     ): Promise<SwapAliasResult> {
         return this.zenoBulkPost('/reindex/swap-alias', {
             tenant_id: tenantId,
             target_index: targetIndex,
             alias,
             backend,
+            cleanup,
         } satisfies SwapAliasRequest);
     }
 }

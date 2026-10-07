@@ -1,18 +1,4 @@
-import type { z } from 'zod';
-import type {
-    CreateEmailRouteRequestSchema,
-    CreateEmailRouteResponseSchema,
-    EmailRouteDataSchema,
-    EmailRouteResponseSchema,
-    ForwardEmailRequestSchema,
-    ForwardEmailResponseSchema,
-    ResolveEmailRouteRequestSchema,
-    SendEmailRequestSchema,
-    SendEmailResponseSchema,
-    UpdateEmailRouteRequestSchema,
-    UpdateEmailRouteResponseSchema,
-} from './api-schemas/agent-communication.js';
-import type { EmailChannelSchema, InteractiveChannelSchema, UserChannelSchema } from './api-schemas/interaction.js';
+import type * as Wire from './wire-types.generated.js';
 /**
  * Email-related types for agent communication and routing.
  */
@@ -23,13 +9,13 @@ import type { EmailChannelSchema, InteractiveChannelSchema, UserChannelSchema } 
  * Email channel configuration with threading support.
  * Used for email-based agent communication.
  */
-export type EmailChannel = z.infer<typeof EmailChannelSchema>;
+export type EmailChannel = Wire.EmailChannel;
 
 /**
  * Interactive (UI chat) channel configuration.
  * Used for real-time chat interface communication.
  */
-export type InteractiveChannel = z.infer<typeof InteractiveChannelSchema>;
+export type InteractiveChannel = Wire.InteractiveChannel;
 
 /**
  * Union of all supported user communication channel types.
@@ -37,7 +23,7 @@ export type InteractiveChannel = z.infer<typeof InteractiveChannelSchema>;
 /**
  * @discriminator type
  */
-export type UserChannel = z.infer<typeof UserChannelSchema>;
+export type UserChannel = Wire.UserChannel;
 
 /**
  * Type guard for email channels
@@ -64,14 +50,14 @@ export function isInteractiveChannel(channel: UserChannel): channel is Interacti
  *
  * Pattern: r+{routeKey}@{domain} instead of r+{32-char-uuid}@{domain}
  */
-export type EmailRouteData = z.infer<typeof EmailRouteDataSchema>;
-export type SendEmailRequest = z.infer<typeof SendEmailRequestSchema>;
-export type SendEmailResponse = z.infer<typeof SendEmailResponseSchema>;
-export type ResolveEmailRouteRequest = z.infer<typeof ResolveEmailRouteRequestSchema>;
-export type CreateEmailRouteRequest = z.infer<typeof CreateEmailRouteRequestSchema>;
-export type CreateEmailRouteResponse = z.infer<typeof CreateEmailRouteResponseSchema>;
-export type EmailRouteResponse = z.infer<typeof EmailRouteResponseSchema>;
-export type UpdateEmailRouteRequest = z.infer<typeof UpdateEmailRouteRequestSchema>;
-export type UpdateEmailRouteResponse = z.infer<typeof UpdateEmailRouteResponseSchema>;
-export type ForwardEmailRequest = z.infer<typeof ForwardEmailRequestSchema>;
-export type ForwardEmailResponse = z.infer<typeof ForwardEmailResponseSchema>;
+export type EmailRouteData = Wire.EmailRouteData;
+export type SendEmailRequest = Wire.SendEmailRequest;
+export type SendEmailResponse = Wire.SendEmailResponse;
+export type ResolveEmailRouteRequest = Wire.ResolveEmailRouteRequest;
+export type CreateEmailRouteRequest = Wire.CreateEmailRouteRequest;
+export type CreateEmailRouteResponse = Wire.CreateEmailRouteResponse;
+export type EmailRouteResponse = Wire.EmailRouteResponse;
+export type UpdateEmailRouteRequest = Wire.UpdateEmailRouteRequest;
+export type UpdateEmailRouteResponse = Wire.UpdateEmailRouteResponse;
+export type ForwardEmailRequest = Wire.ForwardEmailRequest;
+export type ForwardEmailResponse = Wire.ForwardEmailResponse;
