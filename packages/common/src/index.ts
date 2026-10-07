@@ -79,12 +79,8 @@ export * from './rate-limiter.js';
 export * from './refs.js';
 export * from './roles/types.js';
 export type {
-    ReadRunBudgetUsagePayload,
     RunBudgetCapability,
     RunBudgetCapabilityQuery,
-    RunBudgetOwner,
-    RunBudgetTotals,
-    RunBudgetUsage,
 } from './run-budget.js';
 export * from './runs.js';
 export * from './schema-for-extraction.js';

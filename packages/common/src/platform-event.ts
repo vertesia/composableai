@@ -242,31 +242,6 @@ export interface ListEventSubscriptionsQuery {
     app_installation_id?: string;
 }
 
-/** Trusted Studio -> Zeno request used to provision subscriptions declared by an installed app. */
-export interface ProvisionAppEventSubscriptionsRequest {
-    account_id: string;
-    project_id: string;
-    subscriptions: Array<
-        CreateEventSubscriptionPayload & {
-            target: AppEventDeliveryTargetInput;
-            app_installation_id: string;
-            app_id: string;
-            app_subscription_id: string;
-        }
-    >;
-}
-
-/** Trusted Studio -> Zeno request used to remove every subscription owned by an app installation. */
-export interface RemoveAppEventSubscriptionsRequest {
-    account_id: string;
-    project_id: string;
-    app_installation_id: string;
-}
-
-export interface AppEventSubscriptionsMutationResponse {
-    subscription_ids: string[];
-}
-
 export type EventIngestChannelSortField = 'name' | 'source' | 'enabled' | 'updated_at';
 
 export interface ListEventIngestChannelsQuery {

@@ -78,12 +78,7 @@ import {
     RoleDefinitionArraySchema,
     SystemRoleDefinitionArraySchema,
 } from './access-control.js';
-import {
-    AccountApiVersionPolicySchema,
-    AccountSchema,
-    StripeBillingStatusResponseSchema,
-    UpdateAccountPayloadSchema,
-} from './account.js';
+import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
 import * as AgentCommunicationSchemas from './agent-communication.js';
 import * as AgentRunSchemas from './agent-runs.js';
@@ -874,7 +869,6 @@ import * as WorkflowRunSchemas from './workflow-runs.js';
  * group approaches the proven-safe size.
  */
 const IAM_AND_ACCOUNT_SCHEMAS = {
-    AccountApiVersionPolicy: AccountApiVersionPolicySchema,
     Account: AccountSchema,
     UpdateAccountPayload: UpdateAccountPayloadSchema,
     StripeBillingStatusResponse: StripeBillingStatusResponseSchema,
@@ -2321,17 +2315,6 @@ const SECRET_SCHEMAS = {
     SecretProjectQuery: SecretSchemas.SecretProjectQuerySchema,
     ListSecretsQuery: SecretSchemas.ListSecretsQuerySchema,
     SecretLookupQuery: SecretSchemas.SecretLookupQuerySchema,
-    EventWebhookSigningSecretRequest: SecretSchemas.EventWebhookSigningSecretRequestSchema,
-    EventWebhookSigningSecretResponse: SecretSchemas.EventWebhookSigningSecretResponseSchema,
-    SignEventWebhookRequest: SecretSchemas.SignEventWebhookRequestSchema,
-    SignEventWebhookResponse: SecretSchemas.SignEventWebhookResponseSchema,
-    EventIngestSigningSecretRequest: SecretSchemas.EventIngestSigningSecretRequestSchema,
-    EventIngestSigningSecretResponse: SecretSchemas.EventIngestSigningSecretResponseSchema,
-    VerifyEventIngestSignatureRequest: SecretSchemas.VerifyEventIngestSignatureRequestSchema,
-    VerifyEventIngestSignatureResponse: SecretSchemas.VerifyEventIngestSignatureResponseSchema,
-    GithubInstallationTokenRequest: SecretSchemas.GithubInstallationTokenRequestSchema,
-    GithubInstallationTokenResponse: SecretSchemas.GithubInstallationTokenResponseSchema,
-    InternalSecretDeleteResponse: SecretSchemas.InternalSecretDeleteResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const INTEGRATION_SCHEMAS = {
@@ -2465,10 +2448,6 @@ const DELEGATION_SCHEMAS = {
     DelegationGrantArray: DelegationGrantArraySchema,
 };
 const RUN_BUDGET_SCHEMAS = {
-    RunBudgetOwner: RunBudgetSchemas.RunBudgetOwnerSchema,
-    RunBudgetUsage: RunBudgetSchemas.RunBudgetUsageSchema,
-    ReadRunBudgetUsagePayload: RunBudgetSchemas.ReadRunBudgetUsagePayloadSchema,
-    RunBudgetTotals: RunBudgetSchemas.RunBudgetTotalsSchema,
     RunBudgetCapability: RunBudgetSchemas.RunBudgetCapabilitySchema,
     RunBudgetCapabilityQuery: RunBudgetSchemas.RunBudgetCapabilityQuerySchema,
 };
@@ -3620,17 +3599,6 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ActivityCatalog',
     'WorkflowInteractionVars',
     'ListWorkflowInteractionsResponse',
-    'EventWebhookSigningSecretRequest',
-    'EventWebhookSigningSecretResponse',
-    'SignEventWebhookRequest',
-    'SignEventWebhookResponse',
-    'EventIngestSigningSecretRequest',
-    'EventIngestSigningSecretResponse',
-    'VerifyEventIngestSignatureRequest',
-    'VerifyEventIngestSignatureResponse',
-    'GithubInstallationTokenRequest',
-    'GithubInstallationTokenResponse',
-    'InternalSecretDeleteResponse',
 ]);
 
 /**

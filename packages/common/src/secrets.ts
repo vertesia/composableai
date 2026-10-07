@@ -18,15 +18,4 @@ export type CreateSecretRequest = Wire.CreateSecretRequest;
 
 export type UpdateSecretRequest = Wire.UpdateSecretRequest;
 
-export type EventWebhookSigningSecretRequest = Wire.EventWebhookSigningSecretRequest;
-export type EventWebhookSigningSecretResponse = Wire.EventWebhookSigningSecretResponse;
-export type SignEventWebhookRequest = Wire.SignEventWebhookRequest;
-export type SignEventWebhookResponse = Wire.SignEventWebhookResponse;
-export type EventIngestSigningSecretRequest = Wire.EventIngestSigningSecretRequest;
-export type EventIngestSigningSecretResponse = Wire.EventIngestSigningSecretResponse;
-export type VerifyEventIngestSignatureRequest = Wire.VerifyEventIngestSignatureRequest;
-export type VerifyEventIngestSignatureResponse = Wire.VerifyEventIngestSignatureResponse;
-export type GithubInstallationTokenRequest = Wire.GithubInstallationTokenRequest;
-export type GithubInstallationTokenResponse = Wire.GithubInstallationTokenResponse;
-
 export type DeleteSecretResponse = Wire.DeleteSecretResponse;
