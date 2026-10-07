@@ -18,7 +18,7 @@ import { CanonicalInteractionStreamProtocolError } from '@vertesia/client';
 import { NodeStreamSource } from '@vertesia/client/node';
 import {
     CANONICAL_STREAM_RECOVERY_PENDING_ERROR_CODE,
-    type ConversationOutputAsset,
+    type ConversationAsset,
     type ConversationOutputGenerationUsage,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
@@ -456,7 +456,7 @@ function contentHash(bytes: Uint8Array): string {
     return `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
 }
 
-function assertAssetIntegrity(asset: ConversationOutputAsset, bytes: Uint8Array): void {
+function assertAssetIntegrity(asset: ConversationAsset, bytes: Uint8Array): void {
     if (asset.byte_length === undefined || asset.content_hash === undefined) {
         throw new Error(`Canonical generated asset ${asset.id} lacks byte integrity evidence`);
     }
@@ -465,10 +465,7 @@ function assertAssetIntegrity(asset: ConversationOutputAsset, bytes: Uint8Array)
     }
 }
 
-async function readBoundedMedia(
-    stream: ReadableStream<Uint8Array>,
-    asset: ConversationOutputAsset,
-): Promise<Uint8Array> {
+async function readBoundedMedia(stream: ReadableStream<Uint8Array>, asset: ConversationAsset): Promise<Uint8Array> {
     const reader = stream.getReader();
     const chunks: Uint8Array[] = [];
     let byteLength = 0;
@@ -497,10 +494,8 @@ async function readBoundedMedia(
     return bytes;
 }
 
-export async function materializeCanonicalAsset(
-    client: VertesiaClient,
-    asset: ConversationOutputAsset,
-): Promise<Uint8Array> {
+/** Materialize byte custody only; callers retain their received/generated provenance authority checks. */
+export async function materializeCanonicalAsset(client: VertesiaClient, asset: ConversationAsset): Promise<Uint8Array> {
     let bytes: Uint8Array;
     if (asset.storage.type === 'inline_base64') {
         const estimatedByteLength = Math.floor((asset.storage.data.length * 3) / 4);

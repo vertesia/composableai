@@ -132,6 +132,11 @@ interface CanonicalConversationSchemaMap {
     ConversationProcessingJob: typeof Canonical.ProcessingJobSchema;
     ConversationProcessingJobSelection: typeof Canonical.ProcessingJobSelectionSchema;
     ConversationProcessingOperation: typeof Canonical.ProcessingOperationSchema;
+    ConversationProcessingQueueCommand: typeof Canonical.ProcessingQueueCommandSchema;
+    ConversationProcessingPolicyCommand: typeof Canonical.ProcessingPolicyCommandSchema;
+    ConversationInitialProcessingPolicy: typeof Canonical.InitialProcessingPolicySchema;
+    ConversationProcessingPolicyGenesis: typeof Canonical.ProcessingPolicyGenesisSchema;
+    ConversationProcessingQueueAcceptanceInput: typeof Canonical.ProcessingQueueAcceptanceInputSchema;
     ConversationProcessingOutputReceipt: typeof Canonical.ProcessingOutputReceiptSchema;
     ConversationProcessingReadinessCoverage: typeof Canonical.ProcessingReadinessCoverageSchema;
     ConversationProcessingResolvedInput: typeof Canonical.ProcessingResolvedInputSchema;
@@ -352,6 +357,11 @@ export const CANONICAL_CONVERSATION_SCHEMAS: CanonicalConversationSchemaMap = {
     ConversationProcessingJob: Canonical.ProcessingJobSchema,
     ConversationProcessingJobSelection: Canonical.ProcessingJobSelectionSchema,
     ConversationProcessingOperation: Canonical.ProcessingOperationSchema,
+    ConversationProcessingQueueCommand: Canonical.ProcessingQueueCommandSchema,
+    ConversationProcessingPolicyCommand: Canonical.ProcessingPolicyCommandSchema,
+    ConversationInitialProcessingPolicy: Canonical.InitialProcessingPolicySchema,
+    ConversationProcessingPolicyGenesis: Canonical.ProcessingPolicyGenesisSchema,
+    ConversationProcessingQueueAcceptanceInput: Canonical.ProcessingQueueAcceptanceInputSchema,
     ConversationProcessingOutputReceipt: Canonical.ProcessingOutputReceiptSchema,
     ConversationProcessingReadinessCoverage: Canonical.ProcessingReadinessCoverageSchema,
     ConversationProcessingResolvedInput: Canonical.ProcessingResolvedInputSchema,
