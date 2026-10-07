@@ -88,6 +88,13 @@ export function clearPendingSignin(): void {
 }
 
 /**
+ * Detects a tenant sign-in by the key's presence, including tenants with an empty label or name.
+ */
+export function isTenantSignIn(): boolean {
+    return localStorage.getItem('tenantName') !== null;
+}
+
+/**
  * Promotes the pending sign-in record to the last-successful-login entry, stamping the
  * authenticated user's display name.
  *
