@@ -96,7 +96,9 @@ describe('AgentRequestInputOverlay', () => {
             <AgentRequestInputOverlay message={createMcpRequestMessage()} onSendMessage={onSendMessage} />,
         );
 
-        expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Connect', 'Decline']);
+        expect(screen.getByRole('button', { name: 'Hide questions' }).getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByRole('button', { name: 'Connect' })).not.toBeNull();
+        expect(screen.getByRole('button', { name: 'Decline' })).not.toBeNull();
 
         fireEvent.click(screen.getByRole('button', { name: /decline/i }));
 
@@ -194,5 +196,74 @@ describe('AgentRequestInputOverlay', () => {
 
         expect(screen.getByText('Approve Write Artifact: quotes.md?')).not.toBeNull();
         expect(screen.queryByText('Approve Write Artifact: name quotes.md?')).toBeNull();
+    });
+
+    it('collapses questions without submitting and preserves the draft when reopened', () => {
+        const onSendMessage = vi.fn();
+        renderWithProviders(
+            <AgentRequestInputOverlay message={createToolApprovalRequestMessage()} onSendMessage={onSendMessage} />,
+        );
+        const input = screen.getByPlaceholderText('No, and tell the agent what to do differently');
+        fireEvent.change(input, { target: { value: 'Keep this draft' } });
+        const toggle = screen.getByRole('button', { name: 'Hide questions' });
+        const content = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+        expect(content).not.toBeNull();
+
+        fireEvent.click(toggle);
+
+        expect(toggle.getAttribute('aria-expanded')).toBe('false');
+        expect(content?.hidden).toBe(true);
+        expect(screen.getByText('Approve Write Artifact: quotes.md?').closest('[hidden]')).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Allow once' })).toBeNull();
+        expect(screen.queryByRole('textbox')).toBeNull();
+        expect(onSendMessage).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Show questions' }));
+
+        expect(toggle.getAttribute('aria-expanded')).toBe('true');
+        expect(content?.hidden).toBe(false);
+        expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('Keep this draft');
+        fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+        expect(onSendMessage).toHaveBeenCalledWith('Keep this draft', expect.any(Object));
+    });
+
+    it('preserves multiple selections while collapsed', () => {
+        const message = createToolApprovalRequestMessage();
+        message.details.ux.multiSelect = true;
+        const onSendMessage = vi.fn();
+        renderWithProviders(<AgentRequestInputOverlay message={message} onSendMessage={onSendMessage} />);
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Allow once' }));
+        fireEvent.click(screen.getByRole('checkbox', { name: 'Deny' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Hide questions' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Show questions' }));
+        fireEvent.click(screen.getByRole('button', { name: /Submit.*2/ }));
+        expect(onSendMessage).toHaveBeenCalledWith('allow_once, deny', expect.any(Object));
+    });
+
+    it('expands a new request and resets the previous draft', () => {
+        const message = createToolApprovalRequestMessage();
+        const onSendMessage = vi.fn();
+        const view = renderWithProviders(<AgentRequestInputOverlay message={message} onSendMessage={onSendMessage} />);
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Previous answer' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Hide questions' }));
+        view.rerender(<AgentRequestInputOverlay message={{ ...message }} onSendMessage={onSendMessage} />);
+        expect(screen.getByRole('button', { name: 'Show questions' })).not.toBeNull();
+
+        const nextMessage = { ...message, details: { ...message.details, request_id: 'next-request' } };
+        view.rerender(<AgentRequestInputOverlay message={nextMessage} onSendMessage={onSendMessage} />);
+        expect(screen.getByRole('button', { name: 'Hide questions' }).getAttribute('aria-expanded')).toBe('true');
+        expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('');
+    });
+
+    it('allows collapsing disabled MCP requests without resolving them', () => {
+        const onSendMessage = vi.fn();
+        renderWithProviders(
+            <AgentRequestInputOverlay message={createMcpRequestMessage()} onSendMessage={onSendMessage} disabled />,
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Hide questions' }));
+        expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: 'Show questions' }));
+        expect(screen.getByRole('button', { name: /decline/i }).hasAttribute('disabled')).toBe(true);
+        expect(onSendMessage).not.toHaveBeenCalled();
     });
 });
