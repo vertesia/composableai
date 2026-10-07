@@ -1157,6 +1157,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 do_validate: {
                     type: 'boolean',
                 },
+                json_repair: {
+                    type: 'boolean',
+                    description: 'Override the project JSON syntax repair default for this execution.',
+                },
                 run_data: {
                     $ref: '#/$defs/RunDataStorageLevel',
                 },

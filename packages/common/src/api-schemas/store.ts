@@ -93,6 +93,9 @@ export const InteractionExecutionConfigurationSchema = z
         environment: z.string().optional(),
         model: z.string().optional(),
         do_validate: z.boolean().optional(),
+        json_repair: z.boolean().optional().meta({
+            description: 'Override the project JSON syntax repair default for this execution.',
+        }),
         run_data: RunDataStorageLevelSchema.optional(),
         configMode: ConfigModesSchema.optional(),
         model_options: ModelOptionsSchema.optional(),

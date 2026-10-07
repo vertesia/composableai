@@ -4,7 +4,7 @@ import { ContentTypeIntakePolicySchema as GeneratedIntakePolicySchema } from '..
 import type { ContentObjectTypeRef, ContentTypeIntakePolicy, IntakePageRanges } from '../store/store.js';
 import type { JsonObject } from './adapter.js';
 import { ResolveInteractionQuerySchema } from './interaction.js';
-import { ApiSchemaComponents, bundleCanonicalComponent, validateApiResponse } from './registry.js';
+import { ApiSchemaComponents, bundleCanonicalComponent, validateApiRequest, validateApiResponse } from './registry.js';
 import { ContentTypeIntakePolicySchema, InteractionExecutionConfigurationSchema } from './store.js';
 
 /** Exact type identity — `extends` in both directions is too weak (any/unknown slip through). */
@@ -379,6 +379,11 @@ describe('the five content-type shapes are composed, not repeated', () => {
 });
 
 describe('inherited execution model configuration', () => {
+    it.each([true, false, undefined])('accepts a per-execution JSON repair override: %s', (json_repair) => {
+        expect(validateApiRequest('InteractionExecutionConfiguration', { json_repair }).valid).toBe(true);
+        expect(validateApiRequest('InteractionExecutionConfiguration', { json_repair: 'false' }).valid).toBe(false);
+    });
+
     it('retains profile selection alongside inherited settings in resolution queries', () => {
         const query = {
             inference_profile: '507f1f77bcf86cd799439011',

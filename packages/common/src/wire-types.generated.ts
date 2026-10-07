@@ -4442,6 +4442,7 @@ export type InteractionExecutionConfiguration = {
     environment?: string | undefined;
     model?: string | undefined;
     do_validate?: boolean | undefined;
+    json_repair?: boolean | undefined;
     run_data?: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel] | undefined;
     configMode?: (typeof ConfigModes)[keyof typeof ConfigModes] | undefined;
     model_options?: ModelOptions | undefined;
@@ -9387,6 +9388,7 @@ export type ViewAgenticExecutionConfiguration = {
     environment?: string | undefined;
     model?: string | undefined;
     do_validate?: boolean | undefined;
+    json_repair?: boolean | undefined;
     run_data?: (typeof RunDataStorageLevel)[keyof typeof RunDataStorageLevel] | undefined;
     configMode?: (typeof ConfigModes)[keyof typeof ConfigModes] | undefined;
     model_options?:
