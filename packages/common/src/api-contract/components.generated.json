@@ -2187,11 +2187,403 @@
         "items": {
           "$ref": "#/components/schemas/ConversationIdentifier"
         }
+      },
+      "queue_command": {
+        "$ref": "#/components/schemas/ConversationProcessingQueueAcceptanceInput"
+      },
+      "policy_command": {
+        "$ref": "#/components/schemas/ConversationProcessingPolicyCommand"
+      },
+      "policy_genesis": {
+        "$ref": "#/components/schemas/ConversationProcessingPolicyGenesis"
+      },
+      "queue_selected_entries": {
+        "maxItems": 4096,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationContextEntry"
+        }
       }
     },
     "required": [
       "phase",
       "policy_revision"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationProcessingQueueAcceptanceInput": {
+    "type": "object",
+    "properties": {
+      "command": {
+        "$ref": "#/components/schemas/ConversationProcessingQueueCommand"
+      },
+      "selection": {
+        "$ref": "#/components/schemas/ConversationContextSelectionRequest"
+      }
+    },
+    "required": [
+      "command",
+      "selection"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationProcessingQueueCommand": {
+    "type": "object",
+    "properties": {
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "expected_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "processor_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "scope": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "on_budget"
+        ]
+      },
+      "target_fingerprint": {
+        "$ref": "#/components/schemas/ConversationContentHash"
+      }
+    },
+    "required": [
+      "operation_id",
+      "expected_revision",
+      "recorded_at",
+      "processor_id",
+      "scope"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationContextSelectionRequest": {
+    "type": "object",
+    "properties": {
+      "conversation": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "expected_context_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "selector": {
+        "$ref": "#/components/schemas/ConversationContextSelector"
+      }
+    },
+    "required": [
+      "conversation",
+      "expected_context_revision",
+      "selector"
+    ]
+  },
+  "ConversationContextSelector": {
+    "type": "object",
+    "properties": {
+      "source": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "all"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "turn_ids"
+              },
+              "turn_ids": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ConversationIdentifier"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "turn_ids"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "range"
+              },
+              "range": {
+                "$ref": "#/components/schemas/ConversationContextSelectionRange"
+              }
+            },
+            "required": [
+              "kind",
+              "range"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "const": "ranges"
+              },
+              "ranges": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ConversationContextSelectionRange"
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "ranges"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "filters": {
+        "type": "object",
+        "properties": {
+          "actor_kinds": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationContextSelectionActorKind"
+            }
+          },
+          "actor_ids": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "tool_names": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "block_ids": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationIdentifier"
+            }
+          },
+          "block_types": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationContextSelectionBlockType"
+            }
+          },
+          "metadata": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationContextMetadataPredicate"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "source"
+    ]
+  },
+  "ConversationContextSelectionRange": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "$ref": "#/components/schemas/ConversationContextSelectionAnchor"
+      },
+      "through": {
+        "$ref": "#/components/schemas/ConversationContextSelectionAnchor"
+      }
+    },
+    "required": [
+      "from",
+      "through"
+    ]
+  },
+  "ConversationJsonPath": {
+    "minItems": 1,
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ConversationJsonPathSegment"
+    }
+  },
+  "ConversationProcessingPolicyCommand": {
+    "type": "object",
+    "properties": {
+      "operation_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "expected_revision": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "recorded_at": {
+        "$ref": "#/components/schemas/ConversationTimestamp"
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "processors": {
+        "maxItems": 16,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationProcessorConfiguration"
+        }
+      },
+      "budget": {
+        "$ref": "#/components/schemas/ConversationProcessingBudget"
+      },
+      "supersede_job_ids": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationIdentifier"
+        }
+      },
+      "supersession_reason": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      }
+    },
+    "required": [
+      "operation_id",
+      "expected_revision",
+      "recorded_at",
+      "enabled",
+      "processors"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationProcessorConfiguration": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "version": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "scope": {
+        "type": "string",
+        "enum": [
+          "on_append",
+          "on_budget",
+          "manual"
+        ]
+      },
+      "config": {
+        "$ref": "#/components/schemas/ConversationJsonObject"
+      },
+      "required": {
+        "type": "boolean"
+      },
+      "failure_behavior": {
+        "type": "string",
+        "enum": [
+          "block",
+          "skip_with_diagnostic"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "version",
+      "scope",
+      "config",
+      "required",
+      "failure_behavior"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationProcessingBudget": {
+    "type": "object",
+    "properties": {
+      "max_input_tokens": {
+        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
+      },
+      "output_reserve_tokens": {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
+      },
+      "measurement_policy": {
+        "type": "string",
+        "enum": [
+          "exact_only",
+          "identified_estimate"
+        ]
+      }
+    },
+    "required": [
+      "max_input_tokens",
+      "output_reserve_tokens"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationProcessingPolicyGenesis": {
+    "type": "object",
+    "properties": {
+      "source": {
+        "$ref": "#/components/schemas/ConversationRef"
+      },
+      "policy": {
+        "$ref": "#/components/schemas/ConversationInitialProcessingPolicy"
+      }
+    },
+    "required": [
+      "source",
+      "policy"
+    ],
+    "additionalProperties": false
+  },
+  "ConversationInitialProcessingPolicy": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "policy_revision": {
+        "type": "number",
+        "const": 0
+      },
+      "processors": {
+        "maxItems": 16,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ConversationProcessorConfiguration"
+        }
+      },
+      "budget": {
+        "$ref": "#/components/schemas/ConversationProcessingBudget"
+      }
+    },
+    "required": [
+      "enabled",
+      "policy_revision",
+      "processors"
     ],
     "additionalProperties": false
   },
@@ -3246,6 +3638,198 @@
           "placement"
         ],
         "additionalProperties": false
+      }
+    ]
+  },
+  "ConversationContextSelectionAnchor": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "entry"
+          },
+          "id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "turn"
+          },
+          "id": {
+            "$ref": "#/components/schemas/ConversationIdentifier"
+          }
+        },
+        "required": [
+          "kind",
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "ConversationContextSelectionActorKind": {
+    "anyOf": [
+      {
+        "type": "string",
+        "const": "user"
+      },
+      {
+        "type": "string",
+        "const": "agent"
+      },
+      {
+        "type": "string",
+        "const": "tool"
+      },
+      {
+        "type": "string",
+        "const": "program"
+      }
+    ]
+  },
+  "ConversationContextSelectionBlockType": {
+    "anyOf": [
+      {
+        "type": "string",
+        "const": "text"
+      },
+      {
+        "type": "string",
+        "const": "json"
+      },
+      {
+        "type": "string",
+        "const": "image"
+      },
+      {
+        "type": "string",
+        "const": "document"
+      },
+      {
+        "type": "string",
+        "const": "audio"
+      },
+      {
+        "type": "string",
+        "const": "video"
+      },
+      {
+        "type": "string",
+        "const": "tool_call"
+      },
+      {
+        "type": "string",
+        "const": "tool_result"
+      },
+      {
+        "type": "string",
+        "const": "external_reference"
+      },
+      {
+        "type": "string",
+        "const": "reasoning"
+      },
+      {
+        "type": "string",
+        "const": "native_replay"
+      },
+      {
+        "type": "string",
+        "const": "extension"
+      }
+    ]
+  },
+  "ConversationContextMetadataPredicate": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "exists"
+          },
+          "path": {
+            "$ref": "#/components/schemas/ConversationJsonPath"
+          },
+          "exists": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "op",
+          "path",
+          "exists"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "equals"
+          },
+          "path": {
+            "$ref": "#/components/schemas/ConversationJsonPath"
+          },
+          "value": {
+            "$ref": "#/components/schemas/ConversationJsonValue"
+          }
+        },
+        "required": [
+          "op",
+          "path",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "in"
+          },
+          "path": {
+            "$ref": "#/components/schemas/ConversationJsonPath"
+          },
+          "values": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationJsonValue"
+            }
+          }
+        },
+        "required": [
+          "op",
+          "path",
+          "values"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "ConversationJsonPathSegment": {
+    "anyOf": [
+      {
+        "type": "string",
+        "minLength": 1
+      },
+      {
+        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
       }
     ]
   },
@@ -8264,13 +8848,6 @@
     ],
     "additionalProperties": false
   },
-  "ConversationJsonPath": {
-    "minItems": 1,
-    "type": "array",
-    "items": {
-      "$ref": "#/components/schemas/ConversationJsonPathSegment"
-    }
-  },
   "ConversationInvalidatedReplayArchive": {
     "type": "object",
     "properties": {
@@ -8809,6 +9386,46 @@
       "internal",
       "transcript"
     ]
+  },
+  "ConversationApplicationToolCallBlock": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "type": {
+        "type": "string",
+        "const": "tool_call"
+      },
+      "call_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "tool_name": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "definition_id": {
+        "$ref": "#/components/schemas/ConversationIdentifier"
+      },
+      "executor": {
+        "type": "string",
+        "const": "application"
+      },
+      "arguments": {
+        "$ref": "#/components/schemas/ConversationToolArguments"
+      },
+      "native_id": {
+        "$ref": "#/components/schemas/ConversationNativeIdentity"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "call_id",
+      "tool_name",
+      "executor",
+      "arguments"
+    ],
+    "additionalProperties": false
   },
   "ConversationDeletedTurn": {
     "type": "object",
@@ -9783,6 +10400,9 @@
           "$ref": "#/components/schemas/ConversationTurn"
         }
       },
+      "original_context": {
+        "$ref": "#/components/schemas/ConversationContext"
+      },
       "fidelity": {
         "type": "string",
         "enum": [
@@ -9947,70 +10567,6 @@
       "enabled",
       "policy_revision",
       "processors"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationProcessorConfiguration": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "version": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "scope": {
-        "type": "string",
-        "enum": [
-          "on_append",
-          "on_budget",
-          "manual"
-        ]
-      },
-      "config": {
-        "$ref": "#/components/schemas/ConversationJsonObject"
-      },
-      "required": {
-        "type": "boolean"
-      },
-      "failure_behavior": {
-        "type": "string",
-        "enum": [
-          "block",
-          "skip_with_diagnostic"
-        ]
-      }
-    },
-    "required": [
-      "id",
-      "version",
-      "scope",
-      "config",
-      "required",
-      "failure_behavior"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationProcessingBudget": {
-    "type": "object",
-    "properties": {
-      "max_input_tokens": {
-        "$ref": "#/components/schemas/ConversationPositiveSafeInteger"
-      },
-      "output_reserve_tokens": {
-        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-      },
-      "measurement_policy": {
-        "type": "string",
-        "enum": [
-          "exact_only",
-          "identified_estimate"
-        ]
-      }
-    },
-    "required": [
-      "max_input_tokens",
-      "output_reserve_tokens"
     ],
     "additionalProperties": false
   },
@@ -11281,17 +11837,6 @@
       }
     ]
   },
-  "ConversationJsonPathSegment": {
-    "anyOf": [
-      {
-        "type": "string",
-        "minLength": 1
-      },
-      {
-        "$ref": "#/components/schemas/ConversationNonnegativeSafeInteger"
-      }
-    ]
-  },
   "ConversationNestedToolResultContentBlock": {
     "oneOf": [
       {
@@ -11348,6 +11893,9 @@
   "ConversationProgramContentBlock": {
     "oneOf": [
       {
+        "$ref": "#/components/schemas/ConversationApplicationToolCallBlock"
+      },
+      {
         "$ref": "#/components/schemas/ConversationTextBlock"
       },
       {
@@ -11381,6 +11929,7 @@
     "discriminator": {
       "propertyName": "type",
       "mapping": {
+        "tool_call": "#/components/schemas/ConversationApplicationToolCallBlock",
         "text": "#/components/schemas/ConversationTextBlock",
         "json": "#/components/schemas/ConversationJsonBlock",
         "image": "#/components/schemas/ConversationImageBlock",
@@ -12016,46 +12565,6 @@
     "required": [
       "api_version",
       "routing_control"
-    ],
-    "additionalProperties": false
-  },
-  "ConversationApplicationToolCallBlock": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "type": {
-        "type": "string",
-        "const": "tool_call"
-      },
-      "call_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "tool_name": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "definition_id": {
-        "$ref": "#/components/schemas/ConversationIdentifier"
-      },
-      "executor": {
-        "type": "string",
-        "const": "application"
-      },
-      "arguments": {
-        "$ref": "#/components/schemas/ConversationToolArguments"
-      },
-      "native_id": {
-        "$ref": "#/components/schemas/ConversationNativeIdentity"
-      }
-    },
-    "required": [
-      "id",
-      "type",
-      "call_id",
-      "tool_name",
-      "executor",
-      "arguments"
     ],
     "additionalProperties": false
   },
@@ -51647,9 +52156,6 @@
     ],
     "additionalProperties": false
   },
-  "ConversationTranscriptProgramBlock": {
-    "$ref": "#/components/schemas/ConversationTranscriptRenderableBlock"
-  },
   "ConversationTranscriptGenerationMap": {
     "type": "object",
     "propertyNames": {
@@ -52155,6 +52661,16 @@
     "type": "object",
     "required": [
       "type"
+    ]
+  },
+  "ConversationTranscriptProgramBlock": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptRenderableBlock"
+      },
+      {
+        "$ref": "#/components/schemas/ConversationTranscriptToolCallBlock"
+      }
     ]
   },
   "ConversationTranscriptGeneration": {
