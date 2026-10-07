@@ -455,7 +455,7 @@ export const ProjectConfigurationSchema = z
             .optional()
             .meta({
                 description:
-                    'Allow conservative JSON syntax repair for structured output executions in this project. ' +
+                    'Allow JSON syntax repair for structured output executions in this project. ' +
                     'Defaults to true when unspecified. Disabling repair still allows complete JSON wrapper extraction.',
             }),
         agent_streaming_enabled: z
