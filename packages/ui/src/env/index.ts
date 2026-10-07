@@ -41,7 +41,16 @@ export interface EnvProps {
     /** Explicitly allow legacy Firebase/central sign-in in an iframe when host authentication is unavailable. */
     allowLegacyIframeAuth?: boolean;
     /** Public OAuth client for independently hosted apps; ignored inside Studio or a gateway session. */
-    oauth?: { clientId: string; redirectUri: string; scopes?: string[]; offlineAccess?: boolean };
+    oauth?: {
+        clientId: string;
+        redirectUri: string;
+        scopes?: string[];
+        offlineAccess?: boolean;
+        /** Logical authorization server, optionally including a tenant path; defaults to endpoints.sts. */
+        issuer?: string;
+        /** RFC 8707 audience, independent of the logical issuer; defaults to the discovered issuer. */
+        resource?: string;
+    };
     firebase?: {
         apiKey: string;
         authDomain: string;
