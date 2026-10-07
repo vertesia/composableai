@@ -203,12 +203,14 @@ describe('AgentRequestInputOverlay', () => {
         const input = screen.getByPlaceholderText('No, and tell the agent what to do differently');
         fireEvent.change(input, { target: { value: 'Keep this draft' } });
         const toggle = screen.getByRole('button', { name: 'Hide questions' });
-        const content = document.getElementById(toggle.getAttribute('aria-controls')!);
+        const content = document.getElementById(toggle.getAttribute('aria-controls') ?? '');
+        expect(content).not.toBeNull();
 
         fireEvent.click(toggle);
 
         expect(toggle.getAttribute('aria-expanded')).toBe('false');
         expect(content?.hidden).toBe(true);
+        expect(screen.getByText('Approve Write Artifact: quotes.md?').closest('[hidden]')).toBeNull();
         expect(screen.queryByRole('button', { name: 'Allow once' })).toBeNull();
         expect(screen.queryByRole('textbox')).toBeNull();
         expect(onSendMessage).not.toHaveBeenCalled();

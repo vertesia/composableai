@@ -107,28 +107,32 @@ function PendingRequestInputOverlay({
         className,
     );
 
+    const toggleLabel = isCollapsed ? t('agent.showQuestions') : t('agent.hideQuestions');
+    const collapseButton = (
+        <VTooltip description={toggleLabel} asChild>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="size-6 shrink-0"
+                aria-label={toggleLabel}
+                aria-expanded={!isCollapsed}
+                aria-controls={contentId}
+                onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+            >
+                {isCollapsed ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+            </Button>
+        </VTooltip>
+    );
+
     return (
         <div className={wrapperClassName} data-agent-request-input-overlay>
-            <div className="mx-auto flex w-full max-w-3xl justify-end px-3 py-1">
-                <VTooltip description={isCollapsed ? t('agent.showQuestions') : t('agent.hideQuestions')} asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-6"
-                        aria-label={isCollapsed ? t('agent.showQuestions') : t('agent.hideQuestions')}
-                        aria-expanded={!isCollapsed}
-                        aria-controls={contentId}
-                        onClick={() => setIsCollapsed((collapsed) => !collapsed)}
-                    >
-                        {isCollapsed ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
-                    </Button>
-                </VTooltip>
-            </div>
-            {/* Keep the controls mounted so collapsing preserves drafts and selections. */}
-            <div id={contentId} hidden={isCollapsed}>
-                {mcpConnect ? (
-                    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0 text-sm leading-6 text-foreground/85">{displayText}</div>
+            {mcpConnect ? (
+                <div className="mx-auto w-full max-w-3xl px-3 py-3">
+                    <div className="flex items-start gap-2">
+                        <div className="min-w-0 flex-1 text-sm leading-6 text-foreground/85">{displayText}</div>
+                        {collapseButton}
+                    </div>
+                    <div id={contentId} hidden={isCollapsed}>
                         <McpRequestInputControls
                             mcpConnect={mcpConnect}
                             onMcpConnected={(cfg) => onMcpConnected?.(cfg, getRequestInputResponseMetadata(message))}
@@ -136,28 +140,31 @@ function PendingRequestInputOverlay({
                             disabled={isDisabled}
                         />
                     </div>
-                ) : (
-                    <div className="mx-auto w-full max-w-3xl px-3 py-3">
-                        <AskUserWidget
-                            question={displayText}
-                            options={options}
-                            variant={uxConfig.variant}
-                            multiSelect={uxConfig.multiSelect}
-                            allowFreeResponse={options.length === 0 || !!freeResponse}
-                            placeholder={freeResponse?.placeholder}
-                            submitLabel={freeResponse?.submit_label}
-                            onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
-                            onMultiSelect={(optionIds) => send(optionIds.join(', '))}
-                            onSubmit={(value) => send(value, freeResponse?.metadata)}
-                            hideBorder
-                            compact
-                            isLoading={isDisabled}
-                            className="my-0"
-                            cardClassName="bg-background/80 shadow-lg shadow-black/5 dark:shadow-none"
-                        />
-                    </div>
-                )}
-            </div>
+                </div>
+            ) : (
+                <div className="mx-auto w-full max-w-3xl px-3 py-3">
+                    <AskUserWidget
+                        question={displayText}
+                        options={options}
+                        variant={uxConfig.variant}
+                        multiSelect={uxConfig.multiSelect}
+                        allowFreeResponse={options.length === 0 || !!freeResponse}
+                        placeholder={freeResponse?.placeholder}
+                        submitLabel={freeResponse?.submit_label}
+                        onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
+                        onMultiSelect={(optionIds) => send(optionIds.join(', '))}
+                        onSubmit={(value) => send(value, freeResponse?.metadata)}
+                        hideBorder
+                        compact
+                        isLoading={isDisabled}
+                        headerAction={collapseButton}
+                        responseControlsId={contentId}
+                        responseControlsHidden={isCollapsed}
+                        className="my-0"
+                        cardClassName="bg-background/80 shadow-lg shadow-black/5 dark:shadow-none"
+                    />
+                </div>
+            )}
         </div>
     );
 }
