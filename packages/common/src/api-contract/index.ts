@@ -4,6 +4,7 @@ import type { ApiComponentName, ApiComponentType } from '../api-schemas/registry
 import API_SCHEMA_COMPONENTS from './components.generated.json' with { type: 'json' };
 import { createApiContract } from './engine.js';
 
+export type { JsonObject } from '../api-schemas/adapter.js';
 export type {
     ApiParameterLocation,
     NormalizedApiParameters,
@@ -15,15 +16,18 @@ export { createApiContract } from './engine.js';
 
 export const ApiSchemaComponents: Readonly<Record<string, JsonObject>> = API_SCHEMA_COMPONENTS;
 
-export const {
-    bundleCanonicalComponent,
-    apiComponentRef,
-    renderApiValidationIssue,
-    renderApiValidationIssueHead,
-    validateApiRequest,
-    validateApiResponse,
-    pruneApiResponse,
-    pruneAndValidateApiResponse,
-    findUnprunableApiPaths,
-    normalizeApiParameters,
-} = createApiContract<{ [N in ApiComponentName]: ApiComponentType<N> }>(ApiSchemaComponents);
+type ComponentTypes = { [N in ApiComponentName]: ApiComponentType<N> };
+type RuntimeContract = ReturnType<typeof createApiContract<ComponentTypes>>;
+const contract = createApiContract<ComponentTypes>(ApiSchemaComponents);
+export const bundleCanonicalComponent: RuntimeContract['bundleCanonicalComponent'] = contract.bundleCanonicalComponent;
+export const apiComponentRef: RuntimeContract['apiComponentRef'] = contract.apiComponentRef;
+export const renderApiValidationIssue: RuntimeContract['renderApiValidationIssue'] = contract.renderApiValidationIssue;
+export const renderApiValidationIssueHead: RuntimeContract['renderApiValidationIssueHead'] =
+    contract.renderApiValidationIssueHead;
+export const validateApiRequest: RuntimeContract['validateApiRequest'] = contract.validateApiRequest;
+export const validateApiResponse: RuntimeContract['validateApiResponse'] = contract.validateApiResponse;
+export const pruneApiResponse: RuntimeContract['pruneApiResponse'] = contract.pruneApiResponse;
+export const pruneAndValidateApiResponse: RuntimeContract['pruneAndValidateApiResponse'] =
+    contract.pruneAndValidateApiResponse;
+export const findUnprunableApiPaths: RuntimeContract['findUnprunableApiPaths'] = contract.findUnprunableApiPaths;
+export const normalizeApiParameters: RuntimeContract['normalizeApiParameters'] = contract.normalizeApiParameters;

@@ -1,5 +1,5 @@
 import { ClientBase, type FETCH_FN, type IRequestParamsWithPayload } from './base.js';
-import type { RequestError } from './errors.js';
+import type { ConnectionError, RequestError } from './errors.js';
 
 function isAuthorizationHeaderSet(headers: HeadersInit | undefined): boolean {
     if (!headers) return false;
@@ -132,6 +132,10 @@ export abstract class ApiTopic extends ClientBase {
         params: IRequestParamsWithPayload | undefined,
     ): T | Promise<T> {
         return this.client.handleResponse<T>(req, res, params);
+    }
+
+    handleConnectionError(error: ConnectionError): void {
+        this.client.handleConnectionError(error);
     }
 
     handleFetchResponse(req: Request, res: Response): void {

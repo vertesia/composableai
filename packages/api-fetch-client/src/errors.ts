@@ -114,3 +114,14 @@ export class ConnectionError extends RequestError {
         super(`Failed to connect to server: ${err.message}`, req, 0, err);
     }
 }
+
+/** Response detail without request URLs, headers, or the display-only stack label. */
+export function requestErrorDetail(error: RequestError): string {
+    if (error.status === 0) return error.original_message;
+    const payload = error.payload;
+    if (isRecord(payload) && payload.error === 'Not a valid JSON payload' && typeof payload.text === 'string') {
+        return payload.text;
+    }
+    if (payload == null) return error.original_message;
+    return typeof payload === 'string' ? payload : JSON.stringify(payload);
+}
