@@ -101,6 +101,8 @@ describe('AgentRequestInputOverlay', () => {
         expect(document.getElementById(contentId ?? '')?.hidden).toBe(true);
         expect(screen.queryByRole('button', { name: 'Allow once' })).toBeNull();
         expect(screen.queryByRole('textbox')).toBeNull();
+        expect(screen.getByText('Approve Write Artifact: quotes.md?').closest('[hidden]')).toBeNull();
+        expect(screen.queryByText('Pending questions')).toBeNull();
         expect(onSendMessage).not.toHaveBeenCalled();
 
         fireEvent.click(showButton);

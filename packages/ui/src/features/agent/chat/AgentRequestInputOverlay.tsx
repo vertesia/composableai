@@ -2,7 +2,7 @@ import type { McpConnectUxConfig } from '@vertesia/common';
 import { Button, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { ChevronDown, ChevronUp, HelpCircle, XIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, XIcon } from 'lucide-react';
 import { useId, useState } from 'react';
 import { RemoteMcpConnectionButton } from '../../oauth/RemoteMcpConnectionButton.js';
 import { ComposerOverlay, ComposerOverlayQuestion } from './ComposerOverlay';
@@ -101,32 +101,35 @@ function PendingRequestInputOverlay({
         sendRequestInputResponse(onSendMessage, message, value, metadata);
     };
 
+    const collapseButton = (
+        <VTooltip description={toggleLabel} asChild>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="size-6 shrink-0"
+                aria-label={toggleLabel}
+                aria-expanded={!isCollapsed}
+                aria-controls={contentId}
+                onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+            >
+                {isCollapsed ? (
+                    <ChevronUp className="size-4" aria-hidden="true" />
+                ) : (
+                    <ChevronDown className="size-4" aria-hidden="true" />
+                )}
+            </Button>
+        </VTooltip>
+    );
+
     return (
         <ComposerOverlay className={className} data-agent-request-input-overlay>
-            <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-3 pt-2 text-xs text-muted">
-                <div className="flex min-w-0 items-center gap-2 px-1 font-medium">
-                    <HelpCircle className="size-3.5 shrink-0" aria-hidden="true" />
-                    <span className="truncate">{t('agent.pendingQuestions')}</span>
-                </div>
-                <VTooltip description={toggleLabel} asChild>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8 shrink-0 rounded-lg [&_svg]:size-5"
-                        onClick={() => setIsCollapsed((collapsed) => !collapsed)}
-                        aria-label={toggleLabel}
-                        aria-expanded={!isCollapsed}
-                        aria-controls={contentId}
-                    >
-                        {isCollapsed ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
-                    </Button>
-                </VTooltip>
-            </div>
-            {/* Keep the controls mounted so collapsing preserves drafts and selected options. */}
-            <div id={contentId} hidden={isCollapsed}>
-                {mcpConnect ? (
-                    <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0 text-sm leading-6 text-foreground/85">{displayText}</div>
+            {mcpConnect ? (
+                <div className="mx-auto w-full max-w-3xl px-3 py-3">
+                    <div className="flex items-start gap-2">
+                        <div className="min-w-0 flex-1 text-sm leading-6 text-foreground/85">{displayText}</div>
+                        {collapseButton}
+                    </div>
+                    <div id={contentId} hidden={isCollapsed}>
                         <McpRequestInputControls
                             mcpConnect={mcpConnect}
                             onMcpConnected={(cfg) => onMcpConnected?.(cfg, getRequestInputResponseMetadata(message))}
@@ -134,22 +137,25 @@ function PendingRequestInputOverlay({
                             disabled={isDisabled}
                         />
                     </div>
-                ) : (
-                    <ComposerOverlayQuestion
-                        question={displayText}
-                        options={options}
-                        variant={uxConfig.variant}
-                        multiSelect={uxConfig.multiSelect}
-                        allowFreeResponse={options.length === 0 || !!freeResponse}
-                        placeholder={freeResponse?.placeholder}
-                        submitLabel={freeResponse?.submit_label}
-                        onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
-                        onMultiSelect={(optionIds) => send(optionIds.join(', '))}
-                        onSubmit={(value) => send(value, freeResponse?.metadata)}
-                        isLoading={isDisabled}
-                    />
-                )}
-            </div>
+                </div>
+            ) : (
+                <ComposerOverlayQuestion
+                    question={displayText}
+                    options={options}
+                    variant={uxConfig.variant}
+                    multiSelect={uxConfig.multiSelect}
+                    allowFreeResponse={options.length === 0 || !!freeResponse}
+                    placeholder={freeResponse?.placeholder}
+                    submitLabel={freeResponse?.submit_label}
+                    onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
+                    onMultiSelect={(optionIds) => send(optionIds.join(', '))}
+                    onSubmit={(value) => send(value, freeResponse?.metadata)}
+                    isLoading={isDisabled}
+                    headerAction={collapseButton}
+                    responseControlsId={contentId}
+                    responseControlsHidden={isCollapsed}
+                />
+            )}
         </ComposerOverlay>
     );
 }
