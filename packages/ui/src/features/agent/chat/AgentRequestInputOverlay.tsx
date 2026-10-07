@@ -1,5 +1,5 @@
 import type { McpConnectUxConfig } from '@vertesia/common';
-import { Button } from '@vertesia/ui/core';
+import { Button, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { ChevronDown, ChevronUp, HelpCircle, XIcon } from 'lucide-react';
@@ -108,21 +108,19 @@ function PendingRequestInputOverlay({
                     <HelpCircle className="size-3.5 shrink-0" aria-hidden="true" />
                     <span className="truncate">{t('agent.pendingQuestions')}</span>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsCollapsed((collapsed) => !collapsed)}
-                    title={toggleLabel}
-                    aria-label={toggleLabel}
-                    aria-expanded={!isCollapsed}
-                    aria-controls={contentId}
-                >
-                    {isCollapsed ? (
-                        <ChevronUp className="size-4" aria-hidden="true" />
-                    ) : (
-                        <ChevronDown className="size-4" aria-hidden="true" />
-                    )}
-                </Button>
+                <VTooltip description={toggleLabel} asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 shrink-0 [&_svg]:size-5"
+                        onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+                        aria-label={toggleLabel}
+                        aria-expanded={!isCollapsed}
+                        aria-controls={contentId}
+                    >
+                        {isCollapsed ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
+                    </Button>
+                </VTooltip>
             </div>
             {/* Keep the controls mounted so collapsing preserves drafts and selected options. */}
             <div id={contentId} hidden={isCollapsed}>
