@@ -2,7 +2,6 @@ import { z } from 'zod';
 // From the values module, never from `user.ts`: `user.ts` derives its public types from the schemas
 // below, so importing it here would invert the dependency and make the source of truth circular.
 import { ACCOUNT_APP_ACCESS_MESSAGE_MAX_LENGTH, AccountType, BillingMethod, QuotaTier } from '../account-values.js';
-import { ApiVersions } from '../versions.js';
 import type * as Wire from '../wire-types.generated.js';
 
 /**
@@ -146,10 +145,3 @@ export type AccountBillingFromSchema = Wire.AccountBillingFromSchema;
 export type AccountFromSchema = Wire.AccountFromSchema;
 export type UpdateAccountPayloadFromSchema = Wire.UpdateAccountPayloadFromSchema;
 export type StripeBillingStatusResponseFromSchema = Wire.StripeBillingStatusResponseFromSchema;
-
-/** Account-wide defaults for request API version negotiation. */
-export const AccountApiVersionPolicySchema = z
-    .strictObject({
-        default_api_version: z.enum(ApiVersions).optional(),
-    })
-    .meta({ id: 'AccountApiVersionPolicy' });

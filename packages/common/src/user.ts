@@ -87,5 +87,3 @@ export type SignupData = Wire.SignupData;
  * The `POST /auth/signup` request body.
  */
 export type SignupPayload = Wire.SignupPayload;
-
-export type AccountApiVersionPolicy = Wire.AccountApiVersionPolicy;
