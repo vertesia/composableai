@@ -101,6 +101,7 @@ export function openManagedEventSource<T>(options: ManagedEventSourceOptions<T>)
         }
         cleanupCurrentSource();
         const connectionDuration = connectionOpenedAt ? Date.now() - connectionOpenedAt : 0;
+        connectionOpenedAt = 0;
         if (connectionDuration > 5000) {
             reconnectAttempts = 0;
         }
@@ -147,11 +148,7 @@ export function openManagedEventSource<T>(options: ManagedEventSourceOptions<T>)
                 return;
             }
             const url = await resolveUrl(options.url);
-            if (
-                lastEventId &&
-                options.last_event_id_query_param &&
-                !url.searchParams.has(options.last_event_id_query_param)
-            ) {
+            if (lastEventId && options.last_event_id_query_param) {
                 url.searchParams.set(options.last_event_id_query_param, lastEventId);
             }
             withAccessToken(url, await options.get_access_token?.());

@@ -18,7 +18,7 @@ import SignInRecoveryStep, { type SignInRecoveryKind } from './SignInRecoverySte
 import SignInRestrictedEnvStep from './SignInRestrictedEnvStep';
 import SignInTenantBlockedStep from './SignInTenantBlockedStep';
 import SignupForm from './SignupForm';
-import { isInviteRequiredError, readPendingSignin, resetSignInState } from './signInUtils';
+import { isInviteRequiredError, isTenantSignIn, readPendingSignin, resetSignInState } from './signInUtils';
 
 /** Presentation only: the shared screen still owns session gating and recovery transitions. */
 export interface SignInScreenViewProps {
@@ -152,7 +152,12 @@ function SigninScreenImpl({
     useEffect(() => {
         if (!authError) return;
         if (authError instanceof UserNotFoundError) {
-            setMode('signup');
+            if (isTenantSignIn()) {
+                setEmail(authError.email);
+                setMode('blocked');
+            } else {
+                setMode('signup');
+            }
         } else if (authError instanceof RestrictedEnvironmentError) {
             setMode('restricted');
         } else if (authError instanceof RequestedScopeUnavailableError) {
@@ -280,7 +285,7 @@ function SigninScreenImpl({
                 onUseDifferentAccount={useDifferentAccount}
             />
         );
-    } else if (mode === 'signup' && !localStorage.getItem('tenantName')) {
+    } else if (mode === 'signup' && !isTenantSignIn()) {
         content = <SignupForm onSignup={onSignup} goBack={startOver} />;
     } else {
         // Every remaining mode is a core one; an unmatched recovery mode falls through to the
