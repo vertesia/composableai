@@ -56,6 +56,13 @@ interface CanonicalConversationSchemaMap {
     ConversationContextChangePlacement: typeof Canonical.ContextChangePlacementSchema;
     ConversationContextEntry: typeof Canonical.ContextEntrySchema;
     ConversationContextMeasurement: typeof Canonical.ContextMeasurementSchema;
+    ConversationContextMetadataPredicate: typeof Canonical.ContextMetadataPredicateSchema;
+    ConversationContextSelectionActorKind: typeof Canonical.ContextSelectionActorKindSchema;
+    ConversationContextSelectionAnchor: typeof Canonical.ContextSelectionAnchorSchema;
+    ConversationContextSelectionBlockType: typeof Canonical.ContextSelectionBlockTypeSchema;
+    ConversationContextSelectionRange: typeof Canonical.ContextSelectionRangeSchema;
+    ConversationContextSelectionRequest: typeof Canonical.ContextSelectionRequestSchema;
+    ConversationContextSelector: typeof Canonical.ContextSelectorSchema;
     ConversationContextRetrievalRequirement: typeof Canonical.ContextRetrievalRequirementSchema;
     ConversationDerivedAgentTurn: typeof Canonical.DerivedAgentTurnSchema;
     ConversationDerivedAssetProvenance: typeof Canonical.DerivedAssetProvenanceSchema;
@@ -281,6 +288,13 @@ export const CANONICAL_CONVERSATION_SCHEMAS: CanonicalConversationSchemaMap = {
     ConversationContextChangePlacement: Canonical.ContextChangePlacementSchema,
     ConversationContextEntry: Canonical.ContextEntrySchema,
     ConversationContextMeasurement: Canonical.ContextMeasurementSchema,
+    ConversationContextMetadataPredicate: Canonical.ContextMetadataPredicateSchema,
+    ConversationContextSelectionActorKind: Canonical.ContextSelectionActorKindSchema,
+    ConversationContextSelectionAnchor: Canonical.ContextSelectionAnchorSchema,
+    ConversationContextSelectionBlockType: Canonical.ContextSelectionBlockTypeSchema,
+    ConversationContextSelectionRange: Canonical.ContextSelectionRangeSchema,
+    ConversationContextSelectionRequest: Canonical.ContextSelectionRequestSchema,
+    ConversationContextSelector: Canonical.ContextSelectorSchema,
     ConversationContextRetrievalRequirement: Canonical.ContextRetrievalRequirementSchema,
     ConversationDerivedAgentTurn: Canonical.DerivedAgentTurnSchema,
     ConversationDerivedAssetProvenance: Canonical.DerivedAssetProvenanceSchema,

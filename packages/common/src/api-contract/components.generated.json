@@ -2279,7 +2279,8 @@
       "conversation",
       "expected_context_revision",
       "selector"
-    ]
+    ],
+    "additionalProperties": false
   },
   "ConversationContextSelector": {
     "type": "object",
@@ -2411,7 +2412,8 @@
     },
     "required": [
       "source"
-    ]
+    ],
+    "additionalProperties": false
   },
   "ConversationContextSelectionRange": {
     "type": "object",
@@ -2426,7 +2428,8 @@
     "required": [
       "from",
       "through"
-    ]
+    ],
+    "additionalProperties": false
   },
   "ConversationJsonPath": {
     "minItems": 1,

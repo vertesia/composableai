@@ -1,9 +1,19 @@
+import type * as Canonical from '@llumiverse/conversation/schemas';
 import { SelectedContextBlocksSchema } from '@llumiverse/conversation/schemas';
 import { Ajv } from 'ajv';
 import { expect, expectTypeOf, it } from 'vitest';
 import type { z } from 'zod';
 import { buildApiSchemaComponents } from './api-schemas/registry.js';
-import type { ConversationSelectedContextBlocks } from './index.js';
+import type {
+    ConversationContextMetadataPredicate,
+    ConversationContextSelectionActorKind,
+    ConversationContextSelectionAnchor,
+    ConversationContextSelectionBlockType,
+    ConversationContextSelectionRange,
+    ConversationContextSelectionRequest,
+    ConversationContextSelector,
+    ConversationSelectedContextBlocks,
+} from './index.js';
 
 it('exports the transitive partial-selection receipt map with the authoritative inferred type', () => {
     expectTypeOf<ConversationSelectedContextBlocks>().toEqualTypeOf<z.infer<typeof SelectedContextBlocksSchema>>();
@@ -27,4 +37,37 @@ it('exports the transitive partial-selection receipt map with the authoritative 
         expect(SelectedContextBlocksSchema.safeParse(value).success).toBe(accepted);
         expect(validate(value)).toBe(accepted);
     }
+});
+
+it('exports every published queue-selection component with its canonical inferred type', () => {
+    expectTypeOf<ConversationContextMetadataPredicate>().toEqualTypeOf<
+        z.infer<typeof Canonical.ContextMetadataPredicateSchema>
+    >();
+    expectTypeOf<ConversationContextSelectionActorKind>().toEqualTypeOf<
+        z.infer<typeof Canonical.ContextSelectionActorKindSchema>
+    >();
+    expectTypeOf<ConversationContextSelectionAnchor>().toEqualTypeOf<
+        z.infer<typeof Canonical.ContextSelectionAnchorSchema>
+    >();
+    expectTypeOf<ConversationContextSelectionBlockType>().toEqualTypeOf<
+        z.infer<typeof Canonical.ContextSelectionBlockTypeSchema>
+    >();
+    expectTypeOf<ConversationContextSelectionRange>().toEqualTypeOf<
+        z.infer<typeof Canonical.ContextSelectionRangeSchema>
+    >();
+    expectTypeOf<ConversationContextSelectionRequest>().toEqualTypeOf<
+        z.infer<typeof Canonical.ContextSelectionRequestSchema>
+    >();
+    expectTypeOf<ConversationContextSelector>().toEqualTypeOf<z.infer<typeof Canonical.ContextSelectorSchema>>();
+    const components = buildApiSchemaComponents();
+    for (const name of [
+        'ConversationContextMetadataPredicate',
+        'ConversationContextSelectionActorKind',
+        'ConversationContextSelectionAnchor',
+        'ConversationContextSelectionBlockType',
+        'ConversationContextSelectionRange',
+        'ConversationContextSelectionRequest',
+        'ConversationContextSelector',
+    ])
+        expect(components).toHaveProperty(name);
 });
