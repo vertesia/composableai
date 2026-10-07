@@ -55,7 +55,13 @@ interface ZodDef {
     getter: () => AnySchema;
 }
 
-const ARGS = parseArgs({ options: { src: { type: 'string' }, 'no-format': { type: 'boolean' } } }).values;
+const ARGS = parseArgs({
+    options: {
+        src: { type: 'string' },
+        'no-format': { type: 'boolean' },
+        'external-package': { type: 'string', multiple: true },
+    },
+}).values;
 const SRC = ARGS.src ? resolve(ARGS.src) : fileURLToPath(new URL('../src', import.meta.url));
 const OUTPUT = join(SRC, 'wire-types.generated.ts');
 const TEST_OUTPUT = join(SRC, 'wire-types.generated.test.ts');
@@ -171,6 +177,11 @@ const EXTERNAL_PACKAGES = [
         // are written out structurally instead.
         inline: new Set(['DataSourceSchema', 'PromptSegmentSchema', 'ToolDefinitionSchema']),
     },
+    ...(ARGS['external-package'] ?? []).map((types) => ({
+        schemas: `${types}/api-schemas`,
+        types,
+        inline: new Set<string>(),
+    })),
 ];
 
 /** Names a declared `z.ZodType<T>` can use without an import. */

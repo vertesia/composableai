@@ -2507,16 +2507,6 @@ interface Checks {
         W.SystemRoleDefinition,
         z.infer<typeof import('./api-schemas/access-control.js').SystemRoleDefinitionSchema>
     >;
-    RunBudgetOwner: Same<W.RunBudgetOwner, z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetOwnerSchema>>;
-    RunBudgetUsage: Same<W.RunBudgetUsage, z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetUsageSchema>>;
-    ReadRunBudgetUsagePayload: Same<
-        W.ReadRunBudgetUsagePayload,
-        z.infer<typeof import('./api-schemas/run-budget.js').ReadRunBudgetUsagePayloadSchema>
-    >;
-    RunBudgetTotals: Same<
-        W.RunBudgetTotals,
-        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetTotalsSchema>
-    >;
     RunBudgetCapability: Same<
         W.RunBudgetCapability,
         z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilitySchema>
@@ -2579,46 +2569,6 @@ interface Checks {
     UpdateSecretRequest: Same<
         W.UpdateSecretRequest,
         z.infer<typeof import('./api-schemas/secrets.js').UpdateSecretRequestSchema>
-    >;
-    EventWebhookSigningSecretRequest: Same<
-        W.EventWebhookSigningSecretRequest,
-        z.infer<typeof import('./api-schemas/secrets.js').EventWebhookSigningSecretRequestSchema>
-    >;
-    EventWebhookSigningSecretResponse: Same<
-        W.EventWebhookSigningSecretResponse,
-        z.infer<typeof import('./api-schemas/secrets.js').EventWebhookSigningSecretResponseSchema>
-    >;
-    SignEventWebhookRequest: Same<
-        W.SignEventWebhookRequest,
-        z.infer<typeof import('./api-schemas/secrets.js').SignEventWebhookRequestSchema>
-    >;
-    SignEventWebhookResponse: Same<
-        W.SignEventWebhookResponse,
-        z.infer<typeof import('./api-schemas/secrets.js').SignEventWebhookResponseSchema>
-    >;
-    EventIngestSigningSecretRequest: Same<
-        W.EventIngestSigningSecretRequest,
-        z.infer<typeof import('./api-schemas/secrets.js').EventIngestSigningSecretRequestSchema>
-    >;
-    EventIngestSigningSecretResponse: Same<
-        W.EventIngestSigningSecretResponse,
-        z.infer<typeof import('./api-schemas/secrets.js').EventIngestSigningSecretResponseSchema>
-    >;
-    VerifyEventIngestSignatureRequest: Same<
-        W.VerifyEventIngestSignatureRequest,
-        z.infer<typeof import('./api-schemas/secrets.js').VerifyEventIngestSignatureRequestSchema>
-    >;
-    VerifyEventIngestSignatureResponse: Same<
-        W.VerifyEventIngestSignatureResponse,
-        z.infer<typeof import('./api-schemas/secrets.js').VerifyEventIngestSignatureResponseSchema>
-    >;
-    GithubInstallationTokenRequest: Same<
-        W.GithubInstallationTokenRequest,
-        z.infer<typeof import('./api-schemas/secrets.js').GithubInstallationTokenRequestSchema>
-    >;
-    GithubInstallationTokenResponse: Same<
-        W.GithubInstallationTokenResponse,
-        z.infer<typeof import('./api-schemas/secrets.js').GithubInstallationTokenResponseSchema>
     >;
     DeleteSecretResponse: Same<
         W.DeleteSecretResponse,
@@ -3732,10 +3682,6 @@ interface Checks {
     >;
     SignupData: Same<W.SignupData, z.infer<typeof import('./api-schemas/user.js').SignupDataSchema>>;
     SignupPayload: Same<W.SignupPayload, z.infer<typeof import('./api-schemas/user.js').SignupPayloadSchema>>;
-    AccountApiVersionPolicy: Same<
-        W.AccountApiVersionPolicy,
-        z.infer<typeof import('./api-schemas/account.js').AccountApiVersionPolicySchema>
-    >;
     ViewElasticsearchQuery: Same<
         W.ViewElasticsearchQuery,
         z.infer<typeof import('./api-schemas/views.js').ViewElasticsearchQuerySchema>
@@ -4587,10 +4533,6 @@ interface Checks {
         W.SystemPackageQuery,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').SystemPackageQuerySchema>
     >;
-    InternalSecretDeleteResponse: Same<
-        W.InternalSecretDeleteResponse,
-        z.infer<typeof import('./api-schemas/secrets.js').InternalSecretDeleteResponseSchema>
-    >;
     SupportedIntegrations_ask_user_webhook: Same<
         W.SupportedIntegrations_ask_user_webhook,
         z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_ask_user_webhookSchema>
@@ -4682,10 +4624,6 @@ interface Checks {
     BinaryFileResponse: Same<
         W.BinaryFileResponse,
         z.infer<typeof import('./api-schemas/app-runtime.js').BinaryFileResponseSchema>
-    >;
-    'component:AccountApiVersionPolicy': Same<
-        W.ApiComponentTypes['AccountApiVersionPolicy'],
-        z.infer<typeof import('./api-schemas/account.js').AccountApiVersionPolicySchema>
     >;
     'component:Account': Same<
         W.ApiComponentTypes['Account'],
@@ -9097,50 +9035,6 @@ interface Checks {
         W.ApiComponentTypes['SecretLookupQuery'],
         z.infer<typeof import('./api-schemas/secrets.js').SecretLookupQuerySchema>
     >;
-    'component:EventWebhookSigningSecretRequest': Same<
-        W.ApiComponentTypes['EventWebhookSigningSecretRequest'],
-        z.infer<typeof import('./api-schemas/secrets.js').EventWebhookSigningSecretRequestSchema>
-    >;
-    'component:EventWebhookSigningSecretResponse': Same<
-        W.ApiComponentTypes['EventWebhookSigningSecretResponse'],
-        z.infer<typeof import('./api-schemas/secrets.js').EventWebhookSigningSecretResponseSchema>
-    >;
-    'component:SignEventWebhookRequest': Same<
-        W.ApiComponentTypes['SignEventWebhookRequest'],
-        z.infer<typeof import('./api-schemas/secrets.js').SignEventWebhookRequestSchema>
-    >;
-    'component:SignEventWebhookResponse': Same<
-        W.ApiComponentTypes['SignEventWebhookResponse'],
-        z.infer<typeof import('./api-schemas/secrets.js').SignEventWebhookResponseSchema>
-    >;
-    'component:EventIngestSigningSecretRequest': Same<
-        W.ApiComponentTypes['EventIngestSigningSecretRequest'],
-        z.infer<typeof import('./api-schemas/secrets.js').EventIngestSigningSecretRequestSchema>
-    >;
-    'component:EventIngestSigningSecretResponse': Same<
-        W.ApiComponentTypes['EventIngestSigningSecretResponse'],
-        z.infer<typeof import('./api-schemas/secrets.js').EventIngestSigningSecretResponseSchema>
-    >;
-    'component:VerifyEventIngestSignatureRequest': Same<
-        W.ApiComponentTypes['VerifyEventIngestSignatureRequest'],
-        z.infer<typeof import('./api-schemas/secrets.js').VerifyEventIngestSignatureRequestSchema>
-    >;
-    'component:VerifyEventIngestSignatureResponse': Same<
-        W.ApiComponentTypes['VerifyEventIngestSignatureResponse'],
-        z.infer<typeof import('./api-schemas/secrets.js').VerifyEventIngestSignatureResponseSchema>
-    >;
-    'component:GithubInstallationTokenRequest': Same<
-        W.ApiComponentTypes['GithubInstallationTokenRequest'],
-        z.infer<typeof import('./api-schemas/secrets.js').GithubInstallationTokenRequestSchema>
-    >;
-    'component:GithubInstallationTokenResponse': Same<
-        W.ApiComponentTypes['GithubInstallationTokenResponse'],
-        z.infer<typeof import('./api-schemas/secrets.js').GithubInstallationTokenResponseSchema>
-    >;
-    'component:InternalSecretDeleteResponse': Same<
-        W.ApiComponentTypes['InternalSecretDeleteResponse'],
-        z.infer<typeof import('./api-schemas/secrets.js').InternalSecretDeleteResponseSchema>
-    >;
     'component:SupportedIntegrations_ask_user_webhook': Same<
         W.ApiComponentTypes['SupportedIntegrations_ask_user_webhook'],
         z.infer<typeof import('./api-schemas/integrations.js').SupportedIntegrations_ask_user_webhookSchema>
@@ -9568,22 +9462,6 @@ interface Checks {
     'component:DelegationGrantArray': Same<
         W.ApiComponentTypes['DelegationGrantArray'],
         z.infer<typeof import('./api-schemas/delegation.js').DelegationGrantArraySchema>
-    >;
-    'component:RunBudgetOwner': Same<
-        W.ApiComponentTypes['RunBudgetOwner'],
-        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetOwnerSchema>
-    >;
-    'component:RunBudgetUsage': Same<
-        W.ApiComponentTypes['RunBudgetUsage'],
-        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetUsageSchema>
-    >;
-    'component:ReadRunBudgetUsagePayload': Same<
-        W.ApiComponentTypes['ReadRunBudgetUsagePayload'],
-        z.infer<typeof import('./api-schemas/run-budget.js').ReadRunBudgetUsagePayloadSchema>
-    >;
-    'component:RunBudgetTotals': Same<
-        W.ApiComponentTypes['RunBudgetTotals'],
-        z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetTotalsSchema>
     >;
     'component:RunBudgetCapability': Same<
         W.ApiComponentTypes['RunBudgetCapability'],
@@ -10287,10 +10165,6 @@ const checks: Checks = {
     RoleDomain: true,
     RoleDefinition: true,
     SystemRoleDefinition: true,
-    RunBudgetOwner: true,
-    RunBudgetUsage: true,
-    ReadRunBudgetUsagePayload: true,
-    RunBudgetTotals: true,
     RunBudgetCapability: true,
     RunBudgetCapabilityQuery: true,
     ExecutionRunDocRef: true,
@@ -10309,16 +10183,6 @@ const checks: Checks = {
     ListSecretsResponse: true,
     CreateSecretRequest: true,
     UpdateSecretRequest: true,
-    EventWebhookSigningSecretRequest: true,
-    EventWebhookSigningSecretResponse: true,
-    SignEventWebhookRequest: true,
-    SignEventWebhookResponse: true,
-    EventIngestSigningSecretRequest: true,
-    EventIngestSigningSecretResponse: true,
-    VerifyEventIngestSignatureRequest: true,
-    VerifyEventIngestSignatureResponse: true,
-    GithubInstallationTokenRequest: true,
-    GithubInstallationTokenResponse: true,
     DeleteSecretResponse: true,
     AgentToolApprovalMode: true,
     ToolApprovalGrant: true,
@@ -10639,7 +10503,6 @@ const checks: Checks = {
     OnboardingProgress: true,
     SignupData: true,
     SignupPayload: true,
-    AccountApiVersionPolicy: true,
     ViewElasticsearchQuery: true,
     ViewExperienceLayout: true,
     ViewExperienceScope: true,
@@ -10873,7 +10736,6 @@ const checks: Checks = {
     AppVersionRecordArray: true,
     AppToolCollectionArray: true,
     SystemPackageQuery: true,
-    InternalSecretDeleteResponse: true,
     SupportedIntegrations_ask_user_webhook: true,
     SupportedIntegrations_resend: true,
     SupportedIntegrations_linkup: true,
@@ -10897,7 +10759,6 @@ const checks: Checks = {
     AppInstallationWithManifestArray: true,
     AppInstallationListEntryArray: true,
     BinaryFileResponse: true,
-    'component:AccountApiVersionPolicy': true,
     'component:Account': true,
     'component:UpdateAccountPayload': true,
     'component:StripeBillingStatusResponse': true,
@@ -12002,17 +11863,6 @@ const checks: Checks = {
     'component:SecretProjectQuery': true,
     'component:ListSecretsQuery': true,
     'component:SecretLookupQuery': true,
-    'component:EventWebhookSigningSecretRequest': true,
-    'component:EventWebhookSigningSecretResponse': true,
-    'component:SignEventWebhookRequest': true,
-    'component:SignEventWebhookResponse': true,
-    'component:EventIngestSigningSecretRequest': true,
-    'component:EventIngestSigningSecretResponse': true,
-    'component:VerifyEventIngestSignatureRequest': true,
-    'component:VerifyEventIngestSignatureResponse': true,
-    'component:GithubInstallationTokenRequest': true,
-    'component:GithubInstallationTokenResponse': true,
-    'component:InternalSecretDeleteResponse': true,
     'component:SupportedIntegrations_ask_user_webhook': true,
     'component:SupportedIntegrations_resend': true,
     'component:SupportedIntegrations_linkup': true,
@@ -12120,10 +11970,6 @@ const checks: Checks = {
     'component:CreateDelegationGrantPayload': true,
     'component:DelegationGrant': true,
     'component:DelegationGrantArray': true,
-    'component:RunBudgetOwner': true,
-    'component:RunBudgetUsage': true,
-    'component:ReadRunBudgetUsagePayload': true,
-    'component:RunBudgetTotals': true,
     'component:RunBudgetCapability': true,
     'component:RunBudgetCapabilityQuery': true,
     'component-names': true,
@@ -12131,6 +11977,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2529);
+        expect(Object.keys(checks)).toHaveLength(2497);
     });
 });

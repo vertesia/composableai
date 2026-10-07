@@ -16,6 +16,7 @@ export * from './agent-runs.js';
 export * from './analytics.js';
 export * from './apikey.js';
 export * from './app-runtime.js';
+export { EventCategorySchema } from './audit-trail.js';
 export * from './bulk-operation.js';
 export * from './content.js';
 export * from './content-query.js';
