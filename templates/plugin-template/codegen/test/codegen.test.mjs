@@ -180,6 +180,8 @@ test('appgen module selects the service entry and cleans inactive modules', () =
             serviceEntry.indexOf('export function AppEntry'),
         );
         assert.doesNotMatch(versionScope, /useEffect/);
+        assert.match(serviceEntry, /client\.withAppVersion\(appVersion\)/);
+        assert.doesNotMatch(serviceEntry, /useEffect/);
         assert.doesNotMatch(serviceEntry, /store\.withAppVersion/);
         execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {
             cwd: tmpRoot,
@@ -206,10 +208,9 @@ test('appgen Playwright support keeps authenticated output safe and transient ou
     // Client construction lives only in the shared factory; a second hand-rolled call site is how
     // `token`/`appVersion` (options the SDK does not have) get silently dropped into a 401.
     assert.doesNotMatch(playwrightFixture, /new VertesiaClient\(/);
-    assert.doesNotMatch(serviceEntry, /__VERTESIA_AUTH_TOKEN__|VITE_VERTESIA_AUTH_TOKEN/);
-    assert.match(serviceEntry, /__VERTESIA_SANDBOX_READY__/);
-    assert.match(serviceEntry, /if \(window\.__VERTESIA_SANDBOX_READY__ && !hostToken\) return null/);
-    assert.match(serviceEntry, /<VertesiaShell\b[^>]*\bauthToken=\{hostToken\}[^>]*>/);
+    assert.match(serviceEntry, /globalValues\.__VERTESIA_AUTH_TOKEN__/);
+    assert.match(serviceEntry, /const runtimeAuthToken = injectedAuthToken \?\? devAuthToken/);
+    assert.match(serviceEntry, /<VertesiaShell\b[^>]*\bauthToken=\{runtimeAuthToken\}[^>]*>/);
     assert.match(gitignore, /pnpm-lock\.yaml/);
     assert.match(gitignore, /test-results\//);
     assert.match(gitignore, /playwright-report\//);
