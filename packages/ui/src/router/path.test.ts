@@ -1,20 +1,20 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getMountBasename, joinPath, stripMountBasename, withMountBasename } from './path';
 
 // Simulate a served `<base href>` (or its absence) by stubbing document.querySelector + document.URL.
 function setBaseHref(href: string | null, docUrl = 'https://gw.example.com/x') {
-    (globalThis as { document?: unknown }).document = {
+    vi.stubGlobal('document', {
         URL: docUrl,
         querySelector: (sel: string) =>
             sel === 'base[href]' && href ? ({ href: new URL(href, docUrl).href } as unknown) : null,
-    };
+    });
 }
 
 const MOUNT = '/tenants/05948c_5ed5f4/apps/furniture-catalog/versions/20260620T064257113Z/app';
 
 describe('mount basename helpers', () => {
     afterEach(() => {
-        delete (globalThis as { document?: unknown }).document;
+        vi.unstubAllGlobals();
     });
 
     describe('getMountBasename', () => {
@@ -31,7 +31,7 @@ describe('mount basename helpers', () => {
             expect(getMountBasename()).toBe('');
         });
         it('returns "" when there is no document (SSR)', () => {
-            delete (globalThis as { document?: unknown }).document;
+            vi.stubGlobal('document', undefined);
             expect(getMountBasename()).toBe('');
         });
     });

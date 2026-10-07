@@ -117,6 +117,29 @@ async function mockSetup(
 }
 
 describe('generateOrAssignContentType', () => {
+    it('keeps the selection schema valid when catalog names and the fallback name repeat', async () => {
+        const first = { ...typeItem('Invoice', 'active'), id: 'type-invoice-first' };
+        const duplicate = { ...typeItem('Invoice', 'active'), id: 'type-invoice-second' };
+        const { update } = await mockSetup([first, duplicate, typeItem('other', 'active')]);
+        mockSelectionResult('Invoice');
+
+        await testEnv.run(generateOrAssignContentType, payload({ allowNewContentTypes: false }));
+
+        expect(executeInteractionFromActivity).toHaveBeenCalledWith(
+            expect.anything(),
+            'sys:SelectDocumentType',
+            expect.objectContaining({
+                result_schema: expect.objectContaining({
+                    properties: {
+                        document_type: expect.objectContaining({ enum: ['Invoice', 'other'] }),
+                    },
+                }),
+            }),
+            expect.anything(),
+        );
+        expect(update).toHaveBeenCalledWith('object-1', { type: 'type-invoice-first' }, { suppressWorkflows: true });
+    });
+
     it('assigns an app-contributed type instead of generating a duplicate', async () => {
         // An `app:<app>:<type>` entry in the catalog is a real selection candidate: when the model
         // picks it, the activity must assign it as-is and create nothing. If app-contributed types

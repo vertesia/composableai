@@ -284,3 +284,118 @@ describe('validatePrompt — jst', () => {
         expect(findIssue(r.issues, 'jst_unsafe_construct')).toBeDefined();
     });
 });
+
+describe('system variables', () => {
+    const errors = (
+        content: string,
+        contentType = TemplateType.handlebars,
+        properties: Record<string, JSONSchema> = {},
+    ) =>
+        validatePrompt({ content, contentType, inputSchema: schema(properties) }).issues.filter(
+            (i) => i.severity === 'error',
+        );
+
+    // Every position a variable can appear in. `{{#if _now}}` is the reported bug: it failed
+    // because `_now` was only a helper, which Handlebars never calls in argument position.
+    it.each([
+        '{{_now}}',
+        '{{{_now}}}',
+        '{{#if _now}}{{_now}}{{/if}}',
+        '{{#unless _model}}none{{/unless}}',
+        '{{stringify _now}}',
+        '{{stringify (_now)}}',
+        '{{stringify (_model)}}',
+        '{{this._now}}',
+        '{{@root._model}}',
+    ])('accepts %s without a declaration', (content) => {
+        expect(errors(content)).toEqual([]);
+    });
+
+    it('accepts system variables inside #each and #with', () => {
+        const content = '{{#each items}}{{../_now}} {{@root._model}}{{/each}}{{#with obj}}{{_now}}{{/with}}';
+        expect(errors(content, TemplateType.handlebars, { items: { type: 'array' }, obj: { type: 'object' } })).toEqual(
+            [],
+        );
+    });
+
+    it.each(['return _now;', 'return `${_model}`;'])('accepts JST %s without a declaration', (content) => {
+        expect(errors(content, TemplateType.jst)).toEqual([]);
+    });
+
+    it.each(['{{_now.foo}}', '{{#if _model.name}}x{{/if}}'])('rejects property access on a string: %s', (content) => {
+        const result = validatePrompt({ content, contentType: TemplateType.handlebars, inputSchema: schema({}) });
+        expect(findIssue(result.issues, 'system_variable_property_access')).toBeDefined();
+        expect(findIssue(result.issues, 'undeclared_template_variable')).toBeUndefined();
+    });
+
+    it('warns when the schema declares a system variable', () => {
+        const result = validatePrompt({
+            content: '{{_now}}',
+            contentType: TemplateType.handlebars,
+            inputSchema: schema({ _now: { type: 'string' } }),
+        });
+        expect(result.error_count).toBe(0);
+        expect(findIssue(result.issues, 'reserved_variable_declared', '_now')).toBeDefined();
+        expect(findIssue(result.issues, 'unused_schema_variable')).toBeUndefined();
+    });
+
+    it('still rejects ordinary undeclared variables, and lists the system variables in the message', () => {
+        const [issue] = errors('{{#if customer}}x{{/if}}');
+        expect(issue.type).toBe('undeclared_template_variable');
+        expect(issue.variable).toBe('customer');
+        expect(issue.message).toContain('in {{#if customer}}');
+        expect(issue.message).toContain('_now');
+        expect(issue.message).toContain('_model');
+    });
+});
+
+describe('handlebars scopes and helpers', () => {
+    it.each([
+        ['{{#with obj}}{{k}}{{/with}}', { obj: { type: 'object' } }],
+        ['{{#each items}}{{name}}{{/each}}', { items: { type: 'array' } }],
+        ['{{#items}}{{name}}{{/items}}', { items: { type: 'array' } }],
+        ['{{#each items as |it|}}{{it.name}}{{/each}}', { items: { type: 'array' } }],
+    ] as const)('does not report item fields inside %s', (content, properties) => {
+        const result = validatePrompt({
+            content,
+            contentType: TemplateType.handlebars,
+            inputSchema: schema(properties),
+        });
+        expect(result.error_count).toBe(0);
+        expect(result.warning_count).toBe(0);
+    });
+
+    it.each([
+        ['{{#each items}}{{../customer}}{{/each}}', 'customer'],
+        ['{{#with obj}}{{@root.customer}}{{/with}}', 'customer'],
+        ['{{#each items}}x{{else}}{{customer}}{{/each}}', 'customer'],
+    ])('reports root reads from inside a block: %s', (content, variable) => {
+        const result = validatePrompt({
+            content,
+            contentType: TemplateType.handlebars,
+            inputSchema: schema({ items: { type: 'array' }, obj: { type: 'object' } }),
+        });
+        expect(findIssue(result.issues, 'undeclared_template_variable', variable)).toBeDefined();
+    });
+
+    it('counts @root reads as usage', () => {
+        const result = validatePrompt({
+            content: '{{#with obj}}{{@root.customer}}{{/with}}',
+            contentType: TemplateType.handlebars,
+            inputSchema: schema({ obj: { type: 'object' }, customer: { type: 'string' } }),
+        });
+        expect(result.issues).toEqual([]);
+    });
+
+    it('rejects a helper passed as an argument', () => {
+        const result = validatePrompt({ content: '{{#if stringify}}x{{/if}}', contentType: TemplateType.handlebars });
+        expect(findIssue(result.issues, 'helper_used_as_value', 'stringify')).toBeDefined();
+        expect(findIssue(result.issues, 'undeclared_template_variable')).toBeUndefined();
+    });
+
+    it('rejects a helper called without arguments', () => {
+        const result = validatePrompt({ content: '{{stringify}}', contentType: TemplateType.handlebars });
+        expect(findIssue(result.issues, 'helper_missing_arguments', 'stringify')).toBeDefined();
+        expect(findIssue(result.issues, 'undeclared_template_variable')).toBeUndefined();
+    });
+});

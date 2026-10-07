@@ -106,3 +106,11 @@ ${brand.colors?.dark?.background ? `:root.dark{--vertesia-boot-background:${bran
 ${brand.boot?.styles ?? ''}`,
     };
 }
+
+/** Platform defaults shared by boot markup and Firebase/OAuth React screens. */
+export const vertesiaBranding = {
+    name: 'Vertesia',
+    logo: { light: '/logo-light.png', dark: '/logo-dark.png', alt: 'Vertesia' },
+    loadingIcon: { light: '/icon.svg' },
+    favicon: '/icon.svg',
+} satisfies AppBranding;

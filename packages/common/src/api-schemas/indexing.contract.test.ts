@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GenericCommandResponse } from '../common.js';
+import type { RecalculateEmbeddingsQuery } from '../embeddings.js';
 import type {
     DriftAnalysisStatusResponse,
     EmbeddingsStatusResponse,
@@ -11,7 +12,11 @@ import type {
 } from '../project.js';
 import { WorkflowExecutionStatus } from '../store/workflow.js';
 import type { GenericCommandResponseSchema } from './commands.js';
-import type { EmbeddingsStatusResponseSchema, ProjectConfigurationEmbeddingEnablePayloadSchema } from './embeddings.js';
+import type {
+    EmbeddingsStatusResponseSchema,
+    ProjectConfigurationEmbeddingEnablePayloadSchema,
+    RecalculateEmbeddingsQuerySchema,
+} from './embeddings.js';
 import type {
     DriftAnalysisStatusResponseSchema,
     IndexingStatusResponseSchema,
@@ -28,6 +33,7 @@ describe('indexing and embedding API contracts', () => {
     it('derives every public type from its domain schema', () => {
         assertType<Equals<GenericCommandResponse, typeof GenericCommandResponseSchema._output>>(true);
         assertType<Equals<EmbeddingsStatusResponse, typeof EmbeddingsStatusResponseSchema._output>>(true);
+        assertType<Equals<RecalculateEmbeddingsQuery, typeof RecalculateEmbeddingsQuerySchema._output>>(true);
         assertType<Equals<IndexingStatusResponse, typeof IndexingStatusResponseSchema._output>>(true);
         assertType<Equals<DriftAnalysisStatusResponse, typeof DriftAnalysisStatusResponseSchema._output>>(true);
         assertType<
@@ -47,6 +53,39 @@ describe('indexing and embedding API contracts', () => {
         expect(validateApiRequest('StartProjectReindexPayload', { unexpected: true }).valid).toBe(false);
         expect(validateApiRequest('ReindexAgentRunsPayload', {}).valid).toBe(true);
         expect(validateApiRequest('ReindexAgentRunsPayload', { recreate_index: true, unexpected: true }).valid).toBe(
+            false,
+        );
+    });
+
+    it('allows only the explicit synchronous embedding recalculation override', () => {
+        expect(validateApiRequest('RecalculateEmbeddingsQuery', {}).valid).toBe(true);
+        expect(validateApiRequest('RecalculateEmbeddingsQuery', { mode: 'sync' }).valid).toBe(true);
+        expect(validateApiRequest('RecalculateEmbeddingsQuery', { force: true }).valid).toBe(true);
+        expect(validateApiRequest('RecalculateEmbeddingsQuery', { mode: 'sync', force: true }).valid).toBe(true);
+        expect(validateApiRequest('RecalculateEmbeddingsQuery', { force_renditions: true }).valid).toBe(false);
+        expect(validateApiRequest('RecalculateEmbeddingsQuery', { mode: 'batch' }).valid).toBe(false);
+    });
+
+    it('validates the optional batch summary without exposing stored run fields', () => {
+        const summary = {
+            id: 'run-1',
+            state: 'completed_with_errors',
+            model: 'model-1',
+            created_at: '2026-01-01T00:00:00Z',
+            applied: 110,
+            skipped: 17,
+            failed: 0,
+            stale: 0,
+        };
+        expect(
+            validateApiResponse('EmbeddingsStatusResponse', {
+                status: 'success',
+                vectorIndex: { status: 'READY' },
+                latestBatchRun: summary,
+            }).valid,
+        ).toBe(true);
+        expect(validateApiResponse('EmbeddingBatchRunSummary', { ...summary, applied: -1 }).valid).toBe(false);
+        expect(validateApiResponse('EmbeddingBatchRunSummary', { ...summary, prefix_uri: 'private' }).valid).toBe(
             false,
         );
     });

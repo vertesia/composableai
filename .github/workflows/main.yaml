@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - preview
       - "release/**"
       - "production/**"
       - "hotfix**"
@@ -14,9 +13,11 @@ on:
 
 env:
   COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  # Local commands default to read-only remote caching; CI produces reusable results.
+  TURBO_CACHE_OPTS: --cache=local:rw,remote:rw
 
 # Cancel superseded runs on the same branch (latest push wins). Each branch
-# still gets its own concurrent run, so main/preview/PR pushes don't block
+# still gets its own concurrent run, so main/release/PR pushes don't block
 # each other.
 concurrency:
   group: composable-${{ github.ref }}
@@ -28,6 +29,9 @@ permissions:
 jobs:
   unit-tests:
     name: Unit tests
+    permissions:
+      contents: read
+      id-token: write # Exchange GitHub OIDC identity for a short-lived Turbo cache token.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -39,7 +43,7 @@ jobs:
           submodules: true
           persist-credentials: false
       - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -60,20 +64,18 @@ jobs:
         uses: pandoc/actions/setup@86321b6dd4675f5014c611e05088e10d4939e09e # v1.1.1
       - name: Install native test dependencies
         # The Ubuntu mirror occasionally stalls mid-download with no output. Left unbounded the
-        # stall runs until the job's own timeout, so bound each apt invocation, retry the install
-        # once, and cap the step as a whole. `update` only refreshes lists the runner image
-        # already ships, so a stalled refresh falls through to install rather than failing.
+        # stall runs until the job's own timeout, so bound apt and cap the step as a whole.
+        # `update` only refreshes lists the runner image already ships, so a stalled refresh falls
+        # through to install rather than failing.
         #
-        # The first install attempt is deliberately short so a stalled mirror is retried quickly.
-        # The final attempt gets enough time to finish a slow but progressing download; using the
-        # same 90s cap for both attempts can discard progress twice and fail before tests start.
-        timeout-minutes: 9
+        # Keep a single install process: killing apt-get can leave its dpkg child holding the lock,
+        # which makes an immediate retry fail. Allow a slow mirror to finish the package download.
+        timeout-minutes: 12
         run: |
           APT_ACQUIRE="-o Acquire::Retries=3 -o Acquire::http::Timeout=15"
           sudo timeout 90 apt-get update $APT_ACQUIRE ||
             echo "apt-get update timed out or failed; continuing with the runner image's lists"
-          sudo timeout 90 apt-get install -y $APT_ACQUIRE imagemagick mupdf-tools ||
-            sudo timeout 300 apt-get install -y $APT_ACQUIRE imagemagick mupdf-tools
+          sudo timeout 600 apt-get install -y $APT_ACQUIRE imagemagick mupdf-tools
         shell: bash
       - name: Install workspace dependencies
         timeout-minutes: 5
@@ -84,6 +86,11 @@ jobs:
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
+      - name: Authenticate Turbo remote cache
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: vercel/setup-turborepo-remote-cache-action@49d7b1b46ba4c9251e1977986bfe18336feabc8f # v1.1.0
+        with:
+          team: ${{ vars.TURBO_TEAM }}
       - name: Build workspace
         timeout-minutes: 10
         run: pnpm build
@@ -93,6 +100,9 @@ jobs:
 
   template-smoke-test:
     name: Template smoke test (Plugin)
+    permissions:
+      contents: read
+      id-token: write # Exchange GitHub OIDC identity for a short-lived Turbo cache token.
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -104,7 +114,7 @@ jobs:
           submodules: true
           persist-credentials: false
       - name: Install pnpm
-        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -130,6 +140,11 @@ jobs:
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
+      - name: Authenticate Turbo remote cache
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: vercel/setup-turborepo-remote-cache-action@49d7b1b46ba4c9251e1977986bfe18336feabc8f # v1.1.0
+        with:
+          team: ${{ vars.TURBO_TEAM }}
       - name: Build workspace
         timeout-minutes: 10
         run: pnpm build
@@ -143,7 +158,7 @@ jobs:
     name: Notify vertesia/studio of new commit
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/preview' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/repo-dispatch'))
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/repo-dispatch'))
     needs:
       - unit-tests
       - template-smoke-test

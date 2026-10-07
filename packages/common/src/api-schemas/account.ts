@@ -2,6 +2,8 @@ import { z } from 'zod';
 // From the values module, never from `user.ts`: `user.ts` derives its public types from the schemas
 // below, so importing it here would invert the dependency and make the source of truth circular.
 import { ACCOUNT_APP_ACCESS_MESSAGE_MAX_LENGTH, AccountType, BillingMethod, QuotaTier } from '../account-values.js';
+import { ApiVersions } from '../versions.js';
+import type * as Wire from '../wire-types.generated.js';
 
 /**
  * Runtime API schemas for the Accounts endpoints.
@@ -111,14 +113,7 @@ export const UpdateAccountPayloadSchema = z
     })
     .meta({ id: 'UpdateAccountPayload' });
 
-/**
- * Stripe billing status, modelled as a real discriminated union.
- *
- * The hand-written `StripeBillingStatusResponse` in `meters.ts` flattens this into one object
- * with `portal_url?` and `reason?` both optional, so a generated Java/Go client gets two
- * unrelated optionals and no way to know which is populated. The server only ever sets
- * `portal_url` when enabled and `reason` when disabled.
- */
+/** Stripe billing status. Account API keys receive status without a billing portal session. */
 export const StripeBillingEnabledSchema = z
     .object({
         status: z.literal('enabled'),
@@ -128,7 +123,10 @@ export const StripeBillingEnabledSchema = z
          * would describe states the server cannot produce.
          */
         billing_method: z.literal(BillingMethod.stripe),
-        portal_url: z.string(),
+        portal_url: z
+            .string()
+            .nullable()
+            .meta({ description: 'Interactive billing portal URL; null for account API keys.' }),
     })
     .meta({ id: 'StripeBillingEnabled' });
 
@@ -144,7 +142,14 @@ export const StripeBillingStatusResponseSchema = z
     .discriminatedUnion('status', [StripeBillingEnabledSchema, StripeBillingDisabledSchema])
     .meta({ id: 'StripeBillingStatusResponse' });
 
-export type AccountBillingFromSchema = z.infer<typeof AccountBillingSchema>;
-export type AccountFromSchema = z.infer<typeof AccountSchema>;
-export type UpdateAccountPayloadFromSchema = z.infer<typeof UpdateAccountPayloadSchema>;
-export type StripeBillingStatusResponseFromSchema = z.infer<typeof StripeBillingStatusResponseSchema>;
+export type AccountBillingFromSchema = Wire.AccountBillingFromSchema;
+export type AccountFromSchema = Wire.AccountFromSchema;
+export type UpdateAccountPayloadFromSchema = Wire.UpdateAccountPayloadFromSchema;
+export type StripeBillingStatusResponseFromSchema = Wire.StripeBillingStatusResponseFromSchema;
+
+/** Account-wide defaults for request API version negotiation. */
+export const AccountApiVersionPolicySchema = z
+    .strictObject({
+        default_api_version: z.enum(ApiVersions).optional(),
+    })
+    .meta({ id: 'AccountApiVersionPolicy' });

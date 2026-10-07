@@ -1,5 +1,5 @@
-import type { ContentObjectTypeItem } from '@vertesia/common';
-import { Button, CopyButton, Table, TBody, THead, VTooltip } from '@vertesia/ui/core';
+import type { ContentObjectTypeItem, ContentObjectTypeStatus } from '@vertesia/common';
+import { Badge, Button, CopyButton, Table, TBody, THead, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
 import clsx from 'clsx';
@@ -46,12 +46,13 @@ export function ContentObjectTypesTable({
                         </th>
                     )}
                     <th>{t('store.name')}</th>
+                    <th>{t('store.status')}</th>
                     <th>{t('store.strictMode')}</th>
                     <th>{t('store.semanticChunking')}</th>
                     <th>{t('store.updatedAt')}</th>
                 </tr>
             </THead>
-            <TBody isLoading={isLoading && (!objects || objects.length === 0)} columns={selectable ? 5 : 4}>
+            <TBody isLoading={isLoading && (!objects || objects.length === 0)} columns={selectable ? 6 : 5}>
                 {objects?.map((obj) => (
                     <tr
                         key={obj.id}
@@ -93,6 +94,9 @@ export function ContentObjectTypesTable({
                                 )}
                             </div>
                         </td>
+                        <td>
+                            <TypeStatusBadge status={obj.status} />
+                        </td>
                         <td>{obj.strict_mode ? 'Yes' : 'No'}</td>
                         <td>{obj.is_chunkable ? 'Yes' : 'No'}</td>
                         <td>
@@ -104,5 +108,18 @@ export function ContentObjectTypesTable({
                 ))}
             </TBody>
         </Table>
+    );
+}
+
+/** A type stored before `status` existed has none; the stored model defaults it to active. */
+function TypeStatusBadge({ status = 'active' }: { status?: ContentObjectTypeStatus }) {
+    const { t } = useUITranslation();
+    if (status === 'active') {
+        return <Badge variant="success">{t('store.typeStatus.active')}</Badge>;
+    }
+    return (
+        <VTooltip description={t('store.typeStatus.draftHint')}>
+            <Badge variant="attention">{t('store.typeStatus.draft')}</Badge>
+        </VTooltip>
     );
 }

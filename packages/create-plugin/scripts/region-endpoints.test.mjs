@@ -13,7 +13,7 @@ for (const [region, devMode, authUrl, stsUrl] of [
     ['us1', false, 'https://auth.us1.vertesia.io/', 'https://sts.vertesia.io'],
     ['eu1', false, 'https://auth.eu1.vertesia.io/', 'https://sts.eu1.vertesia.io'],
     ['dev1', false, 'https://auth.dev1.vertesia.io/', 'https://sts.dev1.vertesia.io'],
-    ['dev2', false, 'https://internal-auth.vertesia.app/', 'https://sts.dev2.vertesia.io'],
+    ['dev2', false, 'https://auth.vertesia.io/', 'https://sts.dev2.vertesia.io'],
     ['eu1', true, 'https://auth.dev1.vertesia.io/', 'https://sts.dev1.vertesia.io'],
 ]) {
     test(`scaffolding ${region} (dev=${devMode}) configures the matching auth broker`, async () => {
@@ -60,3 +60,20 @@ test('development marker must be a file, matching the Vertesia CLI', () => {
         rmSync(directory, { recursive: true, force: true });
     }
 });
+
+for (const preset of [0, 1, 2]) {
+    test(`permission preset ${preset} survives default prompt resolution`, async () => {
+        const config = JSON.parse(readFileSync(new URL('template.config.json', templateRoot), 'utf8'));
+        const prompt = config.prompts.find((item) => item.name === 'OAUTH_SCOPES');
+        assert.equal(prompt.initial, 0);
+        prompt.initial = preset;
+        const answers = await promptUser('example-app', config, true, false);
+        assert.deepEqual(answers.OAUTH_SCOPES, [
+            'openid',
+            'profile',
+            'offline_access',
+            ...(preset > 0 ? ['content:read'] : []),
+            ...(preset === 2 ? ['content:write'] : []),
+        ]);
+    });
+}

@@ -73,9 +73,9 @@ function PropertyElement({ name, value }: PropertyElementProps) {
             );
         case ValueType.Prose:
             return (
-                <div className="prose dark:prose-invert">
+                <div className="vprose prose">
                     <PropertyTitle name={name} />
-                    <div className="vprose prose-sm dark:prose-invert">{info.value}</div>
+                    <div className="vprose prose prose-sm">{info.value}</div>
                 </div>
             );
         case ValueType.Array:
@@ -152,7 +152,7 @@ function ItemProperty({ index, value, useBullet }: ItemPropertyProps) {
             content = <ArrayProperty value={value as JSONArray} />;
             break;
         case ValueType.Prose:
-            content = <div className="prose dark:prose-invert">{info.value}</div>;
+            content = <div className="vprose prose">{info.value}</div>;
             break;
         default:
             content = <div>{info.value}</div>;

@@ -1,5 +1,6 @@
 import { useUserSession } from '@vertesia/ui/session';
 import type { ComponentType, ReactNode } from 'react';
+import { LOADING_INDICATOR_STYLES } from '../boot/loading.js';
 
 export interface AuthLoadingScreenProps {
     loadingIcon?: ReactNode;
@@ -26,17 +27,8 @@ export function DefaultAuthLoadingScreen({
     loadingLabel = 'Loading',
 }: AuthLoadingScreenProps & { loadingLabel?: string }) {
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 999999 }} role="status" aria-label={loadingLabel}>
-            <div
-                style={{
-                    display: 'flex',
-                    width: '100%',
-                    height: '100%',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}
-                className="flex w-full h-full items-center justify-center"
-            >
+        <div className="fixed inset-0 z-[999999]" role="status" aria-label={loadingLabel}>
+            <div className="flex w-full h-full items-center justify-center">
                 <LoadingAnimation loadingIcon={loadingIcon} />
             </div>
         </div>
@@ -46,8 +38,6 @@ export function DefaultAuthLoadingScreen({
 function LoadingIcon() {
     const stopColor1 = 'currentColor';
     const stopColor2 = 'currentColor';
-    // const stopColor1 = "#4F46E5";
-    // const stopColor2 = "#4F46E5";
     return (
         <svg
             width="32"
@@ -81,10 +71,9 @@ function LoadingIcon() {
 /** Shared logo motion for full-screen and in-content loading states. */
 export function LoadingAnimation({ loadingIcon }: AuthLoadingScreenProps) {
     return (
-        <div className="animate-[var(--vertesia-loading-animation,spin_4s_linear_infinite)] motion-reduce:animate-none">
-            <div className="animate-[var(--vertesia-loading-pulse-animation,pulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite)] motion-reduce:animate-none rounded-full bg-transparent">
-                {loadingIcon || <LoadingIcon />}
-            </div>
+        <div className="vertesia-loading-motion">
+            <style>{LOADING_INDICATOR_STYLES}</style>
+            {loadingIcon || <LoadingIcon />}
         </div>
     );
 }

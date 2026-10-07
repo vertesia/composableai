@@ -1,6 +1,9 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+    readonly VITE_OAUTH_CLIENT_ID?: string;
+    readonly VITE_OAUTH_REDIRECT_URI?: string;
+    readonly VITE_OAUTH_SCOPES?: string;
     readonly VITE_APP_NAME: string;
     /** The immutable app version id this bundle was built for (set by the appgen version build). */
     readonly VITE_APP_VERSION?: string;

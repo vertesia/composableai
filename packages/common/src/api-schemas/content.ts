@@ -338,6 +338,13 @@ const collectionPayloadFields = {
         .optional(),
     sensitivity: z.number().meta({ description: 'BLP sensitivity level for member documents' }).optional(),
     compartments: z.array(z.string()).meta({ description: 'Compartments for member documents' }).optional(),
+    shared_root: z
+        .boolean()
+        .meta({
+            description:
+                'Explicitly share this collection as a root of the project shared space (listable/readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it.',
+        })
+        .optional(),
 };
 
 export const CreateCollectionPayloadSchema = z
@@ -492,6 +499,20 @@ export const CollectionSchema = z
             .array(z.string())
             .meta({ description: 'Compartments — propagated to member documents (union across collections)' })
             .optional(),
+        shared: z
+            .boolean()
+            .meta({
+                description:
+                    'Effective shared state: true iff the collection is a member of an effectively-shared parent collection (inherited; sync-managed). Combine with shared_root for full readability.',
+            })
+            .optional(),
+        shared_root: z
+            .boolean()
+            .meta({
+                description:
+                    'True iff the collection was explicitly shared via the API (a root of the project shared space). Never set by the sync.',
+            })
+            .optional(),
         shared_properties: z
             .array(z.string())
             .meta({
@@ -499,6 +520,10 @@ export const CollectionSchema = z
                     "List of property names from the collection's properties that should be shared with (injected into) member objects. These properties will be propagated to all members of this collection and merged as arrays.",
             })
             .optional(),
+        user_permissions: ContentObjectUserPermissionsSchema.meta({
+            description:
+                "Computed per-request permissions for the current user on this collection. Not stored — computed on the fly from the collection's security field (same semantics as a content object's user_permissions).",
+        }).optional(),
     })
     .meta({ id: 'Collection' });
 
@@ -546,6 +571,13 @@ export const CreateContentObjectPayloadSchema = z
             .array(z.string())
             .meta({
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
+            })
+            .optional(),
+        shared_root: z
+            .boolean()
+            .meta({
+                description:
+                    'Explicitly share this document as a root of the project shared space (readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it.',
             })
             .optional(),
         inherited_properties: z
@@ -646,6 +678,13 @@ export const UpdateContentObjectPayloadSchema = z
             .array(z.string())
             .meta({
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
+            })
+            .optional(),
+        shared_root: z
+            .boolean()
+            .meta({
+                description:
+                    'Explicitly share this document as a root of the project shared space (readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it.',
             })
             .optional(),
         inherited_properties: z
@@ -842,6 +881,20 @@ export const ContentObjectApiResponseSchema = z
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
             })
             .optional(),
+        shared: z
+            .boolean()
+            .meta({
+                description:
+                    'Effective shared state: true iff the document is a member of an effectively-shared collection (inherited; sync-managed). Combine with shared_root for full readability.',
+            })
+            .optional(),
+        shared_root: z
+            .boolean()
+            .meta({
+                description:
+                    'True iff the document was explicitly shared via the API (a root of the project shared space). Never set by the sync.',
+            })
+            .optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectApiResponse' });
@@ -913,6 +966,8 @@ export const ContentObjectItemApiResponseSchema = z
         security: StringArrayMapSchema.optional(),
         sensitivity: z.number().nullable().optional(),
         compartments: z.array(z.string()).optional(),
+        shared: z.boolean().optional(),
+        shared_root: z.boolean().optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectItemApiResponse' });

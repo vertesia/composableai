@@ -84,7 +84,7 @@ describe('ExecutionEnvironmentSettings', () => {
     it('accepts a setting it does not declare', () => {
         expect(
             validateApiRequest('ExecutionEnvironmentUpdatePayload', {
-                settings: { bucket_access_principal: 'sa@p.iam', some_future_driver_flag: true },
+                settings: { some_future_driver_flag: true },
             }),
         ).toMatchObject({ valid: true });
     });

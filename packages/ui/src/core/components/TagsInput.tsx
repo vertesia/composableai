@@ -278,9 +278,8 @@ function TagsInputContent({
                                 <span
                                     key={item}
                                     className={clsx(
-                                        'inline-flex items-center justify-between gap-2 px-2 py-1 text-sm bg-info text-foreground ring-1 ring-primary/30 rounded-md w-full transition-all',
-                                        pendingDeleteIndex === index &&
-                                            'ring-2 ring-destructive shadow-[0_0_8px_rgba(252,165,165,0.5)]',
+                                        'inline-flex items-center justify-between gap-2 px-2 py-1 text-sm bg-info text-info ring-1 ring-info/30 rounded-md w-full transition-all',
+                                        pendingDeleteIndex === index && 'ring-2 ring-destructive shadow-md',
                                     )}
                                 >
                                     <span className="truncate">{item}</span>
@@ -303,9 +302,8 @@ function TagsInputContent({
                             <span
                                 key={item}
                                 className={clsx(
-                                    'inline-flex items-center gap-1 px-2 py-1 text-sm bg-info text-foreground ring-1 ring-primary/30 rounded-md transition-all',
-                                    pendingDeleteIndex === index &&
-                                        'ring-2 ring-destructive shadow-[0_0_8px_rgba(252,165,165,0.5)]',
+                                    'inline-flex items-center gap-1 px-2 py-1 text-sm bg-info text-info ring-1 ring-info/30 rounded-md transition-all',
+                                    pendingDeleteIndex === index && 'ring-2 ring-destructive shadow-md',
                                 )}
                             >
                                 {item}

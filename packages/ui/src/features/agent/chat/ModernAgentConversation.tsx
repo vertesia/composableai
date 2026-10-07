@@ -1,6 +1,8 @@
 import type { VertesiaClient } from '@vertesia/client';
 import {
     type ActiveWorkstreamEntry,
+    AGENT_BUDGET_STATUS_ALLOCATED,
+    AGENT_BUDGET_STATUS_AWAITING,
     type AgentMessage,
     AgentMessageType,
     type AgentRun,
@@ -42,11 +44,17 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
 import { AgentApprovalModeSelector } from './AgentApprovalModeSelector';
+import {
+    AgentBudgetPauseOverlay,
+    type AgentBudgetRequestContext,
+    type AgentBudgetRequestOverrides,
+} from './AgentBudgetPauseOverlay';
 import { AgentChatPlaybackControls } from './AgentChatPlaybackControls';
 import { AgentRequestInputOverlay } from './AgentRequestInputOverlay';
 import { AgentRightPanel, type WorkstreamInfo } from './AgentRightPanel.js';
 import { AgentRunFeedbackProvider } from './AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
+import { findBudgetPause, findRunBudgetRemaining } from './budgetPause';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
@@ -149,6 +157,24 @@ async function closeStagedFileBatch(
             await new Promise((resolve) => setTimeout(resolve, BATCH_CLOSE_RETRY_DELAYS_MS[attempt]));
         }
     }
+}
+
+const TERMINAL_WORKFLOW_STATUSES = new Set(['COMPLETED', 'FAILED', 'CANCELED', 'CANCELLED', 'TERMINATED', 'TIMED_OUT']);
+
+function isTerminalWorkflowStatus(status: string | null | undefined): boolean {
+    return !!status && TERMINAL_WORKFLOW_STATUSES.has(status.toUpperCase());
+}
+
+/**
+ * Whether the next message can continue an ended run by restarting it. FAILED runs are excluded: a
+ * failed run is a dead end, so the failed box and its explicit Restart action are shown instead.
+ */
+function canContinueWorkflowStatus(status: string | null | undefined, canRestart: boolean): boolean {
+    return canRestart && isTerminalWorkflowStatus(status) && status?.toUpperCase() !== 'FAILED';
+}
+
+function isConflictError(err: unknown): boolean {
+    return typeof err === 'object' && err !== null && 'status' in err && err.status === 409;
 }
 
 function getTimestampMs(timestamp: number | string | undefined): number {
@@ -500,8 +526,7 @@ function PendingStartConversation({ message, startedAt }: { message: string; sta
                 <div
                     className={cn(
                         'max-w-[min(44rem,82%)] rounded-[1.35rem] bg-mixer-muted/35 px-4 py-2.5',
-                        'break-words text-sm font-normal leading-6 text-foreground/90 shadow-sm shadow-black/5',
-                        'dark:bg-mixer-muted/15 dark:text-foreground/88 dark:shadow-none [overflow-wrap:anywhere]',
+                        'break-words text-sm font-normal leading-6 text-foreground/90 bg-mixer-muted/35 shadow-sm [overflow-wrap:anywhere]',
                     )}
                 >
                     <div className="whitespace-pre-wrap">{message}</div>
@@ -596,7 +621,7 @@ function downloadJsonFile(filename: string, payload: unknown) {
     URL.revokeObjectURL(url);
 }
 
-export interface ModernAgentConversationProps {
+export interface ModernAgentConversationProps extends AgentBudgetRequestOverrides {
     /** Stable AgentRun ID — the primary identifier for all runtime operations. */
     agentRunId?: string;
     /**
@@ -863,6 +888,8 @@ function StartWorkflowView({
     allowWorkflowControl,
     initialToolApprovalMode,
     onAgentWorkingChange,
+    onBudgetRequest,
+    renderBudgetRequest,
 }: ModernAgentConversationProps) {
     const { t } = useUITranslation();
     const isCompactStartView = startViewVariant !== 'default';
@@ -1198,6 +1225,8 @@ function StartWorkflowView({
                     className,
                     allowWorkflowControl,
                     onAgentWorkingChange,
+                    onBudgetRequest,
+                    renderBudgetRequest,
                 }}
                 agentRunId={startedAgentRunId}
                 title={title}
@@ -1523,6 +1552,8 @@ function ModernAgentConversationInner({
     enablePlayback,
     showPlaybackToggle = true,
     messageFilter,
+    onBudgetRequest,
+    renderBudgetRequest,
     initialWorkstream,
 }: ModernAgentConversationProps & { agentRunId: string }) {
     const { t } = useUITranslation();
@@ -1554,7 +1585,7 @@ function ModernAgentConversationInner({
         showInput,
         showSlidingPanel,
         setShowSlidingPanel,
-    } = useAgentPlans(messages, interactive, isModal);
+    } = useAgentPlans(messages, interactive);
 
     const {
         openDocuments,
@@ -1586,6 +1617,9 @@ function ModernAgentConversationInner({
     const conversationRef = useRef<HTMLDivElement | null>(null);
     const conversationLayoutRef = useRef<HTMLDivElement | null>(null);
     const [isSending, setIsSending] = useState(false);
+    // Request-input overlays replace the composer while the user chooses a response. Keep the
+    // ordinary composer draft here so that temporary unmount does not discard it.
+    const [composerValue, setComposerValue] = useState('');
     const [isCompactingContext, setIsCompactingContext] = useState(false);
     const [internalViewMode, setInternalViewMode] = useState<AgentConversationViewMode>('sliding');
     const viewMode = controlledViewMode ?? internalViewMode;
@@ -1660,17 +1694,10 @@ function ModernAgentConversationInner({
         return agentRunStatus;
     }, [lastMainMessage, agentRunStatus]);
 
-    const isWorkflowTerminal = useMemo(() => {
-        const normalizedStatus = effectiveWorkflowStatus?.toUpperCase();
-        return (
-            normalizedStatus === 'COMPLETED' ||
-            normalizedStatus === 'FAILED' ||
-            normalizedStatus === 'CANCELED' ||
-            normalizedStatus === 'CANCELLED' ||
-            normalizedStatus === 'TERMINATED' ||
-            normalizedStatus === 'TIMED_OUT'
-        );
-    }, [effectiveWorkflowStatus]);
+    const isWorkflowTerminal = useMemo(
+        () => isTerminalWorkflowStatus(effectiveWorkflowStatus),
+        [effectiveWorkflowStatus],
+    );
 
     // When a terminal conversation can be restarted (host provided a restart handler),
     // we keep the composer visible and seamlessly resume the agent on the next message
@@ -1678,8 +1705,8 @@ function ModernAgentConversationInner({
     // FAILED runs are excluded: a failed run is a dead end, so we surface the failed box /
     // `failedAction` (e.g. an explicit Restart button) instead of silently resuming.
     const canContinueConversation = useMemo(
-        () => isWorkflowTerminal && effectiveWorkflowStatus?.toUpperCase() !== 'FAILED' && !!onRestart,
-        [isWorkflowTerminal, effectiveWorkflowStatus, onRestart],
+        () => canContinueWorkflowStatus(effectiveWorkflowStatus, !!onRestart),
+        [effectiveWorkflowStatus, onRestart],
     );
     const shouldRenderMessageInputArea = !hideMessageInput || canContinueConversation;
 
@@ -1707,6 +1734,8 @@ function ModernAgentConversationInner({
     isWorkflowTerminalRef.current = isWorkflowTerminal;
     const canContinueConversationRef = useRef(canContinueConversation);
     canContinueConversationRef.current = canContinueConversation;
+    const canRestartRef = useRef(!!onRestart);
+    canRestartRef.current = !!onRestart;
 
     // ────────────────────────────────────────────
     // Computed values
@@ -1773,12 +1802,20 @@ function ModernAgentConversationInner({
 
     const canShowPlaybackToggle = showPlaybackToggle && enablePlayback === undefined && isAgentChatPlaybackAvailable();
     const isPlaybackEnabled = enablePlayback ?? (isAgentChatPlaybackEnabled() || isPlaybackToggleEnabled);
+    const hasBudgetOverride = Boolean(onBudgetRequest || renderBudgetRequest);
     const transcriptSourceMessages = useMemo(() => {
         // Passive artifact autosaves are surfaced by the editor's own save indicator, not the chat.
         return messages.filter(
-            (message) => !isPassiveArtifactUpdate(message) && !(hiddenMessageTypes?.includes(message.type) ?? false),
+            (message) =>
+                !isPassiveArtifactUpdate(message) &&
+                !(hiddenMessageTypes?.includes(message.type) ?? false) &&
+                !(
+                    hasBudgetOverride &&
+                    (message.details?.status_reason === AGENT_BUDGET_STATUS_AWAITING ||
+                        message.details?.status_reason === AGENT_BUDGET_STATUS_ALLOCATED)
+                ),
         );
-    }, [hiddenMessageTypes, messages]);
+    }, [hasBudgetOverride, hiddenMessageTypes, messages]);
     const playbackSourceMessages = useMemo(
         () => filterMessagesForActiveWorkstream(transcriptSourceMessages, activeWorkstream),
         [activeWorkstream, transcriptSourceMessages],
@@ -1815,6 +1852,28 @@ function ModernAgentConversationInner({
     const effectiveIsCompleted = useMemo(() => isCompleted || !isInProgress(messages), [isCompleted, messages]);
     const displayedIsCompleted = isPlaybackLive || isPlaybackAtLatest ? effectiveIsCompleted : false;
     const isAgentWorking = !effectiveIsCompleted && !isWorkflowTerminal;
+    const remainingBudget = useMemo(
+        // The combined conversation view shows the main run's shared budget.
+        () =>
+            findRunBudgetRemaining(displayedMessages, activeWorkstream === 'all' ? 'main' : activeWorkstream || 'main'),
+        [displayedMessages, activeWorkstream],
+    );
+    const budgetPause = useMemo(
+        () => (isWorkflowTerminal ? undefined : findBudgetPause(messages)),
+        [isWorkflowTerminal, messages],
+    );
+
+    const notifiedBudgetRequest = useRef<string | undefined>(undefined);
+    const handleBudgetRequest = useCallback(
+        async (request: AgentBudgetRequestContext) => {
+            const key = `${request.agentRunId}:${request.pause.requestId}`;
+            // Hiding and reopening the prompt (for example during playback) must not allocate twice.
+            if (notifiedBudgetRequest.current === key) return;
+            notifiedBudgetRequest.current = key;
+            await onBudgetRequest?.(request);
+        },
+        [onBudgetRequest],
+    );
 
     useEffect(() => {
         onAgentWorkingChange?.(isAgentWorking);
@@ -1834,6 +1893,13 @@ function ModernAgentConversationInner({
     const shouldShowRequestInputOverlay =
         Boolean(pendingRequestInputMessage) && !isFailed && (!isWorkflowTerminal || canContinueConversation);
     const isViewingPlaybackHistory = isPlaybackEnabled && !isPlaybackLive;
+    // A budget pause takes the composer's place, as a pending question does: the run takes no
+    // messages until the user adds budget or stops it.
+    const shouldShowBudgetPauseOverlay =
+        Boolean(budgetPause) &&
+        !isFailed &&
+        !isViewingPlaybackHistory &&
+        (hasBudgetOverride || (shouldRenderMessageInputArea && (showInput || canContinueConversation)));
     const shouldRenderLiveMessageInputArea = shouldRenderMessageInputArea && !isViewingPlaybackHistory;
     const contextWindowUsage = useMemo(() => toContextWindowUsage(messages), [messages]);
     // The run is still "alive" while it waits for user input (idle on ask_user), so keep the
@@ -1938,9 +2004,10 @@ function ModernAgentConversationInner({
     // Unified right panel state
     // ────────────────────────────────────────────
     type RightPanelTab = 'plan' | 'workstreams' | 'documents' | 'uploads' | 'artifacts' | 'payload' | 'conversation';
-    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab>(
-        conversationContent || conversationTab ? 'conversation' : 'plan',
+    const [rightPanelTab, setRightPanelTab] = useState<RightPanelTab | undefined>(
+        conversationContent || conversationTab ? 'conversation' : undefined,
     );
+    const defaultRightPanelTab = plans.length > 0 || panelWorkstreams.length === 0 ? 'plan' : 'workstreams';
     const [selectedArtifactPath, setSelectedArtifactPath] = useState<string | null>(null);
     const [rightPanelWidth, setRightPanelWidth] = useState(400);
     const [isRightPanelResizing, setIsRightPanelResizing] = useState(false);
@@ -2329,13 +2396,32 @@ function ModernAgentConversationInner({
             if (requestInputId) {
                 markRequestInputIdAnsweredForSession(agentRunId, requestInputId);
             }
+            const restartAndReconnect = async () => {
+                await client.agents.restart(agentRunId);
+                reconnectStream();
+            };
             const deliver = (async () => {
                 await waitForPendingToolApprovalModeChange();
                 if (isWorkflowTerminalRef.current) {
-                    await client.agents.restart(agentRunId);
-                    reconnectStream();
+                    await restartAndReconnect();
                 }
-                await sendUserInput();
+                try {
+                    await sendUserInput();
+                } catch (err: unknown) {
+                    // The run can end while this view still shows it running — for example when it
+                    // reaches its maximum duration while idle — and the signal then answers 409.
+                    // Re-read its status and, if it ended and can be continued, continue it the way
+                    // a run already known to be ended is continued above.
+                    if (!isConflictError(err)) throw err;
+                    const run = await client.agents.retrieve(agentRunId);
+                    if (!canContinueWorkflowStatus(run.status, canRestartRef.current)) {
+                        // Reconnecting re-reads the status, so the view shows how the run ended.
+                        if (isTerminalWorkflowStatus(run.status)) reconnectStream();
+                        throw err;
+                    }
+                    await restartAndReconnect();
+                    await sendUserInput();
+                }
                 markReceived();
             })();
 
@@ -2855,13 +2941,24 @@ function ModernAgentConversationInner({
                 </AgentRunFeedbackProvider>
             )}
 
-            {shouldShowRequestInputOverlay ? (
+            {shouldShowRequestInputOverlay && !(hasBudgetOverride && shouldShowBudgetPauseOverlay) ? (
                 <AgentRequestInputOverlay
                     message={pendingRequestInputMessage}
                     onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
                     onMcpConnected={isPlaybackLive ? handleMcpConnected : undefined}
                     disabled={isUploading || !isPlaybackLive}
                     isLoading={isSending || isUploading}
+                />
+            ) : shouldShowBudgetPauseOverlay && budgetPause ? (
+                <AgentBudgetPauseOverlay
+                    key={`${agentRunId}:${budgetPause.requestId}`}
+                    onBudgetRequest={onBudgetRequest ? handleBudgetRequest : undefined}
+                    renderBudgetRequest={renderBudgetRequest}
+                    client={client}
+                    agentRunId={agentRunId}
+                    pause={budgetPause}
+                    onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
+                    disabled={!isPlaybackLive || !allowWorkflowControl}
                 />
             ) : isViewingPlaybackHistory && playbackActiveWorkstreams.length > 0 ? (
                 <div className="flex-shrink-0 pb-safe-area">
@@ -2907,6 +3004,8 @@ function ModernAgentConversationInner({
                                     {composerContext}
                                     <MessageInput
                                         onSend={handleSendMessage}
+                                        value={composerValue}
+                                        onValueChange={setComposerValue}
                                         onStop={allowWorkflowControl ? handleStopWorkflow : undefined}
                                         approvalModeSlot={
                                             interactive && toolApprovalMode ? (
@@ -2931,6 +3030,7 @@ function ModernAgentConversationInner({
                                         isStopping={isStopping}
                                         isStreaming={!effectiveIsCompleted}
                                         isCompleted={effectiveIsCompleted}
+                                        remainingBudget={remainingBudget}
                                         contextWindowUsage={canCompactContext ? contextWindowUsage : undefined}
                                         onCompactContext={canCompactContext ? handleCompactContext : undefined}
                                         isCompactingContext={isCompactingContext}
@@ -2984,7 +3084,7 @@ function ModernAgentConversationInner({
                 >
                     {/* Drag overlay for full-panel file drop */}
                     {canUploadFiles && isDragOver && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-info/80 dark:bg-info/40 z-50 pointer-events-none rounded-lg">
+                        <div className="absolute inset-0 flex items-center justify-center bg-info/40 z-50 pointer-events-none rounded-lg">
                             <div className="text-info font-medium flex items-center gap-2 text-lg">
                                 <UploadIcon className="size-6" />
                                 Drop files to upload
@@ -3085,8 +3185,8 @@ function ModernAgentConversationInner({
                                     conversationContent={conversationTab ? conversationAreaJsx : conversationContent}
                                     // Panel control
                                     onClose={handleCloseRightPanel}
-                                    defaultTab={rightPanelTab}
-                                    activeTab={rightPanelTab}
+                                    defaultTab={rightPanelTab ?? defaultRightPanelTab}
+                                    activeTab={rightPanelTab ?? defaultRightPanelTab}
                                     onTabChange={setRightPanelTab}
                                 />
                             </div>

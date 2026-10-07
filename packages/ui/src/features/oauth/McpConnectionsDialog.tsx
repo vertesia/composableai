@@ -2,7 +2,12 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { Link2, Link2Off } from 'lucide-react';
 import { Badge, Button, Modal, ModalBody, ModalTitle, Spinner, Switch, VTooltip } from '../../core/index.js';
 import { RemoteMcpConnectionButton } from './RemoteMcpConnectionButton.js';
-import { isGroupDisabled, type McpConnectionGroup, toggleGroupDisabled } from './useMcpConnections.js';
+import {
+    isGroupConnected,
+    isGroupDisabled,
+    type McpConnectionGroup,
+    toggleGroupDisabled,
+} from './useMcpConnections.js';
 
 export interface McpConnectionsDialogProps {
     isOpen: boolean;
@@ -61,7 +66,7 @@ export function McpConnectionsDialog({
                     <div className="space-y-1">
                         {groups.map((group) => {
                             const active = !isGroupDisabled(group, disabledCollections);
-                            const connected = group.authStatus?.authenticated === true;
+                            const connected = isGroupConnected(group);
                             const interactiveOAuth =
                                 group.authType === 'oauth' && group.oauthGrantType !== 'client_credentials';
                             const StatusIcon = connected ? Link2 : Link2Off;
@@ -115,11 +120,15 @@ export function McpConnectionsDialog({
                                                 showDisconnect
                                                 readOnly={readOnly}
                                             />
-                                        ) : group.authType === 'oauth' ? (
+                                        ) : (
                                             <Badge variant="outline" className="h-6 w-32 justify-center px-2 text-xs">
-                                                {t('mcpConnections.managedByApp')}
+                                                {group.authType === 'none'
+                                                    ? t('mcpConnections.noAuthentication')
+                                                    : group.authType === 'api_key'
+                                                      ? t('mcpConnections.apiKey')
+                                                      : t('mcpConnections.managedByApp')}
                                             </Badge>
-                                        ) : null}
+                                        )}
                                         {onChange && (
                                             <Switch
                                                 size="sm"

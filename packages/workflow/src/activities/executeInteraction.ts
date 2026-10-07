@@ -19,6 +19,7 @@ import {
     type InteractionExecutionConfiguration,
     type RunSearchPayload,
 } from '@vertesia/common';
+import mime from 'mime';
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
@@ -253,22 +254,35 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
                 completionResult.map(async (item, index) => {
                     if (item.type === 'image') {
                         const image = item.value;
-                        // Extract base64 data and create buffer
-                        const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '');
-                        const buffer = Buffer.from(base64Data, 'base64');
+                        // References already identify an image; decoding them would corrupt it.
+                        if (/^[a-z][a-z\d+.-]*:/i.test(image) && !/^data:/i.test(image)) {
+                            return item;
+                        }
+
+                        let buffer: Buffer;
+                        let mimeType = 'image/png';
+                        if (/^data:/i.test(image)) {
+                            const response = await fetch(image);
+                            buffer = Buffer.from(await response.arrayBuffer());
+                            mimeType =
+                                response.headers.get('content-type')?.split(';', 1)[0].trim().toLowerCase() ?? mimeType;
+                        } else {
+                            buffer = Buffer.from(image, 'base64');
+                        }
 
                         // Generate filename
                         const { runId } = activityWorkflowExecution();
                         const { activityId } = activityInfo();
-                        const filename = `generated-image-${runId}-${activityId}-${index}.png`;
+                        const extension = mime.getExtension(mimeType) ?? 'png';
+                        const filename = `generated-image-${runId}-${activityId}-${index}.${extension}`;
 
                         // Create a readable stream from the buffer
-                        const stream = Readable.from(buffer);
+                        const stream = Readable.from([buffer]);
 
-                        const source = new NodeStreamSource(stream, filename, 'image/png');
+                        const source = new NodeStreamSource(stream, filename, mimeType);
 
                         const file = await client.files.uploadFile(source);
-                        return { type: 'image', value: file } as CompletionResult;
+                        return { ...item, value: file };
                     }
                     return item;
                 }),
@@ -286,10 +300,20 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
         // normalized by executeInteractionFromActivity.
         const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
         if (rateLimitFailure) {
+            // Rate-limit/backoff: Temporal retries the activity, so this is not a service failure.
+            log.warn(`Rate limited while executing interaction ${interactionName}; retrying`, {
+                error: rateLimitFailure,
+            });
             throw rateLimitFailure;
         }
         const executionError = toExecutionError(error);
-        log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
+        if (isRenditionPending(executionError)) {
+            log.warn(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
+        } else if (executionError.statusCode === 429) {
+            log.warn(`Resource exhausted while executing interaction ${interactionName}`, { error: executionError });
+        } else {
+            log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
+        }
         if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
             throw new ResourceExhaustedError(executionError.statusCode, 'Resource exhausted - rate limit exceeded');
         } else if (executionError.message.includes('Failed to validate merged prompt schema')) {
@@ -412,6 +436,8 @@ export async function executeInteractionFromActivity(
     const rateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
     const slot = await client.interactions.requestSlot({
         interaction: interactionName,
+        inference_profile: config.inference_profile,
+        inherit_model_config: config.inherit_model_config,
         environment_id: config.environment,
         model_id: config.model,
         rate_limit_id: rateLimitId,
@@ -439,7 +465,7 @@ export async function executeInteractionFromActivity(
             workflow,
         })
         .catch((error: unknown) => {
-            log.error(`Error executing interaction ${interactionName}`, { error });
+            // Logged once by the caller's catch (executeInteraction) — do not log here as well.
             const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);
             throw rateLimitFailure ?? error;
         });
@@ -482,6 +508,10 @@ interface ExecutionError extends Error {
     code?: number;
     retryable?: boolean;
     errorCode?: unknown;
+}
+
+function isRenditionPending(error: ExecutionError): boolean {
+    return (error.statusCode ?? error.status ?? error.code) === 412 && error.retryable !== false;
 }
 
 function toExecutionError(error: unknown): ExecutionError {

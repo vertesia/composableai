@@ -38,12 +38,17 @@ interface HonoApp {
 const RUNTIME_CONFIG_MARKER = 'vertesia-runtime-config';
 const RUNTIME_CONFIG_VERSION = 'v1';
 
-export function injectRuntimeConfigMarker(html: string): string {
+export function injectRuntimeConfigMarker(html: string, authMode?: string): string {
+    if (authMode && authMode !== 'central' && authMode !== 'firebase') {
+        throw new Error('VITE_AUTH_MODE must be firebase or central');
+    }
     const metaTags = html.match(/<meta\b[^>]*>/gi) || [];
     const markerName = new RegExp(`\\bname\\s*=\\s*(["'])${RUNTIME_CONFIG_MARKER}\\1`, 'i');
-    if (metaTags.some((tag) => markerName.test(tag))) return html;
+    const existing = metaTags.find((tag) => markerName.test(tag));
+    const modeAttribute = authMode ? ` data-auth-mode="${authMode}"` : '';
+    const marker = `<meta name="${RUNTIME_CONFIG_MARKER}" content="${RUNTIME_CONFIG_VERSION}"${modeAttribute} />`;
+    if (existing) return authMode ? html.replace(existing, marker) : html;
 
-    const marker = `<meta name="${RUNTIME_CONFIG_MARKER}" content="${RUNTIME_CONFIG_VERSION}" />`;
     return html.replace(/<\/head>/i, `  ${marker}\n</head>`);
 }
 
@@ -101,10 +106,17 @@ export function apiServerPlugin(options: ApiServerPluginOptions = {}): Plugin[] 
     // the project root by convention, so this lands at the right file.
     const absoluteCompiledEntry = path.resolve(process.cwd(), compiledEntry);
 
+    let authMode: string | undefined;
+
     return [
         {
             name: 'vertesia-runtime-config-marker',
-            transformIndexHtml: injectRuntimeConfigMarker,
+            configResolved(config) {
+                authMode = config.env.VITE_AUTH_MODE?.trim() || undefined;
+            },
+            transformIndexHtml(html) {
+                return injectRuntimeConfigMarker(html, authMode);
+            },
         },
 
         // Vertesia query-import transformer (skill / raw / prompt / template etc.).

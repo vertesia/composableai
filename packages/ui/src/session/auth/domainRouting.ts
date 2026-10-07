@@ -1,5 +1,11 @@
+import { markCentralAuthRoundTripStarted } from './authRoundTrip';
+
+export { clearCentralAuthRoundTripMarker, markCentralAuthRoundTripStarted } from './authRoundTrip';
+
 import { Env } from '@vertesia/ui/env';
 import { generateAuthState } from './authState';
+import { gatewayLoginUrl, usesGatewaySession } from './gateway';
+import { getAppOAuthToken, usesAppOAuth } from './oauth';
 
 declare global {
     interface Window {
@@ -10,11 +16,10 @@ declare global {
 /**
  * The broker this app sends users to for sign-in and logout.
  *
- * Hard-coded until now, which meant every consumer of this package reached the same deployment no
- * matter what was running. It is read from the environment so a single app can be pointed at a
- * different broker, and it keeps this default so an app that configures nothing is unaffected.
+ * A gateway or app can select a regional broker through Env.endpoints.auth.
+ * Unconfigured apps use the first-party central broker.
  */
-export const DEFAULT_CENTRAL_AUTH_URL = 'https://internal-auth.vertesia.app/';
+export const DEFAULT_CENTRAL_AUTH_URL = 'https://auth.vertesia.io/';
 
 export function centralAuthUrl(): string {
     const configured = Env.endpoints.auth;
@@ -113,31 +118,6 @@ export function buildCentralAuthRedirectUrl(
  * The TTL bounds the cost of the case where the app never mounts (the visitor abandons the login
  * screen): after it lapses, cold loads are back to withholding the application preloads.
  */
-const AUTH_ROUND_TRIP_COOKIE = 'vtsauth';
-const AUTH_ROUND_TRIP_TTL_SECONDS = 300;
-
-function authRoundTripCookie(value: string, maxAgeSeconds: number): string {
-    // Secure only over https: setting it on http://localhost would make the browser drop the
-    // cookie, and local development would silently lose the return-leg preloads.
-    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-    return `${AUTH_ROUND_TRIP_COOKIE}=${value}; Path=/; Max-Age=${maxAgeSeconds}; SameSite=Lax${secure}`;
-}
-
-/** Record that this browser is on its way to the broker. Called for you by {@link redirectToCentralAuth}. */
-export function markCentralAuthRoundTripStarted(): void {
-    // biome-ignore lint/suspicious/noDocumentCookie: CookieStore is async; this must land before location.replace()
-    document.cookie = authRoundTripCookie('1', AUTH_ROUND_TRIP_TTL_SECONDS);
-}
-
-/**
- * Drop the marker. An app calls this once it is actually rendering, so that its *next* cold load is
- * recognized as an outgoing leg again and does not preload an application it is about to discard.
- */
-export function clearCentralAuthRoundTripMarker(): void {
-    // biome-ignore lint/suspicious/noDocumentCookie: pairs with the write above; see that comment.
-    document.cookie = authRoundTripCookie('', 0);
-}
-
 /**
  * Start a Central Auth round-trip for the current page.
  *
@@ -146,6 +126,14 @@ export function clearCentralAuthRoundTripMarker(): void {
  * into producing different `redirect_uri` / `state` / `sts` values for the same page load.
  */
 export function redirectToCentralAuth(selection: AuthSelection = {}): void {
+    if (usesAppOAuth()) {
+        void getAppOAuthToken().catch((error: unknown) => Env.logger.error('Application OAuth sign-in failed', error));
+        return;
+    }
+    if (usesGatewaySession()) {
+        window.location.replace(gatewayLoginUrl());
+        return;
+    }
     const url = buildCentralAuthRedirectUrl(
         centralAuthUrl(),
         Env.endpoints.sts ?? 'https://sts.vertesia.io',
@@ -178,6 +166,7 @@ export function redirectToCentralAuth(selection: AuthSelection = {}): void {
  * chunks that the navigation is about to discard.
  */
 export function isCentralAuthRedirectPending(): boolean {
+    if (usesGatewaySession() || usesAppOAuth()) return false;
     if (!shouldRedirectToCentralAuth()) return false;
     if (Env.authTokenProvider) return false;
     if (Env.isLocalDev && Env.devAuthToken) return false;

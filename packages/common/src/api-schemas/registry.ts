@@ -69,6 +69,7 @@ import type {
     UpdateProcessDefinitionPayload,
 } from '../store/process.js';
 import type { ViewNavigationNode } from '../views.js';
+import type { ApiComponentTypes } from '../wire-types.generated.js';
 import {
     ACECreatePayloadSchema,
     ACEUpdatePayloadSchema,
@@ -77,7 +78,12 @@ import {
     RoleDefinitionArraySchema,
     SystemRoleDefinitionArraySchema,
 } from './access-control.js';
-import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
+import {
+    AccountApiVersionPolicySchema,
+    AccountSchema,
+    StripeBillingStatusResponseSchema,
+    UpdateAccountPayloadSchema,
+} from './account.js';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
 import * as AgentCommunicationSchemas from './agent-communication.js';
 import * as AgentRunSchemas from './agent-runs.js';
@@ -90,6 +96,9 @@ import {
     TimeResolutionSchema,
 } from './analytics.js';
 import {
+    AccountApiKeyArraySchema,
+    AccountApiKeySchema,
+    AccountApiKeyWithValueSchema,
     ApiKeyArraySchema,
     ApiKeyListQuerySchema,
     ApiKeyReadQuerySchema,
@@ -97,9 +106,11 @@ import {
     ApiKeySchema,
     ApiKeyWithValueSchema,
     AuthTokenResponseSchema,
+    CreateAccountApiKeyPayloadSchema,
     CreateApiKeyPayloadSchema,
     DeleteOperationResultSchema,
     ProjectRefArraySchema,
+    UpdateAccountApiKeyPayloadSchema,
     UpdateApiKeyPayloadSchema,
 } from './apikey.js';
 import {
@@ -170,6 +181,7 @@ import {
     StartAppScaffoldResponseSchema,
     StoredTypeRefSchema,
     SystemPackageQuerySchema,
+    UpdateAppInstallationOAuthApprovalPayloadSchema,
     UpdateAppInstallationToolAllowlistPayloadSchema,
     UpsertAppVersionRequestSchema,
     ValidateUrlRequestSchema,
@@ -197,6 +209,14 @@ import {
 } from './apps.js';
 import {
     AuditActionSchema,
+    AuditAdoptionActiveDaysSchema,
+    AuditAdoptionBucketSchema,
+    AuditAdoptionFilterSchema,
+    AuditAdoptionHistorySchema,
+    AuditAdoptionPeriodSchema,
+    AuditAdoptionProjectSchema,
+    AuditAdoptionQuerySchema,
+    AuditAdoptionResponseSchema,
     AuditAggregationDetailFieldSchema,
     AuditAggregationDetailFilterSchema,
     AuditAggregationDimensionMapSchema,
@@ -214,6 +234,10 @@ import {
     AuditTrailEventSchema,
     AuditTrailQuerySchema,
     AuditTrailResponseSchema,
+    AuditUsageBucketSchema,
+    AuditUsageCountsSchema,
+    AuditUsageQuerySchema,
+    AuditUsageResponseSchema,
     EventCategorySchema,
     KnownAuditActionSchema,
 } from './audit-trail.js';
@@ -365,6 +389,22 @@ import {
     WorkflowExecutionStatusSchema,
 } from './document-processing.js';
 import {
+    EmbeddingBatchApplyRequestSchema,
+    EmbeddingBatchApplyResponseSchema,
+    EmbeddingBatchCapabilityRequestSchema,
+    EmbeddingBatchCapabilityResponseSchema,
+    EmbeddingBatchCreateRequestSchema,
+    EmbeddingBatchJobRequestSchema,
+    EmbeddingBatchJobResponseSchema,
+    EmbeddingBatchPrepareRequestSchema,
+    EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchProviderStateSchema,
+    EmbeddingBatchRenditionPageRequestSchema,
+    EmbeddingBatchRenditionPageResponseSchema,
+    EmbeddingBatchRunStateSchema,
+    EmbeddingBatchRunSummarySchema,
+    EmbeddingBatchSubjobSchema,
+    EmbeddingBatchUpdateRequestSchema,
     EmbeddingsApiAudioInputSchema,
     EmbeddingsApiImageInputSchema,
     EmbeddingsApiInputSchema,
@@ -374,6 +414,7 @@ import {
     EmbeddingsApiVideoInputSchema,
     EmbeddingsStatusResponseSchema,
     ProjectConfigurationEmbeddingEnablePayloadSchema,
+    RecalculateEmbeddingsQuerySchema,
 } from './embeddings.js';
 import { emitJsonSchema } from './emit-json-schema.js';
 import {
@@ -439,6 +480,23 @@ import {
     ReindexAgentRunsResponseSchema,
     StartProjectReindexPayloadSchema,
 } from './indexing.js';
+import {
+    CreateInferenceProfilePayloadSchema,
+    InferenceProfileIdSchema,
+    InferenceProfileNameSchema,
+    InferenceProfileRecordArraySchema,
+    InferenceProfileRecordSchema,
+    InferenceProfileSchema,
+    InferenceProfileSnapshotSchema,
+    InferenceProfileUsageEntrySchema,
+    InferenceProfileUsageQuerySchema,
+    InferenceProfileUsageSchema,
+    InteractionConfigurationRecordSchema,
+    InteractionConfigurationResultSchema,
+    ProjectInferenceProfilesSchema,
+    UpdateInferenceProfilePayloadSchema,
+    UpdateInteractionConfigurationPayloadSchema,
+} from './inference-profile.js';
 import * as IntegrationSchemas from './integrations.js';
 import {
     AgentResourceActionSchema,
@@ -608,6 +666,7 @@ import {
     CreateOAuthClientPayloadSchema,
     ListOAuthGrantsQuerySchema,
     OAuthAuthorizationDecisionResponseSchema,
+    OAuthAuthorizationRequestGeneratedAppSchema,
     OAuthAuthorizationRequestSchema,
     OAuthAuthorizationRequestStatusSchema,
     OAuthAuthorizationServerMetadataSchema,
@@ -630,6 +689,9 @@ import {
     OAuthGrantSortOrderSchema,
     OAuthGrantStatusSchema,
     OAuthGrantTypeSchema,
+    OAuthLoginDecisionResponseSchema,
+    OAuthLoginPayloadSchema,
+    OAuthLoginUserNotFoundResponseSchema,
     OAuthProjectBindingModeSchema,
     OAuthRegistrationSourceSchema,
     OAuthResponseTypeSchema,
@@ -676,6 +738,7 @@ import {
     RenderPromptResponseSchema,
 } from './prompt.js';
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
+import * as RunBudgetSchemas from './run-budget.js';
 import * as SecretSchemas from './secrets.js';
 import {
     ColumnLayoutSchema,
@@ -811,6 +874,7 @@ import * as WorkflowRunSchemas from './workflow-runs.js';
  * group approaches the proven-safe size.
  */
 const IAM_AND_ACCOUNT_SCHEMAS = {
+    AccountApiVersionPolicy: AccountApiVersionPolicySchema,
     Account: AccountSchema,
     UpdateAccountPayload: UpdateAccountPayloadSchema,
     StripeBillingStatusResponse: StripeBillingStatusResponseSchema,
@@ -841,6 +905,12 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     ApiKey: ApiKeySchema,
     ApiKeyArray: ApiKeyArraySchema,
     ApiKeyWithValue: ApiKeyWithValueSchema,
+    AccountApiKey: AccountApiKeySchema,
+    AccountApiKeyWithValue: AccountApiKeyWithValueSchema,
+    AccountApiKeyArray: AccountApiKeyArraySchema,
+    CreateAccountApiKeyPayload: CreateAccountApiKeyPayloadSchema,
+    UpdateAccountApiKeyPayload: UpdateAccountApiKeyPayloadSchema,
+
     ApiKeyReadResponse: ApiKeyReadResponseSchema,
     ApiKeyReadQuery: ApiKeyReadQuerySchema,
     CreateApiKeyPayload: CreateApiKeyPayloadSchema,
@@ -947,6 +1017,10 @@ const OAUTH_SCHEMAS = {
     OAuthAuthorizeQuery: OAuthAuthorizeQuerySchema,
     CreateOAuthAuthorizationRequestPayload: CreateOAuthAuthorizationRequestPayloadSchema,
     OAuthAuthorizationRequest: OAuthAuthorizationRequestSchema,
+    OAuthAuthorizationRequestGeneratedApp: OAuthAuthorizationRequestGeneratedAppSchema,
+    OAuthLoginPayload: OAuthLoginPayloadSchema,
+    OAuthLoginUserNotFoundResponse: OAuthLoginUserNotFoundResponseSchema,
+    OAuthLoginDecisionResponse: OAuthLoginDecisionResponseSchema,
     ApproveOAuthAuthorizationRequestPayload: ApproveOAuthAuthorizationRequestPayloadSchema,
     OAuthGrantableScopesResponse: OAuthGrantableScopesResponseSchema,
     OAuthAuthorizationDecisionResponse: OAuthAuthorizationDecisionResponseSchema,
@@ -1072,6 +1146,21 @@ const LLM_COMPLETION_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const INTERACTION_SCHEMAS = {
+    UpdateInteractionConfigurationPayload: UpdateInteractionConfigurationPayloadSchema,
+    InteractionConfigurationRecord: InteractionConfigurationRecordSchema,
+    InteractionConfigurationResult: InteractionConfigurationResultSchema,
+    CreateInferenceProfilePayload: CreateInferenceProfilePayloadSchema,
+    UpdateInferenceProfilePayload: UpdateInferenceProfilePayloadSchema,
+    InferenceProfileRecord: InferenceProfileRecordSchema,
+    InferenceProfileUsage: InferenceProfileUsageSchema,
+    InferenceProfileUsageEntry: InferenceProfileUsageEntrySchema,
+    InferenceProfileUsageQuery: InferenceProfileUsageQuerySchema,
+    InferenceProfileRecordArray: InferenceProfileRecordArraySchema,
+    InferenceProfileId: InferenceProfileIdSchema,
+    InferenceProfileName: InferenceProfileNameSchema,
+    InferenceProfile: InferenceProfileSchema,
+    InferenceProfileSnapshot: InferenceProfileSnapshotSchema,
+    ProjectInferenceProfiles: ProjectInferenceProfilesSchema,
     // The interaction definition and the prompt tree under it.
     InteractionStatus: InteractionStatusSchema,
     InteractionVisibility: InteractionVisibilitySchema,
@@ -1188,7 +1277,27 @@ const AGENT_CONVERSATION_SCHEMAS = {
     ConversationState: ConversationStateSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const EXECUTION_RUN_SCHEMAS = {
+// Reference schema types by name to keep declaration output bounded without erasing payload types.
+type ExecutionRunSchemaMap = {
+    ExecutionRunStatus: typeof ExecutionRunStatusSchema;
+    RunSourceTypes: typeof RunSourceTypesSchema;
+    RunSource: typeof RunSourceSchema;
+    ExecutionRunDocRef: typeof ExecutionRunDocRefSchema;
+    ExecutionRunWorkflow: typeof ExecutionRunWorkflowSchema;
+    ExecutionRunInteraction: typeof ExecutionRunInteractionSchema;
+    ExecutionRun: typeof ExecutionRunSchema;
+    ExecutionRunRef: typeof ExecutionRunRefSchema;
+    ExecutionRunRefArray: typeof ExecutionRunRefArraySchema;
+    UpdateExecutionRunPayload: typeof UpdateExecutionRunPayloadSchema;
+    RunCreatePayload: typeof RunCreatePayloadSchema;
+    SortOrder: typeof SortOrderSchema;
+    SortOption: typeof SortOptionSchema;
+    RunSearchQuery: typeof RunSearchQuerySchema;
+    RunListQuery: typeof RunListQuerySchema;
+    RunSearchPayload: typeof RunSearchPayloadSchema;
+};
+
+const EXECUTION_RUN_SCHEMAS: ExecutionRunSchemaMap = {
     // A run: what was executed, by whom, and how it ended.
     ExecutionRunStatus: ExecutionRunStatusSchema,
     RunSourceTypes: RunSourceTypesSchema,
@@ -1207,6 +1316,38 @@ const EXECUTION_RUN_SCHEMAS = {
     RunSearchQuery: RunSearchQuerySchema,
     RunListQuery: RunListQuerySchema,
     RunSearchPayload: RunSearchPayloadSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const EXECUTION_REQUEST_SCHEMAS: {
+    InteractionExecutionPayload: typeof InteractionExecutionPayloadSchema;
+    NamedInteractionExecutionPayload: typeof NamedInteractionExecutionPayloadSchema;
+    InteractionExecutionResult: typeof InteractionExecutionResultSchema;
+    FindRunResult: typeof FindRunResultSchema;
+    FindRunResultArray: typeof FindRunResultArraySchema;
+    PopulatedExecutionRunResult: typeof PopulatedExecutionRunResultSchema;
+    LegacyExecutionRunResult: typeof LegacyExecutionRunResultSchema;
+    LegacyPopulatedExecutionRunResult: typeof LegacyPopulatedExecutionRunResultSchema;
+    InteractionExecutionConfiguration: typeof InteractionExecutionConfigurationSchema;
+    InteractionExecutionError: typeof InteractionExecutionErrorSchema;
+    ResultStorageOptions: typeof ResultStorageOptionsSchema;
+    ExecuteInteractionByEndpointQuery: typeof ExecuteInteractionByEndpointQuerySchema;
+    ExecuteInteractionByEndpointHeaders: typeof ExecuteInteractionByEndpointHeadersSchema;
+    AsyncCompletionMode: typeof AsyncCompletionModeSchema;
+    AsyncCompletionOptions: typeof AsyncCompletionOptionsSchema;
+    AsyncExecutionPayload: typeof AsyncExecutionPayloadSchema;
+    AsyncInteractionExecutionPayload: typeof AsyncInteractionExecutionPayloadSchema;
+    AsyncConversationExecutionPayload: typeof AsyncConversationExecutionPayloadSchema;
+    AsyncExecutionResult: typeof AsyncExecutionResultSchema;
+    RateLimitRequestPayload: typeof RateLimitRequestPayloadSchema;
+    RateLimitRequestResponse: typeof RateLimitRequestResponseSchema;
+    ComputeRunFacetPayload: typeof ComputeRunFacetPayloadSchema;
+    ComputeRunFacetsResponse: typeof ComputeRunFacetsResponseSchema;
+    RunSearchMetaResponse: typeof RunSearchMetaResponseSchema;
+    ToolResultsPayload: typeof ToolResultsPayloadSchema;
+    UserMessagePayload: typeof UserMessagePayloadSchema;
+    ExecutionResponse: typeof ExecutionResponseSchema;
+    RunClonePayload: typeof RunClonePayloadSchema;
+} = {
     // Executing an interaction, synchronously or as a workflow.
     InteractionExecutionPayload: InteractionExecutionPayloadSchema,
     NamedInteractionExecutionPayload: NamedInteractionExecutionPayloadSchema,
@@ -1285,7 +1426,22 @@ const DURABLE_TASK_SCHEMAS = {
     ListTasksQuery: ListTasksQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const CONTENT_TYPE_CATALOG_SCHEMAS = {
+// Keep declaration emit from expanding the nested content-type schemas.
+const CONTENT_TYPE_CATALOG_SCHEMAS: {
+    readonly ColumnLayout: typeof ColumnLayoutSchema;
+    readonly ContentTypeEditingPolicy: typeof ContentTypeEditingPolicySchema;
+    readonly ContentObjectTypeStatus: typeof ContentObjectTypeStatusSchema;
+    readonly ContentObjectTypeItem: typeof ContentObjectTypeItemSchema;
+    readonly ContentObjectTypeItemArray: typeof ContentObjectTypeItemArraySchema;
+    readonly ContentObjectTypeCatalogEntry: typeof ContentObjectTypeCatalogEntrySchema;
+    readonly ContentObjectTypeCatalogEntryArray: typeof ContentObjectTypeCatalogEntryArraySchema;
+    readonly InCodeTypeDefinition: typeof InCodeTypeDefinitionSchema;
+    readonly CreateContentObjectTypePayload: typeof CreateContentObjectTypePayloadSchema;
+    readonly UpdateContentObjectTypePayload: typeof UpdateContentObjectTypePayloadSchema;
+    readonly ContentObjectType: typeof ContentObjectTypeSchema;
+    readonly ContentObjectTypeCatalogQuery: typeof ContentObjectTypeCatalogQuerySchema;
+    readonly ContentObjectTypeListQuery: typeof ContentObjectTypeListQuerySchema;
+} = {
     ColumnLayout: ColumnLayoutSchema,
     ContentTypeEditingPolicy: ContentTypeEditingPolicySchema,
     ContentObjectTypeStatus: ContentObjectTypeStatusSchema,
@@ -1465,7 +1621,24 @@ const INDEXING_SCHEMAS = {
 
 const EMBEDDING_ADMIN_SCHEMAS = {
     EmbeddingsStatusResponse: EmbeddingsStatusResponseSchema,
+    RecalculateEmbeddingsQuery: RecalculateEmbeddingsQuerySchema,
     ProjectConfigurationEmbeddingEnablePayload: ProjectConfigurationEmbeddingEnablePayloadSchema,
+    EmbeddingBatchProviderState: EmbeddingBatchProviderStateSchema,
+    EmbeddingBatchCapabilityRequest: EmbeddingBatchCapabilityRequestSchema,
+    EmbeddingBatchCapabilityResponse: EmbeddingBatchCapabilityResponseSchema,
+    EmbeddingBatchCreateRequest: EmbeddingBatchCreateRequestSchema,
+    EmbeddingBatchJobRequest: EmbeddingBatchJobRequestSchema,
+    EmbeddingBatchJobResponse: EmbeddingBatchJobResponseSchema,
+    EmbeddingBatchRunState: EmbeddingBatchRunStateSchema,
+    EmbeddingBatchRunSummary: EmbeddingBatchRunSummarySchema,
+    EmbeddingBatchSubjob: EmbeddingBatchSubjobSchema,
+    EmbeddingBatchPrepareRequest: EmbeddingBatchPrepareRequestSchema,
+    EmbeddingBatchPrepareResponse: EmbeddingBatchPrepareResponseSchema,
+    EmbeddingBatchRenditionPageRequest: EmbeddingBatchRenditionPageRequestSchema,
+    EmbeddingBatchRenditionPageResponse: EmbeddingBatchRenditionPageResponseSchema,
+    EmbeddingBatchUpdateRequest: EmbeddingBatchUpdateRequestSchema,
+    EmbeddingBatchApplyRequest: EmbeddingBatchApplyRequestSchema,
+    EmbeddingBatchApplyResponse: EmbeddingBatchApplyResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const COMMAND_SCHEMAS = {
@@ -1645,6 +1818,9 @@ const PROCESS_RUNTIME_SCHEMAS = {
     AnswerProcessTaskPayload: ProcessSchemas.AnswerProcessTaskPayloadSchema,
     AdvanceProcessPayload: ProcessSchemas.AdvanceProcessPayloadSchema,
     ProcessState: ProcessSchemas.ProcessStateSchema,
+    ProcessTerminalReason: ProcessSchemas.ProcessTerminalReasonSchema,
+    ProcessBudgetState: ProcessSchemas.ProcessBudgetStateSchema,
+    ProcessBudgetSummary: ProcessSchemas.ProcessBudgetSummarySchema,
     WorkflowExecutionStartResultArray: ProcessSchemas.WorkflowExecutionStartResultArraySchema,
     RecordProcessRunPayload: ProcessSchemas.RecordProcessRunPayloadSchema,
     ProcessTestRunStatus: ProcessSchemas.ProcessTestRunStatusSchema,
@@ -1766,6 +1942,7 @@ const AGENT_RUN_SCHEMAS = {
     AgentRunArchiveState: AgentRunSchemas.AgentRunArchiveStateSchema,
     ResourceRef: AgentRunSchemas.ResourceRefSchema,
     SignalAgentResponse: AgentRunSchemas.SignalAgentResponseSchema,
+    AllocateAgentRunBudgetPayload: AgentRunSchemas.AllocateAgentRunBudgetPayloadSchema,
     AutonomousRunResponse: AgentRunSchemas.AutonomousRunResponseSchema,
     AgentRun: AgentRunSchemas.AgentRunSchema,
     CreateAgentRunPayload: AgentRunSchemas.CreateAgentRunPayloadSchema,
@@ -1796,16 +1973,16 @@ const AGENT_RUN_SCHEMAS = {
     AgentRunFeedbackResponse: AgentRunSchemas.AgentRunFeedbackResponseSchema,
     AgentRunFeedbackEntry: AgentRunSchemas.AgentRunFeedbackEntrySchema,
     AgentRunEvaluationRollup: AgentRunSchemas.AgentRunEvaluationRollupSchema,
-    AgentRunJudgeResult: AgentRunSchemas.AgentRunJudgeResultSchema,
+    AgentRunLlmEvaluationResult: AgentRunSchemas.AgentRunLlmEvaluationResultSchema,
     AgentRunContradictionReason: AgentRunSchemas.AgentRunContradictionReasonSchema,
     AgentRunEvaluation: AgentRunSchemas.AgentRunEvaluationSchema,
     TurnTerminalType: AgentRunSchemas.TurnTerminalTypeSchema,
     EvaluationSeverity: AgentRunSchemas.EvaluationSeveritySchema,
     TurnEvaluationFlag: AgentRunSchemas.TurnEvaluationFlagSchema,
     ToolErrorClass: AgentRunSchemas.ToolErrorClassSchema,
-    JudgeGateReason: AgentRunSchemas.JudgeGateReasonSchema,
-    JudgeOutcome: AgentRunSchemas.JudgeOutcomeSchema,
-    JudgeVerdict: AgentRunSchemas.JudgeVerdictSchema,
+    EvaluationGateReason: AgentRunSchemas.EvaluationGateReasonSchema,
+    EvaluationOutcome: AgentRunSchemas.EvaluationOutcomeSchema,
+    EvaluationVerdict: AgentRunSchemas.EvaluationVerdictSchema,
     ListAgentRunsEvaluationSeverity: AgentRunSchemas.ListAgentRunsEvaluationSeveritySchema,
     AgentEvent: AgentRunSchemas.AgentEventSchema,
     IngestAgentEventsPayload: AgentRunSchemas.IngestAgentEventsPayloadSchema,
@@ -1951,6 +2128,18 @@ const REMOTE_MCP_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const AUDIT_TRAIL_SCHEMAS = {
+    AuditAdoptionActiveDays: AuditAdoptionActiveDaysSchema,
+    AuditAdoptionBucket: AuditAdoptionBucketSchema,
+    AuditAdoptionFilter: AuditAdoptionFilterSchema,
+    AuditAdoptionHistory: AuditAdoptionHistorySchema,
+    AuditAdoptionPeriod: AuditAdoptionPeriodSchema,
+    AuditAdoptionProject: AuditAdoptionProjectSchema,
+    AuditAdoptionQuery: AuditAdoptionQuerySchema,
+    AuditAdoptionResponse: AuditAdoptionResponseSchema,
+    AuditUsageQuery: AuditUsageQuerySchema,
+    AuditUsageCounts: AuditUsageCountsSchema,
+    AuditUsageBucket: AuditUsageBucketSchema,
+    AuditUsageResponse: AuditUsageResponseSchema,
     // The audit trail: the events the endpoint pages through and the aggregation it
     // computes over them.
     AuditMeter: AuditMeterSchema,
@@ -2038,6 +2227,7 @@ const VIEW_EXPERIENCE_SCHEMAS = {
 const APP_LIFECYCLE_SCHEMAS = {
     // What an app does once it exists: versions, builds, scaffolds, git repositories,
     // development tasks, installations and inspection.
+    UpdateAppInstallationOAuthApprovalPayload: UpdateAppInstallationOAuthApprovalPayloadSchema,
     UpdateAppInstallationToolAllowlistPayload: UpdateAppInstallationToolAllowlistPayloadSchema,
     ValidateUrlResponse: ValidateUrlResponseSchema,
     ValidateUrlRequest: ValidateUrlRequestSchema,
@@ -2235,6 +2425,8 @@ const STS_SCHEMAS = {
     EnvironmentTokenRequest: StsSchemas.EnvironmentTokenRequestSchema,
     AgentTokenRequest: StsSchemas.AgentTokenRequestSchema,
     ServiceAccountTokenRequest: StsSchemas.ServiceAccountTokenRequestSchema,
+    AppSessionTokenRequest: StsSchemas.AppSessionTokenRequestSchema,
+    AppSessionTokenResponse: StsSchemas.AppSessionTokenResponseSchema,
     IssueTokenRequest: StsSchemas.IssueTokenRequestSchema,
     IssueTokenResponse: StsSchemas.IssueTokenResponseSchema,
     IssueTokenForbiddenResponse: StsSchemas.IssueTokenForbiddenResponseSchema,
@@ -2272,7 +2464,16 @@ const DELEGATION_SCHEMAS = {
     DelegationGrant: DelegationGrantSchema,
     DelegationGrantArray: DelegationGrantArraySchema,
 };
+const RUN_BUDGET_SCHEMAS = {
+    RunBudgetOwner: RunBudgetSchemas.RunBudgetOwnerSchema,
+    RunBudgetUsage: RunBudgetSchemas.RunBudgetUsageSchema,
+    ReadRunBudgetUsagePayload: RunBudgetSchemas.ReadRunBudgetUsagePayloadSchema,
+    RunBudgetTotals: RunBudgetSchemas.RunBudgetTotalsSchema,
+    RunBudgetCapability: RunBudgetSchemas.RunBudgetCapabilitySchema,
+    RunBudgetCapabilityQuery: RunBudgetSchemas.RunBudgetCapabilityQuerySchema,
+};
 const API_SCHEMA_GROUPS = [
+    RUN_BUDGET_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2283,6 +2484,7 @@ const API_SCHEMA_GROUPS = [
     INTERACTION_AUTHORING_SCHEMAS,
     AGENT_CONVERSATION_SCHEMAS,
     EXECUTION_RUN_SCHEMAS,
+    EXECUTION_REQUEST_SCHEMAS,
     PROMPT_AUTHORING_SCHEMAS,
     PROJECT_TOOL_SCHEMAS,
     REMOTE_MCP_SCHEMAS,
@@ -2336,7 +2538,8 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
+type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
+    typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
     typeof OAUTH_SCHEMAS &
@@ -2346,6 +2549,7 @@ type ApiSchemaMap = typeof DELEGATION_SCHEMAS &
     typeof INTERACTION_AUTHORING_SCHEMAS &
     typeof AGENT_CONVERSATION_SCHEMAS &
     typeof EXECUTION_RUN_SCHEMAS &
+    typeof EXECUTION_REQUEST_SCHEMAS &
     typeof PROMPT_AUTHORING_SCHEMAS &
     typeof PROJECT_TOOL_SCHEMAS &
     typeof REMOTE_MCP_SCHEMAS &
@@ -2408,6 +2612,20 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'UpdateInteractionConfigurationPayload',
+    'InteractionConfigurationRecord',
+    'InteractionConfigurationResult',
+    'CreateInferenceProfilePayload',
+    'UpdateInferenceProfilePayload',
+    'InferenceProfileRecord',
+    'InferenceProfile',
+    'InferenceProfileSnapshot',
+    'ProjectInferenceProfiles',
+    'AccountApiKey',
+    'AccountApiKeyWithValue',
+    'CreateAccountApiKeyPayload',
+    'UpdateAccountApiKeyPayload',
+
     'CreateDelegationGrantPayload',
     'DelegationGrant',
     // Process Test Lab request, fixture, and result contracts.
@@ -2450,6 +2668,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'EnvironmentTokenRequest',
     'AgentTokenRequest',
     'ServiceAccountTokenRequest',
+    'AppSessionTokenRequest',
+    'AppSessionTokenResponse',
     'IssueTokenResponse',
     'IssueTokenForbiddenResponse',
     'IssueTokenUnavailableResponse',
@@ -2465,7 +2685,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'QuotaStandingWindow',
     'QuotaStandingAdmissionClass',
     'QuotaTierResponse',
-    // The IAM closure. PrincipalContext is composed into PrincipalIdentity rather than hoisted,
+    // The IAM closure. AbacPrincipalContext is composed into PrincipalIdentity rather than hoisted,
     // so it has no component of its own to list.
     'User',
     'UpdateUserPayload',
@@ -2561,6 +2781,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // The agent configuration block under `ProjectConfiguration`, published closed on both sides.
     'AgentProjectConfiguration',
     'AgentCheckpointConfiguration',
+    'AgentBudgetConfiguration',
+    ...Object.keys(RUN_BUDGET_SCHEMAS),
     // Declared in @llumiverse/common beside the type, like the ModelOptions members above.
     'HttpTimeoutOptions',
     // The intake policy tree. Every object in it is published closed today, including the inline
@@ -2588,34 +2810,14 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     //
     // `JSONSchema` is deliberately absent: it is OPEN by design and by long-standing publication —
     // a JSON Schema carries keywords the type never enumerated. `JSONSchemaProperties` is a map.
-    'TextFallbackOptions',
-    'AzureFoundryChatOptions',
-    'ImagenOptions',
-    'VertexAIClaudeOptions',
-    'VertexAIGeminiOptions',
-    'VertexAIGeminiOmniVideoOptions',
-    'VertexAIGrokOptions',
-    'NovaCanvasOptions',
-    'BedrockConverseOptions',
-    'BedrockNovaOptions',
-    'BedrockMistralOptions',
-    'BedrockAI21Options',
-    'BedrockCohereCommandOptions',
-    'BedrockClaudeOptions',
-    'BedrockPalmyraOptions',
-    'BedrockGptOssOptions',
-    'TwelvelabsPegasusOptions',
-    'BedrockMantleResponsesOptions',
-    'BedrockMantleChatCompletionsOptions',
-    'BedrockMantleClaudeOptions',
-    'OpenAiThinkingOptions',
-    'OpenAiTextOptions',
-    'OpenRouterTextOptions',
-    'OpenAiDalleOptions',
-    'OpenAiGptImageOptions',
-    'XAIGrokImageOptions',
-    'GroqOptions',
-    'MistralTextOptions',
+    // Derive membership so new provider schemas inherit this enforcement check automatically.
+    'OpenAiImageGenerationOptions',
+    'OpenAiImageGenerationMask',
+    ...ModelOptionsSchema.options.map((schema) => {
+        const id = schema.meta()?.id;
+        if (!id) throw new Error('Model option schemas must declare a component id');
+        return id;
+    }),
     // The app-manifest leaves. Every object among them is published closed today, the nested `git`
     // block included, and it is spelled `strictObject` so the emission carries it directly. The five
     // enums take no `additionalProperties` at all.
@@ -2783,6 +2985,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DriftAnalysisResult',
     'DriftAnalysisProgress',
     'EmbeddingsStatusResponse',
+    'EmbeddingBatchRunSummary',
+    'RecalculateEmbeddingsQuery',
     'ProjectConfigurationEmbeddingEnablePayload',
     'GenericCommandResponse',
     'DriftAnalysisStatusResponse',
@@ -2814,7 +3018,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AgentRunFeedbackCounts',
     'AgentRunFeedbackEntry',
     'AgentRunEvaluationRollup',
-    'AgentRunJudgeResult',
+    'AgentRunLlmEvaluationResult',
     'AgentRunEvaluation',
     'StartContentObjectExportResponse',
     'ExportContentObjectsIncludeOptions',
@@ -2854,6 +3058,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ContentObjectExportArtifactFile',
     'ProcessRunConfig',
     'ProcessHistoryRef',
+    'ProcessBudgetState',
+    'ProcessBudgetSummary',
     'NodeHistoryEntry',
     'ResourceRef',
     'WorkflowRun',
@@ -2888,6 +3094,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'WorkflowActionResponse',
     'AnswerProcessTaskPayload',
     'SignalAgentResponse',
+    'AllocateAgentRunBudgetPayload',
     'AdvanceProcessPayload',
     'BranchDefinition',
     'ParallelCollectDefinition',
@@ -3024,6 +3231,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OAuthAuthorizeQuery',
     'CreateOAuthAuthorizationRequestPayload',
     'OAuthAuthorizationRequest',
+    'OAuthAuthorizationRequestGeneratedApp',
+    'OAuthLoginPayload',
+    'OAuthLoginUserNotFoundResponse',
+    'OAuthLoginDecisionResponse',
     'ApproveOAuthAuthorizationRequestPayload',
     'OAuthGrantableScopesResponse',
     'OAuthAuthorizationDecisionResponse',
@@ -3231,6 +3442,18 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AuditAggregationFilter',
     'AuditTrailResponse',
     'AuditAggregationQuery',
+    'AuditAdoptionActiveDays',
+    'AuditAdoptionBucket',
+    'AuditAdoptionFilter',
+    'AuditAdoptionHistory',
+    'AuditAdoptionPeriod',
+    'AuditAdoptionProject',
+    'AuditAdoptionQuery',
+    'AuditAdoptionResponse',
+    'AuditUsageQuery',
+    'AuditUsageCounts',
+    'AuditUsageBucket',
+    'AuditUsageResponse',
     'ViewSortClause',
     'ViewResultMedia',
     'ViewBoardColumn',
@@ -3264,6 +3487,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AuditTrailQuery',
     'ViewExperienceListQuery',
     'UpdateAppInstallationToolAllowlistPayload',
+    'UpdateAppInstallationOAuthApprovalPayload',
     'ValidateUrlResponse',
     'ValidateUrlRequest',
     'AppVersionUrls',
@@ -3422,8 +3646,25 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
  * divergence. Note that `.refine()` is silently DROPPED rather than rejected, so refinements must
  * not be used to express contract rules — they would be invisible to both the spec and AJV.
  */
+function emitSchema(name: string, schema: z.ZodType): unknown {
+    const emitted = emitJsonSchema(schema) as Record<string, unknown>;
+    const rootRef = emitted.$ref;
+    const defs = emitted.$defs;
+    const expectedRef = `#/$defs/${name}`;
+    if (rootRef !== expectedRef || !defs || typeof defs !== 'object' || Array.isArray(defs)) return emitted;
+
+    const root = (defs as Record<string, unknown>)[name];
+    if (!root || typeof root !== 'object' || Array.isArray(root)) return emitted;
+    const remainingDefs = Object.fromEntries(
+        Object.entries(defs as Record<string, unknown>).filter(([id]) => id !== name),
+    );
+    return Object.keys(remainingDefs).length === 0
+        ? root
+        : { ...(root as Record<string, unknown>), $defs: remainingDefs };
+}
+
 function emitRawSchemas(): Record<string, unknown> {
-    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitJsonSchema(schema)]));
+    return Object.fromEntries(Object.entries(API_SCHEMAS).map(([name, schema]) => [name, emitSchema(name, schema)]));
 }
 
 /**
@@ -3490,12 +3731,25 @@ interface ZenoRecursiveComponentTypes {
 /**
  * The wire type a component publishes.
  *
- * `ApiComponentType<'Account'>` is `z.infer<typeof AccountSchema>` — the map is indexed directly
- * rather than dispatched through the groups, which the intersection makes possible.
+ * `ApiComponentType<'Account'>` is the plain type `gen:schemas` writes for `AccountSchema` into
+ * `ApiComponentTypes`, which `wire-types.generated.test.ts` proves identical to its `z.infer`. Indexing
+ * that map rather than `z.infer<ApiSchemaMap[N]>` keeps Zod's inference out of every program that names
+ * a component. A component the generator has not seen yet resolves to `never`, which
+ * `registry-groups.test.ts` rejects.
+ *
+ * It is wrapped in `NoInfer` because `N` always comes from a component-name argument and can never be
+ * recovered from the wire type. Without it, a call whose result has a contextual type — a destructuring
+ * `const { file } = validatedQuery(ctx, 'FileMetadataQuery')`, an `await`, a typed `return` — makes the
+ * checker infer `N` from that context while `N` is still unresolved, which evaluates `z.infer` across
+ * every component in the registry: about 500k types, 1 GB and 2 s of `tsc` in each consuming program.
  */
-export type ApiComponentType<N extends ApiComponentName> = N extends keyof ZenoRecursiveComponentTypes
-    ? ZenoRecursiveComponentTypes[N]
-    : z.infer<ApiSchemaMap[N]>;
+export type ApiComponentType<N extends ApiComponentName> = NoInfer<
+    N extends keyof ZenoRecursiveComponentTypes
+        ? ZenoRecursiveComponentTypes[N]
+        : N extends keyof ApiComponentTypes
+          ? ApiComponentTypes[N]
+          : never
+>;
 
 /**
  * Names a published component from inside a handler signature:

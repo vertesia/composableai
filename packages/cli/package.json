@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli",
-    "version": "1.6.0-dev.20260912.110338Z",
+    "version": "1.6.0-dev.20261004.085740Z",
     "description": "The Vertesia command-line interface (CLI) provides a set of commands to manage and interact with the Vertesia Platform.",
     "type": "module",
     "bin": {
@@ -28,9 +28,9 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json",
         "build:native:macos": "bun build ./src/index.ts --compile --target=bun-darwin-arm64 --define VERTESIA_CLI_RUNTIME='\"native darwin-arm64\"' --outfile ../cli-darwin-arm64/bin/vertesia && bun build ./src/index.ts --compile --target=bun-darwin-x64 --define VERTESIA_CLI_RUNTIME='\"native darwin-x64\"' --outfile ../cli-darwin-x64/bin/vertesia",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
@@ -41,8 +41,8 @@
         "@vertesia/workflow": "workspace:*",
         "ansi-colors": "^4.1.3",
         "ansi-escapes": "^7.3.0",
-        "boxen": "^8.0.1",
-        "chalk": "^6.0.0",
+        "boxen": "^9.0.0",
+        "chalk": "^6.0.1",
         "cli-spinners": "^3.4.0",
         "cli-table3": "^0.6.5",
         "commander": "^15.0.0",
@@ -54,7 +54,7 @@
         "log-symbols": "^7.0.1",
         "log-update": "^8.0.0",
         "mime": "^4.1.0",
-        "open": "^11.0.2",
+        "open": "^11.0.4",
         "ora": "^9.4.1",
         "readline": "^1.3.0",
         "seedrandom": "^3.0.5",
@@ -63,19 +63,19 @@
         "typescript-legacy": "catalog:"
     },
     "optionalDependencies": {
-        "@napi-rs/keyring": "^2.0.0",
+        "@napi-rs/keyring": "^2.1.0",
         "@vertesia/cli-darwin-arm64": "workspace:*",
         "@vertesia/cli-darwin-x64": "workspace:*"
     },
     "devDependencies": {
         "@types/jsonwebtoken": "^9.0.10",
         "@vertesia/tsconfig": "workspace:*",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     },
     "repository": {
         "type": "git",
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/cli"
     },
-    "gitHead": "504e8df031c3950ec324c865385caf460b1c1cd7"
+    "gitHead": "b51b6dc9262f81f55e2424d1e57190060f6068d7"
 }

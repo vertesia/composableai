@@ -84,3 +84,42 @@ describe('McpApiKeyStatus', () => {
         );
     });
 });
+
+describe('MCP anonymous authentication — emitted contract', () => {
+    const collection = {
+        type: 'mcp',
+        id: 'public',
+        name: 'Public tools',
+        description: 'Public tools',
+        namespace: 'public',
+        url: 'https://example.com/mcp',
+    };
+
+    it.each(['none', 'oauth', 'api_key', 'other', undefined])('accepts auth=%s', (auth) => {
+        expect(
+            validateApiRequest('AppManifestData', {
+                name: 'public-mcp',
+                title: 'Public MCP',
+                description: 'Public tools',
+                publisher: 'Vertesia',
+                status: 'beta',
+                visibility: 'private',
+                tool_collections: [{ ...collection, auth }],
+            }).valid,
+        ).toBe(true);
+    });
+
+    it('rejects unknown authentication modes', () => {
+        expect(
+            validateApiRequest('AppManifestData', {
+                name: 'public-mcp',
+                title: 'Public MCP',
+                description: 'Public tools',
+                publisher: 'Vertesia',
+                status: 'beta',
+                visibility: 'private',
+                tool_collections: [{ ...collection, auth: 'anonymous' }],
+            }).valid,
+        ).toBe(false);
+    });
+});

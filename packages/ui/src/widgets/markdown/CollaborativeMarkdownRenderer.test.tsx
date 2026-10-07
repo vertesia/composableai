@@ -238,6 +238,38 @@ describe('collaborative Markdown actions', () => {
         );
     });
 
+    it('renders currency as text and anchors it to the unmodified source', async () => {
+        const onAction = vi.fn();
+        const currency = 'Totals ($49,137,431.65) equal the sub-totals ($49,137,431.65).';
+        const { container } = render(
+            <I18nProvider lng="en">
+                <CollaborativeMarkdownRenderer
+                    resource={{ kind: 'store_document', document_id: 'document-1' }}
+                    onAction={onAction}
+                >
+                    {`${currency}\n\nWhere $x = \\frac{1}{2}$ holds.`}
+                </CollaborativeMarkdownRenderer>
+            </I18nProvider>,
+        );
+
+        expect(container.querySelectorAll('code')).toHaveLength(1);
+        const selectedBlock = screen.getByText(currency).parentElement;
+        if (!selectedBlock) throw new Error('Expected the paragraph to have a collaborative block parent');
+        fireEvent.click(within(selectedBlock).getByRole('button', { name: 'Comment on selection' }));
+        fireEvent.change(within(selectedBlock).getByRole('textbox'), { target: { value: 'Check the sum.' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+        await waitFor(() => expect(onAction).toHaveBeenCalledTimes(1));
+        expect(onAction).toHaveBeenCalledWith(
+            expect.objectContaining({
+                anchor: expect.objectContaining({
+                    exact_text: currency,
+                    source_range: { start: 0, end: currency.length },
+                }),
+            }),
+        );
+    });
+
     it('hides editing controls on a read-only surface', () => {
         render(
             <I18nProvider lng="en">
@@ -412,11 +444,19 @@ describe('collaborative Markdown actions', () => {
         await user.click(screen.getByRole('button', { name: 'Insert component after this block' }));
         await user.click(await screen.findByRole('menuitem', { name: 'Paragraph' }));
 
-        const editor = await screen.findByRole('textbox');
+        // The lazy editor first renders a textarea with the same template text. Wait for
+        // the actual rich-text editor before selecting and pasting into its content.
+        const editor = await waitFor(() => {
+            const textbox = screen.getByRole('textbox');
+            expect(textbox.getAttribute('contenteditable')).toBe('true');
+            expect(textbox.textContent).toBe('Paragraph');
+            return textbox;
+        });
         await user.click(editor);
+        await user.keyboard('{Control>}a{/Control}');
         // Paste in one operation — char-by-char typing races ProseMirror in jsdom and drops chars.
         await user.paste('Inserted paragraph.');
-        await waitFor(() => expect(editor.textContent ?? '').toContain('Inserted paragraph.'));
+        await waitFor(() => expect(editor.textContent).toBe('Inserted paragraph.'));
         fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
         await waitFor(() => expect(onAction).toHaveBeenCalledTimes(1));
@@ -425,7 +465,7 @@ describe('collaborative Markdown actions', () => {
                 action: 'edit',
                 user_change: {
                     before: 'Original paragraph.',
-                    after: expect.stringMatching(/^Original paragraph\.\n\n.*Inserted paragraph\.$/),
+                    after: 'Original paragraph.\n\nInserted paragraph.',
                 },
             }),
         );

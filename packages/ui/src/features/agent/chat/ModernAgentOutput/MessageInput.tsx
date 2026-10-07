@@ -17,6 +17,7 @@ import { Activity, ArrowUpIcon, FileTextIcon, PaperclipIcon, PlusIcon, SquareIco
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SelectDocument } from '../../../store/objects/components/SelectDocument';
+import type { RunBudgetRemaining } from '../budgetPause.js';
 import { extractFilesFromClipboard } from '../clipboardFiles.js';
 import type { WorkstreamInfo } from '../workstreams.js';
 import { ActiveWorkstreamsSummary } from './ActiveWorkstreamsSummary';
@@ -55,6 +56,10 @@ function formatTokenCountInK(tokens: number): string {
 
 interface MessageInputProps {
     onSend: (message: string) => void;
+    /** Controlled composer draft. When omitted, the composer manages its own draft. */
+    value?: string;
+    /** Called whenever the composer draft changes. */
+    onValueChange?: (value: string) => void;
     onStop?: () => void;
     disabled?: boolean;
     isSending?: boolean;
@@ -62,6 +67,7 @@ interface MessageInputProps {
     isStreaming?: boolean;
     isCompleted?: boolean;
     contextWindowUsage?: ContextWindowUsage;
+    remainingBudget?: RunBudgetRemaining;
     onCompactContext?: () => void;
     isCompactingContext?: boolean;
     activeTaskCount?: number;
@@ -121,6 +127,8 @@ interface MessageInputProps {
 
 export default function MessageInput({
     onSend,
+    value: controlledValue,
+    onValueChange,
     onStop,
     approvalModeSlot,
     mcpSlot,
@@ -130,6 +138,7 @@ export default function MessageInput({
     isStreaming = false,
     isCompleted = false,
     contextWindowUsage,
+    remainingBudget,
     onCompactContext,
     isCompactingContext = false,
     activeTaskCount = 0,
@@ -163,7 +172,17 @@ export default function MessageInput({
     const resolvedPlaceholder = placeholder ?? t('agent.typeYourMessage');
     const ref = useRef<HTMLTextAreaElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
-    const [value, setValue] = useState('');
+    const [uncontrolledValue, setUncontrolledValue] = useState('');
+    const value = controlledValue ?? uncontrolledValue;
+    const setValue = useCallback(
+        (nextValue: string) => {
+            if (controlledValue === undefined) {
+                setUncontrolledValue(nextValue);
+            }
+            onValueChange?.(nextValue);
+        },
+        [controlledValue, onValueChange],
+    );
     const [isObjectModalOpen, setIsObjectModalOpen] = useState(false);
     const [isDocSearchOpen, setIsDocSearchOpen] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -456,7 +475,7 @@ export default function MessageInput({
         >
             {/* Drag overlay */}
             {isDragOver && canDropFiles && (
-                <div className="absolute inset-0 flex items-center justify-center bg-info/80 dark:bg-info/40 rounded-lg z-10 pointer-events-none">
+                <div className="absolute inset-0 flex items-center justify-center bg-info/40 rounded-lg z-10 pointer-events-none">
                     <div className="text-info font-medium flex items-center gap-2">
                         <UploadIcon className="size-5" />
                         {t('agent.dropFilesToUpload')}
@@ -574,6 +593,34 @@ export default function MessageInput({
                                         {contextTokenUsageLabel && (
                                             <span className="mt-1 block text-foreground/80">
                                                 {contextTokenUsageLabel}
+                                            </span>
+                                        )}
+                                        {remainingBudget && (
+                                            <span className="mt-2 block border-t border-border pt-2">
+                                                {remainingBudget.remainingUsd !== undefined && (
+                                                    <span className="block">
+                                                        {t('agent.runBudgetRemainingUsd', {
+                                                            remaining: remainingBudget.remainingUsd.toFixed(4),
+                                                            limit: remainingBudget.limitUsd?.toFixed(4),
+                                                        })}
+                                                    </span>
+                                                )}
+                                                <span className="block">
+                                                    {t(
+                                                        remainingBudget.remainingUsd !== undefined
+                                                            ? 'agent.runBudgetRemainingFallback'
+                                                            : 'agent.runBudgetRemainingTokens',
+                                                        {
+                                                            remaining: formatTokenCountInK(
+                                                                remainingBudget.remainingTokens,
+                                                            ),
+                                                            limit: formatTokenCountInK(remainingBudget.limitTokens),
+                                                        },
+                                                    )}
+                                                </span>
+                                                {remainingBudget.incomplete && (
+                                                    <span className="block">{t('agent.runBudgetIncomplete')}</span>
+                                                )}
                                             </span>
                                         )}
                                     </span>

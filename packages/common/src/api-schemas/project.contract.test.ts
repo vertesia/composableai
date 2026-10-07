@@ -151,10 +151,15 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         for (const name of ['UpdateProjectPayload', 'UpdateProjectConfigurationPayload']) {
             expect(Object.keys(ApiSchemaComponents), name).toContain(name);
         }
-        // `.partial()` of the root, not a restatement: same properties, none required.
+        // `.partial()` of the root, not a restatement: same properties minus the server-managed
+        // read-only ones, none required.
+        const readOnly = ['annotations', 'last_activity_at'];
         const project = ApiSchemaComponents.Project as JsonObject;
         const partial = ApiSchemaComponents.UpdateProjectPayload as JsonObject;
-        expect(Object.keys(partial.properties as JsonObject)).toEqual(Object.keys(project.properties as JsonObject));
+        expect(Object.keys(project.properties as JsonObject)).toEqual(expect.arrayContaining(readOnly));
+        expect(Object.keys(partial.properties as JsonObject)).toEqual(
+            Object.keys(project.properties as JsonObject).filter((key) => !readOnly.includes(key)),
+        );
         expect(partial.required).toBeUndefined();
         expect(partial.additionalProperties).toBe(false);
     });
@@ -242,6 +247,21 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
         expect(SYSTEM_INTERACTION_CATEGORIES.ContentSearchReranker).toBe(SystemInteractionCategory.analysis);
     });
 
+    it('uses the agent model default for every app development agent', () => {
+        // Each is launched in-code without an environment or model of its own, so an uncategorised
+        // one silently resolves to the project BASE default instead of the agent default.
+        for (const endpoint of [
+            'AppDevelopmentOrchestrator',
+            'AppSolutionArchitect',
+            'AppDesigner',
+            'AppDeveloper',
+            'AppReviewer',
+            'AppTester',
+        ]) {
+            expect(SYSTEM_INTERACTION_CATEGORIES[endpoint]).toBe(SystemInteractionCategory.agent);
+        }
+    });
+
     it('publishes the property-mapping map without the propertyNames z.record adds', () => {
         // `Record<string, ProjectSearchPropertyMapping>` is inline in the interface and has no
         // TypeScript name, so it never becomes a canonical alias — it stays canonical AND derived,
@@ -251,6 +271,21 @@ describe('gate 2 — the closure is closed, bottom-up', () => {
             type: 'object',
             additionalProperties: { $ref: '#/components/schemas/ProjectSearchPropertyMapping' },
         });
+    });
+
+    it('accepts explicit nested paths through the project configuration contract', () => {
+        expect(ApiSchemaComponents.ProjectSearchPropertyType.enum).toContain('nested');
+        expect(
+            validateApiRequest('UpdateProjectConfigurationPayload', {
+                indexing: {
+                    property_mappings: {
+                        line_items: { type: 'nested' },
+                        'line_items.sku': { type: 'keyword' },
+                        'line_items.quantity': { type: 'long' },
+                    },
+                },
+            }).valid,
+        ).toBe(true);
     });
 
     it('publishes geo_point as an explicit project property mapping type', () => {

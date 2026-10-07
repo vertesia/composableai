@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type * as Wire from '../wire-types.generated.js';
 
 /**
  * Runtime API schemas for quota standing and tier endpoints.
@@ -114,9 +115,9 @@ export const QuotaTierResponseSchema = z
  * definitions of one contract, only one of which OpenAPI publishes and AJV compiles.
  * `../rate-limiter.ts` re-exports these under their public names.
  */
-export type QuotaEffectiveTierFromSchema = z.infer<typeof QuotaEffectiveTierSchema>;
-export type QuotaStandingWindowFromSchema = z.infer<typeof QuotaStandingWindowSchema>;
-export type QuotaStandingResourceFromSchema = z.infer<typeof QuotaStandingResourceSchema>;
-export type QuotaStandingAdmissionClassFromSchema = z.infer<typeof QuotaStandingAdmissionClassSchema>;
-export type QuotaStandingResponseFromSchema = z.infer<typeof QuotaStandingResponseSchema>;
-export type QuotaTierResponseFromSchema = z.infer<typeof QuotaTierResponseSchema>;
+export type QuotaEffectiveTierFromSchema = Wire.QuotaEffectiveTierFromSchema;
+export type QuotaStandingWindowFromSchema = Wire.QuotaStandingWindowFromSchema;
+export type QuotaStandingResourceFromSchema = Wire.QuotaStandingResourceFromSchema;
+export type QuotaStandingAdmissionClassFromSchema = Wire.QuotaStandingAdmissionClassFromSchema;
+export type QuotaStandingResponseFromSchema = Wire.QuotaStandingResponseFromSchema;
+export type QuotaTierResponseFromSchema = Wire.QuotaTierResponseFromSchema;

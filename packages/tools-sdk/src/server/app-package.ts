@@ -220,7 +220,9 @@ export async function buildAppPackage(
     config: ToolServerConfig,
     options: BuildAppPackageOptions = {},
 ): Promise<AppPackage> {
-    const pkg: AppPackage = {};
+    const pkg: AppPackage = {
+        oauth_scopes: config.oauth_scopes ? [...config.oauth_scopes] : undefined,
+    };
 
     const scopes = normalizeScopes(options.scope);
     if (scopes.has('all')) {

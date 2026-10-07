@@ -1,6 +1,12 @@
 import type { JSONObject, JSONSchema, PromptSegment } from '@llumiverse/common';
 import { type PromptSegmentDef, PromptSegmentDefType, type PromptTemplate, TemplateType } from '@vertesia/common';
-import { CompositeError, renderHandlebarsTemplate, renderJsTemplate } from '@vertesia/jst';
+import {
+    CompositeError,
+    renderHandlebarsTemplate,
+    renderJsTemplate,
+    type TemplateSystemContext,
+    withTemplateSystemVariables,
+} from '@vertesia/jst';
 
 export interface SegmentPreview {
     error?: Error;
@@ -12,29 +18,32 @@ export interface SegmentPreview {
 /**
  * Render a prompt template with the given input data.
  *
- * Handlebars templates use {{variable}} interpolation against `data`.
- * JST (JavaScript template) bodies evaluate against `data` with the schema's top-level
- * property names exposed as globals, plus `_model` — the active model id, which the
- * studio-server executor injects into the input as `{ ..._model: run.modelId }` when
- * executing an interaction (see `apps/studio-server/src/executor/ExecutionRequest.ts`
- * and `apps/studio-server/src/executor/rendering/template.ts`). Listing it here keeps
- * the Playground preview and `validatePrompt` in sync with runtime resolution — a JST
- * template referencing `_model` validates fine here and renders fine in production.
+ * Handlebars templates use {{variable}} interpolation against `data`. JST (JavaScript template)
+ * bodies evaluate against `data` with the schema's top-level property names exposed as globals.
+ * Both see the system variables (`TEMPLATE_SYSTEM_VARIABLES` in `@vertesia/jst`), added here the
+ * same way the studio-server executor adds them, so a preview renders what an execution would.
+ * `_model` is only set when the caller passes `system.model` or the data already carries it.
  *
  * For `TemplateType.text`, the content is returned verbatim — it is static text, not a
  * template — matching the studio-server executor (see `apps/studio-server/src/executor/
  * rendering/template.ts`). Routing it through the JST evaluator would compile the prose as
  * JavaScript and throw on any plain sentence (e.g. "You are a helpful assistant.").
  */
-export function renderTemplate(code: string, contentType: TemplateType, schema: JSONSchema, data: JSONObject): string {
-    if (contentType === TemplateType.handlebars) {
-        return renderHandlebarsTemplate(code, data);
-    }
+export function renderTemplate(
+    code: string,
+    contentType: TemplateType,
+    schema: JSONSchema,
+    data: JSONObject,
+    system?: TemplateSystemContext,
+): string {
     if (contentType === TemplateType.text) {
         return code;
     }
-    const globals = [...(schema.properties ? Object.keys(schema.properties) : []), '_model'];
-    return renderJsTemplate(code, globals, data);
+    const input = withTemplateSystemVariables(data, system);
+    if (contentType === TemplateType.handlebars) {
+        return renderHandlebarsTemplate(code, input);
+    }
+    return renderJsTemplate(code, schema.properties ? Object.keys(schema.properties) : [], input);
 }
 
 /**

@@ -1,13 +1,14 @@
 {
     "name": "@vertesia/fusion-ux",
-    "version": "1.6.0-dev.20260912.110338Z",
+    "version": "1.6.0-dev.20261004.085740Z",
     "description": "Dynamic model-generated UI components for Vertesia",
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com",
@@ -22,11 +23,11 @@
     "scripts": {
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "lint": "biome lint src",
         "lint:fix": "biome lint --write src",
         "test": "vitest run",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit"
     },
     "dependencies": {
         "@vertesia/common": "workspace:*",
@@ -37,10 +38,10 @@
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "react": "19.2.8",
+        "react": "19.3.0",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     },
     "exports": {
         ".": {
@@ -53,5 +54,5 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/fusion-ux"
     },
-    "gitHead": "504e8df031c3950ec324c865385caf460b1c1cd7"
+    "gitHead": "b51b6dc9262f81f55e2424d1e57190060f6068d7"
 }

@@ -102,10 +102,40 @@ export const EmbeddingsApiRequestSchema = z
     })
     .meta({ id: 'EmbeddingsApiRequest' });
 
+export const EmbeddingBatchRunStateSchema = z.enum([
+    'preparing',
+    'submitted',
+    'running',
+    'applying',
+    'completed',
+    'completed_with_errors',
+    'cancelled',
+    'stale',
+    'failed',
+]);
+
+export const EmbeddingBatchRunSummarySchema = z
+    .strictObject({
+        id: z.string(),
+        state: EmbeddingBatchRunStateSchema,
+        model: z.string(),
+        created_at: z.string().meta({ format: 'date-time' }),
+        completed_at: z.string().meta({ format: 'date-time' }).optional(),
+        applied: z.number().int().nonnegative(),
+        skipped: z.number().int().nonnegative(),
+        failed: z.number().int().nonnegative(),
+        stale: z.number().int().nonnegative(),
+    })
+    .meta({
+        id: 'EmbeddingBatchRunSummary',
+        description: 'Latest batch run for this embedding type, without provider payloads or input content.',
+    });
+
 export const EmbeddingsStatusResponseSchema = z
     .strictObject({
         status: z.string(),
         embeddingRunsInProgress: z.number().optional(),
+        latestBatchRun: EmbeddingBatchRunSummarySchema.optional(),
         totalIndexableObjects: z.number().optional(),
         embeddingsModels: z.array(z.string()).optional(),
         objectsWithEmbeddings: z.number().optional(),
@@ -117,6 +147,25 @@ export const EmbeddingsStatusResponseSchema = z
     })
     .meta({ id: 'EmbeddingsStatusResponse' });
 
+export const RecalculateEmbeddingsQuerySchema = z
+    .strictObject({
+        mode: z
+            .literal('sync')
+            .meta({
+                description:
+                    'Force synchronous per-object recalculation. When omitted, batch inference is used when supported.',
+            })
+            .optional(),
+        force: z
+            .boolean()
+            .meta({
+                description:
+                    'Recalculate all eligible objects, including current embeddings. Token limits still apply; existing renditions are reused.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'RecalculateEmbeddingsQuery' });
+
 export const ProjectConfigurationEmbeddingEnablePayloadSchema = z
     .strictObject({
         environment: z.string(),
@@ -124,3 +173,138 @@ export const ProjectConfigurationEmbeddingEnablePayloadSchema = z
         model: z.string().optional(),
     })
     .meta({ id: 'ProjectConfigurationEmbeddingEnablePayload' });
+
+export const EmbeddingBatchProviderStateSchema = z.enum([
+    'pending',
+    'running',
+    'succeeded',
+    'failed',
+    'cancelled',
+    'paused',
+]);
+
+export const EmbeddingBatchCapabilityRequestSchema = z
+    .strictObject({ embedding_type: SupportedEmbeddingTypesSchema })
+    .meta({ id: 'EmbeddingBatchCapabilityRequest' });
+
+export const EmbeddingBatchCapabilityResponseSchema = z
+    .strictObject({
+        eligible: z.boolean(),
+        reason: z.string().optional(),
+        environment: z.string().optional(),
+        provider: z.string().optional(),
+        model: z.string().optional(),
+        dimensions: z.number().int().positive().optional(),
+        max_tokens: z.number().int().positive().optional(),
+        location: z.string().optional(),
+        input_format: z.string().optional(),
+        max_rows: z.number().int().positive().optional(),
+        artifact_uri: z.string().optional(),
+    })
+    .meta({ id: 'EmbeddingBatchCapabilityResponse' });
+
+export const EmbeddingBatchCreateRequestSchema = z
+    .strictObject({
+        embedding_type: SupportedEmbeddingTypesSchema,
+        model: z.string(),
+        dimensions: z.number().int().positive(),
+        display_name: z.string(),
+        input_uri: z.string(),
+        output_uri: z.string(),
+    })
+    .meta({ id: 'EmbeddingBatchCreateRequest' });
+
+export const EmbeddingBatchJobRequestSchema = z
+    .strictObject({
+        embedding_type: SupportedEmbeddingTypesSchema,
+        model: z.string(),
+        name: z.string(),
+        include_output_artifacts: z.boolean().optional().meta({
+            description:
+                'On get, resolve terminal result artifacts for application. Omit for lightweight status polling.',
+        }),
+    })
+    .meta({ id: 'EmbeddingBatchJobRequest' });
+
+export const EmbeddingBatchJobResponseSchema = z
+    .strictObject({
+        name: z.string(),
+        display_name: z.string().optional(),
+        state: EmbeddingBatchProviderStateSchema,
+        model: z.string().optional(),
+        input_uri: z.string().optional(),
+        output_uri: z.string().optional(),
+        output_artifacts: z.array(z.string()).optional().meta({
+            description:
+                'Terminal job result artifacts in application storage, including partial results. Never provider file IDs.',
+        }),
+        error_message: z.string().optional(),
+    })
+    .meta({ id: 'EmbeddingBatchJobResponse' });
+
+export const EmbeddingBatchPrepareRequestSchema = z
+    .strictObject({
+        run_id: z.string(),
+        embedding_type: SupportedEmbeddingTypesSchema,
+        capability: EmbeddingBatchCapabilityResponseSchema,
+    })
+    .meta({ id: 'EmbeddingBatchPrepareRequest' });
+
+export const EmbeddingBatchSubjobSchema = z.strictObject({
+    index: z.number().int().nonnegative(),
+    display_name: z.string(),
+    input_uri: z.string(),
+    output_uri: z.string(),
+    row_count: z.number().int().nonnegative(),
+    provider_name: z.string().optional(),
+    state: EmbeddingBatchProviderStateSchema.optional(),
+});
+
+export const EmbeddingBatchPrepareResponseSchema = z
+    .strictObject({
+        run_id: z.string(),
+        row_count: z.number().int().nonnegative(),
+        subjobs: z.array(EmbeddingBatchSubjobSchema),
+    })
+    .meta({ id: 'EmbeddingBatchPrepareResponse' });
+
+export const EmbeddingBatchRenditionPageRequestSchema = z
+    .strictObject({ run_id: z.string() })
+    .meta({ id: 'EmbeddingBatchRenditionPageRequest' });
+
+export const EmbeddingBatchRenditionPageResponseSchema = z
+    .strictObject({
+        status: z.enum(['running', 'page_completed', 'completed']),
+        page_index: z.number().int().nonnegative(),
+        page_scanned: z.number().int().nonnegative(),
+        page_ready: z.number().int().nonnegative(),
+        page_generated: z.number().int().nonnegative(),
+        page_failed: z.number().int().nonnegative(),
+        running: z.number().int().nonnegative(),
+    })
+    .meta({ id: 'EmbeddingBatchRenditionPageResponse' });
+
+export const EmbeddingBatchUpdateRequestSchema = z
+    .strictObject({
+        run_id: z.string(),
+        state: EmbeddingBatchRunStateSchema,
+        subjobs: z.array(EmbeddingBatchSubjobSchema).optional(),
+        error_code: z.string().optional(),
+        error_message: z.string().optional(),
+    })
+    .meta({ id: 'EmbeddingBatchUpdateRequest' });
+
+export const EmbeddingBatchApplyRequestSchema = z
+    .strictObject({ run_id: z.string() })
+    .meta({ id: 'EmbeddingBatchApplyRequest' });
+
+export const EmbeddingBatchApplyResponseSchema = z
+    .strictObject({
+        state: EmbeddingBatchRunStateSchema,
+        succeeded: z.number().int().nonnegative(),
+        failed: z.number().int().nonnegative(),
+        stale: z.number().int().nonnegative(),
+        applied: z.number().int().nonnegative(),
+        failure_counts: z.record(z.string(), z.number().int().nonnegative()).optional(),
+    })
+    .meta({ id: 'EmbeddingBatchApplyResponse' });

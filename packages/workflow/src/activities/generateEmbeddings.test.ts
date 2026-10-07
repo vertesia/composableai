@@ -42,9 +42,52 @@ const createPayload = (params: GenerateEmbeddingsParams): DSLActivityExecutionPa
     };
 };
 
+const embeddingResponse = {
+    model: 'embedding-model',
+    results: [{ outputs: [{ values: [0.1, 0.2, 0.3] }] }],
+};
+
+async function setupPropertiesEmbedding(document: Partial<ContentObject> & { id: string }) {
+    const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+    const client = {
+        objects: {
+            retrieve: vi.fn().mockResolvedValue(document),
+            setEmbedding: vi.fn().mockResolvedValue(undefined),
+        },
+        environments: {
+            embeddings: vi.fn().mockResolvedValue(embeddingResponse),
+        },
+    } as unknown as VertesiaClient;
+    const params = {
+        type: SupportedEmbeddingTypes.properties,
+        force: false,
+    } satisfies GenerateEmbeddingsParams;
+
+    vi.mocked(setupActivity).mockResolvedValue({
+        client,
+        objectId: document.id,
+        params,
+        fetchProject: vi.fn().mockResolvedValue({
+            name: 'Test Project',
+            namespace: 'test-project',
+            configuration: {
+                embeddings: {
+                    [SupportedEmbeddingTypes.properties]: {
+                        enabled: true,
+                        environment: 'test-environment',
+                        model: 'properties-embedding-model',
+                        max_tokens: 8000,
+                    },
+                },
+            },
+        }),
+    } as unknown as ActivityContext<GenerateEmbeddingsParams>);
+
+    return { client, payload: createPayload(params) };
+}
+
 describe('generateEmbeddings', () => {
     it('should generate property embeddings using the logical project type', async () => {
-        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
         const document = {
             id: 'properties-only-object',
             properties: {
@@ -52,45 +95,9 @@ describe('generateEmbeddings', () => {
                 category: 'metadata',
             },
         } satisfies Partial<ContentObject>;
-        const embeddingResponse = {
-            model: 'embedding-model',
-            results: [{ outputs: [{ values: [0.1, 0.2, 0.3] }] }],
-        };
-        const client = {
-            objects: {
-                retrieve: vi.fn().mockResolvedValue(document),
-                setEmbedding: vi.fn().mockResolvedValue(undefined),
-            },
-            environments: {
-                embeddings: vi.fn().mockResolvedValue(embeddingResponse),
-            },
-        } as unknown as VertesiaClient;
-        const params = {
-            type: SupportedEmbeddingTypes.properties,
-            force: false,
-        } satisfies GenerateEmbeddingsParams;
+        const { client, payload } = await setupPropertiesEmbedding(document);
 
-        vi.mocked(setupActivity).mockResolvedValue({
-            client,
-            objectId: document.id,
-            params,
-            fetchProject: vi.fn().mockResolvedValue({
-                name: 'Test Project',
-                namespace: 'test-project',
-                configuration: {
-                    embeddings: {
-                        [SupportedEmbeddingTypes.properties]: {
-                            enabled: true,
-                            environment: 'test-environment',
-                            model: 'properties-embedding-model',
-                            max_tokens: 8000,
-                        },
-                    },
-                },
-            }),
-        } as unknown as ActivityContext<GenerateEmbeddingsParams>);
-
-        const result = await testEnv.run(generateEmbeddings, createPayload(params));
+        const result = await testEnv.run(generateEmbeddings, payload);
 
         expect(result).toEqual({
             id: document.id,
@@ -111,5 +118,16 @@ describe('generateEmbeddings', () => {
             model: embeddingResponse.model,
             etag: expect.any(String),
         });
+    });
+
+    it('should skip property embeddings when the object has no properties', async () => {
+        const document = { id: 'empty-properties-object', properties: {} } satisfies Partial<ContentObject>;
+        const { client, payload } = await setupPropertiesEmbedding(document);
+
+        const result = await testEnv.run(generateEmbeddings, payload);
+
+        expect(result).toMatchObject({ id: document.id, status: 'skipped', message: 'no properties found' });
+        expect(client.environments.embeddings).not.toHaveBeenCalled();
+        expect(client.objects.setEmbedding).not.toHaveBeenCalled();
     });
 });

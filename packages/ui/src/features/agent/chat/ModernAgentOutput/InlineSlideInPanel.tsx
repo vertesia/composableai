@@ -45,7 +45,7 @@ export default function InlineSlideInPanel({
 
     return (
         <div
-            className={`absolute top-12 end-0 bottom-0 z-40 bg-white dark:bg-muted shadow-lg border-s border-border border-4 border-destructive`}
+            className={`absolute top-12 end-0 bottom-0 z-40 bg-card text-card-foreground shadow-lg border-s border-border border-4 border-destructive`}
             style={{ width, transform: 'none' }}
         >
             {/* Header */}

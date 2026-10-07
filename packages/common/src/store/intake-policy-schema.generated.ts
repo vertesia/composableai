@@ -251,6 +251,61 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
     additionalProperties: false,
     description: 'Per-content-type policy for the standard intake workflows.',
     $defs: {
+        AnthropicClaudeOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'anthropic-claude',
+                },
+                max_tokens: {
+                    type: 'number',
+                },
+                temperature: {
+                    type: 'number',
+                },
+                top_p: {
+                    type: 'number',
+                },
+                top_k: {
+                    type: 'number',
+                },
+                stop_sequence: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                effort: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high', 'xhigh', 'max'],
+                },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
+                },
+                thinking_budget_tokens: {
+                    type: 'number',
+                },
+                include_thoughts: {
+                    type: 'boolean',
+                },
+                cache_enabled: {
+                    type: 'boolean',
+                },
+                cache_ttl: {
+                    type: 'string',
+                    enum: ['5m', '1h'],
+                },
+                speed: {
+                    type: 'string',
+                    enum: ['standard', 'fast'],
+                },
+            },
+            additionalProperties: false,
+        },
         AzureFoundryChatOptions: {
             type: 'object',
             properties: {
@@ -290,7 +345,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockAI21Options: {
@@ -309,6 +363,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 top_p: {
                     type: 'number',
                 },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
+                    type: 'number',
+                },
                 stop_sequence: {
                     type: 'array',
                     items: {
@@ -325,7 +385,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockClaudeOptions: {
@@ -353,6 +412,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 top_k: {
                     type: 'number',
                 },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
+                },
                 thinking_budget_tokens: {
                     type: 'number',
                 },
@@ -377,7 +442,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockCohereCommandOptions: {
@@ -396,6 +460,15 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 top_p: {
                     type: 'number',
                 },
+                top_k: {
+                    type: 'number',
+                },
+                presence_penalty: {
+                    type: 'number',
+                },
+                frequency_penalty: {
+                    type: 'number',
+                },
                 stop_sequence: {
                     type: 'array',
                     items: {
@@ -412,7 +485,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockConverseOptions: {
@@ -447,7 +519,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockGptOssOptions: {
@@ -489,7 +560,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockMantleChatCompletionsOptions: {
@@ -526,7 +596,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockMantleClaudeOptions: {
@@ -558,6 +627,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['low', 'medium', 'high', 'xhigh', 'max'],
                 },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
+                },
                 thinking_budget_tokens: {
                     type: 'number',
                 },
@@ -572,7 +647,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['5m', '1h'],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockMantleResponsesOptions: {
@@ -593,11 +667,11 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 effort: {
                     type: 'string',
-                    enum: ['none', 'low', 'medium', 'high', 'xhigh'],
+                    enum: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
                 },
                 reasoning_effort: {
                     type: 'string',
-                    enum: ['none', 'low', 'medium', 'high', 'xhigh'],
+                    enum: ['none', 'low', 'medium', 'high', 'xhigh', 'max'],
                 },
                 verbosity: {
                     type: 'string',
@@ -611,7 +685,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockMistralOptions: {
@@ -630,6 +703,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 top_p: {
                     type: 'number',
                 },
+                top_k: {
+                    type: 'number',
+                },
                 stop_sequence: {
                     type: 'array',
                     items: {
@@ -646,7 +722,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockNovaOptions: {
@@ -665,6 +740,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 top_p: {
                     type: 'number',
                 },
+                top_k: {
+                    type: 'number',
+                },
                 stop_sequence: {
                     type: 'array',
                     items: {
@@ -681,7 +759,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         BedrockPalmyraOptions: {
@@ -725,7 +802,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         ConfigModes: {
@@ -895,7 +971,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['parsed', 'raw', 'hidden'],
                 },
             },
-            required: ['_option_id', 'reasoning_format'],
+            required: ['reasoning_format'],
             additionalProperties: false,
         },
         HttpTimeoutOptions: {
@@ -941,7 +1017,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 person_generation: {
                     type: 'string',
-                    enum: ['dont_allow', 'allow_adults', 'allow_all'],
+                    enum: ['dont_allow', 'allow_adults', 'allow_all', 'allow_adult'],
                 },
                 safety_setting: {
                     type: 'string',
@@ -1002,7 +1078,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     ],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         ImagenTaskType: {
@@ -1018,6 +1093,11 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 'CUSTOMIZATION_CONTROLLED',
                 'CUSTOMIZATION_INSTRUCT',
             ],
+        },
+        InferenceProfileId: {
+            type: 'string',
+            pattern: '^[a-fA-F0-9]{24}$',
+            description: 'MongoDB ObjectId of the inference profile.',
         },
         IntakePageRanges: {
             type: 'array',
@@ -1051,6 +1131,22 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             properties: {
                 id: {
                     type: 'string',
+                },
+                inference_profile: {
+                    anyOf: [
+                        {
+                            $ref: '#/$defs/InferenceProfileId',
+                        },
+                        {
+                            type: 'null',
+                        },
+                    ],
+                    description: 'Select a project inference profile. Null bypasses profile defaults.',
+                },
+                inherit_model_config: {
+                    type: 'boolean',
+                    description:
+                        "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them.",
                 },
                 environment: {
                     type: 'string',
@@ -1153,11 +1249,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         ModelOptions: {
-            oneOf: [
+            anyOf: [
                 {
                     $ref: '#/$defs/TextFallbackOptions',
                 },
@@ -1234,6 +1329,15 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/OpenAiGptImageOptions',
                 },
                 {
+                    $ref: '#/$defs/OpenAiTranscriptionOptions',
+                },
+                {
+                    $ref: '#/$defs/OpenAiSpeechOptions',
+                },
+                {
+                    $ref: '#/$defs/OpenAiAudioOptions',
+                },
+                {
                     $ref: '#/$defs/XAIGrokImageOptions',
                 },
                 {
@@ -1242,7 +1346,11 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 {
                     $ref: '#/$defs/MistralTextOptions',
                 },
+                {
+                    $ref: '#/$defs/AnthropicClaudeOptions',
+                },
             ],
+            type: 'object',
         },
         NovaCanvasOptions: {
             type: 'object',
@@ -1303,7 +1411,25 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['DEFAULT', 'PRECISE'],
                 },
             },
-            required: ['_option_id', 'taskType'],
+            required: ['taskType'],
+            additionalProperties: false,
+        },
+        OpenAiAudioOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'openai-audio',
+                },
+                voice: {
+                    type: 'string',
+                    minLength: 1,
+                },
+                response_format: {
+                    type: 'string',
+                    enum: ['wav', 'mp3', 'flac', 'opus', 'pcm16'],
+                },
+            },
             additionalProperties: false,
         },
         OpenAiDalleOptions: {
@@ -1333,7 +1459,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'number',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         OpenAiGptImageOptions: {
@@ -1345,11 +1470,16 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 size: {
                     type: 'string',
-                    enum: ['1024x1024', '1024x1536', '1536x1024', 'auto'],
+                },
+                width: {
+                    type: 'number',
+                },
+                height: {
+                    type: 'number',
                 },
                 image_quality: {
                     type: 'string',
-                    enum: ['low', 'medium', 'high', 'auto'],
+                    enum: ['low', 'medium', 'high', 'xhigh', 'max', 'auto'],
                 },
                 background: {
                     type: 'string',
@@ -1359,8 +1489,115 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['png', 'webp', 'jpeg'],
                 },
+                n: {
+                    type: 'number',
+                },
+                output_compression: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100,
+                },
+                moderation: {
+                    type: 'string',
+                    enum: ['auto', 'low'],
+                },
+                input_fidelity: {
+                    type: 'string',
+                    enum: ['low', 'high'],
+                },
+                partial_images: {
+                    type: 'number',
+                },
             },
-            required: ['_option_id'],
+            additionalProperties: false,
+        },
+        OpenAiImageGenerationMask: {
+            type: 'object',
+            properties: {
+                file_id: {
+                    type: 'string',
+                },
+                image_url: {
+                    type: 'string',
+                },
+            },
+            additionalProperties: false,
+        },
+        OpenAiImageGenerationOptions: {
+            type: 'object',
+            properties: {
+                model: {
+                    type: 'string',
+                },
+                force: {
+                    type: 'boolean',
+                },
+                action: {
+                    type: 'string',
+                    enum: ['auto', 'generate', 'edit'],
+                },
+                size: {
+                    type: 'string',
+                },
+                quality: {
+                    type: 'string',
+                    enum: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'],
+                },
+                background: {
+                    type: 'string',
+                    enum: ['auto', 'opaque', 'transparent'],
+                },
+                output_format: {
+                    type: 'string',
+                    enum: ['png', 'jpeg', 'webp'],
+                },
+                output_compression: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100,
+                },
+                moderation: {
+                    type: 'string',
+                    enum: ['auto', 'low'],
+                },
+                input_fidelity: {
+                    type: 'string',
+                    enum: ['low', 'high'],
+                },
+                partial_images: {
+                    type: 'number',
+                },
+                input_image_mask: {
+                    $ref: '#/$defs/OpenAiImageGenerationMask',
+                },
+            },
+            required: ['model'],
+            additionalProperties: false,
+        },
+        OpenAiSpeechOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'openai-speech',
+                },
+                voice: {
+                    type: 'string',
+                    minLength: 1,
+                },
+                response_format: {
+                    type: 'string',
+                    enum: ['mp3', 'wav', 'opus', 'aac', 'flac', 'pcm'],
+                },
+                speed: {
+                    type: 'number',
+                    minimum: 0.25,
+                    maximum: 4,
+                },
+                instructions: {
+                    type: 'string',
+                },
+            },
             additionalProperties: false,
         },
         OpenAiTextOptions: {
@@ -1369,6 +1606,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'openai-text',
+                },
+                image_generation: {
+                    $ref: '#/$defs/OpenAiImageGenerationOptions',
                 },
                 max_tokens: {
                     type: 'number',
@@ -1420,7 +1660,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         OpenAiThinkingOptions: {
@@ -1429,6 +1668,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'openai-thinking',
+                },
+                image_generation: {
+                    $ref: '#/$defs/OpenAiImageGenerationOptions',
                 },
                 max_tokens: {
                     type: 'number',
@@ -1449,6 +1691,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 reasoning_effort: {
                     $ref: '#/$defs/ReasoningEffort',
                 },
+                reasoning_context: {
+                    type: 'string',
+                    enum: ['auto', 'current_turn', 'all_turns'],
+                },
                 image_detail: {
                     type: 'string',
                     enum: ['low', 'high', 'auto'],
@@ -1468,7 +1714,19 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     description: 'Additional provider-specific fields merged into the OpenAI-compatible request body.',
                 },
             },
-            required: ['_option_id'],
+            additionalProperties: false,
+        },
+        OpenAiTranscriptionOptions: {
+            type: 'object',
+            properties: {
+                _option_id: {
+                    type: 'string',
+                    const: 'openai-transcription',
+                },
+                language: {
+                    type: 'string',
+                },
+            },
             additionalProperties: false,
         },
         OpenRouterTextOptions: {
@@ -1578,7 +1836,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     },
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         PromptCacheMode: {
@@ -1632,7 +1889,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'boolean',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         ThinkingLevel: {
@@ -1659,7 +1915,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         VertexAIClaudeOptions: {
@@ -1691,6 +1946,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['low', 'medium', 'high', 'xhigh', 'max'],
                 },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
+                },
                 thinking_budget_tokens: {
                     type: 'number',
                 },
@@ -1705,7 +1966,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['5m', '1h'],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         VertexAIGeminiOmniVideoOptions: {
@@ -1733,7 +1993,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     enum: ['360p', '720p', '1080p', '4k'],
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         VertexAIGeminiOptions: {
@@ -1795,6 +2054,30 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     'x-deprecated-message': 'Use service_tier="flex" instead.',
                     description: 'Deprecated: Use service_tier="flex" instead.',
                 },
+                speech_voice: {
+                    type: 'string',
+                },
+                speech_language: {
+                    type: 'string',
+                },
+                transcription_language_codes: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
+                transcription_diarization: {
+                    type: 'boolean',
+                },
+                transcription_word_timestamps: {
+                    type: 'boolean',
+                },
+                transcription_vocabulary: {
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                    },
+                },
                 image_aspect_ratio: {
                     type: 'string',
                     enum: ['1:1', '2:3', '3:2', '3:4', '4:3', '9:16', '16:9', '21:9'],
@@ -1819,7 +2102,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'number',
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         VertexAIGrokOptions: {
@@ -1845,7 +2127,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     },
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
         XAIGrokImageOptions: {
@@ -1892,7 +2173,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     maximum: 10,
                 },
             },
-            required: ['_option_id'],
             additionalProperties: false,
         },
     },

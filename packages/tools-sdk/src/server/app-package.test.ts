@@ -7,6 +7,13 @@ import { buildAppPackage } from './app-package.js';
 import type { ToolServerConfig } from './types.js';
 
 describe('buildAppPackage', () => {
+    it('preserves explicit OAuth permissions without granting project access by default', async () => {
+        expect((await buildAppPackage({})).oauth_scopes).toBeUndefined();
+        const scopes = ['openid', 'profile', 'offline_access', 'content:read'];
+        const pkg = await buildAppPackage({ oauth_scopes: scopes });
+        expect(pkg.oauth_scopes).toEqual(scopes);
+        expect(pkg.oauth_scopes).not.toBe(scopes);
+    });
     it('builds the same package artifact inventory used by the package route', async () => {
         const config = {
             interactions: [

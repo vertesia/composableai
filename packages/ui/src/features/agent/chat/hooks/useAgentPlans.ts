@@ -18,14 +18,14 @@ export interface UseAgentPlansResult {
  * Key improvement: incremental processing. Instead of scanning ALL messages
  * on every change, tracks `lastProcessedIndex` and only scans new messages.
  */
-export function useAgentPlans(messages: AgentMessage[], interactive: boolean, isModal = false): UseAgentPlansResult {
+export function useAgentPlans(messages: AgentMessage[], interactive: boolean): UseAgentPlansResult {
     const [plans, setPlans] = useState<Array<{ plan: Plan; timestamp: number }>>([]);
     const [activePlanIndex, setActivePlanIndex] = useState<number>(0);
     const [workstreamStatusMap, setWorkstreamStatusMap] = useState<
         Map<number, Map<string, 'pending' | 'in_progress' | 'completed' | 'skipped'>>
     >(new Map());
     const [showInput, setShowInput] = useState(interactive);
-    const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(!isModal);
+    const [showSlidingPanel, setShowSlidingPanel] = useState<boolean>(false);
 
     // Incremental processing: track how far we've scanned
     const lastProcessedIndex = useRef<number>(-1);
@@ -38,12 +38,12 @@ export function useAgentPlans(messages: AgentMessage[], interactive: boolean, is
             setPlans([]);
             setActivePlanIndex(0);
             setWorkstreamStatusMap(new Map());
-            // Keep right panel open by default on desktop sessions.
-            setShowSlidingPanel(!isModal);
+            // Open automatically only once a plan is available.
+            setShowSlidingPanel(false);
             lastProcessedIndex.current = -1;
             knownPlanTimestamps.current.clear();
         }
-    }, [messages.length, isModal]);
+    }, [messages.length]);
 
     // Helper to determine showInput from the latest message
     const updateShowInput = useCallback(

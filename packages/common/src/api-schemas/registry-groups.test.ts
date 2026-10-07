@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
+import type { NamedInteractionExecutionPayloadSchema } from './interaction.js';
 import { type ApiComponentName, type ApiComponentType, ApiSchemaComponents, mergeComponentGroups } from './registry.js';
 
 /**
@@ -30,6 +31,13 @@ type ResolvedName<N extends ApiComponentName> = [ApiComponentType<N>] extends [n
  * merge actually refuses, which no import of a correct registry can show.
  */
 describe('mergeComponentGroups', () => {
+    it('preserves execution payload types and rejects unregistered component names', () => {
+        expectTypeOf<ApiComponentType<'NamedInteractionExecutionPayload'>>().toEqualTypeOf<
+            z.infer<typeof NamedInteractionExecutionPayloadSchema>
+        >();
+        expectTypeOf<'UnregisteredExecutionComponent'>().not.toMatchTypeOf<ApiComponentName>();
+    });
+
     const A = z.strictObject({ a: z.string() });
     const B = z.strictObject({ b: z.number() });
 

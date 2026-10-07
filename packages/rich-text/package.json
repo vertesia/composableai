@@ -1,13 +1,14 @@
 {
     "name": "@vertesia/rich-text",
-    "version": "1.6.0-dev.20260912.110338Z",
+    "version": "1.6.0-dev.20261004.085740Z",
     "description": "Markdown-first rich-text editing primitives for Vertesia",
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com",
@@ -20,23 +21,23 @@
     "scripts": {
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "lint": "biome lint src",
         "lint:fix": "biome lint --write src",
         "test": "vitest run",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit"
     },
     "dependencies": {
-        "@tiptap/core": "^3.31.0",
-        "@tiptap/extension-code-block": "^3.31.0",
-        "@tiptap/extension-image": "^3.31.0",
-        "@tiptap/extension-link": "^3.31.0",
-        "@tiptap/extension-table": "^3.31.0",
-        "@tiptap/markdown": "^3.31.0",
-        "@tiptap/pm": "^3.31.0",
-        "@tiptap/react": "^3.31.0",
-        "@tiptap/starter-kit": "^3.31.0",
-        "marked": "^18.0.11",
+        "@tiptap/core": "^3.31.3",
+        "@tiptap/extension-code-block": "^3.31.3",
+        "@tiptap/extension-image": "^3.31.3",
+        "@tiptap/extension-link": "^3.31.3",
+        "@tiptap/extension-table": "^3.31.3",
+        "@tiptap/markdown": "^3.31.3",
+        "@tiptap/pm": "^3.31.3",
+        "@tiptap/react": "^3.31.3",
+        "@tiptap/starter-kit": "^3.31.3",
+        "marked": "^18.0.14",
         "react": "catalog:",
         "react-dom": "catalog:"
     },
@@ -47,7 +48,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     },
     "exports": {
         ".": {
@@ -60,5 +61,5 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/rich-text"
     },
-    "gitHead": "504e8df031c3950ec324c865385caf460b1c1cd7"
+    "gitHead": "b51b6dc9262f81f55e2424d1e57190060f6068d7"
 }

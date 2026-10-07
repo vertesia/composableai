@@ -127,7 +127,7 @@ async function generateAudioRendition(
         outputFile,
     ];
 
-    log.info('Generating web audio rendition (AAC M4A)', { command: 'ffmpeg', args: command, audioBitrate });
+    log.debug('Generating web audio rendition (AAC M4A)', { command: 'ffmpeg', args: command, audioBitrate });
 
     try {
         const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
@@ -140,7 +140,7 @@ async function generateAudioRendition(
         // Verify output file was created
         try {
             await fs.promises.access(outputFile, fs.constants.F_OK);
-            log.info(`Generated web audio rendition: ${outputFile}`);
+            log.debug(`Generated web audio rendition: ${outputFile}`);
             return outputFile;
         } catch {
             log.warn('Audio rendition not generated');
@@ -168,7 +168,7 @@ async function uploadFile(
     const source = new NodeStreamSource(fileStream, fileName, mimeType, storagePath);
 
     const result = await client.files.uploadFile(source);
-    log.info(`Uploaded file to ${storagePath}`, { result });
+    log.debug(`Uploaded file to ${storagePath}`, { result });
 
     return result;
 }
@@ -242,7 +242,7 @@ export async function prepareAudio(
         const metadata = await getAudioMetadata(audioFile);
 
         // Step 2: Generate web audio rendition (AAC M4A)
-        log.info('Generating web audio rendition');
+        log.debug('Generating web audio rendition');
         const renditionFile = await generateAudioRendition(audioFile, tempOutputDir, audioBitrate);
 
         // Step 3: Upload generated rendition

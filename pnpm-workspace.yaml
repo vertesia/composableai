@@ -17,31 +17,43 @@ blockExoticSubdeps: true
 minimumReleaseAge: 4320 # 3 days in minutes, minimumReleaseAge protects against supply chain attacks.
 minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
+  # Match the Hono security floor during the 3-day release cooldown.
+  - hono@4.13.13
   - "@vertesia/*"
   - "@llumiverse/*"
   # Renovate security update: js-yaml@5.2.2
   - js-yaml@5.2.2
   - js-yaml@4.3.1
   - mermaid@11.16.1
-  # GHSA-mh99-v99m-4gvg backport to the 2.x line, published 2026-07-30. Version-scoped exception
-  # so we take the fix now rather than waiting out the 3-day cooldown.
-  - brace-expansion@2.1.4
+  # Security fixes published inside the 3-day cooldown.
+  - brace-expansion@2.1.7 || 5.0.12
+  - fast-uri@3.1.8
+  - "@grpc/grpc-js@1.13.6 || 1.14.5"
+  - serialize-javascript@7.1.2
   # GHSA-8j4g-w8fx-2239 (ReDoS in CORS middleware) fix, published 2026-08-03. Version-scoped
   # exception so we take the fix now rather than waiting out the 3-day cooldown.
   - hono@4.12.34
-  # Renovate security update: dompurify@3.4.13
-  - dompurify@3.4.13
+  # Renovate security update: dompurify@3.4.13 || 3.4.16
+  - dompurify@3.4.13 || 3.4.16
 catalog:
+  # Keep this synchronized with Studio and Llumiverse: each repository generates schemas from
+  # its own local workspace and lockfile, so an override in another repository cannot control it.
+  zod: "4.6.5"
+  vitest: "5.0.2"
   typescript: "7.0.2"
   typescript-legacy: "npm:typescript@6.0.3"
-  react: "19.2.8"
-  react-dom: "19.2.8"
-  "@types/node": "^24.13.3"
-  "@types/react": "19.2.18"
-  "@types/react-dom": "19.2.5"
-  vite: "8.2.2"
-  rolldown: "1.2.6"
+  react: "19.3.0"
+  react-dom: "19.3.0"
+  "@types/node": "^24.19.0"
+  "@types/react": "19.3.0"
+  "@types/react-dom": "19.3.0"
+  vite: "8.3.1"
+  rolldown: "1.2.11"
 overrides:
+  # GHSA-68fv-2mgg-jv7q: validate indexed source-map section offsets.
+  "source-map-js@<1.2.2": 1.2.2
+  # GHSA-238p-pmpm-9mq7: prevent prototype pollution from bypassing trust restrictions.
+  "katex@<0.18.2": 0.18.9
   # ============================
   # Special Overrides
   # ============================
@@ -68,34 +80,27 @@ overrides:
   "@hono/node-server@<2.0.5": 2.0.10
   # GHSA-c83g-rgw3-j3cx + GHSA-73wf-gq98-2v4g (unbounded query cache and unsafe custom stats).
   "browserslist@<4.28.7": 4.28.8
-  # GHSA-8j4g-w8fx-2239 (ReDoS in CORS middleware). Floor so a transitive consumer can never
-  # resolve back to a vulnerable version. 4.12.34 needs the minimumReleaseAgeExclude entry above.
-  "hono@<4.12.34": 4.12.34
-  # GHSA-mh99-v99m-4gvg. Each major line is floored on its own backport rather than forced to
-  # 5.0.8, which would be a cross-major jump for its consumers (mocha, @hono/vite-dev-server).
-  # 2.1.4 needs the minimumReleaseAgeExclude entry above. Note the advisory still declares
-  # `>=5.0.8` as its only patched range, so `pnpm audit` may keep reporting the 2.x copy until
-  # GHSA re-scopes it — 2.1.4 does carry the fix (EXPANSION_MAX_LENGTH, CVE-2026-14257).
-  "brace-expansion@>=2.0.0 <2.1.4": 2.1.4
-  "brace-expansion@>=3.0.0 <5.0.9": 5.0.9
+  # GHSA-gqvv-2mrq-wpjv, GHSA-g6gw-c38x-mqfc, and GHSA-crvj-82cr-hjcx.
+  "hono@<4.13.8": 4.13.8
+  # Brace-expansion denial-of-service advisories. Keep each consumer on its existing major line.
+  "brace-expansion@>=2.0.0 <2.1.7": 2.1.7
+  "brace-expansion@>=3.0.0 <5.0.12": 5.0.12
   diff@>=6.0.0 <8.0.3: ^8.0.3
-  dompurify@<=3.4.12: ^3.4.13
+  dompurify@<=3.4.15: ^3.4.16
   # GHSA-7p8r-x3mc-p8w7, GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc,
-  # GHSA-fph4-wmhf-6fwf, and GHSA-jqff-g426-hqxp (host-confusion and SSRF flaws).
-  "fast-uri@>=3.0.0 <3.1.6": 3.1.6
-  # Tilde (not caret) so @firebase/firestore stays on its ~1.9 line and @temporalio/* on 1.14.
-  "@grpc/grpc-js@<1.9.16": ~1.9.16
-  "@grpc/grpc-js@>=1.14.0 <1.14.4": ~1.14.4
+  # GHSA-fph4-wmhf-6fwf, GHSA-jqff-g426-hqxp, GHSA-qw65-cvwx-89v3, and GHSA-58mr-gqgx-xq4g.
+  "fast-uri@>=3.0.0 <3.1.8": 3.1.8
+  # Floor vulnerable 1.x consumers on patched, range-compatible releases.
+  "@grpc/grpc-js@<1.13.6": 1.13.6
+  "@grpc/grpc-js@>=1.14.0 <1.14.5": 1.14.5
   form-data@>=4.0.0 <4.0.6: ^4.0.6
   # GHSA-fxqj-rqcc-2cmp: incomplete fix of GHSA-6g55-p6wh-862q (attacker-controlled
   # sourceMappingURL reads arbitrary .map files when `from` is unset).
   postcss@<8.5.23: 8.5.23
   "js-yaml@>=4.0.0 <4.3.1": 4.3.1
-  # GHSA-pm4m-ph32-ghv5 (5.x line, reached via packages/build-tools). This lockfile already
-  # resolves 5.2.2; the floor pins that in place so a future resolution cannot drop back to a
-  # vulnerable 5.x. Major-scoped on purpose — a bare `js-yaml@<5.2.2` would drag the 4.x
-  # consumers above across a major.
-  "js-yaml@>=5.0.0 <5.2.2": 5.2.2
+  # GHSA-r3ph-w7gj-g6xm: bound CPU use for empty merge sources.
+  # Keep 3.x/4.x consumers on their existing major versions.
+  "js-yaml@>=5.0.0 <5.4.2": 5.4.2
   # GHSA-2v37-7h3g-55p8: zero-sized custom generators can loop indefinitely.
   # PostCSS remains on nanoid 3; only vulnerable releases are redirected to the latest 3.x patch.
   "nanoid@<3.3.17": 3.3.18
@@ -104,4 +109,7 @@ overrides:
   "qs@<6.16.0": 6.16.0
   serialize-javascript@<=7.0.2: ^7.0.3
   serialize-javascript@>=5.0.0 <7.0.5: ^7.0.5
-  shell-quote@<=1.8.4: 1.9.0
+  serialize-javascript@>=7.1.1 <7.1.2: 7.1.2
+  "shell-quote@>=1.8.4 <1.11.0": 1.11.0
+  # GHSA-r5fr-rjxr-66jc and GHSA-f23m-r3pf-42rh: template injection and prototype pollution.
+  "lodash-es@<4.18.1": 4.18.1

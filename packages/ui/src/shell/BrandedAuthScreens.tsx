@@ -1,12 +1,13 @@
 import { DefaultPermissionLoadingScreen, type PermissionLoadingScreenProps } from '@vertesia/ui/features';
 import { UITranslationOverrides } from '@vertesia/ui/i18n';
-import { createContext, type ReactNode, useContext, useEffect, useId, useMemo, useState } from 'react';
+import { type ReactNode, useContext, useId, useMemo } from 'react';
 import { type AppBranding, renderBrandStyles } from '../boot/branding.js';
+import { BrandedLoadingIndicator, BrandingContext, BrandLoadingIcon } from './BrandedLoadingIndicator';
 import { DefaultSignInScreen, type SignInScreenViewProps } from './login/SigninScreen';
-import { type AuthLoadingScreenProps, DefaultAuthLoadingScreen, LoadingAnimation } from './SplashScreen';
+import { type AuthLoadingScreenProps, DefaultAuthLoadingScreen } from './SplashScreen';
 import type { AuthScreens } from './VertesiaShell';
 
-const BrandingContext = createContext<AppBranding>({ name: '' });
+export { BrandedLoadingIndicator } from './BrandedLoadingIndicator';
 
 export function AppBrandingProvider({ branding, children }: { branding: AppBranding; children: ReactNode }) {
     const id = useId().replace(/[^a-zA-Z0-9_-]/g, '');
@@ -27,20 +28,6 @@ export function AppBrandingProvider({ branding, children }: { branding: AppBrand
                 <UITranslationOverrides overrides={overrides}>{children}</UITranslationOverrides>
             </div>
         </BrandingContext.Provider>
-    );
-}
-
-function BrandLoadingIcon({ brand }: { brand: AppBranding }) {
-    if (!brand.loadingIcon) return null;
-    return (
-        <>
-            <img src={brand.loadingIcon.light} alt="" className="w-10 h-auto rounded-full block dark:hidden" />
-            <img
-                src={brand.loadingIcon.dark ?? brand.loadingIcon.light}
-                alt=""
-                className="w-10 h-auto rounded-full hidden dark:block"
-            />
-        </>
     );
 }
 
@@ -92,26 +79,3 @@ export const brandedAuthScreens: AuthScreens = {
     Loading: BrandedAuthLoadingScreen,
     Permissions: BrandedPermissionLoadingScreen,
 };
-
-/** Brand-aware loading indicator that stays inside its container instead of covering the app shell. */
-export function BrandedLoadingIndicator({ loadingIcon, delayMs = 0 }: AuthLoadingScreenProps & { delayMs?: number }) {
-    const brand = useContext(BrandingContext);
-    const [visible, setVisible] = useState(delayMs <= 0);
-    useEffect(() => {
-        if (delayMs <= 0) {
-            setVisible(true);
-            return;
-        }
-        setVisible(false);
-        const timer = setTimeout(() => setVisible(true), delayMs);
-        return () => clearTimeout(timer);
-    }, [delayMs]);
-    if (!visible) return null;
-    return (
-        <div role="status" aria-label={brand.copy?.loading ?? 'Loading'}>
-            <LoadingAnimation
-                loadingIcon={loadingIcon ?? (brand.loadingIcon ? <BrandLoadingIcon brand={brand} /> : undefined)}
-            />
-        </div>
-    );
-}

@@ -66,3 +66,168 @@ describe('PayloadBuilder', () => {
         consoleWarn.mockRestore();
     });
 });
+
+it('sends only a runtime profile or defaults without stale model overrides', () => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    store.snapshot.setModel('old-model');
+    store.snapshot.setModelOptions({ temperature: 0.3 });
+    expect(store.snapshot.inferenceConfig).toEqual({});
+    store.snapshot.setInferenceProfile('0123456789abcdef01234567');
+    expect(store.snapshot.inferenceConfig).toEqual({ inference_profile: '0123456789abcdef01234567' });
+    expect(store.snapshot.clone().inference_profile).toBe('0123456789abcdef01234567');
+    store.snapshot.setInferenceProfile(null);
+    expect(store.snapshot.inferenceConfig).toEqual({
+        inference_profile: null,
+        environment: undefined,
+        model: 'old-model',
+        model_options: { temperature: 0.3 },
+    });
+    store.snapshot.reset();
+    expect(store.snapshot.inferenceConfig).toEqual({});
+});
+
+it.each(['0123456789abcdef01234567', null, undefined])('restores runtime profile selection %s', async (profile) => {
+    const client = {
+        interactions: {
+            catalog: {
+                resolve: vi.fn().mockResolvedValue({
+                    id: 'sys:GeneralAgent',
+                    name: 'GeneralAgent',
+                    type: 'sys',
+                    tags: [],
+                    prompts: [],
+                }),
+            },
+        },
+    } as unknown as VertesiaClient;
+    const store = new PayloadBuilderStore(client);
+    await store.snapshot.restoreConversation({
+        type: 'ExecuteConversationWorkflow',
+        tool_names: [],
+        interaction: 'sys:GeneralAgent',
+        interactive: true,
+        config: { inference_profile: profile },
+    });
+    expect(store.snapshot.inference_profile).toBe(profile);
+});
+
+it('restores a positive per-run budget limit and drops a disabled one', async () => {
+    const client = {
+        interactions: {
+            catalog: {
+                resolve: vi.fn().mockResolvedValue({
+                    id: 'sys:GeneralAgent',
+                    name: 'GeneralAgent',
+                    type: 'sys',
+                    tags: [],
+                    prompts: [],
+                }),
+            },
+        },
+    } as unknown as VertesiaClient;
+    const store = new PayloadBuilderStore(client);
+    const context = {
+        type: 'ExecuteConversationWorkflow',
+        tool_names: [],
+        interaction: 'sys:GeneralAgent',
+        interactive: true,
+        config: {},
+    };
+    await store.snapshot.restoreConversation({ ...context, budget: { limit_tokens: 250_000 } });
+    expect(store.snapshot.budget).toEqual({ limit_tokens: 250_000 });
+    await store.snapshot.restoreConversation({ ...context, budget: { limit_tokens: 0 } });
+    expect(store.snapshot.budget).toBeUndefined();
+});
+
+it('validates profile availability across builder snapshots without blocking ad hoc or defaults', () => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    const profile = '0123456789abcdef01234567';
+    store.snapshot.setInferenceProfile(profile);
+    expect(store.snapshot.inferenceProfileError).toContain('Wait for inference profiles');
+    store.snapshot.setAvailableInferenceProfiles([]);
+    expect(store.snapshot.inferenceProfileError).toContain('unavailable');
+    store.snapshot.setAvailableInferenceProfiles([profile]);
+    store.snapshot.setModel('manual-model');
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+    store.snapshot.setAvailableInferenceProfiles(undefined);
+    store.snapshot.setInferenceProfile(null);
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+    store.snapshot.setInferenceProfile(undefined);
+    expect(store.snapshot.inferenceProfileError).toBeUndefined();
+});
+
+describe('run check flags', () => {
+    it('defaults to no evaluation request and no final verification', () => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        expect(store.snapshot.evaluate).toBeUndefined();
+        expect(store.snapshot.final_verification).toBe(false);
+    });
+
+    it.each([true, false])('publishes evaluate=%s and notifies only on change', (value) => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        const listener = vi.fn();
+        store.subscribe(listener);
+
+        store.snapshot.setEvaluate(value);
+        expect(store.snapshot.evaluate).toBe(value);
+        expect(listener).toHaveBeenCalledOnce();
+
+        store.snapshot.setEvaluate(value);
+        expect(listener).toHaveBeenCalledOnce();
+    });
+
+    it('publishes the final verification opt-in and notifies only on change', () => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        const listener = vi.fn();
+        store.subscribe(listener);
+
+        store.snapshot.setFinalVerification(true);
+        expect(store.snapshot.final_verification).toBe(true);
+        expect(listener).toHaveBeenCalledOnce();
+
+        store.snapshot.setFinalVerification(true);
+        expect(listener).toHaveBeenCalledOnce();
+    });
+
+    it('keeps both flags across later snapshots and clones', () => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        store.snapshot.setEvaluate(true);
+        store.snapshot.setFinalVerification(true);
+
+        store.snapshot.setModel('model-id');
+
+        expect(store.snapshot.evaluate).toBe(true);
+        expect(store.snapshot.final_verification).toBe(true);
+        expect(store.snapshot.clone()).toMatchObject({ evaluate: true, final_verification: true });
+    });
+
+    it('clears both flags on reset', () => {
+        const store = new PayloadBuilderStore({} as VertesiaClient);
+        store.snapshot.setEvaluate(true);
+        store.snapshot.setFinalVerification(true);
+
+        store.snapshot.reset();
+
+        expect(store.snapshot.evaluate).toBeUndefined();
+        expect(store.snapshot.final_verification).toBe(false);
+    });
+});
+
+it('submits a complete dollar policy and preserves it across builder snapshots', () => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    store.snapshot.setBudgetUsd(12.5, 200_000);
+    expect(store.snapshot.budget).toEqual({ mode: 'dollar', limit_usd: 12.5, limit_tokens: 200_000 });
+    store.snapshot.setBudgetTokens(300_000);
+    expect(store.snapshot.budget).toEqual({ mode: 'dollar', limit_usd: 12.5, limit_tokens: 300_000 });
+    store.snapshot.setBudgetUsd(undefined);
+    expect(store.snapshot.budget).toEqual({ limit_tokens: 300_000 });
+});
+
+it.each([0, -1, NaN, Infinity, Number.MAX_SAFE_INTEGER])('clears invalid USD budget %s', (amount) => {
+    const store = new PayloadBuilderStore({} as VertesiaClient);
+    store.snapshot.setBudgetUsd(amount);
+    expect(store.snapshot.budget).toBeUndefined();
+    store.snapshot.setBudgetUsd(10, 200_000);
+    store.snapshot.setBudgetUsd(amount);
+    expect(store.snapshot.budget).toEqual({ limit_tokens: 200_000 });
+});

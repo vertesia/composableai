@@ -1,5 +1,5 @@
-import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { BrandedLoadingIndicator } from '../BrandedLoadingIndicator';
 import { providerIcon } from './SignInIcons';
 import { SignInIconBadge, SignInStepButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
 import { type ProviderId, providerLabel } from './signInUtils';
@@ -29,7 +29,7 @@ export default function SignInAuthPending({ provider, onCancel }: SignInAuthPend
 
             <div className="w-full flex flex-col gap-2">
                 <div className="flex justify-center">
-                    <Spinner />
+                    <BrandedLoadingIndicator />
                 </div>
                 <span>{t('auth.pending.authenticating')}</span>
                 {onCancel && (

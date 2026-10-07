@@ -1,9 +1,9 @@
 import type { UIResolvedTenant } from '@vertesia/common';
-import { Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { setFirebaseTenant } from '@vertesia/ui/session';
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { BrandedLoadingIndicator } from '../BrandedLoadingIndicator';
 import { SignInEmailField, SignInStepButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
 import { isValidEmail } from './signInUtils';
 
@@ -73,7 +73,9 @@ export default function SignInEmailStep({ initialEmail, onProceed }: SignInEmail
                         aria-label={t('auth.pending.authenticating')}
                         className="h-[42px] flex items-center justify-center"
                     >
-                        <Spinner />
+                        <div aria-hidden="true">
+                            <BrandedLoadingIndicator />
+                        </div>
                     </div>
                 ) : (
                     <SignInStepButton type="submit">

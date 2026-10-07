@@ -1,3 +1,6 @@
+import { vertesiaBranding } from './branding.js';
+import { LOADING_ICON_SIZE, LOADING_INDICATOR_STYLES } from './loading.js';
+
 export interface BootScreenOptions {
     storageKey?: string;
     iconSrc?: string;
@@ -18,10 +21,11 @@ export interface BootScreenHtmlPlugin {
 }
 
 const DEFAULT_STORAGE_KEY = 'vite-ui-theme';
-const DEFAULT_ICON_SRC = '/icon.svg';
+const DEFAULT_ICON_SRC = vertesiaBranding.loadingIcon.light;
 const DEFAULT_LOADING_LABEL = 'Loading';
 
 export const BOOT_SCREEN_STYLES = `
+${LOADING_INDICATOR_STYLES}
   .vboot {
     --vb-bg: #ffffff;
     --vb-fg: #0a0a0a;
@@ -43,10 +47,6 @@ export const BOOT_SCREEN_STYLES = `
     --vb-primary: #2b69d1;
     --vb-primary-fg: #fafafa;
     --vb-glow: rgba(79, 70, 229, 0.2);
-  }
-  @keyframes vboot-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
   }
   .vboot-overlay {
     position: absolute !important;
@@ -75,20 +75,6 @@ export const BOOT_SCREEN_STYLES = `
     padding: 0 !important;
     transform: none !important;
   }
-  .vboot-spinner {
-    width: 2.5rem !important;
-    min-width: 2.5rem !important;
-    max-width: 2.5rem !important;
-    height: 2.5rem !important;
-    min-height: 2.5rem !important;
-    max-height: 2.5rem !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    object-fit: contain !important;
-    flex: none !important;
-    border-radius: 100% !important;
-    animation: var(--vertesia-loading-animation, vboot-spin 2s linear infinite) !important;
-  }
   .vboot-icon-dark { display: none; }
   .vboot-dark .vboot-icon-light { display: none; }
   .vboot-dark .vboot-icon-dark { display: block; }
@@ -114,9 +100,6 @@ export const BOOT_SCREEN_STYLES = `
   }
   .vboot-btn:hover {
     opacity: 0.9;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .vboot-spinner { animation: none !important; }
   }
 `;
 
@@ -144,7 +127,7 @@ export function renderDefaultBootContent(options: BootScreenOptions = {}): strin
         );
     const { iconSrc, loadingLabel } = normalizedOptions(options);
     const icon = (src: string, className = '') =>
-        `<img class="vboot-spinner ${className}" width="40" height="40" src="${escapeMarkup(src)}" alt="${escapeMarkup(loadingLabel)}" />`;
+        `<img class="vboot-spinner vertesia-loading-icon vertesia-loading-motion ${className}" width="${LOADING_ICON_SIZE}" height="${LOADING_ICON_SIZE}" src="${escapeMarkup(src)}" alt="${escapeMarkup(loadingLabel)}" />`;
     return `<div class="vboot-overlay" role="status" aria-live="polite">${options.darkIconSrc ? icon(iconSrc, 'vboot-icon-light') + icon(options.darkIconSrc, 'vboot-icon-dark') : icon(iconSrc)}
 <div id="loading-slow-notice" class="vboot-slow" style="display: none;">
 <p>${escapeMarkup(options.slowLoadingLabel ?? 'Still loading — this is taking longer than usual.')}</p>

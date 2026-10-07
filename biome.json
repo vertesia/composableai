@@ -1,5 +1,5 @@
 {
-    "$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
+    "$schema": "https://biomejs.dev/schemas/2.5.13/schema.json",
     "vcs": {
         "enabled": true,
         "clientKind": "git",
@@ -17,6 +17,7 @@
             "!**/node_modules/**",
             "!**/build/**",
             "!**/bin/**",
+            ".github/bin/ci-approve*.mjs",
             "!libraries/jst/test/data/**",
             "!packages/tools-admin-ui/index.html",
             "!templates/plugin-template/index.html"

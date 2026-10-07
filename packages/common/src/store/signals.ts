@@ -40,6 +40,54 @@ export interface ModelConfigChangedSignal {
     effort?: ReasoningEffort | null;
 }
 
+/** Name of the signal that carries an {@link AllocateBudgetSignal}. */
+export const ALLOCATE_BUDGET_SIGNAL = 'AllocateBudget';
+
+/**
+ * Adds token budget to a run that is paused because its budget ran out. Only interactive runs pause;
+ * others end with `token_budget_exhausted`. The allocation adds to the limit the run was granted, so
+ * usage past that limit is paid out of it: a run granted 1,000,000 that used 1,050,000 has 450,000
+ * left after an allocation of 500,000.
+ */
+export interface AllocateBudgetSignal {
+    /** USD allocation; additional_tokens is zero for this signal variant. */
+    additional_usd?: number;
+    /** Positive weighted tokens for a token grant; zero when additional_usd is supplied. */
+    additional_tokens: number;
+    /** Principal that granted the allocation. */
+    requested_by?: string;
+    /** Epoch milliseconds when the allocation was granted. */
+    requested_at?: number;
+}
+
+/** `status_reason` of the message a run posts when it pauses because its token budget ran out. */
+export const AGENT_BUDGET_STATUS_AWAITING = 'awaiting_budget';
+/** `status_reason` of the message a paused run posts when budget was added and it resumes. */
+export const AGENT_BUDGET_STATUS_ALLOCATED = 'budget_allocated';
+
+export type AgentBudgetStatusReason = typeof AGENT_BUDGET_STATUS_AWAITING | typeof AGENT_BUDGET_STATUS_ALLOCATED;
+
+/** `details` of a budget status message: the run paused on its budget or resumed after an allocation. */
+export interface AgentBudgetStatusDetails {
+    budget_mode?: 'token' | 'dollar';
+    budget_limit_usd?: number;
+    budget_reported_usd?: number;
+    budget_estimated_usd?: number;
+    budget_unmeasured_calls?: number;
+    status_reason: AgentBudgetStatusReason;
+    /** Weighted tokens used, rounded. */
+    budget_used_units: number;
+    budget_limit_tokens: number;
+    /** Allocation revision; 0 before the first allocation. */
+    budget_revision: number;
+    /** Weighted tokens still missing when an allocation did not pay the overshoot. */
+    budget_shortfall?: number;
+    /** Weighted tokens added, on {@link AGENT_BUDGET_STATUS_ALLOCATED}. */
+    additional_tokens?: number;
+    /** Principals that granted the allocation. */
+    requested_by?: string[];
+}
+
 /**
  * Attachment metadata for processing in conversation workflows.
  */

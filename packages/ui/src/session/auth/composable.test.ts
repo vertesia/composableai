@@ -38,7 +38,7 @@ describe('getComposableToken', () => {
         vi.clearAllMocks();
     });
 
-    it('uses an authorization-bearing STS-issued Vertesia token directly instead of exchanging it', async () => {
+    it.each([false, true])('uses an authorization-bearing STS token directly (branch=%s)', async (branch) => {
         const token = makeJwt({
             iss: 'https://sts.dev1.vertesia.io',
             exp: Math.floor(Date.now() / 1000) + 3600,
@@ -51,6 +51,10 @@ describe('getComposableToken', () => {
         vi.stubGlobal('fetch', fetchMock);
 
         const { getComposableToken } = await importComposableAuth();
+        if (branch) {
+            const { Env } = await import('@vertesia/ui/env');
+            Env.endpoints.sts = 'https://token-server-dev-example.api.dev1.vertesia.io';
+        }
         const result = await getComposableToken('account-id', 'project-id', token, false, true);
 
         expect(result.rawToken).toBe(token);
@@ -83,6 +87,24 @@ describe('getComposableToken', () => {
         expect(result.rawToken).toBe(freshToken);
         expect(authTokenProvider).toHaveBeenCalledOnce();
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('uses a short-lived scoped iframe token directly, including a forced host refresh', async () => {
+        const token = makeJwt({
+            iss: 'https://sts.dev1.vertesia.io',
+            exp: Math.floor(Date.now() / 1000) + 120,
+            client_id: 'vertesia-app:analytics',
+            account: { id: 'account-id' },
+            project: { id: 'project-id' },
+            apps: ['analytics'],
+        });
+        const provider = vi.fn(async () => token);
+        const fetcher = vi.fn();
+        vi.stubGlobal('fetch', fetcher);
+        const { getComposableToken } = await importComposableAuth(provider);
+        expect((await getComposableToken('account-id', 'project-id', undefined, true, true)).rawToken).toBe(token);
+        expect(provider).toHaveBeenCalledOnce();
+        expect(fetcher).not.toHaveBeenCalled();
     });
 
     it('falls back to the cached credential when the injected provider is unavailable', async () => {
@@ -341,6 +363,7 @@ describe('getComposableToken', () => {
 describe('resolveAuthSelection', () => {
     beforeEach(() => {
         localStorage.clear();
+        sessionStorage.clear();
         localStorage.setItem('composableai.lastSelectedAccountId', 'stored-account');
         localStorage.setItem('composableai.lastSelectedProjectId-stored-account', 'stored-project');
         localStorage.setItem('composableai.lastSelectedProjectId-url-account', 'account-project');
@@ -375,6 +398,16 @@ describe('resolveAuthSelection', () => {
         expect(resolveAuthSelection(new URL('https://app.example.test/'))).toEqual({
             accountId: 'stored-account',
             projectId: 'stored-project',
+        });
+    });
+
+    it("reloads into this tab's selection rather than the last one made in another tab", async () => {
+        sessionStorage.setItem('composableai.tabAccountId', 'tab-account');
+        sessionStorage.setItem('composableai.tabProjectId', 'tab-project');
+        const { resolveAuthSelection } = await importComposableAuth();
+        expect(resolveAuthSelection(new URL('https://app.example.test/'))).toEqual({
+            accountId: 'tab-account',
+            projectId: 'tab-project',
         });
     });
 });

@@ -17,7 +17,8 @@ export function XMLViewer(props: XMLViewerProps): React.ReactNode {
         initialCollapsedDepth,
     } = props;
 
-    // Detect dark mode from document root class (set by ThemeProvider)
+    // Keep the legacy explicit light/dark theme selection API. Both defaults use CSS variables,
+    // so their colors follow the active app theme while preserving caller-supplied overrides.
     const [isDarkMode, setIsDarkMode] = useState(() => {
         return document.documentElement.classList.contains('dark');
     });

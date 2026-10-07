@@ -9,7 +9,7 @@ import {
 } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
+import { forgetRejectedScopeSelection, readScopeSelection, type ScopeSelection } from '../scopeSelection';
 import { generateAuthState } from './authState';
 import {
     authReturnUrl,
@@ -18,6 +18,7 @@ import {
     shouldRedirectToCentralAuth,
 } from './domainRouting';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
+import { isStsTokenIssuer } from './tokenIssuer';
 
 let AUTH_TOKEN_RAW: string | undefined;
 let AUTH_TOKEN: AuthTokenPayload | undefined;
@@ -90,27 +91,6 @@ function renewExpiredCentralAuthSession(): boolean {
     return true;
 }
 
-function clearRejectedPersistedScope(accountId?: string, projectId?: string) {
-    if (!accountId) return;
-
-    const projectKey = `${LastSelectedProjectId_KEY}-${accountId}`;
-    if (projectId) {
-        const persistedProjectMatches = localStorage.getItem(projectKey) === projectId;
-        if (persistedProjectMatches) {
-            localStorage.removeItem(projectKey);
-        }
-        if (persistedProjectMatches && localStorage.getItem(LastSelectedAccountId_KEY) === accountId) {
-            localStorage.removeItem(LastSelectedAccountId_KEY);
-        }
-        return;
-    }
-
-    if (localStorage.getItem(LastSelectedAccountId_KEY) === accountId) {
-        localStorage.removeItem(LastSelectedAccountId_KEY);
-        localStorage.removeItem(projectKey);
-    }
-}
-
 interface ComposableTokenResponse {
     rawToken: string;
     token: AuthTokenPayload;
@@ -142,16 +122,10 @@ export function resolveAuthSelection(currentUrl: URL): { accountId?: string; pro
     const defaults = hasUrlScope ? undefined : Env.defaultAuthSelection;
     const urlAccount = currentUrl.searchParams.get('a') ?? defaults?.accountId;
     const urlProject = currentUrl.searchParams.get('p') ?? defaults?.projectId;
-    const accountId =
-        urlAccount ??
-        (urlProject === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);
-    const projectId = urlProject ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${accountId}`) ?? undefined;
+    // A project alone identifies its account, so the stored selection only fills in a missing project.
+    const stored = urlProject === undefined ? readScopeSelection(urlAccount) : undefined;
 
-    return { accountId, projectId };
-}
-
-function normalizeIssuer(value: string | undefined): string | undefined {
-    return value?.replace(/\/+$/, '');
+    return { accountId: urlAccount ?? stored?.accountId, projectId: urlProject ?? stored?.projectId };
 }
 
 function decodeToken(token: string): AuthTokenPayload {
@@ -162,7 +136,7 @@ function isVertesiaIssuedToken(token: string | undefined): token is string {
     if (!token) return false;
     try {
         const decoded = decodeToken(token) as AuthTokenPayload & { iss?: string };
-        return normalizeIssuer(decoded.iss) === normalizeIssuer(Env.endpoints.sts);
+        return isStsTokenIssuer(decoded.iss, Env.endpoints.sts);
     } catch {
         return false;
     }
@@ -170,7 +144,11 @@ function isVertesiaIssuedToken(token: string | undefined): token is string {
 
 function canUseVertesiaTokenDirectly(token: string, accountId?: string, projectId?: string): boolean {
     const decoded = decodeToken(token);
-    if (!decoded.exp || decoded.exp <= Date.now() / 1000 + 300) {
+    const appSession =
+        'client_id' in decoded &&
+        typeof decoded.client_id === 'string' &&
+        decoded.client_id.startsWith('vertesia-app:');
+    if (!decoded.exp || decoded.exp <= Date.now() / 1000 + (appSession ? 60 : 300)) {
         return false;
     }
     const hasAuthorizationClaims = Boolean(
@@ -485,6 +463,17 @@ export function getCurrentVertesiaToken(): string | undefined {
     return AUTH_TOKEN_RAW;
 }
 
+/**
+ * The scope a call without an explicit selection keeps: the token this tab already holds, when it is
+ * in the requested account, and otherwise the stored selection.
+ */
+function currentScopeSelection(accountId?: string): ScopeSelection {
+    if (AUTH_TOKEN?.account?.id && (!accountId || AUTH_TOKEN.account.id === accountId)) {
+        return { accountId: AUTH_TOKEN.account.id, projectId: AUTH_TOKEN.project?.id };
+    }
+    return readScopeSelection(accountId);
+}
+
 export async function getComposableToken(
     accountId?: string,
     projectId?: string,
@@ -492,11 +481,9 @@ export async function getComposableToken(
     forceRefresh = false,
     useInternalAuth = false,
 ): Promise<ComposableTokenResponse> {
-    const selectedAccount =
-        accountId ??
-        (projectId === undefined ? (localStorage.getItem(LastSelectedAccountId_KEY) ?? undefined) : undefined);
-    const selectedProject =
-        projectId ?? localStorage.getItem(`${LastSelectedProjectId_KEY}-${selectedAccount}`) ?? undefined;
+    const stored = projectId === undefined ? currentScopeSelection(accountId) : undefined;
+    const selectedAccount = accountId ?? stored?.accountId;
+    const selectedProject = projectId ?? stored?.projectId;
     const devAuthToken = Env.isLocalDev ? Env.devAuthToken : undefined;
     const suppliedToken = devAuthToken ?? initToken ?? AUTH_TOKEN_RAW;
 
@@ -537,7 +524,8 @@ export async function getComposableToken(
             AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
         } else if (!devAuthToken) {
             // Embedded apps can reacquire a fresh credential from their host after their cached token expires.
-            const refreshCredential = (await Env.authTokenProvider?.()) ?? initToken ?? AUTH_TOKEN_RAW;
+            const providerCredential = await Env.authTokenProvider?.();
+            const refreshCredential = providerCredential ?? initToken ?? AUTH_TOKEN_RAW;
             // `forceRefresh` has to defeat this shortcut, not just the cache above it. A caller
             // asking for a forced refresh wants claims recomputed -- `refreshAuthToken()` exists so
             // a stale `apps` claim can be re-read after an ACE change, and STS recomputes it on
@@ -545,7 +533,7 @@ export async function getComposableToken(
             // returns the very token whose claims were suspect, silently making the call a no-op
             // for exactly the sessions that have no other credential to fall back on.
             if (
-                !forceRefresh &&
+                (!forceRefresh || !!providerCredential) &&
                 refreshCredential &&
                 isVertesiaIssuedToken(refreshCredential) &&
                 canUseVertesiaTokenDirectly(refreshCredential, selectedAccount, selectedProject)
@@ -571,8 +559,8 @@ export async function getComposableToken(
         ) {
             AUTH_TOKEN_RAW = undefined;
             AUTH_TOKEN = undefined;
-            if (error instanceof RequestedScopeUnavailableError) {
-                clearRejectedPersistedScope(selectedAccount, selectedProject);
+            if (error instanceof RequestedScopeUnavailableError && selectedAccount) {
+                forgetRejectedScopeSelection(selectedAccount, selectedProject);
             }
         }
         // An expired Central Auth session presents as a rejected credential: the JWT we sent STS to

@@ -1,13 +1,14 @@
 {
     "name": "@vertesia/jst",
-    "version": "1.6.0-dev.20260912.110338Z",
+    "version": "1.6.0-dev.20261004.085740Z",
     "type": "module",
     "description": "Javascript text template",
     "license": "Apache-2.0",
     "homepage": "https://docs.vertesiahq.com",
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "repository": {
         "type": "git",
@@ -25,10 +26,10 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "build": "tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "build": "tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "typecheck": "tsc --noEmit",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
+        "typecheck": "tsc --checkers 1 --noEmit",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit"
     },
     "peerDependencies": {
         "handlebars": ">=4.7.9"
@@ -39,7 +40,7 @@
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
         "typescript": "catalog:",
-        "vitest": "^4.1.11"
+        "vitest": "catalog:"
     },
     "dependencies": {
         "@types/node": "catalog:",

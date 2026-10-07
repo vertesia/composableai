@@ -9,6 +9,7 @@ import {
     BrandedPermissionLoadingScreen,
     BrandedSignInScreen,
 } from './BrandedAuthScreens';
+import SignInAuthPending from './login/SignInAuthPending';
 import { SignInFlowSteps, useSignInFlow } from './login/SignInFlow';
 import { DefaultSignInScreen, type SignInRecoveryMode } from './login/SigninScreen';
 import { DefaultAuthLoadingScreen } from './SplashScreen';
@@ -41,6 +42,31 @@ function SignInPreview() {
 }
 
 describe('configuration-driven auth screens', () => {
+    it('keeps the configured loading logo through the Firebase provider handoff', () => {
+        const brand = {
+            name: 'Workspace',
+            loadingIcon: { light: '/workspace-light.svg', dark: '/workspace-dark.svg' },
+        };
+        const cancel = vi.fn();
+        const view = render(
+            <AppBrandingProvider branding={brand}>
+                <BrandedAuthLoadingScreen />
+            </AppBrandingProvider>,
+        );
+        const loadingIcons = Array.from(view.container.querySelectorAll('img'), (img) => img.getAttribute('src'));
+        view.rerender(
+            <AppBrandingProvider branding={brand}>
+                <SignInAuthPending provider="google" onCancel={cancel} />
+            </AppBrandingProvider>,
+        );
+        expect(
+            Array.from(screen.getByRole('status').querySelectorAll('img'), (img) => img.getAttribute('src')),
+        ).toEqual(loadingIcons);
+        expect(loadingIcons).toEqual(['/workspace-light.svg', '/workspace-dark.svg']);
+        fireEvent.click(screen.getByRole('button'));
+        expect(cancel).toHaveBeenCalledOnce();
+    });
+
     it('keeps brand copy local to each shell and preserves the shared translations', () => {
         const original = i18nInstance.t('auth.email.title', { ns: NAMESPACE });
         render(

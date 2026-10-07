@@ -1,3 +1,4 @@
+export { vertesiaBranding } from '../boot/branding.js';
 export * from './AuthScreenPreview';
 export * from './apps/index';
 export * from './BrandedAuthScreens';

@@ -48,6 +48,8 @@ export interface MCPProviderConfig {
  * Server configuration options
  */
 export interface ToolServerConfig {
+    /** OAuth scopes requested by the app; project permissions must be explicitly declared. */
+    oauth_scopes?: string[];
     /**
      * Server title for HTML pages (default: 'Tools Server')
      */

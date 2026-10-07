@@ -12,6 +12,7 @@ import {
     type AgentRunInternals,
     type AgentRunResponse,
     type AgentRunUpdatesResponse,
+    type AllocateAgentRunBudgetPayload,
     type BindRunWorkflowPayload,
     type CreateAgentRunPayload,
     type CreateProcessRunPayload,
@@ -227,6 +228,14 @@ export class AgentsApi extends ApiTopic {
     }
 
     /**
+     * Add token budget to a run paused because its budget ran out; the run resumes from where it
+     * stopped. The amount is added to the limit the run was granted, so usage past it is paid first.
+     */
+    allocateBudget(id: string, payload: AllocateAgentRunBudgetPayload): Promise<SignalAgentResponse> {
+        return this.post(`/${id}/budget`, { payload });
+    }
+
+    /**
      * Fork a conversation into a new agent run.
      */
     fork(id: string): Promise<AgentRun> {
@@ -397,7 +406,7 @@ export class AgentsApi extends ApiTopic {
                 currentSse.close();
                 currentSse = null;
             }
-            if (signal && abortHandler) {
+            if (isClosed && signal && abortHandler) {
                 signal.removeEventListener('abort', abortHandler);
                 abortHandler = null;
             }
@@ -435,19 +444,29 @@ export class AgentsApi extends ApiTopic {
             );
         };
 
+        // A 404 while polling means the run itself is gone (deleted, or never persisted): nothing
+        // will ever arrive, so stop instead of polling the missing resource every 5s forever.
+        const isRunGone = (error: unknown): boolean =>
+            typeof error === 'object' && error !== null && (error as { status?: unknown }).status === 404;
+        const exitBecauseRunGone = () => {
+            console.warn(`Agent stream ${id}: the run no longer exists (404); stopping the polling fallback.`);
+            exit(null);
+        };
+
         const pollTick = async () => {
             if (isClosed || !isPolling) return;
             let polledMessages = false;
             try {
                 // Resume from the last message we handed to the caller, whether it came from
                 // history, SSE, or an earlier poll. The server returns messages with ts > since.
-                const recent = await this.retrieveMessages(id, lastMessageTimestamp || undefined);
+                const previousMessageTimestamp = lastMessageTimestamp;
+                const recent = await this.retrieveMessages(id, previousMessageTimestamp || undefined);
                 polledMessages = true;
                 for (const msg of recent) {
                     if (isClosed) return;
                     const timestamp = msg.timestamp || 0;
-                    if (timestamp <= lastMessageTimestamp) continue;
-                    lastMessageTimestamp = timestamp;
+                    if (timestamp <= previousMessageTimestamp) continue;
+                    lastMessageTimestamp = Math.max(lastMessageTimestamp, timestamp);
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) return;
                     if (shouldCloseAgentRunStream(msg, id, options?.closeOnIdle)) {
@@ -456,6 +475,10 @@ export class AgentsApi extends ApiTopic {
                     }
                 }
             } catch (err) {
+                if (isRunGone(err)) {
+                    exitBecauseRunGone();
+                    return;
+                }
                 warnPollFailure('GET /updates', err);
             }
             if (isClosed || !isPolling) return;
@@ -468,6 +491,10 @@ export class AgentsApi extends ApiTopic {
                 }
                 if (polledMessages) consecutivePollFailures = 0;
             } catch (err) {
+                if (isRunGone(err)) {
+                    exitBecauseRunGone();
+                    return;
+                }
                 warnPollFailure('run status check', err);
             }
             if (isClosed || !isPolling) return;

@@ -1,8 +1,14 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { AgentRunFeedbackEntry, AgentRunFeedbackPayload, AgentRunFeedbackStatus } from '@vertesia/common';
+import { AgentMessageType } from '@vertesia/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
-import { AgentRunFeedback, AgentRunFeedbackProvider, agentRunFeedbackReasonCodes } from './AgentRunFeedback';
+import {
+    AgentRunFeedback,
+    AgentRunFeedbackProvider,
+    agentRunFeedbackReasonCodes,
+    isAgentMessageRatable,
+} from './AgentRunFeedback';
 
 const mocks = vi.hoisted(() => {
     const recordFeedback = vi.fn();
@@ -37,6 +43,17 @@ function respondWith(...statuses: AgentRunFeedbackStatus[]) {
 function payloadOf(call: number): AgentRunFeedbackPayload {
     return mocks.recordFeedback.mock.calls[call][1] as AgentRunFeedbackPayload;
 }
+
+describe('isAgentMessageRatable', () => {
+    it('offers a rating on a final answer only, never on a streaming placeholder', () => {
+        expect(isAgentMessageRatable({ type: AgentMessageType.ANSWER, details: { streamed: true } })).toBe(true);
+        expect(isAgentMessageRatable({ type: AgentMessageType.ANSWER, details: undefined })).toBe(true);
+        expect(isAgentMessageRatable({ type: AgentMessageType.ANSWER, details: { source: 'streaming_summary' } })).toBe(
+            false,
+        );
+        expect(isAgentMessageRatable({ type: AgentMessageType.THOUGHT, details: undefined })).toBe(false);
+    });
+});
 
 describe('AgentRunFeedback', () => {
     beforeEach(() => {

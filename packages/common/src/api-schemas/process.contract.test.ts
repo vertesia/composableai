@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ProcessRunConfigSchema, RecordProcessRunPayloadSchema } from './process.js';
+import { ProcessBudgetStateSchema, ProcessRunConfigSchema, RecordProcessRunPayloadSchema } from './process.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 
 describe('ProcessRunConfigSchema', () => {
+    it('accepts stable profile IDs and null but rejects profile names', () => {
+        const inference_profile = '0123456789abcdef01234567';
+        expect(ProcessRunConfigSchema.parse({ inference_profile })).toEqual({ inference_profile });
+        expect(ProcessRunConfigSchema.parse({ inference_profile: null })).toEqual({ inference_profile: null });
+        expect(() => ProcessRunConfigSchema.parse({ inference_profile: 'Fast' })).toThrow();
+    });
     it('accepts validated LLM execution configuration and retains a strict Process boundary', () => {
         expect(
             ProcessRunConfigSchema.parse({
@@ -111,5 +117,26 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                 max_repeated_tool_failure_iterations: 0,
             }),
         ).toThrow();
+    });
+});
+
+describe('ProcessBudgetStateSchema', () => {
+    it('preserves historical token-only status', () => {
+        const status = { limit_tokens: 1000, used_units: 250, exhausted: false };
+        expect(ProcessBudgetStateSchema.parse(status)).toEqual(status);
+    });
+    it('retains dollar balances and incomplete accounting in process responses', () => {
+        const status = {
+            mode: 'dollar',
+            limit_tokens: 1000,
+            used_units: 12,
+            exhausted: false,
+            limit_usd: 1,
+            reported_usd: 0.1,
+            estimated_usd: 0.2,
+            accounting_status: 'incomplete',
+            unmeasured_calls: 1,
+        };
+        expect(ProcessBudgetStateSchema.parse(status)).toEqual(status);
     });
 });

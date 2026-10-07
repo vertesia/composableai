@@ -1,6 +1,7 @@
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { SupportedIntegrations } from '../integrations.js';
+import type * as Wire from '../wire-types.generated.js';
 import { ProjectConfigurationSchema } from './project-configuration.js';
 
 /**
@@ -103,15 +104,15 @@ export const ProjectToolInfoSchema = z
 
 export const ProjectToolInfoArraySchema = z.array(ProjectToolInfoSchema).meta({ id: 'ProjectToolInfoArray' });
 
-export type ListProjectsQueryFromSchema = z.infer<typeof ListProjectsQuerySchema>;
-export type ProjectTagQueryFromSchema = z.infer<typeof ProjectTagQuerySchema>;
-export type CreateProjectPayloadFromSchema = z.infer<typeof CreateProjectPayloadSchema>;
-export type ProjectPluginsUpdatePayloadFromSchema = z.infer<typeof ProjectPluginsUpdatePayloadSchema>;
-export type CountResultFromSchema = z.infer<typeof CountResultSchema>;
-export type ProjectIntegrationListEntryFromSchema = z.infer<typeof ProjectIntegrationListEntrySchema>;
-export type ProjectIntegrationListResponseFromSchema = z.infer<typeof ProjectIntegrationListResponseSchema>;
-export type ProjectToolInfoFromSchema = z.infer<typeof ProjectToolInfoSchema>;
-export type ProjectToolInfoArrayFromSchema = z.infer<typeof ProjectToolInfoArraySchema>;
+export type ListProjectsQueryFromSchema = Wire.ListProjectsQueryFromSchema;
+export type ProjectTagQueryFromSchema = Wire.ProjectTagQueryFromSchema;
+export type CreateProjectPayloadFromSchema = Wire.CreateProjectPayloadFromSchema;
+export type ProjectPluginsUpdatePayloadFromSchema = Wire.ProjectPluginsUpdatePayloadFromSchema;
+export type CountResultFromSchema = Wire.CountResultFromSchema;
+export type ProjectIntegrationListEntryFromSchema = Wire.ProjectIntegrationListEntryFromSchema;
+export type ProjectIntegrationListResponseFromSchema = Wire.ProjectIntegrationListResponseFromSchema;
+export type ProjectToolInfoFromSchema = Wire.ProjectToolInfoFromSchema;
+export type ProjectToolInfoArrayFromSchema = Wire.ProjectToolInfoArrayFromSchema;
 
 /**
  * The rendering templates an app ships, and the reference form the manifest embeds.
@@ -194,6 +195,11 @@ export const ProjectSchema = z
         configuration: ProjectConfigurationSchema,
         integrations: z.record(z.string(), z.unknown()).optional(),
         plugins: z.array(z.string()),
+        annotations: z.array(z.string()).meta({ description: 'Classification annotations' }).optional(),
+        last_activity_at: z
+            .string()
+            .meta({ format: 'date-time', description: 'When the project last saw activity. Not yet populated.' })
+            .optional(),
         created_by: z.string(),
         updated_by: z.string(),
         created_at: z.string().meta({ format: 'date-time' }),
@@ -206,8 +212,11 @@ export const ProjectSchema = z
  *
  * `.partial()` keeps both update contracts tied to the corresponding response contract, so a field
  * added to either source schema is available to its update payload without a hand-written twin.
+ * `annotations` and `last_activity_at` are vertesia-managed, so they are read-only.
  */
-export const UpdateProjectPayloadSchema = ProjectSchema.partial().meta({ id: 'UpdateProjectPayload' });
+export const UpdateProjectPayloadSchema = ProjectSchema.omit({ annotations: true, last_activity_at: true })
+    .partial()
+    .meta({ id: 'UpdateProjectPayload' });
 
 export const UpdateProjectConfigurationPayloadSchema = ProjectConfigurationSchema.partial().meta({
     id: 'UpdateProjectConfigurationPayload',
