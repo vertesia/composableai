@@ -6,7 +6,7 @@ import { createToolServer as createBaseToolServer } from './server.js';
 
 /** Browser-bundle entrypoint. Collections take bundled data; directory loaders are Node-only. */
 export * from './ActivityCollection.js';
-export { AuthSession, authorize } from './auth.js';
+export { AuthSession, authorizeSandbox as authorize } from './auth.js';
 export * from './ContentTypesCollection.js';
 export * from './InteractionCollection.js';
 export * from './RenderingTemplateCollection.js';
@@ -18,9 +18,10 @@ export * from './server/types.js';
 export function createToolServer(config: ToolServerConfig) {
     const app = new Hono<{
         Bindings: { sandboxSession?: AuthTokenPayload };
-        Variables: { toolAuthSession: AuthSession };
+        Variables: { toolAuthSession: AuthSession; toolAuthMode: 'sandbox' };
     }>();
     app.use('*', async (ctx, next) => {
+        ctx.set('toolAuthMode', 'sandbox');
         const payload = ctx.env?.sandboxSession;
         if (payload) {
             ctx.set(

@@ -49,7 +49,19 @@ export interface ToolContext {
     runId?: string;
 }
 
+/** Sandbox authorization never accepts a credential supplied by the guest request. */
+export async function authorizeSandbox(
+    ctx: Context,
+    _endpointOverrides?: EndpointOverrides,
+    _toolContext?: ToolContext,
+) {
+    const session = ctx.get('toolAuthSession') as AuthSession | undefined;
+    if (!session) throw new HTTPException(401, { message: 'Missing sandbox host session' });
+    return session;
+}
+
 export async function authorize(ctx: Context, endpointOverrides?: EndpointOverrides, toolContext?: ToolContext) {
+    if (ctx.get('toolAuthMode') === 'sandbox') return authorizeSandbox(ctx);
     // A sandbox host can bind a session in application middleware. HTTP headers cannot set this value.
     const boundSession = ctx.get('toolAuthSession') as AuthSession | undefined;
     if (boundSession) return boundSession;

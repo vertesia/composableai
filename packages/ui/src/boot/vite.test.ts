@@ -68,9 +68,15 @@ describe('branding Vite adapter', () => {
             '<html><head><title>Old</title><link rel="icon" href="old.ico"></head><body></body></html>',
         );
         expect(html).toContain('<title>A &amp; B</title>');
-        const metadata = /id="vertesia-app-branding">(.*?)<\/script>/.exec(html)?.[1];
-        expect(JSON.parse(metadata || '{}').name).toBe('A & B');
-        expect(JSON.parse(metadata || '{}').workspace).toEqual({ account: 'account', project: 'project' });
+        const marker = 'id="vertesia-app-branding">';
+        const start = html.indexOf(marker);
+        expect(start).toBeGreaterThanOrEqual(0);
+        const contentStart = start + marker.length;
+        const end = html.indexOf('</script>', contentStart);
+        expect(end).toBeGreaterThan(contentStart);
+        const metadata = JSON.parse(html.slice(contentStart, end));
+        expect(metadata.name).toBe('A & B');
+        expect(metadata.workspace).toEqual({ account: 'account', project: 'project' });
         expect(html).toContain(resolved.logo.light);
         expect(html).not.toContain('old.ico');
         expect(html).not.toContain('./assets/');

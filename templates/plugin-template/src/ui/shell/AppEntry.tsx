@@ -46,15 +46,23 @@ const routes: Route[] = [
 
 export function AppEntry() {
     const [hostToken, setHostToken] = useState(window.__VERTESIA_SANDBOX_TOKEN__);
+    const [hostSessionFailed, setHostSessionFailed] = useState(false);
     useEffect(() => {
         let mounted = true;
-        void window.__VERTESIA_SANDBOX_READY__?.then((token) => {
-            if (mounted) setHostToken(token);
-        });
+        void window.__VERTESIA_SANDBOX_READY__
+            ?.then((token) => {
+                if (mounted) setHostToken(token);
+            })
+            .catch(() => {
+                if (mounted) setHostSessionFailed(true);
+            });
         return () => {
             mounted = false;
         };
     }, []);
+    if (hostSessionFailed) {
+        return <p role="alert">Unable to start the app session. Please reload the page.</p>;
+    }
     if (window.__VERTESIA_SANDBOX_READY__ && !hostToken) return null;
     return (
         <VertesiaShell branding={branding} preserveSignInPath authScreens={appAuthScreens} authToken={hostToken}>
