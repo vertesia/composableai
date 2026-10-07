@@ -658,7 +658,16 @@ export abstract class ClientBase {
             if (retryPolicy && attempt >= retryPolicy.attempts) {
                 break;
             }
-            return this.handleResponse<T>(req, res, params);
+            try {
+                return await this.handleResponse<T>(req, res, params);
+            } catch (err: unknown) {
+                // Body consumption can time out after fetch has returned the headers. Preserve
+                // HTTP/custom-reader errors, and do not replay a request already accepted upstream.
+                if (!isAbortError(err)) throw err;
+                const connectionError = new ConnectionError(req, toError(err));
+                if (!isCallerAbortError(err)) this.handleConnectionError(connectionError);
+                this.throwError(connectionError);
+            }
         }
 
         if (lastReq) {

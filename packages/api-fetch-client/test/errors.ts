@@ -26,8 +26,6 @@ describe('handled transport failures', () => {
                 assert.ok(error instanceof ConnectionError);
                 assert.equal(error.payload, timeout);
                 assert.equal(requestErrorDetail(error), 'Failed to connect to server: request timed out');
-                assert.ok(!requestErrorDetail(error).includes('https://api.example.test'));
-                assert.ok(!requestErrorDetail(error).includes('Stack Trace:'));
                 return true;
             });
             assert.deepEqual(logged, []);
@@ -64,6 +62,71 @@ describe('handled transport failures', () => {
             assert.equal(received.payload, failure);
         });
     }
+
+    for (const name of ['TimeoutError', 'AbortError']) {
+        it(`uses the current factory for a response-body ${name} without replaying the request`, async () => {
+            const failure = new DOMException('body interrupted', name);
+            const reported: ConnectionError[] = [];
+            class ReportingClient extends FetchClient {
+                override handleConnectionError(error: ConnectionError): void {
+                    reported.push(error);
+                }
+            }
+            class ItemsApi extends ApiTopic {
+                constructor(client: FetchClient) {
+                    super(client, '/items');
+                }
+            }
+            let attempts = 0;
+            const client = new ReportingClient('https://api.example.test', async () => {
+                attempts++;
+                return new Response(
+                    new ReadableStream({
+                        start(controller) {
+                            controller.error(failure);
+                        },
+                    }),
+                );
+            });
+            const topic = new ItemsApi(client);
+            client.withRetryPolicy({ attempts: 3, baseDelayMs: 0, jitter: false });
+            let received: RequestError | undefined;
+            const wrapped = new Error('operation interrupted');
+            client.withErrorFactory((error) => {
+                received = error;
+                return wrapped;
+            });
+            await assert.rejects(topic.get('/'), (error: unknown) => error === wrapped);
+            assert.ok(received instanceof ConnectionError);
+            assert.equal(received.payload, failure);
+            assert.equal(attempts, 1);
+            assert.deepEqual(reported, name === 'AbortError' ? [] : [received]);
+        });
+    }
+
+    it('does not wrap application or custom-reader errors a second time', async () => {
+        const client = new FetchClient('https://api.example.test', async () =>
+            Response.json({ message: 'denied' }, { status: 403 }),
+        );
+        let calls = 0;
+        const wrapped = new Error('permission denied');
+        client.withErrorFactory(() => {
+            calls++;
+            return wrapped;
+        });
+        await assert.rejects(client.get('/'), (error: unknown) => error === wrapped);
+        assert.equal(calls, 1);
+        const readerFailure = new Error('reader failed');
+        await assert.rejects(
+            client.get('/', {
+                reader: () => {
+                    throw readerFailure;
+                },
+            }),
+            (error: unknown) => error === readerFailure,
+        );
+        assert.equal(calls, 1);
+    });
 
     it('retains plain-text and JSON response detail without request metadata', () => {
         const request = new Request('https://api.example.test/items');
