@@ -11,7 +11,7 @@ catalogs:
       version: 7.0.2
 
 overrides:
-  '@types/node': ^24.13.6
+  '@types/node': ^24.19.0
   minimatch@>=3.0.0 <4.0.0: legacy-v3
   minimatch@>=9.0.0 <10.0.0: legacy-v9
   ajv@>=7.0.0 <8.18.0: ^8.20.0
@@ -19,7 +19,7 @@ overrides:
   yaml@>=2.0.0 <2.8.3: ^2.9.1
   picomatch@<2.3.2: ^4.0.7
   picomatch@>=4.0.0 <4.0.4: ^4.0.7
-  fast-xml-parser@<5.7.0: ^5.11.1
+  fast-xml-parser@<5.7.0: ^5.11.2
   fast-xml-builder@<=1.1.6: ^1.3.1
   fast-uri@<4.1.2: 4.2.1
 
@@ -31,16 +31,16 @@ importers:
         specifier: ^3.1139.0
         version: 3.1141.0
       '@vertesia/client':
-        specifier: 1.5.0
-        version: 1.5.0
+        specifier: 1.5.1
+        version: 1.5.1
       '@vertesia/common':
-        specifier: 1.5.0
-        version: 1.5.0
+        specifier: 1.5.1
+        version: 1.5.1
       commander:
         specifier: ^15.0.0
         version: 15.0.0
       dotenv:
-        specifier: ^18.0.3
+        specifier: ^18.0.4
         version: 18.0.4
       google-auth-library:
         specifier: ^11.1.0
@@ -185,8 +185,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@llumiverse/common@1.5.0':
-    resolution: {integrity: sha512-ssnaqAu9UcGHAL0kaFpS5fjojI2+nJ+pQaobhKR2GVJyMZ/vEWn1ydss9Nf7i/EjxpgY20CRvkA6xMIM5LcEgA==}
+  '@llumiverse/common@1.5.1':
+    resolution: {integrity: sha512-uKtqJoAzkd0kLOe4uLNJFRVmL6kmOmyX4gBL2IeTIRPTwJygtA4bl4R6O1nPsPEPwLsT2GlbYtdLc/YsgXj3kA==}
 
   '@smithy/core@3.33.3':
     resolution: {integrity: sha512-CsOeKq/9kA3y6VJHt+/+VTCtBaxJ4OTFpgrjIUhPpDIKxBci1k2bJaQASF2h/ELWrulGp+t97DZ0mevfAD8idg==}
@@ -226,8 +226,8 @@ packages:
   '@types/bun@1.4.2':
     resolution: {integrity: sha512-GimotNn7+ZV0uVArItBbriZsR1oNf0+WTzPkdcFrzShI7k2norL0uzEaJT8T33dWr7O/c9ZDuAFQrctKCi72oQ==}
 
-  '@types/node@24.13.6':
-    resolution: {integrity: sha512-SGrw/h3KPFshy3OE6ZL53LMBG5vGQQ8/gIpiqz/kRZhPJ7HgwCEs8LBuNtWLa8dvGZVpSF7+Bf+c11HUrCb/yg==}
+  '@types/node@24.19.1':
+    resolution: {integrity: sha512-aS3/DG0oM05K0RIXXP+hKjinGG5IgSSVGzswZxW3O0sS3pH4/fycXundUC9XsszgKCk4gHXylTEK6hyFxVxnoQ==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -349,14 +349,14 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@vertesia/api-fetch-client@1.5.0':
-    resolution: {integrity: sha512-JYAJiO5pl2DwSxp2ckKp8lQqRAAmbKFb5Ruji42i+ivb87MXqlxqOosqjl2LSRcTpv7i1DMDdurhoDBfEzAzew==}
+  '@vertesia/api-fetch-client@1.5.1':
+    resolution: {integrity: sha512-P/zpxgKFovFn1ItJhqbNdTIjx/k65HZeONzeg4QfpkdmW2FuIg6DRKmQ1uYbGIBwa7lnkwC3LSb/tiXctOeRAw==}
 
-  '@vertesia/client@1.5.0':
-    resolution: {integrity: sha512-/GPb3/br9LKxanRR8ZJ4vmFQULz7PoxA/IU+L0dX2OZbixOrkviiqysjgGPYnvS82BP2q9l0FwGi7ez2oeQNdg==}
+  '@vertesia/client@1.5.1':
+    resolution: {integrity: sha512-nR8KxfKCGDyeYUlGYIB/n1O1n21O5uONMih3Xoh/u7RYKwVUj2zKzqhP7LnK4A9UySWHBI7uFohc5FLFEyZfUg==}
 
-  '@vertesia/common@1.5.0':
-    resolution: {integrity: sha512-EYGPXtvV8ICu2/iV18mnRQkXTvfugaPxRkBGChuVaqMaBtmBLvXsMJy4424zMCLJiC/OAFOceMCeIKdUX6TiZQ==}
+  '@vertesia/common@1.5.1':
+    resolution: {integrity: sha512-etL58VmPw08dEpGE6y7Q2V76RyAfi1010QDPjj56FXHGb0XKCcyRPjucXhZmq/bcomzjohuIeSaNKVkXr+/+3w==}
 
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
@@ -496,8 +496,8 @@ packages:
     engines: {node: '>=16.20.0'}
     hasBin: true
 
-  undici-types@7.18.2:
-    resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
+  undici-types@7.24.6:
+    resolution: {integrity: sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==}
 
   web-streams-polyfill@3.3.3:
     resolution: {integrity: sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw==}
@@ -688,7 +688,7 @@ snapshots:
   '@biomejs/cli-win32-x64@2.5.13':
     optional: true
 
-  '@llumiverse/common@1.5.0':
+  '@llumiverse/common@1.5.1':
     dependencies:
       zod: 4.6.5
 
@@ -740,9 +740,9 @@ snapshots:
     dependencies:
       bun-types: 1.4.2
 
-  '@types/node@24.13.6':
+  '@types/node@24.19.1':
     dependencies:
-      undici-types: 7.18.2
+      undici-types: 7.24.6
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
@@ -804,20 +804,20 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@vertesia/api-fetch-client@1.5.0':
+  '@vertesia/api-fetch-client@1.5.1':
     dependencies:
       eventsource-parser: 4.1.1
 
-  '@vertesia/client@1.5.0':
+  '@vertesia/client@1.5.1':
     dependencies:
-      '@llumiverse/common': 1.5.0
-      '@vertesia/api-fetch-client': 1.5.0
-      '@vertesia/common': 1.5.0
+      '@llumiverse/common': 1.5.1
+      '@vertesia/api-fetch-client': 1.5.1
+      '@vertesia/common': 1.5.1
       eventsource: 5.1.1
 
-  '@vertesia/common@1.5.0':
+  '@vertesia/common@1.5.1':
     dependencies:
-      '@llumiverse/common': 1.5.0
+      '@llumiverse/common': 1.5.1
       ajv: 8.20.0
       ajv-formats: 3.0.1
       zod: 4.6.5
@@ -845,7 +845,7 @@ snapshots:
 
   bun-types@1.4.2:
     dependencies:
-      '@types/node': 24.13.6
+      '@types/node': 24.19.1
 
   commander@15.0.0: {}
 
@@ -976,7 +976,7 @@ snapshots:
       '@typescript/typescript-win32-arm64': 7.0.2
       '@typescript/typescript-win32-x64': 7.0.2
 
-  undici-types@7.18.2: {}
+  undici-types@7.24.6: {}
 
   web-streams-polyfill@3.3.3: {}
 

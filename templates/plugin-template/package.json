@@ -92,21 +92,21 @@
         "vite-plugin-serve-static": "^2.2.1"
     },
     "dependencies": {
-        "@hono/node-server": "^2.1.1",
+        "@hono/node-server": "^2.1.3",
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "@vertesia/tools-admin-ui": "workspace:*",
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "dotenv": "^18.0.3",
-        "hono": "^4.13.8",
+        "dotenv": "^18.0.4",
+        "hono": "^4.13.11",
         "html-parse-stringify": "^4.0.1",
         "lucide-react": "^1.48.0",
         "react-vega": "^8.0.0",
         "use-sync-external-store": "^1.7.0",
         "vega": "^6.4.0",
-        "vega-embed": "^7.2.0",
+        "vega-embed": "^7.3.0",
         "vega-lite": "^6.4.3"
     }
 }
