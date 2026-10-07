@@ -112,7 +112,7 @@ function PendingRequestInputOverlay({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="size-8 shrink-0 [&_svg]:size-5"
+                        className="size-8 shrink-0 rounded-lg [&_svg]:size-5"
                         onClick={() => setIsCollapsed((collapsed) => !collapsed)}
                         aria-label={toggleLabel}
                         aria-expanded={!isCollapsed}
