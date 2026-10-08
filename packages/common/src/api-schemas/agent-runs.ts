@@ -685,6 +685,8 @@ export const AutonomousRunResponseSchema = z
         config: InteractionExecutionConfigurationSchema.meta({
             description: 'Execution configuration (environment, model, model_options, etc.)',
         }).optional(),
+        settings: AgentRunSettingsSchema.optional(),
+        settings_snapshot: AgentRunSettingsSnapshotSchema.optional(),
         interactive: z.boolean().meta({ description: 'Whether the agent accepts user input' }).optional(),
         tool_approval_mode: AgentToolApprovalModeSchema.meta({
             description: 'How side-effecting tool actions are approved for interactive runs.',

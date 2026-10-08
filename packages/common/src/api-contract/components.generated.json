@@ -35166,6 +35166,12 @@
         "$ref": "#/components/schemas/InteractionExecutionConfiguration",
         "description": "Execution configuration (environment, model, model_options, etc.)"
       },
+      "settings": {
+        "$ref": "#/components/schemas/AgentRunSettings"
+      },
+      "settings_snapshot": {
+        "$ref": "#/components/schemas/AgentRunSettingsSnapshot"
+      },
       "interactive": {
         "type": "boolean",
         "description": "Whether the agent accepts user input"

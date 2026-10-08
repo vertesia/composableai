@@ -10392,6 +10392,8 @@ export type AutonomousRunResponseWire = {
           }
         | undefined;
     config?: InteractionExecutionConfiguration | undefined;
+    settings?: AgentRunSettings | undefined;
+    settings_snapshot?: AgentRunSettingsSnapshot | undefined;
     interactive?: boolean | undefined;
     tool_approval_mode?: AgentToolApprovalMode | undefined;
     tool_names?: string[] | undefined;
