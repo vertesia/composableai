@@ -63,6 +63,7 @@ interface Transaction {
     issuer: string;
     target: string;
     rememberedScope?: ScopeSelection;
+    retryScope?: ScopeSelection;
 }
 
 export function clearAppOAuth(): void {
@@ -119,7 +120,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
             clearAppOAuth();
             current = target;
             window.history.replaceState(window.history.state, '', current);
-            accountId = undefined;
+            accountId = transaction.retryScope?.accountId;
             projectId = undefined;
             transaction = undefined;
         } else if (error || !code) {
@@ -287,6 +288,13 @@ async function acquireToken(forceRefresh = false): Promise<string> {
             throw new Error('Application CIMD does not allow this callback');
         if (!config.scopes && document.scope) scopes = document.scope.split(/\s+/);
     }
+    const explicitScope =
+        current.searchParams.has('a') || current.searchParams.has('p')
+            ? {
+                  accountId: current.searchParams.get('a') ?? undefined,
+                  projectId: current.searchParams.get('p') ?? undefined,
+              }
+            : Env.defaultAuthSelection;
     const verifier = randomValue();
     const next: Transaction = {
         state: randomValue(),
@@ -296,13 +304,10 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         issuer,
         target: current.toString(),
         rememberedScope:
-            accountId &&
-            !current.searchParams.has('a') &&
-            !current.searchParams.has('p') &&
-            !Env.defaultAuthSelection?.accountId &&
-            !Env.defaultAuthSelection?.projectId
+            accountId && explicitScope?.projectId === undefined && (!explicitScope?.accountId || projectId)
                 ? { accountId, projectId }
                 : undefined,
+        retryScope: explicitScope?.accountId ? { accountId: explicitScope.accountId } : undefined,
         created: Date.now(),
     };
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));

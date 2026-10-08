@@ -461,3 +461,27 @@ it('rejects an insecure discovered revocation endpoint', async () => {
     expect(replace).not.toHaveBeenCalled();
     expect(requests.some(({ url }) => url === tokenEndpoint)).toBe(false);
 });
+
+it.each(['url', 'configured'])('preserves a %s account when its remembered project is rejected', async (kind) => {
+    local.set('composableai.lastSelectedAccountId', 'saved-account');
+    local.set('composableai.lastSelectedProjectId-saved-account', 'deleted-project');
+    browser.location.href = `${origin}/app${kind === 'url' ? '?a=saved-account' : ''}`;
+    const defaults = kind === 'configured' ? { accountId: 'saved-account' } : undefined;
+    const initial = await setup(false, defaults);
+    void initial.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const first = new URL(replace.mock.calls[0][0]);
+    expect(first.searchParams.get('project_id')).toBe('deleted-project');
+    browser.location.href = `${origin}/app?error=requested_scope_unavailable&state=${first.searchParams.get('state')}`;
+    const callback = await setup(false, defaults);
+    void callback.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(2));
+    const retry = new URL(replace.mock.calls[1][0]);
+    expect(retry.searchParams.get('account_id')).toBe('saved-account');
+    expect(retry.searchParams.has('project_id')).toBe(false);
+    expect(local.has('composableai.lastSelectedProjectId-saved-account')).toBe(false);
+    browser.location.href = `${origin}/app?error=requested_scope_unavailable&state=${retry.searchParams.get('state')}`;
+    const failedRetry = await setup(false, defaults);
+    await expect(failedRetry.getAppOAuthToken()).rejects.toThrow('requested_scope_unavailable');
+    expect(replace).toHaveBeenCalledTimes(2);
+});
