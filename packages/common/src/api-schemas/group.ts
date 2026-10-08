@@ -55,6 +55,11 @@ export const UserGroupSchema = z
                     '(usable in any project). When set, the group may only be used to grant permissions in the ' +
                     'listed projects.',
             }),
+        member_count: z
+            .number()
+            .int()
+            .optional()
+            .meta({ description: 'Number of users in the group. Returned by the group listing only.' }),
     })
     .meta({ id: 'UserGroup' });
 

@@ -322,6 +322,7 @@
     "agent.thinking": "Thinking...",
     "agent.timeout": "Timed out",
     "agent.toggleRightSidebar": "Toggle right sidebar",
+    "agent.typeDifferentResponse": "Or type a different response...",
     "agent.typeYourMessage": "Type your message...",
     "agent.typeYourResponse": "Type your response...",
     "agent.unableToOpenPrint": "Unable to open print preview",

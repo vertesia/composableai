@@ -249,6 +249,7 @@
     "agent.thinking": "思考中...",
     "agent.timeout": "已逾時",
     "agent.toggleRightSidebar": "切換右側邊欄",
+    "agent.typeDifferentResponse": "或輸入其他回覆...",
     "agent.typeYourMessage": "輸入訊息...",
     "agent.typeYourResponse": "輸入您的回覆...",
     "agent.unableToOpenPrint": "無法開啟列印預覽",
