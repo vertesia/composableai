@@ -2,7 +2,8 @@
 
 Audience: apps generated with `npm create @vertesia/plugin` from the release/1.5 template line
 (`@vertesia/ui` 1.5.x). This guide covers configurable authentication, app-owned branding, loading
-screens, and development workspace selection, then [the sandboxed service runtime](#service-apps-the-sandboxed-service-runtime)
+screens, and development workspace selection, then, for apps that Vertesia hosts through AppGen only,
+[the sandboxed service runtime](#appgen-apps-hosted-by-vertesia-the-sandboxed-service-runtime)
 for apps that Vertesia hosts. It is a focused template migration, not a complete SDK breaking-change inventory. Apps still on 1.4 should first follow [the 1.4 migration](migrate-from-1.4.md).
 
 ## Background: what changed
@@ -269,16 +270,20 @@ against the deployment under test. Check these cases manually as well:
 - Production: deep links and branding assets work at the deployed base path, and preview query
   parameters do not replace the real app.
 
-## Service apps: the sandboxed service runtime
+## AppGen apps hosted by Vertesia: the sandboxed service runtime
 
-Audience: apps whose versions are built with target `service`, so that Vertesia hosts the tool server.
-Static (UI-only) versions need none of this. A tool server you run yourself — `pnpm dev` on localhost or
-the Vercel deployment — keeps running on Node unchanged; only the optional `context.scratch` API below
-requires the 1.6 SDK there.
+> **Applies only to apps that Vertesia hosts through AppGen**: apps whose versions Vertesia builds and
+> publishes with target `service` and serves from the Vertesia app gateway (apps generated with the
+> `appgen` module, or with the `service` module and published to Vertesia).
+>
+> **Skip this section if you host the app yourself.** A tool server deployed to Vercel or your own
+> infrastructure, or run with `pnpm dev` on localhost, keeps running on Node with the regular SDK and
+> needs none of these steps. Static (UI-only) AppGen versions are unaffected as well. The one 1.6
+> addition a self-hosted tool server can adopt is `context.scratch` ([S4](#s4-use-contextscratch-for-temporary-files)).
 
 ### Background: what changed
 
-Hosted service versions now run in a sandboxed [workerd](https://github.com/cloudflare/workerd) runtime:
+Service versions hosted by Vertesia now run in a sandboxed [workerd](https://github.com/cloudflare/workerd) runtime:
 a fresh isolated process for every request, Web-platform APIs only, and no Node.js built-ins. The
 caller's credential never enters that process: `context.getClient()` reaches the Vertesia API through
 the platform, which applies the caller's identity and permissions. Tools can call public HTTP(S)
@@ -287,7 +292,7 @@ services directly with `fetch`.
 The publish build now produces a second bundle, `lib/server-sandbox.js`, and validates it in the
 pinned workerd before the version is stored. Service versions published from a 1.5 app have no such
 bundle and are rejected with `422 Republish this app with the sandbox-compatible service builder`.
-Every service app must be rebuilt and republished once.
+Every Vertesia-hosted service app must be rebuilt and republished once.
 
 ### S1. Upgrade dependencies
 
@@ -399,8 +404,9 @@ Check that `Env.init` receives `import.meta.env`, that the dev server was restar
 parameters are not overriding the defaults. An access-denied selector can also mean the configured
 project does not have the app installed or the current user lacks access.
 
-**Does my Vercel or localhost tool server need the service runtime changes?**
-No. Those run on Node with the regular SDK. Upgrading to 1.6 there is only needed for `context.scratch`.
+**Does my Vercel, self-hosted, or localhost tool server need the service runtime changes?**
+No. The sandboxed runtime only hosts AppGen service versions on Vertesia. Self-hosted tool servers run
+on Node with the regular SDK; upgrading to 1.6 there is only needed for `context.scratch`.
 
-**Why does my existing service version return 422?**
-It was built without the sandbox bundle. Follow [the service runtime steps](#service-apps-the-sandboxed-service-runtime) and republish.
+**Why does my existing Vertesia-hosted service version return 422?**
+It was built without the sandbox bundle. Follow [the service runtime steps](#appgen-apps-hosted-by-vertesia-the-sandboxed-service-runtime) and republish.
