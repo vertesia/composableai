@@ -294,6 +294,9 @@ export function createApiContract<T extends object>(ApiSchemaComponents: Readonl
         // would document a constraint nothing checks — the exact spec/enforcement gap this design is
         // meant to close.
         addFormats(ajv);
+        // Zod's `.startsWith()` emits `format: "starts_with"` next to a `pattern` that already enforces
+        // the prefix. Declared as a no-op so AJV stops logging it as an unknown format on every compile.
+        ajv.addFormat('starts_with', true);
         ajv.addSchema({ $id: AJV_SCHEMA_ID, components: { schemas: toAjvComponents() } });
         ajvInstance = ajv;
         return ajv;
