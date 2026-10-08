@@ -261,6 +261,7 @@
     "agent.thinking": "جارٍ التفكير...",
     "agent.timeout": "انتهت المهلة",
     "agent.toggleRightSidebar": "تبديل الشريط الجانبي الأيمن",
+    "agent.typeDifferentResponse": "أو اكتب ردًا مختلفًا...",
     "agent.typeYourMessage": "اكتب رسالتك...",
     "agent.typeYourResponse": "اكتب ردك...",
     "agent.unableToOpenPrint": "تعذر فتح معاينة الطباعة",

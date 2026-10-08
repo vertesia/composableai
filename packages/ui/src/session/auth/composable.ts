@@ -116,17 +116,7 @@ function identityFromAcceptedToken(token: string): AuthenticatedIdentity | undef
     }
 }
 
-export function resolveAuthSelection(currentUrl: URL): { accountId?: string; projectId?: string } {
-    // A URL selection owns the whole pair: never attach an unrelated configured account/project.
-    const hasUrlScope = currentUrl.searchParams.has('a') || currentUrl.searchParams.has('p');
-    const defaults = hasUrlScope ? undefined : Env.defaultAuthSelection;
-    const urlAccount = currentUrl.searchParams.get('a') ?? defaults?.accountId;
-    const urlProject = currentUrl.searchParams.get('p') ?? defaults?.projectId;
-    // A project alone identifies its account, so the stored selection only fills in a missing project.
-    const stored = urlProject === undefined ? readScopeSelection(urlAccount) : undefined;
-
-    return { accountId: urlAccount ?? stored?.accountId, projectId: urlProject ?? stored?.projectId };
-}
+export { resolveAuthSelection } from '../scopeSelection';
 
 function decodeToken(token: string): AuthTokenPayload {
     return jwtDecode(token) as AuthTokenPayload;

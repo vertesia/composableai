@@ -188,6 +188,7 @@ interface CopyButtonProps {
     /** @deprecated use `aria-label` */
     alt?: string;
     'aria-label'?: string;
+    BtnIcon?: React.ReactNode;
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'icon';
     toast?: {
         toast: (options: { status: 'success' | 'error'; title: string; duration: number }) => void;
@@ -197,7 +198,7 @@ interface CopyButtonProps {
 }
 
 const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
-    ({ size, content, toast, className, alt, 'aria-label': ariaLabel, ...props }, ref) => {
+    ({ size, content, toast, className, alt, BtnIcon, 'aria-label': ariaLabel, ...props }, ref) => {
         const [isCopied, setIsCopied] = useState(false);
         const { t } = useUITranslation();
 
@@ -246,7 +247,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
                 {...props}
                 title={label}
             >
-                {isCopied ? <Check className="text-success" /> : <CopyIcon className="size-4" />}
+                {isCopied ? <Check className="text-success" /> : (BtnIcon ?? <CopyIcon className="size-4" />)}
             </Button>
         );
     },

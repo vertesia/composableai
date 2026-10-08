@@ -6,6 +6,7 @@
  * another tab's next token refresh. `localStorage` holds the last selection made in any tab, and
  * only seeds a tab that has no scope of its own yet (a new tab, or the app after a restart).
  */
+import { Env } from '@vertesia/ui/env';
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
 
 const TabAccountId_KEY = 'composableai.tabAccountId';
@@ -50,6 +51,18 @@ export function readScopeSelection(accountId?: string): ScopeSelection {
             ? sessionGet(TabProjectId_KEY)
             : (localStorage.getItem(`${LastSelectedProjectId_KEY}-${account}`) ?? undefined);
     return { accountId: account, projectId: projectId || undefined };
+}
+
+export function resolveAuthSelection(currentUrl: URL): { accountId?: string; projectId?: string } {
+    // A URL selection owns the whole pair: never attach an unrelated configured account/project.
+    const hasUrlScope = currentUrl.searchParams.has('a') || currentUrl.searchParams.has('p');
+    const defaults = hasUrlScope ? undefined : Env.defaultAuthSelection;
+    const urlAccount = currentUrl.searchParams.get('a') ?? defaults?.accountId;
+    const urlProject = currentUrl.searchParams.get('p') ?? defaults?.projectId;
+    // A project alone identifies its account, so the stored selection only fills in a missing project.
+    const stored = urlProject === undefined ? readScopeSelection(urlAccount) : undefined;
+
+    return { accountId: urlAccount ?? stored?.accountId, projectId: urlProject ?? stored?.projectId };
 }
 
 /** Make this the tab's scope and the default for new tabs. */

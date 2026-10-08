@@ -251,6 +251,7 @@
     "agent.thinking": "Pensando...",
     "agent.timeout": "Tiempo agotado",
     "agent.toggleRightSidebar": "Alternar panel lateral",
+    "agent.typeDifferentResponse": "O escribe una respuesta diferente...",
     "agent.typeYourMessage": "Escribe tu mensaje...",
     "agent.typeYourResponse": "Escribe tu respuesta...",
     "agent.unableToOpenPrint": "No se pudo abrir la vista previa de impresión",

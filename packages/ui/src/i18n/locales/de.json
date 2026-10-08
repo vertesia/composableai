@@ -249,6 +249,7 @@
     "agent.thinking": "Denke nach...",
     "agent.timeout": "Zeitüberschreitung",
     "agent.toggleRightSidebar": "Rechte Seitenleiste umschalten",
+    "agent.typeDifferentResponse": "Oder geben Sie eine andere Antwort ein...",
     "agent.typeYourMessage": "Geben Sie Ihre Nachricht ein...",
     "agent.typeYourResponse": "Geben Sie Ihre Antwort ein...",
     "agent.unableToOpenPrint": "Druckvorschau konnte nicht geöffnet werden",

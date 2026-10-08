@@ -3514,6 +3514,7 @@ export type UserGroup = {
     clearance?: number | undefined;
     compartments?: string[] | undefined;
     allowed_projects?: string[] | undefined;
+    member_count?: number | undefined;
 };
 export type CreateUserGroupPayload = {
     name: string;

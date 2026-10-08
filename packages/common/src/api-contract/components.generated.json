@@ -888,6 +888,12 @@
           "type": "string"
         },
         "description": "Projects this group is allowed to be used in. When empty or absent the group is org-wide (usable in any project). When set, the group may only be used to grant permissions in the listed projects."
+      },
+      "member_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Number of users in the group. Returned by the group listing only."
       }
     },
     "required": [
