@@ -27,6 +27,7 @@ export interface Tab {
 export type CanChangeTab = (nextTab: string, currentTab?: string) => boolean;
 
 const TabsContext = React.createContext<{
+    orientation?: 'horizontal' | 'vertical';
     size?: number;
     tabs?: Tab[];
     current?: string;
@@ -46,6 +47,7 @@ const TabsContext = React.createContext<{
 });
 
 interface TabsProps {
+    orientation?: 'horizontal' | 'vertical';
     current?: string | (() => string);
     tabs: Tab[];
     defaultValue?: string;
@@ -61,6 +63,7 @@ interface TabsProps {
 }
 
 const Tabs = ({
+    orientation = 'horizontal',
     tabs,
     defaultValue,
     current,
@@ -165,6 +168,7 @@ const Tabs = ({
     return (
         <TabsContext.Provider
             value={{
+                orientation,
                 tabs: visibleTabs,
                 size: fullWidth ? visibleTabs.length : 0,
                 current: value,
@@ -176,6 +180,7 @@ const Tabs = ({
             }}
         >
             <TabsPrimitive.Root
+                orientation={orientation}
                 defaultValue={value || visibleTabs[0]?.name}
                 value={value}
                 onValueChange={handleValueChange}
@@ -194,8 +199,9 @@ interface TabsBarProps {
 }
 
 const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
-    const { tabs, size, current, setTab, responsive, variant, updateHash, canChangeTab } =
+    const { tabs, size, current, setTab, responsive, variant, updateHash, canChangeTab, orientation } =
         React.useContext(TabsContext);
+    const barDirection = direction ?? orientation ?? 'horizontal';
 
     const fullWidth = size !== 0;
 
@@ -248,14 +254,14 @@ const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
                     sticky && 'sticky top-0 bg-background z-10',
                     // TabsList's `border-b -mb-px` is the rail under a ROW of tabs. In vertical
                     // mode it renders as a stray line beneath the column, so drop it here only.
-                    direction === 'vertical' ? 'flex-col items-start border-b-0 mb-0' : 'flex-row',
+                    barDirection === 'vertical' ? 'flex-col items-start border-b-0 mb-0' : 'flex-row',
                     responsive ? 'hidden lg:flex' : '',
                     className,
                 )}
             >
                 {tabs.map((tab) => (
                     <TabsTrigger
-                        className={cn(direction === 'vertical' ? 'w-full text-start' : '')}
+                        className={cn(barDirection === 'vertical' ? 'w-full text-start' : '')}
                         key={tab.name}
                         value={tab.name}
                         disabled={tab.disabled}
@@ -349,8 +355,8 @@ const TabsTrigger: React.ForwardRefExoticComponent<
                           )
                         : cn(
                               'px-3 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer rounded-sm transition-colors',
-                              'tborder border-input bg-muted shadow-xs hover:bg-muted ring-inset',
-                              'data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-sm',
+                              'border border-input bg-muted shadow-xs hover:bg-muted ring-inset',
+                              'data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm',
                               'disabled:pointer-events-none disabled:opacity-50',
                           ),
                     className,

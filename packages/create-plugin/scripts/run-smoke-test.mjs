@@ -49,6 +49,8 @@ try {
     } else {
         const generatedEnv = readFileSync(join(projectPath, '.env.app'), 'utf8');
         assert.match(generatedEnv, /^VITE_AUTH_SERVER_URL=https:\/\/auth\.dev1\.vertesia\.io\/$/m);
+        assert.match(generatedEnv, /^# VITE_OAUTH_CLIENT_ID=my-app-development$/m);
+        assert.match(generatedEnv, /^# VITE_OAUTH_REDIRECT_URI=https:\/\/localhost:5173\/$/m);
         const generatedPackage = JSON.parse(readFileSync(join(projectPath, 'package.json'), 'utf8'));
         const internalDependencies = Object.entries({
             ...generatedPackage.dependencies,

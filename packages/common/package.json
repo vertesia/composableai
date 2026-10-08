@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "1.6.0-dev.20260923.085325Z",
+    "version": "1.6.0-dev.20261004.085740Z",
     "license": "Apache-2.0",
     "type": "module",
     "main": "./lib/index.js",
@@ -8,17 +8,18 @@
     "files": [
         "lib",
         "src",
+        "!src/**/*.test.*",
         "tsconfig.dist.json"
     ],
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "gen:schemas": "tsx ./scripts/gen-api-components.ts && tsx ./scripts/gen-intake-policy-schema.ts && pnpm exec biome format --write ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts",
-        "check:schemas": "! git status --porcelain --untracked-files=normal -- ./src/api-contract/components.generated.json ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts | grep .",
+        "gen:schemas": "tsx ./scripts/gen-api-components.ts && tsx ./scripts/gen-intake-policy-schema.ts && tsx ./scripts/gen-wire-types.ts && pnpm exec biome format --write ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts",
+        "check:schemas": "! git status --porcelain --untracked-files=normal -- ./src/api-contract/components.generated.json ./src/store/intake-policy-schema.generated.ts ./src/store/editing-policy-schema.generated.ts ./src/wire-types.generated.ts ./src/wire-types.generated.test.ts | grep .",
         "check:pre-push": "pnpm exec turbo run gen:schemas --filter=@vertesia/common && pnpm run check:schemas"
     },
     "exports": {
@@ -33,13 +34,17 @@
         "./api-contract": {
             "types": "./lib/api-contract/index.d.ts",
             "default": "./lib/api-contract/index.js"
+        },
+        "./wire-types": {
+            "types": "./lib/wire-types.generated.d.ts",
+            "default": "./lib/wire-types.generated.js"
         }
     },
     "devDependencies": {
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
         "rolldown": "catalog:",
-        "tsx": "^4.23.13",
+        "tsx": "^4.23.15",
         "typescript": "catalog:",
         "vitest": "catalog:"
     },
@@ -62,5 +67,5 @@
         "ai",
         "typescript"
     ],
-    "gitHead": "8732631fd8099bdcab4f5375da2309f3cff34e19"
+    "gitHead": "b51b6dc9262f81f55e2424d1e57190060f6068d7"
 }

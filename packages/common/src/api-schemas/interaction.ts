@@ -28,7 +28,7 @@ import { ExecutionEnvironmentRefSchema } from './environment.js';
 import { InferenceProfileIdSchema, InferenceProfileSnapshotSchema } from './inference-profile.js';
 import { AccountRefSchema } from './invites.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
-import { AgentCheckpointConfigurationSchema } from './project-configuration.js';
+import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
@@ -806,6 +806,10 @@ export const AgentRunnerOptionsSchema = z
         checkpoint: AgentCheckpointConfigurationSchema.meta({
             description:
                 "Per-agent context checkpoint configuration. Field-wise it overrides the project's `configuration.agent.checkpoint`; a per-run `checkpoint_tokens` override still wins over both.",
+        }).optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Per-agent token budget. Field-wise it overrides the project's `configuration.agent.budget`; the per-run `budget` wins over both.",
         }).optional(),
     })
     .meta({
@@ -1769,6 +1773,10 @@ export const ConversationStateSchema = z
                     'Project-configured checkpoint hard cap in tokens (cached from project.configuration.agent_checkpoint_tokens at conversation start). The workflow resolves the effective threshold from these, the per-run checkpoint_tokens override, and the model-based default.',
             })
             .optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Project-configured agent token budget (cached from project.configuration.agent.budget at conversation start). The workflow resolves the effective budget field-wise from this, the interaction's agent_runner_options.budget, and the per-run budget override.",
+        }).optional(),
         user_channels: z
             .array(UserChannelSchema)
             .meta({
@@ -2120,6 +2128,11 @@ export const AsyncInteractionExecutionPayloadSchema = z
     })
     .meta({ id: 'AsyncInteractionExecutionPayload' });
 
+export const AgentEvaluateRequestSchema = z.boolean().optional().meta({
+    description:
+        'Request LLM evaluation when the project evaluation policy is opt_in. Defaults to false. Cannot override disabled or opt out of always_on.',
+});
+
 export const ConversationEnrichmentFields = {
     title: z.string().min(1).meta({ description: 'Caller-provided conversation title.' }).optional(),
     topic: z
@@ -2150,6 +2163,7 @@ export const AsyncConversationExecutionPayloadSchema = z
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
         ...ConversationEnrichmentFields,
+        evaluate: AgentEvaluateRequestSchema,
         app_version: z
             .string()
             .meta({
@@ -2165,10 +2179,6 @@ export const AsyncConversationExecutionPayloadSchema = z
             })
             .optional(),
         settings: AgentRunSettingsSchema.optional(),
-        settings_snapshot: AgentRunSettingsSnapshotSchema.optional().meta({
-            description:
-                'Server-resolved settings carried by the workflow. Public launch requests resolve their own snapshot.',
-        }),
         config: InteractionExecutionConfigurationSchema.optional(),
         result_schema: z.union([JSONSchemaSchema, SchemaRefSchema, z.null()]).optional(),
         do_validate: z.boolean().optional(),
@@ -2287,6 +2297,10 @@ export const AsyncConversationExecutionPayloadSchema = z
             description:
                 "Structured per-run checkpoint override. Field-wise it takes precedence over the interaction's `agent_runner_options.checkpoint` and the project's `configuration.agent.checkpoint`. The legacy absolute `checkpoint_tokens` above still wins over everything when set.",
         }).optional(),
+        budget: AgentBudgetConfigurationSchema.meta({
+            description:
+                "Per-run token budget override. Field-wise it takes precedence over the interaction's `agent_runner_options.budget` and the project's `configuration.agent.budget`. Subagent workstreams receive the remaining budget of their parent here.",
+        }).optional(),
         strip_options: ConversationStripOptionsSchema.meta({
             description:
                 'Configuration for stripping large data (images, text) from conversation history to prevent JSON serialization issues and reduce storage bloat.',
@@ -2309,6 +2323,13 @@ export const AsyncConversationExecutionPayloadSchema = z
             .meta({
                 description:
                     "Metadata inherited from parent workflow. Used to propagate context (e.g., apiKey, session info) to child workflows/workstreams. When a workstream is spawned, the parent's `data` is preserved here so that child tools can access it via metadata.parent_metadata.",
+            })
+            .optional(),
+        final_verification: z
+            .boolean()
+            .meta({
+                description:
+                    'When true, a non-interactive free-form run takes one extra turn after its answer to check that the task is complete. Off by default, and never applied to workstreams: their parent reviews the result and can message the workstream to continue.',
             })
             .optional(),
         non_blocking_subagents: z
@@ -2446,7 +2467,7 @@ export const ResolveInteractionQuerySchema = z
         environment: z.string().optional(),
         model: z.string().optional(),
         inference_profile: InferenceProfileIdSchema.optional(),
-        inherit_model_config: z.boolean().optional(),
+        inherit_model_config: InteractionExecutionConfigurationSchema.shape.inherit_model_config,
         hasImage: z.boolean().optional(),
         hasVideo: z.boolean().optional(),
     })

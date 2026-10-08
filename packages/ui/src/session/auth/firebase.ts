@@ -53,17 +53,17 @@ export async function setFirebaseTenant(tenantEmail?: string) {
         };
     }
     if (!tenantEmail) {
-        console.log('No tenant name or email specified, skipping tenant setup');
+        Env.logger.debug('Skipping Firebase tenant setup because no tenant identity was provided');
         return;
     }
 
     if (!Env.firebase) {
-        console.log('Firebase configuration is not available in the environment');
+        Env.logger.debug('Skipping Firebase tenant setup because Firebase is not configured');
         return;
     }
 
     try {
-        if (tenantEmail) console.log(`Resolving tenant ID from email: ${tenantEmail}`);
+        Env.logger.debug('Resolving Firebase tenant');
 
         // Add retry logic with exponential backoff
         let retries = 3;
@@ -91,21 +91,16 @@ export async function setFirebaseTenant(tenantEmail?: string) {
 
                 // Handle HTTP error responses
                 if (!response.ok) {
-                    // Try to parse the error response
-                    try {
-                        const errorData = await response.json();
-                        console.error('Failed to resolve tenant ID:', errorData.error);
-                    } catch {
-                        console.error(`Failed to resolve tenant ID: HTTP ${response.status}`);
-                    }
-
                     // If the error is 404 Not Found, no need to retry
                     if (response.status === 404) {
-                        console.warn(`Tenant not found for ${tenantEmail}`);
+                        Env.logger.warn('Firebase tenant was not found; continuing with the default tenant', {
+                            vertesia: { status: response.status },
+                        });
                         return;
                     }
 
-                    throw new Error(`HTTP error ${response.status}`);
+                    const errorData = (await response.json().catch(() => undefined)) as { error?: string } | undefined;
+                    throw new Error(errorData?.error ?? `HTTP error ${response.status}`);
                 }
 
                 // Successfully got a response, parse it
@@ -115,16 +110,22 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                     const auth = getFirebaseAuth();
                     auth.tenantId = data.firebaseTenantId;
                     Env.firebase.providerType = data.provider ?? 'oidc';
-                    console.log(`Tenant ID set to ${auth.tenantId}`);
+                    Env.logger.debug('Firebase tenant resolved');
                     return data;
                 } else {
-                    console.error(`Invalid response format, missing tenantId for ${tenantEmail}`);
+                    Env.logger.warn('Firebase tenant response did not include a tenant ID');
                     return; // No need to retry for invalid response format
                 }
             } catch (fetchError) {
                 // Only retry for network-related errors
                 if (retries > 1) {
-                    console.warn(`Tenant resolution failed, retrying in ${retryDelay}ms...`, fetchError);
+                    Env.logger.debug('Firebase tenant resolution failed; retrying', {
+                        vertesia: {
+                            retry_delay_ms: retryDelay,
+                            attempts_remaining: retries - 1,
+                            error: fetchError,
+                        },
+                    });
                     await new Promise((resolve) => setTimeout(resolve, retryDelay));
                     retryDelay *= 2; // Exponential backoff
                     retries--;
@@ -135,7 +136,9 @@ export async function setFirebaseTenant(tenantEmail?: string) {
         }
     } catch (error) {
         // Final error handler
-        console.error('Error setting Firebase tenant:', error instanceof Error ? error.message : 'Unknown error');
+        Env.logger.warn('Firebase tenant resolution failed; continuing with the default tenant', {
+            vertesia: { error },
+        });
 
         // Continue without tenant ID - authentication will work without multi-tenancy
         // but the user will access the default tenant
@@ -159,17 +162,16 @@ export async function getFirebaseAuthToken(refresh?: boolean) {
                 });
                 return token;
             })
-            .catch((err) => {
-                Env.logger.error('Failed to get Firebase token', {
+            .catch((error) => {
+                Env.logger.warn('Failed to get Firebase token', {
                     vertesia: {
                         user_email: user.email,
                         user_name: user.displayName,
                         user_id: user.uid,
                         refresh: refresh,
-                        error: err,
+                        error,
                     },
                 });
-                console.error('Failed to get access token', err);
                 return null;
             });
     } else {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { AgentRunSettingsSchema, MAX_RUN_SETTINGS_SUBAGENTS } from '../api-schemas/agent-run-settings.js';
 import type { AsyncConversationExecutionPayload, CreateAgentRunPayload } from '../index.js';
-import { validateApiRequest } from './index.js';
+import { ApiSchemaComponents, validateApiRequest } from './index.js';
 
 const profile = 'a'.repeat(24);
 
@@ -48,12 +49,36 @@ describe('agent run settings wire contract', () => {
         );
     });
 
-    it('does not accept a caller-supplied snapshot on run creation', () => {
+    // The snapshot is resolved by the server and carried only by the workflow, never accepted from callers.
+    it('does not accept or publish a caller-supplied snapshot on the launch APIs', () => {
         expect(
             validateApiRequest('CreateAgentRunPayload', {
                 interaction: 'sys:GeneralAgent',
                 settings_snapshot: {},
             }).valid,
         ).toBe(false);
+        const conversation = ApiSchemaComponents.AsyncConversationExecutionPayload as {
+            properties: Record<string, unknown>;
+        };
+        expect(conversation.properties).toHaveProperty('settings');
+        expect(conversation.properties).not.toHaveProperty('settings_snapshot');
+    });
+
+    it(`accepts up to ${MAX_RUN_SETTINGS_SUBAGENTS} named subagents in the contract and the schema`, () => {
+        const subagents = (count: number) =>
+            Object.fromEntries(
+                Array.from({ length: count }, (_, i) => [`sys:Agent${i}`, { inference_profile: profile }]),
+            );
+        const within = { subagents: subagents(MAX_RUN_SETTINGS_SUBAGENTS) };
+        const over = { subagents: subagents(MAX_RUN_SETTINGS_SUBAGENTS + 1) };
+
+        expect(
+            validateApiRequest('CreateAgentRunPayload', { interaction: 'sys:GeneralAgent', settings: within }).valid,
+        ).toBe(true);
+        expect(
+            validateApiRequest('CreateAgentRunPayload', { interaction: 'sys:GeneralAgent', settings: over }).valid,
+        ).toBe(false);
+        expect(AgentRunSettingsSchema.safeParse(within).success).toBe(true);
+        expect(AgentRunSettingsSchema.safeParse(over).success).toBe(false);
     });
 });

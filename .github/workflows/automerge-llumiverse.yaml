@@ -118,8 +118,8 @@ jobs:
             echo "Skipping PR #$pr_number: head repository owner is $head_owner, not $repo_owner."
             exit 0
           fi
-          if [[ "$base_ref" != "main" && "$base_ref" != "preview" && ! "$base_ref" =~ ^release/[0-9]+\.[0-9]+$ ]]; then
-            echo "Skipping PR #$pr_number: base branch is $base_ref, not main, preview, or release/X.Y."
+          if [[ "$base_ref" != "main" && ! "$base_ref" =~ ^release/[0-9]+\.[0-9]+$ ]]; then
+            echo "Skipping PR #$pr_number: base branch is $base_ref, not main or release/X.Y."
             exit 0
           fi
           if [[ "$is_draft" != "false" ]]; then
@@ -414,6 +414,10 @@ jobs:
       always() && (needs.approve-and-merge.result == 'failure' ||
       needs.approve-and-merge.outputs.attention_reason != '')
     uses: ./.github/workflows/notify-automation.yaml # zizmor: ignore[self-repository] actionlint does not yet support $/ workflow references.
+    # Name the secret so the called job can resolve it from its submodule-sync environment
+    # (actions/runner#1490); without it the job fails with an empty private-key.
+    secrets:
+      APP_VERTESIA_SUBMODULE_SYNC_PEM: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }} # zizmor: ignore[secrets-outside-env] Resolved by the called submodule-sync environment.
     with:
       branch: ${{ github.event.workflow_run.head_branch }}
       sha: ${{ github.event.workflow_run.head_sha }}

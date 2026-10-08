@@ -77,8 +77,13 @@ export class PayloadBuilderStore {
 export class PayloadBuilder {
     _interactive: boolean = true;
     _debug_mode: boolean = false;
+    _evaluate: boolean | undefined;
+    _final_verification: boolean = false;
     _non_blocking_subagents: boolean = true;
     _checkpoint_tokens: number | undefined;
+    /** Per-run token budget (`budget.limit_tokens`), in weighted tokens. */
+    _budget_tokens: number | undefined;
+    _budget_usd: number | undefined;
     _visibility: ConversationVisibility | undefined;
     _user_channels: UserChannel[] | undefined;
     _collection: string | undefined;
@@ -134,8 +139,12 @@ export class PayloadBuilder {
         builder._tool_names = [...this._tool_names];
         builder._interactive = this._interactive;
         builder._debug_mode = this._debug_mode;
+        builder._evaluate = this._evaluate;
+        builder._final_verification = this._final_verification;
         builder._non_blocking_subagents = this._non_blocking_subagents;
         builder._checkpoint_tokens = this._checkpoint_tokens;
+        builder._budget_tokens = this._budget_tokens;
+        builder._budget_usd = this._budget_usd;
         builder._visibility = this._visibility;
         builder._user_channels = this._user_channels ? [...this._user_channels] : undefined;
         builder._inputValidator = this._inputValidator;
@@ -208,6 +217,30 @@ export class PayloadBuilder {
         }
     }
 
+    /** Per-run LLM evaluation request; undefined leaves the project policy default. */
+    get evaluate(): boolean | undefined {
+        return this._evaluate;
+    }
+
+    set evaluate(value: boolean | undefined) {
+        if (value !== this._evaluate) {
+            this._evaluate = value;
+            this.onStateChanged();
+        }
+    }
+
+    /** Opt-in final self-check turn; the workflow applies it to non-interactive runs only. */
+    get final_verification(): boolean {
+        return this._final_verification;
+    }
+
+    set final_verification(value: boolean) {
+        if (value !== this._final_verification) {
+            this._final_verification = value;
+            this.onStateChanged();
+        }
+    }
+
     get non_blocking_subagents() {
         return this._non_blocking_subagents;
     }
@@ -228,6 +261,41 @@ export class PayloadBuilder {
             this._checkpoint_tokens = value;
             this.onStateChanged();
         }
+    }
+
+    get budget_tokens(): number | undefined {
+        return this._budget_tokens;
+    }
+
+    set budget_tokens(value: number | undefined) {
+        if (value !== this._budget_tokens) {
+            this._budget_tokens = value;
+            this.onStateChanged();
+        }
+    }
+
+    /**
+     * The per-run `budget` payload. Only the limit is sent, so the weights and reminders configured
+     * on the agent or project still apply field-wise.
+     */
+    get budget_usd(): number | undefined {
+        return this._budget_usd;
+    }
+
+    setBudgetUsd(value: number | undefined, fallbackTokens?: number) {
+        const valid =
+            value !== undefined && Number.isFinite(value) && value > 0 && value <= Number.MAX_SAFE_INTEGER / 1e9;
+        this._budget_usd = valid ? value : undefined;
+        if (valid) this._budget_tokens ??= fallbackTokens ?? 1_000_000;
+        this.onStateChanged();
+    }
+
+    get budget(): import('@vertesia/common').AgentBudgetConfiguration | undefined {
+        if (this._budget_usd !== undefined)
+            return { mode: 'dollar', limit_usd: this._budget_usd, limit_tokens: this._budget_tokens };
+        return this._budget_tokens != null && this._budget_tokens > 0
+            ? { limit_tokens: this._budget_tokens }
+            : undefined;
     }
 
     get visibility(): ConversationVisibility | undefined {
@@ -317,6 +385,9 @@ export class PayloadBuilder {
         this._debug_mode = context.debug_mode ?? false;
         this._non_blocking_subagents = context.non_blocking_subagents ?? true;
         this._checkpoint_tokens = context.checkpoint_tokens;
+        this._budget_usd = context.budget?.mode === 'dollar' ? context.budget.limit_usd : undefined;
+        const budgetLimit = context.budget?.limit_tokens;
+        this._budget_tokens = budgetLimit !== undefined && budgetLimit > 0 ? budgetLimit : undefined;
         this._user_channels = context.user_channels;
         this._disabled_mcp_collections = context.disabled_mcp_collections;
         this._model_options = context.config?.model_options as ModelOptions | undefined;
@@ -524,11 +595,20 @@ export class PayloadBuilder {
     setDebugMode(debug_mode: boolean) {
         this.debug_mode = debug_mode;
     }
+    setEvaluate(value: boolean | undefined) {
+        this.evaluate = value;
+    }
+    setFinalVerification(value: boolean) {
+        this.final_verification = value;
+    }
     setUserChannels(channels: UserChannel[] | undefined) {
         this.user_channels = channels;
     }
     setCheckpointTokens(value: number | undefined) {
         this.checkpoint_tokens = value;
+    }
+    setBudgetTokens(value: number | undefined) {
+        this.budget_tokens = value;
     }
     setVisibility(value: ConversationVisibility | undefined) {
         this.visibility = value;
@@ -602,8 +682,12 @@ export class PayloadBuilder {
         this._start = false;
         this._interactive = true;
         this._debug_mode = false;
+        this._evaluate = undefined;
+        this._final_verification = false;
         this._non_blocking_subagents = true;
         this._checkpoint_tokens = undefined;
+        this._budget_tokens = undefined;
+        this._budget_usd = undefined;
         this._visibility = undefined;
         this._user_channels = undefined;
         this._collection = undefined;

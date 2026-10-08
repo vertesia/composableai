@@ -1,20 +1,10 @@
-import type { z } from 'zod';
-import type {
-    AgentRunAnalysisSettingsSchema,
-    AgentRunAnalysisSnapshotSchema,
-    AgentRunInferenceSettingsSchema,
-    AgentRunInferenceSnapshotSchema,
-    AgentRunSettingsSchema,
-    AgentRunSettingsSnapshotSchema,
-    AgentRunToolSettingsSchema,
-    AgentRunToolSettingsSnapshotSchema,
-} from './api-schemas/agent-run-settings.js';
+import type * as Wire from './wire-types.generated.js';
 
-export type AgentRunInferenceSettings = z.infer<typeof AgentRunInferenceSettingsSchema>;
-export type AgentRunAnalysisSettings = z.infer<typeof AgentRunAnalysisSettingsSchema>;
-export type AgentRunToolSettings = z.infer<typeof AgentRunToolSettingsSchema>;
-export type AgentRunSettings = z.infer<typeof AgentRunSettingsSchema>;
-export type AgentRunInferenceSnapshot = z.infer<typeof AgentRunInferenceSnapshotSchema>;
-export type AgentRunAnalysisSnapshot = z.infer<typeof AgentRunAnalysisSnapshotSchema>;
-export type AgentRunToolSettingsSnapshot = z.infer<typeof AgentRunToolSettingsSnapshotSchema>;
-export type AgentRunSettingsSnapshot = z.infer<typeof AgentRunSettingsSnapshotSchema>;
+export type AgentRunInferenceSettings = Wire.AgentRunInferenceSettings;
+export type AgentRunAnalysisSettings = Wire.AgentRunAnalysisSettings;
+export type AgentRunToolSettings = Wire.AgentRunToolSettings;
+export type AgentRunSettings = Wire.AgentRunSettings;
+export type AgentRunInferenceSnapshot = Wire.AgentRunInferenceSnapshot;
+export type AgentRunAnalysisSnapshot = Wire.AgentRunAnalysisSnapshot;
+export type AgentRunToolSettingsSnapshot = Wire.AgentRunToolSettingsSnapshot;
+export type AgentRunSettingsSnapshot = Wire.AgentRunSettingsSnapshot;

@@ -2,6 +2,9 @@ import { ModelOptionsSchema } from '@llumiverse/common/schemas';
 import { z } from 'zod';
 import { InferenceProfileIdSchema, InferenceProfileSnapshotSchema } from './inference-profile.js';
 
+/** Named subagents one run may pin; the server rejects more. */
+export const MAX_RUN_SETTINGS_SUBAGENTS = 32;
+
 export const AgentRunInferenceSettingsSchema = z
     .strictObject({
         inference_profile: InferenceProfileIdSchema,
@@ -35,10 +38,14 @@ export const AgentRunSettingsSchema = z
                 z.string().regex(/^(?:[a-fA-F0-9]{24}|sys:[A-Za-z0-9_]+|app:[A-Za-z0-9_-]+:[A-Za-z0-9_]+)$/),
                 AgentRunInferenceSettingsSchema,
             )
+            .refine((subagents) => Object.keys(subagents).length <= MAX_RUN_SETTINGS_SUBAGENTS, {
+                message: `At most ${MAX_RUN_SETTINGS_SUBAGENTS} named subagents`,
+            })
             .optional()
             .meta({
                 description:
                     'Up to 32 named agents, keyed by stable interaction ID (ObjectId, sys: or app: ID). Inherited by descendants.',
+                maxProperties: MAX_RUN_SETTINGS_SUBAGENTS,
             }),
     })
     .meta({

@@ -1,12 +1,13 @@
 {
     "name": "@vertesia/tools-admin-ui",
-    "version": "1.6.0-dev.20260923.085325Z",
+    "version": "1.6.0-dev.20261004.085740Z",
     "description": "Shared admin UI for Vertesia tool servers",
     "type": "module",
     "license": "Apache-2.0",
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "exports": {
         ".": {
@@ -19,7 +20,7 @@
         "lint": "biome lint src",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && vite build --mode lib",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && vite build --mode lib",
         "dev": "vite dev"
     },
     "peerDependencies": {
@@ -41,7 +42,7 @@
     "dependencies": {
         "@vertesia/common": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "lucide-react": "^1.46.0"
+        "lucide-react": "^1.48.0"
     },
     "repository": {
         "type": "git",
@@ -55,5 +56,5 @@
         "ui",
         "react"
     ],
-    "gitHead": "8732631fd8099bdcab4f5375da2309f3cff34e19"
+    "gitHead": "b51b6dc9262f81f55e2424d1e57190060f6068d7"
 }

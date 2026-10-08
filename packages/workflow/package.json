@@ -1,13 +1,14 @@
 {
     "name": "@vertesia/workflow",
-    "version": "1.6.0-dev.20260923.085325Z",
+    "version": "1.6.0-dev.20261004.085740Z",
     "type": "module",
     "description": "Vertesia workflow DSL",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "bin": {
         "bundle-workflows": "./bin/bundle-workflows.mjs"
@@ -15,14 +16,14 @@
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && node ./bin/bundle-workflows.mjs lib/workflows.js lib/workflows-bundle.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "license": "Apache-2.0",
     "devDependencies": {
-        "@smithy/types": "^4.18.0",
+        "@smithy/types": "^4.19.0",
         "@temporalio/proto": "^1.24.0",
         "@temporalio/testing": "^1.24.0",
         "@temporalio/worker": "^1.24.0",
@@ -35,9 +36,9 @@
         "vitest": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.1134.0",
-        "@aws-sdk/client-textract": "^3.1134.0",
-        "@aws-sdk/credential-providers": "^3.1134.0",
+        "@aws-sdk/client-s3": "^3.1144.0",
+        "@aws-sdk/client-textract": "^3.1144.0",
+        "@aws-sdk/credential-providers": "^3.1144.0",
         "@llumiverse/common": "workspace:*",
         "@temporalio/activity": "^1.24.0",
         "@temporalio/workflow": "^1.24.0",
@@ -49,14 +50,14 @@
         "mime": "^4.1.0",
         "ms": "3.0.0-canary.202508261828",
         "node-web-stream-adapters": "^0.2.1",
-        "p-limit": "^7.3.2",
+        "p-limit": "^7.3.3",
         "papaparse": "^5.7.0",
         "seedrandom": "^3.0.5",
-        "sharp": "^0.35.4",
+        "sharp": "^0.35.5",
         "tiktoken": "^1.0.22",
         "tmp": "^0.2.7",
         "tmp-promise": "^3.0.3",
-        "undici": "^7.29.1",
+        "undici": "^7.30.0",
         "yaml": "^2.9.1"
     },
     "exports": {
@@ -139,5 +140,5 @@
         "agents",
         "typescript"
     ],
-    "gitHead": "8732631fd8099bdcab4f5375da2309f3cff34e19"
+    "gitHead": "b51b6dc9262f81f55e2424d1e57190060f6068d7"
 }

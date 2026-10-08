@@ -11,6 +11,7 @@ import { gatewayFetch, loadGatewaySession, logoutGatewaySession, usesGatewaySess
 import { getAppOAuthToken, revokeAppOAuthSession } from './auth/oauth';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
+import { forgetTabScopeSelection, rememberScopeSelection } from './scopeSelection';
 
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
 
@@ -91,9 +92,35 @@ class UserSession {
             if (!token) {
                 throw new Error('No token available');
             }
-            this.authToken = jwtDecode(token) as unknown as AuthTokenPayload;
+            this.adoptToken(token);
             return token;
         });
+    }
+
+    /**
+     * Adopt a token refreshed for this session. A token for another account or project means the
+     * scope moved under the rendered view, which would then mix data from both: reload so the view
+     * starts over in one scope, and fail the call so nothing is sent with the other scope's token.
+     */
+    private adoptToken(token: string): AuthTokenPayload {
+        const next = jwtDecode<AuthTokenPayload>(token);
+        const current = this.authToken;
+        // An account-only session gaining a project rendered no project data, so it has nothing to mix.
+        const projectChanged = !!current?.project && current.project.id !== next.project?.id;
+        if (current && (current.account?.id !== next.account?.id || projectChanged)) {
+            Env.logger.warn('Auth token scope changed under the session; reloading', {
+                vertesia: {
+                    account_id: current.account?.id,
+                    project_id: current.project?.id,
+                    next_account_id: next.account?.id,
+                    next_project_id: next.project?.id,
+                },
+            });
+            location.reload();
+            throw new Error('The session account or project changed; reloading');
+        }
+        this.authToken = next;
+        return next;
     }
 
     /**
@@ -117,9 +144,9 @@ class UserSession {
         if (!token) {
             throw new Error('No token available');
         }
-        this.authToken = jwtDecode(token) as unknown as AuthTokenPayload;
+        const payload = this.adoptToken(token);
         this.setSession?.(this.clone());
-        return this.authToken;
+        return payload;
     }
 
     signOut() {
@@ -142,12 +169,7 @@ class UserSession {
             `Logging in as ${this.authToken?.name} with account ${this.authToken?.account.name} (${this.authToken?.account.id}, and project ${this.authToken?.project?.name} (${this.authToken?.project?.id})`,
         );
 
-        //store selected account in local storage
-        localStorage.setItem(LastSelectedAccountId_KEY, this.authToken.account.id);
-        localStorage.setItem(
-            `${LastSelectedProjectId_KEY}-${this.authToken.account.id}`,
-            this.authToken.project?.id ?? '',
-        );
+        rememberScopeSelection(this.authToken.account.id, this.authToken.project?.id);
         // notify the host app of the login
         Env.onLogin?.(this.authToken);
 
@@ -254,6 +276,8 @@ class UserSession {
                 localStorage.removeItem(`${LastSelectedProjectId_KEY}-${this.account.id}`);
             }
         }
+        // The next load picks the target account's last project, not this tab's current one.
+        forgetTabScopeSelection();
 
         const url = mountRootUrl();
         url.searchParams.set('a', targetAccountId);
@@ -262,7 +286,7 @@ class UserSession {
 
     async switchProject(targetProjectId: string) {
         if (this.account) {
-            localStorage.setItem(`${LastSelectedProjectId_KEY}-${this.account.id}`, targetProjectId);
+            rememberScopeSelection(this.account.id, targetProjectId);
         }
 
         const url = mountRootUrl();

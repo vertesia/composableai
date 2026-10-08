@@ -1,17 +1,12 @@
-import type { z } from 'zod';
-import type {
-    AgentToolApprovalModeSchema,
-    PendingToolApprovalResultsSchema,
-    ToolApprovalGrantSchema,
-} from '../api-schemas/interaction.js';
+import type * as Wire from '../wire-types.generated.js';
 
 export const AgentToolApprovalModes = ['ask', 'auto_review', 'full_control'] as const;
 
-export type AgentToolApprovalMode = z.infer<typeof AgentToolApprovalModeSchema>;
+export type AgentToolApprovalMode = Wire.AgentToolApprovalMode;
 
-export type ToolApprovalGrant = z.infer<typeof ToolApprovalGrantSchema>;
+export type ToolApprovalGrant = Wire.ToolApprovalGrant;
 
-export type PendingToolApprovalResults = z.infer<typeof PendingToolApprovalResultsSchema>;
+export type PendingToolApprovalResults = Wire.PendingToolApprovalResults;
 
 export function normalizeAgentToolApprovalMode(
     mode: AgentToolApprovalMode | undefined,

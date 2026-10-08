@@ -1,7 +1,9 @@
+import type { CompletionResult } from '@llumiverse/common';
 import type { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { ServerError } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
+import type { NodeStreamSource } from '@vertesia/client/node';
 import { ContentEventName, type DSLActivityExecutionPayload, ExecutionRunStatus } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
@@ -57,6 +59,96 @@ async function mockInteractionError(
         params: createPayload().params,
     } as unknown as ActivityContext<ExecuteInteractionParams>);
 }
+
+describe('executeInteraction image results', () => {
+    async function executeImages(
+        images: CompletionResult[],
+        uploadFile = vi.fn(),
+        projection?: DSLActivityExecutionPayload<ExecuteInteractionParams>['activity']['projection'],
+    ) {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const client = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }),
+                executeByName: vi
+                    .fn()
+                    .mockResolvedValue({ id: 'run', status: ExecutionRunStatus.completed, result: images }),
+            },
+            files: { uploadFile },
+        } as unknown as VertesiaClient;
+        const payload = createPayload();
+        payload.activity.projection = projection;
+        vi.mocked(setupActivity).mockResolvedValue({
+            client,
+            params: payload.params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+        return testEnv.run(executeInteraction, payload);
+    }
+
+    it('retains storage and HTTP image references without uploading', async () => {
+        const images: CompletionResult[] = [
+            'gs://bucket/image.png',
+            's3://bucket/image.jpg',
+            'https://example.com/image.webp',
+        ].map((value) => ({ type: 'image', value }));
+        const uploadFile = vi.fn();
+        await expect(executeImages(images, uploadFile)).resolves.toMatchObject({ result: images });
+        expect(uploadFile).not.toHaveBeenCalled();
+    });
+
+    it.each(['png', 'jpeg', 'webp'] as const)(
+        'uploads data-URL %s with matching bytes and metadata',
+        async (format) => {
+            const bytes = Buffer.from([0, 1, 2, 253, 254, 255]);
+            const uploadFile = vi.fn(async (source: NodeStreamSource) => {
+                expect(source.type).toBe(`image/${format}`);
+                expect(source.name).toMatch(new RegExp(`\\.${format === 'jpeg' ? 'jpg' : format}$`));
+                expect(Buffer.from(await new Response(source.stream).arrayBuffer())).toEqual(bytes);
+                return 'gs://bucket/uploaded';
+            });
+            await expect(
+                executeImages(
+                    [
+                        {
+                            type: 'image',
+                            value: `data:image/${format};charset=binary;base64,${bytes.toString('base64')}`,
+                        },
+                    ],
+                    uploadFile,
+                ),
+            ).resolves.toMatchObject({ result: [{ type: 'image', value: 'gs://bucket/uploaded' }] });
+            expect(uploadFile).toHaveBeenCalledTimes(1);
+        },
+    );
+
+    it.each(['base64', 'base64url', 'line-wrapped'] as const)(
+        'preserves legacy %s decoding and PNG metadata',
+        async (encoding) => {
+            const bytes = Buffer.from([0, 1, 2, 253, 254, 255]);
+            const raw = bytes.toString(encoding === 'base64url' ? 'base64url' : 'base64');
+            const value = encoding === 'line-wrapped' ? `${raw.slice(0, 4)}\n${raw.slice(4)}` : raw;
+            const uploadFile = vi.fn(async (source: NodeStreamSource) => {
+                expect(source.type).toBe('image/png');
+                expect(source.name).toMatch(/\.png$/);
+                expect(Buffer.from(await new Response(source.stream).arrayBuffer())).toEqual(bytes);
+                return 'gs://bucket/uploaded';
+            });
+            await expect(executeImages([{ type: 'image', value }], uploadFile)).resolves.toMatchObject({
+                result: [{ type: 'image', value: 'gs://bucket/uploaded' }],
+            });
+            expect(uploadFile).toHaveBeenCalledTimes(1);
+        },
+    );
+
+    it('keeps projections based on the original result after an inline upload', async () => {
+        const image: CompletionResult = { type: 'image', value: 'data:image/jpeg;base64,AAEC' };
+        const uploadFile = vi.fn().mockResolvedValue('gs://bucket/uploaded');
+        await expect(executeImages([image], uploadFile, { images: '${#.result}' })).resolves.toEqual({
+            images: [image],
+        });
+        expect(uploadFile).toHaveBeenCalledTimes(1);
+    });
+});
 
 describe('executeInteraction retryability', () => {
     it('should durably retry before executing when the LLM limiter returns a delay', async () => {
@@ -198,7 +290,7 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             message: 'Interaction Execution failed testInteraction: rendition in progress',
         });
-        expect(activityLogger.debug).toHaveBeenCalledWith(
+        expect(activityLogger.warn).toHaveBeenCalledWith(
             'Interaction testInteraction is waiting for a rendition',
             expect.any(Object),
         );
@@ -214,6 +306,11 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             message: 'Interaction Execution failed testInteraction: precondition failed',
         });
+        expect(activityLogger.warn).toHaveBeenCalledWith(
+            'Interaction testInteraction is waiting for a rendition',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
     it('should mark other 4xx failures as non-retryable', async () => {

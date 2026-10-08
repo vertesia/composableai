@@ -12,7 +12,9 @@ export function registerDataCommand(program: Command) {
         });
 
     data.command('import <storeId> <tableName> [input]')
-        .description('Import local files, stdin, or remote URIs directly into a data store table')
+        .description(
+            'Import local files, stdin, or remote URIs (gs://, s3://, az://, https://) into a data store table',
+        )
         .option('--mode [mode]', 'Import mode: append or replace', 'append')
         .option('--format [format]', 'Input format: csv, json, or parquet. Inferred from filename when omitted.')
         .option('--message [message]', 'Version history message for the import')
