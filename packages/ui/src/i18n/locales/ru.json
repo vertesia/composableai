@@ -255,6 +255,7 @@
     "agent.thinking": "Размышляю...",
     "agent.timeout": "Время ожидания истекло",
     "agent.toggleRightSidebar": "Переключить правую панель",
+    "agent.typeDifferentResponse": "Или введите другой ответ...",
     "agent.typeYourMessage": "Введите сообщение...",
     "agent.typeYourResponse": "Введите ваш ответ...",
     "agent.unableToOpenPrint": "Не удалось открыть предпросмотр печати",

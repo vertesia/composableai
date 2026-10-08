@@ -249,6 +249,7 @@
     "agent.thinking": "생각 중...",
     "agent.timeout": "시간 초과",
     "agent.toggleRightSidebar": "오른쪽 사이드바 전환",
+    "agent.typeDifferentResponse": "또는 다른 응답을 입력하세요...",
     "agent.typeYourMessage": "메시지를 입력하세요...",
     "agent.typeYourResponse": "응답을 입력하세요...",
     "agent.unableToOpenPrint": "인쇄 미리보기를 열 수 없습니다",

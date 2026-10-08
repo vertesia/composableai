@@ -249,6 +249,7 @@
     "agent.thinking": "Düşünüyor...",
     "agent.timeout": "Zaman aşımına uğradı",
     "agent.toggleRightSidebar": "Sağ kenar çubuğunu aç/kapat",
+    "agent.typeDifferentResponse": "Ya da farklı bir yanıt yazın...",
     "agent.typeYourMessage": "Mesajınızı yazın...",
     "agent.typeYourResponse": "Yanıtınızı yazın...",
     "agent.unableToOpenPrint": "Yazdırma önizlemesi açılamadı",
