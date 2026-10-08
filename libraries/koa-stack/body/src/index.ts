@@ -53,9 +53,26 @@ async function getRawBodyText(koaRequest: Request, opts: LazyBodyOpts): Promise<
     if (len && !encoding) {
         opts.length = len;
     }
-    // TODO how to detect custom encoding on content type to ser encoding for readRawBody
-    return (await readRawBody(inflate(koaRequest.req, opts.inflate), opts)).toString(/*which charset?*/);
+    try {
+        // TODO how to detect custom encoding on content type to ser encoding for readRawBody
+        return (await readRawBody(inflate(koaRequest.req, opts.inflate), opts)).toString(/*which charset?*/);
+    } catch (err: unknown) {
+        // A client that hung up before the body was read leaves a destroyed request behind, which
+        // raw-body reports as a 500 "stream is not readable". Nothing failed on the server, and no
+        // response can reach the client: answer 499 (client closed request) so it counts as a 4xx.
+        if (koaRequest.req.destroyed && err instanceof Error) {
+            throw Object.assign(new Error('Client closed the request before its body was read', { cause: err }), {
+                status: CLIENT_CLOSED_REQUEST,
+                statusCode: CLIENT_CLOSED_REQUEST,
+                expose: true,
+            });
+        }
+        throw err;
+    }
 }
+
+/** Not in the HTTP spec; the status proxies such as nginx log for a client that disconnected. */
+const CLIENT_CLOSED_REQUEST = 499;
 
 /**
  * Request body class
