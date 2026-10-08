@@ -1,6 +1,7 @@
 import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
+import { resolveAuthSelection } from '../scopeSelection';
 import { markCentralAuthRoundTripStarted } from './authRoundTrip';
 import { verifyAuthState } from './authState';
 import { usesGatewaySession } from './gateway';
@@ -88,6 +89,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     if (new URL(redirectUri).origin !== window.location.origin) throw new Error('OAuth callback must be same-origin');
     const issuer = Env.endpoints.sts.replace(/\/+$/, '');
     const current = new URL(window.location.href);
+    const { accountId, projectId } = resolveAuthSelection(current);
     const callback = current.origin + current.pathname === new URL(redirectUri).origin + new URL(redirectUri).pathname;
     const state = callback ? current.searchParams.get('state') : null;
     const code = callback ? current.searchParams.get('code') : null;
@@ -124,8 +126,8 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 config.offlineAccess &&
                 cached.clientId === clientId &&
                 cached.issuer === issuer &&
-                (!current.searchParams.get('p') || claims.project?.id === current.searchParams.get('p')) &&
-                (!current.searchParams.get('a') || claims.account?.id === current.searchParams.get('a'))
+                (!projectId || claims.project?.id === projectId) &&
+                (!accountId || claims.account?.id === accountId)
             )
                 refreshCredential =
                     refreshSession?.clientId === clientId && refreshSession.issuer === issuer
@@ -138,8 +140,8 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 cached.issuer === issuer &&
                 !forceRefresh &&
                 claims.exp > Date.now() / 1000 + (config.offlineAccess ? 300 : 30) &&
-                (!current.searchParams.get('p') || claims.project?.id === current.searchParams.get('p')) &&
-                (!current.searchParams.get('a') || claims.account?.id === current.searchParams.get('a'))
+                (!projectId || claims.project?.id === projectId) &&
+                (!accountId || claims.account?.id === accountId)
             ) {
                 return cached.token;
             }
@@ -184,8 +186,8 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                     claims.iss.replace(/\/+$/, '') !== issuer ||
                     claims.client_id !== clientId ||
                     claims.exp <= Date.now() / 1000 ||
-                    (!!current.searchParams.get('a') && claims.account?.id !== current.searchParams.get('a')) ||
-                    (!!current.searchParams.get('p') && claims.project?.id !== current.searchParams.get('p'))
+                    (!!accountId && claims.account?.id !== accountId) ||
+                    (!!projectId && claims.project?.id !== projectId)
                 )
                     throw new OAuthLoginError('Invalid OAuth refresh identity');
                 sessionStorage.setItem(
@@ -297,10 +299,8 @@ async function acquireToken(forceRefresh = false): Promise<string> {
             : scopes.filter((s) => s !== 'offline_access')
         ).join(' '),
     );
-    const account = current.searchParams.get('a');
-    if (account) authorize.searchParams.set('account_id', account);
-    const project = current.searchParams.get('p');
-    if (project) authorize.searchParams.set('project_id', project);
+    if (accountId) authorize.searchParams.set('account_id', accountId);
+    if (projectId) authorize.searchParams.set('project_id', projectId);
     sessionStorage.setItem(TRANSACTION_KEY, JSON.stringify(next));
     markCentralAuthRoundTripStarted();
     window.location.replace(authorize.toString());

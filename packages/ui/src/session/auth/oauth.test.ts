@@ -5,6 +5,7 @@ const origin = 'https://standalone.vercel.app';
 const issuer = 'https://sts.dev1.vertesia.io';
 const clientId = `${origin}/.well-known/oauth-client/vertesia-app`;
 const storage = new Map<string, string>();
+const local = new Map<string, string>();
 const replace = vi.fn();
 let browser: {
     location: { href: string; origin: string; replace: typeof replace };
@@ -26,7 +27,7 @@ function jwt(): string {
         }),
     )}.signature`;
 }
-async function setup(offlineAccess = false) {
+async function setup(offlineAccess = false, defaultAuthSelection?: { accountId?: string; projectId?: string }) {
     vi.resetModules();
     const { Env } = await import('../../env');
     Env.init({
@@ -37,11 +38,13 @@ async function setup(offlineAccess = false) {
         isDocker: false,
         endpoints: { studio: 'https://api.dev1.vertesia.io', zeno: 'https://api.dev1.vertesia.io', sts: issuer },
         oauth: { clientId, redirectUri: `${origin}/app`, offlineAccess },
+        defaultAuthSelection,
     });
     return import('./oauth');
 }
 beforeEach(() => {
     storage.clear();
+    local.clear();
     revocationEndpoint = undefined;
     tokenEndpoint = `${issuer}/oauth/token`;
     requests = [];
@@ -57,6 +60,11 @@ beforeEach(() => {
     browser.parent = browser;
     vi.stubGlobal('window', browser);
     vi.stubGlobal('document', { cookie: '' });
+    vi.stubGlobal('localStorage', {
+        getItem: (key: string) => local.get(key) ?? null,
+        setItem: (key: string, value: string) => local.set(key, value),
+        removeItem: (key: string) => local.delete(key),
+    });
     vi.stubGlobal('sessionStorage', {
         getItem: (key: string) => storage.get(key) ?? null,
         setItem: (key: string, value: string) => storage.set(key, value),
@@ -125,6 +133,50 @@ it('uses CIMD and PKCE, exchanges the callback once and restores the app deep li
     expect(await callback.getAppOAuthToken()).toBe(token);
     expect(requests.filter((request) => request.url.endsWith('/oauth/token'))).toHaveLength(1);
 });
+it.each([
+    { query: '', tab: false, defaults: false, account: 'saved-account', project: 'saved-project' },
+    { query: '', tab: true, defaults: false, account: 'tab-account', project: 'tab-project' },
+    {
+        query: '?a=url-account&p=url-project',
+        tab: true,
+        defaults: true,
+        account: 'url-account',
+        project: 'url-project',
+    },
+    { query: '?p=url-project', tab: true, defaults: true, account: undefined, project: 'url-project' },
+    { query: '?a=saved-account', tab: true, defaults: false, account: 'saved-account', project: 'saved-project' },
+    { query: '', tab: true, defaults: true, account: 'configured-account', project: 'configured-project' },
+])('requests the resolved OAuth scope: $account / $project', async ({ query, tab, defaults, account, project }) => {
+    local.set('composableai.lastSelectedAccountId', 'saved-account');
+    local.set('composableai.lastSelectedProjectId-saved-account', 'saved-project');
+    if (tab) {
+        storage.set('composableai.tabAccountId', 'tab-account');
+        storage.set('composableai.tabProjectId', 'tab-project');
+    }
+    browser.location.href = `${origin}/app${query}`;
+    const oauth = await setup(
+        false,
+        defaults ? { accountId: 'configured-account', projectId: 'configured-project' } : undefined,
+    );
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    expect(authorize.searchParams.get('account_id')).toBe(account ?? null);
+    expect(authorize.searchParams.get('project_id')).toBe(project);
+});
+
+it('does not reuse a cached OAuth token for a different remembered project', async () => {
+    browser.location.href = `${origin}/app`;
+    local.set('composableai.lastSelectedAccountId', 'a');
+    local.set('composableai.lastSelectedProjectId-a', 'preferred-project');
+    storage.set('vertesia.oauth.access', JSON.stringify({ token: jwt(), clientId, issuer }));
+    const oauth = await setup();
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    expect(authorize.searchParams.get('project_id')).toBe('preferred-project');
+});
+
 it('rejects a forged callback before contacting the token endpoint', async () => {
     browser.location.href = `${origin}/app?code=forged&state=wrong`;
     const oauth = await setup();
