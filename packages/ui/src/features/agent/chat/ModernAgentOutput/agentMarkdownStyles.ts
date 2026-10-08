@@ -165,7 +165,7 @@ export const agentMarkdownStyles = `
 .agent-markdown :not(pre) > code:not(:where(.not-prose, .not-prose *)) {
     border: 1px solid var(--border);
     border-radius: 0.375rem;
-    background: var(--muted);
+    background: var(--muted-background);
     color: var(--foreground);
     padding: 0.1rem 0.35rem;
     font-size: 0.8125em;
@@ -178,7 +178,7 @@ export const agentMarkdownStyles = `
     overflow: auto;
     border: 1px solid var(--border);
     border-radius: 0.75rem;
-    background: var(--muted);
+    background: var(--muted-background);
     color: var(--foreground);
     padding: 0.875rem;
     font-size: 0.8125rem;
