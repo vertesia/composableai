@@ -1,3 +1,12 @@
+/** Prose styling used for agent/model message markdown, shared across the conversation UI. */
+export const AGENT_PROSE_CLASS = [
+    'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/80',
+    'prose-p:my-2 prose-p:leading-6 prose-li:my-0.5 prose-pre:my-3 prose-headings:tracking-normal',
+    'prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground',
+    'prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4',
+    'prose-p:text-foreground/80 prose-li:text-foreground/80 prose-li:marker:text-muted',
+].join(' ');
+
 // Shared with rendered regression checks so they exercise the styles the chat actually injects.
 export const agentMarkdownStyles = `
 /* Better vertical rhythm for markdown */
@@ -36,18 +45,6 @@ export const agentMarkdownStyles = `
 .vprose tbody tr:hover:not(:where(.not-prose, .not-prose *)) {
     background: transparent;
 }
-/* Dark mode table styles */
-.dark .vprose th:not(:where(.not-prose, .not-prose *)),
-.dark .vprose td:not(:where(.not-prose, .not-prose *)) {
-    border-color: color-mix(in oklch, var(--border) 70%, transparent);
-}
-.dark .vprose thead th:not(:where(.not-prose, .not-prose *)) {
-    background: transparent;
-    color: var(--muted);
-}
-.dark .vprose tbody tr:hover:not(:where(.not-prose, .not-prose *)) {
-    background: transparent;
-}
 /* Horizontal rules as section dividers */
 .vprose hr:not(:where(.not-prose, .not-prose *)) {
     margin-top: 1rem;
@@ -75,9 +72,6 @@ export const agentMarkdownStyles = `
 }
 .vprose pre code:not(:where(.not-prose, .not-prose *)) {
     color: inherit;
-}
-.dark .vprose pre:not(:where(.not-prose, .not-prose *)) {
-    color: var(--foreground);
 }
 
 /* Summary chat markdown: keep structure, but match the app's quieter conversation surface. */
