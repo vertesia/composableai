@@ -90,7 +90,8 @@
         "typescript": "catalog:",
         "vite": "catalog:",
         "vitest": "catalog:",
-        "vite-plugin-serve-static": "^2.2.1"
+        "vite-plugin-serve-static": "^2.2.1",
+        "workerd": "1.20261002.1"
     },
     "dependencies": {
         "@hono/node-server": "^2.1.3",
