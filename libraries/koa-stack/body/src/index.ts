@@ -60,7 +60,9 @@ async function getRawBodyText(koaRequest: Request, opts: LazyBodyOpts): Promise<
         // A client that hung up before the body was read leaves a destroyed request behind, which
         // raw-body reports as a 500 "stream is not readable". Nothing failed on the server, and no
         // response can reach the client: answer 499 (client closed request) so it counts as a 4xx.
-        if (koaRequest.req.destroyed && err instanceof Error) {
+        // Only that error: a body rejected for its size or encoding keeps its 413/415 even if the
+        // connection closed too.
+        if (koaRequest.req.destroyed && isRawBodyError(err, 'stream.not.readable')) {
             throw Object.assign(new Error('Client closed the request before its body was read', { cause: err }), {
                 status: CLIENT_CLOSED_REQUEST,
                 statusCode: CLIENT_CLOSED_REQUEST,
@@ -73,6 +75,10 @@ async function getRawBodyText(koaRequest: Request, opts: LazyBodyOpts): Promise<
 
 /** Not in the HTTP spec; the status proxies such as nginx log for a client that disconnected. */
 const CLIENT_CLOSED_REQUEST = 499;
+
+function isRawBodyError(err: unknown, type: string): err is Error {
+    return err instanceof Error && (err as Error & { type?: unknown }).type === type;
+}
 
 /**
  * Request body class
