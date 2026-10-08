@@ -36,9 +36,9 @@
         "vitest": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.1139.0",
-        "@aws-sdk/client-textract": "^3.1139.0",
-        "@aws-sdk/credential-providers": "^3.1139.0",
+        "@aws-sdk/client-s3": "^3.1144.0",
+        "@aws-sdk/client-textract": "^3.1144.0",
+        "@aws-sdk/credential-providers": "^3.1144.0",
         "@llumiverse/common": "workspace:*",
         "@temporalio/activity": "^1.24.0",
         "@temporalio/workflow": "^1.24.0",
@@ -53,11 +53,11 @@
         "p-limit": "^7.3.3",
         "papaparse": "^5.7.0",
         "seedrandom": "^3.0.5",
-        "sharp": "^0.35.4",
+        "sharp": "^0.35.5",
         "tiktoken": "^1.0.22",
         "tmp": "^0.2.7",
         "tmp-promise": "^3.0.3",
-        "undici": "^7.29.1",
+        "undici": "^7.30.0",
         "yaml": "^2.9.1"
     },
     "exports": {

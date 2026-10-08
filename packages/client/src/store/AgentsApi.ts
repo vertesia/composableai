@@ -406,7 +406,7 @@ export class AgentsApi extends ApiTopic {
                 currentSse.close();
                 currentSse = null;
             }
-            if (signal && abortHandler) {
+            if (isClosed && signal && abortHandler) {
                 signal.removeEventListener('abort', abortHandler);
                 abortHandler = null;
             }
@@ -459,13 +459,14 @@ export class AgentsApi extends ApiTopic {
             try {
                 // Resume from the last message we handed to the caller, whether it came from
                 // history, SSE, or an earlier poll. The server returns messages with ts > since.
-                const recent = await this.retrieveMessages(id, lastMessageTimestamp || undefined);
+                const previousMessageTimestamp = lastMessageTimestamp;
+                const recent = await this.retrieveMessages(id, previousMessageTimestamp || undefined);
                 polledMessages = true;
                 for (const msg of recent) {
                     if (isClosed) return;
                     const timestamp = msg.timestamp || 0;
-                    if (timestamp <= lastMessageTimestamp) continue;
-                    lastMessageTimestamp = timestamp;
+                    if (timestamp <= previousMessageTimestamp) continue;
+                    lastMessageTimestamp = Math.max(lastMessageTimestamp, timestamp);
                     if (onMessage) onMessage(msg, exit);
                     if (isClosed) return;
                     if (shouldCloseAgentRunStream(msg, id, options?.closeOnIdle)) {

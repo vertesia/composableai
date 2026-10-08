@@ -22,11 +22,11 @@
         "typescript": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-iam": "^3.1139.0",
-        "@vertesia/client": "1.5.0",
-        "@vertesia/common": "1.5.0",
+        "@aws-sdk/client-iam": "^3.1144.0",
+        "@vertesia/client": "1.5.1",
+        "@vertesia/common": "1.5.1",
         "commander": "^15.0.0",
-        "dotenv": "^18.0.3",
+        "dotenv": "^18.0.4",
         "google-auth-library": "^11.1.0"
     }
 }

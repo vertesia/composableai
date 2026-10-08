@@ -5,6 +5,7 @@ const origin = 'https://standalone.vercel.app';
 const issuer = 'https://sts.dev1.vertesia.io';
 const clientId = `${origin}/.well-known/oauth-client/vertesia-app`;
 const storage = new Map<string, string>();
+const local = new Map<string, string>();
 const replace = vi.fn();
 let browser: {
     location: { href: string; origin: string; replace: typeof replace };
@@ -26,7 +27,7 @@ function jwt(): string {
         }),
     )}.signature`;
 }
-async function setup(offlineAccess = false) {
+async function setup(offlineAccess = false, defaultAuthSelection?: { accountId?: string; projectId?: string }) {
     vi.resetModules();
     const { Env } = await import('../../env');
     Env.init({
@@ -37,11 +38,13 @@ async function setup(offlineAccess = false) {
         isDocker: false,
         endpoints: { studio: 'https://api.dev1.vertesia.io', zeno: 'https://api.dev1.vertesia.io', sts: issuer },
         oauth: { clientId, redirectUri: `${origin}/app`, offlineAccess },
+        defaultAuthSelection,
     });
     return import('./oauth');
 }
 beforeEach(() => {
     storage.clear();
+    local.clear();
     revocationEndpoint = undefined;
     tokenEndpoint = `${issuer}/oauth/token`;
     requests = [];
@@ -57,6 +60,11 @@ beforeEach(() => {
     browser.parent = browser;
     vi.stubGlobal('window', browser);
     vi.stubGlobal('document', { cookie: '' });
+    vi.stubGlobal('localStorage', {
+        getItem: (key: string) => local.get(key) ?? null,
+        setItem: (key: string, value: string) => local.set(key, value),
+        removeItem: (key: string) => local.delete(key),
+    });
     vi.stubGlobal('sessionStorage', {
         getItem: (key: string) => storage.get(key) ?? null,
         setItem: (key: string, value: string) => storage.set(key, value),
@@ -125,6 +133,99 @@ it('uses CIMD and PKCE, exchanges the callback once and restores the app deep li
     expect(await callback.getAppOAuthToken()).toBe(token);
     expect(requests.filter((request) => request.url.endsWith('/oauth/token'))).toHaveLength(1);
 });
+it.each([
+    { query: '', tab: false, defaults: false, account: 'saved-account', project: 'saved-project' },
+    { query: '', tab: true, defaults: false, account: 'tab-account', project: 'tab-project' },
+    {
+        query: '?a=url-account&p=url-project',
+        tab: true,
+        defaults: true,
+        account: 'url-account',
+        project: 'url-project',
+    },
+    { query: '?p=url-project', tab: true, defaults: true, account: undefined, project: 'url-project' },
+    { query: '?a=saved-account', tab: true, defaults: false, account: 'saved-account', project: 'saved-project' },
+    { query: '', tab: true, defaults: true, account: 'configured-account', project: 'configured-project' },
+])('requests the resolved OAuth scope: $account / $project', async ({ query, tab, defaults, account, project }) => {
+    local.set('composableai.lastSelectedAccountId', 'saved-account');
+    local.set('composableai.lastSelectedProjectId-saved-account', 'saved-project');
+    if (tab) {
+        storage.set('composableai.tabAccountId', 'tab-account');
+        storage.set('composableai.tabProjectId', 'tab-project');
+    }
+    browser.location.href = `${origin}/app${query}`;
+    const oauth = await setup(
+        false,
+        defaults ? { accountId: 'configured-account', projectId: 'configured-project' } : undefined,
+    );
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    expect(authorize.searchParams.get('account_id')).toBe(account ?? null);
+    expect(authorize.searchParams.get('project_id')).toBe(project);
+});
+
+it('does not reuse a cached OAuth token for a different remembered project', async () => {
+    browser.location.href = `${origin}/app`;
+    local.set('composableai.lastSelectedAccountId', 'a');
+    local.set('composableai.lastSelectedProjectId-a', 'preferred-project');
+    storage.set('vertesia.oauth.access', JSON.stringify({ token: jwt(), clientId, issuer }));
+    const oauth = await setup();
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    expect(authorize.searchParams.get('project_id')).toBe('preferred-project');
+});
+
+it('clears a rejected remembered selection and retries once without scope hints', async () => {
+    browser.location.href = `${origin}/app/report#chart`;
+    local.set('composableai.lastSelectedAccountId', 'stale-account');
+    local.set('composableai.lastSelectedProjectId-stale-account', 'deleted-project');
+    storage.set('composableai.tabAccountId', 'stale-account');
+    storage.set('composableai.tabProjectId', 'deleted-project');
+    const initial = await setup();
+    void initial.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const first = new URL(replace.mock.calls[0][0]);
+    browser.location.href = `${origin}/app?error=requested_scope_unavailable&state=${first.searchParams.get('state')}`;
+    const callback = await setup();
+    void callback.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(2));
+    const retry = new URL(replace.mock.calls[1][0]);
+    expect(retry.searchParams.has('account_id')).toBe(false);
+    expect(retry.searchParams.has('project_id')).toBe(false);
+    expect(local.has('composableai.lastSelectedAccountId')).toBe(false);
+    expect(local.has('composableai.lastSelectedProjectId-stale-account')).toBe(false);
+    expect(storage.has('composableai.tabAccountId')).toBe(false);
+    expect(storage.has('composableai.tabProjectId')).toBe(false);
+    expect(browser.location.href).toBe(`${origin}/app/report#chart`);
+    browser.location.href = `${origin}/app?error=requested_scope_unavailable&state=${retry.searchParams.get('state')}`;
+    const failedRetry = await setup();
+    await expect(failedRetry.getAppOAuthToken()).rejects.toThrow('requested_scope_unavailable');
+    expect(replace).toHaveBeenCalledTimes(2);
+});
+
+it.each(['url', 'configured', 'denied', 'forged'])(
+    'does not discard stored selection for a %s failure',
+    async (kind) => {
+        local.set('composableai.lastSelectedAccountId', 'saved-account');
+        local.set('composableai.lastSelectedProjectId-saved-account', 'saved-project');
+        browser.location.href = `${origin}/app${kind === 'url' ? '?p=explicit-project' : ''}`;
+        const defaults = kind === 'configured' ? { projectId: 'configured-project' } : undefined;
+        const initial = await setup(false, defaults);
+        void initial.getAppOAuthToken();
+        await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+        const authorize = new URL(replace.mock.calls[0][0]);
+        const state = kind === 'forged' ? 'forged' : authorize.searchParams.get('state');
+        const error = kind === 'denied' ? 'access_denied' : 'requested_scope_unavailable';
+        browser.location.href = `${origin}/app?error=${error}&state=${state}`;
+        const callback = await setup(false, defaults);
+        await expect(callback.getAppOAuthToken()).rejects.toThrow();
+        expect(replace).toHaveBeenCalledTimes(1);
+        expect(local.get('composableai.lastSelectedProjectId-saved-account')).toBe('saved-project');
+    },
+);
+
 it('rejects a forged callback before contacting the token endpoint', async () => {
     browser.location.href = `${origin}/app?code=forged&state=wrong`;
     const oauth = await setup();
@@ -184,6 +285,78 @@ it('supports a registered client ID without fetching a CIMD', async () => {
     expect(authorize.searchParams.has('consent_required')).toBe(false);
     expect(requests).toHaveLength(1);
 });
+
+it.each(['http://localhost:5173', 'https://localhost:5173'])(
+    'completes a registered-client PKCE round trip on %s',
+    async (localOrigin) => {
+        const localClientId = 'my-app-development';
+        const redirectUri = `${localOrigin}/`;
+        browser.location.origin = localOrigin;
+        browser.location.href = `${localOrigin}/app/report?a=a&p=p#chart`;
+        const initialize = async () => {
+            vi.resetModules();
+            const { Env } = await import('../../env');
+            Env.init({
+                name: 'local',
+                version: '1',
+                type: 'development',
+                isLocalDev: true,
+                isDocker: false,
+                endpoints: { studio: issuer, zeno: issuer, sts: issuer },
+                oauth: { clientId: localClientId, redirectUri, scopes: ['openid', 'content:read'] },
+            });
+            return import('./oauth');
+        };
+        vi.stubGlobal('fetch', async (input: string | URL, init?: RequestInit) => {
+            const url = String(input);
+            requests.push({ url, init });
+            if (url.endsWith('/.well-known/oauth-authorization-server')) {
+                return Response.json({
+                    issuer,
+                    authorization_endpoint: 'https://auth.dev1.vertesia.io/oauth/authorize',
+                    token_endpoint: tokenEndpoint,
+                });
+            }
+            if (url === tokenEndpoint) {
+                const claims = {
+                    iss: issuer,
+                    client_id: localClientId,
+                    exp: Date.now() / 1000 + 3600,
+                    account: { id: 'a' },
+                    project: { id: 'p' },
+                };
+                return Response.json({
+                    access_token: `e30.${btoa(JSON.stringify(claims))}.signature`,
+                    token_type: 'Bearer',
+                });
+            }
+            throw new Error(`Unexpected request: ${url}`);
+        });
+        const oauth = await initialize();
+        void oauth.getAppOAuthToken();
+        await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+        const authorize = new URL(replace.mock.calls[0][0]);
+        const txn = JSON.parse(storage.get('vertesia.oauth.transaction') ?? '{}');
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txn.verifier));
+        expect(authorize.searchParams.get('client_id')).toBe(localClientId);
+        expect(authorize.searchParams.get('redirect_uri')).toBe(redirectUri);
+        expect(authorize.searchParams.get('code_challenge_method')).toBe('S256');
+        expect(authorize.searchParams.get('code_challenge')).toBe(Buffer.from(digest).toString('base64url'));
+        browser.location.href = `${redirectUri}?code=local-code&state=${authorize.searchParams.get('state')}`;
+        const callback = await initialize();
+        const token = await callback.getAppOAuthToken();
+        const exchange = requests.find((request) => request.url === tokenEndpoint);
+        const body = exchange?.init?.body as URLSearchParams;
+        expect(body.get('client_id')).toBe(localClientId);
+        expect(body.get('redirect_uri')).toBe(redirectUri);
+        expect(body.get('code_verifier')).toBe(txn.verifier);
+        expect(body.has('client_secret')).toBe(false);
+        expect(browser.location.href).toBe(`${localOrigin}/app/report?a=a&p=p#chart`);
+        expect(await callback.getAppOAuthToken()).toBe(token);
+        expect(requests.filter((request) => request.url === tokenEndpoint)).toHaveLength(1);
+        expect(requests.every((request) => new URL(request.url).origin === new URL(issuer).origin)).toBe(true);
+    },
+);
 
 it('prefers an STS fragment token over OAuth', async () => {
     const oauth = await setup();
@@ -287,4 +460,28 @@ it('rejects an insecure discovered revocation endpoint', async () => {
     await expect(oauth.getAppOAuthToken()).rejects.toThrow();
     expect(replace).not.toHaveBeenCalled();
     expect(requests.some(({ url }) => url === tokenEndpoint)).toBe(false);
+});
+
+it.each(['url', 'configured'])('preserves a %s account when its remembered project is rejected', async (kind) => {
+    local.set('composableai.lastSelectedAccountId', 'saved-account');
+    local.set('composableai.lastSelectedProjectId-saved-account', 'deleted-project');
+    browser.location.href = `${origin}/app${kind === 'url' ? '?a=saved-account' : ''}`;
+    const defaults = kind === 'configured' ? { accountId: 'saved-account' } : undefined;
+    const initial = await setup(false, defaults);
+    void initial.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const first = new URL(replace.mock.calls[0][0]);
+    expect(first.searchParams.get('project_id')).toBe('deleted-project');
+    browser.location.href = `${origin}/app?error=requested_scope_unavailable&state=${first.searchParams.get('state')}`;
+    const callback = await setup(false, defaults);
+    void callback.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(2));
+    const retry = new URL(replace.mock.calls[1][0]);
+    expect(retry.searchParams.get('account_id')).toBe('saved-account');
+    expect(retry.searchParams.has('project_id')).toBe(false);
+    expect(local.has('composableai.lastSelectedProjectId-saved-account')).toBe(false);
+    browser.location.href = `${origin}/app?error=requested_scope_unavailable&state=${retry.searchParams.get('state')}`;
+    const failedRetry = await setup(false, defaults);
+    await expect(failedRetry.getAppOAuthToken()).rejects.toThrow('requested_scope_unavailable');
+    expect(replace).toHaveBeenCalledTimes(2);
 });

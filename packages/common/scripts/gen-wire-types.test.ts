@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -21,15 +21,26 @@ function run(bin: string, args: string[]): void {
  * Runs `gen-wire-types.ts` over a fixture tree, then type-checks the tree with the files it wrote. The
  * tree lives under this package's `node_modules` so `zod` and `vitest` resolve from it.
  */
-function generate(files: Record<string, string>): { dir: string; read: (file: string) => string } {
+function generate(
+    files: Record<string, string>,
+    extraArgs: string[] = [],
+): { dir: string; read: (file: string) => string } {
     const root = join(PACKAGE, 'node_modules', '.tmp');
     mkdirSync(root, { recursive: true });
     const dir = mkdtempSync(join(root, 'gen-wire-types-'));
     dirs.push(dir);
     for (const [file, text] of Object.entries(files)) writeFileSync(join(dir, file), text);
-    run('tsx', [join(PACKAGE, 'scripts', 'gen-wire-types.ts'), '--src', dir, '--no-format']);
+    if (extraArgs.includes('@vertesia/common')) {
+        mkdirSync(join(dir, 'node_modules', '@vertesia'), { recursive: true });
+        symlinkSync(PACKAGE, join(dir, 'node_modules', '@vertesia', 'common'), 'dir');
+    }
+    run('tsx', [join(PACKAGE, 'scripts', 'gen-wire-types.ts'), '--src', dir, '--no-format', ...extraArgs]);
     const read = (file: string) => readFileSync(join(dir, file), 'utf8');
-    const tsFiles = [...Object.keys(files), 'wire-types.generated.ts', 'wire-types.generated.test.ts'];
+    const tsFiles = [
+        ...Object.keys(files).filter((file) => file.endsWith('.ts')),
+        'wire-types.generated.ts',
+        'wire-types.generated.test.ts',
+    ];
     run('tsc', [
         '--ignoreConfig',
         '--checkers',
@@ -84,4 +95,22 @@ describe('gen-wire-types', () => {
         expect(read('wire-types.generated.test.ts')).toContain('Tagged: Same<');
         expect(read('wire-types.generated.test.ts')).not.toContain('Prefixed: Same<');
     });
+});
+
+it('resolves numeric enums from an external contract package', { timeout: 60_000 }, () => {
+    const { read } = generate(
+        {
+            'package.json': JSON.stringify({ type: 'module' }),
+            'policy.ts': [
+                "import { z } from 'zod';",
+                "import { ApiVersions } from '@vertesia/common';",
+                'export const PolicySchema = z.object({ version: z.enum(ApiVersions) });',
+                'export type Policy = z.infer<typeof PolicySchema>;',
+            ].join('\n'),
+        },
+        ['--external-package', '@vertesia/common'],
+    );
+    const generated = read('wire-types.generated.ts');
+    expect(generated).toContain("import type { ApiVersions } from '@vertesia/common'");
+    expect(generated).not.toContain("'COMPLETION_RESULT_V1'");
 });
