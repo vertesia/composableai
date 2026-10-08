@@ -177,6 +177,55 @@ it('does not reuse a cached OAuth token for a different remembered project', asy
     expect(authorize.searchParams.get('project_id')).toBe('preferred-project');
 });
 
+it('clears a rejected remembered selection and retries once without scope hints', async () => {
+    browser.location.href = `${origin}/app/report#chart`;
+    local.set('composableai.lastSelectedAccountId', 'stale-account');
+    local.set('composableai.lastSelectedProjectId-stale-account', 'deleted-project');
+    storage.set('composableai.tabAccountId', 'stale-account');
+    storage.set('composableai.tabProjectId', 'deleted-project');
+    const initial = await setup();
+    void initial.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const first = new URL(replace.mock.calls[0][0]);
+    browser.location.href = `${origin}/app?error=requested_scope_unavailable&state=${first.searchParams.get('state')}`;
+    const callback = await setup();
+    void callback.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(2));
+    const retry = new URL(replace.mock.calls[1][0]);
+    expect(retry.searchParams.has('account_id')).toBe(false);
+    expect(retry.searchParams.has('project_id')).toBe(false);
+    expect(local.has('composableai.lastSelectedAccountId')).toBe(false);
+    expect(local.has('composableai.lastSelectedProjectId-stale-account')).toBe(false);
+    expect(storage.has('composableai.tabAccountId')).toBe(false);
+    expect(storage.has('composableai.tabProjectId')).toBe(false);
+    expect(browser.location.href).toBe(`${origin}/app/report#chart`);
+    browser.location.href = `${origin}/app?error=requested_scope_unavailable&state=${retry.searchParams.get('state')}`;
+    const failedRetry = await setup();
+    await expect(failedRetry.getAppOAuthToken()).rejects.toThrow('requested_scope_unavailable');
+    expect(replace).toHaveBeenCalledTimes(2);
+});
+
+it.each(['url', 'configured', 'denied', 'forged'])(
+    'does not discard stored selection for a %s failure',
+    async (kind) => {
+        local.set('composableai.lastSelectedAccountId', 'saved-account');
+        local.set('composableai.lastSelectedProjectId-saved-account', 'saved-project');
+        browser.location.href = `${origin}/app${kind === 'url' ? '?p=explicit-project' : ''}`;
+        const defaults = kind === 'configured' ? { projectId: 'configured-project' } : undefined;
+        const initial = await setup(false, defaults);
+        void initial.getAppOAuthToken();
+        await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+        const authorize = new URL(replace.mock.calls[0][0]);
+        const state = kind === 'forged' ? 'forged' : authorize.searchParams.get('state');
+        const error = kind === 'denied' ? 'access_denied' : 'requested_scope_unavailable';
+        browser.location.href = `${origin}/app?error=${error}&state=${state}`;
+        const callback = await setup(false, defaults);
+        await expect(callback.getAppOAuthToken()).rejects.toThrow();
+        expect(replace).toHaveBeenCalledTimes(1);
+        expect(local.get('composableai.lastSelectedProjectId-saved-account')).toBe('saved-project');
+    },
+);
+
 it('rejects a forged callback before contacting the token endpoint', async () => {
     browser.location.href = `${origin}/app?code=forged&state=wrong`;
     const oauth = await setup();

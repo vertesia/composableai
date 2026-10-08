@@ -1,7 +1,7 @@
-import type { AuthTokenPayload } from '@vertesia/common';
+import { type AuthTokenPayload, REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
-import { resolveAuthSelection } from '../scopeSelection';
+import { forgetRejectedScopeSelection, resolveAuthSelection, type ScopeSelection } from '../scopeSelection';
 import { markCentralAuthRoundTripStarted } from './authRoundTrip';
 import { verifyAuthState } from './authState';
 import { usesGatewaySession } from './gateway';
@@ -62,6 +62,7 @@ interface Transaction {
     redirectUri: string;
     issuer: string;
     target: string;
+    rememberedScope?: ScopeSelection;
 }
 
 export function clearAppOAuth(): void {
@@ -88,8 +89,8 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     const redirectUri = redirect.toString();
     if (new URL(redirectUri).origin !== window.location.origin) throw new Error('OAuth callback must be same-origin');
     const issuer = Env.endpoints.sts.replace(/\/+$/, '');
-    const current = new URL(window.location.href);
-    const { accountId, projectId } = resolveAuthSelection(current);
+    let current = new URL(window.location.href);
+    let { accountId, projectId } = resolveAuthSelection(current);
     const callback = current.origin + current.pathname === new URL(redirectUri).origin + new URL(redirectUri).pathname;
     const state = callback ? current.searchParams.get('state') : null;
     const code = callback ? current.searchParams.get('code') : null;
@@ -111,7 +112,19 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         ) {
             throw new Error('Invalid or expired OAuth login state');
         }
-        if (error || !code) throw new Error(`Application sign-in was not completed (${error || 'missing code'})`);
+        if (error === REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE && transaction.rememberedScope?.accountId) {
+            const target = new URL(transaction.target);
+            if (target.origin !== window.location.origin) throw new Error('Invalid OAuth return target');
+            forgetRejectedScopeSelection(transaction.rememberedScope.accountId, transaction.rememberedScope.projectId);
+            clearAppOAuth();
+            current = target;
+            window.history.replaceState(window.history.state, '', current);
+            accountId = undefined;
+            projectId = undefined;
+            transaction = undefined;
+        } else if (error || !code) {
+            throw new Error(`Application sign-in was not completed (${error || 'missing code'})`);
+        }
     } else {
         const raw = sessionStorage.getItem(TOKEN_KEY);
         if (raw) {
@@ -282,6 +295,14 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         redirectUri,
         issuer,
         target: current.toString(),
+        rememberedScope:
+            accountId &&
+            !current.searchParams.has('a') &&
+            !current.searchParams.has('p') &&
+            !Env.defaultAuthSelection?.accountId &&
+            !Env.defaultAuthSelection?.projectId
+                ? { accountId, projectId }
+                : undefined,
         created: Date.now(),
     };
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
