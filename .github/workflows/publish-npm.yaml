@@ -266,6 +266,7 @@ jobs:
       version: ${{ steps.publish.outputs.version }}
       npm_tag: ${{ steps.publish.outputs.npm_tag }}
       publish_status: ${{ steps.publish.outputs.publish_status }}
+      published_packages: ${{ steps.publish.outputs.published_packages }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -371,7 +372,7 @@ jobs:
   wait-for-npm:
     name: Wait for published npm packages
     runs-on: ubuntu-slim
-    timeout-minutes: 10
+    timeout-minutes: 20
     needs: publish
     if: inputs.dry_run == false
     steps:
@@ -380,19 +381,18 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
-      - name: Wait for published CLI dependency closure
+      - name: Wait for complete published package cohort
         env:
           PACKAGE_VERSION: ${{ needs.publish.outputs.version }}
+          PUBLISHED_PACKAGES: ${{ needs.publish.outputs.published_packages }}
         run: |
-          packages=(
-              @vertesia/api-fetch-client
-              @vertesia/client
-              @vertesia/common
-              @vertesia/workflow
-              @vertesia/cli-darwin-arm64
-              @vertesia/cli-darwin-x64
-              @vertesia/cli
-          )
+          # Template dependencies such as UI can remain under npm scanning after
+          # the CLI dependency closure is ready. Wait for every published package.
+          read -r -a packages <<< "${PUBLISHED_PACKAGES}"
+          if [ "${#packages[@]}" -eq 0 ]; then
+              echo "The publish job did not report a package cohort" >&2
+              exit 1
+          fi
           for attempt in $(seq 1 31); do
               unavailable=()
               for package in "${packages[@]}"; do
@@ -401,7 +401,7 @@ jobs:
                   fi
               done
               if [ "${#unavailable[@]}" -eq 0 ]; then
-                  echo "Published CLI dependency closure is available at version ${PACKAGE_VERSION}"
+                  echo "Complete published package cohort is available at version ${PACKAGE_VERSION}"
                   exit 0
               fi
               if [ "${attempt}" -eq 31 ]; then

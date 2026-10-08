@@ -304,6 +304,7 @@ write_github_outputs() {
     echo "version=${new_version}" >> "$GITHUB_OUTPUT"
     echo "npm_tag=${npm_tag}" >> "$GITHUB_OUTPUT"
     echo "publish_status=${PUBLISH_STATUS}" >> "$GITHUB_OUTPUT"
+    echo "published_packages=${PUBLISHED_PACKAGES# }" >> "$GITHUB_OUTPUT"
   fi
 }
 
