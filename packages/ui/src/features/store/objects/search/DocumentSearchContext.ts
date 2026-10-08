@@ -80,6 +80,24 @@ export class DocumentSearch implements SearchInterface {
         void keys;
     }
 
+    /** Replace the scored-search mode while preserving unrelated filters. */
+    setScoredSearchQuery(query: ComplexSearchQuery) {
+        const fields = ['full_text', 'vector', 'weights', 'score_aggregation', 'dynamic_scaling'] as const;
+        for (const field of fields) {
+            const value = query[field];
+            if (value === undefined) {
+                delete this.query[field];
+            } else {
+                (this.query[field] as typeof value) = value;
+            }
+        }
+
+        if (query.limit !== undefined) {
+            this.limit = query.limit;
+            this.query.limit = query.limit;
+        }
+    }
+
     clearFilters(autoSearch: boolean = true) {
         // Preserve search-related fields when clearing filters
         const { parent, full_text, vector, weights, score_aggregation, dynamic_scaling, limit, all_revisions } =
