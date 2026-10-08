@@ -209,6 +209,7 @@
     "agent.thinking": "Sto pensando...",
     "agent.timeout": "Tempo scaduto",
     "agent.toggleRightSidebar": "Alterna pannello laterale",
+    "agent.typeDifferentResponse": "Oppure scrivi una risposta diversa...",
     "agent.typeYourMessage": "Scrivi il tuo messaggio...",
     "agent.typeYourResponse": "Scrivi la tua risposta...",
     "agent.unableToOpenPrint": "Impossibile aprire l'anteprima di stampa",
