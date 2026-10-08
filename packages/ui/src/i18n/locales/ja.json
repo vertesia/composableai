@@ -207,6 +207,7 @@
     "agent.thinking": "考え中...",
     "agent.timeout": "タイムアウト",
     "agent.toggleRightSidebar": "右サイドバーの切り替え",
+    "agent.typeDifferentResponse": "または別の回答を入力...",
     "agent.typeYourMessage": "メッセージを入力...",
     "agent.typeYourResponse": "回答を入力...",
     "agent.unableToOpenPrint": "印刷プレビューを開けません",

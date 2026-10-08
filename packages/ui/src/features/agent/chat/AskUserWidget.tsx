@@ -169,7 +169,6 @@ export function AskUserWidget({
     submitButtonClassName,
 }: AskUserWidgetProps) {
     const { t } = useUITranslation();
-    const resolvedPlaceholder = placeholder ?? t('agent.typeYourResponse');
     const resolvedSubmitLabel = submitLabel ?? t('agent.send');
     const [inputValue, setInputValue] = React.useState('');
     const [selectedOptions, setSelectedOptions] = React.useState<Set<string>>(new Set());
@@ -179,6 +178,9 @@ export function AskUserWidget({
     const DefaultIcon = VARIANT_ICONS[variant];
     const validOptions = isAskUserOptions(options);
     const safeOptions = validOptions ? options : [];
+    // Next to predefined options the input is an alternative to picking one, not the whole prompt.
+    const resolvedPlaceholder =
+        placeholder ?? (safeOptions.length > 0 ? t('agent.typeDifferentResponse') : t('agent.typeYourResponse'));
     const invalidOptionsReported = React.useRef(false);
 
     React.useEffect(() => {

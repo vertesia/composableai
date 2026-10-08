@@ -40,6 +40,26 @@ describe('AskUserWidget', () => {
         warn.mockRestore();
     });
 
+    it.each([false, true])('offers the text input as an alternative to the options in compact=%s', (compact) => {
+        renderWithProviders(
+            <AskUserWidget
+                question="Which format?"
+                compact={compact}
+                options={[
+                    { id: 'pdf', label: 'PDF' },
+                    { id: 'docx', label: 'Word' },
+                ]}
+                allowFreeResponse
+            />,
+        );
+        expect(screen.getByRole('textbox').getAttribute('placeholder')).toBe('Or type a different response...');
+    });
+
+    it('asks for a response when there are no options to choose from', () => {
+        renderWithProviders(<AskUserWidget question="What should I name it?" allowFreeResponse />);
+        expect(screen.getByRole('textbox').getAttribute('placeholder')).toBe('Type your response...');
+    });
+
     it.each([false, true])('rejects malformed entries in compact=%s without breaking text submission', (compact) => {
         const onSubmit = vi.fn();
         const warn = vi.spyOn(Env.logger, 'warn').mockImplementation(() => undefined);

@@ -209,6 +209,7 @@
     "agent.thinking": "Réflexion...",
     "agent.timeout": "Délai dépassé",
     "agent.toggleRightSidebar": "Basculer le panneau latéral",
+    "agent.typeDifferentResponse": "Ou saisissez une autre réponse...",
     "agent.typeYourMessage": "Saisissez votre message...",
     "agent.typeYourResponse": "Saisissez votre réponse...",
     "agent.unableToOpenPrint": "Impossible d'ouvrir l'aperçu d'impression",
