@@ -287,7 +287,7 @@ export function SelectBox<T = unknown>({
     const renderOptionsContent = () => (
         <>
             {filterBy && (
-                <div className="flex justify-start items-center mb-1">
+                <div className="flex justify-start items-center mb-1 shrink-0">
                     <div className="mx-2">
                         <SearchIcon className="size-4" />
                     </div>
@@ -300,9 +300,9 @@ export function SelectBox<T = unknown>({
                     />
                 </div>
             )}
-            <Command className="overflow-hidden">
+            <Command className={inline ? 'min-h-0 flex-1' : 'overflow-hidden'}>
                 <CommandList
-                    className={inline ? 'max-h-full overflow-y-auto' : 'max-h-[200px] overflow-y-auto'}
+                    className={inline ? 'min-h-0 flex-1 overflow-y-auto' : 'max-h-[200px] overflow-y-auto'}
                     onWheel={(e) => {
                         e.currentTarget.scrollTop += e.deltaY;
                     }}
@@ -342,7 +342,15 @@ export function SelectBox<T = unknown>({
 
     if (inline) {
         return (
-            <div className={clsx(className, border && 'border border-border rounded-md', 'bg-popover p-1', popupClass)}>
+            <div
+                className={clsx(
+                    'flex flex-col',
+                    className,
+                    border && 'border border-border rounded-md',
+                    'bg-popover p-1',
+                    popupClass,
+                )}
+            >
                 {isLoading ? (
                     <div className="flex justify-center items-center p-2 text-muted text-sm">
                         <LoaderCircle className="size-4 animate-spin" />

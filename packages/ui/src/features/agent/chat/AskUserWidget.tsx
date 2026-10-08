@@ -64,6 +64,12 @@ export interface AskUserWidgetProps {
     compact?: boolean;
     /** Render as a resolved transcript prompt, without pending controls */
     answered?: boolean;
+    /** Optional action beside the question, inside the existing card header. */
+    headerAction?: React.ReactNode;
+    /** ID of the response controls for an accessible disclosure action. */
+    responseControlsId?: string;
+    /** Hide response controls while keeping drafts and selections mounted. */
+    responseControlsHidden?: boolean;
 
     // Styling props for full customization
     /** Additional className for the outer container */
@@ -146,6 +152,9 @@ export function AskUserWidget({
     hideBorder = false,
     compact = false,
     answered = false,
+    headerAction,
+    responseControlsId,
+    responseControlsHidden = false,
     // Styling props
     className,
     cardClassName,
@@ -160,7 +169,6 @@ export function AskUserWidget({
     submitButtonClassName,
 }: AskUserWidgetProps) {
     const { t } = useUITranslation();
-    const resolvedPlaceholder = placeholder ?? t('agent.typeYourResponse');
     const resolvedSubmitLabel = submitLabel ?? t('agent.send');
     const [inputValue, setInputValue] = React.useState('');
     const [selectedOptions, setSelectedOptions] = React.useState<Set<string>>(new Set());
@@ -170,6 +178,9 @@ export function AskUserWidget({
     const DefaultIcon = VARIANT_ICONS[variant];
     const validOptions = isAskUserOptions(options);
     const safeOptions = validOptions ? options : [];
+    // Next to predefined options the input is an alternative to picking one, not the whole prompt.
+    const resolvedPlaceholder =
+        placeholder ?? (safeOptions.length > 0 ? t('agent.typeDifferentResponse') : t('agent.typeYourResponse'));
     const invalidOptionsReported = React.useRef(false);
 
     React.useEffect(() => {
@@ -260,124 +271,127 @@ export function AskUserWidget({
                                     )}
                                 </div>
                             </div>
+                            {headerAction}
                         </div>
                     </div>
 
-                    {safeOptions.length > 0 && (
-                        <div className={cn('flex flex-col gap-1.5 px-3 pb-3 pt-0', optionsClassName)}>
-                            {multiSelect ? (
-                                <>
-                                    {safeOptions.map((option) => {
-                                        const selected = selectedOptions.has(option.id);
-                                        return (
-                                            <label
-                                                key={option.id}
-                                                className={cn(
-                                                    'flex cursor-pointer items-start gap-2.5 rounded-md border px-3 py-2 text-start transition-colors',
-                                                    selected
-                                                        ? 'border-info/60 bg-info/10'
-                                                        : 'border-border bg-background/70 hover:bg-mixer-muted/15',
-                                                    isLoading && 'cursor-not-allowed opacity-50',
-                                                    buttonClassName,
-                                                )}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selected}
-                                                    onChange={() => toggleOption(option.id)}
-                                                    disabled={isLoading}
-                                                    className="mt-1 size-4 rounded border-border bg-background text-info focus:ring-info"
-                                                />
-                                                <span className="min-w-0 flex-1">
-                                                    <span className="flex items-center gap-2 text-sm font-medium leading-5 text-foreground">
-                                                        {option.icon}
-                                                        <span className="break-words">{option.label}</span>
-                                                    </span>
-                                                    {option.description && (
-                                                        <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
-                                                            {option.description}
-                                                        </span>
+                    <div id={responseControlsId} hidden={responseControlsHidden}>
+                        {safeOptions.length > 0 && (
+                            <div className={cn('flex flex-col gap-1.5 px-3 pb-3 pt-0', optionsClassName)}>
+                                {multiSelect ? (
+                                    <>
+                                        {safeOptions.map((option) => {
+                                            const selected = selectedOptions.has(option.id);
+                                            return (
+                                                <label
+                                                    key={option.id}
+                                                    className={cn(
+                                                        'flex cursor-pointer items-start gap-2.5 rounded-md border px-3 py-2 text-start transition-colors',
+                                                        selected
+                                                            ? 'border-info/60 bg-info/10'
+                                                            : 'border-border bg-background/70 hover:bg-mixer-muted/15',
+                                                        isLoading && 'cursor-not-allowed opacity-50',
+                                                        buttonClassName,
                                                     )}
-                                                </span>
-                                            </label>
-                                        );
-                                    })}
-                                    <div className="pt-1">
-                                        <Button
-                                            size="sm"
-                                            onClick={handleMultiSubmit}
-                                            disabled={isLoading || selectedOptions.size === 0}
-                                            className="inline-flex items-center gap-2"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selected}
+                                                        onChange={() => toggleOption(option.id)}
+                                                        disabled={isLoading}
+                                                        className="mt-1 size-4 rounded border-border bg-background text-info focus:ring-info"
+                                                    />
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="flex items-center gap-2 text-sm font-medium leading-5 text-foreground">
+                                                            {option.icon}
+                                                            <span className="break-words">{option.label}</span>
+                                                        </span>
+                                                        {option.description && (
+                                                            <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
+                                                                {option.description}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                        <div className="pt-1">
+                                            <Button
+                                                size="sm"
+                                                onClick={handleMultiSubmit}
+                                                disabled={isLoading || selectedOptions.size === 0}
+                                                className="inline-flex items-center gap-2"
+                                            >
+                                                <Send className="size-4" />
+                                                {selectedOptions.size > 0
+                                                    ? t('agent.submitSelectionCount', { count: selectedOptions.size })
+                                                    : t('agent.submitSelection')}
+                                            </Button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    safeOptions.map((option) => (
+                                        <button
+                                            type="button"
+                                            key={option.id}
+                                            onClick={() => onSelect?.(option.id)}
+                                            disabled={isLoading}
+                                            className={cn(
+                                                'flex w-full cursor-pointer items-start gap-2.5 rounded-md border border-border bg-background/70 px-3 py-2 text-start transition-colors',
+                                                'hover:bg-mixer-muted/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                                isLoading && 'cursor-not-allowed opacity-50',
+                                                buttonClassName,
+                                            )}
                                         >
-                                            <Send className="size-4" />
-                                            {selectedOptions.size > 0
-                                                ? t('agent.submitSelectionCount', { count: selectedOptions.size })
-                                                : t('agent.submitSelection')}
-                                        </Button>
-                                    </div>
-                                </>
-                            ) : (
-                                safeOptions.map((option) => (
-                                    <button
-                                        type="button"
-                                        key={option.id}
-                                        onClick={() => onSelect?.(option.id)}
+                                            <span
+                                                className="mt-1 size-4 flex-shrink-0 rounded-full border border-border"
+                                                aria-hidden="true"
+                                            />
+                                            <span className="min-w-0 flex-1">
+                                                <span className="flex items-center gap-2 text-sm font-medium leading-5 text-foreground">
+                                                    {option.icon}
+                                                    <span className="break-words">{option.label}</span>
+                                                </span>
+                                                {option.description && (
+                                                    <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
+                                                        {option.description}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                        )}
+
+                        {allowFreeResponse && (
+                            <div className={cn('px-3 pb-3 pt-0', inputContainerClassName)}>
+                                <div className="flex gap-2">
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder={resolvedPlaceholder}
                                         disabled={isLoading}
                                         className={cn(
-                                            'flex w-full cursor-pointer items-start gap-2.5 rounded-md border border-border bg-background/70 px-3 py-2 text-start transition-colors',
-                                            'hover:bg-mixer-muted/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                                            isLoading && 'cursor-not-allowed opacity-50',
-                                            buttonClassName,
+                                            'min-w-0 flex-1 rounded-md border border-border bg-background/70 px-3 py-2 text-sm text-foreground focus:border-transparent focus:ring-2 focus:ring-ring',
+                                            inputClassName,
                                         )}
+                                    />
+                                    <Button
+                                        size="sm"
+                                        onClick={handleSubmit}
+                                        disabled={isLoading || !inputValue.trim()}
+                                        className={submitButtonClassName}
                                     >
-                                        <span
-                                            className="mt-1 size-4 flex-shrink-0 rounded-full border border-border"
-                                            aria-hidden="true"
-                                        />
-                                        <span className="min-w-0 flex-1">
-                                            <span className="flex items-center gap-2 text-sm font-medium leading-5 text-foreground">
-                                                {option.icon}
-                                                <span className="break-words">{option.label}</span>
-                                            </span>
-                                            {option.description && (
-                                                <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
-                                                    {option.description}
-                                                </span>
-                                            )}
-                                        </span>
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                    )}
-
-                    {allowFreeResponse && (
-                        <div className={cn('px-3 pb-3 pt-0', inputContainerClassName)}>
-                            <div className="flex gap-2">
-                                <input
-                                    ref={inputRef}
-                                    type="text"
-                                    value={inputValue}
-                                    onChange={(e) => setInputValue(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder={resolvedPlaceholder}
-                                    disabled={isLoading}
-                                    className={cn(
-                                        'min-w-0 flex-1 rounded-md border border-border bg-background/70 px-3 py-2 text-sm text-foreground focus:border-transparent focus:ring-2 focus:ring-ring',
-                                        inputClassName,
-                                    )}
-                                />
-                                <Button
-                                    size="sm"
-                                    onClick={handleSubmit}
-                                    disabled={isLoading || !inputValue.trim()}
-                                    className={submitButtonClassName}
-                                >
-                                    {isLoading ? '...' : resolvedSubmitLabel}
-                                </Button>
+                                        {isLoading ? '...' : resolvedSubmitLabel}
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
         );
@@ -408,84 +422,39 @@ export function AskUserWidget({
                                 )}
                             </div>
                         </div>
+                        {headerAction}
                     </div>
                 </div>
 
-                {/* Options */}
-                {safeOptions.length > 0 && (
-                    <div className={`px-4 pb-3 pt-1 ${optionsClassName || ''}`}>
-                        {multiSelect ? (
-                            /* Multi-select mode with checkboxes */
-                            <div className="space-y-2">
-                                {safeOptions.map((option) => (
-                                    <label
-                                        key={option.id}
-                                        className={`flex items-start gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors
+                <div id={responseControlsId} hidden={responseControlsHidden}>
+                    {/* Options */}
+                    {safeOptions.length > 0 && (
+                        <div className={`px-4 pb-3 pt-1 ${optionsClassName || ''}`}>
+                            {multiSelect ? (
+                                /* Multi-select mode with checkboxes */
+                                <div className="space-y-2">
+                                    {safeOptions.map((option) => (
+                                        <label
+                                            key={option.id}
+                                            className={`flex items-start gap-3 px-4 py-3 rounded-lg cursor-pointer transition-colors
                                             ${
                                                 selectedOptions.has(option.id)
                                                     ? 'bg-info border border-info'
                                                     : 'bg-white dark:bg-muted border border-border hover:bg-muted'
                                             }
                                             ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedOptions.has(option.id)}
-                                            onChange={() => toggleOption(option.id)}
-                                            disabled={isLoading}
-                                            className="mt-0.5 w-4 h-4 rounded border-border text-info focus:ring-info dark:bg-muted"
-                                        />
-                                        <div className="flex-1 overflow-hidden">
-                                            <div className="flex items-center gap-2 text-sm font-medium text-foreground break-words">
-                                                {option.icon}
-                                                <span className="break-words">{option.label}</span>
-                                            </div>
-                                            {option.description && (
-                                                <div className="mt-1 text-sm text-muted break-words whitespace-pre-wrap">
-                                                    {option.description}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </label>
-                                ))}
-                                <div className="pt-2">
-                                    <Button
-                                        size="sm"
-                                        onClick={handleMultiSubmit}
-                                        disabled={isLoading || selectedOptions.size === 0}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Send className="size-4" />
-                                        {selectedOptions.size > 0
-                                            ? t('agent.submitSelectionCount', { count: selectedOptions.size })
-                                            : t('agent.submitSelection')}
-                                    </Button>
-                                </div>
-                            </div>
-                        ) : (
-                            /* Single-select mode - always use full-width card layout for clarity */
-                            <div className="flex flex-col gap-2 w-full">
-                                {safeOptions.map((option) => (
-                                    <Button
-                                        variant="unstyled"
-                                        key={option.id}
-                                        onClick={() => onSelect?.(option.id)}
-                                        disabled={isLoading}
-                                        className={`w-full h-auto whitespace-normal text-start px-4 py-3 rounded-lg border border-border
-                                            bg-white dark:bg-muted
-                                            hover:bg-muted hover:border-border
-                                            focus:outline-none focus:ring-2 focus:ring-info focus:ring-offset-1
-                                            transition-colors
-                                            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                                            ${buttonClassName || ''}`}
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            {option.icon && (
-                                                <span className="flex-shrink-0 mt-0.5 text-muted">{option.icon}</span>
-                                            )}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedOptions.has(option.id)}
+                                                onChange={() => toggleOption(option.id)}
+                                                disabled={isLoading}
+                                                className="mt-0.5 w-4 h-4 rounded border-border text-info focus:ring-info dark:bg-muted"
+                                            />
                                             <div className="flex-1 overflow-hidden">
-                                                <div className="font-medium text-sm text-foreground break-words text-center">
-                                                    {option.label}
+                                                <div className="flex items-center gap-2 text-sm font-medium text-foreground break-words">
+                                                    {option.icon}
+                                                    <span className="break-words">{option.label}</span>
                                                 </div>
                                                 {option.description && (
                                                     <div className="mt-1 text-sm text-muted break-words whitespace-pre-wrap">
@@ -493,39 +462,89 @@ export function AskUserWidget({
                                                     </div>
                                                 )}
                                             </div>
-                                        </div>
-                                    </Button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Free-form input */}
-                {allowFreeResponse && (
-                    <div className={`px-4 pb-3 pt-1 ${inputContainerClassName || ''}`}>
-                        <div className="flex gap-2">
-                            <input
-                                ref={inputRef}
-                                type="text"
-                                value={inputValue}
-                                onChange={(e) => setInputValue(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder={resolvedPlaceholder}
-                                disabled={isLoading}
-                                className={`flex-1 px-3 py-2 text-sm border border-border rounded-md bg-white dark:bg-muted focus:ring-2 focus:ring-info focus:border-transparent ${inputClassName || ''}`}
-                            />
-                            <Button
-                                size="sm"
-                                onClick={handleSubmit}
-                                disabled={isLoading || !inputValue.trim()}
-                                className={submitButtonClassName}
-                            >
-                                {isLoading ? '...' : resolvedSubmitLabel}
-                            </Button>
+                                        </label>
+                                    ))}
+                                    <div className="pt-2">
+                                        <Button
+                                            size="sm"
+                                            onClick={handleMultiSubmit}
+                                            disabled={isLoading || selectedOptions.size === 0}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Send className="size-4" />
+                                            {selectedOptions.size > 0
+                                                ? t('agent.submitSelectionCount', { count: selectedOptions.size })
+                                                : t('agent.submitSelection')}
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                /* Single-select mode - always use full-width card layout for clarity */
+                                <div className="flex flex-col gap-2 w-full">
+                                    {safeOptions.map((option) => (
+                                        <Button
+                                            variant="unstyled"
+                                            key={option.id}
+                                            onClick={() => onSelect?.(option.id)}
+                                            disabled={isLoading}
+                                            className={`w-full h-auto whitespace-normal text-start px-4 py-3 rounded-lg border border-border
+                                            bg-white dark:bg-muted
+                                            hover:bg-muted hover:border-border
+                                            focus:outline-none focus:ring-2 focus:ring-info focus:ring-offset-1
+                                            transition-colors
+                                            ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                                            ${buttonClassName || ''}`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                {option.icon && (
+                                                    <span className="flex-shrink-0 mt-0.5 text-muted">
+                                                        {option.icon}
+                                                    </span>
+                                                )}
+                                                <div className="flex-1 overflow-hidden">
+                                                    <div className="font-medium text-sm text-foreground break-words text-center">
+                                                        {option.label}
+                                                    </div>
+                                                    {option.description && (
+                                                        <div className="mt-1 text-sm text-muted break-words whitespace-pre-wrap">
+                                                            {option.description}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    </div>
-                )}
+                    )}
+
+                    {/* Free-form input */}
+                    {allowFreeResponse && (
+                        <div className={`px-4 pb-3 pt-1 ${inputContainerClassName || ''}`}>
+                            <div className="flex gap-2">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder={resolvedPlaceholder}
+                                    disabled={isLoading}
+                                    className={`flex-1 px-3 py-2 text-sm border border-border rounded-md bg-white dark:bg-muted focus:ring-2 focus:ring-info focus:border-transparent ${inputClassName || ''}`}
+                                />
+                                <Button
+                                    size="sm"
+                                    onClick={handleSubmit}
+                                    disabled={isLoading || !inputValue.trim()}
+                                    className={submitButtonClassName}
+                                >
+                                    {isLoading ? '...' : resolvedSubmitLabel}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

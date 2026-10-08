@@ -2,11 +2,13 @@ import type { McpConnectUxConfig } from '@vertesia/common';
 import { Button, cn } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
-import { XIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, XIcon } from 'lucide-react';
+import { useId, useState } from 'react';
 import { RemoteMcpConnectionButton } from '../../oauth/RemoteMcpConnectionButton.js';
 import { AskUserWidget } from './AskUserWidget';
 import {
     getRequestInputDisplayText,
+    getRequestInputResolutionKey,
     getRequestInputResponseMetadata,
     getToolApprovalResponseMetadata,
     type RequestInputMessageWithUx,
@@ -63,17 +65,29 @@ function McpRequestInputControls({ mcpConnect, onMcpConnected, onDecline, disabl
     );
 }
 
-export function AgentRequestInputOverlay({
+export function AgentRequestInputOverlay(props: AgentRequestInputOverlayProps) {
+    if (!props.message) return null;
+
+    return (
+        <PendingRequestInputOverlay
+            {...props}
+            message={props.message}
+            key={`${props.message.workflow_run_id}:${getRequestInputResolutionKey(props.message)}`}
+        />
+    );
+}
+
+function PendingRequestInputOverlay({
     message,
     onSendMessage,
     onMcpConnected,
     isLoading = false,
     disabled = false,
     className,
-}: AgentRequestInputOverlayProps) {
+}: AgentRequestInputOverlayProps & { message: RequestInputMessageWithUx }) {
     const { t } = useUITranslation();
-
-    if (!message) return null;
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const contentId = useId();
 
     const uxConfig = message.details.ux;
     const options = uxConfig.options ?? [];
@@ -93,42 +107,64 @@ export function AgentRequestInputOverlay({
         className,
     );
 
-    if (mcpConnect) {
-        return (
-            <div className={wrapperClassName} data-agent-request-input-overlay>
-                <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0 text-sm leading-6 text-foreground/85">{displayText}</div>
-                    <McpRequestInputControls
-                        mcpConnect={mcpConnect}
-                        onMcpConnected={(cfg) => onMcpConnected?.(cfg, getRequestInputResponseMetadata(message))}
-                        onDecline={() => send(t('agent.mcpDeclinedMessage', { name: mcpConnect.name }))}
-                        disabled={isDisabled}
-                    />
-                </div>
-            </div>
-        );
-    }
+    const toggleLabel = isCollapsed ? t('agent.showQuestions') : t('agent.hideQuestions');
+    const collapseButton = (
+        <Button
+            variant="ghost"
+            size="icon"
+            className="size-6 shrink-0"
+            title={toggleLabel}
+            aria-label={toggleLabel}
+            aria-expanded={!isCollapsed}
+            aria-controls={contentId}
+            onClick={() => setIsCollapsed((collapsed) => !collapsed)}
+        >
+            {isCollapsed ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+        </Button>
+    );
 
     return (
         <div className={wrapperClassName} data-agent-request-input-overlay>
             <div className="mx-auto w-full max-w-3xl px-3 py-3">
-                <AskUserWidget
-                    question={displayText}
-                    options={options}
-                    variant={uxConfig.variant}
-                    multiSelect={uxConfig.multiSelect}
-                    allowFreeResponse={options.length === 0 || !!freeResponse}
-                    placeholder={freeResponse?.placeholder}
-                    submitLabel={freeResponse?.submit_label}
-                    onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
-                    onMultiSelect={(optionIds) => send(optionIds.join(', '))}
-                    onSubmit={(value) => send(value, freeResponse?.metadata)}
-                    hideBorder
-                    compact
-                    isLoading={isDisabled}
-                    className="my-0"
-                    cardClassName="bg-background/80 shadow-lg shadow-black/5 dark:shadow-none"
-                />
+                {mcpConnect ? (
+                    <>
+                        <div className="flex items-start gap-2">
+                            <div className="min-w-0 flex-1 text-sm leading-6 text-foreground/85">{displayText}</div>
+                            {collapseButton}
+                        </div>
+                        <div id={contentId} hidden={isCollapsed}>
+                            <McpRequestInputControls
+                                mcpConnect={mcpConnect}
+                                onMcpConnected={(cfg) =>
+                                    onMcpConnected?.(cfg, getRequestInputResponseMetadata(message))
+                                }
+                                onDecline={() => send(t('agent.mcpDeclinedMessage', { name: mcpConnect.name }))}
+                                disabled={isDisabled}
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <AskUserWidget
+                        question={displayText}
+                        options={options}
+                        variant={uxConfig.variant}
+                        multiSelect={uxConfig.multiSelect}
+                        allowFreeResponse={options.length === 0 || !!freeResponse}
+                        placeholder={freeResponse?.placeholder}
+                        submitLabel={freeResponse?.submit_label}
+                        onSelect={(optionId) => send(optionId, getToolApprovalResponseMetadata(message, optionId))}
+                        onMultiSelect={(optionIds) => send(optionIds.join(', '))}
+                        onSubmit={(value) => send(value, freeResponse?.metadata)}
+                        hideBorder
+                        compact
+                        isLoading={isDisabled}
+                        headerAction={collapseButton}
+                        responseControlsId={contentId}
+                        responseControlsHidden={isCollapsed}
+                        className="my-0"
+                        cardClassName="bg-background/80 shadow-lg shadow-black/5 dark:shadow-none"
+                    />
+                )}
             </div>
         </div>
     );
