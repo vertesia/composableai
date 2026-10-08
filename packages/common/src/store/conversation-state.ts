@@ -1,4 +1,5 @@
 import type { CompletionResult, ExecutionTokenUsage, StatelessExecutionOptions, ToolUse } from '@llumiverse/common';
+import type { AgentRunSettingsSnapshot } from '../agent-run-settings.js';
 import type { ConversationStripOptions, ResolvedInteractionExecutionInfo, UserChannel } from '../interaction.js';
 import type { AgentBudgetConfiguration } from '../project.js';
 import type { ExecutionRunDocRef } from '../runs.js';
@@ -33,6 +34,8 @@ export type ExternalizedToolInputRefs = Wire.ExternalizedToolInputRefs;
  * {@link ConversationCatalogState} (persisted as catalog.json).
  */
 export interface ConversationState {
+    /** Immutable per-run settings for tools and named child agents. */
+    settings_snapshot?: AgentRunSettingsSnapshot;
     /**
      * A reference to the run that started the conversation
      */

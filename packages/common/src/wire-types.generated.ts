@@ -139,6 +139,43 @@ export type ACEUpdatePayload = {
     tags?: string[] | undefined | undefined;
     expires_at?: string | undefined | undefined;
 };
+export type AgentRunInferenceSettings = {
+    inference_profile: InferenceProfileId;
+};
+export type AgentRunAnalysisSettings = {
+    analysis: AgentRunInferenceSettings;
+};
+export type AgentRunToolSettings = {
+    web_fetch_serper?: AgentRunAnalysisSettings | undefined;
+    web_fetch_exa?: AgentRunAnalysisSettings | undefined;
+    web_fetch_linkup?: AgentRunAnalysisSettings | undefined;
+    fetch_document?: AgentRunAnalysisSettings | undefined;
+    search_documents?: AgentRunAnalysisSettings | undefined;
+};
+export type AgentRunSettings = {
+    tools?: AgentRunToolSettings | undefined;
+    subagents?: Record<string, AgentRunInferenceSettings> | undefined;
+};
+export type AgentRunInferenceSnapshot = {
+    inference_profile: InferenceProfileSnapshot;
+    environment: string;
+    model: string;
+    model_options?: ModelOptions | undefined;
+};
+export type AgentRunAnalysisSnapshot = {
+    analysis: AgentRunInferenceSnapshot;
+};
+export type AgentRunToolSettingsSnapshot = {
+    web_fetch_serper?: AgentRunAnalysisSnapshot | undefined;
+    web_fetch_exa?: AgentRunAnalysisSnapshot | undefined;
+    web_fetch_linkup?: AgentRunAnalysisSnapshot | undefined;
+    fetch_document?: AgentRunAnalysisSnapshot | undefined;
+    search_documents?: AgentRunAnalysisSnapshot | undefined;
+};
+export type AgentRunSettingsSnapshot = {
+    tools?: AgentRunToolSettingsSnapshot | undefined;
+    subagents?: Record<string, AgentRunInferenceSnapshot> | undefined;
+};
 /**
  * The five run-analytics contract types, inferred from `./api-schemas/analytics.js`. Their
  * documentation moved with them — a doc comment here would be published on TOP of the schema's
@@ -4182,6 +4219,7 @@ export type AsyncConversationExecutionPayload = {
     evaluate?: boolean | undefined;
     app_version?: string | undefined;
     data?: unknown | undefined;
+    settings?: AgentRunSettings | undefined;
     config?: InteractionExecutionConfiguration | undefined;
     result_schema?: JSONSchema | SchemaRef | null | undefined;
     do_validate?: boolean | undefined;
@@ -9649,6 +9687,8 @@ export type AgentRunWire = {
           }
         | undefined;
     config?: InteractionExecutionConfiguration | undefined;
+    settings?: AgentRunSettings | undefined;
+    settings_snapshot?: AgentRunSettingsSnapshot | undefined;
     interactive?: boolean | undefined;
     tool_approval_mode?: AgentToolApprovalMode | undefined;
     tool_names?: string[] | undefined;
@@ -9719,6 +9759,7 @@ export type CreateAgentRunPayloadWire = {
           }
         | undefined;
     config?: InteractionExecutionConfiguration | undefined;
+    settings?: AgentRunSettings | undefined;
     interactive?: boolean | undefined;
     tool_approval_mode?: AgentToolApprovalMode | undefined;
     tool_names?: string[] | undefined;
@@ -9981,6 +10022,7 @@ export type ToolApprovalGrantMap = {
 };
 export type ConversationStateWire = {
     run: ExecutionRunDocRef;
+    settings_snapshot?: AgentRunSettingsSnapshot | undefined;
     environment: string;
     options: StatelessExecutionOptions;
     tool_use?: ToolUse[] | undefined;
@@ -10350,6 +10392,8 @@ export type AutonomousRunResponseWire = {
           }
         | undefined;
     config?: InteractionExecutionConfiguration | undefined;
+    settings?: AgentRunSettings | undefined;
+    settings_snapshot?: AgentRunSettingsSnapshot | undefined;
     interactive?: boolean | undefined;
     tool_approval_mode?: AgentToolApprovalMode | undefined;
     tool_names?: string[] | undefined;
@@ -10853,6 +10897,14 @@ export interface ApiComponentTypes {
     CompletionResult: CompletionResult;
     ExecutionTokenUsage: ExecutionTokenUsage;
     StatelessExecutionOptions: StatelessExecutionOptions;
+    AgentRunInferenceSettings: AgentRunInferenceSettings;
+    AgentRunAnalysisSettings: AgentRunAnalysisSettings;
+    AgentRunToolSettings: AgentRunToolSettings;
+    AgentRunSettings: AgentRunSettings;
+    AgentRunInferenceSnapshot: AgentRunInferenceSnapshot;
+    AgentRunAnalysisSnapshot: AgentRunAnalysisSnapshot;
+    AgentRunToolSettingsSnapshot: AgentRunToolSettingsSnapshot;
+    AgentRunSettingsSnapshot: AgentRunSettingsSnapshot;
     UpdateInteractionConfigurationPayload: UpdateInteractionConfigurationPayload;
     InteractionConfigurationRecord: InteractionConfigurationRecord;
     InteractionConfigurationResult: InteractionConfigurationResult;

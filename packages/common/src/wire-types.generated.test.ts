@@ -33,6 +33,38 @@ interface Checks {
         W.ACEUpdatePayload,
         z.infer<typeof import('./api-schemas/access-control.js').ACEUpdatePayloadSchema>
     >;
+    AgentRunInferenceSettings: Same<
+        W.AgentRunInferenceSettings,
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunInferenceSettingsSchema>
+    >;
+    AgentRunAnalysisSettings: Same<
+        W.AgentRunAnalysisSettings,
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunAnalysisSettingsSchema>
+    >;
+    AgentRunToolSettings: Same<
+        W.AgentRunToolSettings,
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunToolSettingsSchema>
+    >;
+    AgentRunSettings: Same<
+        W.AgentRunSettings,
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunSettingsSchema>
+    >;
+    AgentRunInferenceSnapshot: Same<
+        W.AgentRunInferenceSnapshot,
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunInferenceSnapshotSchema>
+    >;
+    AgentRunAnalysisSnapshot: Same<
+        W.AgentRunAnalysisSnapshot,
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunAnalysisSnapshotSchema>
+    >;
+    AgentRunToolSettingsSnapshot: Same<
+        W.AgentRunToolSettingsSnapshot,
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunToolSettingsSnapshotSchema>
+    >;
+    AgentRunSettingsSnapshot: Same<
+        W.AgentRunSettingsSnapshot,
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunSettingsSnapshotSchema>
+    >;
     AnalyticsAxis: Same<W.AnalyticsAxis, z.infer<typeof import('./api-schemas/analytics.js').AnalyticsAxisSchema>>;
     RunAnalyticsQuery: Same<
         W.RunAnalyticsQuery,
@@ -5346,6 +5378,38 @@ interface Checks {
         W.ApiComponentTypes['StatelessExecutionOptions'],
         z.infer<typeof import('@llumiverse/common/schemas').StatelessExecutionOptionsSchema>
     >;
+    'component:AgentRunInferenceSettings': Same<
+        W.ApiComponentTypes['AgentRunInferenceSettings'],
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunInferenceSettingsSchema>
+    >;
+    'component:AgentRunAnalysisSettings': Same<
+        W.ApiComponentTypes['AgentRunAnalysisSettings'],
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunAnalysisSettingsSchema>
+    >;
+    'component:AgentRunToolSettings': Same<
+        W.ApiComponentTypes['AgentRunToolSettings'],
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunToolSettingsSchema>
+    >;
+    'component:AgentRunSettings': Same<
+        W.ApiComponentTypes['AgentRunSettings'],
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunSettingsSchema>
+    >;
+    'component:AgentRunInferenceSnapshot': Same<
+        W.ApiComponentTypes['AgentRunInferenceSnapshot'],
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunInferenceSnapshotSchema>
+    >;
+    'component:AgentRunAnalysisSnapshot': Same<
+        W.ApiComponentTypes['AgentRunAnalysisSnapshot'],
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunAnalysisSnapshotSchema>
+    >;
+    'component:AgentRunToolSettingsSnapshot': Same<
+        W.ApiComponentTypes['AgentRunToolSettingsSnapshot'],
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunToolSettingsSnapshotSchema>
+    >;
+    'component:AgentRunSettingsSnapshot': Same<
+        W.ApiComponentTypes['AgentRunSettingsSnapshot'],
+        z.infer<typeof import('./api-schemas/agent-run-settings.js').AgentRunSettingsSnapshotSchema>
+    >;
     'component:UpdateInteractionConfigurationPayload': Same<
         W.ApiComponentTypes['UpdateInteractionConfigurationPayload'],
         z.infer<typeof import('./api-schemas/inference-profile.js').UpdateInteractionConfigurationPayloadSchema>
@@ -9482,6 +9546,14 @@ const checks: Checks = {
     AccessControlEntry: true,
     ACECreatePayload: true,
     ACEUpdatePayload: true,
+    AgentRunInferenceSettings: true,
+    AgentRunAnalysisSettings: true,
+    AgentRunToolSettings: true,
+    AgentRunSettings: true,
+    AgentRunInferenceSnapshot: true,
+    AgentRunAnalysisSnapshot: true,
+    AgentRunToolSettingsSnapshot: true,
+    AgentRunSettingsSnapshot: true,
     AnalyticsAxis: true,
     RunAnalyticsQuery: true,
     RunAnalyticsGroupBy: true,
@@ -10940,6 +11012,14 @@ const checks: Checks = {
     'component:CompletionResult': true,
     'component:ExecutionTokenUsage': true,
     'component:StatelessExecutionOptions': true,
+    'component:AgentRunInferenceSettings': true,
+    'component:AgentRunAnalysisSettings': true,
+    'component:AgentRunToolSettings': true,
+    'component:AgentRunSettings': true,
+    'component:AgentRunInferenceSnapshot': true,
+    'component:AgentRunAnalysisSnapshot': true,
+    'component:AgentRunToolSettingsSnapshot': true,
+    'component:AgentRunSettingsSnapshot': true,
     'component:UpdateInteractionConfigurationPayload': true,
     'component:InteractionConfigurationRecord': true,
     'component:InteractionConfigurationResult': true,
@@ -11977,6 +12057,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2497);
+        expect(Object.keys(checks)).toHaveLength(2513);
     });
 });

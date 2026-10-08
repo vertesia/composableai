@@ -81,6 +81,16 @@ import {
 import { AccountSchema, StripeBillingStatusResponseSchema, UpdateAccountPayloadSchema } from './account.js';
 import { type JsonObject, toOpenApiComponents } from './adapter.js';
 import * as AgentCommunicationSchemas from './agent-communication.js';
+import {
+    AgentRunAnalysisSettingsSchema,
+    AgentRunAnalysisSnapshotSchema,
+    AgentRunInferenceSettingsSchema,
+    AgentRunInferenceSnapshotSchema,
+    AgentRunSettingsSchema,
+    AgentRunSettingsSnapshotSchema,
+    AgentRunToolSettingsSchema,
+    AgentRunToolSettingsSnapshotSchema,
+} from './agent-run-settings.js';
 import * as AgentRunSchemas from './agent-runs.js';
 import {
     AnalyticsAxisSchema,
@@ -1137,6 +1147,19 @@ const LLM_COMPLETION_SCHEMAS = {
     // The options a caller may send. `PromptFormatter` is deliberately gone: see the note on
     // `StatelessExecutionOptionsSchema`.
     StatelessExecutionOptions: StatelessExecutionOptionsSchema,
+} as const satisfies Record<string, z.ZodType>;
+
+// Per-run tool and subagent inference settings. A group of their own: added to INTERACTION_SCHEMAS they push
+// its inferred type past what the compiler will serialize (TS7056).
+const AGENT_RUN_SETTINGS_SCHEMAS = {
+    AgentRunInferenceSettings: AgentRunInferenceSettingsSchema,
+    AgentRunAnalysisSettings: AgentRunAnalysisSettingsSchema,
+    AgentRunToolSettings: AgentRunToolSettingsSchema,
+    AgentRunSettings: AgentRunSettingsSchema,
+    AgentRunInferenceSnapshot: AgentRunInferenceSnapshotSchema,
+    AgentRunAnalysisSnapshot: AgentRunAnalysisSnapshotSchema,
+    AgentRunToolSettingsSnapshot: AgentRunToolSettingsSnapshotSchema,
+    AgentRunSettingsSnapshot: AgentRunSettingsSnapshotSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const INTERACTION_SCHEMAS = {
@@ -2460,6 +2483,7 @@ const API_SCHEMA_GROUPS = [
     ENVIRONMENT_SCHEMAS,
     LLM_COMPLETION_SCHEMAS,
     INTERACTION_SCHEMAS,
+    AGENT_RUN_SETTINGS_SCHEMAS,
     INTERACTION_AUTHORING_SCHEMAS,
     AGENT_CONVERSATION_SCHEMAS,
     EXECUTION_RUN_SCHEMAS,
@@ -2525,6 +2549,7 @@ type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
     typeof ENVIRONMENT_SCHEMAS &
     typeof LLM_COMPLETION_SCHEMAS &
     typeof INTERACTION_SCHEMAS &
+    typeof AGENT_RUN_SETTINGS_SCHEMAS &
     typeof INTERACTION_AUTHORING_SCHEMAS &
     typeof AGENT_CONVERSATION_SCHEMAS &
     typeof EXECUTION_RUN_SCHEMAS &
@@ -2591,6 +2616,15 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'AgentRunInferenceSettings',
+    'AgentRunAnalysisSettings',
+    'AgentRunToolSettings',
+    'AgentRunSettings',
+    'AgentRunInferenceSnapshot',
+    'AgentRunAnalysisSnapshot',
+    'AgentRunToolSettingsSnapshot',
+    'AgentRunSettingsSnapshot',
+
     'UpdateInteractionConfigurationPayload',
     'InteractionConfigurationRecord',
     'InteractionConfigurationResult',
