@@ -228,15 +228,7 @@ export function DocumentSearchResults({
     // Handler for vector search widget
     const handleVectorSearch = (query?: ComplexSearchQuery) => {
         if (query?.vector) {
-            search.query.vector = query.vector;
-            search.query.full_text = query.full_text;
-            search.query.weights = query.weights;
-            search.query.score_aggregation = query.score_aggregation;
-            search.query.dynamic_scaling = query.dynamic_scaling;
-            if (query.limit !== undefined) {
-                search.limit = query.limit;
-                search.query.limit = query.limit;
-            }
+            search.setScoredSearchQuery(query);
             if (!actualLayout.find((c) => c.name === 'Search Score')) {
                 const layout = [
                     ...actualLayout,
@@ -250,11 +242,7 @@ export function DocumentSearchResults({
             }
             settleSearch(search.search(), 'Vector search failed:');
         } else if (query?.full_text) {
-            search.query.full_text = query.full_text;
-            if (query.limit !== undefined) {
-                search.limit = query.limit;
-                search.query.limit = query.limit;
-            }
+            search.setScoredSearchQuery(query);
             settleSearch(search.search(), 'Text search failed:');
         } else if (query === undefined) {
             // Only clear search if this is a user-initiated clear (not initialization)

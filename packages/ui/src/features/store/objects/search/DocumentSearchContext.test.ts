@@ -12,6 +12,26 @@ function createClient(searchImpl: () => Promise<unknown>): ZenoClient {
 }
 
 describe('DocumentSearch', () => {
+    it('clears stale vector search when switching to full-text only', () => {
+        const search = new DocumentSearch(createClient(() => Promise.resolve({ results: [] })));
+        search.query = {
+            type: 'stored-type',
+            full_text: 'previous search',
+            vector: { text: 'previous search' },
+            dynamic_scaling: 'on',
+            score_aggregation: 'smart',
+        };
+
+        search.setScoredSearchQuery({ full_text: 'Hibernix', limit: 10 });
+
+        expect(search.query).toEqual({
+            type: 'stored-type',
+            full_text: 'Hibernix',
+            limit: 10,
+        });
+        expect(search.limit).toBe(10);
+    });
+
     it('settles loading state and preserves current objects when search fails', async () => {
         const error = new Error('search failed');
         const currentObject = { id: 'object-1', name: 'Existing object' } as ContentObjectItemApiResponse;
