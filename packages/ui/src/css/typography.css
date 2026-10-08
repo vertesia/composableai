@@ -1,109 +1,112 @@
-.vprose {
-    @apply prose text-foreground max-w-none;
+/* Typography is opt-in. Own the layer here so normal imports cannot accidentally put
+   theme colours below the typography plugin's prose utilities. */
+@layer utilities {
+    .vprose {
+        @apply prose max-w-none;
 
-    /* Keep typography's descendants and markers on the active theme, including prose-sm consumers. */
-    --tw-prose-body: var(--foreground);
-    --tw-prose-headings: var(--foreground);
-    --tw-prose-lead: var(--muted);
-    --tw-prose-links: var(--info);
-    --tw-prose-bold: var(--foreground);
-    --tw-prose-counters: var(--muted);
-    --tw-prose-bullets: var(--muted);
-    --tw-prose-hr: var(--border);
-    --tw-prose-quotes: var(--muted);
-    --tw-prose-quote-borders: var(--border);
-    --tw-prose-captions: var(--muted);
-    --tw-prose-kbd: var(--foreground);
-    --tw-prose-kbd-shadows: var(--border);
-    --tw-prose-code: var(--foreground);
-    --tw-prose-pre-code: var(--foreground);
-    --tw-prose-pre-bg: var(--muted-background);
-    --tw-prose-th-borders: var(--border);
-    --tw-prose-td-borders: var(--border);
-}
+        /* Tailwind Typography's public palette interface. Use the active semantic tokens so
+           branding and dark mode share one source of truth; consumers do not need prose-invert.
+           https://github.com/tailwindlabs/tailwindcss-typography#adding-custom-color-themes */
+        --tw-prose-body: var(--foreground);
+        --tw-prose-headings: var(--foreground);
+        --tw-prose-lead: var(--muted);
+        --tw-prose-links: var(--info);
+        --tw-prose-bold: var(--foreground);
+        --tw-prose-counters: var(--muted);
+        --tw-prose-bullets: var(--muted);
+        --tw-prose-hr: var(--border);
+        --tw-prose-quotes: var(--muted);
+        --tw-prose-quote-borders: var(--border);
+        --tw-prose-captions: var(--muted);
+        --tw-prose-kbd: var(--foreground);
+        --tw-prose-kbd-shadows: var(--border);
+        --tw-prose-code: var(--muted);
+        --tw-prose-pre-code: var(--muted);
+        --tw-prose-pre-bg: var(--muted-background);
+        --tw-prose-th-borders: var(--border);
+        --tw-prose-td-borders: var(--border);
+    }
 
-.vprose p {
-    @apply bg-transparent my-2;
-}
+    .vprose :where(p):not(:where(.not-prose, .not-prose *)) {
+        @apply bg-transparent my-2;
+    }
 
-.vprose a {
-    @apply text-info hover:text-info/80;
-}
+    .vprose :where(a):not(:where(.not-prose, .not-prose *)) {
+        @variant hover {
+            color: color-mix(in oklab, var(--tw-prose-links) 80%, transparent);
+        }
+    }
 
-.vprose pre,
-.vprose code {
-    @apply !bg-muted text-muted my-2;
-}
+    .vprose :where(pre, code):not(:where(.not-prose, .not-prose *)) {
+        @apply my-2;
+        background-color: var(--tw-prose-pre-bg);
+    }
 
-.vprose h1,
-.vprose h2,
-.vprose h3,
-.vprose h4,
-.vprose h5,
-.vprose h6 {
-    @apply text-foreground;
-}
+    .vprose :where(strong):not(:where(.not-prose, .not-prose *)) {
+        @apply font-bold;
+    }
 
-.vprose strong {
-    @apply text-foreground font-bold;
-}
+    .vprose :where(em):not(:where(.not-prose, .not-prose *)) {
+        @apply italic;
+    }
 
-.vprose em {
-    @apply italic;
-}
+    .vprose :where(ul):not(:where(.not-prose, .not-prose *)) {
+        @apply my-3 ps-6 list-disc space-y-1;
+    }
 
-.vprose ul {
-    @apply my-3 ps-6 list-disc space-y-1;
-}
+    .vprose :where(ol):not(:where(.not-prose, .not-prose *)) {
+        @apply my-3 ps-6 list-decimal space-y-1;
+    }
 
-.vprose ol {
-    @apply my-3 ps-6 list-decimal space-y-1;
-}
+    .vprose :where(li):not(:where(.not-prose, .not-prose *)) {
+        @apply my-2 ps-1;
+    }
 
-.vprose li {
-    @apply text-foreground my-2 ps-1;
-}
+    .vprose :where(blockquote):not(:where(.not-prose, .not-prose *)) {
+        @apply border-s-4 ps-4 italic my-3;
+    }
 
-.vprose blockquote {
-    @apply border-s-4 border-muted/30 ps-4 italic text-muted my-3;
-}
+    .vprose :where(hr):not(:where(.not-prose, .not-prose *)) {
+        @apply my-4;
+    }
 
-.vprose hr {
-    @apply border-muted/30 my-4;
-}
+    .vprose :where(h1):not(:where(.not-prose, .not-prose *)) {
+        @apply font-bold text-2xl my-2;
+    }
 
-.vprose h1 {
-    @apply font-bold text-2xl my-2;
-}
+    .vprose :where(h2):not(:where(.not-prose, .not-prose *)) {
+        @apply font-bold text-xl my-2;
+    }
 
-.vprose h2 {
-    @apply font-bold text-xl my-2;
-}
+    .vprose :where(h3):not(:where(.not-prose, .not-prose *)) {
+        @apply font-bold text-lg my-2;
+    }
 
-.vprose h3 {
-    @apply font-bold text-lg my-2;
-}
+    .vprose :where(table):not(:where(.not-prose, .not-prose *)) {
+        @apply min-w-full border-collapse border my-4;
+        border-color: var(--tw-prose-td-borders);
+    }
 
-.vprose table {
-    @apply min-w-full border-collapse border border-muted/30 my-4;
-}
+    .vprose :where(th):not(:where(.not-prose, .not-prose *)) {
+        @apply border px-4 py-2 text-start font-bold;
+        border-color: var(--tw-prose-th-borders);
+        background-color: var(--muted-background);
+    }
 
-.vprose th {
-    @apply border border-muted/30 bg-mixer-muted/50 px-4 py-2 text-start text-muted font-bold;
-}
+    .vprose :where(td):not(:where(.not-prose, .not-prose *)) {
+        @apply border px-4 py-2;
+        border-color: var(--tw-prose-td-borders);
+    }
 
-.vprose td {
-    @apply border border-muted/30 px-4 py-2 text-muted;
-}
+    .vprose :where(code):not(:where(.not-prose, .not-prose *)) {
+        @apply font-mono text-sm;
+    }
 
-.vprose code {
-    @apply font-mono text-sm;
-}
+    .vprose :where(:not(pre) > code):not(:where(.not-prose, .not-prose *)) {
+        @apply px-1.5 py-0.5 rounded;
+    }
 
-.vprose :not(pre) > code {
-    @apply px-1.5 py-0.5 rounded text-muted bg-muted/20;
-}
-
-.vprose .code-language-indicator {
-    @apply text-xs px-3 py-1 rounded-t-md font-mono border-t border-s border-e -mb-2;
+    .vprose :where(.code-language-indicator):not(:where(.not-prose, .not-prose *)) {
+        @apply text-xs px-3 py-1 rounded-t-md font-mono border-t border-s border-e -mb-2;
+    }
 }

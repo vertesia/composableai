@@ -172,6 +172,30 @@ The axe suite is a static-DOM analyzer. It does not reliably catch focus visibil
 
 For detailed API documentation, visit [docs.vertesiahq.com](https://docs.vertesiahq.com).
 
+## Theme-aware prose
+
+For Markdown and long property values, opt in after the shared styles:
+
+```css
+@import 'tailwindcss';
+@import '@vertesia/ui/styles.css';
+@import '@vertesia/ui/styles/typography.css';
+@plugin '@tailwindcss/typography';
+```
+
+Use `vprose` for the shared typography, optionally with `prose-sm` or another size modifier.
+Existing `vprose prose` combinations also work. The stylesheet owns its `utilities` layer;
+import it without an outer `layer(base)` wrapper.
+
+Prose colours map once to the existing semantic tokens: `--foreground` for primary text,
+`--muted` for secondary text and code, `--info` for links, `--muted-background` for code
+surfaces, and `--border` for separators. Override those tokens on the theme or an ancestor
+of the prose container to apply branding. The same mapping follows `.dark` automatically;
+`dark:prose-invert` is unnecessary and would select Tailwind's independent palette.
+
+This mapping uses [Tailwind Typography's documented custom-palette interface](https://github.com/tailwindlabs/tailwindcss-typography#adding-custom-color-themes).
+Layout rules preserve the plugin's `not-prose` escape hatch for embedded controls and renderers.
+
 ## License
 
 Apache-2.0
