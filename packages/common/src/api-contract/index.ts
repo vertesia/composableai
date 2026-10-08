@@ -1,8 +1,8 @@
 /** Public runtime contracts use prebuilt JSON Schema and never load Zod. */
 import type { JsonObject } from '../api-schemas/adapter.js';
-import type { ApiComponentName, ApiComponentType } from '../api-schemas/registry.js';
 import API_SCHEMA_COMPONENTS from './components.generated.json' with { type: 'json' };
 import { createApiContract } from './engine.js';
+import type { ApiComponentName, ApiComponentType } from './types.js';
 
 export type { JsonObject } from '../api-schemas/adapter.js';
 export type {
@@ -10,9 +10,9 @@ export type {
     NormalizedApiParameters,
     RawApiParameters,
 } from '../api-schemas/parameters.js';
-export type { ApiComponentName, ApiComponentType } from '../api-schemas/registry.js';
 export type { ApiValidationIssue, PruneAndValidateResult, ValidateApiPayloadResult } from './engine.js';
 export { createApiContract } from './engine.js';
+export type { ApiComponentName, ApiComponentType } from './types.js';
 
 export const ApiSchemaComponents: Readonly<Record<string, JsonObject>> = API_SCHEMA_COMPONENTS;
 
