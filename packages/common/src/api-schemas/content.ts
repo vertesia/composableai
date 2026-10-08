@@ -226,6 +226,22 @@ export const ContentObjectTextResponseSchema = z
     })
     .meta({ id: 'ContentObjectTextResponse' });
 
+export const SetObjectTextPayloadSchema = z
+    .strictObject({
+        text: z.string().meta({ description: 'The extracted text to store for the object.' }),
+        etag: z
+            .string()
+            .meta({
+                description:
+                    'The etag of the content the text was extracted from. When provided, the server records it as the object text_etag so extraction can be skipped while the content is unchanged.',
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'SetObjectTextPayload',
+        description: 'Payload for storing the extracted text of a content object as a text artifact.',
+    });
+
 export const GetRenditionResponseSchema = z
     .strictObject({
         status: z.enum(['found', 'generating', 'failed']),
