@@ -3,6 +3,7 @@ import type { AuthTokenPayload } from '@vertesia/common';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { createLocalJWKSet, decodeJwt, type JSONWebKeySet, type JWTVerifyGetKey, jwtVerify } from 'jose';
+import { createMemoryScratch, type ToolScratch } from './scratch.js';
 import type { ToolExecutionContext } from './types.js';
 
 const cache: Record<string, JWTVerifyGetKey> = {};
@@ -106,13 +107,16 @@ export class AuthSession implements ToolExecutionContext {
         token: string;
     };
     toolContext?: ToolContext;
+    private _scratch: ToolScratch | undefined;
 
     constructor(
         public token: string,
         public payload: AuthTokenPayload,
         endpointOverrides?: EndpointOverrides,
         toolContext?: ToolContext,
+        scratch?: ToolScratch,
     ) {
+        this._scratch = scratch;
         const decoded = decodeEndpoints(payload.endpoints);
         // Use overrides from workflow config if provided, falling back to JWT endpoints
         this.endpoints = {
@@ -121,6 +125,12 @@ export class AuthSession implements ToolExecutionContext {
             token: endpointOverrides?.token || decoded.token || payload.iss,
         };
         this.toolContext = toolContext;
+    }
+
+    /** One store per session, which is one per request; created on first use. */
+    get scratch(): ToolScratch {
+        this._scratch ??= createMemoryScratch();
+        return this._scratch;
     }
 
     async getClient() {

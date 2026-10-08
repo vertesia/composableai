@@ -6,6 +6,7 @@ export * from './InteractionCollection.js';
 export { loadSkillsFromDirectory, loadToolsFromDirectory } from './node-loaders.js';
 export * from './RenderingTemplateCollection.js';
 export * from './SkillCollection.js';
+export * from './scratch.js';
 export type { BuildAppPackageOptions } from './server/app-package.js';
 export { buildAppPackage } from './server/app-package.js';
 export * from './server/types.js';
