@@ -34745,7 +34745,9 @@
       "overhead",
       "followup_after_answer",
       "approval_denied",
-      "circuit_breaker"
+      "circuit_breaker",
+      "no_visible_answer",
+      "answer_in_tool_preamble"
     ],
     "description": "Reason behind an evaluation severity."
   },
@@ -37139,6 +37141,14 @@
           "toolUseCount": {
             "type": "number"
           },
+          "finishReason": {
+            "type": "string"
+          },
+          "outputTextChars": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "callType": {
             "type": "string",
             "enum": [
@@ -37598,6 +37608,16 @@
             "maximum": 9007199254740991
           },
           "stallTrips": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "answerChars": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "finalToolCallTextChars": {
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
