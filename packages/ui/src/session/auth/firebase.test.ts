@@ -40,7 +40,17 @@ describe('configured Firebase tenant', () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
-    it('logs a missing discovered tenant once at warning level', async () => {
+    it.each([
+        ['a null answer', () => new Response('null', { status: 200, headers: { 'content-type': 'application/json' } })],
+        [
+            'the 404 older servers return',
+            () =>
+                new Response(JSON.stringify({ error: 'Tenant not found' }), {
+                    status: 404,
+                    headers: { 'content-type': 'application/json' },
+                }),
+        ],
+    ])('treats %s as an address without a tenant, logged at debug', async (_label, respond) => {
         vi.spyOn(Env, 'firebase', 'get').mockReturnValue({
             apiKey: 'key',
             authDomain: 'app.example.com',
@@ -48,19 +58,16 @@ describe('configured Firebase tenant', () => {
         });
         vi.stubGlobal(
             'fetch',
-            vi.fn().mockResolvedValue(
-                new Response(JSON.stringify({ error: 'Tenant not found' }), {
-                    status: 404,
-                    headers: { 'content-type': 'application/json' },
-                }),
-            ),
+            vi.fn().mockImplementation(async () => respond()),
         );
+        const debug = vi.spyOn(Env.logger, 'debug');
         const warn = vi.spyOn(Env.logger, 'warn');
         const error = vi.spyOn(Env.logger, 'error');
 
-        await setFirebaseTenant('someone@another-company.com');
+        await expect(setFirebaseTenant('someone@another-company.com')).resolves.toBeUndefined();
 
-        expect(warn).toHaveBeenCalledOnce();
+        expect(debug).toHaveBeenCalledWith('No Firebase tenant for this address; using the default tenant');
+        expect(warn).not.toHaveBeenCalled();
         expect(error).not.toHaveBeenCalled();
     });
 
