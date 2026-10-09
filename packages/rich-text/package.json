@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/rich-text",
-    "version": "1.6.0-dev.20261008.064737Z",
+    "version": "1.6.0-dev.20261004.085740Z",
     "description": "Markdown-first rich-text editing primitives for Vertesia",
     "type": "module",
     "main": "./lib/index.js",
@@ -61,5 +61,5 @@
         "url": "https://github.com/vertesia/composableai.git",
         "directory": "packages/rich-text"
     },
-    "gitHead": "8ee3a33e9a7c3dbcd13937e971cbdcc5fad56717"
+    "gitHead": "b51b6dc9262f81f55e2424d1e57190060f6068d7"
 }
