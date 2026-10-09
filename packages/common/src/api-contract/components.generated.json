@@ -3008,6 +3008,9 @@
         "type": "string",
         "const": "bedrock-nova"
       },
+      "effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
+      },
       "max_tokens": {
         "type": "number"
       },

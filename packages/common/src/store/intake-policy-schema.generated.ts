@@ -737,6 +737,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     const: 'bedrock-nova',
                 },
+                effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
                 max_tokens: {
                     type: 'number',
                 },

@@ -305,3 +305,20 @@ describe('background inference telemetry contract', () => {
         expect(validateApiRequest('LlmCallType', 'background').valid).toBe(true);
     });
 });
+
+describe('Bedrock reasoning option contracts', () => {
+    it.each([
+        { _option_id: 'bedrock-converse', effort: 'high', reasoning_effort: 'low', verbosity: 'low' },
+        { _option_id: 'bedrock-nova', effort: 'high' },
+        { _option_id: 'bedrock-nova', effort: 'none' },
+    ])('accepts $_option_id reasoning controls at the API boundary', (model_options) => {
+        expect(
+            validateApiRequest('InteractionCreatePayload', {
+                name: 'bedrock-options-contract',
+                status: 'draft',
+                prompts: [],
+                model_options,
+            }).valid,
+        ).toBe(true);
+    });
+});
