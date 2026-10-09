@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/client",
-    "version": "1.6.0-dev.20261008.064737Z",
+    "version": "1.6.0-dev.20261009.095813Z",
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
@@ -57,5 +57,5 @@
         "ai",
         "typescript"
     ],
-    "gitHead": "8ee3a33e9a7c3dbcd13937e971cbdcc5fad56717"
+    "gitHead": "e45bc09ecf2de4c8fe8a8d39fb52c1521980e7b9"
 }
