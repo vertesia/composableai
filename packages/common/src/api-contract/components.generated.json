@@ -41662,6 +41662,41 @@
           "updates"
         ],
         "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "add_foreign_key"
+          },
+          "foreign_key": {
+            "$ref": "#/components/schemas/DataForeignKey"
+          }
+        },
+        "required": [
+          "op",
+          "foreign_key"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "drop_foreign_key"
+          },
+          "column": {
+            "type": "string",
+            "description": "Column whose foreign key is removed"
+          }
+        },
+        "required": [
+          "op",
+          "column"
+        ],
+        "additionalProperties": false
       }
     ],
     "type": "object",
