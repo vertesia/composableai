@@ -3346,6 +3346,20 @@
           "type": "string"
         }
       },
+      "effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
+      },
+      "reasoning_effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
+      },
+      "verbosity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
       "include_thoughts": {
         "type": "boolean"
       },
@@ -3356,6 +3370,18 @@
       }
     },
     "additionalProperties": false
+  },
+  "ReasoningEffort": {
+    "type": "string",
+    "enum": [
+      "none",
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ]
   },
   "BedrockNovaOptions": {
     "type": "object",
@@ -4005,18 +4031,6 @@
       }
     },
     "additionalProperties": false
-  },
-  "ReasoningEffort": {
-    "type": "string",
-    "enum": [
-      "none",
-      "minimal",
-      "low",
-      "medium",
-      "high",
-      "xhigh",
-      "max"
-    ]
   },
   "OpenAiTextOptions": {
     "type": "object",
