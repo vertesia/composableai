@@ -1535,6 +1535,65 @@ describe('ModernAgentOutput summary conversation items', () => {
     });
 });
 
+describe('ModernAgentOutput summary - answer sent with the final tool call', () => {
+    const question = makeMessage({ timestamp: 1000, type: AgentMessageType.QUESTION, message: 'Analyze our cashflow' });
+    const query = makeMessage({
+        timestamp: 2000,
+        message: 'Querying the open orders',
+        details: { tool: 'execute_shell', tool_status: 'completed', tool_run_id: 'tool-1' },
+    });
+    const finalProse = makeMessage({
+        timestamp: 3000,
+        message: '## Cashflow\n\nOutstanding receivables total $4.2M.',
+        details: { display_role: 'tool_preamble', tools: ['update_plan'], streamed: true },
+    });
+    const planUpdate = makeMessage({
+        timestamp: 3100,
+        message: 'Analysis complete.',
+        details: { tool: 'update_plan', tool_status: 'completed' },
+    });
+    const emptyAnswer = makeMessage({
+        timestamp: 4000,
+        type: AgentMessageType.ANSWER,
+        message: '',
+        details: { streamed: true },
+    });
+    const idle = makeMessage({ timestamp: 4100, type: AgentMessageType.IDLE, message: 'Waiting for your command...' });
+
+    it('shows the prose of the final tool call as the answer when the answer itself is empty', () => {
+        const items = buildSummaryConversationItems([question, query, finalProse, planUpdate, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work', 'message']);
+        expect(items[1]).toMatchObject({ type: 'work', messages: [query, planUpdate] });
+        expect(items[2]).toMatchObject({
+            type: 'message',
+            message: { type: AgentMessageType.ANSWER, timestamp: 4000, message: finalProse.message },
+        });
+    });
+
+    it('keeps the prose inside the work row while the turn has not ended', () => {
+        const items = buildSummaryConversationItems([question, query, finalProse, planUpdate], false);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+        expect(items[1]).toMatchObject({ messages: [query, finalProse, planUpdate] });
+    });
+
+    it('leaves a turn with a non-empty answer unchanged', () => {
+        const answer = { ...emptyAnswer, message: 'Here is the analysis.' };
+        const items = buildSummaryConversationItems([question, query, finalProse, planUpdate, answer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work', 'message']);
+        expect(items[1]).toMatchObject({ messages: [query, finalProse, planUpdate] });
+        expect(items[2]).toEqual({ type: 'message', message: answer });
+    });
+
+    it('drops an empty answer that has no prose to stand in for it', () => {
+        const items = buildSummaryConversationItems([question, query, planUpdate, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+    });
+});
+
 describe('ModernAgentOutput utils - streamed deduplication', () => {
     it('shows a workstream stream only in its owning workstream', () => {
         const stream = {

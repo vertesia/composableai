@@ -281,6 +281,15 @@ function isSummaryWorkMessage(message: AgentMessage): boolean {
     return message.type === AgentMessageType.THOUGHT && !message.details?.streamed;
 }
 
+function isEmptyAnswerMessage(message: AgentMessage): boolean {
+    return message.type === AgentMessageType.ANSWER && !getMessageText(message);
+}
+
+function isToolPreambleProse(message: AgentMessage): boolean {
+    const text = getMessageText(message);
+    return message.details?.display_role === 'tool_preamble' && Boolean(text) && !isLowSignalSummaryText(text);
+}
+
 export function buildSummaryConversationItems(
     messages: AgentMessage[],
     isCompleted: boolean,
@@ -330,6 +339,18 @@ export function buildSummaryConversationItems(
                 items.push({ type: 'message', message });
                 continue;
             }
+        }
+
+        if (isEmptyAnswerMessage(message)) {
+            // A model that writes its answer alongside a last tool call leaves that prose as a
+            // tool preamble and ends the turn on an empty answer; show the prose as the answer.
+            const proseIndex = pendingWork.findLastIndex(isToolPreambleProse);
+            if (proseIndex >= 0) {
+                const [prose] = pendingWork.splice(proseIndex, 1);
+                flushWork(false, message);
+                items.push({ type: 'message', message: { ...message, message: prose.message } });
+            }
+            continue;
         }
 
         if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {
