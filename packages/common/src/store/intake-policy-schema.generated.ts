@@ -509,6 +509,16 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         type: 'string',
                     },
                 },
+                effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                reasoning_effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                verbosity: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
+                },
                 include_thoughts: {
                     type: 'boolean',
                 },
