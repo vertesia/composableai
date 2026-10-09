@@ -1547,6 +1547,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 image_generation: {
                     $ref: '#/$defs/OpenAiImageGenerationOptions',
                 },
+                seed: {
+                    type: 'number',
+                },
                 max_tokens: {
                     type: 'number',
                 },
