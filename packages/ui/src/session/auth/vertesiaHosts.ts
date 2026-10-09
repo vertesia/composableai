@@ -11,15 +11,19 @@ export const REGION = `(?:${LABEL}\\.)?`;
  *   `preprod.cloud.vertesia.io`, `preview.cloud.us1.vertesia.io`     — its preview/preprod tiers
  *   `acme.cloud.us1.vertesia.io`                                     — per-IdP-tenant branded hosts
  *   `dev-feat-x.ui.dev1.vertesia.io`                                 — dynamic per-branch dev envs
+ *   `admin.vertesia.io`, `admin.us1.vertesia.io`                     — the Admin console
+ *   `preview.admin.us1.vertesia.io`, `admin-ui-dev-x.admin.dev1.vertesia.io` — its tiers and branches
  *
  * Mirrors the load-balancer host rules (region-lb/main.tf: `cloud.${var.domain}`,
- * `*.cloud.${var.domain}`, `*.ui.${var.domain}`) rather than the DNS zone, so a name we merely own
- * is not trusted for what serves it.
+ * `*.cloud.${var.domain}`, `*.ui.${var.domain}`, `admin.${var.domain}`, `*.admin.${var.domain}`)
+ * rather than the DNS zone, so a name we merely own is not trusted for what serves it.
  */
 export const FIRST_PARTY_HOST_PATTERNS: readonly RegExp[] = [
     new RegExp(`^cloud\\.${REGION}vertesia\\.io$`),
     new RegExp(`^${LABEL}\\.cloud\\.${REGION}vertesia\\.io$`),
     new RegExp(`^${LABEL}\\.ui\\.${LABEL}\\.vertesia\\.io$`),
+    new RegExp(`^admin\\.${REGION}vertesia\\.io$`),
+    new RegExp(`^${LABEL}\\.admin\\.${REGION}vertesia\\.io$`),
 ];
 
 /**
