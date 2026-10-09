@@ -97,6 +97,11 @@ jobs:
       - name: Typecheck and run package tests
         timeout-minutes: 10
         run: pnpm ci:test
+      - name: Build standalone environment configuration workspace
+        timeout-minutes: 5
+        run: |
+          pnpm --dir tools/environment-configuration install --frozen-lockfile
+          pnpm --dir tools/environment-configuration build
 
   template-smoke-test:
     name: Template smoke test (Plugin)

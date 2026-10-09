@@ -1535,6 +1535,129 @@ describe('ModernAgentOutput summary conversation items', () => {
     });
 });
 
+describe('ModernAgentOutput summary - answer sent with the final tool call', () => {
+    const question = makeMessage({ timestamp: 1000, type: AgentMessageType.QUESTION, message: 'Analyze our cashflow' });
+    const query = makeMessage({
+        timestamp: 2000,
+        message: 'Querying the open orders',
+        details: { tool: 'execute_shell', tool_status: 'completed', tool_run_id: 'tool-1' },
+    });
+    const finalProse = makeMessage({
+        timestamp: 3000,
+        message: '## Cashflow\n\nOutstanding receivables total $4.2M.',
+        details: { display_role: 'tool_preamble', tools: ['update_plan'], streamed: true },
+    });
+    const planUpdate = makeMessage({
+        timestamp: 3100,
+        message: 'Analysis complete.',
+        details: { tool: 'update_plan', tool_status: 'completed' },
+    });
+    const emptyAnswer = makeMessage({
+        timestamp: 4000,
+        type: AgentMessageType.ANSWER,
+        message: '',
+        details: { streamed: true },
+    });
+    const idle = makeMessage({ timestamp: 4100, type: AgentMessageType.IDLE, message: 'Waiting for your command...' });
+
+    it('shows the prose of the final tool call as the answer when the answer itself is empty', () => {
+        const items = buildSummaryConversationItems([question, query, finalProse, planUpdate, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work', 'message']);
+        expect(items[1]).toMatchObject({ type: 'work', messages: [query, planUpdate] });
+        expect(items[2]).toMatchObject({
+            type: 'message',
+            message: { type: AgentMessageType.ANSWER, timestamp: 4000, message: finalProse.message },
+        });
+    });
+
+    it('keeps the prose inside the work row while the turn has not ended', () => {
+        const items = buildSummaryConversationItems([question, query, finalProse, planUpdate], false);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+        expect(items[1]).toMatchObject({ messages: [query, finalProse, planUpdate] });
+    });
+
+    it('leaves a turn with a non-empty answer unchanged', () => {
+        const answer = { ...emptyAnswer, message: 'Here is the analysis.' };
+        const items = buildSummaryConversationItems([question, query, finalProse, planUpdate, answer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work', 'message']);
+        expect(items[1]).toMatchObject({ messages: [query, finalProse, planUpdate] });
+        expect(items[2]).toEqual({ type: 'message', message: answer });
+    });
+
+    it('drops an empty answer that has no prose to stand in for it', () => {
+        const items = buildSummaryConversationItems([question, query, planUpdate, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+    });
+
+    const earlierPreamble = makeMessage({
+        timestamp: 1500,
+        message: 'I will start by querying the outstanding orders.',
+        details: { display_role: 'tool_preamble', tools: ['update_plan'], streamed: true },
+    });
+    const earlierPlanUpdate = { ...planUpdate, timestamp: 1600, message: 'Plan created.' };
+
+    it.each(['', '   ', 'Working...'])('does not skip a final preamble with text %j', (message) => {
+        const finalPreamble = { ...finalProse, message };
+        const work = [earlierPreamble, earlierPlanUpdate, query, finalPreamble, planUpdate];
+        const items = buildSummaryConversationItems([question, ...work, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+        expect(items[1]).toMatchObject({ messages: work });
+    });
+
+    it('does not reuse earlier prose when the final tool call has no preamble', () => {
+        const work = [earlierPreamble, earlierPlanUpdate, query, planUpdate];
+        const items = buildSummaryConversationItems([question, ...work, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+        expect(items[1]).toMatchObject({ messages: work });
+    });
+
+    it('does not reuse earlier prose for the same tool in a later iteration', () => {
+        const firstUpdate = { ...earlierPlanUpdate, details: { ...planUpdate.details, tool_iteration: 1 } };
+        const lastUpdate = { ...planUpdate, details: { ...planUpdate.details, tool_iteration: 2 } };
+        const work = [earlierPreamble, firstUpdate, lastUpdate];
+        const items = buildSummaryConversationItems([question, ...work, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+        expect(items[1]).toMatchObject({ messages: work });
+    });
+
+    it('does not reuse earlier prose for a later run of the same tool without iteration metadata', () => {
+        const firstUpdate = { ...earlierPlanUpdate, details: { ...planUpdate.details, tool_run_id: 'plan-1' } };
+        const lastUpdate = { ...planUpdate, details: { ...planUpdate.details, tool_run_id: 'plan-2' } };
+        const work = [earlierPreamble, firstUpdate, lastUpdate];
+        const items = buildSummaryConversationItems([question, ...work, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+        expect(items[1]).toMatchObject({ messages: work });
+    });
+
+    it('does not promote prose sent with a final call to a tool outside the allowlist', () => {
+        const preamble = { ...finalProse, details: { ...finalProse.details, tools: ['execute_shell'] } };
+        const finalQuery = { ...query, timestamp: 3050, details: { ...query.details, tool_run_id: 'tool-2' } };
+        const work = [query, preamble, finalQuery];
+        const items = buildSummaryConversationItems([question, ...work, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+        expect(items[1]).toMatchObject({ messages: work });
+    });
+
+    it('does not promote prose when the final batch mixes an allowlisted tool with another tool', () => {
+        const preamble = { ...finalProse, details: { ...finalProse.details, tools: ['execute_shell', 'update_plan'] } };
+        const finalQuery = { ...query, timestamp: 3050, details: { ...query.details, tool_run_id: 'tool-2' } };
+        const work = [query, preamble, finalQuery, planUpdate];
+        const items = buildSummaryConversationItems([question, ...work, emptyAnswer, idle], true);
+
+        expect(items.map((item) => item.type)).toEqual(['message', 'work']);
+        expect(items[1]).toMatchObject({ messages: work });
+    });
+});
+
 describe('ModernAgentOutput utils - streamed deduplication', () => {
     it('shows a workstream stream only in its owning workstream', () => {
         const stream = {

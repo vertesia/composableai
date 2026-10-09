@@ -57,6 +57,26 @@ describe('data-store API contracts', () => {
         ).toBe(false);
     });
 
+    it('accepts foreign keys added to and dropped from an existing table', () => {
+        expect(
+            validateApiRequest('AlterTablePayload', {
+                changes: [
+                    {
+                        op: 'add_foreign_key',
+                        foreign_key: { column: 'customer_id', references_table: 'customers', references_column: 'id' },
+                    },
+                    { op: 'drop_foreign_key', column: 'product_id' },
+                ],
+            }).valid,
+        ).toBe(true);
+
+        expect(
+            validateApiRequest('AlterTablePayload', {
+                changes: [{ op: 'add_foreign_key', foreign_key: { column: 'customer_id' } }],
+            }).valid,
+        ).toBe(false);
+    });
+
     it('keeps free-form row and parameter maps open', () => {
         expect(
             validateApiRequest('QueryPayload', {

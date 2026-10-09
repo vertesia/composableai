@@ -55,6 +55,9 @@ importers:
       '@types/bun':
         specifier: ^1.4.2
         version: 1.4.2
+      '@types/node':
+        specifier: ^24.19.0
+        version: 24.19.1
       globals:
         specifier: ^17.12.0
         version: 17.12.0

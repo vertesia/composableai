@@ -297,6 +297,14 @@ export const AlterTableOperationSchema = z
             column: z.string(),
             updates: DataColumnUpdateSchema,
         }),
+        z.strictObject({
+            op: z.literal('add_foreign_key'),
+            foreign_key: DataForeignKeySchema,
+        }),
+        z.strictObject({
+            op: z.literal('drop_foreign_key'),
+            column: z.string().meta({ description: 'Column whose foreign key is removed' }),
+        }),
     ])
     .meta({
         id: 'AlterTableOperation',
