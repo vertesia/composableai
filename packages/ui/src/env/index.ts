@@ -1,8 +1,6 @@
 import { isTrustedAuthBrokerUrl } from '../session/auth/vertesiaHosts.js';
 
 export {
-    FIRST_PARTY_HOST_PATTERNS,
-    GATEWAY_HOST_PATTERNS,
     isLoopbackHostname,
     isTrustedAuthBrokerUrl,
     normalizeHostname,
