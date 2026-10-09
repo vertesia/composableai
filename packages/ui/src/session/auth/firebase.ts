@@ -92,10 +92,9 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                 // Handle HTTP error responses
                 if (!response.ok) {
                     // If the error is 404 Not Found, no need to retry
+                    // How older servers answered "this address has no SSO tenant": an ordinary outcome.
                     if (response.status === 404) {
-                        Env.logger.warn('Firebase tenant was not found; continuing with the default tenant', {
-                            vertesia: { status: response.status },
-                        });
+                        Env.logger.debug('No Firebase tenant for this address; using the default tenant');
                         return;
                     }
 
@@ -103,10 +102,14 @@ export async function setFirebaseTenant(tenantEmail?: string) {
                     throw new Error(errorData?.error ?? `HTTP error ${response.status}`);
                 }
 
-                // Successfully got a response, parse it
-                const data = (await response.json()) as UIResolvedTenant;
+                // Successfully got a response, parse it. `null` means the address has no SSO tenant.
+                const data = (await response.json()) as UIResolvedTenant | null;
+                if (data === null) {
+                    Env.logger.debug('No Firebase tenant for this address; using the default tenant');
+                    return;
+                }
 
-                if (data?.firebaseTenantId) {
+                if (data.firebaseTenantId) {
                     const auth = getFirebaseAuth();
                     auth.tenantId = data.firebaseTenantId;
                     Env.firebase.providerType = data.provider ?? 'oidc';
