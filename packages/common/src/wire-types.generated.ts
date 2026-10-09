@@ -2542,6 +2542,14 @@ export type AlterTableOperation =
           op: 'modify_column';
           column: string;
           updates: DataColumnUpdate;
+      }
+    | {
+          op: 'add_foreign_key';
+          foreign_key: DataForeignKey;
+      }
+    | {
+          op: 'drop_foreign_key';
+          column: string;
       };
 /**
  * Payload for altering a table schema.
