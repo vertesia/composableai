@@ -290,6 +290,9 @@ function isToolPreambleProse(message: AgentMessage): boolean {
     return message.details?.display_role === 'tool_preamble' && Boolean(text) && !isLowSignalSummaryText(text);
 }
 
+// Tools a model tends to call last, with its answer written as that call's preamble.
+const ANSWER_CARRYING_TOOLS = new Set(['update_plan']);
+
 function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
     // Check the latest preamble before filtering its text, so an empty or low-signal
     // final preamble cannot make us fall back to prose from an earlier call.
@@ -298,7 +301,7 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
 
     const details = messages[index].details;
     const tools = details?.tools?.length ? details.tools : details?.tool ? [details.tool] : [];
-    if (tools.length === 0) return -1;
+    if (tools.length === 0 || !tools.every((tool) => ANSWER_CARRYING_TOOLS.has(tool))) return -1;
 
     let iteration = details?.tool_iteration;
     let hasMatchingTool = false;
