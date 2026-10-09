@@ -31,7 +31,7 @@
         "typecheck:test": "tsc -p tsconfig.test.json --noEmit"
     },
     "peerDependencies": {
-        "handlebars": ">=4.7.9"
+        "handlebars": ">=4.7.10"
     },
     "devDependencies": {
         "@types/estree": "^1.0.9",
