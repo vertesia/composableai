@@ -66,6 +66,8 @@ export const TurnEvaluationFlagSchema = z
         'followup_after_answer',
         'approval_denied',
         'circuit_breaker',
+        'no_visible_answer',
+        'answer_in_tool_preamble',
     ])
     .meta({ id: 'TurnEvaluationFlag', description: 'Reason behind an evaluation severity.' });
 
@@ -348,6 +350,8 @@ const LlmCallEventSchema = z.strictObject({
     success: z.boolean(),
     streamingEnabled: z.boolean(),
     toolUseCount: z.number(),
+    finishReason: z.string().optional(),
+    outputTextChars: z.number().int().optional(),
     callType: z.enum(LlmCallType),
     attemptNumber: z.number().optional(),
     errorType: z.string().optional(),
@@ -434,6 +438,9 @@ const TurnEvaluationEventSchema = z.strictObject({
     /** Absent on events from producers that predate the stall counters; read as 0. */
     stallCorrectives: z.number().int().optional(),
     stallTrips: z.number().int().optional(),
+    /** Absent on events from producers that predate the answer counters. */
+    answerChars: z.number().int().optional(),
+    finalToolCallTextChars: z.number().int().optional(),
     followupAfterAnswer: z.boolean(),
     severity: EvaluationSeveritySchema,
     flags: z.array(TurnEvaluationFlagSchema),
