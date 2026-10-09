@@ -19,6 +19,8 @@ blockExoticSubdeps: true
 minimumReleaseAge: 4320 # 3 days in minutes, minimumReleaseAge protects against supply chain attacks.
 minimumReleaseAgeStrict: true
 minimumReleaseAgeExclude:
+  # Security update: handlebars@4.7.10
+  - handlebars@4.7.10
   # Match the Hono security floor during the 3-day release cooldown.
   - hono@4.13.13
   - "@vertesia/*"
