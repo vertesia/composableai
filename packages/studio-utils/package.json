@@ -64,7 +64,7 @@
         "@llumiverse/common": "workspace:*",
         "@vertesia/common": "workspace:*",
         "@vertesia/jst": "workspace:*",
-        "handlebars": "^4.7.9"
+        "handlebars": "^4.7.10"
     },
     "gitHead": "7ab3acd95af12b8c254e1b3852e67d5078790f98"
 }
