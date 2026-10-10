@@ -327,7 +327,7 @@ async function generateAudioRendition(videoPath: string, outputDir: string): Pro
 /**
  * Extract a screenshot frame from the video at a specific timestamp
  */
-async function generateScreenshot(
+export async function generateScreenshot(
     videoPath: string,
     outputDir: string,
     timestamp: number,
@@ -377,6 +377,10 @@ async function generateScreenshot(
                 height: dimensions.height,
             };
         } catch {
+            if (timestamp > 0) {
+                log.debug(`${name} seek produced no frame; retrying at frame zero`);
+                return await generateScreenshot(videoPath, outputDir, 0, maxSize, name, metadata);
+            }
             log.warn(`${name} not generated`);
             return null;
         }
