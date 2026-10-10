@@ -36,6 +36,12 @@ const POSTER_TIMESTAMP_RATIO = 0.05; // Extract poster at 5% of video duration
 const POSTER_TIMESTAMP_MAX = 2; // Maximum poster timestamp in seconds
 const MIN_SCREENSHOT_TIMESTAMP = 1; // Minimum timestamp for screenshots in seconds
 
+/** A one-second minimum seek would miss the only frame of a short, low-frame-rate clip. */
+export function screenshotTimestamp(duration: number, ratio: number, maxTimestamp = Number.POSITIVE_INFINITY): number {
+    if (duration <= MIN_SCREENSHOT_TIMESTAMP) return 0;
+    return Math.min(Math.max(Math.min(duration * ratio, maxTimestamp), MIN_SCREENSHOT_TIMESTAMP), duration / 2);
+}
+
 // FFmpeg configuration constants
 const VIDEO_CRF = '23'; // Constant Rate Factor for video quality (18-28, lower = better)
 const AUDIO_BITRATE = '128k'; // Audio bitrate for AAC encoding
@@ -376,7 +382,9 @@ async function generateScreenshot(
         }
     } catch (error) {
         rethrowIfActivityStopped(error);
-        log.error(`Failed to generate ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        // This optional rendition falls back to the source video; upload/update failures below
+        // still fail the activity and are reported as errors.
+        log.warn(`Failed to generate ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
     }
 }
@@ -499,11 +507,8 @@ export async function prepareVideo(
 
         // Step 3 & 4: Generate thumbnail and poster in parallel
         log.debug('Generating thumbnail and poster');
-        const thumbnailTimestamp = Math.max(metadata.duration * THUMBNAIL_TIMESTAMP_RATIO, MIN_SCREENSHOT_TIMESTAMP);
-        const posterTimestamp = Math.max(
-            Math.min(metadata.duration * POSTER_TIMESTAMP_RATIO, POSTER_TIMESTAMP_MAX),
-            MIN_SCREENSHOT_TIMESTAMP,
-        );
+        const thumbnailTimestamp = screenshotTimestamp(metadata.duration, THUMBNAIL_TIMESTAMP_RATIO);
+        const posterTimestamp = screenshotTimestamp(metadata.duration, POSTER_TIMESTAMP_RATIO, POSTER_TIMESTAMP_MAX);
 
         const [thumbnailResult, posterResult] = await Promise.all([
             generateScreenshot(videoFile, tempOutputDir, thumbnailTimestamp, thumbnailSize, 'thumbnail', metadata),
