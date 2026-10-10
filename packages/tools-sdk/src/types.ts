@@ -14,6 +14,7 @@ import type {
     ToolResultContent,
     ToolResultMeta,
 } from '@vertesia/common';
+import type { ToolScratch } from './scratch.js';
 
 export type { ToolExecutionMetadata };
 export type AppEventSubscriptionDefinition = CommonAppEventSubscriptionDefinition;
@@ -58,6 +59,11 @@ export interface ToolExecutionContext {
      * @returns a vertesia client instance
      */
     getClient: () => Promise<VertesiaClient>;
+    /**
+     * Temporary storage private to this request, with the same behavior in the Vertesia sandbox and on
+     * Node hosts (localhost, Vercel). Discarded when the request ends.
+     */
+    scratch: ToolScratch;
 }
 
 export type AppLifecycleHookName = 'install' | 'uninstall';

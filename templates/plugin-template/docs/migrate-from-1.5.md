@@ -1,9 +1,10 @@
-# Migrating a release/1.5 template app to 1.6 authentication and branding
+# Migrating a release/1.5 template app to 1.6
 
 Audience: apps generated with `npm create @vertesia/plugin` from the release/1.5 template line
 (`@vertesia/ui` 1.5.x). This guide covers configurable authentication, app-owned branding, loading
-screens, and development workspace selection. It is a focused template migration, not a complete
-SDK breaking-change inventory. Apps still on 1.4 should first follow [the 1.4 migration](migrate-from-1.4.md).
+screens, and development workspace selection, then, for apps that Vertesia hosts through AppGen only,
+[the sandboxed service runtime](#appgen-apps-hosted-by-vertesia-the-sandboxed-service-runtime)
+for apps that Vertesia hosts. It is a focused template migration, not a complete SDK breaking-change inventory. Apps still on 1.4 should first follow [the 1.4 migration](migrate-from-1.4.md).
 
 ## Background: what changed
 
@@ -269,6 +270,125 @@ against the deployment under test. Check these cases manually as well:
 - Production: deep links and branding assets work at the deployed base path, and preview query
   parameters do not replace the real app.
 
+## AppGen apps hosted by Vertesia: the sandboxed service runtime
+
+> **Applies only to apps that Vertesia hosts through AppGen**: apps whose versions Vertesia builds and
+> publishes with target `service` and serves from the Vertesia app gateway (apps generated with the
+> `appgen` module, or with the `service` module and published to Vertesia).
+>
+> **Skip this section if you host the app yourself.** A tool server deployed to Vercel or your own
+> infrastructure, or run with `pnpm dev` on localhost, keeps running on Node with the regular SDK and
+> needs none of these steps. Static (UI-only) AppGen versions are unaffected as well. The one 1.6
+> addition a self-hosted tool server can adopt is `context.scratch` ([S4](#s4-use-contextscratch-for-temporary-files)).
+
+### Background: what changed
+
+Service versions hosted by Vertesia now run in a sandboxed [workerd](https://github.com/cloudflare/workerd) runtime:
+a fresh isolated process for every request, Web-platform APIs only, and no Node.js built-ins. The
+caller's credential never enters that process: `context.getClient()` reaches the Vertesia API through
+the platform, which applies the caller's identity and permissions. Tools can call public HTTP(S)
+services directly with `fetch`.
+
+The publish build now produces a second bundle, `lib/server-sandbox.js`, and validates it in the
+pinned workerd before the version is stored. Service versions published from a 1.5 app have no such
+bundle and are rejected with `422 Republish this app with the sandbox-compatible service builder`.
+Every Vertesia-hosted service app must be rebuilt and republished once.
+
+### S1. Upgrade dependencies
+
+Complete [step 1](#1-upgrade-dependencies-together). The 1.6 `@vertesia/tools-sdk` provides the
+`@vertesia/tools-sdk/sandbox` entry point and `context.scratch`.
+
+### S2. Take the template's service builder
+
+The publish pipeline runs **your app's copy** of the service builder with `--sandbox`. A 1.5 copy
+ignores that flag, and the build fails because `lib/server-sandbox.js` is missing.
+
+1. Replace `src/modules/service/scripts/build-server-esbuild.mjs` with
+   [the current template version](../src/modules/service/scripts/build-server-esbuild.mjs). Its
+   `--sandbox` mode bundles `src/tool-server/server.ts` for the browser platform and swaps
+   `@vertesia/tools-sdk` for `@vertesia/tools-sdk/sandbox`.
+2. Add the script and, to validate locally with the same runtime, the pinned workerd:
+
+```json
+{
+    "scripts": {
+        "build:sandbox": "node src/modules/service/scripts/build-server-esbuild.mjs --sandbox"
+    },
+    "devDependencies": {
+        "workerd": "1.20261002.1"
+    }
+}
+```
+
+Without the dev dependency the publish build provisions the same workerd version itself.
+
+### S3. Make tool-server code sandbox-compatible
+
+Everything reachable from `src/tool-server/server.ts` is bundled into the sandbox. `server-node.ts`
+remains the Node entry for local and self-hosted serving and is not part of that bundle.
+
+| 1.5 pattern | 1.6 replacement |
+| --- | --- |
+| `node:fs`, `node:os` `tmpdir()`, or temp files | `context.scratch` (S4) |
+| `Buffer` | `Uint8Array`, `TextEncoder`/`TextDecoder`, `btoa`/`atob` |
+| `node:crypto` | Web Crypto: `crypto.subtle`, `crypto.getRandomValues`, `crypto.randomUUID` |
+| `eval` or `new Function` | Explicit parsing; code generation from strings is disabled. See the template's [calculator tool](../src/modules/examples/resources/tools/calculator/calculator.ts) |
+| `loadToolsFromDirectory`, `loadSkillsFromDirectory` | Static imports and `?skills` imports, as the template's resource indexes do |
+| Forwarding `context.token`, or building a `VertesiaClient` from it | `await context.getClient()`; in the sandbox `context.token` is a placeholder, not a credential |
+| `process.env` values | Compile non-secret constants into the bundle. Secret credentials are not yet available in the service runtime: keep a tool that needs one on a self-hosted tool server for now |
+| Node-only npm packages | Packages that bundle for the browser platform |
+
+`pnpm build:sandbox` fails on an unresolvable Node import; the publish-time validation also rejects
+a bundle that cannot load in workerd.
+
+### S4. Use `context.scratch` for temporary files
+
+`context.scratch` is temporary storage private to one request, with the same behavior in the sandbox
+and on Node, so the same tool code runs in both:
+
+```ts
+async run(payload, context) {
+    await context.scratch.put('work/page-1.html', html);
+    await context.scratch.putJson('work/state.json', { page: 2 });
+    const state = await context.scratch.getJson<{ page: number }>('work/state.json');
+    const files = await context.scratch.list(); // [{ key, size, contentType }]
+    await context.scratch.delete('work/page-1.html');
+}
+```
+
+Keys are `/`-separated relative paths. Storage starts empty and is discarded when the request ends;
+write anything that must outlive it as an agent artifact or a file through `context.getClient()`.
+Failures throw a `ScratchError` with code `quota_exceeded`, `invalid_key`, or `unavailable`. The quota
+is 128 MiB by default; on Node, set `VERTESIA_SCRATCH_MAX_BYTES` to match a deployment with another quota.
+
+Unit tests that construct a `ToolExecutionContext` by hand must now supply one:
+
+```ts
+import { createMemoryScratch } from '@vertesia/tools-sdk';
+
+const context = { token, payload, getClient: async () => client, scratch: createMemoryScratch() };
+```
+
+### S5. Respect the runtime limits
+
+Each request runs under limits set by the deployment, by default a deadline of up to 240 s, 1,024
+outbound calls, 16 MiB per outbound request or response body, and 128 MiB of scratch storage. Outbound
+`fetch` may use HTTP or HTTPS on any port, but private, loopback, and link-local addresses are
+blocked: a tool that calls a service on `localhost` or a private network during development will fail
+when hosted. Remote responses must not be compressed; the runtime requests identity encoding.
+
+### S6. Rebuild, republish, and verify
+
+```bash
+pnpm service:build
+pnpm build:sandbox
+```
+
+Confirm that `lib/server-sandbox.js` was produced, then publish a new version with target `service`
+and promote it. Exercise each tool through an agent or the app's API: Vertesia API calls, remote
+calls, and scratch usage. Earlier service versions keep returning `422` until they are replaced.
+
 ## FAQ
 
 **Must I adopt custom branding to upgrade dependencies?**
@@ -283,3 +403,10 @@ Vite, and entry-point updates. Routine branding should no longer require changes
 Check that `Env.init` receives `import.meta.env`, that the dev server was restarted, and that URL
 parameters are not overriding the defaults. An access-denied selector can also mean the configured
 project does not have the app installed or the current user lacks access.
+
+**Does my Vercel, self-hosted, or localhost tool server need the service runtime changes?**
+No. The sandboxed runtime only hosts AppGen service versions on Vertesia. Self-hosted tool servers run
+on Node with the regular SDK; upgrading to 1.6 there is only needed for `context.scratch`.
+
+**Why does my existing Vertesia-hosted service version return 422?**
+It was built without the sandbox bundle. Follow [the service runtime steps](#appgen-apps-hosted-by-vertesia-the-sandboxed-service-runtime) and republish.

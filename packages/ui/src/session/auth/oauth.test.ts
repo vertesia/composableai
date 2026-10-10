@@ -15,10 +15,10 @@ let browser: {
 let requests: { url: string; init?: RequestInit }[];
 let revocationEndpoint: string | undefined;
 let tokenEndpoint: string;
-function jwt(): string {
+function jwt(tokenIssuer = issuer): string {
     return `e30.${btoa(
         JSON.stringify({
-            iss: issuer,
+            iss: tokenIssuer,
             client_id: clientId,
             exp: Date.now() / 1000 + 3600,
             sub: 'user',
@@ -27,7 +27,10 @@ function jwt(): string {
         }),
     )}.signature`;
 }
-async function setup(offlineAccess = false, defaultAuthSelection?: { accountId?: string; projectId?: string }) {
+async function setup(
+    offlineAccess = false,
+    overrides: { issuer?: string; resource?: string; accountId?: string; projectId?: string } = {},
+) {
     vi.resetModules();
     const { Env } = await import('../../env');
     Env.init({
@@ -37,8 +40,8 @@ async function setup(offlineAccess = false, defaultAuthSelection?: { accountId?:
         isLocalDev: false,
         isDocker: false,
         endpoints: { studio: 'https://api.dev1.vertesia.io', zeno: 'https://api.dev1.vertesia.io', sts: issuer },
-        oauth: { clientId, redirectUri: `${origin}/app`, offlineAccess },
-        defaultAuthSelection,
+        oauth: { clientId, redirectUri: `${origin}/app`, offlineAccess, ...overrides },
+        defaultAuthSelection: overrides,
     });
     return import('./oauth');
 }
@@ -460,6 +463,42 @@ it('rejects an insecure discovered revocation endpoint', async () => {
     await expect(oauth.getAppOAuthToken()).rejects.toThrow();
     expect(replace).not.toHaveBeenCalled();
     expect(requests.some(({ url }) => url === tokenEndpoint)).toBe(false);
+});
+
+it('discovers a path issuer while preserving the physical platform resource and branch consent', async () => {
+    const tenantIssuer = `${issuer}/env/dev1/dev-feature`;
+    const oauth = await setup(false, { issuer: tenantIssuer, resource: `${issuer}/` });
+    vi.stubGlobal(
+        'fetch',
+        vi.fn(async (input: string | URL, init?: RequestInit) => {
+            const url = String(input);
+            requests.push({ url, init });
+            if (url === clientId)
+                return Response.json({ scope: 'openid profile content:read', redirect_uris: [`${origin}/app`] });
+            if (url === `${tenantIssuer}/token`) {
+                if (!(init?.body instanceof URLSearchParams)) throw new Error('Expected a token request body');
+                expect(init.body.get('resource')).toBe(`${issuer}/`);
+                return Response.json({ access_token: jwt(tenantIssuer), token_type: 'Bearer' });
+            }
+            expect(url).toBe(`${issuer}/.well-known/oauth-authorization-server/env/dev1/dev-feature`);
+            return Response.json({
+                issuer: tenantIssuer,
+                authorization_endpoint: `https://auth.dev1.vertesia.io/oauth/authorize?issuer=${encodeURIComponent(tenantIssuer)}`,
+                token_endpoint: `${tenantIssuer}/token`,
+            });
+        }),
+    );
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    expect(authorize.searchParams.get('issuer')).toBe(tenantIssuer);
+    expect(authorize.searchParams.get('resource')).toBe(`${issuer}/`);
+    expect(JSON.parse(storage.get('vertesia.oauth.transaction') ?? '{}').issuer).toBe(tenantIssuer);
+    browser.location.href = `${origin}/app?code=tenant-code&state=${authorize.searchParams.get('state')}`;
+    const callback = await setup(false, { issuer: tenantIssuer, resource: `${issuer}/` });
+    const token = await callback.getAppOAuthToken();
+    expect(JSON.parse(atob(token.split('.')[1])).iss).toBe(tenantIssuer);
+    expect(requests.some((request) => request.url === `${tenantIssuer}/token`)).toBe(true);
 });
 
 it.each(['url', 'configured'])('preserves a %s account when its remembered project is rejected', async (kind) => {

@@ -4,7 +4,7 @@ A unified template for building Vertesia plugins with a **Hono tool server** (ba
 
 ## Upgrading an existing app
 
-- [From 1.5 to 1.6: authentication, branding, and workspace defaults](docs/migrate-from-1.5.md)
+- [From 1.5 to 1.6: authentication, branding, workspace defaults, and (AppGen-hosted apps only) the sandboxed service runtime](docs/migrate-from-1.5.md)
 - [From 1.4 to 1.5: iframe hosting and configurable auth](docs/migrate-from-1.4.md)
 
 ## What You Can Build

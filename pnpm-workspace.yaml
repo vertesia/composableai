@@ -13,6 +13,8 @@ allowBuilds:
   protobufjs: true
   sharp: true
   unrs-resolver: true
+  # Resolve the optional platform binary directly; no installer/download fallback is needed.
+  workerd: false
 blockExoticSubdeps: true
 minimumReleaseAge: 4320 # 3 days in minutes, minimumReleaseAge protects against supply chain attacks.
 minimumReleaseAgeStrict: true

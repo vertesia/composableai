@@ -110,6 +110,7 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(packageJson.scripts['exercise:content'], undefined);
         assert.equal(packageJson.scripts['service:quality'], undefined);
         assert.equal(packageJson.scripts['service:build'], undefined);
+        assert.equal(packageJson.scripts['build:sandbox'], undefined);
 
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app')), true);
         assert.equal(fs.existsSync(path.join(tmpRoot, 'src/modules/app/resources/hooks/index.ts')), true);
@@ -143,6 +144,10 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         assert.match(serverModules, /modules\/app\/resources\/index\.js/);
         assert.doesNotMatch(serverModules, /modules\/examples/);
         assert.equal(packageJson.scripts['service:quality'], 'node src/modules/service/scripts/app-quality-check.mjs');
+        assert.equal(
+            packageJson.scripts['build:sandbox'],
+            'node src/modules/service/scripts/build-server-esbuild.mjs --sandbox',
+        );
         assert.equal(packageJson.scripts.test, 'pnpm run test:unit');
         assert.equal(packageJson.scripts['test:unit'], 'vitest run src');
         assert.equal(packageJson.scripts['test:e2e'], 'playwright test');
@@ -169,6 +174,12 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
         const serviceEntry = fs.readFileSync(path.join(tmpRoot, 'src/modules/service/ui/AppEntry.tsx'), 'utf8');
         assert.doesNotMatch(appRoutes, /Document Library/);
+        assert.match(serviceEntry, /client\.withAppVersion\(appVersion\)/);
+        const versionScope = serviceEntry.slice(
+            serviceEntry.indexOf('function AppVersionScope'),
+            serviceEntry.indexOf('export function AppEntry'),
+        );
+        assert.doesNotMatch(versionScope, /useEffect/);
         assert.match(serviceEntry, /client\.withAppVersion\(appVersion\)/);
         assert.doesNotMatch(serviceEntry, /useEffect/);
         assert.doesNotMatch(serviceEntry, /store\.withAppVersion/);

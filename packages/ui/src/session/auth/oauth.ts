@@ -89,7 +89,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     }
     const redirectUri = redirect.toString();
     if (new URL(redirectUri).origin !== window.location.origin) throw new Error('OAuth callback must be same-origin');
-    const issuer = Env.endpoints.sts.replace(/\/+$/, '');
+    const issuer = (config.issuer ? httpsUrl(config.issuer).toString() : Env.endpoints.sts).replace(/\/+$/, '');
     let current = new URL(window.location.href);
     let { accountId, projectId } = resolveAuthSelection(current);
     const callback = current.origin + current.pathname === new URL(redirectUri).origin + new URL(redirectUri).pathname;
@@ -161,7 +161,12 @@ async function acquireToken(forceRefresh = false): Promise<string> {
             }
         }
     }
-    const discovery = await fetch(`${issuer}/.well-known/oauth-authorization-server`);
+    const issuerUrl = new URL(issuer);
+    const discoveryUrl = new URL(
+        `/.well-known/oauth-authorization-server${issuerUrl.pathname.replace(/\/$/, '')}`,
+        issuerUrl.origin,
+    );
+    const discovery = await fetch(discoveryUrl);
     if (!discovery.ok) throw new Error(`OAuth discovery failed (${discovery.status})`);
     const metadata: {
         issuer: string;
@@ -174,7 +179,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     const tokenEndpoint = httpsUrl(metadata.token_endpoint);
     const revocationEndpoint =
         metadata.revocation_endpoint === undefined ? undefined : httpsUrl(metadata.revocation_endpoint).toString();
-    const resource = new URL(metadata.issuer).toString();
+    const resource = config.resource ? httpsUrl(config.resource).toString() : new URL(metadata.issuer).toString();
     if (refreshCredential) {
         try {
             const response = await fetch(tokenEndpoint, {
