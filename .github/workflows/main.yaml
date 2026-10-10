@@ -75,7 +75,7 @@ jobs:
           APT_ACQUIRE="-o Acquire::Retries=3 -o Acquire::http::Timeout=15"
           sudo timeout 90 apt-get update $APT_ACQUIRE ||
             echo "apt-get update timed out or failed; continuing with the runner image's lists"
-          sudo timeout 600 apt-get install -y $APT_ACQUIRE imagemagick mupdf-tools
+          sudo timeout 600 apt-get install -y $APT_ACQUIRE imagemagick mupdf-tools ffmpeg
         shell: bash
       - name: Install workspace dependencies
         timeout-minutes: 5
