@@ -6,6 +6,8 @@ import type {
     AppDeleteSummary,
     AppDevelopmentTaskDetails,
     AppDevelopmentTaskList,
+    AppGithubConfiguration,
+    AppGithubRepositoryList,
     AppInspectionResult,
     AppInstallation,
     AppInstallationKind,
@@ -29,6 +31,7 @@ import type {
     CountResult,
     CreateAppRepoBranchRequest,
     DeleteAppVersionResponse,
+    ExchangeAppGithubAuthorizationResponse,
     McpApiKeyStatus,
     ProjectRef,
     PromoteAppVersionResponse,
@@ -37,6 +40,7 @@ import type {
     StartAppBuildRequest,
     StartAppBuildResponse,
     StartAppDevelopmentTaskRequest,
+    StartAppGithubAuthorizationResponse,
     StartAppScaffoldRequest,
     StartAppScaffoldResponse,
     UpdateAppInstallationOAuthApprovalPayload,
@@ -147,6 +151,43 @@ export default class AppsApi extends ApiTopic {
 
     getScaffoldProgress(workflowId: string, runId: string): Promise<AppScaffoldProgress> {
         return this.get(`/scaffolds/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}/progress`);
+    }
+
+    /**
+     * Return whether the global App Builder GitHub App is configured, together with its slug and
+     * installation URL when available.
+     */
+    getGithubConfiguration(): Promise<AppGithubConfiguration> {
+        return this.get('/source-providers/github');
+    }
+
+    /**
+     * Start GitHub user authorization. The server creates a short-lived, single-use OAuth state
+     * bound to the current Vertesia user/account/project and returns the GitHub authorization URL.
+     */
+    startGithubAuthorization(): Promise<StartAppGithubAuthorizationResponse> {
+        return this.post('/source-providers/github/authorize', {});
+    }
+
+    /**
+     * Complete GitHub authorization with the callback code and state. The server consumes the state,
+     * verifies the current user's writable GitHub App installations, discards the GitHub user token,
+     * and returns those installations plus an opaque `connection_id`. That id references a
+     * short-lived server-side snapshot of the writable repositories verified for this Vertesia
+     * user/account/project; selecting a repository consumes it once.
+     */
+    exchangeGithubAuthorization(code: string, state: string): Promise<ExchangeAppGithubAuthorizationResponse> {
+        return this.post('/source-providers/github/exchange', { payload: { code, state } });
+    }
+
+    /**
+     * List repositories with push access for one installation verified during authorization. The
+     * connection id is scoped to the current Vertesia user/account/project and expires shortly.
+     */
+    listGithubRepositories(connectionId: string, installationId: string): Promise<AppGithubRepositoryList> {
+        return this.get('/source-providers/github/repositories', {
+            query: { connection_id: connectionId, installation_id: installationId },
+        });
     }
 
     /**

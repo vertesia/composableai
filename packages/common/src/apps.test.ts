@@ -4,7 +4,22 @@ import {
     AppEventSubscriptionDefinitionSchema,
     AppPackageHooksSchema,
 } from './api-schemas/app-runtime.js';
-import { APP_CAPABILITIES, APP_PACKAGE_SCOPES } from './apps.js';
+import { APP_CAPABILITIES, APP_PACKAGE_SCOPES, slugifyAppId } from './apps.js';
+
+describe('slugifyAppId', () => {
+    it('normalizes app names to the id used by workflow workers', () => {
+        expect(slugifyAppId(' My Customer App ')).toBe('my-customer-app');
+        expect(slugifyAppId('@scope/My_App')).toBe('scope-my_app');
+    });
+
+    it('rejects names without an id character', () => {
+        expect(() => slugifyAppId('!!!')).toThrow('at least one letter or number');
+    });
+
+    it('trims long runs of boundary hyphens without regular-expression backtracking', () => {
+        expect(slugifyAppId(`${'-'.repeat(10_000)}App${'-'.repeat(10_000)}`)).toBe('app');
+    });
+});
 
 describe('app capability contracts', () => {
     it('keeps views in the manifest and package contracts', () => {

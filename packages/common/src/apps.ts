@@ -3,6 +3,25 @@ import type * as Wire from './wire-types.generated.js';
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
 
+function trimBoundaryHyphens(value: string): string {
+    let start = 0;
+    let end = value.length;
+    while (start < end && value[start] === '-') start++;
+    while (end > start && value[end - 1] === '-') end--;
+    return value.slice(start, end);
+}
+
+/** Convert an app display/package name into the canonical persisted app id. */
+export function slugifyAppId(value: string): string {
+    const normalized = value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '-');
+    const slug = trimBoundaryHyphens(normalized).slice(0, 80);
+    if (!slug) throw new Error('App name must contain at least one letter or number');
+    return slug;
+}
+
 // The app-manifest closure is declared once, as the Zod schemas in `./api-schemas/apps.ts`, and
 // inferred below. The documentation moved with it: what a published component says about a field now
 // comes from the schema's own `.meta({ description })` rather than from a TSDoc comment a generator
@@ -209,6 +228,16 @@ export type StartAppScaffoldRequest = Wire.StartAppScaffoldRequest;
 
 export type StartAppScaffoldResponse = Wire.StartAppScaffoldResponse;
 
+export type AppGithubConfiguration = Wire.AppGithubConfiguration;
+export type StartAppGithubAuthorizationResponse = Wire.StartAppGithubAuthorizationResponse;
+export type ExchangeAppGithubAuthorizationRequest = Wire.ExchangeAppGithubAuthorizationRequest;
+export type AppGithubRepositoriesQuery = Wire.AppGithubRepositoriesQuery;
+export type AppGithubInstallation = Wire.AppGithubInstallation;
+export type AppGithubAccount = Wire.AppGithubAccount;
+export type ExchangeAppGithubAuthorizationResponse = Wire.ExchangeAppGithubAuthorizationResponse;
+export type AppGithubRepository = Wire.AppGithubRepository;
+export type AppGithubRepositoryList = Wire.AppGithubRepositoryList;
+
 export type StartAppDevelopmentTaskRequest = Wire.StartAppDevelopmentTaskRequest;
 
 export type AppScaffoldProgressStatus = Wire.AppScaffoldProgressStatus;
@@ -246,6 +275,7 @@ export type AppManifestData = Wire.AppManifestData;
 export type UpdateAppPayload = Wire.UpdateAppPayload;
 
 export type AppGitSourceConfig = Wire.AppGitSourceConfig;
+export type AppGitSourceProvider = Wire.AppGitSourceProvider;
 
 export type AppSourceConfig = Wire.AppSourceConfig;
 

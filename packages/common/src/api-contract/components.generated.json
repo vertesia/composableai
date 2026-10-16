@@ -6227,8 +6227,20 @@
   "AppGitSourceConfig": {
     "type": "object",
     "properties": {
+      "provider": {
+        "$ref": "#/components/schemas/AppGitSourceProvider",
+        "description": "Repository provider. Missing values are treated as `vertesia` for apps created before provider support."
+      },
       "url": {
         "type": "string"
+      },
+      "installation_id": {
+        "type": "string",
+        "description": "Verified GitHub App installation id. Required when provider is `github`."
+      },
+      "repository": {
+        "type": "string",
+        "description": "GitHub repository in `owner/name` form. Required when provider is `github`."
       },
       "default_branch": {
         "type": "string"
@@ -6241,6 +6253,13 @@
       }
     },
     "additionalProperties": false
+  },
+  "AppGitSourceProvider": {
+    "type": "string",
+    "enum": [
+      "vertesia",
+      "github"
+    ]
   },
   "AppSourceConfig": {
     "type": "object",
@@ -6268,7 +6287,16 @@
       "git": {
         "type": "object",
         "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/AppGitSourceProvider"
+          },
           "url": {
+            "type": "string"
+          },
+          "installation_id": {
+            "type": "string"
+          },
+          "repository": {
             "type": "string"
           },
           "default_branch": {
@@ -19736,6 +19764,179 @@
     },
     "additionalProperties": false
   },
+  "AppGithubConfiguration": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "app_slug": {
+        "type": "string"
+      },
+      "install_url": {
+        "type": "string"
+      },
+      "relay_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "enabled"
+    ]
+  },
+  "StartAppGithubAuthorizationResponse": {
+    "type": "object",
+    "properties": {
+      "authorization_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "authorization_url"
+    ]
+  },
+  "ExchangeAppGithubAuthorizationRequest": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "code",
+      "state"
+    ]
+  },
+  "AppGithubRepositoriesQuery": {
+    "type": "object",
+    "properties": {
+      "connection_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "installation_id": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "connection_id",
+      "installation_id"
+    ]
+  },
+  "AppGithubInstallation": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "account_login": {
+        "type": "string"
+      },
+      "account_type": {
+        "type": "string"
+      },
+      "repository_selection": {
+        "type": "string",
+        "enum": [
+          "all",
+          "selected"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "account_login",
+      "repository_selection"
+    ]
+  },
+  "AppGithubAccount": {
+    "type": "object",
+    "properties": {
+      "login": {
+        "type": "string"
+      },
+      "account_type": {
+        "type": "string"
+      },
+      "avatar_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "login",
+      "account_type"
+    ]
+  },
+  "ExchangeAppGithubAuthorizationResponse": {
+    "type": "object",
+    "properties": {
+      "connection_id": {
+        "type": "string"
+      },
+      "installations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppGithubInstallation"
+        }
+      },
+      "accounts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppGithubAccount"
+        }
+      }
+    },
+    "required": [
+      "connection_id",
+      "installations",
+      "accounts"
+    ]
+  },
+  "AppGithubRepository": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "full_name": {
+        "type": "string"
+      },
+      "private": {
+        "type": "boolean"
+      },
+      "default_branch": {
+        "type": "string"
+      },
+      "html_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "full_name",
+      "private",
+      "default_branch",
+      "html_url"
+    ]
+  },
+  "AppGithubRepositoryList": {
+    "type": "object",
+    "properties": {
+      "repositories": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppGithubRepository"
+        }
+      }
+    },
+    "required": [
+      "repositories"
+    ]
+  },
   "StartAppScaffoldRequest": {
     "type": "object",
     "properties": {
@@ -19770,6 +19971,14 @@
       "create_version": {
         "type": "boolean",
         "description": "Start an initial app version build after the source has been pushed. Defaults to true."
+      },
+      "source": {
+        "$ref": "#/components/schemas/AppSourceConfig",
+        "description": "Source repository to bind to the app. Omit to create and scaffold a Vertesia-managed repository."
+      },
+      "github_connection_id": {
+        "type": "string",
+        "description": "Short-lived proof that the current user verified the selected GitHub installation."
       }
     },
     "required": [
