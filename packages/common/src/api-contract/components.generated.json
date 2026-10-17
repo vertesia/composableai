@@ -38165,6 +38165,13 @@
           "$ref": "#/components/schemas/AlterTableOperation"
         },
         "description": "List of schema changes to apply"
+      },
+      "message": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4000,
+        "pattern": "\\S",
+        "description": "Explanation of what changes, why it is needed, and the expected impact."
       }
     },
     "required": [
