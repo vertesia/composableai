@@ -8,11 +8,12 @@ export const OAUTH_SCOPE_PROJECT_SWITCH = 'project_switch';
 export const OAUTH_STANDARD_SCOPES = [OAUTH_SCOPE_OPENID, OAUTH_SCOPE_PROFILE, OAUTH_SCOPE_OFFLINE_ACCESS] as const;
 
 /**
- * Permissions that are never grantable as an OAuth scope: they administer persistent credentials,
- * hand out secret material, or are internal to the platform's own consoles.
+ * Permissions that are never grantable as an OAuth scope: they administer persistent credentials or
+ * who holds access, hand out secret material, or are internal to the platform's own consoles.
  */
 const NON_OAUTH_PERMISSION_SCOPES = new Set<Permission>([
     ...ACCOUNT_SCOPED_PERMISSIONS,
+    Permission.project_membership_manage,
     Permission.schedule_delegate,
     Permission.api_key_create,
     Permission.api_key_update,
