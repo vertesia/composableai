@@ -1266,6 +1266,12 @@ export type AppInstallationProviderBinding = {
 export type AppInstallation = {
     id: string;
     project: string;
+    instance_key?: string | undefined;
+    display_name?: string | undefined;
+    installation_version?: 1 | undefined;
+    namespace_overrides?: Record<string, string> | undefined;
+    reserved_namespaces?: string[] | undefined;
+    namespace_conflicts?: string[] | undefined;
     manifest: string;
     mcp_configuration?:
         | {
@@ -1299,6 +1305,12 @@ export type AppInstallation = {
 export type AppInstallationWithManifest = {
     id: string;
     project: string;
+    instance_key?: string | undefined;
+    display_name?: string | undefined;
+    installation_version?: 1 | undefined;
+    namespace_overrides?: Record<string, string> | undefined;
+    reserved_namespaces?: string[] | undefined;
+    namespace_conflicts?: string[] | undefined;
     mcp_configuration?:
         | {
               revision: string;
@@ -1333,6 +1345,12 @@ export type AppInstallationWithManifest = {
 export type AppInstallationListEntry = {
     id: string;
     project: string;
+    instance_key?: string | undefined;
+    display_name?: string | undefined;
+    installation_version?: 1 | undefined;
+    namespace_overrides?: Record<string, string> | undefined;
+    reserved_namespaces?: string[] | undefined;
+    namespace_conflicts?: string[] | undefined;
     mcp_configuration?:
         | {
               revision: string;
@@ -1383,6 +1401,9 @@ export type AppApiKeyCollectionParams = {
 export type AppOAuthProviderParams = AppOAuthCollectionParams;
 export type AppInstallationPayload = {
     app_id: string;
+    instance_key?: string | undefined;
+    display_name?: string | undefined;
+    namespace_overrides?: Record<string, string> | undefined;
     mcp_shared_parameters?: Record<string, string | null> | undefined;
     mcp_parameters?: Record<string, Record<string, string | null>> | undefined;
     settings?:
@@ -1404,6 +1425,7 @@ export type AppInstallationKind = 'ui' | 'tools' | 'all';
  */
 export type AppToolCollection = {
     name: string;
+    collection_id?: string | undefined;
     description?: string | undefined;
     tools: AgentToolDefinition[];
 };
@@ -1669,6 +1691,9 @@ export type AppDeleteSummary = {
 };
 export type UpdateAppInstallationOAuthApprovalPayload = {
     approved_scopes: string[];
+};
+export type AppInstanceAvailability = {
+    enabled: boolean;
 };
 export type McpPublicParameter = {
     title?: string | undefined;
@@ -11829,6 +11854,7 @@ export interface ApiComponentTypes {
     AgentRunSearchHit: AgentRunSearchHit;
     UpsertAppVersionRequest: UpsertAppVersionRequest;
     AppInstallationPayload: AppInstallationPayload;
+    AppInstanceAvailability: AppInstanceAvailability;
     AppDevelopmentTaskDetails: AppDevelopmentTaskDetails;
     AppVersionRecordArray: AppVersionRecordArray;
     AppToolCollectionArray: AppToolCollectionArray;

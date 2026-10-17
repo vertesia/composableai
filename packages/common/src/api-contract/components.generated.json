@@ -20202,6 +20202,9 @@
         "type": "string",
         "description": "The collection name"
       },
+      "collection_id": {
+        "type": "string"
+      },
       "description": {
         "type": "string",
         "description": "Optional collection description"
@@ -20664,6 +20667,23 @@
       "app_id": {
         "type": "string"
       },
+      "instance_key": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+      },
+      "display_name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "namespace_overrides": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "maxLength": 24,
+          "pattern": "^[a-z]([a-z0-9]|_[a-z0-9])*_?$"
+        }
+      },
       "mcp_shared_parameters": {
         "type": "object",
         "additionalProperties": {
@@ -20735,6 +20755,18 @@
     },
     "required": [
       "app_id"
+    ],
+    "additionalProperties": false
+  },
+  "AppInstanceAvailability": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "enabled"
     ],
     "additionalProperties": false
   },
@@ -24796,6 +24828,35 @@
       "project": {
         "type": "string"
       },
+      "instance_key": {
+        "type": "string"
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "installation_version": {
+        "type": "number",
+        "const": 1
+      },
+      "namespace_overrides": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "reserved_namespaces": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "namespace_conflicts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
       "manifest": {
         "type": "string"
       },
@@ -24934,6 +24995,35 @@
       },
       "project": {
         "type": "string"
+      },
+      "instance_key": {
+        "type": "string"
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "installation_version": {
+        "type": "number",
+        "const": 1
+      },
+      "namespace_overrides": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "reserved_namespaces": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "namespace_conflicts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
       },
       "mcp_configuration": {
         "type": "object",
@@ -25074,6 +25164,35 @@
       },
       "project": {
         "type": "string"
+      },
+      "instance_key": {
+        "type": "string"
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "installation_version": {
+        "type": "number",
+        "const": 1
+      },
+      "namespace_overrides": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "reserved_namespaces": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "namespace_conflicts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
       },
       "mcp_configuration": {
         "type": "object",

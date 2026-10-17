@@ -16,6 +16,7 @@ import {
     updateApp,
     updateAppInstallationSettings,
 } from './commands.js';
+import { registerAppCredentialsCommands } from './credentials.js';
 
 const exampleManifest: AppManifestData = {
     name: 'my-app',
@@ -141,6 +142,18 @@ ${JSON.stringify(exampleManifest, null, 2)}
 
     apps.command('install <appId>')
         .description('Install an app in the current project')
+        .option('--instance-key <key>', 'Immutable installation key; omitted for the default instance')
+        .option('--display-name <name>', 'Display label for this installation')
+        .option('--namespaces <json>', 'JSON map of MCP collection IDs to permanent tool prefixes')
+        .option('--namespaces-file <file>', 'Namespace map from a JSON file')
+        .option(
+            '--credentials-file <file>',
+            'JSON file containing oauth_params, oauth_provider_params and/or api_key_params',
+        )
+        .option('--mcp-parameters <json>', 'MCP parameter overrides keyed by collection ID')
+        .option('--mcp-parameters-file <file>', 'MCP collection parameter overrides from a JSON file')
+        .option('--mcp-shared-parameters <json>', 'Shared MCP parameter overrides')
+        .option('--mcp-shared-parameters-file <file>', 'Shared MCP parameter overrides from a JSON file')
         .option('-s, --settings <json>', 'Settings as JSON string')
         .option('-f, --settings-file <file>', 'Settings from a JSON file')
         .action(async (appId: string, options: Record<string, unknown>) => {
@@ -157,21 +170,37 @@ ${JSON.stringify(exampleManifest, null, 2)}
     apps.command('list-installed')
         .description('List installed apps you have access to in the current project')
         .option('-k, --kind <kind>', 'Filter by installation kind (e.g., agent, tool)')
+        .option('--json', 'Output complete installation records as JSON')
         .action(async (options: Record<string, unknown>) => {
             await listInstalledApps(program, options);
         });
 
-    apps.command('get-installation <appName>')
-        .description('Get an app installation by name')
+    apps.command('get-installation <appNameOrId>')
+        .description('Get the default installation by app name, or select an exact instance')
+        .option('--id', 'Treat the argument as an installation ID')
+        .option('--instance-key <key>', 'Select this instance of the named app (or manifest ID)')
         .action(async (appName: string, options: Record<string, unknown>) => {
             await getAppInstallation(program, appName, options);
         });
 
-    apps.command('settings <appId>')
-        .description('Update app installation settings')
+    apps.command('settings <installationId>')
+        .description('Update an installation by ID; omitted fields remain unchanged')
+        .option('--display-name <name>', 'Update the display label')
+        .option(
+            '--namespaces <json>',
+            'Allocate namespaces for newly added collections; existing prefixes cannot change',
+        )
+        .option('--namespaces-file <file>', 'Namespace allocations from a JSON file')
+        .option('--mcp-parameters <json>', 'MCP parameters by collection ID; null clears a value')
+        .option('--mcp-parameters-file <file>', 'MCP collection parameter overrides from a JSON file')
+        .option('--mcp-shared-parameters <json>', 'Shared MCP parameters; null clears a value')
+        .option('--mcp-shared-parameters-file <file>', 'Shared MCP parameter overrides from a JSON file')
+        .option('--access-control <policy>', 'Policy: all, ui, none; null restores the manifest policy')
         .option('-s, --settings <json>', 'Settings as JSON string')
         .option('-f, --settings-file <file>', 'Settings from a JSON file')
         .action(async (appId: string, options: Record<string, unknown>) => {
             await updateAppInstallationSettings(program, appId, options);
         });
+
+    registerAppCredentialsCommands(apps, program);
 }

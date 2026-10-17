@@ -12,6 +12,7 @@ import type {
     AppInstallationListEntry,
     AppInstallationPayload,
     AppInstallationWithManifest,
+    AppInstanceAvailability,
     AppManifest,
     AppManifestData,
     AppPackage,
@@ -75,6 +76,27 @@ export default class AppsApi extends ApiTopic {
      * The key is write-only: it is encrypted server-side and never returned by any endpoint,
      * so the response carries only the configured flag and a masked hint.
      */
+    setInstallationMcpApiKey(installationId: string, collectionId: string, apiKey: string): Promise<McpApiKeyStatus> {
+        return this.put(
+            `/installations/${encodeURIComponent(installationId)}/collections/${encodeURIComponent(collectionId)}/api-key`,
+            {
+                payload: { api_key: apiKey },
+            },
+        );
+    }
+
+    getInstallationMcpApiKeyStatus(installationId: string, collectionId: string): Promise<McpApiKeyStatus> {
+        return this.get(
+            `/installations/${encodeURIComponent(installationId)}/collections/${encodeURIComponent(collectionId)}/api-key`,
+        );
+    }
+
+    deleteInstallationMcpApiKey(installationId: string, collectionId: string): Promise<McpApiKeyStatus> {
+        return this.del(
+            `/installations/${encodeURIComponent(installationId)}/collections/${encodeURIComponent(collectionId)}/api-key`,
+        );
+    }
+
     setMcpCollectionApiKey(appId: string, collectionId: string, apiKey: string): Promise<McpApiKeyStatus> {
         return this.put(`/${encodeURIComponent(appId)}/collections/${encodeURIComponent(collectionId)}/api-key`, {
             payload: { api_key: apiKey } satisfies SetMcpApiKeyRequest,
@@ -330,10 +352,12 @@ export default class AppsApi extends ApiTopic {
         apiKeyParams?: AppApiKeyCollectionParams,
         mcpParameters?: AppInstallationPayload['mcp_parameters'],
         mcpSharedParameters?: AppInstallationPayload['mcp_shared_parameters'],
+        instance?: Pick<AppInstallationPayload, 'instance_key' | 'display_name' | 'namespace_overrides'>,
     ): Promise<AppInstallation> {
         return this.post(`/install`, {
             payload: {
                 app_id: appId,
+                ...instance,
                 settings,
                 oauth_params: oauthParams,
                 oauth_provider_params: oauthProviderParams,
@@ -357,6 +381,14 @@ export default class AppsApi extends ApiTopic {
      * get an app unstallation given its name or null if the app is not installed
      * @returns
      */
+    getAppInstanceAvailability(): Promise<AppInstanceAvailability> {
+        return this.get('/instance-availability');
+    }
+
+    getAppInstallation(installationId: string): Promise<AppInstallationWithManifest> {
+        return this.get(`/installations/id/${encodeURIComponent(installationId)}`);
+    }
+
     getAppInstallationByName(appName: string): Promise<AppInstallationWithManifest | null> {
         return this.get<AppInstallationWithManifest>(`/installations/name/${appName}`).catch((err: ServerError) => {
             if (err.status === 404) {
@@ -430,6 +462,10 @@ export default class AppsApi extends ApiTopic {
                 // clear an override). The server uses `'access_control' in payload` to distinguish
                 // "leave unchanged" from "clear", so only spread the key when it was supplied.
                 ...('access_control' in settingsPayload ? { access_control: settingsPayload.access_control } : {}),
+                ...('display_name' in settingsPayload ? { display_name: settingsPayload.display_name } : {}),
+                ...('namespace_overrides' in settingsPayload
+                    ? { namespace_overrides: settingsPayload.namespace_overrides }
+                    : {}),
                 ...('mcp_parameters' in settingsPayload ? { mcp_parameters: settingsPayload.mcp_parameters } : {}),
                 ...('mcp_shared_parameters' in settingsPayload
                     ? { mcp_shared_parameters: settingsPayload.mcp_shared_parameters }

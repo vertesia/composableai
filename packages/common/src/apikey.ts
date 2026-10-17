@@ -97,6 +97,14 @@ export interface AuthTokenPayload {
      */
     apps: string[];
 
+    /** Versioned grants for installations in the selected project. Absence means a legacy token. */
+    app_installations?: {
+        version: 1;
+        project_id: string;
+        ids: string[];
+        ui_restrictions?: string[];
+    };
+
     /**
      * Apps in `apps[]` whose UI surface is restricted for this principal — present only on
      * user tokens, and only when at least one app applies. Such apps grant functional access

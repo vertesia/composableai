@@ -132,6 +132,63 @@ describe('AppsApi', () => {
     });
 });
 
+describe('app installation instance transport', () => {
+    it('preserves old install requests and carries optional instance identity separately from settings', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json({ id: 'installation' })),
+            onRequest: (request) => requests.push(request),
+        });
+        await client.apps.install('app', { workspace: 'default' });
+        expect(await requests[0].clone().json()).toEqual({ app_id: 'app', settings: { workspace: 'default' } });
+        await client.apps.install('app', { workspace: 'eu' }, undefined, undefined, undefined, undefined, undefined, {
+            instance_key: 'eu',
+            display_name: 'Europe',
+            namespace_overrides: { crm: 'crm_eu' },
+        });
+        expect(await requests[1].clone().json()).toEqual({
+            app_id: 'app',
+            settings: { workspace: 'eu' },
+            instance_key: 'eu',
+            display_name: 'Europe',
+            namespace_overrides: { crm: 'crm_eu' },
+        });
+        await client.apps.install(
+            'app',
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { crm: { region: 'eu' } },
+            { tenant: 'one' },
+            { instance_key: 'eu', namespace_overrides: { crm: 'crm_eu' } },
+        );
+        expect(await requests[2].clone().json()).toEqual({
+            app_id: 'app',
+            mcp_parameters: { crm: { region: 'eu' } },
+            mcp_shared_parameters: { tenant: 'one' },
+            instance_key: 'eu',
+            namespace_overrides: { crm: 'crm_eu' },
+        });
+        await client.apps.updateInstallationSettings({
+            app_id: 'installation',
+            display_name: 'Europe renamed',
+            namespace_overrides: { added: 'crm_added' },
+        });
+        expect(await requests[3].clone().json()).toEqual({
+            app_id: 'installation',
+            display_name: 'Europe renamed',
+            namespace_overrides: { added: 'crm_added' },
+        });
+        await client.apps.getAppInstallation('installation');
+        expect(requests[4].url).toContain('/apps/installations/id/installation');
+        await client.apps.setInstallationMcpApiKey('installation', 'crm', 'secret');
+        expect(requests[5].url).toContain('/apps/installations/installation/collections/crm/api-key');
+    });
+});
+
 const mcpParameterUpdates: AppInstallationPayload['mcp_parameters'][] = [
     undefined,
     { graph: { key: 'replacement', region: 'east' } },
