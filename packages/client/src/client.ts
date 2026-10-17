@@ -23,6 +23,7 @@ import RemoteMcpConnectionsApi from './RemoteMcpConnectionsApi.js';
 import { RunsApi } from './RunsApi.js';
 import SecretsApi from './SecretsApi.js';
 import SkillsApi from './SkillsApi.js';
+import type { AgentStreamProvider } from './store/AgentsApi.js';
 import { ZenoClient } from './store/client.js';
 import { VERSION, VERSION_HEADER } from './store/version.js';
 import ToolsApi from './ToolsApi.js';
@@ -75,6 +76,8 @@ export type VertesiaClientProps = {
      */
     timeout?: number | false | null;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
+    /** Replaces the built-in agent history and SSE transport for this client instance. */
+    agentStreamProvider?: AgentStreamProvider;
 };
 
 /**
@@ -94,6 +97,7 @@ const KNOWN_CLIENT_OPTIONS: Record<keyof Required<VertesiaClientProps>, true> = 
     retryPolicy: true,
     timeout: true,
     fetch: true,
+    agentStreamProvider: true,
 };
 
 export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
@@ -231,6 +235,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             retryPolicy: opts.retryPolicy,
             timeout: opts.timeout,
             fetch: opts.fetch,
+            agentStreamProvider: opts.agentStreamProvider,
         });
         this.views = new ViewsApi(this, this.store.views);
 

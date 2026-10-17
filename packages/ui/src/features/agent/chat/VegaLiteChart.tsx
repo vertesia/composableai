@@ -1145,7 +1145,7 @@ export const VegaLiteChart = memo(
                                     spec={chartSpec}
                                     onEmbed={(result) => handleNewView(result.view)}
                                     onError={handleError}
-                                    options={{ renderer: options?.renderer || 'canvas', actions: false }}
+                                    options={{ renderer: options?.renderer || 'canvas', actions: false, ast: true }}
                                 />
                             </Suspense>
                         </div>
@@ -1166,7 +1166,7 @@ export const VegaLiteChart = memo(
                                     spec={fullscreenSpec}
                                     onEmbed={(result) => handleFullscreenNewView(result.view)}
                                     onError={handleError}
-                                    options={{ renderer: options?.renderer || 'canvas', actions: false }}
+                                    options={{ renderer: options?.renderer || 'canvas', actions: false, ast: true }}
                                 />
                             </Suspense>
                         )}

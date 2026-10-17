@@ -20,7 +20,15 @@ import { createContext, useContext, useState, useSyncExternalStore } from 'react
 // Interaction schemas also use `format` as a UI editor hint (for example, `textarea`
 // and `media`). Those values are not validation formats, so do not make AJV inspect them.
 // Reusing one instance also avoids rebuilding AJV's compiler on the Start button click.
-const inputSchemaAjv = new Ajv({ strict: false, validateFormats: false });
+// Construct it lazily: AJV compiles its own meta-schema with `new Function`, which strict
+// WebView CSP blocks even when the conversation hides the workflow-start header and never
+// validates an input payload.
+let inputSchemaAjv: Ajv | undefined;
+
+function getInputSchemaAjv(): Ajv {
+    inputSchemaAjv ??= new Ajv({ strict: false, validateFormats: false });
+    return inputSchemaAjv;
+}
 
 export type WorkflowMode = 'start' | 'schedule';
 type ModelOptions = NonNullable<WorkflowInteractionVars['config']['model_options']>;
@@ -556,7 +564,7 @@ export class PayloadBuilder {
         // If schema has changed or validator not initialized, recompile
         if (!this._inputValidator || this._inputValidator.schema !== this._interactionParamsSchema) {
             this._inputValidator = {
-                validate: inputSchemaAjv.compile(this._interactionParamsSchema),
+                validate: getInputSchemaAjv().compile(this._interactionParamsSchema),
                 schema: this._interactionParamsSchema,
             };
         }

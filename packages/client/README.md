@@ -73,6 +73,39 @@ own long per-request timeout (30 minutes by default, overridable via the
 executions return immediately and stream over a separate channel, so they are never given a
 total-request timeout.
 
+### Custom Agent Stream Transport
+
+Applications that own agent streaming outside the browser can provide an instance-scoped
+`AgentStreamProvider`. The provider receives the same callbacks, resume cursor, abort signal, and
+options as `client.agents.streamMessages(...)`:
+
+```typescript
+import { type AgentStreamProvider, VertesiaClient } from '@vertesia/client';
+
+const agentStreamProvider: AgentStreamProvider = {
+    async streamMessages(id, onMessage, since, signal, options) {
+        // Call onHistoryLoaded once, then replay those historical messages through onMessage.
+        // Continue delivering live messages through onMessage. Honor signal, release transport
+        // resources on abort, provide an exit function to onMessage, and resolve with the payload
+        // passed to it. Resolve normally when the transport finishes; reject transport failures.
+    },
+};
+
+const client = new VertesiaClient({
+    site: 'api.vertesia.io',
+    apikey: 'sk-your-api-key',
+    agentStreamProvider,
+});
+```
+
+When configured, the provider owns the complete history and live-stream lifecycle, including the
+stream transport's authentication. The client does not start its built-in history request,
+EventSource, polling, or retry timers, and provider errors propagate without falling back. Ordinary
+REST requests continue to use the client's API key or auth callback. A native host can use that
+same credential source for its stream transport, but the SDK does not pass credentials into an
+arbitrary provider. Omit the option to retain the standard browser transport. Direct `ZenoClient`
+construction accepts the same option.
+
 ### Available APIs
 
 The client provides access to several API endpoints:
