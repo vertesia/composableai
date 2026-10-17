@@ -215,7 +215,7 @@ export const OAuthTokenResponseSchema = z
 export const OAuthClientDataSchema = z.strictObject({
     app_id: z.string().optional().meta({
         description:
-            'App associated with this client. Authorization requires an installation explicitly enabling this client and current user app access.',
+            'App managing this client. Generic updates and deletion are prohibited; configure it through the app. Authorization requires a current installation and user app access.',
     }),
     client_name: z.string(),
     client_type: OAuthClientTypeSchema,
@@ -307,6 +307,12 @@ export const UpdateOAuthClientPayloadSchema = z
         metadata: z.looseObject({}).optional(),
     })
     .meta({ id: 'UpdateOAuthClientPayload' });
+
+export const UpdateOAuthClientStatusPayloadSchema = z
+    .strictObject({
+        status: OAuthClientStatusSchema,
+    })
+    .meta({ id: 'UpdateOAuthClientStatusPayload' });
 
 export const OAuthGrantSchema = z
     .strictObject({

@@ -1,4 +1,4 @@
-// Shared by the UI, public OAuth metadata, and published app package.
+// Scopes requested by this app. The publisher manifest sets the maximum allowed permissions.
 const CONFIG__OAUTH_SCOPES = ['openid', 'profile', 'offline_access'];
 
 export const appOAuthScopes: string[] = CONFIG__OAUTH_SCOPES;

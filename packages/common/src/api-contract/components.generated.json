@@ -7139,7 +7139,7 @@
     "properties": {
       "app_id": {
         "type": "string",
-        "description": "App associated with this client. Authorization requires an installation explicitly enabling this client and current user app access."
+        "description": "App managing this client. Generic updates and deletion are prohibited; configure it through the app. Authorization requires a current installation and user app access."
       },
       "client_name": {
         "type": "string"
@@ -7244,7 +7244,7 @@
     "properties": {
       "app_id": {
         "type": "string",
-        "description": "App associated with this client. Authorization requires an installation explicitly enabling this client and current user app access."
+        "description": "App managing this client. Generic updates and deletion are prohibited; configure it through the app. Authorization requires a current installation and user app access."
       },
       "client_name": {
         "type": "string"
@@ -7480,6 +7480,18 @@
         "additionalProperties": true
       }
     },
+    "additionalProperties": false
+  },
+  "UpdateOAuthClientStatusPayload": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "$ref": "#/components/schemas/OAuthClientStatus"
+      }
+    },
+    "required": [
+      "status"
+    ],
     "additionalProperties": false
   },
   "OAuthGrant": {
@@ -23133,13 +23145,17 @@
           "type": "string",
           "format": "uri"
         }
+      },
+      "require_consent": {
+        "type": "boolean",
+        "description": "Show user consent before authorizing this app. Defaults to true. Disabling the prompt preserves installation, app access, scope and project-policy enforcement."
       }
     },
     "required": [
       "redirect_uris"
     ],
     "additionalProperties": false,
-    "description": "Standalone public PKCE OAuth. Installation automatically provisions an app client with these exact callback URLs."
+    "description": "Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs."
   },
   "AppManifestData": {
     "type": "object",
@@ -23159,7 +23175,8 @@
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling."
       },
       "oauth_client": {
         "$ref": "#/components/schemas/AppOAuthClientConfig"
@@ -23309,7 +23326,8 @@
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling."
       },
       "oauth_client": {
         "$ref": "#/components/schemas/AppOAuthClientConfig"
@@ -23465,7 +23483,8 @@
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling."
       },
       "oauth_client": {
         "$ref": "#/components/schemas/AppOAuthClientConfig"
@@ -24679,7 +24698,7 @@
         "items": {
           "type": "string"
         },
-        "description": "OAuth scopes requested by the app. Users must consent to project permissions."
+        "description": "Scopes requested by app code. These do not replace the publisher-managed permission ceiling in the app manifest."
       },
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",

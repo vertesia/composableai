@@ -30,6 +30,7 @@ import type {
     CreateAppRepoBranchRequest,
     DeleteAppVersionResponse,
     McpApiKeyStatus,
+    OAuthClient,
     ProjectRef,
     PromoteAppVersionResponse,
     RequireAtLeastOne,
@@ -52,6 +53,11 @@ export type { OrphanedAppInstallation } from '@vertesia/common';
 export default class AppsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/apps');
+    }
+
+    /** The publisher-managed OAuth registration shared by all installations of an app. */
+    getOAuthClient(appId: string): Promise<OAuthClient> {
+        return this.get(`/${encodeURIComponent(appId)}/oauth-client`);
     }
 
     create(manifest: AppManifestData): Promise<AppManifest> {

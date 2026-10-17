@@ -350,11 +350,15 @@ export const AppDashboardDefinitionSchema = z
 export const AppOAuthClientConfigSchema = z
     .strictObject({
         redirect_uris: z.array(z.string().url()).min(1),
+        require_consent: z.boolean().optional().meta({
+            description:
+                'Show user consent before authorizing this app. Defaults to true. Disabling the prompt preserves installation, app access, scope and project-policy enforcement.',
+        }),
     })
     .meta({
         id: 'AppOAuthClientConfig',
         description:
-            'Standalone public PKCE OAuth. Installation automatically provisions an app client with these exact callback URLs.',
+            'Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs.',
     });
 
 export const AppManifestDataSchema = z
@@ -366,7 +370,13 @@ export const AppManifestDataSchema = z
                 description:
                     'Shared MCP installation parameters available to every collection. Collection-local names must not overlap.',
             }),
-        oauth_scopes: z.array(z.string()).optional(),
+        oauth_scopes: z
+            .array(z.string())
+            .meta({
+                description:
+                    'Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling.',
+            })
+            .optional(),
         oauth_client: AppOAuthClientConfigSchema.optional(),
         name: z.string().meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
@@ -549,7 +559,13 @@ export const CompositeAppMessageOverridesSchema = z
 export const AppManifestSchema = z
     .strictObject({
         parameters: AppManifestDataSchema.shape.parameters,
-        oauth_scopes: z.array(z.string()).optional(),
+        oauth_scopes: z
+            .array(z.string())
+            .meta({
+                description:
+                    'Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling.',
+            })
+            .optional(),
         oauth_client: AppOAuthClientConfigSchema.optional(),
         edit_revision: EditRevisionSchema,
         name: z.string().meta({
@@ -960,7 +976,10 @@ export const AppPackageSchema = z
         oauth_client: AppOAuthClientConfigSchema.optional(),
         oauth_scopes: z
             .array(z.string())
-            .meta({ description: 'OAuth scopes requested by the app. Users must consent to project permissions.' })
+            .meta({
+                description:
+                    'Scopes requested by app code. These do not replace the publisher-managed permission ceiling in the app manifest.',
+            })
             .optional(),
         ui: AppUIConfigSchema.meta({ description: 'The UI configuration of the app' }).optional(),
         tools: z
