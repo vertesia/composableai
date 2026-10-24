@@ -3,7 +3,8 @@ packages:
 catalog:
   typescript: "7.0.2"
 overrides:
-  "fast-uri@>=3.0.0 <3.1.8": 3.1.8
+  # GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr, GHSA-333x-w4r6-6crp, and GHSA-xhq7-xmqj-769h.
+  "fast-uri@>=3.0.0 <3.1.9": 3.1.9
   "@types/node": "^24.13.3"
   "minimatch@>=3.0.0 <4.0.0": "legacy-v3"
   "minimatch@>=9.0.0 <10.0.0": "legacy-v9"
