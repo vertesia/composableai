@@ -605,9 +605,24 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     description={t('intakePolicy.help.section.memory')}
                 >
                     <TriStateField
-                        label={t('intakePolicy.field.enabled')}
-                        value={policy.memory?.enabled}
-                        onChange={(value) => setValue(['memory', 'enabled'], value)}
+                        label={t('intakePolicy.field.linkEntities')}
+                        value={policy.memory?.link_entities}
+                        onChange={(value) => setValue(['memory', 'link_entities'], value)}
+                        readonly={readonly}
+                    />
+                    <p className="text-sm text-muted">{t('intakePolicy.help.entityBindings')}</p>
+                    <TriStateField
+                        label={t('intakePolicy.field.discoverRelationships')}
+                        value={policy.memory?.discover_relationships ?? policy.memory?.enabled}
+                        onChange={(value) =>
+                            onChange(
+                                updateIntakePolicy(
+                                    updateIntakePolicy(policy, ['memory', 'enabled'], undefined),
+                                    ['memory', 'discover_relationships'],
+                                    value,
+                                ),
+                            )
+                        }
                         readonly={readonly}
                     />
                     <ModelConfigFields

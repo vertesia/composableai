@@ -39,7 +39,10 @@ describe('graph API contracts', () => {
 
     it('bounds native subject discovery and returns typed canonical subjects', () => {
         expect(FindSubjectsPayloadSchema.safeParse({ query: 'Acme', type: 'company', limit: 100 }).success).toBe(true);
-        expect(FindSubjectsPayloadSchema.safeParse({ query: '', limit: 1 }).success).toBe(false);
+        expect(FindSubjectsPayloadSchema.safeParse({ query: '', limit: 1 }).success).toBe(true);
+        expect(validateApiRequest('FindSubjectsPayload', { query: '', limit: 1 }).valid).toBe(true);
+        expect(validateApiRequest('FindSubjectsPayload', { query: 'x'.repeat(201) }).valid).toBe(false);
+        expect(validateApiRequest('FindSubjectsPayload', { query: '', limit: 0 }).valid).toBe(false);
         expect(FindSubjectsPayloadSchema.safeParse({ query: 'Acme', limit: 101 }).success).toBe(false);
         expect(FindSubjectsResponseSchema.safeParse({ subjects: [], truncated: false }).success).toBe(true);
     });
@@ -140,5 +143,29 @@ describe('graph API contracts', () => {
                 relationships: [{ key: 'acquisition', relationship_id: 'edge-1', status: 'published' }],
             }).success,
         ).toBe(true);
+    });
+    it('publishes strict field bindings that reuse content fields and existing entity documents', () => {
+        const subject = {
+            kind: 'subject',
+            path: '/properties/vendors/*',
+            subject_type: 'company',
+            name_path: '/name',
+            identifiers: [{ namespace: 'erp.vendor', path: '/id' }],
+            relationship_type: 'issued_by',
+        };
+        expect(validateApiRequest('ContentEntityBinding', subject).valid).toBe(true);
+        expect(validateApiRequest('ContentEntityBinding', { ...subject, object_schema: {} }).valid).toBe(false);
+        expect(validateApiRequest('ContentEntityBinding', { ...subject, path: '/metadata/vendor' }).valid).toBe(false);
+        expect(
+            validateApiRequest('ContentEntityBinding', {
+                kind: 'document',
+                path: '/properties/vendor_id',
+                document_id_path: '',
+                relationship_type: 'issued_by',
+            }).valid,
+        ).toBe(true);
+        expect(
+            validateApiRequest('ProjectContentEntitiesPayload', { document_version_id: 'version', entities: [] }).valid,
+        ).toBe(false);
     });
 });

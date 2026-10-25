@@ -92,7 +92,10 @@ export const ResolveSubjectsResponseSchema = z
     .meta({ id: 'ResolveSubjectsResponse' });
 export const FindSubjectsPayloadSchema = z
     .strictObject({
-        query: z.string().min(1).max(200),
+        query: z.string().max(200).meta({
+            description:
+                'Literal name substring or exact identifier value/namespace, case-insensitive. Empty lists visible subjects.',
+        }),
         type: idSchema.optional(),
         limit: z.number().int().min(1).max(100).optional(),
         cursor: z.string().optional(),
@@ -189,6 +192,8 @@ export const RelationshipContributionSourceSchema = z
         document_id: idSchema,
         document_version_id: idSchema,
         text_etag: idSchema,
+        text_hash: idSchema.optional(),
+        structured_fingerprint: idSchema.optional(),
     })
     .meta({ id: 'RelationshipContributionSource' });
 export const RelationshipContributionEvidenceSchema = z
@@ -244,7 +249,13 @@ export const RelationshipContributionStateQuerySchema = z
     .strictObject({ document_id: idSchema, scope: idSchema })
     .meta({ id: 'RelationshipContributionStateQuery' });
 export const RelationshipContributionStateSchema = z
-    .strictObject({ revision: revisionSchema, generation_key: idSchema.optional() })
+    .strictObject({
+        revision: revisionSchema,
+        generation_key: idSchema.optional(),
+        source: RelationshipContributionSourceSchema.optional(),
+        catalog_fingerprint: idSchema.optional(),
+        config_fingerprint: idSchema.optional(),
+    })
     .meta({ id: 'RelationshipContributionState' });
 export const RelationshipContributionEntityResolutionSchema = z
     .strictObject({
@@ -357,3 +368,45 @@ export const SubjectRelationshipContextSchema = z
 export const SubjectReadResponseSchema = SubjectSchema.extend({
     relationship_context: SubjectRelationshipContextSchema.optional(),
 }).meta({ id: 'SubjectReadResponse' });
+
+/** Reuse extracted fields; paths are JSON pointers, with * for array elements. */
+const entityBindingFields = {
+    path: z
+        .string()
+        .min(1)
+        .max(500)
+        .regex(/^\/(properties|domains)(\/|$)/),
+    relationship_type: idSchema,
+    direction: z.enum(['outgoing', 'incoming']).optional(),
+};
+const relativeFieldPath = z
+    .string()
+    .max(500)
+    .regex(/^(\/.*)?$/);
+export const SubjectFieldBindingSchema = z
+    .strictObject({
+        ...entityBindingFields,
+        kind: z.literal('subject'),
+        subject_type: idSchema,
+        name_path: relativeFieldPath,
+        identifiers: z
+            .array(z.strictObject({ namespace: idSchema, path: relativeFieldPath }))
+            .min(1)
+            .max(10),
+    })
+    .meta({ id: 'SubjectFieldBinding' });
+export const DocumentFieldBindingSchema = z
+    .strictObject({
+        ...entityBindingFields,
+        kind: z.literal('document'),
+        document_id_path: relativeFieldPath,
+    })
+    .meta({ id: 'DocumentFieldBinding' });
+export const ContentEntityBindingSchema = z
+    .discriminatedUnion('kind', [SubjectFieldBindingSchema, DocumentFieldBindingSchema])
+    .meta({ id: 'ContentEntityBinding' });
+export const ProjectContentEntitiesPayloadSchema = z
+    .strictObject({
+        document_version_id: idSchema,
+    })
+    .meta({ id: 'ProjectContentEntitiesPayload' });

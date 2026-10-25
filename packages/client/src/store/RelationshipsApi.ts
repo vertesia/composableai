@@ -4,6 +4,7 @@ import type {
     DeleteRelationshipQuery,
     FindRelationshipsPayload,
     FindRelationshipsResponse,
+    ProjectContentEntitiesPayload,
     Relationship,
     RelationshipContributionState,
     RelationshipContributionStateQuery,
@@ -49,6 +50,11 @@ export class RelationshipsApi extends ApiTopic {
         payload: SubmitRelationshipContributionPayload,
     ): Promise<SubmitRelationshipContributionResponse> {
         return this.post('/contributions', { payload });
+    }
+
+    /** Reconcile configured entity links from current properties/domains, without inference. */
+    projectContentEntities(payload: ProjectContentEntitiesPayload): Promise<SubmitRelationshipContributionResponse> {
+        return this.post('/contributions/fields', { payload });
     }
 
     find(payload: FindRelationshipsPayload): Promise<FindRelationshipsResponse> {

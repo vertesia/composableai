@@ -85,7 +85,7 @@ describe('IntakePolicyEditor memory tab', () => {
         const user = userEvent.setup();
 
         fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
-        const enabled = screen.getByRole('button', { name: 'Enabled' });
+        const enabled = screen.getByRole('button', { name: 'Discover additional relationships' });
         expect(enabled.textContent).toContain('Disabled');
         enabled.focus();
         await user.keyboard('{Enter}');
@@ -93,5 +93,22 @@ describe('IntakePolicyEditor memory tab', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Save' }));
         await waitFor(() => expect(onSave).toHaveBeenCalledWith({ extraction: { enabled: true } }));
+    });
+    it('keeps field linking separate from additional relationship discovery', async () => {
+        const onSave = renderEditor({ memory: { link_entities: true, discover_relationships: false } });
+        fireEvent.click(screen.getByRole('tab', { name: 'Memory' }));
+        expect(screen.getByRole('button', { name: 'Link extracted entities' }).textContent).toContain('Enabled');
+        expect(screen.getByRole('button', { name: 'Discover additional relationships' }).textContent).toContain(
+            'Disabled',
+        );
+        fireEvent.change(screen.getByRole('textbox', { name: 'Contribution scope' }), {
+            target: { value: 'extra-links' },
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+        await waitFor(() =>
+            expect(onSave).toHaveBeenCalledWith({
+                memory: { link_entities: true, discover_relationships: false, scope: 'extra-links' },
+            }),
+        );
     });
 });

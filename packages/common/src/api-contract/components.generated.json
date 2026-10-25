@@ -4919,7 +4919,23 @@
     "properties": {
       "enabled": {
         "type": "boolean",
-        "description": "Enable memory contribution extraction for this intake policy."
+        "description": "Discover additional relationships after content extraction. Legacy alias for discover_relationships."
+      },
+      "link_entities": {
+        "type": "boolean",
+        "description": "Link extracted entity fields without a model call. Enabled by default when mappings exist."
+      },
+      "discover_relationships": {
+        "type": "boolean",
+        "description": "Discover additional relationships not already covered by content extraction."
+      },
+      "entity_bindings": {
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentEntityBinding"
+        },
+        "description": "Field mappings from this content type to shared entities or existing entity documents. No duplicate extraction schema."
       },
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration",
@@ -4952,6 +4968,116 @@
     },
     "additionalProperties": false
   },
+  "SubjectFieldBinding": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500,
+        "pattern": "^\\/(properties|domains)(\\/|$)"
+      },
+      "relationship_type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "direction": {
+        "type": "string",
+        "enum": [
+          "outgoing",
+          "incoming"
+        ]
+      },
+      "kind": {
+        "type": "string",
+        "const": "subject"
+      },
+      "subject_type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "name_path": {
+        "type": "string",
+        "maxLength": 500,
+        "pattern": "^(\\/.*)?$"
+      },
+      "identifiers": {
+        "minItems": 1,
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "namespace": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "path": {
+              "type": "string",
+              "maxLength": 500,
+              "pattern": "^(\\/.*)?$"
+            }
+          },
+          "required": [
+            "namespace",
+            "path"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    "required": [
+      "path",
+      "relationship_type",
+      "kind",
+      "subject_type",
+      "name_path",
+      "identifiers"
+    ],
+    "additionalProperties": false
+  },
+  "DocumentFieldBinding": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500,
+        "pattern": "^\\/(properties|domains)(\\/|$)"
+      },
+      "relationship_type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "direction": {
+        "type": "string",
+        "enum": [
+          "outgoing",
+          "incoming"
+        ]
+      },
+      "kind": {
+        "type": "string",
+        "const": "document"
+      },
+      "document_id_path": {
+        "type": "string",
+        "maxLength": 500,
+        "pattern": "^(\\/.*)?$"
+      }
+    },
+    "required": [
+      "path",
+      "relationship_type",
+      "kind",
+      "document_id_path"
+    ],
+    "additionalProperties": false
+  },
   "EmbeddingTypeEnabledMap": {
     "type": "object",
     "properties": {
@@ -4966,6 +5092,27 @@
       }
     },
     "additionalProperties": false
+  },
+  "ContentEntityBinding": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/SubjectFieldBinding"
+      },
+      {
+        "$ref": "#/components/schemas/DocumentFieldBinding"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "kind",
+      "mapping": {
+        "subject": "#/components/schemas/SubjectFieldBinding",
+        "document": "#/components/schemas/DocumentFieldBinding"
+      }
+    },
+    "type": "object",
+    "required": [
+      "kind"
+    ]
   },
   "ContentTypeIntakePolicy": {
     "type": "object",
@@ -27687,8 +27834,8 @@
     "properties": {
       "query": {
         "type": "string",
-        "minLength": 1,
-        "maxLength": 200
+        "maxLength": 200,
+        "description": "Literal name substring or exact identifier value/namespace, case-insensitive. Empty lists visible subjects."
       },
       "type": {
         "type": "string",
@@ -28254,6 +28401,20 @@
     ],
     "additionalProperties": false
   },
+  "ProjectContentEntitiesPayload": {
+    "type": "object",
+    "properties": {
+      "document_version_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "document_version_id"
+    ],
+    "additionalProperties": false
+  },
   "RelationshipContributionSource": {
     "type": "object",
     "properties": {
@@ -28268,6 +28429,16 @@
         "maxLength": 256
       },
       "text_etag": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "text_hash": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "structured_fingerprint": {
         "type": "string",
         "minLength": 1,
         "maxLength": 256
@@ -28533,6 +28704,19 @@
         "maximum": 2147483647
       },
       "generation_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "source": {
+        "$ref": "#/components/schemas/RelationshipContributionSource"
+      },
+      "catalog_fingerprint": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "config_fingerprint": {
         "type": "string",
         "minLength": 1,
         "maxLength": 256

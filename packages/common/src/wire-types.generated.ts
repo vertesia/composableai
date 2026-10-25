@@ -8448,6 +8448,9 @@ export type ContentTypeIntakePolicy = {
 };
 export type ContentTypeMemoryPolicy = {
     enabled?: boolean | undefined;
+    link_entities?: boolean | undefined;
+    discover_relationships?: boolean | undefined;
+    entity_bindings?: ContentEntityBindingWire[] | undefined;
     config?: InteractionExecutionConfiguration | undefined;
     scope?: string | undefined;
     max_entities?: number | undefined;
@@ -11248,10 +11251,35 @@ export type RelationshipMutationResultWire = {
 export type UpsertRelationshipsResponseWire = {
     results: RelationshipMutationResultWire[];
 };
+export type SubjectFieldBindingWire = {
+    path: string;
+    relationship_type: string;
+    direction?: 'outgoing' | 'incoming' | undefined;
+    kind: 'subject';
+    subject_type: string;
+    name_path: string;
+    identifiers: {
+        namespace: string;
+        path: string;
+    }[];
+};
+export type DocumentFieldBindingWire = {
+    path: string;
+    relationship_type: string;
+    direction?: 'outgoing' | 'incoming' | undefined;
+    kind: 'document';
+    document_id_path: string;
+};
+export type ContentEntityBindingWire = SubjectFieldBindingWire | DocumentFieldBindingWire;
+export type ProjectContentEntitiesPayloadWire = {
+    document_version_id: string;
+};
 export type RelationshipContributionSourceWire = {
     document_id: string;
     document_version_id: string;
     text_etag: string;
+    text_hash?: string | undefined;
+    structured_fingerprint?: string | undefined;
 };
 export type RelationshipContributionEvidenceWire = {
     excerpt: string;
@@ -11301,6 +11329,9 @@ export type RelationshipContributionStateQueryWire = {
 export type RelationshipContributionStateWire = {
     revision: number;
     generation_key?: string | undefined;
+    source?: RelationshipContributionSourceWire | undefined;
+    catalog_fingerprint?: string | undefined;
+    config_fingerprint?: string | undefined;
 };
 export type RelationshipContributionEntityResolutionWire = {
     key: string;
@@ -12677,6 +12708,10 @@ export interface ApiComponentTypes {
     UpsertRelationshipsPayload: UpsertRelationshipsPayloadWire;
     RelationshipMutationResult: RelationshipMutationResultWire;
     UpsertRelationshipsResponse: UpsertRelationshipsResponseWire;
+    SubjectFieldBinding: SubjectFieldBindingWire;
+    DocumentFieldBinding: DocumentFieldBindingWire;
+    ContentEntityBinding: ContentEntityBindingWire;
+    ProjectContentEntitiesPayload: ProjectContentEntitiesPayloadWire;
     RelationshipContributionSource: RelationshipContributionSourceWire;
     RelationshipContributionEvidence: RelationshipContributionEvidenceWire;
     RelationshipContributionEntity: RelationshipContributionEntityWire;

@@ -1034,7 +1034,7 @@
     "grounded.verified": "已對照文檔文本驗證",
     "grounded.verifiedOf": "{{verified}}/{{total}} 個已驗證",
     "intakePolicy.tab.memory": "記憶",
-    "intakePolicy.help.section.memory": "從文件文字中擷取實體與關係，並保留來源證據。",
+    "intakePolicy.help.section.memory": "重用已擷取的實體來連接內容，並視需要探索現有擷取未涵蓋的關係。",
     "intakePolicy.field.memoryScope": "貢獻範圍",
     "intakePolicy.help.memoryScope": "維持此範圍不變，讓新的擷取結果取代先前的貢獻。",
     "intakePolicy.field.maxEntities": "實體數量上限",
@@ -1289,5 +1289,8 @@
     "agent.runBudgetRemainingUsd": "剩餘執行預算：{{remaining}}美元 / {{limit}}美元",
     "agent.runBudgetRemainingFallback": "剩餘備用權杖：{{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "剩餘執行預算：{{remaining}} / {{limit}} 權杖",
-    "agent.runBudgetIncomplete": "計費統計不完整，剩餘預算可能偏高。"
+    "agent.runBudgetIncomplete": "計費統計不完整，剩餘預算可能偏高。",
+    "intakePolicy.field.discoverRelationships": "探索其他關係",
+    "intakePolicy.field.linkEntities": "連結已擷取的實體",
+    "intakePolicy.help.entityBindings": "在 JSON 分頁中設定 entity_bindings，以連結現有屬性或領域。這些連結無須呼叫模型。"
 }

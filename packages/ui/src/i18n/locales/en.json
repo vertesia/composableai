@@ -502,7 +502,7 @@
     "grounded.verified": "Verified against the document text",
     "grounded.verifiedOf": "{{verified}}/{{total}} verified",
     "intakePolicy.tab.memory": "Memory",
-    "intakePolicy.help.section.memory": "Extract entities and relationships from document text with source evidence.",
+    "intakePolicy.help.section.memory": "Reuse extracted entities to connect content, then optionally discover relationships beyond existing extraction.",
     "intakePolicy.field.memoryScope": "Contribution scope",
     "intakePolicy.help.memoryScope": "Keep this scope stable so a new extraction replaces the previous contribution.",
     "intakePolicy.field.maxEntities": "Maximum entities",
@@ -1289,5 +1289,8 @@
     "agent.runBudgetRemainingUsd": "Run budget remaining: ${{remaining}} / ${{limit}}",
     "agent.runBudgetRemainingFallback": "Fallback tokens remaining: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Run budget remaining: {{remaining}} / {{limit}} tokens",
-    "agent.runBudgetIncomplete": "Accounting incomplete; remaining budget may be overstated."
+    "agent.runBudgetIncomplete": "Accounting incomplete; remaining budget may be overstated.",
+    "intakePolicy.field.discoverRelationships": "Discover additional relationships",
+    "intakePolicy.field.linkEntities": "Link extracted entities",
+    "intakePolicy.help.entityBindings": "Configure entity_bindings in the JSON tab to link existing properties or domains. These links require no model call."
 }

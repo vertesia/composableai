@@ -4925,6 +4925,22 @@ interface Checks {
         W.UpsertRelationshipsResponseWire,
         z.infer<typeof import('./api-schemas/graph.js').UpsertRelationshipsResponseSchema>
     >;
+    SubjectFieldBindingWire: Same<
+        W.SubjectFieldBindingWire,
+        z.infer<typeof import('./api-schemas/graph.js').SubjectFieldBindingSchema>
+    >;
+    DocumentFieldBindingWire: Same<
+        W.DocumentFieldBindingWire,
+        z.infer<typeof import('./api-schemas/graph.js').DocumentFieldBindingSchema>
+    >;
+    ContentEntityBindingWire: Same<
+        W.ContentEntityBindingWire,
+        z.infer<typeof import('./api-schemas/graph.js').ContentEntityBindingSchema>
+    >;
+    ProjectContentEntitiesPayloadWire: Same<
+        W.ProjectContentEntitiesPayloadWire,
+        z.infer<typeof import('./api-schemas/graph.js').ProjectContentEntitiesPayloadSchema>
+    >;
     RelationshipContributionSourceWire: Same<
         W.RelationshipContributionSourceWire,
         z.infer<typeof import('./api-schemas/graph.js').RelationshipContributionSourceSchema>
@@ -10136,6 +10152,22 @@ interface Checks {
         W.ApiComponentTypes['UpsertRelationshipsResponse'],
         z.infer<typeof import('./api-schemas/graph.js').UpsertRelationshipsResponseSchema>
     >;
+    'component:SubjectFieldBinding': Same<
+        W.ApiComponentTypes['SubjectFieldBinding'],
+        z.infer<typeof import('./api-schemas/graph.js').SubjectFieldBindingSchema>
+    >;
+    'component:DocumentFieldBinding': Same<
+        W.ApiComponentTypes['DocumentFieldBinding'],
+        z.infer<typeof import('./api-schemas/graph.js').DocumentFieldBindingSchema>
+    >;
+    'component:ContentEntityBinding': Same<
+        W.ApiComponentTypes['ContentEntityBinding'],
+        z.infer<typeof import('./api-schemas/graph.js').ContentEntityBindingSchema>
+    >;
+    'component:ProjectContentEntitiesPayload': Same<
+        W.ApiComponentTypes['ProjectContentEntitiesPayload'],
+        z.infer<typeof import('./api-schemas/graph.js').ProjectContentEntitiesPayloadSchema>
+    >;
     'component:RelationshipContributionSource': Same<
         W.ApiComponentTypes['RelationshipContributionSource'],
         z.infer<typeof import('./api-schemas/graph.js').RelationshipContributionSourceSchema>
@@ -11602,6 +11634,10 @@ const checks: Checks = {
     UpsertRelationshipsPayloadWire: true,
     RelationshipMutationResultWire: true,
     UpsertRelationshipsResponseWire: true,
+    SubjectFieldBindingWire: true,
+    DocumentFieldBindingWire: true,
+    ContentEntityBindingWire: true,
+    ProjectContentEntitiesPayloadWire: true,
     RelationshipContributionSourceWire: true,
     RelationshipContributionEvidenceWire: true,
     RelationshipContributionEntityWire: true,
@@ -12907,6 +12943,10 @@ const checks: Checks = {
     'component:UpsertRelationshipsPayload': true,
     'component:RelationshipMutationResult': true,
     'component:UpsertRelationshipsResponse': true,
+    'component:SubjectFieldBinding': true,
+    'component:DocumentFieldBinding': true,
+    'component:ContentEntityBinding': true,
+    'component:ProjectContentEntitiesPayload': true,
     'component:RelationshipContributionSource': true,
     'component:RelationshipContributionEvidence': true,
     'component:RelationshipContributionEntity': true,
@@ -12937,6 +12977,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2692);
+        expect(Object.keys(checks)).toHaveLength(2700);
     });
 });

@@ -1035,7 +1035,7 @@
     "grounded.verified": "Belge metnine göre doğrulandı",
     "grounded.verifiedOf": "{{verified}}/{{total}} doğrulandı",
     "intakePolicy.tab.memory": "Bellek",
-    "intakePolicy.help.section.memory": "Belge metninden kaynak kanıtıyla varlıkları ve ilişkileri çıkarın.",
+    "intakePolicy.help.section.memory": "İçerikleri bağlamak için çıkarılmış varlıkları yeniden kullanın ve isterseniz mevcut çıkarımın kapsamadığı ilişkileri keşfedin.",
     "intakePolicy.field.memoryScope": "Katkı kapsamı",
     "intakePolicy.help.memoryScope": "Yeni çıkarımın önceki katkıyı değiştirmesi için bu kapsamı koruyun.",
     "intakePolicy.field.maxEntities": "En fazla varlık",
@@ -1289,5 +1289,8 @@
     "agent.runBudgetRemainingUsd": "Kalan çalışma bütçesi: {{remaining}} $ / {{limit}} $",
     "agent.runBudgetRemainingFallback": "Kalan yedek token: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Kalan çalışma bütçesi: {{remaining}} / {{limit}} token",
-    "agent.runBudgetIncomplete": "Hesaplama eksik; kalan bütçe olduğundan yüksek görünebilir."
+    "agent.runBudgetIncomplete": "Hesaplama eksik; kalan bütçe olduğundan yüksek görünebilir.",
+    "intakePolicy.field.discoverRelationships": "Ek ilişkileri keşfet",
+    "intakePolicy.field.linkEntities": "Çıkarılan varlıkları bağla",
+    "intakePolicy.help.entityBindings": "Mevcut özellikleri veya alanları bağlamak için JSON sekmesinde entity_bindings ayarını yapılandırın. Bu bağlantılar model çağrısı gerektirmez."
 }

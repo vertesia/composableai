@@ -1034,7 +1034,7 @@
     "grounded.verified": "문서 텍스트와 대조하여 확인됨",
     "grounded.verifiedOf": "{{verified}}/{{total}}개 확인",
     "intakePolicy.tab.memory": "메모리",
-    "intakePolicy.help.section.memory": "문서의 근거와 함께 텍스트에서 엔터티와 관계를 추출합니다.",
+    "intakePolicy.help.section.memory": "추출된 엔터티로 콘텐츠를 연결하고 필요에 따라 기존 추출이 다루지 않는 관계를 발견합니다.",
     "intakePolicy.field.memoryScope": "기여 범위",
     "intakePolicy.help.memoryScope": "새 추출이 이전 기여를 대체하도록 이 범위를 유지하세요.",
     "intakePolicy.field.maxEntities": "최대 엔터티 수",
@@ -1289,5 +1289,8 @@
     "agent.runBudgetRemainingUsd": "남은 실행 예산: ${{remaining}} / ${{limit}}",
     "agent.runBudgetRemainingFallback": "남은 예비 토큰: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "남은 실행 예산: {{remaining}} / {{limit}} 토큰",
-    "agent.runBudgetIncomplete": "집계가 불완전하여 남은 예산이 실제보다 크게 표시될 수 있습니다."
+    "agent.runBudgetIncomplete": "집계가 불완전하여 남은 예산이 실제보다 크게 표시될 수 있습니다.",
+    "intakePolicy.field.discoverRelationships": "추가 관계 발견",
+    "intakePolicy.field.linkEntities": "추출된 엔터티 연결",
+    "intakePolicy.help.entityBindings": "JSON 탭에서 entity_bindings를 설정하여 기존 속성이나 도메인을 연결하세요. 이 연결에는 모델 호출이 필요하지 않습니다."
 }

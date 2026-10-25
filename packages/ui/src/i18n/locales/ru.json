@@ -1061,7 +1061,7 @@
     "grounded.verified": "Проверено по тексту документа",
     "grounded.verifiedOf": "{{verified}}/{{total}} проверено",
     "intakePolicy.tab.memory": "Память",
-    "intakePolicy.help.section.memory": "Извлекать сущности и связи из текста с подтверждением из документа.",
+    "intakePolicy.help.section.memory": "Используйте извлечённые сущности для связи контента и при необходимости находите отношения, не охваченные текущим извлечением.",
     "intakePolicy.field.memoryScope": "Область вклада",
     "intakePolicy.help.memoryScope": "Сохраняйте эту область, чтобы новая обработка заменяла предыдущий вклад.",
     "intakePolicy.field.maxEntities": "Максимум сущностей",
@@ -1315,5 +1315,8 @@
     "agent.runBudgetRemainingUsd": "Остаток бюджета: {{remaining}} $ / {{limit}} $",
     "agent.runBudgetRemainingFallback": "Осталось резервных токенов: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Остаток бюджета: {{remaining}} / {{limit}} токенов",
-    "agent.runBudgetIncomplete": "Учёт неполный; остаток бюджета может быть завышен."
+    "agent.runBudgetIncomplete": "Учёт неполный; остаток бюджета может быть завышен.",
+    "intakePolicy.field.discoverRelationships": "Найти дополнительные связи",
+    "intakePolicy.field.linkEntities": "Связать извлечённые сущности",
+    "intakePolicy.help.entityBindings": "Настройте entity_bindings на вкладке JSON для связи существующих свойств или доменов. Эти связи не требуют вызова модели."
 }

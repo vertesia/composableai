@@ -1035,7 +1035,7 @@
     "grounded.verified": "Mit dem Dokumenttext abgeglichen",
     "grounded.verifiedOf": "{{verified}}/{{total}} bestätigt",
     "intakePolicy.tab.memory": "Wissensspeicher",
-    "intakePolicy.help.section.memory": "Entitäten und Beziehungen mit Belegen aus dem Dokumenttext extrahieren.",
+    "intakePolicy.help.section.memory": "Verwenden Sie extrahierte Entitäten, um Inhalte zu verbinden, und entdecken Sie optional Beziehungen jenseits der vorhandenen Extraktion.",
     "intakePolicy.field.memoryScope": "Beitragsbereich",
     "intakePolicy.help.memoryScope": "Diesen Bereich beibehalten, damit eine neue Extraktion den vorherigen Beitrag ersetzt.",
     "intakePolicy.field.maxEntities": "Maximale Entitäten",
@@ -1289,5 +1289,8 @@
     "agent.runBudgetRemainingUsd": "Verbleibendes Laufbudget: {{remaining}} $ / {{limit}} $",
     "agent.runBudgetRemainingFallback": "Verbleibende Ersatz-Tokens: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Verbleibendes Laufbudget: {{remaining}} / {{limit}} Tokens",
-    "agent.runBudgetIncomplete": "Abrechnung unvollständig; das verbleibende Budget kann zu hoch sein."
+    "agent.runBudgetIncomplete": "Abrechnung unvollständig; das verbleibende Budget kann zu hoch sein.",
+    "intakePolicy.field.discoverRelationships": "Zusätzliche Beziehungen entdecken",
+    "intakePolicy.field.linkEntities": "Extrahierte Entitäten verknüpfen",
+    "intakePolicy.help.entityBindings": "Konfigurieren Sie entity_bindings im JSON-Tab, um vorhandene Eigenschaften oder Domänen zu verknüpfen. Diese Verknüpfungen benötigen keinen Modellaufruf."
 }

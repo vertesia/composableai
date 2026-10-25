@@ -2,6 +2,7 @@ import { HttpTimeoutOptionsSchema, ModelOptionsSchema, PromptCacheModeSchema } f
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
+import { ContentEntityBindingSchema } from './graph.js';
 import { InferenceProfileIdSchema } from './inference-profile.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema, PageCountSchema } from './schema-primitives.js';
 
@@ -256,10 +257,21 @@ export const EmbeddingTypeEnabledMapSchema = z
 
 export const ContentTypeMemoryPolicySchema = z
     .strictObject({
-        enabled: z
+        enabled: z.boolean().optional().meta({
+            description:
+                'Discover additional relationships after content extraction. Legacy alias for discover_relationships.',
+        }),
+        link_entities: z.boolean().optional().meta({
+            description: 'Link extracted entity fields without a model call. Enabled by default when mappings exist.',
+        }),
+        discover_relationships: z
             .boolean()
             .optional()
-            .meta({ description: 'Enable memory contribution extraction for this intake policy.' }),
+            .meta({ description: 'Discover additional relationships not already covered by content extraction.' }),
+        entity_bindings: z.array(ContentEntityBindingSchema).max(50).optional().meta({
+            description:
+                'Field mappings from this content type to shared entities or existing entity documents. No duplicate extraction schema.',
+        }),
         config: InteractionExecutionConfigurationSchema.optional().meta({
             description: 'Model/environment configuration for memory extraction. Defaults to the intake run config.',
         }),

@@ -644,7 +644,11 @@ function IntakeSummary({ policy }: { policy: ContentTypeIntakePolicy }) {
         [t('intakePolicy.summary.source'), optionLabel(t, policy.extraction?.source)],
         [t('intakePolicy.summary.extraction'), enabledLabel(t, policy.extraction?.enabled)],
         [t('intakePolicy.summary.grounding'), enabledLabel(t, grounding?.enabled)],
-        [t('intakePolicy.summary.memory'), enabledLabel(t, policy.memory?.enabled)],
+        [t('intakePolicy.field.linkEntities'), enabledLabel(t, policy.memory?.link_entities)],
+        [
+            t('intakePolicy.field.discoverRelationships'),
+            enabledLabel(t, policy.memory?.discover_relationships ?? policy.memory?.enabled),
+        ],
         [t('intakePolicy.summary.defaultView'), optionLabel(t, policy.default_view)],
         [t('intakePolicy.summary.toc'), enabledLabel(t, policy.generate_toc)],
         [

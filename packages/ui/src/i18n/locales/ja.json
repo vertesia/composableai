@@ -1034,7 +1034,7 @@
     "grounded.verified": "文書テキストと照合済み",
     "grounded.verifiedOf": "{{verified}}/{{total}}件確認済み",
     "intakePolicy.tab.memory": "メモリ",
-    "intakePolicy.help.section.memory": "文書の根拠とともにテキストからエンティティと関係を抽出します。",
+    "intakePolicy.help.section.memory": "抽出済みエンティティでコンテンツを接続し、必要に応じて既存の抽出で扱っていない関係を検出します。",
     "intakePolicy.field.memoryScope": "貢献のスコープ",
     "intakePolicy.help.memoryScope": "新しい抽出で以前の貢献を置き換えられるよう、このスコープを維持します。",
     "intakePolicy.field.maxEntities": "エンティティの最大数",
@@ -1289,5 +1289,8 @@
     "agent.runBudgetRemainingUsd": "残りの実行予算：{{remaining}}ドル / {{limit}}ドル",
     "agent.runBudgetRemainingFallback": "残りの予備トークン：{{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "残りの実行予算：{{remaining}} / {{limit}}トークン",
-    "agent.runBudgetIncomplete": "集計が不完全なため、残りの予算が実際より多く表示される場合があります。"
+    "agent.runBudgetIncomplete": "集計が不完全なため、残りの予算が実際より多く表示される場合があります。",
+    "intakePolicy.field.discoverRelationships": "追加の関係を検出",
+    "intakePolicy.field.linkEntities": "抽出済みエンティティをリンク",
+    "intakePolicy.help.entityBindings": "JSONタブのentity_bindingsで既存のプロパティやドメインをリンクします。このリンク処理ではモデルを呼び出しません。"
 }

@@ -64,3 +64,7 @@ export type RelationshipTraversalStep = z.infer<typeof GraphSchemas.Relationship
 export type TraverseRelationshipsPayload = z.infer<typeof GraphSchemas.TraverseRelationshipsPayloadSchema>;
 export type GraphNode = z.infer<typeof GraphSchemas.GraphNodeSchema>;
 export type TraverseRelationshipsResponse = z.infer<typeof GraphSchemas.TraverseRelationshipsResponseSchema>;
+export type SubjectFieldBinding = z.infer<typeof GraphSchemas.SubjectFieldBindingSchema>;
+export type DocumentFieldBinding = z.infer<typeof GraphSchemas.DocumentFieldBindingSchema>;
+export type ContentEntityBinding = z.infer<typeof GraphSchemas.ContentEntityBindingSchema>;
+export type ProjectContentEntitiesPayload = z.infer<typeof GraphSchemas.ProjectContentEntitiesPayloadSchema>;

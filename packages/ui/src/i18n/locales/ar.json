@@ -1087,7 +1087,7 @@
     "grounded.verified": "تم التحقق بمقارنته مع نص المستند",
     "grounded.verifiedOf": "تم التحقق من {{verified}}/{{total}}",
     "intakePolicy.tab.memory": "الذاكرة",
-    "intakePolicy.help.section.memory": "استخراج الكيانات والعلاقات من نص المستند مع أدلة من المصدر.",
+    "intakePolicy.help.section.memory": "أعد استخدام الكيانات المستخرجة لربط المحتوى، ثم اكتشف اختياريًا العلاقات التي لا يغطيها الاستخراج الحالي.",
     "intakePolicy.field.memoryScope": "نطاق المساهمة",
     "intakePolicy.help.memoryScope": "احتفظ بهذا النطاق لكي يحل الاستخراج الجديد محل المساهمة السابقة.",
     "intakePolicy.field.maxEntities": "الحد الأقصى للكيانات",
@@ -1341,5 +1341,8 @@
     "agent.runBudgetRemainingUsd": "ميزانية التشغيل المتبقية: {{remaining}} دولار / {{limit}} دولار",
     "agent.runBudgetRemainingFallback": "الرموز الاحتياطية المتبقية: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "ميزانية التشغيل المتبقية: {{remaining}} / {{limit}} رمز",
-    "agent.runBudgetIncomplete": "الاحتساب غير مكتمل؛ قد تظهر الميزانية المتبقية أعلى من قيمتها الفعلية."
+    "agent.runBudgetIncomplete": "الاحتساب غير مكتمل؛ قد تظهر الميزانية المتبقية أعلى من قيمتها الفعلية.",
+    "intakePolicy.field.discoverRelationships": "اكتشاف علاقات إضافية",
+    "intakePolicy.field.linkEntities": "ربط الكيانات المستخرجة",
+    "intakePolicy.help.entityBindings": "اضبط entity_bindings في علامة تبويب JSON لربط الخصائص أو المجالات الموجودة. لا تتطلب هذه الروابط استدعاء النموذج."
 }

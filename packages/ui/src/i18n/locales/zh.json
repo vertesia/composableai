@@ -1034,7 +1034,7 @@
     "grounded.verified": "已对照文档文本验证",
     "grounded.verifiedOf": "{{verified}}/{{total}} 个已验证",
     "intakePolicy.tab.memory": "记忆",
-    "intakePolicy.help.section.memory": "从文档文本中提取实体和关系，并保留来源证据。",
+    "intakePolicy.help.section.memory": "复用已提取的实体来连接内容，并按需发现现有提取未涵盖的关系。",
     "intakePolicy.field.memoryScope": "贡献范围",
     "intakePolicy.help.memoryScope": "保持此范围不变，以便新提取结果替换先前的贡献。",
     "intakePolicy.field.maxEntities": "实体数量上限",
@@ -1289,5 +1289,8 @@
     "agent.runBudgetRemainingUsd": "剩余运行预算：{{remaining}}美元 / {{limit}}美元",
     "agent.runBudgetRemainingFallback": "剩余备用令牌：{{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "剩余运行预算：{{remaining}} / {{limit}} 令牌",
-    "agent.runBudgetIncomplete": "计费统计不完整，剩余预算可能偏高。"
+    "agent.runBudgetIncomplete": "计费统计不完整，剩余预算可能偏高。",
+    "intakePolicy.field.discoverRelationships": "发现其他关系",
+    "intakePolicy.field.linkEntities": "关联已提取的实体",
+    "intakePolicy.help.entityBindings": "在 JSON 选项卡中配置 entity_bindings，以关联现有属性或域。这些关联无需调用模型。"
 }

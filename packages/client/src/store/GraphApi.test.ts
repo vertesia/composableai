@@ -2,6 +2,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { ZenoClient } from './client.js';
 
 describe('graph store APIs', () => {
+    it('sends canonical subject browsing and continuation payloads', async () => {
+        const requests: Request[] = [];
+        const client = new ZenoClient({
+            serverUrl: 'https://store.example.test',
+            fetch: vi.fn(async () => Response.json({ subjects: [], truncated: false })),
+            onRequest: (request) => requests.push(request),
+        });
+        await client.subjects.find({ query: '', limit: 12 });
+        await client.subjects.find({ query: 'LEI-42', cursor: 'subject-12', limit: 12 });
+        expect(await requests[0].json()).toEqual({ query: '', limit: 12 });
+        expect(await requests[1].json()).toEqual({ query: 'LEI-42', cursor: 'subject-12', limit: 12 });
+    });
+
     it('targets the subject and relationship resources with encoded identifiers', async () => {
         const requests: Request[] = [];
         const client = new ZenoClient({
@@ -63,5 +76,16 @@ describe('graph store APIs', () => {
             complete: true,
             source: { document_version_id: 'version/1' },
         });
+    });
+    it('projects content fields without sending extracted facts or trusted identity claims', async () => {
+        const requests: Request[] = [];
+        const client = new ZenoClient({
+            serverUrl: 'https://store.example.test',
+            fetch: vi.fn(async () => Response.json({})),
+            onRequest: (request) => requests.push(request),
+        });
+        await client.relationships.projectContentEntities({ document_version_id: 'version-1' });
+        expect(requests[0].url).toBe('https://store.example.test/api/v1/relationships/contributions/fields');
+        expect(await requests[0].json()).toEqual({ document_version_id: 'version-1' });
     });
 });

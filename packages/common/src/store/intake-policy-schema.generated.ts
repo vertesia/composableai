@@ -825,6 +825,16 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             type: 'string',
             enum: ['RUN_AND_INTERACTION_CONFIG', 'RUN_CONFIG_ONLY', 'INTERACTION_CONFIG_ONLY'],
         },
+        ContentEntityBinding: {
+            oneOf: [
+                {
+                    $ref: '#/$defs/SubjectFieldBinding',
+                },
+                {
+                    $ref: '#/$defs/DocumentFieldBinding',
+                },
+            ],
+        },
         ContentTypeExtractionGroundingPolicy: {
             type: 'object',
             properties: {
@@ -945,7 +955,26 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             properties: {
                 enabled: {
                     type: 'boolean',
-                    description: 'Enable memory contribution extraction for this intake policy.',
+                    description:
+                        'Discover additional relationships after content extraction. Legacy alias for discover_relationships.',
+                },
+                link_entities: {
+                    type: 'boolean',
+                    description:
+                        'Link extracted entity fields without a model call. Enabled by default when mappings exist.',
+                },
+                discover_relationships: {
+                    type: 'boolean',
+                    description: 'Discover additional relationships not already covered by content extraction.',
+                },
+                entity_bindings: {
+                    maxItems: 50,
+                    type: 'array',
+                    items: {
+                        $ref: '#/$defs/ContentEntityBinding',
+                    },
+                    description:
+                        'Field mappings from this content type to shared entities or existing entity documents. No duplicate extraction schema.',
                 },
                 config: {
                     $ref: '#/$defs/InteractionExecutionConfiguration',
@@ -978,6 +1007,37 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     description: 'Maximum document text characters sent to memory extraction. Defaults to 100000.',
                 },
             },
+            additionalProperties: false,
+        },
+        DocumentFieldBinding: {
+            type: 'object',
+            properties: {
+                path: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 500,
+                    pattern: '^\\/(properties|domains)(\\/|$)',
+                },
+                relationship_type: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 256,
+                },
+                direction: {
+                    type: 'string',
+                    enum: ['outgoing', 'incoming'],
+                },
+                kind: {
+                    type: 'string',
+                    const: 'document',
+                },
+                document_id_path: {
+                    type: 'string',
+                    maxLength: 500,
+                    pattern: '^(\\/.*)?$',
+                },
+            },
+            required: ['path', 'relationship_type', 'kind', 'document_id_path'],
             additionalProperties: false,
         },
         EmbeddingTypeEnabledMap: {
@@ -1911,6 +1971,64 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
         RunDataStorageLevel: {
             type: 'string',
             enum: ['STANDARD', 'RESTRICTED', 'DEBUG'],
+        },
+        SubjectFieldBinding: {
+            type: 'object',
+            properties: {
+                path: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 500,
+                    pattern: '^\\/(properties|domains)(\\/|$)',
+                },
+                relationship_type: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 256,
+                },
+                direction: {
+                    type: 'string',
+                    enum: ['outgoing', 'incoming'],
+                },
+                kind: {
+                    type: 'string',
+                    const: 'subject',
+                },
+                subject_type: {
+                    type: 'string',
+                    minLength: 1,
+                    maxLength: 256,
+                },
+                name_path: {
+                    type: 'string',
+                    maxLength: 500,
+                    pattern: '^(\\/.*)?$',
+                },
+                identifiers: {
+                    minItems: 1,
+                    maxItems: 10,
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: {
+                            namespace: {
+                                type: 'string',
+                                minLength: 1,
+                                maxLength: 256,
+                            },
+                            path: {
+                                type: 'string',
+                                maxLength: 500,
+                                pattern: '^(\\/.*)?$',
+                            },
+                        },
+                        required: ['namespace', 'path'],
+                        additionalProperties: false,
+                    },
+                },
+            },
+            required: ['path', 'relationship_type', 'kind', 'subject_type', 'name_path', 'identifiers'],
+            additionalProperties: false,
         },
         TextFallbackOptions: {
             type: 'object',

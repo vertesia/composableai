@@ -1046,7 +1046,7 @@
     "grounded.verified": "Verificado con el texto del documento",
     "grounded.verifiedOf": "{{verified}}/{{total}} verificados",
     "intakePolicy.tab.memory": "Memoria",
-    "intakePolicy.help.section.memory": "Extraer entidades y relaciones del texto con pruebas del documento.",
+    "intakePolicy.help.section.memory": "Reutilice las entidades extraídas para conectar contenidos y, si lo desea, descubra relaciones que la extracción existente no cubre.",
     "intakePolicy.field.memoryScope": "Ámbito de contribución",
     "intakePolicy.help.memoryScope": "Mantenga este ámbito para que una nueva extracción reemplace la contribución anterior.",
     "intakePolicy.field.maxEntities": "Máximo de entidades",
@@ -1300,5 +1300,8 @@
     "agent.runBudgetRemainingUsd": "Presupuesto restante: {{remaining}} US$ / {{limit}} US$",
     "agent.runBudgetRemainingFallback": "Tokens de respaldo restantes: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Presupuesto restante: {{remaining}} / {{limit}} tokens",
-    "agent.runBudgetIncomplete": "Contabilidad incompleta; el presupuesto restante puede estar sobreestimado."
+    "agent.runBudgetIncomplete": "Contabilidad incompleta; el presupuesto restante puede estar sobreestimado.",
+    "intakePolicy.field.discoverRelationships": "Descubrir relaciones adicionales",
+    "intakePolicy.field.linkEntities": "Vincular entidades extraídas",
+    "intakePolicy.help.entityBindings": "Configure entity_bindings en la pestaña JSON para vincular propiedades o dominios existentes. Estos vínculos no requieren llamadas al modelo."
 }
