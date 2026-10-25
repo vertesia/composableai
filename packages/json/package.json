@@ -1,21 +1,22 @@
 {
     "name": "@vertesia/json",
-    "version": "1.6.0-dev.20260923.085325Z",
+    "version": "1.6.0-dev.20261022.120426Z",
     "description": "JSON utlities",
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "license": "Apache-2.0",
     "scripts": {
         "lint": "biome lint src",
         "test": "vitest run",
-        "typecheck:test": "tsc -p tsconfig.test.json --noEmit",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit",
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run clean:lib && tsc -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo"
     },
     "exports": {
@@ -44,5 +45,10 @@
         "traverse",
         "typescript"
     ],
-    "gitHead": "8732631fd8099bdcab4f5375da2309f3cff34e19"
+    "gitHead": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+    "releaseIdentity": {
+        "source_sha": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+        "dependency_sha": "93466e47b06db23ac3c800e248d170afe65e5006",
+        "lock_sha256": "117e1c8068aa07d59117323a51ceccfc96cab543e50c03eb7efc19709d6f5e6b"
+    }
 }

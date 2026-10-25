@@ -1,38 +1,18 @@
-import type { z } from 'zod';
-import type { DeleteOperationResultSchema } from './api-schemas/apikey.js';
-import type {
-    BulkObjectCreateResultSchema,
-    BulkObjectDeleteResultSchema,
-    BulkObjectUpdateResultSchema,
-    BulkOperationPayloadSchema,
-    BulkOperationResponseSchema,
-    BulkOperationResultSchema,
-} from './api-schemas/bulk-operation.js';
-import type {
-    DeleteCountResultSchema,
-    GenericCommandResponseSchema,
-    MigrationListResponseSchema,
-    RunMigrationPayloadSchema,
-    RunMigrationResponseSchema,
-} from './api-schemas/commands.js';
-import type { FindPayloadSchema } from './api-schemas/content.js';
-import type { SuccessResponseSchema } from './api-schemas/oauth.js';
-import type { CountResultSchema } from './api-schemas/project.js';
-import type { DeleteByIdResultSchema } from './api-schemas/user.js';
 import type { ContentObjectProcessingPriority } from './store/store.js';
+import type * as Wire from './wire-types.generated.js';
 
-export type FindPayload = z.infer<typeof FindPayloadSchema>;
+export type FindPayload = Wire.FindPayload;
 
-export type GenericCommandResponse = z.infer<typeof GenericCommandResponseSchema>;
+export type GenericCommandResponse = Wire.GenericCommandResponse;
 
 /**
  * Derived from `DeleteByIdResultSchema`. Shared by eight studio delete endpoints; only `DeleteUser`
  * publishes it canonically so far, and the generator fails the build if the canonical and derived
  * definitions ever differ.
  */
-export type DeleteByIdResult = z.infer<typeof DeleteByIdResultSchema>;
+export type DeleteByIdResult = Wire.DeleteByIdResult;
 
-export type DeleteCountResult = z.infer<typeof DeleteCountResultSchema>;
+export type DeleteCountResult = Wire.DeleteCountResult;
 
 /**
  * The success acknowledgement the OAuth provider and client endpoints return, inferred from
@@ -42,7 +22,7 @@ export type DeleteCountResult = z.infer<typeof DeleteCountResultSchema>;
  * scanner widened the literal on its way out. The handlers still only ever return `true`; the type
  * now says what a client can be sent rather than what our five handlers happen to send.
  */
-export type SuccessResponse = z.infer<typeof SuccessResponseSchema>;
+export type SuccessResponse = Wire.SuccessResponse;
 
 /**
  * The raw Mongo delete acknowledgement, inferred from `./api-schemas/apikey.js`.
@@ -51,7 +31,7 @@ export type SuccessResponse = z.infer<typeof SuccessResponseSchema>;
  * group — it is here rather than in an apikey module because `./common.js` is where the shared
  * result shapes live.
  */
-export type DeleteOperationResult = z.infer<typeof DeleteOperationResultSchema>;
+export type DeleteOperationResult = Wire.DeleteOperationResult;
 
 /**
  * How many rows an operation touched, inferred from `./api-schemas/project.js`.
@@ -59,17 +39,17 @@ export type DeleteOperationResult = z.infer<typeof DeleteOperationResultSchema>;
  * The module that owns it is named for the batch that converted it, not for the only resource that
  * uses it: four slots across three resources and two services return this.
  */
-export type CountResult = z.infer<typeof CountResultSchema>;
+export type CountResult = Wire.CountResult;
 
-export type BulkOperationPayload = z.infer<typeof BulkOperationPayloadSchema>;
+export type BulkOperationPayload = Wire.BulkOperationPayload;
 
-export type BulkOperationResult = z.infer<typeof BulkOperationResultSchema>;
+export type BulkOperationResult = Wire.BulkOperationResult;
 
-export type BulkObjectDeleteResult = z.infer<typeof BulkObjectDeleteResultSchema>;
+export type BulkObjectDeleteResult = Wire.BulkObjectDeleteResult;
 
-export type BulkObjectUpdateResult = z.infer<typeof BulkObjectUpdateResultSchema>;
+export type BulkObjectUpdateResult = Wire.BulkObjectUpdateResult;
 
-export type BulkObjectCreateResult = z.infer<typeof BulkObjectCreateResultSchema>;
+export type BulkObjectCreateResult = Wire.BulkObjectCreateResult;
 
 export interface BulkObjectCreateOptions {
     collection_id?: string;
@@ -86,10 +66,10 @@ export interface BulkObjectUpdateOptions {
     idempotency_key?: string;
 }
 
-export type BulkOperationResponse = z.infer<typeof BulkOperationResponseSchema>;
+export type BulkOperationResponse = Wire.BulkOperationResponse;
 
-export type RunMigrationPayload = z.infer<typeof RunMigrationPayloadSchema>;
+export type RunMigrationPayload = Wire.RunMigrationPayload;
 
-export type RunMigrationResponse = z.infer<typeof RunMigrationResponseSchema>;
+export type RunMigrationResponse = Wire.RunMigrationResponse;
 
-export type MigrationListResponse = z.infer<typeof MigrationListResponseSchema>;
+export type MigrationListResponse = Wire.MigrationListResponse;

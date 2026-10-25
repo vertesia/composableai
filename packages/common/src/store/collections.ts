@@ -1,16 +1,4 @@
-import type { z } from 'zod';
-import type {
-    CollectionChildrenUpdatePayloadSchema,
-    CollectionChildrenUpdateResultSchema,
-    CollectionMembersQuerySchema,
-    CollectionMembersUpdatePayloadSchema,
-    CollectionMembersUpdateResultSchema,
-    CollectionPropagationResponseSchema,
-    CollectionSchema,
-    CollectionSecuritySettingsResponseSchema,
-    CreateCollectionPayloadSchema,
-    UpdateCollectionPayloadSchema,
-} from '../api-schemas/content.js';
+import type * as Wire from '../wire-types.generated.js';
 import type { BaseObject } from './common.js';
 import type { ColumnLayout, ContentObjectTypeRef } from './store.js';
 
@@ -19,7 +7,7 @@ export enum CollectionStatus {
     archived = 'archived',
 }
 
-export type CreateCollectionPayload = z.infer<typeof CreateCollectionPayloadSchema>;
+export type CreateCollectionPayload = Wire.CreateCollectionPayload;
 
 export interface CollectionItem extends BaseObject {
     /**
@@ -53,7 +41,7 @@ export interface CollectionItem extends BaseObject {
     allowed_types?: string[];
 }
 
-export type Collection = z.infer<typeof CollectionSchema>;
+export type Collection = Wire.Collection;
 
 export interface DynamicCollection extends Collection {
     dynamic: true;
@@ -70,18 +58,18 @@ export interface CollectionSearchPayload {
     types?: string[];
 }
 
-export type CollectionMembersUpdateResult = z.infer<typeof CollectionMembersUpdateResultSchema>;
+export type CollectionMembersUpdateResult = Wire.CollectionMembersUpdateResult;
 
-export type CollectionSecuritySettingsResponse = z.infer<typeof CollectionSecuritySettingsResponseSchema>;
+export type CollectionSecuritySettingsResponse = Wire.CollectionSecuritySettingsResponse;
 
-export type CollectionPropagationResponse = z.infer<typeof CollectionPropagationResponseSchema>;
+export type CollectionPropagationResponse = Wire.CollectionPropagationResponse;
 
-export type CollectionChildrenUpdateResult = z.infer<typeof CollectionChildrenUpdateResultSchema>;
+export type CollectionChildrenUpdateResult = Wire.CollectionChildrenUpdateResult;
 
-export type CollectionMembersUpdatePayload = z.infer<typeof CollectionMembersUpdatePayloadSchema>;
+export type CollectionMembersUpdatePayload = Wire.CollectionMembersUpdatePayload;
 
-export type CollectionChildrenUpdatePayload = z.infer<typeof CollectionChildrenUpdatePayloadSchema>;
+export type CollectionChildrenUpdatePayload = Wire.CollectionChildrenUpdatePayload;
 
-export type CollectionMembersQuery = z.infer<typeof CollectionMembersQuerySchema>;
+export type CollectionMembersQuery = Wire.CollectionMembersQuery;
 
-export type UpdateCollectionPayload = z.infer<typeof UpdateCollectionPayloadSchema>;
+export type UpdateCollectionPayload = Wire.UpdateCollectionPayload;

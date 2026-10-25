@@ -1,7 +1,62 @@
+import type { AppInstallationPayload } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
 import { VertesiaClient } from './client.js';
 
 describe('AppsApi', () => {
+    it('retrieves an app OAuth registration with an encoded app identifier', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://api.example.com',
+            storeUrl: 'https://store.example.com',
+            fetch: vi.fn(async () => Response.json({ client_id: 'vts_shared' })),
+            onRequest: (request) => requests.push(request),
+        });
+        expect(await client.apps.getOAuthClient('app/name')).toEqual({ client_id: 'vts_shared' });
+        expect(requests[0]?.method).toBe('GET');
+        expect(requests[0]?.url).toBe('https://api.example.com/api/v1/apps/app%2Fname/oauth-client');
+    });
+
+    it('loads a package from a selected deployment alias', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json({ settings_schema: { type: 'object' } })),
+            onRequest: (request) => requests.push(request),
+        });
+
+        await client.apps.getAppPackage('sample-app', 'settings', 'customer-preview');
+
+        expect(requests[0]?.url).toBe(
+            'https://studio.example.com/api/v1/apps/sample-app/package?scope=settings&deployment_alias=customer-preview',
+        );
+    });
+
+    it('lists eligible target projects for a temporary version launch', async () => {
+        const requests: Request[] = [];
+        const fetchMock = vi.fn(async () =>
+            Response.json([
+                {
+                    project: { id: 'project-1', name: 'Project', account: 'account-1' },
+                    installation_id: 'installation-1',
+                    settings: {},
+                },
+            ]),
+        );
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: fetchMock,
+            onRequest: (request) => requests.push(request),
+        });
+
+        const targets = await client.apps.listVersionLaunchTargets('record-1');
+
+        expect(targets[0]?.project.id).toBe('project-1');
+        expect(requests[0]?.method).toBe('GET');
+        expect(requests[0]?.url).toBe('https://studio.example.com/api/v1/apps/versions/record-1/launch-targets');
+    });
+
     it('starts an in-place version rebuild without a caller-controlled payload', async () => {
         const requests: Request[] = [];
         const fetchMock = vi.fn(async () =>
@@ -129,4 +184,112 @@ describe('AppsApi', () => {
         expect(guideFile.name).toBe('guide.md');
         expect(diagramFile.size).toBe(3);
     });
+});
+
+describe('app installation instance transport', () => {
+    it('preserves old install requests and carries optional instance identity separately from settings', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            fetch: vi.fn(async () => Response.json({ id: 'installation' })),
+            onRequest: (request) => requests.push(request),
+        });
+        await client.apps.install('app', { workspace: 'default' });
+        expect(await requests[0].clone().json()).toEqual({ app_id: 'app', settings: { workspace: 'default' } });
+        await client.apps.install('app', { workspace: 'eu' }, undefined, undefined, undefined, undefined, undefined, {
+            instance_key: 'eu',
+            display_name: 'Europe',
+            namespace_overrides: { crm: 'crm_eu' },
+        });
+        expect(await requests[1].clone().json()).toEqual({
+            app_id: 'app',
+            settings: { workspace: 'eu' },
+            instance_key: 'eu',
+            display_name: 'Europe',
+            namespace_overrides: { crm: 'crm_eu' },
+        });
+        await client.apps.install(
+            'app',
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { crm: { region: 'eu' } },
+            { tenant: 'one' },
+            { instance_key: 'eu', namespace_overrides: { crm: 'crm_eu' } },
+        );
+        expect(await requests[2].clone().json()).toEqual({
+            app_id: 'app',
+            mcp_parameters: { crm: { region: 'eu' } },
+            mcp_shared_parameters: { tenant: 'one' },
+            instance_key: 'eu',
+            namespace_overrides: { crm: 'crm_eu' },
+        });
+        await client.apps.updateInstallationSettings({
+            app_id: 'installation',
+            display_name: 'Europe renamed',
+            namespace_overrides: { added: 'crm_added' },
+        });
+        expect(await requests[3].clone().json()).toEqual({
+            app_id: 'installation',
+            display_name: 'Europe renamed',
+            namespace_overrides: { added: 'crm_added' },
+        });
+        await client.apps.getAppInstallation('installation');
+        expect(requests[4].url).toContain('/apps/installations/id/installation');
+        await client.apps.setInstallationMcpApiKey('installation', 'crm', 'secret');
+        expect(requests[5].url).toContain('/apps/installations/installation/collections/crm/api-key');
+    });
+});
+
+const mcpParameterUpdates: AppInstallationPayload['mcp_parameters'][] = [
+    undefined,
+    { graph: { key: 'replacement', region: 'east' } },
+    { graph: { key: null } },
+];
+it.each(mcpParameterUpdates)(
+    'forwards MCP settings replacements, clearing and omission: %j',
+    async (mcp_parameters) => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://api.example.com',
+            storeUrl: 'https://store.example.com',
+            fetch: vi.fn(async () => Response.json({ id: 'installation-one' })),
+            onRequest: (request) => {
+                requests.push(request.clone());
+            },
+        });
+        await client.apps.updateInstallationSettings({
+            app_id: 'installation-one',
+            ...(mcp_parameters === undefined ? {} : { mcp_parameters }),
+        });
+        const body: unknown = await requests[0].json();
+        if (mcp_parameters === undefined) expect(body).not.toHaveProperty('mcp_parameters');
+        else expect(body).toMatchObject({ mcp_parameters });
+    },
+);
+
+it('forwards shared parameter replacements and clears through installation and settings updates', async () => {
+    const requests: Request[] = [];
+    const client = new VertesiaClient({
+        serverUrl: 'https://api.example.com',
+        storeUrl: 'https://store.example.com',
+        fetch: vi.fn(async () => Response.json({ id: 'installed' })),
+        onRequest: (request) => {
+            requests.push(request.clone());
+        },
+    });
+    await client.apps.install('app', undefined, undefined, undefined, undefined, undefined, {
+        tenant: 'one',
+        key: 'private',
+    });
+    await client.apps.updateInstallationSettings({
+        app_id: 'installed',
+        mcp_shared_parameters: { tenant: null, key: 'replacement' },
+    });
+    expect(await Promise.all(requests.map((request) => request.json()))).toEqual([
+        { app_id: 'app', mcp_shared_parameters: { tenant: 'one', key: 'private' } },
+        { app_id: 'installed', mcp_shared_parameters: { tenant: null, key: 'replacement' } },
+    ]);
 });

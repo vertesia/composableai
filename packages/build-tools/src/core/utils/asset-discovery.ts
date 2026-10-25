@@ -2,7 +2,7 @@
  * Utilities for discovering asset files (scripts, widgets) in skill directories
  */
 
-import { readdirSync, statSync } from 'node:fs';
+import { lstatSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import type { AssetFile } from '../types.js';
 
@@ -29,6 +29,12 @@ export interface DiscoveredAssets {
 
     /** Widget metadata for compilation */
     widgetMetadata: WidgetMetadata[];
+
+    /**
+     * Agent Skills resource files, as POSIX paths relative to the skill directory
+     * (e.g. `scripts/extract.py`, `references/REFERENCE.md`).
+     */
+    files: string[];
 
     /** Asset files to be copied */
     assetFiles: AssetFile[];
@@ -57,6 +63,48 @@ function getFilesInDirectory(dirPath: string): string[] {
     } catch {
         return [];
     }
+}
+
+/**
+ * The Agent Skills resource directories (https://agentskills.io/specification), relative to the skill
+ * directory. Unlike the flat scripts beside SKILL.md, their contents keep their relative paths.
+ */
+export const SKILL_RESOURCE_DIRS = ['scripts', 'references', 'assets'] as const;
+
+/** Where a skill's resource files are copied, relative to the assets root. */
+export const SKILL_FILES_DIR = 'skill-files';
+
+/**
+ * List the files under a directory recursively, as POSIX paths relative to `rootDir`.
+ * Hidden entries and symlinks are skipped so resources cannot escape the skill directory or form cycles.
+ */
+function listFilesRecursive(rootDir: string, relDir: string): string[] {
+    const absDir = path.join(rootDir, relDir);
+    let entries: string[];
+    try {
+        // Reject linked resource roots as well as symlinks encountered below.
+        if (!lstatSync(absDir).isDirectory()) return [];
+        entries = readdirSync(absDir);
+    } catch {
+        return [];
+    }
+    const out: string[] = [];
+    for (const entry of entries.sort()) {
+        if (entry.startsWith('.')) continue;
+        const rel = path.posix.join(relDir, entry);
+        const abs = path.join(rootDir, rel);
+        try {
+            const stat = lstatSync(abs);
+            if (stat.isDirectory()) {
+                out.push(...listFilesRecursive(rootDir, rel));
+            } else if (stat.isFile()) {
+                out.push(rel);
+            }
+        } catch {
+            // Unreadable entry: skip it like the flat scan does
+        }
+    }
+    return out;
 }
 
 /**
@@ -92,6 +140,8 @@ export function discoverSkillAssets(
     options: {
         scriptsDir?: string;
         widgetsDir?: string;
+        /** Skill name used to namespace resource files; defaults to the skill directory name. */
+        skillName?: string;
     } = {},
 ): DiscoveredAssets {
     const skillDir = path.dirname(skillFilePath);
@@ -129,10 +179,30 @@ export function discoverSkillAssets(
         }
     }
 
+    // Agent Skills resource directories keep their relative paths and are namespaced per skill, so two
+    // skills can ship files with the same name. The flat scripts above are left as they were. Only a
+    // SKILL.md owns its directory; a `*.md?skill` file may share one with other skills.
+    const resourceFiles =
+        path.basename(skillFilePath) === 'SKILL.md'
+            ? SKILL_RESOURCE_DIRS.flatMap((dir) => listFilesRecursive(skillDir, dir))
+            : [];
+    const skillName = options.skillName || path.basename(skillDir);
+    if (resourceFiles.length > 0 && (skillName === '.' || skillName === '..' || /[\\/]/.test(skillName))) {
+        throw new Error(`Invalid skill name for resource files: ${skillName}`);
+    }
+    for (const file of resourceFiles) {
+        assetFiles.push({
+            sourcePath: path.join(skillDir, file),
+            destPath: path.join(SKILL_FILES_DIR, skillName, file),
+            type: 'skill-file',
+        });
+    }
+
     return {
         scripts,
         widgets,
         widgetMetadata,
+        files: resourceFiles,
         assetFiles,
     };
 }

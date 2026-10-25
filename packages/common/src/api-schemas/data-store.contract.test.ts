@@ -43,6 +43,39 @@ describe('data-store API contracts', () => {
         ).toBe(false);
     });
 
+    it.each([
+        'customer_analytics',
+        'Sales DB 2026',
+        'e2e-test-store-1792345678901-0123456789abcdef0123456789abcdef',
+        'a',
+        'v1.2',
+        'données clients',
+        '売上',
+        'x'.repeat(128),
+    ])('accepts the store name %j', (name) => {
+        expect(validateApiRequest('CreateDataStorePayload', { name }).valid).toBe(true);
+    });
+
+    it.each([
+        ['empty', ''],
+        ['too long', 'x'.repeat(129)],
+        ['a parent segment', '..'],
+        ['a current segment', '.'],
+        ['a traversal', '../zap-probe-traversal'],
+        ['a slash', 'team/sales'],
+        ['a backslash', 'team\\sales'],
+        ['a leading dot', '.hidden'],
+        ['a leading space', ' sales'],
+        ['a trailing space', 'sales '],
+        ['a NUL', 'sales\u0000'],
+        ['a newline', 'sales\nreport'],
+        ['a tab', 'sales\treport'],
+        ['DEL', 'sales\u007f'],
+        ['a C1 control', 'sales\u0085'],
+    ])('rejects a store name with %s', (_case, name) => {
+        expect(validateApiRequest('CreateDataStorePayload', { name }).valid).toBe(false);
+    });
+
     it('enforces every alter-table discriminator branch', () => {
         expect(
             validateApiRequest('AlterTablePayload', {
@@ -53,6 +86,26 @@ describe('data-store API contracts', () => {
         expect(
             validateApiRequest('AlterTablePayload', {
                 changes: [{ op: 'rename_column', from: 'old_name', column: 'new_name' }],
+            }).valid,
+        ).toBe(false);
+    });
+
+    it('accepts foreign keys added to and dropped from an existing table', () => {
+        expect(
+            validateApiRequest('AlterTablePayload', {
+                changes: [
+                    {
+                        op: 'add_foreign_key',
+                        foreign_key: { column: 'customer_id', references_table: 'customers', references_column: 'id' },
+                    },
+                    { op: 'drop_foreign_key', column: 'product_id' },
+                ],
+            }).valid,
+        ).toBe(true);
+
+        expect(
+            validateApiRequest('AlterTablePayload', {
+                changes: [{ op: 'add_foreign_key', foreign_key: { column: 'customer_id' } }],
             }).valid,
         ).toBe(false);
     });

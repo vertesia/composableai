@@ -25,6 +25,14 @@ export function makeScriptUrl(origin: string, script: string) {
     return join(origin, join('/scripts', script));
 }
 
+/**
+ * URL of an Agent Skills resource file, which the build copies to `skill-files/<skill>/<path>`.
+ */
+export function makeSkillFileUrl(origin: string, skillName: string, filePath: string) {
+    const encodedPath = filePath.split('/').map(encodeURIComponent).join('/');
+    return join(origin, `/skill-files/${encodeURIComponent(skillName)}/${encodedPath}`);
+}
+
 export function join(left: string, right: string) {
     if (left.endsWith('/')) {
         if (right.startsWith('/')) {

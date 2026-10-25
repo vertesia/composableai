@@ -92,8 +92,8 @@ it('uses the shared full-screen branded loader while projects load', () => {
         </BrandingContext.Provider>,
     );
     const status = screen.getByRole('status');
-    expect(status.style.position).toBe('fixed');
-    expect(status.style.inset).toBe('0px');
+    expect(status.classList.contains('fixed')).toBe(true);
+    expect(status.classList.contains('inset-0')).toBe(true);
     expect(status.querySelector('.vertesia-loading-motion')).not.toBeNull();
     expect(status.querySelector('img.vertesia-loading-icon')).not.toBeNull();
 });

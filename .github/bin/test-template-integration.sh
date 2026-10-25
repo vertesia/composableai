@@ -293,7 +293,8 @@ echo ""
 echo "=== Bootstrapped package.json ==="
 cat "${TEST_PROJECT_DIR}/package.json"
 
-build_project
+VERCEL=1 VITE_AUTH_MODE=central VITE_OAUTH_CLIENT_ID=vts_integration_app build_project
+pnpm --filter @vertesia/create-plugin test:vercel "$TEST_PROJECT_DIR"
 
 # Dev scaffold (module-selected examples and UI modules) built with npm.
 echo ""
@@ -301,7 +302,11 @@ echo "--- Mode: dev (--module dev scaffold, npm) ---"
 TEST_PROJECT_DIR_NPM=""
 EXTRA_CREATE_ARGS="${EXTRA_CREATE_ARGS} --module dev" bootstrap_template "integration-test-plugin-npm" npm
 TEST_PROJECT_DIR_NPM="$TEST_PROJECT_DIR"
-build_project_npm
+VERCEL=1 VITE_AUTH_MODE=firebase \
+  VITE_FIREBASE_API_KEY=test-public-key VITE_FIREBASE_AUTH_DOMAIN=test.firebaseapp.com \
+  VITE_FIREBASE_PROJECT_ID=test VITE_FIREBASE_APP_ID=test-app \
+  VITE_FIREBASE_MESSAGING_SENDER_ID=123 build_project_npm
+pnpm --filter @vertesia/create-plugin test:vercel "$TEST_PROJECT_DIR"
 
 echo ""
 echo "Template integration test passed (minimal + dev)!"

@@ -23,6 +23,7 @@
     "noUncheckedSideEffectImports": true
   },
   "include": [
+    "api/**/*.ts",
     "vite.config.ts",
     "playwright.config.ts",
     "tests/e2e/**/*.ts"

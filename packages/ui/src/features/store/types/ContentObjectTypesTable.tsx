@@ -1,4 +1,4 @@
-import type { ContentObjectTypeItem } from '@vertesia/common';
+import type { ContentObjectTypeItem, ContentObjectTypeStatus } from '@vertesia/common';
 import { Badge, Button, CopyButton, Table, TableHeaderCell, TBody, THead, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useNavigate } from '@vertesia/ui/router';
@@ -102,7 +102,7 @@ export function ContentObjectTypesTable({
                                 <Badge variant="outline">{t(presentation.natureLabelKey)}</Badge>
                             </td>
                             <td>
-                                <Badge variant={presentation.statusVariant}>{t(presentation.statusLabelKey)}</Badge>
+                                <TypeStatusBadge status={obj.status} />
                             </td>
                             <td>{obj.strict_mode ? 'Yes' : 'No'}</td>
                             <td>{obj.is_chunkable ? 'Yes' : 'No'}</td>
@@ -116,5 +116,18 @@ export function ContentObjectTypesTable({
                 })}
             </TBody>
         </Table>
+    );
+}
+
+/** A type stored before `status` existed has none; the stored model defaults it to active. */
+function TypeStatusBadge({ status = 'active' }: { status?: ContentObjectTypeStatus }) {
+    const { t } = useUITranslation();
+    if (status === 'active') {
+        return <Badge variant="success">{t('store.typeStatus.active')}</Badge>;
+    }
+    return (
+        <VTooltip description={t('store.typeStatus.draftHint')}>
+            <Badge variant="attention">{t('store.typeStatus.draft')}</Badge>
+        </VTooltip>
     );
 }

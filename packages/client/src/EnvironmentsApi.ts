@@ -15,6 +15,8 @@ import type {
     ExecutionEnvironmentUpdatePayload,
     MigrateInteractionsPayload,
     MigrateInteractionsResult,
+    RunBudgetCapability,
+    RunBudgetCapabilityQuery,
 } from '@vertesia/common';
 
 export default class EnvironmentsApi extends ApiTopic {
@@ -36,6 +38,10 @@ export default class EnvironmentsApi extends ApiTopic {
         return this.post('/', {
             payload,
         });
+    }
+
+    runBudgetCapability(id: string, query: RunBudgetCapabilityQuery): Promise<RunBudgetCapability> {
+        return this.get(`/${id}/run-budget-capability`, { query });
     }
 
     retrieve(id: string): Promise<ExecutionEnvironment> {

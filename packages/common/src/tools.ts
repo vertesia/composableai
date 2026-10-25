@@ -1,39 +1,26 @@
-import type { z } from 'zod';
-import type {
-    AggregatedToolSchema,
-    InspectProjectToolQuerySchema,
-    ListProjectToolsQuerySchema,
-    ProcessToolCompatibilityReasonSchema,
-    ProcessToolCompatibilitySchema,
-    ToolInspectionSchema,
-    ToolRuntimeContextSchema,
-    ToolSourceSchema,
-    ToolValidationResultSchema,
-    ValidateToolNamesPayloadSchema,
-    ValidateToolNamesResponseSchema,
-} from './api-schemas/tools.js';
+import type * as Wire from './wire-types.generated.js';
 
 // The unified project-scoped tool registry, inferred from `./api-schemas/tools.js`. The
 // documentation for each member lives on the schema, which is what the OpenAPI document publishes.
 
-export type ToolSource = z.infer<typeof ToolSourceSchema>;
+export type ToolSource = Wire.ToolSource;
 
-export type AggregatedTool = z.infer<typeof AggregatedToolSchema>;
+export type AggregatedTool = Wire.AggregatedTool;
 
-export type ToolRuntimeContext = z.infer<typeof ToolRuntimeContextSchema>;
+export type ToolRuntimeContext = Wire.ToolRuntimeContext;
 
-export type ProcessToolCompatibilityReason = z.infer<typeof ProcessToolCompatibilityReasonSchema>;
+export type ProcessToolCompatibilityReason = Wire.ProcessToolCompatibilityReason;
 
-export type ProcessToolCompatibility = z.infer<typeof ProcessToolCompatibilitySchema>;
+export type ProcessToolCompatibility = Wire.ProcessToolCompatibility;
 
-export type InspectProjectToolQuery = z.infer<typeof InspectProjectToolQuerySchema>;
+export type InspectProjectToolQuery = Wire.InspectProjectToolQuery;
 
-export type ToolInspection = z.infer<typeof ToolInspectionSchema>;
+export type ToolInspection = Wire.ToolInspection;
 
-export type ListProjectToolsQuery = z.infer<typeof ListProjectToolsQuerySchema>;
+export type ListProjectToolsQuery = Wire.ListProjectToolsQuery;
 
-export type ToolValidationResult = z.infer<typeof ToolValidationResultSchema>;
+export type ToolValidationResult = Wire.ToolValidationResult;
 
-export type ValidateToolNamesPayload = z.infer<typeof ValidateToolNamesPayloadSchema>;
+export type ValidateToolNamesPayload = Wire.ValidateToolNamesPayload;
 
-export type ValidateToolNamesResponse = z.infer<typeof ValidateToolNamesResponseSchema>;
+export type ValidateToolNamesResponse = Wire.ValidateToolNamesResponse;

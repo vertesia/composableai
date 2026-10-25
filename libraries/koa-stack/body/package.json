@@ -4,13 +4,14 @@
     "description": "Expose the request body as a promise in koa Context.body",
     "type": "module",
     "scripts": {
-        "build": "tsc -p tsconfig.json",
+        "build": "tsc --checkers 1 -p tsconfig.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
         "test": "echo \"Error: no test specified\""
     },
     "files": [
         "lib",
-        "src"
+        "src",
+        "!src/**/*.test.*"
     ],
     "keywords": [
         "koa",
@@ -38,7 +39,7 @@
         "@types/koa": "^3.0.3",
         "@types/qs": "^6.15.1",
         "@vertesia/tsconfig": "workspace:*",
-        "fast-xml-parser": "^5.11.1",
+        "fast-xml-parser": "^5.11.2",
         "typescript": "catalog:"
     },
     "main": "./lib/index.js",

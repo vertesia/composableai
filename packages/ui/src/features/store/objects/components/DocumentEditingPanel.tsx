@@ -132,8 +132,9 @@ function createDocumentEditingPrompt(
         'the artifact back to the canonical document with the Save to document button, which enforces the base ETag.',
         '',
         'You may use execute_shell to regenerate charts, diagrams, and other derived assets. Write generated files',
-        "under '/home/daytona/out/' so they sync back to the run, then reference them from Markdown with a run-local",
-        "link such as 'artifact:out/chart.png'. Saving the document persists and rewrites those links automatically.",
+        'under ~/out/ so they sync back to the run; leave ~ unquoted in shell commands so it expands. Reference',
+        "them from Markdown with a run-local link such as 'artifact:out/chart.png'. Saving the document persists",
+        'and rewrites those links automatically.',
         '',
         'Images: never inline image data as base64 data URIs — it bloats the document and cannot be reliably edited.',
         "Keep existing image references (e.g. 'artifact:documents/…' URLs) exactly as they are: they point to durable",
@@ -901,7 +902,7 @@ export function DocumentEditingWorkspace({
     }, [agentRunId, draftPath, isEditingLocked, isSendingChanges, messageRef, t, toast]);
 
     return (
-        <div className="flex h-full min-h-0 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-mixer-muted/20 px-4">
                 <div className="min-w-0">
                     <div className="truncate font-semibold">{object.name || object.content?.name}</div>
@@ -1224,7 +1225,9 @@ export function DocumentEditingPanel({
             size="full"
             noCloseButton
             disableCloseOnClickOutside
-            className="gap-0 overflow-hidden p-0"
+            // Flex instead of DialogContent's default grid: its implicit `auto` track grows to the content's
+            // min-content width, so wide agent output would push the chat pane out of view.
+            className="flex flex-col gap-0 overflow-hidden p-0"
             description={t('agent.documentEditingWelcome')}
         >
             <DocumentEditingWorkspace

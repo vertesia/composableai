@@ -1,9 +1,8 @@
-import fs from 'node:fs';
 import { log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, WorkflowParamNotFoundError } from '../../errors.js';
-import { saveBlobToTempFile } from '../../utils/blobs.js';
+import { withBlobTempFile } from '../../utils/blobs.js';
 import { type ImageRenditionParams, uploadRenditionPages } from '../../utils/renditions.js';
 
 interface GenerateImageRenditionParams extends ImageRenditionParams {}
@@ -65,17 +64,14 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
         );
     }
 
-    let imageFile: string | undefined;
+    //IF no etag, log and use use object id as etag
+    if (!inputObject.content.etag) {
+        log.debug(`Document ${objectId} has no etag, using object id as etag`);
+    }
+    const contentEtag = inputObject.content.etag ?? inputObject.id;
 
-    try {
-        imageFile = await saveBlobToTempFile(client, inputObject.content.source);
+    return withBlobTempFile(client, inputObject.content.source, undefined, async (imageFile) => {
         log.debug(`Image ${objectId} copied to ${imageFile}`);
-
-        //IF no etag, log and use use object id as etag
-        if (!inputObject.content.etag) {
-            log.debug(`Document ${objectId} has no etag, using object id as etag`);
-        }
-        const contentEtag = inputObject.content.etag ?? inputObject.id;
 
         const uploaded = await uploadRenditionPages(client, contentEtag, [imageFile], params);
 
@@ -89,13 +85,5 @@ export async function generateImageRendition(payload: DSLActivityExecutionPayloa
             format: params.format,
             status: 'success',
         };
-    } finally {
-        if (imageFile) {
-            try {
-                await fs.promises.unlink(imageFile);
-            } catch (err) {
-                log.warn(`Failed to clean temporary image file for ${objectId}`, { err });
-            }
-        }
-    }
+    });
 }

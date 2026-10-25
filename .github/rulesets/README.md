@@ -37,3 +37,9 @@ the production line and must be CodeQL-gated. This repo uses CodeQL **default
 setup**, which scans pull requests targeting the default branch *or any protected
 branch* — so protecting `release/**` (this ruleset) makes those scans run
 automatically, with no advanced-setup workflow required.
+
+## CI approval gate
+
+`ci-approval.json` is an additive required-status ruleset for `main` and `release/**`.
+Install and validate the workflow before importing it. It preserves existing human
+review settings. See [activation and verification](../bin/ci-approve.md#activation).

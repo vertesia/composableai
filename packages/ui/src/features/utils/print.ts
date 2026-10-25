@@ -1,17 +1,17 @@
 /**
  * Print styles for markdown content export to PDF.
  * These styles ensure tables and other elements render properly in print mode,
- * independent from the application theme.
+ * using the active application theme.
  */
 const PRINT_STYLES = `
 @media print {
   body {
     margin: 24px;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: var(--font-sans, system-ui, sans-serif);
     font-size: 14px;
     line-height: 1.5;
-    color: #111827;
-    background-color: #ffffff;
+    color: var(--foreground, #111827);
+    background-color: var(--background, #ffffff);
   }
 
   .vprose {
@@ -59,13 +59,13 @@ const PRINT_STYLES = `
 
   .vprose th,
   .vprose td {
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--border, #d1d5db);
     padding: 0.5rem 0.75rem;
     vertical-align: top;
   }
 
   .vprose thead th {
-    background-color: #f3f4f6;
+    background-color: var(--muted-background, #f3f4f6);
     font-weight: 600;
   }
 
@@ -78,8 +78,8 @@ const PRINT_STYLES = `
   .vprose pre {
     padding: 0.75rem;
     border-radius: 4px;
-    border: 1px solid #e5e7eb;
-    background-color: #f9fafb;
+    border: 1px solid var(--border, #e5e7eb);
+    background-color: var(--muted-background, #f9fafb);
     white-space: pre-wrap;
     word-break: break-word;
   }

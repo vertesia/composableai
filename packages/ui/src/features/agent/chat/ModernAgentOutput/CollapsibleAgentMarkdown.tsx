@@ -3,15 +3,9 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { MarkdownRenderer, type MarkdownRendererProps } from '@vertesia/ui/widgets';
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { AGENT_PROSE_CLASS } from './agentMarkdownStyles.js';
 
-/** Prose styling used for agent/model message markdown, shared across the conversation UI. */
-export const AGENT_PROSE_CLASS = [
-    'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/80',
-    'prose-p:my-2 prose-p:leading-6 prose-li:my-0.5 prose-pre:my-3 prose-headings:tracking-normal',
-    'prose-headings:text-foreground prose-strong:text-foreground prose-code:text-foreground',
-    'prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4',
-    '[&_p]:text-foreground/80 [&_li]:text-foreground/80 [&_li::marker]:text-muted',
-].join(' ');
+export { AGENT_PROSE_CLASS } from './agentMarkdownStyles.js';
 
 /** Clamp applied to collapsed markdown. Kept as a literal so Tailwind emits the utility. */
 export const AGENT_LINE_CLAMP_CLASS =

@@ -35,14 +35,19 @@ async function main() {
         location_slug: string;
         audience: string;
     };
-    const summary = await client.interactions.executeByName(GUIDE_SUMMARIZER_INTERACTION, {
-        data: {
-            guide_title: properties.title,
-            body: properties.body,
-            location: properties.location_slug,
-            audience: properties.audience,
+    const summary = await client.interactions.executeByName(
+        GUIDE_SUMMARIZER_INTERACTION,
+        {
+            data: {
+                guide_title: properties.title,
+                body: properties.body,
+                location: properties.location_slug,
+                audience: properties.audience,
+            },
         },
-    });
+        undefined,
+        { query: { include_prompt: false } },
+    );
 
     const processRun = await client.agents.start({
         process_id: GUIDE_REVIEW_PROCESS,

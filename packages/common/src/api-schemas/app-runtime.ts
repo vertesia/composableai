@@ -8,6 +8,7 @@ import type { InCodeProcessDefinition } from '../store/process.js';
 import { SystemRolesSchema } from './apikey.js';
 import {
     AgentToolDefinitionSchema,
+    AppDeploymentAliasSchema,
     AppInstallationOAuthBindingSchema,
     AppInstallationProviderBindingSchema,
     AppVersionRecordSchema,
@@ -20,6 +21,7 @@ import {
     AppSourceConfigSchema,
     AppUIConfigSchema,
     MCPOAuthConfigSchema,
+    McpConnectionParameterSchema,
     ToolCollectionObjectSchema,
 } from './apps.js';
 import { AuditMeterSchema } from './audit-trail.js';
@@ -42,6 +44,16 @@ import { ViewExperienceConfigurationSchema } from './view-execution.js';
 const JSONSchemaRefSchema: z.ZodType<JSONSchema> = z.any().meta({
     $ref: '#/components/schemas/JSONSchema',
 });
+
+export const AppDeploymentAliasTargetSchema = z
+    .strictObject({
+        version_id: z.string().min(1).meta({ description: 'Immutable AppGen version id.' }),
+        version_record_id: z
+            .string()
+            .min(1)
+            .meta({ description: 'Globally unique app-version record id used to resolve the exact build.' }),
+    })
+    .meta({ id: 'AppDeploymentAliasTarget' });
 
 export const ProjectPluginArraySchema = z.array(z.string()).meta({ id: 'ProjectPluginArray' });
 
@@ -262,12 +274,32 @@ const appOAuthApprovalSchema = z.strictObject({
     approved_at: z.string(),
 });
 
+const mcpConfigurationSchema = z.strictObject({
+    revision: z.string(),
+    values: z.record(z.string(), z.record(z.string(), z.string())),
+    configured_secrets: z.record(z.string(), z.array(z.string())),
+    shared_values: z.record(z.string(), z.string()).optional(),
+    configured_shared_secrets: z.array(z.string()).optional(),
+});
+
 export const AppInstallationSchema = z
     .strictObject({
         id: z.string(),
         project: z.string(),
+        instance_key: z.string().optional(),
+        display_name: z.string().optional(),
+        installation_version: z.literal(1).optional(),
+        namespace_overrides: z.record(z.string(), z.string()).optional(),
+        reserved_namespaces: z.array(z.string()).min(1).optional(),
+        namespace_conflicts: z.array(z.string()).optional(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                'Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time.',
+        }).optional(),
         manifest: z.string(),
+        mcp_configuration: mcpConfigurationSchema.optional(),
         oauth_approval: appOAuthApprovalSchema.optional(),
+        oauth_client_id: z.string().optional(),
         settings: z.looseObject({}).optional(),
         tool_allowlist: z
             .array(z.string())
@@ -336,9 +368,37 @@ export const AppDashboardDefinitionSchema = z
             'Dashboard definition contributed by an app package.\n\nApp dashboard IDs are local to the app. The platform exposes them as `app:<app_name>:<id>` when listing or retrieving dashboards.',
     });
 
+export const AppOAuthClientConfigSchema = z
+    .strictObject({
+        redirect_uris: z.array(z.string().url()).min(1),
+        require_consent: z.boolean().optional().meta({
+            description:
+                'Deprecated compatibility field. Vertesia-managed apps are authorized by project installation approval, while generic third-party OAuth clients retain per-user consent.',
+        }),
+    })
+    .meta({
+        id: 'AppOAuthClientConfig',
+        description:
+            'Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs.',
+    });
+
 export const AppManifestDataSchema = z
     .strictObject({
-        oauth_scopes: z.array(z.string()).optional(),
+        parameters: z
+            .record(z.string().regex(/^[a-z][a-z0-9_]*$/), McpConnectionParameterSchema)
+            .optional()
+            .meta({
+                description:
+                    'Shared MCP installation parameters available to every collection. Collection-local names must not overlap.',
+            }),
+        oauth_scopes: z
+            .array(z.string())
+            .meta({
+                description:
+                    'Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling.',
+            })
+            .optional(),
+        oauth_client: AppOAuthClientConfigSchema.optional(),
         name: z.string().meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
         }),
@@ -519,7 +579,15 @@ export const CompositeAppMessageOverridesSchema = z
 
 export const AppManifestSchema = z
     .strictObject({
-        oauth_scopes: z.array(z.string()).optional(),
+        parameters: AppManifestDataSchema.shape.parameters,
+        oauth_scopes: z
+            .array(z.string())
+            .meta({
+                description:
+                    'Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling.',
+            })
+            .optional(),
+        oauth_client: AppOAuthClientConfigSchema.optional(),
         edit_revision: EditRevisionSchema,
         name: z.string().meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
@@ -601,6 +669,12 @@ export const AppManifestSchema = z
             .string()
             .meta({ description: 'Optional app version string (e.g. "1.0.0") — informational.' })
             .optional(),
+        deployment_aliases: z
+            .record(AppDeploymentAliasSchema, AppDeploymentAliasTargetSchema)
+            .meta({
+                description: 'Vertesia-managed mapping from stable deployment aliases to immutable AppGen versions.',
+            })
+            .optional(),
         source: AppManifestSourceSchema.meta({
             description: 'Source metadata for generated or synced app manifests.',
         }).optional(),
@@ -639,7 +713,19 @@ export const AppInstallationWithManifestSchema = z
     .strictObject({
         id: z.string(),
         project: z.string(),
+        instance_key: z.string().optional(),
+        display_name: z.string().optional(),
+        installation_version: z.literal(1).optional(),
+        namespace_overrides: z.record(z.string(), z.string()).optional(),
+        reserved_namespaces: z.array(z.string()).min(1).optional(),
+        namespace_conflicts: z.array(z.string()).optional(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                'Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time.',
+        }).optional(),
+        mcp_configuration: mcpConfigurationSchema.optional(),
         oauth_approval: appOAuthApprovalSchema.optional(),
+        oauth_client_id: z.string().optional(),
         settings: z.looseObject({}).optional(),
         tool_allowlist: z
             .array(z.string())
@@ -685,7 +771,19 @@ export const AppInstallationListEntrySchema = z
     .strictObject({
         id: z.string(),
         project: z.string(),
+        instance_key: z.string().optional(),
+        display_name: z.string().optional(),
+        installation_version: z.literal(1).optional(),
+        namespace_overrides: z.record(z.string(), z.string()).optional(),
+        reserved_namespaces: z.array(z.string()).min(1).optional(),
+        namespace_conflicts: z.array(z.string()).optional(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                'Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time.',
+        }).optional(),
+        mcp_configuration: mcpConfigurationSchema.optional(),
         oauth_approval: appOAuthApprovalSchema.optional(),
+        oauth_client_id: z.string().optional(),
         settings: z.looseObject({}).optional(),
         tool_allowlist: z
             .array(z.string())
@@ -922,9 +1020,13 @@ export const AppEventSubscriptionDefinitionSchema = z
 
 export const AppPackageSchema = z
     .strictObject({
+        oauth_client: AppOAuthClientConfigSchema.optional(),
         oauth_scopes: z
             .array(z.string())
-            .meta({ description: 'OAuth scopes requested by the app. Users must consent to project permissions.' })
+            .meta({
+                description:
+                    'Scopes requested by app code. These do not replace the publisher-managed permission ceiling in the app manifest.',
+            })
             .optional(),
         ui: AppUIConfigSchema.meta({ description: 'The UI configuration of the app' }).optional(),
         tools: z

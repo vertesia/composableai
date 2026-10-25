@@ -9,7 +9,7 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path, { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { rawTransformer } from '../src/core/transformers/raw.js';
 import { skillTransformer } from '../src/core/transformers/skill.js';
@@ -87,6 +87,58 @@ describe('transformImports — end to end', () => {
 
         // Widget was bundled to lib/widgets/widget.js.
         expect(existsSync(join(libDir, 'widgets', 'widget.js'))).toBe(true);
+    });
+
+    it('copies Agent Skills resource directories under skill-files/<skill name>, keeping relative paths', async () => {
+        cpSync(join(FIXTURE_ROOT, 'spec-skill'), join(srcDir, 'spec-skill'), { recursive: true });
+        writeFileSync(join(libDir, 'index.js'), `import skill from "./spec-skill/SKILL.md";\nexport default skill;\n`);
+
+        const result = await transformImports({ libDir, srcDir, transformers: [skillTransformer] });
+
+        // One flat script plus four resource files; the hidden file is skipped.
+        expect(result.assetsCopied).toBe(5);
+        expect(readFileSync(join(libDir, 'scripts', 'helper.py'), 'utf-8')).toBe(
+            readFileSync(join(srcDir, 'spec-skill', 'helper.py'), 'utf-8'),
+        );
+        // Namespaced by the frontmatter name, not the directory name.
+        const skillFiles = join(libDir, 'skill-files', 'pdf-processing');
+        for (const file of [
+            'scripts/extract.py',
+            'scripts/helpers/util.py',
+            'references/REFERENCE.md',
+            'assets/template.txt',
+        ]) {
+            expect(readFileSync(join(skillFiles, file), 'utf-8')).toBe(
+                readFileSync(join(srcDir, 'spec-skill', file), 'utf-8'),
+            );
+        }
+        expect(existsSync(join(skillFiles, 'scripts', '.hidden'))).toBe(false);
+        expect(existsSync(join(libDir, 'skill-files', 'spec-skill'))).toBe(false);
+
+        const chunk = readFileSync(join(libDir, 'spec-skill', 'SKILL.md.js'), 'utf-8');
+        expect(chunk).toContain('"references/REFERENCE.md"');
+    });
+
+    it('preserves the copied resource namespace when properties.ts overrides the skill name', async () => {
+        const skillDir = join(srcDir, 'spec-skill');
+        const compiledSkillDir = join(libDir, 'spec-skill');
+        cpSync(join(FIXTURE_ROOT, 'spec-skill'), skillDir, { recursive: true });
+        mkdirSync(compiledSkillDir);
+        writeFileSync(join(workDir, 'package.json'), '{"type":"module"}');
+        writeFileSync(join(skillDir, 'properties.ts'), "export default { name: 'renamed-pdf' };\n");
+        writeFileSync(join(compiledSkillDir, 'properties.js'), "export default { name: 'renamed-pdf' };\n");
+        writeFileSync(join(libDir, 'index.js'), 'import skill from "./spec-skill/SKILL.md"; export default skill;\n');
+
+        await transformImports({ libDir, srcDir, transformers: [skillTransformer] });
+        const { default: skill } = await import(pathToFileURL(join(compiledSkillDir, 'SKILL.md.js')).href);
+
+        expect(skill.name).toBe('renamed-pdf');
+        expect(skill.files_namespace).toBe('pdf-processing');
+        expect(skill.files).toContain('assets/template.txt');
+        expect(readFileSync(join(libDir, 'skill-files', skill.files_namespace, 'assets/template.txt'), 'utf8')).toBe(
+            'template\n',
+        );
+        expect(existsSync(join(libDir, 'skill-files', skill.name))).toBe(false);
     });
 
     it('deduplicates chunk emission when the same import appears in multiple files', async () => {

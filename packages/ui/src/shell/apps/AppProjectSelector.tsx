@@ -1,7 +1,6 @@
 import type { ProjectRef, RequireAtLeastOne } from '@vertesia/common';
 import { errorMessage, SelectBox, useFetch } from '@vertesia/ui/core';
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from '@vertesia/ui/session';
-import { useState } from 'react';
+import { rememberScopeSelection, useUserSession } from '@vertesia/ui/session';
 
 interface AppProjectSelectorProps {
     app: RequireAtLeastOne<{ id?: string; name?: string }, 'id' | 'name'>;
@@ -9,61 +8,42 @@ interface AppProjectSelectorProps {
     onChange?: (value: ProjectRef) => void | boolean;
     placeholder?: string;
 }
-export function AppProjectSelector({ app, onChange, placeholder }: AppProjectSelectorProps) {
+
+/**
+ * Picks the project an app runs in. The selection always shows the session's project: picking
+ * another one loads the page in it (unless `onChange` handles the switch itself), so the view
+ * never renders one project's data under another project's name.
+ */
+export function AppProjectSelector({ app, onChange, placeholder = 'Select Project' }: AppProjectSelectorProps) {
     const { client, project } = useUserSession();
     const { data: projects, error } = useFetch(() => {
         return client.apps.getAppInstallationProjects(app);
     }, [app.id, app.name]);
 
-    const _onChange = (project: ProjectRef) => {
-        if (onChange) {
-            if (!onChange(project)) {
-                // if onChange returns true then the defualt on change is called
-                return;
-            }
+    const _onChange = (selected: ProjectRef) => {
+        if (selected.id === project?.id) {
+            return;
         }
-        // default on change
-        localStorage.setItem(LastSelectedAccountId_KEY, project.account);
-        localStorage.setItem(`${LastSelectedProjectId_KEY}-${project.account}`, project.id);
-        window.location.reload();
+        // A handler returning true also runs the default switch.
+        if (onChange && !onChange(selected)) {
+            return;
+        }
+        rememberScopeSelection(selected.account, selected.id);
+        // Explicit URL scope, so the pick also overrides configured workspace defaults on the next load.
+        const url = new URL(location.href);
+        url.searchParams.set('a', selected.account);
+        url.searchParams.set('p', selected.id);
+        location.assign(url.toString());
     };
 
     if (error) {
         return <span className="text-destructive">Error: failed to fetch projects: {errorMessage(error)}</span>;
     }
     return (
-        <SelectProject
-            placeholder={placeholder}
-            initialValue={project?.id}
-            projects={projects || []}
-            onChange={_onChange}
-        />
-    );
-}
-
-interface SelectProjectProps {
-    initialValue?: string;
-    projects: ProjectRef[];
-    onChange: (value: ProjectRef) => void;
-    placeholder?: string;
-}
-function SelectProject({
-    initialValue,
-    projects,
-    onChange,
-    placeholder = 'Select Project',
-}: Readonly<SelectProjectProps>) {
-    const [value, setValue] = useState<ProjectRef | undefined>();
-    const _onChange = (value: ProjectRef) => {
-        setValue(value);
-        onChange(value);
-    };
-    const actualValue = !value && initialValue ? projects.find((p) => p.id === initialValue) : value;
-    return (
         <SelectBox
             by="id"
-            value={actualValue}
-            options={projects}
+            value={projects?.find((p) => p.id === project?.id)}
+            options={projects || []}
             optionLabel={(option) => option.name}
             placeholder={placeholder}
             onChange={_onChange}

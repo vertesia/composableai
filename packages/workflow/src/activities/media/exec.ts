@@ -1,6 +1,6 @@
-import { type ExecFileOptions, execFile as execFileCallback, spawn } from 'node:child_process';
+import { type ChildProcess, type ExecFileOptions, execFile as execFileCallback, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import { Context } from '@temporalio/activity';
+import { ApplicationFailure, Context } from '@temporalio/activity';
 
 const execFileAsync = promisify(execFileCallback);
 
@@ -8,6 +8,9 @@ const execFileAsync = promisify(execFileCallback);
 export const FFMPEG_MAX_BUFFER = 1024 * 1024 * 10;
 
 const MAX_COMMAND_TIMEOUT_MARGIN_MS = 60_000;
+
+/** How long a stopped child gets to exit after its kill signal before it is killed outright. */
+const CHILD_EXIT_GRACE_MS = 5_000;
 
 /** Terminate an ffmpeg child that makes no encoding progress for this long, so Temporal can retry it promptly. */
 const FFMPEG_STALL_TIMEOUT_MS = 120_000;
@@ -60,12 +63,39 @@ export async function execActivityFile(
     const activityTimeoutMs = getActivityCommandTimeoutMs();
     const configuredTimeoutMs = options.timeout && options.timeout > 0 ? options.timeout : activityTimeoutMs;
 
-    return (await execFileAsync(command, args, {
+    const execution = execFileAsync(command, args, {
         ...options,
         encoding: 'utf8',
         signal: Context.current().cancellationSignal,
         timeout: Math.min(configuredTimeoutMs, activityTimeoutMs),
-    })) as { stdout: string; stderr: string };
+    });
+    try {
+        return (await execution) as { stdout: string; stderr: string };
+    } catch (err: unknown) {
+        // On cancellation execFile rejects as soon as it signals the child, not once the child has exited. Wait for it,
+        // so a caller removing the child's files cannot race a child that is still writing them.
+        await waitForChildExit(execution.child);
+        throw err;
+    }
+}
+
+/** Wait for a signalled child to exit, killing it outright if it outlives the grace period. */
+async function waitForChildExit(child: ChildProcess): Promise<void> {
+    if (child.pid === undefined || child.exitCode !== null || child.signalCode !== null) {
+        return;
+    }
+    await new Promise<void>((resolve) => {
+        const forceKill = setTimeout(() => child.kill('SIGKILL'), CHILD_EXIT_GRACE_MS);
+        // A child that does not report its exit even after SIGKILL must not block the caller forever.
+        const giveUp = setTimeout(done, 2 * CHILD_EXIT_GRACE_MS);
+        function done() {
+            clearTimeout(forceKill);
+            clearTimeout(giveUp);
+            child.off('exit', done);
+            resolve();
+        }
+        child.once('exit', done);
+    });
 }
 
 export interface ProgressAwareOptions {
@@ -251,6 +281,14 @@ export async function execActivityFileWithProgress(
             }),
         );
     });
+}
+
+/** Failure `type` of a file without a usable video stream: a property of the content, logged at warn. */
+export const UNUSABLE_VIDEO_CONTENT = 'UnusableVideoContent';
+
+/** Whether a failure is the {@link UNUSABLE_VIDEO_CONTENT} raised by a metadata probe, which already logged it. */
+export function isUnusableVideoContent(error: unknown): error is ApplicationFailure {
+    return error instanceof ApplicationFailure && error.type === UNUSABLE_VIDEO_CONTENT;
 }
 
 /**

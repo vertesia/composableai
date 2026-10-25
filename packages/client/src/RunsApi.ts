@@ -8,6 +8,7 @@ import type {
     ExecutionRunRef,
     FindPayload,
     FindRunResult,
+    GetRunQuery,
     InteractionExecutionResult,
     PopulatedExecutionRun,
     RunClonePayload,
@@ -67,10 +68,14 @@ export class RunsApi extends ApiTopic {
      * Get a run by id
      *
      * @param id
+     * @param query response options, e.g. `{ include_prompt: false }` to omit the rendered prompt
      * @returns InteractionResult
      **/
-    async retrieve<ResultT = unknown, ParamsT = unknown>(id: string): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
-        const r = await this.get<ExecutionRun<ParamsT>>(`/${id}`);
+    async retrieve<ResultT = unknown, ParamsT = unknown>(
+        id: string,
+        query?: GetRunQuery,
+    ): Promise<EnhancedExecutionRun<ResultT, ParamsT>> {
+        const r = await this.get<ExecutionRun<ParamsT>>(`/${id}`, { query });
         return enhanceExecutionRun<ResultT, ParamsT>(r);
     }
 

@@ -1,32 +1,18 @@
-/**
- * Types for tracking pending ask_user requests and webhook notifications.
- * Used to notify external systems when agents are waiting for user input.
- */
-
-import type { z } from 'zod';
-import type {
-    ListPendingAsksResponseSchema,
-    PendingAskDataSchema,
-    PendingAskStatusSchema,
-    RegisterPendingAskRequestSchema,
-    RegisterPendingAskResponseSchema,
-    ResolvePendingAskRequestSchema,
-    ResolvePendingAskResponseSchema,
-} from './api-schemas/agent-communication.js';
+import type * as Wire from './wire-types.generated.js';
 
 // ================= Pending Ask Data ====================
 
 /**
  * Status of a pending ask request.
  */
-export type PendingAskStatus = z.infer<typeof PendingAskStatusSchema>;
+export type PendingAskStatus = Wire.PendingAskStatus;
 
 /**
  * Data stored in Redis for pending ask_user requests.
  * Tracks which agents are waiting for user input and enables
  * both webhook notifications and portal views.
  */
-export type PendingAskData = z.infer<typeof PendingAskDataSchema>;
+export type PendingAskData = Wire.PendingAskData;
 
 // ================= Webhook Events ====================
 
@@ -81,8 +67,8 @@ export interface AskUserWebhookEvent {
 /**
  * Response from listing pending asks.
  */
-export type RegisterPendingAskRequest = z.infer<typeof RegisterPendingAskRequestSchema>;
-export type RegisterPendingAskResponse = z.infer<typeof RegisterPendingAskResponseSchema>;
-export type ResolvePendingAskRequest = z.infer<typeof ResolvePendingAskRequestSchema>;
-export type ResolvePendingAskResponse = z.infer<typeof ResolvePendingAskResponseSchema>;
-export type ListPendingAsksResponse = z.infer<typeof ListPendingAsksResponseSchema>;
+export type RegisterPendingAskRequest = Wire.RegisterPendingAskRequest;
+export type RegisterPendingAskResponse = Wire.RegisterPendingAskResponse;
+export type ResolvePendingAskRequest = Wire.ResolvePendingAskRequest;
+export type ResolvePendingAskResponse = Wire.ResolvePendingAskResponse;
+export type ListPendingAsksResponse = Wire.ListPendingAsksResponse;

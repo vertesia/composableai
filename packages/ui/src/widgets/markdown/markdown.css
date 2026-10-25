@@ -4,8 +4,10 @@
  * Uses CSS custom properties from the Tailwind theme so colours
  * adapt automatically to light/dark mode.
  *
- * Consumers must import this file in their app entry point:
- *   import '@vertesia/ui/src/widgets/markdown/markdown.css';
+ * Consumers must import this file in their app stylesheet:
+ *   @import "@vertesia/ui/css/markdown.css";
+ * A plugin rendered in a shadow root needs its own import: the host page's copy
+ * does not reach it.
  */
 
 /* ------------------------------------------------------------------ */

@@ -23,8 +23,8 @@ export enum AgentEventType {
     TurnEvaluation = 'turn_evaluation',
     /** A user rating on an agent run, emitted by the server when it is recorded */
     Feedback = 'feedback',
-    /** Verdict of the LLM judge on one turn, emitted by the judge workflow */
-    TurnJudgement = 'turn_judgement',
+    /** LLM evaluation verdict for one turn, emitted by the evaluation workflow */
+    TurnLlmEvaluation = 'turn_llm_evaluation',
     /** The stall circuit breaker acted: a corrective was injected, or the loop was stopped */
     StallBreaker = 'stall_breaker',
 }
@@ -84,7 +84,9 @@ export type TurnEvaluationFlag =
     | 'overhead'
     | 'followup_after_answer'
     | 'approval_denied'
-    | 'circuit_breaker';
+    | 'circuit_breaker'
+    | 'no_visible_answer'
+    | 'answer_in_tool_preamble';
 
 /** Coarse class of a tool error, derived from the error text. */
 export type ToolErrorClass = 'schema' | 'platform' | 'config' | 'environment' | 'other';
@@ -238,12 +240,22 @@ interface BaseLlmCallEvent extends BaseAgentEvent {
     streamingEnabled: boolean;
     /** Number of tool uses returned by the LLM */
     toolUseCount: number;
+    /** Provider stop reason, normalized by the driver (`stop`, `length`, `tool_use`, ...). Absent on failed calls. */
+    finishReason?: string;
+    /**
+     * Characters of visible output (text and JSON parts, trimmed; thoughts and media excluded).
+     * `0` with `toolUseCount: 0` and `finishReason: 'stop'` is a completion with nothing to show.
+     * Absent on failed calls and on events from producers that predate the field.
+     */
+    outputTextChars?: number;
     /** Type of call: 'start' for initial, 'resume_tools' for tool results, 'resume_user' for user message */
     callType: LlmCallType;
     /** Activity attempt number (for retries) */
     attemptNumber?: number;
     /** Error type if failed */
     errorType?: string;
+    /** The interaction run that recorded the call, and its billing event (its `request_id`) */
+    executionRunId?: string;
 }
 
 export interface LlmCallEvent extends BaseLlmCallEvent {}
@@ -413,6 +425,16 @@ export interface TurnEvaluationEvent extends BaseAgentEvent {
     stallCorrectives?: number;
     /** Stall circuit-breaker trips: the model ignored the corrective and the loop was stopped. Same caveat. */
     stallTrips?: number;
+    /**
+     * Characters of the answers posted in the turn. `0` with a `no_visible_answer` flag is a turn the
+     * user saw end without a reply. Absent on events from producers that predate the field.
+     */
+    answerChars?: number;
+    /**
+     * Characters of text the model sent alongside its last tool calls in the turn. Text sent with tool
+     * calls is shown as working prose, not as the answer. Same caveat.
+     */
+    finalToolCallTextChars?: number;
     /** An unprompted user message after an answer was followed by substantive tool work */
     followupAfterAnswer: boolean;
     severity: EvaluationSeverity;
@@ -442,38 +464,38 @@ export interface FeedbackEvent extends BaseAgentEvent {
     replaced: boolean;
 }
 
-/** Why the judge looked at a run. */
-export type JudgeGateReason = 'signal' | 'sample';
+/** Why a run was selected for LLM evaluation. */
+export type EvaluationGateReason = 'signal' | 'sample' | 'opt_in' | 'always_on';
 
-/** What the judge run produced. */
-export type JudgeOutcome = 'judged' | 'skipped_unarchived' | 'failed';
+/** Outcome of an LLM evaluation run. */
+export type EvaluationOutcome = 'evaluated' | 'skipped_unarchived' | 'failed';
 
-/** The judge's reading of a turn. */
-export type JudgeVerdict = 'success' | 'partial' | 'failure';
+/** LLM evaluation verdict for a turn. */
+export type EvaluationVerdict = 'success' | 'partial' | 'failure';
 
 /**
- * Emitted by the judge workflow for each turn it evaluated (or once with a non-judged outcome).
+ * Emitted by the evaluator workflow for each turn it evaluated (or once with a non-evaluated outcome).
  */
-export interface TurnJudgementEvent extends BaseAgentEvent {
-    eventType: AgentEventType.TurnJudgement;
-    /** Evaluation revision the judge run was started for */
+export interface TurnLlmEvaluationEvent extends BaseAgentEvent {
+    eventType: AgentEventType.TurnLlmEvaluation;
+    /** Evaluation revision the evaluator run was started for */
     evaluationRev: number;
     workstreamId: string;
-    /** Turn judged; 0 when the outcome is not `judged` */
+    /** Turn evaluated; 0 when the outcome is not `evaluated` */
     turnSeq: number;
-    gate: JudgeGateReason;
+    gate: EvaluationGateReason;
     /** Sampling rate in force when the gate was evaluated */
     sampleRate: number;
     /** Probability that this run was selected, for weighted calibration */
     selectedProbability: number;
-    outcome: JudgeOutcome;
-    verdict?: JudgeVerdict;
+    outcome: EvaluationOutcome;
+    verdict?: EvaluationVerdict;
     /** 0..1 */
     score?: number;
     reasons?: string[];
-    /** Version of the judge prompt */
+    /** Version of the evaluator prompt */
     promptVersion: string;
-    /** Detector version of the evaluation the judge was compared against */
+    /** Detector version of the evaluation the evaluator was compared against */
     detectorVersion?: number;
 }
 
@@ -509,7 +531,7 @@ export type AgentEvent =
     | ToolCallEvent
     | TurnEvaluationEvent
     | FeedbackEvent
-    | TurnJudgementEvent
+    | TurnLlmEvaluationEvent
     | StallBreakerEvent;
 
 /**

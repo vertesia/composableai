@@ -24,6 +24,8 @@ export function IdeasPage() {
                 {
                     data: { interest, region, season, constraints },
                 },
+                undefined,
+                { query: { include_prompt: false } },
             );
             setResult(response.result.object<FieldSuggestionResult>());
         } catch (err: unknown) {

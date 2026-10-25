@@ -14,6 +14,7 @@ import type {
     ToolResultContent,
     ToolResultMeta,
 } from '@vertesia/common';
+import type { ToolScratch } from './scratch.js';
 
 export type { ToolExecutionMetadata };
 export type AppEventSubscriptionDefinition = CommonAppEventSubscriptionDefinition;
@@ -58,6 +59,11 @@ export interface ToolExecutionContext {
      * @returns a vertesia client instance
      */
     getClient: () => Promise<VertesiaClient>;
+    /**
+     * Temporary storage private to this request, with the same behavior in the Vertesia sandbox and on
+     * Node hosts (localhost, Vercel). Discarded when the request ends.
+     */
+    scratch: ToolScratch;
 }
 
 export type AppLifecycleHookName = 'install' | 'uninstall';
@@ -373,6 +379,32 @@ export interface SkillDefinition {
      * Scripts bundled with this skill (synced to sandbox when skill is used)
      */
     scripts?: string[];
+    /**
+     * Agent Skills resource files from the skill's `scripts/`, `references/` and `assets/` directories, as
+     * paths relative to the skill directory (e.g. `scripts/extract.py`). They are synced to the sandbox
+     * under the skill's directory with these relative paths.
+     */
+    files?: string[];
+    /** Build-time directory under `skill-files/`, independent of a runtime name override. Defaults to `name`. */
+    files_namespace?: string;
+    /**
+     * License from the Agent Skills `license` frontmatter field.
+     */
+    license?: string;
+    /**
+     * Environment requirements from the Agent Skills `compatibility` frontmatter field.
+     */
+    compatibility?: string;
+    /**
+     * Arbitrary key-value metadata from the Agent Skills `metadata` frontmatter field.
+     */
+    metadata?: Record<string, string>;
+    /**
+     * Tools named by the Agent Skills `allowed-tools` frontmatter field, which is experimental in the
+     * spec and not supported by Vertesia. Informational only: unlike `tools`, these names are not
+     * resolved and never unlock a tool.
+     */
+    allowed_tools?: string[];
     /**
      * The name of the widgets provided by this skill (if any)
      * The name will be used to load the widget dynamically from the agent chat

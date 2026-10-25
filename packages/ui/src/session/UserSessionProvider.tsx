@@ -280,10 +280,17 @@ export function UserSessionProvider({ children, loadOnboardingStatus = false }: 
                         })
                         .catch((err) => {
                             if (surfaceAuthError(err)) return;
-                            console.error('Unexpected failure while fetching a user token', err);
-                            Env.logger.error('Unexpected failure while fetching a user token', {
-                                vertesia: { account_id: selectedAccount, project_id: selectedProject, error: err },
-                            });
+                            // A customer-domain user without an invite is an expected sign-in outcome, already
+                            // logged at warn where the 403 is received.
+                            const inviteRequired =
+                                err instanceof Error &&
+                                err.message === 'Customer-domain user requires an invite to join';
+                            if (!inviteRequired) {
+                                console.error('Unexpected failure while fetching a user token', err);
+                                Env.logger.error('Unexpected failure while fetching a user token', {
+                                    vertesia: { account_id: selectedAccount, project_id: selectedProject, error: err },
+                                });
+                            }
                             session.logout();
                             session.isLoading = false;
                             session.authError = err;

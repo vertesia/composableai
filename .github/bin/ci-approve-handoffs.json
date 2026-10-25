@@ -1,0 +1,6 @@
+{
+    "renovate/": "renovate-automerge.yaml",
+    "backport-": "backport-automerge.yaml",
+    "release-bump-": "release-automerge.yaml",
+    "sync-llumiverse-": "automerge-llumiverse.yaml"
+}

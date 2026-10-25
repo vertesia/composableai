@@ -122,7 +122,8 @@ async function resolveImportSource(
 ): Promise<{ tableData: ImportTableData; original: string; uploadedUri?: string }> {
     const normalizedInput = typeof input === 'string' && input.trim() !== '' ? input.trim() : '-';
 
-    if (normalizedInput.startsWith('gs://') || normalizedInput.startsWith('s3://')) {
+    // Cloud blob URIs (GCS, S3, Azure Blob) are read server-side; `gcs` is the source kind for all of them.
+    if (/^(gs|s3|az):\/\//.test(normalizedInput)) {
         return {
             original: normalizedInput,
             tableData: {

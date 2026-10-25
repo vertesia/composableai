@@ -15,7 +15,7 @@
  *   @import "@vertesia/ui/css/theme.css";
  *
  * Typography (.vprose) is opt-in since it requires @tailwindcss/typography:
- *   @import "@vertesia/ui/css/typography.css" layer(base);
+ *   @import "@vertesia/ui/css/typography.css";
  */
 
 @import "./color.css" layer(base);

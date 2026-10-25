@@ -7,6 +7,13 @@ import { buildAppPackage } from './app-package.js';
 import type { ToolServerConfig } from './types.js';
 
 describe('buildAppPackage', () => {
+    it('publishes standalone callback declarations without registering a client', async () => {
+        const redirect_uris = ['https://example.vercel.app/app'];
+        const pkg = await buildAppPackage({ oauth_client: { redirect_uris } });
+        expect(pkg.oauth_client).toEqual({ redirect_uris });
+        expect(pkg.oauth_client?.redirect_uris).not.toBe(redirect_uris);
+        expect((await buildAppPackage({})).oauth_client).toBeUndefined();
+    });
     it('preserves explicit OAuth permissions without granting project access by default', async () => {
         expect((await buildAppPackage({})).oauth_scopes).toBeUndefined();
         const scopes = ['openid', 'profile', 'offline_access', 'content:read'];

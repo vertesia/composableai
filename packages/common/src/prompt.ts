@@ -1,22 +1,5 @@
 import type { JSONSchema, PromptRole } from '@llumiverse/common';
-import type { z } from 'zod';
-import type {
-    ExportedPromptTemplateRefSchema,
-    InteractionPromptSegmentInputSchema,
-    InteractionPromptTemplateInputSchema,
-    PromptTemplateCreatePayloadSchema,
-    PromptTemplateRefSchema,
-    PromptTemplateSchema,
-    PromptTemplateUpdatePayloadSchema,
-} from './api-schemas/interaction.js';
-import type {
-    PromptTemplateForkPayloadSchema,
-    PromptTemplateInteractionsResponseSchema,
-    PromptTemplateInteractionUsageSchema,
-    PromptTemplateInteractionVersionSchema,
-    RenderPromptPayloadSchema,
-    RenderPromptResponseSchema,
-} from './api-schemas/prompt.js';
+import type * as Wire from './wire-types.generated.js';
 
 export interface ChatPromptSchema {
     role: PromptRole.user | PromptRole.assistant;
@@ -51,7 +34,7 @@ export interface ExecutablePromptSegmentDef extends Omit<PromptSegmentDef, 'temp
     template?: ExecutablePromptTemplate;
 }
 
-export type PromptTemplateRef = z.infer<typeof PromptTemplateRefSchema>;
+export type PromptTemplateRef = Wire.PromptTemplateRef;
 
 export enum TemplateType {
     jst = 'jst',
@@ -64,25 +47,25 @@ export interface ExecutablePromptTemplate {
     content_type: TemplateType;
     inputSchema?: JSONSchema;
 }
-export type PromptTemplate = z.infer<typeof PromptTemplateSchema>;
+export type PromptTemplate = Wire.PromptTemplate;
 
-export type InteractionPromptTemplateInput = z.infer<typeof InteractionPromptTemplateInputSchema>;
+export type InteractionPromptTemplateInput = Wire.InteractionPromptTemplateInput;
 
-export type InteractionPromptSegmentInput = z.infer<typeof InteractionPromptSegmentInputSchema>;
+export type InteractionPromptSegmentInput = Wire.InteractionPromptSegmentInput;
 
-export type PromptTemplateForkPayload = z.infer<typeof PromptTemplateForkPayloadSchema>;
+export type PromptTemplateForkPayload = Wire.PromptTemplateForkPayload;
 
-export type PromptTemplateCreatePayload = z.infer<typeof PromptTemplateCreatePayloadSchema>;
+export type PromptTemplateCreatePayload = Wire.PromptTemplateCreatePayload;
 
-export type PromptTemplateUpdatePayload = z.infer<typeof PromptTemplateUpdatePayloadSchema>;
+export type PromptTemplateUpdatePayload = Wire.PromptTemplateUpdatePayload;
 
-export type PromptTemplateInteractionVersion = z.infer<typeof PromptTemplateInteractionVersionSchema>;
+export type PromptTemplateInteractionVersion = Wire.PromptTemplateInteractionVersion;
 
-export type PromptTemplateInteractionUsage = z.infer<typeof PromptTemplateInteractionUsageSchema>;
+export type PromptTemplateInteractionUsage = Wire.PromptTemplateInteractionUsage;
 
-export type PromptTemplateInteractionsResponse = z.infer<typeof PromptTemplateInteractionsResponseSchema>;
+export type PromptTemplateInteractionsResponse = Wire.PromptTemplateInteractionsResponse;
 
-export type RenderPromptPayload = z.infer<typeof RenderPromptPayloadSchema>;
+export type RenderPromptPayload = Wire.RenderPromptPayload;
 
 /**
  * What `POST /prompts/:id/render` answers with: the segment identity plus the rendered body.
@@ -90,6 +73,6 @@ export type RenderPromptPayload = z.infer<typeof RenderPromptPayloadSchema>;
  * Stated here for the first time — the endpoint declared its response inline, so there has never
  * been a name for it on either side of the wire.
  */
-export type RenderPromptResponse = z.infer<typeof RenderPromptResponseSchema>;
+export type RenderPromptResponse = Wire.RenderPromptResponse;
 
-export type ExportedPromptTemplateRef = z.infer<typeof ExportedPromptTemplateRefSchema>;
+export type ExportedPromptTemplateRef = Wire.ExportedPromptTemplateRef;

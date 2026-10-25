@@ -341,3 +341,24 @@ describe('MessageInput', () => {
         expect(screen.getByRole('button', { name: /show more/i })).not.toBeNull();
     });
 });
+
+it('shows remaining USD, fallback tokens and incomplete accounting in the context tooltip', async () => {
+    renderWithProviders(
+        <MessageInput
+            onSend={vi.fn()}
+            onCompactContext={vi.fn()}
+            contextWindowUsage={{ usedTokens: 1000, checkpointTokens: 10000, usedPercent: 10, remainingPercent: 90 }}
+            remainingBudget={{
+                limitUsd: 2,
+                remainingUsd: 1.75,
+                limitTokens: 1000000,
+                remainingTokens: 980000,
+                incomplete: true,
+            }}
+        />,
+    );
+    fireEvent.pointerMove(screen.getByRole('button', { name: /10% context used/i }));
+    expect((await screen.findAllByText('Run budget remaining: $1.7500 / $2.0000')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Fallback tokens remaining: 980K / 1,000K').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Accounting incomplete; remaining budget may be overstated.').length).toBeGreaterThan(0);
+});

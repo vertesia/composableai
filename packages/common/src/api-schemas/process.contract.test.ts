@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ProcessRunConfigSchema, RecordProcessRunPayloadSchema } from './process.js';
+import {
+    ProcessBudgetStateSchema,
+    ProcessRunConfigSchema,
+    PublishProcessDefinitionPayloadSchema,
+    RecordProcessRunPayloadSchema,
+    StartProcessTestRunPayloadSchema,
+    SubmitProcessTestRunPayloadSchema,
+} from './process.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 
 describe('ProcessRunConfigSchema', () => {
@@ -117,5 +124,61 @@ describe('ProcessAgentExecutionPolicySchema', () => {
                 max_repeated_tool_failure_iterations: 0,
             }),
         ).toThrow();
+    });
+});
+
+describe('ProcessBudgetStateSchema', () => {
+    it('preserves historical token-only status', () => {
+        const status = { limit_tokens: 1000, used_units: 250, exhausted: false };
+        expect(ProcessBudgetStateSchema.parse(status)).toEqual(status);
+    });
+    it('retains dollar balances and incomplete accounting in process responses', () => {
+        const status = {
+            mode: 'dollar',
+            limit_tokens: 1000,
+            used_units: 12,
+            exhausted: false,
+            limit_usd: 1,
+            reported_usd: 0.1,
+            estimated_usd: 0.2,
+            accounting_status: 'incomplete',
+            unmeasured_calls: 1,
+        };
+        expect(ProcessBudgetStateSchema.parse(status)).toEqual(status);
+    });
+});
+
+describe('process idempotency_key', () => {
+    const scenario = {
+        id: 'noop',
+        name: 'Noop completes',
+        initial_context: {},
+        actors: [],
+        fixtures: [],
+        human_actions: [],
+        assertions: { status: 'completed' },
+        timeout_seconds: 60,
+    };
+    const payloads = [
+        ['StartProcessTestRunPayload', StartProcessTestRunPayloadSchema, { suite_id: 's', process_revision_id: 'r' }],
+        [
+            'SubmitProcessTestRunPayload',
+            SubmitProcessTestRunPayloadSchema,
+            { process: { id: 'sys:noop' }, scenarios: [scenario] },
+        ],
+        ['PublishProcessDefinitionPayload', PublishProcessDefinitionPayloadSchema, { confirmed: true }],
+    ] as const;
+
+    it.each(payloads)('%s accepts keys of 1 to 256 characters', (_name, schema, base) => {
+        for (const key of ['k', 'k'.repeat(256)]) {
+            expect(schema.parse({ ...base, idempotency_key: key })).toMatchObject({ idempotency_key: key });
+        }
+        expect(schema.parse(base)).not.toHaveProperty('idempotency_key');
+    });
+
+    it.each(payloads)('%s rejects an empty or 257-character key', (_name, schema, base) => {
+        for (const key of ['', 'k'.repeat(257)]) {
+            expect(schema.safeParse({ ...base, idempotency_key: key }).success).toBe(false);
+        }
     });
 });

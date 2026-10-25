@@ -8,7 +8,7 @@ import { ContentObjectTypeRefSchema } from './app-lifecycle.js';
 import { StringArrayMapSchema } from './dashboard.js';
 import { SubjectRelationshipContextSchema } from './graph.js';
 import { ComputedFacetResponseSchema, FacetSpecSchema, SortOptionSchema } from './interaction.js';
-import { nullableStringSchema } from './schema-primitives.js';
+import { nullableStringSchema, PageCountSchema } from './schema-primitives.js';
 import { ColumnLayoutSchema, ContentObjectTypeSchema, EmbeddingTypeEnabledMapSchema } from './store.js';
 
 export const scoreAggregationTypesSchema = z.enum(['rrf', 'rsf', 'smart']).meta({ id: 'scoreAggregationTypes' });
@@ -248,6 +248,22 @@ export const ContentObjectTextResponseSchema = z
     })
     .meta({ id: 'ContentObjectTextResponse' });
 
+export const SetObjectTextPayloadSchema = z
+    .strictObject({
+        text: z.string().meta({ description: 'The extracted text to store for the object.' }),
+        etag: z
+            .string()
+            .meta({
+                description:
+                    'The etag of the content the text was extracted from. When provided, the server records it as the object text_etag so extraction can be skipped while the content is unchanged.',
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'SetObjectTextPayload',
+        description: 'Payload for storing the extracted text of a content object as a text artifact.',
+    });
+
 export const GetRenditionResponseSchema = z
     .strictObject({
         status: z.enum(['found', 'generating', 'failed']),
@@ -360,6 +376,13 @@ const collectionPayloadFields = {
         .optional(),
     sensitivity: z.number().meta({ description: 'BLP sensitivity level for member documents' }).optional(),
     compartments: z.array(z.string()).meta({ description: 'Compartments for member documents' }).optional(),
+    shared_root: z
+        .boolean()
+        .meta({
+            description:
+                'Explicitly share this collection as a root of the project shared space (listable/readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it.',
+        })
+        .optional(),
 };
 
 export const CreateCollectionPayloadSchema = z
@@ -456,8 +479,8 @@ export const ComplexCollectionSearchQuerySchema = z
         parent: nullableStringSchema.optional(),
         dynamic: z.boolean().optional(),
         status: CollectionStatusSchema.optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
+        limit: PageCountSchema.optional(),
+        offset: PageCountSchema.optional(),
         name: z.string().optional(),
         type: z.string().optional(),
         types: z.array(z.string()).optional(),
@@ -513,6 +536,20 @@ export const CollectionSchema = z
         compartments: z
             .array(z.string())
             .meta({ description: 'Compartments — propagated to member documents (union across collections)' })
+            .optional(),
+        shared: z
+            .boolean()
+            .meta({
+                description:
+                    'Effective shared state: true iff the collection is a member of an effectively-shared parent collection (inherited; sync-managed). Combine with shared_root for full readability.',
+            })
+            .optional(),
+        shared_root: z
+            .boolean()
+            .meta({
+                description:
+                    'True iff the collection was explicitly shared via the API (a root of the project shared space). Never set by the sync.',
+            })
             .optional(),
         shared_properties: z
             .array(z.string())
@@ -572,6 +609,13 @@ export const CreateContentObjectPayloadSchema = z
             .array(z.string())
             .meta({
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
+            })
+            .optional(),
+        shared_root: z
+            .boolean()
+            .meta({
+                description:
+                    'Explicitly share this document as a root of the project shared space (readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it.',
             })
             .optional(),
         inherited_properties: z
@@ -673,6 +717,13 @@ export const UpdateContentObjectPayloadSchema = z
             .array(z.string())
             .meta({
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
+            })
+            .optional(),
+        shared_root: z
+            .boolean()
+            .meta({
+                description:
+                    'Explicitly share this document as a root of the project shared space (readable by non-members via matching shared-content ABAC rules). This is the explicit API share flag — the sync never sets it.',
             })
             .optional(),
         inherited_properties: z
@@ -871,6 +922,20 @@ export const ContentObjectApiResponseSchema = z
                 description: 'Compartments — set directly or inherited from collections (union across collections).',
             })
             .optional(),
+        shared: z
+            .boolean()
+            .meta({
+                description:
+                    'Effective shared state: true iff the document is a member of an effectively-shared collection (inherited; sync-managed). Combine with shared_root for full readability.',
+            })
+            .optional(),
+        shared_root: z
+            .boolean()
+            .meta({
+                description:
+                    'True iff the document was explicitly shared via the API (a root of the project shared space). Never set by the sync.',
+            })
+            .optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
         relationship_context: SubjectRelationshipContextSchema.optional(),
     })
@@ -944,6 +1009,8 @@ export const ContentObjectItemApiResponseSchema = z
         security: StringArrayMapSchema.optional(),
         sensitivity: z.number().nullable().optional(),
         compartments: z.array(z.string()).optional(),
+        shared: z.boolean().optional(),
+        shared_root: z.boolean().optional(),
         inherited_properties: z.array(InheritedPropertyMetadataSchema).optional(),
     })
     .meta({ id: 'ContentObjectItemApiResponse' });
@@ -1019,8 +1086,8 @@ export const CollectionMembersQuerySchema = z
     .object({
         status: z.string().optional(),
         type: z.string().optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
+        limit: PageCountSchema.optional(),
+        offset: PageCountSchema.optional(),
     })
     .meta({ id: 'CollectionMembersQuery' });
 

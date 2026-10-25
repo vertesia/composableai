@@ -1,68 +1,4 @@
-import type { z } from 'zod';
-import type { InCodeViewDefinitionSchema } from './api-schemas/app-runtime.js';
-import type {
-    ExecuteViewRequestSchema,
-    PreviewViewExperienceRequestSchema,
-    ViewExecutionDefinitionSchema,
-    ViewExecutionQueryPlanSchema,
-    ViewExecutionRerankResultSchema,
-    ViewExecutionResultSchema,
-    ViewExecutionSearchConfigurationSchema,
-    ViewExecutionSearchResultSchema,
-    ViewExecutionWarningSchema,
-    ViewExperienceConfigurationSchema,
-    ViewHitAnnotationSchema,
-    ViewHitSchema,
-    ViewQueryPlanningFailureCodeSchema,
-    ViewRerankFailureCodeSchema,
-} from './api-schemas/view-execution.js';
-import type {
-    AgenticViewRerankConfigurationSchema,
-    AgenticViewSearchConfigurationSchema,
-    CreateViewExperienceRequestSchema,
-    UpdateViewExperienceRequestSchema,
-    ViewActionConfigurationSchema,
-    ViewActionPlacementSchema,
-    ViewActionSelectionRequirementSchema,
-    ViewActionsConfigurationSchema,
-    ViewAgenticExecutionConfigurationSchema,
-    ViewBoardCardConfigurationSchema,
-    ViewBoardColumnSchema,
-    ViewBoardDisplaySchema,
-    ViewCardsDisplaySchema,
-    ViewCollectionNavigationSchema,
-    ViewDisplayConfigurationSchema,
-    ViewDropConfigurationSchema,
-    ViewElasticsearchQuerySchema,
-    ViewExperienceLayoutSchema,
-    ViewExperienceListQuerySchema,
-    ViewExperienceSchema,
-    ViewExperienceScopeSchema,
-    ViewGalleryDisplaySchema,
-    ViewHierarchyLevelSchema,
-    ViewHierarchyNavigationSchema,
-    ViewKeyTermDefinitionSchema,
-    ViewListDisplaySchema,
-    ViewLocationNavigationSchema,
-    ViewNavigationItemSchema,
-    ViewRangeDefinitionSchema,
-    ViewRangeNavigationSchema,
-    ViewResultFieldFormatSchema,
-    ViewResultFieldSchema,
-    ViewResultMediaSchema,
-    ViewResultsConfigurationSchema,
-    ViewSearchConfigurationSchema,
-    ViewSearchFieldDefinitionSchema,
-    ViewSearchFieldTypeSchema,
-    ViewSelectionConfigurationSchema,
-    ViewSelectionModeSchema,
-    ViewSortClauseSchema,
-    ViewSortOptionSchema,
-    ViewTableColumnSchema,
-    ViewTableDisplaySchema,
-    ViewTermsNavigationSchema,
-    ViewUploadDropParametersSchema,
-} from './api-schemas/views.js';
+import type * as Wire from './wire-types.generated.js';
 
 export const VIEW_EXPERIENCE_SCHEMA_VERSION = 1 as const;
 
@@ -74,19 +10,19 @@ export function viewExperienceRoute(id: string): string {
 }
 
 /** An author-provided Elasticsearch query subtree validated by the View runtime. */
-export type ViewElasticsearchQuery = z.infer<typeof ViewElasticsearchQuerySchema>;
+export type ViewElasticsearchQuery = Wire.ViewElasticsearchQuery;
 
-export type ViewExperienceLayout = z.infer<typeof ViewExperienceLayoutSchema>;
+export type ViewExperienceLayout = Wire.ViewExperienceLayout;
 
-export type ViewExperienceScope = z.infer<typeof ViewExperienceScopeSchema>;
+export type ViewExperienceScope = Wire.ViewExperienceScope;
 
-export type ViewLocationNavigation = z.infer<typeof ViewLocationNavigationSchema>;
+export type ViewLocationNavigation = Wire.ViewLocationNavigation;
 
-export type ViewCollectionNavigation = z.infer<typeof ViewCollectionNavigationSchema>;
+export type ViewCollectionNavigation = Wire.ViewCollectionNavigation;
 
-export type ViewTermsNavigation = z.infer<typeof ViewTermsNavigationSchema>;
+export type ViewTermsNavigation = Wire.ViewTermsNavigation;
 
-export type ViewHierarchyLevel = z.infer<typeof ViewHierarchyLevelSchema>;
+export type ViewHierarchyLevel = Wire.ViewHierarchyLevel;
 
 /**
  * A drill-down hierarchy assembled from independently mapped properties.
@@ -98,41 +34,41 @@ export type ViewHierarchyLevel = z.infer<typeof ViewHierarchyLevelSchema>;
  * the endpoint has always accepted. The narrowing was an authoring hint with nothing behind it: the
  * navigation runtime takes the first selection for `source === 'hierarchy'` whatever the flag says.
  */
-export type ViewHierarchyNavigation = z.infer<typeof ViewHierarchyNavigationSchema>;
+export type ViewHierarchyNavigation = Wire.ViewHierarchyNavigation;
 
-export type ViewRangeDefinition = z.infer<typeof ViewRangeDefinitionSchema>;
+export type ViewRangeDefinition = Wire.ViewRangeDefinition;
 
-export type ViewRangeNavigation = z.infer<typeof ViewRangeNavigationSchema>;
+export type ViewRangeNavigation = Wire.ViewRangeNavigation;
 
-export type ViewNavigationItem = z.infer<typeof ViewNavigationItemSchema>;
+export type ViewNavigationItem = Wire.ViewNavigationItem;
 
-export type ViewKeyTermDefinition = z.infer<typeof ViewKeyTermDefinitionSchema>;
+export type ViewKeyTermDefinition = Wire.ViewKeyTermDefinition;
 
 export const VIEW_SEARCH_FIELD_TYPES = ['text', 'keyword', 'number', 'date', 'boolean'] as const;
 
-export type ViewSearchFieldType = z.infer<typeof ViewSearchFieldTypeSchema>;
+export type ViewSearchFieldType = Wire.ViewSearchFieldType;
 
 /**
  * A mapped Elasticsearch field that a View may use for query planning and
  * deterministic full-text fallback.
  */
-export type ViewSearchFieldDefinition = z.infer<typeof ViewSearchFieldDefinitionSchema>;
+export type ViewSearchFieldDefinition = Wire.ViewSearchFieldDefinition;
 
 export const VIEW_AGENTIC_SEARCH_MODES = ['query', 'query_and_view'] as const;
 
 export type ViewAgenticSearchMode = (typeof VIEW_AGENTIC_SEARCH_MODES)[number];
 
-export type AgenticViewRerankConfiguration = z.infer<typeof AgenticViewRerankConfigurationSchema>;
+export type AgenticViewRerankConfiguration = Wire.AgenticViewRerankConfiguration;
 
-export type ViewAgenticExecutionConfiguration = z.infer<typeof ViewAgenticExecutionConfigurationSchema>;
+export type ViewAgenticExecutionConfiguration = Wire.ViewAgenticExecutionConfiguration;
 
-export type AgenticViewSearchConfiguration = z.infer<typeof AgenticViewSearchConfigurationSchema>;
+export type AgenticViewSearchConfiguration = Wire.AgenticViewSearchConfiguration;
 
-export type ViewSearchConfiguration = z.infer<typeof ViewSearchConfigurationSchema>;
+export type ViewSearchConfiguration = Wire.ViewSearchConfiguration;
 
-export type ViewSortClause = z.infer<typeof ViewSortClauseSchema>;
+export type ViewSortClause = Wire.ViewSortClause;
 
-export type ViewSortOption = z.infer<typeof ViewSortOptionSchema>;
+export type ViewSortOption = Wire.ViewSortOption;
 
 export const VIEW_RESULT_FIELD_FORMATS = [
     'text',
@@ -144,55 +80,55 @@ export const VIEW_RESULT_FIELD_FORMATS = [
     'location',
 ] as const;
 
-export type ViewResultFieldFormat = z.infer<typeof ViewResultFieldFormatSchema>;
+export type ViewResultFieldFormat = Wire.ViewResultFieldFormat;
 
-export type ViewResultField = z.infer<typeof ViewResultFieldSchema>;
+export type ViewResultField = Wire.ViewResultField;
 
-export type ViewResultMedia = z.infer<typeof ViewResultMediaSchema>;
+export type ViewResultMedia = Wire.ViewResultMedia;
 
-export type ViewListDisplay = z.infer<typeof ViewListDisplaySchema>;
+export type ViewListDisplay = Wire.ViewListDisplay;
 
-export type ViewTableColumn = z.infer<typeof ViewTableColumnSchema>;
+export type ViewTableColumn = Wire.ViewTableColumn;
 
-export type ViewTableDisplay = z.infer<typeof ViewTableDisplaySchema>;
+export type ViewTableDisplay = Wire.ViewTableDisplay;
 
-export type ViewCardsDisplay = z.infer<typeof ViewCardsDisplaySchema>;
+export type ViewCardsDisplay = Wire.ViewCardsDisplay;
 
-export type ViewGalleryDisplay = z.infer<typeof ViewGalleryDisplaySchema>;
+export type ViewGalleryDisplay = Wire.ViewGalleryDisplay;
 
-export type ViewBoardColumn = z.infer<typeof ViewBoardColumnSchema>;
+export type ViewBoardColumn = Wire.ViewBoardColumn;
 
-export type ViewBoardCardConfiguration = z.infer<typeof ViewBoardCardConfigurationSchema>;
+export type ViewBoardCardConfiguration = Wire.ViewBoardCardConfiguration;
 
-export type ViewBoardDisplay = z.infer<typeof ViewBoardDisplaySchema>;
+export type ViewBoardDisplay = Wire.ViewBoardDisplay;
 
-export type ViewDisplayConfiguration = z.infer<typeof ViewDisplayConfigurationSchema>;
+export type ViewDisplayConfiguration = Wire.ViewDisplayConfiguration;
 
-export type ViewResultsConfiguration = z.infer<typeof ViewResultsConfigurationSchema>;
+export type ViewResultsConfiguration = Wire.ViewResultsConfiguration;
 
 export const VIEW_SELECTION_MODES = ['single', 'multiple'] as const;
 
-export type ViewSelectionMode = z.infer<typeof ViewSelectionModeSchema>;
+export type ViewSelectionMode = Wire.ViewSelectionMode;
 
-export type ViewSelectionConfiguration = z.infer<typeof ViewSelectionConfigurationSchema>;
+export type ViewSelectionConfiguration = Wire.ViewSelectionConfiguration;
 
 export const VIEW_ACTION_PLACEMENTS = ['toolbar', 'row', 'selection'] as const;
 
-export type ViewActionPlacement = z.infer<typeof ViewActionPlacementSchema>;
+export type ViewActionPlacement = Wire.ViewActionPlacement;
 
 export const VIEW_ACTION_SELECTION_REQUIREMENTS = ['none', 'single', 'multiple', 'any'] as const;
 
-export type ViewActionSelectionRequirement = z.infer<typeof ViewActionSelectionRequirementSchema>;
+export type ViewActionSelectionRequirement = Wire.ViewActionSelectionRequirement;
 
-export type ViewActionConfiguration = z.infer<typeof ViewActionConfigurationSchema>;
+export type ViewActionConfiguration = Wire.ViewActionConfiguration;
 
-export type ViewActionsConfiguration = z.infer<typeof ViewActionsConfigurationSchema>;
+export type ViewActionsConfiguration = Wire.ViewActionsConfiguration;
 
-export type ViewUploadDropParameters = z.infer<typeof ViewUploadDropParametersSchema>;
+export type ViewUploadDropParameters = Wire.ViewUploadDropParameters;
 
-export type ViewDropConfiguration = z.infer<typeof ViewDropConfigurationSchema>;
+export type ViewDropConfiguration = Wire.ViewDropConfiguration;
 
-export type ViewExperienceConfiguration = z.infer<typeof ViewExperienceConfigurationSchema>;
+export type ViewExperienceConfiguration = Wire.ViewExperienceConfiguration;
 
 /**
  * A View configuration stored as a project resource.
@@ -205,34 +141,34 @@ export interface PersistedViewExperienceConfiguration extends Omit<ViewExperienc
 }
 
 /** A View definition contributed by application code through the app package endpoint. */
-export type InCodeViewDefinition = z.infer<typeof InCodeViewDefinitionSchema>;
+export type InCodeViewDefinition = Wire.InCodeViewDefinition;
 
-export type ViewExperience = z.infer<typeof ViewExperienceSchema>;
+export type ViewExperience = Wire.ViewExperience;
 
-export type CreateViewExperienceRequest = z.infer<typeof CreateViewExperienceRequestSchema>;
+export type CreateViewExperienceRequest = Wire.CreateViewExperienceRequest;
 
 /** PUT uses full replacement so omitted optional configuration is removed. */
-export type UpdateViewExperienceRequest = z.infer<typeof UpdateViewExperienceRequestSchema>;
+export type UpdateViewExperienceRequest = Wire.UpdateViewExperienceRequest;
 
-export type ViewExperienceListQuery = z.infer<typeof ViewExperienceListQuerySchema>;
+export type ViewExperienceListQuery = Wire.ViewExperienceListQuery;
 
-export type ExecuteViewRequest = z.infer<typeof ExecuteViewRequestSchema>;
+export type ExecuteViewRequest = Wire.ExecuteViewRequest;
 
-export type PreviewViewExperienceRequest = z.infer<typeof PreviewViewExperienceRequestSchema>;
+export type PreviewViewExperienceRequest = Wire.PreviewViewExperienceRequest;
 
-export type ViewExecutionWarning = z.infer<typeof ViewExecutionWarningSchema>;
+export type ViewExecutionWarning = Wire.ViewExecutionWarning;
 
-export type ViewQueryPlanningFailureCode = z.infer<typeof ViewQueryPlanningFailureCodeSchema>;
+export type ViewQueryPlanningFailureCode = Wire.ViewQueryPlanningFailureCode;
 
-export type ViewExecutionQueryPlan = z.infer<typeof ViewExecutionQueryPlanSchema>;
+export type ViewExecutionQueryPlan = Wire.ViewExecutionQueryPlan;
 
-export type ViewRerankFailureCode = z.infer<typeof ViewRerankFailureCodeSchema>;
+export type ViewRerankFailureCode = Wire.ViewRerankFailureCode;
 
-export type ViewExecutionRerankResult = z.infer<typeof ViewExecutionRerankResultSchema>;
+export type ViewExecutionRerankResult = Wire.ViewExecutionRerankResult;
 
-export type ViewHitAnnotation = z.infer<typeof ViewHitAnnotationSchema>;
+export type ViewHitAnnotation = Wire.ViewHitAnnotation;
 
-export type ViewHit = z.infer<typeof ViewHitSchema>;
+export type ViewHit = Wire.ViewHit;
 
 export interface ViewNavigationNode {
     id: string;
@@ -255,10 +191,10 @@ export interface ViewNavigationResult {
     truncated?: boolean;
 }
 
-export type ViewExecutionSearchResult = z.infer<typeof ViewExecutionSearchResultSchema>;
+export type ViewExecutionSearchResult = Wire.ViewExecutionSearchResult;
 
-export type ViewExecutionSearchConfiguration = z.infer<typeof ViewExecutionSearchConfigurationSchema>;
+export type ViewExecutionSearchConfiguration = Wire.ViewExecutionSearchConfiguration;
 
-export type ViewExecutionDefinition = z.infer<typeof ViewExecutionDefinitionSchema>;
+export type ViewExecutionDefinition = Wire.ViewExecutionDefinition;
 
-export type ViewExecutionResult = z.infer<typeof ViewExecutionResultSchema>;
+export type ViewExecutionResult = Wire.ViewExecutionResult;

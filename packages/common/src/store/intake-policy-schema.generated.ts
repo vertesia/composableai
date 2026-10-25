@@ -284,6 +284,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['low', 'medium', 'high', 'xhigh', 'max'],
                 },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
+                },
                 thinking_budget_tokens: {
                     type: 'number',
                 },
@@ -296,6 +302,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 cache_ttl: {
                     type: 'string',
                     enum: ['5m', '1h'],
+                },
+                speed: {
+                    type: 'string',
+                    enum: ['standard', 'fast'],
                 },
             },
             additionalProperties: false,
@@ -406,6 +416,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 top_k: {
                     type: 'number',
                 },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
+                },
                 thinking_budget_tokens: {
                     type: 'number',
                 },
@@ -496,6 +512,16 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     items: {
                         type: 'string',
                     },
+                },
+                effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                reasoning_effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                verbosity: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
                 },
                 include_thoughts: {
                     type: 'boolean',
@@ -615,6 +641,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['low', 'medium', 'high', 'xhigh', 'max'],
                 },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
+                },
                 thinking_budget_tokens: {
                     type: 'number',
                 },
@@ -712,6 +744,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'bedrock-nova',
+                },
+                effort: {
+                    $ref: '#/$defs/ReasoningEffort',
                 },
                 max_tokens: {
                     type: 'number',
@@ -1168,7 +1203,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 inherit_model_config: {
                     type: 'boolean',
                     description:
-                        'Treat supplied model settings as inherited fallback: an applicable profile replaces them.',
+                        "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them.",
                 },
                 environment: {
                     type: 'string',
@@ -1245,8 +1280,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     },
                 },
                 effort: {
-                    type: 'string',
-                    enum: ['none', 'high'],
+                    $ref: '#/$defs/ReasoningEffort',
                 },
                 random_seed: {
                     type: 'integer',
@@ -1492,11 +1526,16 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 size: {
                     type: 'string',
-                    enum: ['1024x1024', '1024x1536', '1536x1024', 'auto'],
+                },
+                width: {
+                    type: 'number',
+                },
+                height: {
+                    type: 'number',
                 },
                 image_quality: {
                     type: 'string',
-                    enum: ['low', 'medium', 'high', 'auto'],
+                    enum: ['low', 'medium', 'high', 'xhigh', 'max', 'auto'],
                 },
                 background: {
                     type: 'string',
@@ -1506,7 +1545,89 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['png', 'webp', 'jpeg'],
                 },
+                n: {
+                    type: 'number',
+                },
+                output_compression: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100,
+                },
+                moderation: {
+                    type: 'string',
+                    enum: ['auto', 'low'],
+                },
+                input_fidelity: {
+                    type: 'string',
+                    enum: ['low', 'high'],
+                },
+                partial_images: {
+                    type: 'number',
+                },
             },
+            additionalProperties: false,
+        },
+        OpenAiImageGenerationMask: {
+            type: 'object',
+            properties: {
+                file_id: {
+                    type: 'string',
+                },
+                image_url: {
+                    type: 'string',
+                },
+            },
+            additionalProperties: false,
+        },
+        OpenAiImageGenerationOptions: {
+            type: 'object',
+            properties: {
+                model: {
+                    type: 'string',
+                },
+                force: {
+                    type: 'boolean',
+                },
+                action: {
+                    type: 'string',
+                    enum: ['auto', 'generate', 'edit'],
+                },
+                size: {
+                    type: 'string',
+                },
+                quality: {
+                    type: 'string',
+                    enum: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'],
+                },
+                background: {
+                    type: 'string',
+                    enum: ['auto', 'opaque', 'transparent'],
+                },
+                output_format: {
+                    type: 'string',
+                    enum: ['png', 'jpeg', 'webp'],
+                },
+                output_compression: {
+                    type: 'integer',
+                    minimum: 0,
+                    maximum: 100,
+                },
+                moderation: {
+                    type: 'string',
+                    enum: ['auto', 'low'],
+                },
+                input_fidelity: {
+                    type: 'string',
+                    enum: ['low', 'high'],
+                },
+                partial_images: {
+                    type: 'number',
+                },
+                input_image_mask: {
+                    $ref: '#/$defs/OpenAiImageGenerationMask',
+                },
+            },
+            required: ['model'],
             additionalProperties: false,
         },
         OpenAiSpeechOptions: {
@@ -1541,6 +1662,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'openai-text',
+                },
+                image_generation: {
+                    $ref: '#/$defs/OpenAiImageGenerationOptions',
+                },
+                seed: {
+                    type: 'number',
                 },
                 max_tokens: {
                     type: 'number',
@@ -1600,6 +1727,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'openai-thinking',
+                },
+                image_generation: {
+                    $ref: '#/$defs/OpenAiImageGenerationOptions',
                 },
                 max_tokens: {
                     type: 'number',
@@ -1661,6 +1791,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
         OpenRouterTextOptions: {
             type: 'object',
             properties: {
+                seed: {
+                    type: 'number',
+                },
                 max_tokens: {
                     type: 'number',
                 },
@@ -1874,6 +2007,12 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 effort: {
                     type: 'string',
                     enum: ['low', 'medium', 'high', 'xhigh', 'max'],
+                },
+                thinking_mode: {
+                    type: 'string',
+                    enum: ['adaptive', 'between_tools'],
+                    description:
+                        'Thinking mode override. Sonnet 5.5 supports between_tools at low, medium, or high effort. It omits display and budget fields; keep effort fixed during the conversation. When unset, existing model-specific thinking behavior is preserved.',
                 },
                 thinking_budget_tokens: {
                     type: 'number',

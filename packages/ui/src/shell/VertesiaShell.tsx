@@ -28,8 +28,13 @@ export interface VertesiaShellProps {
     suppressSignInErrorPrefixes?: string | string[];
     /** Use an already-issued Vertesia token instead of starting the normal sign-in flow. */
     authToken?: string;
-    /** Force a default language. If omitted, falls back to localStorage then navigator.language then 'en'. */
+    /** Language used only when there is neither a saved choice nor a browser language. */
     defaultLanguage?: SupportedLanguage;
+    /**
+     * Pin the language the shell renders in, whatever the saved choice or browser language.
+     * Embedded apps still receive the user's own language (`useLanguage().preferredLanguage`).
+     */
+    language?: SupportedLanguage;
 }
 export function VertesiaShell({
     children,
@@ -41,6 +46,7 @@ export function VertesiaShell({
     suppressSignInErrorPrefixes,
     authToken,
     defaultLanguage,
+    language,
     authScreens,
     branding,
 }: VertesiaShellProps) {
@@ -48,7 +54,7 @@ export function VertesiaShell({
     const brandedContent = (
         <TypeRegistryProvider>
             <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-                <LanguageProvider defaultLanguage={defaultLanguage}>
+                <LanguageProvider defaultLanguage={defaultLanguage} language={language}>
                     <LanguageBoundI18nProvider>
                         <AppBrandingBoundary branding={branding}>
                             <IframeAppContextSync />

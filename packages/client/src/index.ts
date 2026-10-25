@@ -4,16 +4,16 @@ export type { EnableEnvironmentModelPayload, OrphanedAppInstallation } from '@ve
 export { getOAuthPermissionScopes, Permission } from '@vertesia/common';
 export * from './client.js';
 export { default as DelegationGrantsApi } from './DelegationGrantsApi.js';
+export type { ExecuteInteractionRequestOptions } from './execute.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from './InteractionBase.js';
 export * from './InteractionOutput.js';
-export { default as InternalAccountsApi } from './InternalAccountsApi.js';
-export { default as InternalSecretsApi } from './InternalSecretsApi.js';
 export * from './managed-sse.js';
 export { default as OAuthClientsApi } from './OAuthClientsApi.js';
 export { default as OAuthGrantsApi } from './OAuthGrantsApi.js';
 export { default as OAuthProvidersApi } from './OAuthProvidersApi.js';
 export { default as OAuthServerApi } from './OAuthServerApi.js';
+export { default as OidcFederationApi } from './OidcFederationApi.js';
 export type { ComputePromptFacetsResponse, ListInteractionsResponse } from './PromptsApi.js';
 export { default as RemoteMcpConnectionsApi } from './RemoteMcpConnectionsApi.js';
 export type { ComputeRunFacetsResponse, FilterOption } from './RunsApi.js';

@@ -212,7 +212,7 @@ export class WorkflowsApi extends ApiTopic {
                     currentSse.close();
                     currentSse = null;
                 }
-                if (signal && abortHandler) {
+                if (isClosed && signal && abortHandler) {
                     signal.removeEventListener('abort', abortHandler);
                     abortHandler = null;
                 }
@@ -349,12 +349,14 @@ export class WorkflowsApi extends ApiTopic {
                                 `Failed to reconnect to SSE stream for run ${runId} after ${maxReconnectAttempts} attempts`,
                             );
                             isClosed = true;
+                            cleanup();
                             reject(
                                 new Error(`SSE connection failed after ${maxReconnectAttempts} reconnection attempts`),
                             );
                         }
                     };
                 } catch (err) {
+                    if (isClosed) return;
                     console.error('Error setting up SSE stream:', err);
                     if (reconnectAttempts < maxReconnectAttempts) {
                         const delay = calculateBackoffDelay(reconnectAttempts);
@@ -366,6 +368,8 @@ export class WorkflowsApi extends ApiTopic {
                             }
                         }, delay);
                     } else {
+                        isClosed = true;
+                        cleanup();
                         reject(err);
                     }
                 }

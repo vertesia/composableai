@@ -10,6 +10,7 @@ import { registerIamCommand } from './iam/index.js';
 import { registerInferenceProfilesCommand } from './inference-profiles/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
+import { registerOidcFederationCommand } from './oidc-federation/index.js';
 import { getVersion, upgrade } from './package.js';
 import { registerProcessTestsCommand } from './process-tests/index.js';
 import {
@@ -78,7 +79,7 @@ authRoot
     .description('Authenticate a profile, creating it when it does not exist')
     .option(
         '-t, --target <env>',
-        'The target environment for a new profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.',
+        'The target environment for a new profile. Possible values are: local, dev-main, preview, prod or a custom URL.',
     )
     .option(
         '-r, --region <region>',
@@ -137,6 +138,7 @@ authGit
 
 registerEnvsCommand(program);
 registerInferenceProfilesCommand(program);
+registerOidcFederationCommand(program);
 program
     .command('interactions [interaction]')
     .description('List the interactions available in the current project')
@@ -246,7 +248,7 @@ profilesRoot
     .alias('create')
     .option(
         '-t, --target <env>',
-        'The target environment for the profile. Possible values are: local, dev-main, dev-preview, preview, prod or a custom URL.',
+        'The target environment for the profile. Possible values are: local, dev-main, preview, prod or a custom URL.',
     )
     .option(
         '-r, --region <region>',

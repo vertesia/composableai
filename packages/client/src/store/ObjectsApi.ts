@@ -40,6 +40,7 @@ import {
     type ObjectSearchResponse,
     type ProjectedContentObjectApiResponse,
     type SetObjectEmbeddingsResponse,
+    type SetObjectTextPayload,
     type StartContentObjectExportRequest,
     type StartContentObjectExportResponse,
     type SupportedEmbeddingTypes,
@@ -64,6 +65,7 @@ import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 import type { ZenoClient } from './client.js';
 import { fetchSignedUrl } from './signed-url.js';
 import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
+import { zenoBulkBaseUrl } from './zeno-bulk.js';
 
 /**
  * The two write payloads, each widened at `content` so callers can hand us a browser `File` or a
@@ -216,24 +218,8 @@ export class ObjectsApi extends ApiTopic {
         return this.zenoBulkPost('/export/compose', payload, timeoutMs);
     }
 
-    /**
-     * Get the zeno-bulk base URL.
-     * Dev branches: store URL contains "zeno-server" -> replace with "zeno-bulk".
-     * Production/preview: same domain, LB routes /export to zeno-bulk.
-     */
-    private get zenoBulkBaseUrl(): string {
-        const storeBaseUrl = this.client.baseUrl;
-        if (storeBaseUrl.includes('localhost:') || storeBaseUrl.includes('127.0.0.1:')) {
-            return 'https://zeno-bulk-dev-main.api.dev1.vertesia.io';
-        }
-        if (storeBaseUrl.includes('zeno-server')) {
-            return storeBaseUrl.replace(/zeno-server/, 'zeno-bulk');
-        }
-        return storeBaseUrl;
-    }
-
     private zenoBulkPost<T>(path: string, body: object, timeoutMs?: number | false | null): Promise<T> {
-        return this.client.post(this.zenoBulkBaseUrl + path, { payload: body, timeoutMs });
+        return this.client.post(zenoBulkBaseUrl(this.client.baseUrl) + path, { payload: body, timeoutMs });
     }
 
     listFolders(_path: string = '/') {
@@ -298,6 +284,18 @@ export class ObjectsApi extends ApiTopic {
 
     getObjectText(id: string): Promise<ContentObjectTextResponse> {
         return this.get(`/${id}/text`);
+    }
+
+    /**
+     * Store the extracted text of an object as a text artifact.
+     *
+     * Pass the content etag the text was extracted from so the server records it as the
+     * object `text_etag`, allowing extraction to be skipped while the content is unchanged.
+     */
+    setObjectText(id: string, payload: SetObjectTextPayload): Promise<ContentObjectTextResponse> {
+        return this.put(`/${id}/text`, {
+            payload,
+        });
     }
 
     async upload(source: StreamSource | File) {

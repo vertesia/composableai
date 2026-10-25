@@ -462,6 +462,11 @@ export abstract class ClientBase {
         return Promise.resolve(new Request(url, init));
     }
 
+    /** Override at the caller boundary when handled transport failures have their own logging. */
+    handleConnectionError(error: ConnectionError): void {
+        console.error(`Failed to connect to ${error.request.url}`, error.payload);
+    }
+
     handleFetchResponse(_req: Request, _res: Response): void {}
 
     createServerError(req: Request, res: Response, payload: unknown): RequestError {
@@ -616,7 +621,7 @@ export abstract class ClientBase {
             try {
                 res = await fetch(req);
             } catch (err: unknown) {
-                // A caller abort is their own doing, so it is not a connection failure to log, and
+                // A caller abort is their own doing, and
                 // retrying cannot help: their signal stays aborted, so each further attempt rejects at
                 // once. A TIMEOUT is not included — it is transient, and each attempt gets a fresh
                 // timeout signal, so it retries as before. Still thrown, wrapping the original.
@@ -626,10 +631,9 @@ export abstract class ClientBase {
                     !retryPolicy ||
                     !this.shouldRetryConnectionError(retryPolicy, normalizedMethod, attempt, replayableBody)
                 ) {
-                    if (!aborted) {
-                        console.error(`Failed to connect to ${url}`, err);
-                    }
-                    this.throwError(new ConnectionError(req, toError(err)));
+                    const connectionError = new ConnectionError(req, toError(err));
+                    if (!aborted) this.handleConnectionError(connectionError);
+                    this.throwError(connectionError);
                 }
                 await this.waitBeforeRetry(retryPolicy, attempt);
                 attempt++;
@@ -654,7 +658,16 @@ export abstract class ClientBase {
             if (retryPolicy && attempt >= retryPolicy.attempts) {
                 break;
             }
-            return this.handleResponse<T>(req, res, params);
+            try {
+                return await this.handleResponse<T>(req, res, params);
+            } catch (err: unknown) {
+                // Body consumption can time out after fetch has returned the headers. Preserve
+                // HTTP/custom-reader errors, and do not replay a request already accepted upstream.
+                if (!isAbortError(err)) throw err;
+                const connectionError = new ConnectionError(req, toError(err));
+                if (!isCallerAbortError(err)) this.handleConnectionError(connectionError);
+                this.throwError(connectionError);
+            }
         }
 
         if (lastReq) {

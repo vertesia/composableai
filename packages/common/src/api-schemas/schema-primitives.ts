@@ -11,6 +11,15 @@ export const nullableNumberSchema = z
     .nullable()
     .meta({ anyOf: undefined, type: ['number', 'null'] });
 
+/**
+ * A `limit` or `offset` query count: a whole number, zero or more. A fraction or a negative count used to
+ * reach the database and fail there as a 500.
+ *
+ * Published as `type: number` with `multipleOf: 1` rather than `type: integer`, so the generated Java and Go
+ * clients keep the parameter types they already expose while the contract enforcer answers 400.
+ */
+export const PageCountSchema = z.number().multipleOf(1).min(0);
+
 /** Monotonic token for optimistic concurrency on mutable, user-authored resources. */
 export const EditRevisionSchema = z
     .number()

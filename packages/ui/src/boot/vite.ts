@@ -1,7 +1,8 @@
 /** Node-only adapter. Import from @vertesia/ui/boot/vite, never from browser code. */
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { extname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { type AppBranding, brandedBootOptions, escapeBrandHtml } from './branding.js';
 import { injectBootScreenHtml } from './index.js';
 
@@ -25,7 +26,9 @@ const MIME: Record<string, string> = {
 export function resolveBrandingAssets(branding: AppBranding, moduleUrl: URL, watch: (file: string) => void = () => {}) {
     function asset(value: string, base = moduleUrl): string {
         if (/^(https?:|data:|#)/i.test(value)) return value;
-        const url = new URL(value, base);
+        const url = value.startsWith('@vertesia/ui/assets/')
+            ? pathToFileURL(createRequire(import.meta.url).resolve(value))
+            : new URL(value, base);
         if (url.protocol !== 'file:') throw new Error(`Unsupported branding asset URL: ${value}`);
         const file = fileURLToPath(url);
         const mime = MIME[extname(file).toLowerCase()];
@@ -76,9 +79,18 @@ export function resolveBrandingAssets(branding: AppBranding, moduleUrl: URL, wat
 
 export function createAppBrandingPlugin(branding: AppBranding, moduleUrl: URL) {
     const watched = new Set<string>();
+    let workspace: { account?: string; project?: string } = {};
     const resolve = () => resolveBrandingAssets(branding, moduleUrl, (file) => watched.add(file));
     return {
         name: 'vertesia-app-branding',
+        configResolved(config: { env: Record<string, unknown> }) {
+            const account = config.env.VITE_VERTESIA_ACCOUNT_ID;
+            const project = config.env.VITE_VERTESIA_PROJECT_ID;
+            workspace = {
+                account: typeof account === 'string' ? account : undefined,
+                project: typeof project === 'string' ? project : undefined,
+            };
+        },
         resolveId(id: string) {
             if (id === VIRTUAL_ID) return RESOLVED_ID;
         },
@@ -112,6 +124,12 @@ export function createAppBrandingPlugin(branding: AppBranding, moduleUrl: URL) {
                     `<link rel="icon" href="${escapeBrandHtml(resolved.favicon)}"></head>`,
                 );
             }
+            // Data only: a hosting gateway can render its own trusted login without executing app code.
+            const brandData = JSON.stringify({ ...resolved, workspace }).replace(/</g, '\\u003c');
+            result = result.replace(
+                '</head>',
+                `<script type="application/json" id="vertesia-app-branding">${brandData}</script></head>`,
+            );
             return injectBootScreenHtml(result, brandedBootOptions(resolved));
         },
     };

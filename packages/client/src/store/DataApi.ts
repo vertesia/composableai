@@ -463,7 +463,7 @@ export class DataApi extends ApiTopic {
      * const info = await client.data.getDownloadInfo(storeId);
      * // Download if gcs_generation changed
      * if (info.gcs_generation !== localGeneration) {
-     *   await downloadFile(info.url, '/home/daytona/databases/store.duckdb');
+     *   await downloadFile(info.url, 'databases/store.duckdb');
      * }
      * ```
      */

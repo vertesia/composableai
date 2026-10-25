@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import { AgentBudgetConfigurationSchema } from './agent-budget.js';
+
+export { AgentBudgetConfigurationSchema } from './agent-budget.js';
+
 // From the values module, for the reason `./apikey.js` gives.
 import { ResourceVisibility } from '../project-values.js';
 import { ProjectInferenceProfilesSchema } from './inference-profile.js';
@@ -146,8 +150,17 @@ export const AgentCheckpointConfigurationSchema = z
 
 export const AgentProjectConfigurationSchema = z
     .strictObject({
+        evaluation_policy: z.enum(['disabled', 'opt_in', 'always_on']).optional().meta({
+            description:
+                'LLM evaluation policy. Defaults to always_on when omitted. disabled prevents evaluation even when requested; opt_in requires evaluate=true on the run; always_on evaluates every eligible run without sampling. Deterministic diagnostics are unaffected.',
+        }),
         checkpoint: AgentCheckpointConfigurationSchema.optional().meta({
             description: 'Conversation checkpoint (context compaction) tuning.',
+        }),
+        budget: AgentBudgetConfigurationSchema.optional().meta({
+            description:
+                'Default token budget for agent runs in this project. Field-wise overridden by the ' +
+                "interaction's `agent_runner_options.budget` and the per-run `budget`.",
         }),
     })
     .meta({
