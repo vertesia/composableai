@@ -15,6 +15,8 @@ const LEGACY_PACKAGE_MOUNT = 'https://gw.example.com/tenants/1589ba_149d0b/packa
 const PACKAGE_MOUNT = 'https://gw.example.com/tenants/1589ba_149d0b/apps/my-app/api/package';
 const VERSION_PACKAGE_MOUNT =
     'https://gw.example.com/tenants/1589ba_149d0b/apps/my-app/versions/20260101T000000Z/api/package';
+const ALIAS_PACKAGE_MOUNT =
+    'https://gw.example.com/tenants/1589ba_149d0b/apps/my-app/aliases/customer-preview/api/package';
 
 function resolve(
     endpoint: string,
@@ -42,6 +44,12 @@ describe('app endpoint resolution', () => {
             appId: 'my-app',
             version: '20260101T000000Z',
         });
+        expect(parseGatewayAppEndpoint(ALIAS_PACKAGE_MOUNT)).toEqual({
+            origin: 'https://gw.example.com',
+            tenant: '1589ba_149d0b',
+            appId: 'my-app',
+            deploymentAlias: 'customer-preview',
+        });
         expect(parseGatewayAppEndpoint('https://third-party.example.com/api/package')).toBeUndefined();
     });
 
@@ -55,6 +63,42 @@ describe('app endpoint resolution', () => {
         expect(resolve(APPS_MOUNT, { version: '20260101T000000Z' })).toBe(VERSION_PACKAGE_MOUNT);
         expect(resolve(LEGACY_PACKAGE_MOUNT, { version: '20260101T000000Z' })).toBe(VERSION_PACKAGE_MOUNT);
         expect(resolve(PACKAGE_MOUNT, { version: '20260101T000000Z' })).toBe(VERSION_PACKAGE_MOUNT);
+    });
+
+    it('normalizes gateway app endpoints to stable deployment-alias package URLs', () => {
+        expect(resolve(APPS_MOUNT, { deploymentAlias: 'customer-preview' })).toBe(ALIAS_PACKAGE_MOUNT);
+        expect(resolve(PACKAGE_MOUNT, { deploymentAlias: 'customer-preview' })).toBe(ALIAS_PACKAGE_MOUNT);
+        expect(resolve(ALIAS_PACKAGE_MOUNT)).toBe(ALIAS_PACKAGE_MOUNT);
+    });
+
+    it('rebases an installed gateway app onto its execution tenant', () => {
+        expect(
+            resolve(APPS_MOUNT, {
+                gatewayTenantId: 'destination_project',
+                vars: { gateway: 'https://gw.example.com' },
+            }),
+        ).toBe('https://gw.example.com/tenants/destination_project/apps/my-app/api/package');
+        expect(
+            resolve(APPS_MOUNT, {
+                gatewayTenantId: 'destination_project',
+                deploymentAlias: 'customer-preview',
+                vars: { gateway: 'https://gw.example.com' },
+            }),
+        ).toBe('https://gw.example.com/tenants/destination_project/apps/my-app/aliases/customer-preview/api/package');
+    });
+
+    it('does not rebase a gateway-shaped endpoint hosted outside the configured gateway', () => {
+        expect(
+            resolve('https://vendor.example.com/tenants/source_project/apps/my-app', {
+                gatewayTenantId: 'destination_project',
+            }),
+        ).toBe('https://vendor.example.com/tenants/source_project/apps/my-app/api/package');
+    });
+
+    it('lets an explicit immutable version override a deployment alias', () => {
+        expect(resolve(APPS_MOUNT, { version: '20260101T000000Z', deploymentAlias: 'customer-preview' })).toBe(
+            VERSION_PACKAGE_MOUNT,
+        );
     });
 
     it('ignores endpoint overrides for gateway apps', () => {

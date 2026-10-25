@@ -87,7 +87,7 @@ export interface EnvProps {
     onLogout?: () => void;
 }
 
-export type VertesiaRuntimeConfig =
+export type VertesiaRuntimeConfig = (
     | {
           authMode: 'firebase';
           allowLegacyIframeAuth?: boolean;
@@ -108,7 +108,13 @@ export type VertesiaRuntimeConfig =
           authUrl?: string;
           /** The serving gateway owns this standalone app's OAuth session. */
           gatewaySession?: boolean;
-      };
+          /** Optional path prefix for an ephemeral version launch on the application host. */
+          gatewayPathPrefix?: string;
+      }
+) & {
+    /** Ephemeral selector injected by App Gateway for an advanced App Builder version launch. */
+    appVersionSelector?: string;
+};
 
 declare global {
     interface Window {
@@ -126,6 +132,13 @@ function injectedRuntimeConfig(): VertesiaRuntimeConfig | undefined {
     const firebase = runtimeConfig.firebase;
     if (!firebase?.apiKey || !firebase.authDomain || !firebase.projectId || !firebase.appId) return undefined;
     return runtimeConfig;
+}
+
+/** The runtime selector takes precedence over the immutable version compiled into an app bundle. */
+export function getRuntimeAppVersionSelector(): string | undefined {
+    if (typeof window === 'undefined') return undefined;
+    const selector = window.__VERTESIA_RUNTIME_CONFIG__?.appVersionSelector;
+    return typeof selector === 'string' && selector ? selector : undefined;
 }
 
 /** Public build-time settings, for example Vite's import.meta.env. */

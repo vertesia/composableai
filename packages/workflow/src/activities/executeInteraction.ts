@@ -13,7 +13,7 @@ import { NodeStreamSource } from '@vertesia/client/node';
 import {
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
-    type ExecutionRun,
+    type ExecutionRunRef,
     ExecutionRunStatus,
     type ExecutionRunWorkflow,
     type InteractionExecutionConfiguration,
@@ -243,6 +243,7 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             params,
             prompt_data,
             payload.debug_mode,
+            { includePrompt: projectionReadsPrompt(payload.activity.projection) },
         );
 
         let completionResult: CompletionResult[] = res.result;
@@ -373,12 +374,28 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
     }
 }
 
+/**
+ * Whether an activity projection can read the rendered prompt of the execution response, which it
+ * sees as `#`: through `#.prompt`, or through `#` itself. Any other use of `#` (`#.result`, ...) cannot.
+ * A `#` this cannot rule out, such as one inside a literal, keeps the prompt.
+ */
+function projectionReadsPrompt(projection: unknown): boolean {
+    return projection !== undefined && /#(?!\.)|#\.prompt\b/.test(JSON.stringify(projection));
+}
+
 export async function executeInteractionFromActivity(
     client: VertesiaClient,
     interactionName: string,
     params: InteractionExecutionParams,
     prompt_data: Record<string, unknown>,
     debug?: boolean,
+    options: {
+        /**
+         * Return the rendered prompt sent to the model. Off by default: it can be tens of MB when
+         * media is inlined, and it stays stored with the run either way.
+         */
+        includePrompt?: boolean;
+    } = {},
 ) {
     const userTags = params.tags;
     const info = activityInfo();
@@ -394,7 +411,7 @@ export async function executeInteractionFromActivity(
         activity_type: info.activityType,
     };
 
-    let previousStudioExecutionRun: ExecutionRun | undefined;
+    let previousError: ExecutionRunRef['error'];
     if (params.include_previous_error) {
         //retrieve last failed run if any
         if (info.attempt > 1) {
@@ -414,12 +431,13 @@ export async function executeInteractionFromActivity(
 
             if (previousRun) {
                 log.debug('Found previous run', { prev_run_id: previousRun.id });
-                previousStudioExecutionRun = await client.runs.retrieve(previousRun.id);
+                // The search result already carries the error, so the whole run is not fetched.
+                previousError = previousRun.error;
             }
         }
     }
-    if (debug && previousStudioExecutionRun?.error) {
-        log.info(`Found  previous run error`, { error: previousStudioExecutionRun?.error });
+    if (debug && previousError) {
+        log.info(`Found  previous run error`, { error: previousError });
     }
 
     const configDefaults = params.config ?? {};
@@ -433,7 +451,7 @@ export async function executeInteractionFromActivity(
     };
     const data = {
         ...prompt_data,
-        previous_error: previousStudioExecutionRun?.error,
+        previous_error: previousError,
     };
 
     const result_schema = params.result_schema;
@@ -461,14 +479,19 @@ export async function executeInteractionFromActivity(
     log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags, workflow });
 
     const res = await client.interactions
-        .executeByName(interactionName, {
-            config,
-            data,
-            result_schema,
-            tags,
-            stream: false,
-            workflow,
-        })
+        .executeByName(
+            interactionName,
+            {
+                config,
+                data,
+                result_schema,
+                tags,
+                stream: false,
+                workflow,
+            },
+            undefined,
+            options.includePrompt ? undefined : { query: { include_prompt: false } },
+        )
         .catch((error: unknown) => {
             // Logged once by the caller's catch (executeInteraction) — do not log here as well.
             const rateLimitFailure = getInteractionRateLimitFailure(error, interactionName);

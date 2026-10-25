@@ -36,3 +36,4 @@ export * from './utils/renditions.js';
 export * from './utils/storage.js';
 export * from './utils/text-preview-utils.js';
 export * from './utils/tokens.js';
+export * from './utils/upload-stream.js';

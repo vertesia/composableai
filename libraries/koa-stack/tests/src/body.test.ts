@@ -45,6 +45,12 @@ describe('Malformed request bodies', () => {
         expect(res.text).toBe('Too deeply nested');
     });
 
+    test('a multipart body without a boundary answers 400', async () => {
+        const res = await request(createApp()).post('/').set('Content-Type', 'multipart/form-data').send('a=1');
+        expect(res.status).toBe(400);
+        expect(res.text).toBe('bad content-type header, no multipart boundary');
+    });
+
     test('does not reuse Content-Length for a later compressed request', async () => {
         const koa = new Koa();
         LazyBody.install(koa);

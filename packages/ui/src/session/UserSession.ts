@@ -7,7 +7,13 @@ import { createContext, useContext } from 'react';
 import { getComposableToken } from './auth/composable';
 import { authReturnUrl, centralAuthUrl, mountRootUrl, shouldRedirectToCentralAuth } from './auth/domainRouting';
 import { getFirebaseAuth } from './auth/firebase';
-import { gatewayFetch, loadGatewaySession, logoutGatewaySession, usesGatewaySession } from './auth/gateway';
+import {
+    gatewayFetch,
+    gatewayPath,
+    loadGatewaySession,
+    logoutGatewaySession,
+    usesGatewaySession,
+} from './auth/gateway';
 import { getAppOAuthToken, revokeAppOAuthSession } from './auth/oauth';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
@@ -38,10 +44,10 @@ class UserSession {
         } else {
             this.client = new VertesiaClient({
                 serverUrl: usesGatewaySession()
-                    ? `${window.location.origin}/__appgen/session/studio`
+                    ? `${window.location.origin}${gatewayPath('/__appgen/session/studio')}`
                     : Env.endpoints.studio,
                 storeUrl: usesGatewaySession()
-                    ? `${window.location.origin}/__appgen/session/store`
+                    ? `${window.location.origin}${gatewayPath('/__appgen/session/store')}`
                     : Env.endpoints.zeno,
                 tokenServerUrl: Env.endpoints.sts,
                 fetch: usesGatewaySession() ? gatewayFetch : undefined,

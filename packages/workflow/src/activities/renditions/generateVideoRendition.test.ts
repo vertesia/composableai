@@ -16,7 +16,10 @@ import {
 } from './generateVideoRendition.js';
 
 vi.mock('../../dsl/setup/ActivityContext.js', () => ({ setupActivity: vi.fn() }));
-vi.mock('../../utils/blobs.js', () => ({ saveBlobToTempFile: vi.fn() }));
+vi.mock('../../utils/blobs.js', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../utils/blobs.js')>()),
+    saveBlobToTempFile: vi.fn(),
+}));
 
 vi.mock('@temporalio/activity', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@temporalio/activity')>()),

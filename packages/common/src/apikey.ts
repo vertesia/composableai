@@ -62,7 +62,6 @@ export type ApiKeyArray = Wire.ApiKeyArray;
 export type CreateApiKeyPayload = Wire.CreateApiKeyPayload;
 export type UpdateApiKeyPayload = Wire.UpdateApiKeyPayload;
 export type ApiKeyWithValue = Wire.ApiKeyWithValue;
-export type ApiKeyReadResponse = Wire.ApiKeyReadResponse;
 
 export interface CreatePublicKeyPayload {
     name?: string;
@@ -72,7 +71,6 @@ export interface CreatePublicKeyPayload {
 
 export type AuthTokenResponse = Wire.AuthTokenResponse;
 export type ApiKeyListQuery = Wire.ApiKeyListQuery;
-export type ApiKeyReadQuery = Wire.ApiKeyReadQuery;
 
 export interface AuthTokenPayload {
     credential_scope?: 'project' | 'account';
@@ -96,6 +94,14 @@ export interface AuthTokenPayload {
      * The app names enabled for this token. Defaults to an empty array if no apps are enabled.
      */
     apps: string[];
+
+    /** Versioned grants for installations in the selected project. Absence means a legacy token. */
+    app_installations?: {
+        version: 1;
+        project_id: string;
+        ids: string[];
+        ui_restrictions?: string[];
+    };
 
     /**
      * Apps in `apps[]` whose UI surface is restricted for this principal — present only on
@@ -121,18 +127,15 @@ export interface AuthTokenPayload {
     /** groups */
     groups?: UserGroupRef[]; //group ids
 
-    /** Scoped ABAC conditions keyed by operation.
-     *  Each resource consumer defines its baseline/restrict composition.
-     *
-     *  Transitional: this field is being renamed to `abac` (see [[pending-migrations]]).
-     *  Both fields are typed so consumers can dual-read during the transition.
-     *  Only one will ever be populated in a given token. */
-    content_security?: ContentSecurity;
     /**
-     * New name for `content_security`. Consumers should prefer this field and
-     * fall back to `content_security`. Sts will be flipped to emit this field
-     * once all consumers have shipped their dual-read.
+     * Initial name for the ABAC claim, created when property-based authorization
+     * applied only to content resources. The model now covers multiple resource
+     * scopes, so new tokens use the generic `abac` name. Consumers must retain
+     * this fallback while previously issued tokens can circulate.
+     * @deprecated Read `abac` first and fall back to this field.
      */
+    content_security?: ContentSecurity;
+    /** Scoped ABAC conditions keyed by operation. */
     abac?: ContentSecurity;
 
     /**

@@ -52,7 +52,12 @@ Files in `src/modules/app/resources/skills/<collection>/<skill-name>/`:
 | `SKILL.md` | yes | YAML frontmatter + instructions for the agent |
 | `properties.ts` | no | Runtime gating (`isEnabled`) |
 | `*.tsx` | no | Widgets (compiled to `dist/widgets/`) |
-| `*.py`, `*.js` | no | Scripts (copied to `dist/scripts/`) |
+| `*.py`, `*.js` | no | Scripts beside `SKILL.md` (copied to `dist/scripts/`, synced to `~/skills/<skill-name>/`) |
+| `scripts/`, `references/`, `assets/` | no | [Agent Skills](https://agentskills.io/specification) resource directories, any file type, nested folders allowed (copied to `dist/skill-files/<skill-name>/`, synced to `~/skills/<skill-name>/` with the same relative paths) |
+
+The frontmatter also accepts the Agent Skills fields `license`, `compatibility`, `metadata` (string values) and
+`allowed-tools`. `allowed-tools` is experimental in the spec and Vertesia does not support it: the build records it
+and unlocks nothing. Use `tools` to unlock tools.
 
 Skills are auto-discovered: the collection imports `./all?skills` — no per-skill imports needed.
 

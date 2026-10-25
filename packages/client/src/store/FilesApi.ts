@@ -258,11 +258,17 @@ export class FilesApi extends ApiTopic {
                 'Content-Type': sourceMimeType,
             },
         }).catch((err) => {
-            console.error('Failed to upload file', { err, url, id, path });
+            console.error('Failed to upload file', { err, location: fileLocationForError(url), id, path });
             throw err;
         });
         if (!res.ok) {
-            console.log(res);
+            console.error('Failed to upload file', {
+                status: res.status,
+                statusText: res.statusText,
+                location: fileLocationForError(url),
+                id,
+                path,
+            });
             throw new Error(`Failed to upload file: ${res.statusText}`);
         }
 

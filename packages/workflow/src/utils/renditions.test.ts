@@ -1,5 +1,6 @@
 import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import os from 'node:os';
+import path from 'node:path';
 import { log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import { ImageRenditionFormat } from '@vertesia/common';
@@ -7,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { imageResizer } from '../conversion/image.js';
 import { ImageConversionError } from '../errors.js';
 import { uploadRenditionPages } from './renditions.js';
+import { createUploadStream } from './upload-stream.js';
 
 const activityState = vi.hoisted(() => ({ aborted: false }));
 
@@ -24,14 +26,26 @@ vi.mock('@temporalio/activity', () => ({
 
 vi.mock('../conversion/image.js', () => ({ imageResizer: vi.fn() }));
 
+vi.mock('./upload-stream.js', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('./upload-stream.js')>();
+    return { ...actual, createUploadStream: vi.fn(actual.createUploadStream) };
+});
+
 describe('uploadRenditionPages', () => {
+    let tempDir: string;
+    let resizedImagePath: string;
+
     beforeEach(() => {
         vi.clearAllMocks();
         activityState.aborted = false;
+        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'renditions-test-'));
+        resizedImagePath = path.join(tempDir, 'resized.jpeg');
+        fs.writeFileSync(resizedImagePath, 'resized');
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        fs.rmSync(tempDir, { recursive: true, force: true });
     });
 
     it('should preserve a non-retryable image conversion failure', async () => {
@@ -50,9 +64,7 @@ describe('uploadRenditionPages', () => {
     });
 
     it('should preserve an upload failure and clean the resized image', async () => {
-        const resizedImagePath = fileURLToPath(import.meta.url);
         const uploadError = new Error('upload failed');
-        const unlinkSpy = vi.spyOn(fs, 'unlinkSync').mockImplementation(() => undefined);
         vi.mocked(imageResizer).mockResolvedValue(resizedImagePath);
         const client = {
             files: { uploadFile: vi.fn().mockRejectedValue(uploadError) },
@@ -65,15 +77,17 @@ describe('uploadRenditionPages', () => {
             }),
         ).rejects.toBe(uploadError);
 
-        expect(unlinkSpy).toHaveBeenCalledWith(resizedImagePath);
+        expect(fs.existsSync(resizedImagePath)).toBe(false);
+        // The upload never read the stream; it must be closed so the removed file's descriptor is released.
+        const [stream] = vi.mocked(createUploadStream).mock.results;
+        expect((stream.value as fs.ReadStream).closed).toBe(true);
         expect(log.error).toHaveBeenCalledWith('Failed to upload rendition for etag page 0', { error: uploadError });
     });
 
     it('should log an upload aborted by a stopping activity at info, not error', async () => {
         activityState.aborted = true;
         const shutdownError = new Error('Failed to connect to server: WORKER_SHUTDOWN');
-        vi.spyOn(fs, 'unlinkSync').mockImplementation(() => undefined);
-        vi.mocked(imageResizer).mockResolvedValue(fileURLToPath(import.meta.url));
+        vi.mocked(imageResizer).mockResolvedValue(resizedImagePath);
         const client = {
             files: { uploadFile: vi.fn().mockRejectedValue(shutdownError) },
         } as unknown as VertesiaClient;

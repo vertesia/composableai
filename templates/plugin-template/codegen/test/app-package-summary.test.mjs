@@ -34,6 +34,59 @@ test('publishes declared OAuth scopes in the build summary', () => {
     assert.deepEqual(summarizeAppPackage({}).oauth_scopes, []);
 });
 
+test('publishes the immutable settings schema used by advanced launches', () => {
+    const settingsSchema = {
+        type: 'object',
+        properties: { region: { type: 'string' } },
+        required: ['region'],
+    };
+
+    assert.deepEqual(summarizeAppPackage({ settings_schema: settingsSchema }).settings_schema, settingsSchema);
+    assert.equal('settings_schema' in summarizeAppPackage({}), false);
+});
+
+test('publishes AppGen template provenance and versioned runtime features', () => {
+    const metadata = {
+        name: 'plugin-template',
+        version: 1,
+        runtime_features: { advanced_launch: 1 },
+    };
+
+    assert.deepEqual(summarizeAppPackage({}, { 'vertesia-appgen': metadata }).appgen_template, metadata);
+    assert.equal('appgen_template' in summarizeAppPackage({}), false);
+});
+
+test('rejects malformed declared AppGen template metadata', () => {
+    assert.throws(
+        () =>
+            summarizeAppPackage(
+                {},
+                {
+                    'vertesia-appgen': {
+                        name: 'plugin-template',
+                        version: 1,
+                        runtime_features: { 'Advanced Launch': 1 },
+                    },
+                },
+            ),
+        /invalid feature/,
+    );
+    assert.throws(
+        () =>
+            summarizeAppPackage(
+                {},
+                {
+                    'vertesia-appgen': {
+                        name: 'plugin-template',
+                        version: 1,
+                        runtime_features: { advanced_launch: 0 },
+                    },
+                },
+            ),
+        /must be a positive integer/,
+    );
+});
+
 test('standalone metadata uses the shared permissions and declares session renewal', async () => {
     const previous = process.env.APP_OAUTH_SCOPES;
     delete process.env.APP_OAUTH_SCOPES;

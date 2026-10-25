@@ -5,6 +5,7 @@ import {
     type AgentMessage,
     AgentMessageType,
     type AppInstallationKind,
+    type AppInstallationPayload,
     type AppManifestData,
     type AppScaffoldModule,
     type AppScaffoldProgress,
@@ -13,7 +14,8 @@ import {
 import colors from 'ansi-colors';
 import type { Command } from 'commander';
 import { getClient } from '../client.js';
-import { type CliOptions, hasErrorCode, isRecord } from '../utils/options.js';
+import { type CliOptions, hasErrorCode } from '../utils/options.js';
+import { collectionParameters, parameterMap, readCredentials, readJsonInput, stringMap } from './inputs.js';
 
 type ManifestOptions = CliOptions<{
     manifest?: string;
@@ -24,10 +26,21 @@ type ManifestOptions = CliOptions<{
 type SettingsOptions = CliOptions<{
     settings?: string;
     settingsFile?: string;
+    instanceKey?: string;
+    displayName?: string;
+    namespaces?: string;
+    namespacesFile?: string;
+    credentialsFile?: string;
+    mcpParameters?: string;
+    mcpParametersFile?: string;
+    mcpSharedParameters?: string;
+    mcpSharedParametersFile?: string;
+    accessControl?: string;
 }>;
 
 type InstalledAppsOptions = CliOptions<{
     kind?: AppInstallationKind;
+    json?: boolean;
 }>;
 
 export type ScaffoldOptions = CliOptions<{
@@ -303,35 +316,53 @@ export async function updateApp(program: Command, appId: string, options: Manife
     console.log(`  Name: ${result.name}`);
 }
 
-export async function installApp(program: Command, appId: string, options: SettingsOptions) {
-    const client = await getClient(program);
-
-    let settings: Record<string, unknown> | undefined;
-
-    if (options.settingsFile) {
-        try {
-            const content = await readFile(options.settingsFile, 'utf-8');
-            settings = readSettings(JSON.parse(content));
-        } catch (err: unknown) {
-            if (hasErrorCode(err, 'ENOENT')) {
-                console.error(`${colors.red('✗')} File not found: ${options.settingsFile}`);
-                process.exit(1);
-            }
-            throw err;
-        }
-    } else if (options.settings) {
-        try {
-            settings = readSettings(JSON.parse(options.settings));
-        } catch {
-            console.error(`${colors.red('✗')} Invalid JSON in settings option`);
-            process.exit(1);
-        }
+async function installationInput(options: SettingsOptions) {
+    const settings = await readJsonInput(options.settings, options.settingsFile, '--settings');
+    const namespace_overrides = stringMap(
+        await readJsonInput(options.namespaces, options.namespacesFile, '--namespaces'),
+        '--namespaces',
+    );
+    const mcp_parameters = collectionParameters(
+        await readJsonInput(options.mcpParameters, options.mcpParametersFile, '--mcp-parameters'),
+    );
+    const mcp_shared_parameters = parameterMap(
+        await readJsonInput(options.mcpSharedParameters, options.mcpSharedParametersFile, '--mcp-shared-parameters'),
+    );
+    if (options.displayName !== undefined && !options.displayName.trim()) {
+        throw new Error('--display-name must not be empty');
     }
+    return {
+        ...(settings !== undefined ? { settings } : {}),
+        ...(namespace_overrides !== undefined ? { namespace_overrides } : {}),
+        ...(options.displayName !== undefined ? { display_name: options.displayName } : {}),
+        ...(mcp_parameters !== undefined ? { mcp_parameters } : {}),
+        ...(mcp_shared_parameters !== undefined ? { mcp_shared_parameters } : {}),
+    };
+}
 
-    const result = await client.apps.install(appId, settings);
+export async function installApp(program: Command, appId: string, options: SettingsOptions) {
+    const input = await installationInput(options);
+    const credentials = await readCredentials(options.credentialsFile);
+    const client = await getClient(program);
+    const result = await client.apps.install(
+        appId,
+        input.settings,
+        credentials.oauth_params,
+        credentials.oauth_provider_params,
+        credentials.api_key_params,
+        input.mcp_parameters,
+        input.mcp_shared_parameters,
+        {
+            instance_key: options.instanceKey,
+            display_name: input.display_name,
+            namespace_overrides: input.namespace_overrides,
+        },
+    );
     console.log(`${colors.green('✓')} App installed successfully`);
     console.log(`  Installation ID: ${result.id}`);
     console.log(`  App Manifest ID: ${result.manifest}`);
+    console.log(`  Instance Key: ${result.instance_key ?? 'default'}`);
+    if (result.display_name) console.log(`  Display Name: ${result.display_name}`);
 }
 
 export async function deleteAppInstallation(
@@ -351,6 +382,11 @@ export async function listInstalledApps(program: Command, options: InstalledApps
 
     const apps = await client.apps.getInstalledApps(kind);
 
+    if (options.json) {
+        console.log(JSON.stringify(apps, null, 2));
+        return;
+    }
+
     if (apps.length === 0) {
         console.log('No installed apps found that you have access to.');
         return;
@@ -360,6 +396,9 @@ export async function listInstalledApps(program: Command, options: InstalledApps
     apps.forEach((app) => {
         console.log(`${colors.bold(app.manifest.name)} [${app.manifest.id}]`);
         console.log(`  Installation ID: ${app.id}`);
+        console.log(`  Instance Key: ${app.instance_key ?? 'default'}`);
+        if (app.display_name) console.log(`  Display Name: ${app.display_name}`);
+        if (app.namespace_overrides) console.log(`  Namespaces: ${JSON.stringify(app.namespace_overrides)}`);
         if (app.manifest.description) {
             console.log(`  ${colors.dim(app.manifest.description)}`);
         }
@@ -367,14 +406,39 @@ export async function listInstalledApps(program: Command, options: InstalledApps
     });
 }
 
-export async function getAppInstallation(program: Command, appName: string, _options: Record<string, unknown>) {
+export async function getAppInstallation(
+    program: Command,
+    appName: string,
+    options: CliOptions<{ id?: boolean; instanceKey?: string }>,
+) {
+    if (options.id && options.instanceKey !== undefined) throw new Error('--id and --instance-key cannot be combined');
     const client = await getClient(program);
 
-    const installation = await client.apps.getAppInstallationByName(appName);
+    const candidates =
+        options.instanceKey === undefined
+            ? undefined
+            : (await client.apps.getInstalledApps()).filter(
+                  (app) =>
+                      (app.manifest.name === appName || app.manifest.id === appName) &&
+                      (app.instance_key ?? 'default') === options.instanceKey,
+              );
+    if (candidates && candidates.length > 1) {
+        throw new Error(
+            'App name is ambiguous; select the manifest ID with --instance-key or the installation ID with --id',
+        );
+    }
+    const installation = options.id
+        ? await client.apps.getAppInstallation(appName)
+        : candidates !== undefined
+          ? candidates[0]
+          : await client.apps.getAppInstallationByName(appName);
 
     if (!installation) {
-        console.log(`${colors.yellow('⚠')} App "${appName}" is not installed in this project.`);
-        return;
+        if (!options.id && options.instanceKey === undefined) {
+            console.log(`${colors.yellow('⚠')} App "${appName}" is not installed in this project.`);
+            return;
+        }
+        throw new Error('App installation not found or not accessible in this project');
     }
 
     const permissions = await client.iam.aces.list({
@@ -416,48 +480,29 @@ export async function getAppInstallation(program: Command, appName: string, _opt
     );
 }
 
-export async function updateAppInstallationSettings(program: Command, appId: string, options: SettingsOptions) {
-    const client = await getClient(program);
-
-    let settings: Record<string, unknown>;
-
-    if (options.settingsFile) {
-        try {
-            const content = await readFile(options.settingsFile, 'utf-8');
-            settings = readSettings(JSON.parse(content));
-        } catch (err: unknown) {
-            if (hasErrorCode(err, 'ENOENT')) {
-                console.error(`${colors.red('✗')} File not found: ${options.settingsFile}`);
-                process.exit(1);
-            }
-            throw err;
+export async function updateAppInstallationSettings(
+    program: Command,
+    installationId: string,
+    options: SettingsOptions,
+) {
+    const input = await installationInput(options);
+    let access_control: AppInstallationPayload['access_control'];
+    if (options.accessControl !== undefined) {
+        if (!['all', 'ui', 'none', 'null'].includes(options.accessControl)) {
+            throw new Error('--access-control must be all, ui, none or null');
         }
-    } else if (options.settings) {
-        try {
-            settings = readSettings(JSON.parse(options.settings));
-        } catch {
-            console.error(`${colors.red('✗')} Invalid JSON in settings option`);
-            process.exit(1);
-        }
-    } else {
-        console.error(`${colors.red('✗')} Either --settings or --settings-file must be provided`);
-        process.exit(1);
+        access_control = options.accessControl === 'null' ? null : (options.accessControl as 'all' | 'ui' | 'none');
     }
-
+    if (!Object.keys(input).length && options.accessControl === undefined) {
+        throw new Error('Provide settings, a display name, namespaces, MCP parameters or an access-control policy');
+    }
+    const client = await getClient(program);
     const result = await client.apps.updateInstallationSettings({
-        app_id: appId,
-        settings,
+        app_id: installationId,
+        ...input,
+        ...(options.accessControl !== undefined ? { access_control } : {}),
     });
-
     console.log(`${colors.green('✓')} App settings updated successfully`);
     console.log(`  Installation ID: ${result.id}`);
     console.log(`  App Name: ${result.manifest.name}`);
-}
-
-function readSettings(value: unknown): Record<string, unknown> {
-    if (!isRecord(value)) {
-        console.error(`${colors.red('✗')} Settings must be a JSON object`);
-        process.exit(1);
-    }
-    return value;
 }

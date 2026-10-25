@@ -301,7 +301,7 @@ const pkg = await readAppPackage();
 const packageJson = await readJsonIfExists('package.json');
 const appName = packageJsonName(packageJson);
 await validatePackageProcesses(pkg, appName, shouldRejectTemplateExampleIds(appName, cwd));
-const summary = summarizeAppPackage(pkg);
+const summary = summarizeAppPackage(pkg, packageJson);
 const qualityReport = await readJsonIfExists('dist/app-quality-report.json');
 if (qualityReport?.artifacts && typeof qualityReport.artifacts === 'object') {
     summary.source_artifacts = qualityReport.artifacts;

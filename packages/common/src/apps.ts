@@ -1,7 +1,27 @@
+import type { AuthTokenPayload } from './apikey.js';
 import type * as Wire from './wire-types.generated.js';
 
 /** Allowed values for AppUINavItem.preferredSection */
 export const PREFERRED_SECTIONS = ['default', 'footer', 'settings'] as const;
+
+function trimBoundaryHyphens(value: string): string {
+    let start = 0;
+    let end = value.length;
+    while (start < end && value[start] === '-') start++;
+    while (end > start && value[end - 1] === '-') end--;
+    return value.slice(start, end);
+}
+
+/** Convert an app display/package name into the canonical persisted app id. */
+export function slugifyAppId(value: string): string {
+    const normalized = value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '-');
+    const slug = trimBoundaryHyphens(normalized).slice(0, 80);
+    if (!slug) throw new Error('App name must contain at least one letter or number');
+    return slug;
+}
 
 // The app-manifest closure is declared once, as the Zod schemas in `./api-schemas/apps.ts`, and
 // inferred below. The documentation moved with it: what a published component says about a field now
@@ -169,6 +189,8 @@ export const APP_VERSION_HEADER = 'x-vertesia-app-version';
 export type AppAvailableIn = Wire.AppAvailableIn;
 
 export type AppVersionKind = Wire.AppVersionKind;
+export type AppDeploymentAlias = Wire.AppDeploymentAlias;
+export type AppDeploymentAliasTarget = Wire.AppDeploymentAliasTarget;
 export type AppVersionState = Wire.AppVersionState;
 export type AppVersionTarget = Wire.AppVersionTarget;
 export type AppVersionGitRefType = Wire.AppVersionGitRefType;
@@ -180,7 +202,77 @@ export type AppVersionGitSource = Wire.AppVersionGitSource;
 
 export type AppVersionUrls = Wire.AppVersionUrls;
 
+/**
+ * Stable, user-defined deployment alias (for example `production` or `customer-preview`).
+ *
+ * Aliases are deliberately DNS-label compatible so the app gateway can expose each alias through
+ * both a shared-origin path and a dedicated application hostname without a second naming rule.
+ */
+export const APP_DEPLOYMENT_ALIAS_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
 export type AppVersionRecord = Wire.AppVersionRecord;
+
+export interface AppGenTemplateMetadata {
+    name: string;
+    version: number;
+    runtime_features: Record<string, number>;
+}
+
+export const ADVANCED_APP_VERSION_LAUNCH_FEATURE = 'advanced_launch';
+export const ADVANCED_APP_VERSION_LAUNCH_PROTOCOL_VERSION = 1;
+
+function recordValue(value: unknown): Record<string, unknown> | undefined {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : undefined;
+}
+
+/** Read template provenance captured in an immutable AppGen version manifest. */
+export function getAppGenTemplateMetadata(manifest: unknown): AppGenTemplateMetadata | undefined {
+    const packageArtifacts = recordValue(recordValue(manifest)?.package_artifacts);
+    const metadata = recordValue(packageArtifacts?.appgen_template);
+    const runtimeFeatures = recordValue(metadata?.runtime_features);
+    const name = typeof metadata?.name === 'string' ? metadata.name.trim() : '';
+    if (
+        !metadata ||
+        !name ||
+        !Number.isInteger(metadata.version) ||
+        (metadata.version as number) < 1 ||
+        !runtimeFeatures
+    ) {
+        return undefined;
+    }
+
+    const normalizedFeatures: Record<string, number> = {};
+    for (const [feature, protocolVersion] of Object.entries(runtimeFeatures)) {
+        if (Number.isInteger(protocolVersion) && (protocolVersion as number) > 0) {
+            normalizedFeatures[feature] = protocolVersion as number;
+        }
+    }
+    return {
+        name,
+        version: metadata.version as number,
+        runtime_features: normalizedFeatures,
+    };
+}
+
+/** Return the protocol version implemented by one generated-app runtime feature. */
+export function getAppVersionRuntimeFeatureVersion(manifest: unknown, feature: string): number | undefined {
+    return getAppGenTemplateMetadata(manifest)?.runtime_features[feature];
+}
+
+export function supportsAdvancedAppVersionLaunch(manifest: unknown): boolean {
+    return (
+        (getAppVersionRuntimeFeatureVersion(manifest, ADVANCED_APP_VERSION_LAUNCH_FEATURE) ?? 0) >=
+        ADVANCED_APP_VERSION_LAUNCH_PROTOCOL_VERSION
+    );
+}
+
+export type AppVersionLaunchTarget = Wire.AppVersionLaunchTarget;
+
+export type CreateAppVersionLaunchRequest = Wire.CreateAppVersionLaunchRequest;
+
+export type CreateAppVersionLaunchResponse = Wire.CreateAppVersionLaunchResponse;
 
 export type DeleteAppVersionResponse = Wire.DeleteAppVersionResponse;
 
@@ -205,9 +297,25 @@ export type AppBuildProgress = Wire.AppBuildProgress;
 
 export type AppScaffoldModule = Wire.AppScaffoldModule;
 
+export type AppScaffoldSourceMode = Wire.AppScaffoldSourceMode;
+
 export type StartAppScaffoldRequest = Wire.StartAppScaffoldRequest;
 
 export type StartAppScaffoldResponse = Wire.StartAppScaffoldResponse;
+
+export type AppGithubConfiguration = Wire.AppGithubConfiguration;
+export type StartAppGithubAuthorizationResponse = Wire.StartAppGithubAuthorizationResponse;
+export type ExchangeAppGithubAuthorizationRequest = Wire.ExchangeAppGithubAuthorizationRequest;
+export type AppGithubRepositoriesQuery = Wire.AppGithubRepositoriesQuery;
+export type AppGithubInstallation = Wire.AppGithubInstallation;
+export type AppGithubAccount = Wire.AppGithubAccount;
+export type ExchangeAppGithubAuthorizationResponse = Wire.ExchangeAppGithubAuthorizationResponse;
+export type AppGithubRepository = Wire.AppGithubRepository;
+export type AppGithubRepositoryCreation = Wire.AppGithubRepositoryCreation;
+export type AppGithubRepositoryList = Wire.AppGithubRepositoryList;
+export type AppGithubRepositorySetupQuery = Wire.AppGithubRepositorySetupQuery;
+export type AppGithubBranchState = Wire.AppGithubBranchState;
+export type AppGithubRepositorySetup = Wire.AppGithubRepositorySetup;
 
 export type StartAppDevelopmentTaskRequest = Wire.StartAppDevelopmentTaskRequest;
 
@@ -246,6 +354,7 @@ export type AppManifestData = Wire.AppManifestData;
 export type UpdateAppPayload = Wire.UpdateAppPayload;
 
 export type AppGitSourceConfig = Wire.AppGitSourceConfig;
+export type AppGitSourceProvider = Wire.AppGitSourceProvider;
 
 export type AppSourceConfig = Wire.AppSourceConfig;
 
@@ -649,6 +758,62 @@ export type AppDeleteSummary = Wire.AppDeleteSummary;
 
 export type UpdateAppInstallationOAuthApprovalPayload = Wire.UpdateAppInstallationOAuthApprovalPayload;
 
+/** Check exact installation grants; legacy app-name grants authorize only the default instance. */
+export function hasAppInstallationAccess(
+    token: AuthTokenPayload,
+    installation: { id: string; project: string; instance_key?: string; manifest: { name: string } },
+    ui = false,
+): boolean {
+    if (token.project?.id !== installation.project) return false;
+    const grants = token.app_installations;
+    if (grants !== undefined) {
+        if (grants.version !== 1 || grants.project_id !== installation.project) return false;
+        if (grants.ids.includes(installation.id)) {
+            return !ui || !grants.ui_restrictions?.includes(installation.id);
+        }
+    }
+    // Default app-name grants survive reinstalling the same app with a new installation ID.
+    // Named instances never inherit these grants, including on refreshed running-agent tokens.
+    return (
+        (!installation.instance_key || installation.instance_key === 'default') &&
+        (token.apps ?? []).includes(installation.manifest.name) &&
+        (!ui || !token.ui_restrictions?.includes(installation.manifest.name))
+    );
+}
+
+/** Persist this effective collection in catalogs so discovery and execution use the same namespace. */
+export function resolveInstallationCollection(
+    collection: ToolCollectionObject,
+    installation: Pick<AppInstallation, 'instance_key' | 'namespace_overrides' | 'namespace_conflicts'>,
+): ToolCollectionObject {
+    if (collection.type === 'mcp' && installation.namespace_conflicts?.includes(collection.id)) {
+        throw new Error(`Namespace conflict for MCP collection '${collection.id}'; resolve it in project app settings`);
+    }
+    if (collection.type !== 'mcp') return collection;
+    const overrides = installation.namespace_overrides;
+    if (overrides && Object.hasOwn(overrides, collection.id)) {
+        const namespace = overrides[collection.id];
+        if (typeof namespace === 'string' && namespace.length > 0) return { ...collection, namespace };
+    } else if (!installation.instance_key || installation.instance_key === 'default') {
+        return collection;
+    }
+    throw new Error(`Namespace allocation required for MCP collection '${collection.id}'`);
+}
+
+export type AppInstanceAvailability = Wire.AppInstanceAvailability;
 export type McpPublicParameter = Wire.McpPublicParameter;
 export type McpSecretParameter = Wire.McpSecretParameter;
 export type McpConnectionParameter = Wire.McpConnectionParameter;
+
+/** Whether a manifest can safely back an additional MCP-only installation. */
+export function isMcpOnlyInstanceManifest(
+    manifest: Pick<AppManifestData, 'endpoint' | 'ui' | 'capabilities' | 'tool_collections'>,
+): boolean {
+    return (
+        !manifest.endpoint &&
+        !manifest.ui &&
+        !manifest.capabilities?.some((capability) => capability !== 'tools') &&
+        !!manifest.tool_collections?.length &&
+        manifest.tool_collections.every((collection) => normalizeToolCollection(collection).type === 'mcp')
+    );
+}

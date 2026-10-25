@@ -6,12 +6,16 @@ import type {
     AppDeleteSummary,
     AppDevelopmentTaskDetails,
     AppDevelopmentTaskList,
+    AppGithubConfiguration,
+    AppGithubRepositoryList,
+    AppGithubRepositorySetup,
     AppInspectionResult,
     AppInstallation,
     AppInstallationKind,
     AppInstallationListEntry,
     AppInstallationPayload,
     AppInstallationWithManifest,
+    AppInstanceAvailability,
     AppManifest,
     AppManifestData,
     AppPackage,
@@ -24,12 +28,17 @@ import type {
     AppScaffoldProgress,
     AppsQuery,
     AppToolCollection,
+    AppVersionLaunchTarget,
     AppVersionListQuery,
     AppVersionRecord,
     CountResult,
     CreateAppRepoBranchRequest,
+    CreateAppVersionLaunchRequest,
+    CreateAppVersionLaunchResponse,
     DeleteAppVersionResponse,
+    ExchangeAppGithubAuthorizationResponse,
     McpApiKeyStatus,
+    OAuthClient,
     ProjectRef,
     PromoteAppVersionResponse,
     RequireAtLeastOne,
@@ -37,6 +46,7 @@ import type {
     StartAppBuildRequest,
     StartAppBuildResponse,
     StartAppDevelopmentTaskRequest,
+    StartAppGithubAuthorizationResponse,
     StartAppScaffoldRequest,
     StartAppScaffoldResponse,
     UpdateAppInstallationOAuthApprovalPayload,
@@ -52,6 +62,11 @@ export type { OrphanedAppInstallation } from '@vertesia/common';
 export default class AppsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/apps');
+    }
+
+    /** The publisher-managed OAuth registration shared by all installations of an app. */
+    getOAuthClient(appId: string): Promise<OAuthClient> {
+        return this.get(`/${encodeURIComponent(appId)}/oauth-client`);
     }
 
     create(manifest: AppManifestData): Promise<AppManifest> {
@@ -75,6 +90,27 @@ export default class AppsApi extends ApiTopic {
      * The key is write-only: it is encrypted server-side and never returned by any endpoint,
      * so the response carries only the configured flag and a masked hint.
      */
+    setInstallationMcpApiKey(installationId: string, collectionId: string, apiKey: string): Promise<McpApiKeyStatus> {
+        return this.put(
+            `/installations/${encodeURIComponent(installationId)}/collections/${encodeURIComponent(collectionId)}/api-key`,
+            {
+                payload: { api_key: apiKey },
+            },
+        );
+    }
+
+    getInstallationMcpApiKeyStatus(installationId: string, collectionId: string): Promise<McpApiKeyStatus> {
+        return this.get(
+            `/installations/${encodeURIComponent(installationId)}/collections/${encodeURIComponent(collectionId)}/api-key`,
+        );
+    }
+
+    deleteInstallationMcpApiKey(installationId: string, collectionId: string): Promise<McpApiKeyStatus> {
+        return this.del(
+            `/installations/${encodeURIComponent(installationId)}/collections/${encodeURIComponent(collectionId)}/api-key`,
+        );
+    }
+
     setMcpCollectionApiKey(appId: string, collectionId: string, apiKey: string): Promise<McpApiKeyStatus> {
         return this.put(`/${encodeURIComponent(appId)}/collections/${encodeURIComponent(collectionId)}/api-key`, {
             payload: { api_key: apiKey } satisfies SetMcpApiKeyRequest,
@@ -123,6 +159,29 @@ export default class AppsApi extends ApiTopic {
         return this.post(`/versions/${recordId}/promote`);
     }
 
+    /** Create an ephemeral launch of an immutable version with temporary installation settings. */
+    createVersionLaunch(
+        recordId: string,
+        payload: CreateAppVersionLaunchRequest,
+    ): Promise<CreateAppVersionLaunchResponse> {
+        return this.post(`/versions/${recordId}/launches`, { payload });
+    }
+
+    /** List accessible projects where this app is installed and can host a temporary launch. */
+    listVersionLaunchTargets(recordId: string): Promise<AppVersionLaunchTarget[]> {
+        return this.get(`/versions/${recordId}/launch-targets`);
+    }
+
+    /** Assign or move a stable deployment alias to an immutable app version. */
+    assignVersionAlias(recordId: string, alias: string): Promise<AppVersionRecord> {
+        return this.put(`/versions/${recordId}/aliases/${encodeURIComponent(alias)}`);
+    }
+
+    /** Remove an alias only when it still points to the specified app version. */
+    removeVersionAlias(recordId: string, alias: string): Promise<AppVersionRecord> {
+        return this.del(`/versions/${recordId}/aliases/${encodeURIComponent(alias)}`);
+    }
+
     rebuildVersion(recordId: string): Promise<StartAppBuildResponse> {
         return this.post(`/versions/${recordId}/rebuild`);
     }
@@ -147,6 +206,63 @@ export default class AppsApi extends ApiTopic {
 
     getScaffoldProgress(workflowId: string, runId: string): Promise<AppScaffoldProgress> {
         return this.get(`/scaffolds/${encodeURIComponent(workflowId)}/${encodeURIComponent(runId)}/progress`);
+    }
+
+    /**
+     * Return whether the global App Builder GitHub App is configured, together with its slug and
+     * installation URL when available.
+     */
+    getGithubConfiguration(): Promise<AppGithubConfiguration> {
+        return this.get('/source-providers/github');
+    }
+
+    /**
+     * Start GitHub user authorization. The server creates a short-lived, single-use OAuth state
+     * bound to the current Vertesia user/account/project and returns the GitHub authorization URL.
+     */
+    startGithubAuthorization(): Promise<StartAppGithubAuthorizationResponse> {
+        return this.post('/source-providers/github/authorize', {});
+    }
+
+    /**
+     * Complete GitHub authorization with the callback code and state. The server consumes the state,
+     * verifies the current user's writable GitHub App installations, discards the GitHub user token,
+     * and returns those installations plus an opaque `connection_id`. That id references a
+     * short-lived server-side snapshot of the writable repositories verified for this Vertesia
+     * user/account/project; selecting a repository consumes it once.
+     */
+    exchangeGithubAuthorization(code: string, state: string): Promise<ExchangeAppGithubAuthorizationResponse> {
+        return this.post('/source-providers/github/exchange', { payload: { code, state } });
+    }
+
+    /**
+     * List repositories with push access for one installation verified during authorization. The
+     * connection id is scoped to the current Vertesia user/account/project and expires shortly.
+     */
+    listGithubRepositories(connectionId: string, installationId: string): Promise<AppGithubRepositoryList> {
+        return this.get('/source-providers/github/repositories', {
+            query: { connection_id: connectionId, installation_id: installationId },
+        });
+    }
+
+    /**
+     * List branches and verify whether a selected branch can safely receive generated source.
+     * The verified connection remains reusable until app creation consumes it.
+     */
+    getGithubRepositorySetup(
+        connectionId: string,
+        installationId: string,
+        repository: string,
+        branch: string,
+    ): Promise<AppGithubRepositorySetup> {
+        return this.get('/source-providers/github/repository-setup', {
+            query: {
+                connection_id: connectionId,
+                installation_id: installationId,
+                repository,
+                branch,
+            },
+        });
     }
 
     /**
@@ -280,9 +396,16 @@ export default class AppsApi extends ApiTopic {
      * package-resolved (no per-id route), so this is how a client reads the full definition — type
      * schema, interaction prompt, process definition, dashboard spec — to visualize an exposed id.
      */
-    getAppPackage(appIdOrName: string, scope: AppPackageScope | AppPackageScope[] = 'all'): Promise<AppPackage> {
+    getAppPackage(
+        appIdOrName: string,
+        scope: AppPackageScope | AppPackageScope[] = 'all',
+        deploymentAlias?: string,
+    ): Promise<AppPackage> {
         return this.get(`/${encodeURIComponent(appIdOrName)}/package`, {
-            query: { scope: Array.isArray(scope) ? scope.join(',') : scope },
+            query: {
+                scope: Array.isArray(scope) ? scope.join(',') : scope,
+                ...(deploymentAlias ? { deployment_alias: deploymentAlias } : {}),
+            },
         });
     }
 
@@ -330,10 +453,15 @@ export default class AppsApi extends ApiTopic {
         apiKeyParams?: AppApiKeyCollectionParams,
         mcpParameters?: AppInstallationPayload['mcp_parameters'],
         mcpSharedParameters?: AppInstallationPayload['mcp_shared_parameters'],
+        installation?: Pick<
+            AppInstallationPayload,
+            'approved_scopes' | 'deployment_alias' | 'instance_key' | 'display_name' | 'namespace_overrides'
+        >,
     ): Promise<AppInstallation> {
         return this.post(`/install`, {
             payload: {
                 app_id: appId,
+                ...installation,
                 settings,
                 oauth_params: oauthParams,
                 oauth_provider_params: oauthProviderParams,
@@ -357,6 +485,14 @@ export default class AppsApi extends ApiTopic {
      * get an app unstallation given its name or null if the app is not installed
      * @returns
      */
+    getAppInstanceAvailability(): Promise<AppInstanceAvailability> {
+        return this.get('/instance-availability');
+    }
+
+    getAppInstallation(installationId: string): Promise<AppInstallationWithManifest> {
+        return this.get(`/installations/id/${encodeURIComponent(installationId)}`);
+    }
+
     getAppInstallationByName(appName: string): Promise<AppInstallationWithManifest | null> {
         return this.get<AppInstallationWithManifest>(`/installations/name/${appName}`).catch((err: ServerError) => {
             if (err.status === 404) {
@@ -430,6 +566,10 @@ export default class AppsApi extends ApiTopic {
                 // clear an override). The server uses `'access_control' in payload` to distinguish
                 // "leave unchanged" from "clear", so only spread the key when it was supplied.
                 ...('access_control' in settingsPayload ? { access_control: settingsPayload.access_control } : {}),
+                ...('display_name' in settingsPayload ? { display_name: settingsPayload.display_name } : {}),
+                ...('namespace_overrides' in settingsPayload
+                    ? { namespace_overrides: settingsPayload.namespace_overrides }
+                    : {}),
                 ...('mcp_parameters' in settingsPayload ? { mcp_parameters: settingsPayload.mcp_parameters } : {}),
                 ...('mcp_shared_parameters' in settingsPayload
                     ? { mcp_shared_parameters: settingsPayload.mcp_shared_parameters }

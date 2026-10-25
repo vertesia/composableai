@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/api-fetch-client",
-    "version": "1.6.0-dev.20261014.015055Z",
+    "version": "1.6.0-dev.20261022.120426Z",
     "description": "HTTP client which wraps a fetch implementation and simplify the creation of REST API clients. Works both in browser and in node.",
     "type": "module",
     "main": "./lib/index.js",
@@ -59,7 +59,12 @@
         "typescript": "catalog:"
     },
     "dependencies": {
-        "eventsource-parser": "^4.1.1"
+        "eventsource-parser": "^4.1.2"
     },
-    "gitHead": "468240ecf939f968e1324116be26386cdf5ada49"
+    "gitHead": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+    "releaseIdentity": {
+        "source_sha": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+        "dependency_sha": "93466e47b06db23ac3c800e248d170afe65e5006",
+        "lock_sha256": "117e1c8068aa07d59117323a51ceccfc96cab543e50c03eb7efc19709d6f5e6b"
+    }
 }

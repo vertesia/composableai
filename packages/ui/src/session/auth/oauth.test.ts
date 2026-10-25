@@ -383,6 +383,93 @@ it.each(['http://localhost:5173', 'https://localhost:5173'])(
     },
 );
 
+it('allows a complete OAuth round trip through loopback HTTP services in local development', async () => {
+    const localIssuer = 'http://localhost:8093';
+    const localOrigin = 'http://localhost:8094';
+    const localClientId = `${localOrigin}/.well-known/oauth-client/vertesia-app`;
+    const redirectUri = `${localOrigin}/app/`;
+    browser.location.origin = localOrigin;
+    browser.location.href = `${redirectUri}?a=a&p=p`;
+    const initialize = async () => {
+        vi.resetModules();
+        const { Env } = await import('../../env');
+        Env.init({
+            name: 'local',
+            version: '1',
+            type: 'development',
+            isLocalDev: true,
+            isDocker: false,
+            endpoints: { studio: 'http://localhost:8091', zeno: 'http://localhost:8092', sts: localIssuer },
+            oauth: {
+                clientId: localClientId,
+                redirectUri,
+                scopes: ['openid', 'content:read'],
+                resource: `${localIssuer}/`,
+            },
+        });
+        return import('./oauth');
+    };
+    vi.stubGlobal('fetch', async (input: string | URL, init?: RequestInit) => {
+        const url = String(input);
+        requests.push({ url, init });
+        if (url === `${localIssuer}/.well-known/oauth-authorization-server`) {
+            return Response.json({
+                issuer: localIssuer,
+                authorization_endpoint: `https://localhost:8098/oauth/authorize?issuer=${encodeURIComponent(localIssuer)}`,
+                token_endpoint: `${localIssuer}/oauth/token`,
+                revocation_endpoint: `${localIssuer}/oauth/revoke`,
+            });
+        }
+        if (url === `${localIssuer}/oauth/token`) {
+            return Response.json({
+                access_token: `e30.${btoa(
+                    JSON.stringify({
+                        iss: localIssuer,
+                        client_id: localClientId,
+                        exp: Date.now() / 1000 + 3600,
+                        account: { id: 'a' },
+                        project: { id: 'p' },
+                    }),
+                )}.signature`,
+                token_type: 'Bearer',
+            });
+        }
+        throw new Error(`Unexpected request: ${url}`);
+    });
+
+    const oauth = await initialize();
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledOnce());
+    const authorize = new URL(replace.mock.calls[0][0]);
+    expect(authorize.origin).toBe('https://localhost:8098');
+    expect(authorize.searchParams.get('resource')).toBe(`${localIssuer}/`);
+    browser.location.href = `${redirectUri}?code=local-code&state=${authorize.searchParams.get('state')}`;
+
+    const callback = await initialize();
+    await expect(callback.getAppOAuthToken()).resolves.toBeTruthy();
+    expect(requests.some(({ url }) => url === `${localIssuer}/oauth/token`)).toBe(true);
+});
+
+it.each([
+    [false, 'http://localhost:8093'],
+    [true, 'http://token.internal:8093'],
+])('rejects HTTP OAuth services outside local loopback development: local=%s issuer=%s', async (isLocalDev, sts) => {
+    vi.resetModules();
+    const { Env } = await import('../../env');
+    Env.init({
+        name: 'unsafe',
+        version: '1',
+        type: 'development',
+        isLocalDev,
+        isDocker: false,
+        endpoints: { studio: sts, zeno: sts, sts },
+        oauth: { clientId: 'local-client', redirectUri: `${origin}/app` },
+    });
+    const oauth = await import('./oauth');
+    await expect(oauth.getAppOAuthToken()).rejects.toThrow('loopback HTTP');
+    expect(requests).toHaveLength(0);
+});
+
 it('prefers an STS fragment token over OAuth', async () => {
     const oauth = await setup();
     storage.set('auth_state', 'state');

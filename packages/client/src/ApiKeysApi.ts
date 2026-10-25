@@ -1,7 +1,6 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     ApiKey,
-    ApiKeyReadResponse,
     ApiKeyWithValue,
     AuthTokenResponse,
     CreateApiKeyPayload,
@@ -42,17 +41,10 @@ export class ApiKeysApi extends ApiTopic {
     }
 
     /**
-     * Retrieve an ApiKey and its value
-     * BE VERY CAREFUL USING THIS API AS IT EXPOSE THE API KEY VALUE
-     * ALL REQUESTS ARE LOGGED IN SECURITY AUDIT LOG
-     * @returns ApiKeyWithValue
-     * */
-    retrieve(id: string, withValue: true): Promise<ApiKeyWithValue>;
-    retrieve(id: string, withValue?: false): Promise<ApiKey>;
-    retrieve(id: string, withValue: boolean = false): Promise<ApiKeyReadResponse> {
-        if (withValue) {
-            return this.get(`/${id}`, { query: { withValue: true } });
-        }
+     * Retrieve an ApiKey without its value. The raw value is returned only once, by `create`.
+     * @returns ApiKey
+     */
+    retrieve(id: string): Promise<ApiKey> {
         return this.get(`/${id}`);
     }
 

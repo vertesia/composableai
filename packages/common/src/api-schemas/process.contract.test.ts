@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     ProcessBudgetStateSchema,
     ProcessRunConfigSchema,
+    PublishProcessDefinitionPayloadSchema,
     RecordProcessRunPayloadSchema,
     StartProcessTestRunPayloadSchema,
     SubmitProcessTestRunPayloadSchema,
@@ -147,7 +148,7 @@ describe('ProcessBudgetStateSchema', () => {
     });
 });
 
-describe('process test run idempotency_key', () => {
+describe('process idempotency_key', () => {
     const scenario = {
         id: 'noop',
         name: 'Noop completes',
@@ -165,6 +166,7 @@ describe('process test run idempotency_key', () => {
             SubmitProcessTestRunPayloadSchema,
             { process: { id: 'sys:noop' }, scenarios: [scenario] },
         ],
+        ['PublishProcessDefinitionPayload', PublishProcessDefinitionPayloadSchema, { confirmed: true }],
     ] as const;
 
     it.each(payloads)('%s accepts keys of 1 to 256 characters', (_name, schema, base) => {

@@ -2,6 +2,7 @@ import type { IRequestParams } from '@vertesia/api-fetch-client';
 import {
     type AsyncExecutionPayload,
     type AsyncExecutionResult,
+    type ExecuteNamedInteractionQuery,
     ExecutionRunStatus,
     type InteractionExecutionPayload,
     type InteractionExecutionResult,
@@ -22,6 +23,20 @@ const INTERACTION_EXECUTION_TIMEOUT_MS = (() => {
     const parsed = raw ? Number.parseInt(raw, 10) : NaN;
     return Number.isFinite(parsed) && parsed > 0 ? parsed : 30 * 60 * 1000; // 30 minutes
 })();
+
+/**
+ * Per-request options for a synchronous named-interaction execution: the request options this method
+ * can honour, plus the published execute query.
+ *
+ * `reader` and `jsonPayload` are left out: the method parses the JSON execution result and serializes
+ * the payload it builds, so either would break the call. `query` is the typed execute query instead of
+ * a free-form record, so a misspelt parameter fails to compile rather than being ignored by the server.
+ * With `onChunk`, the options apply to the initial request only; the stream that follows is a separate
+ * connection.
+ */
+export type ExecuteInteractionRequestOptions = Omit<IRequestParams, 'reader' | 'jsonPayload' | 'query'> & {
+    query?: ExecuteNamedInteractionQuery;
+};
 
 export async function EventSourceProvider(): Promise<typeof EventSource> {
     if (typeof globalThis.EventSource === 'function') {
@@ -81,6 +96,7 @@ export async function executeInteraction<P = unknown>(
  * @param interaction
  * @param payload
  * @param onChunk
+ * @param requestOptions request options, e.g. `{ query: { include_prompt: false } }` to omit the rendered prompt
  * @returns
  */
 export async function executeInteractionByName<P = unknown>(
@@ -88,7 +104,7 @@ export async function executeInteractionByName<P = unknown>(
     interaction: string,
     payload: InteractionExecutionPayload = {},
     onChunk?: (chunk: string) => void,
-    requestOptions?: IRequestParams,
+    requestOptions?: ExecuteInteractionRequestOptions,
 ): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
     const response = await client.post<InteractionExecutionResult<P>>('/api/v1/execute', {
@@ -98,8 +114,14 @@ export async function executeInteractionByName<P = unknown>(
             interaction,
             stream,
         } as NamedInteractionExecutionPayload,
-        // Synchronous interaction execution blocks on the model; keep a long client timeout.
-        timeoutMs: requestOptions?.timeoutMs ?? (stream ? undefined : INTERACTION_EXECUTION_TIMEOUT_MS),
+        // Synchronous interaction execution blocks on the model; keep a long client timeout. An explicit
+        // timeout wins, including `null`, `false` or `0`, which disable it.
+        timeoutMs:
+            requestOptions?.timeoutMs !== undefined
+                ? requestOptions.timeoutMs
+                : stream
+                  ? undefined
+                  : INTERACTION_EXECUTION_TIMEOUT_MS,
     });
     if (stream) {
         if (response.status === ExecutionRunStatus.failed) {
@@ -167,8 +189,13 @@ export async function executeInteractionAsync(
     client: VertesiaClient,
     payload: AsyncExecutionPayload,
 ): Promise<AsyncExecutionResult> {
+    // A conversation starts an agent run: without `idempotency_key` a replay could start a second one,
+    // so opt out of any client-level retry policy (see `AgentsApi.start`). With a key, a replay
+    // returns the run the first request started.
+    const unkeyedConversation = payload.type === 'conversation' && !payload.idempotency_key;
     return await client.post('/api/v1/execute/async', {
         payload,
+        retryPolicy: unkeyedConversation ? false : undefined,
     });
 }
 

@@ -4,7 +4,7 @@
 // vertesia import transformers (?skill/?template/?prompt/?raw) to esbuild so skill/interaction
 // apps bundle too. write-app-package.mjs still emits dist/app-package*.json afterwards.
 
-import { mkdirSync, readFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { build } from 'esbuild';
@@ -66,6 +66,12 @@ const plugin = {
                         .join('\n');
                     throw new Error(`Validation failed for ${clean}:\n${errors}`);
                 }
+            }
+            // Transformers also emit scripts, skill resource files and template assets.
+            for (const asset of r.assets || []) {
+                const destination = resolve('dist', asset.destPath);
+                mkdirSync(dirname(destination), { recursive: true });
+                copyFileSync(asset.sourcePath, destination);
             }
             return { contents: renderTransformerModule(r), loader: 'js', resolveDir: dirname(clean) };
         });

@@ -1,6 +1,6 @@
 {
     "name": "plugin-template",
-    "version": "1.6.0-dev.20261014.015055Z",
+    "version": "1.6.0-dev.20261022.120426Z",
     "description": "A unified template for building custom UI plugins and tool servers for Vertesia",
     "type": "module",
     "main": "lib/tool-server/server.js",
@@ -32,6 +32,13 @@
         "seed:content": "node src/modules/content-app/scripts/seed-content-app.ts",
         "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.ts",
         "build:sandbox": "node src/modules/service/scripts/build-server-esbuild.mjs --sandbox"
+    },
+    "vertesia-appgen": {
+        "name": "plugin-template",
+        "version": 1,
+        "runtime_features": {
+            "advanced_launch": 1
+        }
     },
     "vertesia-build": {
         "libDir": "./lib",
@@ -67,9 +74,9 @@
         "react-dom": "^19.3.0"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.13",
+        "@biomejs/biome": "2.5.15",
         "@hono/vite-dev-server": "^0.26.1",
-        "@playwright/test": "^1.63.0",
+        "@playwright/test": "^1.64.1",
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/vite": "^4.3.3",
         "@types/node": "catalog:",
@@ -79,7 +86,7 @@
         "@vertesia/plugin-builder": "workspace:*",
         "@vitejs/plugin-basic-ssl": "^2.3.0",
         "@vitejs/plugin-react": "^6.1.2",
-        "concurrently": "^10.0.5",
+        "concurrently": "^10.0.6",
         "esbuild": "^0.28.2",
         "globals": "^17.13.0",
         "react": "catalog:",
@@ -91,24 +98,24 @@
         "vite": "catalog:",
         "vitest": "catalog:",
         "vite-plugin-serve-static": "^2.2.1",
-        "workerd": "1.20261007.1"
+        "workerd": "1.20261014.1"
     },
     "dependencies": {
-        "@hono/node-server": "^2.1.3",
+        "@hono/node-server": "^2.1.5",
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
         "@vertesia/tools-admin-ui": "workspace:*",
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "dotenv": "^18.0.6",
+        "dotenv": "^18.0.7",
         "hono": "^4.13.13",
         "html-parse-stringify": "^4.0.1",
-        "lucide-react": "^1.52.0",
+        "lucide-react": "^1.55.0",
         "react-vega": "^8.0.0",
         "use-sync-external-store": "^1.7.0",
         "vega": "^6.4.0",
         "vega-embed": "^7.3.0",
-        "vega-lite": "^6.4.3"
+        "vega-lite": "^6.5.0"
     }
 }

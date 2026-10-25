@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/workflow",
-    "version": "1.6.0-dev.20261014.015055Z",
+    "version": "1.6.0-dev.20261022.120426Z",
     "type": "module",
     "description": "Vertesia workflow DSL",
     "main": "./lib/index.js",
@@ -47,7 +47,7 @@
         "@vertesia/common": "workspace:*",
         "fast-deep-equal": "^3.1.3",
         "jsonwebtoken": "^9.0.3",
-        "mime": "^4.1.0",
+        "mime": "^4.1.1",
         "ms": "3.0.0-canary.202508261828",
         "node-web-stream-adapters": "^0.2.1",
         "p-limit": "^7.3.3",
@@ -57,7 +57,7 @@
         "tiktoken": "^1.0.22",
         "tmp": "^0.2.7",
         "tmp-promise": "^3.0.3",
-        "undici": "^7.30.0",
+        "undici": "^7.30.1",
         "yaml": "^2.9.1"
     },
     "exports": {
@@ -123,6 +123,10 @@
         "./activities/executeInteraction": {
             "types": "./lib/activities/executeInteraction.d.ts",
             "default": "./lib/activities/executeInteraction.js"
+        },
+        "./utils/upload-stream": {
+            "types": "./lib/utils/upload-stream.d.ts",
+            "default": "./lib/utils/upload-stream.js"
         }
     },
     "repository": {
@@ -140,5 +144,10 @@
         "agents",
         "typescript"
     ],
-    "gitHead": "468240ecf939f968e1324116be26386cdf5ada49"
+    "gitHead": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+    "releaseIdentity": {
+        "source_sha": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+        "dependency_sha": "93466e47b06db23ac3c800e248d170afe65e5006",
+        "lock_sha256": "117e1c8068aa07d59117323a51ceccfc96cab543e50c03eb7efc19709d6f5e6b"
+    }
 }

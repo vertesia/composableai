@@ -347,9 +347,23 @@ export const ToolCollectionObjectSchema = z
     .discriminatedUnion('type', [MCPToolCollectionObjectSchema, VertesiaSDKToolCollectionObjectSchema])
     .meta({ id: 'ToolCollectionObject' });
 
+export const AppGitSourceProviderSchema = z.enum(['vertesia', 'github']).meta({ id: 'AppGitSourceProvider' });
+
 export const AppGitSourceConfigSchema = z
     .strictObject({
+        provider: AppGitSourceProviderSchema.optional().meta({
+            description:
+                'Repository provider. Missing values are treated as `vertesia` for apps created before provider support.',
+        }),
         url: z.string().optional(),
+        installation_id: z
+            .string()
+            .optional()
+            .meta({ description: 'Verified GitHub App installation id. Required when provider is `github`.' }),
+        repository: z
+            .string()
+            .optional()
+            .meta({ description: 'GitHub repository in `owner/name` form. Required when provider is `github`.' }),
         default_branch: z.string().optional(),
         production_branch: z.string().optional(),
         development_branch: z.string().optional(),
@@ -372,7 +386,10 @@ export const AppManifestSourceSchema = z
     .strictObject({
         kind: z.literal('git'),
         git: z.strictObject({
+            provider: AppGitSourceProviderSchema.optional(),
             url: z.string(),
+            installation_id: z.string().optional(),
+            repository: z.string().optional(),
             default_branch: z.string().optional(),
             production_branch: z.string().optional(),
             development_branch: z.string().optional(),

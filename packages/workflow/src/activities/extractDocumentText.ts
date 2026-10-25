@@ -11,6 +11,7 @@ import { type TextExtractionResult, TextExtractionStatus } from '../result-types
 import { fetchBlobAsBuffer, md5 } from '../utils/blobs.js';
 import { createFileSourceResult, uploadTextPreviewToStorage } from '../utils/text-preview-utils.js';
 import { countTokens } from '../utils/tokens.js';
+import { initializeActivityCommandDeadline } from './media/exec.js';
 
 //@ts-expect-error
 const _JSON: DSLActivitySpec = {
@@ -28,6 +29,8 @@ export interface ExtractDocumentText extends DSLActivitySpec<ExtractDocumentText
 export async function extractDocumentText(
     payload: DSLActivityExecutionPayload<ExtractDocumentTextParams>,
 ): Promise<TextExtractionResult> {
+    // Conversion tools are bounded by the activity deadline, measured from here rather than from their first run.
+    initializeActivityCommandDeadline();
     const context = await setupActivity(payload);
     const { client, inputType, params } = context;
     const { output_storage_path } = params;

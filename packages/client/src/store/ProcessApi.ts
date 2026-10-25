@@ -50,8 +50,15 @@ export class ProcessApi extends ApiTopic {
         return this.get(`/${id}/versions`);
     }
 
+    /**
+     * Publish a draft revision. Set `idempotency_key` to make the call safe to retry: without one, a
+     * replay of a publish that already succeeded is rejected, so no client retry applies.
+     */
     publish(id: string, payload: PublishProcessDefinitionPayload): Promise<ProcessDefinition> {
-        return this.post(`/${id}/publish`, { payload });
+        return this.post(`/${id}/publish`, {
+            payload,
+            retryPolicy: payload.idempotency_key ? undefined : false,
+        });
     }
 
     revert(id: string, payload: RevertProcessDefinitionPayload): Promise<ProcessDefinition> {

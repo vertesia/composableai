@@ -1,11 +1,13 @@
-import fs from 'node:fs';
+import type { ReadStream } from 'node:fs';
 import { log } from '@temporalio/activity';
 import { NodeStreamSource } from '@vertesia/client/node';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { pdfExtractPages } from '../conversion/mutool.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../errors.js';
-import { saveBlobToTempFile } from '../utils/blobs.js';
+import { removeTempFiles, withBlobTempFile } from '../utils/blobs.js';
+import { closeUploadStream, createUploadStream } from '../utils/upload-stream.js';
+import { initializeActivityCommandDeadline } from './media/exec.js';
 
 interface CreatePdfDocumentFromSourceParams {
     target_object_type: string; //type of the object to create
@@ -26,6 +28,8 @@ export interface CreatePdfDocumentFromSource extends DSLActivitySpec<CreatePdfDo
 export async function createPdfDocumentFromSource(
     payload: DSLActivityExecutionPayload<CreatePdfDocumentFromSourceParams>,
 ) {
+    // mutool is bounded by the activity deadline, measured from here rather than from its first run.
+    initializeActivityCommandDeadline();
     const { client, objectId, params } = await setupActivity<CreatePdfDocumentFromSourceParams>(payload);
     const inputObject = await client.objects.retrieve(objectId);
 
@@ -60,27 +64,39 @@ export async function createPdfDocumentFromSource(
         throw new DocumentNotFoundError(`Type ${params.target_object_type} not found`);
     }
 
-    const tmpFile = await saveBlobToTempFile(client, inputObject.content.source, '.pdf');
-    const newPdf = await pdfExtractPages(tmpFile, pages);
-    log.info(`PDF created from pages ${pages.join(', ')} `, { newPdf });
-    const name = `pages-${pages.join('-')}.pdf`;
+    let extracted: { file: string; workDir: string } | undefined;
+    let uploadStream: ReadStream | undefined;
+    try {
+        // Only the extraction reads the source, so release it before the upload.
+        extracted = await withBlobTempFile(client, inputObject.content.source, 'pdf', (file) =>
+            pdfExtractPages(file, pages),
+        );
+        const newPdf = extracted.file;
+        log.info(`PDF created from pages ${pages.join(', ')} `, { newPdf });
+        const name = `pages-${pages.join('-')}.pdf`;
 
-    const sourceToUpload = new NodeStreamSource(fs.createReadStream(newPdf), name, 'application/pdf');
+        uploadStream = createUploadStream(newPdf);
+        const sourceToUpload = new NodeStreamSource(uploadStream, name, 'application/pdf');
 
-    log.info(`Uploading file ${newPdf} `);
-    const upload = await client.objects.upload(sourceToUpload);
-    log.info(`File uploaded ${upload.source} `);
+        log.info(`Uploading file ${newPdf} `);
+        const upload = await client.objects.upload(sourceToUpload);
+        log.info(`File uploaded ${upload.source} `);
 
-    const newObject = await client.objects.create({
-        type: targetType.id,
-        name: title || targetType.name,
-        parent: objectId,
-        content: {
-            source: upload.source,
-            name: upload.name,
-            type: 'application/pdf',
-        },
-    });
+        const newObject = await client.objects.create({
+            type: targetType.id,
+            name: title || targetType.name,
+            parent: objectId,
+            content: {
+                source: upload.source,
+                name: upload.name,
+                type: 'application/pdf',
+            },
+        });
 
-    return { newObjectId: newObject.id, uploadedFile: upload.name };
+        return { newObjectId: newObject.id, uploadedFile: upload.name };
+    } finally {
+        await closeUploadStream(uploadStream);
+        // pdfExtractPages writes its output into a work directory of its own, which the caller owns.
+        await removeTempFiles(extracted?.workDir);
+    }
 }

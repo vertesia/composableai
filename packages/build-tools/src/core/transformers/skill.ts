@@ -103,6 +103,12 @@ const SkillFrontmatterSchema = z
         // Asset fields (auto-discovered but can be overridden)
         scripts: z.array(z.string()).optional(),
         widgets: z.array(z.string()).optional(),
+
+        // Agent Skills specification fields (https://agentskills.io/specification)
+        license: z.string().optional(),
+        compatibility: z.string().max(500).optional(),
+        metadata: z.record(z.string(), z.string()).optional(),
+        'allowed-tools': z.string().optional(),
     })
     .strict();
 
@@ -133,7 +139,13 @@ export const SkillDefinitionSchema = z
         execution: SkillExecutionSchema,
         tools: z.array(z.string()).optional(),
         scripts: z.array(z.string()).optional(),
+        files: z.array(z.string()).optional(),
+        files_namespace: z.string().optional(),
         widgets: z.array(z.string()).optional(),
+        license: z.string().optional(),
+        compatibility: z.string().optional(),
+        metadata: z.record(z.string(), z.string()).optional(),
+        allowed_tools: z.array(z.string()).optional(),
     })
     .passthrough();
 
@@ -157,7 +169,7 @@ type SkillFrontmatter = z.infer<typeof SkillFrontmatterSchema>;
 
 /**
  * Build a SkillDefinition from frontmatter and markdown content.
- * This mirrors the logic in @vertesia/tools-sdk parseSkillFile function.
+ * Includes Agent Skills frontmatter and resources discovered at build time.
  *
  * Supports two frontmatter structures:
  *
@@ -181,6 +193,7 @@ type SkillFrontmatter = z.infer<typeof SkillFrontmatterSchema>;
  * @param contentType - Content type ('md' or 'jst')
  * @param widgets - Discovered widget names
  * @param scripts - Discovered script names
+ * @param files - Discovered Agent Skills resource files (relative paths)
  * @returns Skill definition object
  */
 function buildSkillDefinition(
@@ -189,6 +202,7 @@ function buildSkillDefinition(
     contentType: SkillContentType,
     widgets: string[],
     scripts: string[],
+    files: string[],
 ): SkillDefinition {
     const skill: SkillDefinition = {
         name: frontmatter.name,
@@ -198,7 +212,19 @@ function buildSkillDefinition(
         content_type: contentType,
         widgets: widgets.length > 0 ? widgets : undefined,
         scripts: scripts.length > 0 ? scripts : undefined,
+        files: files.length > 0 ? files : undefined,
+        // Keep copied asset URLs stable when properties.ts overrides the runtime skill name.
+        files_namespace: files.length > 0 ? frontmatter.name : undefined,
     };
+
+    // Agent Skills specification fields. `allowed-tools` is experimental in the spec and Vertesia does not
+    // support it: it pre-approves tools in the authoring harness's vocabulary, Vertesia has no approval step
+    // for it to skip, and it never unlocks a tool here (`tools` does). It is recorded for reference only.
+    if (frontmatter.license) skill.license = frontmatter.license;
+    if (frontmatter.compatibility) skill.compatibility = frontmatter.compatibility;
+    if (frontmatter.metadata) skill.metadata = frontmatter.metadata;
+    const allowedTools = frontmatter['allowed-tools']?.split(/\s+/).filter(Boolean);
+    if (allowedTools && allowedTools.length > 0) skill.allowed_tools = allowedTools;
 
     // Build context triggers - support both flat and nested structure
     // Nested: context_triggers: { keywords: [...], tool_names: [...] }
@@ -353,8 +379,8 @@ function transformSkill(content: string, filePath: string, config: SkillTransfor
     // Determine content type from frontmatter or file extension
     const content_type: SkillContentType = validatedFrontmatter.content_type || 'md';
 
-    // Discover assets (scripts and widgets) in the skill directory
-    const assets = discoverSkillAssets(filePath);
+    // Discover assets (scripts, widgets and Agent Skills resource files) in the skill directory
+    const assets = discoverSkillAssets(filePath, { skillName: validatedFrontmatter.name });
 
     // Build skill definition using the same logic as parseSkillFile in tools-sdk
     const skillData = buildSkillDefinition(
@@ -363,6 +389,7 @@ function transformSkill(content: string, filePath: string, config: SkillTransfor
         content_type,
         assets.widgets,
         assets.scripts,
+        assets.files,
     );
 
     // Check if properties.ts exists in the skill directory

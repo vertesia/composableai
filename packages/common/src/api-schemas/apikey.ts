@@ -17,12 +17,6 @@ export const ApiKeyListQuerySchema = z
     })
     .meta({ id: 'ApiKeyListQuery' });
 
-export const ApiKeyReadQuerySchema = z
-    .object({
-        withValue: z.boolean().optional(),
-    })
-    .meta({ id: 'ApiKeyReadQuery' });
-
 /**
  * `z.literal` rather than `z.enum`, because the enum has exactly one member and the document
  * publishes it as `const: 'sk'`. A one-member `enum: ['sk']` would validate identically but change
@@ -70,9 +64,8 @@ export const ProjectRefArraySchema = z.array(ProjectRefSchema).meta({ id: 'Proje
  * plain string all the way down, which is why tightening it there would have turned stored data into
  * a 500 on read.
  *
- * `value` is deliberately absent. A key's secret is published only by the two components that
- * declare it — {@link ApiKeyWithValueSchema} on creation and {@link ApiKeyReadResponseSchema} on an
- * explicit `?withValue=true` read — so a handler cannot leak it by returning the wrong shape.
+ * `value` is deliberately absent. A key's secret is published only on creation, by
+ * {@link ApiKeyWithValueSchema}, so a handler cannot leak it by returning the wrong shape.
  */
 export const ApiKeySchema = z
     .object({
@@ -118,19 +111,10 @@ export const ApiKeySchema = z
 
 export const ApiKeyArraySchema = z.array(ApiKeySchema).meta({ id: 'ApiKeyArray' });
 
-/** The creation response: the only time the secret is returned unconditionally. */
+/** The creation response: the only time the secret is ever returned. */
 export const ApiKeyWithValueSchema = ApiKeySchema.extend({
     value: z.string(),
 }).meta({ id: 'ApiKeyWithValue' });
-
-/**
- * The single-key read. `value` is present only when the caller asked for it AND holds
- * `api_key:secret_read`, so it is optional here where creation makes it required — which is exactly
- * why the two cannot share one component.
- */
-export const ApiKeyReadResponseSchema = ApiKeySchema.extend({
-    value: z.string().optional(),
-}).meta({ id: 'ApiKeyReadResponse' });
 
 /**
  * What `POST /apikeys` accepts.
@@ -199,12 +183,10 @@ export const DeleteOperationResultSchema = z
     .meta({ id: 'DeleteOperationResult' });
 
 export type ApiKeyListQueryFromSchema = Wire.ApiKeyListQueryFromSchema;
-export type ApiKeyReadQueryFromSchema = Wire.ApiKeyReadQueryFromSchema;
 export type ProjectRefArrayFromSchema = Wire.ProjectRefArrayFromSchema;
 export type ApiKeyFromSchema = Wire.ApiKeyFromSchema;
 export type ApiKeyArrayFromSchema = Wire.ApiKeyArrayFromSchema;
 export type ApiKeyWithValueFromSchema = Wire.ApiKeyWithValueFromSchema;
-export type ApiKeyReadResponseFromSchema = Wire.ApiKeyReadResponseFromSchema;
 export type CreateApiKeyPayloadFromSchema = Wire.CreateApiKeyPayloadFromSchema;
 export type UpdateApiKeyPayloadFromSchema = Wire.UpdateApiKeyPayloadFromSchema;
 export type AuthTokenResponseFromSchema = Wire.AuthTokenResponseFromSchema;

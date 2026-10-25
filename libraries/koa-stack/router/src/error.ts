@@ -74,24 +74,39 @@ function json(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
     return content;
 }
 
+const MARKUP_ESCAPES: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+};
+
+/**
+ * Escapes the characters that are special in HTML and XML text and attribute values,
+ * so error details (which can echo request input) never inject markup into the default formatters.
+ */
+function escapeMarkup(value: string): string {
+    return value.replace(/[&<>"']/g, (ch) => MARKUP_ESCAPES[ch]);
+}
+
 function html(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
     if (opts.html) {
         return opts.html(info, error, opts);
     }
-    const title = `${info.statusCode} ${info.error}`;
-    const message = info.message ? `<p>${info.message}` : '';
+    const title = escapeMarkup(`${info.statusCode} ${info.error}`);
+    const message = info.message ? `<p>${escapeMarkup(info.message)}</p>` : '';
     return `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${title}</title></head><body style='padding:20px'><h1>${title}</h1>${message}</body></html>`;
 }
 
 function xml(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {
-    let content: string | undefined;
     if (opts.xml) {
-        content = opts.xml(info, error, opts);
-    } else {
-        content =
-            '<?xml version="1.0" encoding="UTF-8"?><error status="${info.statusCode}" code="${info.error}">${info.message}</error>';
-        return content;
+        return opts.xml(info, error, opts);
     }
+    const status = escapeMarkup(String(info.statusCode));
+    const code = escapeMarkup(info.error ?? '');
+    const message = escapeMarkup(info.message ?? '');
+    return `<?xml version="1.0" encoding="UTF-8"?><error status="${status}" code="${code}">${message}</error>`;
 }
 
 function text(info: ErrorInfo, error: ErrorObject, opts: ErrorHandlerOpts) {

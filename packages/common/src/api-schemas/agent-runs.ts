@@ -18,6 +18,7 @@ import {
 import {
     AgentEvaluateRequestSchema,
     AgentResourceReferenceSchema,
+    AgentRunIdempotencyKeySchema,
     AgentSearchScopeSchema,
     AgentToolApprovalModeSchema,
     ConversationEnrichmentFields,
@@ -36,7 +37,7 @@ import {
     RecordProcessRunPayloadSchema,
 } from './process.js';
 import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
-import { nullableStringSchema } from './schema-primitives.js';
+import { nullableStringSchema, PageCountSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
 
 // ----------------------------------------------------------------------------
@@ -1089,6 +1090,7 @@ export const CreateAgentRunPayloadSchema = z
             .string()
             .meta({ description: 'Principal ref of the user who initiated the run (for server-to-server forwarding)' })
             .optional(),
+        idempotency_key: AgentRunIdempotencyKeySchema.optional(),
     })
     .meta({ id: 'CreateAgentRunPayload', description: 'Payload to create and start a new agent run.' });
 
@@ -1438,8 +1440,8 @@ export const ListAgentRunsQuerySchema = z
             .string()
             .meta({ description: 'Only return runs started at or before this date', format: 'date-time' })
             .optional(),
-        limit: z.number().meta({ description: 'Maximum number of results (default: 50)' }).optional(),
-        offset: z.number().meta({ description: 'Offset for pagination' }).optional(),
+        limit: PageCountSchema.meta({ description: 'Maximum number of results (default: 50)' }).optional(),
+        offset: PageCountSchema.meta({ description: 'Offset for pagination' }).optional(),
         cursor: z.string().meta({ description: 'Cursor for stable pagination' }).optional(),
         schedule_id: z.string().meta({ description: 'Filter by schedule ID' }).optional(),
         type: AgentRunTypeSchema.meta({ description: 'Filter by run type' }).optional(),

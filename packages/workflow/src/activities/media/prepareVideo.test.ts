@@ -20,7 +20,10 @@ vi.mock('@temporalio/activity', async (importOriginal) => ({
     log: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 vi.mock('../../dsl/setup/ActivityContext.js', () => ({ setupActivity: vi.fn() }));
-vi.mock('../../utils/blobs.js', () => ({ saveBlobToTempFile: vi.fn() }));
+vi.mock('../../utils/blobs.js', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../utils/blobs.js')>()),
+    saveBlobToTempFile: vi.fn(),
+}));
 
 describe('screenshotTimestamp', () => {
     it.each([0.1, 0.5, 1])('extracts the first frame of a %s-second clip', (duration) => {
@@ -83,16 +86,18 @@ describe('shouldTranscodeVideo', () => {
 });
 
 describe('resolveVideoPreset', () => {
-    it.each([
-        { preset: 'medium', attempt: 1, expected: 'medium' },
-        { preset: 'medium', attempt: 2, expected: 'fast' },
-        { preset: 'medium', attempt: 3, expected: 'veryfast' },
-        { preset: 'medium', attempt: 5, expected: 'veryfast' },
-        { preset: 'fast', attempt: 1, expected: 'fast' },
-        { preset: 'fast', attempt: 2, expected: 'veryfast' },
-        { preset: 'ultrafast', attempt: 2, expected: 'ultrafast' },
-    ] as const)('uses $expected for $preset on attempt $attempt', ({ preset, attempt, expected }) => {
-        expect(resolveVideoPreset(preset, attempt)).toBe(expected);
+    it('defaults to veryfast', () => {
+        expect(resolveVideoPreset()).toBe('veryfast');
+    });
+
+    it.each(['medium', 'fast', 'veryfast', 'ultrafast'] as const)('keeps the requested %s preset', (preset) => {
+        expect(resolveVideoPreset(preset)).toBe(preset);
+    });
+
+    it('rejects an unknown preset without retrying', () => {
+        expect(() => resolveVideoPreset('slow')).toThrow(
+            expect.objectContaining({ type: 'InvalidVideoPreset', nonRetryable: true }),
+        );
     });
 });
 

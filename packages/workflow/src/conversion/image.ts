@@ -2,7 +2,7 @@ import { execFile as execFileCallback } from 'node:child_process';
 import fs from 'node:fs';
 import { promisify } from 'node:util';
 import { log } from '@temporalio/activity';
-import { file } from 'tmp-promise';
+import { tmpName } from 'tmp-promise';
 import { ImageConversionError } from '../errors.js';
 
 const execFile = promisify(execFileCallback);
@@ -47,7 +47,11 @@ export async function imageResizer(
 
     //check that inputPath exists
     // Create a temporary file
-    const { path: outputPath, cleanup } = await file({ postfix: `.${format}` });
+    // The caller owns the returned path and removes it, so reserve a name rather than keep a descriptor or a tmp cleanup
+    // registration for it. Create the file exclusively and private (0600) before ImageMagick writes into it; this stays
+    // outside the cleanup below so a failed create never removes another process's file.
+    const outputPath = await tmpName({ postfix: `.${format}` });
+    await (await fs.promises.open(outputPath, 'wx', 0o600)).close();
     try {
         // Check if input file exists
         if (!fs.existsSync(inputPath)) {
@@ -171,11 +175,9 @@ export async function imageResizer(
 
         return outputPath;
     } catch (error: unknown) {
-        try {
-            await cleanup();
-        } catch (cleanupError: unknown) {
+        await fs.promises.rm(outputPath, { force: true }).catch((cleanupError: unknown) => {
             log.warn('Failed to clean temporary image output after conversion failure', { cleanupError });
-        }
+        });
 
         const errorMessage = error instanceof Error ? error.message : String(error);
         log.error(`Image conversion failed: ${errorMessage}`);

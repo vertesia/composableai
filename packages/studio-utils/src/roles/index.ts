@@ -63,7 +63,7 @@ export function getAllRoleNames(): string[] {
  * Merge the permissions granted by a set of roles into a single array.
  * Intended for the system-role gating path. For ABAC roles, the bare-verb
  * permissions returned here aren't directly meaningful — use the JWT
- * `content_security` pathway instead.
+ * `abac` pathway instead.
  */
 export function getPermissionsForRoles(roleNames: Iterable<string>): string[] {
     const permissions = new Set<string>();

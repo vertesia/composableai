@@ -15,10 +15,10 @@
         "gcp": "npx bun ./src/index.ts gcp"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.13",
+        "@biomejs/biome": "2.5.15",
         "@tsconfig/node-lts": "^24.0.1",
-        "@types/bun": "^1.4.2",
-        "@types/node": "^24.19.1",
+        "@types/bun": "^1.4.3",
+        "@types/node": "^24.19.2",
         "globals": "^17.13.0",
         "typescript": "catalog:"
     },
@@ -27,7 +27,7 @@
         "@vertesia/client": "1.5.1",
         "@vertesia/common": "1.5.1",
         "commander": "^15.0.0",
-        "dotenv": "^18.0.6",
-        "google-auth-library": "^11.1.0"
+        "dotenv": "^18.0.7",
+        "google-auth-library": "^11.3.0"
     }
 }

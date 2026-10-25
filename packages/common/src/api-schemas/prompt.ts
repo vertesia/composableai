@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { FacetSpecSchema, PromptTemplateRefSchema } from './interaction.js';
+import { PageCountSchema } from './schema-primitives.js';
 
 // The prompt-authoring contracts: what a fork, a render and a prompt search publish, and how a
 // prompt's interaction usages are reported. `PromptTemplate` itself and its two write payloads live
@@ -50,8 +51,10 @@ export const PromptSearchQuerySchema = z
                     'Accepted and ignored. `GET /prompts` and `POST /prompts/facets` list drafts only, and always have.',
             })
             .optional(),
-        limit: z.number().meta({ description: 'Maximum number of prompts to return. Defaults to 100.' }).optional(),
-        offset: z.number().meta({ description: 'Number of prompts to skip.' }).optional(),
+        limit: PageCountSchema.meta({
+            description: 'Maximum number of prompts to return. Defaults to 100.',
+        }).optional(),
+        offset: PageCountSchema.meta({ description: 'Number of prompts to skip.' }).optional(),
         role: z.string().meta({ description: 'Exact match on the prompt role.' }).optional(),
         tags: z.array(z.string()).meta({ description: 'Match prompts carrying any of these tags.' }).optional(),
         matchInteractions: z

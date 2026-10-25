@@ -3,7 +3,7 @@ import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
 import { InferenceProfileIdSchema } from './inference-profile.js';
-import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema, PageCountSchema } from './schema-primitives.js';
 
 /**
  * Runtime API schemas for the content-intake policy tree.
@@ -643,8 +643,8 @@ export const ContentObjectTypeSchema = z.strictObject(storedContentTypeShape).me
 const contentTypeListingFields = {
     layout: z.boolean().optional(),
     schema: z.boolean().optional(),
-    limit: z.number().optional(),
-    offset: z.number().optional(),
+    limit: PageCountSchema.optional(),
+    offset: PageCountSchema.optional(),
 };
 
 export const ContentObjectTypeCatalogQuerySchema = z

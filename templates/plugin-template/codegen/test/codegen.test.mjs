@@ -144,6 +144,11 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         assert.match(serverModules, /modules\/app\/resources\/index\.js/);
         assert.doesNotMatch(serverModules, /modules\/examples/);
         assert.equal(packageJson.scripts['service:quality'], 'node src/modules/service/scripts/app-quality-check.mjs');
+        assert.deepEqual(packageJson['vertesia-appgen'], {
+            name: 'plugin-template',
+            version: 1,
+            runtime_features: { advanced_launch: 1 },
+        });
         assert.equal(
             packageJson.scripts['build:sandbox'],
             'node src/modules/service/scripts/build-server-esbuild.mjs --sandbox',
@@ -173,14 +178,14 @@ test('appgen module selects the service entry and cleans inactive modules', () =
         assert.equal(fs.existsSync(path.join(tmpRoot, 'tests/e2e/app.spec.ts')), true);
         const appRoutes = fs.readFileSync(path.join(tmpRoot, 'src/modules/app/ui/routes.tsx'), 'utf8');
         const serviceEntry = fs.readFileSync(path.join(tmpRoot, 'src/modules/service/ui/AppEntry.tsx'), 'utf8');
+        // AppVersionScope is shared template infrastructure, not a generated module file. The
+        // scaffold copies it unchanged before module codegen selects the service entry point.
+        const versionScope = fs.readFileSync(path.join(templateRoot, 'src/ui/shell/AppVersionScope.tsx'), 'utf8');
         assert.doesNotMatch(appRoutes, /Document Library/);
-        assert.match(serviceEntry, /client\.withAppVersion\(appVersion\)/);
-        const versionScope = serviceEntry.slice(
-            serviceEntry.indexOf('function AppVersionScope'),
-            serviceEntry.indexOf('export function AppEntry'),
-        );
+        assert.match(serviceEntry, /<AppVersionScope>/);
+        assert.match(versionScope, /runtimeAppVersionSelector\(\) \?\? import\.meta\.env\.VITE_APP_VERSION/);
+        assert.match(versionScope, /client\.withAppVersion\(appVersionSelector\)/);
         assert.doesNotMatch(versionScope, /useEffect/);
-        assert.match(serviceEntry, /client\.withAppVersion\(appVersion\)/);
         assert.doesNotMatch(serviceEntry, /useEffect/);
         assert.doesNotMatch(serviceEntry, /store\.withAppVersion/);
         execFileSync(process.execPath, ['src/modules/service/scripts/app-quality-check.mjs'], {

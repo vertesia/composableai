@@ -369,3 +369,25 @@ describe('run budget allocation contract', () => {
         },
     );
 });
+
+describe('agent run start idempotency_key', () => {
+    const payloads = [
+        ['CreateAgentRunPayload', { interaction: 'sys:GeneralAgent' }],
+        ['CreateRunPayload', { interaction: 'sys:GeneralAgent' }],
+        ['AsyncConversationExecutionPayload', { type: 'conversation', interaction: 'sys:GeneralAgent' }],
+        ['AsyncExecutionPayload', { type: 'conversation', interaction: 'sys:GeneralAgent' }],
+    ] as const;
+
+    it.each(payloads)('%s accepts keys of 1 to 256 characters, or none', (name, base) => {
+        for (const key of ['k', 'k'.repeat(256)]) {
+            expect(validateApiRequest(name, { ...base, idempotency_key: key }).valid).toBe(true);
+        }
+        expect(validateApiRequest(name, base).valid).toBe(true);
+    });
+
+    it.each(payloads)('%s rejects an empty or 257-character key', (name, base) => {
+        for (const key of ['', 'k'.repeat(257)]) {
+            expect(validateApiRequest(name, { ...base, idempotency_key: key }).valid).toBe(false);
+        }
+    });
+});

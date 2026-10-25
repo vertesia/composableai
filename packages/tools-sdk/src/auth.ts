@@ -149,7 +149,25 @@ export class AuthSession implements ToolExecutionContext {
 }
 
 function isAllowedIssuer(iss: string) {
-    return iss.endsWith('.vertesia.io') || iss.endsWith('.becomposable.com');
+    return getTrustedIssuers().has(iss) || iss.endsWith('.vertesia.io') || iss.endsWith('.becomposable.com');
+}
+
+/**
+ * VERTESIA_TRUSTED_ISSUERS (comma-separated issuer URLs) trusts additional token issuers, such as a local
+ * token server (http://localhost:8202). An issuer must match an entry exactly; a trailing slash on an entry
+ * is ignored. Unset by default, which trusts no issuer beyond the built-in domains.
+ */
+let _trustedIssuers: Set<string> | undefined;
+function getTrustedIssuers(): Set<string> {
+    if (_trustedIssuers === undefined) {
+        _trustedIssuers = new Set(
+            (process.env.VERTESIA_TRUSTED_ISSUERS ?? '')
+                .split(',')
+                .map((s) => s.trim().replace(/\/+$/, ''))
+                .filter(Boolean),
+        );
+    }
+    return _trustedIssuers;
 }
 
 /**

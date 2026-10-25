@@ -10,6 +10,7 @@ declare const URL: {
     new (
         url: string,
     ): {
+        origin: string;
         pathname: string;
         toString(): string;
     };
@@ -20,6 +21,12 @@ export interface ResolveAppEndpointOptions {
     vars?: Endpoints;
     requestedOverride?: string;
     version?: string;
+    deploymentAlias?: string;
+    /**
+     * Tenant that executes an installed gateway app. Its immutable artifacts may still live under
+     * the tenant recorded in the manifest; App Gateway resolves that indirection server-side.
+     */
+    gatewayTenantId?: string;
 }
 
 /**
@@ -29,7 +36,10 @@ export interface ResolveAppEndpointOptions {
  */
 const RESERVED_ENDPOINT_OVERRIDE_ENVS = new Set(['production', 'preview', 'staging']);
 const GATEWAY_APP_ENDPOINT_PATTERN = new RegExp(
-    '^(.*)/tenants/([^/]+)/(?:' + 'package/([^/]+)|' + 'apps/([^/]+)(?:/versions/([^/]+))?(?:/api/package)?' + ')/?$',
+    '^(.*)/tenants/([^/]+)/(?:' +
+        'package/([^/]+)|' +
+        'apps/([^/]+)(?:(?:/versions/([^/]+))|(?:/aliases/([^/]+)))?(?:/api/package)?' +
+        ')/?$',
 );
 
 /**
@@ -78,6 +88,8 @@ function trimTrailingSlashes(value: string): string {
  *   -> `https://gw/tenants/t/apps/my-app/api/package`
  * - with `version: "1.2.3"`
  *   -> `https://gw/tenants/t/apps/my-app/versions/1.2.3/api/package`
+ * - with `deploymentAlias: "preview"`
+ *   -> `https://gw/tenants/t/apps/my-app/aliases/preview/api/package`
  *
  * Regular apps: endpoint overrides are supported in this order:
  * 1. Version override: if `version` matches `endpoint_overrides[version]`, use
@@ -111,19 +123,39 @@ export function resolveAppEndpoint(
     const baseEndpoint = substituteEndpoints(manifest.endpoint, options.vars);
     const gateway = parseGatewayAppEndpoint(baseEndpoint);
     if (gateway) {
-        return resolveGatewayAppEndpoint(gateway, options.version);
+        const gatewayTenantId = isConfiguredGatewayOrigin(gateway.origin, options.vars?.gateway)
+            ? options.gatewayTenantId
+            : undefined;
+        return resolveGatewayAppEndpoint(gateway, options.version, options.deploymentAlias, gatewayTenantId);
     }
 
     return resolveRegularAppEndpoint(manifest, manifest.endpoint, options);
 }
 
+function isConfiguredGatewayOrigin(endpointOrigin: string, configuredGateway?: string): boolean {
+    if (!configuredGateway) return false;
+    try {
+        return new URL(configuredGateway).origin === endpointOrigin;
+    } catch {
+        return false;
+    }
+}
+
 function resolveGatewayAppEndpoint(
-    gateway: { origin: string; tenant: string; appId: string; version?: string },
+    gateway: { origin: string; tenant: string; appId: string; version?: string; deploymentAlias?: string },
     version?: string,
+    deploymentAlias?: string,
+    gatewayTenantId?: string,
 ): string {
     const effectiveVersion = version || gateway.version;
-    const versionSeg = effectiveVersion ? `/versions/${encodeURIComponent(effectiveVersion)}` : '';
-    return `${gateway.origin}/tenants/${gateway.tenant}/apps/${gateway.appId}${versionSeg}/api/package`;
+    const effectiveAlias = effectiveVersion ? undefined : deploymentAlias || gateway.deploymentAlias;
+    const selector = effectiveVersion
+        ? `/versions/${encodeURIComponent(effectiveVersion)}`
+        : effectiveAlias
+          ? `/aliases/${encodeURIComponent(effectiveAlias)}`
+          : '';
+    const tenant = gatewayTenantId || gateway.tenant;
+    return `${gateway.origin}/tenants/${encodeURIComponent(tenant)}/apps/${gateway.appId}${selector}/api/package`;
 }
 
 function resolveRegularAppEndpoint(
@@ -198,15 +230,16 @@ export function resolveManifestUrls(
  */
 export function parseGatewayAppEndpoint(
     endpoint: string,
-): { origin: string; tenant: string; appId: string; version?: string } | undefined {
+): { origin: string; tenant: string; appId: string; version?: string; deploymentAlias?: string } | undefined {
     const m = GATEWAY_APP_ENDPOINT_PATTERN.exec(endpoint);
     if (!m) return undefined;
-    const [, origin, tenant, legacyAppId, appsAppId, version] = m;
+    const [, origin, tenant, legacyAppId, appsAppId, version, deploymentAlias] = m;
     return {
         origin,
         tenant,
         appId: legacyAppId || appsAppId,
         ...(version ? { version } : {}),
+        ...(deploymentAlias ? { deploymentAlias } : {}),
     };
 }
 

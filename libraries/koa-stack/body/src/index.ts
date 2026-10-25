@@ -38,7 +38,7 @@ function parseMultipartBody(
     return new Promise((resolve, reject) => {
         form.parse(koaRequest.req, (err, fields, files) => {
             if (err) {
-                reject(err);
+                reject(withClientStatus(err));
             } else {
                 resolve({
                     params: fields,
@@ -47,6 +47,19 @@ function parseMultipartBody(
             }
         });
     });
+}
+
+/**
+ * Give a formidable error its HTTP status. formidable tags the caller's mistakes with a 4xx `httpCode`
+ * (a multipart content type without a boundary is 400, a body over the size limits 413), which Koa
+ * ignores: it reads `status`, so without this they answer 500.
+ */
+function withClientStatus(err: unknown): unknown {
+    const httpCode = (err as { httpCode?: unknown } | null)?.httpCode;
+    if (err instanceof Error && typeof httpCode === 'number' && httpCode >= 400 && httpCode < 500) {
+        Object.assign(err, { status: httpCode, statusCode: httpCode, expose: true });
+    }
+    return err;
 }
 
 async function getRawBodyText(koaRequest: Request, opts: LazyBodyOpts): Promise<string> {

@@ -5,7 +5,7 @@ import { ApplicationFailure, log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, WorkflowParamNotFoundError } from '../../errors.js';
-import { saveBlobToTempFile } from '../../utils/blobs.js';
+import { removeTempFiles, saveBlobToTempFile } from '../../utils/blobs.js';
 import { type ImageRenditionParams, uploadRenditionPages } from '../../utils/renditions.js';
 import {
     execActivityFile,
@@ -274,15 +274,6 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
         }
         throw new Error(`Failed to generate thumbnails for video: ${objectId}`, { cause: error });
     } finally {
-        for (const temporaryPath of [videoFile, tempOutputDir]) {
-            if (!temporaryPath) {
-                continue;
-            }
-            try {
-                fs.rmSync(temporaryPath, { force: true, recursive: true });
-            } catch (error) {
-                log.warn(`Failed to clean up temporary video rendition path`, { error, temporaryPath });
-            }
-        }
+        await removeTempFiles(videoFile, tempOutputDir);
     }
 }

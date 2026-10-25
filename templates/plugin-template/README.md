@@ -7,6 +7,18 @@ A unified template for building Vertesia plugins with a **Hono tool server** (ba
 - [From 1.5 to 1.6: authentication, branding, workspace defaults, and (AppGen-hosted apps only) the sandboxed service runtime](docs/migrate-from-1.5.md)
 - [From 1.4 to 1.5: iframe hosting and configurable auth](docs/migrate-from-1.4.md)
 
+### AppGen compatibility metadata
+
+The `vertesia-appgen` field in `package.json` identifies the generated template and advertises
+versioned runtime features. Production builds copy it into the immutable app-version manifest, so
+App Builder can disable functionality that an older generated app cannot honor.
+
+- Increment the template `version` for a new generated-template migration.
+- Add or increment a `runtime_features` entry only when App Builder and the generated app share a
+  versioned runtime protocol.
+- Gate platform functionality on its runtime feature version, not only on the overall template
+  version, so apps can adopt migrations independently.
+
 ## What You Can Build
 
 - **Tools** -- executable functions invoked by AI agents (API integrations, data processing)

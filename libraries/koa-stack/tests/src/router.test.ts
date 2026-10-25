@@ -27,6 +27,11 @@ describe('Test router features', () => {
             });
     });
 
+    test('a malformed percent-encoded path param answers 400', async () => {
+        const res = await request(server).get('/api-other/child/%E0%A4%A');
+        expect(res.status).to.be.equal(400);
+    });
+
     test('applies a request body limit to one endpoint', async () => {
         const value = 'x'.repeat(1024 * 1024);
         const res = await request(server).post('/api/expanded-body').send({ value }).expect(200);

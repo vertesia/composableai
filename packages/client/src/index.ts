@@ -4,6 +4,7 @@ export type { EnableEnvironmentModelPayload, OrphanedAppInstallation } from '@ve
 export { getOAuthPermissionScopes, Permission } from '@vertesia/common';
 export * from './client.js';
 export { default as DelegationGrantsApi } from './DelegationGrantsApi.js';
+export type { ExecuteInteractionRequestOptions } from './execute.js';
 export type { GroupsQueryOptions } from './GroupsApi.js';
 export * from './InteractionBase.js';
 export * from './InteractionOutput.js';

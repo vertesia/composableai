@@ -5,14 +5,14 @@ allowBuilds:
   # Use the optional platform binary directly; the installer script is unnecessary.
   workerd: false
 catalog:
-  vitest: "5.0.3"
+  vitest: "5.0.4"
   typescript: "7.0.2"
   react: "19.3.0"
   react-dom: "19.3.0"
-  "@types/node": "^24.19.1"
+  "@types/node": "^24.19.2"
   "@types/react": "19.3.0"
   "@types/react-dom": "19.3.0"
-  vite: "8.3.3"
+  vite: "8.3.4"
 overrides:
   react: "catalog:"
   react-dom: "catalog:"

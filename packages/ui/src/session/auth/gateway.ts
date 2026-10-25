@@ -6,9 +6,15 @@ export function usesGatewaySession(): boolean {
     return config?.authMode === 'central' && config.gatewaySession === true;
 }
 
+export function gatewayPath(path: string): string {
+    const config = window.__VERTESIA_RUNTIME_CONFIG__;
+    const prefix = config?.authMode === 'central' ? (config.gatewayPathPrefix?.replace(/\/+$/, '') ?? '') : '';
+    return `${prefix}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
 export function gatewayLoginUrl(): string {
     const current = new URL(window.location.href);
-    const url = new URL('/__appgen/auth/login', current.origin);
+    const url = new URL(gatewayPath('/__appgen/auth/login'), current.origin);
     url.searchParams.set('target', `${current.pathname}${current.search}${current.hash}`);
     return url.toString();
 }
@@ -32,7 +38,7 @@ export async function gatewayFetch(input: RequestInfo, init?: RequestInit): Prom
 }
 
 export async function loadGatewaySession(): Promise<AuthTokenPayload> {
-    const response = await gatewayFetch(new URL('/__appgen/session', window.location.origin).toString());
+    const response = await gatewayFetch(new URL(gatewayPath('/__appgen/session'), window.location.origin).toString());
     if (!response.ok) throw new Error(`Application session could not be loaded (${response.status})`);
     const payload: AuthTokenPayload = await response.json();
     if (!payload.sub || !payload.account?.id || !payload.project?.id) {
@@ -42,8 +48,11 @@ export async function loadGatewaySession(): Promise<AuthTokenPayload> {
 }
 
 export async function logoutGatewaySession(): Promise<void> {
-    const response = await gatewayFetch(new URL('/__appgen/session/logout', window.location.origin).toString(), {
-        method: 'POST',
-    });
+    const response = await gatewayFetch(
+        new URL(gatewayPath('/__appgen/session/logout'), window.location.origin).toString(),
+        {
+            method: 'POST',
+        },
+    );
     if (!response.ok) throw new Error(`Application sign-out failed (${response.status})`);
 }

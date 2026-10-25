@@ -44,6 +44,8 @@ export type CreateOAuthClientPayload = Wire.CreateOAuthClientPayload;
 
 export type UpdateOAuthClientPayload = Wire.UpdateOAuthClientPayload;
 
+export type UpdateOAuthClientStatusPayload = Wire.UpdateOAuthClientStatusPayload;
+
 export type OAuthAuthorizationServerMetadata = Wire.OAuthAuthorizationServerMetadata;
 export type OAuthClientDisplayMetadata = Wire.OAuthClientDisplayMetadata;
 export type OAuthAuthorizeQuery = Wire.OAuthAuthorizeQuery;

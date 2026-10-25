@@ -87,13 +87,22 @@ export class AgentsApi extends ApiTopic {
     /**
      * Create and start a new agent run.
      * Returns the created AgentRun with its stable id.
+     *
+     * Set `idempotency_key` on an agent run to make the call safe to retry: the client's retry policy
+     * then applies, and a replayed request returns the run the first one started.
      */
     start<TData = Record<string, unknown>>(payload: CreateAgentRunPayload<TData>): Promise<AgentRun<TData>>;
     start<TData = Record<string, unknown>>(payload: CreateProcessRunPayload<TData>): Promise<ProcessRun>;
     start<TData = Record<string, unknown>>(
         payload: CreateAgentRunPayload<TData> | CreateProcessRunPayload<TData>,
     ): Promise<AgentRun<TData> | ProcessRun> {
-        return this.post('/', { payload });
+        // Without a key, starting an agent run is not idempotent: a request abandoned client-side can
+        // still complete server-side, so a replay would start a second run. Opt out of any client-level
+        // retry policy explicitly rather than relying on POST being absent from its method list.
+        // Rate-limiter pacing retries are unaffected: those happen before the request reaches the
+        // handler. Process starts take no key and keep the client's policy.
+        const unkeyedAgentStart = 'interaction' in payload && !payload.idempotency_key;
+        return this.post('/', { payload, retryPolicy: unkeyedAgentStart ? false : undefined });
     }
 
     /**

@@ -11,9 +11,11 @@ import {
 } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    MAX_ERROR_BODY_BYTES,
     type NotifyWebhookParams,
     type NotifyWebhookResult,
     notifyWebhook,
+    readBoundedText,
     type WebhookNotificationPayload,
     webhookLogTarget,
 } from './notifyWebhook.js';
@@ -45,6 +47,24 @@ vi.stubGlobal('fetch', vi.fn());
 
 let testEnv: MockActivityEnvironment;
 const mockFetch = vi.mocked(fetch);
+
+describe('readBoundedText', () => {
+    it('returns a body within the cap untouched', async () => {
+        await expect(readBoundedText(new Response('hello'), 16)).resolves.toBe('hello');
+    });
+
+    it('does not mark a body exactly at the cap as truncated', async () => {
+        await expect(readBoundedText(new Response('12345678'), 8)).resolves.toBe('12345678');
+    });
+
+    it('cuts a larger body at the cap and marks it', async () => {
+        await expect(readBoundedText(new Response('123456789'), 8)).resolves.toBe('12345678… [truncated at 8 bytes]');
+    });
+
+    it('returns an empty string when there is no body', async () => {
+        await expect(readBoundedText(new Response(null, { status: 500 }), 8)).resolves.toBe('');
+    });
+});
 
 describe('webhookLogTarget', () => {
     it('removes credentials, query parameters, and fragments', () => {
@@ -168,7 +188,7 @@ describe('Webhook should be notified', () => {
             statusText: 'Internal Server Error',
             url: defaultParams.webhook,
             headers: new Headers(),
-            text: vi.fn().mockResolvedValue('{"error": "Database connection failed", "code": "DB_ERROR"}'),
+            body: new Response('{"error": "Database connection failed", "code": "DB_ERROR"}').body,
         } as unknown as Response;
         mockFetch.mockResolvedValueOnce(mockResponse);
 
@@ -196,9 +216,39 @@ describe('Webhook should be notified', () => {
             },
             redirect: 'manual',
         });
+    });
 
-        // Verify that text() was called to read the response
-        expect(mockResponse.text).toHaveBeenCalled();
+    it('truncates an oversized error response body instead of buffering it', async () => {
+        const chunk = new Uint8Array(16 * 1024).fill(0x61); // 'a'
+        let pulled = 0;
+        let cancelled = false;
+        // An endless body: reading it whole would never finish, so the activity must stop at the cap.
+        const body = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                pulled++;
+                controller.enqueue(chunk);
+            },
+            cancel() {
+                cancelled = true;
+            },
+        });
+        mockFetch.mockResolvedValueOnce({
+            ok: false,
+            status: 502,
+            statusText: 'Bad Gateway',
+            url: defaultParams.webhook,
+            headers: new Headers(),
+            body,
+        } as unknown as Response);
+
+        const error = await testEnv.run(notifyWebhook, createTestPayload()).catch((err: unknown) => err);
+
+        expect(error).toMatchObject({ type: 'WebhookEndpointError' });
+        const message = (error as Error).message;
+        expect(message).toContain(`… [truncated at ${MAX_ERROR_BODY_BYTES} bytes]`);
+        expect(message.length).toBeLessThan(MAX_ERROR_BODY_BYTES + 1024);
+        expect(cancelled).toBe(true);
+        expect(pulled).toBeLessThan(20);
     });
 
     it('should throw when POST fails with network error', async () => {

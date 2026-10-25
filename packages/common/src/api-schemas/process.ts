@@ -155,6 +155,19 @@ export const PublishProcessDefinitionPayloadSchema = z
             .optional(),
         label: z.string().meta({ description: 'Optional human-readable revision label.' }).optional(),
         comment: z.string().meta({ description: 'Optional publish note.' }).optional(),
+        idempotency_key: z
+            .string()
+            .min(1)
+            .max(256)
+            .meta({
+                description:
+                    'Client-chosen key that makes this request safe to retry. Publishing is otherwise not ' +
+                    'idempotent: a repeat of a publish that already succeeded is rejected because the revision ' +
+                    'is no longer a draft. When the revision was published by a request with the same key and ' +
+                    'the same body, the repeat returns that revision instead. Reusing the key with a different ' +
+                    'body is rejected with 409. The key is bound to the revision it published.',
+            })
+            .optional(),
     })
     .meta({ id: 'PublishProcessDefinitionPayload' });
 

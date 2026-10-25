@@ -1,4 +1,4 @@
-import type { Collection, ContentObjectTypeCatalogEntry, DynamicCollection, JSONObject } from '@vertesia/common';
+import type { Collection, DynamicCollection, JSONObject } from '@vertesia/common';
 import {
     Button,
     errorMessage,
@@ -16,7 +16,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { DropZone, UploadSummary } from '@vertesia/ui/widgets';
 import { AlertCircleIcon, CheckCircleIcon, FileIcon, FolderIcon, Info, UploadIcon, XCircleIcon } from 'lucide-react';
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTypeRegistry } from '../../types/TypeRegistryProvider.js';
 import { FileUploadAction, type FileWithMetadata, useSmartFileUploadProcessing } from './useSmartFileUploadProcessing';
 import type { DocumentUploadResult } from './useUploadHandler';
@@ -96,7 +96,9 @@ export function DocumentUploadModal({
     const [files, setFiles] = useState<File[]>([]);
     const [processedFiles, setProcessedFiles] = useState<FileWithMetadata[]>([]);
     const [processingDone, setProcessingDone] = useState(false);
-    const [selectedType, setSelectedType] = useState<ContentObjectTypeCatalogEntry | null>(null);
+    const [selectedTypeId, setSelectedTypeId] = useState<string | null>(null);
+    const selectedType = selectedTypeId ? (typeRegistry?.getType(selectedTypeId) ?? null) : null;
+    const wasOpen = useRef(false);
     const [fileStatuses, setFileStatuses] = useState<FileUploadStatus[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadComplete, setUploadComplete] = useState(false);
@@ -222,13 +224,15 @@ export function DocumentUploadModal({
         [checkDocumentProcessing, collectionId, selectedFolder, t, toast],
     );
 
-    // Reset state when modal opens/closes
+    // Initialize once per opening; registry/session refreshes must not discard selected files.
     useEffect(() => {
-        if (isOpen) {
+        const opening = isOpen && !wasOpen.current;
+        wasOpen.current = isOpen;
+        if (opening) {
             // Always reset state first
             setProcessedFiles([]);
             setProcessingDone(false);
-            setSelectedType(initialTypeId ? (typeRegistry?.getType(initialTypeId) ?? null) : null);
+            setSelectedTypeId(initialTypeId ?? null);
             setFileStatuses([]);
             setIsUploading(false);
             setUploadComplete(false);
@@ -249,7 +253,7 @@ export function DocumentUploadModal({
             // Create a new key to ensure the modal is fresh
             setModalKey(Date.now());
         }
-    }, [initialFiles, initialTypeId, isOpen, processFiles, resolvedTitle, typeRegistry]);
+    }, [initialFiles, initialTypeId, isOpen, processFiles, resolvedTitle]);
 
     // Complete cleanup when modal closes
     const handleClose = () => {
@@ -257,7 +261,7 @@ export function DocumentUploadModal({
         setFiles([]);
         setProcessedFiles([]);
         setProcessingDone(false);
-        setSelectedType(null);
+        setSelectedTypeId(null);
         setFileStatuses([]);
         setIsUploading(false);
         setUploadComplete(false);
@@ -597,7 +601,7 @@ export function DocumentUploadModal({
                     value={selectedType}
                     optionLabel={(type) => (type ? type.name : t('store.selectContentTypeLabel'))}
                     placeholder={t('store.selectContentTypeAuto')}
-                    onChange={(selected) => setSelectedType(selected === undefined ? null : selected)}
+                    onChange={(selected) => setSelectedTypeId(selected?.id ?? null)}
                     filterBy="name"
                     isClearable
                 />
@@ -909,7 +913,7 @@ export function DocumentUploadModal({
                         setFiles([]);
                         setProcessedFiles([]);
                         setProcessingDone(false);
-                        setSelectedType(null);
+                        setSelectedTypeId(null);
                         setFileStatuses([]);
                         setIsUploading(false);
                         setUploadComplete(false);

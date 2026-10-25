@@ -225,7 +225,7 @@ export async function notifyWebhook(
         // Try to get response payload for error message
         let errorMessage = `Webhook Notification to ${logTarget} failed with status: ${res.status} ${res.statusText}`;
         try {
-            const responseText = await res.text();
+            const responseText = await readBoundedText(res, MAX_ERROR_BODY_BYTES);
             if (responseText) {
                 errorMessage += ` - Response: ${responseText}`;
             }
@@ -238,6 +238,50 @@ export async function notifyWebhook(
     }
 
     return { status: res.status, message: res.statusText, url: res.url };
+}
+
+/** Upper bound on how much of a non-2xx webhook response is read into the error message. */
+export const MAX_ERROR_BODY_BYTES = 64 * 1024;
+
+/**
+ * Reads at most `maxBytes` of the response body as text. The webhook endpoint is untrusted, so the body
+ * is consumed as a stream and cancelled at the cap rather than buffered whole (`res.text()`) and sliced.
+ */
+export async function readBoundedText(res: Response, maxBytes: number): Promise<string> {
+    if (!res.body) {
+        return '';
+    }
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+    let truncated = false;
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+                break;
+            }
+            const remaining = maxBytes - received;
+            if (value.byteLength > remaining) {
+                chunks.push(value.subarray(0, remaining));
+                truncated = true;
+                break;
+            }
+            chunks.push(value);
+            received += value.byteLength;
+            if (received === maxBytes) {
+                // Exactly at the cap: it is only truncated if more data follows.
+                const next = await reader.read();
+                truncated = !next.done;
+                break;
+            }
+        }
+    } finally {
+        // Releases the connection without draining the rest of the body.
+        await reader.cancel().catch(() => undefined);
+    }
+    const text = new TextDecoder().decode(Buffer.concat(chunks));
+    return truncated ? `${text}… [truncated at ${maxBytes} bytes]` : text;
 }
 
 function hasHeader(headers: Record<string, string>, name: string): boolean {

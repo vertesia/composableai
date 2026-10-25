@@ -7,7 +7,7 @@ import { ContentObjectStatus } from '../store/store.js';
 import { ContentObjectTypeRefSchema } from './app-lifecycle.js';
 import { StringArrayMapSchema } from './dashboard.js';
 import { ComputedFacetResponseSchema, FacetSpecSchema, SortOptionSchema } from './interaction.js';
-import { nullableStringSchema } from './schema-primitives.js';
+import { nullableStringSchema, PageCountSchema } from './schema-primitives.js';
 import { ColumnLayoutSchema, ContentObjectTypeSchema, EmbeddingTypeEnabledMapSchema } from './store.js';
 
 export const scoreAggregationTypesSchema = z.enum(['rrf', 'rsf', 'smart']).meta({ id: 'scoreAggregationTypes' });
@@ -457,8 +457,8 @@ export const ComplexCollectionSearchQuerySchema = z
         parent: nullableStringSchema.optional(),
         dynamic: z.boolean().optional(),
         status: CollectionStatusSchema.optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
+        limit: PageCountSchema.optional(),
+        offset: PageCountSchema.optional(),
         name: z.string().optional(),
         type: z.string().optional(),
         types: z.array(z.string()).optional(),
@@ -1059,8 +1059,8 @@ export const CollectionMembersQuerySchema = z
     .object({
         status: z.string().optional(),
         type: z.string().optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
+        limit: PageCountSchema.optional(),
+        offset: PageCountSchema.optional(),
     })
     .meta({ id: 'CollectionMembersQuery' });
 

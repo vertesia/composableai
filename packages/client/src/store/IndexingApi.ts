@@ -27,6 +27,7 @@ import type {
     SwapAliasResult,
     TriggerReindexResult,
 } from '@vertesia/common';
+import { zenoBulkBaseUrl } from './zeno-bulk.js';
 
 /**
  * API for indexing operations on content objects.
@@ -274,30 +275,14 @@ export class IndexingApi extends ApiTopic {
 
     // ========================================================================
     // Zeno Bulk endpoints (Go migration service)
-    // Routes via LB path rules in prod, or derived URL in dev.
+    // Routes via LB path rules in prod, or derived URL in dev (see zenoBulkBaseUrl).
     // ========================================================================
-
-    /**
-     * Get the zeno-bulk base URL.
-     * Dev branches: store URL contains "zeno-server" -> replace with "zeno-bulk".
-     * Production/preview: same domain, LB routes /reindex/* to zeno-bulk.
-     */
-    private get zenoBulkBaseUrl(): string {
-        const storeBaseUrl = this.client.baseUrl;
-        if (storeBaseUrl.includes('localhost:') || storeBaseUrl.includes('127.0.0.1:')) {
-            return 'https://zeno-bulk-dev-main.api.dev1.vertesia.io';
-        }
-        if (storeBaseUrl.includes('zeno-server')) {
-            return storeBaseUrl.replace(/zeno-server/, 'zeno-bulk');
-        }
-        return storeBaseUrl;
-    }
 
     /**
      * POST to a zeno-bulk endpoint. Resolves the path against the zeno-bulk base URL.
      */
     private zenoBulkPost<T>(path: string, body: object): Promise<T> {
-        return this.client.post(this.zenoBulkBaseUrl + path, { payload: body });
+        return this.client.post(zenoBulkBaseUrl(this.client.baseUrl) + path, { payload: body });
     }
 
     /**

@@ -147,3 +147,39 @@ Test hashes distinguish CI runners from local runs and include the runner image 
 `@vertesia/common` tests cache their package-owned schemas and build artifacts. Client
 bundle checks live in the client package. Downstream consumers own checks against their
 published API documents and generated-client fixtures; package tests never read those files.
+
+## Coordinated publish callers
+
+The NPM packages workflow accepts optional `source_sha`, `version`, and
+`request_id` inputs. These pin the source commit, set one exact version for the
+whole package cohort, and correlate a dispatched workflow run. Existing channel
+and base-version validation still applies. A successful real publish uploads
+`sdk-publish-source/sdk-publish-source.json` containing the input source SHA,
+published version, and pushed version-commit SHA for downstream consumers.
+
+`dry_run=true` performs no registry uploads or branch/tag pushes.
+
+When `llumiverse_sha` is supplied, both CLI and package builds use that immutable
+Llumiverse commit. The publisher includes its submodule pointer and the updated
+lockfile in the same commit as the package versions; no separate sync PR is needed.
+
+Release retries use immutable `vX.Y.Z` or `vX.Y.Z-dev.YYYYMMDD.HHMMSSZ`
+source tags. Before any Git or registry write, the publisher checks source membership
+on the selected branch and ownership of every existing package version. Package
+metadata records `releaseIdentity` (source commit, dependency pin, and lockfile hash).
+After publishing, the tagged version commit is merged into the current branch tip;
+ordinary commits that land during the build are preserved. A rejected push retries
+against the new tip. Genuine version conflicts stop with the durable tag available
+for recovery, without changing the artifact's source identity.
+
+A preparation job resolves the selected Llumiverse dependency once, refreshes the
+lockfile, builds `@llumiverse/common`, and regenerates all committed common schemas
+and wire types. The prepared source includes generated additions, changes, and
+deletions discovered through Git, so new generator outputs are passed along automatically.
+CLI and package builds download the same prepared files and validate
+their identity. Tagged retries restore that exact dependency and lockfile. Published
+smoke tests execute helpers from the pinned caller source and consume the exact npm
+versions and immutable template tag. Main, release, maintenance, and coordinated
+publications require successful branch propagation before emitting the source artifact.
+Independent feature-branch snapshots warn if the deploy key cannot update the branch;
+the workflow still records the immutable source tag and runs the published-package smoke tests.
