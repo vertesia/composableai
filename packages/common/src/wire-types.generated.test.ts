@@ -340,6 +340,14 @@ interface Checks {
         W.AppVersionKind,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionKindSchema>
     >;
+    AppDeploymentAlias: Same<
+        W.AppDeploymentAlias,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeploymentAliasSchema>
+    >;
+    AppDeploymentAliasTarget: Same<
+        W.AppDeploymentAliasTarget,
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppDeploymentAliasTargetSchema>
+    >;
     AppVersionState: Same<
         W.AppVersionState,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionStateSchema>
@@ -371,6 +379,18 @@ interface Checks {
     AppVersionRecord: Same<
         W.AppVersionRecord,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionRecordSchema>
+    >;
+    AppVersionLaunchTarget: Same<
+        W.AppVersionLaunchTarget,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetSchema>
+    >;
+    CreateAppVersionLaunchRequest: Same<
+        W.CreateAppVersionLaunchRequest,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppVersionLaunchRequestSchema>
+    >;
+    CreateAppVersionLaunchResponse: Same<
+        W.CreateAppVersionLaunchResponse,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppVersionLaunchResponseSchema>
     >;
     DeleteAppVersionResponse: Same<
         W.DeleteAppVersionResponse,
@@ -1253,6 +1273,26 @@ interface Checks {
         W.UpdateDashboardPayload,
         z.infer<typeof import('./api-schemas/dashboard.js').UpdateDashboardPayloadSchema>
     >;
+    ExportDashboardPayload: Same<
+        W.ExportDashboardPayload,
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPayloadSchema>
+    >;
+    ExportDashboardPreviewPayload: Same<
+        W.ExportDashboardPreviewPayload,
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPreviewPayloadSchema>
+    >;
+    DashboardExportStatus: Same<
+        W.DashboardExportStatus,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportStatusSchema>
+    >;
+    DashboardExportError: Same<
+        W.DashboardExportError,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportErrorSchema>
+    >;
+    DashboardExport: Same<
+        W.DashboardExport,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportSchema>
+    >;
     DashboardVersion: Same<
         W.DashboardVersion,
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersionSchema>
@@ -1988,6 +2028,10 @@ interface Checks {
     UpdateOAuthClientPayload: Same<
         W.UpdateOAuthClientPayload,
         z.infer<typeof import('./api-schemas/oauth-server.js').UpdateOAuthClientPayloadSchema>
+    >;
+    UpdateOAuthClientStatusPayload: Same<
+        W.UpdateOAuthClientStatusPayload,
+        z.infer<typeof import('./api-schemas/oauth-server.js').UpdateOAuthClientStatusPayloadSchema>
     >;
     OAuthAuthorizationServerMetadata: Same<
         W.OAuthAuthorizationServerMetadata,
@@ -4617,6 +4661,10 @@ interface Checks {
         W.AppPackageScopeWire,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageScopeSchema>
     >;
+    AppVersionLaunchTargetArray: Same<
+        W.AppVersionLaunchTargetArray,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetArraySchema>
+    >;
     AppVersionRecordArray: Same<
         W.AppVersionRecordArray,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionRecordArraySchema>
@@ -4624,6 +4672,10 @@ interface Checks {
     AppToolCollectionArray: Same<
         W.AppToolCollectionArray,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppToolCollectionArraySchema>
+    >;
+    AppPackageQuery: Same<
+        W.AppPackageQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageQuerySchema>
     >;
     SystemPackageQuery: Same<
         W.SystemPackageQuery,
@@ -5217,6 +5269,10 @@ interface Checks {
     'component:UpdateOAuthClientPayload': Same<
         W.ApiComponentTypes['UpdateOAuthClientPayload'],
         z.infer<typeof import('./api-schemas/oauth-server.js').UpdateOAuthClientPayloadSchema>
+    >;
+    'component:UpdateOAuthClientStatusPayload': Same<
+        W.ApiComponentTypes['UpdateOAuthClientStatusPayload'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').UpdateOAuthClientStatusPayloadSchema>
     >;
     'component:OAuthGrant': Same<
         W.ApiComponentTypes['OAuthGrant'],
@@ -6394,6 +6450,26 @@ interface Checks {
     'component:UpdateDashboardPayload': Same<
         W.ApiComponentTypes['UpdateDashboardPayload'],
         z.infer<typeof import('./api-schemas/dashboard.js').UpdateDashboardPayloadSchema>
+    >;
+    'component:ExportDashboardPayload': Same<
+        W.ApiComponentTypes['ExportDashboardPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPayloadSchema>
+    >;
+    'component:ExportDashboardPreviewPayload': Same<
+        W.ApiComponentTypes['ExportDashboardPreviewPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPreviewPayloadSchema>
+    >;
+    'component:DashboardExportStatus': Same<
+        W.ApiComponentTypes['DashboardExportStatus'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportStatusSchema>
+    >;
+    'component:DashboardExportError': Same<
+        W.ApiComponentTypes['DashboardExportError'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportErrorSchema>
+    >;
+    'component:DashboardExport': Same<
+        W.ApiComponentTypes['DashboardExport'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportSchema>
     >;
     'component:QueryValidationError': Same<
         W.ApiComponentTypes['QueryValidationError'],
@@ -8831,6 +8907,14 @@ interface Checks {
         W.ApiComponentTypes['AppVersionKind'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionKindSchema>
     >;
+    'component:AppDeploymentAlias': Same<
+        W.ApiComponentTypes['AppDeploymentAlias'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeploymentAliasSchema>
+    >;
+    'component:AppDeploymentAliasTarget': Same<
+        W.ApiComponentTypes['AppDeploymentAliasTarget'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppDeploymentAliasTargetSchema>
+    >;
     'component:StartAppScaffoldResponse': Same<
         W.ApiComponentTypes['StartAppScaffoldResponse'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppScaffoldResponseSchema>
@@ -9067,6 +9151,22 @@ interface Checks {
         W.ApiComponentTypes['ContentObjectTypeRef'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').ContentObjectTypeRefSchema>
     >;
+    'component:AppVersionLaunchTarget': Same<
+        W.ApiComponentTypes['AppVersionLaunchTarget'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetSchema>
+    >;
+    'component:AppVersionLaunchTargetArray': Same<
+        W.ApiComponentTypes['AppVersionLaunchTargetArray'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetArraySchema>
+    >;
+    'component:CreateAppVersionLaunchRequest': Same<
+        W.ApiComponentTypes['CreateAppVersionLaunchRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppVersionLaunchRequestSchema>
+    >;
+    'component:CreateAppVersionLaunchResponse': Same<
+        W.ApiComponentTypes['CreateAppVersionLaunchResponse'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppVersionLaunchResponseSchema>
+    >;
     'component:AppBuildProgress': Same<
         W.ApiComponentTypes['AppBuildProgress'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppBuildProgressSchema>
@@ -9138,6 +9238,10 @@ interface Checks {
     'component:AppInstallationProjectsQuery': Same<
         W.ApiComponentTypes['AppInstallationProjectsQuery'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationProjectsQuerySchema>
+    >;
+    'component:AppPackageQuery': Same<
+        W.ApiComponentTypes['AppPackageQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageQuerySchema>
     >;
     'component:SystemPackageQuery': Same<
         W.ApiComponentTypes['SystemPackageQuery'],
@@ -9761,6 +9865,8 @@ const checks: Checks = {
     AppCapabilities: true,
     AppAvailableIn: true,
     AppVersionKind: true,
+    AppDeploymentAlias: true,
+    AppDeploymentAliasTarget: true,
     AppVersionState: true,
     AppVersionTarget: true,
     AppVersionGitRefType: true,
@@ -9769,6 +9875,9 @@ const checks: Checks = {
     AppVersionGitSource: true,
     AppVersionUrls: true,
     AppVersionRecord: true,
+    AppVersionLaunchTarget: true,
+    CreateAppVersionLaunchRequest: true,
+    CreateAppVersionLaunchResponse: true,
     DeleteAppVersionResponse: true,
     UpsertAppVersionRequest: true,
     PromoteAppVersionResponse: true,
@@ -10017,6 +10126,11 @@ const checks: Checks = {
     Dashboard: true,
     CreateDashboardPayload: true,
     UpdateDashboardPayload: true,
+    ExportDashboardPayload: true,
+    ExportDashboardPreviewPayload: true,
+    DashboardExportStatus: true,
+    DashboardExportError: true,
+    DashboardExport: true,
     DashboardVersion: true,
     DashboardVersionItem: true,
     CreateDashboardSnapshotPayload: true,
@@ -10213,6 +10327,7 @@ const checks: Checks = {
     OAuthGrantRevokeResponse: true,
     CreateOAuthClientPayload: true,
     UpdateOAuthClientPayload: true,
+    UpdateOAuthClientStatusPayload: true,
     OAuthAuthorizationServerMetadata: true,
     OAuthClientDisplayMetadata: true,
     OAuthAuthorizeQuery: true,
@@ -10945,8 +11060,10 @@ const checks: Checks = {
     ViewExperienceArray: true,
     Extract_AppVersionGitRefType_branch_tag_commit: true,
     AppPackageScopeWire: true,
+    AppVersionLaunchTargetArray: true,
     AppVersionRecordArray: true,
     AppToolCollectionArray: true,
+    AppPackageQuery: true,
     SystemPackageQuery: true,
     SupportedIntegrations_ask_user_webhook: true,
     SupportedIntegrations_resend: true,
@@ -11096,6 +11213,7 @@ const checks: Checks = {
     'component:OAuthClientScopeMetadata': true,
     'component:CreateOAuthClientPayload': true,
     'component:UpdateOAuthClientPayload': true,
+    'component:UpdateOAuthClientStatusPayload': true,
     'component:OAuthGrant': true,
     'component:ListOAuthGrantsQuery': true,
     'component:RevokeOAuthGrantQuery': true,
@@ -11391,6 +11509,11 @@ const checks: Checks = {
     'component:Dashboard': true,
     'component:CreateDashboardPayload': true,
     'component:UpdateDashboardPayload': true,
+    'component:ExportDashboardPayload': true,
+    'component:ExportDashboardPreviewPayload': true,
+    'component:DashboardExportStatus': true,
+    'component:DashboardExportError': true,
+    'component:DashboardExport': true,
     'component:QueryValidationError': true,
     'component:QueryValidationPayload': true,
     'component:ListDataStoreVersionsQuery': true,
@@ -12000,6 +12123,8 @@ const checks: Checks = {
     'component:AppVersionTarget': true,
     'component:AppVersionState': true,
     'component:AppVersionKind': true,
+    'component:AppDeploymentAlias': true,
+    'component:AppDeploymentAliasTarget': true,
     'component:StartAppScaffoldResponse': true,
     'component:AppScaffoldModule': true,
     'component:AppBuildTrigger': true,
@@ -12059,6 +12184,10 @@ const checks: Checks = {
     'component:AppRepoRefs': true,
     'component:AppRepoCommits': true,
     'component:ContentObjectTypeRef': true,
+    'component:AppVersionLaunchTarget': true,
+    'component:AppVersionLaunchTargetArray': true,
+    'component:CreateAppVersionLaunchRequest': true,
+    'component:CreateAppVersionLaunchResponse': true,
     'component:AppBuildProgress': true,
     'component:AppVersionStorage': true,
     'component:AppToolCollection': true,
@@ -12077,6 +12206,7 @@ const checks: Checks = {
     'component:AppListScope': true,
     'component:AppsQuery': true,
     'component:AppInstallationProjectsQuery': true,
+    'component:AppPackageQuery': true,
     'component:SystemPackageQuery': true,
     'component:WebsiteCredentialTotpAlgorithm': true,
     'component:WebsiteCredentialTotpMetadata': true,
@@ -12212,6 +12342,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2544);
+        expect(Object.keys(checks)).toHaveLength(2570);
     });
 });

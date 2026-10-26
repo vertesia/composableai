@@ -1105,7 +1105,7 @@
       },
       "scope": {
         "$ref": "#/components/schemas/AbacScope",
-        "description": "Kind of object the `resource_props` matches. Used to disambiguate which partition's roles apply (e.g. content roles vs agent-run roles) and to form the JWT `content_security` key prefix (`{scope}:{verb}`). Absent → `'document'` (default; emits bare `read`/`write`/`delete` keys for backward compatibility)."
+        "description": "Kind of object the `resource_props` matches. Used to disambiguate which partition's roles apply (e.g. content roles vs agent-run roles) and to form the JWT `abac` key prefix (`{scope}:{verb}`). Absent → `'document'` (default; emits bare `read`/`write`/`delete` keys for backward compatibility)."
       }
     },
     "additionalProperties": false,
@@ -6774,6 +6774,9 @@
       },
       "version_id": {
         "type": "string"
+      },
+      "deployment_alias": {
+        "type": "string"
       }
     },
     "required": [
@@ -7438,7 +7441,7 @@
     "properties": {
       "app_id": {
         "type": "string",
-        "description": "App associated with this client. Authorization requires an installation explicitly enabling this client and current user app access."
+        "description": "App managing this client. Generic updates and deletion are prohibited; configure it through the app. Authorization requires a current installation and user app access."
       },
       "client_name": {
         "type": "string"
@@ -7547,7 +7550,7 @@
     "properties": {
       "app_id": {
         "type": "string",
-        "description": "App associated with this client. Authorization requires an installation explicitly enabling this client and current user app access."
+        "description": "App managing this client. Generic updates and deletion are prohibited; configure it through the app. Authorization requires a current installation and user app access."
       },
       "client_name": {
         "type": "string"
@@ -7799,6 +7802,18 @@
         "additionalProperties": true
       }
     },
+    "additionalProperties": false
+  },
+  "UpdateOAuthClientStatusPayload": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "$ref": "#/components/schemas/OAuthClientStatus"
+      }
+    },
+    "required": [
+      "status"
+    ],
     "additionalProperties": false
   },
   "OAuthGrant": {
@@ -19403,6 +19418,30 @@
       "version"
     ]
   },
+  "AppDeploymentAlias": {
+    "type": "string",
+    "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+    "description": "Stable, lowercase deployment alias for an immutable app version, such as `production`, `preview`, or `customer-demo`."
+  },
+  "AppDeploymentAliasTarget": {
+    "type": "object",
+    "properties": {
+      "version_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Immutable AppGen version id."
+      },
+      "version_record_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Globally unique app-version record id used to resolve the exact build."
+      }
+    },
+    "required": [
+      "version_id",
+      "version_record_id"
+    ]
+  },
   "StartAppScaffoldResponse": {
     "type": "object",
     "properties": {
@@ -20768,6 +20807,75 @@
       "ref_type"
     ]
   },
+  "AppVersionLaunchTarget": {
+    "type": "object",
+    "properties": {
+      "project": {
+        "$ref": "#/components/schemas/ProjectRef"
+      },
+      "installation_id": {
+        "type": "string"
+      },
+      "settings": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Current settings of the app installation in the target project."
+      }
+    },
+    "required": [
+      "project",
+      "installation_id",
+      "settings"
+    ],
+    "additionalProperties": false,
+    "description": "A user-accessible project where this app version may be launched temporarily."
+  },
+  "AppVersionLaunchTargetArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/AppVersionLaunchTarget"
+    }
+  },
+  "CreateAppVersionLaunchRequest": {
+    "type": "object",
+    "properties": {
+      "target_project_id": {
+        "type": "string",
+        "description": "Project in the source account where the app is already installed and the temporary version will run. Defaults to the current project."
+      },
+      "settings": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Temporary app installation settings used only by this version launch."
+      }
+    },
+    "required": [
+      "settings"
+    ],
+    "additionalProperties": false,
+    "description": "Creates a short-lived launch of one immutable app version with temporary installation settings."
+  },
+  "CreateAppVersionLaunchResponse": {
+    "type": "object",
+    "properties": {
+      "version_launch_id": {
+        "type": "string"
+      },
+      "version_selector": {
+        "type": "string"
+      },
+      "app_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "version_launch_id",
+      "version_selector",
+      "app_url"
+    ],
+    "additionalProperties": false,
+    "description": "Opaque launch selector and App Gateway URL for an advanced app-version launch."
+  },
   "AppBuildProgress": {
     "type": "object",
     "properties": {
@@ -20974,6 +21082,13 @@
       },
       "promoted": {
         "type": "boolean"
+      },
+      "aliases": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppDeploymentAlias"
+        },
+        "description": "Deployment aliases that currently resolve to this immutable version."
       },
       "target": {
         "$ref": "#/components/schemas/AppVersionTarget"
@@ -21317,6 +21432,10 @@
       "app_id": {
         "type": "string"
       },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Optional stable deployment alias to follow for this installation instead of the app's promoted version."
+      },
       "instance_key": {
         "type": "string",
         "pattern": "^[a-z][a-z0-9_-]{0,31}$"
@@ -21379,6 +21498,15 @@
           }
         ],
         "description": "Per-installation override of the manifest's `access_control` policy. When provided, takes precedence over the manifest default for every access check. Sibling of `settings` — admin-controlled, not part of the app's own settings JSON.\n\nThree send-time semantics on update:  - Field omitted entirely from the payload → leave the existing override unchanged.  - Explicit `null` → clear the override, fall back to the manifest default.  - String enum → set the override to that value.\n\n(On install, the same shape applies; omit or pass `null` to use the manifest default.)"
+      },
+      "approved_scopes": {
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "OAuth scopes approved by the project manager during installation. The server records the approving user and timestamp; omitted defaults to all scopes requested by the selected deployment."
       },
       "oauth_params": {
         "type": "object",
@@ -21519,6 +21647,23 @@
     },
     "additionalProperties": false,
     "description": "Exactly one of `name` or `id` identifies the app. Neither is required by the component because the endpoint answers 400 for the empty case with a message naming both."
+  },
+  "AppPackageQuery": {
+    "type": "object",
+    "properties": {
+      "scope": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppPackageScope"
+        },
+        "description": "Which capabilities to include in the returned package. Defaults to `all`. Comma-joined (`?scope=ui,tools`) or repeated."
+      },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Resolve the package from this named deployment. Used before installation to load the selected deployment configuration."
+      }
+    },
+    "additionalProperties": false
   },
   "SystemPackageQuery": {
     "type": "object",
@@ -23815,13 +23960,17 @@
           "type": "string",
           "format": "uri"
         }
+      },
+      "require_consent": {
+        "type": "boolean",
+        "description": "Deprecated compatibility field. Vertesia-managed apps are authorized by project installation approval, while generic third-party OAuth clients retain per-user consent."
       }
     },
     "required": [
       "redirect_uris"
     ],
     "additionalProperties": false,
-    "description": "Standalone public PKCE OAuth. Installation automatically provisions an app client with these exact callback URLs."
+    "description": "Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs."
   },
   "AppManifestData": {
     "type": "object",
@@ -23841,7 +23990,8 @@
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling."
       },
       "oauth_client": {
         "$ref": "#/components/schemas/AppOAuthClientConfig"
@@ -23991,7 +24141,8 @@
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling."
       },
       "oauth_client": {
         "$ref": "#/components/schemas/AppOAuthClientConfig"
@@ -24147,7 +24298,8 @@
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling."
       },
       "oauth_client": {
         "$ref": "#/components/schemas/AppOAuthClientConfig"
@@ -24258,6 +24410,16 @@
       "version": {
         "type": "string",
         "description": "Optional app version string (e.g. \"1.0.0\") — informational."
+      },
+      "deployment_aliases": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "#/components/schemas/AppDeploymentAlias"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/AppDeploymentAliasTarget"
+        },
+        "description": "Vertesia-managed mapping from stable deployment aliases to immutable AppGen versions."
       },
       "source": {
         "$ref": "#/components/schemas/AppManifestSource",
@@ -25361,7 +25523,7 @@
         "items": {
           "type": "string"
         },
-        "description": "OAuth scopes requested by the app. Users must consent to project permissions."
+        "description": "Scopes requested by app code. These do not replace the publisher-managed permission ceiling in the app manifest."
       },
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
@@ -25506,6 +25668,10 @@
         "items": {
           "type": "string"
         }
+      },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time."
       },
       "manifest": {
         "type": "string"
@@ -25675,6 +25841,10 @@
           "type": "string"
         }
       },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time."
+      },
       "mcp_configuration": {
         "type": "object",
         "properties": {
@@ -25843,6 +26013,10 @@
         "items": {
           "type": "string"
         }
+      },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time."
       },
       "mcp_configuration": {
         "type": "object",
@@ -42007,6 +42181,172 @@
     "additionalProperties": false,
     "description": "Payload for updating a dashboard."
   },
+  "ExportDashboardPayload": {
+    "type": "object",
+    "properties": {
+      "parameter_values": {
+        "$ref": "#/components/schemas/StringValueMap",
+        "description": "Values for the dashboard's SQL {{param}} placeholders, overriding its saved defaults."
+      },
+      "format": {
+        "type": "string",
+        "enum": [
+          "png"
+        ],
+        "description": "Image format. Only PNG is supported."
+      },
+      "scale": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 4,
+        "description": "Render scale factor for higher resolution images (default: 1, maximum: 4)."
+      },
+      "background_color": {
+        "type": "string",
+        "maxLength": 64,
+        "description": "CSS background color of the image (default: '#ffffff')."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Options for exporting a saved dashboard as an image."
+  },
+  "ExportDashboardPreviewPayload": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "SQL query that returns all data for the dashboard."
+      },
+      "queryLimit": {
+        "type": "number",
+        "description": "Maximum rows to return from the query (default: 10000)"
+      },
+      "queryParameters": {
+        "$ref": "#/components/schemas/StringValueMap",
+        "description": "Values for SQL {{param}} placeholders"
+      },
+      "spec": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Complete Vega-Lite specification (use vconcat/hconcat for multiple panels)"
+      },
+      "format": {
+        "type": "string",
+        "enum": [
+          "png"
+        ],
+        "description": "Image format. Only PNG is supported."
+      },
+      "scale": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 4,
+        "description": "Render scale factor for higher resolution images (default: 1, maximum: 4)."
+      },
+      "background_color": {
+        "type": "string",
+        "maxLength": 64,
+        "description": "CSS background color of the image (default: '#ffffff')."
+      }
+    },
+    "required": [
+      "query",
+      "spec"
+    ],
+    "additionalProperties": false,
+    "description": "An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image."
+  },
+  "DashboardExportStatus": {
+    "type": "string",
+    "enum": [
+      "running",
+      "completed",
+      "failed"
+    ],
+    "description": "Status of a dashboard export."
+  },
+  "DashboardExportError": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "Why the export failed: `spec_invalid`, `query_invalid`, `parameter_invalid`, `not_renderable`, `data_access_denied` and `data_not_found` describe the dashboard or its data; `export_failed` means the export could not complete. More codes may be added."
+      },
+      "message": {
+        "type": "string",
+        "description": "What went wrong."
+      },
+      "retryable": {
+        "type": "boolean",
+        "description": "Whether starting the same export again may succeed. False when the dashboard, its query or its parameters must change first."
+      }
+    },
+    "required": [
+      "code",
+      "message",
+      "retryable"
+    ],
+    "additionalProperties": false,
+    "description": "Why a dashboard export failed."
+  },
+  "DashboardExport": {
+    "type": "object",
+    "properties": {
+      "export_id": {
+        "type": "string",
+        "description": "Identifier of this export. Every export creates a new image."
+      },
+      "status": {
+        "$ref": "#/components/schemas/DashboardExportStatus"
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the export was started."
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the export completed or failed."
+      },
+      "url": {
+        "type": "string",
+        "description": "Signed URL to download the image, set when the export is `completed`. It expires at `expires_at`; fetch the export again for a new one."
+      },
+      "content_type": {
+        "type": "string",
+        "description": "Media type of the image."
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the download URL expires."
+      },
+      "width": {
+        "type": "number",
+        "description": "Image width in pixels."
+      },
+      "height": {
+        "type": "number",
+        "description": "Image height in pixels."
+      },
+      "row_count": {
+        "type": "number",
+        "description": "Number of rows the query returned."
+      },
+      "error": {
+        "$ref": "#/components/schemas/DashboardExportError",
+        "description": "Why the export failed, set when it is `failed`."
+      }
+    },
+    "required": [
+      "export_id",
+      "status",
+      "started_at"
+    ],
+    "additionalProperties": false,
+    "description": "A dashboard export. Starting an export returns it `running`; poll it until it is `completed`, with a signed download URL, or `failed`, with the reason."
+  },
   "QueryValidationError": {
     "type": "object",
     "properties": {
@@ -45567,7 +45907,7 @@
     "properties": {
       "recreate_index": {
         "type": "boolean",
-        "description": "Drop any existing agent-runs index/alias family and recreate the stable concrete index before indexing. Defaults to true."
+        "description": "Rebuild into a new index and switch searches to it once it is filled, so searches keep working during the rebuild; when false, index into the current index in place. Defaults to true."
       },
       "batch_size": {
         "type": "number",

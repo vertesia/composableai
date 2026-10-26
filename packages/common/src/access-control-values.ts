@@ -109,7 +109,7 @@ export enum AccessControlPrincipalType {
 /**
  * Kind of object a ResourceSet's `resource_props` matches at query time. Used
  * in `AceConditions.scope` (validated at runtime against this list) and as
- * the prefix in JWT `content_security` keys (e.g. `collection:read`).
+ * the prefix in JWT `abac` keys (e.g. `collection:read`).
  *
  * Each scope is owned by exactly one partition. When adding a new partition
  * (e.g. tasks), extend this list with the new scope(s) AND extend `RoleDomain`

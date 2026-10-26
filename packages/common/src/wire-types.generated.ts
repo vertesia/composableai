@@ -37,6 +37,7 @@ import type { AccountType, BillingMethod, QuotaTier } from './account-values.js'
 import type { ApiKeyTypes } from './apikey-values.js';
 import type { AppUINavItem, CompositeAppMenuNavItem } from './apps.js';
 import type {
+    DashboardExportStatus as DashboardExportStatusValues,
     DashboardStatus as DashboardStatusValues,
     DataColumnType as DataColumnTypeValues,
     DataStoreStatus as DataStoreStatusValues,
@@ -552,6 +553,7 @@ export type AppUIConfig = {
 };
 export type AppOAuthClientConfig = {
     redirect_uris: string[];
+    require_consent?: boolean | undefined;
 };
 export type AppInstallationProjectsQuery = {
     name?: string | undefined;
@@ -676,6 +678,11 @@ export type AppCapabilities =
     | 'dashboards';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 export type AppVersionKind = 'design' | 'version';
+export type AppDeploymentAlias = string;
+export type AppDeploymentAliasTarget = {
+    version_id: string;
+    version_record_id: string;
+};
 export type AppVersionState = 'ready' | 'failed' | 'expired';
 export type AppVersionTarget = 'static' | 'service';
 export type AppVersionGitRefType = 'branch' | 'tag' | 'commit' | 'detached';
@@ -721,6 +728,7 @@ export type AppVersionRecord = {
     kind: AppVersionKind;
     state: AppVersionState;
     promoted?: boolean | undefined;
+    aliases?: AppDeploymentAlias[] | undefined;
     target?: AppVersionTarget | undefined;
     agent_run_id?: string | undefined;
     development_task_id?: string | undefined;
@@ -748,6 +756,24 @@ export type AppVersionRecord = {
     built_at?: string | undefined;
     checked_at?: string | undefined;
     expires_at?: string | undefined;
+};
+export type AppVersionLaunchTarget = {
+    project: ProjectRef;
+    installation_id: string;
+    settings: {
+        [k: string]: unknown;
+    };
+};
+export type CreateAppVersionLaunchRequest = {
+    target_project_id?: string | undefined;
+    settings: {
+        [k: string]: unknown;
+    };
+};
+export type CreateAppVersionLaunchResponse = {
+    version_launch_id: string;
+    version_selector: string;
+    app_url: string;
 };
 export type DeleteAppVersionResponse = {
     id: string;
@@ -1273,6 +1299,7 @@ export type AppManifest = {
     endpoint?: string | undefined;
     endpoint_overrides?: StringValueMap | undefined;
     version?: string | undefined;
+    deployment_aliases?: Record<AppDeploymentAlias, AppDeploymentAliasTarget> | undefined;
     source?: AppManifestSource | undefined;
     tags?: string[] | undefined;
     access_control?: AppAccessControl | undefined;
@@ -1322,6 +1349,7 @@ export type AppInstallation = {
     namespace_overrides?: Record<string, string> | undefined;
     reserved_namespaces?: string[] | undefined;
     namespace_conflicts?: string[] | undefined;
+    deployment_alias?: AppDeploymentAlias | undefined;
     manifest: string;
     mcp_configuration?:
         | {
@@ -1361,6 +1389,7 @@ export type AppInstallationWithManifest = {
     namespace_overrides?: Record<string, string> | undefined;
     reserved_namespaces?: string[] | undefined;
     namespace_conflicts?: string[] | undefined;
+    deployment_alias?: AppDeploymentAlias | undefined;
     mcp_configuration?:
         | {
               revision: string;
@@ -1401,6 +1430,7 @@ export type AppInstallationListEntry = {
     namespace_overrides?: Record<string, string> | undefined;
     reserved_namespaces?: string[] | undefined;
     namespace_conflicts?: string[] | undefined;
+    deployment_alias?: AppDeploymentAlias | undefined;
     mcp_configuration?:
         | {
               revision: string;
@@ -1451,6 +1481,7 @@ export type AppApiKeyCollectionParams = {
 export type AppOAuthProviderParams = AppOAuthCollectionParams;
 export type AppInstallationPayload = {
     app_id: string;
+    deployment_alias?: AppDeploymentAlias | undefined;
     instance_key?: string | undefined;
     display_name?: string | undefined;
     namespace_overrides?: Record<string, string> | undefined;
@@ -1462,6 +1493,7 @@ export type AppInstallationPayload = {
           }
         | undefined;
     access_control?: AppAccessControl | null | undefined;
+    approved_scopes?: string[] | undefined;
     oauth_params?: AppOAuthCollectionParams | undefined;
     oauth_provider_params?: AppOAuthCollectionParams | undefined;
     api_key_params?: AppApiKeyCollectionParams | undefined;
@@ -3152,6 +3184,54 @@ export type UpdateDashboardPayload = {
         | undefined;
     expected_edit_revision?: number | undefined;
     skip_versioning?: boolean | undefined;
+};
+/**
+ * Options for exporting a saved dashboard as an image.
+ */
+export type ExportDashboardPayload = {
+    parameter_values?: StringValueMap | undefined;
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+/**
+ * An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.
+ */
+export type ExportDashboardPreviewPayload = {
+    query: string;
+    queryLimit?: number | undefined;
+    queryParameters?: StringValueMap | undefined;
+    spec: {
+        [k: string]: unknown;
+    };
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+export type DashboardExportStatus = (typeof DashboardExportStatusValues)[keyof typeof DashboardExportStatusValues];
+/**
+ * Why a dashboard export failed.
+ */
+export type DashboardExportError = {
+    code: string;
+    message: string;
+    retryable: boolean;
+};
+/**
+ * A dashboard export: `running` until it is `completed`, with a signed download URL, or `failed`.
+ */
+export type DashboardExport = {
+    export_id: string;
+    status: DashboardExportStatus;
+    started_at: string;
+    completed_at?: string | undefined;
+    url?: string | undefined;
+    content_type?: string | undefined;
+    expires_at?: string | undefined;
+    width?: number | undefined;
+    height?: number | undefined;
+    row_count?: number | undefined;
+    error?: DashboardExportError | undefined;
 };
 /**
  * A point-in-time version of a dashboard.
@@ -4961,6 +5041,9 @@ export type UpdateOAuthClientPayload = {
           }
         | undefined;
 };
+export type UpdateOAuthClientStatusPayload = {
+    status: OAuthClientStatus;
+};
 export type OAuthAuthorizationServerMetadata = {
     issuer: string;
     authorization_endpoint: string;
@@ -5073,6 +5156,7 @@ export type OAuthAuthorizationRequestGeneratedApp = {
     tenant_id: string;
     app_name: string;
     version_id?: string | undefined;
+    deployment_alias?: string | undefined;
 };
 export type OAuthLoginPayload = {
     id_token: string;
@@ -6401,7 +6485,7 @@ export type ResourceRef = {
 /**
  * Kind of object a ResourceSet's `resource_props` matches at query time. Used
  * in `AceConditions.scope` (validated at runtime against this list) and as
- * the prefix in JWT `content_security` keys (e.g. `collection:read`).
+ * the prefix in JWT `abac` keys (e.g. `collection:read`).
  *
  * Each scope is owned by exactly one partition. When adding a new partition
  * (e.g. tasks), extend `AbacScopes` with the new scope(s) AND extend
@@ -10861,8 +10945,13 @@ export type AppPackageScopeWire =
     | 'hooks'
     | 'subscriptions'
     | 'all';
+export type AppVersionLaunchTargetArray = AppVersionLaunchTarget[];
 export type AppVersionRecordArray = AppVersionRecord[];
 export type AppToolCollectionArray = AppToolCollection[];
+export type AppPackageQuery = {
+    scope?: AppPackageScopeWire[] | undefined;
+    deployment_alias?: AppDeploymentAlias | undefined;
+};
 export type SystemPackageQuery = {
     scope?: AppPackageScopeWire[] | undefined;
 };
@@ -11020,6 +11109,7 @@ export interface ApiComponentTypes {
     OAuthClientScopeMetadata: OAuthClientScopeMetadata;
     CreateOAuthClientPayload: CreateOAuthClientPayload;
     UpdateOAuthClientPayload: UpdateOAuthClientPayload;
+    UpdateOAuthClientStatusPayload: UpdateOAuthClientStatusPayload;
     OAuthGrant: OAuthGrant;
     ListOAuthGrantsQuery: ListOAuthGrantsQuery;
     RevokeOAuthGrantQuery: RevokeOAuthGrantQuery;
@@ -11335,6 +11425,11 @@ export interface ApiComponentTypes {
     Dashboard: Dashboard;
     CreateDashboardPayload: CreateDashboardPayload;
     UpdateDashboardPayload: UpdateDashboardPayload;
+    ExportDashboardPayload: ExportDashboardPayload;
+    ExportDashboardPreviewPayload: ExportDashboardPreviewPayload;
+    DashboardExportStatus: DashboardExportStatus;
+    DashboardExportError: DashboardExportError;
+    DashboardExport: DashboardExport;
     QueryValidationError: QueryValidationError;
     QueryValidationPayload: QueryValidationPayload;
     ListDataStoreVersionsQuery: ListDataStoreVersionsQuery;
@@ -11944,6 +12039,8 @@ export interface ApiComponentTypes {
     AppVersionTarget: AppVersionTarget;
     AppVersionState: AppVersionState;
     AppVersionKind: AppVersionKind;
+    AppDeploymentAlias: AppDeploymentAlias;
+    AppDeploymentAliasTarget: AppDeploymentAliasTarget;
     StartAppScaffoldResponse: StartAppScaffoldResponse;
     AppScaffoldModule: AppScaffoldModule;
     AppBuildTrigger: AppBuildTrigger;
@@ -12003,6 +12100,10 @@ export interface ApiComponentTypes {
     AppRepoRefs: AppRepoRefs;
     AppRepoCommits: AppRepoCommits;
     ContentObjectTypeRef: ContentObjectApiTypeRef;
+    AppVersionLaunchTarget: AppVersionLaunchTarget;
+    AppVersionLaunchTargetArray: AppVersionLaunchTargetArray;
+    CreateAppVersionLaunchRequest: CreateAppVersionLaunchRequest;
+    CreateAppVersionLaunchResponse: CreateAppVersionLaunchResponse;
     AppBuildProgress: AppBuildProgress;
     AppVersionStorage: AppVersionStorage;
     AppToolCollection: AppToolCollection;
@@ -12021,6 +12122,7 @@ export interface ApiComponentTypes {
     AppListScope: AppListScope;
     AppsQuery: AppsQuery;
     AppInstallationProjectsQuery: AppInstallationProjectsQuery;
+    AppPackageQuery: AppPackageQuery;
     SystemPackageQuery: SystemPackageQuery;
     WebsiteCredentialTotpAlgorithm: WebsiteCredentialTotpAlgorithm;
     WebsiteCredentialTotpMetadata: WebsiteCredentialTotpMetadata;

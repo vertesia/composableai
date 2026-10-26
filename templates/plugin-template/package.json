@@ -1,6 +1,6 @@
 {
     "name": "plugin-template",
-    "version": "1.6.0-dev.20261019.172735Z",
+    "version": "1.6.0-dev.20261022.120426Z",
     "description": "A unified template for building custom UI plugins and tool servers for Vertesia",
     "type": "module",
     "main": "lib/tool-server/server.js",
@@ -32,6 +32,13 @@
         "seed:content": "node src/modules/content-app/scripts/seed-content-app.ts",
         "exercise:content": "node src/modules/content-app/scripts/exercise-content-app.ts",
         "build:sandbox": "node src/modules/service/scripts/build-server-esbuild.mjs --sandbox"
+    },
+    "vertesia-appgen": {
+        "name": "plugin-template",
+        "version": 1,
+        "runtime_features": {
+            "advanced_launch": 1
+        }
     },
     "vertesia-build": {
         "libDir": "./lib",
@@ -104,7 +111,7 @@
         "dotenv": "^18.0.7",
         "hono": "^4.13.13",
         "html-parse-stringify": "^4.0.1",
-        "lucide-react": "^1.55.0",
+        "lucide-react": "^1.59.0",
         "react-vega": "^8.0.0",
         "use-sync-external-store": "^1.7.0",
         "vega": "^6.4.0",

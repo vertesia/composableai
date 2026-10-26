@@ -28,13 +28,17 @@ import type {
     AppScaffoldProgress,
     AppsQuery,
     AppToolCollection,
+    AppVersionLaunchTarget,
     AppVersionListQuery,
     AppVersionRecord,
     CountResult,
     CreateAppRepoBranchRequest,
+    CreateAppVersionLaunchRequest,
+    CreateAppVersionLaunchResponse,
     DeleteAppVersionResponse,
     ExchangeAppGithubAuthorizationResponse,
     McpApiKeyStatus,
+    OAuthClient,
     ProjectRef,
     PromoteAppVersionResponse,
     RequireAtLeastOne,
@@ -58,6 +62,11 @@ export type { OrphanedAppInstallation } from '@vertesia/common';
 export default class AppsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/apps');
+    }
+
+    /** The publisher-managed OAuth registration shared by all installations of an app. */
+    getOAuthClient(appId: string): Promise<OAuthClient> {
+        return this.get(`/${encodeURIComponent(appId)}/oauth-client`);
     }
 
     create(manifest: AppManifestData): Promise<AppManifest> {
@@ -148,6 +157,29 @@ export default class AppsApi extends ApiTopic {
 
     promoteVersion(recordId: string): Promise<PromoteAppVersionResponse> {
         return this.post(`/versions/${recordId}/promote`);
+    }
+
+    /** Create an ephemeral launch of an immutable version with temporary installation settings. */
+    createVersionLaunch(
+        recordId: string,
+        payload: CreateAppVersionLaunchRequest,
+    ): Promise<CreateAppVersionLaunchResponse> {
+        return this.post(`/versions/${recordId}/launches`, { payload });
+    }
+
+    /** List accessible projects where this app is installed and can host a temporary launch. */
+    listVersionLaunchTargets(recordId: string): Promise<AppVersionLaunchTarget[]> {
+        return this.get(`/versions/${recordId}/launch-targets`);
+    }
+
+    /** Assign or move a stable deployment alias to an immutable app version. */
+    assignVersionAlias(recordId: string, alias: string): Promise<AppVersionRecord> {
+        return this.put(`/versions/${recordId}/aliases/${encodeURIComponent(alias)}`);
+    }
+
+    /** Remove an alias only when it still points to the specified app version. */
+    removeVersionAlias(recordId: string, alias: string): Promise<AppVersionRecord> {
+        return this.del(`/versions/${recordId}/aliases/${encodeURIComponent(alias)}`);
     }
 
     rebuildVersion(recordId: string): Promise<StartAppBuildResponse> {
@@ -364,9 +396,16 @@ export default class AppsApi extends ApiTopic {
      * package-resolved (no per-id route), so this is how a client reads the full definition — type
      * schema, interaction prompt, process definition, dashboard spec — to visualize an exposed id.
      */
-    getAppPackage(appIdOrName: string, scope: AppPackageScope | AppPackageScope[] = 'all'): Promise<AppPackage> {
+    getAppPackage(
+        appIdOrName: string,
+        scope: AppPackageScope | AppPackageScope[] = 'all',
+        deploymentAlias?: string,
+    ): Promise<AppPackage> {
         return this.get(`/${encodeURIComponent(appIdOrName)}/package`, {
-            query: { scope: Array.isArray(scope) ? scope.join(',') : scope },
+            query: {
+                scope: Array.isArray(scope) ? scope.join(',') : scope,
+                ...(deploymentAlias ? { deployment_alias: deploymentAlias } : {}),
+            },
         });
     }
 
@@ -414,12 +453,15 @@ export default class AppsApi extends ApiTopic {
         apiKeyParams?: AppApiKeyCollectionParams,
         mcpParameters?: AppInstallationPayload['mcp_parameters'],
         mcpSharedParameters?: AppInstallationPayload['mcp_shared_parameters'],
-        instance?: Pick<AppInstallationPayload, 'instance_key' | 'display_name' | 'namespace_overrides'>,
+        installation?: Pick<
+            AppInstallationPayload,
+            'approved_scopes' | 'deployment_alias' | 'instance_key' | 'display_name' | 'namespace_overrides'
+        >,
     ): Promise<AppInstallation> {
         return this.post(`/install`, {
             payload: {
                 app_id: appId,
-                ...instance,
+                ...installation,
                 settings,
                 oauth_params: oauthParams,
                 oauth_provider_params: oauthProviderParams,

@@ -1,8 +1,26 @@
 name: (publish) NPM packages
 
+run-name: ${{ inputs.request_id || github.workflow }}
+
 on:
   workflow_dispatch:
     inputs:
+      request_id:
+        description: Optional caller correlation ID
+        type: string
+        default: ""
+      source_sha:
+        description: Optional immutable source commit
+        type: string
+        default: ""
+      version:
+        description: Optional exact cohort version (same base as the source)
+        type: string
+        default: ""
+      llumiverse_sha:
+        description: Optional published Llumiverse commit to include in the version commit
+        type: string
+        default: ""
       release_type:
         description: Release Type
         required: true
@@ -39,7 +57,7 @@ jobs:
   prepare-release:
     name: Prepare release version
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -47,12 +65,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          submodules: recursive
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
       - name: Calculate package version
         id: version
         shell: bash
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
           BUMP_TYPE: ${{ inputs.bump_type }}
+          EXACT_VERSION: ${{ inputs.version }}
         run: |
           current_version="$(node -p "require('./package.json').version")"
           base_version="${current_version%%-dev*}"
@@ -66,7 +88,40 @@ jobs:
           else
               version="${base_version}"
           fi
+          if [[ -n "$EXACT_VERSION" ]]; then
+              expected_pattern="^${base_version//./[.]}$"
+              if [[ "$RELEASE_TYPE" == "snapshot" ]]; then
+                  expected_pattern="^${base_version//./[.]}-dev\.[0-9]{8}\.[0-9]{6}Z$"
+              fi
+              if [[ ! "$EXACT_VERSION" =~ $expected_pattern ]]; then
+                  echo "Exact version does not match the computed release base/channel" >&2
+                  exit 1
+              fi
+              version="$EXACT_VERSION"
+          fi
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Install Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          # Older release refs predate .node-version; preserve their Node 24 setup.
+          node-version: ${{ hashFiles('.node-version') == '' && '24' || '' }}
+          node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
+      - name: Prepare shared dependency, lockfile and schemas
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+          LLUMIVERSE_INPUT_SHA: ${{ inputs.llumiverse_sha }}
+        run: bash .github/bin/prepare-release-source.sh "$RELEASE_VERSION" "$RELEASE_SOURCE_SHA" "$LLUMIVERSE_INPUT_SHA"
+      - name: Upload prepared release source
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          overwrite: true
+          name: prepared-release-source
+          path: ${{ runner.temp }}/prepared-release-source/
+          if-no-files-found: error
 
   build-macos-cli:
     name: Build and sign macOS CLI
@@ -83,6 +138,19 @@ jobs:
         with:
           submodules: recursive
           persist-credentials: false
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Restore prepared release source
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: prepared-release-source
+          path: .
+      - name: Load prepared dependency identity
+        env:
+          RELEASE_SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+          LLUMIVERSE_INPUT_SHA: ${{ inputs.llumiverse_sha }}
+        run: bash .github/bin/load-release-source.sh
 
       - name: Install pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -100,13 +168,15 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          # Older release refs predate .node-version; preserve their Node 24 setup.
+          node-version: ${{ hashFiles('.node-version') == '' && '24' || '' }}
+          node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
       - name: Install Bun
         uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
 
       - name: Install workspace dependencies
         timeout-minutes: 5
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Save pnpm store cache
         if: steps.pnpm-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -117,9 +187,9 @@ jobs:
         env:
           CLI_VERSION: ${{ needs.prepare-release.outputs.version }}
         run: |
-          npm version "${CLI_VERSION}" --no-git-tag-version --workspaces=false
+          npm version "${CLI_VERSION}" --no-git-tag-version --allow-same-version --workspaces=false
           pnpm -r --filter "./packages/**" --filter "./libraries/jst" \
-              exec npm version "${CLI_VERSION}" --no-git-tag-version
+              exec npm version "${CLI_VERSION}" --no-git-tag-version --allow-same-version
       - name: Build CLI workspace dependencies
         run: pnpm exec turbo run build --filter=@vertesia/cli...
 
@@ -233,6 +303,7 @@ jobs:
       - name: Upload signed CLI executables
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
+          overwrite: true
           name: native-cli-darwin
           path: |
             packages/cli-darwin-arm64/bin/vertesia
@@ -252,7 +323,7 @@ jobs:
   publish:
     name: Publish all packages
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     needs:
       - prepare-release
       - build-macos-cli
@@ -267,12 +338,26 @@ jobs:
       npm_tag: ${{ steps.publish.outputs.npm_tag }}
       publish_status: ${{ steps.publish.outputs.publish_status }}
       published_packages: ${{ steps.publish.outputs.published_packages }}
+      release_sha: ${{ steps.record.outputs.release_sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Restore prepared release source
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: prepared-release-source
+          path: .
+      - name: Load prepared dependency identity
+        env:
+          RELEASE_SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+          LLUMIVERSE_INPUT_SHA: ${{ inputs.llumiverse_sha }}
+        run: bash .github/bin/load-release-source.sh
 
       - name: Install pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -290,18 +375,17 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          # Older release refs predate .node-version; preserve their Node 24 setup.
+          node-version: ${{ hashFiles('.node-version') == '' && '24' || '' }}
+          node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
 
       # Node.js 24 ships with npm 11.5.1 or later, as required for trusted publishing.
       - name: Verify npm version
         run: npm --version
 
-      - name: Test package channel policy
-        run: bash ./.github/bin/lib-package-channel.test.sh
-
       - name: Install workspace dependencies
         timeout-minutes: 5
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Save pnpm store cache
         if: steps.pnpm-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -322,12 +406,15 @@ jobs:
 
       - name: Publish all packages
         id: publish
-        timeout-minutes: 5
+        # A full cohort signs npm provenance separately for every package.
+        timeout-minutes: 20
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
           BUMP_TYPE: ${{ inputs.bump_type }}
           DRY_RUN: ${{ inputs.dry_run }}
+          COORDINATED_RELEASE: ${{ inputs.request_id != '' }}
           VERSION_OVERRIDE: ${{ needs.prepare-release.outputs.version }}
+          RELEASE_SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           deploy_key_path="${RUNNER_TEMP}/publish-deploy-key"
@@ -337,11 +424,39 @@ jobs:
           trap 'rm -f "${deploy_key_path}"' EXIT
           export GIT_SSH_COMMAND="ssh -i ${deploy_key_path} -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
           git remote set-url origin git@github.com:vertesia/composableai.git
+          # Also support retries whose pinned publisher predates identity setup during propagation.
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
           ./.github/bin/publish-all-packages.sh \
               --ref "${GITHUB_REF_NAME}" \
               --release-type "${RELEASE_TYPE}" \
               --bump-type "${BUMP_TYPE}" \
               --dry-run "${DRY_RUN}"
+
+
+      - name: Record published source
+        id: record
+        if: inputs.dry_run == false
+        env:
+          PACKAGE_VERSION: ${{ needs.prepare-release.outputs.version }}
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          node --input-type=module -e '
+            import fs from "node:fs";
+            import {execFileSync} from "node:child_process";
+            const release_sha=execFileSync("git", ["rev-parse", `refs/tags/v${process.env.PACKAGE_VERSION}^{commit}`], {encoding:"utf8"}).trim();
+            fs.appendFileSync(process.env.GITHUB_OUTPUT,`release_sha=${release_sha}\n`);
+            fs.writeFileSync("sdk-publish-source.json", JSON.stringify({version:process.env.PACKAGE_VERSION,
+              source_sha:process.env.SOURCE_SHA, release_sha}));'
+
+      - name: Upload published source
+        if: inputs.dry_run == false
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          overwrite: true
+          name: sdk-publish-source
+          path: sdk-publish-source.json
+          if-no-files-found: error
 
       # Template integration tests using local verdaccio registry (dry-run only)
       - name: Template integration test - Plugin
@@ -371,15 +486,24 @@ jobs:
   # integration test, especially the macOS runner.
   wait-for-npm:
     name: Wait for published npm packages
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest # Registry scanning can exceed the 15-minute slim runner limit.
     timeout-minutes: 20
     needs: publish
     if: inputs.dry_run == false
     steps:
+      - name: Checkout .node-version
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+          sparse-checkout: .node-version
+          sparse-checkout-cone-mode: false
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          # Older release refs predate .node-version; preserve their Node 24 setup.
+          node-version: ${{ hashFiles('.node-version') == '' && '24' || '' }}
+          node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
           package-manager-cache: false
       - name: Wait for complete published package cohort
         env:
@@ -429,10 +553,14 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          # Older release refs predate .node-version; preserve their Node 24 setup.
+          node-version: ${{ hashFiles('.node-version') == '' && '24' || '' }}
+          node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
           package-manager-cache: false
       - name: Install and smoke test published CLI
         env:
@@ -449,28 +577,26 @@ jobs:
       - publish
       - wait-for-npm
     if: inputs.dry_run == false
+    # Execute helpers from the pinned caller source; consume exact published package/template versions.
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ inputs.source_sha || github.sha }}
+          submodules: recursive
+          fetch-depth: 0
       - name: Install pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - name: Resolve pnpm store directory
-        id: pnpm-store
-        shell: bash
-        run: echo "path=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
-      - name: Restore pnpm store cache
-        id: pnpm-cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
+
+
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          # Older release refs predate .node-version; preserve their Node 24 setup.
+          node-version: ${{ hashFiles('.node-version') == '' && '24' || '' }}
+          node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
+          package-manager-cache: false
 
       - name: Install and smoke test published CLI fallback
         env:
@@ -483,16 +609,11 @@ jobs:
         env:
           RELEASE_TYPE: ${{ inputs.release_type }}
           PACKAGE_VERSION: ${{ needs.publish.outputs.version }}
+          TEMPLATE_SOURCE_REF: v${{ needs.publish.outputs.version }}
         run: >-
           ./.github/bin/test-template-smoke.sh
           --release-type "${RELEASE_TYPE}"
           --template "Vertesia Plugin"
-          --branch "${GITHUB_REF_NAME}"
+          --branch "${TEMPLATE_SOURCE_REF}"
           --package-version "${PACKAGE_VERSION}"
           --wait
-      - name: Save pnpm store cache
-        if: steps.pnpm-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}

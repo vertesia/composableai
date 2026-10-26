@@ -7,6 +7,7 @@ const envEntry = new URL('../../src/ui/env.ts', import.meta.url);
 async function bootstrap({
     origin = 'https://localhost:5173',
     clientId,
+    redirectUri,
     devAuthToken,
     prod = false,
     hostToken,
@@ -38,6 +39,7 @@ async function bootstrap({
                 PROD: prod,
                 DEV: !prod,
                 VITE_OAUTH_CLIENT_ID: clientId,
+                VITE_OAUTH_REDIRECT_URI: redirectUri,
                 VITE_VERTESIA_AUTH_TOKEN: devAuthToken,
                 VITE_VERTESIA_STUDIO_URL: 'https://api.dev1.vertesia.io',
                 VITE_VERTESIA_ZENO_URL: 'https://api.dev1.vertesia.io',
@@ -108,7 +110,12 @@ async function bootstrap({
     }
 }
 
-for (const origin of ['http://localhost:5173', 'https://localhost:5173']) {
+for (const origin of [
+    'http://localhost:5173',
+    'https://localhost:5173',
+    'https://localhost:59235',
+    'http://127.0.0.1:45678',
+]) {
     test(`${origin} requires a registered client even for built apps`, async () => {
         const app = await bootstrap({ origin, prod: true });
         assert.equal(app.env.oauth, undefined);
@@ -178,4 +185,9 @@ test('explicit Firebase authentication retains the local provider flow', async (
 test('local gateway sessions do not require a separately configured client', async () => {
     const app = await bootstrap({ gatewaySession: true });
     assert.doesNotThrow(() => app.validate());
+});
+
+test('keeps an explicit OAuth callback override for custom routes', async () => {
+    const app = await bootstrap({ clientId: 'custom-client', redirectUri: 'https://localhost:59235/custom/callback' });
+    assert.equal(app.env.oauth.redirectUri, 'https://localhost:59235/custom/callback');
 });

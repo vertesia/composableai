@@ -5,12 +5,16 @@ import {
     AppPackageHooksSchema,
 } from './api-schemas/app-runtime.js';
 import {
+    ADVANCED_APP_VERSION_LAUNCH_FEATURE,
     APP_CAPABILITIES,
     APP_PACKAGE_SCOPES,
+    getAppGenTemplateMetadata,
+    getAppVersionRuntimeFeatureVersion,
     isMcpOnlyInstanceManifest,
     type MCPToolCollectionObject,
     resolveInstallationCollection,
     slugifyAppId,
+    supportsAdvancedAppVersionLaunch,
 } from './apps.js';
 
 describe('slugifyAppId', () => {
@@ -106,6 +110,34 @@ describe('app capability contracts', () => {
                 },
             ],
         });
+    });
+});
+
+describe('AppGen template runtime features', () => {
+    const metadata = {
+        name: 'plugin-template',
+        version: 1,
+        runtime_features: { advanced_launch: 1, future_feature: 2 },
+    };
+    const manifest = { package_artifacts: { appgen_template: metadata } };
+
+    it('reads template provenance and individual protocol versions', () => {
+        expect(getAppGenTemplateMetadata(manifest)).toEqual(metadata);
+        expect(getAppVersionRuntimeFeatureVersion(manifest, ADVANCED_APP_VERSION_LAUNCH_FEATURE)).toBe(1);
+        expect(getAppVersionRuntimeFeatureVersion(manifest, 'future_feature')).toBe(2);
+        expect(supportsAdvancedAppVersionLaunch(manifest)).toBe(true);
+    });
+
+    it('treats legacy or malformed metadata as unsupported', () => {
+        expect(getAppGenTemplateMetadata({})).toBeUndefined();
+        expect(supportsAdvancedAppVersionLaunch({})).toBe(false);
+        expect(
+            supportsAdvancedAppVersionLaunch({
+                package_artifacts: {
+                    appgen_template: { ...metadata, runtime_features: { advanced_launch: 0 } },
+                },
+            }),
+        ).toBe(false);
     });
 });
 

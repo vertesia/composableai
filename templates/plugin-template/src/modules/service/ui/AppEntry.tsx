@@ -1,10 +1,9 @@
 import branding from 'virtual:vertesia-branding';
 import { type Route, RouterProvider } from '@vertesia/ui/router';
-import { useUserSession } from '@vertesia/ui/session';
 import { IFRAME_APP_CONTENT_SLOT, IFRAME_APP_SLOT_PARAM, StandaloneApp, VertesiaShell } from '@vertesia/ui/shell';
-import type { ReactNode } from 'react';
 import { setUsePluginAssets } from '../../../ui/assets';
 import { App } from '../../../ui/shell/App';
+import { AppVersionScope } from '../../../ui/shell/AppVersionScope';
 import { OrgGate } from '../../../ui/shell/layouts/OrgGate';
 import { PluginAccessDenied } from '../../../ui/shell/layouts/PluginAccessDenied';
 import { PluginLayout } from '../../../ui/shell/layouts/PluginLayout';
@@ -13,7 +12,6 @@ import { appAuthScreens } from '../../app/branding/screens';
 setUsePluginAssets(false);
 
 const appName = import.meta.env.VITE_APP_NAME;
-const appVersion = import.meta.env.VITE_APP_VERSION;
 const globalValues = globalThis as Record<string, unknown>;
 const injectedAuthToken =
     typeof globalValues.__VERTESIA_AUTH_TOKEN__ === 'string' ? globalValues.__VERTESIA_AUTH_TOKEN__ : undefined;
@@ -50,16 +48,6 @@ const routes: Route[] = [
     { path: 'app/*', Component: GatewayAppRoot },
     { path: '*', Component: GatewayAppRoot },
 ];
-
-function AppVersionScope({ children }: { children: ReactNode }) {
-    const { client } = useUserSession();
-
-    // withAppVersion synchronously pins both Studio and Store clients. Do this before returning
-    // request-producing descendants; a passive effect lets their first requests escape unpinned.
-    if (appVersion) client.withAppVersion(appVersion);
-
-    return <>{children}</>;
-}
 
 export function AppEntry() {
     return (

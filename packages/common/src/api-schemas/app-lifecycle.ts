@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { APPGEN_PACKAGE_SPEC_PATTERN } from '../appgen.js';
+import { APP_DEPLOYMENT_ALIAS_PATTERN } from '../apps.js';
+import { ProjectRefSchema } from './apikey.js';
 import {
     AppAccessControlSchema,
     AppAvailableInSchema,
@@ -84,6 +86,12 @@ export const AppVersionTargetSchema = z.enum(['static', 'service']).meta({ id: '
 export const AppVersionStateSchema = z.enum(['ready', 'failed', 'expired']).meta({ id: 'AppVersionState' });
 
 export const AppVersionKindSchema = z.enum(['design', 'version']).meta({ id: 'AppVersionKind' });
+
+export const AppDeploymentAliasSchema = z.string().regex(APP_DEPLOYMENT_ALIAS_PATTERN).meta({
+    id: 'AppDeploymentAlias',
+    description:
+        'Stable, lowercase deployment alias for an immutable app version, such as `production`, `preview`, or `customer-demo`.',
+});
 
 export const StartAppScaffoldResponseSchema = z
     .strictObject({
@@ -872,6 +880,10 @@ export const AppVersionRecordSchema = z
         kind: AppVersionKindSchema,
         state: AppVersionStateSchema,
         promoted: z.boolean().optional(),
+        aliases: z
+            .array(AppDeploymentAliasSchema)
+            .meta({ description: 'Deployment aliases that currently resolve to this immutable version.' })
+            .optional(),
         target: AppVersionTargetSchema.optional(),
         agent_run_id: z.string().optional(),
         development_task_id: z
@@ -903,6 +915,52 @@ export const AppVersionRecordSchema = z
         expires_at: z.string().optional(),
     })
     .meta({ id: 'AppVersionRecord' });
+
+export const CreateAppVersionLaunchRequestSchema = z
+    .strictObject({
+        target_project_id: z
+            .string()
+            .meta({
+                description:
+                    'Project in the source account where the app is already installed and the temporary version will run. Defaults to the current project.',
+            })
+            .optional(),
+        settings: z
+            .looseObject({})
+            .meta({ description: 'Temporary app installation settings used only by this version launch.' }),
+    })
+    .meta({
+        id: 'CreateAppVersionLaunchRequest',
+        description: 'Creates a short-lived launch of one immutable app version with temporary installation settings.',
+    });
+
+export const CreateAppVersionLaunchResponseSchema = z
+    .strictObject({
+        version_launch_id: z.string(),
+        version_selector: z.string(),
+        app_url: z.string(),
+    })
+    .meta({
+        id: 'CreateAppVersionLaunchResponse',
+        description: 'Opaque launch selector and App Gateway URL for an advanced app-version launch.',
+    });
+
+export const AppVersionLaunchTargetSchema = z
+    .strictObject({
+        project: ProjectRefSchema,
+        installation_id: z.string(),
+        settings: z
+            .looseObject({})
+            .meta({ description: 'Current settings of the app installation in the target project.' }),
+    })
+    .meta({
+        id: 'AppVersionLaunchTarget',
+        description: 'A user-accessible project where this app version may be launched temporarily.',
+    });
+
+export const AppVersionLaunchTargetArraySchema = z
+    .array(AppVersionLaunchTargetSchema)
+    .meta({ id: 'AppVersionLaunchTargetArray' });
 
 export const AgentRunSearchHitSchema = z
     .strictObject({
@@ -989,6 +1047,10 @@ export const UpsertAppVersionRequestSchema = z
 export const AppInstallationPayloadSchema = z
     .strictObject({
         app_id: z.string(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                "Optional stable deployment alias to follow for this installation instead of the app's promoted version.",
+        }).optional(),
         instance_key: z
             .string()
             .regex(/^[a-z][a-z0-9_-]{0,31}$/)
@@ -1019,6 +1081,14 @@ export const AppInstallationPayloadSchema = z
             .meta({
                 description:
                     "Per-installation override of the manifest's `access_control` policy. When provided, takes precedence over the manifest default for every access check. Sibling of `settings` — admin-controlled, not part of the app's own settings JSON.\n\nThree send-time semantics on update:  - Field omitted entirely from the payload → leave the existing override unchanged.  - Explicit `null` → clear the override, fall back to the manifest default.  - String enum → set the override to that value.\n\n(On install, the same shape applies; omit or pass `null` to use the manifest default.)",
+            })
+            .optional(),
+        approved_scopes: z
+            .array(z.string().min(1))
+            .max(200)
+            .meta({
+                description:
+                    'OAuth scopes approved by the project manager during installation. The server records the approving user and timestamp; omitted defaults to all scopes requested by the selected deployment.',
             })
             .optional(),
         oauth_params: AppOAuthCollectionParamsSchema.meta({
@@ -1116,6 +1186,23 @@ export const SystemPackageQuerySchema = z
             .optional(),
     })
     .meta({ id: 'SystemPackageQuery' });
+
+export const AppPackageQuerySchema = z
+    .strictObject({
+        scope: z
+            .array(AppPackageScopeSchema)
+            .meta({
+                description:
+                    'Which capabilities to include in the returned package. Defaults to `all`. ' +
+                    'Comma-joined (`?scope=ui,tools`) or repeated.',
+            })
+            .optional(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                'Resolve the package from this named deployment. Used before installation to load the selected deployment configuration.',
+        }).optional(),
+    })
+    .meta({ id: 'AppPackageQuery' });
 
 export const AppInstanceAvailabilitySchema = z
     .strictObject({ enabled: z.boolean() })

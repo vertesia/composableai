@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "1.6.0-dev.20261019.172735Z",
+    "version": "1.6.0-dev.20261022.120426Z",
     "license": "Apache-2.0",
     "type": "module",
     "main": "./lib/index.js",
@@ -67,5 +67,10 @@
         "ai",
         "typescript"
     ],
-    "gitHead": "85a3010750ab97192d236928b1fca55015a18000"
+    "gitHead": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+    "releaseIdentity": {
+        "source_sha": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+        "dependency_sha": "93466e47b06db23ac3c800e248d170afe65e5006",
+        "lock_sha256": "117e1c8068aa07d59117323a51ceccfc96cab543e50c03eb7efc19709d6f5e6b"
+    }
 }

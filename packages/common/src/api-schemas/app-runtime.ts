@@ -8,6 +8,7 @@ import type { InCodeProcessDefinition } from '../store/process.js';
 import { SystemRolesSchema } from './apikey.js';
 import {
     AgentToolDefinitionSchema,
+    AppDeploymentAliasSchema,
     AppInstallationOAuthBindingSchema,
     AppInstallationProviderBindingSchema,
     AppVersionRecordSchema,
@@ -43,6 +44,16 @@ import { ViewExperienceConfigurationSchema } from './view-execution.js';
 const JSONSchemaRefSchema: z.ZodType<JSONSchema> = z.any().meta({
     $ref: '#/components/schemas/JSONSchema',
 });
+
+export const AppDeploymentAliasTargetSchema = z
+    .strictObject({
+        version_id: z.string().min(1).meta({ description: 'Immutable AppGen version id.' }),
+        version_record_id: z
+            .string()
+            .min(1)
+            .meta({ description: 'Globally unique app-version record id used to resolve the exact build.' }),
+    })
+    .meta({ id: 'AppDeploymentAliasTarget' });
 
 export const ProjectPluginArraySchema = z.array(z.string()).meta({ id: 'ProjectPluginArray' });
 
@@ -281,6 +292,10 @@ export const AppInstallationSchema = z
         namespace_overrides: z.record(z.string(), z.string()).optional(),
         reserved_namespaces: z.array(z.string()).min(1).optional(),
         namespace_conflicts: z.array(z.string()).optional(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                'Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time.',
+        }).optional(),
         manifest: z.string(),
         mcp_configuration: mcpConfigurationSchema.optional(),
         oauth_approval: appOAuthApprovalSchema.optional(),
@@ -356,11 +371,15 @@ export const AppDashboardDefinitionSchema = z
 export const AppOAuthClientConfigSchema = z
     .strictObject({
         redirect_uris: z.array(z.string().url()).min(1),
+        require_consent: z.boolean().optional().meta({
+            description:
+                'Deprecated compatibility field. Vertesia-managed apps are authorized by project installation approval, while generic third-party OAuth clients retain per-user consent.',
+        }),
     })
     .meta({
         id: 'AppOAuthClientConfig',
         description:
-            'Standalone public PKCE OAuth. Installation automatically provisions an app client with these exact callback URLs.',
+            'Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs.',
     });
 
 export const AppManifestDataSchema = z
@@ -372,7 +391,13 @@ export const AppManifestDataSchema = z
                 description:
                     'Shared MCP installation parameters available to every collection. Collection-local names must not overlap.',
             }),
-        oauth_scopes: z.array(z.string()).optional(),
+        oauth_scopes: z
+            .array(z.string())
+            .meta({
+                description:
+                    'Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling.',
+            })
+            .optional(),
         oauth_client: AppOAuthClientConfigSchema.optional(),
         name: z.string().meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
@@ -555,7 +580,13 @@ export const CompositeAppMessageOverridesSchema = z
 export const AppManifestSchema = z
     .strictObject({
         parameters: AppManifestDataSchema.shape.parameters,
-        oauth_scopes: z.array(z.string()).optional(),
+        oauth_scopes: z
+            .array(z.string())
+            .meta({
+                description:
+                    'Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling.',
+            })
+            .optional(),
         oauth_client: AppOAuthClientConfigSchema.optional(),
         edit_revision: EditRevisionSchema,
         name: z.string().meta({
@@ -638,6 +669,12 @@ export const AppManifestSchema = z
             .string()
             .meta({ description: 'Optional app version string (e.g. "1.0.0") — informational.' })
             .optional(),
+        deployment_aliases: z
+            .record(AppDeploymentAliasSchema, AppDeploymentAliasTargetSchema)
+            .meta({
+                description: 'Vertesia-managed mapping from stable deployment aliases to immutable AppGen versions.',
+            })
+            .optional(),
         source: AppManifestSourceSchema.meta({
             description: 'Source metadata for generated or synced app manifests.',
         }).optional(),
@@ -682,6 +719,10 @@ export const AppInstallationWithManifestSchema = z
         namespace_overrides: z.record(z.string(), z.string()).optional(),
         reserved_namespaces: z.array(z.string()).min(1).optional(),
         namespace_conflicts: z.array(z.string()).optional(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                'Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time.',
+        }).optional(),
         mcp_configuration: mcpConfigurationSchema.optional(),
         oauth_approval: appOAuthApprovalSchema.optional(),
         oauth_client_id: z.string().optional(),
@@ -736,6 +777,10 @@ export const AppInstallationListEntrySchema = z
         namespace_overrides: z.record(z.string(), z.string()).optional(),
         reserved_namespaces: z.array(z.string()).min(1).optional(),
         namespace_conflicts: z.array(z.string()).optional(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                'Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time.',
+        }).optional(),
         mcp_configuration: mcpConfigurationSchema.optional(),
         oauth_approval: appOAuthApprovalSchema.optional(),
         oauth_client_id: z.string().optional(),
@@ -978,7 +1023,10 @@ export const AppPackageSchema = z
         oauth_client: AppOAuthClientConfigSchema.optional(),
         oauth_scopes: z
             .array(z.string())
-            .meta({ description: 'OAuth scopes requested by the app. Users must consent to project permissions.' })
+            .meta({
+                description:
+                    'Scopes requested by app code. These do not replace the publisher-managed permission ceiling in the app manifest.',
+            })
             .optional(),
         ui: AppUIConfigSchema.meta({ description: 'The UI configuration of the app' }).optional(),
         tools: z

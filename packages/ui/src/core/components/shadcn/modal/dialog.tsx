@@ -13,6 +13,7 @@ interface ModalProps {
     onClose: () => void;
     description?: string;
     noCloseButton?: boolean;
+    overlayClassName?: string;
     className?: string;
     allowOverflow?: boolean;
     disableCloseOnClickOutside?: boolean;
@@ -34,6 +35,7 @@ export function Modal({
     onClose,
     description = 'Modal Description',
     noCloseButton = false,
+    overlayClassName,
     allowOverflow = false,
     disableCloseOnClickOutside = false,
     size = 'md',
@@ -75,6 +77,7 @@ export function Modal({
                 <DialogDescription>{description}</DialogDescription>
             </VisuallyHidden>
             <DialogContent
+                overlayClassName={overlayClassName}
                 className={cn(
                     'min-h-20 p-4',
                     // rtl-ok: symmetric centering — left-[50%] + translate-x-[-50%] works in both LTR and RTL
@@ -195,12 +198,12 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Content>,
-    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => {
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { overlayClassName?: string }
+>(({ className, children, overlayClassName, ...props }, ref) => {
     const container = usePortalContainer();
     return (
         <DialogPortal container={container}>
-            <DialogOverlay />
+            <DialogOverlay className={overlayClassName} />
             <DialogPrimitive.Content
                 ref={ref}
                 className={cn(

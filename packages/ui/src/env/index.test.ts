@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { type EnvProps, VertesiaEnvironment, type VertesiaRuntimeConfig } from './index';
+import { type EnvProps, getRuntimeAppVersionSelector, VertesiaEnvironment, type VertesiaRuntimeConfig } from './index';
 
 const baseProps: EnvProps = {
     name: 'test-app',
@@ -111,6 +111,15 @@ describe('VertesiaEnvironment runtime configuration', () => {
 
         expect(env.firebase).toBeUndefined();
         expect(window.AUTH_MODE).toBe('central');
+    });
+
+    it('returns the gateway-injected app version launch selector', () => {
+        const appVersionSelector = `vlaunch:${'A'.repeat(43)}`;
+        vi.stubGlobal('window', {
+            __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central', appVersionSelector },
+        });
+
+        expect(getRuntimeAppVersionSelector()).toBe(appVersionSelector);
     });
 });
 

@@ -5,6 +5,7 @@ import { IFRAME_APP_CONTENT_SLOT, IFRAME_APP_SLOT_PARAM, StandaloneApp, Vertesia
 import { appAuthScreens } from '../../modules/app/branding/screens';
 import { setUsePluginAssets } from '../assets';
 import { App } from './App';
+import { AppVersionScope } from './AppVersionScope';
 import { OrgGate } from './layouts/OrgGate';
 import { PluginAccessDenied } from './layouts/PluginAccessDenied';
 import { PluginLayout } from './layouts/PluginLayout';
@@ -38,9 +39,11 @@ const routes: Route[] = [
 export function AppEntry() {
     return (
         <VertesiaShell branding={branding} preserveSignInPath authScreens={appAuthScreens}>
-            <OrgGate>
-                <RouterProvider routes={routes} />
-            </OrgGate>
+            <AppVersionScope>
+                <OrgGate>
+                    <RouterProvider routes={routes} />
+                </OrgGate>
+            </AppVersionScope>
         </VertesiaShell>
     );
 }

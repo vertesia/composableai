@@ -32,6 +32,22 @@ it('preserves account, project and deep link through the existing OAuth login ro
     expect(url.origin + url.pathname).toBe('https://app.example/__appgen/auth/login');
     expect(url.searchParams.get('target')).toBe('/reports?a=account&p=project#chart');
 });
+it('keeps OAuth and session traffic inside an ephemeral launch mount', async () => {
+    const launchMount = `/__vlaunch/${'A'.repeat(43)}`;
+    window.__VERTESIA_RUNTIME_CONFIG__ = {
+        authMode: 'central',
+        gatewaySession: true,
+        gatewayPathPrefix: launchMount,
+    };
+    const login = new URL(gatewayLoginUrl());
+    expect(login.pathname).toBe(`${launchMount}/__appgen/auth/login`);
+
+    const claims = { sub: 'user', account: { id: 'account' }, project: { id: 'project' } };
+    const fetch = vi.fn(async (_request: Request) => new Response(JSON.stringify(claims)));
+    vi.stubGlobal('fetch', fetch);
+    await loadGatewaySession();
+    expect(new URL(fetch.mock.calls[0]?.[0].url).pathname).toBe(`${launchMount}/__appgen/session`);
+});
 it('uses same-origin cookies and never forwards browser bearer credentials', async () => {
     const fetch = vi.fn(async (_request: Request) => new Response('{}'));
     vi.stubGlobal('fetch', fetch);
