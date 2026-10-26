@@ -79,8 +79,15 @@ auth:
     file: ./htpasswd
     max_users: 100
 uplinks:
+  # The template install fetches hundreds of packages at once, so some npmjs requests are slow. With the
+  # defaults (30s timeout, offline after 2 failures for 5m) one slow tarball takes npmjs offline and every
+  # package not fetched yet then answers 404. Wait longer, retry more, and never mark npmjs offline.
   npmjs:
     url: https://registry.npmjs.org/
+    timeout: 2m
+    retry: 4
+    max_fails: 1000
+    fail_timeout: 1s
 packages:
   '@vertesia/*':
     access: $all
