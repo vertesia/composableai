@@ -60,6 +60,15 @@
       "depNameTemplate": "zizmor",
       "datasourceTemplate": "pypi",
       "versioningTemplate": "pep440"
+    },
+    {
+      "description": "Update the Verdaccio version pinned in the template integration test",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/bin/test-template-integration\\.sh$/"],
+      "matchStrings": ["VERDACCIO_VERSION=\"(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)\""],
+      "depNameTemplate": "verdaccio",
+      "datasourceTemplate": "npm",
+      "versioningTemplate": "npm"
     }
   ],
   "npm": {
@@ -425,6 +434,31 @@
       "addLabels": ["renovate-automerge"],
       "assignees": ["michaelva"],
       "schedule": "* * * * 1" // Monday
+    },
+    {
+      // Verdaccio is only the local registry the template integration test publishes to, and that
+      // test runs on every PR, so a green build proves a patch or minor bump. Majors stay unlabeled
+      // for a manual merge: 7.0 changed publish authentication. The custom regex manager is
+      // invisible to the npm rules above, so this rule sets the label, owner and cadence itself.
+      "description": "Update Verdaccio weekly, assigned to michaelva; patch/minor eligible for scoped bot automerge",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "verdaccio"
+      ],
+      "assignees": ["michaelva"],
+      "schedule": "* * * * 1" // Monday
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchPackageNames": [
+        "verdaccio"
+      ],
+      "matchUpdateTypes": ["patch", "minor"],
+      "addLabels": ["renovate-automerge"]
     },
     {
       // Vulnerability alerts use Renovate's forced security-update path and override this rule.
