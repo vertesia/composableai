@@ -113,6 +113,31 @@ export class WorkflowExecutionError extends ApplicationFailure {
     }
 }
 
+/**
+ * Request header sent by a workflow that can wait for media renditions still being generated. With it,
+ * the execute endpoint answers 412 and lists the pending objects instead of rendering a media input from
+ * its original source.
+ */
+export const RENDITION_WAIT_HEADER = 'x-vertesia-rendition-wait';
+
+/** ApplicationFailure type raised when an execution sent with RENDITION_WAIT_HEADER waits for renditions. */
+export const RENDITION_PENDING_ERROR = 'RenditionPendingError';
+
+/** A media input whose rendition is still being generated. */
+export interface PendingRendition {
+    object_id: string;
+    kind: 'video' | 'image';
+}
+
+/** Details of a RENDITION_PENDING_ERROR failure. */
+export interface RenditionPendingDetails {
+    pending: PendingRendition[];
+    /** Suggested delay before checking again. */
+    retry_after_ms?: number;
+    /** The run the server rejected. */
+    run_id?: string;
+}
+
 export const WF_NON_RETRYABLE_ERRORS = [
     'DocumentNotFoundError',
     'ActivityParamInvalidError',

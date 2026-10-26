@@ -21,7 +21,15 @@ import {
 } from '@vertesia/common';
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
-import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
+import {
+    ActivityParamInvalidError,
+    ActivityParamNotFoundError,
+    type PendingRendition,
+    RENDITION_PENDING_ERROR,
+    RENDITION_WAIT_HEADER,
+    type RenditionPendingDetails,
+    ResourceExhaustedError,
+} from '../errors.js';
 import { activityWorkflowExecution } from '../utils/activity-info.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 
@@ -188,6 +196,15 @@ export interface InteractionExecutionParams {
      * activity won't be retried if it fails due to resource exhaustion (429)
      */
     exit_on_resource_exhaustion?: boolean;
+
+    /**
+     * The calling workflow waits for media renditions that are still being generated. A media input
+     * without its rendition then fails the activity with a non-retryable RENDITION_PENDING_ERROR
+     * listing the pending objects, instead of being rendered from its original source. Only set it from a
+     * workflow that catches that failure, waits, and executes again; otherwise the step fails.
+     * @internal
+     */
+    wait_for_renditions?: boolean;
 }
 
 /**
@@ -294,6 +311,21 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             throw rateLimitFailure;
         }
         const executionError = toExecutionError(error);
+        if (params.wait_for_renditions && isRenditionPending(executionError)) {
+            const details = getRenditionPendingDetails(error);
+            if (details) {
+                // The workflow waits for the renditions, then executes again: not a retry of this attempt.
+                log.info(`Interaction ${interactionName} is waiting for media renditions`, {
+                    pending: details.pending,
+                });
+                throw ApplicationFailure.create({
+                    message: `Interaction ${interactionName} is waiting for media renditions`,
+                    type: RENDITION_PENDING_ERROR,
+                    nonRetryable: true,
+                    details: [details],
+                });
+            }
+        }
         if (isRenditionPending(executionError)) {
             log.warn(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
         } else if (executionError.statusCode === 429) {
@@ -475,6 +507,8 @@ export async function executeInteractionFromActivity(
             },
             undefined,
             options.includePrompt ? undefined : { include_prompt: false },
+            // Only a waiting workflow passes headers; other calls keep their exact arguments.
+            ...(params.wait_for_renditions ? [{ [RENDITION_WAIT_HEADER]: '1' }] : []),
         )
         .catch((error: unknown) => {
             // Logged once by the caller's catch (executeInteraction) — do not log here as well.
@@ -530,6 +564,35 @@ function isTransientServerFailure(error: ExecutionError): boolean {
 
 function isRenditionPending(error: ExecutionError): boolean {
     return (error.statusCode ?? error.status ?? error.code) === 412 && error.retryable !== false;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function isPendingRendition(value: unknown): value is PendingRendition {
+    const item = asRecord(value);
+    return typeof item?.object_id === 'string' && (item.kind === 'video' || item.kind === 'image');
+}
+
+/**
+ * Read the pending renditions from a 412 response, whose body is the rejected run: the server lists them
+ * in `error.data.pending`. Undefined when the response names none.
+ */
+function getRenditionPendingDetails(error: unknown): RenditionPendingDetails | undefined {
+    const run = asRecord(asRecord(error)?.payload);
+    const runError = asRecord(run?.error);
+    const data = asRecord(runError?.data);
+    const pending = Array.isArray(data?.pending) ? data.pending.filter(isPendingRendition) : [];
+    if (pending.length === 0) {
+        return undefined;
+    }
+    const retryAfterMs = runError?.retry_after_ms;
+    return {
+        pending: pending.map(({ object_id, kind }) => ({ object_id, kind })),
+        ...(typeof retryAfterMs === 'number' ? { retry_after_ms: retryAfterMs } : {}),
+        ...(typeof run?.id === 'string' ? { run_id: run.id } : {}),
+    };
 }
 
 function toExecutionError(error: unknown): ExecutionError {
