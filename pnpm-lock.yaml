@@ -660,6 +660,9 @@ importers:
       '@vertesia/common':
         specifier: workspace:*
         version: link:../common
+      '@vertesia/studio-utils':
+        specifier: workspace:*
+        version: link:../studio-utils
       eventsource:
         specifier: ^5.1.2
         version: 5.1.2
