@@ -137,3 +137,29 @@ describe('DashboardApi export', () => {
         ).rejects.toThrow('Dashboard export export-1 is still running after 5ms');
     });
 });
+
+describe('DashboardApi markRendered', () => {
+    it('records a render with POST {store}/dashboards/{id}/rendered and accepts an empty 204', async () => {
+        const requests: { url: string; method: string; storeHeader: string | null }[] = [];
+        const fetchRendered = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+            const request = new Request(input, init);
+            requests.push({
+                url: request.url,
+                method: request.method,
+                storeHeader: request.headers.get('x-data-store-id'),
+            });
+            return new Response(null, { status: 204 });
+        };
+        const client = new ZenoClient({ serverUrl: 'https://store.test', apikey: 'token', fetch: fetchRendered });
+
+        await expect(client.data.dashboards('store-1').markRendered('dashboard-1')).resolves.toBeUndefined();
+
+        expect(requests).toEqual([
+            {
+                url: 'https://store.test/api/v1/data/store-1/dashboards/dashboard-1/rendered',
+                method: 'POST',
+                storeHeader: 'store-1',
+            },
+        ]);
+    });
+});

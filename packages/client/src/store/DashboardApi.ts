@@ -154,6 +154,17 @@ export class DashboardApi extends ApiTopic {
     }
 
     /**
+     * Record that the dashboard has just been rendered, without editing it. The export activity calls
+     * it once the image is uploaded; other callers have no reason to.
+     *
+     * @internal
+     * @param id - Dashboard ID
+     */
+    async markRendered(id: string): Promise<void> {
+        await this.post(`/${id}/rendered`, { headers: this.storeHeaders() });
+    }
+
+    /**
      * Poll an export until it is `completed` or `failed`.
      *
      * @param exportId - The `export_id` returned when the export was started
