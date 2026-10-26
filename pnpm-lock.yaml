@@ -1115,7 +1115,7 @@ importers:
         specifier: ^13.0.0
         version: 13.0.0
       framer-motion:
-        specifier: ^14.3.0
+        specifier: ^14.4.0
         version: 14.6.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       i18next:
         specifier: ^26.4.4
@@ -1139,7 +1139,7 @@ importers:
         specifier: ^0.57.0
         version: 0.57.0
       motion:
-        specifier: ^14.3.0
+        specifier: ^14.4.0
         version: 14.6.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       papaparse:
         specifier: ^5.7.0
