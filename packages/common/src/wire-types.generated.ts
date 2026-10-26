@@ -37,6 +37,7 @@ import type { AccountType, BillingMethod, QuotaTier } from './account-values.js'
 import type { ApiKeyTypes } from './apikey-values.js';
 import type { AppUINavItem, CompositeAppMenuNavItem } from './apps.js';
 import type {
+    DashboardExportStatus as DashboardExportStatusValues,
     DashboardStatus as DashboardStatusValues,
     DataColumnType as DataColumnTypeValues,
     DataStoreStatus as DataStoreStatusValues,
@@ -3183,6 +3184,54 @@ export type UpdateDashboardPayload = {
         | undefined;
     expected_edit_revision?: number | undefined;
     skip_versioning?: boolean | undefined;
+};
+/**
+ * Options for exporting a saved dashboard as an image.
+ */
+export type ExportDashboardPayload = {
+    parameter_values?: StringValueMap | undefined;
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+/**
+ * An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.
+ */
+export type ExportDashboardPreviewPayload = {
+    query: string;
+    queryLimit?: number | undefined;
+    queryParameters?: StringValueMap | undefined;
+    spec: {
+        [k: string]: unknown;
+    };
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+export type DashboardExportStatus = (typeof DashboardExportStatusValues)[keyof typeof DashboardExportStatusValues];
+/**
+ * Why a dashboard export failed.
+ */
+export type DashboardExportError = {
+    code: string;
+    message: string;
+    retryable: boolean;
+};
+/**
+ * A dashboard export: `running` until it is `completed`, with a signed download URL, or `failed`.
+ */
+export type DashboardExport = {
+    export_id: string;
+    status: DashboardExportStatus;
+    started_at: string;
+    completed_at?: string | undefined;
+    url?: string | undefined;
+    content_type?: string | undefined;
+    expires_at?: string | undefined;
+    width?: number | undefined;
+    height?: number | undefined;
+    row_count?: number | undefined;
+    error?: DashboardExportError | undefined;
 };
 /**
  * A point-in-time version of a dashboard.
@@ -11378,6 +11427,11 @@ export interface ApiComponentTypes {
     Dashboard: Dashboard;
     CreateDashboardPayload: CreateDashboardPayload;
     UpdateDashboardPayload: UpdateDashboardPayload;
+    ExportDashboardPayload: ExportDashboardPayload;
+    ExportDashboardPreviewPayload: ExportDashboardPreviewPayload;
+    DashboardExportStatus: DashboardExportStatus;
+    DashboardExportError: DashboardExportError;
+    DashboardExport: DashboardExport;
     QueryValidationError: QueryValidationError;
     QueryValidationPayload: QueryValidationPayload;
     ListDataStoreVersionsQuery: ListDataStoreVersionsQuery;

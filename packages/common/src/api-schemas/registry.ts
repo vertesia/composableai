@@ -265,6 +265,9 @@ import {
     DashboardDataSourceSchema,
     DashboardElasticsearchDslSchema,
     DashboardElasticsearchResultMappingSchema,
+    DashboardExportErrorSchema,
+    DashboardExportSchema,
+    DashboardExportStatusSchema,
     DashboardItemArraySchema,
     DashboardItemSchema,
     DashboardLayoutSchema,
@@ -280,6 +283,8 @@ import {
     DashboardVersioningPayloadSchema,
     DashboardVersioningStatusResponseSchema,
     DashboardVersionSchema,
+    ExportDashboardPayloadSchema,
+    ExportDashboardPreviewPayloadSchema,
     PromoteDashboardVersionPayloadSchema,
     StringArrayMapSchema,
     UpdateDashboardPayloadSchema,
@@ -1486,6 +1491,11 @@ const DASHBOARD_SCHEMAS = {
     Dashboard: DashboardSchema,
     CreateDashboardPayload: CreateDashboardPayloadSchema,
     UpdateDashboardPayload: UpdateDashboardPayloadSchema,
+    ExportDashboardPayload: ExportDashboardPayloadSchema,
+    ExportDashboardPreviewPayload: ExportDashboardPreviewPayloadSchema,
+    DashboardExportStatus: DashboardExportStatusSchema,
+    DashboardExportError: DashboardExportErrorSchema,
+    DashboardExport: DashboardExportSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const DATA_STORE_CORE_SCHEMAS = {
@@ -2907,6 +2917,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'Dashboard',
     'CreateDashboardPayload',
     'UpdateDashboardPayload',
+    'ExportDashboardPayload',
+    'ExportDashboardPreviewPayload',
+    'DashboardExportError',
+    'DashboardExport',
     // Data stores. Map, array, enum and discriminated-union components carry no component-level
     // additionalProperties policy; every named object below is already closed in the published spec.
     'QueryValidationError',
