@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PageCountSchema } from './schema-primitives.js';
 
 export const CompleteTaskPayloadSchema = z
     .strictObject({
@@ -98,7 +99,7 @@ export const ListTasksQuerySchema = z
         assignee: z.string().optional(),
         run_id: z.string().optional(),
         source_type: TaskSourceSchema.shape.type.optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
+        limit: PageCountSchema.optional(),
+        offset: PageCountSchema.optional(),
     })
     .meta({ id: 'ListTasksQuery' });

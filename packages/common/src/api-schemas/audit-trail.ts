@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AUDIT_ACTIONS, AUDIT_AGGREGATION_DIMENSIONS } from '../audit-trail.js';
 import { NumberValueMapSchema } from './interaction.js';
+import { PageCountSchema } from './schema-primitives.js';
 
 // The audit trail: the events `GET /audit-trail` pages through and the aggregation `POST
 // /audit-trail/aggregate` computes over them.
@@ -244,11 +245,10 @@ export const AuditTrailQuerySchema = z
             .optional(),
         from: z.string().meta({ description: 'Start time (ISO string)' }).optional(),
         to: z.string().meta({ description: 'End time (ISO string)' }).optional(),
-        limit: z
-            .number()
-            .meta({ description: 'Pagination: number of items to return (default 50, max 200)' })
-            .optional(),
-        offset: z.number().meta({ description: 'Pagination: offset' }).optional(),
+        limit: PageCountSchema.meta({
+            description: 'Pagination: number of items to return (default 50, max 200)',
+        }).optional(),
+        offset: PageCountSchema.meta({ description: 'Pagination: offset' }).optional(),
     })
     .meta({ id: 'AuditTrailQuery' });
 

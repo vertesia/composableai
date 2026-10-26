@@ -28,6 +28,8 @@ VERDACCIO_PORT=4873
 VERDACCIO_URL="http://localhost:${VERDACCIO_PORT}"
 VERDACCIO_DIR="/tmp/verdaccio-$$"
 VERDACCIO_PID=""
+# Pinned exactly: a new major (7.0) changed publish authentication and broke this test overnight.
+VERDACCIO_VERSION="7.0.0"
 
 # =============================================================================
 # Functions
@@ -43,6 +45,7 @@ cleanup() {
     kill "$VERDACCIO_PID" 2>/dev/null || true
     wait "$VERDACCIO_PID" 2>/dev/null || true
   fi
+  forget_verdaccio_token
 
   cleanup_test_project
   [ -n "$TEST_PROJECT_DIR_NPM" ] && [ -d "$TEST_PROJECT_DIR_NPM" ] && rm -rf "$TEST_PROJECT_DIR_NPM"
@@ -62,10 +65,10 @@ trap cleanup EXIT
 start_verdaccio() {
   echo "=== Starting verdaccio local registry ==="
 
-  # Check if verdaccio is installed
-  if ! command -v verdaccio &> /dev/null; then
-    echo "Installing verdaccio..."
-    npm install -g verdaccio
+  # Install the pinned version unless it is already the one on PATH
+  if [ "$(verdaccio --version 2>/dev/null)" != "v${VERDACCIO_VERSION}" ]; then
+    echo "Installing verdaccio@${VERDACCIO_VERSION}..."
+    npm install -g "verdaccio@${VERDACCIO_VERSION}"
   fi
 
   # Create verdaccio config
@@ -134,8 +137,27 @@ publish_to_verdaccio() {
   echo ""
   echo "=== Publishing packages to verdaccio (tag: ${NPM_TAG}) ==="
 
-  # Set auth token for verdaccio
-  npm set "//${VERDACCIO_URL#http://}/:_authToken" "test-token"
+  # Verdaccio 7 only accepts tokens it issued, so register a throwaway user and publish with its token
+  local user_response token
+  user_response=$(node -e '
+    const password = require("crypto").randomBytes(16).toString("hex");
+    console.log(JSON.stringify({ name: "template-ci", password, email: "template-ci@example.com" }));
+  ' | curl -sf -X PUT -H "Content-Type: application/json" --data-binary @- \
+    "${VERDACCIO_URL}/-/user/org.couchdb.user:template-ci") || {
+    echo "ERROR: failed to register a verdaccio user" >&2
+    return 1
+  }
+  token=$(printf '%s' "$user_response" | node -e '
+    let body = "";
+    process.stdin.on("data", (chunk) => (body += chunk));
+    process.stdin.on("end", () => process.stdout.write(JSON.parse(body).token || ""));
+  ')
+  if [ -z "$token" ]; then
+    echo "ERROR: verdaccio returned no token for the registered user" >&2
+    return 1
+  fi
+  # Only publishing uses the token: forget_verdaccio_token removes it before the template installs
+  npm set "//${VERDACCIO_URL#http://}/:_authToken" "$token"
 
   local count=0 pkg_name pkg_version package_os package_cpu
   while IFS= read -r pkg_dir; do
@@ -169,7 +191,15 @@ publish_to_verdaccio() {
     cd "${SCRIPT_DIR}/../.."
   done < <(workspace_package_dirs)
 
+  forget_verdaccio_token
   echo "Published ${count} packages to verdaccio"
+}
+
+# Verdaccio's default tokens carry the user's password, which it checks with bcrypt (~250ms of CPU) on every
+# request that sends one. An install sends hundreds at once, which starves verdaccio until its npmjs requests
+# time out and it answers 404. Every package is readable anonymously, so installs send no token.
+forget_verdaccio_token() {
+  npm config delete "//${VERDACCIO_URL#http://}/:_authToken" 2>/dev/null || true
 }
 
 align_template_versions_for_verdaccio() {
@@ -293,7 +323,8 @@ echo ""
 echo "=== Bootstrapped package.json ==="
 cat "${TEST_PROJECT_DIR}/package.json"
 
-build_project
+VERCEL=1 VITE_AUTH_MODE=central VITE_OAUTH_CLIENT_ID=vts_integration_app build_project
+pnpm --filter @vertesia/create-plugin test:vercel "$TEST_PROJECT_DIR"
 
 # Dev scaffold (module-selected examples and UI modules) built with npm.
 echo ""
@@ -301,7 +332,11 @@ echo "--- Mode: dev (--module dev scaffold, npm) ---"
 TEST_PROJECT_DIR_NPM=""
 EXTRA_CREATE_ARGS="${EXTRA_CREATE_ARGS} --module dev" bootstrap_template "integration-test-plugin-npm" npm
 TEST_PROJECT_DIR_NPM="$TEST_PROJECT_DIR"
-build_project_npm
+VERCEL=1 VITE_AUTH_MODE=firebase \
+  VITE_FIREBASE_API_KEY=test-public-key VITE_FIREBASE_AUTH_DOMAIN=test.firebaseapp.com \
+  VITE_FIREBASE_PROJECT_ID=test VITE_FIREBASE_APP_ID=test-app \
+  VITE_FIREBASE_MESSAGING_SENDER_ID=123 build_project_npm
+pnpm --filter @vertesia/create-plugin test:vercel "$TEST_PROJECT_DIR"
 
 echo ""
 echo "Template integration test passed (minimal + dev)!"

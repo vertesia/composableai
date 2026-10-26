@@ -24,14 +24,6 @@ export class CostApi extends ApiTopic {
     }
 
     /**
-     * Get platform-wide cost analytics across all customers.
-     * Requires Vertesia staff privileges. Defaults to group_by='account'.
-     */
-    getGlobalAnalytics(query: CostAnalyticsQuery = {}): Promise<CostAnalyticsResponse> {
-        return this.post('/analytics/global', { payload: query });
-    }
-
-    /**
      * Get current list prices and effective prices for the selected period.
      */
     getModelPrices(query: CostModelPricesQuery = {}): Promise<ModelPriceComparisonResponse> {

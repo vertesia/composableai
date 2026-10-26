@@ -74,7 +74,7 @@ export const AceConditionsSchema = z
         scope: AbacScopeSchema.meta({
             description:
                 "Kind of object the `resource_props` matches. Used to disambiguate which partition's roles " +
-                'apply (e.g. content roles vs agent-run roles) and to form the JWT `content_security` key prefix ' +
+                'apply (e.g. content roles vs agent-run roles) and to form the JWT `abac` key prefix ' +
                 "(`{scope}:{verb}`). Absent → `'document'` (default; emits bare `read`/`write`/`delete` keys " +
                 'for backward compatibility).',
         }).optional(),

@@ -94,6 +94,7 @@ export function DropZone({ onDrop, message, buttonLabel, allowFolders = true, cl
 
     const handleDrop = async (e: React.DragEvent) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsDragging(false);
 
         if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {

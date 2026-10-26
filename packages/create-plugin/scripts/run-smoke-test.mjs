@@ -49,8 +49,12 @@ try {
     } else {
         const generatedEnv = readFileSync(join(projectPath, '.env.app'), 'utf8');
         assert.match(generatedEnv, /^VITE_AUTH_SERVER_URL=https:\/\/auth\.dev1\.vertesia\.io\/$/m);
-        assert.match(generatedEnv, /^# VITE_OAUTH_CLIENT_ID=my-app-development$/m);
+        assert.match(generatedEnv, /^# VITE_OAUTH_CLIENT_ID=vts_app_client_id$/m);
         assert.match(generatedEnv, /^# VITE_OAUTH_REDIRECT_URI=https:\/\/localhost:5173\/$/m);
+        assert.doesNotMatch(generatedEnv, /^\s*VITE_OAUTH_CLIENT_ID=/m);
+        assert.match(generatedEnv, /^VITE_AUTH_MODE=central$/m);
+        assert.equal(existsSync(join(projectPath, 'api/oauth-client.ts')), true);
+        assert.equal(existsSync(join(projectPath, 'api/oauth-client.js')), false);
         const generatedPackage = JSON.parse(readFileSync(join(projectPath, 'package.json'), 'utf8'));
         const internalDependencies = Object.entries({
             ...generatedPackage.dependencies,

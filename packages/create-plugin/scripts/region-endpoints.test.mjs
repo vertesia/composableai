@@ -72,7 +72,7 @@ for (const preset of [0, 1, 2]) {
             'openid',
             'profile',
             'offline_access',
-            ...(preset > 0 ? ['content:read'] : []),
+            ...(preset > 0 ? ['account:member', 'content:read'] : []),
             ...(preset === 2 ? ['content:write'] : []),
         ]);
     });

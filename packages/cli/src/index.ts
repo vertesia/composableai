@@ -10,6 +10,7 @@ import { registerIamCommand } from './iam/index.js';
 import { registerInferenceProfilesCommand } from './inference-profiles/index.js';
 import { listInteractions } from './interactions/index.js';
 import { registerObjectsCommand } from './objects/index.js';
+import { registerOidcFederationCommand } from './oidc-federation/index.js';
 import { getVersion, upgrade } from './package.js';
 import { registerProcessTestsCommand } from './process-tests/index.js';
 import {
@@ -137,6 +138,7 @@ authGit
 
 registerEnvsCommand(program);
 registerInferenceProfilesCommand(program);
+registerOidcFederationCommand(program);
 program
     .command('interactions [interaction]')
     .description('List the interactions available in the current project')

@@ -59,6 +59,12 @@ const environmentSettingsDescription =
     'Additional provider-specific settings passed through to the driver. For example, custom ' +
     'headers for Apigee-proxied endpoints.';
 
+const environmentManagedDescription =
+    'True when Vertesia manages this environment and supplies its inference credential. Only Vertesia ' +
+    'staff can change its name, description, provider, endpoint or credential, or delete it, and its ' +
+    'configuration and settings are locked; account administrators can still change its default model, ' +
+    'enabled models and allowed projects. Absent on every other environment.';
+
 /**
  * The fields a caller may both send and read back. Create adds nothing; update makes them all
  * optional; the read shape adds the server-owned identity and audit fields.
@@ -112,6 +118,7 @@ export const ExecutionEnvironmentSchema = z
         settings: ExecutionEnvironmentSettingsSchema.meta({ description: environmentSettingsDescription }).optional(),
         account: z.string(),
         allowed_projects: z.array(z.string()).optional(),
+        managed: z.boolean().meta({ description: environmentManagedDescription }).optional(),
         created_by: z.string(),
         updated_by: z.string(),
         created_at: z.string(),
@@ -140,6 +147,7 @@ export const ExecutionEnvironmentRefSchema = z
         default_model: z.string().optional(),
         endpoint_url: z.string().optional(),
         allowed_projects: z.array(z.string()).optional(),
+        managed: z.boolean().meta({ description: environmentManagedDescription }).optional(),
         account: z.string(),
         created_by: z.string(),
         updated_by: z.string(),

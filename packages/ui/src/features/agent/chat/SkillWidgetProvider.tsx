@@ -142,8 +142,9 @@ async function fetchSkillWidgets(
                     }
                     return widgets;
                 })
-                .catch(() => {
-                    console.error('Failed to fetch skill widgets from ', url);
+                .catch((err: unknown) => {
+                    // The chat still renders; only that app's custom widgets are missing.
+                    console.warn('Failed to fetch skill widgets from', url, err);
                     return null;
                 });
         }),

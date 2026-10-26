@@ -281,6 +281,54 @@ function isSummaryWorkMessage(message: AgentMessage): boolean {
     return message.type === AgentMessageType.THOUGHT && !message.details?.streamed;
 }
 
+function isEmptyAnswerMessage(message: AgentMessage): boolean {
+    return message.type === AgentMessageType.ANSWER && !getMessageText(message);
+}
+
+function isToolPreambleProse(message: AgentMessage): boolean {
+    const text = getMessageText(message);
+    return message.details?.display_role === 'tool_preamble' && Boolean(text) && !isLowSignalSummaryText(text);
+}
+
+// Tools a model tends to call last, with its answer written as that call's preamble.
+const ANSWER_CARRYING_TOOLS = new Set(['update_plan']);
+
+function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
+    // Check the latest preamble before filtering its text, so an empty or low-signal
+    // final preamble cannot make us fall back to prose from an earlier call.
+    const index = messages.findLastIndex(isToolPreambleMessage);
+    if (index < 0 || !isToolPreambleProse(messages[index])) return -1;
+
+    const details = messages[index].details;
+    const tools = details?.tools?.length ? details.tools : details?.tool ? [details.tool] : [];
+    if (tools.length === 0 || !tools.every((tool) => ANSWER_CARRYING_TOOLS.has(tool))) return -1;
+
+    let iteration = details?.tool_iteration;
+    let hasMatchingTool = false;
+    const toolRuns = new Map<string, Set<string>>();
+    for (const message of messages.slice(index + 1)) {
+        const tool = message.details?.tool;
+        if (!tool) continue;
+        // A later call without a preamble must not reuse an earlier call's prose.
+        if (!tools.includes(tool)) return -1;
+        const runId = message.details?.tool_run_id ?? message.details?.tool_use_id;
+        if (runId) {
+            const runs = toolRuns.get(tool) ?? new Set<string>();
+            runs.add(runId);
+            toolRuns.set(tool, runs);
+            if (runs.size > tools.filter((name) => name === tool).length) return -1;
+        }
+        const toolIteration = message.details?.tool_iteration;
+        if (toolIteration !== undefined) {
+            if (iteration !== undefined && iteration !== toolIteration) return -1;
+            iteration = toolIteration;
+        }
+        hasMatchingTool = true;
+    }
+
+    return hasMatchingTool ? index : -1;
+}
+
 export function buildSummaryConversationItems(
     messages: AgentMessage[],
     isCompleted: boolean,
@@ -330,6 +378,18 @@ export function buildSummaryConversationItems(
                 items.push({ type: 'message', message });
                 continue;
             }
+        }
+
+        if (isEmptyAnswerMessage(message)) {
+            // A model that writes its answer alongside a last tool call leaves that prose as a
+            // tool preamble and ends the turn on an empty answer; show the prose as the answer.
+            const proseIndex = getFinalToolPreambleProseIndex(pendingWork);
+            if (proseIndex >= 0) {
+                const [prose] = pendingWork.splice(proseIndex, 1);
+                flushWork(false, message);
+                items.push({ type: 'message', message: { ...message, message: prose.message } });
+            }
+            continue;
         }
 
         if (message.type === AgentMessageType.COMPLETE || message.type === AgentMessageType.IDLE) {

@@ -37,6 +37,8 @@ export interface Route {
 
 export interface EndpointRouteOptions {
     version?: string | number;
+    /** Override the lazy request-body parser limit for this endpoint only. */
+    bodyLimit?: string | number;
 }
 
 export class RouterContext {
@@ -76,6 +78,7 @@ export class EndpointRoute implements Route {
     _absPathPattern?: string;
     // a unique key for the route in his router. Can be used as a local identifier
     key: string;
+    bodyLimit?: string | number;
 
     constructor(
         router: Router,
@@ -83,6 +86,7 @@ export class EndpointRoute implements Route {
         pathPattern: string,
         target: RouteTarget,
         thisArg?: unknown,
+        opts?: EndpointRouteOptions,
     ) {
         this.router = router;
         this.pathPattern = normalizePath(pathPattern);
@@ -91,6 +95,7 @@ export class EndpointRoute implements Route {
         this.thisArg = thisArg;
         this.target = target.bind(thisArg);
         this.key = `${this.method || 'ALL'}:${this.pathPattern}`;
+        this.bodyLimit = opts?.bodyLimit;
     }
 
     withVersion(version: string | number) {
@@ -129,6 +134,9 @@ export class EndpointRoute implements Route {
     }
 
     dispatch(ctx: Context) {
+        if (this.bodyLimit !== undefined) {
+            (ctx as Context & { requestBodyLimit?: string | number }).requestBodyLimit = this.bodyLimit;
+        }
         try {
             return Promise.resolve(
                 this.router.interceptor
@@ -373,7 +381,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         thisArg?: unknown,
         opts?: EndpointRouteOptions,
     ) {
-        const route = new EndpointRoute(this, method, path, target, thisArg);
+        const route = new EndpointRoute(this, method, path, target, thisArg, opts);
         if (opts?.version) {
             route.withVersion(opts.version);
             // we push the route in a versioned routes list

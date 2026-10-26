@@ -65,4 +65,38 @@ describe('Skill Transformer with Assets', () => {
         expect(data.scripts).toBeUndefined();
         expect(data.widgets).toBeUndefined();
     });
+
+    it('should accept Agent Skills specification frontmatter and record resource files', async () => {
+        const filePath = join(__dirname, 'fixtures', 'spec-skill', 'SKILL.md');
+        const content = readFileSync(filePath, 'utf-8');
+
+        const result = await skillTransformer.transform(content, filePath);
+        const data = result.data as Record<string, unknown>;
+
+        expect(data.name).toBe('pdf-processing');
+        expect(data.description).toBe(
+            'Extract text and tables from PDF files. Use when the user works with PDF documents.',
+        );
+        expect(data.license).toBe('Apache-2.0');
+        expect(data.compatibility).toBe('Requires Python 3.11 and pdfplumber');
+        expect(data.metadata).toEqual({ author: 'example-org', version: '1.0' });
+        expect(data.allowed_tools).toEqual(['Bash(python:*)', 'Read']);
+        // allowed-tools is informational: it never unlocks tools
+        expect(data.tools).toBeUndefined();
+        expect(data.scripts).toEqual(['helper.py']);
+        expect(data.files).toEqual([
+            'scripts/extract.py',
+            'scripts/helpers/util.py',
+            'references/REFERENCE.md',
+            'assets/template.txt',
+        ]);
+        expect(SkillDefinitionSchema.safeParse(data).success).toBe(true);
+    });
+
+    it('should reject non-string metadata values', async () => {
+        const content = '---\nname: x\ndescription: d\nmetadata:\n  nested:\n    a: 1\n---\nBody\n';
+        await expect(
+            Promise.resolve().then(() => skillTransformer.transform(content, '/tmp/x/SKILL.md')),
+        ).rejects.toThrow(/metadata/);
+    });
 });

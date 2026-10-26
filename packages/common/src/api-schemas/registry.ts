@@ -62,8 +62,6 @@ import {
     AccountApiKeyWithValueSchema,
     ApiKeyArraySchema,
     ApiKeyListQuerySchema,
-    ApiKeyReadQuerySchema,
-    ApiKeyReadResponseSchema,
     ApiKeySchema,
     ApiKeyWithValueSchema,
     AuthTokenResponseSchema,
@@ -85,9 +83,20 @@ import {
     AppBuildProgressStatusSchema,
     AppBuildTriggerSchema,
     AppDeleteSummarySchema,
+    AppDeploymentAliasSchema,
     AppDevelopmentTaskDetailsSchema,
     AppDevelopmentTaskListSchema,
     AppDevelopmentTaskSchema,
+    AppGithubAccountSchema,
+    AppGithubBranchStateSchema,
+    AppGithubConfigurationSchema,
+    AppGithubInstallationSchema,
+    AppGithubRepositoriesQuerySchema,
+    AppGithubRepositoryCreationSchema,
+    AppGithubRepositoryListSchema,
+    AppGithubRepositorySchema,
+    AppGithubRepositorySetupQuerySchema,
+    AppGithubRepositorySetupSchema,
     AppInspectionCapabilityReportSchema,
     AppInspectionIssueSchema,
     AppInspectionResultSchema,
@@ -97,9 +106,11 @@ import {
     AppInstallationProjectsQuerySchema,
     AppInstallationProviderBindingSchema,
     AppInstallationsQuerySchema,
+    AppInstanceAvailabilitySchema,
     AppListScopeSchema,
     AppOAuthCollectionParamsSchema,
     AppOAuthProviderParamsSchema,
+    AppPackageQuerySchema,
     AppPackageScopeSchema,
     AppRepoBranchSchema,
     AppRepoCommitSchema,
@@ -112,12 +123,15 @@ import {
     AppScaffoldModuleSchema,
     AppScaffoldProgressSchema,
     AppScaffoldProgressStatusSchema,
+    AppScaffoldSourceModeSchema,
     AppsQuerySchema,
     AppToolCollectionArraySchema,
     AppToolCollectionSchema,
     AppVersionGitRefTypeSchema,
     AppVersionGitSourceSchema,
     AppVersionKindSchema,
+    AppVersionLaunchTargetArraySchema,
+    AppVersionLaunchTargetSchema,
     AppVersionRecordArraySchema,
     AppVersionRecordSchema,
     AppVersionStateSchema,
@@ -126,8 +140,12 @@ import {
     AppVersionUrlsSchema,
     ContentObjectTypeRefSchema,
     ConversationActivityStateSchema,
+    CreateAppVersionLaunchRequestSchema,
+    CreateAppVersionLaunchResponseSchema,
     DeleteAppVersionResponseSchema,
     EventRefSchema,
+    ExchangeAppGithubAuthorizationRequestSchema,
+    ExchangeAppGithubAuthorizationResponseSchema,
     Extract_AppVersionGitRefType_branch_tag_commitSchema,
     InCodeTypeRefSchema,
     McpApiKeyCredentialSchema,
@@ -138,6 +156,7 @@ import {
     StartAppBuildRequestSchema,
     StartAppBuildResponseSchema,
     StartAppDevelopmentTaskRequestSchema,
+    StartAppGithubAuthorizationResponseSchema,
     StartAppScaffoldRequestSchema,
     StartAppScaffoldResponseSchema,
     StoredTypeRefSchema,
@@ -152,6 +171,7 @@ import * as AppRuntimeSchemas from './app-runtime.js';
 import {
     AppAccessControlSchema,
     AppCapabilitiesSchema,
+    AppGitSourceProviderSchema,
     AppManifestSourceSchema,
     AppSourceConfigSchema,
     AppUIConfigSchema,
@@ -245,6 +265,9 @@ import {
     DashboardDataSourceSchema,
     DashboardElasticsearchDslSchema,
     DashboardElasticsearchResultMappingSchema,
+    DashboardExportErrorSchema,
+    DashboardExportSchema,
+    DashboardExportStatusSchema,
     DashboardItemArraySchema,
     DashboardItemSchema,
     DashboardLayoutSchema,
@@ -260,6 +283,8 @@ import {
     DashboardVersioningPayloadSchema,
     DashboardVersioningStatusResponseSchema,
     DashboardVersionSchema,
+    ExportDashboardPayloadSchema,
+    ExportDashboardPreviewPayloadSchema,
     PromoteDashboardVersionPayloadSchema,
     StringArrayMapSchema,
     UpdateDashboardPayloadSchema,
@@ -487,6 +512,7 @@ import {
     EmailChannelSchema,
     ExecuteInteractionByEndpointHeadersSchema,
     ExecuteInteractionByEndpointQuerySchema,
+    ExecuteNamedInteractionQuerySchema,
     ExecutionResponseSchema,
     ExecutionRunDocRefSchema,
     ExecutionRunInteractionSchema,
@@ -509,6 +535,7 @@ import {
     GeneratedTestDataRecordSchema,
     GenerateInteractionPayloadSchema,
     GenerateTestDataPayloadSchema,
+    GetRunQuerySchema,
     ImprovePromptPayloadConfigSchema,
     ImprovePromptPayloadSchema,
     InCodeInteractionSchema,
@@ -657,9 +684,15 @@ import {
     OAuthRegistrationSourceSchema,
     OAuthResponseTypeSchema,
     OAuthTokenEndpointAuthMethodSchema,
+    OAuthTokenExchangeRequestSchema,
+    OAuthTokenExchangeResponseSchema,
     OAuthTokenResponseSchema,
+    OidcFederationConnectionArraySchema,
+    OidcFederationConnectionPayloadSchema,
+    OidcFederationConnectionSchema,
     RevokeOAuthGrantQuerySchema,
     UpdateOAuthClientPayloadSchema,
+    UpdateOAuthClientStatusPayloadSchema,
 } from './oauth-server.js';
 import * as ProcessSchemas from './process.js';
 import {
@@ -871,8 +904,6 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     CreateAccountApiKeyPayload: CreateAccountApiKeyPayloadSchema,
     UpdateAccountApiKeyPayload: UpdateAccountApiKeyPayloadSchema,
 
-    ApiKeyReadResponse: ApiKeyReadResponseSchema,
-    ApiKeyReadQuery: ApiKeyReadQuerySchema,
     CreateApiKeyPayload: CreateApiKeyPayloadSchema,
     UpdateApiKeyPayload: UpdateApiKeyPayloadSchema,
     AuthTokenResponse: AuthTokenResponseSchema,
@@ -934,6 +965,7 @@ const PROJECT_AND_APP_SCHEMAS = {
     AppCapabilities: AppCapabilitiesSchema,
     AppAccessControl: AppAccessControlSchema,
     AppSourceConfig: AppSourceConfigSchema,
+    AppGitSourceProvider: AppGitSourceProviderSchema,
     AppManifestSource: AppManifestSourceSchema,
 } as const satisfies Record<string, z.ZodType>;
 
@@ -987,6 +1019,12 @@ const OAUTH_SCHEMAS = {
     OAuthDeviceAuthorizationRequest: OAuthDeviceAuthorizationRequestSchema,
     OAuthDeviceAuthorizationResponse: OAuthDeviceAuthorizationResponseSchema,
     OAuthTokenResponse: OAuthTokenResponseSchema,
+    OidcFederationConnectionPayload: OidcFederationConnectionPayloadSchema,
+    OidcFederationConnection: OidcFederationConnectionSchema,
+    OidcFederationConnectionArray: OidcFederationConnectionArraySchema,
+    OAuthTokenExchangeRequest: OAuthTokenExchangeRequestSchema,
+    OAuthTokenExchangeResponse: OAuthTokenExchangeResponseSchema,
+
     // Clients registered against Vertesia's own OAuth server. `OAuthClientData` is composed into
     // `OAuthClient` rather than hoisted, so it has no component of its own — as today.
     OAuthClient: OAuthClientSchema,
@@ -995,6 +1033,7 @@ const OAUTH_SCHEMAS = {
     OAuthClientScopeMetadata: OAuthClientScopeMetadataSchema,
     CreateOAuthClientPayload: CreateOAuthClientPayloadSchema,
     UpdateOAuthClientPayload: UpdateOAuthClientPayloadSchema,
+    UpdateOAuthClientStatusPayload: UpdateOAuthClientStatusPayloadSchema,
     // Grants. The two query components are registered like any other — they are expanded into
     // parameters rather than published as component bodies, which is what every query contract does.
     OAuthGrant: OAuthGrantSchema,
@@ -1250,6 +1289,7 @@ type ExecutionRunSchemaMap = {
     ExecutionRunRefArray: typeof ExecutionRunRefArraySchema;
     UpdateExecutionRunPayload: typeof UpdateExecutionRunPayloadSchema;
     RunCreatePayload: typeof RunCreatePayloadSchema;
+    GetRunQuery: typeof GetRunQuerySchema;
     SortOrder: typeof SortOrderSchema;
     SortOption: typeof SortOptionSchema;
     RunSearchQuery: typeof RunSearchQuerySchema;
@@ -1270,6 +1310,7 @@ const EXECUTION_RUN_SCHEMAS: ExecutionRunSchemaMap = {
     ExecutionRunRefArray: ExecutionRunRefArraySchema,
     UpdateExecutionRunPayload: UpdateExecutionRunPayloadSchema,
     RunCreatePayload: RunCreatePayloadSchema,
+    GetRunQuery: GetRunQuerySchema,
     // Listing and searching runs.
     SortOrder: SortOrderSchema,
     SortOption: SortOptionSchema,
@@ -1290,6 +1331,7 @@ const EXECUTION_REQUEST_SCHEMAS: {
     InteractionExecutionConfiguration: typeof InteractionExecutionConfigurationSchema;
     InteractionExecutionError: typeof InteractionExecutionErrorSchema;
     ResultStorageOptions: typeof ResultStorageOptionsSchema;
+    ExecuteNamedInteractionQuery: typeof ExecuteNamedInteractionQuerySchema;
     ExecuteInteractionByEndpointQuery: typeof ExecuteInteractionByEndpointQuerySchema;
     ExecuteInteractionByEndpointHeaders: typeof ExecuteInteractionByEndpointHeadersSchema;
     AsyncCompletionMode: typeof AsyncCompletionModeSchema;
@@ -1325,6 +1367,7 @@ const EXECUTION_REQUEST_SCHEMAS: {
     InteractionExecutionConfiguration: InteractionExecutionConfigurationSchema,
     InteractionExecutionError: InteractionExecutionErrorSchema,
     ResultStorageOptions: ResultStorageOptionsSchema,
+    ExecuteNamedInteractionQuery: ExecuteNamedInteractionQuerySchema,
     ExecuteInteractionByEndpointQuery: ExecuteInteractionByEndpointQuerySchema,
     ExecuteInteractionByEndpointHeaders: ExecuteInteractionByEndpointHeadersSchema,
     AsyncCompletionMode: AsyncCompletionModeSchema,
@@ -1395,12 +1438,6 @@ const CONTENT_TYPE_CATALOG_SCHEMAS: {
     readonly ContentObjectTypeItemArray: typeof ContentObjectTypeItemArraySchema;
     readonly ContentObjectTypeCatalogEntry: typeof ContentObjectTypeCatalogEntrySchema;
     readonly ContentObjectTypeCatalogEntryArray: typeof ContentObjectTypeCatalogEntryArraySchema;
-    readonly InCodeTypeDefinition: typeof InCodeTypeDefinitionSchema;
-    readonly CreateContentObjectTypePayload: typeof CreateContentObjectTypePayloadSchema;
-    readonly UpdateContentObjectTypePayload: typeof UpdateContentObjectTypePayloadSchema;
-    readonly ContentObjectType: typeof ContentObjectTypeSchema;
-    readonly ContentObjectTypeCatalogQuery: typeof ContentObjectTypeCatalogQuerySchema;
-    readonly ContentObjectTypeListQuery: typeof ContentObjectTypeListQuerySchema;
 } = {
     ColumnLayout: ColumnLayoutSchema,
     ContentTypeEditingPolicy: ContentTypeEditingPolicySchema,
@@ -1409,6 +1446,9 @@ const CONTENT_TYPE_CATALOG_SCHEMAS: {
     ContentObjectTypeItemArray: ContentObjectTypeItemArraySchema,
     ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntrySchema,
     ContentObjectTypeCatalogEntryArray: ContentObjectTypeCatalogEntryArraySchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const CONTENT_TYPE_AUTHORING_SCHEMAS = {
     InCodeTypeDefinition: InCodeTypeDefinitionSchema,
     CreateContentObjectTypePayload: CreateContentObjectTypePayloadSchema,
     UpdateContentObjectTypePayload: UpdateContentObjectTypePayloadSchema,
@@ -1451,6 +1491,11 @@ const DASHBOARD_SCHEMAS = {
     Dashboard: DashboardSchema,
     CreateDashboardPayload: CreateDashboardPayloadSchema,
     UpdateDashboardPayload: UpdateDashboardPayloadSchema,
+    ExportDashboardPayload: ExportDashboardPayloadSchema,
+    ExportDashboardPreviewPayload: ExportDashboardPreviewPayloadSchema,
+    DashboardExportStatus: DashboardExportStatusSchema,
+    DashboardExportError: DashboardExportErrorSchema,
+    DashboardExport: DashboardExportSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const DATA_STORE_CORE_SCHEMAS = {
@@ -1690,6 +1735,7 @@ const CONTENT_OBJECT_SCHEMAS = {
     TranscriptSegment: ContentSchemas.TranscriptSegmentSchema,
     ContentObjectTypeArray: ContentSchemas.ContentObjectTypeArraySchema,
     ContentObjectTextResponse: ContentSchemas.ContentObjectTextResponseSchema,
+    SetObjectTextPayload: ContentSchemas.SetObjectTextPayloadSchema,
     DeleteContentObjectResult: ContentSchemas.DeleteContentObjectResultSchema,
     Transcript: ContentSchemas.TranscriptSchema,
     CreateContentObjectPayload: ContentSchemas.CreateContentObjectPayloadSchema,
@@ -2196,6 +2242,8 @@ const APP_LIFECYCLE_SCHEMAS = {
     AppVersionTarget: AppVersionTargetSchema,
     AppVersionState: AppVersionStateSchema,
     AppVersionKind: AppVersionKindSchema,
+    AppDeploymentAlias: AppDeploymentAliasSchema,
+    AppDeploymentAliasTarget: AppRuntimeSchemas.AppDeploymentAliasTargetSchema,
     StartAppScaffoldResponse: StartAppScaffoldResponseSchema,
     AppScaffoldModule: AppScaffoldModuleSchema,
     AppBuildTrigger: AppBuildTriggerSchema,
@@ -2226,6 +2274,20 @@ const APP_LIFECYCLE_SCHEMAS = {
     AppRepoBranch: AppRepoBranchSchema,
     AppRepoDocumentCommit: AppRepoDocumentCommitSchema,
     AppVersionGitSource: AppVersionGitSourceSchema,
+    AppGithubConfiguration: AppGithubConfigurationSchema,
+    StartAppGithubAuthorizationResponse: StartAppGithubAuthorizationResponseSchema,
+    ExchangeAppGithubAuthorizationRequest: ExchangeAppGithubAuthorizationRequestSchema,
+    AppGithubRepositoriesQuery: AppGithubRepositoriesQuerySchema,
+    ExchangeAppGithubAuthorizationResponse: ExchangeAppGithubAuthorizationResponseSchema,
+    AppGithubInstallation: AppGithubInstallationSchema,
+    AppGithubAccount: AppGithubAccountSchema,
+    AppGithubRepository: AppGithubRepositorySchema,
+    AppGithubRepositoryCreation: AppGithubRepositoryCreationSchema,
+    AppGithubRepositoryList: AppGithubRepositoryListSchema,
+    AppGithubRepositorySetupQuery: AppGithubRepositorySetupQuerySchema,
+    AppGithubBranchState: AppGithubBranchStateSchema,
+    AppGithubRepositorySetup: AppGithubRepositorySetupSchema,
+    AppScaffoldSourceMode: AppScaffoldSourceModeSchema,
     StartAppScaffoldRequest: StartAppScaffoldRequestSchema,
     StartAppDevelopmentTaskRequest: StartAppDevelopmentTaskRequestSchema,
     StartAppBuildRequest: StartAppBuildRequestSchema,
@@ -2241,6 +2303,10 @@ const APP_LIFECYCLE_SCHEMAS = {
     AppRepoRefs: AppRepoRefsSchema,
     AppRepoCommits: AppRepoCommitsSchema,
     ContentObjectTypeRef: ContentObjectTypeRefSchema,
+    AppVersionLaunchTarget: AppVersionLaunchTargetSchema,
+    AppVersionLaunchTargetArray: AppVersionLaunchTargetArraySchema,
+    CreateAppVersionLaunchRequest: CreateAppVersionLaunchRequestSchema,
+    CreateAppVersionLaunchResponse: CreateAppVersionLaunchResponseSchema,
     AppBuildProgress: AppBuildProgressSchema,
     AppVersionStorage: AppVersionStorageSchema,
     AppToolCollection: AppToolCollectionSchema,
@@ -2250,6 +2316,7 @@ const APP_LIFECYCLE_SCHEMAS = {
     AgentRunSearchHit: AgentRunSearchHitSchema,
     UpsertAppVersionRequest: UpsertAppVersionRequestSchema,
     AppInstallationPayload: AppInstallationPayloadSchema,
+    AppInstanceAvailability: AppInstanceAvailabilitySchema,
     AppDevelopmentTaskDetails: AppDevelopmentTaskDetailsSchema,
     AppVersionRecordArray: AppVersionRecordArraySchema,
     AppToolCollectionArray: AppToolCollectionArraySchema,
@@ -2258,6 +2325,7 @@ const APP_LIFECYCLE_SCHEMAS = {
     AppListScope: AppListScopeSchema,
     AppsQuery: AppsQuerySchema,
     AppInstallationProjectsQuery: AppInstallationProjectsQuerySchema,
+    AppPackageQuery: AppPackageQuerySchema,
     SystemPackageQuery: SystemPackageQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
 
@@ -2340,6 +2408,7 @@ const APP_MANIFEST_SCHEMAS = {
     MCPOAuthConfigMap: AppRuntimeSchemas.MCPOAuthConfigMapSchema,
     AppWidgetInfo: AppRuntimeSchemas.AppWidgetInfoSchema,
     AppDashboardDefinition: AppRuntimeSchemas.AppDashboardDefinitionSchema,
+    AppOAuthClientConfig: AppRuntimeSchemas.AppOAuthClientConfigSchema,
     AppManifestData: AppRuntimeSchemas.AppManifestDataSchema,
     UpdateAppPayload: AppRuntimeSchemas.UpdateAppPayloadSchema,
     AppManifest: AppRuntimeSchemas.AppManifestSchema,
@@ -2448,6 +2517,7 @@ const API_SCHEMA_GROUPS = [
     FILE_STORAGE_SCHEMAS,
     DURABLE_TASK_SCHEMAS,
     CONTENT_TYPE_CATALOG_SCHEMAS,
+    CONTENT_TYPE_AUTHORING_SCHEMAS,
     MIGRATION_COMMAND_SCHEMAS,
     PROCESS_DSL_SCHEMAS,
     AGENT_MESSAGE_SCHEMAS,
@@ -2512,6 +2582,7 @@ type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
     typeof FILE_STORAGE_SCHEMAS &
     typeof DURABLE_TASK_SCHEMAS &
     typeof CONTENT_TYPE_CATALOG_SCHEMAS &
+    typeof CONTENT_TYPE_AUTHORING_SCHEMAS &
     typeof MIGRATION_COMMAND_SCHEMAS &
     typeof PROCESS_DSL_SCHEMAS &
     typeof AGENT_MESSAGE_SCHEMAS &
@@ -2557,6 +2628,10 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'OidcFederationConnectionPayload',
+    'OidcFederationConnection',
+    'OAuthTokenExchangeRequest',
+    'OAuthTokenExchangeResponse',
     'UpdateInteractionConfigurationPayload',
     'InteractionConfigurationRecord',
     'InteractionConfigurationResult',
@@ -2683,8 +2758,6 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AccountRef',
     'ApiKey',
     'ApiKeyWithValue',
-    'ApiKeyReadResponse',
-    'ApiKeyReadQuery',
     'CreateApiKeyPayload',
     'UpdateApiKeyPayload',
     'AuthTokenResponse',
@@ -2774,6 +2847,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'MCPOAuthConfig',
     'MCPApiKeyConfig',
     'MCPToolCollectionObject',
+    'McpPublicParameter',
+    'McpSecretParameter',
     'VertesiaSDKToolCollectionObject',
     // File, task, content-type and command components. Every one is published closed
     // today; `StringValueMap`, `MigrationListResponse`, `TaskArray`, the two content-type array
@@ -2842,6 +2917,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'Dashboard',
     'CreateDashboardPayload',
     'UpdateDashboardPayload',
+    'ExportDashboardPayload',
+    'ExportDashboardPreviewPayload',
+    'DashboardExportError',
+    'DashboardExport',
     // Data stores. Map, array, enum and discriminated-union components carry no component-level
     // additionalProperties policy; every named object below is already closed in the published spec.
     'QueryValidationError',
@@ -3092,6 +3171,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ViewExecutionSearchConfiguration',
     'DSLRetryPolicy',
     'CreateContentObjectPayload',
+    'SetObjectTextPayload',
     'EventIngestChannelMutationResponse',
     'CreateEventIngestChannelPayload',
     'AgentRun',
@@ -3189,6 +3269,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OAuthClientScopeMetadata',
     'CreateOAuthClientPayload',
     'UpdateOAuthClientPayload',
+    'UpdateOAuthClientStatusPayload',
     'OAuthGrant',
     'BulkRevokeOAuthGrantsPayload',
     'OAuthGrantListResponse',
@@ -3346,6 +3427,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'CatalogTagQuery',
     'StoredCatalogInteractionsQuery',
     'ResolveInteractionQuery',
+    'ExecuteNamedInteractionQuery',
+    'GetRunQuery',
     'ExecuteInteractionByEndpointQuery',
     'ExecuteInteractionByEndpointHeaders',
     // The prompt-authoring, project-tool, remote-MCP, audit-trail and view-experience closures.
@@ -3436,6 +3519,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ValidateUrlResponse',
     'ValidateUrlRequest',
     'AppVersionUrls',
+    'AppVersionLaunchTarget',
+    'AppVersionLaunchTargetArray',
+    'CreateAppVersionLaunchRequest',
+    'CreateAppVersionLaunchResponse',
     'StartAppScaffoldResponse',
     'StartAppBuildResponse',
     'AppDevelopmentTask',
@@ -3473,10 +3560,13 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AgentRunSearchHit',
     'UpsertAppVersionRequest',
     'AppInstallationPayload',
+    'AppInstanceAvailability',
+    'AppOAuthClientConfig',
     'AppDevelopmentTaskDetails',
     'AppInstallationsQuery',
     'AppsQuery',
     'AppInstallationProjectsQuery',
+    'AppPackageQuery',
     'SystemPackageQuery',
     'WebsiteCredentialTotpMetadata',
     'WebsiteCredentialSecretInput',

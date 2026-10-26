@@ -12,6 +12,16 @@ export const StartProjectReindexPayloadSchema = z
         concurrency: z.number().optional(),
         bulk_size_bytes: z.number().optional(),
         bulk_concurrency: z.number().optional(),
+        modified_since: z
+            .string()
+            .meta({
+                format: 'date-time',
+                description:
+                    'When set, reindex only documents whose updated_at is at or after this RFC3339/ISO-8601 ' +
+                    'datetime. Writes in-place into the live index (no new versioned target, no alias swap). ' +
+                    'Omit for a full reindex into a fresh versioned target.',
+            })
+            .optional(),
     })
     .meta({ id: 'StartProjectReindexPayload' });
 
@@ -42,7 +52,8 @@ export const ReindexAgentRunsPayloadSchema = z
             .boolean()
             .meta({
                 description:
-                    'Drop any existing agent-runs index/alias family and recreate the stable concrete index before indexing. Defaults to true.',
+                    'Rebuild into a new index and switch searches to it once it is filled, so searches keep working ' +
+                    'during the rebuild; when false, index into the current index in place. Defaults to true.',
             })
             .optional(),
         batch_size: z

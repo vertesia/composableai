@@ -15,18 +15,19 @@
         "gcp": "npx bun ./src/index.ts gcp"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.13",
+        "@biomejs/biome": "2.5.15",
         "@tsconfig/node-lts": "^24.0.1",
-        "@types/bun": "^1.4.2",
-        "globals": "^17.12.0",
+        "@types/bun": "^1.4.3",
+        "@types/node": "^24.19.2",
+        "globals": "^17.13.0",
         "typescript": "catalog:"
     },
     "dependencies": {
-        "@aws-sdk/client-iam": "^3.1144.0",
+        "@aws-sdk/client-iam": "^3.1152.0",
         "@vertesia/client": "1.5.1",
         "@vertesia/common": "1.5.1",
         "commander": "^15.0.0",
-        "dotenv": "^18.0.4",
-        "google-auth-library": "^11.1.0"
+        "dotenv": "^18.0.7",
+        "google-auth-library": "^11.3.0"
     }
 }

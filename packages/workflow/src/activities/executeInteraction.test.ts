@@ -270,6 +270,8 @@ describe('executeInteraction retryability', () => {
                     rate_limit_id: expect.stringMatching(/:testInteraction$/),
                 }),
             }),
+            undefined,
+            { query: { include_prompt: false } },
         );
         expect(requestSlot).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -282,6 +284,89 @@ describe('executeInteraction retryability', () => {
             }),
         );
         expect(requestSlot.mock.calls[0][0].rate_limit_id).toBe(executeByName.mock.calls[0][1].workflow.rate_limit_id);
+    });
+
+    async function runWithProjection(projection: Record<string, unknown>) {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const executeByName = vi.fn().mockResolvedValue({
+            id: 'run-id',
+            status: ExecutionRunStatus.completed,
+            result: [],
+            prompt: 'rendered prompt',
+        });
+        const mockClient = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }),
+                executeByName,
+            },
+        } as unknown as VertesiaClient;
+        const payload = createPayload();
+        payload.activity = { ...payload.activity, projection };
+
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            inputType: 'objectIds',
+            params: payload.params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        const output = await testEnv.run(executeInteraction, payload);
+        return { output, requestOptions: executeByName.mock.calls[0][3] };
+    }
+
+    it.each([
+        ['`#.prompt`', { rendered_prompt: '${#.prompt}' }, { rendered_prompt: 'rendered prompt' }],
+        [
+            'the whole response',
+            { response: '${#}' },
+            { response: expect.objectContaining({ prompt: 'rendered prompt' }) },
+        ],
+    ])('should keep the prompt for a projection reading %s', async (_label, projection, expected) => {
+        const { output, requestOptions } = await runWithProjection(projection);
+
+        expect(requestOptions).toBeUndefined();
+        expect(output).toEqual(expected);
+    });
+
+    it('should still omit the prompt for a projection that cannot read it', async () => {
+        const { output, requestOptions } = await runWithProjection({ run: '${#.id}', status: '${#.status}' });
+
+        expect(requestOptions).toEqual({ query: { include_prompt: false } });
+        expect(output).toEqual({ run: 'run-id', status: ExecutionRunStatus.completed });
+    });
+
+    it('should take the previous error from the run search without fetching the whole run', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const previousError = { code: 'validation_error', message: 'missing field' };
+        const executeByName = vi.fn().mockResolvedValue({
+            id: 'run-id',
+            status: ExecutionRunStatus.completed,
+            result: [],
+        });
+        const retrieve = vi.fn();
+        const mockClient = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }),
+                executeByName,
+            },
+            runs: {
+                search: vi.fn().mockResolvedValue([{ id: 'previous-run', error: previousError }]),
+                retrieve,
+            },
+        } as unknown as VertesiaClient;
+        const payload = createPayload();
+        const params: ExecuteInteractionParams = { ...payload.params, include_previous_error: true };
+
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            inputType: 'objectIds',
+            params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        const retryEnv = new MockActivityEnvironment({ attempt: 2 }, { logger: activityLogger });
+        await retryEnv.run(executeInteraction, { ...payload, params });
+
+        expect(retrieve).not.toHaveBeenCalled();
+        expect(executeByName.mock.calls[0][1].data).toEqual(expect.objectContaining({ previous_error: previousError }));
     });
 
     it('should leave 412 rendition-in-progress failures retryable', async () => {
@@ -311,6 +396,34 @@ describe('executeInteraction retryability', () => {
             expect.any(Object),
         );
         expect(activityLogger.error).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['statusCode', { statusCode: 502 }],
+        ['status', { status: 503 }],
+        ['code', { code: 504 }],
+    ])('logs a transient server failure reported as %s at warn and retries it', async (_field, statusProps) => {
+        await mockInteractionError(Object.assign(new Error('Service Unavailable'), statusProps));
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.not.toMatchObject({
+            nonRetryable: true,
+        });
+        expect(activityLogger.warn).toHaveBeenCalledWith(
+            'Transient server failure while executing interaction testInteraction',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('keeps an explicitly permanent 503 at error level', async () => {
+        await mockInteractionError(
+            Object.assign(new Error('permanently unavailable'), { status: 503, retryable: false }),
+        );
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+        expect(activityLogger.error).toHaveBeenCalled();
     });
 
     it('should mark other 4xx failures as non-retryable', async () => {

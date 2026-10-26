@@ -1105,7 +1105,7 @@
       },
       "scope": {
         "$ref": "#/components/schemas/AbacScope",
-        "description": "Kind of object the `resource_props` matches. Used to disambiguate which partition's roles apply (e.g. content roles vs agent-run roles) and to form the JWT `content_security` key prefix (`{scope}:{verb}`). Absent → `'document'` (default; emits bare `read`/`write`/`delete` keys for backward compatibility)."
+        "description": "Kind of object the `resource_props` matches. Used to disambiguate which partition's roles apply (e.g. content roles vs agent-run roles) and to form the JWT `abac` key prefix (`{scope}:{verb}`). Absent → `'document'` (default; emits bare `read`/`write`/`delete` keys for backward compatibility)."
       }
     },
     "additionalProperties": false,
@@ -1792,102 +1792,6 @@
         "pattern": "\\S"
       },
       "enabled": {
-        "type": "boolean"
-      }
-    },
-    "additionalProperties": false
-  },
-  "ApiKeyReadResponse": {
-    "type": "object",
-    "properties": {
-      "id": {
-        "type": "string"
-      },
-      "name": {
-        "type": "string"
-      },
-      "type": {
-        "$ref": "#/components/schemas/ApiKeyTypes"
-      },
-      "role": {
-        "$ref": "#/components/schemas/SystemRoles"
-      },
-      "maskedValue": {
-        "type": "string"
-      },
-      "can_retrieve_value": {
-        "type": "boolean"
-      },
-      "account": {
-        "type": "string"
-      },
-      "project": {
-        "$ref": "#/components/schemas/ProjectRef"
-      },
-      "enabled": {
-        "type": "boolean"
-      },
-      "scim_provisioning": {
-        "type": "boolean",
-        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
-      },
-      "created_by": {
-        "type": "string"
-      },
-      "updated_by": {
-        "type": "string"
-      },
-      "created_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "updated_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "expires_at": {
-        "type": "string",
-        "format": "date-time"
-      },
-      "properties": {
-        "type": "object",
-        "additionalProperties": true,
-        "description": "Custom properties for dynamic permission matching (PrincipalSet / $principal. conditions)"
-      },
-      "clearance": {
-        "type": "number",
-        "description": "BLP clearance level — the maximum document sensitivity the key can access"
-      },
-      "compartments": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Compartments the key belongs to — restricts access to matching documents"
-      },
-      "value": {
-        "type": "string"
-      }
-    },
-    "required": [
-      "id",
-      "name",
-      "type",
-      "role",
-      "account",
-      "project",
-      "enabled",
-      "created_by",
-      "updated_by",
-      "created_at",
-      "updated_at"
-    ],
-    "additionalProperties": false
-  },
-  "ApiKeyReadQuery": {
-    "type": "object",
-    "properties": {
-      "withValue": {
         "type": "boolean"
       }
     },
@@ -3346,6 +3250,20 @@
           "type": "string"
         }
       },
+      "effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
+      },
+      "reasoning_effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
+      },
+      "verbosity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
       "include_thoughts": {
         "type": "boolean"
       },
@@ -3357,12 +3275,27 @@
     },
     "additionalProperties": false
   },
+  "ReasoningEffort": {
+    "type": "string",
+    "enum": [
+      "none",
+      "minimal",
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ]
+  },
   "BedrockNovaOptions": {
     "type": "object",
     "properties": {
       "_option_id": {
         "type": "string",
         "const": "bedrock-nova"
+      },
+      "effort": {
+        "$ref": "#/components/schemas/ReasoningEffort"
       },
       "max_tokens": {
         "type": "number"
@@ -4006,18 +3939,6 @@
     },
     "additionalProperties": false
   },
-  "ReasoningEffort": {
-    "type": "string",
-    "enum": [
-      "none",
-      "minimal",
-      "low",
-      "medium",
-      "high",
-      "xhigh",
-      "max"
-    ]
-  },
   "OpenAiTextOptions": {
     "type": "object",
     "properties": {
@@ -4027,6 +3948,9 @@
       },
       "image_generation": {
         "$ref": "#/components/schemas/OpenAiImageGenerationOptions"
+      },
+      "seed": {
+        "type": "number"
       },
       "max_tokens": {
         "type": "number"
@@ -4091,6 +4015,9 @@
   "OpenRouterTextOptions": {
     "type": "object",
     "properties": {
+      "seed": {
+        "type": "number"
+      },
       "max_tokens": {
         "type": "number"
       },
@@ -4524,11 +4451,7 @@
         }
       },
       "effort": {
-        "type": "string",
-        "enum": [
-          "none",
-          "high"
-        ]
+        "$ref": "#/components/schemas/ReasoningEffort"
       },
       "random_seed": {
         "type": "integer",
@@ -5829,6 +5752,23 @@
         "type": "string",
         "const": "mcp"
       },
+      "parameters": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/McpConnectionParameter"
+        }
+      },
+      "headers": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "HTTP header templates. Reference declared installation parameters with {{name}}. Never embed secrets."
+      },
       "id": {
         "type": "string",
         "description": "Stable identifier for this collection. Used to key oauth_bindings on AppInstallation — protects against collection renames. Required for new manifests."
@@ -5889,6 +5829,50 @@
       "other"
     ],
     "description": "Authentication type for tool collections.\n- 'none': connect directly without credentials for MCP collections; does not disable authentication for Vertesia SDK collections\n- 'oauth': the runtime resolves a per-user or per-project OAuth access token\n- 'api_key': a static key held in the project's secret store is sent as the RFC 6750 bearer token (`Authorization: Bearer <key>`)\n- 'other' or omitted: use the legacy provider connection-details flow for MCP collections"
+  },
+  "McpPublicParameter": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "required": {
+        "type": "boolean"
+      },
+      "type": {
+        "type": "string",
+        "const": "string"
+      },
+      "default": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "McpSecretParameter": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "required": {
+        "type": "boolean"
+      },
+      "type": {
+        "type": "string",
+        "const": "secret"
+      }
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false
   },
   "MCPOAuthConfig": {
     "type": "object",
@@ -5995,6 +5979,16 @@
     ],
     "additionalProperties": false,
     "description": "Vertesia SDK tool collection configuration"
+  },
+  "McpConnectionParameter": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/McpPublicParameter"
+      },
+      {
+        "$ref": "#/components/schemas/McpSecretParameter"
+      }
+    ]
   },
   "ToolCollectionObject": {
     "oneOf": [
@@ -6137,8 +6131,20 @@
   "AppGitSourceConfig": {
     "type": "object",
     "properties": {
+      "provider": {
+        "$ref": "#/components/schemas/AppGitSourceProvider",
+        "description": "Repository provider. Missing values are treated as `vertesia` for apps created before provider support."
+      },
       "url": {
         "type": "string"
+      },
+      "installation_id": {
+        "type": "string",
+        "description": "Verified GitHub App installation id. Required when provider is `github`."
+      },
+      "repository": {
+        "type": "string",
+        "description": "GitHub repository in `owner/name` form. Required when provider is `github`."
       },
       "default_branch": {
         "type": "string"
@@ -6151,6 +6157,13 @@
       }
     },
     "additionalProperties": false
+  },
+  "AppGitSourceProvider": {
+    "type": "string",
+    "enum": [
+      "vertesia",
+      "github"
+    ]
   },
   "AppSourceConfig": {
     "type": "object",
@@ -6178,7 +6191,16 @@
       "git": {
         "type": "object",
         "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/AppGitSourceProvider"
+          },
           "url": {
+            "type": "string"
+          },
+          "installation_id": {
+            "type": "string"
+          },
+          "repository": {
             "type": "string"
           },
           "default_branch": {
@@ -6497,7 +6519,8 @@
     "enum": [
       "none",
       "client_secret_post",
-      "client_secret_basic"
+      "client_secret_basic",
+      "private_key_jwt"
     ]
   },
   "OAuthGrantType": {
@@ -6505,7 +6528,8 @@
     "enum": [
       "authorization_code",
       "refresh_token",
-      "urn:ietf:params:oauth:grant-type:device_code"
+      "urn:ietf:params:oauth:grant-type:device_code",
+      "urn:ietf:params:oauth:grant-type:token-exchange"
     ]
   },
   "OAuthResponseType": {
@@ -6594,6 +6618,12 @@
         }
       },
       "token_endpoint_auth_methods_supported": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "token_endpoint_auth_signing_alg_values_supported": {
         "type": "array",
         "items": {
           "type": "string"
@@ -6744,6 +6774,9 @@
       },
       "version_id": {
         "type": "string"
+      },
+      "deployment_alias": {
+        "type": "string"
       }
     },
     "required": [
@@ -6766,6 +6799,9 @@
         "type": "string"
       },
       "client_name": {
+        "type": "string"
+      },
+      "app_id": {
         "type": "string"
       },
       "client_metadata": {
@@ -7041,9 +7077,372 @@
       "expires_in"
     ]
   },
+  "OidcFederationConnectionPayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "issuer": {
+        "type": "string",
+        "format": "uri"
+      },
+      "jwks_uri": {
+        "type": "string",
+        "format": "uri"
+      },
+      "external_id_claim": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "pattern": "\\S",
+        "description": "Exact top-level verified token claim matched to SCIM externalId within the owning provisioning account."
+      },
+      "allowed_audiences": {
+        "minItems": 1,
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allowed_algorithms": {
+        "minItems": 1,
+        "maxItems": 2,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "RS256",
+            "ES256"
+          ]
+        }
+      },
+      "subject_token_type": {
+        "type": "string",
+        "enum": [
+          "urn:ietf:params:oauth:token-type:jwt",
+          "urn:ietf:params:oauth:token-type:id_token",
+          "urn:ietf:params:oauth:token-type:access_token"
+        ]
+      },
+      "required_claims": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Exact string matches against verified top-level IdP claims, such as tenant or azp."
+      },
+      "all_projects": {
+        "type": "boolean",
+        "description": "Explicitly allow all current and future projects in the owning organization, subject to the user’s current access. Defaults to false for existing allowlists. When true, allowed_project_ids must be empty."
+      },
+      "allowed_project_ids": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$"
+        },
+        "description": "Explicit project allowlist. Must contain 1–100 projects unless all_projects is true."
+      },
+      "allowed_client_ids": {
+        "minItems": 1,
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "description": "When set, require authentication by one of these account-owned confidential OAuth clients. Omit to allow exchanges without separate client authentication."
+      },
+      "allowed_scopes": {
+        "minItems": 1,
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Optional restriction on delegable Vertesia permissions, excluding account:admin. Omit to use the user’s current permissions. An explicit list further restricts the grant."
+      },
+      "max_token_ttl_seconds": {
+        "type": "integer",
+        "minimum": 30,
+        "maximum": 300
+      },
+      "max_subject_token_age_seconds": {
+        "type": "integer",
+        "minimum": 30,
+        "maximum": 86400,
+        "description": "Maximum age since the signed iat claim. Defaults to 3600 seconds; 60 seconds of clock tolerance applies."
+      },
+      "enabled": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "name",
+      "issuer",
+      "external_id_claim",
+      "allowed_audiences",
+      "allowed_algorithms",
+      "subject_token_type",
+      "allowed_project_ids",
+      "max_token_ttl_seconds",
+      "enabled"
+    ],
+    "additionalProperties": false
+  },
+  "OidcFederationConnection": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "issuer": {
+        "type": "string",
+        "format": "uri"
+      },
+      "jwks_uri": {
+        "type": "string",
+        "format": "uri"
+      },
+      "external_id_claim": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "pattern": "\\S",
+        "description": "Exact top-level verified token claim matched to SCIM externalId within the owning provisioning account."
+      },
+      "allowed_audiences": {
+        "minItems": 1,
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allowed_algorithms": {
+        "minItems": 1,
+        "maxItems": 2,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "RS256",
+            "ES256"
+          ]
+        }
+      },
+      "subject_token_type": {
+        "type": "string",
+        "enum": [
+          "urn:ietf:params:oauth:token-type:jwt",
+          "urn:ietf:params:oauth:token-type:id_token",
+          "urn:ietf:params:oauth:token-type:access_token"
+        ]
+      },
+      "required_claims": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Exact string matches against verified top-level IdP claims, such as tenant or azp."
+      },
+      "all_projects": {
+        "type": "boolean",
+        "description": "Explicitly allow all current and future projects in the owning organization, subject to the user’s current access. Defaults to false for existing allowlists. When true, allowed_project_ids must be empty."
+      },
+      "allowed_project_ids": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$"
+        },
+        "description": "Explicit project allowlist. Must contain 1–100 projects unless all_projects is true."
+      },
+      "allowed_client_ids": {
+        "minItems": 1,
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "description": "When set, require authentication by one of these account-owned confidential OAuth clients. Omit to allow exchanges without separate client authentication."
+      },
+      "allowed_scopes": {
+        "minItems": 1,
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Optional restriction on delegable Vertesia permissions, excluding account:admin. Omit to use the user’s current permissions. An explicit list further restricts the grant."
+      },
+      "max_token_ttl_seconds": {
+        "type": "integer",
+        "minimum": 30,
+        "maximum": 300
+      },
+      "max_subject_token_age_seconds": {
+        "type": "integer",
+        "minimum": 30,
+        "maximum": 86400
+      },
+      "enabled": {
+        "type": "boolean"
+      },
+      "id": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "account_id": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      }
+    },
+    "required": [
+      "name",
+      "issuer",
+      "external_id_claim",
+      "allowed_audiences",
+      "allowed_algorithms",
+      "subject_token_type",
+      "allowed_project_ids",
+      "max_token_ttl_seconds",
+      "max_subject_token_age_seconds",
+      "enabled",
+      "id",
+      "account_id"
+    ],
+    "additionalProperties": false
+  },
+  "OidcFederationConnectionArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/OidcFederationConnection"
+    }
+  },
+  "OAuthTokenExchangeRequest": {
+    "type": "object",
+    "properties": {
+      "grant_type": {
+        "type": "string",
+        "const": "urn:ietf:params:oauth:grant-type:token-exchange"
+      },
+      "subject_token": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 65536
+      },
+      "subject_token_type": {
+        "type": "string",
+        "enum": [
+          "urn:ietf:params:oauth:token-type:jwt",
+          "urn:ietf:params:oauth:token-type:id_token",
+          "urn:ietf:params:oauth:token-type:access_token"
+        ]
+      },
+      "requested_token_type": {
+        "type": "string",
+        "const": "urn:ietf:params:oauth:token-type:access_token"
+      },
+      "federation_connection_id": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "client_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "client_secret": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      },
+      "client_assertion": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 16384
+      },
+      "client_assertion_type": {
+        "type": "string",
+        "const": "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
+      },
+      "project_id": {
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$"
+      },
+      "resource": {
+        "type": "string",
+        "minLength": 1
+      },
+      "scope": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096,
+        "description": "Optional space-separated permission subset. Omit to use current user permissions within the connection policy."
+      }
+    },
+    "required": [
+      "grant_type",
+      "subject_token",
+      "subject_token_type",
+      "federation_connection_id",
+      "project_id",
+      "resource"
+    ],
+    "additionalProperties": false
+  },
+  "OAuthTokenExchangeResponse": {
+    "type": "object",
+    "properties": {
+      "access_token": {
+        "type": "string"
+      },
+      "token_type": {
+        "type": "string",
+        "const": "Bearer"
+      },
+      "expires_in": {
+        "type": "number"
+      },
+      "scope": {
+        "type": "string"
+      },
+      "issued_token_type": {
+        "type": "string",
+        "const": "urn:ietf:params:oauth:token-type:access_token"
+      }
+    },
+    "required": [
+      "access_token",
+      "token_type",
+      "expires_in",
+      "issued_token_type"
+    ],
+    "additionalProperties": false
+  },
   "OAuthClient": {
     "type": "object",
     "properties": {
+      "app_id": {
+        "type": "string",
+        "description": "App managing this client. Generic updates and deletion are prohibited; configure it through the app. Authorization requires a current installation and user app access."
+      },
       "client_name": {
         "type": "string"
       },
@@ -7070,6 +7469,10 @@
       },
       "token_endpoint_auth_method": {
         "$ref": "#/components/schemas/OAuthTokenEndpointAuthMethod"
+      },
+      "jwks_uri": {
+        "type": "string",
+        "format": "uri"
       },
       "allowed_scopes": {
         "type": "array",
@@ -7145,6 +7548,10 @@
   "OAuthClientCreateResponse": {
     "type": "object",
     "properties": {
+      "app_id": {
+        "type": "string",
+        "description": "App managing this client. Generic updates and deletion are prohibited; configure it through the app. Authorization requires a current installation and user app access."
+      },
       "client_name": {
         "type": "string"
       },
@@ -7171,6 +7578,10 @@
       },
       "token_endpoint_auth_method": {
         "$ref": "#/components/schemas/OAuthTokenEndpointAuthMethod"
+      },
+      "jwks_uri": {
+        "type": "string",
+        "format": "uri"
       },
       "allowed_scopes": {
         "type": "array",
@@ -7285,6 +7696,10 @@
       "token_endpoint_auth_method": {
         "$ref": "#/components/schemas/OAuthTokenEndpointAuthMethod"
       },
+      "jwks_uri": {
+        "type": "string",
+        "format": "uri"
+      },
       "allowed_scopes": {
         "type": "array",
         "items": {
@@ -7347,6 +7762,10 @@
       "token_endpoint_auth_method": {
         "$ref": "#/components/schemas/OAuthTokenEndpointAuthMethod"
       },
+      "jwks_uri": {
+        "type": "string",
+        "format": "uri"
+      },
       "allowed_scopes": {
         "type": "array",
         "items": {
@@ -7361,6 +7780,10 @@
       },
       "status": {
         "$ref": "#/components/schemas/OAuthClientStatus"
+      },
+      "revoke_previous_client_secret": {
+        "type": "boolean",
+        "description": "Immediately revoke the previous rotation secret while retaining the current secret."
       },
       "project_binding_mode": {
         "$ref": "#/components/schemas/OAuthProjectBindingMode"
@@ -7379,6 +7802,18 @@
         "additionalProperties": true
       }
     },
+    "additionalProperties": false
+  },
+  "UpdateOAuthClientStatusPayload": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "$ref": "#/components/schemas/OAuthClientStatus"
+      }
+    },
+    "required": [
+      "status"
+    ],
     "additionalProperties": false
   },
   "OAuthGrant": {
@@ -7752,6 +8187,10 @@
           "type": "string"
         }
       },
+      "managed": {
+        "type": "boolean",
+        "description": "True when Vertesia manages this environment and supplies its inference credential. Only Vertesia staff can change its name, description, provider, endpoint or credential, or delete it, and its configuration and settings are locked; account administrators can still change its default model, enabled models and allowed projects. Absent on every other environment."
+      },
       "account": {
         "type": "string"
       },
@@ -7842,6 +8281,10 @@
         "items": {
           "type": "string"
         }
+      },
+      "managed": {
+        "type": "boolean",
+        "description": "True when Vertesia manages this environment and supplies its inference credential. Only Vertesia staff can change its name, description, provider, endpoint or credential, or delete it, and its configuration and settings are locked; account administrators can still change its default model, enabled models and allowed projects. Absent on every other environment."
       },
       "created_by": {
         "type": "string"
@@ -10452,10 +10895,14 @@
     "type": "object",
     "properties": {
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "status": {
         "$ref": "#/components/schemas/InteractionStatus"
@@ -12559,7 +13006,8 @@
       "fallback_coordination_unavailable",
       "fallback_wait_timeout",
       "minimum_token_rejection",
-      "unusable_resource_recreated"
+      "unusable_resource_recreated",
+      "unsupported_model"
     ]
   },
   "InteractionExecutionError": {
@@ -13149,6 +13597,16 @@
     "additionalProperties": false,
     "description": "Interaction execution payload for creating a new run It uses interaction field (from NamedInteractionExecutionPayload) to pass the interaction ID to run"
   },
+  "GetRunQuery": {
+    "type": "object",
+    "properties": {
+      "include_prompt": {
+        "type": "boolean",
+        "description": "Whether the run includes the rendered `prompt` sent to the model. Defaults to true. Pass false when the caller does not read the prompt: it can be large (for example when media is inlined), and it is then not loaded from storage."
+      }
+    },
+    "additionalProperties": false
+  },
   "SortOrder": {
     "type": "string",
     "enum": [
@@ -13269,13 +13727,13 @@
     "properties": {
       "limit": {
         "type": "integer",
-        "minimum": -9007199254740991,
+        "minimum": 0,
         "maximum": 9007199254740991,
         "description": "Maximum number of runs to return."
       },
       "offset": {
         "type": "integer",
-        "minimum": -9007199254740991,
+        "minimum": 0,
         "maximum": 9007199254740991,
         "description": "Number of runs to skip."
       },
@@ -13359,10 +13817,14 @@
         "$ref": "#/components/schemas/RunSearchQuery"
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "select": {
         "type": "string"
@@ -14286,11 +14748,25 @@
     "additionalProperties": false,
     "description": "A retrieved execution run whose completion result is reported in the pre-versioning format. A run that has no result yet is returned unchanged, so `result` may still hold the current array form."
   },
+  "ExecuteNamedInteractionQuery": {
+    "type": "object",
+    "properties": {
+      "include_prompt": {
+        "type": "boolean",
+        "description": "Whether the synchronous execution result includes the rendered `prompt` sent to the model. Defaults to true. Pass false when the caller does not read the prompt: it can be large (for example when media is inlined). It is still stored with the run unless run data storage is restricted."
+      }
+    },
+    "additionalProperties": false
+  },
   "ExecuteInteractionByEndpointQuery": {
     "type": "object",
     "properties": {
       "tag": {
         "type": "string"
+      },
+      "include_prompt": {
+        "type": "boolean",
+        "description": "Whether the synchronous execution result includes the rendered `prompt` sent to the model. Defaults to true. Pass false when the caller does not read the prompt: it can be large (for example when media is inlined). It is still stored with the run unless run data storage is restricted."
       }
     },
     "additionalProperties": false
@@ -14393,6 +14869,12 @@
           "type": "string"
         },
         "description": "An array of endpoint URLs to be notified upon execution"
+      },
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Client-chosen key, unique per intended run, that makes this request safe to retry. A repeat of the request with the same key and the same body returns the agent run the first request started instead of starting another. Reusing a key with a different body is rejected with 409, and a repeat that arrives while the first request is still starting the run may be answered with 503 and `Retry-After`. Keys are scoped to the project and stay bound to their run for as long as it exists; once the run is deleted, the same key starts a new one."
       },
       "task_queue": {
         "type": "string"
@@ -15531,10 +16013,14 @@
       },
       "limit": {
         "type": "number",
+        "minimum": 0,
+        "multipleOf": 1,
         "description": "Maximum number of prompts to return. Defaults to 100."
       },
       "offset": {
         "type": "number",
+        "minimum": 0,
+        "multipleOf": 1,
         "description": "Number of prompts to skip."
       },
       "role": {
@@ -17364,10 +17850,14 @@
       },
       "limit": {
         "type": "number",
+        "minimum": 0,
+        "multipleOf": 1,
         "description": "Pagination: number of items to return (default 50, max 200)"
       },
       "offset": {
         "type": "number",
+        "minimum": 0,
+        "multipleOf": 1,
         "description": "Pagination: offset"
       }
     },
@@ -18936,6 +19426,30 @@
       "version"
     ]
   },
+  "AppDeploymentAlias": {
+    "type": "string",
+    "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+    "description": "Stable, lowercase deployment alias for an immutable app version, such as `production`, `preview`, or `customer-demo`."
+  },
+  "AppDeploymentAliasTarget": {
+    "type": "object",
+    "properties": {
+      "version_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Immutable AppGen version id."
+      },
+      "version_record_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Globally unique app-version record id used to resolve the exact build."
+      }
+    },
+    "required": [
+      "version_id",
+      "version_record_id"
+    ]
+  },
   "StartAppScaffoldResponse": {
     "type": "object",
     "properties": {
@@ -19634,6 +20148,275 @@
     },
     "additionalProperties": false
   },
+  "AppGithubConfiguration": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      },
+      "app_slug": {
+        "type": "string"
+      },
+      "install_url": {
+        "type": "string"
+      },
+      "relay_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "enabled"
+    ]
+  },
+  "StartAppGithubAuthorizationResponse": {
+    "type": "object",
+    "properties": {
+      "authorization_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "authorization_url"
+    ]
+  },
+  "ExchangeAppGithubAuthorizationRequest": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "code",
+      "state"
+    ]
+  },
+  "AppGithubRepositoriesQuery": {
+    "type": "object",
+    "properties": {
+      "connection_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "installation_id": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "connection_id",
+      "installation_id"
+    ]
+  },
+  "AppGithubInstallation": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "account_login": {
+        "type": "string"
+      },
+      "account_type": {
+        "type": "string"
+      },
+      "repository_selection": {
+        "type": "string",
+        "enum": [
+          "all",
+          "selected"
+        ]
+      }
+    },
+    "required": [
+      "id",
+      "account_login",
+      "repository_selection"
+    ]
+  },
+  "AppGithubAccount": {
+    "type": "object",
+    "properties": {
+      "login": {
+        "type": "string"
+      },
+      "account_type": {
+        "type": "string"
+      },
+      "avatar_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "login",
+      "account_type"
+    ]
+  },
+  "ExchangeAppGithubAuthorizationResponse": {
+    "type": "object",
+    "properties": {
+      "connection_id": {
+        "type": "string"
+      },
+      "installations": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppGithubInstallation"
+        }
+      },
+      "accounts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppGithubAccount"
+        }
+      }
+    },
+    "required": [
+      "connection_id",
+      "installations",
+      "accounts"
+    ]
+  },
+  "AppGithubRepository": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "full_name": {
+        "type": "string"
+      },
+      "private": {
+        "type": "boolean"
+      },
+      "default_branch": {
+        "type": "string"
+      },
+      "html_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "name",
+      "full_name",
+      "private",
+      "default_branch",
+      "html_url"
+    ]
+  },
+  "AppGithubRepositoryCreation": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        "description": "Name of the empty GitHub repository to create in the verified installation."
+      },
+      "private": {
+        "type": "boolean",
+        "description": "Create a private repository. Defaults to true when omitted."
+      }
+    },
+    "required": [
+      "name"
+    ]
+  },
+  "AppGithubRepositoryList": {
+    "type": "object",
+    "properties": {
+      "repositories": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppGithubRepository"
+        }
+      }
+    },
+    "required": [
+      "repositories"
+    ]
+  },
+  "AppGithubRepositorySetupQuery": {
+    "type": "object",
+    "properties": {
+      "connection_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "installation_id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "repository": {
+        "type": "string",
+        "minLength": 1
+      },
+      "branch": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "connection_id",
+      "installation_id",
+      "repository",
+      "branch"
+    ]
+  },
+  "AppGithubBranchState": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "exists": {
+        "type": "boolean"
+      },
+      "empty": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "name",
+      "exists",
+      "empty"
+    ]
+  },
+  "AppGithubRepositorySetup": {
+    "type": "object",
+    "properties": {
+      "default_branch": {
+        "type": "string"
+      },
+      "branches": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "selected_branch": {
+        "$ref": "#/components/schemas/AppGithubBranchState"
+      }
+    },
+    "required": [
+      "default_branch",
+      "branches",
+      "selected_branch"
+    ],
+    "description": "Branch choices and write-safety state for a verified GitHub repository."
+  },
+  "AppScaffoldSourceMode": {
+    "type": "string",
+    "enum": [
+      "generate",
+      "existing"
+    ],
+    "description": "How App Builder should use a connected source repository. `generate` writes a starter app to an empty branch; `existing` only binds the repository."
+  },
   "StartAppScaffoldRequest": {
     "type": "object",
     "properties": {
@@ -19668,6 +20451,22 @@
       "create_version": {
         "type": "boolean",
         "description": "Start an initial app version build after the source has been pushed. Defaults to true."
+      },
+      "source_mode": {
+        "$ref": "#/components/schemas/AppScaffoldSourceMode",
+        "description": "Explicit source setup behavior for external repositories. Omit to retain the legacy automatic behavior."
+      },
+      "source": {
+        "$ref": "#/components/schemas/AppSourceConfig",
+        "description": "Source repository to bind to the app. Omit to create and scaffold a Vertesia-managed repository."
+      },
+      "github_connection_id": {
+        "type": "string",
+        "description": "Short-lived proof that the current user verified the selected GitHub installation."
+      },
+      "github_repository_creation": {
+        "$ref": "#/components/schemas/AppGithubRepositoryCreation",
+        "description": "Create an empty repository in the verified GitHub installation before generating the app source."
       }
     },
     "required": [
@@ -20016,6 +20815,75 @@
       "ref_type"
     ]
   },
+  "AppVersionLaunchTarget": {
+    "type": "object",
+    "properties": {
+      "project": {
+        "$ref": "#/components/schemas/ProjectRef"
+      },
+      "installation_id": {
+        "type": "string"
+      },
+      "settings": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Current settings of the app installation in the target project."
+      }
+    },
+    "required": [
+      "project",
+      "installation_id",
+      "settings"
+    ],
+    "additionalProperties": false,
+    "description": "A user-accessible project where this app version may be launched temporarily."
+  },
+  "AppVersionLaunchTargetArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/AppVersionLaunchTarget"
+    }
+  },
+  "CreateAppVersionLaunchRequest": {
+    "type": "object",
+    "properties": {
+      "target_project_id": {
+        "type": "string",
+        "description": "Project in the source account where the app is already installed and the temporary version will run. Defaults to the current project."
+      },
+      "settings": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Temporary app installation settings used only by this version launch."
+      }
+    },
+    "required": [
+      "settings"
+    ],
+    "additionalProperties": false,
+    "description": "Creates a short-lived launch of one immutable app version with temporary installation settings."
+  },
+  "CreateAppVersionLaunchResponse": {
+    "type": "object",
+    "properties": {
+      "version_launch_id": {
+        "type": "string"
+      },
+      "version_selector": {
+        "type": "string"
+      },
+      "app_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "version_launch_id",
+      "version_selector",
+      "app_url"
+    ],
+    "additionalProperties": false,
+    "description": "Opaque launch selector and App Gateway URL for an advanced app-version launch."
+  },
   "AppBuildProgress": {
     "type": "object",
     "properties": {
@@ -20099,6 +20967,9 @@
       "name": {
         "type": "string",
         "description": "The collection name"
+      },
+      "collection_id": {
+        "type": "string"
       },
       "description": {
         "type": "string",
@@ -20219,6 +21090,13 @@
       },
       "promoted": {
         "type": "boolean"
+      },
+      "aliases": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppDeploymentAlias"
+        },
+        "description": "Deployment aliases that currently resolve to this immutable version."
       },
       "target": {
         "$ref": "#/components/schemas/AppVersionTarget"
@@ -20562,6 +21440,58 @@
       "app_id": {
         "type": "string"
       },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Optional stable deployment alias to follow for this installation instead of the app's promoted version."
+      },
+      "instance_key": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+      },
+      "display_name": {
+        "type": "string",
+        "maxLength": 120,
+        "description": "Optional instance label. Send an empty string to clear the saved label; omit to preserve it."
+      },
+      "namespace_overrides": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string",
+          "maxLength": 24,
+          "pattern": "^[a-z]([a-z0-9]|_[a-z0-9])*_?$"
+        }
+      },
+      "mcp_shared_parameters": {
+        "type": "object",
+        "additionalProperties": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "description": "Shared MCP parameter overrides. Omitted values are retained; null clears an override or restores its default."
+      },
+      "mcp_parameters": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "description": "Installation parameter overrides by MCP collection id. Omit to preserve; null clears an override. Secret inputs are write-only."
+      },
       "settings": {
         "type": "object",
         "additionalProperties": true
@@ -20576,6 +21506,15 @@
           }
         ],
         "description": "Per-installation override of the manifest's `access_control` policy. When provided, takes precedence over the manifest default for every access check. Sibling of `settings` — admin-controlled, not part of the app's own settings JSON.\n\nThree send-time semantics on update:  - Field omitted entirely from the payload → leave the existing override unchanged.  - Explicit `null` → clear the override, fall back to the manifest default.  - String enum → set the override to that value.\n\n(On install, the same shape applies; omit or pass `null` to use the manifest default.)"
+      },
+      "approved_scopes": {
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "OAuth scopes approved by the project manager during installation. The server records the approving user and timestamp; omitted defaults to all scopes requested by the selected deployment."
       },
       "oauth_params": {
         "type": "object",
@@ -20602,6 +21541,18 @@
     },
     "required": [
       "app_id"
+    ],
+    "additionalProperties": false
+  },
+  "AppInstanceAvailability": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "enabled"
     ],
     "additionalProperties": false
   },
@@ -20704,6 +21655,23 @@
     },
     "additionalProperties": false,
     "description": "Exactly one of `name` or `id` identifies the app. Neither is required by the component because the endpoint answers 400 for the empty case with a message naming both."
+  },
+  "AppPackageQuery": {
+    "type": "object",
+    "properties": {
+      "scope": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AppPackageScope"
+        },
+        "description": "Which capabilities to include in the returned package. Defaults to `all`. Comma-joined (`?scope=ui,tools`) or repeated."
+      },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Resolve the package from this named deployment. Used before installation to load the selected deployment configuration."
+      }
+    },
+    "additionalProperties": false
   },
   "SystemPackageQuery": {
     "type": "object",
@@ -22990,14 +23958,51 @@
     "additionalProperties": false,
     "description": "Dashboard definition contributed by an app package.\n\nApp dashboard IDs are local to the app. The platform exposes them as `app:<app_name>:<id>` when listing or retrieving dashboards."
   },
+  "AppOAuthClientConfig": {
+    "type": "object",
+    "properties": {
+      "redirect_uris": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "require_consent": {
+        "type": "boolean",
+        "description": "Deprecated compatibility field. Vertesia-managed apps are authorized by project installation approval, while generic third-party OAuth clients retain per-user consent."
+      }
+    },
+    "required": [
+      "redirect_uris"
+    ],
+    "additionalProperties": false,
+    "description": "Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs."
+  },
   "AppManifestData": {
     "type": "object",
     "properties": {
+      "parameters": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/McpConnectionParameter"
+        },
+        "description": "Shared MCP installation parameters available to every collection. Collection-local names must not overlap."
+      },
       "oauth_scopes": {
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling."
+      },
+      "oauth_client": {
+        "$ref": "#/components/schemas/AppOAuthClientConfig"
       },
       "name": {
         "type": "string",
@@ -23129,11 +24134,26 @@
   "UpdateAppPayload": {
     "type": "object",
     "properties": {
+      "parameters": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/McpConnectionParameter"
+        },
+        "description": "Shared MCP installation parameters available to every collection. Collection-local names must not overlap."
+      },
       "oauth_scopes": {
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling."
+      },
+      "oauth_client": {
+        "$ref": "#/components/schemas/AppOAuthClientConfig"
       },
       "name": {
         "type": "string",
@@ -23271,11 +24291,26 @@
   "AppManifest": {
     "type": "object",
     "properties": {
+      "parameters": {
+        "type": "object",
+        "propertyNames": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/McpConnectionParameter"
+        },
+        "description": "Shared MCP installation parameters available to every collection. Collection-local names must not overlap."
+      },
       "oauth_scopes": {
         "type": "array",
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling."
+      },
+      "oauth_client": {
+        "$ref": "#/components/schemas/AppOAuthClientConfig"
       },
       "edit_revision": {
         "type": "integer",
@@ -23383,6 +24418,16 @@
       "version": {
         "type": "string",
         "description": "Optional app version string (e.g. \"1.0.0\") — informational."
+      },
+      "deployment_aliases": {
+        "type": "object",
+        "propertyNames": {
+          "$ref": "#/components/schemas/AppDeploymentAlias"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/AppDeploymentAliasTarget"
+        },
+        "description": "Vertesia-managed mapping from stable deployment aliases to immutable AppGen versions."
       },
       "source": {
         "$ref": "#/components/schemas/AppManifestSource",
@@ -24478,12 +25523,15 @@
   "AppPackage": {
     "type": "object",
     "properties": {
+      "oauth_client": {
+        "$ref": "#/components/schemas/AppOAuthClientConfig"
+      },
       "oauth_scopes": {
         "type": "array",
         "items": {
           "type": "string"
         },
-        "description": "OAuth scopes requested by the app. Users must consent to project permissions."
+        "description": "Scopes requested by app code. These do not replace the publisher-managed permission ceiling in the app manifest."
       },
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
@@ -24600,8 +25648,85 @@
       "project": {
         "type": "string"
       },
+      "instance_key": {
+        "type": "string"
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "installation_version": {
+        "type": "number",
+        "const": 1
+      },
+      "namespace_overrides": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "reserved_namespaces": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "namespace_conflicts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time."
+      },
       "manifest": {
         "type": "string"
+      },
+      "mcp_configuration": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "string"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "configured_secrets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "shared_values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "configured_shared_secrets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "revision",
+          "values",
+          "configured_secrets"
+        ],
+        "additionalProperties": false
       },
       "oauth_approval": {
         "type": "object",
@@ -24625,6 +25750,9 @@
           "approved_at"
         ],
         "additionalProperties": false
+      },
+      "oauth_client_id": {
+        "type": "string"
       },
       "settings": {
         "type": "object",
@@ -24692,6 +25820,83 @@
       "project": {
         "type": "string"
       },
+      "instance_key": {
+        "type": "string"
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "installation_version": {
+        "type": "number",
+        "const": 1
+      },
+      "namespace_overrides": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "reserved_namespaces": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "namespace_conflicts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time."
+      },
+      "mcp_configuration": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "string"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "configured_secrets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "shared_values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "configured_shared_secrets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "revision",
+          "values",
+          "configured_secrets"
+        ],
+        "additionalProperties": false
+      },
       "oauth_approval": {
         "type": "object",
         "properties": {
@@ -24714,6 +25919,9 @@
           "approved_at"
         ],
         "additionalProperties": false
+      },
+      "oauth_client_id": {
+        "type": "string"
       },
       "settings": {
         "type": "object",
@@ -24785,6 +25993,83 @@
       "project": {
         "type": "string"
       },
+      "instance_key": {
+        "type": "string"
+      },
+      "display_name": {
+        "type": "string"
+      },
+      "installation_version": {
+        "type": "number",
+        "const": 1
+      },
+      "namespace_overrides": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "reserved_namespaces": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "namespace_conflicts": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "deployment_alias": {
+        "$ref": "#/components/schemas/AppDeploymentAlias",
+        "description": "Stable deployment alias selected for this installation. The alias is resolved to its current immutable app version at request time."
+      },
+      "mcp_configuration": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "string"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "configured_secrets": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "shared_values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "configured_shared_secrets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "revision",
+          "values",
+          "configured_secrets"
+        ],
+        "additionalProperties": false
+      },
       "oauth_approval": {
         "type": "object",
         "properties": {
@@ -24807,6 +26092,9 @@
           "approved_at"
         ],
         "additionalProperties": false
+      },
+      "oauth_client_id": {
+        "type": "string"
       },
       "settings": {
         "type": "object",
@@ -26527,10 +27815,14 @@
         ]
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       }
     },
     "additionalProperties": false
@@ -26920,10 +28212,14 @@
         "type": "boolean"
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       }
     },
     "additionalProperties": false
@@ -26944,10 +28240,14 @@
         "type": "boolean"
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       }
     },
     "additionalProperties": false
@@ -28291,6 +29591,12 @@
       "comment": {
         "type": "string",
         "description": "Optional publish note."
+      },
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Client-chosen key that makes this request safe to retry. Publishing is otherwise not idempotent: a repeat of a publish that already succeeded is rejected because the revision is no longer a draft. When the revision was published by a request with the same key and the same body, the repeat returns that revision instead. Reusing the key with a different body is rejected with 409. The key is bound to the revision it published."
       }
     },
     "required": [
@@ -28703,6 +30009,24 @@
       }
     },
     "additionalProperties": false
+  },
+  "SetObjectTextPayload": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string",
+        "description": "The extracted text to store for the object."
+      },
+      "etag": {
+        "type": "string",
+        "description": "The etag of the content the text was extracted from. When provided, the server records it as the object text_etag so extraction can be skipped while the content is unchanged."
+      }
+    },
+    "required": [
+      "text"
+    ],
+    "additionalProperties": false,
+    "description": "Payload for storing the extracted text of a content object as a text artifact."
   },
   "DeleteContentObjectResult": {
     "type": "object",
@@ -32699,6 +34023,12 @@
         "items": {
           "type": "string"
         }
+      },
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Client-chosen key, unique per intended run, that makes this request safe to retry. A repeat of the request with the same key and the same body returns the run the first request started instead of starting another. Reusing a key with a different body is rejected with 409. Keys are scoped to the project and stay bound to their run for as long as it exists; once the run is deleted, the same key starts a new one."
       }
     },
     "required": [
@@ -32835,6 +34165,12 @@
         "items": {
           "$ref": "#/components/schemas/ProcessTestScenario"
         }
+      },
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Client-chosen key, unique per intended run, that makes this request safe to retry. A repeat of the request with the same key and the same body returns the run the first request started instead of starting another. Reusing a key with a different body is rejected with 409. Keys are scoped to the project and stay bound to their run for as long as it exists; once the run is deleted, the same key starts a new one."
       }
     },
     "required": [
@@ -34121,10 +35457,14 @@
         "$ref": "#/components/schemas/CollectionStatus"
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "name": {
         "type": "string"
@@ -34310,10 +35650,14 @@
         "type": "string"
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
       }
     }
   },
@@ -34745,7 +36089,9 @@
       "overhead",
       "followup_after_answer",
       "approval_denied",
-      "circuit_breaker"
+      "circuit_breaker",
+      "no_visible_answer",
+      "answer_in_tool_preamble"
     ],
     "description": "Reason behind an evaluation severity."
   },
@@ -35737,6 +37083,12 @@
       "started_by": {
         "type": "string",
         "description": "Principal ref of the user who initiated the run (for server-to-server forwarding)"
+      },
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Client-chosen key, unique per intended run, that makes this request safe to retry. A repeat of the request with the same key and the same body returns the agent run the first request started instead of starting another. Reusing a key with a different body is rejected with 409, and a repeat that arrives while the first request is still starting the run may be answered with 503 and `Retry-After`. Keys are scoped to the project and stay bound to their run for as long as it exists; once the run is deleted, the same key starts a new one."
       }
     },
     "required": [
@@ -36403,10 +37755,14 @@
       },
       "limit": {
         "type": "number",
+        "minimum": 0,
+        "multipleOf": 1,
         "description": "Maximum number of results (default: 50)"
       },
       "offset": {
         "type": "number",
+        "minimum": 0,
+        "multipleOf": 1,
         "description": "Offset for pagination"
       },
       "cursor": {
@@ -37139,6 +38495,14 @@
           "toolUseCount": {
             "type": "number"
           },
+          "finishReason": {
+            "type": "string"
+          },
+          "outputTextChars": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "callType": {
             "type": "string",
             "enum": [
@@ -37598,6 +38962,16 @@
             "maximum": 9007199254740991
           },
           "stallTrips": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "answerChars": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "finalToolCallTextChars": {
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
@@ -40815,6 +42189,172 @@
     "additionalProperties": false,
     "description": "Payload for updating a dashboard."
   },
+  "ExportDashboardPayload": {
+    "type": "object",
+    "properties": {
+      "parameter_values": {
+        "$ref": "#/components/schemas/StringValueMap",
+        "description": "Values for the dashboard's SQL {{param}} placeholders, overriding its saved defaults."
+      },
+      "format": {
+        "type": "string",
+        "enum": [
+          "png"
+        ],
+        "description": "Image format. Only PNG is supported."
+      },
+      "scale": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 4,
+        "description": "Render scale factor for higher resolution images (default: 1, maximum: 4)."
+      },
+      "background_color": {
+        "type": "string",
+        "maxLength": 64,
+        "description": "CSS background color of the image (default: '#ffffff')."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Options for exporting a saved dashboard as an image."
+  },
+  "ExportDashboardPreviewPayload": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "SQL query that returns all data for the dashboard."
+      },
+      "queryLimit": {
+        "type": "number",
+        "description": "Maximum rows to return from the query (default: 10000)"
+      },
+      "queryParameters": {
+        "$ref": "#/components/schemas/StringValueMap",
+        "description": "Values for SQL {{param}} placeholders"
+      },
+      "spec": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Complete Vega-Lite specification (use vconcat/hconcat for multiple panels)"
+      },
+      "format": {
+        "type": "string",
+        "enum": [
+          "png"
+        ],
+        "description": "Image format. Only PNG is supported."
+      },
+      "scale": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 4,
+        "description": "Render scale factor for higher resolution images (default: 1, maximum: 4)."
+      },
+      "background_color": {
+        "type": "string",
+        "maxLength": 64,
+        "description": "CSS background color of the image (default: '#ffffff')."
+      }
+    },
+    "required": [
+      "query",
+      "spec"
+    ],
+    "additionalProperties": false,
+    "description": "An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image."
+  },
+  "DashboardExportStatus": {
+    "type": "string",
+    "enum": [
+      "running",
+      "completed",
+      "failed"
+    ],
+    "description": "Status of a dashboard export."
+  },
+  "DashboardExportError": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "Why the export failed: `spec_invalid`, `query_invalid`, `parameter_invalid`, `not_renderable`, `data_access_denied` and `data_not_found` describe the dashboard or its data; `export_failed` means the export could not complete. More codes may be added."
+      },
+      "message": {
+        "type": "string",
+        "description": "What went wrong."
+      },
+      "retryable": {
+        "type": "boolean",
+        "description": "Whether starting the same export again may succeed. False when the dashboard, its query or its parameters must change first."
+      }
+    },
+    "required": [
+      "code",
+      "message",
+      "retryable"
+    ],
+    "additionalProperties": false,
+    "description": "Why a dashboard export failed."
+  },
+  "DashboardExport": {
+    "type": "object",
+    "properties": {
+      "export_id": {
+        "type": "string",
+        "description": "Identifier of this export. Every export creates a new image."
+      },
+      "status": {
+        "$ref": "#/components/schemas/DashboardExportStatus"
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the export was started."
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the export completed or failed."
+      },
+      "url": {
+        "type": "string",
+        "description": "Signed URL to download the image, set when the export is `completed`. It expires at `expires_at`; fetch the export again for a new one."
+      },
+      "content_type": {
+        "type": "string",
+        "description": "Media type of the image."
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the download URL expires."
+      },
+      "width": {
+        "type": "number",
+        "description": "Image width in pixels."
+      },
+      "height": {
+        "type": "number",
+        "description": "Image height in pixels."
+      },
+      "row_count": {
+        "type": "number",
+        "description": "Number of rows the query returned."
+      },
+      "error": {
+        "$ref": "#/components/schemas/DashboardExportError",
+        "description": "Why the export failed, set when it is `failed`."
+      }
+    },
+    "required": [
+      "export_id",
+      "status",
+      "started_at"
+    ],
+    "additionalProperties": false,
+    "description": "A dashboard export. Starting an export returns it `running`; poll it until it is `completed`, with a signed download URL, or `failed`, with the reason."
+  },
   "QueryValidationError": {
     "type": "object",
     "properties": {
@@ -41492,7 +43032,10 @@
     "properties": {
       "name": {
         "type": "string",
-        "description": "Store name (unique within project)"
+        "minLength": 1,
+        "maxLength": 128,
+        "pattern": "^[^\\x00-\\x20\\x7f-\\x9f/\\\\.](?:[^\\x00-\\x1f\\x7f-\\x9f/\\\\]*[^\\x00-\\x20\\x7f-\\x9f/\\\\])?$",
+        "description": "Store name (unique within project). 1 to 128 characters; must not contain `/`, `\\` or control characters, start with a dot, or start or end with a space."
       },
       "description": {
         "type": "string",
@@ -41660,6 +43203,41 @@
           "op",
           "column",
           "updates"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "add_foreign_key"
+          },
+          "foreign_key": {
+            "$ref": "#/components/schemas/DataForeignKey"
+          }
+        },
+        "required": [
+          "op",
+          "foreign_key"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": "string",
+            "const": "drop_foreign_key"
+          },
+          "column": {
+            "type": "string",
+            "description": "Column whose foreign key is removed"
+          }
+        },
+        "required": [
+          "op",
+          "column"
         ],
         "additionalProperties": false
       }
@@ -44264,6 +45842,11 @@
       },
       "bulk_concurrency": {
         "type": "number"
+      },
+      "modified_since": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When set, reindex only documents whose updated_at is at or after this RFC3339/ISO-8601 datetime. Writes in-place into the live index (no new versioned target, no alias swap). Omit for a full reindex into a fresh versioned target."
       }
     },
     "additionalProperties": false
@@ -44332,7 +45915,7 @@
     "properties": {
       "recreate_index": {
         "type": "boolean",
-        "description": "Drop any existing agent-runs index/alias family and recreate the stable concrete index before indexing. Defaults to true."
+        "description": "Rebuild into a new index and switch searches to it once it is filled, so searches keep working during the rebuild; when false, index into the current index in place. Defaults to true."
       },
       "batch_size": {
         "type": "number",

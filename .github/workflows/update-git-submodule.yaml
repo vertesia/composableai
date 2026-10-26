@@ -82,7 +82,7 @@ jobs:
 
       - name: Generate authenticated checkout token
         id: checkout-app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
           private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
@@ -122,9 +122,11 @@ jobs:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: pnpm-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          # Older release refs predate .node-version; preserve their Node 24 setup.
+          node-version: ${{ hashFiles('.node-version') == '' && '24' || '' }}
+          node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
 
       - name: Check if submodule update is needed
         id: precheck
@@ -277,7 +279,7 @@ jobs:
       - name: Generate composableai write token
         id: sync-app-token
         if: ${{ steps.precheck.outputs.skip != 'true' }}
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
           private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}
@@ -404,7 +406,7 @@ jobs:
       - name: Generate Studio dispatch token
         id: studio-dispatch-token
         if: ${{ steps.precheck.outputs.skip != 'true' && steps.update-submodule.outputs.author_login }}
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ vars.APP_VERTESIA_SUBMODULE_SYNC_CLIENT_ID }}
           private-key: ${{ secrets.APP_VERTESIA_SUBMODULE_SYNC_PEM }}

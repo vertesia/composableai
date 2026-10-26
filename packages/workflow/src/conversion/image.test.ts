@@ -93,6 +93,32 @@ describe('ImageMagick image resizing', () => {
 
         // Check format (JPEG)
         expect(imageFormat.toLowerCase()).to.equal('jpeg');
+        fs.rmSync(resizedImagePath);
+    });
+
+    test('should create the output file readable by its owner only', async () => {
+        const inputImagePath = path.join(__dirname, '../../fixtures', 'cat-picture.jpg');
+
+        const output = await imageResizer(inputImagePath, 64, 'png');
+
+        expect(fs.statSync(output).mode & 0o777).toBe(0o600);
+        fs.rmSync(output);
+    });
+
+    test('should leave no descriptor open on the returned output file', async () => {
+        const inputImagePath = path.join(__dirname, '../../fixtures', 'cat-picture.jpg');
+        // /dev/fd lists this process's open descriptors on both Linux and macOS.
+        const before = fs.readdirSync('/dev/fd').length;
+
+        const outputs: string[] = [];
+        for (let i = 0; i < 5; i++) {
+            outputs.push(await imageResizer(inputImagePath, 64, 'png'));
+        }
+
+        expect(fs.readdirSync('/dev/fd').length).toBe(before);
+        for (const output of outputs) {
+            fs.rmSync(output);
+        }
     });
 
     test('should throw an error for non-existent input file', async () => {

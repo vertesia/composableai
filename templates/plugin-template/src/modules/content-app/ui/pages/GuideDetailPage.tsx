@@ -38,14 +38,19 @@ export function GuideDetailPage() {
         setIsSummarizing(true);
         setError(undefined);
         try {
-            const result = await client.interactions.executeByName<GuideSummaryResult>(GUIDE_SUMMARIZER_INTERACTION, {
-                data: {
-                    guide_title: guide.properties.title,
-                    body: guide.properties.body,
-                    location: guide.properties.location_slug,
-                    audience: guide.properties.audience,
+            const result = await client.interactions.executeByName<GuideSummaryResult>(
+                GUIDE_SUMMARIZER_INTERACTION,
+                {
+                    data: {
+                        guide_title: guide.properties.title,
+                        body: guide.properties.body,
+                        location: guide.properties.location_slug,
+                        audience: guide.properties.audience,
+                    },
                 },
-            });
+                undefined,
+                { query: { include_prompt: false } },
+            );
             setSummary(result.result.object<GuideSummaryResult>());
         } catch (err: unknown) {
             setError(err instanceof Error ? err.message : String(err));

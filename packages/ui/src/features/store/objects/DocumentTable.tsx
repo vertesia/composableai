@@ -290,15 +290,6 @@ function ObjectTableWithDropZone({
                     setFiles([]);
                     setProcessedFiles(null);
                     setTypeSelectionOpen(false);
-
-                    // Complete the upload process with type ID if successful
-                    if (result?.success && result.objectIds.length > 0) {
-                        // We don't have type information here, so pass null (process completed)
-                        onDoUpload(null);
-                    } else {
-                        // Cancel the upload
-                        onDoUpload(undefined);
-                    }
                 }}
             />
         </div>

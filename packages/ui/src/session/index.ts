@@ -8,7 +8,7 @@ export {
     redirectToCentralAuth,
 } from './auth/domainRouting';
 export * from './auth/firebase';
-export { isAppOAuthLoginPending, startAppOAuthLogin } from './auth/oauth';
+export { isAppOAuthLoginPending, revokeAppOAuthSession, startAppOAuthLogin } from './auth/oauth';
 export * from './auth/useAuthState';
 export * from './auth/useCurrentTenant';
 export * from './DevSessionProvider';

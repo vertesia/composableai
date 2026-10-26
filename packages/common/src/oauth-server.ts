@@ -44,6 +44,8 @@ export type CreateOAuthClientPayload = Wire.CreateOAuthClientPayload;
 
 export type UpdateOAuthClientPayload = Wire.UpdateOAuthClientPayload;
 
+export type UpdateOAuthClientStatusPayload = Wire.UpdateOAuthClientStatusPayload;
+
 export type OAuthAuthorizationServerMetadata = Wire.OAuthAuthorizationServerMetadata;
 export type OAuthClientDisplayMetadata = Wire.OAuthClientDisplayMetadata;
 export type OAuthAuthorizeQuery = Wire.OAuthAuthorizeQuery;
@@ -62,3 +64,13 @@ export type OAuthLoginPayload = Wire.OAuthLoginPayload;
 export type OAuthLoginDecisionResponse = Wire.OAuthLoginDecisionResponse;
 
 export type OAuthLoginUserNotFoundResponse = Wire.OAuthLoginUserNotFoundResponse;
+
+export type OidcFederationConnectionPayload = Wire.OidcFederationConnectionPayload;
+
+export type OidcFederationConnection = Wire.OidcFederationConnection;
+
+export type OidcFederationConnectionArray = Wire.OidcFederationConnectionArray;
+
+export type OAuthTokenExchangeRequest = Wire.OAuthTokenExchangeRequest;
+
+export type OAuthTokenExchangeResponse = Wire.OAuthTokenExchangeResponse;

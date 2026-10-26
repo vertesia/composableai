@@ -18,6 +18,7 @@ import OAuthClientsApi from './OAuthClientsApi.js';
 import OAuthGrantsApi from './OAuthGrantsApi.js';
 import OAuthProvidersApi from './OAuthProvidersApi.js';
 import OAuthServerApi from './OAuthServerApi.js';
+import OidcFederationApi from './OidcFederationApi.js';
 import ProjectsApi from './ProjectsApi.js';
 import PromptsApi from './PromptsApi.js';
 import QuotaApi from './QuotaApi.js';
@@ -120,6 +121,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      */
     tokenServerUrl: string;
 
+    oidcFederation: OidcFederationApi;
     oauthClients: OAuthClientsApi;
     oauthGrants: OAuthGrantsApi;
     oauthServer: OAuthServerApi;
@@ -251,6 +253,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;
+        this.oidcFederation = new OidcFederationApi(this);
         this.oauthClients = new OAuthClientsApi(this);
         this.oauthGrants = new OAuthGrantsApi(this);
         this.oauthServer = new OAuthServerApi(this, this.tokenServerUrl);

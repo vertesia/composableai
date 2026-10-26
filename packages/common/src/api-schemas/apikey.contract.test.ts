@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
     type ApiKey,
     type ApiKeyArray,
-    type ApiKeyReadResponse,
     ApiKeyTypes,
     type ApiKeyWithValue,
     type CreateApiKeyPayload,
@@ -61,17 +60,14 @@ describe('gate 1 — the schema is the single source of truth for the public API
         expect(true).toBe(true);
     });
 
-    it('keeps the secret off the base type and derives the two shapes that carry it', () => {
+    it('keeps the secret off the base type and derives the one shape that carries it', () => {
         // `value` is absent from `ApiKey` entirely, so a handler cannot leak a secret by returning
         // the wrong shape — it has to name a component that declares one.
         assertType<Equals<Extract<keyof ApiKey, 'value'>, never>>(true);
-        // Creation always returns the secret; the single-key read returns it only when asked for it
-        // AND permitted, which is why the two cannot share a component.
+        // Creation is the only response that returns the secret.
         assertType<Equals<ApiKeyWithValue['value'], string>>(true);
-        assertType<Equals<ApiKeyReadResponse['value'], string | undefined>>(true);
         // Everything else is inherited rather than restated.
         assertType<Equals<ApiKeyWithValue['project'], ApiKey['project']>>(true);
-        assertType<Equals<ApiKeyReadResponse['role'], ApiKey['role']>>(true);
         expect(true).toBe(true);
     });
 
@@ -132,7 +128,6 @@ describe('gate 2 — the published components match the closure the types come f
         expect(Object.keys(ApiSchemaComponents.ApiKey.properties as JsonObject)).not.toContain('value');
         expect(ApiSchemaComponents.ApiKey.additionalProperties).toBe(false);
         expect((ApiSchemaComponents.ApiKeyWithValue.required as string[]) ?? []).toContain('value');
-        expect((ApiSchemaComponents.ApiKeyReadResponse.required as string[]) ?? []).not.toContain('value');
     });
 
     it('publishes ProjectRef closed, with the documentation the list endpoints rely on', () => {
@@ -156,8 +151,6 @@ describe('gate 3 — AJV validates the same canonical objects that are published
         // the boundary rather than shipping the secret.
         expect(compile('ApiKey')({ ...VALID_KEY, value: 'sk-live-abcdef' })).toBe(false);
         expect(compile('ApiKeyWithValue')({ ...VALID_KEY, value: 'sk-live-abcdef' })).toBe(true);
-        expect(compile('ApiKeyReadResponse')({ ...VALID_KEY, value: 'sk-live-abcdef' })).toBe(true);
-        expect(compile('ApiKeyReadResponse')(VALID_KEY)).toBe(true);
         // ...and one that omits it where it is promised.
         expect(compile('ApiKeyWithValue')(VALID_KEY)).toBe(false);
     });
@@ -222,12 +215,10 @@ describe('gate 3 — AJV validates the same canonical objects that are published
         expect(validate({ rogue_field: 1 })).toBe(false);
     });
 
-    it('validates the two query components the scanner expands into parameters', () => {
+    it('validates the query component the scanner expands into parameters', () => {
         expect(compile('ApiKeyListQuery')({ level: 'project' })).toBe(true);
         expect(compile('ApiKeyListQuery')({})).toBe(true);
         expect(compile('ApiKeyListQuery')({ level: 'organization' })).toBe(false);
-        expect(compile('ApiKeyReadQuery')({ withValue: true })).toBe(true);
-        expect(compile('ApiKeyReadQuery')({ withValue: 'yes' })).toBe(false);
     });
 });
 

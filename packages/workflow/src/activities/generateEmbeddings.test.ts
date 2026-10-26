@@ -130,4 +130,40 @@ describe('generateEmbeddings', () => {
         expect(client.environments.embeddings).not.toHaveBeenCalled();
         expect(client.objects.setEmbedding).not.toHaveBeenCalled();
     });
+
+    it('should skip embeddings when the provider rejects the environment (424) instead of retrying', async () => {
+        const document = {
+            id: 'rejected-environment-object',
+            properties: { title: 'Rejected environment' },
+        } satisfies Partial<ContentObject>;
+        const { client, payload } = await setupPropertiesEmbedding(document);
+        const rejection = Object.assign(
+            new Error('Error generating embeddings: [bedrock] InvalidIdentityTokenException'),
+            {
+                status: 424,
+            },
+        );
+        vi.mocked(client.environments.embeddings).mockRejectedValueOnce(rejection);
+
+        const result = await testEnv.run(generateEmbeddings, payload);
+
+        expect(result).toMatchObject({
+            id: document.id,
+            status: 'skipped',
+            message: expect.stringContaining('InvalidIdentityTokenException'),
+        });
+        expect(client.objects.setEmbedding).not.toHaveBeenCalled();
+    });
+
+    it('should still fail on a server error so the activity retries', async () => {
+        const document = {
+            id: 'server-error-object',
+            properties: { title: 'Server error' },
+        } satisfies Partial<ContentObject>;
+        const { client, payload } = await setupPropertiesEmbedding(document);
+        const serverError = Object.assign(new Error('Internal Server Error'), { status: 500 });
+        vi.mocked(client.environments.embeddings).mockRejectedValueOnce(serverError);
+
+        await expect(testEnv.run(generateEmbeddings, payload)).rejects.toThrow('Internal Server Error');
+    });
 });

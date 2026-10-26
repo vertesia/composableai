@@ -136,6 +136,8 @@ export type ContentObjectUserPermissions = Wire.ContentObjectUserPermissions;
 
 export type ContentObjectTextResponse = Wire.ContentObjectTextResponse;
 
+export type SetObjectTextPayload = Wire.SetObjectTextPayload;
+
 export type DeleteContentObjectResult = Wire.DeleteContentObjectResult;
 
 export type SetObjectEmbeddingsResponse = Wire.SetObjectEmbeddingsResponse;

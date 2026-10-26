@@ -52,6 +52,26 @@ function isEnvironmentNotFound(error: unknown): boolean {
     return /environment not found/i.test(message);
 }
 
+/**
+ * `424 Failed Dependency` from the embeddings API: the provider refused the environment's credentials,
+ * permissions or model. Every retry fails the same way until the environment is fixed, so intake skips
+ * the embeddings instead of repeating the call for the whole activity retry budget.
+ */
+const PROVIDER_REJECTED_STATUS = 424;
+
+function isProviderRejection(error: unknown): boolean {
+    return (error as { status?: unknown } | null)?.status === PROVIDER_REJECTED_STATUS;
+}
+
+/** Log a failed embeddings call; a provider rejection is the environment's configuration, not an outage. */
+function logEmbeddingsError(message: string, error: unknown): void {
+    if (isProviderRejection(error)) {
+        log.warn(message, { error });
+    } else {
+        log.error(message, { error });
+    }
+}
+
 export async function generateEmbeddings(payload: DSLActivityExecutionPayload<GenerateEmbeddingsParams>) {
     const { params, client, objectId, fetchProject } = await setupActivity<GenerateEmbeddingsParams>(payload);
     const { force, type } = params;
@@ -131,6 +151,10 @@ export async function generateEmbeddings(payload: DSLActivityExecutionPayload<Ge
         // (and avoid the long LLM-activity retry storm a throw would trigger).
         if (isEnvironmentNotFound(error)) {
             return skipped(`embedding environment unavailable for type ${type}`);
+        }
+        if (isProviderRejection(error)) {
+            const reason = error instanceof Error ? error.message : String(error);
+            return skipped(`embedding provider rejected the environment for type ${type}: ${reason}`);
         }
         throw error;
     }
@@ -311,8 +335,8 @@ async function generateImageEmbeddings({ document, client, type, config, force }
                 },
             ],
         })
-        .catch((e) => {
-            log.error('Error generating embeddings for image', { error: e });
+        .catch((e: unknown) => {
+            logEmbeddingsError('Error generating embeddings for image', e);
             throw e;
         });
 
@@ -355,8 +379,8 @@ async function generateEmbeddingsFromStudio(
             embedding_type: type,
             inputs: [{ type: 'text', text }],
         })
-        .catch((e) => {
-            log.error('Error generating embeddings for text', { error: e });
+        .catch((e: unknown) => {
+            logEmbeddingsError('Error generating embeddings for text', e);
             throw e;
         });
 }

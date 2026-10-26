@@ -18,6 +18,7 @@ import {
 import {
     AgentEvaluateRequestSchema,
     AgentResourceReferenceSchema,
+    AgentRunIdempotencyKeySchema,
     AgentSearchScopeSchema,
     AgentToolApprovalModeSchema,
     ConversationEnrichmentFields,
@@ -36,7 +37,7 @@ import {
     RecordProcessRunPayloadSchema,
 } from './process.js';
 import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
-import { nullableStringSchema } from './schema-primitives.js';
+import { nullableStringSchema, PageCountSchema } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema } from './store.js';
 
 // ----------------------------------------------------------------------------
@@ -66,6 +67,8 @@ export const TurnEvaluationFlagSchema = z
         'followup_after_answer',
         'approval_denied',
         'circuit_breaker',
+        'no_visible_answer',
+        'answer_in_tool_preamble',
     ])
     .meta({ id: 'TurnEvaluationFlag', description: 'Reason behind an evaluation severity.' });
 
@@ -348,6 +351,8 @@ const LlmCallEventSchema = z.strictObject({
     success: z.boolean(),
     streamingEnabled: z.boolean(),
     toolUseCount: z.number(),
+    finishReason: z.string().optional(),
+    outputTextChars: z.number().int().optional(),
     callType: z.enum(LlmCallType),
     attemptNumber: z.number().optional(),
     errorType: z.string().optional(),
@@ -434,6 +439,9 @@ const TurnEvaluationEventSchema = z.strictObject({
     /** Absent on events from producers that predate the stall counters; read as 0. */
     stallCorrectives: z.number().int().optional(),
     stallTrips: z.number().int().optional(),
+    /** Absent on events from producers that predate the answer counters. */
+    answerChars: z.number().int().optional(),
+    finalToolCallTextChars: z.number().int().optional(),
     followupAfterAnswer: z.boolean(),
     severity: EvaluationSeveritySchema,
     flags: z.array(TurnEvaluationFlagSchema),
@@ -1082,6 +1090,7 @@ export const CreateAgentRunPayloadSchema = z
             .string()
             .meta({ description: 'Principal ref of the user who initiated the run (for server-to-server forwarding)' })
             .optional(),
+        idempotency_key: AgentRunIdempotencyKeySchema.optional(),
     })
     .meta({ id: 'CreateAgentRunPayload', description: 'Payload to create and start a new agent run.' });
 
@@ -1431,8 +1440,8 @@ export const ListAgentRunsQuerySchema = z
             .string()
             .meta({ description: 'Only return runs started at or before this date', format: 'date-time' })
             .optional(),
-        limit: z.number().meta({ description: 'Maximum number of results (default: 50)' }).optional(),
-        offset: z.number().meta({ description: 'Offset for pagination' }).optional(),
+        limit: PageCountSchema.meta({ description: 'Maximum number of results (default: 50)' }).optional(),
+        offset: PageCountSchema.meta({ description: 'Offset for pagination' }).optional(),
         cursor: z.string().meta({ description: 'Cursor for stable pagination' }).optional(),
         schedule_id: z.string().meta({ description: 'Filter by schedule ID' }).optional(),
         type: AgentRunTypeSchema.meta({ description: 'Filter by run type' }).optional(),

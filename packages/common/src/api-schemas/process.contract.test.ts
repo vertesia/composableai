@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ProcessBudgetStateSchema, ProcessRunConfigSchema, RecordProcessRunPayloadSchema } from './process.js';
+import {
+    ProcessBudgetStateSchema,
+    ProcessRunConfigSchema,
+    PublishProcessDefinitionPayloadSchema,
+    RecordProcessRunPayloadSchema,
+    StartProcessTestRunPayloadSchema,
+    SubmitProcessTestRunPayloadSchema,
+} from './process.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 
 describe('ProcessRunConfigSchema', () => {
@@ -138,5 +145,40 @@ describe('ProcessBudgetStateSchema', () => {
             unmeasured_calls: 1,
         };
         expect(ProcessBudgetStateSchema.parse(status)).toEqual(status);
+    });
+});
+
+describe('process idempotency_key', () => {
+    const scenario = {
+        id: 'noop',
+        name: 'Noop completes',
+        initial_context: {},
+        actors: [],
+        fixtures: [],
+        human_actions: [],
+        assertions: { status: 'completed' },
+        timeout_seconds: 60,
+    };
+    const payloads = [
+        ['StartProcessTestRunPayload', StartProcessTestRunPayloadSchema, { suite_id: 's', process_revision_id: 'r' }],
+        [
+            'SubmitProcessTestRunPayload',
+            SubmitProcessTestRunPayloadSchema,
+            { process: { id: 'sys:noop' }, scenarios: [scenario] },
+        ],
+        ['PublishProcessDefinitionPayload', PublishProcessDefinitionPayloadSchema, { confirmed: true }],
+    ] as const;
+
+    it.each(payloads)('%s accepts keys of 1 to 256 characters', (_name, schema, base) => {
+        for (const key of ['k', 'k'.repeat(256)]) {
+            expect(schema.parse({ ...base, idempotency_key: key })).toMatchObject({ idempotency_key: key });
+        }
+        expect(schema.parse(base)).not.toHaveProperty('idempotency_key');
+    });
+
+    it.each(payloads)('%s rejects an empty or 257-character key', (_name, schema, base) => {
+        for (const key of ['', 'k'.repeat(257)]) {
+            expect(schema.safeParse({ ...base, idempotency_key: key }).success).toBe(false);
+        }
     });
 });

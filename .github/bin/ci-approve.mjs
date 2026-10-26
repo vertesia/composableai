@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { main as verifyCi } from './automerge-ci.mjs';
 
@@ -21,6 +21,17 @@ export function ownsReview(review) {
         review.body?.startsWith(`${MARKER}\n`) &&
         review.state === 'APPROVED'
     );
+}
+
+export function approvalBody(sha) {
+    return `${MARKER}\nApproved after lint, build, and selected tests passed for ${sha}.`;
+}
+
+// GitHub moves an undismissed review's commit_id forward when the PR head changes, so commit_id can
+// name a commit this gate never tested. The body this gate wrote is the only record of the tested
+// commit; a review without one is never current.
+export function approvedSha(review) {
+    return /^Approved after lint, build, and selected tests passed for ([0-9a-f]{40})\.$/m.exec(review.body ?? '')?.[1];
 }
 
 export function requiresHuman(pr) {
@@ -58,6 +69,33 @@ export async function evaluate(api, pr, ci) {
     };
 }
 
+// Specialized automerge workflows merge only after this gate has published success, so the gate
+// starts them instead of letting both race on the same CI completion. Head-branch prefixes map to
+// repository-local workflows in ci-approve-handoffs.json; repositories without it hand off nothing.
+export function handoffFor(pr, handoffs = {}) {
+    const workflow = Object.entries(handoffs).find(([prefix]) => pr.head.ref.startsWith(prefix))?.[1];
+    if (!workflow) return undefined;
+    const eventType = {
+        'renovate-automerge.yaml': 'ci-approved-renovate',
+        'backport-automerge.yaml': 'ci-approved-backport',
+        'release-automerge.yaml': 'ci-approved-release',
+        'automerge-composableai.yaml': 'ci-approved-composableai',
+        'automerge-llumiverse.yaml': 'ci-approved-llumiverse',
+    }[workflow];
+    if (!eventType) throw new Error(`Unsupported automerge hand-off workflow: ${workflow}`);
+    return {
+        workflow,
+        eventType,
+        inputs: {
+            pr_number: String(pr.number),
+            head_branch: pr.head.ref,
+            head_sha: pr.head.sha,
+            base_ref: pr.base.ref,
+            base_sha: pr.base.sha,
+        },
+    };
+}
+
 function sameRevision(a, b) {
     return a.head.sha === b.head.sha && a.base.sha === b.base.sha && a.base.ref === b.base.ref;
 }
@@ -88,7 +126,12 @@ export async function waitForCiToSettle(
     }
 }
 
-export async function reconcile(api, number, ci, { pushed = false, settle = false, settleOptions, branch } = {}) {
+export async function reconcile(
+    api,
+    number,
+    ci,
+    { pushed = false, settle = false, settleOptions, branch, handoffs } = {},
+) {
     // Without a current PR head, fail with the original API error before attempting writes.
     let pr = await api.pr(number);
     if (branch && pr.head.ref !== branch) {
@@ -98,9 +141,9 @@ export async function reconcile(api, number, ci, { pushed = false, settle = fals
     let standing = [];
     async function withdraw(reason, all = true) {
         for (const review of standing) {
-            if (all || review.commit_id !== pr.head.sha) await api.dismiss(number, review.id, reason);
+            if (all || approvedSha(review) !== pr.head.sha) await api.dismiss(number, review.id, reason);
         }
-        standing = all ? [] : standing.filter((review) => review.commit_id === pr.head.sha);
+        standing = all ? [] : standing.filter((review) => approvedSha(review) === pr.head.sha);
     }
     try {
         standing = (await api.reviews(number)).filter(ownsReview);
@@ -150,12 +193,7 @@ export async function reconcile(api, number, ci, { pushed = false, settle = fals
             }
         }
         if (result.approve && standing.length === 0) {
-            const review = await submitApproval(
-                api,
-                number,
-                pr.head.sha,
-                `${MARKER}\nApproved after lint, build, and selected tests passed for ${pr.head.sha}.`,
-            );
+            const review = await submitApproval(api, number, pr.head.sha, approvalBody(pr.head.sha));
             if (!ownsReview(review)) throw new Error('Unexpected approval identity or response');
             standing.push(review);
             if (review.commit_id !== pr.head.sha) throw new Error('Approval commit does not match the tested head');
@@ -174,7 +212,9 @@ export async function reconcile(api, number, ci, { pushed = false, settle = fals
             }
         }
         if (pr.head.repo?.full_name === api.repo) await api.status(pr.head.sha, result.state, result.reason);
-        return result;
+        // Hand off only once the successful status for this exact revision is published.
+        const handoff = result.state === 'success' ? handoffFor(pr, handoffs) : undefined;
+        return handoff ? { ...result, handoff } : result;
     } catch (error) {
         // Best-effort cleanup: status/review writes can also fail during an API outage.
         try {
@@ -249,8 +289,17 @@ export function githubApi(env, call = execFileSync, sleep = sleepSync) {
     const repo = env.GITHUB_REPOSITORY;
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo ?? '')) throw new Error('Invalid GITHUB_REPOSITORY');
     const owner = repo.split('/')[0];
-    const request = (endpoint, { method = 'GET', body, membership = false, review = false, pages = false } = {}) => {
-        const token = membership ? env.GH_MEMBERS_TOKEN : review ? env.GH_REVIEW_TOKEN : env.GH_TOKEN;
+    const request = (
+        endpoint,
+        { method = 'GET', body, handoff = false, membership = false, review = false, pages = false } = {},
+    ) => {
+        const token = handoff
+            ? env.GH_HANDOFF_TOKEN
+            : membership
+              ? env.GH_MEMBERS_TOKEN
+              : review
+                ? env.GH_REVIEW_TOKEN
+                : env.GH_TOKEN;
         if (!token) throw new Error('Missing GitHub token');
         const args = ['api', endpoint, '--method', method];
         if (pages) args.push('--paginate', '--slurp');
@@ -308,6 +357,14 @@ export function githubApi(env, call = execFileSync, sleep = sleepSync) {
                 review: true,
                 body: { message },
             }),
+        dispatch(eventType, payload) {
+            if (!/^ci-approved-[a-z0-9-]+$/.test(eventType)) throw new Error('Invalid automerge hand-off event');
+            return request(`repos/${repo}/dispatches`, {
+                method: 'POST',
+                handoff: true,
+                body: { event_type: eventType, client_payload: payload },
+            });
+        },
         approve: (number, sha, body) =>
             request(`repos/${repo}/pulls/${number}/reviews`, {
                 method: 'POST',
@@ -334,8 +391,8 @@ export function githubApi(env, call = execFileSync, sleep = sleepSync) {
 
 export async function targets(api, event, eventName, branch) {
     if (event.pull_request) return [event.pull_request.number];
-    if (eventName === 'workflow_dispatch' && event.inputs?.pr_number) {
-        const number = Number(event.inputs.pr_number);
+    if (eventName === 'repository_dispatch' && event.client_payload?.pr_number) {
+        const number = Number(event.client_payload.pr_number);
         if (!Number.isSafeInteger(number) || number <= 0) throw new Error('Invalid PR number');
         return [number];
     }
@@ -365,6 +422,11 @@ export async function targetBranches(api, event, eventName) {
     return [...new Set(branches)];
 }
 
+export async function handOff(api, { workflow, eventType, inputs }) {
+    await api.dispatch(eventType, inputs);
+    console.log(`PR #${inputs.pr_number}: started ${workflow} for ${inputs.head_sha}.`);
+}
+
 export function verifyPrCi(api, pr, workflows) {
     if (!pr.base?.sha || !pr.base?.ref) throw new Error('Missing PR base revision');
     return verifyCi(
@@ -391,6 +453,8 @@ export async function main(env, { discover = false } = {}) {
     }
     const policy = JSON.parse(readFileSync(new URL('./automerge-ci-policy.json', import.meta.url), 'utf8'));
     const ci = (pr) => verifyPrCi(api, pr, Object.keys(policy));
+    const handoffsUrl = new URL('./ci-approve-handoffs.json', import.meta.url);
+    const handoffs = existsSync(handoffsUrl) ? JSON.parse(readFileSync(handoffsUrl, 'utf8')) : {};
     const errors = [];
     for (const number of await targets(api, event, env.GITHUB_EVENT_NAME, env.CI_APPROVAL_BRANCH)) {
         try {
@@ -398,10 +462,13 @@ export async function main(env, { discover = false } = {}) {
                 pushed: env.GITHUB_EVENT_NAME === 'pull_request_target' && event.action === 'synchronize',
                 settle: env.GITHUB_EVENT_NAME === 'workflow_run',
                 branch: env.CI_APPROVAL_BRANCH,
+                handoffs,
             });
             const summary = `PR #${number}: ${result.reason}`;
             console.log(summary);
             if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `${summary}\n\n`);
+            // A failed hand-off fails this job without touching the published status or approval.
+            if (result.handoff) await handOff(api, result.handoff);
         } catch (error) {
             errors.push(new Error(`PR #${number}: ${error.message}`, { cause: error }));
         }

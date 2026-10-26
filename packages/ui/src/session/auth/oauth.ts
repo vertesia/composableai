@@ -6,6 +6,7 @@ import { markCentralAuthRoundTripStarted } from './authRoundTrip';
 import { verifyAuthState } from './authState';
 import { usesGatewaySession } from './gateway';
 import { isStsTokenIssuer } from './tokenIssuer';
+import { isLoopbackHostname } from './vertesiaHosts';
 
 const TRANSACTION_KEY = 'vertesia.oauth.transaction';
 const TOKEN_KEY = 'vertesia.oauth.access';
@@ -13,7 +14,14 @@ const MAX_TRANSACTION_AGE = 10 * 60_000;
 let pending: Promise<string> | undefined;
 // Long-lived credentials never enter browser storage. A reload resumes via the broker when access expires.
 let refreshSession:
-    | { token: string; clientId: string; issuer: string; tokenEndpoint: string; revocationEndpoint?: string }
+    | {
+          token: string;
+          clientId: string;
+          issuer: string;
+          resource?: string;
+          tokenEndpoint: string;
+          revocationEndpoint?: string;
+      }
     | undefined;
 
 export class OAuthLoginError extends Error {}
@@ -48,9 +56,13 @@ function base64url(bytes: Uint8Array): string {
 function randomValue(): string {
     return base64url(crypto.getRandomValues(new Uint8Array(32)));
 }
-function httpsUrl(value: string): URL {
+/** Validate a public protocol endpoint URL. The returned URL is routing metadata, not a credential. */
+function validatedEndpointUrl(value: string): URL {
     const url = new URL(value);
-    if (url.protocol !== 'https:' || url.username || url.password) throw new Error('OAuth endpoint must use HTTPS');
+    const localHttp = Env.isLocalDev && url.protocol === 'http:' && isLoopbackHostname(url.hostname);
+    if ((url.protocol !== 'https:' && !localHttp) || url.username || url.password) {
+        throw new Error('OAuth endpoint must use HTTPS or local-development loopback HTTP');
+    }
     return url;
 }
 
@@ -61,6 +73,7 @@ interface Transaction {
     clientId: string;
     redirectUri: string;
     issuer: string;
+    resource?: string;
     target: string;
     rememberedScope?: ScopeSelection;
     retryScope?: ScopeSelection;
@@ -89,7 +102,15 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     }
     const redirectUri = redirect.toString();
     if (new URL(redirectUri).origin !== window.location.origin) throw new Error('OAuth callback must be same-origin');
-    const issuer = Env.endpoints.sts.replace(/\/+$/, '');
+    const issuer = validatedEndpointUrl(config.issuer ?? Env.endpoints.sts)
+        .toString()
+        .replace(/\/+$/, '');
+    // A token is issued for one audience. The default audience follows the issuer, which is already part of every
+    // stored credential's identity; a configured one is recorded alongside it, so changing it never reuses a token,
+    // refresh session or login transaction issued for the previous audience.
+    const configuredResource = config.resource ? validatedEndpointUrl(config.resource).toString() : undefined;
+    const sameClient = (stored: { clientId: string; issuer: string; resource?: string }) =>
+        stored.clientId === clientId && stored.issuer === issuer && stored.resource === configuredResource;
     let current = new URL(window.location.href);
     let { accountId, projectId } = resolveAuthSelection(current);
     const callback = current.origin + current.pathname === new URL(redirectUri).origin + new URL(redirectUri).pathname;
@@ -105,9 +126,8 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         if (
             !transaction ||
             transaction.state !== state ||
-            transaction.clientId !== clientId ||
+            !sameClient(transaction) ||
             transaction.redirectUri !== redirectUri ||
-            transaction.issuer !== issuer ||
             Date.now() - transaction.created > MAX_TRANSACTION_AGE ||
             transaction.created > Date.now()
         ) {
@@ -133,25 +153,21 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 token: string;
                 clientId: string;
                 issuer: string;
+                resource?: string;
                 refreshToken?: string;
             };
             const claims = jwtDecode<AuthTokenPayload>(cached.token);
             if (
                 config.offlineAccess &&
-                cached.clientId === clientId &&
-                cached.issuer === issuer &&
+                sameClient(cached) &&
                 (!projectId || claims.project?.id === projectId) &&
                 (!accountId || claims.account?.id === accountId)
             )
-                refreshCredential =
-                    refreshSession?.clientId === clientId && refreshSession.issuer === issuer
-                        ? refreshSession.token
-                        : undefined;
+                refreshCredential = refreshSession && sameClient(refreshSession) ? refreshSession.token : undefined;
             // Discard credentials persisted by older SDK versions rather than loading them into the new session.
             if (cached.refreshToken) sessionStorage.removeItem(TOKEN_KEY);
             if (
-                cached.clientId === clientId &&
-                cached.issuer === issuer &&
+                sameClient(cached) &&
                 !forceRefresh &&
                 claims.exp > Date.now() / 1000 + (config.offlineAccess ? 300 : 30) &&
                 (!projectId || claims.project?.id === projectId) &&
@@ -161,7 +177,12 @@ async function acquireToken(forceRefresh = false): Promise<string> {
             }
         }
     }
-    const discovery = await fetch(`${issuer}/.well-known/oauth-authorization-server`);
+    const issuerUrl = new URL(issuer);
+    const discoveryUrl = new URL(
+        `/.well-known/oauth-authorization-server${issuerUrl.pathname.replace(/\/$/, '')}`,
+        issuerUrl.origin,
+    );
+    const discovery = await fetch(discoveryUrl);
     if (!discovery.ok) throw new Error(`OAuth discovery failed (${discovery.status})`);
     const metadata: {
         issuer: string;
@@ -170,11 +191,13 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         revocation_endpoint?: string;
     } = await discovery.json();
     if (metadata.issuer.replace(/\/+$/, '') !== issuer) throw new Error('OAuth issuer mismatch');
-    const authorize = httpsUrl(metadata.authorization_endpoint);
-    const tokenEndpoint = httpsUrl(metadata.token_endpoint);
+    const authorize = validatedEndpointUrl(metadata.authorization_endpoint);
+    const tokenEndpoint = validatedEndpointUrl(metadata.token_endpoint);
     const revocationEndpoint =
-        metadata.revocation_endpoint === undefined ? undefined : httpsUrl(metadata.revocation_endpoint).toString();
-    const resource = new URL(metadata.issuer).toString();
+        metadata.revocation_endpoint === undefined
+            ? undefined
+            : validatedEndpointUrl(metadata.revocation_endpoint).toString();
+    const resource = configuredResource ?? new URL(metadata.issuer).toString();
     if (refreshCredential) {
         try {
             const response = await fetch(tokenEndpoint, {
@@ -210,12 +233,14 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                         token: grant.access_token,
                         clientId,
                         issuer,
+                        resource: configuredResource,
                     }),
                 );
                 refreshSession = {
                     token: grant.refresh_token ?? refreshCredential,
                     clientId,
                     issuer,
+                    resource: configuredResource,
                     tokenEndpoint: tokenEndpoint.toString(),
                     revocationEndpoint,
                 };
@@ -257,6 +282,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 token: grant.access_token,
                 clientId,
                 issuer,
+                resource: configuredResource,
             }),
         );
         refreshSession =
@@ -265,6 +291,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                       token: grant.refresh_token,
                       clientId,
                       issuer,
+                      resource: configuredResource,
                       tokenEndpoint: tokenEndpoint.toString(),
                       revocationEndpoint,
                   }
@@ -281,7 +308,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     }
     let scopes = config.scopes ?? ['openid', 'profile'];
     if (clientId.startsWith('https://')) {
-        const documentResponse = await fetch(httpsUrl(clientId), { cache: 'no-store' });
+        const documentResponse = await fetch(validatedEndpointUrl(clientId), { cache: 'no-store' });
         if (!documentResponse.ok) throw new Error(`Application CIMD unavailable (${documentResponse.status})`);
         const document: { scope?: string; redirect_uris?: string[] } = await documentResponse.json();
         if (!document.redirect_uris?.includes(redirectUri))
@@ -302,6 +329,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         clientId,
         redirectUri,
         issuer,
+        resource: configuredResource,
         target: current.toString(),
         rememberedScope:
             accountId && explicitScope?.projectId === undefined && (!explicitScope?.accountId || projectId)
@@ -349,7 +377,7 @@ export async function revokeAppOAuthSession(): Promise<void> {
     const cached = refreshSession;
     clearAppOAuth();
     if (!cached) return;
-    const revoke = httpsUrl(cached.revocationEndpoint ?? cached.tokenEndpoint);
+    const revoke = validatedEndpointUrl(cached.revocationEndpoint ?? cached.tokenEndpoint);
     if (cached.revocationEndpoint === undefined) revoke.pathname = revoke.pathname.replace(/\/token$/, '/revoke');
     await fetch(revoke, {
         method: 'POST',

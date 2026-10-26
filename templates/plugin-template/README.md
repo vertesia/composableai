@@ -4,8 +4,20 @@ A unified template for building Vertesia plugins with a **Hono tool server** (ba
 
 ## Upgrading an existing app
 
-- [From 1.5 to 1.6: authentication, branding, and workspace defaults](docs/migrate-from-1.5.md)
+- [From 1.5 to 1.6: authentication, branding, workspace defaults, and (AppGen-hosted apps only) the sandboxed service runtime](docs/migrate-from-1.5.md)
 - [From 1.4 to 1.5: iframe hosting and configurable auth](docs/migrate-from-1.4.md)
+
+### AppGen compatibility metadata
+
+The `vertesia-appgen` field in `package.json` identifies the generated template and advertises
+versioned runtime features. Production builds copy it into the immutable app-version manifest, so
+App Builder can disable functionality that an older generated app cannot honor.
+
+- Increment the template `version` for a new generated-template migration.
+- Add or increment a `runtime_features` entry only when App Builder and the generated app share a
+  versioned runtime protocol.
+- Gate platform functionality on its runtime feature version, not only on the overall template
+  version, so apps can adopt migrations independently.
 
 ## What You Can Build
 
@@ -778,7 +790,7 @@ Set the client ID and callback in `.env.app.local`, then restart `pnpm dev`:
 VITE_OAUTH_CLIENT_ID=my-app-development
 VITE_OAUTH_REDIRECT_URI=https://localhost:5173/
 # Optional: otherwise src/app-permissions.ts supplies the requested scopes.
-# VITE_OAUTH_SCOPES=openid profile content:read offline_access
+# VITE_OAUTH_SCOPES=openid profile account:member content:read offline_access
 ```
 
 Register that callback with the client. The template's default Vite server uses HTTPS. If running
@@ -794,30 +806,56 @@ Explicit `VITE_AUTH_MODE=firebase` deployments retain their configured Firebase 
 
 #### Independently hosted apps
 
-Independent Vercel deployments publish `/.well-known/oauth-client/vertesia-app` through
-`api/oauth-client.js`. The standalone UI uses this CIMD with OAuth authorization code + PKCE,
-asks the user for consent, and returns to `/app`. There is no client secret or manual client
-registration. Keep the CIMD rewrite before the catch-all API rewrite in `vercel.json`.
-The metadata endpoint must be publicly reachable by the authorization server (Vercel deployment
-protection must not block it). Configure `APP_OAUTH_SCOPES` in Vercel with the space-separated
-permissions the app needs, plus `openid profile`; the default permits sign-in only. The user
-must hold and consent to each requested permission.
+Declare the standalone authentication mode in `.env.app` or your deployment environment:
+
+```dotenv
+VITE_AUTH_MODE=central
+# Or VITE_AUTH_MODE=firebase with all five VITE_FIREBASE_* settings.
+```
+
+For OAuth (`central`), declare exact callback URLs in the Vertesia app manifest:
+
+```json
+{ "oauth_client": { "redirect_uris": ["https://your-app.vercel.app/app"] } }
+```
+
+Install the app normally. Vertesia creates or reuses the account's public OAuth client automatically.
+For an already installed app, saving this declaration initializes its client in the current project.
+Copy the client ID displayed in the installed app's settings to `VITE_OAUTH_CLIENT_ID` in Vercel and rebuild.
+The installation enables that client;
+STS offers only projects where the app is installed and the user has UI access. The app's
+`oauth_scopes` declares its permissions; API permissions also require `account:member`.
+
+OAuth builds without a client ID show a configuration error instead of choosing CIMD automatically.
+Use a stable production or branch URL for callbacks; arbitrary Vercel version URLs need their own
+exact registered callbacks. There is no client secret: standalone OAuth uses authorization code + PKCE.
+
+Firebase (`VITE_AUTH_MODE=firebase`) remains supported on Vercel and other independent hosts.
+It uses the configured Firebase project and does not require an OAuth client registration.
+Gateway and embedded sessions retain precedence over standalone build configuration.
+
+The public metadata endpoint `api/oauth-client.ts` remains available for explicitly configured CIMD
+clients: use its full HTTPS URL as `VITE_OAUTH_CLIENT_ID` to opt in. It is never selected automatically.
+Its permissions come from `src/app-permissions.ts`, with `APP_OAUTH_SCOPES` as an optional override.
+Declare `account:member` with API permissions.
+
+Vercel builds use `/app/` asset URLs to match `dist/app/`. Gateway builds set `VITE_RELATIVE_BASE=1`
+to emit relative URLs; the gateway injects the versioned mount through `<base href>`. That explicit
+relative-base setting takes precedence over Vercel's build environment.
 
 Gateway-hosted builds use the gateway's CIMD and HttpOnly cookie session instead. The SDK
 loads user information and calls the platform APIs through same-origin gateway routes; it
 does not read the gateway's access or refresh token. Embedded apps retain host-provided auth.
-Existing applications must upgrade their SDK, adopt the standalone template auth configuration
-and Vercel metadata route, and rebuild to receive these changes.
+Existing applications must upgrade their SDK, adopt the standalone template auth configuration,
+and rebuild to receive these changes.
 
-Vercel can also use a named, registered **public** client instead of CIMD. Create it in the target
-Vertesia environment with authorization code + PKCE and `token_endpoint_auth_method=none`, then set
-these Vercel build environment variables and redeploy:
+After installing the app with its manifest callbacks, set these Vercel build environment variables and redeploy:
 
 ```dotenv
-VITE_OAUTH_CLIENT_ID=my-app-production
+VITE_OAUTH_CLIENT_ID=vts_your_registered_client_id
 VITE_OAUTH_REDIRECT_URI=https://my-app.vercel.app/app
 # Optional: otherwise src/app-permissions.ts supplies the requested scopes.
-# VITE_OAUTH_SCOPES=openid profile content:read offline_access
+# VITE_OAUTH_SCOPES=openid profile account:member content:read offline_access
 ```
 
 Register the callback and allow the requested scopes on that client. A non-URL client ID avoids

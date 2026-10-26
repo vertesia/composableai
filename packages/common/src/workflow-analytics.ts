@@ -84,7 +84,9 @@ export type TurnEvaluationFlag =
     | 'overhead'
     | 'followup_after_answer'
     | 'approval_denied'
-    | 'circuit_breaker';
+    | 'circuit_breaker'
+    | 'no_visible_answer'
+    | 'answer_in_tool_preamble';
 
 /** Coarse class of a tool error, derived from the error text. */
 export type ToolErrorClass = 'schema' | 'platform' | 'config' | 'environment' | 'other';
@@ -238,6 +240,14 @@ interface BaseLlmCallEvent extends BaseAgentEvent {
     streamingEnabled: boolean;
     /** Number of tool uses returned by the LLM */
     toolUseCount: number;
+    /** Provider stop reason, normalized by the driver (`stop`, `length`, `tool_use`, ...). Absent on failed calls. */
+    finishReason?: string;
+    /**
+     * Characters of visible output (text and JSON parts, trimmed; thoughts and media excluded).
+     * `0` with `toolUseCount: 0` and `finishReason: 'stop'` is a completion with nothing to show.
+     * Absent on failed calls and on events from producers that predate the field.
+     */
+    outputTextChars?: number;
     /** Type of call: 'start' for initial, 'resume_tools' for tool results, 'resume_user' for user message */
     callType: LlmCallType;
     /** Activity attempt number (for retries) */
@@ -415,6 +425,16 @@ export interface TurnEvaluationEvent extends BaseAgentEvent {
     stallCorrectives?: number;
     /** Stall circuit-breaker trips: the model ignored the corrective and the loop was stopped. Same caveat. */
     stallTrips?: number;
+    /**
+     * Characters of the answers posted in the turn. `0` with a `no_visible_answer` flag is a turn the
+     * user saw end without a reply. Absent on events from producers that predate the field.
+     */
+    answerChars?: number;
+    /**
+     * Characters of text the model sent alongside its last tool calls in the turn. Text sent with tool
+     * calls is shown as working prose, not as the answer. Same caveat.
+     */
+    finalToolCallTextChars?: number;
     /** An unprompted user message after an answer was followed by substantive tool work */
     followupAfterAnswer: boolean;
     severity: EvaluationSeverity;

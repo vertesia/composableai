@@ -104,10 +104,6 @@ interface Checks {
         W.ApiKeyListQueryFromSchema,
         z.infer<typeof import('./api-schemas/apikey.js').ApiKeyListQuerySchema>
     >;
-    ApiKeyReadQueryFromSchema: Same<
-        W.ApiKeyReadQueryFromSchema,
-        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyReadQuerySchema>
-    >;
     ProjectRefArrayFromSchema: Same<
         W.ProjectRefArrayFromSchema,
         z.infer<typeof import('./api-schemas/apikey.js').ProjectRefArraySchema>
@@ -120,10 +116,6 @@ interface Checks {
     ApiKeyWithValueFromSchema: Same<
         W.ApiKeyWithValueFromSchema,
         z.infer<typeof import('./api-schemas/apikey.js').ApiKeyWithValueSchema>
-    >;
-    ApiKeyReadResponseFromSchema: Same<
-        W.ApiKeyReadResponseFromSchema,
-        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyReadResponseSchema>
     >;
     CreateApiKeyPayloadFromSchema: Same<
         W.CreateApiKeyPayloadFromSchema,
@@ -271,16 +263,11 @@ interface Checks {
         z.infer<typeof import('./api-schemas/apikey.js').UpdateApiKeyPayloadSchema>
     >;
     ApiKeyWithValue: Same<W.ApiKeyWithValue, z.infer<typeof import('./api-schemas/apikey.js').ApiKeyWithValueSchema>>;
-    ApiKeyReadResponse: Same<
-        W.ApiKeyReadResponse,
-        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyReadResponseSchema>
-    >;
     AuthTokenResponse: Same<
         W.AuthTokenResponse,
         z.infer<typeof import('./api-schemas/apikey.js').AuthTokenResponseSchema>
     >;
     ApiKeyListQuery: Same<W.ApiKeyListQuery, z.infer<typeof import('./api-schemas/apikey.js').ApiKeyListQuerySchema>>;
-    ApiKeyReadQuery: Same<W.ApiKeyReadQuery, z.infer<typeof import('./api-schemas/apikey.js').ApiKeyReadQuerySchema>>;
     AccountApiKey: Same<W.AccountApiKey, z.infer<typeof import('./api-schemas/apikey.js').AccountApiKeySchema>>;
     AccountApiKeyWithValue: Same<
         W.AccountApiKeyWithValue,
@@ -299,6 +286,10 @@ interface Checks {
         z.infer<typeof import('./api-schemas/apikey.js').UpdateAccountApiKeyPayloadSchema>
     >;
     AppUIConfig: Same<W.AppUIConfig, z.infer<typeof import('./api-schemas/apps.js').AppUIConfigSchema>>;
+    AppOAuthClientConfig: Same<
+        W.AppOAuthClientConfig,
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppOAuthClientConfigSchema>
+    >;
     AppInstallationProjectsQuery: Same<
         W.AppInstallationProjectsQuery,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationProjectsQuerySchema>
@@ -349,6 +340,14 @@ interface Checks {
         W.AppVersionKind,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionKindSchema>
     >;
+    AppDeploymentAlias: Same<
+        W.AppDeploymentAlias,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeploymentAliasSchema>
+    >;
+    AppDeploymentAliasTarget: Same<
+        W.AppDeploymentAliasTarget,
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppDeploymentAliasTargetSchema>
+    >;
     AppVersionState: Same<
         W.AppVersionState,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionStateSchema>
@@ -380,6 +379,18 @@ interface Checks {
     AppVersionRecord: Same<
         W.AppVersionRecord,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionRecordSchema>
+    >;
+    AppVersionLaunchTarget: Same<
+        W.AppVersionLaunchTarget,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetSchema>
+    >;
+    CreateAppVersionLaunchRequest: Same<
+        W.CreateAppVersionLaunchRequest,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppVersionLaunchRequestSchema>
+    >;
+    CreateAppVersionLaunchResponse: Same<
+        W.CreateAppVersionLaunchResponse,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppVersionLaunchResponseSchema>
     >;
     DeleteAppVersionResponse: Same<
         W.DeleteAppVersionResponse,
@@ -413,6 +424,10 @@ interface Checks {
         W.AppScaffoldModule,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppScaffoldModuleSchema>
     >;
+    AppScaffoldSourceMode: Same<
+        W.AppScaffoldSourceMode,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppScaffoldSourceModeSchema>
+    >;
     StartAppScaffoldRequest: Same<
         W.StartAppScaffoldRequest,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppScaffoldRequestSchema>
@@ -420,6 +435,58 @@ interface Checks {
     StartAppScaffoldResponse: Same<
         W.StartAppScaffoldResponse,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppScaffoldResponseSchema>
+    >;
+    AppGithubConfiguration: Same<
+        W.AppGithubConfiguration,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubConfigurationSchema>
+    >;
+    StartAppGithubAuthorizationResponse: Same<
+        W.StartAppGithubAuthorizationResponse,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppGithubAuthorizationResponseSchema>
+    >;
+    ExchangeAppGithubAuthorizationRequest: Same<
+        W.ExchangeAppGithubAuthorizationRequest,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').ExchangeAppGithubAuthorizationRequestSchema>
+    >;
+    AppGithubRepositoriesQuery: Same<
+        W.AppGithubRepositoriesQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositoriesQuerySchema>
+    >;
+    AppGithubInstallation: Same<
+        W.AppGithubInstallation,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubInstallationSchema>
+    >;
+    AppGithubAccount: Same<
+        W.AppGithubAccount,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubAccountSchema>
+    >;
+    ExchangeAppGithubAuthorizationResponse: Same<
+        W.ExchangeAppGithubAuthorizationResponse,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').ExchangeAppGithubAuthorizationResponseSchema>
+    >;
+    AppGithubRepository: Same<
+        W.AppGithubRepository,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositorySchema>
+    >;
+    AppGithubRepositoryCreation: Same<
+        W.AppGithubRepositoryCreation,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositoryCreationSchema>
+    >;
+    AppGithubRepositoryList: Same<
+        W.AppGithubRepositoryList,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositoryListSchema>
+    >;
+    AppGithubRepositorySetupQuery: Same<
+        W.AppGithubRepositorySetupQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositorySetupQuerySchema>
+    >;
+    AppGithubBranchState: Same<
+        W.AppGithubBranchState,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubBranchStateSchema>
+    >;
+    AppGithubRepositorySetup: Same<
+        W.AppGithubRepositorySetup,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositorySetupSchema>
     >;
     StartAppDevelopmentTaskRequest: Same<
         W.StartAppDevelopmentTaskRequest,
@@ -445,6 +512,10 @@ interface Checks {
     AppGitSourceConfig: Same<
         W.AppGitSourceConfig,
         z.infer<typeof import('./api-schemas/apps.js').AppGitSourceConfigSchema>
+    >;
+    AppGitSourceProvider: Same<
+        W.AppGitSourceProvider,
+        z.infer<typeof import('./api-schemas/apps.js').AppGitSourceProviderSchema>
     >;
     AppSourceConfig: Same<W.AppSourceConfig, z.infer<typeof import('./api-schemas/apps.js').AppSourceConfigSchema>>;
     AppRepoTreeEntry: Same<
@@ -697,6 +768,22 @@ interface Checks {
     UpdateAppInstallationOAuthApprovalPayload: Same<
         W.UpdateAppInstallationOAuthApprovalPayload,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').UpdateAppInstallationOAuthApprovalPayloadSchema>
+    >;
+    AppInstanceAvailability: Same<
+        W.AppInstanceAvailability,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstanceAvailabilitySchema>
+    >;
+    McpPublicParameter: Same<
+        W.McpPublicParameter,
+        z.infer<typeof import('./api-schemas/apps.js').McpPublicParameterSchema>
+    >;
+    McpSecretParameter: Same<
+        W.McpSecretParameter,
+        z.infer<typeof import('./api-schemas/apps.js').McpSecretParameterSchema>
+    >;
+    McpConnectionParameter: Same<
+        W.McpConnectionParameter,
+        z.infer<typeof import('./api-schemas/apps.js').McpConnectionParameterSchema>
     >;
     AuditMeter: Same<W.AuditMeter, z.infer<typeof import('./api-schemas/audit-trail.js').AuditMeterSchema>>;
     AuditTrailEvent: Same<
@@ -1186,6 +1273,26 @@ interface Checks {
         W.UpdateDashboardPayload,
         z.infer<typeof import('./api-schemas/dashboard.js').UpdateDashboardPayloadSchema>
     >;
+    ExportDashboardPayload: Same<
+        W.ExportDashboardPayload,
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPayloadSchema>
+    >;
+    ExportDashboardPreviewPayload: Same<
+        W.ExportDashboardPreviewPayload,
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPreviewPayloadSchema>
+    >;
+    DashboardExportStatus: Same<
+        W.DashboardExportStatus,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportStatusSchema>
+    >;
+    DashboardExportError: Same<
+        W.DashboardExportError,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportErrorSchema>
+    >;
+    DashboardExport: Same<
+        W.DashboardExport,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportSchema>
+    >;
     DashboardVersion: Same<
         W.DashboardVersion,
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersionSchema>
@@ -1587,6 +1694,15 @@ interface Checks {
         W.CatalogInteractionRef,
         z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefSchema>
     >;
+    ExecuteNamedInteractionQuery: Same<
+        W.ExecuteNamedInteractionQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').ExecuteNamedInteractionQuerySchema>
+    >;
+    GetRunQuery: Same<W.GetRunQuery, z.infer<typeof import('./api-schemas/interaction.js').GetRunQuerySchema>>;
+    ExecuteInteractionByEndpointQuery: Same<
+        W.ExecuteInteractionByEndpointQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').ExecuteInteractionByEndpointQuerySchema>
+    >;
     ResolveInteractionQuery: Same<
         W.ResolveInteractionQuery,
         z.infer<typeof import('./api-schemas/interaction.js').ResolveInteractionQuerySchema>
@@ -1913,6 +2029,10 @@ interface Checks {
         W.UpdateOAuthClientPayload,
         z.infer<typeof import('./api-schemas/oauth-server.js').UpdateOAuthClientPayloadSchema>
     >;
+    UpdateOAuthClientStatusPayload: Same<
+        W.UpdateOAuthClientStatusPayload,
+        z.infer<typeof import('./api-schemas/oauth-server.js').UpdateOAuthClientStatusPayloadSchema>
+    >;
     OAuthAuthorizationServerMetadata: Same<
         W.OAuthAuthorizationServerMetadata,
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthAuthorizationServerMetadataSchema>
@@ -1972,6 +2092,26 @@ interface Checks {
     OAuthLoginUserNotFoundResponse: Same<
         W.OAuthLoginUserNotFoundResponse,
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginUserNotFoundResponseSchema>
+    >;
+    OidcFederationConnectionPayload: Same<
+        W.OidcFederationConnectionPayload,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OidcFederationConnectionPayloadSchema>
+    >;
+    OidcFederationConnection: Same<
+        W.OidcFederationConnection,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OidcFederationConnectionSchema>
+    >;
+    OidcFederationConnectionArray: Same<
+        W.OidcFederationConnectionArray,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OidcFederationConnectionArraySchema>
+    >;
+    OAuthTokenExchangeRequest: Same<
+        W.OAuthTokenExchangeRequest,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthTokenExchangeRequestSchema>
+    >;
+    OAuthTokenExchangeResponse: Same<
+        W.OAuthTokenExchangeResponse,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthTokenExchangeResponseSchema>
     >;
     OAuthProviderData: Same<
         W.OAuthProviderData,
@@ -3228,6 +3368,10 @@ interface Checks {
         W.ContentObjectTextResponse,
         z.infer<typeof import('./api-schemas/content.js').ContentObjectTextResponseSchema>
     >;
+    SetObjectTextPayload: Same<
+        W.SetObjectTextPayload,
+        z.infer<typeof import('./api-schemas/content.js').SetObjectTextPayloadSchema>
+    >;
     DeleteContentObjectResult: Same<
         W.DeleteContentObjectResult,
         z.infer<typeof import('./api-schemas/content.js').DeleteContentObjectResultSchema>
@@ -4059,10 +4203,6 @@ interface Checks {
         W.LegacyPopulatedExecutionRunResult,
         z.infer<typeof import('./api-schemas/interaction.js').LegacyPopulatedExecutionRunResultSchema>
     >;
-    ExecuteInteractionByEndpointQueryWire: Same<
-        W.ExecuteInteractionByEndpointQueryWire,
-        z.infer<typeof import('./api-schemas/interaction.js').ExecuteInteractionByEndpointQuerySchema>
-    >;
     ExecuteInteractionByEndpointHeadersWire: Same<
         W.ExecuteInteractionByEndpointHeadersWire,
         z.infer<typeof import('./api-schemas/interaction.js').ExecuteInteractionByEndpointHeadersSchema>
@@ -4521,6 +4661,10 @@ interface Checks {
         W.AppPackageScopeWire,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageScopeSchema>
     >;
+    AppVersionLaunchTargetArray: Same<
+        W.AppVersionLaunchTargetArray,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetArraySchema>
+    >;
     AppVersionRecordArray: Same<
         W.AppVersionRecordArray,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionRecordArraySchema>
@@ -4528,6 +4672,10 @@ interface Checks {
     AppToolCollectionArray: Same<
         W.AppToolCollectionArray,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppToolCollectionArraySchema>
+    >;
+    AppPackageQuery: Same<
+        W.AppPackageQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageQuerySchema>
     >;
     SystemPackageQuery: Same<
         W.SystemPackageQuery,
@@ -4762,14 +4910,6 @@ interface Checks {
         W.ApiComponentTypes['UpdateAccountApiKeyPayload'],
         z.infer<typeof import('./api-schemas/apikey.js').UpdateAccountApiKeyPayloadSchema>
     >;
-    'component:ApiKeyReadResponse': Same<
-        W.ApiComponentTypes['ApiKeyReadResponse'],
-        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyReadResponseSchema>
-    >;
-    'component:ApiKeyReadQuery': Same<
-        W.ApiComponentTypes['ApiKeyReadQuery'],
-        z.infer<typeof import('./api-schemas/apikey.js').ApiKeyReadQuerySchema>
-    >;
     'component:CreateApiKeyPayload': Same<
         W.ApiComponentTypes['CreateApiKeyPayload'],
         z.infer<typeof import('./api-schemas/apikey.js').CreateApiKeyPayloadSchema>
@@ -4934,6 +5074,10 @@ interface Checks {
         W.ApiComponentTypes['AppSourceConfig'],
         z.infer<typeof import('./api-schemas/apps.js').AppSourceConfigSchema>
     >;
+    'component:AppGitSourceProvider': Same<
+        W.ApiComponentTypes['AppGitSourceProvider'],
+        z.infer<typeof import('./api-schemas/apps.js').AppGitSourceProviderSchema>
+    >;
     'component:AppManifestSource': Same<
         W.ApiComponentTypes['AppManifestSource'],
         z.infer<typeof import('./api-schemas/apps.js').AppManifestSourceSchema>
@@ -5082,6 +5226,26 @@ interface Checks {
         W.ApiComponentTypes['OAuthTokenResponse'],
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthTokenResponseSchema>
     >;
+    'component:OidcFederationConnectionPayload': Same<
+        W.ApiComponentTypes['OidcFederationConnectionPayload'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OidcFederationConnectionPayloadSchema>
+    >;
+    'component:OidcFederationConnection': Same<
+        W.ApiComponentTypes['OidcFederationConnection'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OidcFederationConnectionSchema>
+    >;
+    'component:OidcFederationConnectionArray': Same<
+        W.ApiComponentTypes['OidcFederationConnectionArray'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OidcFederationConnectionArraySchema>
+    >;
+    'component:OAuthTokenExchangeRequest': Same<
+        W.ApiComponentTypes['OAuthTokenExchangeRequest'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthTokenExchangeRequestSchema>
+    >;
+    'component:OAuthTokenExchangeResponse': Same<
+        W.ApiComponentTypes['OAuthTokenExchangeResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthTokenExchangeResponseSchema>
+    >;
     'component:OAuthClient': Same<
         W.ApiComponentTypes['OAuthClient'],
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientSchema>
@@ -5105,6 +5269,10 @@ interface Checks {
     'component:UpdateOAuthClientPayload': Same<
         W.ApiComponentTypes['UpdateOAuthClientPayload'],
         z.infer<typeof import('./api-schemas/oauth-server.js').UpdateOAuthClientPayloadSchema>
+    >;
+    'component:UpdateOAuthClientStatusPayload': Same<
+        W.ApiComponentTypes['UpdateOAuthClientStatusPayload'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').UpdateOAuthClientStatusPayloadSchema>
     >;
     'component:OAuthGrant': Same<
         W.ApiComponentTypes['OAuthGrant'],
@@ -5834,6 +6002,10 @@ interface Checks {
         W.ApiComponentTypes['RunCreatePayload'],
         z.infer<typeof import('./api-schemas/interaction.js').RunCreatePayloadSchema>
     >;
+    'component:GetRunQuery': Same<
+        W.ApiComponentTypes['GetRunQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').GetRunQuerySchema>
+    >;
     'component:SortOrder': Same<
         W.ApiComponentTypes['SortOrder'],
         z.infer<typeof import('./api-schemas/interaction.js').SortOrderSchema>
@@ -5897,6 +6069,10 @@ interface Checks {
     'component:ResultStorageOptions': Same<
         W.ApiComponentTypes['ResultStorageOptions'],
         z.infer<typeof import('./api-schemas/interaction.js').ResultStorageOptionsSchema>
+    >;
+    'component:ExecuteNamedInteractionQuery': Same<
+        W.ApiComponentTypes['ExecuteNamedInteractionQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').ExecuteNamedInteractionQuerySchema>
     >;
     'component:ExecuteInteractionByEndpointQuery': Same<
         W.ApiComponentTypes['ExecuteInteractionByEndpointQuery'],
@@ -6274,6 +6450,26 @@ interface Checks {
     'component:UpdateDashboardPayload': Same<
         W.ApiComponentTypes['UpdateDashboardPayload'],
         z.infer<typeof import('./api-schemas/dashboard.js').UpdateDashboardPayloadSchema>
+    >;
+    'component:ExportDashboardPayload': Same<
+        W.ApiComponentTypes['ExportDashboardPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPayloadSchema>
+    >;
+    'component:ExportDashboardPreviewPayload': Same<
+        W.ApiComponentTypes['ExportDashboardPreviewPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPreviewPayloadSchema>
+    >;
+    'component:DashboardExportStatus': Same<
+        W.ApiComponentTypes['DashboardExportStatus'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportStatusSchema>
+    >;
+    'component:DashboardExportError': Same<
+        W.ApiComponentTypes['DashboardExportError'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportErrorSchema>
+    >;
+    'component:DashboardExport': Same<
+        W.ApiComponentTypes['DashboardExport'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportSchema>
     >;
     'component:QueryValidationError': Same<
         W.ApiComponentTypes['QueryValidationError'],
@@ -7074,6 +7270,10 @@ interface Checks {
     'component:ContentObjectTextResponse': Same<
         W.ApiComponentTypes['ContentObjectTextResponse'],
         z.infer<typeof import('./api-schemas/content.js').ContentObjectTextResponseSchema>
+    >;
+    'component:SetObjectTextPayload': Same<
+        W.ApiComponentTypes['SetObjectTextPayload'],
+        z.infer<typeof import('./api-schemas/content.js').SetObjectTextPayloadSchema>
     >;
     'component:DeleteContentObjectResult': Same<
         W.ApiComponentTypes['DeleteContentObjectResult'],
@@ -8707,6 +8907,14 @@ interface Checks {
         W.ApiComponentTypes['AppVersionKind'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionKindSchema>
     >;
+    'component:AppDeploymentAlias': Same<
+        W.ApiComponentTypes['AppDeploymentAlias'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeploymentAliasSchema>
+    >;
+    'component:AppDeploymentAliasTarget': Same<
+        W.ApiComponentTypes['AppDeploymentAliasTarget'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppDeploymentAliasTargetSchema>
+    >;
     'component:StartAppScaffoldResponse': Same<
         W.ApiComponentTypes['StartAppScaffoldResponse'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppScaffoldResponseSchema>
@@ -8827,6 +9035,62 @@ interface Checks {
         W.ApiComponentTypes['AppVersionGitSource'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionGitSourceSchema>
     >;
+    'component:AppGithubConfiguration': Same<
+        W.ApiComponentTypes['AppGithubConfiguration'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubConfigurationSchema>
+    >;
+    'component:StartAppGithubAuthorizationResponse': Same<
+        W.ApiComponentTypes['StartAppGithubAuthorizationResponse'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppGithubAuthorizationResponseSchema>
+    >;
+    'component:ExchangeAppGithubAuthorizationRequest': Same<
+        W.ApiComponentTypes['ExchangeAppGithubAuthorizationRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').ExchangeAppGithubAuthorizationRequestSchema>
+    >;
+    'component:AppGithubRepositoriesQuery': Same<
+        W.ApiComponentTypes['AppGithubRepositoriesQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositoriesQuerySchema>
+    >;
+    'component:ExchangeAppGithubAuthorizationResponse': Same<
+        W.ApiComponentTypes['ExchangeAppGithubAuthorizationResponse'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').ExchangeAppGithubAuthorizationResponseSchema>
+    >;
+    'component:AppGithubInstallation': Same<
+        W.ApiComponentTypes['AppGithubInstallation'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubInstallationSchema>
+    >;
+    'component:AppGithubAccount': Same<
+        W.ApiComponentTypes['AppGithubAccount'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubAccountSchema>
+    >;
+    'component:AppGithubRepository': Same<
+        W.ApiComponentTypes['AppGithubRepository'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositorySchema>
+    >;
+    'component:AppGithubRepositoryCreation': Same<
+        W.ApiComponentTypes['AppGithubRepositoryCreation'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositoryCreationSchema>
+    >;
+    'component:AppGithubRepositoryList': Same<
+        W.ApiComponentTypes['AppGithubRepositoryList'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositoryListSchema>
+    >;
+    'component:AppGithubRepositorySetupQuery': Same<
+        W.ApiComponentTypes['AppGithubRepositorySetupQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositorySetupQuerySchema>
+    >;
+    'component:AppGithubBranchState': Same<
+        W.ApiComponentTypes['AppGithubBranchState'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubBranchStateSchema>
+    >;
+    'component:AppGithubRepositorySetup': Same<
+        W.ApiComponentTypes['AppGithubRepositorySetup'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppGithubRepositorySetupSchema>
+    >;
+    'component:AppScaffoldSourceMode': Same<
+        W.ApiComponentTypes['AppScaffoldSourceMode'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppScaffoldSourceModeSchema>
+    >;
     'component:StartAppScaffoldRequest': Same<
         W.ApiComponentTypes['StartAppScaffoldRequest'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').StartAppScaffoldRequestSchema>
@@ -8887,6 +9151,22 @@ interface Checks {
         W.ApiComponentTypes['ContentObjectTypeRef'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').ContentObjectTypeRefSchema>
     >;
+    'component:AppVersionLaunchTarget': Same<
+        W.ApiComponentTypes['AppVersionLaunchTarget'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetSchema>
+    >;
+    'component:AppVersionLaunchTargetArray': Same<
+        W.ApiComponentTypes['AppVersionLaunchTargetArray'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetArraySchema>
+    >;
+    'component:CreateAppVersionLaunchRequest': Same<
+        W.ApiComponentTypes['CreateAppVersionLaunchRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppVersionLaunchRequestSchema>
+    >;
+    'component:CreateAppVersionLaunchResponse': Same<
+        W.ApiComponentTypes['CreateAppVersionLaunchResponse'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppVersionLaunchResponseSchema>
+    >;
     'component:AppBuildProgress': Same<
         W.ApiComponentTypes['AppBuildProgress'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppBuildProgressSchema>
@@ -8923,6 +9203,10 @@ interface Checks {
         W.ApiComponentTypes['AppInstallationPayload'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationPayloadSchema>
     >;
+    'component:AppInstanceAvailability': Same<
+        W.ApiComponentTypes['AppInstanceAvailability'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstanceAvailabilitySchema>
+    >;
     'component:AppDevelopmentTaskDetails': Same<
         W.ApiComponentTypes['AppDevelopmentTaskDetails'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDevelopmentTaskDetailsSchema>
@@ -8954,6 +9238,10 @@ interface Checks {
     'component:AppInstallationProjectsQuery': Same<
         W.ApiComponentTypes['AppInstallationProjectsQuery'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationProjectsQuerySchema>
+    >;
+    'component:AppPackageQuery': Same<
+        W.ApiComponentTypes['AppPackageQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageQuerySchema>
     >;
     'component:SystemPackageQuery': Same<
         W.ApiComponentTypes['SystemPackageQuery'],
@@ -9235,6 +9523,10 @@ interface Checks {
         W.ApiComponentTypes['AppDashboardDefinition'],
         z.infer<typeof import('./api-schemas/app-runtime.js').AppDashboardDefinitionSchema>
     >;
+    'component:AppOAuthClientConfig': Same<
+        W.ApiComponentTypes['AppOAuthClientConfig'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppOAuthClientConfigSchema>
+    >;
     'component:AppManifestData': Same<
         W.ApiComponentTypes['AppManifestData'],
         z.infer<typeof import('./api-schemas/app-runtime.js').AppManifestDataSchema>
@@ -9502,12 +9794,10 @@ const checks: Checks = {
     UpdateAccountPayloadFromSchema: true,
     StripeBillingStatusResponseFromSchema: true,
     ApiKeyListQueryFromSchema: true,
-    ApiKeyReadQueryFromSchema: true,
     ProjectRefArrayFromSchema: true,
     ApiKeyFromSchema: true,
     ApiKeyArrayFromSchema: true,
     ApiKeyWithValueFromSchema: true,
-    ApiKeyReadResponseFromSchema: true,
     CreateApiKeyPayloadFromSchema: true,
     UpdateApiKeyPayloadFromSchema: true,
     AuthTokenResponseFromSchema: true,
@@ -9549,16 +9839,15 @@ const checks: Checks = {
     CreateApiKeyPayload: true,
     UpdateApiKeyPayload: true,
     ApiKeyWithValue: true,
-    ApiKeyReadResponse: true,
     AuthTokenResponse: true,
     ApiKeyListQuery: true,
-    ApiKeyReadQuery: true,
     AccountApiKey: true,
     AccountApiKeyWithValue: true,
     AccountApiKeyArray: true,
     CreateAccountApiKeyPayload: true,
     UpdateAccountApiKeyPayload: true,
     AppUIConfig: true,
+    AppOAuthClientConfig: true,
     AppInstallationProjectsQuery: true,
     AppInstallationsQuery: true,
     AppListScope: true,
@@ -9576,6 +9865,8 @@ const checks: Checks = {
     AppCapabilities: true,
     AppAvailableIn: true,
     AppVersionKind: true,
+    AppDeploymentAlias: true,
+    AppDeploymentAliasTarget: true,
     AppVersionState: true,
     AppVersionTarget: true,
     AppVersionGitRefType: true,
@@ -9584,6 +9875,9 @@ const checks: Checks = {
     AppVersionGitSource: true,
     AppVersionUrls: true,
     AppVersionRecord: true,
+    AppVersionLaunchTarget: true,
+    CreateAppVersionLaunchRequest: true,
+    CreateAppVersionLaunchResponse: true,
     DeleteAppVersionResponse: true,
     UpsertAppVersionRequest: true,
     PromoteAppVersionResponse: true,
@@ -9592,8 +9886,22 @@ const checks: Checks = {
     AppBuildProgressStatus: true,
     AppBuildProgress: true,
     AppScaffoldModule: true,
+    AppScaffoldSourceMode: true,
     StartAppScaffoldRequest: true,
     StartAppScaffoldResponse: true,
+    AppGithubConfiguration: true,
+    StartAppGithubAuthorizationResponse: true,
+    ExchangeAppGithubAuthorizationRequest: true,
+    AppGithubRepositoriesQuery: true,
+    AppGithubInstallation: true,
+    AppGithubAccount: true,
+    ExchangeAppGithubAuthorizationResponse: true,
+    AppGithubRepository: true,
+    AppGithubRepositoryCreation: true,
+    AppGithubRepositoryList: true,
+    AppGithubRepositorySetupQuery: true,
+    AppGithubBranchState: true,
+    AppGithubRepositorySetup: true,
     StartAppDevelopmentTaskRequest: true,
     AppScaffoldProgressStatus: true,
     AppScaffoldProgress: true,
@@ -9601,6 +9909,7 @@ const checks: Checks = {
     AppManifestData: true,
     UpdateAppPayload: true,
     AppGitSourceConfig: true,
+    AppGitSourceProvider: true,
     AppSourceConfig: true,
     AppRepoTreeEntry: true,
     AppRepoTree: true,
@@ -9673,6 +9982,10 @@ const checks: Checks = {
     ValidateUrlResponse: true,
     AppDeleteSummary: true,
     UpdateAppInstallationOAuthApprovalPayload: true,
+    AppInstanceAvailability: true,
+    McpPublicParameter: true,
+    McpSecretParameter: true,
+    McpConnectionParameter: true,
     AuditMeter: true,
     AuditTrailEvent: true,
     AuditTrailQuery: true,
@@ -9813,6 +10126,11 @@ const checks: Checks = {
     Dashboard: true,
     CreateDashboardPayload: true,
     UpdateDashboardPayload: true,
+    ExportDashboardPayload: true,
+    ExportDashboardPreviewPayload: true,
+    DashboardExportStatus: true,
+    DashboardExportError: true,
+    DashboardExport: true,
     DashboardVersion: true,
     DashboardVersionItem: true,
     CreateDashboardSnapshotPayload: true,
@@ -9917,6 +10235,9 @@ const checks: Checks = {
     InteractionExecutionError: true,
     ConversationStripOptions: true,
     CatalogInteractionRef: true,
+    ExecuteNamedInteractionQuery: true,
+    GetRunQuery: true,
+    ExecuteInteractionByEndpointQuery: true,
     ResolveInteractionQuery: true,
     InCodePrompt: true,
     InCodeInteraction: true,
@@ -10006,6 +10327,7 @@ const checks: Checks = {
     OAuthGrantRevokeResponse: true,
     CreateOAuthClientPayload: true,
     UpdateOAuthClientPayload: true,
+    UpdateOAuthClientStatusPayload: true,
     OAuthAuthorizationServerMetadata: true,
     OAuthClientDisplayMetadata: true,
     OAuthAuthorizeQuery: true,
@@ -10021,6 +10343,11 @@ const checks: Checks = {
     OAuthLoginPayload: true,
     OAuthLoginDecisionResponse: true,
     OAuthLoginUserNotFoundResponse: true,
+    OidcFederationConnectionPayload: true,
+    OidcFederationConnection: true,
+    OidcFederationConnectionArray: true,
+    OAuthTokenExchangeRequest: true,
+    OAuthTokenExchangeResponse: true,
     OAuthProviderData: true,
     OAuthProvider: true,
     CreateOAuthProviderPayload: true,
@@ -10358,6 +10685,7 @@ const checks: Checks = {
     InheritedPropertyMetadata: true,
     ContentObjectUserPermissions: true,
     ContentObjectTextResponse: true,
+    SetObjectTextPayload: true,
     DeleteContentObjectResult: true,
     SetObjectEmbeddingsResponse: true,
     ContentObjectApiTypeRef: true,
@@ -10610,7 +10938,6 @@ const checks: Checks = {
     InteractionExecutionResultWire: true,
     LegacyExecutionRunResult: true,
     LegacyPopulatedExecutionRunResult: true,
-    ExecuteInteractionByEndpointQueryWire: true,
     ExecuteInteractionByEndpointHeadersWire: true,
     ExecutionResponse: true,
     StringValueMap: true,
@@ -10733,8 +11060,10 @@ const checks: Checks = {
     ViewExperienceArray: true,
     Extract_AppVersionGitRefType_branch_tag_commit: true,
     AppPackageScopeWire: true,
+    AppVersionLaunchTargetArray: true,
     AppVersionRecordArray: true,
     AppToolCollectionArray: true,
+    AppPackageQuery: true,
     SystemPackageQuery: true,
     SupportedIntegrations_ask_user_webhook: true,
     SupportedIntegrations_resend: true,
@@ -10794,8 +11123,6 @@ const checks: Checks = {
     'component:AccountApiKeyArray': true,
     'component:CreateAccountApiKeyPayload': true,
     'component:UpdateAccountApiKeyPayload': true,
-    'component:ApiKeyReadResponse': true,
-    'component:ApiKeyReadQuery': true,
     'component:CreateApiKeyPayload': true,
     'component:UpdateApiKeyPayload': true,
     'component:AuthTokenResponse': true,
@@ -10837,6 +11164,7 @@ const checks: Checks = {
     'component:AppCapabilities': true,
     'component:AppAccessControl': true,
     'component:AppSourceConfig': true,
+    'component:AppGitSourceProvider': true,
     'component:AppManifestSource': true,
     'component:SuccessResponse': true,
     'component:OAuthProvider': true,
@@ -10874,12 +11202,18 @@ const checks: Checks = {
     'component:OAuthDeviceAuthorizationRequest': true,
     'component:OAuthDeviceAuthorizationResponse': true,
     'component:OAuthTokenResponse': true,
+    'component:OidcFederationConnectionPayload': true,
+    'component:OidcFederationConnection': true,
+    'component:OidcFederationConnectionArray': true,
+    'component:OAuthTokenExchangeRequest': true,
+    'component:OAuthTokenExchangeResponse': true,
     'component:OAuthClient': true,
     'component:OAuthClientArray': true,
     'component:OAuthClientCreateResponse': true,
     'component:OAuthClientScopeMetadata': true,
     'component:CreateOAuthClientPayload': true,
     'component:UpdateOAuthClientPayload': true,
+    'component:UpdateOAuthClientStatusPayload': true,
     'component:OAuthGrant': true,
     'component:ListOAuthGrantsQuery': true,
     'component:RevokeOAuthGrantQuery': true,
@@ -11062,6 +11396,7 @@ const checks: Checks = {
     'component:ExecutionRunRefArray': true,
     'component:UpdateExecutionRunPayload': true,
     'component:RunCreatePayload': true,
+    'component:GetRunQuery': true,
     'component:SortOrder': true,
     'component:SortOption': true,
     'component:RunSearchQuery': true,
@@ -11078,6 +11413,7 @@ const checks: Checks = {
     'component:InteractionExecutionConfiguration': true,
     'component:InteractionExecutionError': true,
     'component:ResultStorageOptions': true,
+    'component:ExecuteNamedInteractionQuery': true,
     'component:ExecuteInteractionByEndpointQuery': true,
     'component:ExecuteInteractionByEndpointHeaders': true,
     'component:AsyncCompletionMode': true,
@@ -11173,6 +11509,11 @@ const checks: Checks = {
     'component:Dashboard': true,
     'component:CreateDashboardPayload': true,
     'component:UpdateDashboardPayload': true,
+    'component:ExportDashboardPayload': true,
+    'component:ExportDashboardPreviewPayload': true,
+    'component:DashboardExportStatus': true,
+    'component:DashboardExportError': true,
+    'component:DashboardExport': true,
     'component:QueryValidationError': true,
     'component:QueryValidationPayload': true,
     'component:ListDataStoreVersionsQuery': true,
@@ -11373,6 +11714,7 @@ const checks: Checks = {
     'component:TranscriptSegment': true,
     'component:ContentObjectTypeArray': true,
     'component:ContentObjectTextResponse': true,
+    'component:SetObjectTextPayload': true,
     'component:DeleteContentObjectResult': true,
     'component:Transcript': true,
     'component:CreateContentObjectPayload': true,
@@ -11781,6 +12123,8 @@ const checks: Checks = {
     'component:AppVersionTarget': true,
     'component:AppVersionState': true,
     'component:AppVersionKind': true,
+    'component:AppDeploymentAlias': true,
+    'component:AppDeploymentAliasTarget': true,
     'component:StartAppScaffoldResponse': true,
     'component:AppScaffoldModule': true,
     'component:AppBuildTrigger': true,
@@ -11811,6 +12155,20 @@ const checks: Checks = {
     'component:AppRepoBranch': true,
     'component:AppRepoDocumentCommit': true,
     'component:AppVersionGitSource': true,
+    'component:AppGithubConfiguration': true,
+    'component:StartAppGithubAuthorizationResponse': true,
+    'component:ExchangeAppGithubAuthorizationRequest': true,
+    'component:AppGithubRepositoriesQuery': true,
+    'component:ExchangeAppGithubAuthorizationResponse': true,
+    'component:AppGithubInstallation': true,
+    'component:AppGithubAccount': true,
+    'component:AppGithubRepository': true,
+    'component:AppGithubRepositoryCreation': true,
+    'component:AppGithubRepositoryList': true,
+    'component:AppGithubRepositorySetupQuery': true,
+    'component:AppGithubBranchState': true,
+    'component:AppGithubRepositorySetup': true,
+    'component:AppScaffoldSourceMode': true,
     'component:StartAppScaffoldRequest': true,
     'component:StartAppDevelopmentTaskRequest': true,
     'component:StartAppBuildRequest': true,
@@ -11826,6 +12184,10 @@ const checks: Checks = {
     'component:AppRepoRefs': true,
     'component:AppRepoCommits': true,
     'component:ContentObjectTypeRef': true,
+    'component:AppVersionLaunchTarget': true,
+    'component:AppVersionLaunchTargetArray': true,
+    'component:CreateAppVersionLaunchRequest': true,
+    'component:CreateAppVersionLaunchResponse': true,
     'component:AppBuildProgress': true,
     'component:AppVersionStorage': true,
     'component:AppToolCollection': true,
@@ -11835,6 +12197,7 @@ const checks: Checks = {
     'component:AgentRunSearchHit': true,
     'component:UpsertAppVersionRequest': true,
     'component:AppInstallationPayload': true,
+    'component:AppInstanceAvailability': true,
     'component:AppDevelopmentTaskDetails': true,
     'component:AppVersionRecordArray': true,
     'component:AppToolCollectionArray': true,
@@ -11843,6 +12206,7 @@ const checks: Checks = {
     'component:AppListScope': true,
     'component:AppsQuery': true,
     'component:AppInstallationProjectsQuery': true,
+    'component:AppPackageQuery': true,
     'component:SystemPackageQuery': true,
     'component:WebsiteCredentialTotpAlgorithm': true,
     'component:WebsiteCredentialTotpMetadata': true,
@@ -11913,6 +12277,7 @@ const checks: Checks = {
     'component:MCPOAuthConfigMap': true,
     'component:AppWidgetInfo': true,
     'component:AppDashboardDefinition': true,
+    'component:AppOAuthClientConfig': true,
     'component:AppManifestData': true,
     'component:UpdateAppPayload': true,
     'component:AppManifest': true,
@@ -11977,6 +12342,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2497);
+        expect(Object.keys(checks)).toHaveLength(2570);
     });
 });

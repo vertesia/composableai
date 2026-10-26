@@ -50,8 +50,15 @@ export class ProcessApi extends ApiTopic {
         return this.get(`/${id}/versions`);
     }
 
+    /**
+     * Publish a draft revision. Set `idempotency_key` to make the call safe to retry: without one, a
+     * replay of a publish that already succeeded is rejected, so no client retry applies.
+     */
     publish(id: string, payload: PublishProcessDefinitionPayload): Promise<ProcessDefinition> {
-        return this.post(`/${id}/publish`, { payload });
+        return this.post(`/${id}/publish`, {
+            payload,
+            retryPolicy: payload.idempotency_key ? undefined : false,
+        });
     }
 
     revert(id: string, payload: RevertProcessDefinitionPayload): Promise<ProcessDefinition> {
@@ -82,8 +89,15 @@ export class ProcessApi extends ApiTopic {
         return this.del(`/${processId}/test-suites/${suiteId}`);
     }
 
+    /**
+     * Start a test run against a stored process revision. Set `idempotency_key` to make the call
+     * safe to retry: without one, a replay would start a second run, so no client retry applies.
+     */
     startTestRun(processId: string, payload: StartProcessTestRunPayload): Promise<ProcessTestRun> {
-        return this.post(`/${processId}/test-runs`, { payload });
+        return this.post(`/${processId}/test-runs`, {
+            payload,
+            retryPolicy: payload.idempotency_key ? undefined : false,
+        });
     }
 
     listTestRuns(processId: string, query?: ListProcessTestRunsQuery): Promise<ProcessTestRun[]> {

@@ -49,6 +49,8 @@ export function useMcpConnections() {
 
             for (const app of apps) {
                 const inst = app as AppInstallationWithManifest;
+                const activationId = (id: string) =>
+                    inst.instance_key && inst.instance_key !== 'default' ? `${inst.id}:${id}` : id;
                 const oauthIds = inst.oauth_collection_ids ?? [];
                 const manifestProviders = inst.manifest.oauth_providers ?? {};
 
@@ -86,10 +88,14 @@ export function useMcpConnections() {
                         allGroups.push({
                             key: `${inst.id}:provider:${providerKey}:${col.id}`,
                             appId: inst.id,
-                            appName: inst.manifest.title || inst.manifest.name,
+                            appName:
+                                inst.display_name ||
+                                (inst.instance_key && inst.instance_key !== 'default'
+                                    ? `${inst.manifest.title || inst.manifest.name} — ${inst.instance_key}`
+                                    : inst.manifest.title || inst.manifest.name),
                             label: col.name,
                             representativeId,
-                            memberIds: [col.id],
+                            memberIds: [activationId(col.id)],
                             memberNames: [col.name],
                             authType: 'oauth',
                             oauthGrantType: manifestProviders[providerKey]?.grant_type,
@@ -103,10 +109,14 @@ export function useMcpConnections() {
                         allGroups.push({
                             key: `${inst.id}:oauthapp:${oauthApp}:${col.id}`,
                             appId: inst.id,
-                            appName: inst.manifest.title || inst.manifest.name,
+                            appName:
+                                inst.display_name ||
+                                (inst.instance_key && inst.instance_key !== 'default'
+                                    ? `${inst.manifest.title || inst.manifest.name} — ${inst.instance_key}`
+                                    : inst.manifest.title || inst.manifest.name),
                             label: col.name,
                             representativeId,
-                            memberIds: [col.id],
+                            memberIds: [activationId(col.id)],
                             memberNames: [col.name],
                             authType: 'oauth',
                         });
@@ -117,10 +127,14 @@ export function useMcpConnections() {
                     allGroups.push({
                         key: `${inst.id}:individual:${col.id}`,
                         appId: inst.id,
-                        appName: inst.manifest.title || inst.manifest.name,
+                        appName:
+                            inst.display_name ||
+                            (inst.instance_key && inst.instance_key !== 'default'
+                                ? `${inst.manifest.title || inst.manifest.name} — ${inst.instance_key}`
+                                : inst.manifest.title || inst.manifest.name),
                         label: col.name,
                         representativeId: col.id,
-                        memberIds: [col.id],
+                        memberIds: [activationId(col.id)],
                         memberNames: [col.name],
                         authType: 'oauth',
                     });
@@ -130,10 +144,14 @@ export function useMcpConnections() {
                     allGroups.push({
                         key: `${inst.id}:${col.auth}:${col.id}`,
                         appId: inst.id,
-                        appName: inst.manifest.title || inst.manifest.name,
+                        appName:
+                            inst.display_name ||
+                            (inst.instance_key && inst.instance_key !== 'default'
+                                ? `${inst.manifest.title || inst.manifest.name} — ${inst.instance_key}`
+                                : inst.manifest.title || inst.manifest.name),
                         label: col.name,
                         representativeId: col.id,
-                        memberIds: [col.id],
+                        memberIds: [activationId(col.id)],
                         memberNames: [col.name],
                         authType: col.auth === 'none' ? 'none' : 'api_key',
                     });

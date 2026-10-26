@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/tools-sdk",
-    "version": "1.6.0-dev.20261004.085740Z",
+    "version": "1.6.0-dev.20261022.120426Z",
     "description": "Tools SDK - utilities for building remote tools",
     "type": "module",
     "main": "./lib/index.js",
@@ -23,6 +23,10 @@
         ".": {
             "types": "./lib/index.d.ts",
             "default": "./lib/index.js"
+        },
+        "./sandbox": {
+            "types": "./lib/sandbox.d.ts",
+            "default": "./lib/sandbox.js"
         }
     },
     "devDependencies": {
@@ -55,5 +59,10 @@
         "agents",
         "typescript"
     ],
-    "gitHead": "b51b6dc9262f81f55e2424d1e57190060f6068d7"
+    "gitHead": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+    "releaseIdentity": {
+        "source_sha": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
+        "dependency_sha": "93466e47b06db23ac3c800e248d170afe65e5006",
+        "lock_sha256": "117e1c8068aa07d59117323a51ceccfc96cab543e50c03eb7efc19709d6f5e6b"
+    }
 }

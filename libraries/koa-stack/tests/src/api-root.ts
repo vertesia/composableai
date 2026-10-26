@@ -164,6 +164,12 @@ export class ApiRoot extends BaseResource {
         ctx.body = payload.isEmpty && json === undefined ? 'null body' : 'unexpected body';
     }
 
+    @post('/expanded-body', { bodyLimit: '2mb' })
+    async parseExpandedBody(ctx: Context) {
+        const payload = await ctx.payload;
+        ctx.body = { length: payload.json.value.length };
+    }
+
     @get('/filters')
     @filters(async (ctx, next) => {
         pusBodyPart(ctx, 'endpoint');

@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { APPGEN_PACKAGE_SPEC_PATTERN } from '../appgen.js';
-import { AppAccessControlSchema, AppAvailableInSchema, MCPToolAnnotationsSchema } from './apps.js';
+import { APP_DEPLOYMENT_ALIAS_PATTERN } from '../apps.js';
+import { ProjectRefSchema } from './apikey.js';
+import {
+    AppAccessControlSchema,
+    AppAvailableInSchema,
+    AppSourceConfigSchema,
+    MCPToolAnnotationsSchema,
+} from './apps.js';
 import { EventCategorySchema } from './audit-trail.js';
 import { AgentBudgetConfigurationSchema } from './project-configuration.js';
 
@@ -80,6 +87,12 @@ export const AppVersionStateSchema = z.enum(['ready', 'failed', 'expired']).meta
 
 export const AppVersionKindSchema = z.enum(['design', 'version']).meta({ id: 'AppVersionKind' });
 
+export const AppDeploymentAliasSchema = z.string().regex(APP_DEPLOYMENT_ALIAS_PATTERN).meta({
+    id: 'AppDeploymentAlias',
+    description:
+        'Stable, lowercase deployment alias for an immutable app version, such as `production`, `preview`, or `customer-demo`.',
+});
+
 export const StartAppScaffoldResponseSchema = z
     .strictObject({
         workflow_id: z.string(),
@@ -94,6 +107,12 @@ export const StartAppScaffoldResponseSchema = z
 export const AppScaffoldModuleSchema = z
     .enum(['service', 'assistant', 'content-app', 'examples'])
     .meta({ id: 'AppScaffoldModule' });
+
+export const AppScaffoldSourceModeSchema = z.enum(['generate', 'existing']).meta({
+    id: 'AppScaffoldSourceMode',
+    description:
+        'How App Builder should use a connected source repository. `generate` writes a starter app to an empty branch; `existing` only binds the repository.',
+});
 
 export const AppBuildTriggerSchema = z.enum(['ui', 'git_push', 'agent', 'api']).meta({ id: 'AppBuildTrigger' });
 
@@ -405,6 +424,22 @@ export const AppVersionGitSourceSchema = z
     })
     .meta({ id: 'AppVersionGitSource' });
 
+export const AppGithubRepositoryCreationSchema = z
+    .strictObject({
+        name: z
+            .string()
+            .trim()
+            .min(1)
+            .max(100)
+            .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/)
+            .meta({ description: 'Name of the empty GitHub repository to create in the verified installation.' }),
+        private: z
+            .boolean()
+            .optional()
+            .meta({ description: 'Create a private repository. Defaults to true when omitted.' }),
+    })
+    .meta({ id: 'AppGithubRepositoryCreation' });
+
 export const StartAppScaffoldRequestSchema = z
     .strictObject({
         app_id: z.string().meta({
@@ -431,8 +466,114 @@ export const StartAppScaffoldRequestSchema = z
                 description: 'Start an initial app version build after the source has been pushed. Defaults to true.',
             })
             .optional(),
+        source_mode: AppScaffoldSourceModeSchema.optional().meta({
+            description:
+                'Explicit source setup behavior for external repositories. Omit to retain the legacy automatic behavior.',
+        }),
+        source: AppSourceConfigSchema.optional().meta({
+            description:
+                'Source repository to bind to the app. Omit to create and scaffold a Vertesia-managed repository.',
+        }),
+        github_connection_id: z.string().optional().meta({
+            description: 'Short-lived proof that the current user verified the selected GitHub installation.',
+        }),
+        github_repository_creation: AppGithubRepositoryCreationSchema.optional().meta({
+            description:
+                'Create an empty repository in the verified GitHub installation before generating the app source.',
+        }),
     })
     .meta({ id: 'StartAppScaffoldRequest' });
+
+export const AppGithubConfigurationSchema = z
+    .strictObject({
+        enabled: z.boolean(),
+        app_slug: z.string().optional(),
+        install_url: z.string().optional(),
+        relay_url: z.string().optional(),
+    })
+    .meta({ id: 'AppGithubConfiguration' });
+
+export const StartAppGithubAuthorizationResponseSchema = z
+    .strictObject({ authorization_url: z.string() })
+    .meta({ id: 'StartAppGithubAuthorizationResponse' });
+
+export const ExchangeAppGithubAuthorizationRequestSchema = z
+    .strictObject({ code: z.string(), state: z.string() })
+    .meta({ id: 'ExchangeAppGithubAuthorizationRequest' });
+
+export const AppGithubRepositoriesQuerySchema = z
+    .strictObject({
+        connection_id: z.string().trim().min(1),
+        installation_id: z.string().trim().min(1),
+    })
+    .meta({ id: 'AppGithubRepositoriesQuery' });
+
+export const AppGithubInstallationSchema = z
+    .strictObject({
+        id: z.string(),
+        account_login: z.string(),
+        account_type: z.string().optional(),
+        repository_selection: z.enum(['all', 'selected']),
+    })
+    .meta({ id: 'AppGithubInstallation' });
+
+export const AppGithubAccountSchema = z
+    .strictObject({
+        login: z.string(),
+        account_type: z.string(),
+        avatar_url: z.string().optional(),
+    })
+    .meta({ id: 'AppGithubAccount' });
+
+export const ExchangeAppGithubAuthorizationResponseSchema = z
+    .strictObject({
+        connection_id: z.string(),
+        installations: z.array(AppGithubInstallationSchema),
+        accounts: z.array(AppGithubAccountSchema),
+    })
+    .meta({ id: 'ExchangeAppGithubAuthorizationResponse' });
+
+export const AppGithubRepositorySchema = z
+    .strictObject({
+        name: z.string(),
+        full_name: z.string(),
+        private: z.boolean(),
+        default_branch: z.string(),
+        html_url: z.string(),
+    })
+    .meta({ id: 'AppGithubRepository' });
+
+export const AppGithubRepositoryListSchema = z
+    .strictObject({ repositories: z.array(AppGithubRepositorySchema) })
+    .meta({ id: 'AppGithubRepositoryList' });
+
+export const AppGithubRepositorySetupQuerySchema = z
+    .strictObject({
+        connection_id: z.string().trim().min(1),
+        installation_id: z.string().trim().min(1),
+        repository: z.string().trim().min(1),
+        branch: z.string().trim().min(1),
+    })
+    .meta({ id: 'AppGithubRepositorySetupQuery' });
+
+export const AppGithubBranchStateSchema = z
+    .strictObject({
+        name: z.string(),
+        exists: z.boolean(),
+        empty: z.boolean(),
+    })
+    .meta({ id: 'AppGithubBranchState' });
+
+export const AppGithubRepositorySetupSchema = z
+    .strictObject({
+        default_branch: z.string(),
+        branches: z.array(z.string()),
+        selected_branch: AppGithubBranchStateSchema,
+    })
+    .meta({
+        id: 'AppGithubRepositorySetup',
+        description: 'Branch choices and write-safety state for a verified GitHub repository.',
+    });
 
 export const StartAppDevelopmentTaskRequestSchema = z
     .strictObject({
@@ -685,6 +826,7 @@ export const AppVersionStorageSchema = z
 export const AppToolCollectionSchema = z
     .strictObject({
         name: z.string().meta({ description: 'The collection name' }),
+        collection_id: z.string().optional(),
         description: z.string().meta({ description: 'Optional collection description' }).optional(),
         tools: z.array(AgentToolDefinitionSchema).meta({ description: 'the tools provided by this collection' }),
     })
@@ -738,6 +880,10 @@ export const AppVersionRecordSchema = z
         kind: AppVersionKindSchema,
         state: AppVersionStateSchema,
         promoted: z.boolean().optional(),
+        aliases: z
+            .array(AppDeploymentAliasSchema)
+            .meta({ description: 'Deployment aliases that currently resolve to this immutable version.' })
+            .optional(),
         target: AppVersionTargetSchema.optional(),
         agent_run_id: z.string().optional(),
         development_task_id: z
@@ -769,6 +915,52 @@ export const AppVersionRecordSchema = z
         expires_at: z.string().optional(),
     })
     .meta({ id: 'AppVersionRecord' });
+
+export const CreateAppVersionLaunchRequestSchema = z
+    .strictObject({
+        target_project_id: z
+            .string()
+            .meta({
+                description:
+                    'Project in the source account where the app is already installed and the temporary version will run. Defaults to the current project.',
+            })
+            .optional(),
+        settings: z
+            .looseObject({})
+            .meta({ description: 'Temporary app installation settings used only by this version launch.' }),
+    })
+    .meta({
+        id: 'CreateAppVersionLaunchRequest',
+        description: 'Creates a short-lived launch of one immutable app version with temporary installation settings.',
+    });
+
+export const CreateAppVersionLaunchResponseSchema = z
+    .strictObject({
+        version_launch_id: z.string(),
+        version_selector: z.string(),
+        app_url: z.string(),
+    })
+    .meta({
+        id: 'CreateAppVersionLaunchResponse',
+        description: 'Opaque launch selector and App Gateway URL for an advanced app-version launch.',
+    });
+
+export const AppVersionLaunchTargetSchema = z
+    .strictObject({
+        project: ProjectRefSchema,
+        installation_id: z.string(),
+        settings: z
+            .looseObject({})
+            .meta({ description: 'Current settings of the app installation in the target project.' }),
+    })
+    .meta({
+        id: 'AppVersionLaunchTarget',
+        description: 'A user-accessible project where this app version may be launched temporarily.',
+    });
+
+export const AppVersionLaunchTargetArraySchema = z
+    .array(AppVersionLaunchTargetSchema)
+    .meta({ id: 'AppVersionLaunchTargetArray' });
 
 export const AgentRunSearchHitSchema = z
     .strictObject({
@@ -855,12 +1047,48 @@ export const UpsertAppVersionRequestSchema = z
 export const AppInstallationPayloadSchema = z
     .strictObject({
         app_id: z.string(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                "Optional stable deployment alias to follow for this installation instead of the app's promoted version.",
+        }).optional(),
+        instance_key: z
+            .string()
+            .regex(/^[a-z][a-z0-9_-]{0,31}$/)
+            .optional(),
+        display_name: z.string().max(120).optional().meta({
+            description: 'Optional instance label. Send an empty string to clear the saved label; omit to preserve it.',
+        }),
+        namespace_overrides: z
+            .record(
+                z.string(),
+                z
+                    .string()
+                    .max(24)
+                    .regex(/^[a-z]([a-z0-9]|_[a-z0-9])*_?$/),
+            )
+            .optional(),
+        mcp_shared_parameters: z.record(z.string(), z.string().nullable()).optional().meta({
+            description:
+                'Shared MCP parameter overrides. Omitted values are retained; null clears an override or restores its default.',
+        }),
+        mcp_parameters: z.record(z.string(), z.record(z.string(), z.string().nullable())).optional().meta({
+            description:
+                'Installation parameter overrides by MCP collection id. Omit to preserve; null clears an override. Secret inputs are write-only.',
+        }),
         settings: z.looseObject({}).optional(),
         access_control: z
             .union([AppAccessControlSchema, z.null()])
             .meta({
                 description:
                     "Per-installation override of the manifest's `access_control` policy. When provided, takes precedence over the manifest default for every access check. Sibling of `settings` — admin-controlled, not part of the app's own settings JSON.\n\nThree send-time semantics on update:  - Field omitted entirely from the payload → leave the existing override unchanged.  - Explicit `null` → clear the override, fall back to the manifest default.  - String enum → set the override to that value.\n\n(On install, the same shape applies; omit or pass `null` to use the manifest default.)",
+            })
+            .optional(),
+        approved_scopes: z
+            .array(z.string().min(1))
+            .max(200)
+            .meta({
+                description:
+                    'OAuth scopes approved by the project manager during installation. The server records the approving user and timestamp; omitted defaults to all scopes requested by the selected deployment.',
             })
             .optional(),
         oauth_params: AppOAuthCollectionParamsSchema.meta({
@@ -958,3 +1186,24 @@ export const SystemPackageQuerySchema = z
             .optional(),
     })
     .meta({ id: 'SystemPackageQuery' });
+
+export const AppPackageQuerySchema = z
+    .strictObject({
+        scope: z
+            .array(AppPackageScopeSchema)
+            .meta({
+                description:
+                    'Which capabilities to include in the returned package. Defaults to `all`. ' +
+                    'Comma-joined (`?scope=ui,tools`) or repeated.',
+            })
+            .optional(),
+        deployment_alias: AppDeploymentAliasSchema.meta({
+            description:
+                'Resolve the package from this named deployment. Used before installation to load the selected deployment configuration.',
+        }).optional(),
+    })
+    .meta({ id: 'AppPackageQuery' });
+
+export const AppInstanceAvailabilitySchema = z
+    .strictObject({ enabled: z.boolean() })
+    .meta({ id: 'AppInstanceAvailability' });

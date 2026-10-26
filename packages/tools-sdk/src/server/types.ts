@@ -50,6 +50,8 @@ export interface MCPProviderConfig {
 export interface ToolServerConfig {
     /** OAuth scopes requested by the app; project permissions must be explicitly declared. */
     oauth_scopes?: string[];
+    /** Declare exact standalone callbacks; installation provisions the public PKCE client. */
+    oauth_client?: { redirect_uris: string[] };
     /**
      * Server title for HTML pages (default: 'Tools Server')
      */

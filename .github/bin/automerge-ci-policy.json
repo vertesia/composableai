@@ -1,16 +1,19 @@
 {
     "main.yaml": {
+        "workflow": "pr-validation.yaml",
+        "fallbackWorkflows": ["main.yaml"],
         "jobs": [
             {
-                "name": "^Unit tests$",
+                "name": "^(Build and test / )?Unit tests$",
+                "example": "Build and test / Unit tests",
                 "steps": [
                     "Build workspace",
                     "Typecheck and run package tests"
                 ]
             },
             {
-                "name": "^Template smoke test \\(Plugin\\)$",
-                "example": "Template smoke test (Plugin)",
+                "name": "^(Build and test / )?Template smoke test \\(Plugin\\)$",
+                "example": "Build and test / Template smoke test (Plugin)",
                 "steps": [
                     "Build workspace",
                     "Test package channel policy",
@@ -20,9 +23,12 @@
         ]
     },
     "lint.yaml": {
+        "workflow": "pr-validation.yaml",
+        "fallbackWorkflows": ["lint.yaml"],
         "jobs": [
             {
-                "name": "^Check codebase$",
+                "name": "^(Lint / )?Check codebase$",
+                "example": "Lint / Check codebase",
                 "steps": [
                     "Test automerge CI policy",
                     "Check codebase"

@@ -17,6 +17,7 @@ import type {
     JSONSchema,
     JSONValue,
     JsonResult,
+    // biome-ignore lint/suspicious/noDeprecatedImports: Legacy output_modality contracts require Modalities.
     Modalities,
     ModelOptions,
     ModelSearchPayload,
@@ -36,6 +37,7 @@ import type { AccountType, BillingMethod, QuotaTier } from './account-values.js'
 import type { ApiKeyTypes } from './apikey-values.js';
 import type { AppUINavItem, CompositeAppMenuNavItem } from './apps.js';
 import type {
+    DashboardExportStatus as DashboardExportStatusValues,
     DashboardStatus as DashboardStatusValues,
     DataColumnType as DataColumnTypeValues,
     DataStoreStatus as DataStoreStatusValues,
@@ -231,9 +233,6 @@ export type StripeBillingStatusResponseFromSchema = StripeBillingEnabled | Strip
 export type ApiKeyListQueryFromSchema = {
     level?: 'account' | 'project' | undefined;
 };
-export type ApiKeyReadQueryFromSchema = {
-    withValue?: boolean | undefined;
-};
 export type ProjectRefArrayFromSchema = ProjectRef[];
 export type ApiKeyFromSchema = {
     id: string;
@@ -276,27 +275,6 @@ export type ApiKeyWithValueFromSchema = {
     clearance?: number | undefined;
     compartments?: string[] | undefined;
     value: string;
-};
-export type ApiKeyReadResponseFromSchema = {
-    id: string;
-    name: string;
-    type: (typeof ApiKeyTypes)['secret'];
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
-    maskedValue?: string | undefined;
-    can_retrieve_value?: boolean | undefined;
-    account: string;
-    project: ProjectRef;
-    enabled: boolean;
-    scim_provisioning?: boolean | undefined;
-    created_by: string;
-    updated_by: string;
-    created_at: string;
-    updated_at: string;
-    expires_at?: string | undefined;
-    properties?: Record<string, unknown> | undefined;
-    clearance?: number | undefined;
-    compartments?: string[] | undefined;
-    value?: string | undefined;
 };
 export type CreateApiKeyPayloadFromSchema = {
     name: string;
@@ -524,10 +502,8 @@ export type ApiKeyArray = ApiKeyArrayFromSchema;
 export type CreateApiKeyPayload = CreateApiKeyPayloadFromSchema;
 export type UpdateApiKeyPayload = UpdateApiKeyPayloadFromSchema;
 export type ApiKeyWithValue = ApiKeyWithValueFromSchema;
-export type ApiKeyReadResponse = ApiKeyReadResponseFromSchema;
 export type AuthTokenResponse = AuthTokenResponseFromSchema;
 export type ApiKeyListQuery = ApiKeyListQueryFromSchema;
-export type ApiKeyReadQuery = ApiKeyReadQueryFromSchema;
 export type AccountApiKey = {
     id: string;
     name: string;
@@ -575,6 +551,10 @@ export type AppUIConfig = {
     navigation?: AppUINavItem[] | undefined;
     available_in?: AppAvailableIn[] | undefined;
 };
+export type AppOAuthClientConfig = {
+    redirect_uris: string[];
+    require_consent?: boolean | undefined;
+};
 export type AppInstallationProjectsQuery = {
     name?: string | undefined;
     id?: string | undefined;
@@ -609,6 +589,8 @@ export type MCPToolCollectionObject = {
     url: string;
     auth?: ToolCollectionAuthType | undefined;
     type: 'mcp';
+    parameters?: Record<string, McpConnectionParameter> | undefined;
+    headers?: Record<string, string> | undefined;
     id: string;
     name: string;
     description: string;
@@ -696,6 +678,11 @@ export type AppCapabilities =
     | 'dashboards';
 export type AppAvailableIn = 'app_portal' | 'composite_app';
 export type AppVersionKind = 'design' | 'version';
+export type AppDeploymentAlias = string;
+export type AppDeploymentAliasTarget = {
+    version_id: string;
+    version_record_id: string;
+};
 export type AppVersionState = 'ready' | 'failed' | 'expired';
 export type AppVersionTarget = 'static' | 'service';
 export type AppVersionGitRefType = 'branch' | 'tag' | 'commit' | 'detached';
@@ -741,6 +728,7 @@ export type AppVersionRecord = {
     kind: AppVersionKind;
     state: AppVersionState;
     promoted?: boolean | undefined;
+    aliases?: AppDeploymentAlias[] | undefined;
     target?: AppVersionTarget | undefined;
     agent_run_id?: string | undefined;
     development_task_id?: string | undefined;
@@ -768,6 +756,24 @@ export type AppVersionRecord = {
     built_at?: string | undefined;
     checked_at?: string | undefined;
     expires_at?: string | undefined;
+};
+export type AppVersionLaunchTarget = {
+    project: ProjectRef;
+    installation_id: string;
+    settings: {
+        [k: string]: unknown;
+    };
+};
+export type CreateAppVersionLaunchRequest = {
+    target_project_id?: string | undefined;
+    settings: {
+        [k: string]: unknown;
+    };
+};
+export type CreateAppVersionLaunchResponse = {
+    version_launch_id: string;
+    version_selector: string;
+    app_url: string;
 };
 export type DeleteAppVersionResponse = {
     id: string;
@@ -846,6 +852,7 @@ export type AppBuildProgress = {
     updated_at: string;
 };
 export type AppScaffoldModule = 'service' | 'assistant' | 'content-app' | 'examples';
+export type AppScaffoldSourceMode = 'generate' | 'existing';
 export type StartAppScaffoldRequest = {
     app_id: string;
     title?: string | undefined;
@@ -854,6 +861,10 @@ export type StartAppScaffoldRequest = {
     oauth_scopes?: string[] | undefined;
     appgen_package_spec?: string | undefined;
     create_version?: boolean | undefined;
+    source_mode?: AppScaffoldSourceMode | undefined;
+    source?: AppSourceConfig | undefined;
+    github_connection_id?: string | undefined;
+    github_repository_creation?: AppGithubRepositoryCreation | undefined;
 };
 export type StartAppScaffoldResponse = {
     workflow_id: string;
@@ -862,6 +873,69 @@ export type StartAppScaffoldResponse = {
     app_record_id?: string | undefined;
     git_url?: string | undefined;
     create_version: boolean;
+};
+export type AppGithubConfiguration = {
+    enabled: boolean;
+    app_slug?: string | undefined;
+    install_url?: string | undefined;
+    relay_url?: string | undefined;
+};
+export type StartAppGithubAuthorizationResponse = {
+    authorization_url: string;
+};
+export type ExchangeAppGithubAuthorizationRequest = {
+    code: string;
+    state: string;
+};
+export type AppGithubRepositoriesQuery = {
+    connection_id: string;
+    installation_id: string;
+};
+export type AppGithubInstallation = {
+    id: string;
+    account_login: string;
+    account_type?: string | undefined;
+    repository_selection: 'all' | 'selected';
+};
+export type AppGithubAccount = {
+    login: string;
+    account_type: string;
+    avatar_url?: string | undefined;
+};
+export type ExchangeAppGithubAuthorizationResponse = {
+    connection_id: string;
+    installations: AppGithubInstallation[];
+    accounts: AppGithubAccount[];
+};
+export type AppGithubRepository = {
+    name: string;
+    full_name: string;
+    private: boolean;
+    default_branch: string;
+    html_url: string;
+};
+export type AppGithubRepositoryCreation = {
+    name: string;
+    private?: boolean | undefined;
+};
+export type AppGithubRepositoryList = {
+    repositories: AppGithubRepository[];
+};
+export type AppGithubRepositorySetupQuery = {
+    connection_id: string;
+    installation_id: string;
+    repository: string;
+    branch: string;
+};
+export type AppGithubBranchState = {
+    name: string;
+    exists: boolean;
+    empty: boolean;
+};
+export type AppGithubRepositorySetup = {
+    default_branch: string;
+    branches: string[];
+    selected_branch: AppGithubBranchState;
 };
 export type StartAppDevelopmentTaskRequest = {
     prompt: string;
@@ -905,7 +979,9 @@ export type AppScaffoldProgress = {
  */
 export type AppAccessControl = 'all' | 'ui' | 'none';
 export type AppManifestData = {
+    parameters?: Record<string, McpConnectionParameter> | undefined;
     oauth_scopes?: string[] | undefined;
+    oauth_client?: AppOAuthClientConfig | undefined;
     name: string;
     visibility: 'public' | 'private' | 'vertesia';
     title: string;
@@ -934,7 +1010,9 @@ export type AppManifestData = {
     access_control?: AppAccessControl | undefined;
 };
 export type UpdateAppPayload = {
+    parameters?: Record<string, McpConnectionParameter> | undefined;
     oauth_scopes?: string[] | undefined;
+    oauth_client?: AppOAuthClientConfig | undefined;
     name: string;
     visibility: 'public' | 'private' | 'vertesia';
     title: string;
@@ -964,11 +1042,15 @@ export type UpdateAppPayload = {
     expected_edit_revision?: number | undefined;
 };
 export type AppGitSourceConfig = {
+    provider?: AppGitSourceProvider | undefined;
     url?: string | undefined;
+    installation_id?: string | undefined;
+    repository?: string | undefined;
     default_branch?: string | undefined;
     production_branch?: string | undefined;
     development_branch?: string | undefined;
 };
+export type AppGitSourceProvider = 'vertesia' | 'github';
 export type AppSourceConfig = {
     kind: 'git';
     git?: AppGitSourceConfig | undefined;
@@ -1108,6 +1190,7 @@ export type AppEventSubscriptionDefinition = {
     priority?: EventPriority | undefined;
 };
 export type AppPackage = {
+    oauth_client?: AppOAuthClientConfig | undefined;
     oauth_scopes?: string[] | undefined;
     ui?: AppUIConfig | undefined;
     tools?: AgentToolDefinition[] | undefined;
@@ -1189,7 +1272,9 @@ export type RenderingTemplateDefinitionRef = {
     tags?: string[] | undefined;
 };
 export type AppManifest = {
+    parameters?: Record<string, McpConnectionParameter> | undefined;
     oauth_scopes?: string[] | undefined;
+    oauth_client?: AppOAuthClientConfig | undefined;
     edit_revision: number;
     name: string;
     visibility: 'public' | 'private' | 'vertesia';
@@ -1214,6 +1299,7 @@ export type AppManifest = {
     endpoint?: string | undefined;
     endpoint_overrides?: StringValueMap | undefined;
     version?: string | undefined;
+    deployment_aliases?: Record<AppDeploymentAlias, AppDeploymentAliasTarget> | undefined;
     source?: AppManifestSource | undefined;
     tags?: string[] | undefined;
     access_control?: AppAccessControl | undefined;
@@ -1225,7 +1311,10 @@ export type AppManifest = {
 export type AppManifestSource = {
     kind: 'git';
     git: {
+        provider?: AppGitSourceProvider | undefined;
         url: string;
+        installation_id?: string | undefined;
+        repository?: string | undefined;
         default_branch?: string | undefined;
         production_branch?: string | undefined;
         development_branch?: string | undefined;
@@ -1254,7 +1343,23 @@ export type AppInstallationProviderBinding = {
 export type AppInstallation = {
     id: string;
     project: string;
+    instance_key?: string | undefined;
+    display_name?: string | undefined;
+    installation_version?: 1 | undefined;
+    namespace_overrides?: Record<string, string> | undefined;
+    reserved_namespaces?: string[] | undefined;
+    namespace_conflicts?: string[] | undefined;
+    deployment_alias?: AppDeploymentAlias | undefined;
     manifest: string;
+    mcp_configuration?:
+        | {
+              revision: string;
+              values: Record<string, Record<string, string>>;
+              configured_secrets: Record<string, string[]>;
+              shared_values?: Record<string, string> | undefined;
+              configured_shared_secrets?: string[] | undefined;
+          }
+        | undefined;
     oauth_approval?:
         | {
               scopes: string[];
@@ -1262,6 +1367,7 @@ export type AppInstallation = {
               approved_at: string;
           }
         | undefined;
+    oauth_client_id?: string | undefined;
     settings?:
         | {
               [k: string]: unknown;
@@ -1277,6 +1383,22 @@ export type AppInstallation = {
 export type AppInstallationWithManifest = {
     id: string;
     project: string;
+    instance_key?: string | undefined;
+    display_name?: string | undefined;
+    installation_version?: 1 | undefined;
+    namespace_overrides?: Record<string, string> | undefined;
+    reserved_namespaces?: string[] | undefined;
+    namespace_conflicts?: string[] | undefined;
+    deployment_alias?: AppDeploymentAlias | undefined;
+    mcp_configuration?:
+        | {
+              revision: string;
+              values: Record<string, Record<string, string>>;
+              configured_secrets: Record<string, string[]>;
+              shared_values?: Record<string, string> | undefined;
+              configured_shared_secrets?: string[] | undefined;
+          }
+        | undefined;
     oauth_approval?:
         | {
               scopes: string[];
@@ -1284,6 +1406,7 @@ export type AppInstallationWithManifest = {
               approved_at: string;
           }
         | undefined;
+    oauth_client_id?: string | undefined;
     settings?:
         | {
               [k: string]: unknown;
@@ -1301,6 +1424,22 @@ export type AppInstallationWithManifest = {
 export type AppInstallationListEntry = {
     id: string;
     project: string;
+    instance_key?: string | undefined;
+    display_name?: string | undefined;
+    installation_version?: 1 | undefined;
+    namespace_overrides?: Record<string, string> | undefined;
+    reserved_namespaces?: string[] | undefined;
+    namespace_conflicts?: string[] | undefined;
+    deployment_alias?: AppDeploymentAlias | undefined;
+    mcp_configuration?:
+        | {
+              revision: string;
+              values: Record<string, Record<string, string>>;
+              configured_secrets: Record<string, string[]>;
+              shared_values?: Record<string, string> | undefined;
+              configured_shared_secrets?: string[] | undefined;
+          }
+        | undefined;
     oauth_approval?:
         | {
               scopes: string[];
@@ -1308,6 +1447,7 @@ export type AppInstallationListEntry = {
               approved_at: string;
           }
         | undefined;
+    oauth_client_id?: string | undefined;
     settings?:
         | {
               [k: string]: unknown;
@@ -1341,12 +1481,19 @@ export type AppApiKeyCollectionParams = {
 export type AppOAuthProviderParams = AppOAuthCollectionParams;
 export type AppInstallationPayload = {
     app_id: string;
+    deployment_alias?: AppDeploymentAlias | undefined;
+    instance_key?: string | undefined;
+    display_name?: string | undefined;
+    namespace_overrides?: Record<string, string> | undefined;
+    mcp_shared_parameters?: Record<string, string | null> | undefined;
+    mcp_parameters?: Record<string, Record<string, string | null>> | undefined;
     settings?:
         | {
               [k: string]: unknown;
           }
         | undefined;
     access_control?: AppAccessControl | null | undefined;
+    approved_scopes?: string[] | undefined;
     oauth_params?: AppOAuthCollectionParams | undefined;
     oauth_provider_params?: AppOAuthCollectionParams | undefined;
     api_key_params?: AppApiKeyCollectionParams | undefined;
@@ -1360,6 +1507,7 @@ export type AppInstallationKind = 'ui' | 'tools' | 'all';
  */
 export type AppToolCollection = {
     name: string;
+    collection_id?: string | undefined;
     description?: string | undefined;
     tools: AgentToolDefinition[];
 };
@@ -1626,6 +1774,23 @@ export type AppDeleteSummary = {
 export type UpdateAppInstallationOAuthApprovalPayload = {
     approved_scopes: string[];
 };
+export type AppInstanceAvailability = {
+    enabled: boolean;
+};
+export type McpPublicParameter = {
+    title?: string | undefined;
+    description?: string | undefined;
+    required?: boolean | undefined;
+    type?: 'string' | undefined;
+    default?: string | undefined;
+};
+export type McpSecretParameter = {
+    title?: string | undefined;
+    description?: string | undefined;
+    required?: boolean | undefined;
+    type: 'secret';
+};
+export type McpConnectionParameter = McpPublicParameter | McpSecretParameter;
 /**
  * Generic metering entry attached to audit events.
  * Used for cost attribution, usage tracking, and billing.
@@ -2542,6 +2707,14 @@ export type AlterTableOperation =
           op: 'modify_column';
           column: string;
           updates: DataColumnUpdate;
+      }
+    | {
+          op: 'add_foreign_key';
+          foreign_key: DataForeignKey;
+      }
+    | {
+          op: 'drop_foreign_key';
+          column: string;
       };
 /**
  * Payload for altering a table schema.
@@ -3013,6 +3186,54 @@ export type UpdateDashboardPayload = {
     skip_versioning?: boolean | undefined;
 };
 /**
+ * Options for exporting a saved dashboard as an image.
+ */
+export type ExportDashboardPayload = {
+    parameter_values?: StringValueMap | undefined;
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+/**
+ * An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.
+ */
+export type ExportDashboardPreviewPayload = {
+    query: string;
+    queryLimit?: number | undefined;
+    queryParameters?: StringValueMap | undefined;
+    spec: {
+        [k: string]: unknown;
+    };
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+export type DashboardExportStatus = (typeof DashboardExportStatusValues)[keyof typeof DashboardExportStatusValues];
+/**
+ * Why a dashboard export failed.
+ */
+export type DashboardExportError = {
+    code: string;
+    message: string;
+    retryable: boolean;
+};
+/**
+ * A dashboard export: `running` until it is `completed`, with a signed download URL, or `failed`.
+ */
+export type DashboardExport = {
+    export_id: string;
+    status: DashboardExportStatus;
+    started_at: string;
+    completed_at?: string | undefined;
+    url?: string | undefined;
+    content_type?: string | undefined;
+    expires_at?: string | undefined;
+    width?: number | undefined;
+    height?: number | undefined;
+    row_count?: number | undefined;
+    error?: DashboardExportError | undefined;
+};
+/**
  * A point-in-time version of a dashboard.
  * Stores full snapshot inline (no external storage needed for small JSON documents).
  */
@@ -3422,6 +3643,7 @@ export type ExecutionEnvironment = {
     settings?: ExecutionEnvironmentSettings | undefined;
     account: string;
     allowed_projects?: string[] | undefined;
+    managed?: boolean | undefined;
     created_by: string;
     updated_by: string;
     created_at: string;
@@ -3435,6 +3657,7 @@ export type ExecutionEnvironmentRef = {
     default_model?: string | undefined;
     endpoint_url?: string | undefined;
     allowed_projects?: string[] | undefined;
+    managed?: boolean | undefined;
     account: string;
     created_by: string;
     updated_by: string;
@@ -3838,6 +4061,16 @@ export type CatalogInteractionRef = {
     title: string;
     description?: string | undefined;
 };
+export type ExecuteNamedInteractionQuery = {
+    include_prompt?: boolean | undefined;
+};
+export type GetRunQuery = {
+    include_prompt?: boolean | undefined;
+};
+export type ExecuteInteractionByEndpointQuery = {
+    tag?: string | undefined;
+    include_prompt?: boolean | undefined;
+};
 export type ResolveInteractionQuery = {
     environment?: string | undefined;
     model?: string | undefined;
@@ -4193,6 +4426,7 @@ export type AsyncConversationExecutionPayload = {
     asyncCompletion?: AsyncCompletionOptions | undefined;
     type: 'conversation';
     notify_endpoints?: string[] | undefined;
+    idempotency_key?: string | undefined;
     task_queue?: string | undefined;
     tool_approval_mode?: AgentToolApprovalMode | undefined;
     visibility?: ConversationVisibility | undefined;
@@ -4605,8 +4839,12 @@ export type OAuthClientType = 'public' | 'confidential';
 export type OAuthClientStatus = 'active' | 'disabled';
 export type OAuthRegistrationSource = 'admin' | 'dynamic';
 export type OAuthProjectBindingMode = 'user_select' | 'fixed';
-export type OAuthTokenEndpointAuthMethod = 'none' | 'client_secret_post' | 'client_secret_basic';
-export type OAuthGrantType = 'authorization_code' | 'refresh_token' | 'urn:ietf:params:oauth:grant-type:device_code';
+export type OAuthTokenEndpointAuthMethod = 'none' | 'client_secret_post' | 'client_secret_basic' | 'private_key_jwt';
+export type OAuthGrantType =
+    | 'authorization_code'
+    | 'refresh_token'
+    | 'urn:ietf:params:oauth:grant-type:device_code'
+    | 'urn:ietf:params:oauth:grant-type:token-exchange';
 export type OAuthResponseType = 'code';
 export type OAuthAuthorizationRequestStatus = 'pending' | 'denied' | 'consumed';
 export type OAuthClientRegistrationMode = 'registered' | 'client_id_metadata_document';
@@ -4622,12 +4860,14 @@ export type OAuthGrantSortField =
 export type OAuthGrantSortOrder = 'asc' | 'desc';
 /** An OAuth client's registration, without the id the server issues for it. */
 export type OAuthClientData = {
+    app_id?: string | undefined;
     client_name: string;
     client_type: OAuthClientType;
     redirect_uris: string[];
     grant_types: OAuthGrantType[];
     response_types: OAuthResponseType[];
     token_endpoint_auth_method: OAuthTokenEndpointAuthMethod;
+    jwks_uri?: string | undefined;
     allowed_scopes: string[];
     default_scopes?: string[] | undefined;
     registration_source: OAuthRegistrationSource;
@@ -4646,12 +4886,14 @@ export type OAuthClientData = {
     updated_at: string;
 };
 export type OAuthClient = {
+    app_id?: string | undefined;
     client_name: string;
     client_type: OAuthClientType;
     redirect_uris: string[];
     grant_types: OAuthGrantType[];
     response_types: OAuthResponseType[];
     token_endpoint_auth_method: OAuthTokenEndpointAuthMethod;
+    jwks_uri?: string | undefined;
     allowed_scopes: string[];
     default_scopes?: string[] | undefined;
     registration_source: OAuthRegistrationSource;
@@ -4672,12 +4914,14 @@ export type OAuthClient = {
 };
 /** The read shape plus the client secret, which is returned by the create call and never again. */
 export type OAuthClientCreateResponse = {
+    app_id?: string | undefined;
     client_name: string;
     client_type: OAuthClientType;
     redirect_uris: string[];
     grant_types: OAuthGrantType[];
     response_types: OAuthResponseType[];
     token_endpoint_auth_method: OAuthTokenEndpointAuthMethod;
+    jwks_uri?: string | undefined;
     allowed_scopes: string[];
     default_scopes?: string[] | undefined;
     registration_source: OAuthRegistrationSource;
@@ -4765,6 +5009,7 @@ export type CreateOAuthClientPayload = {
     grant_types?: OAuthGrantType[] | undefined;
     response_types?: OAuthResponseType[] | undefined;
     token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod | undefined;
+    jwks_uri?: string | undefined;
     allowed_scopes?: string[] | undefined;
     default_scopes?: string[] | undefined;
     project_binding_mode?: OAuthProjectBindingMode | undefined;
@@ -4783,9 +5028,11 @@ export type UpdateOAuthClientPayload = {
     grant_types?: OAuthGrantType[] | undefined;
     response_types?: OAuthResponseType[] | undefined;
     token_endpoint_auth_method?: OAuthTokenEndpointAuthMethod | undefined;
+    jwks_uri?: string | undefined;
     allowed_scopes?: string[] | undefined;
     default_scopes?: string[] | undefined;
     status?: OAuthClientStatus | undefined;
+    revoke_previous_client_secret?: boolean | undefined;
     project_binding_mode?: OAuthProjectBindingMode | undefined;
     fixed_project_id?: string | undefined;
     restrict_to_owner_account?: boolean | undefined;
@@ -4795,6 +5042,9 @@ export type UpdateOAuthClientPayload = {
               [k: string]: unknown;
           }
         | undefined;
+};
+export type UpdateOAuthClientStatusPayload = {
+    status: OAuthClientStatus;
 };
 export type OAuthAuthorizationServerMetadata = {
     issuer: string;
@@ -4807,6 +5057,7 @@ export type OAuthAuthorizationServerMetadata = {
     grant_types_supported: string[];
     code_challenge_methods_supported: string[];
     token_endpoint_auth_methods_supported: string[];
+    token_endpoint_auth_signing_alg_values_supported?: string[] | undefined;
     scopes_supported: string[];
     client_id_metadata_document_supported?: boolean | undefined;
     authorization_response_iss_parameter_supported?: boolean | undefined;
@@ -4847,6 +5098,7 @@ export type OAuthAuthorizationRequest = {
     user_code?: string | undefined;
     client_id: string;
     client_name: string;
+    app_id?: string | undefined;
     client_metadata?: OAuthClientDisplayMetadata | undefined;
     client_registration_mode?: OAuthClientRegistrationMode | undefined;
     redirect_uri: string;
@@ -4906,6 +5158,7 @@ export type OAuthAuthorizationRequestGeneratedApp = {
     tenant_id: string;
     app_name: string;
     version_id?: string | undefined;
+    deployment_alias?: string | undefined;
 };
 export type OAuthLoginPayload = {
     id_token: string;
@@ -4919,6 +5172,73 @@ export type OAuthLoginDecisionResponse = {
 export type OAuthLoginUserNotFoundResponse = {
     error: 'user_not_found';
     ensure_user_url: string;
+};
+export type OidcFederationConnectionPayload = {
+    name: string;
+    issuer: string;
+    jwks_uri?: string | undefined;
+    external_id_claim: string;
+    allowed_audiences: string[];
+    allowed_algorithms: ('RS256' | 'ES256')[];
+    subject_token_type:
+        | 'urn:ietf:params:oauth:token-type:jwt'
+        | 'urn:ietf:params:oauth:token-type:id_token'
+        | 'urn:ietf:params:oauth:token-type:access_token';
+    required_claims?: Record<string, string> | undefined;
+    all_projects?: boolean | undefined;
+    allowed_project_ids: string[];
+    allowed_client_ids?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
+    max_token_ttl_seconds: number;
+    max_subject_token_age_seconds?: number | undefined;
+    enabled: boolean;
+};
+export type OidcFederationConnection = {
+    name: string;
+    issuer: string;
+    jwks_uri?: string | undefined;
+    external_id_claim: string;
+    allowed_audiences: string[];
+    allowed_algorithms: ('RS256' | 'ES256')[];
+    subject_token_type:
+        | 'urn:ietf:params:oauth:token-type:jwt'
+        | 'urn:ietf:params:oauth:token-type:id_token'
+        | 'urn:ietf:params:oauth:token-type:access_token';
+    required_claims?: Record<string, string> | undefined;
+    all_projects?: boolean | undefined;
+    allowed_project_ids: string[];
+    allowed_client_ids?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
+    max_token_ttl_seconds: number;
+    max_subject_token_age_seconds: number;
+    enabled: boolean;
+    id: string;
+    account_id: string;
+};
+export type OidcFederationConnectionArray = OidcFederationConnection[];
+export type OAuthTokenExchangeRequest = {
+    grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange';
+    subject_token: string;
+    subject_token_type:
+        | 'urn:ietf:params:oauth:token-type:jwt'
+        | 'urn:ietf:params:oauth:token-type:id_token'
+        | 'urn:ietf:params:oauth:token-type:access_token';
+    requested_token_type?: 'urn:ietf:params:oauth:token-type:access_token' | undefined;
+    federation_connection_id: string;
+    client_id?: string | undefined;
+    client_secret?: string | undefined;
+    client_assertion?: string | undefined;
+    client_assertion_type?: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer' | undefined;
+    project_id: string;
+    resource: string;
+    scope?: string | undefined;
+};
+export type OAuthTokenExchangeResponse = {
+    access_token: string;
+    token_type: 'Bearer';
+    expires_in: number;
+    scope?: string | undefined;
+    issued_token_type: 'urn:ietf:params:oauth:token-type:access_token';
 };
 /**
  * OAuth Provider data stored in MongoDB.
@@ -5795,6 +6115,7 @@ export type StartProjectReindexPayload = {
     concurrency?: number | undefined;
     bulk_size_bytes?: number | undefined;
     bulk_concurrency?: number | undefined;
+    modified_since?: string | undefined;
 };
 export type ReindexAgentRunsPayload = {
     recreate_index?: boolean | undefined;
@@ -6166,7 +6487,7 @@ export type ResourceRef = {
 /**
  * Kind of object a ResourceSet's `resource_props` matches at query time. Used
  * in `AceConditions.scope` (validated at runtime against this list) and as
- * the prefix in JWT `content_security` keys (e.g. `collection:read`).
+ * the prefix in JWT `abac` keys (e.g. `collection:read`).
  *
  * Each scope is owned by exactly one partition. When adding a new partition
  * (e.g. tasks), extend `AbacScopes` with the new scope(s) AND extend
@@ -7340,6 +7661,7 @@ export type PublishProcessDefinitionPayload = {
     tags?: string[] | undefined;
     label?: string | undefined;
     comment?: string | undefined;
+    idempotency_key?: string | undefined;
 };
 export type RevertProcessDefinitionPayload = {
     confirmed: boolean;
@@ -7456,6 +7778,7 @@ export type StartProcessTestRunPayload = {
     suite_id: string;
     process_revision_id: string;
     scenario_ids?: string[] | undefined;
+    idempotency_key?: string | undefined;
 };
 export type ProcessTestAssertionResult = {
     assertion: string;
@@ -7720,6 +8043,10 @@ export type ContentObjectUserPermissions = {
 };
 export type ContentObjectTextResponse = {
     text?: string | undefined;
+};
+export type SetObjectTextPayload = {
+    text: string;
+    etag?: string | undefined;
 };
 export type DeleteContentObjectResult = {
     id: string;
@@ -9751,6 +10078,7 @@ export type CreateAgentRunPayloadWire = {
     notify_endpoints?: string[] | undefined;
     debug_mode?: boolean | undefined;
     started_by?: string | undefined;
+    idempotency_key?: string | undefined;
 };
 export type DSLActivitySpecWire = {
     name: string;
@@ -9829,6 +10157,7 @@ export type ProcessTestTargetWithDefinitionWire = {
 export type SubmitProcessTestRunPayloadWire = {
     process: ProcessTestTargetWire;
     scenarios: ProcessTestScenario[];
+    idempotency_key?: string | undefined;
 };
 export type CreateContentObjectPayloadWire = {
     text?: string | undefined;
@@ -10176,9 +10505,6 @@ export type LegacyPopulatedExecutionRunResult = {
     conversation?: unknown | undefined;
     options?: StatelessExecutionOptions | undefined;
 };
-export type ExecuteInteractionByEndpointQueryWire = {
-    tag?: string | undefined;
-};
 export type ExecuteInteractionByEndpointHeadersWire = {
     'x-interaction-tag'?: string | undefined;
 };
@@ -10494,7 +10820,9 @@ export type TurnEvaluationFlagWire =
     | 'overhead'
     | 'followup_after_answer'
     | 'approval_denied'
-    | 'circuit_breaker';
+    | 'circuit_breaker'
+    | 'no_visible_answer'
+    | 'answer_in_tool_preamble';
 export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'other';
 export type EvaluationGateReasonWire = 'signal' | 'sample' | 'opt_in' | 'always_on';
 export type EvaluationOutcomeWire = 'evaluated' | 'skipped_unarchived' | 'failed';
@@ -10619,8 +10947,13 @@ export type AppPackageScopeWire =
     | 'hooks'
     | 'subscriptions'
     | 'all';
+export type AppVersionLaunchTargetArray = AppVersionLaunchTarget[];
 export type AppVersionRecordArray = AppVersionRecord[];
 export type AppToolCollectionArray = AppToolCollection[];
+export type AppPackageQuery = {
+    scope?: AppPackageScopeWire[] | undefined;
+    deployment_alias?: AppDeploymentAlias | undefined;
+};
 export type SystemPackageQuery = {
     scope?: AppPackageScopeWire[] | undefined;
 };
@@ -10688,8 +11021,6 @@ export interface ApiComponentTypes {
     AccountApiKeyArray: AccountApiKeyArray;
     CreateAccountApiKeyPayload: CreateAccountApiKeyPayload;
     UpdateAccountApiKeyPayload: UpdateAccountApiKeyPayload;
-    ApiKeyReadResponse: ApiKeyReadResponseFromSchema;
-    ApiKeyReadQuery: ApiKeyReadQueryFromSchema;
     CreateApiKeyPayload: CreateApiKeyPayloadFromSchema;
     UpdateApiKeyPayload: UpdateApiKeyPayloadFromSchema;
     AuthTokenResponse: AuthTokenResponseFromSchema;
@@ -10731,6 +11062,7 @@ export interface ApiComponentTypes {
     AppCapabilities: AppCapabilities;
     AppAccessControl: AppAccessControl;
     AppSourceConfig: AppSourceConfig;
+    AppGitSourceProvider: AppGitSourceProvider;
     AppManifestSource: AppManifestSource;
     SuccessResponse: SuccessResponse;
     OAuthProvider: OAuthProvider;
@@ -10768,12 +11100,18 @@ export interface ApiComponentTypes {
     OAuthDeviceAuthorizationRequest: OAuthDeviceAuthorizationRequest;
     OAuthDeviceAuthorizationResponse: OAuthDeviceAuthorizationResponse;
     OAuthTokenResponse: OAuthTokenResponse;
+    OidcFederationConnectionPayload: OidcFederationConnectionPayload;
+    OidcFederationConnection: OidcFederationConnection;
+    OidcFederationConnectionArray: OidcFederationConnectionArray;
+    OAuthTokenExchangeRequest: OAuthTokenExchangeRequest;
+    OAuthTokenExchangeResponse: OAuthTokenExchangeResponse;
     OAuthClient: OAuthClient;
     OAuthClientArray: OAuthClientArray;
     OAuthClientCreateResponse: OAuthClientCreateResponse;
     OAuthClientScopeMetadata: OAuthClientScopeMetadata;
     CreateOAuthClientPayload: CreateOAuthClientPayload;
     UpdateOAuthClientPayload: UpdateOAuthClientPayload;
+    UpdateOAuthClientStatusPayload: UpdateOAuthClientStatusPayload;
     OAuthGrant: OAuthGrant;
     ListOAuthGrantsQuery: ListOAuthGrantsQuery;
     RevokeOAuthGrantQuery: RevokeOAuthGrantQuery;
@@ -10976,6 +11314,7 @@ export interface ApiComponentTypes {
     ExecutionRunRefArray: ExecutionRunRefArray;
     UpdateExecutionRunPayload: UpdateExecutionRunPayload;
     RunCreatePayload: RunCreatePayload;
+    GetRunQuery: GetRunQuery;
     SortOrder: SortOrder;
     SortOption: SortOption;
     RunSearchQuery: RunSearchQuery;
@@ -10992,7 +11331,8 @@ export interface ApiComponentTypes {
     InteractionExecutionConfiguration: InteractionExecutionConfiguration;
     InteractionExecutionError: InteractionExecutionError;
     ResultStorageOptions: ResultStorageOptions;
-    ExecuteInteractionByEndpointQuery: ExecuteInteractionByEndpointQueryWire;
+    ExecuteNamedInteractionQuery: ExecuteNamedInteractionQuery;
+    ExecuteInteractionByEndpointQuery: ExecuteInteractionByEndpointQuery;
     ExecuteInteractionByEndpointHeaders: ExecuteInteractionByEndpointHeadersWire;
     AsyncCompletionMode: AsyncCompletionMode;
     AsyncCompletionOptions: AsyncCompletionOptions;
@@ -11087,6 +11427,11 @@ export interface ApiComponentTypes {
     Dashboard: Dashboard;
     CreateDashboardPayload: CreateDashboardPayload;
     UpdateDashboardPayload: UpdateDashboardPayload;
+    ExportDashboardPayload: ExportDashboardPayload;
+    ExportDashboardPreviewPayload: ExportDashboardPreviewPayload;
+    DashboardExportStatus: DashboardExportStatus;
+    DashboardExportError: DashboardExportError;
+    DashboardExport: DashboardExport;
     QueryValidationError: QueryValidationError;
     QueryValidationPayload: QueryValidationPayload;
     ListDataStoreVersionsQuery: ListDataStoreVersionsQuery;
@@ -11287,6 +11632,7 @@ export interface ApiComponentTypes {
     TranscriptSegment: TranscriptSegment;
     ContentObjectTypeArray: ContentObjectTypeArray;
     ContentObjectTextResponse: ContentObjectTextResponse;
+    SetObjectTextPayload: SetObjectTextPayload;
     DeleteContentObjectResult: DeleteContentObjectResult;
     Transcript: Transcript;
     CreateContentObjectPayload: CreateContentObjectPayloadWire;
@@ -11695,6 +12041,8 @@ export interface ApiComponentTypes {
     AppVersionTarget: AppVersionTarget;
     AppVersionState: AppVersionState;
     AppVersionKind: AppVersionKind;
+    AppDeploymentAlias: AppDeploymentAlias;
+    AppDeploymentAliasTarget: AppDeploymentAliasTarget;
     StartAppScaffoldResponse: StartAppScaffoldResponse;
     AppScaffoldModule: AppScaffoldModule;
     AppBuildTrigger: AppBuildTrigger;
@@ -11725,6 +12073,20 @@ export interface ApiComponentTypes {
     AppRepoBranch: AppRepoBranch;
     AppRepoDocumentCommit: AppRepoDocumentCommit;
     AppVersionGitSource: AppVersionGitSource;
+    AppGithubConfiguration: AppGithubConfiguration;
+    StartAppGithubAuthorizationResponse: StartAppGithubAuthorizationResponse;
+    ExchangeAppGithubAuthorizationRequest: ExchangeAppGithubAuthorizationRequest;
+    AppGithubRepositoriesQuery: AppGithubRepositoriesQuery;
+    ExchangeAppGithubAuthorizationResponse: ExchangeAppGithubAuthorizationResponse;
+    AppGithubInstallation: AppGithubInstallation;
+    AppGithubAccount: AppGithubAccount;
+    AppGithubRepository: AppGithubRepository;
+    AppGithubRepositoryCreation: AppGithubRepositoryCreation;
+    AppGithubRepositoryList: AppGithubRepositoryList;
+    AppGithubRepositorySetupQuery: AppGithubRepositorySetupQuery;
+    AppGithubBranchState: AppGithubBranchState;
+    AppGithubRepositorySetup: AppGithubRepositorySetup;
+    AppScaffoldSourceMode: AppScaffoldSourceMode;
     StartAppScaffoldRequest: StartAppScaffoldRequest;
     StartAppDevelopmentTaskRequest: StartAppDevelopmentTaskRequest;
     StartAppBuildRequest: StartAppBuildRequest;
@@ -11740,6 +12102,10 @@ export interface ApiComponentTypes {
     AppRepoRefs: AppRepoRefs;
     AppRepoCommits: AppRepoCommits;
     ContentObjectTypeRef: ContentObjectApiTypeRef;
+    AppVersionLaunchTarget: AppVersionLaunchTarget;
+    AppVersionLaunchTargetArray: AppVersionLaunchTargetArray;
+    CreateAppVersionLaunchRequest: CreateAppVersionLaunchRequest;
+    CreateAppVersionLaunchResponse: CreateAppVersionLaunchResponse;
     AppBuildProgress: AppBuildProgress;
     AppVersionStorage: AppVersionStorage;
     AppToolCollection: AppToolCollection;
@@ -11749,6 +12115,7 @@ export interface ApiComponentTypes {
     AgentRunSearchHit: AgentRunSearchHit;
     UpsertAppVersionRequest: UpsertAppVersionRequest;
     AppInstallationPayload: AppInstallationPayload;
+    AppInstanceAvailability: AppInstanceAvailability;
     AppDevelopmentTaskDetails: AppDevelopmentTaskDetails;
     AppVersionRecordArray: AppVersionRecordArray;
     AppToolCollectionArray: AppToolCollectionArray;
@@ -11757,6 +12124,7 @@ export interface ApiComponentTypes {
     AppListScope: AppListScope;
     AppsQuery: AppsQuery;
     AppInstallationProjectsQuery: AppInstallationProjectsQuery;
+    AppPackageQuery: AppPackageQuery;
     SystemPackageQuery: SystemPackageQuery;
     WebsiteCredentialTotpAlgorithm: WebsiteCredentialTotpAlgorithm;
     WebsiteCredentialTotpMetadata: WebsiteCredentialTotpMetadata;
@@ -11827,6 +12195,7 @@ export interface ApiComponentTypes {
     MCPOAuthConfigMap: MCPOAuthConfigMap;
     AppWidgetInfo: AppWidgetInfo;
     AppDashboardDefinition: AppDashboardDefinition;
+    AppOAuthClientConfig: AppOAuthClientConfig;
     AppManifestData: AppManifestData;
     UpdateAppPayload: UpdateAppPayload;
     AppManifest: AppManifest;

@@ -191,7 +191,7 @@ export function SelectBox<T = unknown>({
         } else if (typeof filterBy === 'string') {
             return (o: T) => String(getProperty(o, filterBy)).toLowerCase();
         } else {
-            return filterBy;
+            return (o: T) => filterBy(o).toLowerCase();
         }
     }
 

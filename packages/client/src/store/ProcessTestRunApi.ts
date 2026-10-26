@@ -17,13 +17,17 @@ export class ProcessTestRunApi extends ApiTopic {
      * Start a test run against an in-code process or an inline definition, with the scenarios
      * supplied in the request instead of a stored suite. Use
      * `client.store.processes.startTestRun()` for stored process definitions and their suites.
+     *
+     * Set `idempotency_key` to make the call safe to retry: the client's retry policy then applies,
+     * and a replayed request returns the run the first one started.
      */
     submit(payload: SubmitProcessTestRunPayload): Promise<ProcessTestRun> {
-        // Starting a run is not idempotent and the contract carries no request key, so a replay
-        // would create a second run. Opt out of any client-level retry policy explicitly rather
-        // than relying on POST being absent from its method list. Rate-limiter pacing retries are
-        // unaffected: those happen before the request reaches the handler.
-        return this.post('/', { payload, retryPolicy: false });
+        // Without a key, starting a run is not idempotent: a request abandoned client-side can still
+        // complete server-side, so a replay would create a second run. Opt out of any client-level
+        // retry policy explicitly rather than relying on POST being absent from its method list.
+        // Rate-limiter pacing retries are unaffected: those happen before the request reaches the
+        // handler.
+        return this.post('/', { payload, retryPolicy: payload.idempotency_key ? undefined : false });
     }
 
     retrieve(runId: string): Promise<ProcessTestRun> {

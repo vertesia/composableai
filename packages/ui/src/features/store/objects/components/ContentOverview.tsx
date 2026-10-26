@@ -51,6 +51,7 @@ import {
 } from './documentEditingRun.js';
 import { PropertiesEditorModal } from './PropertiesEditorModal';
 import { TextEditorPanel } from './TextEditorPanel.js';
+import { getTextPanelSource } from './textPanelSource.js';
 import { useObjectText, useOfficePdfConversion, usePdfProcessingStatus } from './useContentPanelHooks.js';
 import { useDownloadFile } from './useDownloadFile.js';
 
@@ -150,23 +151,6 @@ function isCreatedOrProcessingStatus(status?: ContentObjectStatus): boolean {
  */
 function getContentProcessorType(object: ContentObject): string | undefined {
     return (object.metadata as DocumentMetadata)?.content_processor?.type;
-}
-
-/**
- * Check if text content appears to be markdown based on common patterns.
- */
-function looksLikeMarkdown(text: string | undefined): boolean {
-    if (!text) return false;
-    return (
-        text.includes('\n# ') ||
-        text.includes('\n## ') ||
-        text.includes('\n### ') ||
-        text.includes('\n* ') ||
-        text.includes('\n- ') ||
-        text.includes('\n+ ') ||
-        text.includes('![') ||
-        text.includes('](')
-    );
 }
 
 /**
@@ -1059,23 +1043,7 @@ function TextActions({
 const TextPanel = memo(({ object, text, isTextCropped, textContainerRef, resolveUrl }: TextPanelProps) => {
     const { t } = useUITranslation();
     const isCreatedOrProcessing = isCreatedOrProcessingStatus(object?.status);
-    const content = object.content;
-    const contentProcessorType = getContentProcessorType(object);
-    const isXml = contentProcessorType === 'xml' || content?.type === 'application/xml' || content?.type === 'text/xml';
-
-    // Check if content type is markdown or plain text
-    const isMarkdownOrText = isDocumentEditingContentType(content?.type);
-
-    // Render as markdown if it's markdown/text type OR if text looks like markdown (but not if XML)
-    const shouldRenderAsMarkdown = !isXml && (isMarkdownOrText || looksLikeMarkdown(text));
-    const source: UniversalDocumentSource = {
-        id: object.id,
-        title: object.name,
-        fileName: object.content?.name || object.name,
-        contentType: isXml ? 'text/xml' : shouldRenderAsMarkdown ? 'text/markdown' : object.content?.type,
-        content: text,
-        sourcePath: object.content?.source,
-    };
+    const source = getTextPanelSource(object, text);
 
     return text ? (
         <>

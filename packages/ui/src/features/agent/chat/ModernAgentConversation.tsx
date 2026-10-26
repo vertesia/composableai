@@ -1397,10 +1397,13 @@ function StartWorkflowView({
                             rows={2}
                             className={cn(
                                 'min-h-[72px] resize-none border-0 bg-transparent px-0 py-0 text-sm leading-6 shadow-none focus-visible:ring-0',
-                                // The expanded composer is a fixed-height flex box (adjustTextareaHeight
-                                // pins it to 100%), so it has to scroll its own overflow. The auto-growing
-                                // variant hides overflow because it resizes to fit instead.
-                                isExpandedStartComposer ? 'min-h-0 flex-1 overflow-y-auto' : 'overflow-hidden',
+                                // Both variants scroll their own overflow: the expanded composer is a
+                                // fixed-height flex box (adjustTextareaHeight pins it to 100%), and the
+                                // auto-growing one stops growing at 200px. Hiding overflow there left long
+                                // text unscrollable, so the wheel scrolled the surrounding page instead.
+                                // overscroll-contain keeps that from happening at the ends of the text too.
+                                'overflow-y-auto overscroll-contain',
+                                isExpandedStartComposer && 'min-h-0 flex-1',
                                 inputClassName,
                             )}
                             style={

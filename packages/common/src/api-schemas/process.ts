@@ -155,6 +155,19 @@ export const PublishProcessDefinitionPayloadSchema = z
             .optional(),
         label: z.string().meta({ description: 'Optional human-readable revision label.' }).optional(),
         comment: z.string().meta({ description: 'Optional publish note.' }).optional(),
+        idempotency_key: z
+            .string()
+            .min(1)
+            .max(256)
+            .meta({
+                description:
+                    'Client-chosen key that makes this request safe to retry. Publishing is otherwise not ' +
+                    'idempotent: a repeat of a publish that already succeeded is rejected because the revision ' +
+                    'is no longer a draft. When the revision was published by a request with the same key and ' +
+                    'the same body, the repeat returns that revision instead. Reusing the key with a different ' +
+                    'body is rejected with 409. The key is bound to the revision it published.',
+            })
+            .optional(),
     })
     .meta({ id: 'PublishProcessDefinitionPayload' });
 
@@ -1187,11 +1200,29 @@ export const UpdateProcessTestSuitePayloadSchema = CreateProcessTestSuitePayload
     id: 'UpdateProcessTestSuitePayload',
 });
 
+/**
+ * Makes starting a test run safe to retry. Starting a run is otherwise not idempotent: a request the
+ * client gave up on can still complete server-side, and resending it would start a second run.
+ */
+const ProcessTestRunIdempotencyKeySchema = z
+    .string()
+    .min(1)
+    .max(256)
+    .meta({
+        description:
+            'Client-chosen key, unique per intended run, that makes this request safe to retry. A repeat of ' +
+            'the request with the same key and the same body returns the run the first request started ' +
+            'instead of starting another. Reusing a key with a different body is rejected with 409. Keys ' +
+            'are scoped to the project and stay bound to their run for as long as it exists; once the run ' +
+            'is deleted, the same key starts a new one.',
+    });
+
 export const StartProcessTestRunPayloadSchema = z
     .strictObject({
         suite_id: z.string(),
         process_revision_id: z.string(),
         scenario_ids: z.array(z.string()).optional(),
+        idempotency_key: ProcessTestRunIdempotencyKeySchema.optional(),
     })
     .meta({ id: 'StartProcessTestRunPayload' });
 
@@ -1265,6 +1296,7 @@ export const SubmitProcessTestRunPayloadSchema = z
     .strictObject({
         process: ProcessTestTargetSchema,
         scenarios: z.array(ProcessTestScenarioSchema).min(1),
+        idempotency_key: ProcessTestRunIdempotencyKeySchema.optional(),
     })
     .meta({ id: 'SubmitProcessTestRunPayload' });
 

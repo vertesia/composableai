@@ -509,6 +509,16 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                         type: 'string',
                     },
                 },
+                effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                reasoning_effort: {
+                    $ref: '#/$defs/ReasoningEffort',
+                },
+                verbosity: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
+                },
                 include_thoughts: {
                     type: 'boolean',
                 },
@@ -730,6 +740,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 _option_id: {
                     type: 'string',
                     const: 'bedrock-nova',
+                },
+                effort: {
+                    $ref: '#/$defs/ReasoningEffort',
                 },
                 max_tokens: {
                     type: 'number',
@@ -1223,8 +1236,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     },
                 },
                 effort: {
-                    type: 'string',
-                    enum: ['none', 'high'],
+                    $ref: '#/$defs/ReasoningEffort',
                 },
                 random_seed: {
                     type: 'integer',
@@ -1610,6 +1622,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 image_generation: {
                     $ref: '#/$defs/OpenAiImageGenerationOptions',
                 },
+                seed: {
+                    type: 'number',
+                },
                 max_tokens: {
                     type: 'number',
                 },
@@ -1732,6 +1747,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
         OpenRouterTextOptions: {
             type: 'object',
             properties: {
+                seed: {
+                    type: 'number',
+                },
                 max_tokens: {
                     type: 'number',
                 },
