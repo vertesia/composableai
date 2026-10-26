@@ -139,12 +139,12 @@ export const UpdateUserGroupPayloadSchema = UserGroupSchema.pick({
  *
  * Picked from {@link UserGroupSchema} for the same reason the payloads are — it is a subset of the
  * group, not a parallel shape — and the subset is decided by what an authorization decision needs:
- * identity (`id`, `name`), the dynamic-matching input (`tags`, `properties`) and the BLP inputs
- * (`clearance`, `compartments`, `allowed_projects`). `account` and the audit fields are deliberately
- * out: a token is not a place to restate who edited a group.
+ * identity (`id`, `name`), dynamic properties and the BLP inputs (`clearance`, `compartments`,
+ * `allowed_projects`). `account` and the audit fields are deliberately out: a token is not a place
+ * to restate who edited a group.
  *
- * `tags` is optional here while the group always has them, matching the payloads: the token mapper
- * omits an empty list rather than emitting one.
+ * `tags` remains optional for compatibility with older tokens. Current token producers use tags
+ * while resolving principal sets at mint time, then omit them from the signed payload.
  *
  * This is NOT the Mongoose projection that feeds it. The projection is a `select()` string that lives
  * beside its query — token-server has one, studio-server's resource-reference endpoint has a

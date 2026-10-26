@@ -158,7 +158,8 @@ export interface AuthTokenPayload {
     tags?: string[]; //tags
 
     permissions?: string[]; //permissions
-    scopes?: string[]; //scopes
+    /** Standard OAuth space-delimited scope claim. */
+    scope?: string;
 
     /**
      * Service caller information for agent and service account tokens.
