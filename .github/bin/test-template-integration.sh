@@ -28,6 +28,8 @@ VERDACCIO_PORT=4873
 VERDACCIO_URL="http://localhost:${VERDACCIO_PORT}"
 VERDACCIO_DIR="/tmp/verdaccio-$$"
 VERDACCIO_PID=""
+# Pinned exactly: verdaccio 7.0 only accepts tokens it issued, so the "test-token" publish below fails with E401.
+VERDACCIO_VERSION="6.11.1"
 
 # =============================================================================
 # Functions
@@ -62,10 +64,10 @@ trap cleanup EXIT
 start_verdaccio() {
   echo "=== Starting verdaccio local registry ==="
 
-  # Check if verdaccio is installed
-  if ! command -v verdaccio &> /dev/null; then
-    echo "Installing verdaccio..."
-    npm install -g verdaccio
+  # Install the pinned version unless it is already the one on PATH
+  if [ "$(verdaccio --version 2>/dev/null)" != "v${VERDACCIO_VERSION}" ]; then
+    echo "Installing verdaccio@${VERDACCIO_VERSION}..."
+    npm install -g "verdaccio@${VERDACCIO_VERSION}"
   fi
 
   # Create verdaccio config
