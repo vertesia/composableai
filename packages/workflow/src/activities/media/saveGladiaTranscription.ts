@@ -11,6 +11,7 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { type TextExtractionResult, TextExtractionStatus } from '../../result-types.js';
+import { updateObjectMetadata } from '../../utils/metadata.js';
 
 export interface SaveGladiaTranscriptionParams {
     gladiaTranscriptionId: string;
@@ -98,21 +99,19 @@ export async function saveGladiaTranscription(
     if (inputType === 'objectIds') {
         // Object mode: save to object store
         const objectId = context.objectId;
-        const object = await client.objects.retrieve(objectId, '+text');
-
-        await client.objects.update(objectId, {
+        await updateObjectMetadata(client, objectId, ({ metadata, etag }) => ({
             text: fullText,
-            text_etag: object.content?.etag,
+            text_etag: etag,
             transcript: {
                 segments,
-                etag: object.content?.etag,
+                etag,
             },
             metadata: {
-                ...object.metadata,
+                ...metadata,
                 duration: transcriptionResult.result.metadata.audio_duration,
                 languages: transcriptionResult.result.transcription.languages,
             } as AudioMetadata | VideoMetadata,
-        });
+        }));
 
         log.info(`Saved transcription for object`, {
             objectId,

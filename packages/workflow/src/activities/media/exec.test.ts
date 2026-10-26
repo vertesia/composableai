@@ -2,8 +2,39 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { MockActivityEnvironment } from '@temporalio/testing';
-import { describe, expect, it } from 'vitest';
-import { createFfmpegProgressTracker, execActivityFile, execActivityFileWithProgress } from './exec.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+    createFfmpegProgressTracker,
+    execActivityFile,
+    execActivityFileWithProgress,
+    ffmpegInputThreadArgs,
+    ffmpegOutputThreadArgs,
+    libx264ThreadArgs,
+} from './exec.js';
+
+describe('ffmpeg thread arguments', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('sizes decoder, filter and encoder threads to the available CPUs', () => {
+        vi.spyOn(os, 'availableParallelism').mockReturnValue(3);
+
+        expect(ffmpegInputThreadArgs()).toEqual(['-filter_threads', '3', '-threads', '3']);
+        expect(ffmpegOutputThreadArgs()).toEqual(['-threads', '3']);
+    });
+
+    it('applies the libx264 1.5x rule to the available CPUs', () => {
+        vi.spyOn(os, 'availableParallelism').mockReturnValue(8);
+        expect(libx264ThreadArgs()).toEqual(['-threads', '12']);
+    });
+
+    it('never asks for fewer than one thread', () => {
+        vi.spyOn(os, 'availableParallelism').mockReturnValue(1);
+        expect(libx264ThreadArgs()).toEqual(['-threads', '1']);
+        expect(ffmpegOutputThreadArgs()).toEqual(['-threads', '1']);
+    });
+});
 
 describe('execActivityFile', () => {
     it('should execute a child process inside an Activity context', async () => {

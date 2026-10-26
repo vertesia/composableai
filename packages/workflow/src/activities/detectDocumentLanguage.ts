@@ -1,6 +1,7 @@
 import { log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
+import { updateObjectMetadata } from '../utils/metadata.js';
 import {
     executeInteractionFromActivity,
     getInteractionRateLimitFailure,
@@ -93,7 +94,10 @@ export async function detectDocumentLanguage(payload: DSLActivityExecutionPayloa
 
     // metadata-only update (not source/properties), so it won't re-trigger intake; suppress
     // workflows anyway for consistency with the other intake writes.
-    await client.objects.update(objectId, { metadata: { ...doc.metadata, languages } }, { suppressWorkflows: true });
+    // Re-read metadata rather than spreading the copy read before detection, which another step may have changed.
+    await updateObjectMetadata(client, objectId, ({ metadata }) => ({ metadata: { ...metadata, languages } }), {
+        suppressWorkflows: true,
+    });
 
     log.debug(`detectDocumentLanguage: set languages for ${objectId}`, { languages, runId: res.id });
     return { status: 'completed', languages };

@@ -1,4 +1,5 @@
 import { type ChildProcess, type ExecFileOptions, execFile as execFileCallback, spawn } from 'node:child_process';
+import os from 'node:os';
 import { promisify } from 'node:util';
 import { ApplicationFailure, Context } from '@temporalio/activity';
 
@@ -23,6 +24,35 @@ const FFMPEG_FRAME_PATTERN = /frame=\s*(\d+)/;
 // defensive guard against an unterminated stream, retaining enough of a tail to reunite a marker split at the boundary.
 const PROGRESS_CARRY_LIMIT = 64 * 1024;
 const PROGRESS_CARRY_TAIL = 512;
+
+/**
+ * CPUs ffmpeg may actually use. Left to itself, ffmpeg (and libx264) sizes its thread pools from the process's CPU
+ * affinity mask, which in a container is usually the host's CPUs rather than the container's CPU limit, so a small
+ * container on a large host starts far more threads than it has CPU time for. `os.availableParallelism()` also honours
+ * the cgroup CPU limit.
+ */
+export function ffmpegThreadCount(): number {
+    return Math.max(1, os.availableParallelism());
+}
+
+/** Options placed before `-i`: size the input decoder and the filter graph to the available CPUs. */
+export function ffmpegInputThreadArgs(): string[] {
+    const threads = String(ffmpegThreadCount());
+    return ['-filter_threads', threads, '-threads', threads];
+}
+
+/** Options placed before the output file: size the output encoder to the available CPUs. */
+export function ffmpegOutputThreadArgs(): string[] {
+    return ['-threads', String(ffmpegThreadCount())];
+}
+
+/**
+ * libx264 encoder threads. Keeps x264's own automatic rule (1.5 threads per CPU, so frame threads waiting on a
+ * reference frame do not leave a CPU idle) but applies it to the available CPUs instead of the affinity mask.
+ */
+export function libx264ThreadArgs(): string[] {
+    return ['-threads', String(Math.floor((ffmpegThreadCount() * 3) / 2))];
+}
 
 const activityCommandDeadlines = new WeakMap<Context, number>();
 

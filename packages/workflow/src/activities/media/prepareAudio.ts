@@ -18,6 +18,8 @@ import { saveBlobToTempFile } from '../../utils/blobs.js';
 import {
     execActivityFile,
     execActivityFileWithProgress,
+    ffmpegInputThreadArgs,
+    ffmpegOutputThreadArgs,
     initializeActivityCommandDeadline,
     rethrowIfActivityStopped,
 } from './exec.js';
@@ -116,6 +118,7 @@ async function generateAudioRendition(
 
     const command = [
         '-y', // Overwrite output
+        ...ffmpegInputThreadArgs(),
         '-i',
         audioPath,
         '-c:a',
@@ -124,6 +127,7 @@ async function generateAudioRendition(
         audioBitrate, // Audio bitrate
         '-movflags',
         '+faststart', // Enable streaming
+        ...ffmpegOutputThreadArgs(),
         outputFile,
     ];
 

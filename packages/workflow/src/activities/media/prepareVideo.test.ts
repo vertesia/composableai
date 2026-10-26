@@ -2,11 +2,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { log } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
 import { execActivityFile } from './exec.js';
-import { prepareVideo, resolveVideoPreset, shouldTranscodeVideo } from './prepareVideo.js';
+import { buildWebRenditionArgs, prepareVideo, resolveVideoPreset, shouldTranscodeVideo } from './prepareVideo.js';
 
 vi.mock('@temporalio/activity', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@temporalio/activity')>()),
@@ -50,6 +50,24 @@ describe('prepareVideo', () => {
         });
         expect(log.warn).toHaveBeenCalledWith('Failed to get video metadata: No video stream found in file');
         expect(log.error).not.toHaveBeenCalled();
+    });
+});
+
+describe('buildWebRenditionArgs', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('sizes decoding before the input and the libx264 encoder after it', () => {
+        vi.spyOn(os, 'availableParallelism').mockReturnValue(4);
+
+        const args = buildWebRenditionArgs('in.mov', 'out.mp4', { width: 1920, height: 1080 }, 'medium');
+
+        const inputIndex = args.indexOf('-i');
+        expect(args.slice(1, inputIndex)).toEqual(['-filter_threads', '4', '-threads', '4']);
+        const encoderIndex = args.indexOf('libx264');
+        expect(args.slice(encoderIndex + 1, encoderIndex + 3)).toEqual(['-threads', '6']);
+        expect(args.at(-1)).toBe('out.mp4');
     });
 });
 

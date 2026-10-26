@@ -1,5 +1,6 @@
 // Export here DSL activities
 
+export { addObjectRendition } from './addObjectRendition.js';
 export { createDocumentTypeFromInteractionRun } from './advanced/createDocumentTypeFromInteractionRun.js';
 export { createOrUpdateDocumentFromInteractionRun } from './advanced/createOrUpdateDocumentFromInteractionRun.js';
 export { updateDocumentFromInteractionRun } from './advanced/updateDocumentFromInteractionRun.js';
@@ -23,12 +24,14 @@ export { generateOrAssignContentType } from './generateOrAssignContentType.js';
 export { getObjectFromStore } from './getObjectFromStore.js';
 export { handleDslError } from './handleError.js';
 export { loadChildWorkflowSpec } from './loadChildWorkflowSpec.js';
+export { extractVideoAssets } from './media/extractVideoAssets.js';
 export { prepareAudio } from './media/prepareAudio.js';
 export { prepareVideo } from './media/prepareVideo.js';
 export type { ProbeMediaStreamsResult } from './media/probeMediaStreams.js';
 export { probeMediaStreams } from './media/probeMediaStreams.js';
 export { convertPdfToStructuredText } from './media/processPdfWithTextract.js';
 export { saveGladiaTranscription } from './media/saveGladiaTranscription.js';
+export { transcodeVideo } from './media/transcodeVideo.js';
 export type { TranscriptMediaResult } from './media/transcribeMediaWithGladia.js';
 export { transcribeMedia } from './media/transcribeMediaWithGladia.js';
 export { mergeChildArtifacts } from './mergeChildArtifacts.js';
