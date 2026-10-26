@@ -22,6 +22,7 @@ import { getClient } from '../client.js';
 import { readFile, readStdin, writeFile } from '../utils/stdio.js';
 
 type StartOptions = {
+    inferenceProfile?: unknown;
     data?: unknown;
     input?: unknown;
     output?: unknown;
@@ -104,6 +105,7 @@ export function registerAgentsCommand(program: Command) {
         .option('--run-type <type>', 'Process run type: programmatic or supervised', 'programmatic')
         .option('-e, --env <environmentId>', 'Environment ID for conversation agents')
         .option('-m, --model <model>', 'Model override')
+        .option('--inference-profile <id>', 'Inference profile override for this agent or process run')
         .option('--user-message <message>', 'Process run intent passed to supervised mode')
         .option('-T, --tags <tags>', 'Comma-separated tags')
         .option('-C, --categories <categories>', 'Comma-separated categories')
@@ -537,6 +539,8 @@ async function waitForTaskUpdate(client: Awaited<ReturnType<typeof getClient>>, 
 
 function buildInteractionConfig(options: StartOptions): InteractionExecutionConfiguration | undefined {
     const config: InteractionExecutionConfiguration = {};
+    const profile = readOptionalString(options.inferenceProfile);
+    if (profile) config.inference_profile = profile;
     const environment = readOptionalString(options.env);
     const model = readOptionalString(options.model);
     if (environment) {
@@ -550,6 +554,8 @@ function buildInteractionConfig(options: StartOptions): InteractionExecutionConf
 
 function buildProcessConfig(options: StartOptions): ProcessRunConfig | undefined {
     const config: ProcessRunConfig = {};
+    const profile = readOptionalString(options.inferenceProfile);
+    if (profile) config.inference_profile = profile;
     const model = readOptionalString(options.model);
     const userMessage = readOptionalString(options.userMessage);
     if (model) {

@@ -1,5 +1,7 @@
+import { isRTL, LANGUAGE_STORAGE_KEY, SUPPORTED_LANGUAGES, type SupportedLanguage } from '../i18n/rtl.js';
 import { vertesiaBranding } from './branding.js';
 import { LOADING_ICON_SIZE, LOADING_INDICATOR_STYLES } from './loading.js';
+import { BOOT_TEXT, type BootText } from './text.js';
 
 export interface BootScreenOptions {
     storageKey?: string;
@@ -8,6 +10,12 @@ export interface BootScreenOptions {
     slowLoadingLabel?: string;
     reloadLabel?: string;
     loadingLabel?: string;
+    /**
+     * Language of the boot copy. `'auto'` (the default) resolves it the way `LanguageProvider` does:
+     * the saved choice, then the browser language, then English. Pin a language when the app's
+     * React tree pins one, so the boot screen and the app agree.
+     */
+    language?: SupportedLanguage | 'auto';
     autoStart?: boolean;
     /** Trusted, app-authored HTML inside the loading container. Never pass user content. */
     html?: string;
@@ -22,7 +30,6 @@ export interface BootScreenHtmlPlugin {
 
 const DEFAULT_STORAGE_KEY = 'vite-ui-theme';
 const DEFAULT_ICON_SRC = vertesiaBranding.loadingIcon.light;
-const DEFAULT_LOADING_LABEL = 'Loading';
 
 export const BOOT_SCREEN_STYLES = `
 ${LOADING_INDICATOR_STYLES}
@@ -103,44 +110,95 @@ ${LOADING_INDICATOR_STYLES}
   }
 `;
 
-function inlineJson(value: string): string {
+function inlineJson(value: unknown): string {
     return JSON.stringify(value).replaceAll('<', '\\u003c');
 }
 
 function normalizedOptions(options: BootScreenOptions) {
     return {
+        ...options,
         storageKey: options.storageKey ?? DEFAULT_STORAGE_KEY,
         iconSrc: options.iconSrc ?? DEFAULT_ICON_SRC,
-        loadingLabel: options.loadingLabel ?? DEFAULT_LOADING_LABEL,
+        language: options.language ?? 'auto',
         autoStart: options.autoStart ?? true,
-        html: options.html,
-        styles: options.styles,
     };
 }
 
-/** Default markup shared by Studio and configurable applications. */
+/** An app-supplied label wins in every language. */
+function bootText(options: BootScreenOptions, language: SupportedLanguage): BootText {
+    return {
+        loading: options.loadingLabel ?? BOOT_TEXT[language].loading,
+        slowLoading: options.slowLoadingLabel ?? BOOT_TEXT[language].slowLoading,
+        reload: options.reloadLabel ?? BOOT_TEXT[language].reload,
+    };
+}
+
+/** The copy of every language the runtime may pick: only the pinned one, or all of them. */
+function bootTexts(options: BootScreenOptions): Partial<Record<SupportedLanguage, BootText>> {
+    const languages = options.language && options.language !== 'auto' ? [options.language] : SUPPORTED_LANGUAGES;
+    return Object.fromEntries(languages.map((language) => [language, bootText(options, language)]));
+}
+
+/**
+ * Default markup shared by Studio and configurable applications. It carries the copy of the pinned
+ * language (English under `'auto'`); `data-boot-text` and `data-boot-alt` let the runtime swap in
+ * the language it resolves at page load. Custom `html` may use the same attributes.
+ */
 export function renderDefaultBootContent(options: BootScreenOptions = {}): string {
     const escapeMarkup = (value: string) =>
         value.replace(
             /[&<>"']/g,
             (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char,
         );
-    const { iconSrc, loadingLabel } = normalizedOptions(options);
+    const { iconSrc, language } = normalizedOptions(options);
+    const text = bootText(options, language === 'auto' ? 'en' : language);
     const icon = (src: string, className = '') =>
-        `<img class="vboot-spinner vertesia-loading-icon vertesia-loading-motion ${className}" width="${LOADING_ICON_SIZE}" height="${LOADING_ICON_SIZE}" src="${escapeMarkup(src)}" alt="${escapeMarkup(loadingLabel)}" />`;
+        `<img class="vboot-spinner vertesia-loading-icon vertesia-loading-motion ${className}" width="${LOADING_ICON_SIZE}" height="${LOADING_ICON_SIZE}" src="${escapeMarkup(src)}" alt="${escapeMarkup(text.loading)}" data-boot-alt="loading" />`;
     return `<div class="vboot-overlay" role="status" aria-live="polite">${options.darkIconSrc ? icon(iconSrc, 'vboot-icon-light') + icon(options.darkIconSrc, 'vboot-icon-dark') : icon(iconSrc)}
 <div id="loading-slow-notice" class="vboot-slow" style="display: none;">
-<p>${escapeMarkup(options.slowLoadingLabel ?? 'Still loading — this is taking longer than usual.')}</p>
-<div id="loading-slow-reload" style="display: none;"><button type="button" class="vboot-btn" data-boot-reload>${escapeMarkup(options.reloadLabel ?? 'Reload page')}</button></div></div></div>`;
+<p data-boot-text="slowLoading">${escapeMarkup(text.slowLoading)}</p>
+<div id="loading-slow-reload" style="display: none;"><button type="button" class="vboot-btn" data-boot-reload data-boot-text="reload">${escapeMarkup(text.reload)}</button></div></div></div>`;
 }
 
 export function renderBootScreenRuntime(options: BootScreenOptions = {}): string {
-    const { storageKey, html } = normalizedOptions(options);
+    const { storageKey, html, language } = normalizedOptions(options);
     const defaultHtml = renderDefaultBootContent(options);
     return `(() => {
   const storageKey = ${inlineJson(storageKey)};
 
   const customHtml = ${html === undefined ? 'undefined' : inlineJson(html)};
+  const bootText = ${inlineJson(bootTexts(options))};
+  // Mirrors resolveLanguage and LanguageProvider's initial read (i18n/rtl.ts, i18n/LanguageProvider.tsx).
+  const hasText = (code) => Object.prototype.hasOwnProperty.call(bootText, code);
+  const resolveLanguage = (raw) => {
+    if (!raw) return 'en';
+    if (hasText(raw)) return raw;
+    const base = String(raw).split('-')[0];
+    return hasText(base) ? base : 'en';
+  };
+  const language = (() => {
+    const pinned = ${inlineJson(language)};
+    if (pinned !== 'auto') return pinned;
+    try {
+      const stored = window.localStorage.getItem(${inlineJson(LANGUAGE_STORAGE_KEY)});
+      if (stored) return resolveLanguage(stored);
+    } catch (_error) {
+      // Storage can be unavailable in private or restricted browsing contexts.
+    }
+    return resolveLanguage(window.navigator && window.navigator.language);
+  })();
+  const direction = ${inlineJson(SUPPORTED_LANGUAGES.filter((code) => isRTL(code)))}.includes(language) ? 'rtl' : 'ltr';
+  const localize = (container) => {
+    const text = bootText[language];
+    container.querySelectorAll('[data-boot-text]').forEach((node) => {
+      const value = text[node.getAttribute('data-boot-text')];
+      if (value) node.textContent = value;
+    });
+    container.querySelectorAll('[data-boot-alt]').forEach((node) => {
+      const value = text[node.getAttribute('data-boot-alt')];
+      if (value) node.setAttribute('alt', value);
+    });
+  };
   let slowNoticeTimer;
   let slowReloadTimer;
   const previewTheme = (() => {
@@ -196,7 +254,10 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
     const loading = document.createElement('div');
     loading.id = 'loading-indicator';
     loading.className = bootThemeClass();
+    loading.lang = language;
+    loading.dir = direction;
     loading.innerHTML = customHtml ?? ${inlineJson(defaultHtml)};
+    localize(loading);
     loading.querySelectorAll('[data-boot-title]').forEach((heading) => {
       if (document.title) heading.textContent = document.title;
     });
@@ -251,6 +312,8 @@ export function renderBootScreenRuntime(options: BootScreenOptions = {}): string
     }, 30000);
   };
   window.__vertesiaBoot = {
+    direction,
+    language,
     scheduleSlowLoadingNotice,
     applyTheme,
     bootThemeClass,

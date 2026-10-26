@@ -1,10 +1,12 @@
-import type { AuthTokenPayload } from '@vertesia/common';
+import { type AuthTokenPayload, REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { jwtDecode } from 'jwt-decode';
+import { forgetRejectedScopeSelection, resolveAuthSelection, type ScopeSelection } from '../scopeSelection';
 import { markCentralAuthRoundTripStarted } from './authRoundTrip';
 import { verifyAuthState } from './authState';
 import { usesGatewaySession } from './gateway';
 import { isStsTokenIssuer } from './tokenIssuer';
+import { isLoopbackHostname } from './vertesiaHosts';
 
 const TRANSACTION_KEY = 'vertesia.oauth.transaction';
 const TOKEN_KEY = 'vertesia.oauth.access';
@@ -12,7 +14,14 @@ const MAX_TRANSACTION_AGE = 10 * 60_000;
 let pending: Promise<string> | undefined;
 // Long-lived credentials never enter browser storage. A reload resumes via the broker when access expires.
 let refreshSession:
-    | { token: string; clientId: string; issuer: string; tokenEndpoint: string; revocationEndpoint?: string }
+    | {
+          token: string;
+          clientId: string;
+          issuer: string;
+          resource?: string;
+          tokenEndpoint: string;
+          revocationEndpoint?: string;
+      }
     | undefined;
 
 export class OAuthLoginError extends Error {}
@@ -47,9 +56,13 @@ function base64url(bytes: Uint8Array): string {
 function randomValue(): string {
     return base64url(crypto.getRandomValues(new Uint8Array(32)));
 }
-function httpsUrl(value: string): URL {
+/** Validate a public protocol endpoint URL. The returned URL is routing metadata, not a credential. */
+function validatedEndpointUrl(value: string): URL {
     const url = new URL(value);
-    if (url.protocol !== 'https:' || url.username || url.password) throw new Error('OAuth endpoint must use HTTPS');
+    const localHttp = Env.isLocalDev && url.protocol === 'http:' && isLoopbackHostname(url.hostname);
+    if ((url.protocol !== 'https:' && !localHttp) || url.username || url.password) {
+        throw new Error('OAuth endpoint must use HTTPS or local-development loopback HTTP');
+    }
     return url;
 }
 
@@ -60,7 +73,10 @@ interface Transaction {
     clientId: string;
     redirectUri: string;
     issuer: string;
+    resource?: string;
     target: string;
+    rememberedScope?: ScopeSelection;
+    retryScope?: ScopeSelection;
 }
 
 export function clearAppOAuth(): void {
@@ -86,8 +102,17 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     }
     const redirectUri = redirect.toString();
     if (new URL(redirectUri).origin !== window.location.origin) throw new Error('OAuth callback must be same-origin');
-    const issuer = Env.endpoints.sts.replace(/\/+$/, '');
-    const current = new URL(window.location.href);
+    const issuer = validatedEndpointUrl(config.issuer ?? Env.endpoints.sts)
+        .toString()
+        .replace(/\/+$/, '');
+    // A token is issued for one audience. The default audience follows the issuer, which is already part of every
+    // stored credential's identity; a configured one is recorded alongside it, so changing it never reuses a token,
+    // refresh session or login transaction issued for the previous audience.
+    const configuredResource = config.resource ? validatedEndpointUrl(config.resource).toString() : undefined;
+    const sameClient = (stored: { clientId: string; issuer: string; resource?: string }) =>
+        stored.clientId === clientId && stored.issuer === issuer && stored.resource === configuredResource;
+    let current = new URL(window.location.href);
+    let { accountId, projectId } = resolveAuthSelection(current);
     const callback = current.origin + current.pathname === new URL(redirectUri).origin + new URL(redirectUri).pathname;
     const state = callback ? current.searchParams.get('state') : null;
     const code = callback ? current.searchParams.get('code') : null;
@@ -101,15 +126,26 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         if (
             !transaction ||
             transaction.state !== state ||
-            transaction.clientId !== clientId ||
+            !sameClient(transaction) ||
             transaction.redirectUri !== redirectUri ||
-            transaction.issuer !== issuer ||
             Date.now() - transaction.created > MAX_TRANSACTION_AGE ||
             transaction.created > Date.now()
         ) {
             throw new Error('Invalid or expired OAuth login state');
         }
-        if (error || !code) throw new Error(`Application sign-in was not completed (${error || 'missing code'})`);
+        if (error === REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE && transaction.rememberedScope?.accountId) {
+            const target = new URL(transaction.target);
+            if (target.origin !== window.location.origin) throw new Error('Invalid OAuth return target');
+            forgetRejectedScopeSelection(transaction.rememberedScope.accountId, transaction.rememberedScope.projectId);
+            clearAppOAuth();
+            current = target;
+            window.history.replaceState(window.history.state, '', current);
+            accountId = transaction.retryScope?.accountId;
+            projectId = undefined;
+            transaction = undefined;
+        } else if (error || !code) {
+            throw new Error(`Application sign-in was not completed (${error || 'missing code'})`);
+        }
     } else {
         const raw = sessionStorage.getItem(TOKEN_KEY);
         if (raw) {
@@ -117,35 +153,36 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 token: string;
                 clientId: string;
                 issuer: string;
+                resource?: string;
                 refreshToken?: string;
             };
             const claims = jwtDecode<AuthTokenPayload>(cached.token);
             if (
                 config.offlineAccess &&
-                cached.clientId === clientId &&
-                cached.issuer === issuer &&
-                (!current.searchParams.get('p') || claims.project?.id === current.searchParams.get('p')) &&
-                (!current.searchParams.get('a') || claims.account?.id === current.searchParams.get('a'))
+                sameClient(cached) &&
+                (!projectId || claims.project?.id === projectId) &&
+                (!accountId || claims.account?.id === accountId)
             )
-                refreshCredential =
-                    refreshSession?.clientId === clientId && refreshSession.issuer === issuer
-                        ? refreshSession.token
-                        : undefined;
+                refreshCredential = refreshSession && sameClient(refreshSession) ? refreshSession.token : undefined;
             // Discard credentials persisted by older SDK versions rather than loading them into the new session.
             if (cached.refreshToken) sessionStorage.removeItem(TOKEN_KEY);
             if (
-                cached.clientId === clientId &&
-                cached.issuer === issuer &&
+                sameClient(cached) &&
                 !forceRefresh &&
                 claims.exp > Date.now() / 1000 + (config.offlineAccess ? 300 : 30) &&
-                (!current.searchParams.get('p') || claims.project?.id === current.searchParams.get('p')) &&
-                (!current.searchParams.get('a') || claims.account?.id === current.searchParams.get('a'))
+                (!projectId || claims.project?.id === projectId) &&
+                (!accountId || claims.account?.id === accountId)
             ) {
                 return cached.token;
             }
         }
     }
-    const discovery = await fetch(`${issuer}/.well-known/oauth-authorization-server`);
+    const issuerUrl = new URL(issuer);
+    const discoveryUrl = new URL(
+        `/.well-known/oauth-authorization-server${issuerUrl.pathname.replace(/\/$/, '')}`,
+        issuerUrl.origin,
+    );
+    const discovery = await fetch(discoveryUrl);
     if (!discovery.ok) throw new Error(`OAuth discovery failed (${discovery.status})`);
     const metadata: {
         issuer: string;
@@ -154,11 +191,13 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         revocation_endpoint?: string;
     } = await discovery.json();
     if (metadata.issuer.replace(/\/+$/, '') !== issuer) throw new Error('OAuth issuer mismatch');
-    const authorize = httpsUrl(metadata.authorization_endpoint);
-    const tokenEndpoint = httpsUrl(metadata.token_endpoint);
+    const authorize = validatedEndpointUrl(metadata.authorization_endpoint);
+    const tokenEndpoint = validatedEndpointUrl(metadata.token_endpoint);
     const revocationEndpoint =
-        metadata.revocation_endpoint === undefined ? undefined : httpsUrl(metadata.revocation_endpoint).toString();
-    const resource = new URL(metadata.issuer).toString();
+        metadata.revocation_endpoint === undefined
+            ? undefined
+            : validatedEndpointUrl(metadata.revocation_endpoint).toString();
+    const resource = configuredResource ?? new URL(metadata.issuer).toString();
     if (refreshCredential) {
         try {
             const response = await fetch(tokenEndpoint, {
@@ -184,8 +223,8 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                     claims.iss.replace(/\/+$/, '') !== issuer ||
                     claims.client_id !== clientId ||
                     claims.exp <= Date.now() / 1000 ||
-                    (!!current.searchParams.get('a') && claims.account?.id !== current.searchParams.get('a')) ||
-                    (!!current.searchParams.get('p') && claims.project?.id !== current.searchParams.get('p'))
+                    (!!accountId && claims.account?.id !== accountId) ||
+                    (!!projectId && claims.project?.id !== projectId)
                 )
                     throw new OAuthLoginError('Invalid OAuth refresh identity');
                 sessionStorage.setItem(
@@ -194,12 +233,14 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                         token: grant.access_token,
                         clientId,
                         issuer,
+                        resource: configuredResource,
                     }),
                 );
                 refreshSession = {
                     token: grant.refresh_token ?? refreshCredential,
                     clientId,
                     issuer,
+                    resource: configuredResource,
                     tokenEndpoint: tokenEndpoint.toString(),
                     revocationEndpoint,
                 };
@@ -241,6 +282,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 token: grant.access_token,
                 clientId,
                 issuer,
+                resource: configuredResource,
             }),
         );
         refreshSession =
@@ -249,6 +291,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                       token: grant.refresh_token,
                       clientId,
                       issuer,
+                      resource: configuredResource,
                       tokenEndpoint: tokenEndpoint.toString(),
                       revocationEndpoint,
                   }
@@ -265,13 +308,20 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     }
     let scopes = config.scopes ?? ['openid', 'profile'];
     if (clientId.startsWith('https://')) {
-        const documentResponse = await fetch(httpsUrl(clientId), { cache: 'no-store' });
+        const documentResponse = await fetch(validatedEndpointUrl(clientId), { cache: 'no-store' });
         if (!documentResponse.ok) throw new Error(`Application CIMD unavailable (${documentResponse.status})`);
         const document: { scope?: string; redirect_uris?: string[] } = await documentResponse.json();
         if (!document.redirect_uris?.includes(redirectUri))
             throw new Error('Application CIMD does not allow this callback');
         if (!config.scopes && document.scope) scopes = document.scope.split(/\s+/);
     }
+    const explicitScope =
+        current.searchParams.has('a') || current.searchParams.has('p')
+            ? {
+                  accountId: current.searchParams.get('a') ?? undefined,
+                  projectId: current.searchParams.get('p') ?? undefined,
+              }
+            : Env.defaultAuthSelection;
     const verifier = randomValue();
     const next: Transaction = {
         state: randomValue(),
@@ -279,7 +329,13 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         clientId,
         redirectUri,
         issuer,
+        resource: configuredResource,
         target: current.toString(),
+        rememberedScope:
+            accountId && explicitScope?.projectId === undefined && (!explicitScope?.accountId || projectId)
+                ? { accountId, projectId }
+                : undefined,
+        retryScope: explicitScope?.accountId ? { accountId: explicitScope.accountId } : undefined,
         created: Date.now(),
     };
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
@@ -297,10 +353,8 @@ async function acquireToken(forceRefresh = false): Promise<string> {
             : scopes.filter((s) => s !== 'offline_access')
         ).join(' '),
     );
-    const account = current.searchParams.get('a');
-    if (account) authorize.searchParams.set('account_id', account);
-    const project = current.searchParams.get('p');
-    if (project) authorize.searchParams.set('project_id', project);
+    if (accountId) authorize.searchParams.set('account_id', accountId);
+    if (projectId) authorize.searchParams.set('project_id', projectId);
     sessionStorage.setItem(TRANSACTION_KEY, JSON.stringify(next));
     markCentralAuthRoundTripStarted();
     window.location.replace(authorize.toString());
@@ -323,7 +377,7 @@ export async function revokeAppOAuthSession(): Promise<void> {
     const cached = refreshSession;
     clearAppOAuth();
     if (!cached) return;
-    const revoke = httpsUrl(cached.revocationEndpoint ?? cached.tokenEndpoint);
+    const revoke = validatedEndpointUrl(cached.revocationEndpoint ?? cached.tokenEndpoint);
     if (cached.revocationEndpoint === undefined) revoke.pathname = revoke.pathname.replace(/\/token$/, '/revoke');
     await fetch(revoke, {
         method: 'POST',

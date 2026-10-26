@@ -1,7 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
-import { buildApiSchemaComponents } from '../api-schemas/registry.js';
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import { buildApiSchemaComponents, type ApiComponentName as RegistryComponentName } from '../api-schemas/registry.js';
+import type { ProcessDefinition } from '../store/process.js';
+import type { ViewNavigationNode } from '../views.js';
+import type { ApiComponentName, ApiComponentType } from './index.js';
 import { ApiSchemaComponents } from './index.js';
 
 /**
@@ -14,6 +17,14 @@ import { ApiSchemaComponents } from './index.js';
  *    building the Zod graph costs ~85 MB of heap in every process that enforces contracts, which is
  *    enough to push a small API process past its memory limit.
  */
+describe('runtime contract component types', () => {
+    it('preserves the registered names and recursive wire types', () => {
+        expectTypeOf<ApiComponentName>().toEqualTypeOf<RegistryComponentName>();
+        expectTypeOf<ApiComponentType<'ProcessDefinition'>>().toEqualTypeOf<ProcessDefinition>();
+        expectTypeOf<ApiComponentType<'ViewNavigationNode'>>().toEqualTypeOf<ViewNavigationNode>();
+    });
+});
+
 describe('api-contract components artifact', () => {
     it('matches the Zod registry exactly', { timeout: 30_000 }, () => {
         // Fails when an API schema was edited without re-running the generator, and equally when the
@@ -68,7 +79,7 @@ const packageOf = (url: string): string | undefined =>
 
 describe('api-contract zod isolation', () => {
     it('does not reference zod or the Zod registry from the entry file', () => {
-        // `index.ts` imports `ApiComponentName`/`ApiComponentType` from the registry with
+        // `index.ts` imports the schema-free component definitions with
         // `import type`, which tsc elides. Dropping the `type` keyword would compile fine and quietly
         // pull the whole graph back into every server, so assert on the emitted JavaScript.
         const emitted = readFileSync(BUILT_ENTRY, 'utf8');

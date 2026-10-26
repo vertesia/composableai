@@ -95,6 +95,7 @@ export function AuthScreenPreview({
         setTenant: noop,
         setStoredSession: noop,
         onProceedFromEmail: noop,
+        onPasswordRequired: noop,
         onBack: noop,
         onNotYou: noop,
         onProviderClicked: noop,

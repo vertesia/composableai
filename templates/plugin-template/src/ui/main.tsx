@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import './i18n'; // register plugin-specific translations
 import './index.css';
 // initialize dev environment
-import './env';
+import { LocalOAuthConfigurationError, validateLocalAuthConfiguration } from './env';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -29,6 +29,7 @@ async function mount(container: HTMLElement) {
         await mountAuthScreenPreview(container, preview, branding, appAuthScreens);
         return;
     }
+    validateLocalAuthConfiguration();
     const { AppEntry } = await import('./app-ui-entry');
     createRoot(container).render(
         <StrictMode>
@@ -37,4 +38,11 @@ async function mount(container: HTMLElement) {
     );
 }
 
-void mount(rootElement).catch((error: unknown) => console.error('Failed to initialize application', error));
+void mount(rootElement).catch((error: unknown) => {
+    console.error('Failed to initialize application', error);
+    if (error instanceof LocalOAuthConfigurationError) {
+        rootElement.setAttribute('role', 'alert');
+        rootElement.className = 'm-6 rounded border border-attention bg-attention p-4 text-attention';
+        rootElement.textContent = error.message;
+    }
+});

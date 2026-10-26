@@ -10,6 +10,8 @@ declare module 'koa' {
     interface BaseContext {
         payload: Promise<LazyBody>;
         hasPayload: boolean;
+        /** Per-request override applied before the lazy body is first read. */
+        requestBodyLimit?: RawBodyOptions['limit'];
     }
 }
 
@@ -36,7 +38,7 @@ function parseMultipartBody(
     return new Promise((resolve, reject) => {
         form.parse(koaRequest.req, (err, fields, files) => {
             if (err) {
-                reject(err);
+                reject(withClientStatus(err));
             } else {
                 resolve({
                     params: fields,
@@ -47,14 +49,58 @@ function parseMultipartBody(
     });
 }
 
+/**
+ * Give a formidable error its HTTP status. formidable tags the caller's mistakes with a 4xx `httpCode`
+ * (a multipart content type without a boundary is 400, a body over the size limits 413), which Koa
+ * ignores: it reads `status`, so without this they answer 500.
+ */
+function withClientStatus(err: unknown): unknown {
+    const httpCode = (err as { httpCode?: unknown } | null)?.httpCode;
+    if (err instanceof Error && typeof httpCode === 'number' && httpCode >= 400 && httpCode < 500) {
+        Object.assign(err, { status: httpCode, statusCode: httpCode, expose: true });
+    }
+    return err;
+}
+
 async function getRawBodyText(koaRequest: Request, opts: LazyBodyOpts): Promise<string> {
+    // raw-body options are request-specific. In particular, `length` must never leak from one
+    // request to the next when a later request is compressed or uses chunked transfer encoding.
+    const requestOpts = { ...opts };
+    if (koaRequest.ctx.requestBodyLimit !== undefined) {
+        requestOpts.limit = koaRequest.ctx.requestBodyLimit;
+    }
     const len = koaRequest.length;
     const encoding = koaRequest.headers['content-encoding'];
     if (len && !encoding) {
-        opts.length = len;
+        requestOpts.length = len;
+    } else {
+        delete requestOpts.length;
     }
-    // TODO how to detect custom encoding on content type to ser encoding for readRawBody
-    return (await readRawBody(inflate(koaRequest.req, opts.inflate), opts)).toString(/*which charset?*/);
+    try {
+        // TODO how to detect custom encoding on content type to ser encoding for readRawBody
+        return (await readRawBody(inflate(koaRequest.req, requestOpts.inflate), requestOpts)).toString();
+    } catch (err: unknown) {
+        // A client that hung up before the body was read leaves a destroyed request behind, which
+        // raw-body reports as a 500 "stream is not readable". Nothing failed on the server, and no
+        // response can reach the client: answer 499 (client closed request) so it counts as a 4xx.
+        // Only that error: a body rejected for its size or encoding keeps its 413/415 even if the
+        // connection closed too.
+        if (koaRequest.req.destroyed && isRawBodyError(err, 'stream.not.readable')) {
+            throw Object.assign(new Error('Client closed the request before its body was read', { cause: err }), {
+                status: CLIENT_CLOSED_REQUEST,
+                statusCode: CLIENT_CLOSED_REQUEST,
+                expose: true,
+            });
+        }
+        throw err;
+    }
+}
+
+/** Not in the HTTP spec; the status proxies such as nginx log for a client that disconnected. */
+const CLIENT_CLOSED_REQUEST = 499;
+
+function isRawBodyError(err: unknown, type: string): err is Error {
+    return err instanceof Error && (err as Error & { type?: unknown }).type === type;
 }
 
 /**
@@ -232,7 +278,7 @@ async function createBody(koaRequest: Request, opts: LazyBodyOpts) {
     } else if (koaRequest.is('urlencoded')) {
         // by default we use qs. You can replace the querystring parser using opts.form
         raw = await getRawBodyText(koaRequest, opts);
-        data = opts.form ? opts.form(raw) : qs.parse(raw);
+        data = parseBody(koaRequest, 'form', () => (opts.form ? opts.form(raw) : qs.parse(raw)));
         type = FormType.form;
     } else if (koaRequest.is('json', '+json')) {
         // by default we use JSON.parse. You can replace the json parser using opts.json
@@ -245,18 +291,19 @@ async function createBody(koaRequest: Request, opts: LazyBodyOpts) {
             // for JSON we support no content posted
             data = undefined;
         } else {
-            data = opts.json ? opts.json(raw) : JSON.parse(raw);
+            data = parseBody(koaRequest, 'JSON', () => (opts.json ? opts.json(raw) : JSON.parse(raw)));
         }
         type = FormType.json;
     } else if (koaRequest.is('xml', '+xml')) {
         // by default fast-xml-parser is used - to change the parser you should provde an xml parser through opts.xml
         raw = await getRawBodyText(koaRequest, opts);
         if (opts.xml) {
-            data = opts.xml(raw);
+            const parseXml = opts.xml;
+            data = parseBody(koaRequest, 'XML', () => parseXml(raw));
         } else {
             const parser = await tryGetXmlParser();
             if (parser) {
-                data = parser.parse(raw);
+                data = parseBody(koaRequest, 'XML', () => parser.parse(raw));
             }
         }
         type = FormType.xml;
@@ -274,6 +321,23 @@ async function createBody(koaRequest: Request, opts: LazyBodyOpts) {
         }
     }
     return new LazyBody(koaRequest.ctx, type, data, raw, files);
+}
+
+/**
+ * Run a body parser. A body the parser rejects is the client's fault, so it answers 400 with the
+ * parser's reason rather than letting a `SyntaxError` surface as a 500. An error that already carries
+ * an HTTP status (thrown by a custom parser) keeps it.
+ */
+function parseBody<T>(koaRequest: Request, format: string, parse: () => T): T {
+    try {
+        return parse();
+    } catch (err: unknown) {
+        if (err !== null && typeof err === 'object' && ('status' in err || 'statusCode' in err)) {
+            throw err;
+        }
+        const reason = err instanceof Error ? err.message : String(err);
+        return koaRequest.ctx.throw(400, `Invalid ${format} request body: ${reason}`, { cause: err });
+    }
 }
 
 /**

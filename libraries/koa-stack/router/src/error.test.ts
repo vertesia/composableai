@@ -5,9 +5,9 @@ import { ServerError } from './ServerError.js';
 
 /**
  * Minimal Koa context that captures the serialized error body written by `errorHandler`.
- * `accepts()` always resolves to JSON so the JSON serializer runs.
+ * `accepts()` always resolves to `accepted` (JSON by default) so that serializer runs.
  */
-function createMockContext() {
+function createMockContext(accepted = 'json') {
     let body: string | undefined;
     const ctx = {
         res: {
@@ -20,7 +20,7 @@ function createMockContext() {
             },
         },
         set: () => {},
-        accepts: () => 'json',
+        accepts: () => accepted,
         app: { emit: () => {} },
         headerSent: false,
         writable: true,
@@ -80,5 +80,76 @@ describe('errorHandler JSON serialization — expose vs errorCode', () => {
         // Only the generic status text is exposed.
         expect(body.error).toBe('Forbidden');
         expect(body.status).toBe(403);
+    });
+});
+
+describe('errorHandler markup serialization — escaping', () => {
+    const payload = '<script>alert("x")</script> & \'quoted\'';
+
+    function exposedError() {
+        return Object.assign(new Error(payload), { statusCode: 404, expose: true }) as ErrorObject;
+    }
+
+    it('escapes the message in the HTML error page', () => {
+        const { ctx, getBody } = createMockContext('html');
+
+        errorHandler(ctx, exposedError());
+
+        const body = getBody() ?? '';
+        expect(ctx.type).toBe('text/html');
+        expect(body).not.toContain('<script>');
+        expect(body).not.toContain('"x"');
+        expect(body).toContain('<p>&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; &#39;quoted&#39;</p>');
+        expect(body).toContain('<title>404 Not Found</title>');
+    });
+
+    it('escapes the title in the HTML error page', () => {
+        const { ctx, getBody } = createMockContext('html');
+
+        errorHandler(ctx, exposedError(), {
+            updateErrorInfo: (_ctx, _err, info) => {
+                info.error = '<b>"Bad"</b>';
+            },
+        });
+
+        const body = getBody() ?? '';
+        expect(body).not.toContain('<b>');
+        expect(body).toContain('<title>404 &lt;b&gt;&quot;Bad&quot;&lt;/b&gt;</title>');
+        expect(body).toContain('<h1>404 &lt;b&gt;&quot;Bad&quot;&lt;/b&gt;</h1>');
+    });
+
+    it('interpolates and escapes the XML error document', () => {
+        const { ctx, getBody } = createMockContext('xml');
+
+        errorHandler(ctx, exposedError(), {
+            updateErrorInfo: (_ctx, _err, info) => {
+                info.error = 'Not "Found"';
+            },
+        });
+
+        expect(ctx.type).toBe('text/xml');
+        expect(getBody()).toBe(
+            '<?xml version="1.0" encoding="UTF-8"?><error status="404" code="Not &quot;Found&quot;">' +
+                '&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; &#39;quoted&#39;</error>',
+        );
+    });
+
+    it('writes an empty XML element when the message is not exposed', () => {
+        const err = Object.assign(new Error(payload), { statusCode: 500, expose: false }) as ErrorObject;
+        const { ctx, getBody } = createMockContext('xml');
+
+        errorHandler(ctx, err);
+
+        expect(getBody()).toBe(
+            '<?xml version="1.0" encoding="UTF-8"?><error status="500" code="Internal Server Error"></error>',
+        );
+    });
+
+    it('uses a custom XML formatter verbatim', () => {
+        const { ctx, getBody } = createMockContext('xml');
+
+        errorHandler(ctx, exposedError(), { xml: (info) => `<custom>${info.status}</custom>` });
+
+        expect(getBody()).toBe('<custom>404</custom>');
     });
 });

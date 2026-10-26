@@ -1,12 +1,26 @@
 import type { Context } from 'koa';
 import { type MatchFunction, match, type ParamData } from 'path-to-regexp';
+import { ServerError } from './ServerError.js';
 
 export type SimplePathMatcher = (path: string) => boolean;
 export type PathMatcher = SimplePathMatcher | MatchFunction<ParamData>;
 export type PrefixMatcher = (ctx: Context, path: string) => boolean;
 
+/**
+ * Decode a path parameter. A malformed escape such as `%E0%A4` is the caller's mistake, so it answers
+ * 400 instead of escaping as the 500 a bare `URIError` would become.
+ */
 function decode(val: string): string {
-    return val ? decodeURIComponent(val) : val;
+    if (!val) return val;
+    try {
+        return decodeURIComponent(val);
+    } catch (err) {
+        if (err instanceof URIError) {
+            // The segment is not echoed: it is caller input, and the error body is exposed.
+            throw new ServerError(400, 'Malformed percent-encoding in URL path');
+        }
+        throw err;
+    }
 }
 
 function normalizeLegacyNamedSplatParams(pattern: string): string {

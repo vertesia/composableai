@@ -51,7 +51,7 @@ describe('listRoles', () => {
         expect(roles).toHaveLength(22);
     });
 
-    it('lists system roles before content roles (partition registration order)', () => {
+    it('lists roles in partition registration order (system, content)', () => {
         const roles = listRoles();
         const systemCount = roles.filter((r) => r.domain === 'system').length;
         const contentCount = roles.filter((r) => r.domain === 'content').length;
@@ -78,6 +78,10 @@ describe('listRolesByDomain', () => {
         const roles = listRolesByDomain('content');
         expect(roles).toHaveLength(3);
         expect(roles.every((r) => r.domain === 'content')).toBe(true);
+    });
+
+    it('returns empty for "shared_content" (a scope over content, not its own domain)', () => {
+        expect(listRolesByDomain('shared_content')).toEqual([]);
     });
 
     it('returns only agent-run roles for "agent_runs"', () => {
@@ -115,6 +119,12 @@ describe('listAbacRolesForScope', () => {
         const roles = listAbacRolesForScope('collection');
         expect(roles).toHaveLength(3);
         expect(roles.every((r) => r.applicableScopes.includes('collection'))).toBe(true);
+    });
+
+    it('returns only content:reader for "shared_content" scope (shared content is read-only)', () => {
+        const roles = listAbacRolesForScope('shared_content');
+        expect(roles.map((r) => r.name)).toEqual(['content:reader']);
+        expect(roles.every((r) => r.applicableScopes.includes('shared_content'))).toBe(true);
     });
 
     it('returns empty for "task" scope (no task partition registered)', () => {
@@ -210,7 +220,8 @@ describe('Role instances', () => {
 
     it('AbacRole carries applicableScopes', () => {
         const reader = getRoleByName(ContentRoleNames.content_reader) as AbacRole;
-        expect(reader.applicableScopes).toEqual(['document', 'collection']);
+        // content:reader also serves the shared_content scope (cross-project sharing reuses content read).
+        expect(reader.applicableScopes).toEqual(['document', 'collection', 'shared_content']);
     });
 
     it('AbacRole permissions are bare verbs, not Permission enum values', () => {

@@ -2,7 +2,8 @@ import { HttpTimeoutOptionsSchema, ModelOptionsSchema, PromptCacheModeSchema } f
 import { z } from 'zod';
 // From the values module, for the reason `./apikey.js` gives.
 import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
-import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
+import { InferenceProfileIdSchema } from './inference-profile.js';
+import { EditRevisionSchema, ExpectedEditRevisionSchema, PageCountSchema } from './schema-primitives.js';
 
 /**
  * Runtime API schemas for the content-intake policy tree.
@@ -78,6 +79,17 @@ export const ConfigModesSchema = z.enum(ConfigModes).meta({ id: 'ConfigModes' })
 export const InteractionExecutionConfigurationSchema = z
     .strictObject({
         id: z.string().optional(),
+        inference_profile: InferenceProfileIdSchema.nullable()
+            .optional()
+            .meta({ description: 'Select a project inference profile. Null bypasses profile defaults.' }),
+        inherit_model_config: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as " +
+                    "a fallback: the interaction's bound or attached profile, or its own model, replaces them.",
+            }),
         environment: z.string().optional(),
         model: z.string().optional(),
         do_validate: z.boolean().optional(),
@@ -631,8 +643,8 @@ export const ContentObjectTypeSchema = z.strictObject(storedContentTypeShape).me
 const contentTypeListingFields = {
     layout: z.boolean().optional(),
     schema: z.boolean().optional(),
-    limit: z.number().optional(),
-    offset: z.number().optional(),
+    limit: PageCountSchema.optional(),
+    offset: PageCountSchema.optional(),
 };
 
 export const ContentObjectTypeCatalogQuerySchema = z

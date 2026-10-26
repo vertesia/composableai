@@ -11,12 +11,14 @@ import CommandsApi from './CommandsApi.js';
 import DelegationGrantsApi from './DelegationGrantsApi.js';
 import EnvironmentsApi from './EnvironmentsApi.js';
 import { IamApi } from './IamApi.js';
+import InferenceProfilesApi from './InferenceProfilesApi.js';
+import InteractionConfigurationsApi from './InteractionConfigurationsApi.js';
 import InteractionsApi from './InteractionsApi.js';
-import InternalSecretsApi from './InternalSecretsApi.js';
 import OAuthClientsApi from './OAuthClientsApi.js';
 import OAuthGrantsApi from './OAuthGrantsApi.js';
 import OAuthProvidersApi from './OAuthProvidersApi.js';
 import OAuthServerApi from './OAuthServerApi.js';
+import OidcFederationApi from './OidcFederationApi.js';
 import ProjectsApi from './ProjectsApi.js';
 import PromptsApi from './PromptsApi.js';
 import QuotaApi from './QuotaApi.js';
@@ -119,13 +121,13 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      */
     tokenServerUrl: string;
 
+    oidcFederation: OidcFederationApi;
     oauthClients: OAuthClientsApi;
     oauthGrants: OAuthGrantsApi;
     oauthServer: OAuthServerApi;
     oauthProviders: OAuthProvidersApi;
     remoteMcpConnections: RemoteMcpConnectionsApi;
     secrets: SecretsApi;
-    internalSecrets: InternalSecretsApi;
 
     /**
      * Create a client from the given token.
@@ -251,13 +253,13 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;
+        this.oidcFederation = new OidcFederationApi(this);
         this.oauthClients = new OAuthClientsApi(this);
         this.oauthGrants = new OAuthGrantsApi(this);
         this.oauthServer = new OAuthServerApi(this, this.tokenServerUrl);
         this.oauthProviders = new OAuthProvidersApi(this);
         this.remoteMcpConnections = new RemoteMcpConnectionsApi(this);
         this.secrets = new SecretsApi(this);
-        this.internalSecrets = new InternalSecretsApi(this);
     }
 
     withApiVersion(version: string | number | null) {
@@ -445,6 +447,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     }
 
     projects = new ProjectsApi(this);
+    interactionConfigurations = new InteractionConfigurationsApi(this);
+    inferenceProfiles = new InferenceProfilesApi(this);
     environments = new EnvironmentsApi(this);
     interactions = new InteractionsApi(this);
     skills = new SkillsApi(this);

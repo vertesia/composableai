@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from '../constants';
 
 const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 
@@ -25,6 +26,7 @@ describe('getComposableToken scope cache', () => {
         vi.restoreAllMocks();
         vi.resetModules();
         localStorage.clear();
+        sessionStorage.clear();
     });
 
     it('does not reuse a valid token from another project', async () => {
@@ -83,6 +85,25 @@ describe('getComposableToken scope cache', () => {
 
         expect(global.token.account.id).toBe('account-1');
         expect(global.token.project?.id).toBe('project-a');
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps its own project when another tab selects a different one', async () => {
+        const accountId = 'account-1';
+        const expiry = Math.floor(Date.now() / 1000) + 3600;
+        const token = unsignedJwt({ exp: expiry, account: { id: accountId }, project: { id: 'project-a' } });
+        const fetchMock = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValueOnce(new Response(JSON.stringify({ token }), { status: 200 }));
+
+        const { getComposableToken } = await import('./composable');
+        await getComposableToken(accountId, 'project-a', 'central-auth-credential', true);
+        // What another tab's project switch leaves behind in the shared store.
+        localStorage.setItem(LastSelectedAccountId_KEY, accountId);
+        localStorage.setItem(`${LastSelectedProjectId_KEY}-${accountId}`, 'project-b');
+        const next = await getComposableToken();
+
+        expect(next.token.project?.id).toBe('project-a');
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });

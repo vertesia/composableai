@@ -1,3 +1,4 @@
+import type { AppManifestData } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
 import { installStudioUtilsLogger, type StudioUtilsLogger } from '../logger.js';
 import {
@@ -6,6 +7,7 @@ import {
     resolveAppApiBase,
     resolveAppEndpoint,
     resolveAppResource,
+    resolveManifestUrls,
 } from './index.js';
 
 const APPS_MOUNT = 'https://gw.example.com/tenants/1589ba_149d0b/apps/my-app';
@@ -13,6 +15,8 @@ const LEGACY_PACKAGE_MOUNT = 'https://gw.example.com/tenants/1589ba_149d0b/packa
 const PACKAGE_MOUNT = 'https://gw.example.com/tenants/1589ba_149d0b/apps/my-app/api/package';
 const VERSION_PACKAGE_MOUNT =
     'https://gw.example.com/tenants/1589ba_149d0b/apps/my-app/versions/20260101T000000Z/api/package';
+const ALIAS_PACKAGE_MOUNT =
+    'https://gw.example.com/tenants/1589ba_149d0b/apps/my-app/aliases/customer-preview/api/package';
 
 function resolve(
     endpoint: string,
@@ -40,6 +44,12 @@ describe('app endpoint resolution', () => {
             appId: 'my-app',
             version: '20260101T000000Z',
         });
+        expect(parseGatewayAppEndpoint(ALIAS_PACKAGE_MOUNT)).toEqual({
+            origin: 'https://gw.example.com',
+            tenant: '1589ba_149d0b',
+            appId: 'my-app',
+            deploymentAlias: 'customer-preview',
+        });
         expect(parseGatewayAppEndpoint('https://third-party.example.com/api/package')).toBeUndefined();
     });
 
@@ -53,6 +63,42 @@ describe('app endpoint resolution', () => {
         expect(resolve(APPS_MOUNT, { version: '20260101T000000Z' })).toBe(VERSION_PACKAGE_MOUNT);
         expect(resolve(LEGACY_PACKAGE_MOUNT, { version: '20260101T000000Z' })).toBe(VERSION_PACKAGE_MOUNT);
         expect(resolve(PACKAGE_MOUNT, { version: '20260101T000000Z' })).toBe(VERSION_PACKAGE_MOUNT);
+    });
+
+    it('normalizes gateway app endpoints to stable deployment-alias package URLs', () => {
+        expect(resolve(APPS_MOUNT, { deploymentAlias: 'customer-preview' })).toBe(ALIAS_PACKAGE_MOUNT);
+        expect(resolve(PACKAGE_MOUNT, { deploymentAlias: 'customer-preview' })).toBe(ALIAS_PACKAGE_MOUNT);
+        expect(resolve(ALIAS_PACKAGE_MOUNT)).toBe(ALIAS_PACKAGE_MOUNT);
+    });
+
+    it('rebases an installed gateway app onto its execution tenant', () => {
+        expect(
+            resolve(APPS_MOUNT, {
+                gatewayTenantId: 'destination_project',
+                vars: { gateway: 'https://gw.example.com' },
+            }),
+        ).toBe('https://gw.example.com/tenants/destination_project/apps/my-app/api/package');
+        expect(
+            resolve(APPS_MOUNT, {
+                gatewayTenantId: 'destination_project',
+                deploymentAlias: 'customer-preview',
+                vars: { gateway: 'https://gw.example.com' },
+            }),
+        ).toBe('https://gw.example.com/tenants/destination_project/apps/my-app/aliases/customer-preview/api/package');
+    });
+
+    it('does not rebase a gateway-shaped endpoint hosted outside the configured gateway', () => {
+        expect(
+            resolve('https://vendor.example.com/tenants/source_project/apps/my-app', {
+                gatewayTenantId: 'destination_project',
+            }),
+        ).toBe('https://vendor.example.com/tenants/source_project/apps/my-app/api/package');
+    });
+
+    it('lets an explicit immutable version override a deployment alias', () => {
+        expect(resolve(APPS_MOUNT, { version: '20260101T000000Z', deploymentAlias: 'customer-preview' })).toBe(
+            VERSION_PACKAGE_MOUNT,
+        );
     });
 
     it('ignores endpoint overrides for gateway apps', () => {
@@ -163,4 +209,44 @@ describe('app API base resolution', () => {
             'https://gw.example.com/tenants/1589ba_149d0b/apps/my-app/versions/20260101T000000Z/api/templates/invoice',
         );
     });
+});
+
+it('preserves installation URL parameters during manifest serialization while resolving platform endpoints', () => {
+    const manifest: Partial<AppManifestData> = {
+        tool_collections: [
+            {
+                type: 'mcp',
+                id: 'graph',
+                name: 'Graph',
+                description: 'Graph',
+                namespace: 'graph',
+                url: 'https://example.com/{{store}}/mcp?service={{token}}',
+                parameters: { store: { default: 'tenant' } },
+            },
+        ],
+    };
+    resolveManifestUrls(manifest, {
+        vars: { store: 'https://platform.example.com', token: 'https://token.example.com' },
+    });
+    expect(manifest.tool_collections?.[0].url).toBe(
+        'https://example.com/{{store}}/mcp?service=https://token.example.com',
+    );
+});
+
+it('preserves shared MCP parameters matching endpoint aliases during manifest serialization', () => {
+    const manifest: Partial<AppManifestData> = {
+        parameters: { store: { default: 'tenant' } },
+        tool_collections: [
+            {
+                type: 'mcp',
+                id: 'graph',
+                namespace: 'graph',
+                name: 'Graph',
+                description: 'Graph',
+                url: 'https://example.com/{{store}}/mcp',
+            },
+        ],
+    };
+    resolveManifestUrls(manifest, { vars: { store: 'https://platform.example.com' } });
+    expect(manifest.tool_collections?.[0].url).toBe('https://example.com/{{store}}/mcp');
 });

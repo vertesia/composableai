@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -20,6 +20,25 @@ afterEach(() => {
 });
 
 describe('branding Vite adapter', () => {
+    it('resolves shared artwork from the package even when the app config is elsewhere', () => {
+        const { moduleUrl } = fixture();
+        const resolved = resolveBrandingAssets(
+            {
+                name: 'Example',
+                logo: { light: '@vertesia/ui/assets/logo-light.png', dark: '@vertesia/ui/assets/logo-dark.png' },
+                favicon: '@vertesia/ui/assets/icon.svg',
+                loadingIcon: { light: '@vertesia/ui/assets/icon.svg' },
+            },
+            moduleUrl,
+        );
+        expect(resolved.logo?.light).toMatch(/^data:image\/png;base64,/);
+        expect(resolved.logo?.dark).toMatch(/^data:image\/png;base64,/);
+        expect(resolved.favicon).toBe(
+            `data:image/svg+xml;base64,${readFileSync(new URL('../assets/icon.svg', import.meta.url)).toString('base64')}`,
+        );
+        expect(resolved.loadingIcon?.light).toBe(resolved.favicon);
+    });
+
     it('resolves local assets once for both React and first paint independently of deployment paths', () => {
         const { moduleUrl } = fixture();
         const plugin = createAppBrandingPlugin(
@@ -32,6 +51,7 @@ describe('branding Vite adapter', () => {
             },
             moduleUrl,
         );
+        plugin.configResolved({ env: { VITE_VERTESIA_ACCOUNT_ID: 'account', VITE_VERTESIA_PROJECT_ID: 'project' } });
         const addWatchFile = vi.fn();
         const id = plugin.resolveId('virtual:vertesia-branding') ?? '';
         const code = plugin.load.call({ addWatchFile }, id) ?? '';
@@ -48,6 +68,15 @@ describe('branding Vite adapter', () => {
             '<html><head><title>Old</title><link rel="icon" href="old.ico"></head><body></body></html>',
         );
         expect(html).toContain('<title>A &amp; B</title>');
+        const marker = 'id="vertesia-app-branding">';
+        const start = html.indexOf(marker);
+        expect(start).toBeGreaterThanOrEqual(0);
+        const contentStart = start + marker.length;
+        const end = html.indexOf('</script>', contentStart);
+        expect(end).toBeGreaterThan(contentStart);
+        const metadata = JSON.parse(html.slice(contentStart, end));
+        expect(metadata.name).toBe('A & B');
+        expect(metadata.workspace).toEqual({ account: 'account', project: 'project' });
         expect(html).toContain(resolved.logo.light);
         expect(html).not.toContain('old.ico');
         expect(html).not.toContain('./assets/');

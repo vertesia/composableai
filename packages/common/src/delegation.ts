@@ -1,13 +1,8 @@
-import type { z } from 'zod';
-import type {
-    CreateDelegationGrantPayloadSchema,
-    DelegationGrantArraySchema,
-    DelegationGrantSchema,
-} from './api-schemas/delegation.js';
+import type * as Wire from './wire-types.generated.js';
 
-export type CreateDelegationGrantPayload = z.infer<typeof CreateDelegationGrantPayloadSchema>;
-export type DelegationGrant = z.infer<typeof DelegationGrantSchema>;
-export type DelegationGrantArray = z.infer<typeof DelegationGrantArraySchema>;
+export type CreateDelegationGrantPayload = Wire.CreateDelegationGrantPayload;
+export type DelegationGrant = Wire.DelegationGrant;
+export type DelegationGrantArray = Wire.DelegationGrantArray;
 
 export interface DelegationTokenClaim {
     grant_id: string;

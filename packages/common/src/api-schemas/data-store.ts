@@ -244,9 +244,27 @@ export const DataStoreDownloadInfoSchema = z
     })
     .meta({ id: 'DataStoreDownloadInfo' });
 
+/**
+ * A store name is a display label, never a path: no `/` or `\`, no control characters (C0, DEL, C1),
+ * no leading dot (which also rules out `.` and `..`), and no leading or trailing space. The pattern
+ * avoids lookaheads and `\u` escapes so the Go (RE2) and Java generated clients accept it too.
+ */
+const DATA_STORE_NAME_MAX_LENGTH = 128;
+// biome-ignore lint/suspicious/noControlCharactersInRegex: the pattern exists to reject control characters.
+const DATA_STORE_NAME_PATTERN = /^[^\x00-\x20\x7f-\x9f/\\.](?:[^\x00-\x1f\x7f-\x9f/\\]*[^\x00-\x20\x7f-\x9f/\\])?$/;
+
 export const CreateDataStorePayloadSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'Store name (unique within project)' }),
+        name: z
+            .string()
+            .min(1)
+            .max(DATA_STORE_NAME_MAX_LENGTH)
+            .regex(DATA_STORE_NAME_PATTERN)
+            .meta({
+                description:
+                    'Store name (unique within project). 1 to 128 characters; must not contain `/`, `\\` or ' +
+                    'control characters, start with a dot, or start or end with a space.',
+            }),
         description: z.string().meta({ description: 'Store description' }).optional(),
         tags: z.array(z.string()).meta({ description: 'Tags for organization' }).optional(),
     })
@@ -296,6 +314,14 @@ export const AlterTableOperationSchema = z
             op: z.literal('modify_column'),
             column: z.string(),
             updates: DataColumnUpdateSchema,
+        }),
+        z.strictObject({
+            op: z.literal('add_foreign_key'),
+            foreign_key: DataForeignKeySchema,
+        }),
+        z.strictObject({
+            op: z.literal('drop_foreign_key'),
+            column: z.string().meta({ description: 'Column whose foreign key is removed' }),
         }),
     ])
     .meta({

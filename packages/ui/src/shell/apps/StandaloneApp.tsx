@@ -1,7 +1,7 @@
 import type { AppInstallationWithManifest, ProjectRef } from '@vertesia/common';
 import { Center, SelectBox, useFetch } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY, useUserSession } from '@vertesia/ui/session';
+import { rememberScopeSelection, useUserSession } from '@vertesia/ui/session';
 import { LockIcon } from 'lucide-react';
 import { type ComponentType, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { AppInstallationProvider } from './AppInstallationProvider';
@@ -107,8 +107,7 @@ function AccessDeniedMessage({ name }: AccessDeniedMessageProps) {
     }, [orgOptions, selectedAccountId]);
 
     const onProjectChange = (selected: ProjectRef) => {
-        localStorage.setItem(LastSelectedAccountId_KEY, selected.account);
-        localStorage.setItem(`${LastSelectedProjectId_KEY}-${selected.account}`, selected.id);
+        rememberScopeSelection(selected.account, selected.id);
         // An explicit selection must override configured workspace defaults on the next load.
         const url = new URL(window.location.href);
         url.searchParams.set('a', selected.account);

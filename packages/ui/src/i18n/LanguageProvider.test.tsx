@@ -13,6 +13,7 @@ const STORAGE_KEY = 'vertesia-ui-language';
 
 type LanguageSnapshot = {
     language: SupportedLanguage;
+    preferredLanguage: SupportedLanguage;
     isRTL: boolean;
     setLanguage: (next: SupportedLanguage) => void;
 };
@@ -168,5 +169,73 @@ describe('LanguageProvider', () => {
         });
         expect(localStorage.getItem('custom-lang-key')).toBe('ar');
         expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+    });
+
+    it("renders a pinned language while tracking the user's own", () => {
+        localStorage.setItem(STORAGE_KEY, 'ja');
+        let snap!: LanguageSnapshot;
+        function Probe() {
+            snap = useLanguage();
+            return null;
+        }
+        mount(
+            <LanguageProvider language="en">
+                <Probe />
+            </LanguageProvider>,
+        );
+        expect(snap.language).toBe('en');
+        expect(snap.preferredLanguage).toBe('ja');
+        expect(document.documentElement.lang).toBe('en');
+    });
+
+    it('keeps a pinned right-to-left language right to left whatever the user prefers', () => {
+        localStorage.setItem(STORAGE_KEY, 'fr');
+        let snap!: LanguageSnapshot;
+        function Probe() {
+            snap = useLanguage();
+            return null;
+        }
+        mount(
+            <LanguageProvider language="ar">
+                <Probe />
+            </LanguageProvider>,
+        );
+        expect(snap.isRTL).toBe(true);
+        expect(document.documentElement.dir).toBe('rtl');
+    });
+
+    it('records a new choice under a pinned language without changing what renders', () => {
+        let snap!: LanguageSnapshot;
+        function Probe() {
+            snap = useLanguage();
+            return null;
+        }
+        mount(
+            <LanguageProvider language="en">
+                <Probe />
+            </LanguageProvider>,
+        );
+        void act(() => {
+            snap.setLanguage('de');
+        });
+        expect(snap.language).toBe('en');
+        expect(snap.preferredLanguage).toBe('de');
+        expect(localStorage.getItem(STORAGE_KEY)).toBe('de');
+    });
+
+    it('reports the rendered language as preferred when nothing is pinned', () => {
+        localStorage.setItem(STORAGE_KEY, 'ko');
+        let snap!: LanguageSnapshot;
+        function Probe() {
+            snap = useLanguage();
+            return null;
+        }
+        mount(
+            <LanguageProvider>
+                <Probe />
+            </LanguageProvider>,
+        );
+        expect(snap.language).toBe('ko');
+        expect(snap.preferredLanguage).toBe('ko');
     });
 });

@@ -17,7 +17,7 @@ export function InfoItems({ title, value }: { title: string; value: string }) {
     return (
         <div className="w-full flex justify-between items-center mb-1">
             <div className="flex flex-col w-[calc(100%-3rem)]">
-                <div className="text-sm px-2 dark:text-foreground">{title}</div>
+                <div className="text-sm px-2 text-foreground">{title}</div>
                 <VTooltip description={value} size="xs" placement="left">
                     <div className="text-xs truncate text-muted w-full text-start px-2">{value} </div>
                 </VTooltip>

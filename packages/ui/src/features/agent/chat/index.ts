@@ -12,6 +12,7 @@ export {
     AgentApprovalModeSelector,
     type AgentApprovalModeSelectorProps,
 } from './AgentApprovalModeSelector';
+export type { AgentBudgetRequestContext, AgentBudgetRequestOverrides } from './AgentBudgetPauseOverlay';
 export {
     AgentChart,
     type AgentChartSpec,
@@ -43,6 +44,7 @@ export {
     ConfirmationWidget,
     type ConfirmationWidgetProps,
 } from './AskUserWidget';
+export type { BudgetPause } from './budgetPause';
 export * from './JumpingDots';
 export {
     type AgentMessageFilter,

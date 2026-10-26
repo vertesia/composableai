@@ -5,7 +5,7 @@
  * distinguishes LaTeX math (`$x = \frac{1}{2}$`) from currency (`$2,847,500`).
  *
  * Uses a three-pass priority algorithm over `$` positions:
- *   1. Commit pairs matching LaTeX patterns (highest priority)
+ *   1. Commit pairs matching LaTeX patterns, unless they read as an amount followed by prose
  *   2. Pair remaining positions; escape currency patterns
  *   3. Escape lone `$` adjacent to committed LaTeX pairs
  *
@@ -31,6 +31,10 @@ const RE_LEADING_SPACE = /^\s/; // space after opening $
 const RE_TRAILING_SPACE = /\s$/; // space before closing $
 const RE_TRAILING_OPERATOR = /[+*/-]$/; // ends with bare operator
 const RE_ION_NOTATION = /\^[+-]$/; // except ^+ or ^- (ion notation)
+// A span that opens on an amount ($10, $49,137,431.65, $500K) and then reads as prose:
+// the amount is closed off by punctuation before a word ($10) vs ($20), **$10,710** in lost ... **$),
+const RE_AMOUNT_THEN_PROSE = /^\d[\d,]*(?:\.\d+)?[kKmMbB]?[)\]*_,;:.!?]+\s+[a-zA-Z]{2,}(?!\w)/;
+const RE_LEADING_AMOUNT = /^\d/;
 
 /**
  * Returns true if content between `$...$` contains LaTeX structural patterns.
@@ -52,7 +56,30 @@ function hasCurrencyPattern(content: string): boolean {
     if (RE_LEADING_SPACE.test(content)) return true;
     if (RE_TRAILING_SPACE.test(content)) return true;
     if (RE_TRAILING_OPERATOR.test(content) && !RE_ION_NOTATION.test(content)) return true;
-    return false;
+    return hasAmountShape(content);
+}
+
+/**
+ * Returns true if content between `$...$` reads as an amount followed by prose. This outranks LaTeX
+ * signals: markdown between two amounts (`[plan_a]`, a link URL, `{estimate}`) can look like math.
+ */
+function hasAmountShape(content: string): boolean {
+    if (RE_AMOUNT_THEN_PROSE.test(content)) return true;
+    return RE_LEADING_AMOUNT.test(content) && hasUnbalancedBrackets(content);
+}
+
+/**
+ * True when `(`/`[` and `)`/`]` do not pair up, as in `10) equals (` between two parenthesized
+ * amounts. Openers and closers are counted together so half-open intervals like `[0, 1)` balance.
+ */
+function hasUnbalancedBrackets(content: string): boolean {
+    let depth = 0;
+    for (const char of content) {
+        if (char === '(' || char === '[') depth++;
+        else if (char === ')' || char === ']') depth--;
+        if (depth < 0) return true;
+    }
+    return depth !== 0;
 }
 
 /**
@@ -83,11 +110,20 @@ function inlineMathContent(text: string, openPos: number, closePos: number): str
     return content;
 }
 
+interface DollarReplacements {
+    /** Replaces a currency `$` so remark-math does not pair it */
+    currency: string;
+    /** Replaces `\$` inside a LaTeX span */
+    escapedInLatex: string;
+}
+
+const ESCAPING: DollarReplacements = { currency: '\\$', escapedInLatex: '\\text{\\textdollar}' };
+
 /**
  * Classify `$` positions in a text segment, escape currency dollar signs,
  * and normalize `\$` inside LaTeX spans for remark-math compatibility.
  */
-function processTextSegment(text: string): string {
+function processTextSegment(text: string, replacements: DollarReplacements): string {
     const positions = findSingleDollarPositions(text);
     if (positions.length < 2) return text;
 
@@ -105,7 +141,7 @@ function processTextSegment(text: string): string {
     for (let i = 0; i < positions.length - 1; i++) {
         if (committed.has(i)) continue;
         const content = adjacentContent[i];
-        if (content !== null && hasLatexPattern(content)) {
+        if (content !== null && hasLatexPattern(content) && !hasAmountShape(content)) {
             committed.add(i);
             committed.add(i + 1);
             latexSpans.push([positions[i], positions[i + 1]]);
@@ -173,14 +209,14 @@ function processTextSegment(text: string): string {
 
         if (escPos < spanOpen) {
             if (escPos > segStart) parts.push(text.slice(segStart, escPos));
-            parts.push('\\$');
+            parts.push(replacements.currency);
             segStart = escPos + 1;
             escIdx++;
         } else {
             const [open, close] = latexSpans[spanIdx];
             if (open > segStart) parts.push(text.slice(segStart, open));
             const spanContent = text.slice(open, close + 1);
-            parts.push(spanContent.replace(ESCAPED_DOLLAR_REGEX, '\\text{\\textdollar}'));
+            parts.push(spanContent.replace(ESCAPED_DOLLAR_REGEX, replacements.escapedInLatex));
             segStart = close + 1;
             while (escIdx < escapePositions.length && escapePositions[escIdx] <= close) escIdx++;
             spanIdx++;
@@ -194,17 +230,35 @@ function processTextSegment(text: string): string {
 /**
  * Process text segments outside inline code spans.
  */
-function processSkippingInlineCode(text: string): string {
+function processSkippingInlineCode(text: string, replacements: DollarReplacements): string {
     const parts: string[] = [];
     let lastIndex = 0;
 
     for (const match of text.matchAll(INLINE_CODE_REGEX)) {
-        parts.push(processTextSegment(text.slice(lastIndex, match.index)));
+        parts.push(processTextSegment(text.slice(lastIndex, match.index), replacements));
         parts.push(match[0]);
         lastIndex = match.index + match[0].length;
     }
 
-    parts.push(processTextSegment(text.slice(lastIndex)));
+    parts.push(processTextSegment(text.slice(lastIndex), replacements));
+    return parts.join('');
+}
+
+/**
+ * Disambiguate `$` outside fenced code blocks, applying `replacements` to the `$` signs that must
+ * not reach remark-math as delimiters.
+ */
+function disambiguateDollars(markdown: string, replacements: DollarReplacements): string {
+    const parts: string[] = [];
+    let lastIndex = 0;
+
+    for (const match of markdown.matchAll(FENCED_CODE_BLOCK_REGEX)) {
+        parts.push(processSkippingInlineCode(markdown.slice(lastIndex, match.index), replacements));
+        parts.push(match[0]);
+        lastIndex = match.index + match[0].length;
+    }
+
+    parts.push(processSkippingInlineCode(markdown.slice(lastIndex), replacements));
     return parts.join('');
 }
 
@@ -218,16 +272,44 @@ export function preprocessMathDelimiters(markdown: string): string {
     if (!markdown?.includes('$')) {
         return markdown;
     }
+    return disambiguateDollars(markdown, ESCAPING);
+}
 
-    const parts: string[] = [];
-    let lastIndex = 0;
+// Mask candidates: currency symbols first (Unicode Sc, so markdown flanking rules treat them like
+// `$`), then the private use area. All are a single UTF-16 code unit, like `$`.
+const MASK_CANDIDATE_RANGES: [number, number][] = [
+    [0x20a0, 0x20c0],
+    [0xe000, 0xf8ff],
+];
 
-    for (const match of markdown.matchAll(FENCED_CODE_BLOCK_REGEX)) {
-        parts.push(processSkippingInlineCode(markdown.slice(lastIndex, match.index)));
-        parts.push(match[0]);
-        lastIndex = match.index + match[0].length;
+function pickMask(markdown: string): string | undefined {
+    for (const [first, last] of MASK_CANDIDATE_RANGES) {
+        for (let code = first; code <= last; code++) {
+            const candidate = String.fromCharCode(code);
+            if (!markdown.includes(candidate)) return candidate;
+        }
     }
+    return undefined;
+}
 
-    parts.push(processSkippingInlineCode(markdown.slice(lastIndex)));
-    return parts.join('');
+export interface MaskedMathDelimiters {
+    markdown: string;
+    /** Stand-in used for disambiguated `$`; undefined when nothing was masked */
+    mask?: string;
+}
+
+/**
+ * Length-preserving variant of `preprocessMathDelimiters`, for when parser offsets must still
+ * index into the original markdown. Disambiguated `$` become `mask`, a character absent from the
+ * input, instead of `\$`; pass it to `remarkRestoreMaskedDollars` to turn it back after parsing.
+ */
+export function maskMathDelimiters(markdown: string): MaskedMathDelimiters {
+    if (!markdown?.includes('$')) {
+        return { markdown };
+    }
+    const mask = pickMask(markdown);
+    if (!mask) {
+        return { markdown };
+    }
+    return { markdown: disambiguateDollars(markdown, { currency: mask, escapedInLatex: `\\${mask}` }), mask };
 }

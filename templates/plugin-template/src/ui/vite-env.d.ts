@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+    readonly VITE_AUTH_MODE?: 'central' | 'firebase';
     readonly VITE_OAUTH_CLIENT_ID?: string;
     readonly VITE_OAUTH_REDIRECT_URI?: string;
     readonly VITE_OAUTH_SCOPES?: string;

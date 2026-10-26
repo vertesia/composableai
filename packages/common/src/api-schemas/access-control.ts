@@ -8,6 +8,7 @@ import {
     Permission,
     RoleDomains,
 } from '../access-control-values.js';
+import type * as Wire from '../wire-types.generated.js';
 
 /**
  * Runtime API schemas for IAM roles and access-control entries.
@@ -73,7 +74,7 @@ export const AceConditionsSchema = z
         scope: AbacScopeSchema.meta({
             description:
                 "Kind of object the `resource_props` matches. Used to disambiguate which partition's roles " +
-                'apply (e.g. content roles vs agent-run roles) and to form the JWT `content_security` key prefix ' +
+                'apply (e.g. content roles vs agent-run roles) and to form the JWT `abac` key prefix ' +
                 "(`{scope}:{verb}`). Absent → `'document'` (default; emits bare `read`/`write`/`delete` keys " +
                 'for backward compatibility).',
         }).optional(),
@@ -197,13 +198,13 @@ export const SystemRoleDefinitionArraySchema = z
  * The public access-control types, inferred rather than written. `../access-control.ts` and
  * `../roles/types.ts` re-export these under their public names.
  */
-export type PropertyConditionsFromSchema = z.infer<typeof PropertyConditionsSchema>;
-export type AceConditionsFromSchema = z.infer<typeof AceConditionsSchema>;
-export type AccessControlEntryFromSchema = z.infer<typeof AccessControlEntrySchema>;
-export type AccessControlEntryArrayFromSchema = z.infer<typeof AccessControlEntryArraySchema>;
-export type ACECreatePayloadFromSchema = z.infer<typeof ACECreatePayloadSchema>;
-export type ACEUpdatePayloadFromSchema = z.infer<typeof ACEUpdatePayloadSchema>;
-export type RoleDefinitionFromSchema = z.infer<typeof RoleDefinitionSchema>;
-export type RoleDefinitionArrayFromSchema = z.infer<typeof RoleDefinitionArraySchema>;
-export type SystemRoleDefinitionFromSchema = z.infer<typeof SystemRoleDefinitionSchema>;
-export type SystemRoleDefinitionArrayFromSchema = z.infer<typeof SystemRoleDefinitionArraySchema>;
+export type PropertyConditionsFromSchema = Wire.PropertyConditionsFromSchema;
+export type AceConditionsFromSchema = Wire.AceConditionsFromSchema;
+export type AccessControlEntryFromSchema = Wire.AccessControlEntryFromSchema;
+export type AccessControlEntryArrayFromSchema = Wire.AccessControlEntryArrayFromSchema;
+export type ACECreatePayloadFromSchema = Wire.ACECreatePayloadFromSchema;
+export type ACEUpdatePayloadFromSchema = Wire.ACEUpdatePayloadFromSchema;
+export type RoleDefinitionFromSchema = Wire.RoleDefinitionFromSchema;
+export type RoleDefinitionArrayFromSchema = Wire.RoleDefinitionArrayFromSchema;
+export type SystemRoleDefinitionFromSchema = Wire.SystemRoleDefinitionFromSchema;
+export type SystemRoleDefinitionArrayFromSchema = Wire.SystemRoleDefinitionArrayFromSchema;

@@ -1,6 +1,8 @@
 export type {
     AudioResult,
     OpenAiAudioOptions,
+    OpenAiImageGenerationMask,
+    OpenAiImageGenerationOptions,
     OpenAiSpeechOptions,
     OpenAiTranscriptionOptions,
     VertexAIGeminiOmniVideoOptions,
@@ -40,6 +42,23 @@ export * from './embeddings.js';
 export * from './environment.js';
 export * from './facets.js';
 export * from './group.js';
+export type {
+    CreateInferenceProfilePayload,
+    InferenceProfile,
+    InferenceProfileId,
+    InferenceProfileName,
+    InferenceProfileRecord,
+    InferenceProfileRecordArray,
+    InferenceProfileSnapshot,
+    InferenceProfileUsage,
+    InferenceProfileUsageEntry,
+    InferenceProfileUsageQuery,
+    InteractionConfigurationRecord,
+    InteractionConfigurationResult,
+    ProjectInferenceProfiles,
+    UpdateInferenceProfilePayload,
+    UpdateInteractionConfigurationPayload,
+} from './inference-profile.js';
 export * from './integrations.js';
 export * from './interaction.js';
 export * from './json.js';
@@ -59,6 +78,10 @@ export * from './query.js';
 export * from './rate-limiter.js';
 export * from './refs.js';
 export * from './roles/types.js';
+export type {
+    RunBudgetCapability,
+    RunBudgetCapabilityQuery,
+} from './run-budget.js';
 export * from './runs.js';
 export * from './schema-for-extraction.js';
 export * from './secrets.js';

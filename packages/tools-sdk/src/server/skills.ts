@@ -4,7 +4,7 @@ import { type Context, Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { SkillCollection } from '../SkillCollection.js';
 import type { SkillDefinition, ToolCollectionDefinition, ToolDefinition } from '../types.js';
-import { makeScriptUrl } from '../utils.js';
+import { makeScriptUrl, makeSkillFileUrl } from '../utils.js';
 import type { ToolContext, ToolServerConfig } from './types.js';
 
 export function createSkillsRoute(app: Hono, basePath: string, config: ToolServerConfig) {
@@ -113,6 +113,32 @@ function createSkillEndpoints(coll: SkillCollection): Hono {
         return c.json({
             skill_name: skill.name,
             scripts: skill.scripts ? skill.scripts.map((s) => makeScriptUrl(url.origin, s)) : [],
+        });
+    });
+
+    // Get the Agent Skills resource files (scripts/, references/, assets/) for a specific skill.
+    // Separate from /scripts so existing clients keep receiving only the flat scripts.
+    endpoint.get('/:name/files', (c: Context) => {
+        const name = c.req.param('name');
+        if (!name) {
+            throw new HTTPException(400, {
+                message: 'Skill name is required',
+            });
+        }
+        const skillName = name.startsWith('learn_') ? name.slice(6) : name;
+        const skill = coll.getSkill(skillName);
+        if (!skill) {
+            throw new HTTPException(404, {
+                message: `Skill not found: ${skillName}`,
+            });
+        }
+        const url = new URL(c.req.url);
+        return c.json({
+            skill_name: skill.name,
+            files: (skill.files ?? []).map((path) => ({
+                path,
+                url: makeSkillFileUrl(url.origin, skill.files_namespace ?? skill.name, path),
+            })),
         });
     });
 

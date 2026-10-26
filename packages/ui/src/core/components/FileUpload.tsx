@@ -78,7 +78,7 @@ export function DropZone({ onUpload }: DropZoneProps) {
     return (
         <div
             {...dropZoneProps}
-            className="flex items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-muted dark:hover:bg-bray-800 hover:bg-muted dark:border-border dark:hover:border-border"
+            className="flex items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-background border-border"
         >
             <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-full">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">

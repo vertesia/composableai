@@ -103,3 +103,15 @@ describe('anonymous MCP groups', () => {
         expect(getConnectedActiveGroupLabels([anonymous], ['anonymous'])).toEqual([]);
     });
 });
+
+describe('additional-instance activation keys', () => {
+    it('toggles an instance without changing its sibling or legacy default', () => {
+        const eu = group(['eu-install:crm'], true);
+        const us = group(['us-install:crm'], true);
+        const disabled = toggleGroupDisabled(eu, ['crm'], false);
+        expect(isGroupDisabled(eu, disabled)).toBe(true);
+        expect(isGroupDisabled(us, disabled)).toBe(false);
+        expect(disabled).toContain('crm');
+        expect(toggleGroupDisabled(eu, disabled, true)).toEqual(['crm']);
+    });
+});

@@ -21,6 +21,8 @@ interface SignInReturningStepProps {
     session: LastSuccessfulLogin;
     onNotYou: () => void;
     onProviderClicked: (provider: ProviderId) => void;
+    /** The address signs in with a password, so the parent shows the password step instead. */
+    onPasswordRequired: (email: string) => void;
     redirectTo?: string;
 }
 
@@ -28,6 +30,7 @@ export default function SignInReturningStep({
     session,
     onNotYou,
     onProviderClicked,
+    onPasswordRequired,
     redirectTo,
 }: SignInReturningStepProps) {
     const { t } = useUITranslation();
@@ -36,14 +39,23 @@ export default function SignInReturningStep({
     const avatar = <SignInInitialsBadge initials={emailInitial(session.email)} />;
     // A stored tenantName means we resolved the user's organization.
     const hasTenant = !!session.tenantName;
+    const lastProvider = session.lastProvider;
     const primaryLabel =
-        session.lastProvider === 'oidc'
-            ? t('auth.continueWithSignIn')
-            : t('auth.continueWithProvider', { provider: providerLabel(session.lastProvider) });
+        lastProvider === 'password'
+            ? t('auth.password.continue')
+            : lastProvider === 'oidc'
+              ? t('auth.continueWithSignIn')
+              : t('auth.continueWithProvider', { provider: providerLabel(lastProvider) });
 
-    const continueWith = async (provider: ProviderId) => {
-        onProviderClicked(provider);
-        await startSignIn(provider, session.email, redirectTo);
+    const continueWithLastProvider = async () => {
+        if (lastProvider === 'password') {
+            onPasswordRequired(session.email);
+            return;
+        }
+        onProviderClicked(lastProvider);
+        // The stored provider can be stale: the address may now resolve to a password tenant.
+        const result = await startSignIn(lastProvider, session.email, redirectTo);
+        if (!result.ok && result.reason === 'password-required') onPasswordRequired(session.email);
     };
 
     return (
@@ -76,9 +88,9 @@ export default function SignInReturningStep({
 
             <div className="flex flex-col gap-2">
                 <SignInProviderButton
-                    provider={session.lastProvider}
+                    provider={lastProvider}
                     label={primaryLabel}
-                    onClick={() => continueWith(session.lastProvider)}
+                    onClick={continueWithLastProvider}
                     variant="filled"
                 />
                 <SignInStepButton variant="ghost" onClick={onNotYou}>

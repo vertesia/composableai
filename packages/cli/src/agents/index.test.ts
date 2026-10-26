@@ -3,7 +3,7 @@ import { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerAgentsCommand } from './index.js';
 
-const mocks = vi.hoisted(() => ({ retrieveRun: vi.fn(), getRunDetails: vi.fn(), writeFile: vi.fn() }));
+const mocks = vi.hoisted(() => ({ start: vi.fn(), retrieveRun: vi.fn(), getRunDetails: vi.fn(), writeFile: vi.fn() }));
 vi.mock('../client.js', () => ({ getClient: async () => ({ agents: mocks }) }));
 vi.mock('../utils/stdio.js', () => ({ writeFile: mocks.writeFile, readFile: vi.fn(), readStdin: vi.fn() }));
 
@@ -64,4 +64,20 @@ describe('agents inspect history cursors', () => {
         expect(mocks.getRunDetails.mock.calls[1]).toEqual(['run-1', { includeHistory: true, from: undefined }]);
         expect(JSON.parse(vi.mocked(console.log).mock.calls[1][0]).details).toEqual(details('snapshot'));
     });
+});
+
+it('passes the runtime inference profile to agent and process starts', async () => {
+    mocks.start.mockResolvedValue({ id: 'run-1' });
+    for (const target of [['sys:GeneralAgent'], ['--process-id', 'process-1']]) {
+        const program = new Command().exitOverride();
+        registerAgentsCommand(program);
+        await program.parseAsync(
+            ['agents', 'start', ...target, '--inference-profile', '0123456789abcdef01234567', '--no-stream', '--json'],
+            { from: 'user' },
+        );
+    }
+    expect(mocks.start).toHaveBeenCalledTimes(2);
+    for (const [payload] of mocks.start.mock.calls) {
+        expect(payload.config.inference_profile).toBe('0123456789abcdef01234567');
+    }
 });

@@ -133,6 +133,7 @@ export class ExecutionRequest {
         };
 
         const config = {
+            inference_profile: getStringOption(options.inferenceProfile),
             environment: typeof options.env === 'string' ? options.env : undefined,
             model: typeof options.model === 'string' ? options.model : undefined,
             model_options: Object.entries(model_options).some(

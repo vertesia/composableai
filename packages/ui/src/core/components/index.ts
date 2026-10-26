@@ -1,5 +1,6 @@
 export * from './Avatar.js';
 export * from './Center.js';
+export * from './CloudIcon.js';
 export * from './ComboBox.js';
 export * from './Divider.js';
 export * from './EmptyCollection.js';

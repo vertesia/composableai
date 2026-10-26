@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { KoaServer } from '@koa-stack/server';
-import { FetchClient } from '../src/index.js';
+import { FetchClient, RequestError } from '../src/index.js';
 import Endpoints from './endpoints.js';
 
 const HOST = '127.0.0.1';
@@ -24,6 +24,17 @@ before(async () => {
 after(() => server.stop());
 
 describe('Test requests', () => {
+    it('keeps request headers out of serialized request errors', () => {
+        const request = new Request('https://example.test/private', {
+            headers: { authorization: 'Bearer secret-token' },
+        });
+        const error = new RequestError('Request failed', request, 500, {});
+
+        assert.equal(error.request, request);
+        assert.equal(Object.prototype.propertyIsEnumerable.call(error, 'request'), false);
+        assert(!JSON.stringify(error).includes('secret-token'));
+    });
+
     it('get method works', (done) => {
         client
             .get('/')

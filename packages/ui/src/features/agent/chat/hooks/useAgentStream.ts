@@ -7,6 +7,7 @@ import {
     type FileProcessingDetails,
     getResourcesFromMessage,
 } from '@vertesia/common';
+import { Env } from '@vertesia/ui/env';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     debugAgentChat,
@@ -81,6 +82,11 @@ function getClientMessageId(message: AgentMessage): string | undefined {
 function getStringDetail(details: Common.AgentMessageDetails | undefined, key: string): string | undefined {
     const value = details?.[key];
     return typeof value === 'string' && value ? value : undefined;
+}
+
+function getErrorStatus(error: unknown): number | undefined {
+    if (!error || typeof error !== 'object' || !('status' in error)) return undefined;
+    return typeof error.status === 'number' ? error.status : undefined;
 }
 
 function isWorkflowRunScopedStreamingId(details: Common.AgentMessageDetails | undefined): boolean {
@@ -347,7 +353,15 @@ export function useAgentStream(
             })
             .catch((error) => {
                 if (!abortController.signal.aborted) {
-                    console.error('Failed to check agent run status:', error);
+                    const status = getErrorStatus(error);
+                    if (status === 404) {
+                        // The run can briefly trail the live stream during startup; the stream remains authoritative.
+                        debugAgentChat('agent run internals not available yet', { agentRunId, status });
+                    } else {
+                        Env.logger.warn('Failed to check agent run status; continuing with the message stream', {
+                            vertesia: { agent_run_id: agentRunId, status, error },
+                        });
+                    }
                 }
             });
 

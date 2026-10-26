@@ -250,19 +250,6 @@ export function MonacoEditor({
                 editor.setValue(newValue);
             };
 
-            // Set up custom theme for better error line highlighting
-            monacoInstance.editor.defineTheme('errorLineTheme', {
-                base: resolvedTheme === 'dark' ? 'vs-dark' : 'vs',
-                inherit: true,
-                rules: [],
-                colors: {
-                    'editorError.background': '#ffebee',
-                    'editorError.border': '#f44336',
-                },
-            });
-
-            monacoInstance.editor.setTheme('errorLineTheme');
-
             if (useCustomFolding) {
                 setTimeout(() => foldAllCodeBlocks(editor, monacoInstance), 300);
             }
@@ -270,7 +257,7 @@ export function MonacoEditor({
             // Call custom onMount if provided
             onMount?.(editor, monacoInstance);
         },
-        [onMount, resolvedTheme, useCustomFolding, foldAllCodeBlocks, jsonSchema, modelPath, language],
+        [onMount, useCustomFolding, foldAllCodeBlocks, jsonSchema, modelPath, language],
     );
 
     // Unregister this editor's schema on unmount so the global JSON diagnostics config

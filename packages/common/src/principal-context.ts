@@ -1,5 +1,5 @@
-import type { z } from 'zod';
-import type { AbacPrincipalContextFromSchema, PrincipalIdentitySchema } from './api-schemas/user.js';
+import type { AbacPrincipalContextFromSchema } from './api-schemas/user.js';
+import type * as Wire from './wire-types.generated.js';
 
 /**
  * The resolved principal context matched by ResourceSet/PrincipalSet condition evaluation
@@ -30,4 +30,4 @@ export type PrincipalKind = AbacPrincipalContext['kind'];
  * the identity, so a field added here never widens the `$principal.*` surface. Derived from
  * `PrincipalIdentitySchema`, where its published description lives — Zod reads `.meta()`, not TSDoc.
  */
-export type PrincipalIdentity = z.infer<typeof PrincipalIdentitySchema>;
+export type PrincipalIdentity = Wire.PrincipalIdentity;

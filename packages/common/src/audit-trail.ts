@@ -1,21 +1,4 @@
-import type { z } from 'zod';
-import type {
-    AuditAggregationDetailFieldSchema,
-    AuditAggregationDetailFilterSchema,
-    AuditAggregationDistinctFieldSchema,
-    AuditAggregationFilterSchema,
-    AuditAggregationGroupSchema,
-    AuditAggregationMetricSchema,
-    AuditAggregationOperationSchema,
-    AuditAggregationQuerySchema,
-    AuditAggregationResolutionSchema,
-    AuditAggregationResponseSchema,
-    AuditAggregationRowSchema,
-    AuditMeterSchema,
-    AuditTrailEventSchema,
-    AuditTrailQuerySchema,
-    AuditTrailResponseSchema,
-} from './api-schemas/audit-trail.js';
+import type * as Wire from './wire-types.generated.js';
 
 export const AUDIT_ACTIONS = [
     // CRUD operations
@@ -32,6 +15,9 @@ export const AUDIT_ACTIONS = [
     'credentials_totp_generation',
     'publish',
     'unpublish',
+    // Content access (retrieval is not proof of a human reading the document)
+    'search',
+    'read',
     // Billable operations
     'inference',
     'embedding',
@@ -56,13 +42,13 @@ export type AuditAction = KnownAuditAction | (string & {});
  *   { category: "compute", type: "duration_ms", quantity: 2100 }
  *   { category: "processing", type: "pages", quantity: 12 }
  */
-export type AuditMeter = z.infer<typeof AuditMeterSchema>;
+export type AuditMeter = Wire.AuditMeter;
 
-export type AuditTrailEvent = z.infer<typeof AuditTrailEventSchema>;
+export type AuditTrailEvent = Wire.AuditTrailEvent;
 
-export type AuditTrailQuery = z.infer<typeof AuditTrailQuerySchema>;
+export type AuditTrailQuery = Wire.AuditTrailQuery;
 
-export type AuditTrailResponse = z.infer<typeof AuditTrailResponseSchema>;
+export type AuditTrailResponse = Wire.AuditTrailResponse;
 
 export const AUDIT_AGGREGATION_DIMENSIONS = [
     'time',
@@ -71,6 +57,9 @@ export const AUDIT_AGGREGATION_DIMENSIONS = [
     'event_category',
     'provider',
     'project_id',
+    'principal_id',
+    'actor_id',
+    'user_id',
     'details.pipeline',
     'details.verdict',
     'details.workflow_type',
@@ -79,28 +68,41 @@ export const AUDIT_AGGREGATION_DIMENSIONS = [
 ] as const;
 
 export type AuditAggregationDimension = (typeof AUDIT_AGGREGATION_DIMENSIONS)[number];
-export type AuditAggregationResolution = z.infer<typeof AuditAggregationResolutionSchema>;
-export type AuditAggregationDetailField = z.infer<typeof AuditAggregationDetailFieldSchema>;
-export type AuditAggregationOperation = z.infer<typeof AuditAggregationOperationSchema>;
-export type AuditAggregationDistinctField = z.infer<typeof AuditAggregationDistinctFieldSchema>;
+export type AuditAggregationResolution = Wire.AuditAggregationResolution;
+export type AuditAggregationDetailField = Wire.AuditAggregationDetailField;
+export type AuditAggregationOperation = Wire.AuditAggregationOperation;
+export type AuditAggregationDistinctField = Wire.AuditAggregationDistinctField;
 
-export type AuditAggregationGroup = z.infer<typeof AuditAggregationGroupSchema>;
+export type AuditAggregationGroup = Wire.AuditAggregationGroup;
 
-export type AuditAggregationMetric = z.infer<typeof AuditAggregationMetricSchema>;
+export type AuditAggregationMetric = Wire.AuditAggregationMetric;
 
-export type AuditAggregationDetailFilter = z.infer<typeof AuditAggregationDetailFilterSchema>;
+export type AuditAggregationDetailFilter = Wire.AuditAggregationDetailFilter;
 
-export type AuditAggregationFilter = z.infer<typeof AuditAggregationFilterSchema>;
+export type AuditAggregationFilter = Wire.AuditAggregationFilter;
 
 /**
  * Safe audit aggregation query. The server always applies the authenticated account scope and,
  * for project-scoped principals, replaces projectId with the authenticated project.
  */
-export type AuditAggregationQuery = z.infer<typeof AuditAggregationQuerySchema>;
+export type AuditAggregationQuery = Wire.AuditAggregationQuery;
 
-export type AuditAggregationRow = z.infer<typeof AuditAggregationRowSchema>;
+export type AuditAggregationRow = Wire.AuditAggregationRow;
 
-export type AuditAggregationResponse = z.infer<typeof AuditAggregationResponseSchema>;
+export type AuditAggregationResponse = Wire.AuditAggregationResponse;
+
+export type AuditAdoptionFilter = Wire.AuditAdoptionFilter;
+export type AuditAdoptionQuery = Wire.AuditAdoptionQuery;
+export type AuditAdoptionPeriod = Wire.AuditAdoptionPeriod;
+export type AuditAdoptionBucket = Wire.AuditAdoptionBucket;
+export type AuditAdoptionActiveDays = Wire.AuditAdoptionActiveDays;
+export type AuditAdoptionProject = Wire.AuditAdoptionProject;
+export type AuditAdoptionHistory = Wire.AuditAdoptionHistory;
+export type AuditAdoptionResponse = Wire.AuditAdoptionResponse;
+export type AuditUsageQuery = Wire.AuditUsageQuery;
+export type AuditUsageCounts = Wire.AuditUsageCounts;
+export type AuditUsageBucket = Wire.AuditUsageBucket;
+export type AuditUsageResponse = Wire.AuditUsageResponse;
 
 /** Billable audit actions for cost analytics queries */
 export const BILLABLE_AUDIT_ACTIONS = ['inference', 'embedding', 'image_generation'] satisfies KnownAuditAction[];

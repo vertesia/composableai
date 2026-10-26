@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { preprocessMathDelimiters } from './preprocessMathDelimiters';
+import { maskMathDelimiters, preprocessMathDelimiters } from './preprocessMathDelimiters';
 
 describe('preprocessMathDelimiters', () => {
     it('preserves LaTeX patterns (commands, subscripts, superscripts, braces)', () => {
@@ -29,6 +29,32 @@ describe('preprocessMathDelimiters', () => {
         expect(preprocessMathDelimiters('all $ figures by $500k')).toBe('all \\$ figures by \\$500k');
         expect(preprocessMathDelimiters('$100K-$500K range')).toBe('\\$100K-\\$500K range');
     });
+
+    it('escapes currency pairs that enclose prose, whatever surrounds the $', () => {
+        expect(
+            preprocessMathDelimiters('summed directly ($49,137,431.65) equals the sub-totals ($49,137,431.65).'),
+        ).toBe('summed directly (\\$49,137,431.65) equals the sub-totals (\\$49,137,431.65).');
+        expect(preprocessMathDelimiters('**−$10,710** in lost revenue with a **−$6,154.50** net drop')).toBe(
+            '**−\\$10,710** in lost revenue with a **−\\$6,154.50** net drop',
+        );
+    });
+
+    it.each([
+        ['Totals ($10) vs ($20).', 'Totals (\\$10) vs (\\$20).'],
+        ['Totals ($10) equals ($20).', 'Totals (\\$10) equals (\\$20).'],
+        ['The fee is ($10), not ($20).', 'The fee is (\\$10), not (\\$20).'],
+        ['Fees ($10). ($20) later.', 'Fees (\\$10). (\\$20) later.'],
+        ['From $10 to [$20]', 'From \\$10 to [\\$20]'],
+    ])('escapes short punctuation-wrapped currency pairs: %s', (input, expected) => {
+        expect(preprocessMathDelimiters(input)).toBe(expected);
+    });
+
+    it.each(['$2xy$', '$2ab + 3cd$', 'so $2xy + 3ab$ holds', '$3 \\cdot ab$', '$2(a+b)$', '$1, 2, 3$', '$[0, 1)$'])(
+        'preserves algebraic forms: %s',
+        (input) => {
+            expect(preprocessMathDelimiters(input)).toBe(input);
+        },
+    );
 
     it('preserves uncertain content as fallback', () => {
         expect(preprocessMathDelimiters('$100 + 200$')).toBe('$100 + 200$');
@@ -88,5 +114,34 @@ describe('preprocessMathDelimiters', () => {
         expect(result).toContain('$sales = x*e^{y}$');
         expect(result).toContain('$$variance = x*v/2*e^(y-y`)$$');
         expect(result).toContain('\\$500M');
+    });
+
+    describe('maskMathDelimiters', () => {
+        it('masks currency with a same-length stand-in instead of escaping it', () => {
+            const input = 'between $100M and $500M, summed ($49,137,431.65) equals the sub-totals ($49,137,431.65).';
+            const { markdown, mask } = maskMathDelimiters(input);
+            if (!mask) throw new Error('Expected a mask');
+            expect(markdown).toHaveLength(input.length);
+            expect(markdown).not.toContain('$');
+            expect(markdown.split(mask).join('$')).toBe(input);
+        });
+
+        it('masks \\$ inside LaTeX spans without changing length', () => {
+            const { markdown, mask } = maskMathDelimiters('where $P = \\$2,847,500$ end');
+            expect(markdown).toBe(`where $P = \\${mask}2,847,500$ end`);
+        });
+
+        it('picks a mask absent from the input, so existing symbols are left alone', () => {
+            const input = 'Pfennig \u20B0 and \u20A0, totals ($10) vs ($20).';
+            const { markdown, mask } = maskMathDelimiters(input);
+            if (!mask) throw new Error('Expected a mask');
+            expect(input).not.toContain(mask);
+            expect(markdown).toBe(`Pfennig \u20B0 and \u20A0, totals (${mask}10) vs (${mask}20).`);
+        });
+
+        it('leaves LaTeX untouched and reports no mask without $', () => {
+            expect(maskMathDelimiters('$x = \\frac{1}{2}$').markdown).toBe('$x = \\frac{1}{2}$');
+            expect(maskMathDelimiters('no dollars')).toEqual({ markdown: 'no dollars' });
+        });
     });
 });

@@ -7,7 +7,8 @@ import { mutoolPdfToText, pdfExtractPages, pdfToImages } from './mutool.js';
 let activityContext: MockActivityEnvironment;
 
 beforeAll(async () => {
-    activityContext = new MockActivityEnvironment();
+    // mutool runs are bounded by the activity's start-to-close timeout, which defaults to 1s in the mock.
+    activityContext = new MockActivityEnvironment({ startToCloseTimeoutMs: 60_000 });
 });
 
 const TIMEOUT = 60000;
@@ -62,10 +63,16 @@ test(
         const pages = [7, 8, 9];
 
         console.log('Running pdfGetPages');
-        const result: string = await activityContext.run(pdfExtractPages, filename, pages);
+        const result: { file: string; workDir: string } = await activityContext.run(pdfExtractPages, filename, pages);
         console.log(result);
 
-        expect(result).toContain('.pdf');
+        try {
+            expect(result.file).toContain('.pdf');
+            expect(path.dirname(result.file)).toBe(result.workDir);
+            expect(fs.existsSync(result.file)).toBe(true);
+        } finally {
+            fs.rmSync(result.workDir, { recursive: true, force: true });
+        }
     },
     TIMEOUT,
 );
@@ -77,10 +84,16 @@ test(
         const pages = [12];
 
         console.log('Running pdfGetPages');
-        const result: string = await activityContext.run(pdfExtractPages, filename, pages);
+        const result: { file: string; workDir: string } = await activityContext.run(pdfExtractPages, filename, pages);
         console.log(result);
 
-        expect(result).toContain('.pdf');
+        try {
+            expect(result.file).toContain('.pdf');
+            expect(path.dirname(result.file)).toBe(result.workDir);
+            expect(fs.existsSync(result.file)).toBe(true);
+        } finally {
+            fs.rmSync(result.workDir, { recursive: true, force: true });
+        }
     },
     TIMEOUT,
 );

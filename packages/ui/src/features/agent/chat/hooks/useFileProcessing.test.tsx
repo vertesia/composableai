@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { VertesiaClient } from '@vertesia/client';
 import { type AgentArtifactUrlResponse, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 import { useFileProcessing } from './useFileProcessing';
 
 function createClient() {
@@ -121,6 +121,12 @@ describe('useFileProcessing', () => {
     });
 
     it('does not signal an upload that was removed before upload completion', async () => {
+        // jsdom's URL.createObjectURL throws on File instances; the preview URL is not under test here.
+        vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:wrong');
+        vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
         const client = createClient();
         const uploadArtifact = vi.mocked(client.agents.uploadArtifact);
         let resolveUpload: ((value: AgentArtifactUrlResponse) => void) | undefined;

@@ -47,8 +47,14 @@ export const CostAnalyticsQuerySchema = z
                 'service_tier',
                 'interaction',
                 'workflow',
+                'agent_run',
+                'workflow_run',
             ])
-            .meta({ description: 'Group results by this dimension' })
+            .meta({
+                description:
+                    'Group results by this dimension. `agent_run` groups by root agent run, including the calls of ' +
+                    'its sub-agents; `workflow_run` groups by Temporal workflow run, which separates each sub-agent.',
+            })
             .optional(),
         resolution: z.enum(['hour', 'day', 'week', 'month']).meta({ description: 'Time series resolution' }).optional(),
         model: z.string().meta({ description: 'Filter by model pattern' }).optional(),
@@ -60,6 +66,14 @@ export const CostAnalyticsQuerySchema = z
         workflow_run_id: z.string().meta({ description: 'Filter by Temporal workflow run ID' }).optional(),
         run_id: z.string().meta({ description: 'Filter by interaction execution run ID' }).optional(),
         agent_run_id: z.string().meta({ description: 'Filter by agent run ID' }).optional(),
+        agent_only: z
+            .boolean()
+            .meta({
+                description:
+                    'Restrict usage to agent runs and their attributed nested/background inference. ' +
+                    'Excludes standalone interactions and non-agent workflows. Defaults to false.',
+            })
+            .optional(),
         interaction_id: z
             .string()
             .meta({ description: 'Filter by interaction id: stored ObjectId or namespaced in-code id' })
@@ -141,11 +155,25 @@ export const ModelPricingSchema = z
         provider: z.string().optional(),
         provider_account_id: z.string().optional(),
         service_tier: z.string().meta({ description: 'Processing tier this price applies to' }).optional(),
+        min_prompt_tokens: z
+            .number()
+            .int()
+            .nonnegative()
+            .meta({
+                description:
+                    'When set, these prices apply to calls whose prompt (input, cached and cache-write tokens) is ' +
+                    'longer than this many tokens, in place of the prices without it.',
+            })
+            .optional(),
         input_price_per_m_tokens: z.number(),
         cached_input_price_per_m_tokens: z.number().optional(),
         cache_write_input_price_per_m_tokens: z.number().optional(),
         output_price_per_m_tokens: z.number(),
-        source: z.enum(['billing_export', 'model_pricing_daily', 'unavailable']),
+        source: z.enum(['billing_export', 'model_pricing_daily', 'run_time_estimate', 'unavailable']).meta({
+            description:
+                'Where the rates come from. `run_time_estimate` rates are the ones recorded on the calls when their ' +
+                'cost was estimated; the others come from the pricing catalog.',
+        }),
     })
     .meta({ id: 'ModelPricing' });
 
@@ -222,6 +250,18 @@ const PricingCoverageSchema = z.strictObject({
             calls: z.number(),
         }),
     ),
+    cost_by_source: z
+        .strictObject({
+            provider_billed: z.number().meta({ description: 'USD the provider reported billing for the calls.' }),
+            run_time_estimate: z.number().meta({
+                description: 'USD estimated from list prices when the calls ran, for calls with no billed amount.',
+            }),
+            price_table: z.number().meta({
+                description: 'USD computed from the pricing table, for calls with no cost recorded when they ran.',
+            }),
+        })
+        .optional()
+        .meta({ description: "How the total cost splits by where each call's cost came from." }),
 });
 
 export const ModelPriceComparisonResponseSchema = z

@@ -3,6 +3,7 @@ import type { AuthTokenPayload } from '@vertesia/common';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { createLocalJWKSet, decodeJwt, type JSONWebKeySet, type JWTVerifyGetKey, jwtVerify } from 'jose';
+import { createMemoryScratch, type ToolScratch } from './scratch.js';
 import type { ToolExecutionContext } from './types.js';
 
 const cache: Record<string, JWTVerifyGetKey> = {};
@@ -49,7 +50,22 @@ export interface ToolContext {
     runId?: string;
 }
 
+/** Sandbox authorization never accepts a credential supplied by the guest request. */
+export async function authorizeSandbox(
+    ctx: Context,
+    _endpointOverrides?: EndpointOverrides,
+    _toolContext?: ToolContext,
+) {
+    const session = ctx.get('toolAuthSession') as AuthSession | undefined;
+    if (!session) throw new HTTPException(401, { message: 'Missing sandbox host session' });
+    return session;
+}
+
 export async function authorize(ctx: Context, endpointOverrides?: EndpointOverrides, toolContext?: ToolContext) {
+    if (ctx.get('toolAuthMode') === 'sandbox') return authorizeSandbox(ctx);
+    // A sandbox host can bind a session in application middleware. HTTP headers cannot set this value.
+    const boundSession = ctx.get('toolAuthSession') as AuthSession | undefined;
+    if (boundSession) return boundSession;
     const auth = ctx.req.header('Authorization');
     if (!auth) {
         throw new HTTPException(401, {
@@ -91,13 +107,16 @@ export class AuthSession implements ToolExecutionContext {
         token: string;
     };
     toolContext?: ToolContext;
+    private _scratch: ToolScratch | undefined;
 
     constructor(
         public token: string,
         public payload: AuthTokenPayload,
         endpointOverrides?: EndpointOverrides,
         toolContext?: ToolContext,
+        scratch?: ToolScratch,
     ) {
+        this._scratch = scratch;
         const decoded = decodeEndpoints(payload.endpoints);
         // Use overrides from workflow config if provided, falling back to JWT endpoints
         this.endpoints = {
@@ -106,6 +125,12 @@ export class AuthSession implements ToolExecutionContext {
             token: endpointOverrides?.token || decoded.token || payload.iss,
         };
         this.toolContext = toolContext;
+    }
+
+    /** One store per session, which is one per request; created on first use. */
+    get scratch(): ToolScratch {
+        this._scratch ??= createMemoryScratch();
+        return this._scratch;
     }
 
     async getClient() {
@@ -124,7 +149,25 @@ export class AuthSession implements ToolExecutionContext {
 }
 
 function isAllowedIssuer(iss: string) {
-    return iss.endsWith('.vertesia.io') || iss.endsWith('.becomposable.com');
+    return getTrustedIssuers().has(iss) || iss.endsWith('.vertesia.io') || iss.endsWith('.becomposable.com');
+}
+
+/**
+ * VERTESIA_TRUSTED_ISSUERS (comma-separated issuer URLs) trusts additional token issuers, such as a local
+ * token server (http://localhost:8202). An issuer must match an entry exactly; a trailing slash on an entry
+ * is ignored. Unset by default, which trusts no issuer beyond the built-in domains.
+ */
+let _trustedIssuers: Set<string> | undefined;
+function getTrustedIssuers(): Set<string> {
+    if (_trustedIssuers === undefined) {
+        _trustedIssuers = new Set(
+            (process.env.VERTESIA_TRUSTED_ISSUERS ?? '')
+                .split(',')
+                .map((s) => s.trim().replace(/\/+$/, ''))
+                .filter(Boolean),
+        );
+    }
+    return _trustedIssuers;
 }
 
 /**

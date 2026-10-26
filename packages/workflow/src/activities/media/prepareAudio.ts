@@ -14,7 +14,8 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
-import { saveBlobToTempFile } from '../../utils/blobs.js';
+import { removeTempFiles, saveBlobToTempFile } from '../../utils/blobs.js';
+import { closeUploadStream, createUploadStream } from '../../utils/upload-stream.js';
 import {
     execActivityFile,
     execActivityFileWithProgress,
@@ -164,13 +165,16 @@ async function uploadFile(
     storagePath: string,
 ): Promise<string> {
     const { NodeStreamSource } = await import('@vertesia/client/node');
-    const fileStream = fs.createReadStream(filePath);
+    const fileStream = createUploadStream(filePath);
     const source = new NodeStreamSource(fileStream, fileName, mimeType, storagePath);
 
-    const result = await client.files.uploadFile(source);
-    log.debug(`Uploaded file to ${storagePath}`, { result });
-
-    return result;
+    try {
+        const result = await client.files.uploadFile(source);
+        log.debug(`Uploaded file to ${storagePath}`, { result });
+        return result;
+    } finally {
+        await closeUploadStream(fileStream);
+    }
 }
 
 /**
@@ -234,9 +238,11 @@ export async function prepareAudio(
 
     // Download audio to temp file
     const audioFile = await saveBlobToTempFile(client, inputObject.content.source);
-    const tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prepare-audio-'));
+    // Created inside the try, so a failure here still removes the download in the finally.
+    let tempOutputDir: string | undefined;
 
     try {
+        tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prepare-audio-'));
         // Step 1: Extract audio metadata
         log.info('Extracting audio metadata');
         const metadata = await getAudioMetadata(audioFile);
@@ -310,25 +316,6 @@ export async function prepareAudio(
         // Wrap unknown errors in Error
         throw new Error(`Failed to prepare audio ${objectId}: ${errorMessage}`);
     } finally {
-        // Clean up temporary files
-        const cleanupPromises: Promise<void>[] = [];
-
-        if (audioFile) {
-            cleanupPromises.push(
-                fs.promises.unlink(audioFile).catch((err) => {
-                    log.warn(`Failed to cleanup audio file: ${audioFile}`, { err });
-                }),
-            );
-        }
-
-        if (tempOutputDir) {
-            cleanupPromises.push(
-                fs.promises.rm(tempOutputDir, { recursive: true, force: true }).catch((err) => {
-                    log.warn(`Failed to cleanup temp directory: ${tempOutputDir}`, { err });
-                }),
-            );
-        }
-
-        await Promise.allSettled(cleanupPromises);
+        await removeTempFiles(audioFile, tempOutputDir);
     }
 }

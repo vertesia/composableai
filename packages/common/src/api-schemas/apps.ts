@@ -208,10 +208,39 @@ const toolCollectionBaseShape = {
     }),
 };
 
+const mcpParameterFields = {
+    title: z.string().optional(),
+    description: z.string().optional(),
+    required: z.boolean().optional(),
+};
+
+// Separate variants forbid plaintext defaults for secret parameters in the emitted contract too.
+export const McpPublicParameterSchema = z
+    .strictObject({
+        ...mcpParameterFields,
+        type: z.literal('string').optional(),
+        default: z.string().optional(),
+    })
+    .meta({ id: 'McpPublicParameter' });
+export const McpSecretParameterSchema = z
+    .strictObject({
+        ...mcpParameterFields,
+        type: z.literal('secret'),
+    })
+    .meta({ id: 'McpSecretParameter' });
+export const McpConnectionParameterSchema = z
+    .union([McpPublicParameterSchema, McpSecretParameterSchema])
+    .meta({ id: 'McpConnectionParameter' });
+
 export const MCPToolCollectionObjectSchema = z
     .strictObject({
         ...toolCollectionBaseShape,
         type: z.literal('mcp'),
+        parameters: z.record(z.string().regex(/^[a-z][a-z0-9_]*$/), McpConnectionParameterSchema).optional(),
+        headers: z.record(z.string(), z.string()).optional().meta({
+            description:
+                'HTTP header templates. Reference declared installation parameters with {{name}}. Never embed secrets.',
+        }),
         id: z.string().meta({
             description:
                 'Stable identifier for this collection. Used to key oauth_bindings on AppInstallation — ' +
@@ -318,9 +347,23 @@ export const ToolCollectionObjectSchema = z
     .discriminatedUnion('type', [MCPToolCollectionObjectSchema, VertesiaSDKToolCollectionObjectSchema])
     .meta({ id: 'ToolCollectionObject' });
 
+export const AppGitSourceProviderSchema = z.enum(['vertesia', 'github']).meta({ id: 'AppGitSourceProvider' });
+
 export const AppGitSourceConfigSchema = z
     .strictObject({
+        provider: AppGitSourceProviderSchema.optional().meta({
+            description:
+                'Repository provider. Missing values are treated as `vertesia` for apps created before provider support.',
+        }),
         url: z.string().optional(),
+        installation_id: z
+            .string()
+            .optional()
+            .meta({ description: 'Verified GitHub App installation id. Required when provider is `github`.' }),
+        repository: z
+            .string()
+            .optional()
+            .meta({ description: 'GitHub repository in `owner/name` form. Required when provider is `github`.' }),
         default_branch: z.string().optional(),
         production_branch: z.string().optional(),
         development_branch: z.string().optional(),
@@ -343,7 +386,10 @@ export const AppManifestSourceSchema = z
     .strictObject({
         kind: z.literal('git'),
         git: z.strictObject({
+            provider: AppGitSourceProviderSchema.optional(),
             url: z.string(),
+            installation_id: z.string().optional(),
+            repository: z.string().optional(),
             default_branch: z.string().optional(),
             production_branch: z.string().optional(),
             development_branch: z.string().optional(),

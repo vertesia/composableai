@@ -1,47 +1,21 @@
-import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { log } from '@temporalio/activity';
-import tmp from 'tmp';
+import { removeTempFiles } from '../utils/blobs.js';
+import { convertWithTool, runTool } from './convert-with-tool.js';
 
 /**
  * Convert a pdf file to text
  * TODO: pass file reference instead of Buffer
  */
-
 export function mutoolPdfToText(buffer: Buffer): Promise<string> {
-    const inputFile = tmp.fileSync({ postfix: '.pdf' });
-    const targetFileName = tmp.tmpNameSync({ postfix: '.txt' });
-
-    fs.writeSync(inputFile.fd, buffer);
-
-    return new Promise((resolve, reject) => {
-        log.info('Converting pdf to text', { inputFile: inputFile.name, targetFileName });
-
-        const command = spawn('mutool', ['convert', '-o', targetFileName, inputFile.name]);
-
-        command.on('exit', (code) => {
-            if (code) {
-                reject(new Error(`mutool exited with code ${code}`));
-            }
-        });
-
-        command.on('close', (code) => {
-            if (code) {
-                reject(new Error(`mutool exited with code ${code}`));
-            } else {
-                return fs.readFile(targetFileName, 'utf8', (err, data) => {
-                    if (err) {
-                        reject(err);
-                    }
-                    return resolve(data);
-                });
-            }
-        });
-
-        command.on('error', (err) => {
-            reject(err);
-        });
-    });
+    return convertWithTool('mutool', buffer, 'pdf', 'txt', (inputFile, outputFile) => [
+        'convert',
+        '-o',
+        outputFile,
+        inputFile,
+    ]);
 }
 
 /**
@@ -50,109 +24,68 @@ export function mutoolPdfToText(buffer: Buffer): Promise<string> {
  *
  * @param file
  * @param pages
- * @returns
+ * @returns the image paths, inside a work directory the caller owns and must remove
  */
 export async function pdfToImages(file: Buffer | string, pages?: number[]): Promise<string[]> {
-    const workDir = tmp.dirSync();
-    log.info(`Converting pdf to images`, { workDir: workDir.name, input_type: typeof file, pages });
+    return withMutoolWorkDir(async (workDir) => {
+        log.info(`Converting pdf to images`, { workDir, input_type: typeof file, pages });
+        const filename = await inputPdfPath(workDir, file);
 
-    if (file instanceof Buffer) {
-        fs.writeFileSync(`${workDir.name}/input.pdf`, file);
-    }
-    const filename = typeof file === 'string' ? file : `${workDir.name}/input.pdf`;
+        const args = ['draw', '-o', path.join(workDir, 'page-%d.png'), filename];
+        if (pages) {
+            args.push(pages.join(','));
+        }
+        await runTool('mutool', args);
 
-    const args = ['draw', '-o', `${workDir.name}/page-%d.png`, filename];
-
-    if (pages) {
-        args.push(pages.join(','));
-    }
-
-    return new Promise((resolve, reject) => {
-        const command = spawn('mutool', args);
-        log.info(`Executing mutool command`, { workDir: workDir.name, filename, command: command.spawnargs });
-
-        let errors = '';
-
-        command.stderr.on('data', (data) => {
-            errors += data;
-        });
-
-        command.on('exit', (code) => {
-            if (code) {
-                log.error(`mutool exited with code ${code}`, { errors });
-                reject(new Error(`mutool exited with code ${code}`));
-            }
-        });
-
-        command.on('close', (code) => {
-            if (code) {
-                reject(new Error(`mutool finished with code ${code}`));
-            } else {
-                const files = fs.readdirSync(workDir.name);
-                const images = files.filter((f) => f.endsWith('.png')).map((f) => `${workDir.name}/${f}`);
-                log.info(`Converted pdf to ${images.length} images`, files);
-                return resolve(images);
-            }
-        });
-
-        command.on('error', (err) => {
-            reject(err);
-        });
+        const files = await fs.promises.readdir(workDir);
+        const images = files.filter((f) => f.endsWith('.png')).map((f) => path.join(workDir, f));
+        log.info(`Converted pdf to ${images.length} images`, files);
+        return images;
     });
 }
 
 /**
  * Get some pages from a PDF to create a new one
+ *
+ * @returns the new PDF's path, and the work directory holding it, which the caller owns and must remove
  */
+export async function pdfExtractPages(
+    file: Buffer | string,
+    pages: number[],
+): Promise<{ file: string; workDir: string }> {
+    return withMutoolWorkDir(async (workDir) => {
+        log.info(`Getting pages from pdf`, { workDir, input_type: typeof file, pages });
+        const filename = await inputPdfPath(workDir, file);
 
-export async function pdfExtractPages(file: Buffer | string, pages: number[]): Promise<string> {
-    const workDir = tmp.dirSync();
-    log.info(`Getting pages from pdf`, { workDir: workDir.name, input_type: typeof file, pages });
+        const output = path.join(workDir, 'output.pdf');
+        await runTool('mutool', ['merge', '-o', output, '-O', 'garbage=compact,sanitize', filename, pages.join(',')]);
 
-    if (file instanceof Buffer) {
-        fs.writeFileSync(`${workDir.name}/input.pdf`, file);
-    }
-    const filename = typeof file === 'string' ? file : `${workDir.name}/input.pdf`;
-
-    const args = [
-        'merge',
-        '-o',
-        `${workDir.name}/output.pdf`,
-        '-O',
-        'garbage=compact,sanitize',
-        filename,
-        pages.join(','),
-    ];
-
-    return new Promise((resolve, reject) => {
-        const command = spawn('mutool', args);
-        log.info(`Executing mutool command`, { workDir: workDir.name, filename, command: command.spawnargs });
-
-        let errors = '';
-
-        command.stderr.on('data', (data) => {
-            errors += data;
-        });
-
-        command.on('exit', (code) => {
-            if (code) {
-                log.error(`mutool exited with code ${code}`, { errors });
-                reject(new Error(`mutool exited with code ${code}`));
-            }
-        });
-
-        command.on('close', (code) => {
-            if (code) {
-                reject(new Error(`mutool finished with code ${code}`));
-            } else {
-                const file = `${workDir.name}/output.pdf`;
-                log.info(`Extracted pages from pdf`, { pages, file });
-                return resolve(file);
-            }
-        });
-
-        command.on('error', (err) => {
-            reject(err);
-        });
+        log.info(`Extracted pages from pdf`, { pages, file: output });
+        return { file: output, workDir };
     });
+}
+
+/**
+ * Run `work` in a new work directory. The directory is removed if `work` fails; on success the caller owns it.
+ */
+async function withMutoolWorkDir<T>(work: (workDir: string) => Promise<T>): Promise<T> {
+    // mkdtemp rather than tmp.dirSync: the directory is removed by path, which would leave a tmp cleanup registration
+    // behind for the life of the process.
+    const workDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'mutool-'));
+    try {
+        return await work(workDir);
+    } catch (err: unknown) {
+        log.error('mutool conversion failed', { workDir, err });
+        await removeTempFiles(workDir);
+        throw err;
+    }
+}
+
+async function inputPdfPath(workDir: string, file: Buffer | string): Promise<string> {
+    if (typeof file === 'string') {
+        return file;
+    }
+    const input = path.join(workDir, 'input.pdf');
+    await fs.promises.writeFile(input, file);
+    return input;
 }

@@ -1,13 +1,25 @@
 import type { JSONObject } from '@llumiverse/common';
 import { type JSONSchema, TemplateType } from '@vertesia/common';
-import { getFreeVariables, renderJsTemplate } from '@vertesia/jst';
-import { extractHandlebarsVariables } from './extract-vars.js';
+import {
+    describeTemplateSystemVariables,
+    getFreeVariables,
+    isTemplateSystemVariable,
+    JST_TEMPLATE_GLOBALS,
+    renderJsTemplate,
+    TEMPLATE_SYSTEM_VARIABLES,
+    withTemplateSystemVariables,
+} from '@vertesia/jst';
+import { analyzeHandlebarsTemplate } from './extract-vars.js';
 import { generateMockData } from './mock-data.js';
 import { executeHandlebars } from './render.js';
 
 export type PromptValidationIssueType =
     | 'undeclared_template_variable'
     | 'unused_schema_variable'
+    | 'reserved_variable_declared'
+    | 'system_variable_property_access'
+    | 'helper_used_as_value'
+    | 'helper_missing_arguments'
     | 'handlebars_render_error'
     | 'jst_unsafe_construct'
     | 'jst_render_error';
@@ -43,16 +55,6 @@ export interface PromptValidationInput {
     inputSchema?: JSONSchema;
 }
 
-// JST's renderJsTemplate auto-adds `_` (helpers object) and runtime injects `Set` and `Array`
-// — treat them as globals so they don't appear as free vars in user templates.
-// Globals always available to JST templates regardless of schema:
-//  - `_`, `Array`, `Set`: runtime-injected by `renderJsTemplate` (jst library)
-//  - `_model`: runtime-injected by the studio-server executor as `{ ..._model: run.modelId }`
-//    (see ExecutionRequest.ts:313 and executor/rendering/template.ts:13)
-// Keeping these in sync with `renderTemplate` in ./render.ts so a JST template that runs in
-// production also passes the validator.
-const JST_AUTO_GLOBALS = ['_', 'Array', 'Set', '_model'];
-
 function countSeverities(issues: PromptValidationIssue[]): { error_count: number; warning_count: number } {
     let error_count = 0;
     let warning_count = 0;
@@ -66,43 +68,110 @@ function countSeverities(issues: PromptValidationIssue[]): { error_count: number
     return { error_count, warning_count };
 }
 
-function validateHandlebarsPrompt(content: string, inputSchema?: JSONSchema): PromptValidationIssue[] {
+/** Mock data for the render smoke test: schema-shaped input plus the runtime system values. */
+function buildMockInput(inputSchema: JSONSchema): Record<string, unknown> {
+    const mockData = generateMockData(inputSchema);
+    const mockObject: JSONObject =
+        typeof mockData === 'object' && mockData !== null && !Array.isArray(mockData) ? (mockData as JSONObject) : {};
+    return withTemplateSystemVariables(mockObject, { model: 'validation-model' });
+}
+
+/**
+ * Issues shared by both template languages: reserved names declared in the schema, and
+ * unused schema properties. `usedVars` holds the input variables the template reads.
+ */
+function checkDeclarations(
+    declaredVars: Set<string>,
+    usedVars: Set<string>,
+    usageHint: (name: string) => string,
+): PromptValidationIssue[] {
     const issues: PromptValidationIssue[] = [];
-    const usedVars = extractHandlebarsVariables(content);
-    const declaredVars = new Set<string>(inputSchema?.properties ? Object.keys(inputSchema.properties) : []);
-
-    for (const used of usedVars) {
-        // The execution request injects _model for both template languages.
-        if (!declaredVars.has(used) && used !== '_model') {
-            issues.push({
-                type: 'undeclared_template_variable',
-                severity: 'error',
-                variable: used,
-                message: `Template references variable '{{${used}}}' but it is not declared in input_schema.properties. Add '${used}' to the schema with an appropriate type.`,
-            });
-        }
-    }
-
     for (const declared of declaredVars) {
-        if (!usedVars.has(declared)) {
+        if (isTemplateSystemVariable(declared)) {
+            issues.push({
+                type: 'reserved_variable_declared',
+                severity: 'warning',
+                variable: declared,
+                message: `Schema declares '${declared}', a system variable the runtime supplies and overrides. Remove it from input_schema.`,
+            });
+        } else if (!usedVars.has(declared)) {
             issues.push({
                 type: 'unused_schema_variable',
                 severity: 'warning',
                 variable: declared,
-                message: `Schema declares property '${declared}' but the template never references it. Remove it from input_schema or use it via {{${declared}}}.`,
+                message: `Schema declares property '${declared}' but the template never references it. Remove it from input_schema or ${usageHint(declared)}.`,
             });
         }
     }
+    return issues;
+}
+
+function undeclaredVariableIssue(name: string, where: string): PromptValidationIssue {
+    return {
+        type: 'undeclared_template_variable',
+        severity: 'error',
+        variable: name,
+        message:
+            `Template reads variable '${name}' ${where} but it is not declared in input_schema.properties. ` +
+            `Add '${name}' to the schema with an appropriate type. ` +
+            `System variables need no declaration: ${describeTemplateSystemVariables()}.`,
+    };
+}
+
+function validateHandlebarsPrompt(content: string, inputSchema?: JSONSchema): PromptValidationIssue[] {
+    const issues: PromptValidationIssue[] = [];
+    const analysis = analyzeHandlebarsTemplate(content);
+    const declaredVars = new Set<string>(inputSchema?.properties ? Object.keys(inputSchema.properties) : []);
+    const usedVars = new Set<string>();
+    const reported = new Set<string>();
+
+    for (const ref of analysis?.references ?? []) {
+        if (isTemplateSystemVariable(ref.name)) {
+            const variable = TEMPLATE_SYSTEM_VARIABLES.find((v) => v.name === ref.name);
+            if (ref.hasPath && variable?.type === 'string' && !reported.has(`path:${ref.expression}`)) {
+                reported.add(`path:${ref.expression}`);
+                issues.push({
+                    type: 'system_variable_property_access',
+                    severity: 'error',
+                    variable: ref.name,
+                    message: `'${ref.expression}' in ${ref.tag} reads a property of system variable '${ref.name}', which is a string (${variable.description}). Use '${ref.name}' directly.`,
+                });
+            }
+            continue;
+        }
+        usedVars.add(ref.name);
+        if (!declaredVars.has(ref.name) && !reported.has(ref.name)) {
+            reported.add(ref.name);
+            issues.push(undeclaredVariableIssue(ref.name, `in ${ref.tag}`));
+        }
+    }
+
+    for (const misuse of analysis?.helperMisuses ?? []) {
+        issues.push(
+            misuse.problem === 'used_as_value'
+                ? {
+                      type: 'helper_used_as_value',
+                      severity: 'error',
+                      variable: misuse.helper,
+                      message: `'${misuse.helper}' in ${misuse.tag} is a helper, but as an argument Handlebars reads it as data, which is empty. Call it as a subexpression: (${misuse.helper} ...).`,
+                  }
+                : {
+                      type: 'helper_missing_arguments',
+                      severity: 'error',
+                      variable: misuse.helper,
+                      message: `${misuse.tag} calls helper '${misuse.helper}' without arguments. Pass the value it operates on, e.g. {{${misuse.helper} value}}.`,
+                  },
+        );
+    }
+
+    issues.push(...checkDeclarations(declaredVars, usedVars, (name) => `use it via {{${name}}}`));
 
     // Render-time smoke test — always runs so syntax errors and failing helper calls are
     // surfaced even when undeclared-variable errors are already in the list. Handlebars renders
     // missing vars as empty strings (non-strict by default), so the render check does NOT echo
     // the var errors — anything it reports is a distinct template problem worth showing.
     const renderSchema = inputSchema ?? ({} as JSONSchema);
-    const mockData = generateMockData(renderSchema);
-    const mockObject: JSONObject =
-        typeof mockData === 'object' && mockData !== null && !Array.isArray(mockData) ? (mockData as JSONObject) : {};
-    const renderResult = executeHandlebars(content, renderSchema, mockObject);
+    const renderResult = executeHandlebars(content, renderSchema, buildMockInput(renderSchema) as JSONObject);
     if (!renderResult.success) {
         issues.push({
             type: 'handlebars_render_error',
@@ -121,7 +190,7 @@ function validateJstPrompt(content: string, inputSchema?: JSONSchema): PromptVal
     let referenced: Set<string>;
     try {
         const result = getFreeVariables(content, {
-            globals: JST_AUTO_GLOBALS,
+            globals: [...JST_TEMPLATE_GLOBALS],
             acorn: { allowReturnOutsideFunction: true, locations: true },
         });
         referenced = result.vars;
@@ -144,38 +213,19 @@ function validateJstPrompt(content: string, inputSchema?: JSONSchema): PromptVal
 
     for (const used of referenced) {
         if (!declaredVars.has(used)) {
-            issues.push({
-                type: 'undeclared_template_variable',
-                severity: 'error',
-                variable: used,
-                message: `Template references variable '${used}' but it is not declared in input_schema.properties. Add '${used}' to the schema with an appropriate type.`,
-            });
+            issues.push(undeclaredVariableIssue(used, 'in the template'));
         }
     }
 
-    for (const declared of declaredVars) {
-        if (!referenced.has(declared)) {
-            issues.push({
-                type: 'unused_schema_variable',
-                severity: 'warning',
-                variable: declared,
-                message: `Schema declares property '${declared}' but the template never references it. Remove it from input_schema or use it in the template.`,
-            });
-        }
-    }
+    issues.push(...checkDeclarations(declaredVars, referenced, () => 'use it in the template'));
 
     // Render-time smoke test — only if there are no blocking errors so far, otherwise
     // the failure mode would just echo what we already reported.
     const blockingSoFar = issues.some((i) => i.severity === 'error');
     if (!blockingSoFar) {
         const renderSchema = inputSchema ?? ({} as JSONSchema);
-        const mockData = generateMockData(renderSchema);
-        const mockObject: JSONObject =
-            typeof mockData === 'object' && mockData !== null && !Array.isArray(mockData)
-                ? (mockData as JSONObject)
-                : {};
         try {
-            renderJsTemplate(content, [...declaredVars], mockObject);
+            renderJsTemplate(content, [...declaredVars], buildMockInput(renderSchema));
         } catch (renderError) {
             issues.push({
                 type: 'jst_render_error',
@@ -193,9 +243,15 @@ function validateJstPrompt(content: string, inputSchema?: JSONSchema): PromptVal
  *
  * For `handlebars` and `jst` templates, the following checks are performed:
  *  1. Every variable referenced in the template must be declared as a top-level property
- *     in `inputSchema.properties` (else → `undeclared_template_variable` error).
+ *     in `inputSchema.properties` (else → `undeclared_template_variable` error). System variables
+ *     (`TEMPLATE_SYSTEM_VARIABLES` in `@vertesia/jst`) are supplied at runtime and need no declaration;
+ *     declaring one → `reserved_variable_declared` warning, reading a property of one →
+ *     `system_variable_property_access` error.
  *  2. Every property declared in `inputSchema.properties` should be referenced by the template
  *     (else → `unused_schema_variable` warning — non-blocking).
+ *  For Handlebars only: a helper passed as an argument (`{{#if stringify}}`) →
+ *     `helper_used_as_value` error; a helper called bare without the arguments it needs
+ *     (`{{stringify}}`) → `helper_missing_arguments` error.
  *  3. The template must render successfully against schema-derived mock data
  *     (else → `handlebars_render_error` / `jst_render_error` error).
  *  4. For JST only: unsafe constructs (`with`, `for`, `while`, `import`, class, `this`,

@@ -1,9 +1,13 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    AuditAdoptionQuery,
+    AuditAdoptionResponse,
     AuditAggregationQuery,
     AuditAggregationResponse,
     AuditTrailQuery,
     AuditTrailResponse,
+    AuditUsageQuery,
+    AuditUsageResponse,
 } from '@vertesia/common';
 
 export default class AuditTrailApi extends ApiTopic {
@@ -32,5 +36,13 @@ export default class AuditTrailApi extends ApiTopic {
 
     aggregate(query: AuditAggregationQuery): Promise<AuditAggregationResponse> {
         return this.post('/aggregate', { payload: query });
+    }
+
+    adoption(query: AuditAdoptionQuery = {}): Promise<AuditAdoptionResponse> {
+        return this.post('/adoption', { payload: query });
+    }
+
+    usage(query: AuditUsageQuery = {}): Promise<AuditUsageResponse> {
+        return this.post('/usage', { payload: query });
     }
 }

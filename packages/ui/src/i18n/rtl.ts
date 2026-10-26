@@ -29,6 +29,9 @@ export const SUPPORTED_LANGUAGES = [
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
+/** Where `LanguageProvider` persists the chosen language; the boot runtime reads it too. */
+export const LANGUAGE_STORAGE_KEY = 'vertesia-ui-language';
+
 export const RTL_LANGUAGES: ReadonlySet<string> = new Set(['ar', 'he', 'fa', 'ur']);
 
 export function isRTL(lng?: string): boolean {
@@ -42,8 +45,8 @@ export function isRTL(lng?: string): boolean {
  *   2. base-language fallback (`pt-BR` -> `pt`)
  *   3. `'en'` fallback
  *
- * The inline FOUC script in `index.html` must reimplement this same logic
- * verbatim (it cannot import ESM before bundle load).
+ * The pre-React boot runtime (`../boot/index.ts`) reimplements this same logic
+ * in its inline script, which runs before any bundle loads.
  */
 export function resolveLanguage(raw: string | undefined | null): SupportedLanguage {
     if (!raw) return 'en';

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type * as Wire from '../wire-types.generated.js';
 
 /**
  * Runtime API schemas for the IAM user endpoints.
@@ -200,11 +201,11 @@ export const SignupPayloadSchema = z
  * The public IAM types, inferred rather than written. `../principal-context.ts`, `../user.ts` and
  * `../common.ts` re-export these under their public names.
  */
-export type AbacPrincipalContextFromSchema = z.infer<typeof AbacPrincipalContextSchema>;
-export type PrincipalIdentityFromSchema = z.infer<typeof PrincipalIdentitySchema>;
-export type UserFromSchema = z.infer<typeof UserSchema>;
-export type UserArrayFromSchema = z.infer<typeof UserArraySchema>;
-export type UserRefFromSchema = z.infer<typeof UserRefSchema>;
-export type UserRefArrayFromSchema = z.infer<typeof UserRefArraySchema>;
-export type UpdateUserPayloadFromSchema = z.infer<typeof UpdateUserPayloadSchema>;
-export type DeleteByIdResultFromSchema = z.infer<typeof DeleteByIdResultSchema>;
+export type AbacPrincipalContextFromSchema = Wire.AbacPrincipalContextFromSchema;
+export type PrincipalIdentityFromSchema = Wire.PrincipalIdentityFromSchema;
+export type UserFromSchema = Wire.UserFromSchema;
+export type UserArrayFromSchema = Wire.UserArrayFromSchema;
+export type UserRefFromSchema = Wire.UserRefFromSchema;
+export type UserRefArrayFromSchema = Wire.UserRefArrayFromSchema;
+export type UpdateUserPayloadFromSchema = Wire.UpdateUserPayloadFromSchema;
+export type DeleteByIdResultFromSchema = Wire.DeleteByIdResultFromSchema;

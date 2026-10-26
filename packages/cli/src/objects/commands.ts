@@ -237,7 +237,7 @@ export async function createObjectFromFiles(program: Command, files: string[], o
 export async function createObjectFromFile(program: Command, file: string, options: CreateObjectOptions) {
     const client = await getClient(program);
     let res: ContentObject;
-    if (file.startsWith('s3://') || file.startsWith('gs://')) {
+    if (/^(s3|gs|az):\/\//.test(file)) {
         res = await createObjectFromExternalSource(client, file, options);
     } else {
         res = await createObjectFromLocalFile(client, file, options);

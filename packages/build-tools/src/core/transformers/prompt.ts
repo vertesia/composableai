@@ -6,7 +6,7 @@
 import path from 'node:path';
 import { PromptRole } from '@llumiverse/common';
 import { type JSONSchema, TemplateType } from '@vertesia/common';
-import { executeHandlebars } from '@vertesia/studio-utils';
+import { describeTemplateSystemVariables, executeHandlebars, HANDLEBARS_HELPER_NAMES } from '@vertesia/studio-utils';
 import { z } from 'zod';
 import { parseFrontmatter } from '../parsers/frontmatter.js';
 import type { TransformerPreset } from '../types.js';
@@ -162,7 +162,8 @@ function validatePromptContent(content: string, contentType: TemplateType, fileP
     if (!result.success) {
         throw new Error(
             `Invalid Handlebars prompt in ${filePath}: ${result.error}\n\n` +
-                'Supported helpers are: _now, stringify, and standard block helpers if/each/with/unless. ' +
+                `Supported helpers are: ${HANDLEBARS_HELPER_NAMES.join(', ')}. ` +
+                `System variables available without declaration: ${describeTemplateSystemVariables()}. ` +
                 'For array formatting, use {{#each items}}...{{/each}} rather than an unregistered helper such as {{join items ", "}}.',
         );
     }

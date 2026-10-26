@@ -1,8 +1,6 @@
 import { isTrustedAuthBrokerUrl } from '../session/auth/vertesiaHosts.js';
 
 export {
-    FIRST_PARTY_HOST_PATTERNS,
-    GATEWAY_HOST_PATTERNS,
     isLoopbackHostname,
     isTrustedAuthBrokerUrl,
     normalizeHostname,
@@ -41,7 +39,16 @@ export interface EnvProps {
     /** Explicitly allow legacy Firebase/central sign-in in an iframe when host authentication is unavailable. */
     allowLegacyIframeAuth?: boolean;
     /** Public OAuth client for independently hosted apps; ignored inside Studio or a gateway session. */
-    oauth?: { clientId: string; redirectUri: string; scopes?: string[]; offlineAccess?: boolean };
+    oauth?: {
+        clientId: string;
+        redirectUri: string;
+        scopes?: string[];
+        offlineAccess?: boolean;
+        /** Logical authorization server, optionally including a tenant path; defaults to endpoints.sts. */
+        issuer?: string;
+        /** RFC 8707 audience, independent of the logical issuer; defaults to the discovered issuer. */
+        resource?: string;
+    };
     firebase?: {
         apiKey: string;
         authDomain: string;
@@ -80,7 +87,7 @@ export interface EnvProps {
     onLogout?: () => void;
 }
 
-export type VertesiaRuntimeConfig =
+export type VertesiaRuntimeConfig = (
     | {
           authMode: 'firebase';
           allowLegacyIframeAuth?: boolean;
@@ -101,7 +108,13 @@ export type VertesiaRuntimeConfig =
           authUrl?: string;
           /** The serving gateway owns this standalone app's OAuth session. */
           gatewaySession?: boolean;
-      };
+          /** Optional path prefix for an ephemeral version launch on the application host. */
+          gatewayPathPrefix?: string;
+      }
+) & {
+    /** Ephemeral selector injected by App Gateway for an advanced App Builder version launch. */
+    appVersionSelector?: string;
+};
 
 declare global {
     interface Window {
@@ -119,6 +132,13 @@ function injectedRuntimeConfig(): VertesiaRuntimeConfig | undefined {
     const firebase = runtimeConfig.firebase;
     if (!firebase?.apiKey || !firebase.authDomain || !firebase.projectId || !firebase.appId) return undefined;
     return runtimeConfig;
+}
+
+/** The runtime selector takes precedence over the immutable version compiled into an app bundle. */
+export function getRuntimeAppVersionSelector(): string | undefined {
+    if (typeof window === 'undefined') return undefined;
+    const selector = window.__VERTESIA_RUNTIME_CONFIG__?.appVersionSelector;
+    return typeof selector === 'string' && selector ? selector : undefined;
 }
 
 /** Public build-time settings, for example Vite's import.meta.env. */

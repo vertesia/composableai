@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { ContentObject, Project } from '@vertesia/common';
+import type { ContentObject, InferenceProfileRecord } from '@vertesia/common';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { I18nProvider } from '../../../../i18n/index.js';
@@ -10,11 +10,13 @@ import { type DocumentEditingModelConfiguration, DocumentEditingWorkspace } from
 const mocks = vi.hoisted(() => {
     const retrieveProject = vi.fn();
     const startAgent = vi.fn();
+    const getDefault = vi.fn();
     return {
         findRun: vi.fn(),
         resolveTarget: vi.fn(),
         retrieveProject,
         startAgent,
+        getDefault,
         session: {
             client: {
                 agents: {
@@ -23,6 +25,7 @@ const mocks = vi.hoisted(() => {
                 },
                 files: {},
                 projects: { retrieve: retrieveProject },
+                inferenceProfiles: { getDefault },
             },
             project: { id: 'project-1' },
             store: { objects: {} },
@@ -92,7 +95,8 @@ vi.mock('../../../agent/chat/ModernAgentConversation.js', () => ({
     ),
 }));
 
-vi.mock('./DocumentEditingConfigurationSelector.js', () => ({
+vi.mock('./DocumentEditingConfigurationSelector.js', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('./DocumentEditingConfigurationSelector.js')>()),
     DocumentEditingConfigurationSelector: ({
         value,
     }: {
@@ -105,10 +109,6 @@ vi.mock('./DocumentEditingConfigurationSelector.js', () => ({
             data-model-options={JSON.stringify(value.model_options)}
         />
     ),
-    getDocumentEditingProjectDefault: (project: Pick<Project, 'configuration'>) => {
-        const defaults = project.configuration?.defaults?.system?.agent ?? project.configuration?.defaults?.base;
-        return { environment: defaults?.environment, model: defaults?.model };
-    },
 }));
 
 vi.mock('./documentEditingRun.js', () => ({
@@ -146,6 +146,7 @@ function renderWorkspace(props?: { model?: DocumentEditingModelConfiguration; st
 describe('DocumentEditingWorkspace startup configuration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.getDefault.mockResolvedValue(undefined);
         mocks.findRun.mockResolvedValue(undefined);
         mocks.resolveTarget.mockResolvedValue({ id: 'document-1', etag: 'etag-1', content: '# Editing test' });
         mocks.retrieveProject.mockResolvedValue({
@@ -221,6 +222,23 @@ describe('DocumentEditingWorkspace startup configuration', () => {
             'project-environment',
         );
         expect(screen.getByTestId('editing-configuration').getAttribute('data-model')).toBe('project-model');
+    });
+
+    it('starts a profile-backed editing run using the stable profile assignment', async () => {
+        const profile = {
+            id: '507f1f77bcf86cd799439011',
+            project: 'project-1',
+            name: 'Editing',
+            environment: 'profile-environment',
+            model: 'profile-model',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        } satisfies InferenceProfileRecord;
+        mocks.retrieveProject.mockResolvedValue({ configuration: { inference: { default_profile: profile.id } } });
+        mocks.getDefault.mockResolvedValue(profile);
+        renderWorkspace({ startImmediately: true });
+        await waitFor(() => expect(mocks.startAgent).toHaveBeenCalledTimes(1));
+        expect(mocks.startAgent.mock.calls[0]?.[0].config).toEqual({ inference_profile: profile.id });
     });
 
     it('does not duplicate automatic startup for equivalent inline model objects', async () => {

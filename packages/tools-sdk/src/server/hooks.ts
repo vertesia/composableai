@@ -53,6 +53,7 @@ export function createHooksRoute(app: Hono, basePath: string, config: ToolServer
             token: session.token,
             payload: session.payload,
             getClient: () => session.getClient(),
+            scratch: session.scratch,
             metadata,
         };
         const result = await hook.handler(context);
@@ -68,6 +69,7 @@ async function executeEventHook(c: Context, requestContext: ToolContext, hook: A
         token: session.token,
         payload: session.payload,
         getClient: () => session.getClient(),
+        scratch: session.scratch,
     };
     const result = await hook.handler(eventPayload, context);
 

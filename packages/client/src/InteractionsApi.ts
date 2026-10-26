@@ -30,9 +30,16 @@ import type {
     RateLimitRequestPayload,
     RateLimitRequestResponse,
     ResolvedInteractionExecutionInfo,
+    ResolveInteractionQuery,
 } from '@vertesia/common';
 import type { VertesiaClient } from './client.js';
-import { checkRateLimit, executeInteraction, executeInteractionAsync, executeInteractionByName } from './execute.js';
+import {
+    checkRateLimit,
+    type ExecuteInteractionRequestOptions,
+    executeInteraction,
+    executeInteractionAsync,
+    executeInteractionByName,
+} from './execute.js';
 import { InteractionCatalogApi } from './InteractionCatalogApi.js';
 import { type EnhancedInteractionExecutionResult, enhanceInteractionExecutionResult } from './InteractionOutput.js';
 
@@ -221,13 +228,14 @@ export default class InteractionsApi extends ApiTopic {
      * @param nameWithTag
      * @param payload
      * @param onChunk
+     * @param requestOptions request options, e.g. `{ query: { include_prompt: false } }` to omit the rendered prompt
      * @returns
      */
     async executeByName<ResultT = unknown, ParamsT = unknown>(
         nameWithTag: string,
         payload: InteractionExecutionPayload = {},
         onChunk?: (chunk: string) => void,
-        requestOptions?: IRequestParams,
+        requestOptions?: ExecuteInteractionRequestOptions,
     ): Promise<EnhancedInteractionExecutionResult<ResultT, ParamsT>> {
         const r = await executeInteractionByName<ParamsT>(
             this.client as VertesiaClient,
@@ -341,15 +349,7 @@ export default class InteractionsApi extends ApiTopic {
      * @param options Optional environment and/or model to resolve with
      * @returns ResolvedInteractionExecutionInfo with the resolved environment and model
      */
-    resolve(
-        nameOrId: string,
-        options?: {
-            environment?: string;
-            model?: string;
-            hasImage?: boolean;
-            hasVideo?: boolean;
-        },
-    ): Promise<ResolvedInteractionExecutionInfo> {
+    resolve(nameOrId: string, options?: ResolveInteractionQuery): Promise<ResolvedInteractionExecutionInfo> {
         return this.get(`/resolve/${encodeURIComponent(nameOrId)}`, {
             query: options,
         });

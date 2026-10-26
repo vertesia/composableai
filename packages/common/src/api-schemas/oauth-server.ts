@@ -20,11 +20,16 @@ export const OAuthRegistrationSourceSchema = z.enum(['admin', 'dynamic']).meta({
 export const OAuthProjectBindingModeSchema = z.enum(['user_select', 'fixed']).meta({ id: 'OAuthProjectBindingMode' });
 
 export const OAuthTokenEndpointAuthMethodSchema = z
-    .enum(['none', 'client_secret_post', 'client_secret_basic'])
+    .enum(['none', 'client_secret_post', 'client_secret_basic', 'private_key_jwt'])
     .meta({ id: 'OAuthTokenEndpointAuthMethod' });
 
 export const OAuthGrantTypeSchema = z
-    .enum(['authorization_code', 'refresh_token', 'urn:ietf:params:oauth:grant-type:device_code'])
+    .enum([
+        'authorization_code',
+        'refresh_token',
+        'urn:ietf:params:oauth:grant-type:device_code',
+        'urn:ietf:params:oauth:grant-type:token-exchange',
+    ])
     .meta({ id: 'OAuthGrantType' });
 
 export const OAuthResponseTypeSchema = z.literal('code').meta({ id: 'OAuthResponseType' });
@@ -58,6 +63,7 @@ export const OAuthAuthorizationServerMetadataSchema = z
         grant_types_supported: z.array(z.string()),
         code_challenge_methods_supported: z.array(z.string()),
         token_endpoint_auth_methods_supported: z.array(z.string()),
+        token_endpoint_auth_signing_alg_values_supported: z.array(z.string()).optional(),
         scopes_supported: z.array(z.string()),
         client_id_metadata_document_supported: z.boolean().optional(),
         authorization_response_iss_parameter_supported: z.boolean().optional(),
@@ -98,6 +104,7 @@ export const OAuthAuthorizationRequestGeneratedAppSchema = z
         tenant_id: z.string(),
         app_name: z.string(),
         version_id: z.string().optional(),
+        deployment_alias: z.string().optional(),
     })
     .meta({ id: 'OAuthAuthorizationRequestGeneratedApp' });
 
@@ -110,6 +117,7 @@ export const OAuthAuthorizationRequestSchema = z
         }),
         client_id: z.string(),
         client_name: z.string(),
+        app_id: z.string().optional(),
         client_metadata: OAuthClientDisplayMetadataSchema.optional(),
         client_registration_mode: OAuthClientRegistrationModeSchema.optional(),
         redirect_uri: z.string(),
@@ -212,12 +220,17 @@ export const OAuthTokenResponseSchema = z
  * publishes these properties inline under `OAuthClient`, with `client_id` last.
  */
 export const OAuthClientDataSchema = z.strictObject({
+    app_id: z.string().optional().meta({
+        description:
+            'App managing this client. Generic updates and deletion are prohibited; configure it through the app. Authorization requires a current installation and user app access.',
+    }),
     client_name: z.string(),
     client_type: OAuthClientTypeSchema,
     redirect_uris: z.array(z.string()),
     grant_types: z.array(OAuthGrantTypeSchema),
     response_types: z.array(OAuthResponseTypeSchema),
     token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema,
+    jwks_uri: z.string().url().optional(),
     allowed_scopes: z.array(z.string()),
     default_scopes: z.array(z.string()).optional(),
     registration_source: OAuthRegistrationSourceSchema,
@@ -269,6 +282,7 @@ export const CreateOAuthClientPayloadSchema = z
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
+        jwks_uri: z.string().url().optional(),
         allowed_scopes: z.array(z.string()).optional(),
         default_scopes: z.array(z.string()).optional(),
         project_binding_mode: OAuthProjectBindingModeSchema.optional(),
@@ -292,9 +306,13 @@ export const UpdateOAuthClientPayloadSchema = z
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
+        jwks_uri: z.string().url().optional(),
         allowed_scopes: z.array(z.string()).optional(),
         default_scopes: z.array(z.string()).optional(),
         status: OAuthClientStatusSchema.optional(),
+        revoke_previous_client_secret: z.boolean().optional().meta({
+            description: 'Immediately revoke the previous rotation secret while retaining the current secret.',
+        }),
         project_binding_mode: OAuthProjectBindingModeSchema.optional(),
         fixed_project_id: z.string().optional(),
         restrict_to_owner_account: z.boolean().optional(),
@@ -302,6 +320,12 @@ export const UpdateOAuthClientPayloadSchema = z
         metadata: z.looseObject({}).optional(),
     })
     .meta({ id: 'UpdateOAuthClientPayload' });
+
+export const UpdateOAuthClientStatusPayloadSchema = z
+    .strictObject({
+        status: OAuthClientStatusSchema,
+    })
+    .meta({ id: 'UpdateOAuthClientStatusPayload' });
 
 export const OAuthGrantSchema = z
     .strictObject({
@@ -406,3 +430,87 @@ export const OAuthLoginUserNotFoundResponseSchema = z
         ensure_user_url: z.string(),
     })
     .meta({ id: 'OAuthLoginUserNotFoundResponse' });
+
+const federationId = z.string().regex(/^[a-fA-F0-9]{24}$/);
+export const OidcFederationConnectionPayloadSchema = z
+    .strictObject({
+        name: z.string().min(1).max(200),
+        issuer: z.string().url(),
+        jwks_uri: z.string().url().optional(),
+        external_id_claim: z.string().min(1).max(256).regex(/\S/).meta({
+            description:
+                'Exact top-level verified token claim matched to SCIM externalId within the owning provisioning account.',
+        }),
+        allowed_audiences: z.array(z.string().min(1)).min(1).max(20),
+        allowed_algorithms: z
+            .array(z.enum(['RS256', 'ES256']))
+            .min(1)
+            .max(2),
+        subject_token_type: z.enum([
+            'urn:ietf:params:oauth:token-type:jwt',
+            'urn:ietf:params:oauth:token-type:id_token',
+            'urn:ietf:params:oauth:token-type:access_token',
+        ]),
+        required_claims: z.record(z.string(), z.string()).optional().meta({
+            description: 'Exact string matches against verified top-level IdP claims, such as tenant or azp.',
+        }),
+        all_projects: z.boolean().optional().meta({
+            description:
+                'Explicitly allow all current and future projects in the owning organization, subject to the user’s current access. Defaults to false for existing allowlists. When true, allowed_project_ids must be empty.',
+        }),
+        allowed_project_ids: z.array(federationId).max(100).meta({
+            description: 'Explicit project allowlist. Must contain 1–100 projects unless all_projects is true.',
+        }),
+        allowed_client_ids: z.array(z.string().min(1).max(256)).min(1).max(20).optional().meta({
+            description:
+                'When set, require authentication by one of these account-owned confidential OAuth clients. Omit to allow exchanges without separate client authentication.',
+        }),
+        allowed_scopes: z.array(z.string().min(1)).min(1).max(100).optional().meta({
+            description:
+                'Optional restriction on delegable Vertesia permissions, excluding account:admin. Omit to use the user’s current permissions. An explicit list further restricts the grant.',
+        }),
+        max_token_ttl_seconds: z.number().int().min(30).max(300),
+        max_subject_token_age_seconds: z.number().int().min(30).max(86400).optional().meta({
+            description:
+                'Maximum age since the signed iat claim. Defaults to 3600 seconds; 60 seconds of clock tolerance applies.',
+        }),
+        enabled: z.boolean(),
+    })
+    .meta({ id: 'OidcFederationConnectionPayload' });
+export const OidcFederationConnectionSchema = OidcFederationConnectionPayloadSchema.extend({
+    id: federationId,
+    account_id: federationId,
+    max_subject_token_age_seconds: z.number().int().min(30).max(86400),
+}).meta({ id: 'OidcFederationConnection' });
+export const OidcFederationConnectionArraySchema = z
+    .array(OidcFederationConnectionSchema)
+    .meta({ id: 'OidcFederationConnectionArray' });
+export const OAuthTokenExchangeRequestSchema = z
+    .strictObject({
+        grant_type: z.literal('urn:ietf:params:oauth:grant-type:token-exchange'),
+        subject_token: z.string().min(1).max(65536),
+        subject_token_type: OidcFederationConnectionPayloadSchema.shape.subject_token_type,
+        requested_token_type: z.literal('urn:ietf:params:oauth:token-type:access_token').optional(),
+        federation_connection_id: federationId,
+        client_id: z.string().min(1).max(256).optional(),
+        client_secret: z.string().min(1).max(4096).optional(),
+        client_assertion: z.string().min(1).max(16384).optional(),
+        client_assertion_type: z.literal('urn:ietf:params:oauth:client-assertion-type:jwt-bearer').optional(),
+        project_id: federationId,
+        resource: z.string().min(1),
+        scope: z.string().min(1).max(4096).optional().meta({
+            description:
+                'Optional space-separated permission subset. Omit to use current user permissions within the connection policy.',
+        }),
+    })
+    .meta({ id: 'OAuthTokenExchangeRequest' });
+export const OAuthTokenExchangeResponseSchema = OAuthTokenResponseSchema.omit({
+    refresh_token: true,
+    refresh_token_expires_in: true,
+    id_token: true,
+})
+    .extend({
+        token_type: z.literal('Bearer'),
+        issued_token_type: z.literal('urn:ietf:params:oauth:token-type:access_token'),
+    })
+    .meta({ id: 'OAuthTokenExchangeResponse' });

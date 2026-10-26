@@ -54,3 +54,70 @@ describe('OAuthServerApi.createAuthorizationRequest', () => {
         expect(requests).toHaveLength(0);
     });
 });
+
+describe('OAuthServerApi.exchangeToken', () => {
+    it('sends only the assertion and policy selectors without client credentials', async () => {
+        const requests: Request[] = [];
+        const response = {
+            access_token: 'short-lived-token',
+            token_type: 'Bearer',
+            issued_token_type: 'urn:ietf:params:oauth:token-type:access_token',
+            expires_in: 300,
+            scope: 'content:read',
+        };
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.com',
+            storeUrl: 'https://zeno.example.com',
+            tokenServerUrl: 'https://sts.example.com',
+            fetch: vi.fn(async () => Response.json(response)),
+            onRequest: (request) => requests.push(request),
+        });
+        const request = {
+            grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange' as const,
+            subject_token: 'signed-idp-assertion',
+            subject_token_type: 'urn:ietf:params:oauth:token-type:jwt' as const,
+            federation_connection_id: '012345678901234567890123',
+            project_id: '012345678901234567890124',
+            resource: 'https://api.example.com/',
+            scope: 'content:read',
+        };
+        expect(await client.oauthServer.exchangeToken(request)).toEqual(response);
+        expect(requests[0]?.url).toBe('https://sts.example.com/oauth/token');
+        expect(await requests[0]?.json()).toEqual(request);
+        expect(requests[0]?.headers.has('Authorization')).toBe(false);
+    });
+});
+
+describe('authenticated federation exchange', () => {
+    const payload = {
+        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange' as const,
+        subject_token: 'user-assertion',
+        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt' as const,
+        federation_connection_id: '012345678901234567890123',
+        project_id: '012345678901234567890124',
+        resource: 'https://api.example/',
+    };
+    it('sends HTTP Basic credentials in the header and keeps them out of the body', async () => {
+        const requests: Request[] = [];
+        const client = createClient(requests);
+        await client.oauthServer.exchangeToken(payload, { client_id: 'vts_client', client_secret: 'a+b:c' });
+        expect(requests[0].headers.get('authorization')).toBe(`Basic ${btoa('vts_client:a%2Bb%3Ac')}`);
+        expect(await requests[0].clone().json()).toEqual(payload);
+    });
+    it('passes signed assertions and rejects mixed authentication before a request', async () => {
+        const requests: Request[] = [];
+        const client = createClient(requests);
+        const signed = {
+            ...payload,
+            client_id: 'vts_client',
+            client_assertion: 'signed',
+            client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer' as const,
+        };
+        await client.oauthServer.exchangeToken(signed);
+        expect(await requests[0].clone().json()).toEqual(signed);
+        expect(() =>
+            client.oauthServer.exchangeToken(signed, { client_id: 'vts_client', client_secret: 'secret' }),
+        ).toThrow('exactly one');
+        expect(requests).toHaveLength(1);
+    });
+});

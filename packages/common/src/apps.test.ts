@@ -4,8 +4,33 @@ import {
     AppEventSubscriptionDefinitionSchema,
     AppPackageHooksSchema,
 } from './api-schemas/app-runtime.js';
-import { APP_CAPABILITIES, APP_PACKAGE_SCOPES } from './apps.js';
+import {
+    ADVANCED_APP_VERSION_LAUNCH_FEATURE,
+    APP_CAPABILITIES,
+    APP_PACKAGE_SCOPES,
+    getAppGenTemplateMetadata,
+    getAppVersionRuntimeFeatureVersion,
+    isMcpOnlyInstanceManifest,
+    type MCPToolCollectionObject,
+    resolveInstallationCollection,
+    slugifyAppId,
+    supportsAdvancedAppVersionLaunch,
+} from './apps.js';
 
+describe('slugifyAppId', () => {
+    it('normalizes app names to the id used by workflow workers', () => {
+        expect(slugifyAppId(' My Customer App ')).toBe('my-customer-app');
+        expect(slugifyAppId('@scope/My_App')).toBe('scope-my_app');
+    });
+
+    it('rejects names without an id character', () => {
+        expect(() => slugifyAppId('!!!')).toThrow('at least one letter or number');
+    });
+
+    it('trims long runs of boundary hyphens without regular-expression backtracking', () => {
+        expect(slugifyAppId(`${'-'.repeat(10_000)}App${'-'.repeat(10_000)}`)).toBe('app');
+    });
+});
 describe('app capability contracts', () => {
     it('keeps views in the manifest and package contracts', () => {
         expect(APP_CAPABILITIES).toContain('views');
@@ -85,5 +110,106 @@ describe('app capability contracts', () => {
                 },
             ],
         });
+    });
+});
+
+describe('AppGen template runtime features', () => {
+    const metadata = {
+        name: 'plugin-template',
+        version: 1,
+        runtime_features: { advanced_launch: 1, future_feature: 2 },
+    };
+    const manifest = { package_artifacts: { appgen_template: metadata } };
+
+    it('reads template provenance and individual protocol versions', () => {
+        expect(getAppGenTemplateMetadata(manifest)).toEqual(metadata);
+        expect(getAppVersionRuntimeFeatureVersion(manifest, ADVANCED_APP_VERSION_LAUNCH_FEATURE)).toBe(1);
+        expect(getAppVersionRuntimeFeatureVersion(manifest, 'future_feature')).toBe(2);
+        expect(supportsAdvancedAppVersionLaunch(manifest)).toBe(true);
+    });
+
+    it('treats legacy or malformed metadata as unsupported', () => {
+        expect(getAppGenTemplateMetadata({})).toBeUndefined();
+        expect(supportsAdvancedAppVersionLaunch({})).toBe(false);
+        expect(
+            supportsAdvancedAppVersionLaunch({
+                package_artifacts: {
+                    appgen_template: { ...metadata, runtime_features: { advanced_launch: 0 } },
+                },
+            }),
+        ).toBe(false);
+    });
+});
+
+describe('installation collection namespaces', () => {
+    const collection: MCPToolCollectionObject = {
+        id: 'crm',
+        name: 'CRM',
+        description: 'CRM tools',
+        type: 'mcp',
+        url: 'https://mcp.example.test',
+        namespace: 'crm',
+    };
+
+    it.each([undefined, 'default'])('preserves legacy naming without an allocation for %s', (instance_key) => {
+        expect(resolveInstallationCollection(collection, { instance_key })).toBe(collection);
+    });
+
+    it.each([undefined, 'default', 'eu'])('applies stored allocations for %s', (instance_key) => {
+        expect(
+            resolveInstallationCollection(collection, { instance_key, namespace_overrides: { crm: 'crm_custom' } }),
+        ).toEqual({ ...collection, namespace: 'crm_custom' });
+    });
+
+    it.each(['constructor', 'toString', '__proto__'])('rejects inherited allocations for %s', (id) => {
+        expect(() =>
+            resolveInstallationCollection({ ...collection, id }, { instance_key: 'eu', namespace_overrides: {} }),
+        ).toThrow('Namespace allocation required');
+    });
+
+    it('accepts an own allocation for a collection named constructor', () => {
+        expect(
+            resolveInstallationCollection(
+                { ...collection, id: 'constructor' },
+                { instance_key: 'eu', namespace_overrides: { constructor: 'crm_eu' } },
+            ),
+        ).toEqual({ ...collection, id: 'constructor', namespace: 'crm_eu' });
+    });
+
+    it('rejects an empty stored allocation even for the default instance', () => {
+        expect(() =>
+            resolveInstallationCollection(collection, { instance_key: 'default', namespace_overrides: { crm: '' } }),
+        ).toThrow('Namespace allocation required');
+    });
+
+    it('keeps namespace conflicts fail-closed', () => {
+        expect(() =>
+            resolveInstallationCollection(collection, {
+                instance_key: 'default',
+                namespace_overrides: { crm: 'crm_custom' },
+                namespace_conflicts: ['crm'],
+            }),
+        ).toThrow('Namespace conflict');
+    });
+});
+
+describe('MCP-only instance eligibility after publisher updates', () => {
+    const manifest = {
+        tool_collections: [
+            {
+                type: 'mcp' as const,
+                id: 'one',
+                name: 'One',
+                description: '',
+                namespace: '',
+                url: 'https://mcp.example.test',
+            },
+        ],
+    };
+    it('accepts MCP-only collections and rejects endpoint/UI/mixed updates', () => {
+        expect(isMcpOnlyInstanceManifest(manifest)).toBe(true);
+        expect(isMcpOnlyInstanceManifest({ ...manifest, endpoint: 'https://app.example.test' })).toBe(false);
+        expect(isMcpOnlyInstanceManifest({ ...manifest, ui: { src: 'https://app.example.test' } })).toBe(false);
+        expect(isMcpOnlyInstanceManifest({ tool_collections: [] })).toBe(false);
     });
 });

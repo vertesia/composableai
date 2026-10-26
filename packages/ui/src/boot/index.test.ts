@@ -1,14 +1,19 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { LANGUAGE_STORAGE_KEY, resolveLanguage, SUPPORTED_LANGUAGES } from '../i18n/rtl.js';
 import {
     BOOT_SCREEN_STYLES,
+    type BootScreenOptions,
     createBootScreenVitePlugin,
     injectBootScreenHtml,
     renderBootScreenHead,
     renderBootScreenRuntime,
     renderDefaultBootContent,
 } from './index.js';
+import { BOOT_TEXT } from './text.js';
 
 interface BootScreenApi {
+    language: string;
+    direction: 'ltr' | 'rtl';
     ensureLoadingIndicator: () => void;
     hideLoadingIndicatorOnFirstRender: () => void;
     scheduleSlowLoadingNotice: () => void;
@@ -212,5 +217,102 @@ describe('custom boot branding', () => {
         await Promise.resolve();
         expect(vi.getTimerCount()).toBe(0);
         expect(document.getElementById('loading-slow-notice')?.style.display).toBe('none');
+    });
+});
+
+describe('boot screen language', () => {
+    function showLoader(options: BootScreenOptions = {}) {
+        new Function(renderBootScreenRuntime(options))();
+        bootApi().ensureLoadingIndicator();
+        const loader = document.getElementById('loading-indicator');
+        return {
+            loader,
+            slowNotice: loader?.querySelector('[data-boot-text="slowLoading"]')?.textContent,
+            reload: loader?.querySelector('[data-boot-text="reload"]')?.textContent,
+            alt: loader?.querySelector('.vboot-spinner')?.getAttribute('alt'),
+        };
+    }
+
+    function browserLanguage(language: string) {
+        vi.spyOn(navigator, 'language', 'get').mockReturnValue(language);
+    }
+
+    it('follows the browser language when no language was saved', () => {
+        browserLanguage('ja-JP');
+        const { loader, slowNotice, reload, alt } = showLoader();
+
+        expect(bootApi().language).toBe('ja');
+        expect(loader?.lang).toBe('ja');
+        expect(slowNotice).toBe(BOOT_TEXT.ja.slowLoading);
+        expect(reload).toBe(BOOT_TEXT.ja.reload);
+        expect(alt).toBe(BOOT_TEXT.ja.loading);
+    });
+
+    it('prefers the language LanguageProvider saved over the browser language', () => {
+        browserLanguage('ja-JP');
+        localStorage.setItem(LANGUAGE_STORAGE_KEY, 'fr');
+
+        expect(showLoader().slowNotice).toBe(BOOT_TEXT.fr.slowLoading);
+    });
+
+    it.each([
+        ['pt-BR', 'pt'],
+        ['zh-TW', 'zh-TW'],
+        ['nl-NL', 'en'],
+    ])('resolves %s to %s like resolveLanguage', (raw, expected) => {
+        browserLanguage(raw);
+        showLoader();
+
+        expect(bootApi().language).toBe(expected);
+        expect(bootApi().language).toBe(resolveLanguage(raw));
+    });
+
+    it('lays out right-to-left languages right to left', () => {
+        browserLanguage('ar-EG');
+        const { loader } = showLoader();
+
+        expect(bootApi().direction).toBe('rtl');
+        expect(loader?.dir).toBe('rtl');
+    });
+
+    it('keeps a pinned language whatever the browser and storage say', () => {
+        browserLanguage('ja-JP');
+        localStorage.setItem(LANGUAGE_STORAGE_KEY, 'de');
+        const { slowNotice } = showLoader({ language: 'en' });
+
+        expect(bootApi().language).toBe('en');
+        expect(slowNotice).toBe(BOOT_TEXT.en.slowLoading);
+    });
+
+    it('inlines only the pinned language', () => {
+        const runtime = renderBootScreenRuntime({ language: 'en' });
+
+        expect(runtime).toContain(BOOT_TEXT.en.slowLoading);
+        expect(runtime).not.toContain(BOOT_TEXT.ja.slowLoading);
+    });
+
+    it('lets an app-supplied label win in every language', () => {
+        browserLanguage('ja-JP');
+        const { slowNotice, reload } = showLoader({ slowLoadingLabel: 'Warming up', reloadLabel: 'Refresh' });
+
+        expect(slowNotice).toBe('Warming up');
+        expect(reload).toBe('Refresh');
+    });
+
+    it('keeps branded labels and the dark icon when injected through the Vite plugin', () => {
+        const html = createBootScreenVitePlugin({
+            darkIconSrc: '/dark-icon.svg',
+            slowLoadingLabel: 'Warming up',
+            language: 'en',
+        }).transformIndexHtml('<html><head><meta charset="UTF-8"></head><body></body></html>');
+
+        expect(html).toContain('/dark-icon.svg');
+        expect(html).toContain('Warming up');
+    });
+
+    it('has every boot string in every supported language', () => {
+        for (const language of SUPPORTED_LANGUAGES) {
+            expect(Object.values(BOOT_TEXT[language]).every((value) => value.trim() !== '')).toBe(true);
+        }
     });
 });

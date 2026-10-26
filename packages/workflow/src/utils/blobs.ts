@@ -1,11 +1,15 @@
 import crypto from 'node:crypto';
-import { createWriteStream } from 'node:fs';
+import { mkdtemp, open, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
+import { log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import tmp from 'tmp';
 import { DocumentNotFoundError } from '../errors.js';
 
+// Process-wide: other tmp users rely on exit-time cleanup. saveBlobToTempFile registers nothing with tmp.
 tmp.setGracefulCleanup();
 
 export async function fetchBlobAsStream(client: VertesiaClient, blobUri: string): Promise<ReadableStream<Uint8Array>> {
@@ -37,31 +41,103 @@ export async function fetchBlobAsBase64(client: VertesiaClient, blobUri: string)
     return buffer.toString('base64');
 }
 
-async function saveBlobToFile(client: VertesiaClient, blobUri: string, toFile: string): Promise<void> {
-    const stream = await fetchBlobAsStream(client, blobUri);
-
-    const nodeReadable = Readable.from(stream);
-    const out = createWriteStream(toFile);
-
-    await pipeline(nodeReadable, out); // Ensures completion before continuing
-}
-
+/**
+ * Download a blob to a new temporary file and return its path.
+ *
+ * The caller owns the file and must remove it with {@link removeTempFiles} in a `finally`. Prefer
+ * {@link withBlobTempFile}, which removes it for you, or {@link fetchBlobAsBuffer} when the file would only be read
+ * into memory. No descriptor is left open and nothing is registered for exit-time cleanup, so removing the path frees
+ * its space.
+ */
 export async function saveBlobToTempFile(client: VertesiaClient, blobUri: string, fileExt?: string): Promise<string> {
-    const tmpFile = tmp.fileSync({
+    const fileName = tmp.tmpNameSync({
         prefix: 'vertesia-activity-',
-        postfix: fileExt ? `.${fileExt}` : '',
+        postfix: toPostfix(fileExt),
     });
     try {
-        await saveBlobToFile(client, blobUri, tmpFile.name);
-        return tmpFile.name;
+        await saveBlobToNewFile(client, blobUri, fileName);
+        return fileName;
     } catch (err: unknown) {
-        try {
-            tmpFile.removeCallback();
-        } catch {
-            // Preserve the download failure, which is the actionable error for the caller.
+        if ((err as NodeJS.ErrnoException | undefined)?.code !== 'EEXIST') {
+            // Best effort, and silent: the download failure is the actionable error for the caller.
+            await rm(fileName, { force: true }).catch(() => undefined);
         }
         throw err;
     }
+}
+
+/**
+ * Download a blob into a new work directory, run `fn` with the file's path, and remove the directory whatever the
+ * outcome. Files `fn` writes into `dir` are removed with it.
+ *
+ * @param fileExt extension of the downloaded file, with or without the leading dot (e.g. `pdf`)
+ */
+export async function withBlobTempFile<T>(
+    client: VertesiaClient,
+    blobUri: string,
+    fileExt: string | undefined,
+    fn: (file: string, dir: string) => Promise<T>,
+): Promise<T> {
+    const dir = await mkdtemp(join(tmpdir(), 'vertesia-activity-'));
+    try {
+        const file = join(dir, `blob${toPostfix(fileExt)}`);
+        await saveBlobToNewFile(client, blobUri, file);
+        return await fn(file, dir);
+    } finally {
+        await removeTempFiles(dir);
+    }
+}
+
+/**
+ * Remove temporary files or directories, ignoring paths that are `undefined` or already gone. A failure is logged,
+ * never thrown, so cleanup in a `finally` cannot replace the result or error of the code that created them.
+ */
+export async function removeTempFiles(...paths: Array<string | undefined>): Promise<void> {
+    await Promise.all(
+        paths.map(async (path) => {
+            if (!path) {
+                return;
+            }
+            try {
+                await rm(path, { force: true, recursive: true });
+            } catch (err: unknown) {
+                warnCleanupFailure(path, err);
+            }
+        }),
+    );
+}
+
+function warnCleanupFailure(path: string, err: unknown): void {
+    // The activity logger does not serialize an Error, so the message goes as a plain field.
+    const attributes = { path, error: err instanceof Error ? err.message : String(err) };
+    try {
+        log.warn('Failed to remove temporary file', attributes);
+    } catch {
+        // No activity context: this utility also runs outside activities.
+        console.warn('Failed to remove temporary file', attributes);
+    }
+}
+
+/**
+ * Create `file`, failing if it already exists, and write the blob to it. The descriptor is closed whatever the outcome;
+ * removing a partial file is the caller's job.
+ */
+async function saveBlobToNewFile(client: VertesiaClient, blobUri: string, file: string): Promise<void> {
+    // Create the file before downloading: a name that is already taken fails before any request.
+    const handle = await open(file, 'wx', 0o600);
+    try {
+        const stream = await fetchBlobAsStream(client, blobUri);
+        // The write stream closes the descriptor once the pipeline settles.
+        await pipeline(Readable.from(stream), handle.createWriteStream());
+    } catch (err: unknown) {
+        // A failed download never handed the descriptor to a write stream; closing an already closed one is a no-op.
+        await handle.close();
+        throw err;
+    }
+}
+
+function toPostfix(ext: string | undefined): string {
+    return ext ? `.${ext.replace(/^\./, '')}` : '';
 }
 
 export function md5(contents: string) {

@@ -222,6 +222,7 @@ export async function buildAppPackage(
 ): Promise<AppPackage> {
     const pkg: AppPackage = {
         oauth_scopes: config.oauth_scopes ? [...config.oauth_scopes] : undefined,
+        oauth_client: config.oauth_client ? { redirect_uris: [...config.oauth_client.redirect_uris] } : undefined,
     };
 
     const scopes = normalizeScopes(options.scope);

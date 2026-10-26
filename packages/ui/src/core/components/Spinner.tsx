@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { type ComponentType, createContext, useContext } from 'react';
 
 function getRealSize(size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') {
     switch (size) {
@@ -19,12 +20,21 @@ function getRealSize(size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl') {
     }
 }
 
+/** Optional app-owned loading icon. Defaults to the standard spinner when no provider is present. */
+export interface SpinnerIconProps {
+    className: string;
+}
+const SpinnerIconContext = createContext<ComponentType<SpinnerIconProps> | undefined>(undefined);
+export const SpinnerIconProvider = SpinnerIconContext.Provider;
+
 interface SpinnerProps {
     size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     className?: string;
 }
 export function Spinner({ size, className }: SpinnerProps) {
     const sizeClass = getRealSize(size || 'md');
+    const Icon = useContext(SpinnerIconContext);
+    if (Icon) return <Icon className={clsx(sizeClass, className)} />;
     return (
         <svg
             className={clsx('animate-[spin_0.8s_linear_infinite] text-info', sizeClass, className)}

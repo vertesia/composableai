@@ -39,7 +39,7 @@ export const AVAILABLE_REGIONS: Region[] = ['us1', 'eu1', 'jp1'];
  */
 export const DEV_REGIONS: Region[] = [...AVAILABLE_REGIONS, 'dev1'];
 
-export type ConfigUrlRef = 'local' | 'dev-main' | 'dev-preview' | 'preview' | 'prod' | string;
+export type ConfigUrlRef = 'local' | 'dev-main' | 'preview' | 'prod' | string;
 export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGION): string {
     if (isDevDeploymentTarget(value)) {
         return `https://${value}.ui.dev1.vertesia.io/cli`;
@@ -49,8 +49,6 @@ export function getConfigUrl(value: ConfigUrlRef, region: Region = DEFAULT_REGIO
             return 'https://localhost:5173/cli';
         case 'dev-main':
             return 'https://dev-main.ui.dev1.vertesia.io/cli';
-        case 'dev-preview':
-            return 'https://dev-preview.ui.dev1.vertesia.io/cli';
         case 'preview':
             return `https://preview.cloud.${region}.vertesia.io/cli`;
         case 'prod':
@@ -90,12 +88,6 @@ export function getServerUrls(
             return {
                 studio_server_url: 'https://studio-server-dev-main.api.dev1.vertesia.io',
                 zeno_server_url: 'https://zeno-server-dev-main.api.dev1.vertesia.io',
-                oauth_server_url: 'https://sts.dev1.vertesia.io',
-            };
-        case 'dev-preview':
-            return {
-                studio_server_url: 'https://studio-server-dev-preview.api.dev1.vertesia.io',
-                zeno_server_url: 'https://zeno-server-dev-preview.api.dev1.vertesia.io',
                 oauth_server_url: 'https://sts.dev1.vertesia.io',
             };
         case 'preview':
