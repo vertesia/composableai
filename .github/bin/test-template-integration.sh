@@ -28,6 +28,8 @@ VERDACCIO_PORT=4873
 VERDACCIO_URL="http://localhost:${VERDACCIO_PORT}"
 VERDACCIO_DIR="/tmp/verdaccio-$$"
 VERDACCIO_PID=""
+# Pinned exactly: a new major (7.0) changed publish authentication and broke this test overnight.
+VERDACCIO_VERSION="7.0.0"
 
 # =============================================================================
 # Functions
@@ -62,10 +64,10 @@ trap cleanup EXIT
 start_verdaccio() {
   echo "=== Starting verdaccio local registry ==="
 
-  # Check if verdaccio is installed
-  if ! command -v verdaccio &> /dev/null; then
-    echo "Installing verdaccio..."
-    npm install -g verdaccio
+  # Install the pinned version unless it is already the one on PATH
+  if [ "$(verdaccio --version 2>/dev/null)" != "v${VERDACCIO_VERSION}" ]; then
+    echo "Installing verdaccio@${VERDACCIO_VERSION}..."
+    npm install -g "verdaccio@${VERDACCIO_VERSION}"
   fi
 
   # Create verdaccio config
@@ -134,8 +136,26 @@ publish_to_verdaccio() {
   echo ""
   echo "=== Publishing packages to verdaccio (tag: ${NPM_TAG}) ==="
 
-  # Set auth token for verdaccio
-  npm set "//${VERDACCIO_URL#http://}/:_authToken" "test-token"
+  # Verdaccio 7 only accepts tokens it issued, so register a throwaway user and publish with its token
+  local user_response token
+  user_response=$(node -e '
+    const password = require("crypto").randomBytes(16).toString("hex");
+    console.log(JSON.stringify({ name: "template-ci", password, email: "template-ci@example.com" }));
+  ' | curl -sf -X PUT -H "Content-Type: application/json" --data-binary @- \
+    "${VERDACCIO_URL}/-/user/org.couchdb.user:template-ci") || {
+    echo "ERROR: failed to register a verdaccio user" >&2
+    return 1
+  }
+  token=$(printf '%s' "$user_response" | node -e '
+    let body = "";
+    process.stdin.on("data", (chunk) => (body += chunk));
+    process.stdin.on("end", () => process.stdout.write(JSON.parse(body).token || ""));
+  ')
+  if [ -z "$token" ]; then
+    echo "ERROR: verdaccio returned no token for the registered user" >&2
+    return 1
+  fi
+  npm set "//${VERDACCIO_URL#http://}/:_authToken" "$token"
 
   local count=0 pkg_name pkg_version package_os package_cpu
   while IFS= read -r pkg_dir; do
