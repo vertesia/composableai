@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DashboardStatus } from '../data-platform.js';
+import { DashboardExportStatus, DashboardStatus } from '../data-platform.js';
 import { StringValueMapSchema } from './files.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 
@@ -399,14 +399,56 @@ export const ExportDashboardPreviewPayloadSchema = z
         description: 'An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.',
     });
 
+export const DashboardExportStatusSchema = z
+    .enum(DashboardExportStatus)
+    .meta({ id: 'DashboardExportStatus', description: 'Status of a dashboard export.' });
+
+export const DashboardExportErrorSchema = z
+    .strictObject({
+        code: z.string().meta({
+            description:
+                'Why the export failed: `spec_invalid`, `query_invalid`, `parameter_invalid`, `not_renderable`, ' +
+                '`data_access_denied` and `data_not_found` describe the dashboard or its data; `export_failed` means ' +
+                'the export could not complete. More codes may be added.',
+        }),
+        message: z.string().meta({ description: 'What went wrong.' }),
+        retryable: z.boolean().meta({
+            description:
+                'Whether starting the same export again may succeed. False when the dashboard, its query or its ' +
+                'parameters must change first.',
+        }),
+    })
+    .meta({ id: 'DashboardExportError', description: 'Why a dashboard export failed.' });
+
 export const DashboardExportSchema = z
     .strictObject({
         export_id: z.string().meta({ description: 'Identifier of this export. Every export creates a new image.' }),
-        url: z.string().meta({ description: 'Signed URL to download the image. It expires at `expires_at`.' }),
-        content_type: z.string().meta({ description: 'Media type of the image.' }),
-        expires_at: z.string().meta({ format: 'date-time', description: 'When the download URL expires.' }),
-        width: z.number().meta({ description: 'Image width in pixels.' }),
-        height: z.number().meta({ description: 'Image height in pixels.' }),
+        status: DashboardExportStatusSchema,
+        started_at: z.string().meta({ format: 'date-time', description: 'When the export was started.' }),
+        completed_at: z
+            .string()
+            .meta({ format: 'date-time', description: 'When the export completed or failed.' })
+            .optional(),
+        url: z
+            .string()
+            .meta({
+                description:
+                    'Signed URL to download the image, set when the export is `completed`. It expires at ' +
+                    '`expires_at`; fetch the export again for a new one.',
+            })
+            .optional(),
+        content_type: z.string().meta({ description: 'Media type of the image.' }).optional(),
+        expires_at: z.string().meta({ format: 'date-time', description: 'When the download URL expires.' }).optional(),
+        width: z.number().meta({ description: 'Image width in pixels.' }).optional(),
+        height: z.number().meta({ description: 'Image height in pixels.' }).optional(),
         row_count: z.number().meta({ description: 'Number of rows the query returned.' }).optional(),
+        error: DashboardExportErrorSchema.meta({
+            description: 'Why the export failed, set when it is `failed`.',
+        }).optional(),
     })
-    .meta({ id: 'DashboardExport', description: 'A rendered dashboard image.' });
+    .meta({
+        id: 'DashboardExport',
+        description:
+            'A dashboard export. Starting an export returns it `running`; poll it until it is `completed`, with ' +
+            'a signed download URL, or `failed`, with the reason.',
+    });

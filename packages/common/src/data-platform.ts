@@ -488,7 +488,26 @@ export type ExportDashboardPayload = Wire.ExportDashboardPayload;
 export type ExportDashboardPreviewPayload = Wire.ExportDashboardPreviewPayload;
 
 /**
- * A rendered dashboard image, downloadable from a signed URL until it expires.
+ * Status of a dashboard export.
+ */
+export const DashboardExportStatus = {
+    /** The image is being rendered */
+    RUNNING: 'running',
+    /** The image is ready to download */
+    COMPLETED: 'completed',
+    /** The export failed; its `error` says why */
+    FAILED: 'failed',
+} as const;
+
+export type DashboardExportStatus = Wire.DashboardExportStatus;
+
+/**
+ * Why a dashboard export failed.
+ */
+export type DashboardExportError = Wire.DashboardExportError;
+
+/**
+ * A dashboard export: `running` until it is `completed`, with a signed download URL, or `failed`.
  */
 export type DashboardExport = Wire.DashboardExport;
 

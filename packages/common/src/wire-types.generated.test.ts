@@ -1281,6 +1281,14 @@ interface Checks {
         W.ExportDashboardPreviewPayload,
         z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPreviewPayloadSchema>
     >;
+    DashboardExportStatus: Same<
+        W.DashboardExportStatus,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportStatusSchema>
+    >;
+    DashboardExportError: Same<
+        W.DashboardExportError,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportErrorSchema>
+    >;
     DashboardExport: Same<
         W.DashboardExport,
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportSchema>
@@ -6451,6 +6459,14 @@ interface Checks {
         W.ApiComponentTypes['ExportDashboardPreviewPayload'],
         z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPreviewPayloadSchema>
     >;
+    'component:DashboardExportStatus': Same<
+        W.ApiComponentTypes['DashboardExportStatus'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportStatusSchema>
+    >;
+    'component:DashboardExportError': Same<
+        W.ApiComponentTypes['DashboardExportError'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportErrorSchema>
+    >;
     'component:DashboardExport': Same<
         W.ApiComponentTypes['DashboardExport'],
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportSchema>
@@ -10112,6 +10128,8 @@ const checks: Checks = {
     UpdateDashboardPayload: true,
     ExportDashboardPayload: true,
     ExportDashboardPreviewPayload: true,
+    DashboardExportStatus: true,
+    DashboardExportError: true,
     DashboardExport: true,
     DashboardVersion: true,
     DashboardVersionItem: true,
@@ -11493,6 +11511,8 @@ const checks: Checks = {
     'component:UpdateDashboardPayload': true,
     'component:ExportDashboardPayload': true,
     'component:ExportDashboardPreviewPayload': true,
+    'component:DashboardExportStatus': true,
+    'component:DashboardExportError': true,
     'component:DashboardExport': true,
     'component:QueryValidationError': true,
     'component:QueryValidationPayload': true,
@@ -12322,6 +12342,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2566);
+        expect(Object.keys(checks)).toHaveLength(2570);
     });
 });

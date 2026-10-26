@@ -37,6 +37,7 @@ import type { AccountType, BillingMethod, QuotaTier } from './account-values.js'
 import type { ApiKeyTypes } from './apikey-values.js';
 import type { AppUINavItem, CompositeAppMenuNavItem } from './apps.js';
 import type {
+    DashboardExportStatus as DashboardExportStatusValues,
     DashboardStatus as DashboardStatusValues,
     DataColumnType as DataColumnTypeValues,
     DataStoreStatus as DataStoreStatusValues,
@@ -3207,17 +3208,30 @@ export type ExportDashboardPreviewPayload = {
     scale?: number | undefined;
     background_color?: string | undefined;
 };
+export type DashboardExportStatus = (typeof DashboardExportStatusValues)[keyof typeof DashboardExportStatusValues];
 /**
- * A rendered dashboard image, downloadable from a signed URL until it expires.
+ * Why a dashboard export failed.
+ */
+export type DashboardExportError = {
+    code: string;
+    message: string;
+    retryable: boolean;
+};
+/**
+ * A dashboard export: `running` until it is `completed`, with a signed download URL, or `failed`.
  */
 export type DashboardExport = {
     export_id: string;
-    url: string;
-    content_type: string;
-    expires_at: string;
-    width: number;
-    height: number;
+    status: DashboardExportStatus;
+    started_at: string;
+    completed_at?: string | undefined;
+    url?: string | undefined;
+    content_type?: string | undefined;
+    expires_at?: string | undefined;
+    width?: number | undefined;
+    height?: number | undefined;
     row_count?: number | undefined;
+    error?: DashboardExportError | undefined;
 };
 /**
  * A point-in-time version of a dashboard.
@@ -11413,6 +11427,8 @@ export interface ApiComponentTypes {
     UpdateDashboardPayload: UpdateDashboardPayload;
     ExportDashboardPayload: ExportDashboardPayload;
     ExportDashboardPreviewPayload: ExportDashboardPreviewPayload;
+    DashboardExportStatus: DashboardExportStatus;
+    DashboardExportError: DashboardExportError;
     DashboardExport: DashboardExport;
     QueryValidationError: QueryValidationError;
     QueryValidationPayload: QueryValidationPayload;

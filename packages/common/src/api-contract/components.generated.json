@@ -42256,6 +42256,39 @@
     "additionalProperties": false,
     "description": "An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image."
   },
+  "DashboardExportStatus": {
+    "type": "string",
+    "enum": [
+      "running",
+      "completed",
+      "failed"
+    ],
+    "description": "Status of a dashboard export."
+  },
+  "DashboardExportError": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "description": "Why the export failed: `spec_invalid`, `query_invalid`, `parameter_invalid`, `not_renderable`, `data_access_denied` and `data_not_found` describe the dashboard or its data; `export_failed` means the export could not complete. More codes may be added."
+      },
+      "message": {
+        "type": "string",
+        "description": "What went wrong."
+      },
+      "retryable": {
+        "type": "boolean",
+        "description": "Whether starting the same export again may succeed. False when the dashboard, its query or its parameters must change first."
+      }
+    },
+    "required": [
+      "code",
+      "message",
+      "retryable"
+    ],
+    "additionalProperties": false,
+    "description": "Why a dashboard export failed."
+  },
   "DashboardExport": {
     "type": "object",
     "properties": {
@@ -42263,9 +42296,22 @@
         "type": "string",
         "description": "Identifier of this export. Every export creates a new image."
       },
+      "status": {
+        "$ref": "#/components/schemas/DashboardExportStatus"
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the export was started."
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the export completed or failed."
+      },
       "url": {
         "type": "string",
-        "description": "Signed URL to download the image. It expires at `expires_at`."
+        "description": "Signed URL to download the image, set when the export is `completed`. It expires at `expires_at`; fetch the export again for a new one."
       },
       "content_type": {
         "type": "string",
@@ -42287,18 +42333,19 @@
       "row_count": {
         "type": "number",
         "description": "Number of rows the query returned."
+      },
+      "error": {
+        "$ref": "#/components/schemas/DashboardExportError",
+        "description": "Why the export failed, set when it is `failed`."
       }
     },
     "required": [
       "export_id",
-      "url",
-      "content_type",
-      "expires_at",
-      "width",
-      "height"
+      "status",
+      "started_at"
     ],
     "additionalProperties": false,
-    "description": "A rendered dashboard image."
+    "description": "A dashboard export. Starting an export returns it `running`; poll it until it is `completed`, with a signed download URL, or `failed`, with the reason."
   },
   "QueryValidationError": {
     "type": "object",
