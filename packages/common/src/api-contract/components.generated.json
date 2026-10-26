@@ -42181,6 +42181,125 @@
     "additionalProperties": false,
     "description": "Payload for updating a dashboard."
   },
+  "ExportDashboardPayload": {
+    "type": "object",
+    "properties": {
+      "parameter_values": {
+        "$ref": "#/components/schemas/StringValueMap",
+        "description": "Values for the dashboard's SQL {{param}} placeholders, overriding its saved defaults."
+      },
+      "format": {
+        "type": "string",
+        "enum": [
+          "png"
+        ],
+        "description": "Image format. Only PNG is supported."
+      },
+      "scale": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 4,
+        "description": "Render scale factor for higher resolution images (default: 1, maximum: 4)."
+      },
+      "background_color": {
+        "type": "string",
+        "maxLength": 64,
+        "description": "CSS background color of the image (default: '#ffffff')."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Options for exporting a saved dashboard as an image."
+  },
+  "ExportDashboardPreviewPayload": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "SQL query that returns all data for the dashboard."
+      },
+      "queryLimit": {
+        "type": "number",
+        "description": "Maximum rows to return from the query (default: 10000)"
+      },
+      "queryParameters": {
+        "$ref": "#/components/schemas/StringValueMap",
+        "description": "Values for SQL {{param}} placeholders"
+      },
+      "spec": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Complete Vega-Lite specification (use vconcat/hconcat for multiple panels)"
+      },
+      "format": {
+        "type": "string",
+        "enum": [
+          "png"
+        ],
+        "description": "Image format. Only PNG is supported."
+      },
+      "scale": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "maximum": 4,
+        "description": "Render scale factor for higher resolution images (default: 1, maximum: 4)."
+      },
+      "background_color": {
+        "type": "string",
+        "maxLength": 64,
+        "description": "CSS background color of the image (default: '#ffffff')."
+      }
+    },
+    "required": [
+      "query",
+      "spec"
+    ],
+    "additionalProperties": false,
+    "description": "An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image."
+  },
+  "DashboardExport": {
+    "type": "object",
+    "properties": {
+      "export_id": {
+        "type": "string",
+        "description": "Identifier of this export. Every export creates a new image."
+      },
+      "url": {
+        "type": "string",
+        "description": "Signed URL to download the image. It expires at `expires_at`."
+      },
+      "content_type": {
+        "type": "string",
+        "description": "Media type of the image."
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the download URL expires."
+      },
+      "width": {
+        "type": "number",
+        "description": "Image width in pixels."
+      },
+      "height": {
+        "type": "number",
+        "description": "Image height in pixels."
+      },
+      "row_count": {
+        "type": "number",
+        "description": "Number of rows the query returned."
+      }
+    },
+    "required": [
+      "export_id",
+      "url",
+      "content_type",
+      "expires_at",
+      "width",
+      "height"
+    ],
+    "additionalProperties": false,
+    "description": "A rendered dashboard image."
+  },
   "QueryValidationError": {
     "type": "object",
     "properties": {

@@ -1273,6 +1273,18 @@ interface Checks {
         W.UpdateDashboardPayload,
         z.infer<typeof import('./api-schemas/dashboard.js').UpdateDashboardPayloadSchema>
     >;
+    ExportDashboardPayload: Same<
+        W.ExportDashboardPayload,
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPayloadSchema>
+    >;
+    ExportDashboardPreviewPayload: Same<
+        W.ExportDashboardPreviewPayload,
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPreviewPayloadSchema>
+    >;
+    DashboardExport: Same<
+        W.DashboardExport,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportSchema>
+    >;
     DashboardVersion: Same<
         W.DashboardVersion,
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersionSchema>
@@ -6431,6 +6443,18 @@ interface Checks {
         W.ApiComponentTypes['UpdateDashboardPayload'],
         z.infer<typeof import('./api-schemas/dashboard.js').UpdateDashboardPayloadSchema>
     >;
+    'component:ExportDashboardPayload': Same<
+        W.ApiComponentTypes['ExportDashboardPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPayloadSchema>
+    >;
+    'component:ExportDashboardPreviewPayload': Same<
+        W.ApiComponentTypes['ExportDashboardPreviewPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ExportDashboardPreviewPayloadSchema>
+    >;
+    'component:DashboardExport': Same<
+        W.ApiComponentTypes['DashboardExport'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardExportSchema>
+    >;
     'component:QueryValidationError': Same<
         W.ApiComponentTypes['QueryValidationError'],
         z.infer<typeof import('./api-schemas/data-store.js').QueryValidationErrorSchema>
@@ -10086,6 +10110,9 @@ const checks: Checks = {
     Dashboard: true,
     CreateDashboardPayload: true,
     UpdateDashboardPayload: true,
+    ExportDashboardPayload: true,
+    ExportDashboardPreviewPayload: true,
+    DashboardExport: true,
     DashboardVersion: true,
     DashboardVersionItem: true,
     CreateDashboardSnapshotPayload: true,
@@ -11464,6 +11491,9 @@ const checks: Checks = {
     'component:Dashboard': true,
     'component:CreateDashboardPayload': true,
     'component:UpdateDashboardPayload': true,
+    'component:ExportDashboardPayload': true,
+    'component:ExportDashboardPreviewPayload': true,
+    'component:DashboardExport': true,
     'component:QueryValidationError': true,
     'component:QueryValidationPayload': true,
     'component:ListDataStoreVersionsQuery': true,
@@ -12292,6 +12322,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2560);
+        expect(Object.keys(checks)).toHaveLength(2566);
     });
 });

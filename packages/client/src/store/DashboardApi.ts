@@ -6,12 +6,15 @@ import {
     type DashboardArchiveResult,
     type DashboardBulkArchiveResult,
     type DashboardBulkDeleteResult,
+    type DashboardExport,
     type DashboardItem,
     type DashboardStatus,
     type DashboardVersion,
     type DashboardVersionItem,
     type DashboardVersioningStatusResponse,
     DataStoreApiHeaders,
+    type ExportDashboardPayload,
+    type ExportDashboardPreviewPayload,
     type PromoteDashboardVersionPayload,
     type UpdateDashboardPayload,
 } from '@vertesia/common';
@@ -23,7 +26,8 @@ import {
  * - Multi-panel Vega/Vega-Lite visualizations
  * - SQL-backed data sources via named queries
  *
- * Note: Rendering is handled by the tools (data_preview_dashboard, data_render_dashboard).
+ * - PNG export of a saved dashboard ({@link DashboardApi.export}) or of an unsaved one
+ *   ({@link DashboardApi.exportPreview})
  */
 export class DashboardApi extends ApiTopic {
     private readonly storeId: string;
@@ -108,6 +112,32 @@ export class DashboardApi extends ApiTopic {
      */
     update(id: string, payload: UpdateDashboardPayload): Promise<Dashboard> {
         return this.put(`/${id}`, { payload, headers: this.storeHeaders() });
+    }
+
+    /**
+     * Render a saved dashboard as an image.
+     *
+     * Every call renders a new image from the current data and returns a signed URL that expires.
+     *
+     * @param id - Dashboard ID
+     * @param payload - Parameter values and render options
+     * @returns The signed download URL and the image details
+     */
+    export(id: string, payload: ExportDashboardPayload = {}): Promise<DashboardExport> {
+        return this.post(`/${id}/export`, { payload, headers: this.storeHeaders() });
+    }
+
+    /**
+     * Render an unsaved dashboard (SQL query and Vega-Lite spec) as an image, without saving it.
+     *
+     * Use it to check a spec before creating or updating a dashboard: an invalid spec or query is
+     * rejected with the list of problems.
+     *
+     * @param payload - The query, spec and render options
+     * @returns The signed download URL and the image details
+     */
+    exportPreview(payload: ExportDashboardPreviewPayload): Promise<DashboardExport> {
+        return this.post('/export', { payload, headers: this.storeHeaders() });
     }
 
     /**

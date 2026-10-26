@@ -478,6 +478,21 @@ export type CreateDashboardPayload = Wire.CreateDashboardPayload;
 export type UpdateDashboardPayload = Wire.UpdateDashboardPayload;
 
 /**
+ * Options for exporting a saved dashboard as an image.
+ */
+export type ExportDashboardPayload = Wire.ExportDashboardPayload;
+
+/**
+ * An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.
+ */
+export type ExportDashboardPreviewPayload = Wire.ExportDashboardPreviewPayload;
+
+/**
+ * A rendered dashboard image, downloadable from a signed URL until it expires.
+ */
+export type DashboardExport = Wire.DashboardExport;
+
+/**
  * Options for rendering a dashboard.
  */
 export interface RenderDashboardOptions {

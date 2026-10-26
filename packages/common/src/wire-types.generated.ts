@@ -3185,6 +3185,41 @@ export type UpdateDashboardPayload = {
     skip_versioning?: boolean | undefined;
 };
 /**
+ * Options for exporting a saved dashboard as an image.
+ */
+export type ExportDashboardPayload = {
+    parameter_values?: StringValueMap | undefined;
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+/**
+ * An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.
+ */
+export type ExportDashboardPreviewPayload = {
+    query: string;
+    queryLimit?: number | undefined;
+    queryParameters?: StringValueMap | undefined;
+    spec: {
+        [k: string]: unknown;
+    };
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+/**
+ * A rendered dashboard image, downloadable from a signed URL until it expires.
+ */
+export type DashboardExport = {
+    export_id: string;
+    url: string;
+    content_type: string;
+    expires_at: string;
+    width: number;
+    height: number;
+    row_count?: number | undefined;
+};
+/**
  * A point-in-time version of a dashboard.
  * Stores full snapshot inline (no external storage needed for small JSON documents).
  */
@@ -11376,6 +11411,9 @@ export interface ApiComponentTypes {
     Dashboard: Dashboard;
     CreateDashboardPayload: CreateDashboardPayload;
     UpdateDashboardPayload: UpdateDashboardPayload;
+    ExportDashboardPayload: ExportDashboardPayload;
+    ExportDashboardPreviewPayload: ExportDashboardPreviewPayload;
+    DashboardExport: DashboardExport;
     QueryValidationError: QueryValidationError;
     QueryValidationPayload: QueryValidationPayload;
     ListDataStoreVersionsQuery: ListDataStoreVersionsQuery;

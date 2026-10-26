@@ -352,3 +352,61 @@ export const UpdateDashboardPayloadSchema = CreateDashboardPayloadSchema.partial
         skip_versioning: z.boolean().meta({ description: 'Skip auto-version creation' }).optional(),
     })
     .meta({ id: 'UpdateDashboardPayload', description: 'Payload for updating a dashboard.' });
+
+const DashboardExportFormatSchema = z.enum(['png']).meta({ description: 'Image format. Only PNG is supported.' });
+
+const DashboardExportRenderOptions = {
+    format: DashboardExportFormatSchema.optional(),
+    scale: z
+        .number()
+        .positive()
+        .max(4)
+        .meta({ description: 'Render scale factor for higher resolution images (default: 1, maximum: 4).' })
+        .optional(),
+    background_color: z
+        .string()
+        .max(64)
+        .meta({ description: "CSS background color of the image (default: '#ffffff')." })
+        .optional(),
+};
+
+export const ExportDashboardPayloadSchema = z
+    .strictObject({
+        parameter_values: StringValueMapSchema.meta({
+            description: "Values for the dashboard's SQL {{param}} placeholders, overriding its saved defaults.",
+        }).optional(),
+        ...DashboardExportRenderOptions,
+    })
+    .meta({ id: 'ExportDashboardPayload', description: 'Options for exporting a saved dashboard as an image.' });
+
+export const ExportDashboardPreviewPayloadSchema = z
+    .strictObject({
+        query: z.string().meta({ description: 'SQL query that returns all data for the dashboard.' }),
+        queryLimit: z
+            .number()
+            .meta({ description: 'Maximum rows to return from the query (default: 10000)' })
+            .optional(),
+        queryParameters: StringValueMapSchema.meta({
+            description: 'Values for SQL {{param}} placeholders',
+        }).optional(),
+        spec: z
+            .looseObject({})
+            .meta({ description: 'Complete Vega-Lite specification (use vconcat/hconcat for multiple panels)' }),
+        ...DashboardExportRenderOptions,
+    })
+    .meta({
+        id: 'ExportDashboardPreviewPayload',
+        description: 'An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.',
+    });
+
+export const DashboardExportSchema = z
+    .strictObject({
+        export_id: z.string().meta({ description: 'Identifier of this export. Every export creates a new image.' }),
+        url: z.string().meta({ description: 'Signed URL to download the image. It expires at `expires_at`.' }),
+        content_type: z.string().meta({ description: 'Media type of the image.' }),
+        expires_at: z.string().meta({ format: 'date-time', description: 'When the download URL expires.' }),
+        width: z.number().meta({ description: 'Image width in pixels.' }),
+        height: z.number().meta({ description: 'Image height in pixels.' }),
+        row_count: z.number().meta({ description: 'Number of rows the query returned.' }).optional(),
+    })
+    .meta({ id: 'DashboardExport', description: 'A rendered dashboard image.' });
