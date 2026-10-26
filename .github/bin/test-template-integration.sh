@@ -45,6 +45,7 @@ cleanup() {
     kill "$VERDACCIO_PID" 2>/dev/null || true
     wait "$VERDACCIO_PID" 2>/dev/null || true
   fi
+  forget_verdaccio_token
 
   cleanup_test_project
   [ -n "$TEST_PROJECT_DIR_NPM" ] && [ -d "$TEST_PROJECT_DIR_NPM" ] && rm -rf "$TEST_PROJECT_DIR_NPM"
@@ -79,15 +80,8 @@ auth:
     file: ./htpasswd
     max_users: 100
 uplinks:
-  # The template install fetches hundreds of packages at once, so some npmjs requests are slow. With the
-  # defaults (30s timeout, offline after 2 failures for 5m) one slow tarball takes npmjs offline and every
-  # package not fetched yet then answers 404. Wait longer, retry more, and never mark npmjs offline.
   npmjs:
     url: https://registry.npmjs.org/
-    timeout: 2m
-    retry: 4
-    max_fails: 1000
-    fail_timeout: 1s
 packages:
   '@vertesia/*':
     access: $all
@@ -162,6 +156,7 @@ publish_to_verdaccio() {
     echo "ERROR: verdaccio returned no token for the registered user" >&2
     return 1
   fi
+  # Only publishing uses the token: forget_verdaccio_token removes it before the template installs
   npm set "//${VERDACCIO_URL#http://}/:_authToken" "$token"
 
   local count=0 pkg_name pkg_version package_os package_cpu
@@ -196,7 +191,15 @@ publish_to_verdaccio() {
     cd "${SCRIPT_DIR}/../.."
   done < <(workspace_package_dirs)
 
+  forget_verdaccio_token
   echo "Published ${count} packages to verdaccio"
+}
+
+# Verdaccio's default tokens carry the user's password, which it checks with bcrypt (~250ms of CPU) on every
+# request that sends one. An install sends hundreds at once, which starves verdaccio until its npmjs requests
+# time out and it answers 404. Every package is readable anonymously, so installs send no token.
+forget_verdaccio_token() {
+  npm config delete "//${VERDACCIO_URL#http://}/:_authToken" 2>/dev/null || true
 }
 
 align_template_versions_for_verdaccio() {
