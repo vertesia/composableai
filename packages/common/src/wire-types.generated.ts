@@ -3594,6 +3594,7 @@ export type ExecutionEnvironment = {
     settings?: ExecutionEnvironmentSettings | undefined;
     account: string;
     allowed_projects?: string[] | undefined;
+    managed?: boolean | undefined;
     created_by: string;
     updated_by: string;
     created_at: string;
@@ -3607,6 +3608,7 @@ export type ExecutionEnvironmentRef = {
     default_model?: string | undefined;
     endpoint_url?: string | undefined;
     allowed_projects?: string[] | undefined;
+    managed?: boolean | undefined;
     account: string;
     created_by: string;
     updated_by: string;
