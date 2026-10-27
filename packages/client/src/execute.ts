@@ -11,7 +11,7 @@ import {
     type RateLimitRequestResponse,
 } from '@vertesia/common';
 import type { VertesiaClient } from './client.js';
-import { withRunIdempotencyKey } from './run-idempotency.js';
+import { withIdempotencyKey } from './idempotency-key.js';
 
 /**
  * Client-side timeout for a synchronous (non-streaming) interaction execution. The request blocks on
@@ -193,7 +193,7 @@ export async function executeInteractionAsync(
     // A conversation starts an agent run: without `idempotency_key` a replay could start a second one,
     // so opt out of any client-level retry policy (see `AgentsApi.start`). With a key, a replay
     // returns the run the first request started.
-    const keyedPayload = payload.type === 'conversation' ? withRunIdempotencyKey(client, payload) : payload;
+    const keyedPayload = payload.type === 'conversation' ? withIdempotencyKey(client, payload) : payload;
     const unkeyedConversation = keyedPayload.type === 'conversation' && !keyedPayload.idempotency_key;
     return await client.post('/api/v1/execute/async', {
         payload: keyedPayload,

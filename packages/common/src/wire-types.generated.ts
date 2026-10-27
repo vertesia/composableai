@@ -10206,6 +10206,7 @@ export type CreateContentObjectPayloadWire = {
     id?: string | undefined;
     type?: string | undefined;
     generation_run_info?: GenerationRunMetadata | undefined;
+    idempotency_key?: string | undefined;
 };
 export type UpdateContentObjectPayloadWire = {
     text?: string | undefined;

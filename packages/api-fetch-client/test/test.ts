@@ -1,12 +1,6 @@
 import assert from 'node:assert';
 import { KoaServer } from '@koa-stack/server';
-import {
-    FetchClient,
-    generateIdempotencyKey,
-    IDEMPOTENCY_KEY_HEADER,
-    IDEMPOTENCY_STATUS_HEADER,
-    RequestError,
-} from '../src/index.js';
+import { FetchClient, generateIdempotencyKey, RequestError } from '../src/index.js';
 import Endpoints from './endpoints.js';
 
 const HOST = '127.0.0.1';
@@ -541,98 +535,9 @@ describe('Test requests', () => {
         assert.equal(attempts, 2);
         assert.equal(payload.attempts, 2);
     });
-    it('sends one idempotency key on every attempt of a POST when the policy opts in', async () => {
-        const keys: (string | null)[] = [];
-        const retryClient = new FetchClient('http://example.test', async (input: unknown) => {
-            keys.push((input as Request).headers.get(IDEMPOTENCY_KEY_HEADER));
-            return new Response(JSON.stringify({ attempts: keys.length }), {
-                status: keys.length === 1 ? 503 : 200,
-                headers: { 'content-type': 'application/json' },
-            });
-        }).withRetryPolicy({ attempts: 3, methods: ['POST'], baseDelayMs: 0, jitter: false, idempotencyKeys: true });
+});
 
-        await retryClient.post('/objects', { payload: { name: 'a' } });
-        await retryClient.post('/objects', { payload: { name: 'b' } });
-
-        assert.equal(keys.length, 3);
-        assert.match(keys[0] ?? '', /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-        assert.equal(keys[1], keys[0]);
-        assert.notEqual(keys[2], keys[0]);
-    });
-    it('keeps a caller-supplied idempotency key', async () => {
-        const keys: (string | null)[] = [];
-        const retryClient = new FetchClient('http://example.test', async (input: unknown) => {
-            keys.push((input as Request).headers.get(IDEMPOTENCY_KEY_HEADER));
-            return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
-        }).withRetryPolicy({ methods: ['POST'], idempotencyKeys: true });
-
-        await retryClient.post('/objects', { payload: {}, headers: { 'Idempotency-Key': 'caller-key' } });
-
-        assert.deepEqual(keys, ['caller-key']);
-    });
-    it('sends no idempotency key unless the policy opts in and may retry the POST', async () => {
-        const keys: (string | null)[] = [];
-        const fetchImpl = async (input: unknown) => {
-            keys.push((input as Request).headers.get(IDEMPOTENCY_KEY_HEADER));
-            return new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } });
-        };
-        await new FetchClient('http://example.test', fetchImpl)
-            .withRetryPolicy({ methods: ['POST'] })
-            .post('/objects', { payload: {} });
-        const keyedClient = new FetchClient('http://example.test', fetchImpl).withRetryPolicy({
-            idempotencyKeys: true,
-        });
-        // POST is not in the default retry methods, so no attempt would ever reuse the key.
-        await keyedClient.post('/objects', { payload: {} });
-        await keyedClient.post('/objects', { payload: {}, retryPolicy: false });
-        await keyedClient.put('/objects/1', { payload: {} });
-
-        assert.deepEqual(keys, [null, null, null, null]);
-    });
-    it('retries an in-progress 409 only for a keyed request', async () => {
-        let attempts = 0;
-        const inProgressThenDone = async () => {
-            attempts++;
-            if (attempts === 1) {
-                return new Response(JSON.stringify({ message: 'in progress' }), {
-                    status: 409,
-                    headers: { 'content-type': 'application/json', [IDEMPOTENCY_STATUS_HEADER]: 'in-progress' },
-                });
-            }
-            return new Response(JSON.stringify({ attempts }), {
-                status: 201,
-                headers: { 'content-type': 'application/json' },
-            });
-        };
-        const policy = { attempts: 2, methods: ['POST'], baseDelayMs: 0, jitter: false };
-
-        const keyed = new FetchClient('http://example.test', inProgressThenDone).withRetryPolicy({
-            ...policy,
-            idempotencyKeys: true,
-        });
-        const payload = (await keyed.post('/objects', { payload: {} })) as { attempts: number };
-        assert.equal(payload.attempts, 2);
-
-        attempts = 0;
-        const unkeyed = new FetchClient('http://example.test', inProgressThenDone).withRetryPolicy(policy);
-        await assert.rejects(unkeyed.post('/objects', { payload: {} }), (err: unknown) => {
-            return (err as { status?: number }).status === 409;
-        });
-        assert.equal(attempts, 1);
-    });
-    it('does not retry a 409 the server did not mark as in progress', async () => {
-        let attempts = 0;
-        const retryClient = new FetchClient('http://example.test', async () => {
-            attempts++;
-            return new Response(JSON.stringify({ message: 'name taken' }), {
-                status: 409,
-                headers: { 'content-type': 'application/json' },
-            });
-        }).withRetryPolicy({ attempts: 3, methods: ['POST'], baseDelayMs: 0, jitter: false, idempotencyKeys: true });
-
-        await assert.rejects(retryClient.post('/objects', { payload: {} }));
-        assert.equal(attempts, 1);
-    });
+describe('generateIdempotencyKey', () => {
     it('generates RFC 4122 version 4 keys', () => {
         const key = generateIdempotencyKey();
         assert.match(key, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);

@@ -42,7 +42,6 @@ export * from './embeddings.js';
 export * from './environment.js';
 export * from './facets.js';
 export * from './group.js';
-export * from './idempotency.js';
 export type {
     CreateInferenceProfilePayload,
     InferenceProfile,

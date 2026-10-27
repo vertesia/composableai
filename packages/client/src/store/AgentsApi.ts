@@ -57,7 +57,7 @@ import {
 } from '@vertesia/common';
 import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
-import { withRunIdempotencyKey } from '../run-idempotency.js';
+import { withIdempotencyKey } from '../idempotency-key.js';
 import { fetchSignedUrl } from './signed-url.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
@@ -103,7 +103,7 @@ export class AgentsApi extends ApiTopic {
         // Rate-limiter pacing retries are unaffected: those happen before the request reaches the
         // handler. Process starts take no key and keep the client's policy.
         // A client whose policy sends idempotency keys gives the run a generated key instead.
-        const keyedPayload = 'interaction' in payload ? withRunIdempotencyKey(this.client, payload) : payload;
+        const keyedPayload = 'interaction' in payload ? withIdempotencyKey(this.client, payload) : payload;
         const unkeyedAgentStart = 'interaction' in keyedPayload && !keyedPayload.idempotency_key;
         return this.post('/', { payload: keyedPayload, retryPolicy: unkeyedAgentStart ? false : undefined });
     }

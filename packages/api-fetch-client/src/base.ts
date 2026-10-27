@@ -42,24 +42,13 @@ export interface IRequestRetryPolicy {
      */
     jitter?: boolean;
     /**
-     * Send an `Idempotency-Key` header on every POST this policy may retry, so the server can
-     * recognise a retry of a request it has already run and answer with the first response instead
-     * of running it again. One key is generated per logical request and reused by every attempt of
-     * it; a key the caller sets in `headers` wins. While a key is attached, a `409` the server marks
-     * as still in progress (`Idempotency-Status: in-progress`) is retried as well. Defaults to false.
-     *
-     * This prevents duplicates only on a server that supports the header; one that ignores it runs
-     * every attempt.
+     * Have SDK methods whose request body accepts an `idempotency_key` generate one when the caller
+     * set none, so this policy can retry those POSTs without the server repeating them: a retry with
+     * the same key returns what the first attempt created. Every attempt of a call reuses its key.
+     * Other POSTs are unaffected. Defaults to false.
      */
     idempotencyKeys?: boolean;
 }
-
-/** Request header carrying a client-chosen key that identifies one logical request across retries. */
-export const IDEMPOTENCY_KEY_HEADER = 'idempotency-key';
-/** Response header the server sets on a `409` while another request with the same key is still running. */
-export const IDEMPOTENCY_STATUS_HEADER = 'idempotency-status';
-/** Response header the server sets to `true` when it answers with a stored response instead of running the request. */
-export const IDEMPOTENT_REPLAYED_HEADER = 'idempotent-replayed';
 
 /** Generate a fresh idempotency key (a random UUID). */
 export function generateIdempotencyKey(): string {
@@ -84,7 +73,6 @@ type NormalizedRetryPolicy = {
     baseDelayMs: number;
     maxDelayMs: number;
     jitter: boolean;
-    idempotencyKeys: boolean;
 };
 
 /**
@@ -228,13 +216,7 @@ function normalizeRetryPolicy(policy: IRequestRetryPolicy): NormalizedRetryPolic
         baseDelayMs,
         maxDelayMs,
         jitter: policy.jitter ?? true,
-        idempotencyKeys: policy.idempotencyKeys ?? false,
     };
-}
-
-/** True for the server's answer that a request with the same idempotency key is still running. */
-function isIdempotencyInProgress(res: Response): boolean {
-    return res.status === 409 && res.headers.get(IDEMPOTENCY_STATUS_HEADER) === 'in-progress';
 }
 
 function retryAfterDelayMs(res: Response): number | undefined {
@@ -642,14 +624,6 @@ export abstract class ClientBase {
             return init;
         };
         const retryPolicy = this.resolveRetryPolicy(params);
-        // Set before the first attempt so every retry of this request carries the same key.
-        let idempotencyKeyed = false;
-        if (retryPolicy?.idempotencyKeys && normalizedMethod === 'POST' && retryPolicy.methods.has('POST')) {
-            idempotencyKeyed = true;
-            if (!Object.keys(headers).some((key) => key.toLowerCase() === IDEMPOTENCY_KEY_HEADER)) {
-                headers[IDEMPOTENCY_KEY_HEADER] = generateIdempotencyKey();
-            }
-        }
         const pacing =
             params?.reader === 'sse' ? undefined : normalizePacingPolicy(params?.pacingRetry ?? this.pacingRetry);
         const fetch = await this._fetch;
@@ -696,10 +670,7 @@ export abstract class ClientBase {
                     continue;
                 }
             }
-            if (
-                retryPolicy &&
-                this.shouldRetryResponse(retryPolicy, normalizedMethod, attempt, replayableBody, res, idempotencyKeyed)
-            ) {
+            if (retryPolicy && this.shouldRetryResponse(retryPolicy, normalizedMethod, attempt, replayableBody, res)) {
                 await discardBody(res);
                 await this.waitBeforeRetry(retryPolicy, attempt, res);
                 attempt++;
@@ -750,12 +721,9 @@ export abstract class ClientBase {
         attempt: number,
         replayableBody: boolean,
         res: Response,
-        idempotencyKeyed: boolean,
     ) {
         const retryableStatus =
-            policy.statuses.has(res.status) ||
-            (policy.retryNonJsonServerErrors && isNonJsonServerError(res)) ||
-            (idempotencyKeyed && isIdempotencyInProgress(res));
+            policy.statuses.has(res.status) || (policy.retryNonJsonServerErrors && isNonJsonServerError(res));
         return attempt < policy.attempts - 1 && replayableBody && policy.methods.has(method) && retryableStatus;
     }
 

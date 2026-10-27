@@ -567,6 +567,18 @@ export const ContentObjectExportStatusResponseSchema = z
     })
     .meta({ id: 'ContentObjectExportStatusResponse' });
 
+export const ContentObjectIdempotencyKeySchema = z
+    .string()
+    .min(1)
+    .max(256)
+    .meta({
+        description:
+            'Client-chosen key, unique per intended object, that makes this request safe to retry. A repeat of ' +
+            'the request with the same key, body, collection and processing priority returns the object the ' +
+            'first request created instead of creating another. Reusing a key with different input is rejected ' +
+            'with 409. Keys are scoped to the project and stay bound to their object for as long as it exists.',
+    });
+
 export const CreateContentObjectPayloadSchema = z
     .strictObject({
         text: z.string().optional(),
@@ -661,6 +673,7 @@ export const CreateContentObjectPayloadSchema = z
         id: z.string().optional(),
         type: z.string().optional(),
         generation_run_info: GenerationRunMetadataSchema.optional(),
+        idempotency_key: ContentObjectIdempotencyKeySchema.optional(),
     })
     .meta({
         id: 'CreateContentObjectPayload',

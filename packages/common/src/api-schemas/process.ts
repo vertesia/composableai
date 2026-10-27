@@ -165,7 +165,7 @@ export const PublishProcessDefinitionPayloadSchema = z
                     'idempotent: a repeat of a publish that already succeeded is rejected because the revision ' +
                     'is no longer a draft. When the revision was published by a request with the same key and ' +
                     'the same body, the repeat returns that revision instead. Reusing the key with a different ' +
-                    'body is rejected with 409. The key is bound to the revision it published.',
+                    'body is rejected with 422. The key is bound to the revision it published.',
             })
             .optional(),
     })
@@ -1212,7 +1212,7 @@ const ProcessTestRunIdempotencyKeySchema = z
         description:
             'Client-chosen key, unique per intended run, that makes this request safe to retry. A repeat of ' +
             'the request with the same key and the same body returns the run the first request started ' +
-            'instead of starting another. Reusing a key with a different body is rejected with 409. Keys ' +
+            'instead of starting another. Reusing a key with a different body is rejected with 422. Keys ' +
             'are scoped to the project and stay bound to their run for as long as it exists; once the run ' +
             'is deleted, the same key starts a new one.',
     });
