@@ -14,6 +14,7 @@ import {
     FileProcessingStatus,
     type McpConnectUxConfig,
     normalizeAgentToolApprovalMode,
+    Permission,
     type Plan,
     type StopSignal,
     type UserInputSignal,
@@ -41,8 +42,9 @@ import {
 } from '@vertesia/ui/widgets';
 import { ArrowUpIcon, Bot, CheckCircle, ChevronDown, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
+import { UserPermissionsContext } from '../../permissions/UserPermissionsProvider.js';
 import { AgentApprovalModeSelector } from './AgentApprovalModeSelector';
 import {
     AgentBudgetPauseOverlay,
@@ -1605,6 +1607,12 @@ function ModernAgentConversationInner({
     const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile, clearProcessingFiles } =
         useFileProcessing(client, agentRunId, serverFileUpdates, toast, deliveredArtifactRefs);
     const canUploadFiles = interactive && !hideFileUpload;
+    // Answering a pending question or tool approval signals the run, which the server only allows with
+    // workflow_run. A read-only viewer (auditor, support) still sees the question, but not the controls
+    // it could never use. Hosts without a permissions provider keep the answer controls: the server
+    // remains the authority there.
+    const userPermissions = useContext(UserPermissionsContext);
+    const canSignalRun = !userPermissions || userPermissions.hasPermission(Permission.workflow_run);
 
     const handleRemoveProcessingFile = useCallback(
         (fileId: string) => {
@@ -2913,7 +2921,7 @@ function ModernAgentConversationInner({
                         onChangePlan={handleChangePlan}
                         taskLabels={taskLabels}
                         streamingMessages={displayedStreamingMessages}
-                        onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
+                        onSendMessage={isPlaybackLive && canSignalRun ? handleSendMessage : undefined}
                         onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
                         messageItemClassNames={messageItemClassNames}
                         messageStyleOverrides={messageStyleOverrides}
@@ -2947,9 +2955,10 @@ function ModernAgentConversationInner({
             {shouldShowRequestInputOverlay && !(hasBudgetOverride && shouldShowBudgetPauseOverlay) ? (
                 <AgentRequestInputOverlay
                     message={pendingRequestInputMessage}
-                    onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
-                    onMcpConnected={isPlaybackLive ? handleMcpConnected : undefined}
+                    onSendMessage={isPlaybackLive && canSignalRun ? handleSendMessage : undefined}
+                    onMcpConnected={isPlaybackLive && canSignalRun ? handleMcpConnected : undefined}
                     disabled={isUploading || !isPlaybackLive}
+                    readOnly={!canSignalRun}
                     isLoading={isSending || isUploading}
                 />
             ) : shouldShowBudgetPauseOverlay && budgetPause ? (

@@ -11,6 +11,7 @@ import {
     type Rendition,
 } from '@vertesia/common';
 import { type ActivityContext, setupActivity } from '../dsl/setup/ActivityContext.js';
+import { activityWillRetry } from '../utils/activity-info.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
 
@@ -37,6 +38,20 @@ interface GeneratedDocumentTypeResult {
     metadata_schema?: CreateContentObjectTypePayload['object_schema'];
     is_chunkable?: boolean;
     table_layout?: CreateContentObjectTypePayload['table_layout'];
+}
+
+/**
+ * A 502/503/504 answered by the execution API. The server that called the model provider logs and classifies
+ * that request itself (a provider outage at warn, its own failure at error), so this activity's copy is a warn.
+ */
+function isUnavailableResponse(error: unknown): boolean {
+    const status = (error as { status?: unknown } | undefined)?.status;
+    return status === 502 || status === 503 || status === 504;
+}
+
+/** Warn for a provider outage or a failure Temporal will retry; error for a failure that ends the activity. */
+function failureLogLevel(error: unknown): 'warn' | 'error' {
+    return isUnavailableResponse(error) || activityWillRetry(error) ? 'warn' : 'error';
 }
 
 function toRetryableError(error: unknown): RetryableError {
@@ -219,7 +234,10 @@ export async function generateOrAssignContentType(
         );
     } catch (error: unknown) {
         const selectionError = toRetryableError(error);
-        log.error(`Failed to select document type`, { error: selectionError, retryable: selectionError.retryable });
+        log[failureLogLevel(error)](`Failed to select document type`, {
+            error: selectionError,
+            retryable: selectionError.retryable,
+        });
 
         const isRetryable = selectionError.retryable !== undefined ? selectionError.retryable !== false : undefined;
 
@@ -345,7 +363,7 @@ async function generateNewType(
         });
     } catch (error: unknown) {
         const generationError = toRetryableError(error);
-        log.error(`Failed to generate new document type`, {
+        log[failureLogLevel(error)](`Failed to generate new document type`, {
             error: generationError,
             retryable: generationError.retryable,
         });

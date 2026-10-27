@@ -58,6 +58,7 @@ export { getSupportedRenditionFormats, supportsVisualRendition } from '@vertesia
 // Re-export rendition utilities for consumers
 export { canGenerateRendition };
 
+import { withIdempotencyKey } from '../idempotency-key.js';
 import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 import type { ZenoClient } from './client.js';
@@ -324,9 +325,10 @@ export class ObjectsApi extends ApiTopic {
         },
     ): Promise<ContentObject> {
         const { content, ...payloadWithoutContent } = payload;
-        const createPayload: CreateContentObjectPayload = {
+        // One key per call, reused by every retry of the POST below.
+        const createPayload: CreateContentObjectPayload = withIdempotencyKey(this.client, {
             ...payloadWithoutContent,
-        };
+        });
         if (content instanceof StreamSource || content instanceof File) {
             createPayload.content = await this.upload(content);
         } else {
@@ -365,7 +367,7 @@ export class ObjectsApi extends ApiTopic {
         },
     ): Promise<ContentObject> {
         const metadata = await this.client.files.getMetadata(uri);
-        const createPayload: CreateContentObjectPayload = {
+        const createPayload: CreateContentObjectPayload = withIdempotencyKey(this.client, {
             ...payload,
             content: {
                 source: uri,
@@ -373,7 +375,7 @@ export class ObjectsApi extends ApiTopic {
                 type: metadata.contentType,
                 etag: metadata.etag,
             },
-        };
+        });
 
         const headers: Record<string, string> = {};
         if (options?.processing_priority) {
