@@ -153,6 +153,7 @@
     "agent.remaining": "{{seconds}}초 남음",
     "agent.removeFile": "{{name}} 제거",
     "agent.removeFileFailed": "파일을 제거하지 못했습니다",
+    "agent.requestInputReadOnly": "에이전트가 이 실행에 대해 작업할 권한이 있는 사용자의 응답을 기다리고 있습니다.",
     "agent.resourceActionCreated": "생성됨",
     "agent.resourceActionDeleted": "삭제됨",
     "agent.resourceActionUpdated": "업데이트됨",
