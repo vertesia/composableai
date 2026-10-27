@@ -551,7 +551,7 @@ export const ImportDataPayloadSchema = z
             .regex(/^[0-9a-f]{24}$/)
             .meta({
                 description:
-                    'Optional client-generated Mongo ObjectId for idempotent retries. Generate once before submitting, then reuse with identical input. New IDs must be less than 24 hours old; existing jobs are returned without executing again. Poll GET /data/:storeId/import/:importId after a timeout.',
+                    'Optional client-generated Mongo ObjectId for idempotent retries. Generate once before submitting, then reuse with identical input. New IDs must be less than 24 hours old; existing jobs are returned without executing again, and reusing an ID with different input is rejected with 422. Poll GET /data/:storeId/import/:importId after a timeout.',
             })
             .optional(),
         tables: ImportTableDataMapSchema.meta({ description: 'Map of table name to data specification' }),
