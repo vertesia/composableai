@@ -48,7 +48,7 @@
         "@types/degit": "^2.8.6",
         "@types/node": "catalog:",
         "@types/prompts": "^2.4.9",
-        "@vercel/node": "23.0.1",
+        "@vercel/node": "25.0.0",
         "typescript": "^7.0.2"
     },
     "gitHead": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
