@@ -1,13 +1,14 @@
-import { TestWorkflowEnvironment } from '@temporalio/testing';
+import type { TestWorkflowEnvironment } from '@temporalio/testing';
 import { bundleWorkflowCode, Worker, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
 import type { WorkflowExecutionPayload } from '@vertesia/common';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
+import { createTimeSkippingTestEnvironment } from '../../test-utils/temporal-environment.mjs';
 
 let environment: TestWorkflowEnvironment;
 let workflowBundle: WorkflowBundleWithSourceMap;
 
 beforeAll(async () => {
-    environment = await TestWorkflowEnvironment.createTimeSkipping();
+    environment = await createTimeSkippingTestEnvironment();
     workflowBundle = await bundleWorkflowCode({
         workflowsPath: new URL('./embeddingBatchWorkflow.ts', import.meta.url).pathname,
     });
