@@ -270,7 +270,7 @@ describe('generateOrAssignContentType', () => {
             return fn.mock.calls.some((call) => call[0] === message);
         }
 
-        it('logs a provider failure at warn while Temporal will retry the activity', async () => {
+        it('logs a failure at warn while Temporal will retry the activity', async () => {
             await mockSetup([typeItem('Invoice', 'active')]);
             const failure = new Error('503 - Error executing interaction sys:SelectDocumentType');
             vi.mocked(executeInteractionFromActivity).mockRejectedValue(failure);
@@ -284,17 +284,34 @@ describe('generateOrAssignContentType', () => {
             expect(loggedWith(logger.error, 'Failed to select document type')).toBe(false);
         });
 
-        it('logs the last attempt at error', async () => {
+        it('logs the last attempt of a server failure at error', async () => {
             await mockSetup([typeItem('Invoice', 'active')]);
-            vi.mocked(executeInteractionFromActivity).mockRejectedValue(new Error('503 - provider unavailable'));
+            vi.mocked(executeInteractionFromActivity).mockRejectedValue(
+                Object.assign(new Error('500 - execution failed'), { status: 500 }),
+            );
             const { env, logger } = capturingEnv(15);
 
             await expect(
                 env.run(generateOrAssignContentType, payload({ allowNewContentTypes: false })),
-            ).rejects.toThrow('503 - provider unavailable');
+            ).rejects.toThrow('500 - execution failed');
 
             expect(loggedWith(logger.error, 'Failed to select document type')).toBe(true);
             expect(loggedWith(logger.warn, 'Failed to select document type')).toBe(false);
+        });
+
+        it.each([502, 503, 504])('logs an execution API %s at warn even on the last attempt', async (status) => {
+            await mockSetup([typeItem('Invoice', 'active')]);
+            vi.mocked(executeInteractionFromActivity).mockRejectedValue(
+                Object.assign(new Error(`${status} - provider unavailable`), { status }),
+            );
+            const { env, logger } = capturingEnv(15);
+
+            await expect(
+                env.run(generateOrAssignContentType, payload({ allowNewContentTypes: false })),
+            ).rejects.toThrow('provider unavailable');
+
+            expect(loggedWith(logger.warn, 'Failed to select document type')).toBe(true);
+            expect(loggedWith(logger.error, 'Failed to select document type')).toBe(false);
         });
 
         it('logs a non-retryable failure at error on an early attempt', async () => {

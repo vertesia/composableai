@@ -40,6 +40,20 @@ interface GeneratedDocumentTypeResult {
     table_layout?: CreateContentObjectTypePayload['table_layout'];
 }
 
+/**
+ * A 502/503/504 answered by the execution API. The server that called the model provider logs and classifies
+ * that request itself (a provider outage at warn, its own failure at error), so this activity's copy is a warn.
+ */
+function isUnavailableResponse(error: unknown): boolean {
+    const status = (error as { status?: unknown } | undefined)?.status;
+    return status === 502 || status === 503 || status === 504;
+}
+
+/** Warn for a provider outage or a failure Temporal will retry; error for a failure that ends the activity. */
+function failureLogLevel(error: unknown): 'warn' | 'error' {
+    return isUnavailableResponse(error) || activityWillRetry(error) ? 'warn' : 'error';
+}
+
 function toRetryableError(error: unknown): RetryableError {
     if (error instanceof Error) {
         return error as RetryableError;
@@ -220,13 +234,10 @@ export async function generateOrAssignContentType(
         );
     } catch (error: unknown) {
         const selectionError = toRetryableError(error);
-        // Provider outages and rate-limit backoff are retried; only the attempt that ends the activity is an error.
-        const selectionLog = { error: selectionError, retryable: selectionError.retryable };
-        if (activityWillRetry(error)) {
-            log.warn(`Failed to select document type`, selectionLog);
-        } else {
-            log.error(`Failed to select document type`, selectionLog);
-        }
+        log[failureLogLevel(error)](`Failed to select document type`, {
+            error: selectionError,
+            retryable: selectionError.retryable,
+        });
 
         const isRetryable = selectionError.retryable !== undefined ? selectionError.retryable !== false : undefined;
 
@@ -352,12 +363,10 @@ async function generateNewType(
         });
     } catch (error: unknown) {
         const generationError = toRetryableError(error);
-        const generationLog = { error: generationError, retryable: generationError.retryable };
-        if (activityWillRetry(error)) {
-            log.warn(`Failed to generate new document type`, generationLog);
-        } else {
-            log.error(`Failed to generate new document type`, generationLog);
-        }
+        log[failureLogLevel(error)](`Failed to generate new document type`, {
+            error: generationError,
+            retryable: generationError.retryable,
+        });
 
         const isRetryable = generationError.retryable !== undefined ? generationError.retryable !== false : undefined;
 
