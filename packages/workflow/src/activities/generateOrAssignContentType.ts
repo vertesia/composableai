@@ -11,6 +11,7 @@ import {
     type Rendition,
 } from '@vertesia/common';
 import { type ActivityContext, setupActivity } from '../dsl/setup/ActivityContext.js';
+import { activityWillRetry } from '../utils/activity-info.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
 
@@ -219,7 +220,13 @@ export async function generateOrAssignContentType(
         );
     } catch (error: unknown) {
         const selectionError = toRetryableError(error);
-        log.error(`Failed to select document type`, { error: selectionError, retryable: selectionError.retryable });
+        // Provider outages and rate-limit backoff are retried; only the attempt that ends the activity is an error.
+        const selectionLog = { error: selectionError, retryable: selectionError.retryable };
+        if (activityWillRetry(error)) {
+            log.warn(`Failed to select document type`, selectionLog);
+        } else {
+            log.error(`Failed to select document type`, selectionLog);
+        }
 
         const isRetryable = selectionError.retryable !== undefined ? selectionError.retryable !== false : undefined;
 
@@ -345,10 +352,12 @@ async function generateNewType(
         });
     } catch (error: unknown) {
         const generationError = toRetryableError(error);
-        log.error(`Failed to generate new document type`, {
-            error: generationError,
-            retryable: generationError.retryable,
-        });
+        const generationLog = { error: generationError, retryable: generationError.retryable };
+        if (activityWillRetry(error)) {
+            log.warn(`Failed to generate new document type`, generationLog);
+        } else {
+            log.error(`Failed to generate new document type`, generationLog);
+        }
 
         const isRetryable = generationError.retryable !== undefined ? generationError.retryable !== false : undefined;
 
