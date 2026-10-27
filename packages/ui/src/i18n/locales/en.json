@@ -258,6 +258,7 @@
     "agent.remaining": "{{seconds}}s remaining",
     "agent.removeFile": "Remove {{name}}",
     "agent.removeFileFailed": "Failed to remove file",
+    "agent.requestInputReadOnly": "The agent is waiting for a response from someone allowed to act on this run.",
     "agent.resourceActionCreated": "Created",
     "agent.resourceActionDeleted": "Deleted",
     "agent.resourceActionUpdated": "Updated",
