@@ -195,6 +195,7 @@
     "agent.remaining": "{{seconds}}s verbleibend",
     "agent.removeFile": "{{name}} entfernen",
     "agent.removeFileFailed": "Datei konnte nicht entfernt werden",
+    "agent.requestInputReadOnly": "Der Agent wartet auf eine Antwort von jemandem, der für diesen Lauf handeln darf.",
     "agent.resourceActionCreated": "Erstellt",
     "agent.resourceActionDeleted": "Gelöscht",
     "agent.resourceActionUpdated": "Aktualisiert",
