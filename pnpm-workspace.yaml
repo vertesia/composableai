@@ -42,11 +42,11 @@ catalog:
   # Keep this synchronized with Studio and Llumiverse: each repository generates schemas from
   # its own local workspace and lockfile, so an override in another repository cannot control it.
   zod: "4.6.7"
-  vitest: "5.0.4"
+  vitest: "5.0.5"
   typescript: "7.0.2"
   typescript-legacy: "npm:typescript@6.0.3"
-  react: "19.3.0"
-  react-dom: "19.3.0"
+  react: "19.3.1"
+  react-dom: "19.3.1"
   "@types/node": "^24.19.2"
   "@types/react": "19.3.0"
   "@types/react-dom": "19.3.0"
