@@ -6,11 +6,11 @@ import { ZenoClient } from './client.js';
  * A client whose own policy retries POST, answered by a server that fails the first attempt with a
  * retryable 503. Records the body of every attempt that reached the server.
  */
-function createRetryingClient(bodies: string[]) {
+function createRetryingClient(bodies: string[], idempotencyKeys = false) {
     let attempt = 0;
     return new ZenoClient({
         serverUrl: 'https://zeno.example.com',
-        retryPolicy: { attempts: 3, methods: ['POST'], baseDelayMs: 0, jitter: false },
+        retryPolicy: { attempts: 3, methods: ['POST'], baseDelayMs: 0, jitter: false, idempotencyKeys },
         fetch: vi.fn(async (input: RequestInfo) => {
             bodies.push(input instanceof Request ? await input.text() : '');
             attempt++;
@@ -39,6 +39,24 @@ describe('AgentsApi.start', () => {
         await client.agents.start({ ...agentPayload, idempotency_key: 'key-1' });
         expect(bodies).toHaveLength(2);
         expect(bodies[1]).toBe(bodies[0]);
+        expect(JSON.parse(bodies[0] ?? '{}')).toMatchObject({ idempotency_key: 'key-1' });
+    });
+
+    it('keys and retries an unkeyed agent start when the policy sends idempotency keys', async () => {
+        const bodies: string[] = [];
+        const client = createRetryingClient(bodies, true);
+
+        await client.agents.start(agentPayload);
+        expect(bodies).toHaveLength(2);
+        expect(bodies[1]).toBe(bodies[0]);
+        expect(JSON.parse(bodies[0] ?? '{}').idempotency_key).toMatch(/^[0-9a-f-]{36}$/);
+    });
+
+    it('keeps a caller key when the policy sends idempotency keys', async () => {
+        const bodies: string[] = [];
+        const client = createRetryingClient(bodies, true);
+
+        await client.agents.start({ ...agentPayload, idempotency_key: 'key-1' });
         expect(JSON.parse(bodies[0] ?? '{}')).toMatchObject({ idempotency_key: 'key-1' });
     });
 
