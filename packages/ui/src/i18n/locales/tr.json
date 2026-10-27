@@ -195,6 +195,7 @@
     "agent.remaining": "{{seconds}}sn kaldı",
     "agent.removeFile": "{{name}} dosyasını kaldır",
     "agent.removeFileFailed": "Dosya kaldırılamadı",
+    "agent.requestInputReadOnly": "Ajan, bu çalıştırma üzerinde işlem yapma yetkisi olan birinden yanıt bekliyor.",
     "agent.resourceActionCreated": "Oluşturuldu",
     "agent.resourceActionDeleted": "Silindi",
     "agent.resourceActionUpdated": "Güncellendi",

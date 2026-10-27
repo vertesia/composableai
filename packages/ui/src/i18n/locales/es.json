@@ -196,6 +196,7 @@
     "agent.remaining": "{{seconds}}s restantes",
     "agent.removeFile": "Eliminar {{name}}",
     "agent.removeFileFailed": "No se pudo eliminar el archivo",
+    "agent.requestInputReadOnly": "El agente espera una respuesta de alguien autorizado a actuar sobre esta ejecución.",
     "agent.resourceActionCreated": "Creado",
     "agent.resourceActionDeleted": "Eliminado",
     "agent.resourceActionUpdated": "Actualizado",

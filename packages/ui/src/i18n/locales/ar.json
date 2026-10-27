@@ -203,6 +203,7 @@
     "agent.remaining": "{{seconds}}ث متبقية",
     "agent.removeFile": "إزالة {{name}}",
     "agent.removeFileFailed": "فشلت إزالة الملف",
+    "agent.requestInputReadOnly": "ينتظر الوكيل ردًا من شخص مخوّل باتخاذ إجراء في هذا التشغيل.",
     "agent.resourceActionCreated": "تم الإنشاء",
     "agent.resourceActionDeleted": "تم الحذف",
     "agent.resourceActionUpdated": "تم التحديث",

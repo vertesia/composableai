@@ -195,6 +195,7 @@
     "agent.remaining": "残り{{seconds}}秒",
     "agent.removeFile": "{{name}} を削除",
     "agent.removeFileFailed": "ファイルを削除できませんでした",
+    "agent.requestInputReadOnly": "エージェントは、この実行を操作する権限を持つユーザーからの応答を待っています。",
     "agent.resourceActionCreated": "作成済み",
     "agent.resourceActionDeleted": "削除済み",
     "agent.resourceActionUpdated": "更新済み",
