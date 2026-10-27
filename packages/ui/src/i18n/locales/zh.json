@@ -153,6 +153,7 @@
     "agent.remaining": "剩余{{seconds}}秒",
     "agent.removeFile": "移除 {{name}}",
     "agent.removeFileFailed": "无法移除文件",
+    "agent.requestInputReadOnly": "代理正在等待有权操作此运行的人员回复。",
     "agent.resourceActionCreated": "已创建",
     "agent.resourceActionDeleted": "已删除",
     "agent.resourceActionUpdated": "已更新",
