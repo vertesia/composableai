@@ -1,6 +1,6 @@
 import type { UIResolvedTenant } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
-import { type Analytics, getAnalytics } from 'firebase/analytics';
+import { type Analytics, initializeAnalytics } from 'firebase/analytics';
 import { type FirebaseApp, initializeApp } from 'firebase/app';
 import { type Auth, getAuth } from 'firebase/auth';
 
@@ -29,7 +29,11 @@ export function getFirebaseApp(): FirebaseApp {
 
 export function getFirebaseAnalytics(): Analytics {
     if (!_analytics) {
-        _analytics = getAnalytics(getFirebaseApp());
+        // We run no Google Ads: without Google's ad signals, gtag sends no ad-conversion beacon
+        // (www.google.com/measurement/conversion), which the Studio CSP does not allow.
+        _analytics = initializeAnalytics(getFirebaseApp(), {
+            config: { allow_google_signals: false, allow_ad_personalization_signals: false },
+        });
     }
     return _analytics;
 }
