@@ -63,6 +63,28 @@ function isProviderRejection(error: unknown): boolean {
     return (error as { status?: unknown } | null)?.status === PROVIDER_REJECTED_STATUS;
 }
 
+/**
+ * Store an embedding, or report that the object's source changed while it was computed: the store answers
+ * `409 Conflict` instead of replacing a fresher embedding, and the run that read the new source writes its own.
+ */
+async function storeEmbedding(
+    client: VertesiaClient,
+    document: ContentObject,
+    type: SupportedEmbeddingTypes,
+    embedding: { values: number[]; model: string; etag?: string },
+): Promise<'stored' | 'stale'> {
+    try {
+        await client.objects.setEmbedding(document.id, type, embedding);
+        return 'stored';
+    } catch (error) {
+        if ((error as { status?: unknown } | null)?.status === 409) {
+            log.info(`Skipping ${type} embeddings for ${document.id}: the source changed while they were computed`);
+            return 'stale';
+        }
+        throw error;
+    }
+}
+
 /** Log a failed embeddings call; a provider rejection is the environment's configuration, not an outage. */
 function logEmbeddingsError(message: string, error: unknown): void {
     if (isProviderRejection(error)) {
@@ -253,11 +275,16 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
         log.debug(`${type} embeddings generated for document ${document.id}`, {
             len: values.length,
         });
-        await client.objects.setEmbedding(document.id, type, {
-            values,
-            model: res.model,
-            etag: sourceEtag,
-        });
+        if (
+            (await storeEmbedding(client, document, type, { values, model: res.model, etag: sourceEtag })) === 'stale'
+        ) {
+            return {
+                id: document.id,
+                type,
+                status: 'skipped',
+                message: 'source changed while embeddings were computed',
+            };
+        }
 
         return {
             id: document.id,
@@ -349,11 +376,14 @@ async function generateImageEmbeddings({ document, client, type, config, force }
         };
     }
 
-    await client.objects.setEmbedding(document.id, SupportedEmbeddingTypes.image, {
+    const stored = await storeEmbedding(client, document, SupportedEmbeddingTypes.image, {
         values,
         model: res.model,
         etag: contentEtag,
     });
+    if (stored === 'stale') {
+        return { id: document.id, type, status: 'skipped', message: 'source changed while embeddings were computed' };
+    }
 
     return {
         id: document.id,
