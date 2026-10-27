@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { KoaServer } from '@koa-stack/server';
-import { FetchClient, RequestError } from '../src/index.js';
+import { FetchClient, generateIdempotencyKey, RequestError } from '../src/index.js';
 import Endpoints from './endpoints.js';
 
 const HOST = '127.0.0.1';
@@ -534,5 +534,13 @@ describe('Test requests', () => {
 
         assert.equal(attempts, 2);
         assert.equal(payload.attempts, 2);
+    });
+});
+
+describe('generateIdempotencyKey', () => {
+    it('generates RFC 4122 version 4 keys', () => {
+        const key = generateIdempotencyKey();
+        assert.match(key, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+        assert.notEqual(generateIdempotencyKey(), key);
     });
 });

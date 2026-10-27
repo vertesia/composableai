@@ -26,6 +26,7 @@ import {
     type QueryValidationResult,
     type UpdateSchemaPayload,
 } from '@vertesia/common';
+import { withImportId } from '../idempotency-key.js';
 import { DashboardApi } from './DashboardApi.js';
 
 /**
@@ -279,7 +280,10 @@ export class DataApi extends ApiTopic {
      * the moment 1.5 is deployed, not at their next upgrade.
      */
     import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
-        return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
+        return this.post(`/${id}/import`, {
+            payload: withImportId(this.client, payload),
+            headers: this.storeHeaders(id),
+        });
     }
 
     /**

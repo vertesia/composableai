@@ -41,6 +41,27 @@ export interface IRequestRetryPolicy {
      * Use full jitter for backoff delays. Defaults to true.
      */
     jitter?: boolean;
+    /**
+     * Have SDK methods whose request body accepts an `idempotency_key` generate one when the caller
+     * set none, so this policy can retry those POSTs without the server repeating them: a retry with
+     * the same key returns what the first attempt created. Every attempt of a call reuses its key.
+     * Other POSTs are unaffected. Defaults to false.
+     */
+    idempotencyKeys?: boolean;
+}
+
+/** Generate a fresh idempotency key (a random UUID). */
+export function generateIdempotencyKey(): string {
+    const cryptoImpl = globalThis.crypto;
+    if (typeof cryptoImpl.randomUUID === 'function') {
+        return cryptoImpl.randomUUID();
+    }
+    // Browsers expose `randomUUID` only in secure contexts; `getRandomValues` is always there.
+    const bytes = cryptoImpl.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 type NormalizedRetryPolicy = {
