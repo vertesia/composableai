@@ -6,9 +6,7 @@ import type {
     ComputeInteractionFacetPayload,
     DeleteByIdResult,
     ExecuteNamedInteractionQuery,
-    GeneratedInteractionDefinition,
     GeneratedTestDataRecord,
-    GenerateInteractionPayload,
     GenerateTestDataPayload,
     ImprovePromptPayload,
     ImprovePromptPayloadConfig,
@@ -265,15 +263,6 @@ export default class InteractionsApi extends ApiTopic {
 
     fork(id: string, payload: InteractionForkPayload): Promise<Interaction> {
         return this.post(`/${id}/fork`, {
-            payload,
-        });
-    }
-
-    /**
-     * Generate Composable definition of an interaction
-     **/
-    generateInteraction(id: string, payload: GenerateInteractionPayload): Promise<GeneratedInteractionDefinition[]> {
-        return this.post(`${id}/generate-interaction`, {
             payload,
         });
     }

@@ -557,16 +557,6 @@ export const ImprovePromptPayloadSchema = z
 
 export const GeneratedTestDataRecordSchema = z.object({}).catchall(z.unknown()).meta({ id: 'GeneratedTestDataRecord' });
 
-export const GeneratedInteractionPromptTemplateSchema = z
-    .strictObject({
-        role: z.enum(['safety', 'system', 'user']),
-        name: z.string(),
-        content: z.string(),
-        content_type: z.literal('jst'),
-        inputSchema: JSONSchemaSchema,
-    })
-    .meta({ id: 'GeneratedInteractionPromptTemplate' });
-
 export const GenerateTestDataPayloadSchema = z
     .strictObject({
         message: z.string().optional(),
@@ -574,13 +564,6 @@ export const GenerateTestDataPayloadSchema = z
         config: InteractionExecutionConfigurationSchema,
     })
     .meta({ id: 'GenerateTestDataPayload' });
-
-export const GenerateInteractionPayloadSchema = z
-    .strictObject({
-        description: z.string(),
-        config: InteractionExecutionConfigurationSchema,
-    })
-    .meta({ id: 'GenerateInteractionPayload' });
 
 export const InteractionSearchQuerySchema = z
     .strictObject({
@@ -1037,13 +1020,6 @@ export const GeneratedTestDataRecordArraySchema = z
     .array(GeneratedTestDataRecordSchema)
     .meta({ id: 'GeneratedTestDataRecordArray' });
 
-export const GeneratedInteractionPromptSegmentSchema = z
-    .strictObject({
-        type: z.literal('template'),
-        template: GeneratedInteractionPromptTemplateSchema,
-    })
-    .meta({ id: 'GeneratedInteractionPromptSegment' });
-
 export const ComputeInteractionFacetPayloadSchema = z
     .strictObject({
         facets: z.array(FacetSpecSchema),
@@ -1248,18 +1224,6 @@ export const InteractionEndpointArraySchema = z
 
 export const InteractionArraySchema = z.array(InteractionSchema).meta({ id: 'InteractionArray' });
 
-export const GeneratedInteractionDefinitionSchema = z
-    .strictObject({
-        name: z.string(),
-        description: z.string(),
-        temperature: z.number(),
-        prompts: z.array(GeneratedInteractionPromptSegmentSchema),
-        max_tokens: z.number().optional(),
-        result_schema: JSONSchemaSchema,
-        tags: z.array(z.enum(['generated', 'agent'])),
-    })
-    .meta({ id: 'GeneratedInteractionDefinition' });
-
 export const CatalogInteractionRefArraySchema = z
     .array(CatalogInteractionRefSchema)
     .meta({ id: 'CatalogInteractionRefArray' });
@@ -1385,10 +1349,6 @@ export const InteractionRefWithSchemaSchema = InteractionRefSchema.extend({
 export const InteractionRefWithSchemaArraySchema = z
     .array(InteractionRefWithSchemaSchema)
     .meta({ id: 'InteractionRefWithSchemaArray' });
-
-export const GeneratedInteractionDefinitionArraySchema = z
-    .array(GeneratedInteractionDefinitionSchema)
-    .meta({ id: 'GeneratedInteractionDefinitionArray' });
 
 export const PendingToolApprovalResultsSchema = z
     .strictObject({
