@@ -343,6 +343,47 @@ describe('getComposableToken', () => {
         });
     });
 
+    it('signs up with the address Studio resolved, which may not be in the email claim', async () => {
+        // Entra ID without the optional `email` claim: the environment reads `preferred_username`.
+        const identityToken = makeJwt({ preferred_username: 'jane@agency.gov', name: 'Jane' });
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(new Response('User not found', { status: 404 }))
+            .mockResolvedValueOnce(
+                Response.json(
+                    { action: 'signup_required', email: 'jane@agency.gov', name: 'Jane Doe' },
+                    { status: 412 },
+                ),
+            );
+        vi.stubGlobal('fetch', fetchMock);
+
+        const { fetchComposableToken, UserNotFoundError } = await importComposableAuth();
+        const error = await fetchComposableToken(async () => identityToken).catch((caught) => caught);
+
+        expect(fetchMock.mock.calls[1]?.[0]).toBe(
+            'https://studio-server-dev-feat-appgen.api.dev1.vertesia.io/auth/ensure-user',
+        );
+        expect(error).toBeInstanceOf(UserNotFoundError);
+        expect(error).toMatchObject({ email: 'jane@agency.gov', idToken: identityToken, displayName: 'Jane Doe' });
+    });
+
+    it("falls back to the token's email claim when Studio sends no address", async () => {
+        const identityToken = makeJwt({ email: 'leon@example.com', name: 'Leon' });
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValueOnce(new Response('User not found', { status: 404 }))
+                .mockResolvedValueOnce(Response.json({ message: 'User not found - signup required' }, { status: 412 })),
+        );
+
+        const { fetchComposableToken, UserNotFoundError } = await importComposableAuth();
+        const error = await fetchComposableToken(async () => identityToken).catch((caught) => caught);
+
+        expect(error).toBeInstanceOf(UserNotFoundError);
+        expect(error).toMatchObject({ email: 'leon@example.com', displayName: 'Leon' });
+    });
+
     it.each([
         { status: 401, errorName: 'CredentialError' },
         { status: 500, errorName: 'AuthenticationServiceError' },

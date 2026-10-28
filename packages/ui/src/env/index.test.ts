@@ -81,6 +81,31 @@ describe('VertesiaEnvironment runtime configuration', () => {
         expect(window.AUTH_MODE).toBeUndefined();
     });
 
+    it('signs in on the page through the injected OIDC provider', () => {
+        const oidc = { issuer: 'https://login.example.gov/tenant/v2.0', clientId: 'apps-client', label: 'Agency SSO' };
+        vi.stubGlobal('window', { __VERTESIA_RUNTIME_CONFIG__: { authMode: 'oidc', oidc } });
+
+        const env = new VertesiaEnvironment().init(baseProps);
+
+        expect(env.oidc).toEqual(oidc);
+        expect(env.firebase).toBeUndefined();
+        expect(window.AUTH_MODE).toBe('oidc');
+    });
+
+    it('ignores injected OIDC configuration without an issuer and client', () => {
+        vi.stubGlobal('window', {
+            __VERTESIA_RUNTIME_CONFIG__: {
+                authMode: 'oidc',
+                oidc: { issuer: 'https://login.example.gov', clientId: '' },
+            },
+        });
+
+        const env = new VertesiaEnvironment().init(baseProps);
+
+        expect(env.oidc).toBeUndefined();
+        expect(window.AUTH_MODE).toBeUndefined();
+    });
+
     it('uses the gateway broker ahead of an app build endpoint', () => {
         vi.stubGlobal('window', {
             __VERTESIA_RUNTIME_CONFIG__: { authMode: 'central', authUrl: 'https://auth.dev1.vertesia.io/' },

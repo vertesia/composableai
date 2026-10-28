@@ -18,6 +18,7 @@ import {
     shouldRedirectToCentralAuth,
 } from './domainRouting';
 import { getFirebaseAuth, getFirebaseAuthToken } from './firebase';
+import { getOidcIdToken, usesOidcSignIn } from './oidc';
 import { isStsTokenIssuer } from './tokenIssuer';
 
 let AUTH_TOKEN_RAW: string | undefined;
@@ -246,12 +247,23 @@ export async function fetchComposableToken(
                         project_id: projectId,
                     },
                 });
-                const idTokenDecoded = jwtDecode<{ email?: string }>(idToken);
-                if (!idTokenDecoded?.email) {
+                // Studio sends the address it read from the token, which is not always in `email`: an OIDC
+                // provider may put it in another claim (USER_OIDC_EMAIL_CLAIM). An older Studio sends none.
+                const resolved = (await ensureResponse.json().catch(() => undefined)) as
+                    | { email?: unknown; name?: unknown }
+                    | undefined;
+                const idTokenDecoded = jwtDecode<{ email?: string; name?: string }>(idToken);
+                const email = typeof resolved?.email === 'string' ? resolved.email : idTokenDecoded?.email;
+                if (!email) {
                     Env.logger.error('No email found in id token');
                     throw new Error('No email found in id token');
                 }
-                throw new UserNotFoundError('User not found - signup required', idTokenDecoded.email);
+                throw new UserNotFoundError(
+                    'User not found - signup required',
+                    email,
+                    idToken,
+                    typeof resolved?.name === 'string' ? resolved.name : idTokenDecoded.name,
+                );
             }
 
             if (ensureResponse.status === 403) {
@@ -295,7 +307,7 @@ export async function fetchComposableToken(
                     status: stsRes?.status,
                 },
             });
-            const idTokenDecoded = jwtDecode<{ email?: string }>(idToken);
+            const idTokenDecoded = jwtDecode<{ email?: string; name?: string }>(idToken);
             if (!idTokenDecoded?.email) {
                 Env.logger.error('No email found in id token');
                 throw new Error('No email found in id token');
@@ -307,7 +319,7 @@ export async function fetchComposableToken(
                     email: idTokenDecoded.email,
                 },
             });
-            throw new UserNotFoundError('User not found', idTokenDecoded.email);
+            throw new UserNotFoundError('User not found', idTokenDecoded.email, idToken, idTokenDecoded.name);
         }
 
         if (stsRes.status === 401) {
@@ -509,13 +521,16 @@ export async function getComposableToken(
 
     try {
         //token is close to expire, refresh it
-        if (!devAuthToken && !useInternalAuth && getFirebaseAuth().currentUser) {
+        // A page that signs in through an OIDC provider has no Firebase, and must not initialize it.
+        if (!devAuthToken && !useInternalAuth && !usesOidcSignIn() && getFirebaseAuth().currentUser) {
             //we have a firebase user, get the token from there
             AUTH_TOKEN_RAW = await fetchComposableTokenFromFirebaseToken(selectedAccount, selectedProject);
         } else if (!devAuthToken) {
             // Embedded apps can reacquire a fresh credential from their host after their cached token expires.
             const providerCredential = await Env.authTokenProvider?.();
-            const refreshCredential = providerCredential ?? initToken ?? AUTH_TOKEN_RAW;
+            // The provider's ID token of an OIDC sign-in renews the session until it expires itself.
+            const oidcCredential = usesOidcSignIn() ? getOidcIdToken() : undefined;
+            const refreshCredential = providerCredential ?? initToken ?? oidcCredential ?? AUTH_TOKEN_RAW;
             // `forceRefresh` has to defeat this shortcut, not just the cache above it. A caller
             // asking for a forced refresh wants claims recomputed -- `refreshAuthToken()` exists so
             // a stale `apps` claim can be re-read after an ACE change, and STS recomputes it on
@@ -596,10 +611,18 @@ export async function getComposableToken(
 
 export class UserNotFoundError extends Error {
     email: string;
-    constructor(message: string, email: string) {
+    /**
+     * The identity-provider ID token that has no user yet, and the name it carries. Sign-up posts that token: after a
+     * sign-in through the central broker this origin has no provider session of its own to get one from.
+     */
+    idToken?: string;
+    displayName?: string;
+    constructor(message: string, email: string, idToken?: string, displayName?: string) {
         super(message);
         this.name = 'UserNotFoundError';
         this.email = email;
+        this.idToken = idToken;
+        this.displayName = displayName;
     }
 }
 

@@ -16,6 +16,7 @@ import { buildCentralAuthRedirectUrl, redirectToCentralAuth, shouldRedirectToCen
 import { getFirebaseAuth } from './auth/firebase';
 import { usesGatewaySession } from './auth/gateway';
 import { getAppOAuthToken, usesAppOAuth } from './auth/oauth';
+import { completeOidcSignIn, getOidcIdToken, usesOidcSignIn } from './auth/oidc';
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
 
@@ -220,6 +221,42 @@ export function UserSessionProvider({ children, loadOnboardingStatus = false }: 
         let cancelled = false;
         let unsubscribe: (() => void) | undefined;
 
+        // The page signs in through the environment's OIDC provider (Env.oidc), served by App Gateway on
+        // an application's own host: the shared sign-in screen sends the user there, and the provider
+        // returns to OIDC_CALLBACK_PATH on this origin.
+        const startOidcAuth = () => {
+            session.setSession = setSession;
+            void completeOidcSignIn()
+                .then(async (completed) => {
+                    if (cancelled) return;
+                    if (completed) {
+                        // The router has already read the callback URL; load the page the sign-in
+                        // started from, which finds the ID token this tab now holds.
+                        location.replace(window.location.href);
+                        return;
+                    }
+                    const idToken = getOidcIdToken();
+                    if (!idToken) {
+                        session.client.withAuthCallback(undefined);
+                        session.logout();
+                        setSession(session.clone());
+                        return;
+                    }
+                    const res = await getComposableToken(selectedAccount, selectedProject, idToken, false, false);
+                    await session.login(res.rawToken, { loadOnboardingStatus });
+                    if (!cancelled) setSession(session.clone());
+                })
+                .catch((err: unknown) => {
+                    if (cancelled || surfaceAuthError(err)) return;
+                    Env.logger.warn('OIDC sign-in failed', {
+                        vertesia: { account_id: selectedAccount, project_id: selectedProject, error: err },
+                    });
+                    session.isLoading = false;
+                    session.authError = err instanceof Error ? err : new Error(String(err));
+                    setSession(session.clone());
+                });
+        };
+
         const startFirebaseOrCentralAuth = () => {
             if (cancelled) return;
             // A missing/expired host token must not upgrade an embedded app to a full user session.
@@ -255,6 +292,11 @@ export function UserSessionProvider({ children, loadOnboardingStatus = false }: 
                         project_id: selectedProject,
                     },
                 });
+            }
+
+            if (usesOidcSignIn()) {
+                startOidcAuth();
+                return;
             }
 
             unsubscribe = onAuthStateChanged(getFirebaseAuth(), async (firebaseUser) => {
