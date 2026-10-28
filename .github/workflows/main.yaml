@@ -80,6 +80,29 @@ jobs:
       - name: Install workspace dependencies
         timeout-minutes: 5
         run: pnpm install
+      - name: Pre-download Temporal test server binaries
+        # The Temporal tests download the server binaries in their `beforeAll` hooks, where a dropped transfer
+        # fails the suite. Fetch them once here instead, retrying a failed attempt: the tests then find them in
+        # the SDK's default download directory. A killed attempt leaves `<binary>.downloading` behind, which
+        # the SDK takes for another process's download and waits on, so a retry deletes it first.
+        timeout-minutes: 4
+        working-directory: packages/workflow
+        run: |
+          prewarm() {
+            timeout --kill-after=5 60 node --input-type=module -e "
+              import testing from '@temporalio/testing';
+              for (const create of ['createTimeSkipping', 'createLocal']) {
+                await (await testing.TestWorkflowEnvironment[create]()).teardown();
+              }"
+          }
+          tmp=$(node -p "require('node:os').tmpdir()")
+          for attempt in 1 2 3; do
+            prewarm && exit 0
+            echo "::warning::Temporal binary download failed (attempt $attempt of 3)"
+            rm -f "$tmp"/temporal-*.downloading
+            sleep $((attempt * 5))
+          done
+          exit 1
       - name: Save pnpm store cache
         if: github.event_name == 'push' && steps.pnpm-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
