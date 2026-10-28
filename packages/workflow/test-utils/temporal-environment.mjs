@@ -2,8 +2,8 @@
 //
 // `TestWorkflowEnvironment.createLocal()` and `createTimeSkipping()` download the server binary from
 // temporal.download into a temp directory when none is configured, and @temporalio/testing exposes no retry
-// setting. A momentary 5xx/429, or a connection dropped mid-body (a reqwest body error, a reset socket, or a
-// truncated archive that cannot be extracted), then fails the whole suite. These helpers download into
+// setting. A momentary 5xx/429, a connection that fails or times out, or one dropped mid-body (leaving a
+// truncated archive that cannot be extracted) then fails the whole suite. These helpers download into
 // `.cache/test-binaries`, which CI caches and `prewarm-temporal.mjs` fills before the tests run, and retry
 // the transient failures.
 //
@@ -18,11 +18,16 @@ const binaryDir = path.resolve(import.meta.dirname, '..', '.cache', 'test-binari
 // The time-skipping test server and the CLI used by the local dev server are different binaries.
 const TEST_SERVER_DIR = path.join(binaryDir, 'temporal');
 const CLI_DIR = path.join(binaryDir, 'temporal-cli');
+// The SDK deletes a cached binary older than its `ttl` (default 1d) and downloads it again, which would
+// defeat the CI cache from the day after it is saved. The cache key already changes with the SDK version.
+const BINARY_TTL = '3650d';
 
 // 408 Request Timeout, 425 Too Early, 429 Too Many Requests, 500/502/503/504 server-side transients.
 const RETRYABLE_STATUS = new Set([408, 425, 429, 500, 502, 503, 504]);
-// A transfer cut off after the response headers: reqwest's body error, a reset socket, or a truncated archive.
-const RETRYABLE_MESSAGE = /error decoding response body|connection reset|could not extract tar archive/i;
+// Network failures reported by the SDK's reqwest client (no connection, a timeout, a body cut off mid-transfer,
+// a reset socket) and the truncated archive such a cut-off leaves behind.
+const RETRYABLE_MESSAGE =
+    /error sending request|operation timed out|error reading a body from connection|request or response body error|error decoding response body|connection reset|could not (?:extract|read) tar archive/i;
 
 /**
  * Describes a retryable Temporal binary download failure, or returns `undefined` when the error is not one.
@@ -62,7 +67,7 @@ export async function withTemporalDownloadRetry(create, retries = 3) {
 
 function cachedDownload(downloadDir) {
     fs.mkdirSync(downloadDir, { recursive: true });
-    return { executable: { type: 'cached-download', downloadDir } };
+    return { executable: { type: 'cached-download', downloadDir, ttl: BINARY_TTL } };
 }
 
 export function createLocalTestEnvironment() {

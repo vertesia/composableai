@@ -26,7 +26,12 @@ describe('withTemporalDownloadRetry', () => {
         `HTTP status client error (429 Too Many Requests) ${url}`,
         'Failed to download test server: error decoding response body',
         'error sending request: connection error: Connection reset by peer (os error 104)',
-        'could not extract tar archive: failed to unpack `temporal-test-server`',
+        'could not extract tar archive entry: failed to unpack `temporal-test-server`',
+        'could not read tar archive entry: unexpected end of file',
+        'error sending request for url (https://temporal.download/assets/temporal-test-server)',
+        'operation timed out',
+        'error reading a body from connection',
+        'request or response body error',
     ])('retries a transient download failure: %s', async (message) => {
         await expect(runOnce(message)).resolves.toEqual({ result: 'env', calls: 2 });
     });
