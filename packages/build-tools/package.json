@@ -46,9 +46,9 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/studio-utils": "workspace:*",
         "ajv": "^8.20.0",
-        "es-module-lexer": "^3.0.3",
+        "es-module-lexer": "^3.0.4",
         "esbuild": "^0.28.2",
-        "js-yaml": "^5.4.3",
+        "js-yaml": "^5.5.0",
         "zod": "catalog:"
     },
     "peerDependencies": {

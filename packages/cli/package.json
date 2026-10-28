@@ -63,7 +63,7 @@
         "typescript-legacy": "catalog:"
     },
     "optionalDependencies": {
-        "@napi-rs/keyring": "^2.1.1",
+        "@napi-rs/keyring": "^2.1.2",
         "@vertesia/cli-darwin-arm64": "workspace:*",
         "@vertesia/cli-darwin-x64": "workspace:*"
     },
