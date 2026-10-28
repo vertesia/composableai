@@ -220,6 +220,19 @@ export const AUDIO_RENDITION_NAME = 'Audio';
 export const WEB_VIDEO_RENDITION_NAME = 'Web';
 export const PDF_RENDITION_NAME = 'PDF';
 
+/**
+ * Request header sent by a workflow that can wait for media renditions still being generated. With it,
+ * the execute endpoint answers 412 and lists the pending objects instead of rendering a media input from
+ * its original source.
+ */
+export const RENDITION_WAIT_HEADER = 'x-vertesia-rendition-wait';
+
+/** A media input whose rendition is still being generated. */
+export interface PendingRendition {
+    object_id: string;
+    kind: 'video' | 'image';
+}
+
 export interface ContentMetadata {
     // Common fields for all media types
     type?: ContentNature;
