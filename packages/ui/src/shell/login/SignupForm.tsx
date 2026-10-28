@@ -12,11 +12,16 @@ interface CompanySizeOption {
 
 interface SignupFormProps {
     identity?: Pick<User, 'displayName' | 'email'>;
+    /**
+     * The ID token to sign up with. Given after a sign-in through the central broker, whose provider session lives on
+     * the broker's origin; without it the form reads the Firebase session of this page.
+     */
+    idToken?: string;
     onSignup: (data: SignupData, fbToken: string) => void;
     goBack: () => void;
 }
 
-export default function SignupForm({ onSignup, goBack, identity }: SignupFormProps) {
+export default function SignupForm({ onSignup, goBack, identity, idToken }: SignupFormProps) {
     const { t } = useUITranslation();
     const [accountType, setAccountType] = useState<string | undefined>(undefined);
     const [companySize, setCompanySize] = useState<CompanySizeOption | undefined>(undefined);
@@ -58,7 +63,7 @@ export default function SignupForm({ onSignup, goBack, identity }: SignupFormPro
     ];
 
     useEffect(() => {
-        if (identity) {
+        if (identity || idToken) {
             setFbUser(identity);
             return;
         }
@@ -68,7 +73,7 @@ export default function SignupForm({ onSignup, goBack, identity }: SignupFormPro
             return;
         }
         setFbUser(user);
-    }, [identity]);
+    }, [identity, idToken]);
 
     const isValid = () => {
         if (!accountType) {
@@ -102,8 +107,7 @@ export default function SignupForm({ onSignup, goBack, identity }: SignupFormPro
 
         window.localStorage.setItem('composableSignupData', JSON.stringify(signupData));
 
-        const fbToken = await getFirebaseAuth().currentUser?.getIdToken();
-        console.log('Got firebase token', getFirebaseAuth(), fbToken);
+        const fbToken = idToken ?? (await getFirebaseAuth().currentUser?.getIdToken());
         if (!fbToken) {
             console.error('No firebase token found');
             return;

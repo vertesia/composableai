@@ -15,6 +15,8 @@ import {
     usesGatewaySession,
 } from './auth/gateway';
 import { getAppOAuthToken, revokeAppOAuthSession } from './auth/oauth';
+import { clearOidcSession, usesOidcSignIn } from './auth/oidc';
+import { recordOidcSignOut } from './auth/oidcAutoStart';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
 import { forgetTabScopeSelection, rememberScopeSelection } from './scopeSelection';
@@ -232,6 +234,25 @@ class UserSession {
             this.isLoading = false;
             Env.onLogout?.();
             this.setSession?.(this.clone());
+            return;
+        }
+
+        if (usesOidcSignIn()) {
+            // Forget the provider's ID token in this tab. The provider's own session outlives it, so the
+            // sign-in page then waits for a click rather than signing the user straight back in.
+            const wasLoggedIn = !!this.authToken;
+            if (wasLoggedIn) {
+                clearOidcSession();
+                recordOidcSignOut();
+            }
+            this.authError = undefined;
+            this.isLoading = false;
+            this.authToken = undefined;
+            this.setSession = undefined;
+            this.client.withAuthCallback(undefined);
+            if (wasLoggedIn) {
+                location.replace(mountRootUrl().toString());
+            }
             return;
         }
 
