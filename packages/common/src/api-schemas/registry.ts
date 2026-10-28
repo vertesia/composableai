@@ -507,8 +507,6 @@ import {
     GeneratedTestDataRecordSchema,
     GenerateTestDataPayloadSchema,
     GetRunQuerySchema,
-    ImprovePromptPayloadConfigSchema,
-    ImprovePromptPayloadSchema,
     InCodeInteractionSchema,
     InCodePromptSchema,
     InitialToolCallSchema,
@@ -550,7 +548,6 @@ import {
     PlanSchema,
     PlanTaskSchema,
     PopulatedExecutionRunResultSchema,
-    PromptImprovementResponseSchema,
     PromptModalitiesSchema,
     PromptSegmentDefSchema,
     PromptSegmentDefTypeSchema,
@@ -1152,10 +1149,7 @@ const INTERACTION_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const INTERACTION_AUTHORING_SCHEMAS = {
-    // Prompt improvement, and the test-data generator behind the authoring screens.
-    ImprovePromptPayloadConfig: ImprovePromptPayloadConfigSchema,
-    ImprovePromptPayload: ImprovePromptPayloadSchema,
-    PromptImprovementResponse: PromptImprovementResponseSchema,
+    // The test-data generator behind the authoring screens.
     GenerateTestDataPayload: GenerateTestDataPayloadSchema,
     GeneratedTestDataRecord: GeneratedTestDataRecordSchema,
     GeneratedTestDataRecordArray: GeneratedTestDataRecordArraySchema,
@@ -3124,9 +3118,6 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ResolvedInteractionExecutionInfo',
     'FacetSpec',
     'ComputeInteractionFacetPayload',
-    'ImprovePromptPayloadConfig',
-    'ImprovePromptPayload',
-    'PromptImprovementResponse',
     'GenerateTestDataPayload',
     'AgentRunnerOptions',
     'SkillContextTriggers',

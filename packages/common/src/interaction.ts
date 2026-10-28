@@ -31,8 +31,6 @@ import type {
     GeneratedTestDataRecordSchema,
     GenerateTestDataPayloadSchema,
     GetRunQuerySchema,
-    ImprovePromptPayloadConfigSchema,
-    ImprovePromptPayloadSchema,
     InCodeInteractionSchema,
     InCodePromptSchema,
     InitialToolCallSchema,
@@ -52,7 +50,6 @@ import type {
     InteractionUpdatePayloadSchema,
     InteractionVisibilitySchema,
     NamedInteractionExecutionPayloadSchema,
-    PromptImprovementResponseSchema,
     PromptModalitiesSchema,
     RateLimitRequestPayloadSchema,
     RateLimitRequestResponseSchema,
@@ -495,12 +492,6 @@ export type InteractionExecutionConfiguration = z.infer<typeof InteractionExecut
 export type GenerateTestDataPayload = z.infer<typeof GenerateTestDataPayloadSchema>;
 
 export type GeneratedTestDataRecord = z.infer<typeof GeneratedTestDataRecordSchema>;
-
-export type ImprovePromptPayloadConfig = z.infer<typeof ImprovePromptPayloadConfigSchema>;
-
-export type ImprovePromptPayload = z.infer<typeof ImprovePromptPayloadSchema>;
-
-export type PromptImprovementResponse = z.infer<typeof PromptImprovementResponseSchema>;
 
 export type RateLimitRequestPayload = z.infer<typeof RateLimitRequestPayloadSchema>;
 

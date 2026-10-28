@@ -73,7 +73,7 @@ describe('mergeComponentGroups', () => {
             'ExecutionEnvironment',
             'JSONValue',
             'Interaction',
-            'ImprovePromptPayload',
+            'GenerateTestDataPayload',
             'AgentRunnerOptions',
             'ExecutionRunStatus',
             'RenderPromptResponse',

@@ -534,27 +534,6 @@ export const InteractionEndpointQuerySchema = z
     })
     .meta({ id: 'InteractionEndpointQuery', description: 'The payload to query the interaction endpoints' });
 
-export const ImprovePromptPayloadConfigSchema = z
-    .strictObject({
-        config: InteractionExecutionConfigurationSchema,
-    })
-    .meta({ id: 'ImprovePromptPayloadConfig' });
-
-export const ImprovePromptPayloadSchema = z
-    .strictObject({
-        config: InteractionExecutionConfigurationSchema,
-        interaction_name: z.string(),
-        context: z.string().optional(),
-        prompt: z.array(
-            z.strictObject({
-                name: z.string(),
-                content: z.string(),
-            }),
-        ),
-        result_schema: JSONSchemaSchema.optional(),
-    })
-    .meta({ id: 'ImprovePromptPayload' });
-
 export const GeneratedTestDataRecordSchema = z.object({}).catchall(z.unknown()).meta({ id: 'GeneratedTestDataRecord' });
 
 export const GenerateTestDataPayloadSchema = z
@@ -1171,12 +1150,6 @@ export const ToolResultMetaSchema = z
         description:
             'Metadata a tool executor may attach to its result. Kept as an open record for forward compatibility while typing the fields the runtime interprets.',
     });
-
-export const PromptImprovementResponseSchema = z
-    .strictObject({
-        result: z.array(CompletionResultSchema),
-    })
-    .meta({ id: 'PromptImprovementResponse' });
 
 export const PromptSegmentRef_PromptTemplateRefSchema = z
     .strictObject({
