@@ -1,5 +1,5 @@
 import * as protos from '@temporalio/proto';
-import type { TestWorkflowEnvironment } from '@temporalio/testing';
+import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { bundleWorkflowCode, Worker, type WorkflowBundleWithSourceMap } from '@temporalio/worker';
 import {
     ContentEventName,
@@ -8,7 +8,6 @@ import {
     type DSLWorkflowStep,
 } from '@vertesia/common';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createLocalTestEnvironment } from '../../test-utils/temporal-environment.mjs';
 import { dslWorkflow } from './dsl-workflow.js';
 import { setupActivity } from './setup/ActivityContext.js';
 
@@ -127,7 +126,7 @@ describe('DSL Workflow with child workflows', () => {
     let workflowBundle: WorkflowBundleWithSourceMap;
 
     beforeAll(async () => {
-        testEnv = await createLocalTestEnvironment();
+        testEnv = await TestWorkflowEnvironment.createLocal();
         const { connection } = testEnv;
         await connection.operatorService.addSearchAttributes({
             namespace: 'default',
