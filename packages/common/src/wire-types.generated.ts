@@ -4038,6 +4038,7 @@ export type CatalogSearchInteractionRef = {
     model?: string | undefined;
     prompts?: PromptSegmentRef_PromptTemplateRef[] | undefined;
     updated_at?: string | undefined;
+    inference_profile?: InferenceProfileId | undefined;
 };
 export type CatalogTagCount = {
     tag: string;
@@ -4048,13 +4049,6 @@ export type CatalogSearchResult = {
     total: number;
     tags: CatalogTagCount[];
     interactions: CatalogSearchInteractionRef[];
-};
-/** An app catalog search result: the matching app interactions, their tag counts, the total and the apps that did not answer. */
-export type CatalogAppSearchResult = {
-    total: number;
-    tags: CatalogTagCount[];
-    interactions: CatalogSearchInteractionRef[];
-    unavailable_apps: string[];
 };
 export type ExecuteNamedInteractionQuery = {
     include_prompt?: boolean | undefined;
@@ -11248,7 +11242,6 @@ export interface ApiComponentTypes {
     CatalogSearchInteractionRef: CatalogSearchInteractionRef;
     CatalogTagCount: CatalogTagCount;
     CatalogSearchResult: CatalogSearchResult;
-    CatalogAppSearchResult: CatalogAppSearchResult;
     ModelSource: ModelSourceWire;
     ResolvedEnvironmentInfo: ResolvedEnvironmentInfo;
     ResolvedInteractionExecutionInfo: ResolvedInteractionExecutionInfo;

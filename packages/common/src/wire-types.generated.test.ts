@@ -1694,10 +1694,6 @@ interface Checks {
         W.CatalogSearchResult,
         z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchResultSchema>
     >;
-    CatalogAppSearchResult: Same<
-        W.CatalogAppSearchResult,
-        z.infer<typeof import('./api-schemas/interaction.js').CatalogAppSearchResultSchema>
-    >;
     ExecuteNamedInteractionQuery: Same<
         W.ExecuteNamedInteractionQuery,
         z.infer<typeof import('./api-schemas/interaction.js').ExecuteNamedInteractionQuerySchema>
@@ -5769,10 +5765,6 @@ interface Checks {
     'component:CatalogSearchResult': Same<
         W.ApiComponentTypes['CatalogSearchResult'],
         z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchResultSchema>
-    >;
-    'component:CatalogAppSearchResult': Same<
-        W.ApiComponentTypes['CatalogAppSearchResult'],
-        z.infer<typeof import('./api-schemas/interaction.js').CatalogAppSearchResultSchema>
     >;
     'component:ModelSource': Same<
         W.ApiComponentTypes['ModelSource'],
@@ -10235,7 +10227,6 @@ const checks: Checks = {
     CatalogSearchInteractionRef: true,
     CatalogTagCount: true,
     CatalogSearchResult: true,
-    CatalogAppSearchResult: true,
     ExecuteNamedInteractionQuery: true,
     GetRunQuery: true,
     ExecuteInteractionByEndpointQuery: true,
@@ -11338,7 +11329,6 @@ const checks: Checks = {
     'component:CatalogSearchInteractionRef': true,
     'component:CatalogTagCount': true,
     'component:CatalogSearchResult': true,
-    'component:CatalogAppSearchResult': true,
     'component:ModelSource': true,
     'component:ResolvedEnvironmentInfo': true,
     'component:ResolvedInteractionExecutionInfo': true,
@@ -12342,6 +12332,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2570);
+        expect(Object.keys(checks)).toHaveLength(2568);
     });
 });

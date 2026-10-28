@@ -1529,9 +1529,14 @@ export const CatalogSearchInteractionRefSchema = CatalogInteractionRefSchema.ext
         .string()
         .meta({ format: 'date-time', description: 'Only applies for stored interactions. The last update time.' })
         .optional(),
+    inference_profile: InferenceProfileIdSchema.meta({
+        description:
+            'Only applies for in-code interactions. The inference profile the interaction pins; runs of one that ' +
+            'pins none use the project default.',
+    }).optional(),
 }).meta({
     id: 'CatalogSearchInteractionRef',
-    description: 'An interaction found by a catalog search: a system, an app or a stored interaction.',
+    description: 'An interaction found by a catalog search: a stored, a system or an app interaction.',
 });
 
 export const CatalogTagCountSchema = z
@@ -1549,27 +1554,11 @@ export const CatalogSearchResultSchema = z
         }),
         interactions: z.array(CatalogSearchInteractionRefSchema).meta({
             description:
-                'The matching interactions: stored interactions first, most recently updated first, then system ' +
-                'interactions.',
+                'The matching interactions. Stored interactions are listed most recently updated first; in-code ' +
+                'interactions in the order their source defines them.',
         }),
     })
     .meta({ id: 'CatalogSearchResult' });
-
-export const CatalogAppSearchResultSchema = CatalogSearchResultSchema.extend({
-    interactions: z.array(CatalogSearchInteractionRefSchema).meta({
-        description: 'The matching app interactions, grouped by app in the order the apps are assigned.',
-    }),
-    unavailable_apps: z.array(z.string()).meta({
-        description:
-            'The apps whose interactions could not be listed in time, or at all. Their interactions are missing ' +
-            'from the result; searching again may include them.',
-    }),
-}).meta({
-    id: 'CatalogAppSearchResult',
-    description:
-        'A catalog search over the interactions provided by the apps assigned to the caller, searched separately ' +
-        'from the system and stored interactions because each app is asked for its interactions.',
-});
 
 export const InteractionExecutionResultSchema = z
     .strictObject({

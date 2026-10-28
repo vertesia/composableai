@@ -1,7 +1,6 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     CatalogAgentSearchQuery,
-    CatalogAppSearchResult,
     CatalogCallSearchQuery,
     CatalogInteractionRef,
     CatalogSearchResult,
@@ -44,38 +43,39 @@ export class InteractionCatalogApi extends ApiTopic {
     }
 
     /**
-     * Search the system and stored project interactions configured as agents
-     * (`agent_runner_options.is_agent`). Returns the matching agents with their tag counts and total.
-     * App-provided interactions are searched by `listAppAgents`.
+     * Search the stored agents of the project: the interactions configured as agents
+     * (`agent_runner_options.is_agent`), in their draft version.
      */
-    listAgents(query: CatalogAgentSearchQuery = {}): Promise<CatalogSearchResult> {
-        return this.get('/agents', { query });
+    listStoredAgents(query: CatalogAgentSearchQuery = {}): Promise<CatalogSearchResult> {
+        return this.get('/agents/stored', { query });
+    }
+
+    /** Search the system agents, which are defined in code by the platform. */
+    listSystemAgents(query: CatalogAgentSearchQuery = {}): Promise<CatalogSearchResult> {
+        return this.get('/agents/system', { query });
+    }
+
+    /** Search the agents provided by an app. The app is asked for its interactions, so this can be slow. */
+    listAppAgents(appName: string, query: CatalogAgentSearchQuery = {}): Promise<CatalogSearchResult> {
+        return this.get(`/agents/apps/${encodeURIComponent(appName)}`, { query });
     }
 
     /**
-     * Search the system and stored project interactions that are not agents: basic, tool and skill calls.
-     * Returns the matching calls with their tag counts and total. App-provided interactions are searched by `listAppCalls`.
+     * Search the stored calls of the project: the interactions that are not agents (basic, tool and skill calls),
+     * in their draft version.
      */
-    listCalls(query: CatalogCallSearchQuery = {}): Promise<CatalogSearchResult> {
-        return this.get('/calls', { query });
+    listStoredCalls(query: CatalogCallSearchQuery = {}): Promise<CatalogSearchResult> {
+        return this.get('/calls/stored', { query });
     }
 
-    /**
-     * Search the agents provided by the apps assigned to the caller, with the filters of `listAgents`. Each app
-     * is asked for its interactions, so this is slower than `listAgents` and meant to be loaded after it; apps
-     * that do not answer in time are listed in `unavailable_apps`.
-     */
-    listAppAgents(query: CatalogAgentSearchQuery = {}): Promise<CatalogAppSearchResult> {
-        return this.get('/agents/apps', { query });
+    /** Search the system calls, which are defined in code by the platform. */
+    listSystemCalls(query: CatalogCallSearchQuery = {}): Promise<CatalogSearchResult> {
+        return this.get('/calls/system', { query });
     }
 
-    /**
-     * Search the calls provided by the apps assigned to the caller, with the filters of `listCalls`. Each app
-     * is asked for its interactions, so this is slower than `listCalls` and meant to be loaded after it; apps
-     * that do not answer in time are listed in `unavailable_apps`.
-     */
-    listAppCalls(query: CatalogCallSearchQuery = {}): Promise<CatalogAppSearchResult> {
-        return this.get('/calls/apps', { query });
+    /** Search the calls provided by an app. The app is asked for its interactions, so this can be slow. */
+    listAppCalls(appName: string, query: CatalogCallSearchQuery = {}): Promise<CatalogSearchResult> {
+        return this.get(`/calls/apps/${encodeURIComponent(appName)}`, { query });
     }
 
     /**
