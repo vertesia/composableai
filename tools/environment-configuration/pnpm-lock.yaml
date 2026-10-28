@@ -41,8 +41,8 @@ importers:
         specifier: ^15.0.0
         version: 15.0.0
       dotenv:
-        specifier: ^18.0.7
-        version: 18.0.7
+        specifier: ^18.0.8
+        version: 18.0.9
       google-auth-library:
         specifier: ^11.3.1
         version: 11.3.1
@@ -396,8 +396,8 @@ packages:
       supports-color:
         optional: true
 
-  dotenv@18.0.7:
-    resolution: {integrity: sha512-QEvMEF8ca3GNZJJnAbOgxpj5ULhBvnMcURp+XKrtvqFNPgjBvYoswQ0Jl2cO7JzCjxZjJhr9ZuIEhlrRxMft/Q==}
+  dotenv@18.0.9:
+    resolution: {integrity: sha512-3fVOW4cB02R066PUSwn8O4TJyz9NckQl7F81blIbaq9jKBm2tSmOKky7ZHIXzGvkVPXCSn6jkpziBPZdGFs8Tw==}
     engines: {node: '>=12'}
     hasBin: true
 
@@ -847,7 +847,7 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
-  dotenv@18.0.7: {}
+  dotenv@18.0.9: {}
 
   ecdsa-sig-formatter@1.0.11:
     dependencies:
