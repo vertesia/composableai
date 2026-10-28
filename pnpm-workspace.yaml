@@ -38,6 +38,8 @@ minimumReleaseAgeExclude:
   - hono@4.12.34
   # Renovate security update: dompurify@3.4.13 || 3.4.16
   - dompurify@3.4.13 || 3.4.16
+  # Renovate security update: qs@6.16.1
+  - qs@6.16.1
 catalog:
   # Keep this synchronized with Studio and Llumiverse: each repository generates schemas from
   # its own local workspace and lockfile, so an override in another repository cannot control it.
