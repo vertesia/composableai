@@ -522,16 +522,32 @@ describe('executeInteraction retryability', () => {
         expect(activityLogger.error).toHaveBeenCalled();
     });
 
-    it('should mark other 4xx failures as non-retryable', async () => {
+    it('should mark other 4xx failures as non-retryable and log them at warn', async () => {
         await mockInteractionError(Object.assign(new Error('bad request'), { statusCode: 400 }));
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
-        expect(activityLogger.error).toHaveBeenCalled();
+        expect(activityLogger.warn).toHaveBeenCalledWith(
+            'Failed to execute interaction testInteraction',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
-    it('keeps explicitly permanent 412 failures at error level', async () => {
+    it.each([401, 403])('logs a %s at error: the platform rejected the worker itself', async (statusCode) => {
+        await mockInteractionError(Object.assign(new Error('unauthorized'), { statusCode }));
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+        expect(activityLogger.error).toHaveBeenCalledWith(
+            'Failed to execute interaction testInteraction',
+            expect.any(Object),
+        );
+    });
+
+    it('logs explicitly permanent 412 failures at warn', async () => {
         await mockInteractionError(
             Object.assign(new Error('permanent precondition failure'), {
                 statusCode: 412,
@@ -542,16 +558,24 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
-        expect(activityLogger.error).toHaveBeenCalled();
+        expect(activityLogger.warn).toHaveBeenCalledWith(
+            'Failed to execute interaction testInteraction',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
-    it('does not retry unavailable rendition responses', async () => {
+    it('does not retry unavailable rendition responses, and logs them at warn', async () => {
         await mockInteractionError(Object.assign(new Error('rendition unavailable'), { statusCode: 422 }));
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
-        expect(activityLogger.error).toHaveBeenCalled();
+        expect(activityLogger.warn).toHaveBeenCalledWith(
+            'Failed to execute interaction testInteraction',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
     it('should honor explicitly retryable 4xx execution errors', async () => {
@@ -573,5 +597,65 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
+    });
+});
+
+describe('executeInteraction failed run log level', () => {
+    async function mockFailedRun(error: { code: string; message: string; retryable?: boolean }): Promise<void> {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const mockClient = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }),
+                executeByName: vi.fn().mockResolvedValue({ id: 'run', status: ExecutionRunStatus.failed, error }),
+            },
+        } as unknown as VertesiaClient;
+
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            inputType: 'objectIds',
+            params: createPayload().params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+    }
+
+    /** This activity's own lines: the SDK also logs `Activity failed` at warn when the activity throws. */
+    function messagesLoggedAt(level: 'warn' | 'error'): unknown[] {
+        return activityLogger[level].mock.calls
+            .map(([message]) => message)
+            .filter((message) => String(message).includes('interaction testInteraction'));
+    }
+
+    it.each(['validation_error', 'json_error', 'content_policy_violation'])(
+        'logs a %s once at warn: the model answer is an outcome of the run',
+        async (code) => {
+            await mockFailedRun({ code, message: '/processing_hint: must be object' });
+
+            await expect(testEnv.run(executeInteraction, createPayload())).rejects.toThrow(
+                'Interaction Execution failed testInteraction: /processing_hint: must be object',
+            );
+            expect(messagesLoggedAt('warn')).toEqual(['Error executing interaction testInteraction']);
+            expect(messagesLoggedAt('error')).toEqual([]);
+        },
+    );
+
+    it('logs another failed run once at error on the attempt that ends the activity', async () => {
+        await mockFailedRun({ code: 'error', message: 'store failed', retryable: false });
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+        expect(messagesLoggedAt('error')).toEqual(['Error executing interaction testInteraction']);
+        expect(messagesLoggedAt('warn')).toEqual([]);
+    });
+
+    it('logs another failed run at warn while Temporal will retry it', async () => {
+        await mockFailedRun({ code: 'error', message: 'store failed' });
+        const env = new MockActivityEnvironment(
+            { attempt: 2, retryPolicy: { maximumAttempts: 15 } },
+            { logger: activityLogger },
+        );
+
+        await expect(env.run(executeInteraction, createPayload())).rejects.toThrow('store failed');
+        expect(messagesLoggedAt('warn')).toEqual(['Error executing interaction testInteraction']);
+        expect(messagesLoggedAt('error')).toEqual([]);
     });
 });

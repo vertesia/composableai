@@ -31,7 +31,7 @@ import {
     type RenditionPendingDetails,
     ResourceExhaustedError,
 } from '../errors.js';
-import { activityWorkflowExecution } from '../utils/activity-info.js';
+import { activityWillRetry, activityWorkflowExecution } from '../utils/activity-info.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 
 //Example:
@@ -349,8 +349,10 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             log.warn(`Transient server failure while executing interaction ${interactionName}`, {
                 error: executionError,
             });
-        } else {
-            log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
+        } else if (!(error instanceof InteractionRunFailedError)) {
+            log[interactionFailureLogLevel(error)](`Failed to execute interaction ${interactionName}`, {
+                error: executionError,
+            });
         }
         if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
             throw new ResourceExhaustedError(executionError.statusCode, 'Resource exhausted - rate limit exceeded');
@@ -541,17 +543,13 @@ export async function executeInteractionFromActivity(
     }
 
     if (res.error || res.status === ExecutionRunStatus.failed) {
-        log.error(`Error executing interaction ${interactionName}`, { error: res.error });
-
-        // Create error with retryability information
-        const errorMessage = `Interaction Execution failed ${interactionName}: ${res.error?.message || 'Unknown error'}`;
-        const error = new Error(errorMessage);
-
-        // Attach retryable property so the catch block can access it
-        const executionError = error as Error & { retryable?: boolean; errorCode?: string };
-        executionError.retryable = res.error?.retryable;
-        executionError.errorCode = res.error?.code;
-
+        // Carries retryability so the caller's catch can decide whether Temporal retries it.
+        const error = new InteractionRunFailedError(
+            `Interaction Execution failed ${interactionName}: ${res.error?.message || 'Unknown error'}`,
+            res.error?.code,
+            res.error?.retryable,
+        );
+        log[interactionFailureLogLevel(error)](`Error executing interaction ${interactionName}`, { error: res.error });
         throw error;
     }
 
@@ -584,6 +582,43 @@ function isTransientServerFailure(error: ExecutionError): boolean {
 
 function isRenditionPending(error: ExecutionError): boolean {
     return (error.statusCode ?? error.status ?? error.code) === 412 && error.retryable !== false;
+}
+
+/**
+ * The run came back failed. executeInteractionFromActivity logs it once, so callers rethrow it without
+ * logging it again.
+ */
+export class InteractionRunFailedError extends Error {
+    constructor(
+        message: string,
+        readonly errorCode?: string,
+        readonly retryable?: boolean,
+    ) {
+        super(message);
+        this.name = 'InteractionRunFailedError';
+    }
+}
+
+/** Run error codes for a model answer that the result schema or the provider's content policy rejected. */
+const MODEL_OUTPUT_ERROR_CODES = new Set(['validation_error', 'json_error', 'content_policy_violation']);
+
+/**
+ * The level for an interaction failure, chosen by who has to act on it, not by whether Temporal retries it:
+ * - a model answer rejected by the result schema or a content policy is an outcome of the run: warn;
+ * - a 4xx rejects what the caller sent (an unknown interaction or model, an oversized prompt): warn. 401 and 403
+ *   are excluded, because the platform rejecting a worker's own token is our failure;
+ * - anything else is ours: warn while Temporal will retry it, error on the attempt that ends the activity.
+ */
+export function interactionFailureLogLevel(error: unknown): 'warn' | 'error' {
+    const failure = toExecutionError(error);
+    if (typeof failure.errorCode === 'string' && MODEL_OUTPUT_ERROR_CODES.has(failure.errorCode)) {
+        return 'warn';
+    }
+    const status = failure.statusCode ?? failure.status ?? failure.code;
+    if (typeof status === 'number' && status >= 400 && status < 500 && status !== 401 && status !== 403) {
+        return 'warn';
+    }
+    return activityWillRetry(error) ? 'warn' : 'error';
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {

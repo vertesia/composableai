@@ -11,7 +11,7 @@ import {
 } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
-import { executeInteractionFromActivity } from './executeInteraction.js';
+import { executeInteractionFromActivity, InteractionRunFailedError } from './executeInteraction.js';
 import {
     computeExtractionFingerprint,
     type GenerateDocumentPropertiesParams,
@@ -159,6 +159,37 @@ describe('generateDocumentProperties', () => {
             nonRetryable: false,
             nextRetryDelay: 12_345,
         } satisfies Partial<ApplicationFailure>);
+    });
+
+    it('does not log a failed run that executeInteractionFromActivity already logged', async () => {
+        await mockSetup({ text: 'source text', contentType: 'text/plain' });
+        const logger = { log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        const env = new MockActivityEnvironment({}, { logger });
+        const error = new InteractionRunFailedError(
+            'Interaction Execution failed sys:ExtractInformation: /processing_hint: must be object',
+            'validation_error',
+        );
+        vi.mocked(executeInteractionFromActivity).mockRejectedValue(error);
+
+        await expect(env.run(generateDocumentProperties, payload({}))).rejects.toBe(error);
+        const messages = [...logger.warn.mock.calls, ...logger.error.mock.calls].map(([message]) => message);
+        expect(messages).not.toContain('Failed to extract document properties for object-1');
+    });
+
+    it('logs a 4xx rejection of the extraction request at warn', async () => {
+        await mockSetup({ text: 'source text', contentType: 'text/plain' });
+        const logger = { log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        const env = new MockActivityEnvironment({}, { logger });
+        vi.mocked(executeInteractionFromActivity).mockRejectedValue(
+            Object.assign(new Error('model not found'), { statusCode: 404 }),
+        );
+
+        await expect(env.run(generateDocumentProperties, payload({}))).rejects.toThrow('model not found');
+        expect(logger.warn).toHaveBeenCalledWith(
+            'Failed to extract document properties for object-1',
+            expect.any(Object),
+        );
+        expect(logger.error).not.toHaveBeenCalled();
     });
 
     it('does not execute extraction when no text or supported vision source is available', async () => {
