@@ -703,6 +703,53 @@
     },
     "additionalProperties": false
   },
+  "CreateUserPayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "language": {
+        "type": "string"
+      },
+      "phone": {
+        "type": "string"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Custom properties for dynamic permission matching"
+      },
+      "clearance": {
+        "type": "number",
+        "description": "BLP clearance level — determines max document sensitivity the user can access"
+      },
+      "compartments": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Compartments the user belongs to — restricts access to documents in matching compartments"
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "description": "The address the user signs in with. Matched case-insensitively against existing users, so repeating a request returns the same user."
+      },
+      "groups": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "IDs of groups of the current account to add the user to."
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "additionalProperties": false,
+    "description": "Adds a user to the current account. When no user has this address, the user is created and can sign in through the account's identity providers. When one exists, it is added to the account and its profile is left unchanged. Authorization attributes (`properties`, `clearance`, `compartments`) apply to every account the user belongs to, so they are refused for a user who also belongs to another account: assign groups instead."
+  },
   "DeleteByIdResult": {
     "type": "object",
     "properties": {

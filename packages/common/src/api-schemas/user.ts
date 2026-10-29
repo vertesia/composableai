@@ -160,6 +160,48 @@ export const UpdateUserPayloadSchema = UserSchema.pick({
     .meta({ id: 'UpdateUserPayload' });
 
 /**
+ * The request to add a user to the current account without an invitation email and without a SCIM
+ * directory: the record is created as a SCIM-provisioned one would be, and joins the account as a
+ * `member`. Project roles are granted separately, through ACEs.
+ *
+ * `email` is the only identity field. `username` and `externalId` are login identifiers the STS
+ * resolves a sign-in by, and stay with SCIM, where a directory owns them. The authorization
+ * attributes are picked from {@link UserSchema} so they mean exactly what they mean on `User`.
+ */
+export const CreateUserPayloadSchema = UserSchema.pick({
+    name: true,
+    language: true,
+    phone: true,
+    properties: true,
+    clearance: true,
+    compartments: true,
+})
+    .partial()
+    .extend({
+        // `format: 'email'` rather than `z.email()`: the latter also publishes Zod's own address
+        // regex as a `pattern`, which every generated client would then enforce on its own terms.
+        email: z.string().meta({
+            format: 'email',
+            description:
+                'The address the user signs in with. Matched case-insensitively against existing users, so ' +
+                'repeating a request returns the same user.',
+        }),
+        groups: z
+            .array(z.string())
+            .optional()
+            .meta({ description: 'IDs of groups of the current account to add the user to.' }),
+    })
+    .meta({
+        id: 'CreateUserPayload',
+        description:
+            'Adds a user to the current account. When no user has this address, the user is created and can ' +
+            "sign in through the account's identity providers. When one exists, it is added to the account " +
+            'and its profile is left unchanged. Authorization attributes (`properties`, `clearance`, ' +
+            '`compartments`) apply to every account the user belongs to, so they are refused for a user ' +
+            'who also belongs to another account: assign groups instead.',
+    });
+
+/**
  * Shared by eight studio delete endpoints.
  *
  * The byte-identity guard in the generator does not make it safe to leave the others behind: the

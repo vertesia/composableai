@@ -3792,6 +3792,10 @@ interface Checks {
         W.UpdateUserPayload,
         z.infer<typeof import('./api-schemas/user.js').UpdateUserPayloadSchema>
     >;
+    CreateUserPayload: Same<
+        W.CreateUserPayload,
+        z.infer<typeof import('./api-schemas/user.js').CreateUserPayloadSchema>
+    >;
     UserRef: Same<W.UserRef, z.infer<typeof import('./api-schemas/user.js').UserRefSchema>>;
     Account: Same<W.Account, z.infer<typeof import('./api-schemas/account.js').AccountSchema>>;
     AccountBilling: Same<W.AccountBilling, z.infer<typeof import('./api-schemas/account.js').AccountBillingSchema>>;
@@ -4805,6 +4809,10 @@ interface Checks {
     'component:UpdateUserPayload': Same<
         W.ApiComponentTypes['UpdateUserPayload'],
         z.infer<typeof import('./api-schemas/user.js').UpdateUserPayloadSchema>
+    >;
+    'component:CreateUserPayload': Same<
+        W.ApiComponentTypes['CreateUserPayload'],
+        z.infer<typeof import('./api-schemas/user.js').CreateUserPayloadSchema>
     >;
     'component:DeleteByIdResult': Same<
         W.ApiComponentTypes['DeleteByIdResult'],
@@ -10818,6 +10826,7 @@ const checks: Checks = {
     UserInviteTokenData: true,
     User: true,
     UpdateUserPayload: true,
+    CreateUserPayload: true,
     UserRef: true,
     Account: true,
     AccountBilling: true,
@@ -11097,6 +11106,7 @@ const checks: Checks = {
     'component:User': true,
     'component:UserArray': true,
     'component:UpdateUserPayload': true,
+    'component:CreateUserPayload': true,
     'component:DeleteByIdResult': true,
     'component:PrincipalIdentity': true,
     'component:SignupData': true,
@@ -12342,6 +12352,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2570);
+        expect(Object.keys(checks)).toHaveLength(2572);
     });
 });

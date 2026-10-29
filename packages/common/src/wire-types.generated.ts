@@ -9440,6 +9440,16 @@ export type UserInviteTokenData = UserInviteTokenDataFromSchema;
  */
 export type User = UserFromSchema;
 export type UpdateUserPayload = UpdateUserPayloadFromSchema;
+export type CreateUserPayload = {
+    name?: string | undefined;
+    language?: string | undefined | undefined;
+    phone?: string | undefined | undefined;
+    properties?: Record<string, unknown> | undefined | undefined;
+    clearance?: number | undefined | undefined;
+    compartments?: string[] | undefined | undefined;
+    email: string;
+    groups?: string[] | undefined;
+};
 /**
  * The compact user shape embedded in other resources' responses, derived from `UserRefSchema`.
  *
@@ -10996,6 +11006,7 @@ export interface ApiComponentTypes {
     User: UserFromSchema;
     UserArray: UserArrayFromSchema;
     UpdateUserPayload: UpdateUserPayloadFromSchema;
+    CreateUserPayload: CreateUserPayload;
     DeleteByIdResult: DeleteByIdResultFromSchema;
     PrincipalIdentity: PrincipalIdentityFromSchema;
     SignupData: SignupData;
