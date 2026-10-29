@@ -703,6 +703,53 @@
     },
     "additionalProperties": false
   },
+  "CreateUserPayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "language": {
+        "type": "string"
+      },
+      "phone": {
+        "type": "string"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "Custom properties for dynamic permission matching"
+      },
+      "clearance": {
+        "type": "number",
+        "description": "BLP clearance level — determines max document sensitivity the user can access"
+      },
+      "compartments": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Compartments the user belongs to — restricts access to documents in matching compartments"
+      },
+      "email": {
+        "type": "string",
+        "format": "email",
+        "description": "The address the user signs in with. Matched case-insensitively against existing users, so repeating a request returns the same user."
+      },
+      "groups": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "IDs of groups of the current account to add the user to."
+      }
+    },
+    "required": [
+      "email"
+    ],
+    "additionalProperties": false,
+    "description": "Adds a user to the current account. When no user has this address, the user is created and can sign in through the account's identity providers. When one exists, it is added to the account and its profile is left unchanged. Authorization attributes (`properties`, `clearance`, `compartments`) apply to every account the user belongs to, so they are refused for a user who also belongs to another account: assign groups instead."
+  },
   "DeleteByIdResult": {
     "type": "object",
     "properties": {
@@ -5432,6 +5479,10 @@
       "sync_content_properties": {
         "type": "boolean"
       },
+      "shared_content_enabled": {
+        "type": "boolean",
+        "description": "Enable Shared Content for this project: sharing its documents and collections with other projects in the account, and browsing content they share. Defaults to false if not specified."
+      },
       "embeddings": {
         "type": "object",
         "properties": {
@@ -5658,6 +5709,10 @@
       },
       "sync_content_properties": {
         "type": "boolean"
+      },
+      "shared_content_enabled": {
+        "type": "boolean",
+        "description": "Enable Shared Content for this project: sharing its documents and collections with other projects in the account, and browsing content they share. Defaults to false if not specified."
       },
       "embeddings": {
         "type": "object",
@@ -11776,75 +11831,6 @@
       ]
     }
   },
-  "ImprovePromptPayloadConfig": {
-    "type": "object",
-    "properties": {
-      "config": {
-        "$ref": "#/components/schemas/InteractionExecutionConfiguration"
-      }
-    },
-    "required": [
-      "config"
-    ],
-    "additionalProperties": false
-  },
-  "ImprovePromptPayload": {
-    "type": "object",
-    "properties": {
-      "config": {
-        "$ref": "#/components/schemas/InteractionExecutionConfiguration"
-      },
-      "interaction_name": {
-        "type": "string"
-      },
-      "context": {
-        "type": "string"
-      },
-      "prompt": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "content": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "name",
-            "content"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "result_schema": {
-        "$ref": "#/components/schemas/JSONSchema"
-      }
-    },
-    "required": [
-      "config",
-      "interaction_name",
-      "prompt"
-    ],
-    "additionalProperties": false
-  },
-  "PromptImprovementResponse": {
-    "type": "object",
-    "properties": {
-      "result": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/CompletionResult"
-        }
-      }
-    },
-    "required": [
-      "result"
-    ],
-    "additionalProperties": false
-  },
   "GenerateTestDataPayload": {
     "type": "object",
     "properties": {
@@ -11870,124 +11856,6 @@
     "type": "array",
     "items": {
       "$ref": "#/components/schemas/GeneratedTestDataRecord"
-    }
-  },
-  "GenerateInteractionPayload": {
-    "type": "object",
-    "properties": {
-      "description": {
-        "type": "string"
-      },
-      "config": {
-        "$ref": "#/components/schemas/InteractionExecutionConfiguration"
-      }
-    },
-    "required": [
-      "description",
-      "config"
-    ],
-    "additionalProperties": false
-  },
-  "GeneratedInteractionPromptSegment": {
-    "type": "object",
-    "properties": {
-      "type": {
-        "type": "string",
-        "const": "template"
-      },
-      "template": {
-        "$ref": "#/components/schemas/GeneratedInteractionPromptTemplate"
-      }
-    },
-    "required": [
-      "type",
-      "template"
-    ],
-    "additionalProperties": false
-  },
-  "GeneratedInteractionPromptTemplate": {
-    "type": "object",
-    "properties": {
-      "role": {
-        "type": "string",
-        "enum": [
-          "safety",
-          "system",
-          "user"
-        ]
-      },
-      "name": {
-        "type": "string"
-      },
-      "content": {
-        "type": "string"
-      },
-      "content_type": {
-        "type": "string",
-        "const": "jst"
-      },
-      "inputSchema": {
-        "$ref": "#/components/schemas/JSONSchema"
-      }
-    },
-    "required": [
-      "role",
-      "name",
-      "content",
-      "content_type",
-      "inputSchema"
-    ],
-    "additionalProperties": false
-  },
-  "GeneratedInteractionDefinition": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "type": "string"
-      },
-      "description": {
-        "type": "string"
-      },
-      "temperature": {
-        "type": "number"
-      },
-      "prompts": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/GeneratedInteractionPromptSegment"
-        }
-      },
-      "max_tokens": {
-        "type": "number"
-      },
-      "result_schema": {
-        "$ref": "#/components/schemas/JSONSchema"
-      },
-      "tags": {
-        "type": "array",
-        "items": {
-          "type": "string",
-          "enum": [
-            "generated",
-            "agent"
-          ]
-        }
-      }
-    },
-    "required": [
-      "name",
-      "description",
-      "temperature",
-      "prompts",
-      "result_schema",
-      "tags"
-    ],
-    "additionalProperties": false
-  },
-  "GeneratedInteractionDefinitionArray": {
-    "type": "array",
-    "items": {
-      "$ref": "#/components/schemas/GeneratedInteractionDefinition"
     }
   },
   "AgentSearchScope_Collection": {

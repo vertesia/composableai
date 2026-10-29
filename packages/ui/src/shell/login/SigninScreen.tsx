@@ -4,6 +4,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     AuthenticationServiceError,
     CredentialError,
+    InviteRequiredError,
     NoAccessibleAccountError,
     RequestedScopeUnavailableError,
     RestrictedEnvironmentError,
@@ -171,8 +172,10 @@ function SigninScreenImpl({
         } else if (authError instanceof AuthenticationServiceError) {
             setMode('serviceFailure');
         } else if (isInviteRequiredError(authError)) {
-            const pending = readPendingSignin();
-            if (pending) setEmail(pending.email);
+            // After a central-auth sign-in this origin recorded no pending sign-in; the error carries the address.
+            const email =
+                readPendingSignin()?.email ?? (authError instanceof InviteRequiredError ? authError.email : undefined);
+            if (email) setEmail(email);
             setMode('blocked');
         }
     }, [authError, setEmail, setMode]);

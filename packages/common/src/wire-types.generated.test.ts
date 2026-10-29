@@ -1867,10 +1867,6 @@ interface Checks {
         W.InteractionExecutionConfiguration,
         z.infer<typeof import('./api-schemas/store.js').InteractionExecutionConfigurationSchema>
     >;
-    GenerateInteractionPayload: Same<
-        W.GenerateInteractionPayload,
-        z.infer<typeof import('./api-schemas/interaction.js').GenerateInteractionPayloadSchema>
-    >;
     GenerateTestDataPayload: Same<
         W.GenerateTestDataPayload,
         z.infer<typeof import('./api-schemas/interaction.js').GenerateTestDataPayloadSchema>
@@ -1878,30 +1874,6 @@ interface Checks {
     GeneratedTestDataRecord: Same<
         W.GeneratedTestDataRecord,
         z.infer<typeof import('./api-schemas/interaction.js').GeneratedTestDataRecordSchema>
-    >;
-    ImprovePromptPayloadConfig: Same<
-        W.ImprovePromptPayloadConfig,
-        z.infer<typeof import('./api-schemas/interaction.js').ImprovePromptPayloadConfigSchema>
-    >;
-    ImprovePromptPayload: Same<
-        W.ImprovePromptPayload,
-        z.infer<typeof import('./api-schemas/interaction.js').ImprovePromptPayloadSchema>
-    >;
-    GeneratedInteractionPromptTemplate: Same<
-        W.GeneratedInteractionPromptTemplate,
-        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionPromptTemplateSchema>
-    >;
-    GeneratedInteractionPromptSegment: Same<
-        W.GeneratedInteractionPromptSegment,
-        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionPromptSegmentSchema>
-    >;
-    GeneratedInteractionDefinition: Same<
-        W.GeneratedInteractionDefinition,
-        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionDefinitionSchema>
-    >;
-    PromptImprovementResponse: Same<
-        W.PromptImprovementResponse,
-        z.infer<typeof import('./api-schemas/interaction.js').PromptImprovementResponseSchema>
     >;
     RateLimitRequestPayload: Same<
         W.RateLimitRequestPayload,
@@ -3792,6 +3764,10 @@ interface Checks {
         W.UpdateUserPayload,
         z.infer<typeof import('./api-schemas/user.js').UpdateUserPayloadSchema>
     >;
+    CreateUserPayload: Same<
+        W.CreateUserPayload,
+        z.infer<typeof import('./api-schemas/user.js').CreateUserPayloadSchema>
+    >;
     UserRef: Same<W.UserRef, z.infer<typeof import('./api-schemas/user.js').UserRefSchema>>;
     Account: Same<W.Account, z.infer<typeof import('./api-schemas/account.js').AccountSchema>>;
     AccountBilling: Same<W.AccountBilling, z.infer<typeof import('./api-schemas/account.js').AccountBillingSchema>>;
@@ -4152,10 +4128,6 @@ interface Checks {
     GeneratedTestDataRecordArray: Same<
         W.GeneratedTestDataRecordArray,
         z.infer<typeof import('./api-schemas/interaction.js').GeneratedTestDataRecordArraySchema>
-    >;
-    GeneratedInteractionDefinitionArray: Same<
-        W.GeneratedInteractionDefinitionArray,
-        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionDefinitionArraySchema>
     >;
     AgentSearchScopeWire: Same<
         W.AgentSearchScopeWire,
@@ -4805,6 +4777,10 @@ interface Checks {
     'component:UpdateUserPayload': Same<
         W.ApiComponentTypes['UpdateUserPayload'],
         z.infer<typeof import('./api-schemas/user.js').UpdateUserPayloadSchema>
+    >;
+    'component:CreateUserPayload': Same<
+        W.ApiComponentTypes['CreateUserPayload'],
+        z.infer<typeof import('./api-schemas/user.js').CreateUserPayloadSchema>
     >;
     'component:DeleteByIdResult': Same<
         W.ApiComponentTypes['DeleteByIdResult'],
@@ -5782,18 +5758,6 @@ interface Checks {
         W.ApiComponentTypes['ComputedFacetResponse'],
         z.infer<typeof import('./api-schemas/interaction.js').ComputedFacetResponseSchema>
     >;
-    'component:ImprovePromptPayloadConfig': Same<
-        W.ApiComponentTypes['ImprovePromptPayloadConfig'],
-        z.infer<typeof import('./api-schemas/interaction.js').ImprovePromptPayloadConfigSchema>
-    >;
-    'component:ImprovePromptPayload': Same<
-        W.ApiComponentTypes['ImprovePromptPayload'],
-        z.infer<typeof import('./api-schemas/interaction.js').ImprovePromptPayloadSchema>
-    >;
-    'component:PromptImprovementResponse': Same<
-        W.ApiComponentTypes['PromptImprovementResponse'],
-        z.infer<typeof import('./api-schemas/interaction.js').PromptImprovementResponseSchema>
-    >;
     'component:GenerateTestDataPayload': Same<
         W.ApiComponentTypes['GenerateTestDataPayload'],
         z.infer<typeof import('./api-schemas/interaction.js').GenerateTestDataPayloadSchema>
@@ -5805,26 +5769,6 @@ interface Checks {
     'component:GeneratedTestDataRecordArray': Same<
         W.ApiComponentTypes['GeneratedTestDataRecordArray'],
         z.infer<typeof import('./api-schemas/interaction.js').GeneratedTestDataRecordArraySchema>
-    >;
-    'component:GenerateInteractionPayload': Same<
-        W.ApiComponentTypes['GenerateInteractionPayload'],
-        z.infer<typeof import('./api-schemas/interaction.js').GenerateInteractionPayloadSchema>
-    >;
-    'component:GeneratedInteractionDefinition': Same<
-        W.ApiComponentTypes['GeneratedInteractionDefinition'],
-        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionDefinitionSchema>
-    >;
-    'component:GeneratedInteractionDefinitionArray': Same<
-        W.ApiComponentTypes['GeneratedInteractionDefinitionArray'],
-        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionDefinitionArraySchema>
-    >;
-    'component:GeneratedInteractionPromptTemplate': Same<
-        W.ApiComponentTypes['GeneratedInteractionPromptTemplate'],
-        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionPromptTemplateSchema>
-    >;
-    'component:GeneratedInteractionPromptSegment': Same<
-        W.ApiComponentTypes['GeneratedInteractionPromptSegment'],
-        z.infer<typeof import('./api-schemas/interaction.js').GeneratedInteractionPromptSegmentSchema>
     >;
     'component:AgentRunnerOptions': Same<
         W.ApiComponentTypes['AgentRunnerOptions'],
@@ -10285,15 +10229,8 @@ const checks: Checks = {
     PromptModalities: true,
     ExecutionRunRef: true,
     InteractionExecutionConfiguration: true,
-    GenerateInteractionPayload: true,
     GenerateTestDataPayload: true,
     GeneratedTestDataRecord: true,
-    ImprovePromptPayloadConfig: true,
-    ImprovePromptPayload: true,
-    GeneratedInteractionPromptTemplate: true,
-    GeneratedInteractionPromptSegment: true,
-    GeneratedInteractionDefinition: true,
-    PromptImprovementResponse: true,
     RateLimitRequestPayload: true,
     RateLimitRequestResponse: true,
     ResolvedEnvironmentInfo: true,
@@ -10818,6 +10755,7 @@ const checks: Checks = {
     UserInviteTokenData: true,
     User: true,
     UpdateUserPayload: true,
+    CreateUserPayload: true,
     UserRef: true,
     Account: true,
     AccountBilling: true,
@@ -10924,7 +10862,6 @@ const checks: Checks = {
     ModelSourceWire: true,
     NumberValueMap: true,
     GeneratedTestDataRecordArray: true,
-    GeneratedInteractionDefinitionArray: true,
     AgentSearchScopeWire: true,
     AgentSearchScope_Collection: true,
     LlmCallTypeWire: true,
@@ -11097,6 +11034,7 @@ const checks: Checks = {
     'component:User': true,
     'component:UserArray': true,
     'component:UpdateUserPayload': true,
+    'component:CreateUserPayload': true,
     'component:DeleteByIdResult': true,
     'component:PrincipalIdentity': true,
     'component:SignupData': true,
@@ -11341,17 +11279,9 @@ const checks: Checks = {
     'component:NumberValueMap': true,
     'component:ComputeInteractionFacetPayload': true,
     'component:ComputedFacetResponse': true,
-    'component:ImprovePromptPayloadConfig': true,
-    'component:ImprovePromptPayload': true,
-    'component:PromptImprovementResponse': true,
     'component:GenerateTestDataPayload': true,
     'component:GeneratedTestDataRecord': true,
     'component:GeneratedTestDataRecordArray': true,
-    'component:GenerateInteractionPayload': true,
-    'component:GeneratedInteractionDefinition': true,
-    'component:GeneratedInteractionDefinitionArray': true,
-    'component:GeneratedInteractionPromptTemplate': true,
-    'component:GeneratedInteractionPromptSegment': true,
     'component:AgentRunnerOptions': true,
     'component:AgentSearchScope': true,
     'component:AgentSearchScope_Collection': true,
@@ -12342,6 +12272,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2570);
+        expect(Object.keys(checks)).toHaveLength(2556);
     });
 });

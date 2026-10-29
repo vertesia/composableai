@@ -429,23 +429,9 @@ export type ExecutionRunRef = Wire.ExecutionRunRef;
 
 export type InteractionExecutionConfiguration = Wire.InteractionExecutionConfiguration;
 
-export type GenerateInteractionPayload = Wire.GenerateInteractionPayload;
-
 export type GenerateTestDataPayload = Wire.GenerateTestDataPayload;
 
 export type GeneratedTestDataRecord = Wire.GeneratedTestDataRecord;
-
-export type ImprovePromptPayloadConfig = Wire.ImprovePromptPayloadConfig;
-
-export type ImprovePromptPayload = Wire.ImprovePromptPayload;
-
-export type GeneratedInteractionPromptTemplate = Wire.GeneratedInteractionPromptTemplate;
-
-export type GeneratedInteractionPromptSegment = Wire.GeneratedInteractionPromptSegment;
-
-export type GeneratedInteractionDefinition = Wire.GeneratedInteractionDefinition;
-
-export type PromptImprovementResponse = Wire.PromptImprovementResponse;
 
 export type RateLimitRequestPayload = Wire.RateLimitRequestPayload;
 
