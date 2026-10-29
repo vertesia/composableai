@@ -135,8 +135,11 @@ export interface AuthTokenPayload {
      * @deprecated Read `abac` first and fall back to this field.
      */
     content_security?: ContentSecurity;
-    /** Scoped ABAC conditions keyed by operation. */
-    abac?: ContentSecurity;
+    /**
+     * Scoped ABAC conditions keyed by operation, or an opaque reference to conditions stored by STS.
+     * Resource servers resolve references after verifying the JWT and before constructing a principal.
+     */
+    abac?: ContentSecurity | string;
 
     /**
      * API endpoints information to be used with this token.
@@ -158,7 +161,8 @@ export interface AuthTokenPayload {
     tags?: string[]; //tags
 
     permissions?: string[]; //permissions
-    scopes?: string[]; //scopes
+    /** Standard OAuth space-delimited scope claim. */
+    scope?: string;
 
     /**
      * Service caller information for agent and service account tokens.

@@ -38,3 +38,4 @@ export {
     validatePrompt,
 } from './prompts/validate.js';
 export * from './roles/index.js';
+export * from './token-claims/index.js';
