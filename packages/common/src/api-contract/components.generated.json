@@ -5479,6 +5479,10 @@
       "sync_content_properties": {
         "type": "boolean"
       },
+      "shared_content_enabled": {
+        "type": "boolean",
+        "description": "Enable Shared Content for this project: sharing its documents and collections with other projects in the account, and browsing content they share. Defaults to false if not specified."
+      },
       "embeddings": {
         "type": "object",
         "properties": {
@@ -5705,6 +5709,10 @@
       },
       "sync_content_properties": {
         "type": "boolean"
+      },
+      "shared_content_enabled": {
+        "type": "boolean",
+        "description": "Enable Shared Content for this project: sharing its documents and collections with other projects in the account, and browsing content they share. Defaults to false if not specified."
       },
       "embeddings": {
         "type": "object",

@@ -5909,6 +5909,7 @@ export type ProjectConfiguration = {
     inference?: ProjectInferenceProfiles | undefined;
     default_visibility?: ResourceVisibilityWire | undefined;
     sync_content_properties?: boolean | undefined;
+    shared_content_enabled?: boolean | undefined;
     embeddings: {
         text?: ProjectConfigurationEmbedding | undefined;
         image?: ProjectConfigurationEmbedding | undefined;
@@ -6152,6 +6153,7 @@ export type UpdateProjectConfigurationPayload = {
     inference?: ProjectInferenceProfiles | undefined | undefined;
     default_visibility?: ResourceVisibilityWire | undefined | undefined;
     sync_content_properties?: boolean | undefined | undefined;
+    shared_content_enabled?: boolean | undefined | undefined;
     embeddings?:
         | {
               text?: ProjectConfigurationEmbedding | undefined;
