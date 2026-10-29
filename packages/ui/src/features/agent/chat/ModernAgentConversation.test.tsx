@@ -643,6 +643,110 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'received');
     });
 
+    describe('uploading a file', () => {
+        // The view hands useFileProcessing the function that delivers its FileUploaded signal.
+        function latestSignalUpload() {
+            const calls = mocks.useFileProcessing.mock.calls;
+            return calls[calls.length - 1]?.[5] as (sendSignal: () => Promise<unknown>) => Promise<unknown>;
+        }
+
+        it('restarts a terminal continuable run before signaling the upload', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+                agentRunStatus: 'COMPLETED',
+            });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation({ onRestart: vi.fn() });
+            await act(async () => {
+                await latestSignalUpload()(sendFileUploaded);
+            });
+
+            expect(mocks.restart).toHaveBeenCalledWith('agent-run-1');
+            expect(mocks.reconnect).toHaveBeenCalledTimes(1);
+            expect(sendFileUploaded).toHaveBeenCalledTimes(1);
+            expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(
+                sendFileUploaded.mock.invocationCallOrder[0],
+            );
+        });
+
+        it('restarts once for uploads and a message sent before the view sees the run running', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+                agentRunStatus: 'COMPLETED',
+            });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation({ onRestart: vi.fn() });
+            await act(async () => {
+                await Promise.all([latestSignalUpload()(sendFileUploaded), latestSignalUpload()(sendFileUploaded)]);
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+            await waitFor(() => {
+                expect(mocks.sendSignal).toHaveBeenCalledWith(
+                    'agent-run-1',
+                    'UserInput',
+                    expect.objectContaining({ message: 'follow up' }),
+                );
+            });
+            expect(sendFileUploaded).toHaveBeenCalledTimes(2);
+            expect(mocks.restart).toHaveBeenCalledTimes(1);
+        });
+
+        it('restarts again after a failed restart', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+                agentRunStatus: 'COMPLETED',
+            });
+            mocks.restart.mockRejectedValueOnce(new Error('unavailable')).mockResolvedValueOnce({ id: 'agent-run-1' });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation({ onRestart: vi.fn() });
+            await act(async () => {
+                await expect(latestSignalUpload()(sendFileUploaded)).rejects.toThrow('unavailable');
+            });
+            expect(sendFileUploaded).not.toHaveBeenCalled();
+
+            await act(async () => {
+                await latestSignalUpload()(sendFileUploaded);
+            });
+            expect(mocks.restart).toHaveBeenCalledTimes(2);
+            expect(sendFileUploaded).toHaveBeenCalledTimes(1);
+        });
+
+        it('signals the upload without restarting while the run is active', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+                agentRunStatus: 'RUNNING',
+            });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation({ onRestart: vi.fn() });
+            await act(async () => {
+                await latestSignalUpload()(sendFileUploaded);
+            });
+
+            expect(sendFileUploaded).toHaveBeenCalledTimes(1);
+            expect(mocks.restart).not.toHaveBeenCalled();
+        });
+
+        it('does not restart a terminal run that cannot continue', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+                agentRunStatus: 'COMPLETED',
+            });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation();
+            await act(async () => {
+                await latestSignalUpload()(sendFileUploaded);
+            });
+
+            expect(mocks.restart).not.toHaveBeenCalled();
+        });
+    });
+
     it('opens a Markdown artifact in the side panel and allows collaboration for an active run', async () => {
         mocks.useAgentPlans.mockReturnValue({
             plans: [],
