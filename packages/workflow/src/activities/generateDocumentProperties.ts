@@ -13,7 +13,12 @@ import {
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { md5 } from '../utils/blobs.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
+import {
+    executeInteractionFromActivity,
+    type InteractionExecutionParams,
+    InteractionRunFailedError,
+    interactionFailureLogLevel,
+} from './executeInteraction.js';
 
 const INT_EXTRACT_INFORMATION = 'sys:ExtractInformation';
 
@@ -261,10 +266,13 @@ export async function generateDocumentProperties(
         );
     } catch (error: unknown) {
         const extractionError = toRetryableError(error);
-        log.error(`Failed to extract document properties for ${objectId}`, {
-            error: extractionError,
-            retryable: extractionError.retryable,
-        });
+        // A failed run was already logged by executeInteractionFromActivity.
+        if (!(error instanceof InteractionRunFailedError)) {
+            log[interactionFailureLogLevel(error)](`Failed to extract document properties for ${objectId}`, {
+                error: extractionError,
+                retryable: extractionError.retryable,
+            });
+        }
 
         const isRetryable = extractionError.retryable !== undefined ? extractionError.retryable !== false : undefined;
 

@@ -11,9 +11,13 @@ import {
     type Rendition,
 } from '@vertesia/common';
 import { type ActivityContext, setupActivity } from '../dsl/setup/ActivityContext.js';
-import { activityWillRetry } from '../utils/activity-info.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
+import {
+    executeInteractionFromActivity,
+    type InteractionExecutionParams,
+    InteractionRunFailedError,
+    interactionFailureLogLevel,
+} from './executeInteraction.js';
 
 const INT_SELECT_DOCUMENT_TYPE = 'sys:SelectDocumentType';
 const INT_GENERATE_METADATA_MODEL = 'sys:GenerateMetadataModel';
@@ -49,9 +53,9 @@ function isUnavailableResponse(error: unknown): boolean {
     return status === 502 || status === 503 || status === 504;
 }
 
-/** Warn for a provider outage or a failure Temporal will retry; error for a failure that ends the activity. */
+/** Warn for a provider outage; otherwise the level for whoever has to act on the failure. */
 function failureLogLevel(error: unknown): 'warn' | 'error' {
-    return isUnavailableResponse(error) || activityWillRetry(error) ? 'warn' : 'error';
+    return isUnavailableResponse(error) ? 'warn' : interactionFailureLogLevel(error);
 }
 
 function toRetryableError(error: unknown): RetryableError {
@@ -234,10 +238,13 @@ export async function generateOrAssignContentType(
         );
     } catch (error: unknown) {
         const selectionError = toRetryableError(error);
-        log[failureLogLevel(error)](`Failed to select document type`, {
-            error: selectionError,
-            retryable: selectionError.retryable,
-        });
+        // A failed run was already logged by executeInteractionFromActivity.
+        if (!(error instanceof InteractionRunFailedError)) {
+            log[failureLogLevel(error)](`Failed to select document type`, {
+                error: selectionError,
+                retryable: selectionError.retryable,
+            });
+        }
 
         const isRetryable = selectionError.retryable !== undefined ? selectionError.retryable !== false : undefined;
 
@@ -363,10 +370,13 @@ async function generateNewType(
         });
     } catch (error: unknown) {
         const generationError = toRetryableError(error);
-        log[failureLogLevel(error)](`Failed to generate new document type`, {
-            error: generationError,
-            retryable: generationError.retryable,
-        });
+        // A failed run was already logged by executeInteractionFromActivity.
+        if (!(error instanceof InteractionRunFailedError)) {
+            log[failureLogLevel(error)](`Failed to generate new document type`, {
+                error: generationError,
+                retryable: generationError.retryable,
+            });
+        }
 
         const isRetryable = generationError.retryable !== undefined ? generationError.retryable !== false : undefined;
 
