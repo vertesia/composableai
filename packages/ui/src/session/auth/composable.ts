@@ -274,7 +274,10 @@ export async function fetchComposableToken(
                         project_id: projectId,
                     },
                 });
-                throw new Error('Customer-domain user requires an invite to join');
+                throw new InviteRequiredError(
+                    'Customer-domain user requires an invite to join',
+                    jwtDecode<{ email?: string }>(idToken).email,
+                );
             }
 
             if (!ensureResponse.ok) {
@@ -623,6 +626,21 @@ export class UserNotFoundError extends Error {
         this.email = email;
         this.idToken = idToken;
         this.displayName = displayName;
+    }
+}
+
+/**
+ * Thrown when Studio declines to create the user who signed in: there is no invite for the address, and either its
+ * domain belongs to an invite-only account or the environment does not allow self-service signup. The sign-in screen
+ * renders its "invite required" step for this error.
+ */
+export class InviteRequiredError extends Error {
+    /** The address from the ID token, when it carries one. */
+    email?: string;
+    constructor(message: string, email?: string) {
+        super(message);
+        this.name = 'InviteRequiredError';
+        this.email = email;
     }
 }
 

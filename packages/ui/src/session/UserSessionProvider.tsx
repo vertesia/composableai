@@ -6,6 +6,7 @@ import {
     AuthenticationServiceError,
     CredentialError,
     getComposableToken,
+    InviteRequiredError,
     NoAccessibleAccountError,
     RequestedScopeUnavailableError,
     RestrictedEnvironmentError,
@@ -206,6 +207,15 @@ export function UserSessionProvider({ children, loadOnboardingStatus = false }: 
                 })
                 .catch((err) => {
                     if (surfaceAuthError(err, true)) return;
+                    // Studio declined to create this user. Central auth would hand back the same identity, so a
+                    // redirect would loop: show the invite-required screen instead.
+                    if (err instanceof InviteRequiredError) {
+                        clearAuthHash();
+                        session.isLoading = false;
+                        session.authError = err;
+                        setSession(session.clone());
+                        return;
+                    }
 
                     console.error('Failed to fetch user token from studio, redirecting to central auth', err);
                     Env.logger.error('Failed to fetch user token from studio, redirecting to central auth', {
