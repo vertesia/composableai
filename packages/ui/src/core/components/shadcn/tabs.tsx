@@ -570,15 +570,17 @@ function OverflowTabsList({ tabs, current, onTabChange, variant = 'tabs', classN
             </div>
 
             {/* Visible row */}
-            <div className={cn('flex gap-1 overflow-hidden', variant === 'tabs' && '-mb-px border-b')}>
+            <div role="tablist" className={cn('flex gap-1 overflow-hidden', variant === 'tabs' && '-mb-px border-b')}>
                 {visible.map((tab) => {
                     const isActive = tab.name === current;
                     return (
-                        // Tab-bar primitive: raw button mirrors core TabsTrigger styling.
+                        // Tab-bar primitive: raw button mirrors core TabsTrigger styling and keeps the
+                        // tab role, so the row reads like a Radix TabsList to assistive tech and tests.
                         <button
                             type="button"
+                            role="tab"
                             key={tab.name}
-                            aria-current={isActive ? 'page' : undefined}
+                            aria-selected={isActive}
                             disabled={tab.disabled}
                             onClick={() => onTabChange(tab.name)}
                             className={cn(
@@ -623,7 +625,14 @@ const TabsPanel = ({ className }: { className?: string }) => {
     return (
         <>
             {tabs.map((tab) => (
-                <TabsContent key={tab.name} value={tab.name} className={className}>
+                // Radix names the panel via aria-labelledby → its TabsTrigger. `TabsBar overflow` renders no
+                // triggers, so that id is dangling and the browser falls back to this label.
+                <TabsContent
+                    key={tab.name}
+                    value={tab.name}
+                    aria-label={typeof tab.label === 'string' ? tab.label : undefined}
+                    className={className}
+                >
                     {tab.content}
                 </TabsContent>
             ))}
