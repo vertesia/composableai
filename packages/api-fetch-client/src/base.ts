@@ -302,13 +302,17 @@ function isAbortError(err: unknown): boolean {
 }
 
 /**
- * True only for a CALLER abort — `controller.abort()` on the signal they supplied, which surfaces as
- * `AbortError`. Our own `timeoutMs` surfaces as `TimeoutError` and is deliberately excluded: a
- * timeout is a transient failure, and `createRequestInit()` mints a fresh timeout signal per attempt,
- * so retrying one is both meaningful and intended. A caller's signal stays aborted across attempts,
- * so retrying that can only burn the budget.
+ * True only for a CALLER abort — `controller.abort()` on the signal they supplied. The runtime rejects
+ * with the signal's reason, which is an `AbortError` only when the caller gave none: a signal aborted
+ * with a reason rejects with that reason, whatever its type. So the caller's own signal is checked as
+ * well as the error name. Our own `timeoutMs` surfaces as `TimeoutError` and
+ * never aborts the caller's signal, so it is deliberately excluded: a timeout is a transient failure,
+ * and `createRequestInit()` mints a fresh timeout signal per attempt, so retrying one is both
+ * meaningful and intended. A caller's signal stays aborted across attempts, so retrying that can only
+ * burn the budget.
  */
-function isCallerAbortError(err: unknown): boolean {
+function isCallerAbortError(err: unknown, callerSignal: AbortSignal | undefined): boolean {
+    if (callerSignal?.aborted) return true;
     return typeof err === 'object' && err !== null && 'name' in err && (err as { name: unknown }).name === 'AbortError';
 }
 
@@ -646,7 +650,7 @@ export abstract class ClientBase {
                 // retrying cannot help: their signal stays aborted, so each further attempt rejects at
                 // once. A TIMEOUT is not included — it is transient, and each attempt gets a fresh
                 // timeout signal, so it retries as before. Still thrown, wrapping the original.
-                const aborted = isCallerAbortError(err);
+                const aborted = isCallerAbortError(err, params?.signal);
                 if (
                     aborted ||
                     !retryPolicy ||
@@ -686,7 +690,7 @@ export abstract class ClientBase {
                 // HTTP/custom-reader errors, and do not replay a request already accepted upstream.
                 if (!isAbortError(err)) throw err;
                 const connectionError = new ConnectionError(req, toError(err));
-                if (!isCallerAbortError(err)) this.handleConnectionError(connectionError);
+                if (!isCallerAbortError(err, params?.signal)) this.handleConnectionError(connectionError);
                 this.throwError(connectionError);
             }
         }

@@ -482,6 +482,34 @@ describe('Test requests', () => {
             console.error = original;
         }
     });
+    it('does not report or retry a caller abort whose signal reason is not an AbortError', async () => {
+        // A signal aborted with a custom reason makes fetch reject with that reason rather than with an
+        // `AbortError`.
+        class CancellationError extends Error {
+            override name = 'CancellationError';
+        }
+        const errors: unknown[][] = [];
+        const original = console.error;
+        console.error = (...args: unknown[]) => {
+            errors.push(args);
+        };
+
+        try {
+            let attempts = 0;
+            const controller = new AbortController();
+            const cancelledClient = new FetchClient('http://example.test', async () => {
+                attempts++;
+                controller.abort(new CancellationError('cancelled'));
+                throw controller.signal.reason;
+            }).withRetryPolicy({ attempts: 3, baseDelayMs: 0, jitter: false });
+
+            await assert.rejects(cancelledClient.get('/cancelled', { signal: controller.signal }));
+            assert.equal(attempts, 1);
+            assert.deepEqual(errors, [], 'a cancelled request must not log to console.error');
+        } finally {
+            console.error = original;
+        }
+    });
     it('still reports a genuine connection failure', async () => {
         const errors: unknown[][] = [];
         const original = console.error;
