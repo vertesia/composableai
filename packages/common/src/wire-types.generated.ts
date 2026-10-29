@@ -4684,10 +4684,6 @@ export type InteractionExecutionConfiguration = {
     prompt_cache_schema_suffix?: boolean | undefined;
     http_timeout?: HttpTimeoutOptions | undefined;
 };
-export type GenerateInteractionPayload = {
-    description: string;
-    config: InteractionExecutionConfiguration;
-};
 export type GenerateTestDataPayload = {
     message?: string | undefined;
     count?: number | undefined;
@@ -4695,42 +4691,6 @@ export type GenerateTestDataPayload = {
 };
 export type GeneratedTestDataRecord = {
     [k: string]: unknown;
-};
-export type ImprovePromptPayloadConfig = {
-    config: InteractionExecutionConfiguration;
-};
-export type ImprovePromptPayload = {
-    config: InteractionExecutionConfiguration;
-    interaction_name: string;
-    context?: string | undefined;
-    prompt: {
-        name: string;
-        content: string;
-    }[];
-    result_schema?: JSONSchema | undefined;
-};
-export type GeneratedInteractionPromptTemplate = {
-    role: 'safety' | 'system' | 'user';
-    name: string;
-    content: string;
-    content_type: 'jst';
-    inputSchema: JSONSchema;
-};
-export type GeneratedInteractionPromptSegment = {
-    type: 'template';
-    template: GeneratedInteractionPromptTemplate;
-};
-export type GeneratedInteractionDefinition = {
-    name: string;
-    description: string;
-    temperature: number;
-    prompts: GeneratedInteractionPromptSegment[];
-    max_tokens?: number | undefined;
-    result_schema: JSONSchema;
-    tags: ('generated' | 'agent')[];
-};
-export type PromptImprovementResponse = {
-    result: CompletionResult[];
 };
 export type RateLimitRequestPayload = {
     interaction: string;
@@ -10313,7 +10273,6 @@ export type NumberValueMap = {
     [k: string]: number;
 };
 export type GeneratedTestDataRecordArray = GeneratedTestDataRecord[];
-export type GeneratedInteractionDefinitionArray = GeneratedInteractionDefinition[];
 export type AgentSearchScopeWire = (typeof AgentSearchScope)['Collection'];
 export type AgentSearchScope_Collection = (typeof AgentSearchScope)['Collection'];
 export type LlmCallTypeWire = (typeof LlmCallType)[keyof typeof LlmCallType];
@@ -11271,17 +11230,9 @@ export interface ApiComponentTypes {
     NumberValueMap: NumberValueMap;
     ComputeInteractionFacetPayload: ComputeInteractionFacetPayload;
     ComputedFacetResponse: ComputedFacetResponse;
-    ImprovePromptPayloadConfig: ImprovePromptPayloadConfig;
-    ImprovePromptPayload: ImprovePromptPayload;
-    PromptImprovementResponse: PromptImprovementResponse;
     GenerateTestDataPayload: GenerateTestDataPayload;
     GeneratedTestDataRecord: GeneratedTestDataRecord;
     GeneratedTestDataRecordArray: GeneratedTestDataRecordArray;
-    GenerateInteractionPayload: GenerateInteractionPayload;
-    GeneratedInteractionDefinition: GeneratedInteractionDefinition;
-    GeneratedInteractionDefinitionArray: GeneratedInteractionDefinitionArray;
-    GeneratedInteractionPromptTemplate: GeneratedInteractionPromptTemplate;
-    GeneratedInteractionPromptSegment: GeneratedInteractionPromptSegment;
     AgentRunnerOptions: AgentRunnerOptions;
     AgentSearchScope: AgentSearchScopeWire;
     AgentSearchScope_Collection: AgentSearchScope_Collection;
