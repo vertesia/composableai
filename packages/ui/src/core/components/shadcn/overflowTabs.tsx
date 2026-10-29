@@ -1,30 +1,12 @@
-import { useUITranslation } from '@vertesia/ui/i18n';
 import { ChevronDownIcon } from 'lucide-react';
 import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { cn } from '../libs/utils';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './dropdown';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from './dropdown';
 
 /** Gap between tab items, in px — must match the `gap-1` used by the rendered rows. */
 export const OVERFLOW_TAB_GAP_PX = 4;
 
 export type OverflowTabsVariant = 'tabs' | 'pills';
-
-/** Tab-item styling, matching the corresponding `TabsTrigger` variants. */
-const VARIANT_CLASSES: Record<OverflowTabsVariant, { base: string; active: string; inactive: string; icon: string }> = {
-    tabs: {
-        base: 'flex items-center border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer shrink-0',
-        inactive: 'border-transparent text-muted hover:border-border hover:text-foreground',
-        active: 'border-primary text-info',
-        icon: 'ms-1 size-4',
-    },
-    pills: {
-        base: 'flex items-center rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap cursor-pointer shrink-0',
-        inactive: 'text-muted hover:bg-muted/60',
-        active: 'bg-muted text-foreground',
-        icon: 'ms-0.5 size-3.5',
-    },
-};
 
 export interface OverflowTabsLayout<T> {
     /** Attach to the element whose width bounds the row; its `clientWidth` is what tabs are fitted into. */
@@ -43,7 +25,7 @@ export interface OverflowTabsLayout<T> {
 
 /**
  * Splits `items` into a visible row and an overflow list, measured from a hidden row that renders
- * every item at its natural width (see {@link OverflowTabsBar} for the expected markup). The active
+ * every item at its natural width (see `TabsBar overflow` for the expected markup). The active
  * item is promoted into the last visible slot when it would otherwise be hidden in the menu.
  *
  * Callers own the rendering, so the hidden row must use the same classes and content as the visible
@@ -218,103 +200,5 @@ export function OverflowMoreMenu({ label, triggerClassName, icon, children }: Ov
                 {children}
             </DropdownMenuContent>
         </DropdownMenu>
-    );
-}
-
-/** Minimal tab shape the bar needs; the richer core `Tab` satisfies it as-is. */
-export interface OverflowTab {
-    name: string;
-    label: ReactNode;
-    disabled?: boolean;
-}
-
-export interface OverflowTabsBarProps {
-    tabs: OverflowTab[];
-    current: string;
-    onTabChange: (name: string) => void;
-    /** `tabs` draws the underline bar (default), `pills` the compact rounded row. */
-    variant?: OverflowTabsVariant;
-    className?: string;
-}
-
-/**
- * Tabs as a horizontal row; any that don't fit collapse into a trailing "More" dropdown. Unlike
- * `TabsBar` this is a bar only — it does not own the panels — so it suits tab rows whose content is
- * rendered by the caller. The visible/overflow split is measured from a hidden full-width row.
- */
-export function OverflowTabsBar({ tabs, current, onTabChange, variant = 'tabs', className }: OverflowTabsBarProps) {
-    const { t } = useUITranslation();
-    const styles = VARIANT_CLASSES[variant];
-    const { containerRef, setItemRef, setMoreRef, visible, overflow, activeInOverflow } = useOverflowTabs(
-        tabs,
-        (tab) => tab.name === current,
-    );
-    const moreLabel = t('agent.moreTabs');
-
-    return (
-        <div ref={containerRef} className={cn('relative', className)}>
-            {/* Hidden measurement row: all tabs + More at natural width, kept separate
-                from the visible row so measuring can't feed back into the layout. */}
-            <div aria-hidden className="pointer-events-none invisible absolute start-0 top-0 flex w-max gap-1">
-                {tabs.map((tab, i) => (
-                    <button
-                        type="button"
-                        key={tab.name}
-                        tabIndex={-1}
-                        ref={setItemRef(i)}
-                        className={cn(styles.base, styles.inactive)}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
-                <button type="button" tabIndex={-1} ref={setMoreRef} className={cn(styles.base, styles.inactive)}>
-                    {moreLabel}
-                    <ChevronDownIcon className={styles.icon} />
-                </button>
-            </div>
-
-            {/* Visible row */}
-            <div className={cn('flex gap-1 overflow-hidden', variant === 'tabs' && '-mb-px border-b')}>
-                {visible.map((tab) => {
-                    const isActive = tab.name === current;
-                    return (
-                        // Tab-bar primitive: raw button mirrors core TabsTrigger styling.
-                        <button
-                            type="button"
-                            key={tab.name}
-                            aria-current={isActive ? 'page' : undefined}
-                            disabled={tab.disabled}
-                            onClick={() => onTabChange(tab.name)}
-                            className={cn(
-                                styles.base,
-                                isActive ? styles.active : styles.inactive,
-                                'disabled:pointer-events-none disabled:opacity-50',
-                            )}
-                        >
-                            {tab.label}
-                        </button>
-                    );
-                })}
-
-                {overflow.length > 0 && (
-                    <OverflowMoreMenu
-                        label={moreLabel}
-                        triggerClassName={cn(styles.base, activeInOverflow ? styles.active : styles.inactive)}
-                        icon={<ChevronDownIcon className={styles.icon} />}
-                    >
-                        {overflow.map((tab) => (
-                            <DropdownMenuItem
-                                key={tab.name}
-                                disabled={tab.disabled}
-                                onClick={() => onTabChange(tab.name)}
-                                className={cn(tab.name === current && 'text-info')}
-                            >
-                                {tab.label}
-                            </DropdownMenuItem>
-                        ))}
-                    </OverflowMoreMenu>
-                )}
-            </div>
-        </div>
     );
 }

@@ -1,8 +1,12 @@
 import * as TabsPrimitive from '@radix-ui/react-tabs';
+import { useUITranslation } from '@vertesia/ui/i18n';
+import { ChevronDownIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import * as React from 'react';
 
 import { cn } from '../libs/utils';
+import { DropdownMenuItem } from './dropdown';
+import { OverflowMoreMenu, type OverflowTabsVariant, useOverflowTabs } from './overflowTabs';
 import { SelectBox } from './selectBox';
 
 export interface Tab {
@@ -196,9 +200,15 @@ interface TabsBarProps {
     className?: string;
     sticky?: boolean;
     direction?: 'vertical' | 'horizontal';
+    /**
+     * Collapse the tabs that don't fit into a trailing "More" dropdown instead of letting the row
+     * scroll or wrap. Horizontal bars only; it replaces the `responsive` select, since the row
+     * already fits any width.
+     */
+    overflow?: boolean;
 }
 
-const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
+const TabsBar = ({ className, sticky, direction, overflow }: TabsBarProps) => {
     const { tabs, size, current, setTab, responsive, variant, updateHash, canChangeTab, orientation } =
         React.useContext(TabsContext);
     const barDirection = direction ?? orientation ?? 'horizontal';
@@ -228,6 +238,18 @@ const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
     if (!tabs || !setTab) {
         console.warn('TabsBar: No tabs provided or setTab not available');
         return null;
+    }
+
+    if (overflow && barDirection === 'horizontal') {
+        return (
+            <OverflowTabsList
+                tabs={tabs}
+                current={current ?? ''}
+                onTabChange={handleTabChange}
+                variant={variant}
+                className={cn(sticky && 'sticky top-0 bg-background z-10', className)}
+            />
+        );
     }
 
     return (
@@ -276,6 +298,114 @@ const TabsBar = ({ className, sticky, direction }: TabsBarProps) => {
         </>
     );
 };
+
+/** Overflow-row tab styling, matching the corresponding `TabsTrigger` variants. */
+const OVERFLOW_VARIANT_CLASSES: Record<
+    OverflowTabsVariant,
+    { base: string; active: string; inactive: string; icon: string }
+> = {
+    tabs: {
+        base: 'flex items-center border-b-2 px-2 py-1.5 text-sm font-medium whitespace-nowrap cursor-pointer shrink-0',
+        inactive: 'border-transparent text-muted hover:border-border hover:text-foreground',
+        active: 'border-primary text-info',
+        icon: 'ms-1 size-4',
+    },
+    pills: {
+        base: 'flex items-center rounded-md px-2 py-1 text-xs font-medium whitespace-nowrap cursor-pointer shrink-0',
+        inactive: 'text-muted hover:bg-muted/60',
+        active: 'bg-muted text-foreground',
+        icon: 'ms-0.5 size-3.5',
+    },
+};
+
+interface OverflowTabsListProps {
+    tabs: Tab[];
+    current: string;
+    onTabChange: (name: string) => void;
+    variant?: OverflowTabsVariant;
+    className?: string;
+}
+
+/**
+ * `TabsBar overflow` row: tabs that don't fit collapse into a trailing "More" dropdown. The
+ * visible/overflow split is measured from a hidden full-width row.
+ */
+function OverflowTabsList({ tabs, current, onTabChange, variant = 'tabs', className }: OverflowTabsListProps) {
+    const { t } = useUITranslation();
+    const styles = OVERFLOW_VARIANT_CLASSES[variant];
+    const { containerRef, setItemRef, setMoreRef, visible, overflow, activeInOverflow } = useOverflowTabs(
+        tabs,
+        (tab) => tab.name === current,
+    );
+    const moreLabel = t('agent.moreTabs');
+
+    return (
+        <div ref={containerRef} className={cn('relative', className)}>
+            {/* Hidden measurement row: all tabs + More at natural width, kept separate
+                from the visible row so measuring can't feed back into the layout. */}
+            <div aria-hidden className="pointer-events-none invisible absolute start-0 top-0 flex w-max gap-1">
+                {tabs.map((tab, i) => (
+                    <button
+                        type="button"
+                        key={tab.name}
+                        tabIndex={-1}
+                        ref={setItemRef(i)}
+                        className={cn(styles.base, styles.inactive)}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+                <button type="button" tabIndex={-1} ref={setMoreRef} className={cn(styles.base, styles.inactive)}>
+                    {moreLabel}
+                    <ChevronDownIcon className={styles.icon} />
+                </button>
+            </div>
+
+            {/* Visible row */}
+            <div className={cn('flex gap-1 overflow-hidden', variant === 'tabs' && '-mb-px border-b')}>
+                {visible.map((tab) => {
+                    const isActive = tab.name === current;
+                    return (
+                        // Tab-bar primitive: raw button mirrors core TabsTrigger styling.
+                        <button
+                            type="button"
+                            key={tab.name}
+                            aria-current={isActive ? 'page' : undefined}
+                            disabled={tab.disabled}
+                            onClick={() => onTabChange(tab.name)}
+                            className={cn(
+                                styles.base,
+                                isActive ? styles.active : styles.inactive,
+                                'disabled:pointer-events-none disabled:opacity-50',
+                            )}
+                        >
+                            {tab.label}
+                        </button>
+                    );
+                })}
+
+                {overflow.length > 0 && (
+                    <OverflowMoreMenu
+                        label={moreLabel}
+                        triggerClassName={cn(styles.base, activeInOverflow ? styles.active : styles.inactive)}
+                        icon={<ChevronDownIcon className={styles.icon} />}
+                    >
+                        {overflow.map((tab) => (
+                            <DropdownMenuItem
+                                key={tab.name}
+                                disabled={tab.disabled}
+                                onClick={() => onTabChange(tab.name)}
+                                className={cn(tab.name === current && 'text-info')}
+                            >
+                                {tab.label}
+                            </DropdownMenuItem>
+                        ))}
+                    </OverflowMoreMenu>
+                )}
+            </div>
+        </div>
+    );
+}
 
 const TabsPanel = ({ className }: { className?: string }) => {
     const { tabs } = React.useContext(TabsContext);
