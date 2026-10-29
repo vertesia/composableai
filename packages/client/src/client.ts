@@ -1,6 +1,12 @@
 import { AbstractFetchClient, type FETCH_FN, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
 import type { AppSessionTokenRequest, AppSessionTokenResponse } from '@vertesia/common';
-import { APP_VERSION_HEADER, type AuthTokenPayload, type AuthTokenResponse } from '@vertesia/common';
+import {
+    APP_VERSION_HEADER,
+    type AuthTokenPayload,
+    type AuthTokenResponse,
+    type ContentSecurity,
+} from '@vertesia/common';
+import { resolveAbacClaim, TokenClaimReferenceError } from '@vertesia/studio-utils/token-claims';
 import AccountApi from './AccountApi.js';
 import AccountsApi from './AccountsApi.js';
 import AnalyticsApi from './AnalyticsApi.js';
@@ -105,6 +111,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
      * The JWT token linked to the API KEY (sk or pk)
      */
     _jwt: string | null = null;
+    private abacResolution?: { jwt: string; value: Promise<ContentSecurity | undefined> };
 
     /**
      * The store client
@@ -325,12 +332,9 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     }
 
     async getRawJWT() {
-        if (!this._jwt && this._auth) {
+        if (this._auth) {
             const auth = await this._auth();
-            if (!this._jwt) {
-                // the _jwt may be set by the auth callback
-                this._jwt = auth.trim().split(' ')[1]; // remove Bearer prefix
-            }
+            this._jwt = auth.trim().split(' ')[1]; // remove Bearer prefix
         }
         return this._jwt || null;
     }
@@ -338,6 +342,38 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     async getDecodedJWT(): Promise<AuthTokenPayload | null> {
         const jwt = await this.getRawJWT();
         return jwt ? decodeJWT(jwt) : null;
+    }
+
+    /**
+     * Resolve ABAC only when it is needed. JWT decoding alone deliberately keeps opaque claim
+     * references intact. The existing STS validation endpoint verifies the complete bearer before
+     * loading Redis; knowing a reference alone never authorizes reading its policy.
+     */
+    async getAbac(): Promise<ContentSecurity | undefined> {
+        const jwt = await this.getRawJWT();
+        if (!jwt) return undefined;
+        if (this.abacResolution?.jwt === jwt) return this.abacResolution.value;
+
+        const payload = decodeJWT(jwt);
+        const value = resolveAbacClaim(payload.abac ?? payload.content_security, async () => {
+            const response = await this.post<{ valid: boolean; payload?: AuthTokenPayload }>(
+                new URL('/validate', this.tokenServerUrl).toString(),
+                { payload: { token: jwt } },
+            );
+            const abac = response.payload?.abac;
+            if (!response.valid || !abac || typeof abac !== 'object' || Array.isArray(abac)) {
+                throw new TokenClaimReferenceError('STS could not resolve token authorization context');
+            }
+            return { abac };
+        });
+        const entry = { jwt, value };
+        this.abacResolution = entry;
+        try {
+            return await value;
+        } catch (error: unknown) {
+            if (this.abacResolution === entry) this.abacResolution = undefined;
+            throw error;
+        }
     }
 
     async getProject() {
