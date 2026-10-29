@@ -1,8 +1,13 @@
-import type { AccessControlPrincipalType, AccessControlResourceType, SystemRoles } from '@vertesia/common';
+import type {
+    AccessControlPrincipalType,
+    AccessControlResourceType,
+    CreateUserPayload,
+    SystemRoles,
+} from '@vertesia/common';
 import colors from 'ansi-colors';
 import type { Command } from 'commander';
 import { getClient } from '../client.js';
-import { type CliOptions, getStringOption } from '../utils/options.js';
+import { type CliOptions, getBooleanOption, getStringOption, isRecord } from '../utils/options.js';
 
 type CreateAceOptions = CliOptions<{
     principal?: string;
@@ -88,4 +93,45 @@ export async function listRoles(program: Command) {
     for (const role of roles) {
         console.log(`${role.name}\t${role.permissions.join(', ')}`);
     }
+}
+
+type CreateUserOptions = CliOptions<{
+    name?: string;
+    group?: string[];
+    properties?: string;
+    clearance?: string;
+    compartment?: string[];
+    json?: boolean;
+}>;
+
+export async function createUser(program: Command, email: string, options: CreateUserOptions) {
+    const payload: CreateUserPayload = {
+        email,
+        name: getStringOption(options.name),
+        groups: options.group?.length ? options.group : undefined,
+        compartments: options.compartment?.length ? options.compartment : undefined,
+    };
+    const properties = getStringOption(options.properties);
+    if (properties) {
+        const parsed: unknown = JSON.parse(properties);
+        if (!isRecord(parsed)) {
+            throw new Error('--properties must be a JSON object');
+        }
+        payload.properties = parsed;
+    }
+    const clearance = getStringOption(options.clearance);
+    if (clearance) {
+        payload.clearance = Number(clearance);
+        if (!Number.isFinite(payload.clearance)) {
+            throw new Error('--clearance must be a number');
+        }
+    }
+
+    const client = await getClient(program);
+    const user = await client.users.create(payload);
+    if (getBooleanOption(options.json)) {
+        console.log(JSON.stringify(user, null, 2));
+        return;
+    }
+    console.log(`${colors.green('✓')} User ${user.email} is a member of the account: ${user.id}`);
 }

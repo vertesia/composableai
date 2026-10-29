@@ -779,6 +779,7 @@ import {
     ValidateToolNamesResponseSchema,
 } from './tools.js';
 import {
+    CreateUserPayloadSchema,
     DeleteByIdResultSchema,
     PrincipalIdentitySchema,
     SignupDataSchema,
@@ -877,6 +878,7 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     User: UserSchema,
     UserArray: UserArraySchema,
     UpdateUserPayload: UpdateUserPayloadSchema,
+    CreateUserPayload: CreateUserPayloadSchema,
     DeleteByIdResult: DeleteByIdResultSchema,
     PrincipalIdentity: PrincipalIdentitySchema,
     SignupData: SignupDataSchema,
@@ -2709,6 +2711,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // so it has no component of its own to list.
     'User',
     'UpdateUserPayload',
+    'CreateUserPayload',
     'DeleteByIdResult',
     'PrincipalIdentity',
     'SignupData',

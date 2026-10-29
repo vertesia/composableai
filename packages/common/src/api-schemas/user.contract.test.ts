@@ -1,7 +1,7 @@
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import type { AbacPrincipalContext, PrincipalIdentity } from '../principal-context.js';
-import type { UpdateUserPayload, User } from '../user.js';
+import type { CreateUserPayload, UpdateUserPayload, User } from '../user.js';
 import type { JsonObject } from './adapter.js';
 import { ApiSchemaComponents, apiComponentRef, validateApiRequest, validateApiResponse } from './registry.js';
 import type { AbacPrincipalContextFromSchema, UserArrayFromSchema } from './user.js';
@@ -188,6 +188,20 @@ describe('gate 4 — runtime enforcement uses the published components', () => {
         expect(validateApiResponse('UserArray', [VALID_USER, legacyMember]).valid).toBe(false);
         // And one carrying a null the component cannot publish.
         expect(validateApiResponse('UserArray', [{ ...VALID_USER, phone: null }]).valid).toBe(false);
+    });
+
+    it('requires a well-formed address to create a user and keeps login identifiers out', () => {
+        const result = validateApiRequest('CreateUserPayload', { email: 'new@acme.com', groups: ['g1'], clearance: 2 });
+        expect(result.valid).toBe(true);
+        if (result.valid) {
+            assertType<Equals<typeof result.data, CreateUserPayload>>(true);
+            assertType<Equals<CreateUserPayload['clearance'], User['clearance']>>(true);
+        }
+        expect(validateApiRequest('CreateUserPayload', {}).valid).toBe(false);
+        expect(validateApiRequest('CreateUserPayload', { email: 'not-an-address' }).valid).toBe(false);
+        // `username` and `externalId` are what the STS resolves a login by; they stay with SCIM.
+        expect(validateApiRequest('CreateUserPayload', { email: 'new@acme.com', username: 'new' }).valid).toBe(false);
+        expect(validateApiRequest('CreateUserPayload', { email: 'new@acme.com', externalId: 'x' }).valid).toBe(false);
     });
 
     it('validates the shared DeleteByIdResult that seven other endpoints also publish', () => {
