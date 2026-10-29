@@ -527,17 +527,10 @@ import {
     FacetSpecSchema,
     FindRunResultArraySchema,
     FindRunResultSchema,
-    GeneratedInteractionDefinitionArraySchema,
-    GeneratedInteractionDefinitionSchema,
-    GeneratedInteractionPromptSegmentSchema,
-    GeneratedInteractionPromptTemplateSchema,
     GeneratedTestDataRecordArraySchema,
     GeneratedTestDataRecordSchema,
-    GenerateInteractionPayloadSchema,
     GenerateTestDataPayloadSchema,
     GetRunQuerySchema,
-    ImprovePromptPayloadConfigSchema,
-    ImprovePromptPayloadSchema,
     InCodeInteractionSchema,
     InCodePromptSchema,
     InitialToolCallSchema,
@@ -579,7 +572,6 @@ import {
     PlanSchema,
     PlanTaskSchema,
     PopulatedExecutionRunResultSchema,
-    PromptImprovementResponseSchema,
     PromptModalitiesSchema,
     PromptSegmentDefSchema,
     PromptSegmentDefTypeSchema,
@@ -1224,18 +1216,10 @@ const INTERACTION_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const INTERACTION_AUTHORING_SCHEMAS = {
-    // Prompt improvement, and the two generators behind the authoring screens.
-    ImprovePromptPayloadConfig: ImprovePromptPayloadConfigSchema,
-    ImprovePromptPayload: ImprovePromptPayloadSchema,
-    PromptImprovementResponse: PromptImprovementResponseSchema,
+    // The test-data generator behind the authoring screens.
     GenerateTestDataPayload: GenerateTestDataPayloadSchema,
     GeneratedTestDataRecord: GeneratedTestDataRecordSchema,
     GeneratedTestDataRecordArray: GeneratedTestDataRecordArraySchema,
-    GenerateInteractionPayload: GenerateInteractionPayloadSchema,
-    GeneratedInteractionDefinition: GeneratedInteractionDefinitionSchema,
-    GeneratedInteractionDefinitionArray: GeneratedInteractionDefinitionArraySchema,
-    GeneratedInteractionPromptTemplate: GeneratedInteractionPromptTemplateSchema,
-    GeneratedInteractionPromptSegment: GeneratedInteractionPromptSegmentSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const AGENT_CONVERSATION_SCHEMAS = {
@@ -3370,14 +3354,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ResolvedInteractionExecutionInfo',
     'FacetSpec',
     'ComputeInteractionFacetPayload',
-    'ImprovePromptPayloadConfig',
-    'ImprovePromptPayload',
-    'PromptImprovementResponse',
     'GenerateTestDataPayload',
-    'GenerateInteractionPayload',
-    'GeneratedInteractionDefinition',
-    'GeneratedInteractionPromptTemplate',
-    'GeneratedInteractionPromptSegment',
     'AgentRunnerOptions',
     'SkillContextTriggers',
     'InitialToolCall',
