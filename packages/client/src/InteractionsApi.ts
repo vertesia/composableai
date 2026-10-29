@@ -6,12 +6,8 @@ import type {
     ComputeInteractionFacetPayload,
     DeleteByIdResult,
     ExecuteNamedInteractionQuery,
-    GeneratedInteractionDefinition,
     GeneratedTestDataRecord,
-    GenerateInteractionPayload,
     GenerateTestDataPayload,
-    ImprovePromptPayload,
-    ImprovePromptPayloadConfig,
     Interaction,
     InteractionCreatePayload,
     InteractionDeletePayload,
@@ -27,7 +23,6 @@ import type {
     InteractionsExportPayload,
     InteractionTags,
     InteractionUpdatePayload,
-    PromptImprovementResponse,
     RateLimitRequestPayload,
     RateLimitRequestResponse,
     ResolvedInteractionExecutionInfo,
@@ -272,35 +267,10 @@ export default class InteractionsApi extends ApiTopic {
     }
 
     /**
-     * Generate Composable definition of an interaction
-     **/
-    generateInteraction(id: string, payload: GenerateInteractionPayload): Promise<GeneratedInteractionDefinition[]> {
-        return this.post(`${id}/generate-interaction`, {
-            payload,
-        });
-    }
-
-    /**
      * Generate Test Data for an interaction
      **/
     generateTestData(id: string, payload: GenerateTestDataPayload): Promise<GeneratedTestDataRecord[]> {
         return this.post(`${id}/generate-test-data`, {
-            payload,
-        });
-    }
-
-    /**
-     * Suggest Improvement for a prompt
-     * @deprecated use suggestPromptImprovements instead
-     */
-    suggestImprovements(id: string, payload: ImprovePromptPayloadConfig): Promise<PromptImprovementResponse> {
-        return this.post(`${id}/suggest-prompt-improvements`, {
-            payload,
-        });
-    }
-
-    suggestPromptImprovements(payload: ImprovePromptPayload): Promise<PromptImprovementResponse> {
-        return this.post(`/improve`, {
             payload,
         });
     }
