@@ -205,16 +205,19 @@ export function useFileProcessing(
                         continue;
                     }
 
-                    // Signal agent that file was uploaded
-                    await signalUpload(() =>
-                        client.agents.sendSignal(agentRunId, 'FileUploaded', {
+                    // Signal agent that file was uploaded. signalUpload can first wait for an ended run
+                    // to restart, and the user may remove the file meanwhile, so check again right
+                    // before the signal goes out.
+                    await signalUpload(async () => {
+                        if (removedFileIdsRef.current.has(fileId)) return;
+                        await client.agents.sendSignal(agentRunId, 'FileUploaded', {
                             id: fileId,
                             name: file.name,
                             content_type: file.type || 'application/octet-stream',
                             reference: `artifact:${artifactPath}`,
                             artifact_path: artifactPath,
-                        } as ConversationFileRef),
-                    );
+                        } as ConversationFileRef);
+                    });
                 } catch (error) {
                     if (removedFileIdsRef.current.has(fileId)) {
                         continue;

@@ -193,6 +193,51 @@ describe('useFileProcessing', () => {
         expect(toast).not.toHaveBeenCalled();
     });
 
+    it('does not signal an upload removed while the signal function waits for a restart', async () => {
+        vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:wrong');
+        vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        const client = createClient();
+        const toast = vi.fn();
+        let finishRestart: (() => void) | undefined;
+        const restart = new Promise<void>((resolve) => {
+            finishRestart = resolve;
+        });
+        const signalUpload = vi.fn(async (sendSignal: () => Promise<unknown>) => {
+            await restart;
+            return sendSignal();
+        });
+        const { result } = renderHook(() =>
+            useFileProcessing(client, 'agent-run-1', new Map(), toast, undefined, signalUpload),
+        );
+        let uploadPromise: Promise<void> | undefined;
+
+        act(() => {
+            uploadPromise = result.current.handleFileUpload([new File(['image'], 'wrong.png', { type: 'image/png' })]);
+        });
+        await waitFor(() => {
+            expect(signalUpload).toHaveBeenCalledTimes(1);
+        });
+
+        const [fileId] = Array.from(result.current.processingFiles.keys());
+        await act(async () => {
+            await result.current.removeProcessingFile(fileId);
+        });
+        await act(async () => {
+            finishRestart?.();
+            await uploadPromise;
+        });
+
+        expect(client.agents.sendSignal).toHaveBeenCalledWith('agent-run-1', 'FileRemoved', { id: fileId });
+        expect(client.agents.sendSignal).not.toHaveBeenCalledWith(
+            'agent-run-1',
+            'FileUploaded',
+            expect.objectContaining({ id: fileId }),
+        );
+    });
+
     it('marks the upload failed when the signal function rejects', async () => {
         vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:wrong');
         vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
