@@ -8,7 +8,7 @@ import { markdownWithPandoc } from '../conversion/pandoc.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../errors.js';
 import { type TextExtractionResult, TextExtractionStatus } from '../result-types.js';
-import { fetchBlobAsBuffer, md5 } from '../utils/blobs.js';
+import { fetchBlobHead, md5 } from '../utils/blobs.js';
 import { createFileSourceResult, uploadTextPreviewToStorage } from '../utils/text-preview-utils.js';
 import { countTokens } from '../utils/tokens.js';
 import { initializeActivityCommandDeadline } from './media/exec.js';
@@ -97,9 +97,10 @@ async function extractFromObject(
     // fetchBlobAsStream already classifies the failure for us: not-found/forbidden become a
     // non-retryable DocumentNotFoundError, and everything else a plain Error the activity's
     // retry policy will retry. Let that classification through.
-    const fileBuffer = await fetchBlobAsBuffer(client, doc.content.source);
-
-    const extractedText = await extractTextFromBuffer(fileBuffer, doc.content.type);
+    const { text: extractedText, skipped } = await extractTextFromSource(client, doc.content.source, doc.content.type);
+    if (skipped) {
+        return createResponse(doc, doc.text ?? '', TextExtractionStatus.skipped, skipped);
+    }
     if (!extractedText) {
         return createResponse(
             doc,
@@ -145,9 +146,14 @@ async function extractFromFileSource(
     // because createFileSourceResult reports `status: success` — a failed download was
     // indistinguishable from a document that legitimately has no text. Let the error propagate so
     // the retry policy sees it.
-    const fileBuffer = await fetchBlobAsBuffer(client, input_file.url);
-
-    const extractedText = await extractTextFromBuffer(fileBuffer, input_file.mimetype);
+    const { text: extractedText, skipped } = await extractTextFromSource(client, input_file.url, input_file.mimetype);
+    if (skipped) {
+        return {
+            ...createFileSourceResult(input_file.url, output_storage_path, null),
+            status: TextExtractionStatus.skipped,
+            message: skipped,
+        };
+    }
     const limitedText = extractedText ? truncateExtractedText(extractedText) : undefined;
     const txt = limitedText?.text ?? null;
     if (limitedText?.truncated) {
@@ -162,77 +168,87 @@ async function extractFromFileSource(
     return createFileSourceResult(input_file.url, output_storage_path, txt);
 }
 
-async function extractTextFromBuffer(fileBuffer: Buffer, mimeType: string): Promise<string | null> {
-    let txt: string;
+const MiB = 1024 * 1024;
 
-    switch (mimeType) {
-        case 'application/pdf':
-            txt = await mutoolPdfToText(fileBuffer);
-            break;
+/**
+ * Largest source handed to a converter. The source is held in memory, so a larger one is skipped rather than allowed
+ * to exhaust the worker's memory, which would take down every activity on it and then, on retry, the next worker.
+ */
+const CONVERTER_MAX_SOURCE_BYTES = 1024 * MiB;
 
-        case 'text/plain':
-            txt = fileBuffer.toString('utf8');
-            break;
+/** A source of any other type is sniffed for text only up to this size. */
+const SNIFF_MAX_BYTES = 500 * 1024;
 
-        //docx
-        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-            txt = await markdownWithMarkitdown(fileBuffer, 'docx');
-            break;
+/** Types converted to text by an external tool, which reads a copy of the source written to disk. */
+const CONVERTERS: Record<string, (source: Buffer) => Promise<string>> = {
+    'application/pdf': (source) => mutoolPdfToText(source),
+    //docx
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': (source) =>
+        markdownWithMarkitdown(source, 'docx'),
+    //pptx
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': (source) =>
+        markdownWithMarkitdown(source, 'pptx'),
+    'text/html': (source) => markdownWithPandoc(source, 'html'),
+    //opendocument
+    'application/vnd.oasis.opendocument.text': (source) => markdownWithPandoc(source, 'odt'),
+    'application/rtf': (source) => markdownWithPandoc(source, 'rtf'),
+};
 
-        //pptx
-        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
-            txt = await markdownWithMarkitdown(fileBuffer, 'pptx');
-            break;
+/** Types whose source is the text itself. */
+const TEXT_TYPES = new Set([
+    'text/plain',
+    'text/markdown',
+    'text/csv',
+    'application/typescript',
+    'application/javascript',
+    'application/json',
+]);
 
-        //html
-        case 'text/html':
-            txt = await markdownWithPandoc(fileBuffer, 'html');
-            break;
+interface SourceText {
+    /** The extracted text, or null when the type holds no text this activity can read. */
+    text: string | null;
+    /** Why the source was not read, when it was too large to. */
+    skipped?: string;
+}
 
-        //opendocument
-        case 'application/vnd.oasis.opendocument.text':
-            txt = await markdownWithPandoc(fileBuffer, 'odt');
-            break;
-
-        //rtf
-        case 'application/rtf':
-            txt = await markdownWithPandoc(fileBuffer, 'rtf');
-            break;
-
-        //markdown
-        case 'text/markdown':
-            txt = fileBuffer.toString('utf8');
-            break;
-
-        //csv
-        case 'text/csv':
-            txt = fileBuffer.toString('utf8');
-            break;
-
-        //typescript
-        case 'application/typescript':
-            txt = fileBuffer.toString('utf8');
-            break;
-
-        //javascript
-        case 'application/javascript':
-            txt = fileBuffer.toString('utf8');
-            break;
-
-        //json
-        case 'application/json':
-            txt = fileBuffer.toString('utf8');
-            break;
-
-        default:
-            if (sniffIfText(fileBuffer)) {
-                txt = fileBuffer.toString('utf8'); //TODO: add charset detection
-                break;
-            }
-            return null;
+/**
+ * Extract the text of a source, reading no more of it than its type needs. The type decides before anything is
+ * downloaded, so a source of any size costs at most:
+ * - text types: one byte over {@link MAX_EXTRACTED_TEXT_BYTES}, which is enough for the text to be truncated as it
+ *   would be after a full read;
+ * - converter types: {@link CONVERTER_MAX_SOURCE_BYTES}, beyond which the source is skipped;
+ * - any other type: one byte over {@link SNIFF_MAX_BYTES}, the most it is ever sniffed for text.
+ */
+async function extractTextFromSource(client: VertesiaClient, source: string, mimeType: string): Promise<SourceText> {
+    const convert = CONVERTERS[mimeType];
+    if (convert) {
+        const head = await fetchBlobHead(client, source, CONVERTER_MAX_SOURCE_BYTES);
+        if (head.truncated) {
+            log.warn('Skipping text extraction of a source over the converter size limit', {
+                source,
+                mime_type: mimeType,
+                max_bytes: CONVERTER_MAX_SOURCE_BYTES,
+            });
+            return {
+                text: null,
+                skipped: `Source too large for text extraction: over ${CONVERTER_MAX_SOURCE_BYTES / MiB} MiB`,
+            };
+        }
+        return { text: await convert(head.data) };
     }
 
-    return txt;
+    if (TEXT_TYPES.has(mimeType)) {
+        // A truncated read still decodes the same prefix: the truncation that follows keeps only whole characters
+        // that fit within the limit.
+        const head = await fetchBlobHead(client, source, MAX_EXTRACTED_TEXT_BYTES + 1);
+        return { text: head.data.toString('utf8') };
+    }
+
+    const head = await fetchBlobHead(client, source, SNIFF_MAX_BYTES + 1);
+    if (!head.truncated && sniffIfText(head.data)) {
+        return { text: head.data.toString('utf8') }; //TODO: add charset detection
+    }
+    return { text: null };
 }
 
 function createResponse(
@@ -265,7 +281,7 @@ function getCompleteTokens(doc: ContentObject): TextExtractionResult['tokens'] {
 
 function sniffIfText(buf: Buffer) {
     // If file is too large, don't even try
-    if (buf.length > 500 * 1024) {
+    if (buf.length > SNIFF_MAX_BYTES) {
         return false;
     }
 
