@@ -3530,6 +3530,14 @@
           "all_turns"
         ]
       },
+      "verbosity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
       "image_detail": {
         "type": "string",
         "enum": [
@@ -3665,6 +3673,14 @@
       },
       "reasoning_effort": {
         "$ref": "#/components/schemas/ReasoningEffort"
+      },
+      "verbosity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ]
       },
       "temperature": {
         "type": "number"

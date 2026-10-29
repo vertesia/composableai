@@ -1558,6 +1558,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 reasoning_effort: {
                     $ref: '#/$defs/ReasoningEffort',
                 },
+                verbosity: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
+                },
                 temperature: {
                     type: 'number',
                 },
@@ -1625,6 +1629,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 reasoning_context: {
                     type: 'string',
                     enum: ['auto', 'current_turn', 'all_turns'],
+                },
+                verbosity: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
                 },
                 image_detail: {
                     type: 'string',
