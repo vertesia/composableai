@@ -1434,6 +1434,7 @@
       "run:write",
       "environment:admin",
       "app:manage",
+      "app:oauth:approve",
       "project:admin",
       "project:integration_read",
       "project:settings_write",

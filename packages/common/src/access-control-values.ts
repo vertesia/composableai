@@ -35,6 +35,8 @@ export enum Permission {
     env_admin = 'environment:admin',
 
     app_manage = 'app:manage',
+    /** Approve an installed app's OAuth access; never available to app runtime sessions. */
+    app_oauth_approve = 'app:oauth:approve',
     project_admin = 'project:admin',
     project_integration_read = 'project:integration_read',
     project_settings_write = 'project:settings_write',
