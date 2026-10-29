@@ -9,6 +9,7 @@ import {
     ContentNature,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
+    isVideoContentType,
     POSTER_RENDITION_NAME,
     type RenditionWithDimensions,
     type VideoMetadata,
@@ -17,6 +18,7 @@ import {
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { removeTempFiles, saveBlobToTempFile } from '../../utils/blobs.js';
+import { getSourceLimits } from '../../utils/source-limits.js';
 import { closeUploadStream, createUploadStream } from '../../utils/upload-stream.js';
 import {
     execActivityFile,
@@ -498,13 +500,16 @@ export async function prepareVideo(
         throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type?.startsWith('video/')) {
+    if (!isVideoContentType(inputObject.content.type)) {
         log.error(`Document ${objectId} is not a video: ${inputObject.content.type}`);
         throw new InvalidContentTypeError(objectId, 'video/*', inputObject.content.type || 'unknown');
     }
 
-    // Download video to temp file
-    const videoFile = await saveBlobToTempFile(client, inputObject.content.source);
+    // Download video to temp file. A source over the media limit fails with a non-retryable SourceTooLargeError,
+    // before any download when the store reports its size.
+    const videoFile = await saveBlobToTempFile(client, inputObject.content.source, undefined, {
+        maxBytes: getSourceLimits().mediaMaxBytes,
+    });
     // Created inside the try, so a failure here still removes the download in the finally.
     let tempOutputDir: string | undefined;
 

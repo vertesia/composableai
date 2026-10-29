@@ -6,9 +6,10 @@ import { markdownWithMarkitdown } from '../conversion/markitdown.js';
 import { mutoolPdfToText } from '../conversion/mutool.js';
 import { markdownWithPandoc } from '../conversion/pandoc.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
-import { DocumentNotFoundError } from '../errors.js';
+import { DocumentNotFoundError, SourceTooLargeError } from '../errors.js';
 import { type TextExtractionResult, TextExtractionStatus } from '../result-types.js';
-import { fetchBlobHead, md5 } from '../utils/blobs.js';
+import { fetchBlobHead, md5, withBlobTempFile } from '../utils/blobs.js';
+import { getSourceLimits } from '../utils/source-limits.js';
 import { createFileSourceResult, uploadTextPreviewToStorage } from '../utils/text-preview-utils.js';
 import { countTokens } from '../utils/tokens.js';
 import { initializeActivityCommandDeadline } from './media/exec.js';
@@ -170,35 +171,36 @@ async function extractFromFileSource(
 
 const MiB = 1024 * 1024;
 
-/**
- * Largest source handed to a converter. The source is held in memory, so a larger one is skipped rather than allowed
- * to exhaust the worker's memory, which would take down every activity on it and then, on retry, the next worker.
- */
-const CONVERTER_MAX_SOURCE_BYTES = 1024 * MiB;
-
 /** A source of any other type is sniffed for text only up to this size. */
 const SNIFF_MAX_BYTES = 500 * 1024;
+
+/** A converter to text, run by an external tool on a copy of the source downloaded to disk. */
+interface Converter {
+    /** Extension of the downloaded copy, from which markitdown picks its converter. */
+    ext: string;
+    convert: (file: string) => Promise<string>;
+}
 
 /**
  * Types converted to text by an external tool. A Map, so a type named like an `Object.prototype` member (`toString`,
  * `constructor`) is not mistaken for a converter.
  */
-const CONVERTERS = new Map<string, (source: Buffer) => Promise<string>>([
-    ['application/pdf', (source) => mutoolPdfToText(source)],
+const CONVERTERS = new Map<string, Converter>([
+    ['application/pdf', { ext: 'pdf', convert: (file) => mutoolPdfToText(file) }],
     //docx
     [
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        (source) => markdownWithMarkitdown(source, 'docx'),
+        { ext: 'docx', convert: (file) => markdownWithMarkitdown(file) },
     ],
     //pptx
     [
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        (source) => markdownWithMarkitdown(source, 'pptx'),
+        { ext: 'pptx', convert: (file) => markdownWithMarkitdown(file) },
     ],
-    ['text/html', (source) => markdownWithPandoc(source, 'html')],
+    ['text/html', { ext: 'html', convert: (file) => markdownWithPandoc(file, 'html') }],
     //opendocument
-    ['application/vnd.oasis.opendocument.text', (source) => markdownWithPandoc(source, 'odt')],
-    ['application/rtf', (source) => markdownWithPandoc(source, 'rtf')],
+    ['application/vnd.oasis.opendocument.text', { ext: 'odt', convert: (file) => markdownWithPandoc(file, 'odt') }],
+    ['application/rtf', { ext: 'rtf', convert: (file) => markdownWithPandoc(file, 'rtf') }],
 ]);
 
 /** Types whose source is the text itself. */
@@ -223,25 +225,30 @@ interface SourceText {
  * downloaded, so a source of any size costs at most:
  * - text types: one byte over {@link MAX_EXTRACTED_TEXT_BYTES}, which is enough for the text to be truncated as it
  *   would be after a full read;
- * - converter types: {@link CONVERTER_MAX_SOURCE_BYTES}, beyond which the source is skipped;
+ * - converter types: the converter limit of {@link getSourceLimits} on disk, beyond which the source is skipped;
  * - any other type: one byte over {@link SNIFF_MAX_BYTES}, the most it is ever sniffed for text.
  */
 async function extractTextFromSource(client: VertesiaClient, source: string, mimeType: string): Promise<SourceText> {
-    const convert = CONVERTERS.get(mimeType);
-    if (convert) {
-        const head = await fetchBlobHead(client, source, CONVERTER_MAX_SOURCE_BYTES);
-        if (head.truncated) {
+    const converter = CONVERTERS.get(mimeType);
+    if (converter) {
+        const maxBytes = getSourceLimits().converterMaxBytes;
+        try {
+            const text = await withBlobTempFile(client, source, converter.ext, (file) => converter.convert(file), {
+                maxBytes,
+            });
+            return { text };
+        } catch (err: unknown) {
+            if (!(err instanceof SourceTooLargeError)) {
+                throw err;
+            }
             log.warn('Skipping text extraction of a source over the converter size limit', {
                 source,
                 mime_type: mimeType,
-                max_bytes: CONVERTER_MAX_SOURCE_BYTES,
+                size: err.size,
+                max_bytes: maxBytes,
             });
-            return {
-                text: null,
-                skipped: `Source too large for text extraction: over ${CONVERTER_MAX_SOURCE_BYTES / MiB} MiB`,
-            };
+            return { text: null, skipped: `Source too large for text extraction: over ${maxBytes / MiB} MiB` };
         }
-        return { text: await convert(head.data) };
     }
 
     if (TEXT_TYPES.has(mimeType)) {

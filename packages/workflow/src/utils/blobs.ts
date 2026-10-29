@@ -2,12 +2,12 @@ import crypto from 'node:crypto';
 import { mkdtemp, open, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Readable } from 'node:stream';
+import { Readable, Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import tmp from 'tmp';
-import { DocumentNotFoundError } from '../errors.js';
+import { DocumentNotFoundError, SourceTooLargeError } from '../errors.js';
 
 // Process-wide: other tmp users rely on exit-time cleanup. saveBlobToTempFile registers nothing with tmp.
 tmp.setGracefulCleanup();
@@ -63,6 +63,44 @@ export async function fetchBlobHead(client: VertesiaClient, blobUri: string, max
     return { data: Buffer.concat(chunks), truncated: false };
 }
 
+/** Options of a download to disk. */
+export interface BlobDownloadOptions {
+    /**
+     * The largest blob to download, in bytes. A larger one fails with a {@link SourceTooLargeError}: before the
+     * download when the store reports the blob's size, otherwise as soon as the download goes over.
+     */
+    maxBytes?: number;
+}
+
+/**
+ * The size of a blob, as its store reports it, or `undefined` when the store cannot tell (a signed URL, a store
+ * error). Reading it downloads nothing.
+ */
+export async function getBlobSize(client: VertesiaClient, blobUri: string): Promise<number | undefined> {
+    if (/^https?:/.test(blobUri)) {
+        return undefined;
+    }
+    try {
+        const { size } = await client.files.getMetadata(blobUri);
+        return typeof size === 'number' && Number.isFinite(size) && size >= 0 ? size : undefined;
+    } catch (err: unknown) {
+        // The download that follows reports a missing blob properly, and enforces any size limit itself.
+        warn('Could not read the size of a blob', { blob_uri: blobUri, error: errorMessage(err) });
+        return undefined;
+    }
+}
+
+/**
+ * Fail with a {@link SourceTooLargeError} when the store reports a blob larger than `maxBytes`. A blob whose size is
+ * unknown passes: a capped download ({@link BlobDownloadOptions.maxBytes}) still stops it.
+ */
+export async function assertBlobSizeWithin(client: VertesiaClient, blobUri: string, maxBytes: number): Promise<void> {
+    const size = await getBlobSize(client, blobUri);
+    if (size !== undefined && size > maxBytes) {
+        throw new SourceTooLargeError(blobUri, maxBytes, size);
+    }
+}
+
 export async function fetchBlobAsBase64(client: VertesiaClient, blobUri: string): Promise<string> {
     const buffer = await fetchBlobAsBuffer(client, blobUri);
     return buffer.toString('base64');
@@ -76,13 +114,18 @@ export async function fetchBlobAsBase64(client: VertesiaClient, blobUri: string)
  * into memory. No descriptor is left open and nothing is registered for exit-time cleanup, so removing the path frees
  * its space.
  */
-export async function saveBlobToTempFile(client: VertesiaClient, blobUri: string, fileExt?: string): Promise<string> {
+export async function saveBlobToTempFile(
+    client: VertesiaClient,
+    blobUri: string,
+    fileExt?: string,
+    options: BlobDownloadOptions = {},
+): Promise<string> {
     const fileName = tmp.tmpNameSync({
         prefix: 'vertesia-activity-',
         postfix: toPostfix(fileExt),
     });
     try {
-        await saveBlobToNewFile(client, blobUri, fileName);
+        await saveBlobToNewFile(client, blobUri, fileName, options);
         return fileName;
     } catch (err: unknown) {
         if ((err as NodeJS.ErrnoException | undefined)?.code !== 'EEXIST') {
@@ -104,11 +147,12 @@ export async function withBlobTempFile<T>(
     blobUri: string,
     fileExt: string | undefined,
     fn: (file: string, dir: string) => Promise<T>,
+    options: BlobDownloadOptions = {},
 ): Promise<T> {
     const dir = await mkdtemp(join(tmpdir(), 'vertesia-activity-'));
     try {
         const file = join(dir, `blob${toPostfix(fileExt)}`);
-        await saveBlobToNewFile(client, blobUri, file);
+        await saveBlobToNewFile(client, blobUri, file, options);
         return await fn(file, dir);
     } finally {
         await removeTempFiles(dir);
@@ -136,12 +180,19 @@ export async function removeTempFiles(...paths: Array<string | undefined>): Prom
 
 function warnCleanupFailure(path: string, err: unknown): void {
     // The activity logger does not serialize an Error, so the message goes as a plain field.
-    const attributes = { path, error: err instanceof Error ? err.message : String(err) };
+    warn('Failed to remove temporary file', { path, error: errorMessage(err) });
+}
+
+function errorMessage(err: unknown): string {
+    return err instanceof Error ? err.message : String(err);
+}
+
+function warn(message: string, attributes: Record<string, unknown>): void {
     try {
-        log.warn('Failed to remove temporary file', attributes);
+        log.warn(message, attributes);
     } catch {
-        // No activity context: this utility also runs outside activities.
-        console.warn('Failed to remove temporary file', attributes);
+        // No activity context: these utilities also run outside activities.
+        console.warn(message, attributes);
     }
 }
 
@@ -149,18 +200,42 @@ function warnCleanupFailure(path: string, err: unknown): void {
  * Create `file`, failing if it already exists, and write the blob to it. The descriptor is closed whatever the outcome;
  * removing a partial file is the caller's job.
  */
-async function saveBlobToNewFile(client: VertesiaClient, blobUri: string, file: string): Promise<void> {
+async function saveBlobToNewFile(
+    client: VertesiaClient,
+    blobUri: string,
+    file: string,
+    { maxBytes }: BlobDownloadOptions,
+): Promise<void> {
+    if (maxBytes !== undefined) {
+        await assertBlobSizeWithin(client, blobUri, maxBytes);
+    }
     // Create the file before downloading: a name that is already taken fails before any request.
     const handle = await open(file, 'wx', 0o600);
     try {
         const stream = await fetchBlobAsStream(client, blobUri);
-        // The write stream closes the descriptor once the pipeline settles.
-        await pipeline(Readable.from(stream), handle.createWriteStream());
+        // The write stream closes the descriptor once the pipeline settles. A failure destroys the source, which
+        // aborts the download.
+        if (maxBytes === undefined) {
+            await pipeline(Readable.from(stream), handle.createWriteStream());
+        } else {
+            await pipeline(Readable.from(stream), limitBytes(blobUri, maxBytes), handle.createWriteStream());
+        }
     } catch (err: unknown) {
         // A failed download never handed the descriptor to a write stream; closing an already closed one is a no-op.
         await handle.close();
         throw err;
     }
+}
+
+/** Pass bytes through until more than `maxBytes` went by, then fail with a {@link SourceTooLargeError}. */
+function limitBytes(blobUri: string, maxBytes: number): Transform {
+    let size = 0;
+    return new Transform({
+        transform(chunk: Buffer, _encoding, callback) {
+            size += chunk.length;
+            callback(size > maxBytes ? new SourceTooLargeError(blobUri, maxBytes) : null, chunk);
+        },
+    });
 }
 
 function toPostfix(ext: string | undefined): string {

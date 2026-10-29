@@ -11,9 +11,9 @@ import {
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mutoolPdfToText } from '../conversion/mutool.js';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
-import { DocumentNotFoundError } from '../errors.js';
+import { DocumentNotFoundError, SourceTooLargeError } from '../errors.js';
 import { TextExtractionStatus } from '../result-types.js';
-import { fetchBlobHead } from '../utils/blobs.js';
+import { fetchBlobHead, withBlobTempFile } from '../utils/blobs.js';
 import { type ExtractDocumentTextParams, extractDocumentText } from './extractDocumentText.js';
 
 vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
@@ -23,7 +23,7 @@ vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
 
 vi.mock('../utils/blobs.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../utils/blobs.js')>();
-    return { ...actual, fetchBlobHead: vi.fn() };
+    return { ...actual, fetchBlobHead: vi.fn(), withBlobTempFile: vi.fn() };
 });
 
 vi.mock('../conversion/mutool.js', () => ({ mutoolPdfToText: vi.fn(async () => 'pdf text') }));
@@ -258,22 +258,59 @@ describe('extractDocumentText', () => {
             });
         });
 
-        it('hands a converter source within the limit to the converter', async () => {
+        /** Download converter sources to a fake path, as withBlobTempFile would, or fail as over the limit. */
+        function downloadConverterSource(tooLarge = false) {
+            vi.mocked(withBlobTempFile).mockImplementation(async (_client, uri, ext, fn, options) => {
+                if (tooLarge) {
+                    throw new SourceTooLargeError(uri, options?.maxBytes ?? 0, 2 * (options?.maxBytes ?? 0));
+                }
+                return fn(`/tmp/source.${ext}`, '/tmp');
+            });
+        }
+
+        it('converts a source within the limit from a capped copy on disk', async () => {
             retrieve.mockResolvedValue(createDoc({ content: { type: 'application/pdf', source: SOURCE, etag: 'e' } }));
             setObjectText.mockResolvedValue({});
             update.mockResolvedValue({});
-            serveSource(Buffer.from('%PDF-1.7'));
+            downloadConverterSource();
 
             await expect(testEnv.run(extractDocumentText, createPayload())).resolves.toMatchObject({
                 status: TextExtractionStatus.success,
             });
-            expect(requestedBytes()).toBe(1024 * MiB);
-            expect(mutoolPdfToText).toHaveBeenCalledExactlyOnceWith(Buffer.from('%PDF-1.7'));
+            expect(withBlobTempFile).toHaveBeenCalledExactlyOnceWith(
+                expect.anything(),
+                SOURCE,
+                'pdf',
+                expect.any(Function),
+                {
+                    maxBytes: 1024 * MiB,
+                },
+            );
+            expect(mutoolPdfToText).toHaveBeenCalledExactlyOnceWith('/tmp/source.pdf');
+            expect(fetchBlobHead).not.toHaveBeenCalled();
+        });
+
+        it('takes the converter limit from the environment', async () => {
+            vi.stubEnv('WORKFLOW_CONVERTER_MAX_SOURCE_MB', '2048');
+            try {
+                retrieve.mockResolvedValue(
+                    createDoc({ content: { type: 'application/pdf', source: SOURCE, etag: 'e' } }),
+                );
+                setObjectText.mockResolvedValue({});
+                update.mockResolvedValue({});
+                downloadConverterSource();
+
+                await testEnv.run(extractDocumentText, createPayload());
+
+                expect(vi.mocked(withBlobTempFile).mock.calls[0]?.[4]).toEqual({ maxBytes: 2048 * MiB });
+            } finally {
+                vi.unstubAllEnvs();
+            }
         });
 
         it('skips a converter source over the limit without converting it, and does not fail', async () => {
             retrieve.mockResolvedValue(createDoc({ content: { type: 'application/pdf', source: SOURCE, etag: 'e' } }));
-            vi.mocked(fetchBlobHead).mockResolvedValue({ data: Buffer.alloc(0), truncated: true });
+            downloadConverterSource(true);
 
             await expect(testEnv.run(extractDocumentText, createPayload())).resolves.toMatchObject({
                 status: TextExtractionStatus.skipped,
@@ -291,7 +328,7 @@ describe('extractDocumentText', () => {
                 file: { url: 'gs://bucket/big.pdf', mimetype: 'application/pdf' },
                 params: { output_storage_path: 'out/text.md' },
             } as unknown as ActivityContext<ExtractDocumentTextParams>);
-            vi.mocked(fetchBlobHead).mockResolvedValue({ data: Buffer.alloc(0), truncated: true });
+            downloadConverterSource(true);
 
             await expect(testEnv.run(extractDocumentText, createPayload())).resolves.toMatchObject({
                 status: TextExtractionStatus.skipped,

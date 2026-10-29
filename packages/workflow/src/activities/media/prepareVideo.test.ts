@@ -6,6 +6,7 @@ import { CancelledFailure, log } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { describe, expect, it, vi } from 'vitest';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
+import { SourceTooLargeError } from '../../errors.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
 import {
     generateScreenshot,
@@ -71,6 +72,55 @@ describe('prepareVideo', () => {
         });
         expect(log.warn).toHaveBeenCalledWith('Failed to get video metadata: No video stream found in file');
         expect(log.error).not.toHaveBeenCalled();
+    });
+});
+
+describe('prepareVideo source limits', () => {
+    function mockObject(type: string) {
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: {
+                objects: {
+                    retrieve: vi.fn().mockResolvedValue({
+                        id: 'obj-1',
+                        content: { source: 'gs://bucket/master.mxf', type },
+                    }),
+                },
+            },
+            objectId: 'obj-1',
+            params: {},
+        } as unknown as Awaited<ReturnType<typeof setupActivity>>);
+    }
+
+    it('accepts an MXF video and downloads it with the media size limit', async () => {
+        mockObject('application/mxf');
+        vi.mocked(saveBlobToTempFile).mockClear().mockRejectedValue(new Error('stop after the download call'));
+
+        await expect(
+            new MockActivityEnvironment().run(prepareVideo, {} as Parameters<typeof prepareVideo>[0]),
+        ).rejects.toThrow('stop after the download call');
+
+        expect(saveBlobToTempFile).toHaveBeenCalledExactlyOnceWith(
+            expect.anything(),
+            'gs://bucket/master.mxf',
+            undefined,
+            {
+                maxBytes: 8192 * 1024 * 1024,
+            },
+        );
+    });
+
+    it('fails a source over the limit without retrying', async () => {
+        mockObject('application/mxf');
+        vi.mocked(log.error).mockClear();
+        vi.mocked(saveBlobToTempFile)
+            .mockClear()
+            .mockRejectedValue(new SourceTooLargeError('gs://bucket/master.mxf', 10, 50));
+
+        const failure = await new MockActivityEnvironment()
+            .run(prepareVideo, {} as Parameters<typeof prepareVideo>[0])
+            .catch((error: unknown) => error);
+
+        expect(failure).toMatchObject({ type: 'SourceTooLargeError', nonRetryable: true });
     });
 });
 
