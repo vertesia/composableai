@@ -5,8 +5,7 @@ import type { ReactNode } from 'react';
 import * as React from 'react';
 
 import { cn } from '../libs/utils';
-import { DropdownMenuItem } from './dropdown';
-import { OverflowMoreMenu, type OverflowTabsVariant, useOverflowTabs } from './overflowTabs';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './dropdown';
 import { SelectBox } from './selectBox';
 
 export interface Tab {
@@ -299,6 +298,211 @@ const TabsBar = ({ className, sticky, direction, overflow }: TabsBarProps) => {
     );
 };
 
+/** Gap between tab items, in px — must match the `gap-1` used by the rendered rows. */
+export const OVERFLOW_TAB_GAP_PX = 4;
+
+export type OverflowTabsVariant = 'tabs' | 'pills';
+
+export interface OverflowTabsLayout<T> {
+    /** Attach to the element whose width bounds the row; its `clientWidth` is what tabs are fitted into. */
+    containerRef: React.RefObject<HTMLDivElement | null>;
+    /** Ref callback for the i-th item of the hidden measurement row. */
+    setItemRef: (index: number) => (el: HTMLElement | null) => void;
+    /** Ref callback for the "More" button of the hidden measurement row. */
+    setMoreRef: (el: HTMLElement | null) => void;
+    /** Items that fit; when the active item overflowed it is promoted into the last slot. */
+    visible: T[];
+    /** Items that did not fit and belong in the "More" menu. */
+    overflow: T[];
+    /** Whether the active item ended up in `overflow` (used to highlight the "More" trigger). */
+    activeInOverflow: boolean;
+}
+
+/**
+ * Splits `items` into a visible row and an overflow list, measured from a hidden row that renders
+ * every item at its natural width (see `TabsBar overflow` for the expected markup). The active
+ * item is promoted into the last visible slot when it would otherwise be hidden in the menu.
+ *
+ * Callers own the rendering, so the hidden row must use the same classes and content as the visible
+ * one — otherwise the measured widths don't describe what is actually laid out.
+ */
+export function useOverflowTabs<T>(
+    items: T[],
+    isActive: (item: T) => boolean,
+    gap = OVERFLOW_TAB_GAP_PX,
+): OverflowTabsLayout<T> {
+    const containerRef = React.useRef<HTMLDivElement | null>(null);
+    const itemRefs = React.useRef<Array<HTMLElement | null>>([]);
+    const moreRef = React.useRef<HTMLElement | null>(null);
+    // `count` leading items are shown. When `promote` is set, the active item is pulled
+    // into the last slot (before More) and `count` counts the items shown before it.
+    const [layout, setLayout] = React.useState<{ count: number; promote: boolean }>({
+        count: items.length,
+        promote: false,
+    });
+
+    const recompute = () => {
+        const container = containerRef.current;
+        if (!container) return;
+        // Fit into the content box: `clientWidth` includes the container's own padding.
+        const style = getComputedStyle(container);
+        const containerWidth =
+            container.clientWidth -
+            (parseFloat(style.paddingInlineStart) || 0) -
+            (parseFloat(style.paddingInlineEnd) || 0);
+        const widths = items.map((_, i) => itemRefs.current[i]?.offsetWidth ?? 0);
+        const totalAll = widths.reduce((sum, w) => sum + w, 0) + gap * Math.max(0, items.length - 1);
+
+        // How many items (in order, optionally skipping one) fit within `available`.
+        const fitCount = (available: number, skipIndex: number) => {
+            let used = 0;
+            let fitted = 0;
+            for (let i = 0; i < items.length; i++) {
+                if (i === skipIndex) continue;
+                const cand = used + (fitted > 0 ? gap : 0) + widths[i];
+                if (cand > available) break;
+                used = cand;
+                fitted += 1;
+            }
+            return fitted;
+        };
+
+        let next: { count: number; promote: boolean };
+        if (totalAll <= containerWidth) {
+            next = { count: items.length, promote: false };
+        } else {
+            const moreWidth = moreRef.current?.offsetWidth ?? 0;
+            const naturalCount = Math.max(1, fitCount(containerWidth - moreWidth - gap, -1));
+            const activeIndex = items.findIndex(isActive);
+            if (activeIndex < 0 || activeIndex < naturalCount) {
+                next = { count: naturalCount, promote: false };
+            } else {
+                // Active item overflowed: reserve its slot at the end, fit leading items before it.
+                const leadAvailable = containerWidth - moreWidth - widths[activeIndex] - gap * 2;
+                next = { count: fitCount(leadAvailable, activeIndex), promote: true };
+            }
+        }
+        setLayout((prev) => (prev.count === next.count && prev.promote === next.promote ? prev : next));
+    };
+
+    // Re-measure after every render (item/label changes) and on container resize.
+    const recomputeRef = React.useRef(recompute);
+    recomputeRef.current = recompute;
+    React.useLayoutEffect(() => {
+        recomputeRef.current();
+    });
+    React.useEffect(() => {
+        const container = containerRef.current;
+        if (!container || typeof ResizeObserver === 'undefined') return;
+        const observer = new ResizeObserver(() => recomputeRef.current());
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, []);
+
+    const activeIndex = items.findIndex(isActive);
+    let visible: T[];
+    let overflow: T[];
+    if (layout.promote && activeIndex >= 0) {
+        // Pull the active item into the last visible slot; the item it displaces overflows.
+        const others = items.filter((_, i) => i !== activeIndex);
+        visible = [...others.slice(0, layout.count), items[activeIndex]];
+        overflow = others.slice(layout.count);
+    } else {
+        visible = items.slice(0, layout.count);
+        overflow = items.slice(layout.count);
+    }
+
+    return {
+        containerRef,
+        setItemRef: (index: number) => (el: HTMLElement | null) => {
+            itemRefs.current[index] = el;
+        },
+        setMoreRef: (el: HTMLElement | null) => {
+            moreRef.current = el;
+        },
+        visible,
+        overflow,
+        activeInOverflow: overflow.some(isActive),
+    };
+}
+
+export interface OverflowMoreMenuProps {
+    label: ReactNode;
+    /** Classes for the trigger button — pass the same tab-item classes the row uses. */
+    triggerClassName?: string;
+    /** Icon after the label; the hidden measurement row must render the same one. */
+    icon?: ReactNode;
+    /** The menu entries, normally `DropdownMenuItem`s rendered by the caller. */
+    children: ReactNode;
+}
+
+/** Trailing "More" dropdown of overflowed tabs; opens on hover, click, or keyboard. */
+export function OverflowMoreMenu({ label, triggerClassName, icon, children }: OverflowMoreMenuProps) {
+    const [open, setOpen] = React.useState(false);
+    const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const openedByHover = React.useRef(false);
+
+    const cancelClose = () => {
+        if (closeTimer.current) {
+            clearTimeout(closeTimer.current);
+            closeTimer.current = null;
+        }
+    };
+    const openOnHover = () => {
+        cancelClose();
+        openedByHover.current = true;
+        setOpen(true);
+    };
+    // Delay the close so the pointer can travel across the gap onto the menu.
+    const closeAfterDelay = () => {
+        cancelClose();
+        closeTimer.current = setTimeout(() => setOpen(false), 150);
+    };
+
+    // Clear any pending close timer on unmount.
+    React.useEffect(() => () => clearTimeout(closeTimer.current ?? undefined), []);
+
+    return (
+        // Non-modal: a modal menu sets body `pointer-events: none` while open, which makes
+        // the hover open/close flap. It still closes on outside-click / Escape.
+        <DropdownMenu
+            modal={false}
+            open={open}
+            onOpenChange={(next) => {
+                // Fired by click / keyboard / dismiss (not by hover); keep our state in sync.
+                cancelClose();
+                if (next) openedByHover.current = false;
+                setOpen(next);
+            }}
+        >
+            <DropdownMenuTrigger asChild>
+                {/* Tab-bar primitive: raw button is the menu trigger (asChild). */}
+                <button
+                    type="button"
+                    onMouseEnter={openOnHover}
+                    onMouseLeave={closeAfterDelay}
+                    className={triggerClassName}
+                >
+                    {label}
+                    {icon ?? <ChevronDownIcon className="ms-1 size-4" />}
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="end"
+                className="w-max"
+                onMouseEnter={cancelClose}
+                onMouseLeave={closeAfterDelay}
+                onCloseAutoFocus={(e) => {
+                    // Keep hover-opens from returning the focus ring to the trigger.
+                    if (openedByHover.current) e.preventDefault();
+                }}
+            >
+                {children}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
 /** Overflow-row tab styling, matching the corresponding `TabsTrigger` variants. */
 const OVERFLOW_VARIANT_CLASSES: Record<
     OverflowTabsVariant,
@@ -340,7 +544,11 @@ function OverflowTabsList({ tabs, current, onTabChange, variant = 'tabs', classN
     const moreLabel = t('agent.moreTabs');
 
     return (
-        <div ref={containerRef} className={cn('relative', className)}>
+        // `overflow-x-clip` keeps the full-width measurement row from widening the page (unlike
+        // `overflow-hidden` it leaves the underline that sits 1px below the row visible), and
+        // `contain: inline-size` stops the tabs' natural width from stretching the container, which
+        // would otherwise keep every tab "fitting" and hold off the More menu.
+        <div ref={containerRef} className={cn('relative min-w-0 overflow-x-clip [contain:inline-size]', className)}>
             {/* Hidden measurement row: all tabs + More at natural width, kept separate
                 from the visible row so measuring can't feed back into the layout. */}
             <div aria-hidden className="pointer-events-none invisible absolute start-0 top-0 flex w-max gap-1">
