@@ -367,6 +367,27 @@ describe('getComposableToken', () => {
         expect(error).toMatchObject({ email: 'jane@agency.gov', idToken: identityToken, displayName: 'Jane Doe' });
     });
 
+    it('reports an invite-required refusal with the address from the token', async () => {
+        const identityToken = makeJwt({ email: 'sam@example.gov', name: 'Sam' });
+        vi.stubGlobal(
+            'fetch',
+            vi
+                .fn()
+                .mockResolvedValueOnce(new Response('User not found', { status: 404 }))
+                .mockResolvedValueOnce(new Response('Self-service signup is disabled', { status: 403 })),
+        );
+
+        const { fetchComposableToken, InviteRequiredError } = await importComposableAuth();
+        const error = await fetchComposableToken(async () => identityToken).catch((caught) => caught);
+
+        expect(error).toBeInstanceOf(InviteRequiredError);
+        // SigninScreen and the Firebase sign-in path still recognise it by this message.
+        expect(error).toMatchObject({
+            message: 'Customer-domain user requires an invite to join',
+            email: 'sam@example.gov',
+        });
+    });
+
     it("falls back to the token's email claim when Studio sends no address", async () => {
         const identityToken = makeJwt({ email: 'leon@example.com', name: 'Leon' });
         vi.stubGlobal(
