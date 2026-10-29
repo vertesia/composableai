@@ -40,18 +40,31 @@ function combineSignals(requestSignal: AbortSignal | null, activitySignal?: Abor
     return AbortSignal.any([requestSignal, activitySignal]);
 }
 
+// An aborted signal rejects with its reason — for the activity signal, a Temporal CancelledFailure.
+// The API client recognises a caller abort only by the `AbortError` name or by its own request
+// signal, which never carries the activity signal, so it would log a cancelled activity as a
+// connection failure. Report the cancellation as an `AbortError` that keeps the reason as its cause.
+function toActivityAbortError(err: unknown, activitySignal?: AbortSignal): unknown {
+    if (!activitySignal?.aborted) return err;
+    return new DOMException('The activity was cancelled', { name: 'AbortError', cause: activitySignal.reason });
+}
+
 function createWorkflowFetch(activitySignal?: AbortSignal): FETCH_FN {
     return async (input, init) => {
         const requestSignal = input instanceof Request ? input.signal : (init?.signal ?? null);
         const signal = combineSignals(requestSignal, activitySignal);
-        signal?.throwIfAborted();
-        const dispatcher = await getWorkflowDispatcher();
-        signal?.throwIfAborted();
-        return globalThis.fetch(input, {
-            ...init,
-            dispatcher,
-            signal,
-        } as DispatcherRequestInit);
+        try {
+            signal?.throwIfAborted();
+            const dispatcher = await getWorkflowDispatcher();
+            signal?.throwIfAborted();
+            return await globalThis.fetch(input, {
+                ...init,
+                dispatcher,
+                signal,
+            } as DispatcherRequestInit);
+        } catch (err: unknown) {
+            throw toActivityAbortError(err, activitySignal);
+        }
     };
 }
 
