@@ -20,6 +20,8 @@ type ToastFn = (opts: {
 
 type LocalConversationFile = ConversationFile & { preview_url?: string };
 
+const sendSignalDirectly = (sendSignal: () => Promise<unknown>): Promise<unknown> => sendSignal();
+
 function isPreviewableImage(file: File): boolean {
     return file.type.startsWith('image/');
 }
@@ -45,6 +47,8 @@ function revokePreviewUrlValue(previewUrl: string): void {
  * @param agentRunId - Stable AgentRun ID
  * @param serverFileUpdates - Server-side file processing updates from useAgentStream
  * @param toast - Toast notification function for error display
+ * @param signalUpload - Delivers the FileUploaded signal; the conversation view passes one that
+ *   restarts an ended run first, so an upload continues the conversation the way a message does
  */
 export function useFileProcessing(
     client: VertesiaClient,
@@ -58,6 +62,7 @@ export function useFileProcessing(
      * the in-session `removedFileIds` suppression.
      */
     deliveredArtifactRefs?: Set<string>,
+    signalUpload: (sendSignal: () => Promise<unknown>) => Promise<unknown> = sendSignalDirectly,
 ): UseFileProcessingResult {
     const t = i18nInstance.getFixedT(null, NAMESPACE);
     // Local optimistic file state (uploads initiated from the UI)
@@ -201,13 +206,15 @@ export function useFileProcessing(
                     }
 
                     // Signal agent that file was uploaded
-                    await client.agents.sendSignal(agentRunId, 'FileUploaded', {
-                        id: fileId,
-                        name: file.name,
-                        content_type: file.type || 'application/octet-stream',
-                        reference: `artifact:${artifactPath}`,
-                        artifact_path: artifactPath,
-                    } as ConversationFileRef);
+                    await signalUpload(() =>
+                        client.agents.sendSignal(agentRunId, 'FileUploaded', {
+                            id: fileId,
+                            name: file.name,
+                            content_type: file.type || 'application/octet-stream',
+                            reference: `artifact:${artifactPath}`,
+                            artifact_path: artifactPath,
+                        } as ConversationFileRef),
+                    );
                 } catch (error) {
                     if (removedFileIdsRef.current.has(fileId)) {
                         continue;
@@ -234,7 +241,7 @@ export function useFileProcessing(
                 }
             }
         },
-        [client, agentRunId, toast, t],
+        [client, agentRunId, toast, t, signalUpload],
     );
 
     const removeProcessingFile = useCallback(

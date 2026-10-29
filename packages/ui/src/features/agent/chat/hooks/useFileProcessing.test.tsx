@@ -166,6 +166,56 @@ describe('useFileProcessing', () => {
         );
     });
 
+    it('delivers the FileUploaded signal through the provided signal function', async () => {
+        vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:wrong');
+        vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        const client = createClient();
+        const toast = vi.fn();
+        // Stands in for the conversation view, which restarts an ended run before the signal.
+        const signalUpload = vi.fn((sendSignal: () => Promise<unknown>) => sendSignal());
+        const { result } = renderHook(() =>
+            useFileProcessing(client, 'agent-run-1', new Map(), toast, undefined, signalUpload),
+        );
+
+        await act(async () => {
+            await result.current.handleFileUpload([new File(['image'], 'wrong.png', { type: 'image/png' })]);
+        });
+
+        expect(signalUpload).toHaveBeenCalledTimes(1);
+        expect(client.agents.sendSignal).toHaveBeenCalledWith(
+            'agent-run-1',
+            'FileUploaded',
+            expect.objectContaining({ name: 'wrong.png', artifact_path: 'files/wrong.png' }),
+        );
+        expect(toast).not.toHaveBeenCalled();
+    });
+
+    it('marks the upload failed when the signal function rejects', async () => {
+        vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:wrong');
+        vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+        onTestFinished(() => {
+            vi.restoreAllMocks();
+        });
+        const client = createClient();
+        const toast = vi.fn();
+        const signalUpload = vi.fn().mockRejectedValue(new Error('restart failed'));
+        const { result } = renderHook(() =>
+            useFileProcessing(client, 'agent-run-1', new Map(), toast, undefined, signalUpload),
+        );
+
+        await act(async () => {
+            await result.current.handleFileUpload([new File(['image'], 'wrong.png', { type: 'image/png' })]);
+        });
+
+        const [file] = Array.from(result.current.processingFiles.values());
+        expect(file?.status).toBe(FileProcessingStatus.ERROR);
+        expect(file?.error).toBe('restart failed');
+        expect(toast).toHaveBeenCalledWith(expect.objectContaining({ status: 'error' }));
+    });
+
     it('creates and revokes local image preview URLs', async () => {
         const createObjectURL = vi.fn(() => 'blob:wrong');
         const revokeObjectURL = vi.fn();
