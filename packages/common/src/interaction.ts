@@ -8,73 +8,6 @@ import type {
     StatelessExecutionOptions,
     ToolUse,
 } from '@llumiverse/common';
-<<<<<<< HEAD
-=======
-import type { z } from 'zod';
-import type {
-    AgentResourceActionSchema,
-    AgentResourceReferenceSchema,
-    AgentResourceTypeSchema,
-    AgentRunnerOptionsSchema,
-    AsyncCompletionModeSchema,
-    AsyncCompletionOptionsSchema,
-    AsyncConversationExecutionPayloadSchema,
-    AsyncExecutionPayloadSchema,
-    AsyncExecutionResultSchema,
-    AsyncInteractionExecutionPayloadSchema,
-    CachePolicySchema,
-    CatalogInteractionRefSchema,
-    ConversationStripOptionsSchema,
-    ConversationVisibilitySchema,
-    ExecuteInteractionByEndpointQuerySchema,
-    ExecuteNamedInteractionQuerySchema,
-    ExecutionRunInteractionSchema,
-    ExecutionRunRefSchema,
-    ExecutionRunWorkflowSchema,
-    GeneratedTestDataRecordSchema,
-    GenerateTestDataPayloadSchema,
-    GetRunQuerySchema,
-    InCodeInteractionSchema,
-    InCodePromptSchema,
-    InitialToolCallSchema,
-    InteractionCreatePayloadSchema,
-    InteractionEndpointQuerySchema,
-    InteractionEndpointSchema,
-    InteractionExecutionErrorSchema,
-    InteractionExecutionPayloadSchema,
-    InteractionForkPayloadSchema,
-    InteractionNameSchema,
-    InteractionPublishPayloadSchema,
-    InteractionRefSchema,
-    InteractionRefWithSchemaSchema,
-    InteractionSchema,
-    InteractionsExportPayloadSchema,
-    InteractionTagsSchema,
-    InteractionUpdatePayloadSchema,
-    InteractionVisibilitySchema,
-    NamedInteractionExecutionPayloadSchema,
-    PromptModalitiesSchema,
-    RateLimitRequestPayloadSchema,
-    RateLimitRequestResponseSchema,
-    ResolvedCatalogInteractionSchema,
-    ResolvedEnvironmentInfoSchema,
-    ResolvedInteractionExecutionInfoSchema,
-    ResolvedRuntimeConfigSchema,
-    ResolveInteractionQuerySchema,
-    ResultStorageOptionsSchema,
-    RunSourceSchema,
-    SchemaRefSchema,
-    SkillContextTriggersSchema,
-    StreamingOptionsSchema,
-    StreamingTelemetryContextSchema,
-    ToolResultMetaSchema,
-    ToolResultSchema,
-    ToolResultsPayloadSchema,
-    UpdateExecutionRunPayloadSchema,
-    UserMessagePayloadSchema,
-} from './api-schemas/interaction.js';
-import type { InteractionExecutionConfigurationSchema } from './api-schemas/store.js';
->>>>>>> 3a32ba27 (Feat: remove deprecated genAI function (#2679))
 import type { ExecutionEnvironmentRef } from './environment.js';
 import type { InferenceProfileSnapshot } from './inference-profile.js';
 import type { ProjectRef } from './project.js';
@@ -496,33 +429,11 @@ export type ExecutionRunRef = Wire.ExecutionRunRef;
 
 export type InteractionExecutionConfiguration = Wire.InteractionExecutionConfiguration;
 
-<<<<<<< HEAD
-export type GenerateInteractionPayload = Wire.GenerateInteractionPayload;
-
 export type GenerateTestDataPayload = Wire.GenerateTestDataPayload;
-=======
-export type GenerateTestDataPayload = z.infer<typeof GenerateTestDataPayloadSchema>;
->>>>>>> 3a32ba27 (Feat: remove deprecated genAI function (#2679))
 
 export type GeneratedTestDataRecord = Wire.GeneratedTestDataRecord;
 
-<<<<<<< HEAD
-export type ImprovePromptPayloadConfig = Wire.ImprovePromptPayloadConfig;
-
-export type ImprovePromptPayload = Wire.ImprovePromptPayload;
-
-export type GeneratedInteractionPromptTemplate = Wire.GeneratedInteractionPromptTemplate;
-
-export type GeneratedInteractionPromptSegment = Wire.GeneratedInteractionPromptSegment;
-
-export type GeneratedInteractionDefinition = Wire.GeneratedInteractionDefinition;
-
-export type PromptImprovementResponse = Wire.PromptImprovementResponse;
-
 export type RateLimitRequestPayload = Wire.RateLimitRequestPayload;
-=======
-export type RateLimitRequestPayload = z.infer<typeof RateLimitRequestPayloadSchema>;
->>>>>>> 3a32ba27 (Feat: remove deprecated genAI function (#2679))
 
 export type RateLimitRequestResponse = Wire.RateLimitRequestResponse;
 

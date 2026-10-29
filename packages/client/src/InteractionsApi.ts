@@ -5,11 +5,6 @@ import type {
     ComputedFacetResponse,
     ComputeInteractionFacetPayload,
     DeleteByIdResult,
-<<<<<<< HEAD
-    GeneratedInteractionDefinition,
-=======
-    ExecuteNamedInteractionQuery,
->>>>>>> 3a32ba27 (Feat: remove deprecated genAI function (#2679))
     GeneratedTestDataRecord,
     GenerateTestDataPayload,
     Interaction,
