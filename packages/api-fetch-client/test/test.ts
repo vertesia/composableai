@@ -483,10 +483,10 @@ describe('Test requests', () => {
         }
     });
     it('does not report or retry a caller abort whose signal reason is not an AbortError', async () => {
-        // A Temporal activity's cancellation signal aborts with a `CancelledFailure`, and fetch rejects
-        // with that reason rather than with an `AbortError`.
-        class CancelledFailure extends Error {
-            override name = 'CancelledFailure';
+        // A signal aborted with a custom reason makes fetch reject with that reason rather than with an
+        // `AbortError`.
+        class CancellationError extends Error {
+            override name = 'CancellationError';
         }
         const errors: unknown[][] = [];
         const original = console.error;
@@ -499,7 +499,7 @@ describe('Test requests', () => {
             const controller = new AbortController();
             const cancelledClient = new FetchClient('http://example.test', async () => {
                 attempts++;
-                controller.abort(new CancelledFailure('CANCELLED'));
+                controller.abort(new CancellationError('cancelled'));
                 throw controller.signal.reason;
             }).withRetryPolicy({ attempts: 3, baseDelayMs: 0, jitter: false });
 

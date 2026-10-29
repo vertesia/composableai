@@ -303,9 +303,9 @@ function isAbortError(err: unknown): boolean {
 
 /**
  * True only for a CALLER abort — `controller.abort()` on the signal they supplied. The runtime rejects
- * with the signal's reason, which is an `AbortError` only when the caller gave none: a Temporal
- * activity's cancellation signal, for one, rejects with its `CancelledFailure`. So the caller's own
- * signal is checked as well as the error name. Our own `timeoutMs` surfaces as `TimeoutError` and
+ * with the signal's reason, which is an `AbortError` only when the caller gave none: a signal aborted
+ * with a reason rejects with that reason, whatever its type. So the caller's own signal is checked as
+ * well as the error name. Our own `timeoutMs` surfaces as `TimeoutError` and
  * never aborts the caller's signal, so it is deliberately excluded: a timeout is a transient failure,
  * and `createRequestInit()` mints a fresh timeout signal per attempt, so retrying one is both
  * meaningful and intended. A caller's signal stays aborted across attempts, so retrying that can only
