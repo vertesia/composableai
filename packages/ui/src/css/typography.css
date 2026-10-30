@@ -55,7 +55,10 @@
     }
 
     .vprose :where(ol):not(:where(.not-prose, .not-prose *)) {
-        @apply my-3 ps-6 list-decimal space-y-1;
+        @apply my-3 list-decimal space-y-1;
+        /* Outside markers sit in this padding: one ch per digit plus the "." and a gap. MarkdownRenderer
+           sets --ol-marker-digits from the list's highest number; other lists assume two digits. */
+        padding-inline-start: calc((var(--ol-marker-digits, 2) + 1) * 1ch + 0.5em);
     }
 
     .vprose :where(li):not(:where(.not-prose, .not-prose *)) {
