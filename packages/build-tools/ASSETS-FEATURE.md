@@ -9,13 +9,13 @@ How `vertesia-build` discovers, copies and bundles the files that sit beside a `
 Two kinds of asset are discovered, both non-recursively, both from the directory containing the
 Markdown file being transformed:
 
-| Source | Discovered as | Handling |
-| ------ | ------------- | -------- |
-| `.js`, `.py` beside a `SKILL.md` | `skill.scripts` | Copied verbatim |
-| `.tsx` beside a `SKILL.md` | `skill.widgets` | Bundled with esbuild |
-| Anything beside a `TEMPLATE.md` except `TEMPLATE.md`, `.ts`, `.js` | template assets | Copied verbatim |
+| Source                                                             | Discovered as   | Handling             |
+| ------------------------------------------------------------------ | --------------- | -------------------- |
+| `.js`, `.py` beside a `SKILL.md`                                   | `skill.scripts` | Copied verbatim      |
+| `.tsx` beside a `SKILL.md`                                         | `skill.widgets` | Bundled with esbuild |
+| Anything beside a `TEMPLATE.md` except `TEMPLATE.md`, `.ts`, `.js` | template assets | Copied verbatim      |
 
-Discovery always runs — the names always land in the skill definition. *Copying and bundling* are
+Discovery always runs — the names always land in the skill definition. _Copying and bundling_ are
 what `assetsDir: false` disables, which is how `workflows` and `studio-server` are configured: they
 want `skill.scripts` populated without a `dist/` tree.
 
@@ -92,11 +92,11 @@ Fixed esbuild settings: `bundle: true`, `format: 'esm'`, `platform: 'browser'`,
 }
 ```
 
-| Option | Type | Default | Meaning |
-| ------ | ---- | ------- | ------- |
-| `external` | `string[]` | React family (below) | Packages left as bare imports rather than bundled. |
-| `minify` | `boolean` | `false` | esbuild minification. |
-| `sourcemap` | `boolean \| 'inline' \| 'external'` | `true` | Source map emission. |
+| Option      | Type                                | Default              | Meaning                                            |
+| ----------- | ----------------------------------- | -------------------- | -------------------------------------------------- |
+| `external`  | `string[]`                          | React family (below) | Packages left as bare imports rather than bundled. |
+| `minify`    | `boolean`                           | `false`              | esbuild minification.                              |
+| `sourcemap` | `boolean \| 'inline' \| 'external'` | `true`               | Source map emission.                               |
 
 Default externals, used whenever `external` is omitted:
 
@@ -121,20 +121,20 @@ the template's own path, so two templates cannot overwrite each other:
 
 Only these keys affect assets; see the README for the full config reference.
 
-| Key | Effect |
-| --- | ------ |
-| `assetsDir` | Destination root. `false` disables copying *and* bundling. Defaults to `libDir`. |
-| `widgetsDir` | Sub-directory of `assetsDir` for widget bundles. Default `widgets`. |
-| `widgetConfig` | Forwarded to the esbuild bundler (table above). |
+| Key            | Effect                                                                           |
+| -------------- | -------------------------------------------------------------------------------- |
+| `assetsDir`    | Destination root. `false` disables copying _and_ bundling. Defaults to `libDir`. |
+| `widgetsDir`   | Sub-directory of `assetsDir` for widget bundles. Default `widgets`.              |
+| `widgetConfig` | Forwarded to the esbuild bundler (table above).                                  |
 
 ## Implementation map
 
-| Concern | Module | Key exports |
-| ------- | ------ | ----------- |
-| Skill discovery | `src/core/utils/asset-discovery.ts` | `discoverSkillAssets`, `WidgetMetadata`, `DiscoveredAssets` |
-| Template discovery | `src/core/utils/template-asset-discovery.ts` | `discoverTemplateAssets` |
-| Copying | `src/core/utils/asset-copy.ts` | `copyAssetFile`, `copyAssets` |
-| Bundling | `src/core/compilers/widget.ts` | `compileWidget`, `compileWidgets`, `WidgetCompilerConfig` |
+| Concern            | Module                                       | Key exports                                                 |
+| ------------------ | -------------------------------------------- | ----------------------------------------------------------- |
+| Skill discovery    | `src/core/utils/asset-discovery.ts`          | `discoverSkillAssets`, `WidgetMetadata`, `DiscoveredAssets` |
+| Template discovery | `src/core/utils/template-asset-discovery.ts` | `discoverTemplateAssets`                                    |
+| Copying            | `src/core/utils/asset-copy.ts`               | `copyAssetFile`, `copyAssets`                               |
+| Bundling           | `src/core/compilers/widget.ts`               | `compileWidget`, `compileWidgets`, `WidgetCompilerConfig`   |
 
 Ordering inside `transformImports`: assets and widgets are accumulated as chunks are emitted,
 deduplicated (widgets by source path), and only copied and bundled once the whole work queue has

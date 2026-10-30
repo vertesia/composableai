@@ -11,6 +11,10 @@
             "!!**/llumiverse",
             "**/package.json",
             "**/*.{js,cjs,mjs,jsx,ts,tsx,css,html}",
+            "**/*.{md,yml,yaml}",
+            "!**/pnpm-lock.yaml",
+            "!**/pnpm-workspace.yaml",
+            "!**/templates/**/*.{yml,yaml}",
             "packages/ui/src/i18n/locales/*.json",
             "!**/dist/**",
             "!**/lib/**",
@@ -45,15 +49,21 @@
             },
             "complexity": {
                 "useLiteralKeys": "error",
-                "useOptionalChain": "error"
+                "useOptionalChain": "error",
+                "noUnnecessaryTemplateExpression": "error",
+                "useArraySome": "error",
+                "useMathMinMax": "error",
+                "useRegexpTest": "error"
             },
             "security": {
-                "noDangerouslySetInnerHtml": "error"
+                "noDangerouslySetInnerHtml": "error",
+                "useIframeSandbox": "error"
             },
             "style": {
                 "useImportType": "error",
                 "useNodejsImportProtocol": "error",
-                "useTemplate": "error"
+                "useTemplate": "error",
+                "useReduceTypeParameter": "error"
             },
             "suspicious": {
                 "noBiomeFirstException": "off",
@@ -67,7 +77,11 @@
                 "noUnusedExpressions": "error",
                 "useBiomeIgnoreFolder": "off",
                 "useIterableCallbackReturn": "error",
-                "noImportCycles": "error"
+                "noImportCycles": "error",
+                "noDuplicateSelectors": "error",
+                "noEmptyObjectKeys": "error",
+                "noIdenticalTestTitle": "error",
+                "noJsxLeakedDollar": "error"
             },
             "a11y": {
                 "useAltText": "error",
@@ -88,8 +102,37 @@
                 "useAriaActivedescendantWithTabindex": "error",
                 "noLabelWithoutControl": "error"
             },
+            "performance": {
+                "useDomNodeTextContent": "error"
+            },
             "nursery": {
-                "noFloatingPromises": "error"
+                "noFloatingPromises": "error",
+                "noMisusedPromises": "error",
+                "noAccidentalBitwiseOperators": "error",
+                "noArgumentsCallerOrCallee": "error",
+                "noArraySortForMinMax": "error",
+                "noBooleanSortComparator": "error",
+                "noDoubleComparison": "error",
+                "noDuplicateMapKeys": "error",
+                "noNewRequire": "error",
+                "noObjectConstructor": "error",
+                "noObsoleteAttributes": "error",
+                "noOctal": "error",
+                "noPathConcat": "error",
+                "noSelfNestedLayer": "error",
+                "noTailwindLegacyUtilities": "error",
+                "noUnsafeUnaryMinus": "error",
+                "noUselessCall": "error",
+                "noUselessDateGetTime": "error",
+                "noUselessSplice": "error",
+                "useConsistentHeadingLevel": "error",
+                "useFencedCodeLanguage": "error",
+                "useMathAbs": "error",
+                "usePackageJsonValidCpu": "error",
+                "usePackageJsonValidEngines": "error",
+                "useSimplifiedBooleanReturn": "error",
+                "useSingleTopLevelHeading": "error",
+                "useTopLevelHeading": "error"
             }
         }
     },
@@ -103,6 +146,19 @@
             "tailwindDirectives": true
         }
     },
+    "markdown": {
+        "parser": {
+            "frontmatter": true
+        },
+        "formatter": {
+            "formatEmbeds": false
+        }
+    },
+    "yaml": {
+        "formatter": {
+            "indentWidth": 2
+        }
+    },
     "assist": {
         "enabled": true,
         "actions": {
@@ -112,6 +168,68 @@
         }
     },
     "overrides": [
+        {
+            "includes": ["templates/plugin-template/tests/**/*.ts"],
+            "linter": {
+                "rules": {
+                    "complexity": {
+                        "noPlaywrightUselessAwait": "error"
+                    },
+                    "correctness": {
+                        "noPlaywrightMissingAwait": "error",
+                        "usePlaywrightValidDescribeCallback": "error"
+                    },
+                    "style": {
+                        "noPlaywrightElementHandle": "error",
+                        "noPlaywrightEval": "error",
+                        "noPlaywrightWaitForSelector": "error"
+                    },
+                    "suspicious": {
+                        "noPlaywrightForceOption": "error",
+                        "noPlaywrightNetworkidle": "error",
+                        "noPlaywrightPagePause": "error",
+                        "noPlaywrightWaitForNavigation": "error",
+                        "noPlaywrightWaitForTimeout": "error"
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["packages/build-tools/ASSETS-FEATURE.md", "packages/ui/README.md"],
+            "formatter": {
+                "enabled": false
+            }
+        },
+        {
+            "includes": ["AGENTS.md"],
+            "linter": {
+                "rules": {
+                    "nursery": {
+                        "useSingleTopLevelHeading": "off"
+                    }
+                }
+            }
+        },
+        {
+            "includes": ["packages/ui/src/core/components/shadcn/modal/dialog.tsx"],
+            "linter": {
+                "rules": {
+                    "nursery": {
+                        "noTailwindLegacyUtilities": "off"
+                    }
+                }
+            }
+        },
+        {
+            "includes": [".github/**/*.md", "**/.claude/agents/**/*.md"],
+            "linter": {
+                "rules": {
+                    "nursery": {
+                        "useTopLevelHeading": "off"
+                    }
+                }
+            }
+        },
         {
             "includes": [
                 "packages/fusion-ux/src/**/*.{js,jsx,ts,tsx}",

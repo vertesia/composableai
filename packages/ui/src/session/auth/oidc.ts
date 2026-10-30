@@ -183,7 +183,7 @@ export function completeOidcSignIn(): Promise<boolean> {
     // The exchange leaves the callback URL before it finishes, so a caller arriving meanwhile (React
     // Strict Mode runs a provider's effect twice) would see an ordinary page and no token yet, and
     // sign the user out. It waits for the same exchange instead.
-    if (pendingCompletion) return pendingCompletion;
+    if (pendingCompletion !== undefined) return pendingCompletion;
     if (!Env.oidc || window.location.pathname !== OIDC_CALLBACK_PATH) return Promise.resolve(false);
     pendingCompletion = finishOidcCallback().finally(() => {
         pendingCompletion = undefined;

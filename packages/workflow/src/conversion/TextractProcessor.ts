@@ -88,7 +88,7 @@ export class TextractProcessor {
                         if (word.BlockType === 'WORD') {
                             const wordText = word.Text || '';
                             // Example logic to quote numeric text with commas
-                            if (wordText.includes(',') && wordText.replace(',', '').match(/^\d+$/)) {
+                            if (wordText.includes(',') && /^\d+$/.test(wordText.replace(',', ''))) {
                                 text += `"${wordText}" `;
                             } else {
                                 text += `${wordText} `;
@@ -319,10 +319,7 @@ export class TextractProcessor {
         const gap = currentTop - prevBottom;
 
         // For example, if gap < 0.02, treat them as contiguous
-        if (gap < 0.02) {
-            return true;
-        }
-        return false;
+        return gap < 0.02;
     }
 
     async processResults(jobId: string): Promise<string> {

@@ -4,16 +4,16 @@ The updated theme uses surface / foreground pairs consistently. Update consumer 
 alongside the shared theme. Keeping old text classes with the new theme will paint surface
 colors as text. This is a styling compatibility change even though the React APIs are unchanged.
 
-| Previous usage | New usage |
-|----------------|-----------|
-| `text-muted` | `text-muted-foreground` |
-| `text-success` | `text-success-foreground` |
-| `border-info` | `border-info-foreground` for a strong accent, `border-border` for a neutral border |
-| `bg-success` | Unchanged: the pale/translucent success surface |
-| `bg-success/50` | `bg-success-foreground/50` to preserve the old strong tint, or `bg-success/50` for a translucent surface |
-| `var(--success)` used as an accent | `var(--success-foreground)` |
-| `var(--success-background)` | `var(--success)` |
-| `bg-primary text-white` | `bg-primary text-primary-foreground` (prefer the shared Button) |
+| Previous usage                     | New usage                                                                                                |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `text-muted`                       | `text-muted-foreground`                                                                                  |
+| `text-success`                     | `text-success-foreground`                                                                                |
+| `border-info`                      | `border-info-foreground` for a strong accent, `border-border` for a neutral border                       |
+| `bg-success`                       | Unchanged: the pale/translucent success surface                                                          |
+| `bg-success/50`                    | `bg-success-foreground/50` to preserve the old strong tint, or `bg-success/50` for a translucent surface |
+| `var(--success)` used as an accent | `var(--success-foreground)`                                                                              |
+| `var(--success-background)`        | `var(--success)`                                                                                         |
+| `bg-primary text-white`            | `bg-primary text-primary-foreground` (prefer the shared Button)                                          |
 
 The same migration applies to secondary, muted, attention, destructive, done, and info.
 It also applies to SVG fill/stroke, ring, outline, decoration, shadow, and mixer utilities.

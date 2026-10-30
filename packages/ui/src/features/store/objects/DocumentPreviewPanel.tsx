@@ -127,7 +127,7 @@ export function DocumentPreviewPanel({ objectId, isOpen, onClose }: DocumentPrev
 
     return (
         <div
-            className={`fixed inset-y-0 end-0 w-2/5 bg-card text-card-foreground shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${panelTranslateClass}`}
+            className={`fixed inset-y-0 inset-e-0 w-2/5 bg-card text-card-foreground shadow-xl z-50 flex flex-col transition-transform duration-300 transform ${panelTranslateClass}`}
         >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted">

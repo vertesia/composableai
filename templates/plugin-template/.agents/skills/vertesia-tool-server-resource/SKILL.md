@@ -33,11 +33,11 @@ contributions: register hooks under `src/modules/app/resources/hooks/` and subsc
 
 Three files in `src/modules/app/resources/tools/<collection>/<tool-name>/`:
 
-| File | Purpose |
-|------|---------|
-| `schema.ts` | TypeScript interface + JSONSchema (`satisfies JSONSchema`) |
+| File        | Purpose                                                                          |
+| ----------- | -------------------------------------------------------------------------------- |
+| `schema.ts` | TypeScript interface + JSONSchema (`satisfies JSONSchema`)                       |
 | `<impl>.ts` | The `run` function — uses `ToolExecutionPayload<P>`, returns `ToolResultContent` |
-| `index.ts` | `Tool<P>` definition (`satisfies Tool<ParamsT>`) |
+| `index.ts`  | `Tool<P>` definition (`satisfies Tool<ParamsT>`)                                 |
 
 Then export from `src/modules/app/resources/tools/<collection>/index.ts` as a `ToolCollection`.
 
@@ -47,13 +47,13 @@ Then export from `src/modules/app/resources/tools/<collection>/index.ts` as a `T
 
 Files in `src/modules/app/resources/skills/<collection>/<skill-name>/`:
 
-| File | Required | Purpose |
-|------|----------|---------|
-| `SKILL.md` | yes | YAML frontmatter + instructions for the agent |
-| `properties.ts` | no | Runtime gating (`isEnabled`) |
-| `*.tsx` | no | Widgets (compiled to `dist/widgets/`) |
-| `*.py`, `*.js` | no | Scripts beside `SKILL.md` (copied to `dist/scripts/`, synced to `~/skills/<skill-name>/`) |
-| `scripts/`, `references/`, `assets/` | no | [Agent Skills](https://agentskills.io/specification) resource directories, any file type, nested folders allowed (copied to `dist/skill-files/<skill-name>/`, synced to `~/skills/<skill-name>/` with the same relative paths) |
+| File                                 | Required | Purpose                                                                                                                                                                                                                        |
+| ------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SKILL.md`                           | yes      | YAML frontmatter + instructions for the agent                                                                                                                                                                                  |
+| `properties.ts`                      | no       | Runtime gating (`isEnabled`)                                                                                                                                                                                                   |
+| `*.tsx`                              | no       | Widgets (compiled to `dist/widgets/`)                                                                                                                                                                                          |
+| `*.py`, `*.js`                       | no       | Scripts beside `SKILL.md` (copied to `dist/scripts/`, synced to `~/skills/<skill-name>/`)                                                                                                                                      |
+| `scripts/`, `references/`, `assets/` | no       | [Agent Skills](https://agentskills.io/specification) resource directories, any file type, nested folders allowed (copied to `dist/skill-files/<skill-name>/`, synced to `~/skills/<skill-name>/` with the same relative paths) |
 
 The frontmatter also accepts the Agent Skills fields `license`, `compatibility`, `metadata` (string values) and
 `allowed-tools`. `allowed-tools` is experimental in the spec and Vertesia does not support it: the build records it

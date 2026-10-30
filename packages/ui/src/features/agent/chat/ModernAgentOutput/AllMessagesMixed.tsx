@@ -619,7 +619,7 @@ function SummaryUserBubble({
                 className={cn(
                     'max-w-[min(44rem,82%)] rounded-[1.35rem] bg-mixer-muted/35 px-4 py-2.5',
                     'text-sm font-normal leading-6 text-foreground/90 bg-mixer-muted/35 shadow-sm',
-                    'break-words [overflow-wrap:anywhere]',
+                    'wrap-break-word [overflow-wrap:anywhere]',
                     className,
                 )}
                 data-workstream-id={workstreamId}
@@ -638,7 +638,7 @@ function SummaryUserBubble({
                             onArtifactOpen={onOpenArtifact}
                             components={markdownComponents}
                             className={cn(
-                                'agent-markdown vprose prose max-w-none break-words text-sm leading-6 text-foreground/90',
+                                'agent-markdown vprose prose max-w-none wrap-break-word text-sm leading-6 text-foreground/90',
                                 'prose-p:my-0 prose-p:leading-6 prose-a:text-foreground prose-a:underline prose-a:decoration-muted prose-a:underline-offset-4',
                                 '[&_p+_p]:mt-2',
                             )}
@@ -926,7 +926,7 @@ function renderDefaultInitialRequest(
                 {fields.map((field) => (
                     <div key={field.key} className="grid gap-1 sm:grid-cols-[minmax(7rem,32%)_1fr] sm:gap-3">
                         <dt className="text-xs font-medium text-muted">{field.label}</dt>
-                        <dd className="min-w-0 break-words text-sm text-foreground">
+                        <dd className="min-w-0 wrap-break-word text-sm text-foreground">
                             {renderRequestValue(field.value)}
                         </dd>
                     </div>
@@ -1853,7 +1853,7 @@ function ToolDetailSection({ section }: { section: SummaryToolDetailSection }) {
         isPrimitive && !String(value).includes('\n') && String(value).length < 180 ? (
             <div
                 className={cn(
-                    'break-words text-xs',
+                    'wrap-break-word text-xs',
                     section.tone === 'error' ? 'text-destructive' : 'text-foreground/75',
                 )}
             >
@@ -1966,7 +1966,7 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
     return (
         <div className="relative mt-2 rounded-lg border border-border/70 bg-mixer-muted/10 p-3 shadow-sm">
             {hasDetailContent ? (
-                <div className="absolute end-2 top-2">
+                <div className="absolute inset-e-2 top-2">
                     <button
                         type="button"
                         className={cn(
@@ -1986,12 +1986,12 @@ function SummaryToolDetailPanel({ item }: { item: SummaryToolDetailItem }) {
             <div className={cn(hasDetailContent && 'pe-7')}>
                 <ToolDetailMetadata item={item} hasDetailContent={hasDetailContent} />
                 {commandText ? (
-                    <pre className="mb-3 whitespace-pre-wrap break-words font-mono text-sm leading-6 text-foreground/85">
+                    <pre className="mb-3 whitespace-pre-wrap wrap-break-word font-mono text-sm leading-6 text-foreground/85">
                         {commandText}
                     </pre>
                 ) : null}
                 {fallbackText ? (
-                    <div className="mb-3 break-words text-sm leading-6 text-foreground/75">{fallbackText}</div>
+                    <div className="mb-3 wrap-break-word text-sm leading-6 text-foreground/75">{fallbackText}</div>
                 ) : null}
                 {item.sections.length > 0 ? (
                     <div className="space-y-3">
@@ -2073,7 +2073,7 @@ function SummaryToolTimelineItem({ item }: { item: SummaryToolDetailItem }) {
                 >
                     {icon}
                     <span className="min-w-0 text-sm text-muted">
-                        <span className="break-words">{item.title}</span>
+                        <span className="wrap-break-word">{item.title}</span>
                         {item.decisionText ? (
                             <Badge variant="destructive" className="ms-2 rounded-full shadow-sm shadow-destructive/10">
                                 {item.decisionText}
@@ -2383,8 +2383,10 @@ function TimelineEntry({ children, status }: { children: React.ReactNode; status
 
     return (
         <div className="relative ps-7">
-            <div className="absolute start-2 top-0 bottom-0 w-px bg-border" />
-            <div className={cn('absolute start-[5px] top-4 size-2.5 rounded-full ring-4 ring-background', dotClass)} />
+            <div className="absolute inset-s-2 top-0 bottom-0 w-px bg-border" />
+            <div
+                className={cn('absolute inset-s-[5px] top-4 size-2.5 rounded-full ring-4 ring-background', dotClass)}
+            />
             {children}
         </div>
     );

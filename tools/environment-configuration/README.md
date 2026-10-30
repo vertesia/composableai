@@ -71,7 +71,7 @@ npm run aws -- -r <AWS_REGION>
 
 The list of all the parameters can be displayed using
 
-```
+```bash
 npm run aws -- -h
 ```
 
@@ -93,7 +93,7 @@ npm run gcp -- -r <GCP_REGION>
 
 The list of all the parameters can be displayed using
 
-```
+```bash
 npm run gcp -- -h
 ```
 

@@ -336,7 +336,7 @@ function GroundedExtractionViewImpl({
                     {selectedCellRange && (
                         <Badge
                             variant="secondary"
-                            className="absolute start-2 max-w-32 truncate font-mono text-[11px]"
+                            className="absolute inset-s-2 max-w-32 truncate font-mono text-[11px]"
                             title={selectedCellRange}
                         >
                             {selectedCellRange}
@@ -365,7 +365,7 @@ function GroundedExtractionViewImpl({
                             <ChevronRight className="size-4" />
                         </Button>
                     </div>
-                    <fieldset className="absolute end-2 flex items-center gap-0.5 rounded border-0 bg-muted p-0.5">
+                    <fieldset className="absolute inset-e-2 flex items-center gap-0.5 rounded border-0 bg-muted p-0.5">
                         <legend className="sr-only">{t('grounded.checkerboard')}</legend>
                         <VTooltip description={t('pdf.originalImages')} placement="bottom" size="xs" asChild>
                             <Button

@@ -181,7 +181,7 @@ export function AuthScreenPreview({
                     {page}
                 </div>
                 <details
-                    className="fixed top-2 start-2 max-h-80 overflow-auto rounded border bg-background text-foreground p-3 text-sm"
+                    className="fixed top-2 inset-s-2 max-h-80 overflow-auto rounded border bg-background text-foreground p-3 text-sm"
                     style={{ zIndex: 2147483647 }}
                 >
                     <summary>Auth preview: {selected}</summary>

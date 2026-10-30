@@ -33,7 +33,7 @@ export function ArtifactUrlCacheProvider({ children }: { children: React.ReactNo
 
         // Return pending promise if a fetch is already in progress
         const pending = pendingRef.current.get(key);
-        if (pending) {
+        if (pending !== undefined) {
             return pending;
         }
 

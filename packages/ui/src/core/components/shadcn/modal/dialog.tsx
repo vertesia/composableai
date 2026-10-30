@@ -86,7 +86,7 @@ export function Modal({
                     className,
                 )}
             >
-                <div className="top-4 end-4 absolute">
+                <div className="top-4 inset-e-4 absolute">
                     <div className="flex gap-2">
                         {action && action}
                         {!noCloseButton && (

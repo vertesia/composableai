@@ -311,7 +311,7 @@ export function PdfPageSlider({
                 <Button variant="ghost" size="xs" onClick={goPrev} title={t('pdf.previousPage')}>
                     <ChevronsUp className="size-4" />
                 </Button>
-                <div className="absolute start-2 flex items-center gap-x-1">
+                <div className="absolute inset-s-2 flex items-center gap-x-1">
                     <ZoomControls
                         zoom={zoom}
                         onZoomIn={zoomIn}
@@ -327,7 +327,7 @@ export function PdfPageSlider({
                         </>
                     )}
                 </div>
-                <div className="absolute end-2">
+                <div className="absolute inset-e-2">
                     <PageNavigator currentPage={currentPage} totalPages={pageCount} onChange={onChange} />
                 </div>
             </div>

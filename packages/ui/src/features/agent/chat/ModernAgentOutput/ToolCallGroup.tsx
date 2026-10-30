@@ -465,7 +465,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                 onKeyDown={onActivateKey(onToggle)}
             >
                 <div className="flex items-start gap-2 flex-1 min-w-0">
-                    <div className="flex-shrink-0 pt-0.5">
+                    <div className="shrink-0 pt-0.5">
                         {isExpanded ? (
                             <ChevronDown className="size-3 text-muted" />
                         ) : (
@@ -481,7 +481,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                         )}
                     </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                     {/* Tool name badge on the right */}
                     {!isExpanded && <span className={cn(badgeClass, classNames.toolBadgeClassName)}>{toolName}</span>}
                     <Button
@@ -541,7 +541,7 @@ function ToolCallItem({ message, isExpanded, onToggle, artifactRunId, classNames
                                 <div className="mb-2 space-y-0.5">
                                     {interestingDetails.map(([key, value]) => (
                                         <div key={key} className="flex gap-1.5 text-xs">
-                                            <span className="text-muted font-medium flex-shrink-0">
+                                            <span className="text-muted font-medium shrink-0">
                                                 {formatDetailKey(key)}:
                                             </span>
                                             <span className="text-foreground break-all">
@@ -945,13 +945,13 @@ function ToolCallGroupComponent({
                         </>
                     )}
                     {isCollapsed ? (
-                        <ChevronRight className="size-3 text-muted flex-shrink-0 cn-rtl-flip" />
+                        <ChevronRight className="size-3 text-muted shrink-0 cn-rtl-flip" />
                     ) : (
-                        <ChevronDown className="size-3 text-muted flex-shrink-0" />
+                        <ChevronDown className="size-3 text-muted shrink-0" />
                     )}
                 </div>
 
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 shrink-0">
                     {preambleText && (
                         <span className={cn('text-[10px] text-done font-medium', toolSummaryClassName)}>
                             {toolSummary}
@@ -1028,7 +1028,7 @@ function ToolCallGroupComponent({
                                     onKeyDown={onActivateKey(() => toggleItem(itemKey))}
                                     title={fullMessage}
                                 >
-                                    <div className="flex-shrink-0 pt-0.5">
+                                    <div className="shrink-0 pt-0.5">
                                         {isItemExpanded ? (
                                             <ChevronDown className="size-3 text-muted" />
                                         ) : (
@@ -1045,7 +1045,7 @@ function ToolCallGroupComponent({
                                     </div>
                                     {/* Tool name badge on the right */}
                                     {!isItemExpanded && (
-                                        <span className={cn(badgeClass, 'flex-shrink-0', toolBadgeClassName)}>
+                                        <span className={cn(badgeClass, 'shrink-0', toolBadgeClassName)}>
                                             {toolName}
                                         </span>
                                     )}
@@ -1090,7 +1090,7 @@ function ToolCallGroupComponent({
                                                     <div className="mb-1.5 space-y-0.5">
                                                         {interestingDetails.map(([key, value]) => (
                                                             <div key={key} className="flex gap-1.5 text-xs">
-                                                                <span className="text-muted font-medium flex-shrink-0">
+                                                                <span className="text-muted font-medium shrink-0">
                                                                     {formatDetailKey(key)}:
                                                                 </span>
                                                                 <span className="text-foreground break-all">
