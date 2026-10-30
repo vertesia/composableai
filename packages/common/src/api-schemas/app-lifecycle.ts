@@ -48,14 +48,21 @@ export const UpdateAppInstallationToolAllowlistPayloadSchema = z
     })
     .meta({ id: 'UpdateAppInstallationToolAllowlistPayload' });
 
-export const UpdateAppInstallationToolApprovalsPayloadSchema = z
+export const UpdateAppInstallationToolPermissionsPayloadSchema = z
     .strictObject({
-        tools_requiring_approval: nullableToolAllowlistSchema,
+        tool_allowlist: nullableToolAllowlistSchema.optional().meta({
+            description:
+                'Tool names agents may use. Null removes the restriction; omit to leave the allowlist unchanged.',
+        }),
+        tools_requiring_approval: nullableToolAllowlistSchema.optional().meta({
+            description:
+                'Tool names that always require human approval before an agent runs them. Null clears the list; omit to leave it unchanged.',
+        }),
     })
     .meta({
-        id: 'UpdateAppInstallationToolApprovalsPayload',
+        id: 'UpdateAppInstallationToolPermissionsPayload',
         description:
-            'Tool names that always require human approval before an agent runs them. Use null to clear the list.',
+            'Updates the tool allowlist and the tools requiring approval of an app installation in one atomic write.',
     });
 
 export const UpdateAppInstallationOAuthApprovalPayloadSchema = z

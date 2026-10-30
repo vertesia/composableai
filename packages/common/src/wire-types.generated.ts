@@ -1504,8 +1504,9 @@ export type AppInstallationPayload = {
 export type UpdateAppInstallationToolAllowlistPayload = {
     tool_allowlist: string[] | null;
 };
-export type UpdateAppInstallationToolApprovalsPayload = {
-    tools_requiring_approval: string[] | null;
+export type UpdateAppInstallationToolPermissionsPayload = {
+    tool_allowlist?: string[] | null | undefined;
+    tools_requiring_approval?: string[] | null | undefined;
 };
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
 /**
@@ -12005,7 +12006,7 @@ export interface ApiComponentTypes {
     ViewExperienceListQuery: ViewExperienceListQuery;
     UpdateAppInstallationOAuthApprovalPayload: UpdateAppInstallationOAuthApprovalPayload;
     UpdateAppInstallationToolAllowlistPayload: UpdateAppInstallationToolAllowlistPayload;
-    UpdateAppInstallationToolApprovalsPayload: UpdateAppInstallationToolApprovalsPayload;
+    UpdateAppInstallationToolPermissionsPayload: UpdateAppInstallationToolPermissionsPayload;
     ValidateUrlResponse: ValidateUrlResponse;
     ValidateUrlRequest: ValidateUrlRequest;
     AppVersionUrls: AppVersionUrls;

@@ -19242,9 +19242,19 @@
     ],
     "additionalProperties": false
   },
-  "UpdateAppInstallationToolApprovalsPayload": {
+  "UpdateAppInstallationToolPermissionsPayload": {
     "type": "object",
     "properties": {
+      "tool_allowlist": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": "string"
+        },
+        "description": "Tool names agents may use. Null removes the restriction; omit to leave the allowlist unchanged."
+      },
       "tools_requiring_approval": {
         "type": [
           "array",
@@ -19252,14 +19262,12 @@
         ],
         "items": {
           "type": "string"
-        }
+        },
+        "description": "Tool names that always require human approval before an agent runs them. Null clears the list; omit to leave it unchanged."
       }
     },
-    "required": [
-      "tools_requiring_approval"
-    ],
     "additionalProperties": false,
-    "description": "Tool names that always require human approval before an agent runs them. Use null to clear the list."
+    "description": "Updates the tool allowlist and the tools requiring approval of an app installation in one atomic write."
   },
   "ValidateUrlResponse": {
     "type": "object",
