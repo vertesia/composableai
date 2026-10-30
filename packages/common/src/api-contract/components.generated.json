@@ -4824,8 +4824,7 @@
         "description": "How configuration combines with the interaction configuration. Normally omit to use the default merge behavior."
       },
       "model_options": {
-        "$ref": "#/components/schemas/ModelOptions",
-        "description": "Provider-specific model options, such as temperature and output-token limits. Options must be supported by the selected model."
+        "$ref": "#/components/schemas/ModelOptions"
       },
       "prompt_cache_key": {
         "type": "string",

@@ -1288,8 +1288,6 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 model_options: {
                     $ref: '#/$defs/ModelOptions',
-                    description:
-                        'Provider-specific model options, such as temperature and output-token limits. Options must be supported by the selected model.',
                 },
                 prompt_cache_key: {
                     type: 'string',

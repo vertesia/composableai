@@ -78,12 +78,9 @@ export const ConfigModesSchema = z.enum(ConfigModes).meta({ id: 'ConfigModes' })
 
 export const InteractionExecutionConfigurationSchema = z
     .strictObject({
-        id: z
-            .string()
-            .optional()
-            .meta({
-                description: 'Optional configuration identifier. Normally omit this when overriding intake settings.',
-            }),
+        id: z.string().optional().meta({
+            description: 'Optional configuration identifier. Normally omit this when overriding intake settings.',
+        }),
         inference_profile: InferenceProfileIdSchema.nullable()
             .optional()
             .meta({ description: 'Select a project inference profile. Null bypasses profile defaults.' }),
@@ -95,27 +92,18 @@ export const InteractionExecutionConfigurationSchema = z
                     "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as " +
                     "a fallback: the interaction's bound or attached profile, or its own model, replaces them.",
             }),
-        environment: z
-            .string()
-            .optional()
-            .meta({
-                description:
-                    'Execution environment ID for the selected model. Supply with model to replace inherited profile routing.',
-            }),
-        model: z
-            .string()
-            .optional()
-            .meta({
-                description:
-                    'Model name within the execution environment. Changing model or profile drops inherited model options.',
-            }),
-        do_validate: z
-            .boolean()
-            .optional()
-            .meta({
-                description:
-                    'Validate the interaction output against its result schema. Omit to inherit validation settings.',
-            }),
+        environment: z.string().optional().meta({
+            description:
+                'Execution environment ID for the selected model. Supply with model to replace inherited profile routing.',
+        }),
+        model: z.string().optional().meta({
+            description:
+                'Model name within the execution environment. Changing model or profile drops inherited model options.',
+        }),
+        do_validate: z.boolean().optional().meta({
+            description:
+                'Validate the interaction output against its result schema. Omit to inherit validation settings.',
+        }),
         run_data: RunDataStorageLevelSchema.optional().meta({
             description:
                 'Run-data storage level: controls which execution inputs and outputs are retained. Omit to inherit.',
@@ -124,10 +112,7 @@ export const InteractionExecutionConfigurationSchema = z
             description:
                 'How configuration combines with the interaction configuration. Normally omit to use the default merge behavior.',
         }),
-        model_options: ModelOptionsSchema.optional().meta({
-            description:
-                'Provider-specific model options, such as temperature and output-token limits. Options must be supported by the selected model.',
-        }),
+        model_options: ModelOptionsSchema.optional(),
         prompt_cache_key: z
             .string()
             .optional()
@@ -280,41 +265,28 @@ export const ContentTypeExtractionGroundingPolicySchema = z
  */
 export const EmbeddingTypeEnabledMapSchema = z
     .strictObject({
-        text: z
-            .boolean()
-            .optional()
-            .meta({
-                description:
-                    'Generate embeddings from object text. False disables this step; true still requires text embeddings to be enabled in the project.',
-            }),
-        image: z
-            .boolean()
-            .optional()
-            .meta({
-                description:
-                    'Generate image embeddings when applicable. False disables this step; true still requires image embeddings to be enabled in the project.',
-            }),
-        properties: z
-            .boolean()
-            .optional()
-            .meta({
-                description:
-                    'Generate embeddings from extracted properties. False disables this step; true still requires property embeddings to be enabled in the project.',
-            }),
+        text: z.boolean().optional().meta({
+            description:
+                'Generate embeddings from object text. False disables this step; true still requires text embeddings to be enabled in the project.',
+        }),
+        image: z.boolean().optional().meta({
+            description:
+                'Generate image embeddings when applicable. False disables this step; true still requires image embeddings to be enabled in the project.',
+        }),
+        properties: z.boolean().optional().meta({
+            description:
+                'Generate embeddings from extracted properties. False disables this step; true still requires property embeddings to be enabled in the project.',
+        }),
     })
     .meta({ id: 'EmbeddingTypeEnabledMap' });
 
 /** Per-media settings for StandardIntake subscriptions and intake policies. */
 export const IntakeMediaAnalysisOverrideSchema = z
     .strictObject({
-        interaction: z
-            .string()
-            .regex(/\S/)
-            .optional()
-            .meta({
-                description:
-                    'Interaction ID or qualified name for this media analysis step. Omit to inherit the type/project setting or built-in interaction; image analysis also inherits extraction.interaction.',
-            }),
+        interaction: z.string().regex(/\S/).optional().meta({
+            description:
+                'Interaction ID or qualified name for this media analysis step. Omit to inherit the type/project setting or built-in interaction; image analysis also inherits extraction.interaction.',
+        }),
         config: InteractionExecutionConfigurationSchema.optional().meta({
             description:
                 'Execution configuration for this media analysis step only. Omitted fields inherit; inference_profile: null bypasses profile defaults.',
@@ -348,36 +320,23 @@ export const ContentTypeIntakePolicySchema = z
             description:
                 'Media analysis defaults. Subscription settings override the content type, which overrides project defaults.',
         }),
-        mode: z
-            .enum(['programmatic', 'agentic'])
-            .optional()
-            .meta({
-                description:
-                    'Intake orchestration: programmatic runs the standard processing pipeline; agentic delegates processing to the intake agent. Omit to inherit; platform default programmatic.',
-            }),
+        mode: z.enum(['programmatic', 'agentic']).optional().meta({
+            description:
+                'Intake orchestration: programmatic runs the standard processing pipeline; agentic delegates processing to the intake agent. Omit to inherit; platform default programmatic.',
+        }),
         identification: z
             .strictObject({
-                guidance: z
-                    .string()
-                    .optional()
-                    .meta({
-                        description:
-                            'Describe when this content type should be selected. This is type-identification metadata, not a workflow parameter.',
-                    }),
-                distinguish_from: z
-                    .string()
-                    .optional()
-                    .meta({
-                        description:
-                            'Explain how to distinguish this type from similar types to improve type selection.',
-                    }),
-                examples: z
-                    .array(z.string())
-                    .optional()
-                    .meta({
-                        description:
-                            'Representative examples or identifying characteristics that help the type selector recognize this type.',
-                    }),
+                guidance: z.string().optional().meta({
+                    description:
+                        'Describe when this content type should be selected. This is type-identification metadata, not a workflow parameter.',
+                }),
+                distinguish_from: z.string().optional().meta({
+                    description: 'Explain how to distinguish this type from similar types to improve type selection.',
+                }),
+                examples: z.array(z.string()).optional().meta({
+                    description:
+                        'Representative examples or identifying characteristics that help the type selector recognize this type.',
+                }),
             })
             .optional()
             .meta({ description: 'Guidance used when selecting or creating this content type.' }),
@@ -404,53 +363,38 @@ export const ContentTypeIntakePolicySchema = z
             }),
         text_conversion: z
             .strictObject({
-                enabled: z
-                    .boolean()
-                    .optional()
-                    .meta({
-                        description:
-                            'Run source-to-text conversion before extraction. False skips conversion; omission inherits the next policy layer.',
-                    }),
-                method: z
-                    .enum(['auto', 'basic', 'llm', 'custom'])
-                    .optional()
-                    .meta({
-                        description:
-                            'Conversion strategy: basic uses mechanical extraction; llm uses visual conversion to Markdown; custom uses a supplied interaction. Standard Intake resolves auto to its platform semantic-conversion default.',
-                    }),
+                enabled: z.boolean().optional().meta({
+                    description:
+                        'Run source-to-text conversion before extraction. False skips conversion; omission inherits the next policy layer.',
+                }),
+                method: z.enum(['auto', 'basic', 'llm', 'custom']).optional().meta({
+                    description:
+                        'Conversion strategy: basic uses mechanical extraction; llm uses visual conversion to Markdown; custom uses a supplied interaction. Standard Intake resolves auto to its platform semantic-conversion default.',
+                }),
                 custom: z
                     .strictObject({
                         interaction: z
                             .string()
                             .optional()
                             .meta({ description: 'Interaction ID or qualified name to use when method is custom.' }),
-                        agent: z
-                            .string()
-                            .optional()
-                            .meta({
-                                description:
-                                    'Reserved custom-agent conversion target. Standard Intake currently supports custom.interaction only.',
-                            }),
+                        agent: z.string().optional().meta({
+                            description:
+                                'Reserved custom-agent conversion target. Standard Intake currently supports custom.interaction only.',
+                        }),
                     })
                     .optional()
                     .meta({
                         description:
                             'Custom conversion target, used with method: custom. Set interaction; agent conversion is not implemented.',
                     }),
-                instructions: z
-                    .string()
-                    .optional()
-                    .meta({
-                        description:
-                            'Additional conversion guidance, such as which sections to retain or how to describe tables and figures.',
-                    }),
-                output_format: z
-                    .enum(['markdown', 'text'])
-                    .optional()
-                    .meta({
-                        description:
-                            'Output format requested from custom conversion. Visual llm conversion always produces Markdown.',
-                    }),
+                instructions: z.string().optional().meta({
+                    description:
+                        'Additional conversion guidance, such as which sections to retain or how to describe tables and figures.',
+                }),
+                output_format: z.enum(['markdown', 'text']).optional().meta({
+                    description:
+                        'Output format requested from custom conversion. Visual llm conversion always produces Markdown.',
+                }),
                 scope: IntakePageScopeSchema.optional().meta({
                     description: 'Which pages to convert: everything or the locate result. Default all.',
                 }),
@@ -480,34 +424,22 @@ export const ContentTypeIntakePolicySchema = z
             .meta({ description: 'Controls source-to-text conversion before extraction and embedding.' }),
         extraction: z
             .strictObject({
-                enabled: z
-                    .boolean()
-                    .optional()
-                    .meta({
-                        description:
-                            'Extract structured properties using the content-type schema. False skips property extraction; omission inherits.',
-                    }),
-                source: z
-                    .enum(['auto', 'text', 'vision', 'mixed'])
-                    .optional()
-                    .meta({
-                        description:
-                            'Evidence used for property extraction: text uses object text, vision uses page images, mixed uses both, and auto selects appropriate evidence for the source.',
-                    }),
-                instructions: z
-                    .string()
-                    .optional()
-                    .meta({
-                        description:
-                            "Additional instructions for extracting this type's properties, appended to the extraction prompt.",
-                    }),
-                interaction: z
-                    .string()
-                    .optional()
-                    .meta({
-                        description:
-                            'Property-extraction interaction ID or qualified name. The built-in default is sys:ExtractInformation; media-specific analysis may override it.',
-                    }),
+                enabled: z.boolean().optional().meta({
+                    description:
+                        'Extract structured properties using the content-type schema. False skips property extraction; omission inherits.',
+                }),
+                source: z.enum(['auto', 'text', 'vision', 'mixed']).optional().meta({
+                    description:
+                        'Evidence used for property extraction: text uses object text, vision uses page images, mixed uses both, and auto selects appropriate evidence for the source.',
+                }),
+                instructions: z.string().optional().meta({
+                    description:
+                        "Additional instructions for extracting this type's properties, appended to the extraction prompt.",
+                }),
+                interaction: z.string().optional().meta({
+                    description:
+                        'Property-extraction interaction ID or qualified name. The built-in default is sys:ExtractInformation; media-specific analysis may override it.',
+                }),
                 config: InteractionExecutionConfigurationSchema.optional().meta({
                     description:
                         'Model execution config for the standard property-extraction interaction ' +
@@ -533,13 +465,10 @@ export const ContentTypeIntakePolicySchema = z
                             description:
                                 'Default visual evidence detail: low, standard, or high. References a platform/project rendering profile; default standard.',
                         }),
-                        allowed_details: z
-                            .array(IntakeVisionDetailSchema)
-                            .optional()
-                            .meta({
-                                description:
-                                    'Visual detail levels the evidence planner may choose. Omit to use the platform-supported levels.',
-                            }),
+                        allowed_details: z.array(IntakeVisionDetailSchema).optional().meta({
+                            description:
+                                'Visual detail levels the evidence planner may choose. Omit to use the platform-supported levels.',
+                        }),
                         max_image_tokens: z.int32().min(1).optional().meta({
                             description: 'PRIMARY budget: estimated image tokens per extraction call. Default 16000.',
                         }),
@@ -562,58 +491,33 @@ export const ContentTypeIntakePolicySchema = z
                     }),
                 verification: z
                     .strictObject({
-                        enabled: z
-                            .boolean()
-                            .optional()
-                            .meta({
-                                description:
-                                    'Reserved verification switch. Standard Intake does not currently execute this verification pass; use grounding.review for implemented grounded-extraction review.',
-                            }),
-                        model: z
-                            .string()
-                            .optional()
-                            .meta({
-                                description:
-                                    'Reserved model name for the verification pass; not currently used by Standard Intake.',
-                            }),
-                        environment: z
-                            .string()
-                            .optional()
-                            .meta({
-                                description:
-                                    'Reserved execution environment for the verification model; not currently used by Standard Intake.',
-                            }),
-                        materiality: z
-                            .string()
-                            .optional()
-                            .meta({
-                                description:
-                                    'Reserved guidance describing which extraction discrepancies matter; not currently used by Standard Intake.',
-                            }),
-                        threshold: z
-                            .number()
-                            .min(0)
-                            .max(1)
-                            .optional()
-                            .meta({
-                                description:
-                                    'Reserved verification score threshold between 0 and 1; not currently used by Standard Intake.',
-                            }),
-                        max_retries: z
-                            .int32()
-                            .min(0)
-                            .optional()
-                            .meta({
-                                description:
-                                    'Reserved verification retry limit; not currently used by Standard Intake.',
-                            }),
-                        on_fail: z
-                            .enum(['flag', 'block'])
-                            .optional()
-                            .meta({
-                                description:
-                                    'Reserved action for failed verification: flag or block. Not currently used by Standard Intake.',
-                            }),
+                        enabled: z.boolean().optional().meta({
+                            description:
+                                'Reserved verification switch. Standard Intake does not currently execute this verification pass; use grounding.review for implemented grounded-extraction review.',
+                        }),
+                        model: z.string().optional().meta({
+                            description:
+                                'Reserved model name for the verification pass; not currently used by Standard Intake.',
+                        }),
+                        environment: z.string().optional().meta({
+                            description:
+                                'Reserved execution environment for the verification model; not currently used by Standard Intake.',
+                        }),
+                        materiality: z.string().optional().meta({
+                            description:
+                                'Reserved guidance describing which extraction discrepancies matter; not currently used by Standard Intake.',
+                        }),
+                        threshold: z.number().min(0).max(1).optional().meta({
+                            description:
+                                'Reserved verification score threshold between 0 and 1; not currently used by Standard Intake.',
+                        }),
+                        max_retries: z.int32().min(0).optional().meta({
+                            description: 'Reserved verification retry limit; not currently used by Standard Intake.',
+                        }),
+                        on_fail: z.enum(['flag', 'block']).optional().meta({
+                            description:
+                                'Reserved action for failed verification: flag or block. Not currently used by Standard Intake.',
+                        }),
                     })
                     .optional()
                     .meta({
