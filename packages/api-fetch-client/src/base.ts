@@ -288,6 +288,17 @@ function toError(err: unknown): Error {
 }
 
 /**
+ * A 2xx response whose body could not be read, e.g. because the page navigated away mid-download.
+ * There is no result to hand back, so it fails like a connection error instead.
+ */
+class ResponseBodyError extends Error {
+    constructor(err: unknown) {
+        super(`Unable to load response content: ${toError(err).message}`);
+        this.name = 'ResponseBodyError';
+    }
+}
+
+/**
  * True for an AbortSignal-driven failure (caller abort or our timeout). Checks `name` rather than
  * `instanceof Error` because runtimes surface these as a `DOMException` (`TimeoutError`/`AbortError`),
  * which is not always an `Error` subclass in browsers.
@@ -547,6 +558,10 @@ export abstract class ClientBase {
                 if (isAbortError(err)) {
                     throw err;
                 }
+                // Same for a successful response: the error payload would be returned as the result.
+                if (res.ok) {
+                    throw new ResponseBodyError(err);
+                }
                 return {
                     status: res.status,
                     error: 'Unable to load response content',
@@ -686,9 +701,9 @@ export abstract class ClientBase {
             try {
                 return await this.handleResponse<T>(req, res, params);
             } catch (err: unknown) {
-                // Body consumption can time out after fetch has returned the headers. Preserve
+                // Body consumption can time out or break after fetch has returned the headers. Preserve
                 // HTTP/custom-reader errors, and do not replay a request already accepted upstream.
-                if (!isAbortError(err)) throw err;
+                if (!isAbortError(err) && !(err instanceof ResponseBodyError)) throw err;
                 const connectionError = new ConnectionError(req, toError(err));
                 if (!isCallerAbortError(err, params?.signal)) this.handleConnectionError(connectionError);
                 this.throwError(connectionError);
