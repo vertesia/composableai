@@ -528,6 +528,30 @@ describe('Test requests', () => {
             console.error = original;
         }
     });
+    it('rejects a successful response whose body cannot be read instead of returning an error payload', async () => {
+        const original = console.error;
+        console.error = () => {};
+
+        try {
+            const brokenBodyClient = new FetchClient('http://example.test', async () => {
+                const body = new ReadableStream({
+                    start(controller) {
+                        controller.error(new TypeError('network error'));
+                    },
+                });
+                return new Response(body, { status: 200, headers: { 'content-type': 'application/json' } });
+            });
+
+            await assert.rejects(brokenBodyClient.get('/list'), (err: unknown) => {
+                if (!(err instanceof RequestError)) return false;
+                assert.equal(err.status, 0);
+                assert.match(err.message, /Unable to load response content: network error/);
+                return true;
+            });
+        } finally {
+            console.error = original;
+        }
+    });
     it('does not spend retry attempts on an aborted request', async () => {
         let attempts = 0;
         const abortRetryClient = new FetchClient('http://example.test', async () => {
