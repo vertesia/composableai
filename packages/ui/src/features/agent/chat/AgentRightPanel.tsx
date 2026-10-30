@@ -5,9 +5,9 @@ import {
     Button,
     Center,
     cn,
-    OverflowTabsBar,
     type Tab as TabDefinition,
     Tabs,
+    TabsBar,
     TabsPanel,
     useToast,
 } from '@vertesia/ui/core';
@@ -586,16 +586,10 @@ function AgentRightPanelComponent({
         },
     ];
 
-    const visibleTabs = tabs.filter((tab) => tab.is_allowed === undefined || tab.is_allowed === true);
     return (
         <Tabs tabs={tabs} current={activeTab} onTabChange={handleTabChange} fullHeight className="px-0">
             <div className="flex items-end justify-between shrink-0 px-1 py-1 gap-1">
-                <OverflowTabsBar
-                    tabs={visibleTabs}
-                    current={activeTab}
-                    onTabChange={handleTabChange}
-                    className="min-w-0 flex-1"
-                />
+                <TabsBar overflow className="min-w-0 flex-1" />
                 {!conversationContent && (
                     <Button
                         variant="ghost"
