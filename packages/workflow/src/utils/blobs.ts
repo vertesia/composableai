@@ -206,12 +206,12 @@ async function saveBlobToNewFile(
     file: string,
     { maxBytes }: BlobDownloadOptions,
 ): Promise<void> {
-    if (maxBytes !== undefined) {
-        await assertBlobSizeWithin(client, blobUri, maxBytes);
-    }
     // Create the file before downloading: a name that is already taken fails before any request.
     const handle = await open(file, 'wx', 0o600);
     try {
+        if (maxBytes !== undefined) {
+            await assertBlobSizeWithin(client, blobUri, maxBytes);
+        }
         const stream = await fetchBlobAsStream(client, blobUri);
         // The write stream closes the descriptor once the pipeline settles. A failure destroys the source, which
         // aborts the download.

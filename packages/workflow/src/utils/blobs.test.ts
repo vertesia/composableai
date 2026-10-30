@@ -275,6 +275,18 @@ describe('blob size limits', () => {
         expect(fs.readdirSync(tempDir)).toEqual([]);
     });
 
+    it('fails on a taken name before asking the store anything', async () => {
+        const existing = path.join(tempDir, 'vertesia-activity-taken.mxf');
+        fs.writeFileSync(existing, 'someone else');
+        vi.spyOn(tmp, 'tmpNameSync').mockReturnValueOnce(existing);
+        const client = clientWith('x'.repeat(100), 100);
+
+        await expect(saveBlobToTempFile(client, 'gs://b/s', 'mxf', { maxBytes: 10 })).rejects.toThrow('EEXIST');
+
+        expect(client.files.getMetadata).not.toHaveBeenCalled();
+        expect(fs.readFileSync(existing, 'utf8')).toBe('someone else');
+    });
+
     it('downloads a blob of exactly the limit', async () => {
         const client = clientWith('x'.repeat(100), undefined);
 

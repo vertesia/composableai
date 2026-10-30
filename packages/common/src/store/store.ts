@@ -197,13 +197,15 @@ const APPLICATION_VIDEO_CONTENT_TYPES = new Set(['application/mxf']);
 
 /**
  * Whether a MIME type is a video: any `video/*` type, or a video container registered under `application/*`.
- * Types that may hold audio only, such as `application/mp4` and `application/ogg`, are not counted.
+ * Types that may hold audio only, such as `application/mp4` and `application/ogg`, are not counted. MIME types are
+ * case-insensitive and may carry parameters (`application/MXF; foo=bar`), so both are ignored.
  */
 export function isVideoContentType(contentType: string | undefined): boolean {
-    if (!contentType) {
+    const essence = contentType?.split(';')[0].trim().toLowerCase();
+    if (!essence) {
         return false;
     }
-    return contentType.startsWith('video/') || APPLICATION_VIDEO_CONTENT_TYPES.has(contentType);
+    return essence.startsWith('video/') || APPLICATION_VIDEO_CONTENT_TYPES.has(essence);
 }
 
 export interface Dimensions {
