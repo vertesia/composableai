@@ -17,6 +17,7 @@ import { MarkdownLink, type MarkdownLinkProps } from './MarkdownLink';
 import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import { normalizeDirectives } from './normalizeDirectives';
 import { maskMathDelimiters, preprocessMathDelimiters } from './preprocessMathDelimiters';
+import { rehypeOrderedListMarkerWidth } from './rehypeOrderedListMarkerWidth';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 import { remarkRestoreMaskedDollars } from './remarkRestoreMaskedDollars';
 
@@ -31,7 +32,7 @@ type RehypePlugin = RehypePluginList[number];
 // node. Currency is escaped to `\$` by `preprocessMathDelimiters` (or masked by
 // `maskMathDelimiters`), so it does not match.
 const MATH_DELIMITER_REGEX = /(?:^|[^\\])\$/;
-const NO_REHYPE_PLUGINS: RehypePluginList = [];
+const BASE_REHYPE_PLUGINS: RehypePluginList = [rehypeOrderedListMarkerWidth];
 
 let rehypeKatex: RehypePlugin | undefined;
 let rehypeKatexPromise: Promise<RehypePlugin> | undefined;
@@ -72,7 +73,7 @@ function useRehypePlugins(markdown: string): RehypePluginList {
         };
     }, [hasMath, plugin]);
 
-    return React.useMemo(() => (plugin ? [plugin] : NO_REHYPE_PLUGINS), [plugin]);
+    return React.useMemo(() => (plugin ? [...BASE_REHYPE_PLUGINS, plugin] : BASE_REHYPE_PLUGINS), [plugin]);
 }
 
 // Custom URL schemes that we handle in our components
