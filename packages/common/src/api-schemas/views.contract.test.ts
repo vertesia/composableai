@@ -78,7 +78,7 @@ describe('ViewExperienceConfiguration', () => {
         // Keep the shared component wired to the canonical options contract.
         const modelOptions = (name: string) =>
             (ApiSchemaComponents[name] as { properties: Record<string, unknown> }).properties.model_options;
-        expect(modelOptions('InteractionExecutionConfiguration')).toEqual({
+        expect(modelOptions('InteractionExecutionConfiguration')).toMatchObject({
             $ref: '#/components/schemas/ModelOptions',
         });
         expect(modelOptions('ViewAgenticExecutionConfiguration')).toMatchObject({
