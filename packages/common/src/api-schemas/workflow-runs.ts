@@ -97,6 +97,25 @@ export const ActivityCatalogSchema = z
     })
     .meta({ id: 'ActivityCatalog' });
 
+export const SubscriptionWorkflowDefinitionSchema = z
+    .strictObject({
+        endpoint: z.string(),
+        title: z.string(),
+        description: z.string(),
+        variables_schema: JSONSchemaSchema,
+        variables_template: JSONObjectSchema,
+    })
+    .meta({
+        id: 'SubscriptionWorkflowDefinition',
+        description: 'A packaged workflow supported as an event subscription target.',
+    });
+
+export const SubscriptionWorkflowCatalogSchema = z
+    .strictObject({
+        workflows: z.array(SubscriptionWorkflowDefinitionSchema),
+    })
+    .meta({ id: 'SubscriptionWorkflowCatalog' });
+
 export const WorkflowInteractionVarsSchema = z
     .strictObject({
         type: z.string(),

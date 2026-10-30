@@ -6748,6 +6748,17 @@ export type UpdateSecretRequest = {
 export type DeleteSecretResponse = {
     ok: boolean;
 };
+/** Packaged workflows supported by event subscriptions. */
+export type SubscriptionWorkflowDefinition = {
+    endpoint: string;
+    title: string;
+    description: string;
+    variables_schema: JSONSchema;
+    variables_template: JSONObject;
+};
+export type SubscriptionWorkflowCatalog = {
+    workflows: SubscriptionWorkflowDefinition[];
+};
 export type AgentToolApprovalMode = 'ask' | 'auto_review' | 'full_control';
 export type ToolApprovalGrant = {
     key: string;
@@ -11866,6 +11877,8 @@ export interface ApiComponentTypes {
     ActivityPropertyDefinition: ActivityPropertyDefinitionWire;
     ActivityDefinition: ActivityDefinitionWire;
     ActivityCatalog: ActivityCatalogWire;
+    SubscriptionWorkflowDefinition: SubscriptionWorkflowDefinition;
+    SubscriptionWorkflowCatalog: SubscriptionWorkflowCatalog;
     WorkflowInteractionVars: WorkflowInteractionVars;
     ListWorkflowInteractionsResponse: ListWorkflowInteractionsResponse;
     RestartAgentRunPayload: RestartAgentRunPayload;

@@ -2009,6 +2009,8 @@ const WORKFLOW_RUN_SCHEMAS = {
     ActivityPropertyDefinition: WorkflowRunSchemas.ActivityPropertyDefinitionSchema,
     ActivityDefinition: WorkflowRunSchemas.ActivityDefinitionSchema,
     ActivityCatalog: WorkflowRunSchemas.ActivityCatalogSchema,
+    SubscriptionWorkflowDefinition: WorkflowRunSchemas.SubscriptionWorkflowDefinitionSchema,
+    SubscriptionWorkflowCatalog: WorkflowRunSchemas.SubscriptionWorkflowCatalogSchema,
     WorkflowInteractionVars: WorkflowRunSchemas.WorkflowInteractionVarsSchema,
     ListWorkflowInteractionsResponse: WorkflowRunSchemas.ListWorkflowInteractionsResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
@@ -3637,6 +3639,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ActivityPropertyDefinition',
     'ActivityDefinition',
     'ActivityCatalog',
+    'SubscriptionWorkflowDefinition',
+    'SubscriptionWorkflowCatalog',
     'WorkflowInteractionVars',
     'ListWorkflowInteractionsResponse',
 ]);

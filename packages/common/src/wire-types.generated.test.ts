@@ -2694,6 +2694,14 @@ interface Checks {
         W.DeleteSecretResponse,
         z.infer<typeof import('./api-schemas/secrets.js').DeleteSecretResponseSchema>
     >;
+    SubscriptionWorkflowDefinition: Same<
+        W.SubscriptionWorkflowDefinition,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowDefinitionSchema>
+    >;
+    SubscriptionWorkflowCatalog: Same<
+        W.SubscriptionWorkflowCatalog,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowCatalogSchema>
+    >;
     AgentToolApprovalMode: Same<
         W.AgentToolApprovalMode,
         z.infer<typeof import('./api-schemas/interaction.js').AgentToolApprovalModeSchema>
@@ -8255,6 +8263,14 @@ interface Checks {
         W.ApiComponentTypes['ActivityCatalog'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityCatalogSchema>
     >;
+    'component:SubscriptionWorkflowDefinition': Same<
+        W.ApiComponentTypes['SubscriptionWorkflowDefinition'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowDefinitionSchema>
+    >;
+    'component:SubscriptionWorkflowCatalog': Same<
+        W.ApiComponentTypes['SubscriptionWorkflowCatalog'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowCatalogSchema>
+    >;
     'component:WorkflowInteractionVars': Same<
         W.ApiComponentTypes['WorkflowInteractionVars'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInteractionVarsSchema>
@@ -10466,6 +10482,8 @@ const checks: Checks = {
     CreateSecretRequest: true,
     UpdateSecretRequest: true,
     DeleteSecretResponse: true,
+    SubscriptionWorkflowDefinition: true,
+    SubscriptionWorkflowCatalog: true,
     AgentToolApprovalMode: true,
     ToolApprovalGrant: true,
     PendingToolApprovalResults: true,
@@ -11920,6 +11938,8 @@ const checks: Checks = {
     'component:ActivityPropertyDefinition': true,
     'component:ActivityDefinition': true,
     'component:ActivityCatalog': true,
+    'component:SubscriptionWorkflowDefinition': true,
+    'component:SubscriptionWorkflowCatalog': true,
     'component:WorkflowInteractionVars': true,
     'component:ListWorkflowInteractionsResponse': true,
     'component:RestartAgentRunPayload': true,
@@ -12292,6 +12312,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2560);
+        expect(Object.keys(checks)).toHaveLength(2564);
     });
 });

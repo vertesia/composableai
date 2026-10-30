@@ -40953,6 +40953,50 @@
     ],
     "additionalProperties": false
   },
+  "SubscriptionWorkflowDefinition": {
+    "type": "object",
+    "properties": {
+      "endpoint": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "variables_schema": {
+        "$ref": "#/components/schemas/JSONSchema"
+      },
+      "variables_template": {
+        "$ref": "#/components/schemas/JSONObject"
+      }
+    },
+    "required": [
+      "endpoint",
+      "title",
+      "description",
+      "variables_schema",
+      "variables_template"
+    ],
+    "additionalProperties": false,
+    "description": "A packaged workflow supported as an event subscription target."
+  },
+  "SubscriptionWorkflowCatalog": {
+    "type": "object",
+    "properties": {
+      "workflows": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SubscriptionWorkflowDefinition"
+        }
+      }
+    },
+    "required": [
+      "workflows"
+    ],
+    "additionalProperties": false
+  },
   "WorkflowInteractionVars": {
     "type": "object",
     "properties": {
