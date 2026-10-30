@@ -179,20 +179,27 @@ const CONVERTER_MAX_SOURCE_BYTES = 1024 * MiB;
 /** A source of any other type is sniffed for text only up to this size. */
 const SNIFF_MAX_BYTES = 500 * 1024;
 
-/** Types converted to text by an external tool, which reads a copy of the source written to disk. */
-const CONVERTERS: Record<string, (source: Buffer) => Promise<string>> = {
-    'application/pdf': (source) => mutoolPdfToText(source),
+/**
+ * Types converted to text by an external tool. A Map, so a type named like an `Object.prototype` member (`toString`,
+ * `constructor`) is not mistaken for a converter.
+ */
+const CONVERTERS = new Map<string, (source: Buffer) => Promise<string>>([
+    ['application/pdf', (source) => mutoolPdfToText(source)],
     //docx
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': (source) =>
-        markdownWithMarkitdown(source, 'docx'),
+    [
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        (source) => markdownWithMarkitdown(source, 'docx'),
+    ],
     //pptx
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation': (source) =>
-        markdownWithMarkitdown(source, 'pptx'),
-    'text/html': (source) => markdownWithPandoc(source, 'html'),
+    [
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        (source) => markdownWithMarkitdown(source, 'pptx'),
+    ],
+    ['text/html', (source) => markdownWithPandoc(source, 'html')],
     //opendocument
-    'application/vnd.oasis.opendocument.text': (source) => markdownWithPandoc(source, 'odt'),
-    'application/rtf': (source) => markdownWithPandoc(source, 'rtf'),
-};
+    ['application/vnd.oasis.opendocument.text', (source) => markdownWithPandoc(source, 'odt')],
+    ['application/rtf', (source) => markdownWithPandoc(source, 'rtf')],
+]);
 
 /** Types whose source is the text itself. */
 const TEXT_TYPES = new Set([
@@ -220,7 +227,7 @@ interface SourceText {
  * - any other type: one byte over {@link SNIFF_MAX_BYTES}, the most it is ever sniffed for text.
  */
 async function extractTextFromSource(client: VertesiaClient, source: string, mimeType: string): Promise<SourceText> {
-    const convert = CONVERTERS[mimeType];
+    const convert = CONVERTERS.get(mimeType);
     if (convert) {
         const head = await fetchBlobHead(client, source, CONVERTER_MAX_SOURCE_BYTES);
         if (head.truncated) {
@@ -280,11 +287,6 @@ function getCompleteTokens(doc: ContentObject): TextExtractionResult['tokens'] {
 }
 
 function sniffIfText(buf: Buffer) {
-    // If file is too large, don't even try
-    if (buf.length > SNIFF_MAX_BYTES) {
-        return false;
-    }
-
     // Count binary/control characters
     let binaryCount = 0;
     const sampleSize = Math.min(buf.length, 1000); // Check first 1000 bytes

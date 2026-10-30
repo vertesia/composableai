@@ -196,9 +196,10 @@ describe('extractDocumentText', () => {
         const MiB = 1024 * 1024;
 
         it('reads one byte past the text limit, and stores what a full read would have stored', async () => {
-            // Multi-byte characters straddling the limit, at every offset that matters.
+            // Multi-byte characters straddling the limit, at every alignment: a shift of one character's width
+            // repeats an alignment already covered, at both the read limit and the marker cut.
             for (const char of ['é', '€', '😀']) {
-                for (let shift = -4; shift <= 4; shift++) {
+                for (let shift = 0; shift < Buffer.byteLength(char); shift++) {
                     vi.clearAllMocks();
                     const filler = 'a'.repeat(MAX_EXTRACTED_TEXT_BYTES - 64 + shift);
                     const full = filler + char.repeat(40) + 'tail'.repeat(1000);
@@ -226,6 +227,20 @@ describe('extractDocumentText', () => {
             });
             expect(requestedBytes()).toBe(500 * 1024 + 1);
             expect(setObjectText).not.toHaveBeenCalled();
+        });
+
+        it('treats a type named like an Object.prototype member as an unknown type', async () => {
+            for (const type of ['toString', 'constructor', '__proto__']) {
+                vi.clearAllMocks();
+                retrieve.mockResolvedValue(createDoc({ content: { type, source: SOURCE, etag: 'e' } }));
+                setObjectText.mockResolvedValue({});
+                update.mockResolvedValue({});
+
+                await testEnv.run(extractDocumentText, createPayload());
+
+                expect(requestedBytes()).toBe(500 * 1024 + 1);
+                expect(setObjectText).toHaveBeenCalledExactlyOnceWith('object-1', { text: 'hello world', etag: 'e' });
+            }
         });
 
         it('still extracts a small unknown type that sniffs as text', async () => {
