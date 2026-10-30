@@ -33,6 +33,33 @@ export async function fetchBlobAsBuffer(client: VertesiaClient, blobUri: string)
     return Buffer.concat(buffers);
 }
 
+/** The start of a blob, read by {@link fetchBlobHead}. */
+export interface BlobHead {
+    data: Buffer;
+    /** True when the blob holds more than `data`: the download stopped there. */
+    truncated: boolean;
+}
+
+/**
+ * Read at most `maxBytes` of a blob, then stop the download. Whatever the blob's size, the caller holds no more than
+ * `maxBytes` of it in memory.
+ */
+export async function fetchBlobHead(client: VertesiaClient, blobUri: string, maxBytes: number): Promise<BlobHead> {
+    const stream = await fetchBlobAsStream(client, blobUri);
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    // Leaving the loop early cancels the stream, which aborts the download.
+    for await (const chunk of stream) {
+        if (size + chunk.byteLength > maxBytes) {
+            chunks.push(chunk.subarray(0, maxBytes - size));
+            return { data: Buffer.concat(chunks), truncated: true };
+        }
+        chunks.push(chunk);
+        size += chunk.byteLength;
+    }
+    return { data: Buffer.concat(chunks), truncated: false };
+}
+
 export async function fetchBlobAsBase64(client: VertesiaClient, blobUri: string): Promise<string> {
     const buffer = await fetchBlobAsBuffer(client, blobUri);
     return buffer.toString('base64');
