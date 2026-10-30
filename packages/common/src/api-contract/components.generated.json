@@ -31714,7 +31714,6 @@
     "properties": {
       "interaction": {
         "type": "string",
-        "minLength": 1,
         "pattern": "\\S"
       },
       "config": {
@@ -32442,13 +32441,8 @@
       },
       "vars": {
         "type": "object",
-        "properties": {
-          "media_analysis": {
-            "$ref": "#/components/schemas/IntakeMediaAnalysisOverrides"
-          }
-        },
         "additionalProperties": true,
-        "description": "Workflow variables. media_analysis configures StandardIntake media analysis."
+        "description": "Workflow-specific variables. Known catalog workflows validate their own schema."
       },
       "input_type": {
         "$ref": "#/components/schemas/WorkflowRuleInputType"
@@ -32796,7 +32790,7 @@
       },
       "overrides_system_subscription_id": {
         "type": "string",
-        "minLength": 1,
+        "pattern": "\\S",
         "description": "Fully replace this code-defined system subscription in the current project. Only one replacement per system subscription is allowed. Disabling the replacement keeps the default suppressed; deleting it restores the default. Immutable after creation."
       },
       "description": {
@@ -32852,13 +32846,8 @@
       },
       "vars": {
         "type": "object",
-        "properties": {
-          "media_analysis": {
-            "$ref": "#/components/schemas/IntakeMediaAnalysisOverrides"
-          }
-        },
         "additionalProperties": true,
-        "description": "Workflow variables. media_analysis configures StandardIntake media analysis."
+        "description": "Workflow-specific variables. Known catalog workflows validate their own schema."
       },
       "input_type": {
         "$ref": "#/components/schemas/WorkflowRuleInputType"

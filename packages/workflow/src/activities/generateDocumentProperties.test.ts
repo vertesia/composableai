@@ -451,6 +451,22 @@ describe('generateDocumentProperties', () => {
             );
         });
 
+        it('normalizes configuration key order and treats empty overrides as absent', () => {
+            const base = { source: 'vision' as const, interactionName: 'sys:ExtractInformation' };
+            expect(computeExtractionFingerprint({ ...base, config: {} })).toBe(computeExtractionFingerprint(base));
+            expect(
+                computeExtractionFingerprint({
+                    ...base,
+                    config: { environment: 'env', model_options: { temperature: 0.2, max_tokens: 100 } },
+                }),
+            ).toBe(
+                computeExtractionFingerprint({
+                    ...base,
+                    config: { model_options: { max_tokens: 100, temperature: 0.2 }, environment: 'env' },
+                }),
+            );
+        });
+
         it('folds the evidence refs into the extraction fingerprint (absent = legacy hash)', () => {
             const base = {
                 content_etag: 'etag-1',
@@ -586,6 +602,54 @@ describe('generateDocumentProperties', () => {
             });
             expect(executeInteractionFromActivity).not.toHaveBeenCalled();
             expect(update).not.toHaveBeenCalled();
+        });
+
+        it('keeps pre-existing fingerprints fresh when a legacy run config is present', async () => {
+            await mockSetup(freshSetupOptions());
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({
+                    skip_if_fresh: true,
+                    config: { inference_profile: 'existing-profile', environment: 'env', model: 'model' },
+                }),
+            );
+            expect(result.status).toBe('skipped');
+            expect(executeInteractionFromActivity).not.toHaveBeenCalled();
+        });
+
+        it('hits the cache for a previously stored explicit media override', async () => {
+            const config = { inference_profile: 'media-profile' };
+            const fingerprint = computeExtractionFingerprint({
+                content_etag: CONTENT_ETAG,
+                type_id: 'type-1',
+                source: 'auto',
+                interactionName: 'sys:ExtractInformation',
+                object_schema: DEFAULT_OBJECT_SCHEMA,
+                text_etag: 'source-etag',
+                config,
+            });
+            await mockSetup(
+                freshSetupOptions({
+                    generationRuns: [
+                        {
+                            id: 'run-media',
+                            date: '2026-01-01T00:00:00.000Z',
+                            model: 'model-1',
+                            extraction_fingerprint: fingerprint,
+                        },
+                    ],
+                }),
+            );
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({
+                    skip_if_fresh: true,
+                    config,
+                    fingerprint_config: config,
+                }),
+            );
+            expect(result.status).toBe('skipped');
+            expect(executeInteractionFromActivity).not.toHaveBeenCalled();
         });
 
         it('scans backwards past generation runs written without a fingerprint', async () => {

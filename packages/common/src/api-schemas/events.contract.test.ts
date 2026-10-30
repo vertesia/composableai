@@ -43,3 +43,30 @@ describe('subscription override wire contracts', () => {
         ).toBe(false);
     });
 });
+
+it.each(['', '   ', '\t\n'])('rejects blank replacement ids and media interaction names: %j', (value) => {
+    expect(
+        validateApiRequest('CreateEventSubscriptionPayload', {
+            name: 'Intake',
+            filter: {},
+            target: { type: 'workflow', endpoint: 'StandardIntake' },
+            run_as_role: 'automation',
+            overrides_system_subscription_id: value,
+        }).valid,
+    ).toBe(false);
+    expect(validateApiRequest('IntakeMediaAnalysisOverrides', { image: { interaction: value } }).valid).toBe(false);
+});
+it('keeps custom workflow variables opaque, including their own media_analysis shape', () => {
+    expect(
+        validateApiRequest('CreateEventSubscriptionPayload', {
+            name: 'Custom',
+            filter: {},
+            target: {
+                type: 'workflow',
+                endpoint: 'CustomWorker',
+                vars: { media_analysis: 'custom-layout', nested: [1, true, null] },
+            },
+            run_as_role: 'automation',
+        }).valid,
+    ).toBe(true);
+});

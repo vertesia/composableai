@@ -45,6 +45,12 @@ function readPayload(file: string): Record<string, unknown> {
 }
 
 function toCreatePayload(value: Record<string, unknown>): CreateEventSubscriptionPayload {
+    if (
+        value.overrides_system_subscription_id !== undefined &&
+        typeof value.overrides_system_subscription_id !== 'string'
+    ) {
+        throw new Error('overrides_system_subscription_id must be a string');
+    }
     const payload: CreateEventSubscriptionPayload = {
         name: value.name as string,
         ...(typeof value.overrides_system_subscription_id === 'string'

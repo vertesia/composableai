@@ -5506,7 +5506,6 @@ export type WorkflowEventDeliveryTarget = {
     task_queue?: string | undefined;
     vars?:
         | {
-              media_analysis?: IntakeMediaAnalysisOverrides | undefined;
               [k: string]: unknown;
           }
         | undefined;
@@ -5580,7 +5579,6 @@ export type WorkflowEventDeliveryTargetInput = {
     task_queue?: string | undefined;
     vars?:
         | {
-              media_analysis?: IntakeMediaAnalysisOverrides | undefined;
               [k: string]: unknown;
           }
         | undefined;

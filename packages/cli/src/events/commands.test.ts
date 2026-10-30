@@ -40,3 +40,20 @@ describe('event subscription CLI', () => {
         expect(mocks.update).toHaveBeenCalledWith('subscription-1', update);
     });
 });
+
+it.each([42, ['sys:StandardIntake'], {}, null])(
+    'rejects malformed replacement identity %j without creating an additive subscription',
+    async (id) => {
+        mocks.readJsonFile.mockReturnValue({
+            name: 'Intake',
+            filter: {},
+            target: { type: 'workflow', endpoint: 'StandardIntake' },
+            run_as_role: 'automation',
+            overrides_system_subscription_id: id,
+        });
+        await expect(createEventSubscription(new Command(), { file: 'intake.json' })).rejects.toThrow(
+            'overrides_system_subscription_id must be a string',
+        );
+        expect(mocks.create).not.toHaveBeenCalled();
+    },
+);

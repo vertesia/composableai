@@ -201,10 +201,12 @@ export const AppEventDeliveryTargetSchema = z
     })
     .meta({ id: 'AppEventDeliveryTarget' });
 
+const nonBlankStringSchema = z.string().regex(/\S/);
+
 /** Per-media settings for StandardIntake subscription variables. */
 export const IntakeMediaAnalysisOverrideSchema = z
     .strictObject({
-        interaction: z.string().min(1).regex(/\S/).optional(),
+        interaction: nonBlankStringSchema.optional(),
         config: InteractionExecutionConfigurationSchema.optional(),
     })
     .meta({ id: 'IntakeMediaAnalysisOverride' });
@@ -227,8 +229,8 @@ export const WorkflowEventDeliveryTargetSchema = z
         workflow_class: z.string().optional(),
         task_queue: z.string().optional(),
         vars: z
-            .looseObject({ media_analysis: IntakeMediaAnalysisOverridesSchema.optional() })
-            .meta({ description: 'Workflow variables. media_analysis configures StandardIntake media analysis.' })
+            .looseObject({})
+            .meta({ description: 'Workflow-specific variables. Known catalog workflows validate their own schema.' })
             .optional(),
         input_type: WorkflowRuleInputTypeSchema.optional(),
         migrated_rule_name: z.string().optional(),
@@ -491,8 +493,8 @@ export const WorkflowEventDeliveryTargetInputSchema = z
         workflow_class: z.string().optional(),
         task_queue: z.string().optional(),
         vars: z
-            .looseObject({ media_analysis: IntakeMediaAnalysisOverridesSchema.optional() })
-            .meta({ description: 'Workflow variables. media_analysis configures StandardIntake media analysis.' })
+            .looseObject({})
+            .meta({ description: 'Workflow-specific variables. Known catalog workflows validate their own schema.' })
             .optional(),
         input_type: WorkflowRuleInputTypeSchema.optional(),
         // Same round-trip allowance as the webhook input above: the read target carries this, the
@@ -880,7 +882,7 @@ export const ListEventDeliveriesResponseSchema = z
     })
     .meta({ id: 'ListEventDeliveriesResponse' });
 
-const systemSubscriptionOverrideSchema = z.string().min(1).meta({
+const systemSubscriptionOverrideSchema = nonBlankStringSchema.meta({
     description:
         'Fully replace this code-defined system subscription in the current project. Only one replacement per system subscription is allowed. Disabling the replacement keeps the default suppressed; deleting it restores the default. Immutable after creation.',
 });
