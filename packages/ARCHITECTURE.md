@@ -6,7 +6,7 @@ constants, and schemas. Everything else builds upward.
 
 ## Layering
 
-```
+```text
                 ┌──────────────────────────────────────────────────────┐
    apps:        │  studio-server, token-server, zeno-server, …         │
                 │  composable-ui, admin-ui, auth-ui, tools, docs, …    │
@@ -112,14 +112,14 @@ not depend on `studio-utils` (keep SDK lean for downstream consumers).
 When deciding where a new file belongs, apply these questions in order. The
 first "yes" determines the package:
 
-| Question | If yes |
-|---|---|
-| Does the file have a class with methods or constructor logic? | studio-utils |
-| Does the file declare module-level mutable state, a registry, or a side-effectful initializer? | studio-utils |
+| Question                                                                                           | If yes       |
+| -------------------------------------------------------------------------------------------------- | ------------ |
+| Does the file have a class with methods or constructor logic?                                      | studio-utils |
+| Does the file declare module-level mutable state, a registry, or a side-effectful initializer?     | studio-utils |
 | Does the file export functions that compute, validate at runtime, transform, or have side effects? | studio-utils |
-| Does the file import from another workspace package (other than `@vertesia/common`)? | studio-utils |
-| Could the file have a `.test.ts` next to it that tests behavior? | studio-utils |
-| None of the above — only types, interfaces, enums, `as const` data, or Zod schemas? | common |
+| Does the file import from another workspace package (other than `@vertesia/common`)?               | studio-utils |
+| Could the file have a `.test.ts` next to it that tests behavior?                                   | studio-utils |
+| None of the above — only types, interfaces, enums, `as const` data, or Zod schemas?                | common       |
 
 A quick rule of thumb: **if you'd write tests for it, it doesn't belong in
 common.**

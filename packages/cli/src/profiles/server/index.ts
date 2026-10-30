@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import type { Server } from 'node:http';
+import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import enquirer from 'enquirer';
 import open from 'open';
 import { handleCors } from './cors.js';
@@ -109,7 +109,8 @@ export async function startConfigSession(
     const code = randomInt(1000, 9999);
 
     try {
-        server = await startServer(async (req, res) => {
+        // http.createServer ignores the returned promise, so the handler reports its own failures.
+        const handleCallback = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
             if (handleCors(req, res)) {
                 return;
             }
@@ -144,6 +145,11 @@ export async function startConfigSession(
                 res.end();
                 console.error('Error processing request:', error);
             }
+        };
+        server = await startServer((req, res) => {
+            handleCallback(req, res).catch((error) => {
+                console.error('Error handling callback request:', error);
+            });
         });
 
         const address = server.address();

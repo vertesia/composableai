@@ -113,19 +113,19 @@ Open <https://localhost:5173> -- the UI loads with HMR, and the tool server API 
 
 ## Scripts
 
-| Script              | Runs                           | Description                                                 |
-| ------------------- | ------------------------------ | ----------------------------------------------------------- |
-| `{{PM_RUN}} dev`          | `vite dev --mode app`          | Dev server (HTTPS) with UI HMR + tool server API middleware |
-| `{{PM_RUN}} build`        | `tsc + Vertesia build tools + Vite` | Full production build (lint runs as prebuild)         |
-| `{{PM_RUN}} build:server` | `tsc + Vertesia build tools`   | Compile tool server and resources to `lib/`                  |
-| `{{PM_RUN}} build:ui`     | `vite build (app + lib)`       | Build both UI targets                                       |
-| `{{PM_RUN}} build:ui:app` | `vite build --mode app`        | Standalone app to `dist/app/`                               |
-| `{{PM_RUN}} build:ui:lib` | `vite build --mode lib`        | Plugin library to `dist/lib/plugin.js`                      |
-| `{{PM_RUN}} service:build` | `service:build:ui + lib + service:build:server` | Build Vertesia service deployment artifacts |
-| `{{PM_RUN}} service:build:ui` | `vite build --mode app` | Build service UI assets to `dist/app/` |
-| `{{PM_RUN}} service:build:server` | `build-server-esbuild + write-app-package` | Build bundled service runtime and app package metadata |
-| `{{PM_RUN}} start`        | `build:server + vite preview`  | Preview production build locally                            |
-| `{{PM_RUN}} start:vercel` | `vercel dev`                   | Test Vercel deployment locally                              |
+| Script                            | Runs                                            | Description                                                 |
+| --------------------------------- | ----------------------------------------------- | ----------------------------------------------------------- |
+| `{{PM_RUN}} dev`                  | `vite dev --mode app`                           | Dev server (HTTPS) with UI HMR + tool server API middleware |
+| `{{PM_RUN}} build`                | `tsc + Vertesia build tools + Vite`             | Full production build (lint runs as prebuild)               |
+| `{{PM_RUN}} build:server`         | `tsc + Vertesia build tools`                    | Compile tool server and resources to `lib/`                 |
+| `{{PM_RUN}} build:ui`             | `vite build (app + lib)`                        | Build both UI targets                                       |
+| `{{PM_RUN}} build:ui:app`         | `vite build --mode app`                         | Standalone app to `dist/app/`                               |
+| `{{PM_RUN}} build:ui:lib`         | `vite build --mode lib`                         | Plugin library to `dist/lib/plugin.js`                      |
+| `{{PM_RUN}} service:build`        | `service:build:ui + lib + service:build:server` | Build Vertesia service deployment artifacts                 |
+| `{{PM_RUN}} service:build:ui`     | `vite build --mode app`                         | Build service UI assets to `dist/app/`                      |
+| `{{PM_RUN}} service:build:server` | `build-server-esbuild + write-app-package`      | Build bundled service runtime and app package metadata      |
+| `{{PM_RUN}} start`                | `build:server + vite preview`                   | Preview production build locally                            |
+| `{{PM_RUN}} start:vercel`         | `vercel dev`                                    | Test Vercel deployment locally                              |
 
 ## Project Structure
 
@@ -455,7 +455,7 @@ The scaffolded plugin targets a **WCAG 2.1 AA baseline** out of the box. The `bi
 - **Prefer `<Button>` over raw `<button>`.** `Button` from `@vertesia/ui/core` provides consistent focus rings, deprecation-safe ARIA forwarding, and disabled state. Use raw `<button type="button">` only inside primitives that spread hook props onto the DOM (e.g. a downshift-style toggle); add a one-line comment explaining why.
 - **Icon-only buttons require an accessible name.** Pass `aria-label`. Example: `<Button aria-label="Refresh" onClick={…}><RefreshIcon /></Button>`. The included `InlineFilterButton` follows this pattern. Avoid the deprecated `alt` prop — it is forwarded to `aria-label` for one release with a console warning.
 - **Sortable table headers use `<SortableTableHeaderCell>`** from `@vertesia/ui/core`. It renders a real `<button>` inside the `<th>`, sets `aria-sort`, and is keyboard-operable automatically. The bundled `SortableHead` example wraps this primitive.
-- **Form controls go through `<FormItem>`.** Use the `helpText` prop for persistent helper text and the `error` prop for validation messages — both auto-wire `aria-describedby` and `aria-invalid` on a single element child. The `description` prop is hover-only (renders as a tooltip on an Info icon) and is *not* an accessible substitute for `helpText`.
+- **Form controls go through `<FormItem>`.** Use the `helpText` prop for persistent helper text and the `error` prop for validation messages — both auto-wire `aria-describedby` and `aria-invalid` on a single element child. The `description` prop is hover-only (renders as a tooltip on an Info icon) and is _not_ an accessible substitute for `helpText`.
 - **Headers and labels matter for screen readers.** Set the page title in `index.html`, keep `lang="en"` (or your locale) on `<html>`, and make sure every input has a `<label htmlFor>` (or use `FormItem`).
 
 If you need to introduce a pattern the rules flag (a `role="separator"` resize handle, a `<div role="button">` wrapper around a render-prop child, etc.), use a `// biome-ignore lint/a11y/<rule>: <reason>` comment on the line immediately before the JSX element, with a real justification — not a blanket suppression.
@@ -769,12 +769,12 @@ restore the last project for that account. These settings select a workspace; th
 
 ### Standalone authentication
 
-| Hosting | Default authentication | Client configuration |
-| --- | --- | --- |
-| App gateway subdomain | Gateway-owned OAuth and HttpOnly cookie session | Gateway publishes the app metadata from its manifest |
-| Vercel / independent HTTPS host | Browser authorization code + PKCE | Public metadata document, or an explicitly registered public client ID |
-| Developer localhost | Browser authorization code + PKCE | Registered public development client ID required |
-| Embedded in Studio | Host-provided app-scoped token | Host authentication takes precedence |
+| Hosting                         | Default authentication                          | Client configuration                                                   |
+| ------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
+| App gateway subdomain           | Gateway-owned OAuth and HttpOnly cookie session | Gateway publishes the app metadata from its manifest                   |
+| Vercel / independent HTTPS host | Browser authorization code + PKCE               | Public metadata document, or an explicitly registered public client ID |
+| Developer localhost             | Browser authorization code + PKCE               | Registered public development client ID required                       |
+| Embedded in Studio              | Host-provided app-scoped token                  | Host authentication takes precedence                                   |
 
 #### Local development
 

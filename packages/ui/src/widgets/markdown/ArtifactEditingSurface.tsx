@@ -76,7 +76,7 @@ function MarkdownChangeRuler({
 
     return (
         <nav
-            className="absolute inset-y-12 end-1 z-10 w-3 rounded-full border border-mixer-muted/25 bg-muted/20"
+            className="absolute inset-y-12 inset-e-1 z-10 w-3 rounded-full border border-mixer-muted/25 bg-muted/20"
             aria-label={t('agent.changeRuler')}
         >
             {regions.map((region) => {
@@ -561,7 +561,7 @@ export function ArtifactEditingSurface({
 
     const persistPendingDocumentContent = useCallback((): Promise<boolean> => {
         if (!runId) return Promise.resolve(false);
-        if (documentSavePromiseRef.current) return documentSavePromiseRef.current;
+        if (documentSavePromiseRef.current !== undefined) return documentSavePromiseRef.current;
 
         const savePromise = (async () => {
             documentSaveInFlightRef.current = true;
@@ -637,7 +637,7 @@ export function ArtifactEditingSurface({
             if (!resolved) return false;
         }
 
-        while (pendingDocumentContentRef.current !== undefined || documentSavePromiseRef.current) {
+        while (pendingDocumentContentRef.current !== undefined || documentSavePromiseRef.current !== undefined) {
             const saved = await persistPendingDocumentContent();
             if (!saved) return false;
         }
@@ -834,7 +834,7 @@ export function ArtifactEditingSurface({
                             {!onSaveStatusChange && saveStatus !== 'idle' ? (
                                 <div
                                     className={cn(
-                                        'pointer-events-none absolute bottom-3 end-6 flex items-center gap-1.5 rounded-full',
+                                        'pointer-events-none absolute bottom-3 inset-e-6 flex items-center gap-1.5 rounded-full',
                                         'border border-mixer-muted/25 bg-background/90 px-2.5 py-1 text-[11px] shadow-sm',
                                         isSavingDocument || isDocumentSavePending ? 'text-muted' : 'text-success',
                                     )}
@@ -869,7 +869,7 @@ export function ArtifactEditingSurface({
                 </div>
             )}
             {isLoading && content ? (
-                <div className="absolute end-3 top-3 rounded-full bg-background/80 p-2 shadow-sm">
+                <div className="absolute inset-e-3 top-3 rounded-full bg-background/80 p-2 shadow-sm">
                     <GitCommitHorizontal className="size-4 animate-pulse text-muted" />
                 </div>
             ) : null}

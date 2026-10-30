@@ -285,7 +285,7 @@ export default function Header({
         <PayloadBuilderProvider>
             <div
                 className={cn(
-                    'flex flex-wrap items-center justify-between py-1.5 px-2 border-b shadow-sm flex-shrink-0',
+                    'flex flex-wrap items-center justify-between py-1.5 px-2 border-b shadow-sm shrink-0',
                     className,
                 )}
             >

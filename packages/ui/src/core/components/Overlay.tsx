@@ -73,7 +73,7 @@ export function Overlay({
                         className={`${positionClasses} ${overlayClassName}`}
                     >
                         {showCloseButton && (
-                            <div className="absolute top-2 end-2 z-10">
+                            <div className="absolute top-2 inset-e-2 z-10">
                                 <Button onClick={handleClose} variant="primary">
                                     <X />
                                 </Button>

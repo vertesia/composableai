@@ -502,7 +502,7 @@ function createBlockComponent(
             <>
                 <div
                     className={cn(
-                        'absolute end-1 top-1 z-10 flex items-center gap-0.5 rounded-md border bg-background p-0.5 shadow-sm',
+                        'absolute inset-e-1 top-1 z-10 flex items-center gap-0.5 rounded-md border bg-background p-0.5 shadow-sm',
                         ((!isEditable && !isCommentable) || isEditingContent) && 'hidden',
                         isSelected
                             ? 'opacity-100'

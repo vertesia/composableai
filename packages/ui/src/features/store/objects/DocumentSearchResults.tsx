@@ -229,7 +229,7 @@ export function DocumentSearchResults({
     const handleVectorSearch = (query?: ComplexSearchQuery) => {
         if (query?.vector) {
             search.setScoredSearchQuery(query);
-            if (!actualLayout.find((c) => c.name === 'Search Score')) {
+            if (!actualLayout.some((c) => c.name === 'Search Score')) {
                 const layout = [
                     ...actualLayout,
                     {

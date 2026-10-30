@@ -10,20 +10,20 @@ It is a pnpm and Turbo monorepo. Most packages are published under the `@vertesi
 
 ## Packages
 
-| Package | Purpose |
-| --- | --- |
-| `@vertesia/common` | Shared API types, permissions, OAuth scope helpers, store types, and platform contracts. |
-| `@vertesia/client` | Browser and Node.js client for the Vertesia APIs. |
-| `@vertesia/ui` | React components, hooks, shell, layout, i18n, and shared UI features. |
-| `@vertesia/cli` | Command-line tools for working with Vertesia projects and resources. |
-| `@vertesia/workflow` | Workflow DSL and helpers for Vertesia workflow definitions. |
-| `@vertesia/tools-sdk` | SDK helpers for building remote tools and tool servers. |
-| `@vertesia/create-plugin` | CLI for creating Vertesia UI plugins and tool-server plugins. |
-| `@vertesia/plugin-builder` | Vite integration for building Vertesia UI plugins. |
-| `@vertesia/api-fetch-client` | Fetch-based foundation for generated and hand-written REST API clients. |
-| `@vertesia/json` | JSON parsing, schema, and utility helpers. |
-| `@vertesia/converters` | Image and content conversion helpers. |
-| `@vertesia/build-tools` | Shared Rollup, Vite, and build-time utilities. |
+| Package                      | Purpose                                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------------------- |
+| `@vertesia/common`           | Shared API types, permissions, OAuth scope helpers, store types, and platform contracts. |
+| `@vertesia/client`           | Browser and Node.js client for the Vertesia APIs.                                        |
+| `@vertesia/ui`               | React components, hooks, shell, layout, i18n, and shared UI features.                    |
+| `@vertesia/cli`              | Command-line tools for working with Vertesia projects and resources.                     |
+| `@vertesia/workflow`         | Workflow DSL and helpers for Vertesia workflow definitions.                              |
+| `@vertesia/tools-sdk`        | SDK helpers for building remote tools and tool servers.                                  |
+| `@vertesia/create-plugin`    | CLI for creating Vertesia UI plugins and tool-server plugins.                            |
+| `@vertesia/plugin-builder`   | Vite integration for building Vertesia UI plugins.                                       |
+| `@vertesia/api-fetch-client` | Fetch-based foundation for generated and hand-written REST API clients.                  |
+| `@vertesia/json`             | JSON parsing, schema, and utility helpers.                                               |
+| `@vertesia/converters`       | Image and content conversion helpers.                                                    |
+| `@vertesia/build-tools`      | Shared Rollup, Vite, and build-time utilities.                                           |
 
 Additional packages and templates live under `packages/`, `libraries/`, and `templates/`.
 

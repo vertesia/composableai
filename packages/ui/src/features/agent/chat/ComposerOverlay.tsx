@@ -4,8 +4,8 @@ import { AskUserWidget, type AskUserWidgetProps } from './AskUserWidget';
 
 /** Placement shared by the prompts that take the composer's place while the run waits on the user. */
 const COMPOSER_OVERLAY_CLASS = cn(
-    'flex-shrink-0 border-t border-border/70 bg-background/95 backdrop-blur',
-    'fixed bottom-0 end-0 start-0 z-20 lg:sticky lg:start-auto lg:end-auto',
+    'shrink-0 border-t border-border/70 bg-background/95 backdrop-blur',
+    'fixed bottom-0 inset-e-0 inset-s-0 z-20 lg:sticky lg:inset-s-auto lg:inset-e-auto',
     'pb-safe-area',
 );
 

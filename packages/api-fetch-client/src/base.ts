@@ -169,7 +169,7 @@ export interface IRequestParamsWithPayload extends IRequestParams {
 }
 
 export function fetchPromise(fetchImpl?: FETCH_FN | Promise<FETCH_FN>) {
-    if (fetchImpl) {
+    if (fetchImpl !== undefined) {
         return Promise.resolve(fetchImpl);
     } else if (typeof globalThis.fetch === 'function') {
         return Promise.resolve(globalThis.fetch);

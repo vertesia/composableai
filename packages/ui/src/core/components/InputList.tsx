@@ -105,7 +105,7 @@ export function InputList({
                             variant={'secondary'}
                             onClick={() => _onClick(index)}
                             className={clsx(
-                                'flex-shrink-0 transition-colors',
+                                'shrink-0 transition-colors',
                                 disabled
                                     ? 'cursor-not-allowed'
                                     : 'cursor-pointer hover:bg-destructive hover:text-destructive',
