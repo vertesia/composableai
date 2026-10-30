@@ -31,6 +31,7 @@ type SettingsOptions = CliOptions<{
     namespaces?: string;
     namespacesFile?: string;
     credentialsFile?: string;
+    approvedScopes?: string;
     mcpParameters?: string;
     mcpParametersFile?: string;
     mcpSharedParameters?: string;
@@ -356,6 +357,14 @@ export async function installApp(program: Command, appId: string, options: Setti
             instance_key: options.instanceKey,
             display_name: input.display_name,
             namespace_overrides: input.namespace_overrides,
+            ...(options.approvedScopes !== undefined
+                ? {
+                      approved_scopes: options.approvedScopes
+                          .split(',')
+                          .map((scope) => scope.trim())
+                          .filter(Boolean),
+                  }
+                : {}),
         },
     );
     console.log(`${colors.green('✓')} App installed successfully`);

@@ -30,3 +30,8 @@ const OAUTH_PERMISSION_SCOPES = Object.values(Permission).filter((scope) => !NON
 export function getOAuthPermissionScopes(): Permission[] {
     return [...OAUTH_PERMISSION_SCOPES];
 }
+
+/** Permissions an installed app may request; approval authority belongs to management clients. */
+export function getAppOAuthPermissionScopes(): Permission[] {
+    return OAUTH_PERMISSION_SCOPES.filter((scope) => scope !== Permission.app_oauth_approve);
+}
