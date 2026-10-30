@@ -40959,6 +40959,25 @@
       },
       "variables_template": {
         "$ref": "#/components/schemas/JSONObject"
+      },
+      "system_targets": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "run_as_role": {
+              "$ref": "#/components/schemas/SystemRoles"
+            },
+            "task_queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "run_as_role"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Code-defined system targets for this workflow, used to resolve managed execution roles."
       }
     },
     "required": [

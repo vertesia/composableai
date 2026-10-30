@@ -6753,6 +6753,12 @@ export type SubscriptionWorkflowDefinition = {
     description: string;
     variables_schema: JSONSchema;
     variables_template: JSONObject;
+    system_targets?:
+        | {
+              run_as_role: (typeof SystemRoles)[keyof typeof SystemRoles];
+              task_queue?: string | undefined;
+          }[]
+        | undefined;
 };
 export type SubscriptionWorkflowCatalog = {
     workflows: SubscriptionWorkflowDefinition[];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateApiRequest } from './registry.js';
+import { validateApiRequest, validateApiResponse } from './registry.js';
 
 describe('subscription override wire contracts', () => {
     const payload = {
@@ -69,4 +69,27 @@ it('keeps custom workflow variables opaque, including their own media_analysis s
             run_as_role: 'automation',
         }).valid,
     ).toBe(true);
+});
+
+it('supports optional code-defined execution metadata in workflow catalog responses', () => {
+    const workflow = {
+        endpoint: 'Workflow',
+        title: 'Workflow',
+        description: '',
+        variables_schema: {},
+        variables_template: {},
+    };
+    expect(validateApiResponse('SubscriptionWorkflowCatalog', { workflows: [workflow] }).valid).toBe(true);
+    expect(
+        validateApiResponse('SubscriptionWorkflowCatalog', {
+            workflows: [
+                { ...workflow, system_targets: [{ run_as_role: 'content_processor', task_queue: 'packaged-worker' }] },
+            ],
+        }).valid,
+    ).toBe(true);
+    expect(
+        validateApiResponse('SubscriptionWorkflowCatalog', {
+            workflows: [{ ...workflow, system_targets: [{ run_as_role: 'unknown-role' }] }],
+        }).valid,
+    ).toBe(false);
 });

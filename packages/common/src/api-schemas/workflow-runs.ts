@@ -4,6 +4,7 @@ import { JSONObjectSchema, JSONSchemaSchema, JSONValueSchema } from '@llumiverse
 import { z } from 'zod';
 import type { ActivityTypeDefinition } from '../store/activity-catalog.js';
 import { CompactMessageSchema } from './agent-runs.js';
+import { SystemRolesSchema } from './apikey.js';
 import { AgentRunStatusSchema, ConversationActivityStateSchema } from './app-lifecycle.js';
 import { WorkflowExecutionStatusSchema } from './document-processing.js';
 import {
@@ -104,6 +105,17 @@ export const SubscriptionWorkflowDefinitionSchema = z
         description: z.string(),
         variables_schema: JSONSchemaSchema,
         variables_template: JSONObjectSchema,
+        system_targets: z
+            .array(
+                z.strictObject({
+                    run_as_role: SystemRolesSchema,
+                    task_queue: z.string().optional(),
+                }),
+            )
+            .meta({
+                description: 'Code-defined system targets for this workflow, used to resolve managed execution roles.',
+            })
+            .optional(),
     })
     .meta({
         id: 'SubscriptionWorkflowDefinition',
