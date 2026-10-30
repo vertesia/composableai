@@ -15286,6 +15286,10 @@
     "properties": {
       "delay_ms": {
         "type": "number"
+      },
+      "rate_limit_grant": {
+        "type": "string",
+        "description": "Opaque token for the slot this request was admitted under. Send it back unchanged as `workflow.rate_limit_id` when executing, so completion releases exactly this slot."
       }
     },
     "required": [
