@@ -140,7 +140,7 @@ async function extractFromFileSource(
     input_file: WorkflowInputFile,
     output_storage_path: string,
 ): Promise<TextExtractionResult> {
-    log.info(`Extracting text from ${input_file}`);
+    log.info('Extracting text from file', { url: input_file.url, mime_type: input_file.mimetype });
 
     // Same reasoning as extractFromObject: swallowing the download failure here is worse still,
     // because createFileSourceResult reports `status: success` — a failed download was
