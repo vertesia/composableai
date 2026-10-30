@@ -4,7 +4,6 @@ packages:
   - libraries/*
   - libraries/koa-stack/*
   - templates/*
-  - "!templates/worker-template"
 verifyDepsBeforeRun: false
 allowBuilds:
   '@firebase/util': true
