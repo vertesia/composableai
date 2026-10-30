@@ -254,8 +254,31 @@ export const EmbeddingTypeEnabledMapSchema = z
     })
     .meta({ id: 'EmbeddingTypeEnabledMap' });
 
+/** Per-media settings for StandardIntake subscriptions and intake policies. */
+export const IntakeMediaAnalysisOverrideSchema = z
+    .strictObject({
+        interaction: z.string().regex(/\S/).optional(),
+        config: InteractionExecutionConfigurationSchema.optional(),
+    })
+    .meta({ id: 'IntakeMediaAnalysisOverride' });
+
+export const IntakeMediaAnalysisOverridesSchema = z
+    .strictObject({
+        image: IntakeMediaAnalysisOverrideSchema.optional(),
+        video: IntakeMediaAnalysisOverrideSchema.optional(),
+        audio: IntakeMediaAnalysisOverrideSchema.optional(),
+    })
+    .meta({
+        id: 'IntakeMediaAnalysisOverrides',
+        description: 'Per-media analysis settings shared by StandardIntake variables and intake policies.',
+    });
+
 export const ContentTypeIntakePolicySchema = z
     .strictObject({
+        media_analysis: IntakeMediaAnalysisOverridesSchema.optional().meta({
+            description:
+                'Media analysis defaults. Subscription settings override the content type, which overrides project defaults.',
+        }),
         mode: z
             .enum(['programmatic', 'agentic'])
             .optional()

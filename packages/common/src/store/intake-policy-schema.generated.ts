@@ -20,6 +20,11 @@ import type { JSONObject } from '../json.js';
 export const ContentTypeIntakePolicySchema: JSONObject = {
     type: 'object',
     properties: {
+        media_analysis: {
+            $ref: '#/$defs/IntakeMediaAnalysisOverrides',
+            description:
+                'Media analysis defaults. Subscription settings override the content type, which overrides project defaults.',
+        },
         mode: {
             type: 'string',
             enum: ['programmatic', 'agentic'],
@@ -1111,6 +1116,35 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
             type: 'string',
             pattern: '^[a-fA-F0-9]{24}$',
             description: 'MongoDB ObjectId of the inference profile.',
+        },
+        IntakeMediaAnalysisOverride: {
+            type: 'object',
+            properties: {
+                interaction: {
+                    type: 'string',
+                    pattern: '\\S',
+                },
+                config: {
+                    $ref: '#/$defs/InteractionExecutionConfiguration',
+                },
+            },
+            additionalProperties: false,
+        },
+        IntakeMediaAnalysisOverrides: {
+            type: 'object',
+            properties: {
+                image: {
+                    $ref: '#/$defs/IntakeMediaAnalysisOverride',
+                },
+                video: {
+                    $ref: '#/$defs/IntakeMediaAnalysisOverride',
+                },
+                audio: {
+                    $ref: '#/$defs/IntakeMediaAnalysisOverride',
+                },
+            },
+            additionalProperties: false,
+            description: 'Per-media analysis settings shared by StandardIntake variables and intake policies.',
         },
         IntakePageRanges: {
             type: 'array',

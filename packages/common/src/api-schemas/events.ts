@@ -203,24 +203,7 @@ export const AppEventDeliveryTargetSchema = z
 
 const nonBlankStringSchema = z.string().regex(/\S/);
 
-/** Per-media settings for StandardIntake subscription variables. */
-export const IntakeMediaAnalysisOverrideSchema = z
-    .strictObject({
-        interaction: nonBlankStringSchema.optional(),
-        config: InteractionExecutionConfigurationSchema.optional(),
-    })
-    .meta({ id: 'IntakeMediaAnalysisOverride' });
-
-export const IntakeMediaAnalysisOverridesSchema = z
-    .strictObject({
-        image: IntakeMediaAnalysisOverrideSchema.optional(),
-        video: IntakeMediaAnalysisOverrideSchema.optional(),
-        audio: IntakeMediaAnalysisOverrideSchema.optional(),
-    })
-    .meta({
-        id: 'IntakeMediaAnalysisOverrides',
-        description: 'StandardIntake target.vars.media_analysis. Overrides only the matching media analysis step.',
-    });
+export { IntakeMediaAnalysisOverrideSchema, IntakeMediaAnalysisOverridesSchema } from './store.js';
 
 export const WorkflowEventDeliveryTargetSchema = z
     .strictObject({

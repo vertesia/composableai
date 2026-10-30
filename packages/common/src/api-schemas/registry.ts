@@ -921,7 +921,33 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     RenderingTemplateDefinitionRef: RenderingTemplateDefinitionRefSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const PROJECT_AND_APP_SCHEMAS = {
+// Preserve named schema types instead of expanding the full project/policy tree in declaration output.
+type ProjectAndAppSchemaMap = {
+    ProjectModelDefaults: typeof ProjectModelDefaultsSchema;
+    ResourceVisibility: typeof ResourceVisibilitySchema;
+    ProjectIndexingConfiguration: typeof ProjectIndexingConfigurationSchema;
+    ProjectConfigurationEmbedding: typeof ProjectConfigurationEmbeddingSchema;
+    BrowserUseProjectConfiguration: typeof BrowserUseProjectConfigurationSchema;
+    ProjectIntakeSniffConfiguration: typeof ProjectIntakeSniffConfigurationSchema;
+    JSONSchema: typeof JSONSchemaSchema;
+    ModelOptions: typeof ModelOptionsSchema;
+    HttpTimeoutOptions: typeof HttpTimeoutOptionsSchema;
+    ContentTypeIntakePolicy: typeof ContentTypeIntakePolicySchema;
+    ProjectIntakeConfiguration: typeof ProjectIntakeConfigurationSchema;
+    ProjectConfiguration: typeof ProjectConfigurationSchema;
+    Project: typeof ProjectSchema;
+    UpdateProjectPayload: typeof UpdateProjectPayloadSchema;
+    UpdateProjectConfigurationPayload: typeof UpdateProjectConfigurationPayloadSchema;
+    ToolCollectionObject: typeof ToolCollectionObjectSchema;
+    AppUIConfig: typeof AppUIConfigSchema;
+    AppCapabilities: typeof AppCapabilitiesSchema;
+    AppAccessControl: typeof AppAccessControlSchema;
+    AppSourceConfig: typeof AppSourceConfigSchema;
+    AppGitSourceProvider: typeof AppGitSourceProviderSchema;
+    AppManifestSource: typeof AppManifestSourceSchema;
+};
+
+const PROJECT_AND_APP_SCHEMAS: ProjectAndAppSchemaMap = {
     // Leaves of the ProjectConfiguration closure. Each is hoisted by `ProjectConfiguration` rather
     // than named by an endpoint, so only the roots that nothing else here references are listed;
     // `ModelDefault`, the two search enums, `ProjectSearchPropertyMapping(+Map)` and the two

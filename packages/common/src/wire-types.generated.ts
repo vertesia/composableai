@@ -8327,6 +8327,7 @@ export type ContentTypeExtractionGroundingPolicy = {
     review?: ContentTypeExtractionGroundingReviewPolicy | undefined;
 };
 export type ContentTypeIntakePolicy = {
+    media_analysis?: IntakeMediaAnalysisOverrides | undefined;
     mode?: 'programmatic' | 'agentic' | undefined;
     identification?:
         | {

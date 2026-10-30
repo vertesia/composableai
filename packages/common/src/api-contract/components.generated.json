@@ -4747,27 +4747,34 @@
     "additionalProperties": false,
     "description": "HTTP timeouts applied to a driver's upstream LLM-provider calls.\n\nAll values are in milliseconds. Drivers should map these onto whatever HTTP client their SDK uses; the defaults applied in `@llumiverse/core/createDriverHttpAgent` are:   - headersTimeout:   900_000   - bodyTimeout:      900_000   - connectTimeout:   60_000   - keepAliveTimeout: 300_000\n\nThe response defaults are deliberately longer than the hosting request boundary. Application-level cancellation should end user work first; driver timeouts are bounded-resource safety nets."
   },
-  "IntakePageScope": {
-    "type": "string",
-    "enum": [
-      "all",
-      "located"
-    ],
-    "description": "Named page scope for intake conversion/extraction: everything or the locate-pass result. Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as a SEPARATE field because scalar-or-collection unions generate unstable API clients."
-  },
-  "IntakePageRanges": {
-    "type": "array",
-    "items": {
-      "minItems": 2,
-      "maxItems": 2,
-      "type": "array",
-      "items": {
-        "type": "integer",
-        "minimum": -2147483648,
-        "maximum": 2147483647
+  "IntakeMediaAnalysisOverrides": {
+    "type": "object",
+    "properties": {
+      "image": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride"
+      },
+      "video": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride"
+      },
+      "audio": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride"
       }
     },
-    "description": "Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the document ([[1, 2], [-1, -1]] = first two pages plus the last page)."
+    "additionalProperties": false,
+    "description": "Per-media analysis settings shared by StandardIntake variables and intake policies."
+  },
+  "IntakeMediaAnalysisOverride": {
+    "type": "object",
+    "properties": {
+      "interaction": {
+        "type": "string",
+        "pattern": "\\S"
+      },
+      "config": {
+        "$ref": "#/components/schemas/InteractionExecutionConfiguration"
+      }
+    },
+    "additionalProperties": false
   },
   "InteractionExecutionConfiguration": {
     "type": "object",
@@ -4861,6 +4868,28 @@
       "off",
       "required"
     ]
+  },
+  "IntakePageScope": {
+    "type": "string",
+    "enum": [
+      "all",
+      "located"
+    ],
+    "description": "Named page scope for intake conversion/extraction: everything or the locate-pass result. Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as a SEPARATE field because scalar-or-collection unions generate unstable API clients."
+  },
+  "IntakePageRanges": {
+    "type": "array",
+    "items": {
+      "minItems": 2,
+      "maxItems": 2,
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": -2147483648,
+        "maximum": 2147483647
+      }
+    },
+    "description": "Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the document ([[1, 2], [-1, -1]] = first two pages plus the last page)."
   },
   "IntakeVisionDetail": {
     "type": "string",
@@ -5002,6 +5031,10 @@
   "ContentTypeIntakePolicy": {
     "type": "object",
     "properties": {
+      "media_analysis": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverrides",
+        "description": "Media analysis defaults. Subscription settings override the content type, which overrides project defaults."
+      },
       "mode": {
         "type": "string",
         "enum": [
@@ -31708,35 +31741,6 @@
       "facets"
     ],
     "additionalProperties": false
-  },
-  "IntakeMediaAnalysisOverride": {
-    "type": "object",
-    "properties": {
-      "interaction": {
-        "type": "string",
-        "pattern": "\\S"
-      },
-      "config": {
-        "$ref": "#/components/schemas/InteractionExecutionConfiguration"
-      }
-    },
-    "additionalProperties": false
-  },
-  "IntakeMediaAnalysisOverrides": {
-    "type": "object",
-    "properties": {
-      "image": {
-        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride"
-      },
-      "video": {
-        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride"
-      },
-      "audio": {
-        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride"
-      }
-    },
-    "additionalProperties": false,
-    "description": "StandardIntake target.vars.media_analysis. Overrides only the matching media analysis step."
   },
   "WorkflowRuleInputType": {
     "type": "string",

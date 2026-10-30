@@ -117,3 +117,23 @@ it('accepts named workflow templates and retains compatibility with a single def
         validateApiResponse('SubscriptionWorkflowCatalog', { workflows: [{ ...workflow, templates: [] }] }).valid,
     ).toBe(false);
 });
+
+it('shares media analysis policy validation with subscription overrides', () => {
+    const media_analysis = {
+        image: { interaction: 'custom:Image', config: { inference_profile: null } },
+        audio: { config: { inference_profile: '111111111111111111111111' } },
+        video: { interaction: 'sys:AnalyzeVideo' },
+    };
+    expect(validateApiRequest('ContentTypeIntakePolicy', { media_analysis }).valid).toBe(true);
+    expect(validateApiRequest('IntakeMediaAnalysisOverrides', media_analysis).valid).toBe(true);
+    expect(
+        validateApiRequest('ContentTypeIntakePolicy', {
+            media_analysis: { video: { interaction: '   ' } },
+        }).valid,
+    ).toBe(false);
+    expect(
+        validateApiRequest('ContentTypeIntakePolicy', {
+            media_analysis: { audio: { config: { inference_profile: 42 } } },
+        }).valid,
+    ).toBe(false);
+});
