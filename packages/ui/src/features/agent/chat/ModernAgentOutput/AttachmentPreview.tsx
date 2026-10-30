@@ -249,7 +249,7 @@ function AttachmentPreview({
             aria-label={t('agent.removeFile', { name: item.name })}
             onClick={handleRemove}
             className={cn(
-                'absolute -end-1.5 -top-1.5 inline-flex size-5 items-center justify-center rounded-full',
+                'absolute -inset-e-1.5 -top-1.5 inline-flex size-5 items-center justify-center rounded-full',
                 'border border-border bg-background text-muted shadow-sm transition-colors hover:text-foreground',
             )}
         >

@@ -647,11 +647,7 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
     const [category] = contentType.split('/');
     const wildcardKey = `${category}/*`;
     const wildcardMatch = RENDITION_COMPATIBILITY[wildcardKey];
-    if (wildcardMatch?.some((f) => f === formatStr)) {
-        return true;
-    }
-
-    return false;
+    return !!wildcardMatch?.some((f) => f === formatStr);
 }
 
 export type GetUploadUrlPayload = Wire.GetUploadUrlPayload;

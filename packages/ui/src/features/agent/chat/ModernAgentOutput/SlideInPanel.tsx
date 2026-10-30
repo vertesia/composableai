@@ -48,7 +48,7 @@ export default function SlideInPanel({ isOpen, onClose, title, children, width =
 
             {/* Slide-in panel */}
             <div
-                className={`fixed top-0 end-0 bottom-0 z-50 bg-card text-card-foreground shadow-lg border-s border-border transition-transform duration-300 ease-in-out ${panelTranslateClass}`}
+                className={`fixed top-0 inset-e-0 bottom-0 z-50 bg-card text-card-foreground shadow-lg border-s border-border transition-transform duration-300 ease-in-out ${panelTranslateClass}`}
                 style={{ width }}
             >
                 {/* Header */}

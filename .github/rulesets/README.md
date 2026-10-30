@@ -34,8 +34,8 @@ the approve+merge automation lands.
 
 `release.json` keeps `main`'s CodeQL `code_scanning` rule because `release/X.Y` is
 the production line and must be CodeQL-gated. This repo uses CodeQL **default
-setup**, which scans pull requests targeting the default branch *or any protected
-branch* — so protecting `release/**` (this ruleset) makes those scans run
+setup**, which scans pull requests targeting the default branch _or any protected
+branch_ — so protecting `release/**` (this ruleset) makes those scans run
 automatically, with no advanced-setup workflow required.
 
 ## CI approval gate

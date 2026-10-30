@@ -287,7 +287,7 @@ function TagsInputContent({
                                         type="button"
                                         onClick={(e) => handleRemove(item, e)}
                                         disabled={disabled}
-                                        className="hover:bg-info rounded-sm transition-colors flex-shrink-0"
+                                        className="hover:bg-info rounded-sm transition-colors shrink-0"
                                     >
                                         <X className="h-3 w-3" />
                                     </button>

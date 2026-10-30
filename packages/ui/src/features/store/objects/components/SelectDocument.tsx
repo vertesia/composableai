@@ -86,7 +86,7 @@ function SelectDocumentImpl({ onRowClick, selectedIds }: Readonly<SelectDocument
 
     return (
         <div className="flex flex-col gap-2 h-full w-full">
-            <div className="flex justify-between items-center flex-shrink-0">
+            <div className="flex justify-between items-center shrink-0">
                 <DocumentsFacetsNav facets={facets} search={facetSearch} />
                 <div className="flex items-center gap-2">
                     <Button variant="outline" onClick={handleRefetch} aria-label="Refresh">

@@ -163,9 +163,9 @@ legacy fragment-token broker flow on localhost.
 For an existing 1.5 app, add the regional auth setting to its existing `.env.app` when adopting this
 wiring (the CLI does not rewrite an already generated app):
 
-| Region | `VITE_AUTH_SERVER_URL` |
-| --- | --- |
-| US (`us1`) | `https://auth.us1.vertesia.io/` |
+| Region         | `VITE_AUTH_SERVER_URL`          |
+| -------------- | ------------------------------- |
+| US (`us1`)     | `https://auth.us1.vertesia.io/` |
 | Europe (`eu1`) | `https://auth.eu1.vertesia.io/` |
 
 The CLI's development mode uses `https://auth.dev1.vertesia.io/` with its development API endpoints.
@@ -330,16 +330,16 @@ Without the dev dependency the publish build provisions the same workerd version
 Everything reachable from `src/tool-server/server.ts` is bundled into the sandbox. `server-node.ts`
 remains the Node entry for local and self-hosted serving and is not part of that bundle.
 
-| 1.5 pattern | 1.6 replacement |
-| --- | --- |
-| `node:fs`, `node:os` `tmpdir()`, or temp files | `context.scratch` (S4) |
-| `Buffer` | `Uint8Array`, `TextEncoder`/`TextDecoder`, `btoa`/`atob` |
-| `node:crypto` | Web Crypto: `crypto.subtle`, `crypto.getRandomValues`, `crypto.randomUUID` |
-| `eval` or `new Function` | Explicit parsing; code generation from strings is disabled. See the template's [calculator tool](../src/modules/examples/resources/tools/calculator/calculator.ts) |
-| `loadToolsFromDirectory`, `loadSkillsFromDirectory` | Static imports and `?skills` imports, as the template's resource indexes do |
-| Forwarding `context.token`, or building a `VertesiaClient` from it | `await context.getClient()`; in the sandbox `context.token` is a placeholder, not a credential |
-| `process.env` values | Compile non-secret constants into the bundle. Secret credentials are not yet available in the service runtime: keep a tool that needs one on a self-hosted tool server for now |
-| Node-only npm packages | Packages that bundle for the browser platform |
+| 1.5 pattern                                                        | 1.6 replacement                                                                                                                                                                |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `node:fs`, `node:os` `tmpdir()`, or temp files                     | `context.scratch` (S4)                                                                                                                                                         |
+| `Buffer`                                                           | `Uint8Array`, `TextEncoder`/`TextDecoder`, `btoa`/`atob`                                                                                                                       |
+| `node:crypto`                                                      | Web Crypto: `crypto.subtle`, `crypto.getRandomValues`, `crypto.randomUUID`                                                                                                     |
+| `eval` or `new Function`                                           | Explicit parsing; code generation from strings is disabled. See the template's [calculator tool](../src/modules/examples/resources/tools/calculator/calculator.ts)             |
+| `loadToolsFromDirectory`, `loadSkillsFromDirectory`                | Static imports and `?skills` imports, as the template's resource indexes do                                                                                                    |
+| Forwarding `context.token`, or building a `VertesiaClient` from it | `await context.getClient()`; in the sandbox `context.token` is a placeholder, not a credential                                                                                 |
+| `process.env` values                                               | Compile non-secret constants into the bundle. Secret credentials are not yet available in the service runtime: keep a tool that needs one on a self-hosted tool server for now |
+| Node-only npm packages                                             | Packages that bundle for the browser platform                                                                                                                                  |
 
 `pnpm build:sandbox` fails on an unresolvable Node import; the publish-time validation also rejects
 a bundle that cannot load in workerd.

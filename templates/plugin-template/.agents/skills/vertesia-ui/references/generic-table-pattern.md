@@ -526,13 +526,13 @@ Push-based routers (including `NestedRouterProvider`) create a **new history ent
 
 ### Common failure modes (what bit us)
 
-| Symptom | Cause | Fix |
-| --- | --- | --- |
-| Scroll resets to top on first back-nav, works on second | Cleanup persisted `el.scrollTop = 0` (DOM detached at cleanup time), clobbering the saved value | Don't persist on cleanup |
-| Listener attaches to `<html>` and never fires | `findScrollableElement` ran when items were empty; inner div had no overflow yet, so it walked all the way up | Walk-up logic + provider state covers it |
-| Visible flash to top before scroll lands | Restore wrapped in `requestAnimationFrame` with no synchronous attempt | Try synchronously inside `useLayoutEffect` first |
-| StrictMode double-mount loses scroll | Cleanup persists 0 between passes; second mount reads 0 | Don't persist on cleanup |
-| `fromHistory = undefined` after back-nav | Router pushes new entry instead of going back via browser history | Provider state is the primary source |
+| Symptom                                                 | Cause                                                                                                         | Fix                                              |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Scroll resets to top on first back-nav, works on second | Cleanup persisted `el.scrollTop = 0` (DOM detached at cleanup time), clobbering the saved value               | Don't persist on cleanup                         |
+| Listener attaches to `<html>` and never fires           | `findScrollableElement` ran when items were empty; inner div had no overflow yet, so it walked all the way up | Walk-up logic + provider state covers it         |
+| Visible flash to top before scroll lands                | Restore wrapped in `requestAnimationFrame` with no synchronous attempt                                        | Try synchronously inside `useLayoutEffect` first |
+| StrictMode double-mount loses scroll                    | Cleanup persists 0 between passes; second mount reads 0                                                       | Don't persist on cleanup                         |
+| `fromHistory = undefined` after back-nav                | Router pushes new entry instead of going back via browser history                                             | Provider state is the primary source             |
 
 ## Checklist
 

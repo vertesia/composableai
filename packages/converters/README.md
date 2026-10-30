@@ -101,31 +101,31 @@ Supported input formats include all formats supported by Pandoc: `docx`, `html`,
 
 ### Image Functions
 
-| Function | Description |
-|----------|-------------|
-| `transformImage(input, output, opts)` | Transform image from stream to stream |
-| `transformImageToBuffer(input, opts)` | Transform image to buffer |
-| `transformImageToFile(input, output, opts)` | Transform image to file |
+| Function                                    | Description                           |
+| ------------------------------------------- | ------------------------------------- |
+| `transformImage(input, output, opts)`       | Transform image from stream to stream |
+| `transformImageToBuffer(input, opts)`       | Transform image to buffer             |
+| `transformImageToFile(input, output, opts)` | Transform image to file               |
 
 #### TransformOptions
 
-| Option | Type | Description |
-|--------|------|-------------|
+| Option   | Type     | Description                                                 |
+| -------- | -------- | ----------------------------------------------------------- |
 | `max_hw` | `number` | Maximum width/height (maintains aspect ratio, no upscaling) |
-| `format` | `string` | Output format (`jpeg`, `png`, `webp`, `avif`, etc.) |
+| `format` | `string` | Output format (`jpeg`, `png`, `webp`, `avif`, etc.)         |
 
 ### PDF Functions
 
-| Function | Description |
-|----------|-------------|
-| `pdfToText(buffer)` | Convert PDF buffer to text string |
-| `pdfToTextBuffer(buffer)` | Convert PDF buffer to text buffer |
-| `pdfFileToText(input, output)` | Convert PDF file to text file |
+| Function                       | Description                       |
+| ------------------------------ | --------------------------------- |
+| `pdfToText(buffer)`            | Convert PDF buffer to text string |
+| `pdfToTextBuffer(buffer)`      | Convert PDF buffer to text buffer |
+| `pdfFileToText(input, output)` | Convert PDF file to text file     |
 
 ### Document Functions
 
-| Function | Description |
-|----------|-------------|
+| Function                         | Description                         |
+| -------------------------------- | ----------------------------------- |
 | `manyToMarkdown(stream, format)` | Convert document stream to Markdown |
 
 ## Requirements

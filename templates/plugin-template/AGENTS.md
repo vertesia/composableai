@@ -6,15 +6,15 @@ Dual-architecture plugin: **Hono tool server** (backend) + **React UI plugin** (
 
 IMPORTANT: You MUST invoke the relevant skill using the Skill tool BEFORE starting implementation for the task types below. Skills contain detailed, up-to-date patterns beyond what this file covers.
 
-| When the task involves...                                                       | INVOKE this skill first         |
-| ------------------------------------------------------------------------------- | ------------------------------- |
-| Reviewing requirement docs, discovery notes, or feature/demo asks               | `vertesia-gap-assessment`       |
-| Understanding plugin architecture, dual build system, or `config.ts`            | `vertesia-plugin`               |
-| Adding tools, skills, interactions, types, templates, hooks, or subscriptions   | `vertesia-tool-server-resource` |
-| Building or modifying React UI pages or components                              | `vertesia-ui`                   |
-| Calling the Vertesia client API (objects, workflows, interactions, files)       | `vertesia-api`                  |
-| Writing or debugging DSL workflows that call remote activities                  | `vertesia-dsl-workflow`         |
-| Seeding the store with realistic demo objects                                   | `vertesia-demo-content`         |
+| When the task involves...                                                     | INVOKE this skill first         |
+| ----------------------------------------------------------------------------- | ------------------------------- |
+| Reviewing requirement docs, discovery notes, or feature/demo asks             | `vertesia-gap-assessment`       |
+| Understanding plugin architecture, dual build system, or `config.ts`          | `vertesia-plugin`               |
+| Adding tools, skills, interactions, types, templates, hooks, or subscriptions | `vertesia-tool-server-resource` |
+| Building or modifying React UI pages or components                            | `vertesia-ui`                   |
+| Calling the Vertesia client API (objects, workflows, interactions, files)     | `vertesia-api`                  |
+| Writing or debugging DSL workflows that call remote activities                | `vertesia-dsl-workflow`         |
+| Seeding the store with realistic demo objects                                 | `vertesia-demo-content`         |
 
 ### Typical "build a feature" loop
 
@@ -63,16 +63,16 @@ before asserting it; do not require controls at opposite ends of the page to occ
 
 ## Key Files
 
-| File                          | Purpose                                              |
-|-------------------------------|------------------------------------------------------|
-| `src/tool-server/config.ts`   | Registers generated module collections               |
-| `src/tool-server/settings.ts` | Plugin settings JSON Schema                          |
-| `src/ui/plugin.tsx`           | Library entry for the Vertesia host app              |
-| `src/ui/main.tsx`             | Standalone dev entry (VertesiaShell + AdminApp)      |
-| `src/ui/shell/App.tsx`        | Shared app runtime (module providers + router)       |
-| `src/modules/app/ui/routes.tsx` | User app route definitions                         |
-| `src/modules/app/resources/`  | User app Vertesia resource definitions               |
-| `src/ui/index.css`            | Tailwind CSS 4 entry with shared styles import       |
+| File                            | Purpose                                         |
+| ------------------------------- | ----------------------------------------------- |
+| `src/tool-server/config.ts`     | Registers generated module collections          |
+| `src/tool-server/settings.ts`   | Plugin settings JSON Schema                     |
+| `src/ui/plugin.tsx`             | Library entry for the Vertesia host app         |
+| `src/ui/main.tsx`               | Standalone dev entry (VertesiaShell + AdminApp) |
+| `src/ui/shell/App.tsx`          | Shared app runtime (module providers + router)  |
+| `src/modules/app/ui/routes.tsx` | User app route definitions                      |
+| `src/modules/app/resources/`    | User app Vertesia resource definitions          |
+| `src/ui/index.css`              | Tailwind CSS 4 entry with shared styles import  |
 
 ## UI Directory Structure
 

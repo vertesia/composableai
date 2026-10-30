@@ -73,8 +73,7 @@ function getHashSearchParams(hash: string): URLSearchParams {
 }
 
 export function isAgentChatPlaybackAvailable(): boolean {
-    if (typeof window === 'undefined') return false;
-    return true;
+    return typeof window !== 'undefined';
 }
 
 export function isAgentChatPlaybackEnabled(): boolean {

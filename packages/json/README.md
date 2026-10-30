@@ -146,30 +146,30 @@ walker.walk(data, {
 
 ### Types
 
-| Type | Description |
-|------|-------------|
+| Type            | Description                           |
+| --------------- | ------------------------------------- |
 | `JSONPrimitive` | `string \| number \| boolean \| null` |
-| `JSONArray` | `JSONValue[]` |
-| `JSONObject` | `{ [key: string]: JSONValue }` |
-| `JSONComposite` | `JSONArray \| JSONObject` |
-| `JSONValue` | `JSONPrimitive \| JSONComposite` |
+| `JSONArray`     | `JSONValue[]`                         |
+| `JSONObject`    | `{ [key: string]: JSONValue }`        |
+| `JSONComposite` | `JSONArray \| JSONObject`             |
+| `JSONValue`     | `JSONPrimitive \| JSONComposite`      |
 
 ### ObjectWalker
 
-| Method | Description |
-|--------|-------------|
-| `walk(obj, visitor)` | Traverse object with visitor callbacks |
-| `map(obj, mapFn)` | Transform values while preserving structure |
+| Method               | Description                                 |
+| -------------------- | ------------------------------------------- |
+| `walk(obj, visitor)` | Traverse object with visitor callbacks      |
+| `map(obj, mapFn)`    | Transform values while preserving structure |
 
 ### ObjectVisitor Callbacks
 
-| Callback | Description |
-|----------|-------------|
-| `onStartObject(key, value)` | Called when entering an object |
-| `onEndObject(key, value)` | Called when leaving an object |
+| Callback                       | Description                            |
+| ------------------------------ | -------------------------------------- |
+| `onStartObject(key, value)`    | Called when entering an object         |
+| `onEndObject(key, value)`      | Called when leaving an object          |
 | `onStartIteration(key, value)` | Called when entering an array/iterable |
-| `onEndIteration(key, value)` | Called when leaving an array/iterable |
-| `onValue(key, value)` | Called for primitive values |
+| `onEndIteration(key, value)`   | Called when leaving an array/iterable  |
+| `onValue(key, value)`          | Called for primitive values            |
 
 ### AsyncObjectWalker
 

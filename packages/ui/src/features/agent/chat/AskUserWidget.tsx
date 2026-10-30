@@ -259,7 +259,7 @@ export function AskUserWidget({
                     <div className={cn('px-3 py-2', headerClassName)}>
                         <div className="flex items-start gap-2.5">
                             {!hideIcon && (
-                                <div className={cn('mt-1 flex-shrink-0 text-attention', iconClassName)}>{iconNode}</div>
+                                <div className={cn('mt-1 shrink-0 text-attention', iconClassName)}>{iconNode}</div>
                             )}
                             <div className="min-w-0 flex-1">
                                 <div className={SCROLLABLE_PROMPT_CLASS}>
@@ -304,10 +304,10 @@ export function AskUserWidget({
                                                     <span className="min-w-0 flex-1">
                                                         <span className="flex items-center gap-2 text-sm font-medium leading-5 text-foreground">
                                                             {option.icon}
-                                                            <span className="break-words">{option.label}</span>
+                                                            <span className="wrap-break-word">{option.label}</span>
                                                         </span>
                                                         {option.description && (
-                                                            <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
+                                                            <span className="mt-0.5 block wrap-break-word text-xs leading-5 text-muted">
                                                                 {option.description}
                                                             </span>
                                                         )}
@@ -344,16 +344,16 @@ export function AskUserWidget({
                                             )}
                                         >
                                             <span
-                                                className="mt-1 size-4 flex-shrink-0 rounded-full border border-border"
+                                                className="mt-1 size-4 shrink-0 rounded-full border border-border"
                                                 aria-hidden="true"
                                             />
                                             <span className="min-w-0 flex-1">
                                                 <span className="flex items-center gap-2 text-sm font-medium leading-5 text-foreground">
                                                     {option.icon}
-                                                    <span className="break-words">{option.label}</span>
+                                                    <span className="wrap-break-word">{option.label}</span>
                                                 </span>
                                                 {option.description && (
-                                                    <span className="mt-0.5 block break-words text-xs leading-5 text-muted">
+                                                    <span className="mt-0.5 block wrap-break-word text-xs leading-5 text-muted">
                                                         {option.description}
                                                     </span>
                                                 )}
@@ -404,7 +404,7 @@ export function AskUserWidget({
                 <div className={`px-4 py-3 ${headerClassName || ''}`}>
                     <div className="flex items-start gap-3">
                         {!hideIcon && (
-                            <div className={`flex-shrink-0 mt-0.5 ${styles.icon} ${iconClassName || ''}`}>
+                            <div className={`shrink-0 mt-0.5 ${styles.icon} ${iconClassName || ''}`}>
                                 {icon || <DefaultIcon className="size-5" />}
                             </div>
                         )}
@@ -452,12 +452,12 @@ export function AskUserWidget({
                                                 className="mt-0.5 w-4 h-4 rounded border-border text-info focus:ring-info bg-background"
                                             />
                                             <div className="flex-1 overflow-hidden">
-                                                <div className="flex items-center gap-2 text-sm font-medium text-foreground break-words">
+                                                <div className="flex items-center gap-2 text-sm font-medium text-foreground wrap-break-word">
                                                     {option.icon}
-                                                    <span className="break-words">{option.label}</span>
+                                                    <span className="wrap-break-word">{option.label}</span>
                                                 </div>
                                                 {option.description && (
-                                                    <div className="mt-1 text-sm text-muted break-words whitespace-pre-wrap">
+                                                    <div className="mt-1 text-sm text-muted wrap-break-word whitespace-pre-wrap">
                                                         {option.description}
                                                     </div>
                                                 )}
@@ -497,16 +497,14 @@ export function AskUserWidget({
                                         >
                                             <div className="flex items-start gap-3">
                                                 {option.icon && (
-                                                    <span className="flex-shrink-0 mt-0.5 text-muted">
-                                                        {option.icon}
-                                                    </span>
+                                                    <span className="shrink-0 mt-0.5 text-muted">{option.icon}</span>
                                                 )}
                                                 <div className="flex-1 overflow-hidden">
-                                                    <div className="font-medium text-sm text-foreground break-words text-center">
+                                                    <div className="font-medium text-sm text-foreground wrap-break-word text-center">
                                                         {option.label}
                                                     </div>
                                                     {option.description && (
-                                                        <div className="mt-1 text-sm text-muted break-words whitespace-pre-wrap">
+                                                        <div className="mt-1 text-sm text-muted wrap-break-word whitespace-pre-wrap">
                                                             {option.description}
                                                         </div>
                                                     )}

@@ -62,7 +62,7 @@ export function MessageBox({ icon, status, title, children, className }: Message
                 <div className="shrink-0">{icon ?? defaultIcon}</div>
                 <div className="w-full ms-2 px-1">
                     {title && <h3 className={`text-base font-medium mb-2 ${titleColor}`}>{title}</h3>}
-                    <div className={`text-sm ${textColor} break-words`}>{children}</div>
+                    <div className={`text-sm ${textColor} wrap-break-word`}>{children}</div>
                 </div>
             </div>
         </div>
@@ -88,7 +88,7 @@ export function ErrorBox({
             title={title}
             className={`${className} flex flex-col items-center justify-center text-center`}
         >
-            <pre className="whitespace-pre-wrap break-words">{children}</pre>
+            <pre className="whitespace-pre-wrap wrap-break-word">{children}</pre>
             {action && actionLabel && (
                 <Button onClick={action} variant="ghost" size="sm" className="mt-4">
                     {actionLabel}

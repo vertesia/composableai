@@ -230,7 +230,7 @@ export function AgentChatFixtureReplay({
                     </div>
                 </div>
             )}
-            <div className="flex flex-shrink-0 justify-end px-2 py-1.5">
+            <div className="flex shrink-0 justify-end px-2 py-1.5">
                 <AgentChatPlaybackControls cursor={playback.cursor} messages={messages} onChangeCursor={setCursor} />
             </div>
             <AllMessagesMixed

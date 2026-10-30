@@ -7,6 +7,12 @@ const clientId = '0oa-test-client';
 const tokenEndpoint = `${issuer}/v1/token`;
 const storage = new Map<string, string>();
 const assign = vi.fn();
+
+/** Return a value the test needs, failing with a readable message when it is missing. */
+function present<T>(value: T | null | undefined, what: string): T {
+    if (value == null) throw new Error(`expected ${what} to be present`);
+    return value;
+}
 // Transform the module graph once, before the per-test deadlines start.
 beforeAll(async () => {
     await import('./oidc');
@@ -50,7 +56,9 @@ async function setup(oidc: { issuer: string; clientId: string; scopes?: string[]
 async function signInAndReturn(oidc: Awaited<ReturnType<typeof setup>>, query?: Record<string, string>) {
     await oidc.startOidcSignIn({ returnTo: '/app/report?x=1#chart' });
     const authorize = new URL(assign.mock.calls[0][0]);
-    const params = new URLSearchParams(query ?? { code: 'one-time-code', state: authorize.searchParams.get('state')! });
+    const params = new URLSearchParams(
+        query ?? { code: 'one-time-code', state: present(authorize.searchParams.get('state'), 'the state parameter') },
+    );
     navigate(`/oidc/callback?${params}`);
     return authorize;
 }
@@ -115,7 +123,7 @@ it('sends the user to the provider with PKCE, state, nonce and the same-origin c
         code_challenge_method: 'S256',
         login_hint: 'jane@agency.gov',
     });
-    const transaction = JSON.parse(storage.get('vertesia.oidc.transaction')!);
+    const transaction = JSON.parse(present(storage.get('vertesia.oidc.transaction'), 'the OIDC transaction'));
     expect(authorize.searchParams.get('state')).toBe(transaction.state);
     expect(authorize.searchParams.get('nonce')).toBe(transaction.nonce);
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(transaction.verifier));
@@ -136,20 +144,25 @@ it('refuses a cross-origin return target and a discovery document for another is
 it('exchanges the code once, stores the ID token and restores the page the sign-in started from', async () => {
     const oidc = await setup();
     await signInAndReturn(oidc);
-    const { verifier, nonce } = JSON.parse(storage.get('vertesia.oidc.transaction')!);
+    const { verifier, nonce } = JSON.parse(present(storage.get('vertesia.oidc.transaction'), 'the OIDC transaction'));
     tokenResponse = () => Response.json({ id_token: idToken({ nonce }), token_type: 'Bearer' });
 
     await expect(oidc.completeOidcSignIn()).resolves.toBe(true);
     expect(browser.location.href).toBe(`${origin}/app/report?x=1#chart`);
-    const exchange = vi.mocked(fetch).mock.calls.find(([url]) => String(url) === tokenEndpoint)!;
-    expect(Object.fromEntries(exchange[1]!.body as URLSearchParams)).toEqual({
+    const exchange = present(
+        vi.mocked(fetch).mock.calls.find(([url]) => String(url) === tokenEndpoint),
+        'the token exchange request',
+    );
+    expect(Object.fromEntries(present(exchange[1], 'the token exchange options').body as URLSearchParams)).toEqual({
         grant_type: 'authorization_code',
         code: 'one-time-code',
         redirect_uri: `${origin}/oidc/callback`,
         client_id: clientId,
         code_verifier: verifier,
     });
-    expect(oidc.getOidcIdToken()).toBe(JSON.parse(storage.get('vertesia.oidc.id_token')!).idToken);
+    expect(oidc.getOidcIdToken()).toBe(
+        JSON.parse(present(storage.get('vertesia.oidc.id_token'), 'the stored ID token')).idToken,
+    );
     expect(storage.has('vertesia.oidc.transaction')).toBe(false);
 
     // A replayed callback has no transaction left to match.
@@ -160,7 +173,7 @@ it('exchanges the code once, stores the ID token and restores the page the sign-
 it('gives a caller arriving during the exchange the same completion, not a signed-out page', async () => {
     const oidc = await setup();
     await signInAndReturn(oidc);
-    const { nonce } = JSON.parse(storage.get('vertesia.oidc.transaction')!);
+    const { nonce } = JSON.parse(present(storage.get('vertesia.oidc.transaction'), 'the OIDC transaction'));
     let release!: () => void;
     const released = new Promise<void>((resolve) => {
         release = resolve;
@@ -210,7 +223,7 @@ describe('rejects a callback that does not belong to this sign-in', () => {
     it('a provider error', async () => {
         const oidc = await setup();
         await oidc.startOidcSignIn();
-        const state = new URL(assign.mock.calls[0][0]).searchParams.get('state')!;
+        const state = present(new URL(assign.mock.calls[0][0]).searchParams.get('state'), 'the state parameter');
         navigate(`/oidc/callback?${new URLSearchParams({ error: 'access_denied', state })}`);
         await expect(oidc.completeOidcSignIn()).rejects.toThrow('access_denied');
     });
@@ -223,7 +236,7 @@ describe('rejects a callback that does not belong to this sign-in', () => {
     ])('an ID token with %s', async (_label, claims) => {
         const oidc = await setup();
         await signInAndReturn(oidc);
-        const { nonce } = JSON.parse(storage.get('vertesia.oidc.transaction')!);
+        const { nonce } = JSON.parse(present(storage.get('vertesia.oidc.transaction'), 'the OIDC transaction'));
         tokenResponse = () => Response.json({ id_token: idToken({ nonce, ...claims }) });
         await expect(oidc.completeOidcSignIn()).rejects.toThrow('not issued for this sign-in');
         expect(oidc.getOidcIdToken()).toBeUndefined();
@@ -240,7 +253,7 @@ describe('rejects a callback that does not belong to this sign-in', () => {
 it('accepts an audience list that includes the client and the matching nonce', async () => {
     const oidc = await setup();
     await signInAndReturn(oidc);
-    const { nonce } = JSON.parse(storage.get('vertesia.oidc.transaction')!);
+    const { nonce } = JSON.parse(present(storage.get('vertesia.oidc.transaction'), 'the OIDC transaction'));
     tokenResponse = () => Response.json({ id_token: idToken({ nonce, aud: ['api', clientId] }) });
     await expect(oidc.completeOidcSignIn()).resolves.toBe(true);
 });

@@ -528,7 +528,7 @@ function PendingStartConversation({ message, startedAt }: { message: string; sta
                 <div
                     className={cn(
                         'max-w-[min(44rem,82%)] rounded-[1.35rem] bg-mixer-muted/35 px-4 py-2.5',
-                        'break-words text-sm font-normal leading-6 text-foreground/90 bg-mixer-muted/35 shadow-sm [overflow-wrap:anywhere]',
+                        'wrap-break-word text-sm font-normal leading-6 text-foreground/90 bg-mixer-muted/35 shadow-sm [overflow-wrap:anywhere]',
                     )}
                 >
                     <div className="whitespace-pre-wrap">{message}</div>
@@ -2352,7 +2352,7 @@ function ModernAgentConversationInner({
 
     const waitForPendingToolApprovalModeChange = useCallback(async () => {
         const pendingChange = pendingToolApprovalModeChangeRef.current;
-        if (pendingChange) {
+        if (pendingChange !== null) {
             await pendingChange;
         }
     }, []);
@@ -2909,16 +2909,16 @@ function ModernAgentConversationInner({
             )}
         >
             {!hideHeader && headerVariant === 'compact' && (
-                <div className="flex flex-shrink-0 justify-end border-b border-border/60 px-2 py-1 lg:hidden">
+                <div className="flex shrink-0 justify-end border-b border-border/60 px-2 py-1 lg:hidden">
                     {renderConversationHeader('compact')}
                 </div>
             )}
             {!hideHeader && headerVariant !== 'compact' && (
-                <div className="flex-shrink-0">{renderConversationHeader(headerVariant)}</div>
+                <div className="shrink-0">{renderConversationHeader(headerVariant)}</div>
             )}
 
             {isPlaybackEnabled && (
-                <div className="flex flex-shrink-0 justify-end px-2 py-1.5">
+                <div className="flex shrink-0 justify-end px-2 py-1.5">
                     <AgentChatPlaybackControls
                         cursor={clampedPlaybackCursor}
                         messages={playbackSourceMessages}
@@ -2997,7 +2997,7 @@ function ModernAgentConversationInner({
                     disabled={!isPlaybackLive || !allowWorkflowControl}
                 />
             ) : isViewingPlaybackHistory && playbackActiveWorkstreams.length > 0 ? (
-                <div className="flex-shrink-0 pb-safe-area">
+                <div className="shrink-0 pb-safe-area">
                     <ActiveWorkstreamsSummary
                         activeWorkstreams={playbackActiveWorkstreams}
                         onSelectWorkstream={setActiveWorkstream}
@@ -3005,7 +3005,7 @@ function ModernAgentConversationInner({
                 </div>
             ) : (
                 shouldRenderLiveMessageInputArea && (
-                    <div className="flex-shrink-0 pb-safe-area">
+                    <div className="shrink-0 pb-safe-area">
                         {isFailed ? (
                             // FAILED takes priority over every other branch so the composer can
                             // never render for a failed run. Use the caller's action when provided,
