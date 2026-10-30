@@ -542,6 +542,8 @@ export type AppInstallationPayload = Wire.AppInstallationPayload;
 
 export type UpdateAppInstallationToolAllowlistPayload = Wire.UpdateAppInstallationToolAllowlistPayload;
 
+export type UpdateAppInstallationToolPermissionsPayload = Wire.UpdateAppInstallationToolPermissionsPayload;
+
 export type AppInstallationKind = Wire.AppInstallationKind;
 
 /**

@@ -308,6 +308,13 @@ export const AppInstallationSchema = z
                     'Admin-managed allowlist of tool names permitted for this installation. When undefined, all tools from the app are permitted. When set, only listed tool names are available for agent configuration and execution.',
             })
             .optional(),
+        tools_requiring_approval: z
+            .array(z.string())
+            .meta({
+                description:
+                    "Admin-managed list of tool names from this installation that always require human approval before an agent runs them, regardless of the run's tool approval mode. When undefined, the default approval behavior applies.",
+            })
+            .optional(),
         oauth_bindings: z
             .array(AppInstallationOAuthBindingSchema)
             .meta({
@@ -734,6 +741,13 @@ export const AppInstallationWithManifestSchema = z
                     'Admin-managed allowlist of tool names permitted for this installation. When undefined, all tools from the app are permitted. When set, only listed tool names are available for agent configuration and execution.',
             })
             .optional(),
+        tools_requiring_approval: z
+            .array(z.string())
+            .meta({
+                description:
+                    "Admin-managed list of tool names from this installation that always require human approval before an agent runs them, regardless of the run's tool approval mode. When undefined, the default approval behavior applies.",
+            })
+            .optional(),
         oauth_bindings: z
             .array(AppInstallationOAuthBindingSchema)
             .meta({
@@ -790,6 +804,13 @@ export const AppInstallationListEntrySchema = z
             .meta({
                 description:
                     'Admin-managed allowlist of tool names permitted for this installation. When undefined, all tools from the app are permitted. When set, only listed tool names are available for agent configuration and execution.',
+            })
+            .optional(),
+        tools_requiring_approval: z
+            .array(z.string())
+            .meta({
+                description:
+                    "Admin-managed list of tool names from this installation that always require human approval before an agent runs them, regardless of the run's tool approval mode. When undefined, the default approval behavior applies.",
             })
             .optional(),
         oauth_bindings: z
