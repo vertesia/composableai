@@ -375,7 +375,7 @@ export const ProjectIntakeConfigurationSchema = z
         }),
         default_policy: ContentTypeIntakePolicySchema.optional().meta({
             description:
-                "Project-level intake policy defaults. Same shape as the per-content-type policy; a type's " +
+                "Project-level intake policy defaults. The same processing fields are used by workflow overrides and type policy. A type's " +
                 '`intake` block wins field-by-field over these defaults, which in turn win over the legacy flat ' +
                 'fields below. `identification` is type-specific and ignored here.',
         }),

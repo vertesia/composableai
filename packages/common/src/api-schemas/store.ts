@@ -433,7 +433,8 @@ export const ContentTypeIntakePolicySchema = z
     })
     .meta({
         id: 'ContentTypeIntakePolicy',
-        description: 'Per-content-type policy for the standard intake workflows.',
+        description:
+            'Shared intake processing policy. Workflow parameters override content-type policy, which overrides project defaults. Omitted processing fields inherit from the next layer.',
     });
 
 export const ColumnLayoutSchema = z

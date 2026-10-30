@@ -5289,7 +5289,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "Per-content-type policy for the standard intake workflows."
+    "description": "Shared intake processing policy. Workflow parameters override content-type policy, which overrides project defaults. Omitted processing fields inherit from the next layer."
   },
   "IntakeVisionProfileSettingsMap": {
     "type": "object",
@@ -5345,7 +5345,7 @@
       },
       "default_policy": {
         "$ref": "#/components/schemas/ContentTypeIntakePolicy",
-        "description": "Project-level intake policy defaults. Same shape as the per-content-type policy; a type's `intake` block wins field-by-field over these defaults, which in turn win over the legacy flat fields below. `identification` is type-specific and ignored here."
+        "description": "Project-level intake policy defaults. The same processing fields are used by workflow overrides and type policy. A type's `intake` block wins field-by-field over these defaults, which in turn win over the legacy flat fields below. `identification` is type-specific and ignored here."
       },
       "vision_profiles": {
         "$ref": "#/components/schemas/IntakeVisionProfileSettingsMap",

@@ -254,7 +254,8 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
         },
     },
     additionalProperties: false,
-    description: 'Per-content-type policy for the standard intake workflows.',
+    description:
+        'Shared intake processing policy. Workflow parameters override content-type policy, which overrides project defaults. Omitted processing fields inherit from the next layer.',
     $defs: {
         AnthropicClaudeOptions: {
             type: 'object',
