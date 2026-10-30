@@ -40960,6 +40960,36 @@
       "variables_template": {
         "$ref": "#/components/schemas/JSONObject"
       },
+      "templates": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "type": "string"
+            },
+            "variables": {
+              "$ref": "#/components/schemas/JSONObject"
+            }
+          },
+          "required": [
+            "name",
+            "title",
+            "description",
+            "variables"
+          ],
+          "additionalProperties": false
+        }
+      },
       "system_targets": {
         "type": "array",
         "items": {

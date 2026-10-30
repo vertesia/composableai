@@ -6753,6 +6753,14 @@ export type SubscriptionWorkflowDefinition = {
     description: string;
     variables_schema: JSONSchema;
     variables_template: JSONObject;
+    templates?:
+        | {
+              name: string;
+              title: string;
+              description: string;
+              variables: JSONObject;
+          }[]
+        | undefined;
     system_targets?:
         | {
               run_as_role: (typeof SystemRoles)[keyof typeof SystemRoles];

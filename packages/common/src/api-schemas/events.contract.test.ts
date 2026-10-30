@@ -93,3 +93,27 @@ it('supports optional code-defined execution metadata in workflow catalog respon
         }).valid,
     ).toBe(false);
 });
+
+it('accepts named workflow templates and retains compatibility with a single default template', () => {
+    const workflow = {
+        endpoint: 'Workflow',
+        title: 'Workflow',
+        description: '',
+        variables_schema: {},
+        variables_template: {},
+    };
+    const template = {
+        name: 'media_intake',
+        title: 'Media intake parameters',
+        description: 'Media parameters',
+        variables: { media_analysis: {} },
+    };
+    expect(
+        validateApiResponse('SubscriptionWorkflowCatalog', { workflows: [{ ...workflow, templates: [template] }] })
+            .valid,
+    ).toBe(true);
+    expect(validateApiResponse('SubscriptionWorkflowCatalog', { workflows: [workflow] }).valid).toBe(true);
+    expect(
+        validateApiResponse('SubscriptionWorkflowCatalog', { workflows: [{ ...workflow, templates: [] }] }).valid,
+    ).toBe(false);
+});

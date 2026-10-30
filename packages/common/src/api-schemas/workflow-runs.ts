@@ -105,6 +105,17 @@ export const SubscriptionWorkflowDefinitionSchema = z
         description: z.string(),
         variables_schema: JSONSchemaSchema,
         variables_template: JSONObjectSchema,
+        templates: z
+            .array(
+                z.strictObject({
+                    name: z.string().min(1),
+                    title: z.string().min(1),
+                    description: z.string(),
+                    variables: JSONObjectSchema,
+                }),
+            )
+            .min(1)
+            .optional(),
         system_targets: z
             .array(
                 z.strictObject({
