@@ -51,6 +51,7 @@ import type {
     StartAppScaffoldResponse,
     UpdateAppInstallationOAuthApprovalPayload,
     UpdateAppInstallationToolAllowlistPayload,
+    UpdateAppInstallationToolApprovalsPayload,
     UpdateAppPayload,
     UpsertAppVersionRequest,
     ValidateUrlRequest,
@@ -595,6 +596,19 @@ export default class AppsApi extends ApiTopic {
     updateToolAllowlist(installId: string, tool_allowlist: string[] | null): Promise<AppInstallationWithManifest> {
         return this.put(`/installations/${installId}/tool-allowlist`, {
             payload: { tool_allowlist } satisfies UpdateAppInstallationToolAllowlistPayload,
+        });
+    }
+
+    /**
+     * Update the tools of an app installation that always require human approval before an agent runs them.
+     * Pass null to clear the list (default approval behavior for every tool).
+     */
+    updateToolApprovals(
+        installId: string,
+        tools_requiring_approval: string[] | null,
+    ): Promise<AppInstallationWithManifest> {
+        return this.put(`/installations/${installId}/tool-approvals`, {
+            payload: { tools_requiring_approval } satisfies UpdateAppInstallationToolApprovalsPayload,
         });
     }
 

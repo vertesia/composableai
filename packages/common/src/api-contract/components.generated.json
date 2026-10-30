@@ -19242,6 +19242,25 @@
     ],
     "additionalProperties": false
   },
+  "UpdateAppInstallationToolApprovalsPayload": {
+    "type": "object",
+    "properties": {
+      "tools_requiring_approval": {
+        "type": [
+          "array",
+          "null"
+        ],
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "tools_requiring_approval"
+    ],
+    "additionalProperties": false,
+    "description": "Tool names that always require human approval before an agent runs them. Use null to clear the list."
+  },
   "ValidateUrlResponse": {
     "type": "object",
     "properties": {
@@ -25657,6 +25676,13 @@
         },
         "description": "Admin-managed allowlist of tool names permitted for this installation. When undefined, all tools from the app are permitted. When set, only listed tool names are available for agent configuration and execution."
       },
+      "tools_requiring_approval": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Admin-managed list of tool names from this installation that always require human approval before an agent runs them, regardless of the run's tool approval mode. When undefined, the default approval behavior applies."
+      },
       "oauth_bindings": {
         "type": "array",
         "items": {
@@ -25825,6 +25851,13 @@
           "type": "string"
         },
         "description": "Admin-managed allowlist of tool names permitted for this installation. When undefined, all tools from the app are permitted. When set, only listed tool names are available for agent configuration and execution."
+      },
+      "tools_requiring_approval": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Admin-managed list of tool names from this installation that always require human approval before an agent runs them, regardless of the run's tool approval mode. When undefined, the default approval behavior applies."
       },
       "oauth_bindings": {
         "type": "array",
@@ -25998,6 +26031,13 @@
           "type": "string"
         },
         "description": "Admin-managed allowlist of tool names permitted for this installation. When undefined, all tools from the app are permitted. When set, only listed tool names are available for agent configuration and execution."
+      },
+      "tools_requiring_approval": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Admin-managed list of tool names from this installation that always require human approval before an agent runs them, regardless of the run's tool approval mode. When undefined, the default approval behavior applies."
       },
       "oauth_bindings": {
         "type": "array",

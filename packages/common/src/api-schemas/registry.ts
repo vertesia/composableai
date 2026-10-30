@@ -163,6 +163,7 @@ import {
     SystemPackageQuerySchema,
     UpdateAppInstallationOAuthApprovalPayloadSchema,
     UpdateAppInstallationToolAllowlistPayloadSchema,
+    UpdateAppInstallationToolApprovalsPayloadSchema,
     UpsertAppVersionRequestSchema,
     ValidateUrlRequestSchema,
     ValidateUrlResponseSchema,
@@ -2221,6 +2222,7 @@ const APP_LIFECYCLE_SCHEMAS = {
     // development tasks, installations and inspection.
     UpdateAppInstallationOAuthApprovalPayload: UpdateAppInstallationOAuthApprovalPayloadSchema,
     UpdateAppInstallationToolAllowlistPayload: UpdateAppInstallationToolAllowlistPayloadSchema,
+    UpdateAppInstallationToolApprovalsPayload: UpdateAppInstallationToolApprovalsPayloadSchema,
     ValidateUrlResponse: ValidateUrlResponseSchema,
     ValidateUrlRequest: ValidateUrlRequestSchema,
     AppVersionUrls: AppVersionUrlsSchema,
@@ -3495,6 +3497,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AuditTrailQuery',
     'ViewExperienceListQuery',
     'UpdateAppInstallationToolAllowlistPayload',
+    'UpdateAppInstallationToolApprovalsPayload',
     'UpdateAppInstallationOAuthApprovalPayload',
     'ValidateUrlResponse',
     'ValidateUrlRequest',

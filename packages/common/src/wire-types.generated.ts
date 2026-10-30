@@ -1374,6 +1374,7 @@ export type AppInstallation = {
           }
         | undefined;
     tool_allowlist?: string[] | undefined;
+    tools_requiring_approval?: string[] | undefined;
     oauth_bindings?: AppInstallationOAuthBinding[] | undefined;
     provider_bindings?: AppInstallationProviderBinding[] | undefined;
     access_control?: AppAccessControl | undefined;
@@ -1413,6 +1414,7 @@ export type AppInstallationWithManifest = {
           }
         | undefined;
     tool_allowlist?: string[] | undefined;
+    tools_requiring_approval?: string[] | undefined;
     oauth_bindings?: AppInstallationOAuthBinding[] | undefined;
     provider_bindings?: AppInstallationProviderBinding[] | undefined;
     access_control?: AppAccessControl | undefined;
@@ -1454,6 +1456,7 @@ export type AppInstallationListEntry = {
           }
         | undefined;
     tool_allowlist?: string[] | undefined;
+    tools_requiring_approval?: string[] | undefined;
     oauth_bindings?: AppInstallationOAuthBinding[] | undefined;
     provider_bindings?: AppInstallationProviderBinding[] | undefined;
     access_control?: AppAccessControl | undefined;
@@ -1500,6 +1503,9 @@ export type AppInstallationPayload = {
 };
 export type UpdateAppInstallationToolAllowlistPayload = {
     tool_allowlist: string[] | null;
+};
+export type UpdateAppInstallationToolApprovalsPayload = {
+    tools_requiring_approval: string[] | null;
 };
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
 /**
@@ -11999,6 +12005,7 @@ export interface ApiComponentTypes {
     ViewExperienceListQuery: ViewExperienceListQuery;
     UpdateAppInstallationOAuthApprovalPayload: UpdateAppInstallationOAuthApprovalPayload;
     UpdateAppInstallationToolAllowlistPayload: UpdateAppInstallationToolAllowlistPayload;
+    UpdateAppInstallationToolApprovalsPayload: UpdateAppInstallationToolApprovalsPayload;
     ValidateUrlResponse: ValidateUrlResponse;
     ValidateUrlRequest: ValidateUrlRequest;
     AppVersionUrls: AppVersionUrls;
