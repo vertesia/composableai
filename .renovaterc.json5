@@ -278,8 +278,7 @@
         "googleapis",
         "googleapis/**",
         "googleapis-common",
-        "google-auth-library",
-        "google-artifactregistry-auth"
+        "google-auth-library"
       ],
       "rangeStrategy": "bump",
       "schedule": "* * * * 2" // Tuesday
