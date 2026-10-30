@@ -31709,6 +31709,36 @@
     ],
     "additionalProperties": false
   },
+  "IntakeMediaAnalysisOverride": {
+    "type": "object",
+    "properties": {
+      "interaction": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "config": {
+        "$ref": "#/components/schemas/InteractionExecutionConfiguration"
+      }
+    },
+    "additionalProperties": false
+  },
+  "IntakeMediaAnalysisOverrides": {
+    "type": "object",
+    "properties": {
+      "image": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride"
+      },
+      "video": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride"
+      },
+      "audio": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride"
+      }
+    },
+    "additionalProperties": false,
+    "description": "StandardIntake target.vars.media_analysis. Overrides only the matching media analysis step."
+  },
   "WorkflowRuleInputType": {
     "type": "string",
     "enum": [
@@ -32412,7 +32442,13 @@
       },
       "vars": {
         "type": "object",
-        "additionalProperties": true
+        "properties": {
+          "media_analysis": {
+            "$ref": "#/components/schemas/IntakeMediaAnalysisOverrides"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Workflow variables. media_analysis configures StandardIntake media analysis."
       },
       "input_type": {
         "$ref": "#/components/schemas/WorkflowRuleInputType"
@@ -32758,6 +32794,11 @@
       "name": {
         "type": "string"
       },
+      "overrides_system_subscription_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Fully replace this code-defined system subscription in the current project. Only one replacement per system subscription is allowed. Disabling the replacement keeps the default suppressed; deleting it restores the default. Immutable after creation."
+      },
       "description": {
         "type": "string"
       },
@@ -32811,7 +32852,13 @@
       },
       "vars": {
         "type": "object",
-        "additionalProperties": true
+        "properties": {
+          "media_analysis": {
+            "$ref": "#/components/schemas/IntakeMediaAnalysisOverrides"
+          }
+        },
+        "additionalProperties": true,
+        "description": "Workflow variables. media_analysis configures StandardIntake media analysis."
       },
       "input_type": {
         "$ref": "#/components/schemas/WorkflowRuleInputType"
@@ -33010,7 +33057,7 @@
       },
       "overrides_system_subscription_id": {
         "type": "string",
-        "description": "System subscription ID replaced by this stored subscription. Set only for tenant-specific system overrides created by migrations or platform code."
+        "description": "System subscription ID fully replaced by this stored project subscription. Disabling the replacement keeps the default suppressed; deleting it restores the default."
       },
       "customer_override": {
         "type": "boolean",

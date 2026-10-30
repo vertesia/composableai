@@ -2263,6 +2263,14 @@ interface Checks {
         W.AppEventDeliveryTargetInput,
         z.infer<typeof import('./api-schemas/events.js').AppEventDeliveryTargetInputSchema>
     >;
+    IntakeMediaAnalysisOverride: Same<
+        W.IntakeMediaAnalysisOverride,
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverrideSchema>
+    >;
+    IntakeMediaAnalysisOverrides: Same<
+        W.IntakeMediaAnalysisOverrides,
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverridesSchema>
+    >;
     EventDeliveryIntentSummary: Same<
         W.EventDeliveryIntentSummary,
         z.infer<typeof import('./api-schemas/events.js').EventDeliveryIntentSummarySchema>
@@ -7415,6 +7423,14 @@ interface Checks {
         W.ApiComponentTypes['ObjectSearchResponse'],
         z.infer<typeof import('./api-schemas/content.js').ObjectSearchResponseSchema>
     >;
+    'component:IntakeMediaAnalysisOverride': Same<
+        W.ApiComponentTypes['IntakeMediaAnalysisOverride'],
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverrideSchema>
+    >;
+    'component:IntakeMediaAnalysisOverrides': Same<
+        W.ApiComponentTypes['IntakeMediaAnalysisOverrides'],
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverridesSchema>
+    >;
     'component:EventPriority': Same<
         W.ApiComponentTypes['EventPriority'],
         z.infer<typeof import('./api-schemas/events.js').EventPrioritySchema>
@@ -10334,6 +10350,8 @@ const checks: Checks = {
     WorkflowEventDeliveryTargetInput: true,
     WebhookEventDeliveryTargetInput: true,
     AppEventDeliveryTargetInput: true,
+    IntakeMediaAnalysisOverride: true,
+    IntakeMediaAnalysisOverrides: true,
     EventDeliveryIntentSummary: true,
     EventDeliverySummary: true,
     EventDeliverySortField: true,
@@ -11694,6 +11712,8 @@ const checks: Checks = {
     'component:ComputeObjectFacetPayload': true,
     'component:ComplexSearchPayload': true,
     'component:ObjectSearchResponse': true,
+    'component:IntakeMediaAnalysisOverride': true,
+    'component:IntakeMediaAnalysisOverrides': true,
     'component:EventPriority': true,
     'component:WorkflowRuleInputType': true,
     'component:WorkflowRuleItem': true,
@@ -12272,6 +12292,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2556);
+        expect(Object.keys(checks)).toHaveLength(2560);
     });
 });

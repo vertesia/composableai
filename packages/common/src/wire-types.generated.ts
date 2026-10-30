@@ -5506,6 +5506,7 @@ export type WorkflowEventDeliveryTarget = {
     task_queue?: string | undefined;
     vars?:
         | {
+              media_analysis?: IntakeMediaAnalysisOverrides | undefined;
               [k: string]: unknown;
           }
         | undefined;
@@ -5579,6 +5580,7 @@ export type WorkflowEventDeliveryTargetInput = {
     task_queue?: string | undefined;
     vars?:
         | {
+              media_analysis?: IntakeMediaAnalysisOverrides | undefined;
               [k: string]: unknown;
           }
         | undefined;
@@ -5610,6 +5612,15 @@ export type AppEventDeliveryTargetInput = {
     hook: string;
     url: string;
     timeout_ms?: number | undefined;
+};
+export type IntakeMediaAnalysisOverride = {
+    interaction?: string | undefined;
+    config?: InteractionExecutionConfiguration | undefined;
+};
+export type IntakeMediaAnalysisOverrides = {
+    image?: IntakeMediaAnalysisOverride | undefined;
+    video?: IntakeMediaAnalysisOverride | undefined;
+    audio?: IntakeMediaAnalysisOverride | undefined;
 };
 export type EventDeliveryIntentSummary = {
     id: string;
@@ -11647,6 +11658,8 @@ export interface ApiComponentTypes {
     ComputeObjectFacetPayload: ComputeObjectFacetPayload;
     ComplexSearchPayload: ComplexSearchPayload;
     ObjectSearchResponse: ObjectSearchResponse;
+    IntakeMediaAnalysisOverride: IntakeMediaAnalysisOverride;
+    IntakeMediaAnalysisOverrides: IntakeMediaAnalysisOverrides;
     EventPriority: EventPriority;
     WorkflowRuleInputType: WorkflowRuleInputTypeWire;
     WorkflowRuleItem: WorkflowRuleItem;

@@ -47,6 +47,9 @@ function readPayload(file: string): Record<string, unknown> {
 function toCreatePayload(value: Record<string, unknown>): CreateEventSubscriptionPayload {
     const payload: CreateEventSubscriptionPayload = {
         name: value.name as string,
+        ...(typeof value.overrides_system_subscription_id === 'string'
+            ? { overrides_system_subscription_id: value.overrides_system_subscription_id }
+            : {}),
         ...(typeof value.description === 'string' ? { description: value.description } : {}),
         ...(value.scope === 'account' || value.scope === 'project' ? { scope: value.scope } : {}),
         filter: value.filter as CreateEventSubscriptionPayload['filter'],

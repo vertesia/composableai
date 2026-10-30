@@ -1780,6 +1780,8 @@ const CONTENT_SEARCH_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const EVENT_SUBSCRIPTION_SCHEMAS = {
+    IntakeMediaAnalysisOverride: EventSchemas.IntakeMediaAnalysisOverrideSchema,
+    IntakeMediaAnalysisOverrides: EventSchemas.IntakeMediaAnalysisOverridesSchema,
     EventPriority: EventSchemas.EventPrioritySchema,
     WorkflowRuleInputType: EventSchemas.WorkflowRuleInputTypeSchema,
     WorkflowRuleItem: EventSchemas.WorkflowRuleItemSchema,
@@ -2614,6 +2616,8 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'IntakeMediaAnalysisOverride',
+    'IntakeMediaAnalysisOverrides',
     'OidcFederationConnectionPayload',
     'OidcFederationConnection',
     'OAuthTokenExchangeRequest',

@@ -437,6 +437,20 @@ describe('generateDocumentProperties', () => {
             );
         });
 
+        it('invalidates extraction when the inference profile changes', () => {
+            const base = { source: 'vision' as const, interactionName: 'sys:ExtractInformation' };
+            const fingerprint = computeExtractionFingerprint({ ...base, config: { inference_profile: 'profile-1' } });
+            expect(computeExtractionFingerprint({ ...base, config: { inference_profile: 'profile-2' } })).not.toBe(
+                fingerprint,
+            );
+            expect(computeExtractionFingerprint({ ...base, config: { inference_profile: null } })).not.toBe(
+                fingerprint,
+            );
+            expect(computeExtractionFingerprint({ ...base, config: undefined })).toBe(
+                computeExtractionFingerprint(base),
+            );
+        });
+
         it('folds the evidence refs into the extraction fingerprint (absent = legacy hash)', () => {
             const base = {
                 content_etag: 'etag-1',

@@ -4,6 +4,7 @@ import {
     type ContentSource,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
+    type InteractionExecutionConfiguration,
     type JSONObject,
     mergePreservingNonExtractable,
     PDF_RENDITION_NAME,
@@ -102,6 +103,8 @@ export function computeExtractionFingerprint(input: {
      *  re-conversion, manual edit) and text-consuming extractions must invalidate.
      *  Undefined (vision-only callers) keeps previously stored hashes valid. */
     text_etag?: string | null;
+    /** Model/profile changes must invalidate extracted properties. */
+    config?: InteractionExecutionConfiguration;
 }): string {
     return md5(
         JSON.stringify({
@@ -110,6 +113,7 @@ export function computeExtractionFingerprint(input: {
             source: input.source,
             instructions: input.instructions,
             interactionName: input.interactionName,
+            ...(input.config !== undefined ? { config: input.config } : {}),
             object_schema: input.object_schema,
             ...(input.evidence ? { evidence: input.evidence } : {}),
             ...(input.text_etag !== undefined ? { text_etag: input.text_etag } : {}),
@@ -177,6 +181,7 @@ export async function generateDocumentProperties(
         source,
         instructions: params.instructions,
         interactionName,
+        config: params.config,
         object_schema: type.object_schema,
         evidence: evidenceImages?.map((image) => image.source ?? image.name ?? ''),
         // text may change under the same content etag; only vision-only extraction ignores it
