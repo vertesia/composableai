@@ -3,9 +3,11 @@ import { Button, VTooltip } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { ChevronDown, ChevronUp, XIcon } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { useAcknowledgeOnRender } from '../../notifications/NotificationAcknowledgement.js';
 import { RemoteMcpConnectionButton } from '../../oauth/RemoteMcpConnectionButton.js';
 import { ComposerOverlay, ComposerOverlayQuestion } from './ComposerOverlay';
+import { getRequestInputOccurrence } from './ModernAgentOutput/notificationAcknowledgement.js';
 import {
     getRequestInputDisplayText,
     getRequestInputResolutionKey,
@@ -29,6 +31,8 @@ export interface AgentRequestInputOverlayProps {
      */
     readOnly?: boolean;
     className?: string;
+    /** The agent run asking, so a store mounted by the host app can mark the question's notification read. */
+    agentRunId?: string;
 }
 
 interface McpRequestInputControlsProps {
@@ -91,8 +95,11 @@ function PendingRequestInputOverlay({
     disabled = false,
     readOnly = false,
     className,
+    agentRunId,
 }: AgentRequestInputOverlayProps & { message: RequestInputMessageWithUx }) {
     const { t } = useUITranslation();
+    const overlayRef = useRef<HTMLDivElement>(null);
+    useAcknowledgeOnRender(getRequestInputOccurrence(agentRunId, message), overlayRef);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const contentId = useId();
     const toggleLabel = isCollapsed ? t('agent.showQuestions') : t('agent.hideQuestions');
@@ -130,7 +137,7 @@ function PendingRequestInputOverlay({
 
     if (readOnly) {
         return (
-            <ComposerOverlay className={className} data-agent-request-input-overlay>
+            <ComposerOverlay ref={overlayRef} className={className} data-agent-request-input-overlay>
                 <ComposerOverlayQuestion
                     question={displayText}
                     description={t('agent.requestInputReadOnly')}
@@ -141,7 +148,7 @@ function PendingRequestInputOverlay({
     }
 
     return (
-        <ComposerOverlay className={className} data-agent-request-input-overlay>
+        <ComposerOverlay ref={overlayRef} className={className} data-agent-request-input-overlay>
             {mcpConnect ? (
                 <div className="mx-auto w-full max-w-3xl px-3 py-3">
                     <div className="flex items-start gap-2">

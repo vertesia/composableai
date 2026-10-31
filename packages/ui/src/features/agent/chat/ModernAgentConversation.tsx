@@ -2978,6 +2978,7 @@ function ModernAgentConversationInner({
 
             {shouldShowRequestInputOverlay && !(hasBudgetOverride && shouldShowBudgetPauseOverlay) ? (
                 <AgentRequestInputOverlay
+                    agentRunId={agentRunId}
                     message={pendingRequestInputMessage}
                     onSendMessage={isPlaybackLive && canSignalRun ? handleSendMessage : undefined}
                     onMcpConnected={isPlaybackLive && canSignalRun ? handleMcpConnected : undefined}

@@ -629,6 +629,7 @@ import {
     OnboardingProgressSchema,
     UserInviteTokenArraySchema,
 } from './invites.js';
+import * as NotificationSchemas from './notifications.js';
 import {
     CreateOAuthProviderPayloadSchema,
     OAuthProviderAccessTokenResponseSchema,
@@ -1414,6 +1415,26 @@ const DURABLE_TASK_SCHEMAS = {
     UpdateTaskPayload: UpdateTaskPayloadSchema,
     CompleteTaskPayload: CompleteTaskPayloadSchema,
     ListTasksQuery: ListTasksQuerySchema,
+} as const satisfies Record<string, z.ZodType>;
+
+const NOTIFICATION_SCHEMAS = {
+    NotificationKind: NotificationSchemas.NotificationKindSchema,
+    NotificationCategory: NotificationSchemas.NotificationCategorySchema,
+    NotificationChannel: NotificationSchemas.NotificationChannelSchema,
+    NotificationRef: NotificationSchemas.NotificationRefSchema,
+    NotificationPayload: NotificationSchemas.NotificationPayloadSchema,
+    Notification: NotificationSchemas.NotificationSchema,
+    ListNotificationsQuery: NotificationSchemas.ListNotificationsQuerySchema,
+    ListNotificationsResponse: NotificationSchemas.ListNotificationsResponseSchema,
+    NotificationCounts: NotificationSchemas.NotificationCountsSchema,
+    MarkNotificationsSeenPayload: NotificationSchemas.MarkNotificationsSeenPayloadSchema,
+    MarkNotificationsReadPayload: NotificationSchemas.MarkNotificationsReadPayloadSchema,
+    MarkAllNotificationsReadPayload: NotificationSchemas.MarkAllNotificationsReadPayloadSchema,
+    ArchiveNotificationsPayload: NotificationSchemas.ArchiveNotificationsPayloadSchema,
+    NotificationUpdateResult: NotificationSchemas.NotificationUpdateResultSchema,
+    NotificationChannelPreferences: NotificationSchemas.NotificationChannelPreferencesSchema,
+    NotificationPreferences: NotificationSchemas.NotificationPreferencesSchema,
+    NotificationStreamEvent: NotificationSchemas.NotificationStreamEventSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 // Keep declaration emit from expanding the nested content-type schemas.
@@ -2504,6 +2525,7 @@ const API_SCHEMA_GROUPS = [
     CONTENT_QUERY_SCHEMAS,
     FILE_STORAGE_SCHEMAS,
     DURABLE_TASK_SCHEMAS,
+    NOTIFICATION_SCHEMAS,
     CONTENT_TYPE_CATALOG_SCHEMAS,
     CONTENT_TYPE_AUTHORING_SCHEMAS,
     MIGRATION_COMMAND_SCHEMAS,
@@ -2569,6 +2591,7 @@ type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
     typeof CONTENT_QUERY_SCHEMAS &
     typeof FILE_STORAGE_SCHEMAS &
     typeof DURABLE_TASK_SCHEMAS &
+    typeof NOTIFICATION_SCHEMAS &
     typeof CONTENT_TYPE_CATALOG_SCHEMAS &
     typeof CONTENT_TYPE_AUTHORING_SCHEMAS &
     typeof MIGRATION_COMMAND_SCHEMAS &
@@ -2870,6 +2893,20 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // components. Listed because the strict policy is what an endpoint opting into
     // `rejectUndeclaredQuery` rejects against; `GET /tasks` does not opt in today.
     'ListTasksQuery',
+    'NotificationRef',
+    'NotificationPayload',
+    'Notification',
+    'ListNotificationsQuery',
+    'ListNotificationsResponse',
+    'NotificationCounts',
+    'MarkNotificationsSeenPayload',
+    'MarkNotificationsReadPayload',
+    'MarkAllNotificationsReadPayload',
+    'ArchiveNotificationsPayload',
+    'NotificationUpdateResult',
+    'NotificationChannelPreferences',
+    'NotificationPreferences',
+    'NotificationStreamEvent',
     'ColumnLayout',
     'ContentTypeEditingPolicy',
     'ContentObjectTypeItem',

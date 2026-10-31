@@ -22,6 +22,23 @@ export const TaskSourceSchema = z
         run_id: z.string(),
         node: z.string().optional(),
         ask_id: z.string().optional(),
+        request_key: z
+            .string()
+            .min(1)
+            .max(512)
+            .optional()
+            .meta({
+                description:
+                    'Stable key of the agent request this task answers (`<run_id>:<tool_use_id>`). Unique in the ' +
+                    'project: creating a task whose source repeats an existing request key returns that task instead ' +
+                    'of creating a second one.',
+            }),
+        request_id: z.string().optional().meta({
+            description: 'Tool-use id of the agent request (the REQUEST_INPUT message) this task answers.',
+        }),
+        approval_key: z.string().optional().meta({
+            description: 'For a tool approval task, the approval key (`tool_name:target`) the decision applies to.',
+        }),
     })
     .meta({ id: 'TaskSource' });
 
@@ -60,6 +77,13 @@ export const TaskSchema = z
         result: z.looseObject({}).optional(),
         source: TaskSourceSchema,
         due_at: z.string().meta({ format: 'date-time' }).optional(),
+        assignment_rev: z.number().int().optional().meta({
+            description: 'Assignment revision: 1 at creation, incremented every time the assignee changes.',
+        }),
+        assigned_at: z
+            .string()
+            .meta({ format: 'date-time', description: 'When the current assignment revision started.' })
+            .optional(),
         created_at: z.string().meta({ format: 'date-time' }),
         completed_at: z.string().meta({ format: 'date-time' }).optional(),
         updated_at: z.string().meta({ format: 'date-time' }).optional(),
