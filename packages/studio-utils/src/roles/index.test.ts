@@ -175,6 +175,26 @@ describe('getPermissionsForRoles', () => {
     });
 });
 
+describe('access-management capabilities', () => {
+    it('grants project_membership_manage to the admin roles only', () => {
+        for (const role of [SystemRoles.owner, SystemRoles.admin, SystemRoles.app_admin]) {
+            expect(getPermissionsForRoles([role])).toContain(Permission.project_membership_manage);
+        }
+        for (const role of [SystemRoles.manager, SystemRoles.developer, SystemRoles.application]) {
+            expect(getPermissionsForRoles([role])).not.toContain(Permission.project_membership_manage);
+        }
+    });
+
+    it('keeps the account capabilities out of manager and developer', () => {
+        for (const role of [SystemRoles.manager, SystemRoles.developer]) {
+            const permissions = getPermissionsForRoles([role]);
+            expect(permissions).not.toContain(Permission.account_oauth_client_manage);
+            expect(permissions).not.toContain(Permission.account_project_manage);
+        }
+        expect(getPermissionsForRoles([SystemRoles.admin])).toContain(Permission.account_project_manage);
+    });
+});
+
 describe('getDelegablePermissionsForRole', () => {
     it('returns system permission keys unchanged', () => {
         expect(getDelegablePermissionsForRole(SystemRoles.reader)).toContain(Permission.content_read);

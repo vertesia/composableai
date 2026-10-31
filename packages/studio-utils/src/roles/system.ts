@@ -39,6 +39,7 @@ class ManagerRole extends OrgMemberRole {
         super(SystemRoles.manager, Object.values(Permission));
         for (const permission of ACCOUNT_SCOPED_PERMISSIONS) this.permissions.delete(permission);
         this.permissions.delete(Permission.account_admin);
+        this.permissions.delete(Permission.project_membership_manage);
         this.permissions.delete(Permission.manage_billing);
         this.permissions.delete(Permission.audit_read);
         this.permissions.delete(Permission.agent_run_read);
@@ -55,6 +56,7 @@ class DeveloperRole extends OrgMemberRole {
         for (const permission of ACCOUNT_SCOPED_PERMISSIONS) this.permissions.delete(permission);
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.project_admin);
+        this.permissions.delete(Permission.project_membership_manage);
         this.permissions.delete(Permission.project_settings_write);
         this.permissions.delete(Permission.env_admin);
         this.permissions.delete(Permission.manage_billing);
