@@ -139,7 +139,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 config: {
                     $ref: '#/$defs/InteractionExecutionConfiguration',
                     description:
-                        "Model execution config for the page-conversion interaction (method 'llm'/'auto' -> sys:ConvertPageToMarkdown, method 'custom' -> the custom interaction). Lets the visual conversion run on a cheaper/faster model (e.g. a flash model) than extraction. When unset, conversion uses the run's model config or the project default model.",
+                        "Model execution config for the page-conversion interaction (method 'llm'/'auto' -> sys:ConvertPageToMarkdown, method 'custom' -> the custom interaction). Lets the visual conversion run on a cheaper/faster model than extraction. Fields inherit across policy layers: subscription phase settings (including legacy run-wide config) override content-type settings, which override project policy defaults. Unspecified routing uses interaction/project model defaults.",
                 },
             },
             additionalProperties: false,
@@ -172,7 +172,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 config: {
                     $ref: '#/$defs/InteractionExecutionConfiguration',
                     description:
-                        "Model execution config for the standard property-extraction interaction (sys:ExtractInformation). Lets extraction run on a different model/environment than the visual page conversion. When unset, extraction uses the run's model config or the project default model. (Grounded extraction is configured separately via grounding.config.)",
+                        'Model execution config for the standard property-extraction interaction (sys:ExtractInformation). Lets extraction run on a different model/environment than the visual page conversion. Subscription phase settings (including legacy run-wide config) override content-type settings, which override project policy defaults; omitted fields inherit. Unspecified routing uses interaction/project model defaults. Grounded extraction uses grounding.config.',
                 },
                 scope: {
                     $ref: '#/$defs/IntakePageScope',
