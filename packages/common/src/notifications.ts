@@ -46,6 +46,15 @@ export const NOTIFICATION_KIND_CATEGORY: Record<NotificationKind, NotificationCa
     'intake.finished': 'results',
 };
 
+/**
+ * The occurrence of a task assignment. Each assignment revision is its own occurrence, so reading one
+ * assignment never reads a later one: in Alice → Bob → Alice, Alice's second notification stays unread
+ * however often she opened the first.
+ */
+export function taskNotificationOccurrence(task: { id: string; assignment_rev?: number }): NotificationRef {
+    return { type: 'task', id: `${task.id}:${task.assignment_rev ?? 1}` };
+}
+
 /** Redis pub/sub channel that tells a user's open clients their project inbox changed. */
 export function notificationChannelName(accountId: string, projectId: string, userId: string): string {
     return `notif:${accountId}:${projectId}:${userId}`;

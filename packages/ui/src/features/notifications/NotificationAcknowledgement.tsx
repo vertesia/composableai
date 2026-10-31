@@ -2,13 +2,20 @@ import type { Notification } from '@vertesia/common';
 import { createContext, type ReactNode, type RefObject, useContext, useEffect, useMemo, useRef } from 'react';
 
 /**
- * The exact item a notification is about, as the server names it (`{ type: 'task', id }`). The types a
- * client acknowledges by rendering are `agent_request` (`<agentRunId>:<request_id>`), `task`,
- * `agent_run_end` and `agent_turn` (agent run id) and `object` (content object id).
+ * The exact item a notification is about, as the server names it. The types a client acknowledges by
+ * rendering are `agent_request` (`<agentRunId>:<request_id>`), `task` (`<taskId>:<assignment_rev>`, from
+ * `taskNotificationOccurrence`), `agent_run_end` and `agent_turn` (agent run id) and `object` (content
+ * object id).
  */
 export interface NotificationOccurrence {
     type: string;
     id: string;
+    /**
+     * For `agent_turn` and `object`, which name the latest of something: the server time of the version
+     * on screen (a document's `updated_at`). Only notifications that occurred by then are read, so one
+     * that arrives before the view shows it stays unread until the view refreshes and reports again.
+     */
+    as_of?: string;
 }
 
 /**
@@ -67,7 +74,10 @@ export function useAcknowledgeOnRender(
 ): void {
     const registry = useContext(NotificationAcknowledgementContext);
     const list = toList(occurrences);
-    const key = list.map(notificationOccurrenceKey).join('|');
+    // `as_of` is part of the identity: a refreshed view reports its new version again.
+    const key = list
+        .map((occurrence) => `${notificationOccurrenceKey(occurrence)}@${occurrence.as_of ?? ''}`)
+        .join('|');
     // Keyed by content, so a caller rebuilding the same occurrences each render does not re-observe.
     // biome-ignore lint/correctness/useExhaustiveDependencies: `key` is the identity of `list`.
     const stableList = useMemo(() => list, [key]);

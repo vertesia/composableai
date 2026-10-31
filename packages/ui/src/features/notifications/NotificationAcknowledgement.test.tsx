@@ -172,6 +172,25 @@ describe('useAcknowledgeOnRender', () => {
         );
         expect(FakeIntersectionObserver.instances).toHaveLength(1);
     });
+
+    it('reports again when the version on screen changes', () => {
+        const { registry, calls } = createRegistry();
+        const at = (as_of: string) => (
+            <NotificationAcknowledgementContext.Provider value={registry}>
+                <Probe occurrence={{ type: 'object', id: 'o1', as_of }} />
+            </NotificationAcknowledgementContext.Provider>
+        );
+        const { rerender } = render(at('2026-11-01T10:00:00.000Z'));
+        FakeIntersectionObserver.instances[0].fire(true);
+        rerender(at('2026-11-01T10:05:00.000Z'));
+        FakeIntersectionObserver.instances[1].fire(true);
+        expect(FakeIntersectionObserver.instances).toHaveLength(2);
+        expect(calls).toEqual([
+            ['object:o1', true],
+            ['object:o1', false],
+            ['object:o1', true],
+        ]);
+    });
 });
 
 describe('AcknowledgeOnRender', () => {
