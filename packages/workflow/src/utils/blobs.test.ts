@@ -5,7 +5,8 @@ import path from 'node:path';
 import type { VertesiaClient } from '@vertesia/client';
 import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { removeTempFiles, saveBlobToTempFile, withBlobTempFile } from './blobs.js';
+import { SourceTooLargeError } from '../errors.js';
+import { assertBlobSizeWithin, getBlobSize, removeTempFiles, saveBlobToTempFile, withBlobTempFile } from './blobs.js';
 
 // Pass-through, so a test can make the cleanup of a failed download fail.
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -201,5 +202,104 @@ describe('removeTempFiles', () => {
             path: '/tmp/some-file',
             error: 'cleanup failed',
         });
+    });
+});
+
+describe('blob size limits', () => {
+    function clientWith(content: string, size: number | Error | undefined): VertesiaClient {
+        return {
+            files: {
+                downloadFile: vi.fn(async () => new Blob([content]).stream()),
+                getMetadata: vi.fn(async () => {
+                    if (size instanceof Error) {
+                        throw size;
+                    }
+                    return { name: 'source', contentType: 'application/octet-stream', size };
+                }),
+            },
+        } as unknown as VertesiaClient;
+    }
+
+    it('reads the size the store reports, without downloading', async () => {
+        const client = clientWith('12345', 5);
+
+        await expect(getBlobSize(client, 'gs://bucket/source')).resolves.toBe(5);
+        expect(client.files.downloadFile).not.toHaveBeenCalled();
+    });
+
+    it('reports no size for a signed URL, or when the store fails', async () => {
+        const signed = clientWith('12345', 5);
+        await expect(getBlobSize(signed, 'https://storage.example/source?sig=x')).resolves.toBeUndefined();
+        expect(signed.files.getMetadata).not.toHaveBeenCalled();
+
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        await expect(getBlobSize(clientWith('12345', new Error('boom')), 'gs://b/s')).resolves.toBeUndefined();
+    });
+
+    it('fails a blob the store reports over the limit, and passes one of unknown size', async () => {
+        await expect(assertBlobSizeWithin(clientWith('', 11), 'gs://b/s', 10)).rejects.toMatchObject({
+            type: 'SourceTooLargeError',
+            nonRetryable: true,
+            size: 11,
+            maxBytes: 10,
+        });
+        await expect(assertBlobSizeWithin(clientWith('', 10), 'gs://b/s', 10)).resolves.toBeUndefined();
+        await expect(assertBlobSizeWithin(clientWith('', undefined), 'gs://b/s', 10)).resolves.toBeUndefined();
+    });
+
+    it('fails before downloading anything when the store reports the blob over the limit', async () => {
+        const client = clientWith('x'.repeat(100), 100);
+
+        await expect(saveBlobToTempFile(client, 'gs://bucket/source', 'mxf', { maxBytes: 99 })).rejects.toBeInstanceOf(
+            SourceTooLargeError,
+        );
+
+        expect(client.files.downloadFile).not.toHaveBeenCalled();
+        expect(fs.readdirSync(tempDir)).toEqual([]);
+    });
+
+    it('stops a download of unknown size once it goes over the limit, and removes the partial file', async () => {
+        const before = openDescriptorCount();
+        for (const size of [undefined, 1]) {
+            // A store that under-reports the size is caught by the download cap too.
+            const client = clientWith('x'.repeat(100), size);
+
+            await expect(
+                withBlobTempFile(client, 'gs://b/s', 'mxf', async () => 'used', { maxBytes: 99 }),
+            ).rejects.toBeInstanceOf(SourceTooLargeError);
+            await expect(saveBlobToTempFile(client, 'gs://b/s', 'mxf', { maxBytes: 99 })).rejects.toBeInstanceOf(
+                SourceTooLargeError,
+            );
+        }
+        expect(openDescriptorCount()).toBe(before);
+        expect(fs.readdirSync(tempDir)).toEqual([]);
+    });
+
+    it('fails on a taken name before asking the store anything', async () => {
+        const existing = path.join(tempDir, 'vertesia-activity-taken.mxf');
+        fs.writeFileSync(existing, 'someone else');
+        vi.spyOn(tmp, 'tmpNameSync').mockReturnValueOnce(existing);
+        const client = clientWith('x'.repeat(100), 100);
+
+        await expect(saveBlobToTempFile(client, 'gs://b/s', 'mxf', { maxBytes: 10 })).rejects.toThrow('EEXIST');
+
+        expect(client.files.getMetadata).not.toHaveBeenCalled();
+        expect(fs.readFileSync(existing, 'utf8')).toBe('someone else');
+    });
+
+    it('downloads a blob of exactly the limit', async () => {
+        const client = clientWith('x'.repeat(100), undefined);
+
+        const content = await withBlobTempFile(
+            client,
+            'gs://b/s',
+            'txt',
+            (file) => fs.promises.readFile(file, 'utf8'),
+            {
+                maxBytes: 100,
+            },
+        );
+
+        expect(content).toBe('x'.repeat(100));
     });
 });

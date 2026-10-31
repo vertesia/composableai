@@ -2,11 +2,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { ApplicationFailure, log } from '@temporalio/activity';
-import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import { type DSLActivityExecutionPayload, type DSLActivitySpec, isVideoContentType } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, WorkflowParamNotFoundError } from '../../errors.js';
 import { removeTempFiles, saveBlobToTempFile } from '../../utils/blobs.js';
 import { type ImageRenditionParams, uploadRenditionPages } from '../../utils/renditions.js';
+import { getSourceLimits } from '../../utils/source-limits.js';
 import {
     execActivityFile,
     execActivityFileWithProgress,
@@ -207,12 +208,16 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
         throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
     }
 
-    if (!inputObject.content.type?.startsWith('video/')) {
+    if (!isVideoContentType(inputObject.content.type)) {
         log.error(`Document ${objectId} is not a video: ${inputObject.content.type}`);
         throw new DocumentNotFoundError(`Document ${objectId} is not a video: ${inputObject.content.type}`, [objectId]);
     }
 
-    const videoFile = await saveBlobToTempFile(client, inputObject.content.source);
+    // A source over the media limit fails with a non-retryable SourceTooLargeError, before any download when the store
+    // reports its size.
+    const videoFile = await saveBlobToTempFile(client, inputObject.content.source, undefined, {
+        maxBytes: getSourceLimits().mediaMaxBytes,
+    });
     let tempOutputDir: string | undefined;
 
     try {

@@ -8,29 +8,38 @@ import { removeTempFiles } from '../utils/blobs.js';
 const TOOL_MAX_BUFFER = 10 * 1024 * 1024;
 
 /**
- * Write `input` to a temporary file, run `tool` with the arguments built by `args(inputFile, outputFile)`, and
- * return the output file's text. Both temporary files are removed whatever the outcome.
+ * Run `tool` with the arguments built by `args(inputFile, outputFile)`, and return the output file's text.
  *
- * @param inputExt extension of the input file, with or without the leading dot (e.g. `docx`)
+ * `input` is the path of the input file, which is left in place, or its content, which is written to a temporary
+ * file first. Prefer a path for a large input: its content is never held in memory. Temporary files are removed
+ * whatever the outcome.
+ *
+ * @param inputExt extension of the temporary input file, with or without the leading dot (e.g. `docx`); a path is
+ *   used as it is
  * @param outputExt extension of the output file, with or without the leading dot (e.g. `md`)
  */
 export async function convertWithTool(
     tool: string,
-    input: Buffer,
+    input: Buffer | string,
     inputExt: string | undefined,
     outputExt: string,
     args: (inputFile: string, outputFile: string) => string[],
 ): Promise<string> {
-    const inputFile = tmp.tmpNameSync({ postfix: toPostfix(inputExt) });
+    let inputFile: string;
+    let tempInputFile: string | undefined;
+    if (typeof input === 'string') {
+        inputFile = input;
+    } else {
+        tempInputFile = inputFile = tmp.tmpNameSync({ postfix: toPostfix(inputExt) });
+        await writeNewFile(tempInputFile, input);
+    }
     const outputFile = tmp.tmpNameSync({ postfix: toPostfix(outputExt) });
-
-    await writeNewFile(inputFile, input);
     try {
         log.info(`Converting with ${tool}`, { inputFile, outputFile });
         await runTool(tool, args(inputFile, outputFile));
         return await fs.promises.readFile(outputFile, 'utf8');
     } finally {
-        await removeTempFiles(inputFile, outputFile);
+        await removeTempFiles(tempInputFile, outputFile);
     }
 }
 
