@@ -12,6 +12,21 @@ function isCommandExitError(error: unknown): error is Error & { code: number } {
 }
 
 /**
+ * Whether the first frame is smaller than, or offset on, its page canvas (an optimized GIF or WebP subframe).
+ * `identify -ping` reads the geometry from the header without decoding pixels.
+ */
+async function firstFrameNeedsCanvas(inputPath: string): Promise<boolean> {
+    const { stdout } = await execFile('identify', ['-ping', '-format', '%W %H %w %h %X %Y', `${inputPath}[0]`]);
+    const [pageWidth, pageHeight, width, height, offsetX, offsetY] = stdout.trim().split(/\s+/);
+    return (
+        pageWidth !== width ||
+        pageHeight !== height ||
+        Number.parseInt(offsetX, 10) !== 0 ||
+        Number.parseInt(offsetY, 10) !== 0
+    );
+}
+
+/**
  * Resizes an image to a maximum height or width using ImageMagick
  * with progressive loading when supported and colorspace correction
  * @param inputPath Input file path
@@ -91,8 +106,11 @@ export async function imageResizer(
         // Keep the selector after the JPEG shrink-on-load optimization so ImageMagick can apply it while decoding.
         args.push(`${inputPath}[0]`);
 
-        // Expand optimized animation subframes onto their logical canvas before resizing.
-        args.push('-coalesce');
+        // Place an optimized animation subframe on its logical canvas before resizing. Only when needed: -coalesce
+        // copies the decoded frame, which can exhaust the pixel cache on a large image that already fills its canvas.
+        if (await firstFrameNeedsCanvas(inputPath)) {
+            args.push('-coalesce');
+        }
 
         // Apply EXIF orientation to pixels before stripping metadata or resizing.
         args.push('-auto-orient');
@@ -179,8 +197,8 @@ export async function imageResizer(
             log.warn('Failed to clean temporary image output after conversion failure', { cleanupError });
         });
 
+        // No log here: the thrown error carries the message and the caller logs it with its context.
         const errorMessage = error instanceof Error ? error.message : String(error);
-        log.error(`Image conversion failed: ${errorMessage}`);
 
         if (error instanceof ImageConversionError) {
             throw error;
