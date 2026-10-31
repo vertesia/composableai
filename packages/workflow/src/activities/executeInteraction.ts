@@ -508,7 +508,9 @@ export async function executeInteractionFromActivity(
             details: [{ interactionName, rateLimitId, delayMs: slot.delay_ms }],
         });
     }
-    workflow.rate_limit_id = rateLimitId;
+    // The grant names the slot and the scope it was admitted in, so the server releases exactly that
+    // slot however the run's model is resolved later. Older servers return none: send our own id.
+    workflow.rate_limit_id = slot.rate_limit_grant ?? rateLimitId;
 
     log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags, workflow });
 

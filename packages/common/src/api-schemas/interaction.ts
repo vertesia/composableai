@@ -353,6 +353,14 @@ export const SchemaRefSchema = z
 export const RateLimitRequestResponseSchema = z
     .strictObject({
         delay_ms: z.number(),
+        rate_limit_grant: z
+            .string()
+            .meta({
+                description:
+                    'Opaque token for the slot this request was admitted under. Send it back unchanged as ' +
+                    '`workflow.rate_limit_id` when executing, so completion releases exactly this slot.',
+            })
+            .optional(),
     })
     .meta({ id: 'RateLimitRequestResponse' });
 

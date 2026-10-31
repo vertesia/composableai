@@ -286,6 +286,31 @@ describe('executeInteraction retryability', () => {
         expect(requestSlot.mock.calls[0][0].rate_limit_id).toBe(executeByName.mock.calls[0][1].workflow.rate_limit_id);
     });
 
+    it('should execute under the slot grant the admission returned', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const executeByName = vi.fn().mockResolvedValue({
+            id: 'run-id',
+            status: ExecutionRunStatus.completed,
+            result: [],
+        });
+        const mockClient = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0, rate_limit_grant: 'grant-token' }),
+                executeByName,
+            },
+        } as unknown as VertesiaClient;
+        const payload = createPayload();
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            inputType: 'objectIds',
+            params: payload.params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        await testEnv.run(executeInteraction, payload);
+
+        expect(executeByName.mock.calls[0][1].workflow.rate_limit_id).toBe('grant-token');
+    });
+
     async function runWithProjection(projection: Record<string, unknown>) {
         const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
         const executeByName = vi.fn().mockResolvedValue({
