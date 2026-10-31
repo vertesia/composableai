@@ -1,5 +1,6 @@
 import type {
     ContentTypeIntakePolicy,
+    InferenceProfileRecord,
     IntakePageRanges,
     IntakeVisionDetail,
     InteractionExecutionConfiguration,
@@ -24,16 +25,24 @@ import {
     replaceIntakeRange,
     updateExecutionEnvironment,
     updateExecutionModel,
+    updateExecutionProfile,
     updateIntakePolicy,
 } from './intake-policy-editor.logic.js';
 
-export type IntakePolicyFormSection = 'classification' | 'conversion' | 'extraction' | 'grounding' | 'output';
+export type IntakePolicyFormSection = 'classification' | 'conversion' | 'extraction' | 'grounding' | 'media' | 'output';
+
+export interface IntakeProfileChoices {
+    items: InferenceProfileRecord[];
+    loading?: boolean;
+    error?: boolean;
+}
 
 interface IntakePolicyFormProps {
     policy: ContentTypeIntakePolicy;
     section: IntakePolicyFormSection;
     onChange: (policy: ContentTypeIntakePolicy) => void;
     readonly?: boolean;
+    profileOptions?: IntakeProfileChoices;
 }
 
 interface SelectOption<T extends string | number> {
@@ -41,9 +50,44 @@ interface SelectOption<T extends string | number> {
     label: string;
 }
 
-export function IntakePolicyForm({ policy, section, onChange, readonly = false }: IntakePolicyFormProps) {
+export function IntakePolicyForm({
+    policy,
+    section,
+    onChange,
+    readonly = false,
+    profileOptions = { items: [] },
+}: IntakePolicyFormProps) {
     const { t } = useUITranslation();
     const setValue = (path: IntakePolicyPath, value: unknown) => onChange(updateIntakePolicy(policy, path, value));
+
+    if (section === 'media') {
+        const media = [
+            { kind: 'image', title: t('intakePolicy.field.imageAnalysis') },
+            { kind: 'audio', title: t('intakePolicy.field.audioAnalysis') },
+            { kind: 'video', title: t('intakePolicy.field.videoAnalysis') },
+        ] as const;
+        return (
+            <FormSurface>
+                {media.map(({ kind, title }, index) => (
+                    <FormSection
+                        key={kind}
+                        title={title}
+                        description={index === 0 ? t('intakePolicy.help.section.media') : undefined}
+                        last={index === media.length - 1}
+                    >
+                        <ModelConfigFields
+                            title={title}
+                            hideTitle
+                            config={policy.media_analysis?.[kind]?.config}
+                            onChange={(value) => setValue(['media_analysis', kind, 'config'], value)}
+                            readonly={readonly}
+                            profileOptions={profileOptions}
+                        />
+                    </FormSection>
+                ))}
+            </FormSurface>
+        );
+    }
 
     if (section === 'classification') {
         return (
@@ -199,6 +243,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     description={t('intakePolicy.help.section.conversionModel')}
                 >
                     <ModelConfigFields
+                        profileOptions={profileOptions}
                         title={t('intakePolicy.field.model')}
                         config={policy.text_conversion?.config}
                         onChange={(value) => setValue(['text_conversion', 'config'], value)}
@@ -307,6 +352,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     description={t('intakePolicy.help.section.extractionModel')}
                 >
                     <ModelConfigFields
+                        profileOptions={profileOptions}
                         title={t('intakePolicy.field.model')}
                         config={policy.extraction?.config}
                         onChange={(value) => setValue(['extraction', 'config'], value)}
@@ -504,12 +550,14 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                     description={t('intakePolicy.help.section.models')}
                 >
                     <ModelConfigFields
+                        profileOptions={profileOptions}
                         title={t('intakePolicy.field.primaryModel')}
                         config={grounding?.config}
                         onChange={(value) => setValue(['extraction', 'grounding', 'config'], value)}
                         readonly={readonly}
                     />
                     <ModelConfigFields
+                        profileOptions={profileOptions}
                         title={t('intakePolicy.field.hardModel')}
                         config={grounding?.hard_config}
                         onChange={(value) => setValue(['extraction', 'grounding', 'hard_config'], value)}
@@ -581,6 +629,7 @@ export function IntakePolicyForm({ policy, section, onChange, readonly = false }
                         />
                     </div>
                     <ModelConfigFields
+                        profileOptions={profileOptions}
                         title={t('intakePolicy.field.reviewModel')}
                         config={review?.config}
                         onChange={(value) => setValue(['extraction', 'grounding', 'review', 'config'], value)}
@@ -926,27 +975,66 @@ function PageRangesField({
 
 function ModelConfigFields({
     title,
+    hideTitle = false,
     config,
     onChange,
     readonly,
+    profileOptions,
 }: {
     title: string;
+    hideTitle?: boolean;
     config?: InteractionExecutionConfiguration;
     onChange: (value: InteractionExecutionConfiguration | undefined) => void;
     readonly: boolean;
+    profileOptions: IntakeProfileChoices;
 }) {
     const { t } = useUITranslation();
+    const inherit = '__inherit__';
+    const bypass = '__bypass__';
+    const selected = config?.inference_profile === null ? bypass : (config?.inference_profile ?? inherit);
+    const profileIds = profileOptions.items.map((item) => item.id);
+    if (selected !== inherit && selected !== bypass && !profileIds.includes(selected)) profileIds.push(selected);
+    const usingProfile = typeof config?.inference_profile === 'string';
+    const profileLabel = (id: string) =>
+        id === inherit
+            ? t('intakePolicy.option.inherit')
+            : id === bypass
+              ? t('intakePolicy.option.noInferenceProfile')
+              : (profileOptions.items.find((item) => item.id === id)?.name ?? id);
 
     return (
         <div>
-            <div className="mb-2 text-xs font-medium text-muted">{title}</div>
-            <div className="grid gap-4 md:grid-cols-2">
+            {!hideTitle && <div className="mb-2 text-xs font-medium text-muted">{title}</div>}
+            <FormItem
+                label={t('intakePolicy.field.inferenceProfile')}
+                description={t('intakePolicy.help.inferenceProfile')}
+                helpText={profileOptions.error ? t('intakePolicy.error.loadProfiles') : undefined}
+            >
+                <SelectBox
+                    aria-label={`${title}: ${t('intakePolicy.field.inferenceProfile')}`}
+                    value={selected}
+                    options={[inherit, bypass, ...profileIds]}
+                    optionLabel={profileLabel}
+                    filterBy={(id) => `${profileLabel(id)} ${id}`}
+                    onChange={(id) =>
+                        onChange(
+                            updateExecutionProfile(
+                                config,
+                                id === inherit || id === undefined ? undefined : id === bypass ? null : id,
+                            ),
+                        )
+                    }
+                    isLoading={profileOptions.loading}
+                    disabled={readonly}
+                />
+            </FormItem>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <FormItem label={t('intakePolicy.field.environment')}>
                     <SelectEnvironment
                         selectedEnvId={config?.environment}
                         onChange={(environment) => onChange(updateExecutionEnvironment(config, environment?.id))}
                         isClearable
-                        disabled={readonly}
+                        disabled={readonly || usingProfile}
                     />
                 </FormItem>
                 <FormItem label={t('intakePolicy.field.model')}>
@@ -955,7 +1043,7 @@ function ModelConfigFields({
                         selectedModelId={config?.model}
                         onChange={(model) => onChange(updateExecutionModel(config, model?.id))}
                         isClearable
-                        disabled={readonly || !config?.environment}
+                        disabled={readonly || usingProfile || !config?.environment}
                     />
                 </FormItem>
             </div>

@@ -14,6 +14,7 @@ import {
     Tabs,
     TabsBar,
     TabsPanel,
+    useFetch,
     useTheme,
     useToast,
 } from '@vertesia/ui/core';
@@ -25,7 +26,7 @@ import addFormats from 'ajv-formats';
 import type { TFunction } from 'i18next';
 import { Braces, CheckCircle2, FileText, RotateCcw, WandSparkles } from 'lucide-react';
 import { type ReactNode, useMemo, useRef, useState } from 'react';
-import { IntakePolicyForm, type IntakePolicyFormSection } from './IntakePolicyForm.js';
+import { IntakePolicyForm, type IntakePolicyFormSection, type IntakeProfileChoices } from './IntakePolicyForm.js';
 
 /** A tab rendered above the policy tabs. The owner supplies its own Panel and actions. */
 export interface IntakePolicyEditorTab {
@@ -291,7 +292,23 @@ export function IntakePolicyEditor({
     leadingTabs,
     readonly = false,
 }: IntakePolicyEditorProps) {
-    const { store } = useUserSession();
+    const { store, client, project } = useUserSession();
+    const {
+        data: profiles,
+        isLoading: loadingProfiles,
+        error: profileError,
+    } = useFetch(
+        async () => ({
+            projectId: project?.id,
+            items: await client.inferenceProfiles.list(),
+        }),
+        [client, project?.id],
+    );
+    const profileOptions: IntakeProfileChoices = {
+        items: profiles?.projectId === project?.id ? (profiles?.items ?? []) : [],
+        loading: loadingProfiles,
+        error: !!profileError,
+    };
     const { t } = useUITranslation();
     const toast = useToast();
     const { theme } = useTheme();
@@ -541,6 +558,7 @@ export function IntakePolicyEditor({
             theme,
         },
         withPolicyPanel,
+        profileOptions,
     );
 
     return (
@@ -575,11 +593,20 @@ function createEditorTabs(
         theme: string;
     },
     wrap: (content: ReactNode, fill?: boolean) => ReactNode,
+    profileOptions: IntakeProfileChoices,
 ) {
     const formTab = (name: IntakePolicyFormSection, label: string) => ({
         name,
         label,
-        content: wrap(<IntakePolicyForm policy={policy} section={name} onChange={onChange} readonly={readonly} />),
+        content: wrap(
+            <IntakePolicyForm
+                policy={policy}
+                section={name}
+                onChange={onChange}
+                readonly={readonly}
+                profileOptions={profileOptions}
+            />,
+        ),
     });
 
     return [
@@ -587,6 +614,7 @@ function createEditorTabs(
         formTab('conversion', t('intakePolicy.tab.conversion')),
         formTab('extraction', t('intakePolicy.tab.extraction')),
         formTab('grounding', t('intakePolicy.tab.grounding')),
+        formTab('media', t('intakePolicy.tab.media')),
         formTab('output', t('intakePolicy.tab.output')),
         {
             name: 'json',
