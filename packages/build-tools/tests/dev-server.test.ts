@@ -108,6 +108,21 @@ describe('vertesiaDevServerPlugin', () => {
             );
         });
 
+        it('resolves a relative import whose importer is a root-relative URL', () => {
+            mkdirSync(join(workDir, 'src'), { recursive: true });
+            writeFileSync(join(workDir, 'src', 'page.html'), '<p></p>', 'utf-8');
+            const plugin = getPlugin();
+            plugin.configResolved({ root: workDir });
+            expect(plugin.resolveId('./page.html?raw', '/src/index.ts')).toBe(join(workDir, 'src', 'page.html?raw'));
+        });
+
+        it('strips the /@fs/ prefix from a file outside the root', () => {
+            const file = writeSkillFile(join(workDir, 'outside'), 'fs-skill');
+            const plugin = getPlugin();
+            plugin.configResolved({ root: join(workDir, 'app') });
+            expect(plugin.resolveId(`/@fs${file}?skill`, undefined)).toBe(`${file}?skill`);
+        });
+
         it('keeps an absolute filesystem path when nothing exists at that path under the root', () => {
             const file = writeSkillFile(join(workDir, 'outside'), 'abs-skill');
             const plugin = getPlugin();
@@ -200,6 +215,24 @@ describe('vertesiaDevServerPlugin', () => {
             try {
                 const result = await server.transformRequest('/src/skills/served-skill.md?skill');
                 expect(result?.code).toContain('"name": "served-skill"');
+            } finally {
+                await server.close();
+            }
+        });
+
+        it('transforms a file outside the root requested by its /@fs/ URL', async () => {
+            const file = writeSkillFile(join(workDir, 'shared'), 'fs-served');
+            const server = await createServer({
+                root: join(workDir, 'app'),
+                configFile: false,
+                logLevel: 'silent',
+                appType: 'custom',
+                server: { middlewareMode: true, hmr: false, ws: false, fs: { strict: false } },
+                plugins: [vertesiaDevServerPlugin({ skillCatalog: false })],
+            });
+            try {
+                const result = await server.transformRequest(`/@fs${file}?skill`);
+                expect(result?.code).toContain('"name": "fs-served"');
             } finally {
                 await server.close();
             }
