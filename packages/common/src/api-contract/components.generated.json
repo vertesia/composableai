@@ -4747,33 +4747,46 @@
     "additionalProperties": false,
     "description": "HTTP timeouts applied to a driver's upstream LLM-provider calls.\n\nAll values are in milliseconds. Drivers should map these onto whatever HTTP client their SDK uses; the defaults applied in `@llumiverse/core/createDriverHttpAgent` are:   - headersTimeout:   900_000   - bodyTimeout:      900_000   - connectTimeout:   60_000   - keepAliveTimeout: 300_000\n\nThe response defaults are deliberately longer than the hosting request boundary. Application-level cancellation should end user work first; driver timeouts are bounded-resource safety nets."
   },
-  "IntakePageScope": {
-    "type": "string",
-    "enum": [
-      "all",
-      "located"
-    ],
-    "description": "Named page scope for intake conversion/extraction: everything or the locate-pass result. Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as a SEPARATE field because scalar-or-collection unions generate unstable API clients."
-  },
-  "IntakePageRanges": {
-    "type": "array",
-    "items": {
-      "minItems": 2,
-      "maxItems": 2,
-      "type": "array",
-      "items": {
-        "type": "integer",
-        "minimum": -2147483648,
-        "maximum": 2147483647
+  "IntakeMediaAnalysisOverrides": {
+    "type": "object",
+    "properties": {
+      "image": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride",
+        "description": "Image property-analysis settings. Inherits extraction interaction/config defaults at each policy layer unless explicitly overridden here."
+      },
+      "video": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride",
+        "description": "Video analysis interaction and model settings. The built-in interaction is sys:AnalyzeVideo; these settings do not change transcription."
+      },
+      "audio": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride",
+        "description": "Audio analysis interaction and model settings. The built-in interaction is sys:AnalyzeAudio; these settings do not change transcription."
       }
     },
-    "description": "Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the document ([[1, 2], [-1, -1]] = first two pages plus the last page)."
+    "additionalProperties": false,
+    "description": "Per-media analysis settings shared by StandardIntake variables and intake policies."
+  },
+  "IntakeMediaAnalysisOverride": {
+    "type": "object",
+    "properties": {
+      "interaction": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "Interaction ID or qualified name for this media analysis step. Omit to inherit the type/project setting or built-in interaction; image analysis also inherits extraction.interaction."
+      },
+      "config": {
+        "$ref": "#/components/schemas/InteractionExecutionConfiguration",
+        "description": "Execution configuration for this media analysis step only. Omitted fields inherit; inference_profile: null bypasses profile defaults."
+      }
+    },
+    "additionalProperties": false
   },
   "InteractionExecutionConfiguration": {
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "description": "Optional configuration identifier. Normally omit this when overriding intake settings."
       },
       "inference_profile": {
         "anyOf": [
@@ -4791,19 +4804,24 @@
         "description": "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them."
       },
       "environment": {
-        "type": "string"
+        "type": "string",
+        "description": "Execution environment ID for the selected model. Supply with model to replace inherited profile routing."
       },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Model name within the execution environment. Changing model or profile drops inherited model options."
       },
       "do_validate": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Validate the interaction output against its result schema. Omit to inherit validation settings."
       },
       "run_data": {
-        "$ref": "#/components/schemas/RunDataStorageLevel"
+        "$ref": "#/components/schemas/RunDataStorageLevel",
+        "description": "Run-data storage level: controls which execution inputs and outputs are retained. Omit to inherit."
       },
       "configMode": {
-        "$ref": "#/components/schemas/ConfigModes"
+        "$ref": "#/components/schemas/ConfigModes",
+        "description": "How configuration combines with the interaction configuration. Normally omit to use the default merge behavior."
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
@@ -4861,6 +4879,28 @@
       "off",
       "required"
     ]
+  },
+  "IntakePageScope": {
+    "type": "string",
+    "enum": [
+      "all",
+      "located"
+    ],
+    "description": "Named page scope for intake conversion/extraction: everything or the locate-pass result. Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as a SEPARATE field because scalar-or-collection unions generate unstable API clients."
+  },
+  "IntakePageRanges": {
+    "type": "array",
+    "items": {
+      "minItems": 2,
+      "maxItems": 2,
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": -2147483648,
+        "maximum": 2147483647
+      }
+    },
+    "description": "Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the document ([[1, 2], [-1, -1]] = first two pages plus the last page)."
   },
   "IntakeVisionDetail": {
     "type": "string",
@@ -4988,13 +5028,16 @@
     "type": "object",
     "properties": {
       "text": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Generate embeddings from object text. False disables this step; true still requires text embeddings to be enabled in the project."
       },
       "image": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Generate image embeddings when applicable. False disables this step; true still requires image embeddings to be enabled in the project."
       },
       "properties": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Generate embeddings from extracted properties. False disables this step; true still requires property embeddings to be enabled in the project."
       }
     },
     "additionalProperties": false
@@ -5002,28 +5045,35 @@
   "ContentTypeIntakePolicy": {
     "type": "object",
     "properties": {
+      "media_analysis": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverrides",
+        "description": "Media analysis defaults. Subscription settings override the content type, which overrides project defaults."
+      },
       "mode": {
         "type": "string",
         "enum": [
           "programmatic",
           "agentic"
         ],
-        "description": "Intake orchestration mode for this type."
+        "description": "Intake orchestration: programmatic runs the standard processing pipeline; agentic delegates processing to the intake agent. Omit to inherit; platform default programmatic."
       },
       "identification": {
         "type": "object",
         "properties": {
           "guidance": {
-            "type": "string"
+            "type": "string",
+            "description": "Describe when this content type should be selected. This is type-identification metadata, not a workflow parameter."
           },
           "distinguish_from": {
-            "type": "string"
+            "type": "string",
+            "description": "Explain how to distinguish this type from similar types to improve type selection."
           },
           "examples": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Representative examples or identifying characteristics that help the type selector recognize this type."
           }
         },
         "additionalProperties": false,
@@ -5061,7 +5111,8 @@
         "type": "object",
         "properties": {
           "enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Run source-to-text conversion before extraction. False skips conversion; omission inherits the next policy layer."
           },
           "method": {
             "type": "string",
@@ -5070,29 +5121,35 @@
               "basic",
               "llm",
               "custom"
-            ]
+            ],
+            "description": "Conversion strategy: basic uses mechanical extraction; llm uses visual conversion to Markdown; custom uses a supplied interaction. Standard Intake resolves auto to its platform semantic-conversion default."
           },
           "custom": {
             "type": "object",
             "properties": {
               "interaction": {
-                "type": "string"
+                "type": "string",
+                "description": "Interaction ID or qualified name to use when method is custom."
               },
               "agent": {
-                "type": "string"
+                "type": "string",
+                "description": "Reserved custom-agent conversion target. Standard Intake currently supports custom.interaction only."
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Custom conversion target, used with method: custom. Set interaction; agent conversion is not implemented."
           },
           "instructions": {
-            "type": "string"
+            "type": "string",
+            "description": "Additional conversion guidance, such as which sections to retain or how to describe tables and figures."
           },
           "output_format": {
             "type": "string",
             "enum": [
               "markdown",
               "text"
-            ]
+            ],
+            "description": "Output format requested from custom conversion. Visual llm conversion always produces Markdown."
           },
           "scope": {
             "$ref": "#/components/schemas/IntakePageScope",
@@ -5110,7 +5167,7 @@
           },
           "config": {
             "$ref": "#/components/schemas/InteractionExecutionConfiguration",
-            "description": "Model execution config for the page-conversion interaction (method 'llm'/'auto' -> sys:ConvertPageToMarkdown, method 'custom' -> the custom interaction). Lets the visual conversion run on a cheaper/faster model (e.g. a flash model) than extraction. When unset, conversion uses the run's model config or the project default model."
+            "description": "Model execution config for the page-conversion interaction (method 'llm'/'auto' -> sys:ConvertPageToMarkdown, method 'custom' -> the custom interaction). Lets the visual conversion run on a cheaper/faster model than extraction. Fields inherit across policy layers: subscription phase settings (including legacy run-wide config) override content-type settings, which override project policy defaults. Unspecified routing uses interaction/project model defaults."
           }
         },
         "additionalProperties": false,
@@ -5120,7 +5177,8 @@
         "type": "object",
         "properties": {
           "enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Extract structured properties using the content-type schema. False skips property extraction; omission inherits."
           },
           "source": {
             "type": "string",
@@ -5129,17 +5187,20 @@
               "text",
               "vision",
               "mixed"
-            ]
+            ],
+            "description": "Evidence used for property extraction: text uses object text, vision uses page images, mixed uses both, and auto selects appropriate evidence for the source."
           },
           "instructions": {
-            "type": "string"
+            "type": "string",
+            "description": "Additional instructions for extracting this type's properties, appended to the extraction prompt."
           },
           "interaction": {
-            "type": "string"
+            "type": "string",
+            "description": "Property-extraction interaction ID or qualified name. The built-in default is sys:ExtractInformation; media-specific analysis may override it."
           },
           "config": {
             "$ref": "#/components/schemas/InteractionExecutionConfiguration",
-            "description": "Model execution config for the standard property-extraction interaction (sys:ExtractInformation). Lets extraction run on a different model/environment than the visual page conversion. When unset, extraction uses the run's model config or the project default model. (Grounded extraction is configured separately via grounding.config.)"
+            "description": "Model execution config for the standard property-extraction interaction (sys:ExtractInformation). Lets extraction run on a different model/environment than the visual page conversion. Subscription phase settings (including legacy run-wide config) override content-type settings, which override project policy defaults; omitted fields inherit. Unspecified routing uses interaction/project model defaults. Grounded extraction uses grounding.config."
           },
           "scope": {
             "$ref": "#/components/schemas/IntakePageScope",
@@ -5159,13 +5220,15 @@
             "type": "object",
             "properties": {
               "default_detail": {
-                "$ref": "#/components/schemas/IntakeVisionDetail"
+                "$ref": "#/components/schemas/IntakeVisionDetail",
+                "description": "Default visual evidence detail: low, standard, or high. References a platform/project rendering profile; default standard."
               },
               "allowed_details": {
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/IntakeVisionDetail"
-                }
+                },
+                "description": "Visual detail levels the evidence planner may choose. Omit to use the platform-supported levels."
               },
               "max_image_tokens": {
                 "type": "integer",
@@ -5192,36 +5255,44 @@
             "type": "object",
             "properties": {
               "enabled": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Reserved verification switch. Standard Intake does not currently execute this verification pass; use grounding.review for implemented grounded-extraction review."
               },
               "model": {
-                "type": "string"
+                "type": "string",
+                "description": "Reserved model name for the verification pass; not currently used by Standard Intake."
               },
               "environment": {
-                "type": "string"
+                "type": "string",
+                "description": "Reserved execution environment for the verification model; not currently used by Standard Intake."
               },
               "materiality": {
-                "type": "string"
+                "type": "string",
+                "description": "Reserved guidance describing which extraction discrepancies matter; not currently used by Standard Intake."
               },
               "threshold": {
                 "type": "number",
                 "minimum": 0,
-                "maximum": 1
+                "maximum": 1,
+                "description": "Reserved verification score threshold between 0 and 1; not currently used by Standard Intake."
               },
               "max_retries": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 2147483647
+                "maximum": 2147483647,
+                "description": "Reserved verification retry limit; not currently used by Standard Intake."
               },
               "on_fail": {
                 "type": "string",
                 "enum": [
                   "flag",
                   "block"
-                ]
+                ],
+                "description": "Reserved action for failed verification: flag or block. Not currently used by Standard Intake."
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Reserved verification configuration. Standard Intake currently implements grounding.review instead of this pass."
           },
           "grounding": {
             "$ref": "#/components/schemas/ContentTypeExtractionGroundingPolicy",
@@ -5237,7 +5308,7 @@
       },
       "embeddings": {
         "$ref": "#/components/schemas/EmbeddingTypeEnabledMap",
-        "description": "Per-type embedding switches. Unspecified values inherit the project policy."
+        "description": "Embedding generation switches. Omitted fields inherit type/project policy; project embedding availability remains a hard limit."
       },
       "generate_toc": {
         "type": "boolean",
@@ -5256,7 +5327,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "Per-content-type policy for the standard intake workflows."
+    "description": "Shared intake processing policy. Workflow parameters override content-type policy, which overrides project defaults. Omitted processing fields inherit from the next layer."
   },
   "IntakeVisionProfileSettingsMap": {
     "type": "object",
@@ -5312,7 +5383,7 @@
       },
       "default_policy": {
         "$ref": "#/components/schemas/ContentTypeIntakePolicy",
-        "description": "Project-level intake policy defaults. Same shape as the per-content-type policy; a type's `intake` block wins field-by-field over these defaults, which in turn win over the legacy flat fields below. `identification` is type-specific and ignored here."
+        "description": "Project-level intake policy defaults. The same processing fields are used by workflow overrides and type policy. A type's `intake` block wins field-by-field over these defaults, which in turn win over the legacy flat fields below. `identification` is type-specific and ignored here."
       },
       "vision_profiles": {
         "$ref": "#/components/schemas/IntakeVisionProfileSettingsMap",
@@ -17908,7 +17979,8 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "description": "Optional configuration identifier. Normally omit this when overriding intake settings."
       },
       "inference_profile": {
         "anyOf": [
@@ -17926,19 +17998,24 @@
         "description": "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them."
       },
       "environment": {
-        "type": "string"
+        "type": "string",
+        "description": "Execution environment ID for the selected model. Supply with model to replace inherited profile routing."
       },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Model name within the execution environment. Changing model or profile drops inherited model options."
       },
       "do_validate": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Validate the interaction output against its result schema. Omit to inherit validation settings."
       },
       "run_data": {
-        "$ref": "#/components/schemas/RunDataStorageLevel"
+        "$ref": "#/components/schemas/RunDataStorageLevel",
+        "description": "Run-data storage level: controls which execution inputs and outputs are retained. Omit to inherit."
       },
       "configMode": {
-        "$ref": "#/components/schemas/ConfigModes"
+        "$ref": "#/components/schemas/ConfigModes",
+        "description": "How configuration combines with the interaction configuration. Normally omit to use the default merge behavior."
       },
       "model_options": {
         "type": "object",
@@ -32460,7 +32537,8 @@
       },
       "vars": {
         "type": "object",
-        "additionalProperties": true
+        "additionalProperties": true,
+        "description": "Workflow-specific variables. Known catalog workflows validate their own schema."
       },
       "input_type": {
         "$ref": "#/components/schemas/WorkflowRuleInputType"
@@ -32806,6 +32884,11 @@
       "name": {
         "type": "string"
       },
+      "overrides_system_subscription_id": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "Fully replace this code-defined system subscription in the current project. Only one replacement per system subscription is allowed. Disabling the replacement keeps the default suppressed; deleting it restores the default. Immutable after creation."
+      },
       "description": {
         "type": "string"
       },
@@ -32859,7 +32942,8 @@
       },
       "vars": {
         "type": "object",
-        "additionalProperties": true
+        "additionalProperties": true,
+        "description": "Workflow-specific variables. Known catalog workflows validate their own schema."
       },
       "input_type": {
         "$ref": "#/components/schemas/WorkflowRuleInputType"
@@ -33058,7 +33142,7 @@
       },
       "overrides_system_subscription_id": {
         "type": "string",
-        "description": "System subscription ID replaced by this stored subscription. Set only for tenant-specific system overrides created by migrations or platform code."
+        "description": "System subscription ID fully replaced by this stored project subscription. Disabling the replacement keeps the default suppressed; deleting it restores the default."
       },
       "customer_override": {
         "type": "boolean",
@@ -40951,6 +41035,99 @@
     },
     "required": [
       "activities"
+    ],
+    "additionalProperties": false
+  },
+  "SubscriptionWorkflowDefinition": {
+    "type": "object",
+    "properties": {
+      "endpoint": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "variables_schema": {
+        "$ref": "#/components/schemas/JSONSchema"
+      },
+      "variables_template": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "templates": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "type": "string"
+            },
+            "variables": {
+              "$ref": "#/components/schemas/JSONObject"
+            }
+          },
+          "required": [
+            "name",
+            "title",
+            "description",
+            "variables"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "system_targets": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "run_as_role": {
+              "$ref": "#/components/schemas/SystemRoles"
+            },
+            "task_queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "run_as_role"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Code-defined system targets for this workflow, used to resolve managed execution roles."
+      }
+    },
+    "required": [
+      "endpoint",
+      "title",
+      "description",
+      "variables_schema",
+      "variables_template"
+    ],
+    "additionalProperties": false,
+    "description": "A packaged workflow supported as an event subscription target."
+  },
+  "SubscriptionWorkflowCatalog": {
+    "type": "object",
+    "properties": {
+      "workflows": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SubscriptionWorkflowDefinition"
+        }
+      }
+    },
+    "required": [
+      "workflows"
     ],
     "additionalProperties": false
   },

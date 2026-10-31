@@ -689,6 +689,8 @@ export type PlanTask = Wire.PlanTask;
 
 export type Plan = Wire.Plan;
 
+/** Route explicitly to the environment's regular worker pool. */
+export const NORMAL_PRIORITY_TASK_QUEUE = 'normal_priority';
 export const LOW_PRIORITY_TASK_QUEUE = 'low_priority';
 
 /**

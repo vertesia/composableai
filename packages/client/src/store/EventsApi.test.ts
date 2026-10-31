@@ -1,4 +1,4 @@
-import type { EventDeliveryStreamSnapshot } from '@vertesia/common';
+import { type CreateEventSubscriptionPayload, type EventDeliveryStreamSnapshot, SystemRoles } from '@vertesia/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { VertesiaClient } from '../client.js';
 
@@ -168,5 +168,42 @@ describe('EventsApi.subscribeDeliveries', () => {
             subscription.close();
             vi.useRealTimers();
         }
+    });
+});
+
+describe('event subscription replacement requests', () => {
+    it('serializes replacement identity and per-media settings through the SDK', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://studio.example.test',
+            storeUrl: 'https://store.example.test',
+            fetch: vi.fn(async () => Response.json({ subscription: { id: 'subscription-1' } })),
+            onRequest: (request) => {
+                requests.push(request);
+            },
+        });
+        const payload: CreateEventSubscriptionPayload = {
+            name: 'Normal intake',
+            overrides_system_subscription_id: 'sys:StandardIntake',
+            filter: {},
+            run_as_role: SystemRoles.automation,
+            target: {
+                type: 'workflow',
+                endpoint: 'StandardIntake',
+                vars: {
+                    media_analysis: {
+                        video: {
+                            interaction: 'custom:Video',
+                            config: { inference_profile: '111111111111111111111111' },
+                        },
+                    },
+                },
+            },
+        };
+        await client.store.events.subscriptions.create(payload);
+        expect(requests).toHaveLength(1);
+        expect(requests[0].method).toBe('POST');
+        expect(new URL(requests[0].url).pathname).toBe('/api/v1/events/subscriptions');
+        expect(await requests[0].clone().json()).toEqual(payload);
     });
 });

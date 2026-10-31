@@ -922,7 +922,33 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     RenderingTemplateDefinitionRef: RenderingTemplateDefinitionRefSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const PROJECT_AND_APP_SCHEMAS = {
+// Preserve named schema types instead of expanding the full project/policy tree in declaration output.
+type ProjectAndAppSchemaMap = {
+    ProjectModelDefaults: typeof ProjectModelDefaultsSchema;
+    ResourceVisibility: typeof ResourceVisibilitySchema;
+    ProjectIndexingConfiguration: typeof ProjectIndexingConfigurationSchema;
+    ProjectConfigurationEmbedding: typeof ProjectConfigurationEmbeddingSchema;
+    BrowserUseProjectConfiguration: typeof BrowserUseProjectConfigurationSchema;
+    ProjectIntakeSniffConfiguration: typeof ProjectIntakeSniffConfigurationSchema;
+    JSONSchema: typeof JSONSchemaSchema;
+    ModelOptions: typeof ModelOptionsSchema;
+    HttpTimeoutOptions: typeof HttpTimeoutOptionsSchema;
+    ContentTypeIntakePolicy: typeof ContentTypeIntakePolicySchema;
+    ProjectIntakeConfiguration: typeof ProjectIntakeConfigurationSchema;
+    ProjectConfiguration: typeof ProjectConfigurationSchema;
+    Project: typeof ProjectSchema;
+    UpdateProjectPayload: typeof UpdateProjectPayloadSchema;
+    UpdateProjectConfigurationPayload: typeof UpdateProjectConfigurationPayloadSchema;
+    ToolCollectionObject: typeof ToolCollectionObjectSchema;
+    AppUIConfig: typeof AppUIConfigSchema;
+    AppCapabilities: typeof AppCapabilitiesSchema;
+    AppAccessControl: typeof AppAccessControlSchema;
+    AppSourceConfig: typeof AppSourceConfigSchema;
+    AppGitSourceProvider: typeof AppGitSourceProviderSchema;
+    AppManifestSource: typeof AppManifestSourceSchema;
+};
+
+const PROJECT_AND_APP_SCHEMAS: ProjectAndAppSchemaMap = {
     // Leaves of the ProjectConfiguration closure. Each is hoisted by `ProjectConfiguration` rather
     // than named by an endpoint, so only the roots that nothing else here references are listed;
     // `ModelDefault`, the two search enums, `ProjectSearchPropertyMapping(+Map)` and the two
@@ -1781,6 +1807,8 @@ const CONTENT_SEARCH_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const EVENT_SUBSCRIPTION_SCHEMAS = {
+    IntakeMediaAnalysisOverride: EventSchemas.IntakeMediaAnalysisOverrideSchema,
+    IntakeMediaAnalysisOverrides: EventSchemas.IntakeMediaAnalysisOverridesSchema,
     EventPriority: EventSchemas.EventPrioritySchema,
     WorkflowRuleInputType: EventSchemas.WorkflowRuleInputTypeSchema,
     WorkflowRuleItem: EventSchemas.WorkflowRuleItemSchema,
@@ -2008,6 +2036,8 @@ const WORKFLOW_RUN_SCHEMAS = {
     ActivityPropertyDefinition: WorkflowRunSchemas.ActivityPropertyDefinitionSchema,
     ActivityDefinition: WorkflowRunSchemas.ActivityDefinitionSchema,
     ActivityCatalog: WorkflowRunSchemas.ActivityCatalogSchema,
+    SubscriptionWorkflowDefinition: WorkflowRunSchemas.SubscriptionWorkflowDefinitionSchema,
+    SubscriptionWorkflowCatalog: WorkflowRunSchemas.SubscriptionWorkflowCatalogSchema,
     WorkflowInteractionVars: WorkflowRunSchemas.WorkflowInteractionVarsSchema,
     ListWorkflowInteractionsResponse: WorkflowRunSchemas.ListWorkflowInteractionsResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
@@ -2616,6 +2646,8 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'IntakeMediaAnalysisOverride',
+    'IntakeMediaAnalysisOverrides',
     'OidcFederationConnectionPayload',
     'OidcFederationConnection',
     'OAuthTokenExchangeRequest',
@@ -3636,6 +3668,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ActivityPropertyDefinition',
     'ActivityDefinition',
     'ActivityCatalog',
+    'SubscriptionWorkflowDefinition',
+    'SubscriptionWorkflowCatalog',
     'WorkflowInteractionVars',
     'ListWorkflowInteractionsResponse',
 ]);

@@ -62,6 +62,7 @@ export function updateExecutionEnvironment(
     const next = { ...config, environment };
     delete next.model;
     delete next.model_options;
+    if (environment !== undefined && next.inference_profile !== null) delete next.inference_profile;
     return hasConfiguration(next) ? next : undefined;
 }
 
@@ -70,7 +71,23 @@ export function updateExecutionModel(
     model: string | undefined,
 ): InteractionExecutionConfiguration | undefined {
     const next = { ...config, model };
-    if (model !== config?.model) {
+    if (model !== config?.model || (model !== undefined && typeof config?.inference_profile === 'string')) {
+        delete next.model_options;
+    }
+    if (model !== undefined && next.inference_profile !== null) delete next.inference_profile;
+    return hasConfiguration(next) ? next : undefined;
+}
+
+export function updateExecutionProfile(
+    config: InteractionExecutionConfiguration | undefined,
+    profile: string | null | undefined,
+): InteractionExecutionConfiguration | undefined {
+    const next = { ...config };
+    if (profile === undefined) delete next.inference_profile;
+    else next.inference_profile = profile;
+    if (profile !== null) {
+        delete next.environment;
+        delete next.model;
         delete next.model_options;
     }
     return hasConfiguration(next) ? next : undefined;

@@ -195,26 +195,27 @@ describe('extractDocumentText', () => {
     describe('bounded reads', () => {
         const MiB = 1024 * 1024;
 
-        it('reads one byte past the text limit, and stores what a full read would have stored', async () => {
-            // Multi-byte characters straddling the limit, at every alignment: a shift of one character's width
-            // repeats an alignment already covered, at both the read limit and the marker cut.
-            for (const char of ['é', '€', '😀']) {
-                for (let shift = 0; shift < Buffer.byteLength(char); shift++) {
-                    vi.clearAllMocks();
-                    const filler = 'a'.repeat(MAX_EXTRACTED_TEXT_BYTES - 64 + shift);
-                    const full = filler + char.repeat(40) + 'tail'.repeat(1000);
-                    retrieve.mockResolvedValue(createDoc());
-                    setObjectText.mockResolvedValue({});
-                    update.mockResolvedValue({});
-                    serveSource(Buffer.from(full, 'utf8'));
+        // Each alignment is an independent 10 MiB fixture. Separate cases preserve the full Unicode
+        // matrix without making all nine activity executions share one test's timeout on busy runners.
+        const textBoundaryCases = ['é', '€', '😀'].flatMap((char) =>
+            Array.from({ length: Buffer.byteLength(char) }, (_unused, shift) => ({ char, shift })),
+        );
+        it.each(textBoundaryCases)(
+            'reads one byte past the limit and matches a full read: $char alignment $shift',
+            async ({ char, shift }) => {
+                const filler = 'a'.repeat(MAX_EXTRACTED_TEXT_BYTES - 64 + shift);
+                const full = filler + char.repeat(40) + 'tail'.repeat(1000);
+                retrieve.mockResolvedValue(createDoc());
+                setObjectText.mockResolvedValue({});
+                update.mockResolvedValue({});
+                serveSource(Buffer.from(full, 'utf8'));
 
-                    await testEnv.run(extractDocumentText, createPayload());
+                await testEnv.run(extractDocumentText, createPayload());
 
-                    expect(requestedBytes()).toBe(MAX_EXTRACTED_TEXT_BYTES + 1);
-                    expect(setObjectText.mock.calls[0]?.[1].text).toBe(truncateExtractedText(full).text);
-                }
-            }
-        });
+                expect(requestedBytes()).toBe(MAX_EXTRACTED_TEXT_BYTES + 1);
+                expect(setObjectText.mock.calls[0]?.[1].text).toBe(truncateExtractedText(full).text);
+            },
+        );
 
         it('reads an unknown type only as far as it can be sniffed, and skips a larger one as before', async () => {
             retrieve.mockResolvedValue(createDoc({ content: { type: 'application/mxf', source: SOURCE, etag: 'e' } }));

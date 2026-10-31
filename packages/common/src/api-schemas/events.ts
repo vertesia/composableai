@@ -201,13 +201,20 @@ export const AppEventDeliveryTargetSchema = z
     })
     .meta({ id: 'AppEventDeliveryTarget' });
 
+const nonBlankStringSchema = z.string().regex(/\S/);
+
+export { IntakeMediaAnalysisOverrideSchema, IntakeMediaAnalysisOverridesSchema } from './store.js';
+
 export const WorkflowEventDeliveryTargetSchema = z
     .strictObject({
         type: z.literal('workflow'),
         endpoint: z.string(),
         workflow_class: z.string().optional(),
         task_queue: z.string().optional(),
-        vars: z.looseObject({}).optional(),
+        vars: z
+            .looseObject({})
+            .meta({ description: 'Workflow-specific variables. Known catalog workflows validate their own schema.' })
+            .optional(),
         input_type: WorkflowRuleInputTypeSchema.optional(),
         migrated_rule_name: z.string().optional(),
     })
@@ -468,7 +475,10 @@ export const WorkflowEventDeliveryTargetInputSchema = z
         endpoint: z.string(),
         workflow_class: z.string().optional(),
         task_queue: z.string().optional(),
-        vars: z.looseObject({}).optional(),
+        vars: z
+            .looseObject({})
+            .meta({ description: 'Workflow-specific variables. Known catalog workflows validate their own schema.' })
+            .optional(),
         input_type: WorkflowRuleInputTypeSchema.optional(),
         // Same round-trip allowance as the webhook input above: the read target carries this, the
         // update handler re-applies it from the stored target rather than from the body.
@@ -855,9 +865,15 @@ export const ListEventDeliveriesResponseSchema = z
     })
     .meta({ id: 'ListEventDeliveriesResponse' });
 
+const systemSubscriptionOverrideSchema = nonBlankStringSchema.meta({
+    description:
+        'Fully replace this code-defined system subscription in the current project. Only one replacement per system subscription is allowed. Disabling the replacement keeps the default suppressed; deleting it restores the default. Immutable after creation.',
+});
+
 export const CreateEventSubscriptionPayloadSchema: z.ZodType = z
     .strictObject({
         name: z.string(),
+        overrides_system_subscription_id: systemSubscriptionOverrideSchema.optional(),
         description: z.string().optional(),
         scope: z.enum(['account', 'project']).optional(),
         filter: EventSubscriptionFilterSchema,
@@ -918,7 +934,7 @@ export const EventSubscriptionSchema: z.ZodType = z
             .string()
             .meta({
                 description:
-                    'System subscription ID replaced by this stored subscription. Set only for tenant-specific system overrides created by migrations or platform code.',
+                    'System subscription ID fully replaced by this stored project subscription. Disabling the replacement keeps the default suppressed; deleting it restores the default.',
             })
             .optional(),
         customer_override: z

@@ -142,8 +142,8 @@ export interface EventSubscription {
     updated_at?: string;
     migrated_from_workflow_rule_id?: string;
     /**
-     * System subscription ID replaced by this stored subscription. Set only for
-     * tenant-specific system overrides created by migrations or platform code.
+     * System subscription ID fully replaced by this stored project subscription.
+     * Disabling the replacement keeps the default suppressed; deleting it restores the default.
      */
     overrides_system_subscription_id?: string;
     /**
@@ -152,7 +152,12 @@ export interface EventSubscription {
     customer_override?: boolean;
 }
 
+export type IntakeMediaAnalysisOverride = Wire.IntakeMediaAnalysisOverride;
+export type IntakeMediaAnalysisOverrides = Wire.IntakeMediaAnalysisOverrides;
+
 export interface CreateEventSubscriptionPayload {
+    /** Fully replaces a code-defined system subscription in this project. Immutable after creation. */
+    overrides_system_subscription_id?: string;
     name: string;
     description?: string;
     scope?: 'account' | 'project';
