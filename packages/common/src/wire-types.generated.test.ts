@@ -642,6 +642,10 @@ interface Checks {
         W.UpdateAppInstallationToolAllowlistPayload,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').UpdateAppInstallationToolAllowlistPayloadSchema>
     >;
+    UpdateAppInstallationToolPermissionsPayload: Same<
+        W.UpdateAppInstallationToolPermissionsPayload,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').UpdateAppInstallationToolPermissionsPayloadSchema>
+    >;
     AppInstallationKind: Same<
         W.AppInstallationKind,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppInstallationKindSchema>
@@ -8855,6 +8859,10 @@ interface Checks {
         W.ApiComponentTypes['UpdateAppInstallationToolAllowlistPayload'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').UpdateAppInstallationToolAllowlistPayloadSchema>
     >;
+    'component:UpdateAppInstallationToolPermissionsPayload': Same<
+        W.ApiComponentTypes['UpdateAppInstallationToolPermissionsPayload'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').UpdateAppInstallationToolPermissionsPayloadSchema>
+    >;
     'component:ValidateUrlResponse': Same<
         W.ApiComponentTypes['ValidateUrlResponse'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').ValidateUrlResponseSchema>
@@ -9924,6 +9932,7 @@ const checks: Checks = {
     AppOAuthProviderParams: true,
     AppInstallationPayload: true,
     UpdateAppInstallationToolAllowlistPayload: true,
+    UpdateAppInstallationToolPermissionsPayload: true,
     AppInstallationKind: true,
     AppToolCollection: true,
     ProjectToolInfo: true,
@@ -12086,6 +12095,7 @@ const checks: Checks = {
     'component:ViewExperienceListQuery': true,
     'component:UpdateAppInstallationOAuthApprovalPayload': true,
     'component:UpdateAppInstallationToolAllowlistPayload': true,
+    'component:UpdateAppInstallationToolPermissionsPayload': true,
     'component:ValidateUrlResponse': true,
     'component:ValidateUrlRequest': true,
     'component:AppVersionUrls': true,
@@ -12312,6 +12322,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2564);
+        expect(Object.keys(checks)).toHaveLength(2566);
     });
 });
