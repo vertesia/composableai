@@ -1024,6 +1024,7 @@ function ModelConfigFields({
         <div>
             {!hideTitle && <div className="mb-2 text-xs font-medium text-muted">{title}</div>}
             <FormItem
+                className="w-full md:max-w-sm"
                 label={t('intakePolicy.field.inferenceProfile')}
                 description={t('intakePolicy.help.inferenceProfile')}
                 helpText={profileOptions.error ? t('intakePolicy.error.loadProfiles') : undefined}
