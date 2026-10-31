@@ -10,12 +10,14 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path, { join } from 'node:path';
+import { createServer } from 'vite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { vertesiaDevServerPlugin } from '../src/vite/dev-server.js';
 
 type PluginShape = {
     resolveId: (source: string, importer?: string) => string | null;
     load: (id: string) => Promise<string | null | undefined>;
+    configResolved: (config: { root: string }) => void;
     name: string;
     enforce?: string;
 };
@@ -33,6 +35,13 @@ function getPlugin(options?: Parameters<typeof vertesiaDevServerPlugin>[0]): Plu
     // with a Rollup plugin. We type-cast through unknown to call the hooks
     // directly without spinning up Vite.
     return vertesiaDevServerPlugin(options) as unknown as PluginShape;
+}
+
+function writeSkillFile(dir: string, name: string): string {
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, `${name}.md`);
+    writeFileSync(file, `---\nname: ${name}\ndescription: d\n---\n# Hello\n`, 'utf-8');
+    return file;
 }
 
 async function loadHook(plugin: PluginShape, id: string): Promise<string | null | undefined> {
@@ -78,6 +87,39 @@ describe('vertesiaDevServerPlugin', () => {
             const plugin = getPlugin();
             const resolved = plugin.resolveId('/abs/skills/foo/SKILL.md', undefined);
             expect(resolved).toBe('/abs/skills/foo/SKILL.md');
+        });
+
+        // Vite requests a module by its root-relative URL once it has resolved it, e.g. when Vitest
+        // replays a cached transform, and the importer is then the root's `index.html`.
+        it('resolves a root-relative ?skill URL under the Vite root', () => {
+            writeSkillFile(join(workDir, 'src', 'skills'), 'my-skill');
+            const plugin = getPlugin();
+            plugin.configResolved({ root: workDir });
+            const resolved = plugin.resolveId('/src/skills/my-skill.md?skill', join(workDir, 'index.html'));
+            expect(resolved).toBe(join(workDir, 'src', 'skills', 'my-skill.md?skill'));
+        });
+
+        it('resolves a root-relative ?skills collection URL under the Vite root', () => {
+            mkdirSync(join(workDir, 'src', 'skills', 'group'), { recursive: true });
+            const plugin = getPlugin();
+            plugin.configResolved({ root: workDir });
+            expect(plugin.resolveId('/src/skills/group?skills', undefined)).toBe(
+                join(workDir, 'src', 'skills', 'group?skills'),
+            );
+        });
+
+        it('keeps an absolute filesystem path when nothing exists at that path under the root', () => {
+            const file = writeSkillFile(join(workDir, 'outside'), 'abs-skill');
+            const plugin = getPlugin();
+            plugin.configResolved({ root: join(workDir, 'app') });
+            expect(plugin.resolveId(`${file}?skill`, undefined)).toBe(`${file}?skill`);
+        });
+
+        it('keeps an absolute path that is already inside the root', () => {
+            const file = writeSkillFile(join(workDir, 'src'), 'inside');
+            const plugin = getPlugin();
+            plugin.configResolved({ root: workDir });
+            expect(plugin.resolveId(`${file}?skill`, undefined)).toBe(`${file}?skill`);
         });
 
         it('returns null for imports that no transformer matches', () => {
@@ -141,6 +183,26 @@ describe('vertesiaDevServerPlugin', () => {
             await expect(loadHook(plugin, join(skillDir, 'SKILL.md'))).rejects.toThrow(
                 /vertesia-dev-server: failed to transform/,
             );
+        });
+    });
+
+    describe('in a Vite server', () => {
+        it('transforms a module requested by its root-relative URL', async () => {
+            writeSkillFile(join(workDir, 'src', 'skills'), 'served-skill');
+            const server = await createServer({
+                root: workDir,
+                configFile: false,
+                logLevel: 'silent',
+                appType: 'custom',
+                server: { middlewareMode: true, hmr: false, ws: false },
+                plugins: [vertesiaDevServerPlugin({ skillCatalog: false })],
+            });
+            try {
+                const result = await server.transformRequest('/src/skills/served-skill.md?skill');
+                expect(result?.code).toContain('"name": "served-skill"');
+            } finally {
+                await server.close();
+            }
         });
     });
 

@@ -30,7 +30,7 @@
  * ```
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Plugin } from 'vite';
 import { loadSkillCatalog, readPackageJson, resolveSkillCatalogPath } from '../core/skill-markdown/load-catalog.js';
@@ -98,24 +98,24 @@ export function vertesiaDevServerPlugin(options: VertesiaDevServerPluginOptions 
         },
 
         /**
-         * Map relative query-style imports to absolute paths so Vite's loader
-         * sees a stable id keyed by the original file location. The query
-         * suffix is preserved in the id and used by `load` to pick the right
-         * transformer.
+         * Map relative and root-relative query-style imports to absolute paths so Vite's loader
+         * sees a stable id keyed by the original file location. The query suffix is preserved in
+         * the id and used by `load` to pick the right transformer.
          */
         resolveId(source: string, importer: string | undefined) {
             for (const transformer of transformers) {
                 if (!transformer.pattern.test(source)) continue;
-                // Only relative specifiers can be resolved meaningfully against an importer.
+                const suffix = source.match(transformer.pattern)?.[0] ?? '';
+                const base = source.slice(0, source.length - suffix.length);
                 if (source.startsWith('.') && importer) {
-                    const cleanSource = source.replace(transformer.pattern, '');
-                    const cleanImporter = importer.includes('?')
-                        ? importer.substring(0, importer.indexOf('?'))
-                        : importer;
-                    const baseDir = path.dirname(cleanImporter);
-                    const resolved = path.resolve(baseDir, cleanSource);
-                    const suffix = source.match(transformer.pattern)?.[0] ?? '';
-                    return resolved + suffix;
+                    return path.resolve(path.dirname(stripQuery(importer)), base) + suffix;
+                }
+                // Vite also requests modules by their root-relative URL (`/src/x.md?skill`), e.g.
+                // when it replays a cached transform. Like Vite's own resolver, read a `/` id under
+                // the root first, and as a filesystem path only when nothing exists there.
+                if (source.startsWith('/') && !source.startsWith(`${root}/`)) {
+                    const underRoot = path.join(root, base) + suffix;
+                    if (existsSync(stripQuery(underRoot))) return underRoot;
                 }
                 // Bare or absolute matches are returned as-is.
                 return source;
