@@ -48,8 +48,38 @@ vi.mock('@vertesia/ui/core', async (importOriginal) => {
     };
 });
 vi.mock('../../environment/SelectEnvironment.js', () => ({
-    SelectEnvironment: ({ disabled }: { disabled?: boolean }) => <input aria-label="Environment" disabled={disabled} />,
-    SelectModel: ({ disabled }: { disabled?: boolean }) => <input aria-label="Model" disabled={disabled} />,
+    SelectEnvironment: ({
+        disabled,
+        selectedEnvId,
+        onChange,
+    }: {
+        disabled?: boolean;
+        selectedEnvId?: string;
+        onChange: (env?: { id: string }) => void;
+    }) => (
+        <input
+            aria-label="Environment"
+            value={selectedEnvId ?? ''}
+            disabled={disabled}
+            onChange={(e) => onChange(e.target.value ? { id: e.target.value } : undefined)}
+        />
+    ),
+    SelectModel: ({
+        disabled,
+        selectedModelId,
+        onChange,
+    }: {
+        disabled?: boolean;
+        selectedModelId?: string;
+        onChange: (model?: { id: string }) => void;
+    }) => (
+        <input
+            aria-label="Model"
+            value={selectedModelId ?? ''}
+            disabled={disabled}
+            onChange={(e) => onChange(e.target.value ? { id: e.target.value } : undefined)}
+        />
+    ),
 }));
 
 afterEach(cleanup);
@@ -133,4 +163,72 @@ describe('intake policy profile forms', () => {
         ).toBe(true);
         expect(screen.getAllByText(/Profiles could not be loaded/)).toHaveLength(3);
     });
+});
+
+it('locks inherited routing and enables manual routing only for Ad hoc', async () => {
+    const user = userEvent.setup();
+    render(<Form section="conversion" />);
+    const select = screen.getByRole('combobox', { name: 'Model: Inference profile' });
+    const environment = screen.getByLabelText('Environment') as HTMLInputElement;
+    const model = screen.getByLabelText('Model') as HTMLInputElement;
+    expect(environment.disabled).toBe(true);
+    expect(model.disabled).toBe(true);
+    await user.selectOptions(select, screen.getByRole('option', { name: 'Ad hoc' }));
+    expect(environment.disabled).toBe(false);
+    expect(model.disabled).toBe(true);
+    await user.type(environment, 'custom-env');
+    expect(model.disabled).toBe(false);
+    await user.type(model, 'custom-model');
+    expect(JSON.parse(screen.getByTestId('policy').textContent ?? '{}').text_conversion.config).toEqual({
+        inference_profile: null,
+        environment: 'custom-env',
+        model: 'custom-model',
+    });
+    await user.selectOptions(select, '__inherit__');
+    expect(environment.disabled).toBe(true);
+    expect(model.disabled).toBe(true);
+    expect(JSON.parse(screen.getByTestId('policy').textContent ?? '{}')).toEqual({});
+});
+
+it('recognizes existing manual routing as Ad hoc without rewriting the policy', async () => {
+    const initial = {
+        media_analysis: {
+            image: {
+                interaction: 'Extractor@stable',
+                config: { environment: 'env', model: 'model', do_validate: true },
+            },
+        },
+    };
+    render(<Form initial={initial} />);
+    const select = screen.getByRole('combobox', { name: 'Image analysis: Inference profile' });
+    expect((select as HTMLSelectElement).value).toBe('__bypass__');
+    expect((screen.getAllByLabelText('Environment')[0] as HTMLInputElement).disabled).toBe(false);
+    expect(JSON.parse(screen.getByTestId('policy').textContent ?? '{}')).toEqual(initial);
+    await userEvent.setup().selectOptions(select, '__inherit__');
+    expect(JSON.parse(screen.getByTestId('policy').textContent ?? '{}')).toEqual({
+        media_analysis: {
+            image: {
+                interaction: 'Extractor@stable',
+                config: { do_validate: true },
+            },
+        },
+    });
+});
+
+it('edits and clears media interactions independently of profile configuration', async () => {
+    const user = userEvent.setup();
+    render(<Form initial={{ media_analysis: { image: { config: { inference_profile: profile.id } } } }} />);
+    for (const label of ['Image analysis', 'Audio analysis', 'Video analysis']) {
+        await user.type(screen.getByRole('textbox', { name: `${label}: Interaction` }), 'Analyzer@stable');
+    }
+    const result = () => JSON.parse(screen.getByTestId('policy').textContent ?? '{}');
+    expect(result()).toEqual({
+        media_analysis: {
+            image: { interaction: 'Analyzer@stable', config: { inference_profile: profile.id } },
+            audio: { interaction: 'Analyzer@stable' },
+            video: { interaction: 'Analyzer@stable' },
+        },
+    });
+    await user.clear(screen.getByRole('textbox', { name: 'Image analysis: Interaction' }));
+    expect(result().media_analysis.image).toEqual({ config: { inference_profile: profile.id } });
 });

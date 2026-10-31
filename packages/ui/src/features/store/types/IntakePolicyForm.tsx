@@ -62,19 +62,33 @@ export function IntakePolicyForm({
 
     if (section === 'media') {
         const media = [
-            { kind: 'image', title: t('intakePolicy.field.imageAnalysis') },
-            { kind: 'audio', title: t('intakePolicy.field.audioAnalysis') },
-            { kind: 'video', title: t('intakePolicy.field.videoAnalysis') },
+            { kind: 'image', title: t('intakePolicy.field.imageAnalysis'), fallback: 'sys:ExtractInformation' },
+            { kind: 'audio', title: t('intakePolicy.field.audioAnalysis'), fallback: 'sys:AnalyzeAudio' },
+            { kind: 'video', title: t('intakePolicy.field.videoAnalysis'), fallback: 'sys:AnalyzeVideo' },
         ] as const;
         return (
             <FormSurface>
-                {media.map(({ kind, title }, index) => (
+                {media.map(({ kind, title, fallback }, index) => (
                     <FormSection
                         key={kind}
                         title={title}
                         description={index === 0 ? t('intakePolicy.help.section.media') : undefined}
                         last={index === media.length - 1}
                     >
+                        <FormItem
+                            label={t('intakePolicy.field.interaction')}
+                            description={t('intakePolicy.help.mediaInteraction', { interaction: fallback })}
+                        >
+                            <Input
+                                aria-label={`${title}: ${t('intakePolicy.field.interaction')}`}
+                                value={policy.media_analysis?.[kind]?.interaction ?? ''}
+                                placeholder={t('intakePolicy.option.inherit')}
+                                onChange={(value) =>
+                                    setValue(['media_analysis', kind, 'interaction'], value || undefined)
+                                }
+                                disabled={readonly}
+                            />
+                        </FormItem>
                         <ModelConfigFields
                             title={title}
                             hideTitle
@@ -991,10 +1005,14 @@ function ModelConfigFields({
     const { t } = useUITranslation();
     const inherit = '__inherit__';
     const bypass = '__bypass__';
-    const selected = config?.inference_profile === null ? bypass : (config?.inference_profile ?? inherit);
+    // Older policies specified manual routing before profile selection was exposed.
+    const adHoc =
+        config?.inference_profile === null ||
+        (config?.inference_profile === undefined && !!(config?.environment || config?.model));
+    const selected = adHoc ? bypass : (config?.inference_profile ?? inherit);
     const profileIds = profileOptions.items.map((item) => item.id);
     if (selected !== inherit && selected !== bypass && !profileIds.includes(selected)) profileIds.push(selected);
-    const usingProfile = typeof config?.inference_profile === 'string';
+
     const profileLabel = (id: string) =>
         id === inherit
             ? t('intakePolicy.option.inherit')
@@ -1034,7 +1052,7 @@ function ModelConfigFields({
                         selectedEnvId={config?.environment}
                         onChange={(environment) => onChange(updateExecutionEnvironment(config, environment?.id))}
                         isClearable
-                        disabled={readonly || usingProfile}
+                        disabled={readonly || !adHoc}
                     />
                 </FormItem>
                 <FormItem label={t('intakePolicy.field.model')}>
@@ -1043,7 +1061,7 @@ function ModelConfigFields({
                         selectedModelId={config?.model}
                         onChange={(model) => onChange(updateExecutionModel(config, model?.id))}
                         isClearable
-                        disabled={readonly || usingProfile || !config?.environment}
+                        disabled={readonly || !adHoc || !config?.environment}
                     />
                 </FormItem>
             </div>

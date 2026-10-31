@@ -85,7 +85,7 @@ export function updateExecutionProfile(
     const next = { ...config };
     if (profile === undefined) delete next.inference_profile;
     else next.inference_profile = profile;
-    if (typeof profile === 'string') {
+    if (profile !== null) {
         delete next.environment;
         delete next.model;
         delete next.model_options;

@@ -156,3 +156,16 @@ describe('inference profile selection', () => {
         });
     });
 });
+
+it('clears manual routing and model options when returning to inheritance', () => {
+    const config = {
+        inference_profile: null,
+        environment: 'env',
+        model: 'model',
+        model_options: MODEL_OPTIONS,
+        do_validate: true,
+    };
+    expect(updateExecutionProfile(config, undefined)).toEqual({ do_validate: true });
+    expect(config.environment).toBe('env');
+    expect(updateExecutionProfile({ environment: 'env', model: 'model' }, undefined)).toBeUndefined();
+});
