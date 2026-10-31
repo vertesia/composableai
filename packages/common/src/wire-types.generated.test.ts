@@ -1915,6 +1915,71 @@ interface Checks {
         W.StripeBillingDisabled,
         z.infer<typeof import('./api-schemas/account.js').StripeBillingDisabledSchema>
     >;
+    NotificationKind: Same<
+        W.NotificationKind,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationKindSchema>
+    >;
+    NotificationCategory: Same<
+        W.NotificationCategory,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationCategorySchema>
+    >;
+    NotificationChannel: Same<
+        W.NotificationChannel,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationChannelSchema>
+    >;
+    NotificationRef: Same<
+        W.NotificationRef,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationRefSchema>
+    >;
+    NotificationPayload: Same<
+        W.NotificationPayload,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationPayloadSchema>
+    >;
+    Notification: Same<W.Notification, z.infer<typeof import('./api-schemas/notifications.js').NotificationSchema>>;
+    ListNotificationsQuery: Same<
+        W.ListNotificationsQuery,
+        z.infer<typeof import('./api-schemas/notifications.js').ListNotificationsQuerySchema>
+    >;
+    ListNotificationsResponse: Same<
+        W.ListNotificationsResponse,
+        z.infer<typeof import('./api-schemas/notifications.js').ListNotificationsResponseSchema>
+    >;
+    NotificationCounts: Same<
+        W.NotificationCounts,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationCountsSchema>
+    >;
+    MarkNotificationsSeenPayload: Same<
+        W.MarkNotificationsSeenPayload,
+        z.infer<typeof import('./api-schemas/notifications.js').MarkNotificationsSeenPayloadSchema>
+    >;
+    MarkNotificationsReadPayload: Same<
+        W.MarkNotificationsReadPayload,
+        z.infer<typeof import('./api-schemas/notifications.js').MarkNotificationsReadPayloadSchema>
+    >;
+    MarkAllNotificationsReadPayload: Same<
+        W.MarkAllNotificationsReadPayload,
+        z.infer<typeof import('./api-schemas/notifications.js').MarkAllNotificationsReadPayloadSchema>
+    >;
+    ArchiveNotificationsPayload: Same<
+        W.ArchiveNotificationsPayload,
+        z.infer<typeof import('./api-schemas/notifications.js').ArchiveNotificationsPayloadSchema>
+    >;
+    NotificationUpdateResult: Same<
+        W.NotificationUpdateResult,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationUpdateResultSchema>
+    >;
+    NotificationChannelPreferences: Same<
+        W.NotificationChannelPreferences,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationChannelPreferencesSchema>
+    >;
+    NotificationPreferences: Same<
+        W.NotificationPreferences,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationPreferencesSchema>
+    >;
+    NotificationStreamEvent: Same<
+        W.NotificationStreamEvent,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationStreamEventSchema>
+    >;
     OAuthClientType: Same<
         W.OAuthClientType,
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientTypeSchema>
@@ -6227,6 +6292,74 @@ interface Checks {
         W.ApiComponentTypes['ListTasksQuery'],
         z.infer<typeof import('./api-schemas/task.js').ListTasksQuerySchema>
     >;
+    'component:NotificationKind': Same<
+        W.ApiComponentTypes['NotificationKind'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationKindSchema>
+    >;
+    'component:NotificationCategory': Same<
+        W.ApiComponentTypes['NotificationCategory'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationCategorySchema>
+    >;
+    'component:NotificationChannel': Same<
+        W.ApiComponentTypes['NotificationChannel'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationChannelSchema>
+    >;
+    'component:NotificationRef': Same<
+        W.ApiComponentTypes['NotificationRef'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationRefSchema>
+    >;
+    'component:NotificationPayload': Same<
+        W.ApiComponentTypes['NotificationPayload'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationPayloadSchema>
+    >;
+    'component:Notification': Same<
+        W.ApiComponentTypes['Notification'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationSchema>
+    >;
+    'component:ListNotificationsQuery': Same<
+        W.ApiComponentTypes['ListNotificationsQuery'],
+        z.infer<typeof import('./api-schemas/notifications.js').ListNotificationsQuerySchema>
+    >;
+    'component:ListNotificationsResponse': Same<
+        W.ApiComponentTypes['ListNotificationsResponse'],
+        z.infer<typeof import('./api-schemas/notifications.js').ListNotificationsResponseSchema>
+    >;
+    'component:NotificationCounts': Same<
+        W.ApiComponentTypes['NotificationCounts'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationCountsSchema>
+    >;
+    'component:MarkNotificationsSeenPayload': Same<
+        W.ApiComponentTypes['MarkNotificationsSeenPayload'],
+        z.infer<typeof import('./api-schemas/notifications.js').MarkNotificationsSeenPayloadSchema>
+    >;
+    'component:MarkNotificationsReadPayload': Same<
+        W.ApiComponentTypes['MarkNotificationsReadPayload'],
+        z.infer<typeof import('./api-schemas/notifications.js').MarkNotificationsReadPayloadSchema>
+    >;
+    'component:MarkAllNotificationsReadPayload': Same<
+        W.ApiComponentTypes['MarkAllNotificationsReadPayload'],
+        z.infer<typeof import('./api-schemas/notifications.js').MarkAllNotificationsReadPayloadSchema>
+    >;
+    'component:ArchiveNotificationsPayload': Same<
+        W.ApiComponentTypes['ArchiveNotificationsPayload'],
+        z.infer<typeof import('./api-schemas/notifications.js').ArchiveNotificationsPayloadSchema>
+    >;
+    'component:NotificationUpdateResult': Same<
+        W.ApiComponentTypes['NotificationUpdateResult'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationUpdateResultSchema>
+    >;
+    'component:NotificationChannelPreferences': Same<
+        W.ApiComponentTypes['NotificationChannelPreferences'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationChannelPreferencesSchema>
+    >;
+    'component:NotificationPreferences': Same<
+        W.ApiComponentTypes['NotificationPreferences'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationPreferencesSchema>
+    >;
+    'component:NotificationStreamEvent': Same<
+        W.ApiComponentTypes['NotificationStreamEvent'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationStreamEventSchema>
+    >;
     'component:ColumnLayout': Same<
         W.ApiComponentTypes['ColumnLayout'],
         z.infer<typeof import('./api-schemas/store.js').ColumnLayoutSchema>
@@ -10249,6 +10382,23 @@ const checks: Checks = {
     StripeBillingStatusResponse: true,
     StripeBillingEnabled: true,
     StripeBillingDisabled: true,
+    NotificationKind: true,
+    NotificationCategory: true,
+    NotificationChannel: true,
+    NotificationRef: true,
+    NotificationPayload: true,
+    Notification: true,
+    ListNotificationsQuery: true,
+    ListNotificationsResponse: true,
+    NotificationCounts: true,
+    MarkNotificationsSeenPayload: true,
+    MarkNotificationsReadPayload: true,
+    MarkAllNotificationsReadPayload: true,
+    ArchiveNotificationsPayload: true,
+    NotificationUpdateResult: true,
+    NotificationChannelPreferences: true,
+    NotificationPreferences: true,
+    NotificationStreamEvent: true,
     OAuthClientType: true,
     OAuthClientStatus: true,
     OAuthRegistrationSource: true,
@@ -11405,6 +11555,23 @@ const checks: Checks = {
     'component:UpdateTaskPayload': true,
     'component:CompleteTaskPayload': true,
     'component:ListTasksQuery': true,
+    'component:NotificationKind': true,
+    'component:NotificationCategory': true,
+    'component:NotificationChannel': true,
+    'component:NotificationRef': true,
+    'component:NotificationPayload': true,
+    'component:Notification': true,
+    'component:ListNotificationsQuery': true,
+    'component:ListNotificationsResponse': true,
+    'component:NotificationCounts': true,
+    'component:MarkNotificationsSeenPayload': true,
+    'component:MarkNotificationsReadPayload': true,
+    'component:MarkAllNotificationsReadPayload': true,
+    'component:ArchiveNotificationsPayload': true,
+    'component:NotificationUpdateResult': true,
+    'component:NotificationChannelPreferences': true,
+    'component:NotificationPreferences': true,
+    'component:NotificationStreamEvent': true,
     'component:ColumnLayout': true,
     'component:ContentTypeEditingPolicy': true,
     'component:ContentObjectTypeStatus': true,
@@ -12282,6 +12449,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2558);
+        expect(Object.keys(checks)).toHaveLength(2592);
     });
 });

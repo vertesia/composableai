@@ -27558,6 +27558,20 @@
       },
       "ask_id": {
         "type": "string"
+      },
+      "request_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512,
+        "description": "Stable key of the agent request this task answers (`<run_id>:<tool_use_id>`). Unique in the project: creating a task whose source repeats an existing request key returns that task instead of creating a second one."
+      },
+      "request_id": {
+        "type": "string",
+        "description": "Tool-use id of the agent request (the REQUEST_INPUT message) this task answers."
+      },
+      "approval_key": {
+        "type": "string",
+        "description": "For a tool approval task, the approval key (`tool_name:target`) the decision applies to."
       }
     },
     "required": [
@@ -27606,6 +27620,17 @@
       "due_at": {
         "type": "string",
         "format": "date-time"
+      },
+      "assignment_rev": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Assignment revision: 1 at creation, incremented every time the assignee changes."
+      },
+      "assigned_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the current assignment revision started."
       },
       "created_at": {
         "type": "string",
@@ -27766,6 +27791,372 @@
       }
     },
     "additionalProperties": false
+  },
+  "NotificationKind": {
+    "type": "string",
+    "enum": [
+      "agent.question",
+      "agent.approval",
+      "agent.finished",
+      "agent.turn_finished",
+      "task.assigned",
+      "intake.finished"
+    ],
+    "description": "What a notification is about. Each kind belongs to one category."
+  },
+  "NotificationCategory": {
+    "type": "string",
+    "enum": [
+      "actions",
+      "failures",
+      "results"
+    ],
+    "description": "Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` report failed runs or intakes, `results` report successful ones."
+  },
+  "NotificationChannel": {
+    "type": "string",
+    "enum": [
+      "in_app"
+    ],
+    "description": "A delivery channel. Only the in-app inbox exists today."
+  },
+  "NotificationRef": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "minLength": 1
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "required": [
+      "type",
+      "id"
+    ],
+    "additionalProperties": false,
+    "description": "A typed reference to the item a notification is about."
+  },
+  "NotificationPayload": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string"
+      },
+      "body": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "description": "Outcome of the item, for example `completed` or `failed`."
+      },
+      "agent_name": {
+        "type": "string"
+      },
+      "object_name": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "title"
+    ],
+    "additionalProperties": false,
+    "description": "Display fields of a notification, copied from the item when the notification was written."
+  },
+  "Notification": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "kind": {
+        "$ref": "#/components/schemas/NotificationKind"
+      },
+      "category": {
+        "$ref": "#/components/schemas/NotificationCategory"
+      },
+      "occurrence": {
+        "$ref": "#/components/schemas/NotificationRef",
+        "description": "The exact occurrence acknowledged by `POST /notifications/read` with `occurrences`."
+      },
+      "subject": {
+        "$ref": "#/components/schemas/NotificationRef",
+        "description": "Where the notification links to."
+      },
+      "parent": {
+        "$ref": "#/components/schemas/NotificationRef",
+        "description": "Lifecycle parent, usually the agent run."
+      },
+      "actor": {
+        "type": "string",
+        "description": "Principal that caused the notification, when a person."
+      },
+      "payload": {
+        "$ref": "#/components/schemas/NotificationPayload"
+      },
+      "payload_version": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "occurred_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "seen_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "read_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "archived_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "resolved_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the item stopped needing attention (task closed or reassigned, run ended)."
+      }
+    },
+    "required": [
+      "id",
+      "kind",
+      "category",
+      "occurrence",
+      "subject",
+      "payload",
+      "payload_version",
+      "occurred_at",
+      "created_at"
+    ],
+    "additionalProperties": false,
+    "description": "One notification in the current user’s project inbox."
+  },
+  "ListNotificationsQuery": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "number",
+        "minimum": 0,
+        "multipleOf": 1
+      },
+      "cursor": {
+        "type": "string",
+        "description": "The `next_cursor` of the previous page."
+      },
+      "unread": {
+        "type": "boolean",
+        "description": "Only notifications that were not read."
+      },
+      "archived": {
+        "type": "boolean",
+        "description": "Archived notifications instead of the inbox."
+      },
+      "category": {
+        "$ref": "#/components/schemas/NotificationCategory"
+      }
+    },
+    "additionalProperties": false
+  },
+  "ListNotificationsResponse": {
+    "type": "object",
+    "properties": {
+      "notifications": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Notification"
+        }
+      },
+      "next_cursor": {
+        "type": "string"
+      },
+      "read_all_before": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Server time when this page was read. Pass it to `POST /notifications/read-all` so notifications written afterwards stay unread."
+      }
+    },
+    "required": [
+      "notifications",
+      "read_all_before"
+    ],
+    "additionalProperties": false
+  },
+  "NotificationCounts": {
+    "type": "object",
+    "properties": {
+      "unseen": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Inbox notifications not seen, archived or resolved. Counted up to 100."
+      },
+      "needs_action": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Open tasks assigned to the user. Counted up to 100."
+      }
+    },
+    "required": [
+      "unseen",
+      "needs_action"
+    ],
+    "additionalProperties": false
+  },
+  "MarkNotificationsSeenPayload": {
+    "type": "object",
+    "properties": {
+      "ids": {
+        "minItems": 1,
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "ids"
+    ],
+    "additionalProperties": false
+  },
+  "MarkNotificationsReadPayload": {
+    "type": "object",
+    "properties": {
+      "ids": {
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "occurrences": {
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/NotificationRef"
+        },
+        "description": "Occurrences the client rendered. An occurrence with no notification yet is remembered for a day and applied when its notification is written."
+      }
+    },
+    "additionalProperties": false
+  },
+  "MarkAllNotificationsReadPayload": {
+    "type": "object",
+    "properties": {
+      "before": {
+        "type": "string",
+        "format": "date-time",
+        "description": "The `read_all_before` of the list the user saw."
+      }
+    },
+    "required": [
+      "before"
+    ],
+    "additionalProperties": false
+  },
+  "ArchiveNotificationsPayload": {
+    "type": "object",
+    "properties": {
+      "ids": {
+        "minItems": 1,
+        "maxItems": 200,
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "ids"
+    ],
+    "additionalProperties": false
+  },
+  "NotificationUpdateResult": {
+    "type": "object",
+    "properties": {
+      "updated": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "held": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Occurrences acknowledged before their notification existed."
+      }
+    },
+    "required": [
+      "updated"
+    ],
+    "additionalProperties": false
+  },
+  "NotificationChannelPreferences": {
+    "type": "object",
+    "properties": {
+      "in_app": {
+        "type": "boolean"
+      }
+    },
+    "additionalProperties": false
+  },
+  "NotificationPreferences": {
+    "type": "object",
+    "properties": {
+      "categories": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/NotificationChannelPreferences"
+        },
+        "description": "Per category (`actions`, `failures`, `results`), the channels it is delivered to."
+      },
+      "kinds": {
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/components/schemas/NotificationChannelPreferences"
+        },
+        "description": "Per kind, an override of its category. Today only `agent.turn_finished` is offered."
+      }
+    },
+    "required": [
+      "categories",
+      "kinds"
+    ],
+    "additionalProperties": false,
+    "description": "The user’s notification preferences in the project. Unset channels are on."
+  },
+  "NotificationStreamEvent": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "changed",
+          "heartbeat"
+        ]
+      },
+      "emitted_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "type",
+      "emitted_at"
+    ],
+    "additionalProperties": false,
+    "description": "A server-sent event: the inbox changed and should be fetched again."
   },
   "ContentObjectTypeItem": {
     "type": "object",
