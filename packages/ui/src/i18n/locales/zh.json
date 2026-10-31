@@ -1285,5 +1285,19 @@
     "agent.runBudgetRemainingUsd": "剩余运行预算：{{remaining}}美元 / {{limit}}美元",
     "agent.runBudgetRemainingFallback": "剩余备用令牌：{{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "剩余运行预算：{{remaining}} / {{limit}} 令牌",
-    "agent.runBudgetIncomplete": "计费统计不完整，剩余预算可能偏高。"
+    "agent.runBudgetIncomplete": "计费统计不完整，剩余预算可能偏高。",
+    "modelOptions.min": "最小值：{{value}}",
+    "modelOptions.max": "最大值：{{value}}",
+    "modelOptions.default": "默认值：{{value}}",
+    "modelOptions.reset": "重置",
+    "modelOptions.resetLabel": "将 {{label}} 重置为模型默认值",
+    "modelOptions.modelDefault": "模型默认值",
+    "modelOptions.numericListError": "每个值都必须是数字。",
+    "modelOptions.jsonObjectError": "值必须是 JSON 对象。",
+    "modelOptions.unsupported": "无法识别的选项类型",
+    "modelOptions.loadError": "无法加载模型选项，请检查所选环境。",
+    "modelOptions.title": "模型选项",
+    "intakePolicy.option.databaseInteraction": "数据库交互",
+    "intakePolicy.option.codeInteraction": "代码交互",
+    "intakePolicy.error.loadInteractions": "无法加载交互。现有引用会保留。"
 }

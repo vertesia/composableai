@@ -1285,5 +1285,19 @@
     "agent.runBudgetRemainingUsd": "Kalan çalışma bütçesi: {{remaining}} $ / {{limit}} $",
     "agent.runBudgetRemainingFallback": "Kalan yedek token: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Kalan çalışma bütçesi: {{remaining}} / {{limit}} token",
-    "agent.runBudgetIncomplete": "Hesaplama eksik; kalan bütçe olduğundan yüksek görünebilir."
+    "agent.runBudgetIncomplete": "Hesaplama eksik; kalan bütçe olduğundan yüksek görünebilir.",
+    "modelOptions.min": "En az: {{value}}",
+    "modelOptions.max": "En çok: {{value}}",
+    "modelOptions.default": "Varsayılan: {{value}}",
+    "modelOptions.reset": "Sıfırla",
+    "modelOptions.resetLabel": "{{label}} değerini model varsayılanına sıfırla",
+    "modelOptions.modelDefault": "Model varsayılanı",
+    "modelOptions.numericListError": "Her değer bir sayı olmalıdır.",
+    "modelOptions.jsonObjectError": "Değer bir JSON nesnesi olmalıdır.",
+    "modelOptions.unsupported": "Bilinmeyen seçenek türü",
+    "modelOptions.loadError": "Model seçenekleri yüklenemedi. Seçilen ortamı kontrol edin.",
+    "modelOptions.title": "Model seçenekleri",
+    "intakePolicy.option.databaseInteraction": "Veritabanı etkileşimleri",
+    "intakePolicy.option.codeInteraction": "Kod etkileşimleri",
+    "intakePolicy.error.loadInteractions": "Etkileşimler yüklenemedi. Mevcut başvurular korunur."
 }

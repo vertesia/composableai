@@ -1297,5 +1297,19 @@
     "agent.runBudgetRemainingUsd": "Budget restant : {{remaining}} $ / {{limit}} $",
     "agent.runBudgetRemainingFallback": "Jetons de secours restants : {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Budget restant : {{remaining}} / {{limit}} jetons",
-    "agent.runBudgetIncomplete": "Comptabilisation incomplète ; le budget restant peut être surestimé."
+    "agent.runBudgetIncomplete": "Comptabilisation incomplète ; le budget restant peut être surestimé.",
+    "modelOptions.min": "Min. : {{value}}",
+    "modelOptions.max": "Max. : {{value}}",
+    "modelOptions.default": "Défaut : {{value}}",
+    "modelOptions.reset": "Réinitialiser",
+    "modelOptions.resetLabel": "Rétablir {{label}} à la valeur du modèle",
+    "modelOptions.modelDefault": "Valeur du modèle",
+    "modelOptions.numericListError": "Chaque valeur doit être un nombre.",
+    "modelOptions.jsonObjectError": "La valeur doit être un objet JSON.",
+    "modelOptions.unsupported": "Type d’option non reconnu",
+    "modelOptions.loadError": "Impossible de charger les options du modèle. Vérifiez l’environnement choisi.",
+    "modelOptions.title": "Options du modèle",
+    "intakePolicy.option.databaseInteraction": "Interactions en base",
+    "intakePolicy.option.codeInteraction": "Interactions de code",
+    "intakePolicy.error.loadInteractions": "Impossible de charger les interactions. Les références existantes sont conservées."
 }

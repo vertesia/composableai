@@ -1285,5 +1285,19 @@
     "agent.runBudgetRemainingUsd": "Verbleibendes Laufbudget: {{remaining}} $ / {{limit}} $",
     "agent.runBudgetRemainingFallback": "Verbleibende Ersatz-Tokens: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Verbleibendes Laufbudget: {{remaining}} / {{limit}} Tokens",
-    "agent.runBudgetIncomplete": "Abrechnung unvollständig; das verbleibende Budget kann zu hoch sein."
+    "agent.runBudgetIncomplete": "Abrechnung unvollständig; das verbleibende Budget kann zu hoch sein.",
+    "modelOptions.min": "Min.: {{value}}",
+    "modelOptions.max": "Max.: {{value}}",
+    "modelOptions.default": "Standard: {{value}}",
+    "modelOptions.reset": "Zurücksetzen",
+    "modelOptions.resetLabel": "{{label}} auf den Modellstandard zurücksetzen",
+    "modelOptions.modelDefault": "Modellstandard",
+    "modelOptions.numericListError": "Jeder Wert muss eine Zahl sein.",
+    "modelOptions.jsonObjectError": "Der Wert muss ein JSON-Objekt sein.",
+    "modelOptions.unsupported": "Unbekannter Optionstyp",
+    "modelOptions.loadError": "Modelloptionen konnten nicht geladen werden. Prüfen Sie die ausgewählte Umgebung.",
+    "modelOptions.title": "Modelloptionen",
+    "intakePolicy.option.databaseInteraction": "Datenbankinteraktionen",
+    "intakePolicy.option.codeInteraction": "Code-Interaktionen",
+    "intakePolicy.error.loadInteractions": "Interaktionen konnten nicht geladen werden. Vorhandene Referenzen bleiben erhalten."
 }

@@ -26,7 +26,13 @@ import addFormats from 'ajv-formats';
 import type { TFunction } from 'i18next';
 import { Braces, CheckCircle2, FileText, RotateCcw, WandSparkles } from 'lucide-react';
 import { type ReactNode, useMemo, useRef, useState } from 'react';
-import { IntakePolicyForm, type IntakePolicyFormSection, type IntakeProfileChoices } from './IntakePolicyForm.js';
+import {
+    type IntakeInteractionChoices,
+    IntakePolicyForm,
+    type IntakePolicyFormSection,
+    type IntakeProfileChoices,
+} from './IntakePolicyForm.js';
+import { loadIntakeInteractions } from './intake-policy-catalog.js';
 
 /** A tab rendered above the policy tabs. The owner supplies its own Panel and actions. */
 export interface IntakePolicyEditorTab {
@@ -309,6 +315,22 @@ export function IntakePolicyEditor({
         loading: loadingProfiles,
         error: !!profileError,
     };
+    const {
+        data: catalog,
+        isLoading: loadingInteractions,
+        error: interactionError,
+    } = useFetch(
+        async () => ({
+            projectId: project?.id,
+            ...(await loadIntakeInteractions(client.interactions.catalog)),
+        }),
+        [client, project?.id],
+    );
+    const interactionOptions: IntakeInteractionChoices = {
+        items: catalog?.projectId === project?.id ? (catalog?.items ?? []) : [],
+        loading: loadingInteractions,
+        error: !!interactionError || (catalog?.projectId === project?.id && !!catalog?.failed),
+    };
     const { t } = useUITranslation();
     const toast = useToast();
     const { theme } = useTheme();
@@ -559,6 +581,7 @@ export function IntakePolicyEditor({
         },
         withPolicyPanel,
         profileOptions,
+        interactionOptions,
     );
 
     return (
@@ -594,6 +617,7 @@ function createEditorTabs(
     },
     wrap: (content: ReactNode, fill?: boolean) => ReactNode,
     profileOptions: IntakeProfileChoices,
+    interactionOptions: IntakeInteractionChoices,
 ) {
     const formTab = (name: IntakePolicyFormSection, label: string) => ({
         name,
@@ -605,6 +629,7 @@ function createEditorTabs(
                 onChange={onChange}
                 readonly={readonly}
                 profileOptions={profileOptions}
+                interactionOptions={interactionOptions}
             />,
         ),
     });

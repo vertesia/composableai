@@ -1311,5 +1311,19 @@
     "agent.runBudgetRemainingUsd": "Остаток бюджета: {{remaining}} $ / {{limit}} $",
     "agent.runBudgetRemainingFallback": "Осталось резервных токенов: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Остаток бюджета: {{remaining}} / {{limit}} токенов",
-    "agent.runBudgetIncomplete": "Учёт неполный; остаток бюджета может быть завышен."
+    "agent.runBudgetIncomplete": "Учёт неполный; остаток бюджета может быть завышен.",
+    "modelOptions.min": "Мин.: {{value}}",
+    "modelOptions.max": "Макс.: {{value}}",
+    "modelOptions.default": "По умолчанию: {{value}}",
+    "modelOptions.reset": "Сбросить",
+    "modelOptions.resetLabel": "Сбросить {{label}} до значения модели",
+    "modelOptions.modelDefault": "Значение модели",
+    "modelOptions.numericListError": "Каждое значение должно быть числом.",
+    "modelOptions.jsonObjectError": "Значение должно быть объектом JSON.",
+    "modelOptions.unsupported": "Неизвестный тип параметра",
+    "modelOptions.loadError": "Не удалось загрузить параметры модели. Проверьте выбранную среду.",
+    "modelOptions.title": "Параметры модели",
+    "intakePolicy.option.databaseInteraction": "Взаимодействия из базы данных",
+    "intakePolicy.option.codeInteraction": "Взаимодействия из кода",
+    "intakePolicy.error.loadInteractions": "Не удалось загрузить взаимодействия. Существующие ссылки сохранены."
 }

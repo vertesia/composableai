@@ -82,6 +82,8 @@ vi.mock('../../environment/SelectEnvironment.js', () => ({
     ),
 }));
 
+vi.mock('./IntakeModelOptions.js', () => ({ IntakeModelOptions: () => <div>Model options</div> }));
+
 afterEach(cleanup);
 const profile = {
     id: 'a'.repeat(24),
@@ -112,6 +114,20 @@ function Form({
                 onChange={setPolicy}
                 readonly={readonly}
                 profileOptions={{ items: [profile], error }}
+                interactionOptions={{
+                    items: [
+                        {
+                            type: 'stored',
+                            id: 'stored-1',
+                            name: 'Analyzer',
+                            title: 'Database analyzer',
+                            version: 2,
+                            published: true,
+                            tags: ['stable'],
+                        },
+                        { type: 'sys', id: 'sys:AnalyzeImage', name: 'AnalyzeImage', title: 'Code analyzer', tags: [] },
+                    ],
+                }}
             />
             <output data-testid="policy">{JSON.stringify(policy)}</output>
         </I18nProvider>
@@ -138,7 +154,7 @@ describe('intake policy profile forms', () => {
         render(<Form section="conversion" />);
         const select = screen.getByRole('combobox', { name: 'Model: Inference profile' });
         await user.selectOptions(select, profile.id);
-        expect((screen.getByLabelText('Environment') as HTMLInputElement).disabled).toBe(true);
+        expect(screen.queryByLabelText('Environment')).toBeNull();
         await user.selectOptions(select, '__bypass__');
         expect(
             JSON.parse(screen.getByTestId('policy').textContent ?? '{}').text_conversion.config.inference_profile,
@@ -169,11 +185,11 @@ it('locks inherited routing and enables manual routing only for Ad hoc', async (
     const user = userEvent.setup();
     render(<Form section="conversion" />);
     const select = screen.getByRole('combobox', { name: 'Model: Inference profile' });
+    expect(screen.queryByLabelText('Environment')).toBeNull();
+    expect(screen.queryByLabelText('Model')).toBeNull();
+    await user.selectOptions(select, screen.getByRole('option', { name: 'Ad hoc' }));
     const environment = screen.getByLabelText('Environment') as HTMLInputElement;
     const model = screen.getByLabelText('Model') as HTMLInputElement;
-    expect(environment.disabled).toBe(true);
-    expect(model.disabled).toBe(true);
-    await user.selectOptions(select, screen.getByRole('option', { name: 'Ad hoc' }));
     expect(environment.disabled).toBe(false);
     expect(model.disabled).toBe(true);
     await user.type(environment, 'custom-env');
@@ -185,8 +201,8 @@ it('locks inherited routing and enables manual routing only for Ad hoc', async (
         model: 'custom-model',
     });
     await user.selectOptions(select, '__inherit__');
-    expect(environment.disabled).toBe(true);
-    expect(model.disabled).toBe(true);
+    expect(screen.queryByLabelText('Environment')).toBeNull();
+    expect(screen.queryByLabelText('Model')).toBeNull();
     expect(JSON.parse(screen.getByTestId('policy').textContent ?? '{}')).toEqual({});
 });
 
@@ -219,7 +235,7 @@ it('edits and clears media interactions independently of profile configuration',
     const user = userEvent.setup();
     render(<Form initial={{ media_analysis: { image: { config: { inference_profile: profile.id } } } }} />);
     for (const label of ['Image analysis', 'Audio analysis', 'Video analysis']) {
-        await user.type(screen.getByRole('textbox', { name: `${label}: Interaction` }), 'Analyzer@stable');
+        await user.selectOptions(screen.getByRole('combobox', { name: `${label}: Interaction` }), 'Analyzer@stable');
     }
     const result = () => JSON.parse(screen.getByTestId('policy').textContent ?? '{}');
     expect(result()).toEqual({
@@ -229,6 +245,20 @@ it('edits and clears media interactions independently of profile configuration',
             video: { interaction: 'Analyzer@stable' },
         },
     });
-    await user.clear(screen.getByRole('textbox', { name: 'Image analysis: Interaction' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Image analysis: Interaction' }), '__inherit__');
     expect(result().media_analysis.image).toEqual({ config: { inference_profile: profile.id } });
+});
+
+it('selects code and versioned database interactions using executable references', async () => {
+    const user = userEvent.setup();
+    render(<Form />);
+    const select = screen.getByRole('combobox', { name: 'Image analysis: Interaction' });
+    await user.selectOptions(select, 'sys:AnalyzeImage');
+    expect(JSON.parse(screen.getByTestId('policy').textContent ?? '{}').media_analysis.image.interaction).toBe(
+        'sys:AnalyzeImage',
+    );
+    await user.selectOptions(select, 'Analyzer@2');
+    expect(JSON.parse(screen.getByTestId('policy').textContent ?? '{}').media_analysis.image.interaction).toBe(
+        'Analyzer@2',
+    );
 });

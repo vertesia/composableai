@@ -1337,5 +1337,19 @@
     "agent.runBudgetRemainingUsd": "ميزانية التشغيل المتبقية: {{remaining}} دولار / {{limit}} دولار",
     "agent.runBudgetRemainingFallback": "الرموز الاحتياطية المتبقية: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "ميزانية التشغيل المتبقية: {{remaining}} / {{limit}} رمز",
-    "agent.runBudgetIncomplete": "الاحتساب غير مكتمل؛ قد تظهر الميزانية المتبقية أعلى من قيمتها الفعلية."
+    "agent.runBudgetIncomplete": "الاحتساب غير مكتمل؛ قد تظهر الميزانية المتبقية أعلى من قيمتها الفعلية.",
+    "modelOptions.min": "الحد الأدنى: {{value}}",
+    "modelOptions.max": "الحد الأقصى: {{value}}",
+    "modelOptions.default": "الافتراضي: {{value}}",
+    "modelOptions.reset": "إعادة تعيين",
+    "modelOptions.resetLabel": "إعادة {{label}} إلى القيمة الافتراضية للنموذج",
+    "modelOptions.modelDefault": "القيمة الافتراضية للنموذج",
+    "modelOptions.numericListError": "يجب أن تكون كل قيمة رقمًا.",
+    "modelOptions.jsonObjectError": "يجب أن تكون القيمة كائن JSON.",
+    "modelOptions.unsupported": "نوع خيار غير معروف",
+    "modelOptions.loadError": "تعذر تحميل خيارات النموذج. تحقق من البيئة المحددة.",
+    "modelOptions.title": "خيارات النموذج",
+    "intakePolicy.option.databaseInteraction": "تفاعلات قاعدة البيانات",
+    "intakePolicy.option.codeInteraction": "تفاعلات الشفرة",
+    "intakePolicy.error.loadInteractions": "تعذر تحميل التفاعلات. يتم الاحتفاظ بالمراجع الحالية."
 }

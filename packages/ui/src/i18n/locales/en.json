@@ -1285,5 +1285,19 @@
     "agent.runBudgetRemainingUsd": "Run budget remaining: ${{remaining}} / ${{limit}}",
     "agent.runBudgetRemainingFallback": "Fallback tokens remaining: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Run budget remaining: {{remaining}} / {{limit}} tokens",
-    "agent.runBudgetIncomplete": "Accounting incomplete; remaining budget may be overstated."
+    "agent.runBudgetIncomplete": "Accounting incomplete; remaining budget may be overstated.",
+    "modelOptions.min": "Min: {{value}}",
+    "modelOptions.max": "Max: {{value}}",
+    "modelOptions.default": "Default: {{value}}",
+    "modelOptions.reset": "Reset",
+    "modelOptions.resetLabel": "Reset {{label}} to model default",
+    "modelOptions.modelDefault": "Model default",
+    "modelOptions.numericListError": "Each value must be a number.",
+    "modelOptions.jsonObjectError": "Value must be a JSON object.",
+    "modelOptions.unsupported": "Option type not recognised",
+    "modelOptions.loadError": "Could not load model options. Check the selected environment.",
+    "modelOptions.title": "Model options",
+    "intakePolicy.option.databaseInteraction": "Database interactions",
+    "intakePolicy.option.codeInteraction": "Code interactions",
+    "intakePolicy.error.loadInteractions": "Interactions could not be loaded. Existing references are preserved."
 }

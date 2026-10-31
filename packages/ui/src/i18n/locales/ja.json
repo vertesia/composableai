@@ -1285,5 +1285,19 @@
     "agent.runBudgetRemainingUsd": "残りの実行予算：{{remaining}}ドル / {{limit}}ドル",
     "agent.runBudgetRemainingFallback": "残りの予備トークン：{{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "残りの実行予算：{{remaining}} / {{limit}}トークン",
-    "agent.runBudgetIncomplete": "集計が不完全なため、残りの予算が実際より多く表示される場合があります。"
+    "agent.runBudgetIncomplete": "集計が不完全なため、残りの予算が実際より多く表示される場合があります。",
+    "modelOptions.min": "最小: {{value}}",
+    "modelOptions.max": "最大: {{value}}",
+    "modelOptions.default": "既定: {{value}}",
+    "modelOptions.reset": "リセット",
+    "modelOptions.resetLabel": "{{label}} をモデルの既定値に戻す",
+    "modelOptions.modelDefault": "モデルの既定値",
+    "modelOptions.numericListError": "各値は数値である必要があります。",
+    "modelOptions.jsonObjectError": "値は JSON オブジェクトである必要があります。",
+    "modelOptions.unsupported": "不明なオプション形式",
+    "modelOptions.loadError": "モデルオプションを読み込めませんでした。選択した環境を確認してください。",
+    "modelOptions.title": "モデルオプション",
+    "intakePolicy.option.databaseInteraction": "データベースのインタラクション",
+    "intakePolicy.option.codeInteraction": "コードのインタラクション",
+    "intakePolicy.error.loadInteractions": "インタラクションを読み込めませんでした。既存の参照は保持されます。"
 }

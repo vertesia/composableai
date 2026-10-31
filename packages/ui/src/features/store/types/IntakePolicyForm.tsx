@@ -1,4 +1,5 @@
 import type {
+    CatalogInteractionRef,
     ContentTypeIntakePolicy,
     InferenceProfileRecord,
     IntakePageRanges,
@@ -20,6 +21,7 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { Plus, Trash2 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { SelectEnvironment, SelectModel } from '../../environment/SelectEnvironment.js';
+import { IntakeModelOptions } from './IntakeModelOptions.js';
 import {
     type IntakePolicyPath,
     replaceIntakeRange,
@@ -37,12 +39,19 @@ export interface IntakeProfileChoices {
     error?: boolean;
 }
 
+export interface IntakeInteractionChoices {
+    items: CatalogInteractionRef[];
+    loading?: boolean;
+    error?: boolean;
+}
+
 interface IntakePolicyFormProps {
     policy: ContentTypeIntakePolicy;
     section: IntakePolicyFormSection;
     onChange: (policy: ContentTypeIntakePolicy) => void;
     readonly?: boolean;
     profileOptions?: IntakeProfileChoices;
+    interactionOptions?: IntakeInteractionChoices;
 }
 
 interface SelectOption<T extends string | number> {
@@ -56,6 +65,7 @@ export function IntakePolicyForm({
     onChange,
     readonly = false,
     profileOptions = { items: [] },
+    interactionOptions = { items: [] },
 }: IntakePolicyFormProps) {
     const { t } = useUITranslation();
     const setValue = (path: IntakePolicyPath, value: unknown) => onChange(updateIntakePolicy(policy, path, value));
@@ -75,20 +85,14 @@ export function IntakePolicyForm({
                         description={index === 0 ? t('intakePolicy.help.section.media') : undefined}
                         last={index === media.length - 1}
                     >
-                        <FormItem
-                            label={t('intakePolicy.field.interaction')}
-                            description={t('intakePolicy.help.mediaInteraction', { interaction: fallback })}
-                        >
-                            <Input
-                                aria-label={`${title}: ${t('intakePolicy.field.interaction')}`}
-                                value={policy.media_analysis?.[kind]?.interaction ?? ''}
-                                placeholder={t('intakePolicy.option.inherit')}
-                                onChange={(value) =>
-                                    setValue(['media_analysis', kind, 'interaction'], value || undefined)
-                                }
-                                disabled={readonly}
-                            />
-                        </FormItem>
+                        <InteractionField
+                            title={title}
+                            fallback={fallback}
+                            value={policy.media_analysis?.[kind]?.interaction}
+                            onChange={(value) => setValue(['media_analysis', kind, 'interaction'], value)}
+                            choices={interactionOptions}
+                            readonly={readonly}
+                        />
                         <ModelConfigFields
                             title={title}
                             hideTitle
@@ -271,8 +275,9 @@ export function IntakePolicyForm({
                         description={t('intakePolicy.help.section.customConversion')}
                     >
                         <div className="grid gap-4 md:grid-cols-2">
-                            <InputField
-                                label={t('intakePolicy.field.interaction')}
+                            <InteractionField
+                                title={t('intakePolicy.section.customConversion')}
+                                choices={interactionOptions}
                                 value={policy.text_conversion.custom?.interaction}
                                 onChange={(value) => setValue(['text_conversion', 'custom', 'interaction'], value)}
                                 readonly={readonly}
@@ -341,8 +346,9 @@ export function IntakePolicyForm({
                             readonly={readonly}
                         />
                     </div>
-                    <InputField
-                        label={t('intakePolicy.field.interaction')}
+                    <InteractionField
+                        title={t('intakePolicy.tab.extraction')}
+                        choices={interactionOptions}
                         description={t('intakePolicy.help.extractionInteraction')}
                         value={policy.extraction?.interaction}
                         onChange={(value) => setValue(['extraction', 'interaction'], value)}
@@ -513,8 +519,9 @@ export function IntakePolicyForm({
                             onChange={(value) => setValue(['extraction', 'grounding', 'window_pages'], value)}
                             readonly={readonly}
                         />
-                        <InputField
-                            label={t('intakePolicy.field.interaction')}
+                        <InteractionField
+                            title={t('intakePolicy.tab.grounding')}
+                            choices={interactionOptions}
                             value={grounding?.interaction}
                             onChange={(value) => setValue(['extraction', 'grounding', 'interaction'], value)}
                             readonly={readonly}
@@ -1047,26 +1054,96 @@ function ModelConfigFields({
                     disabled={readonly}
                 />
             </FormItem>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <FormItem label={t('intakePolicy.field.environment')}>
-                    <SelectEnvironment
-                        selectedEnvId={config?.environment}
-                        onChange={(environment) => onChange(updateExecutionEnvironment(config, environment?.id))}
-                        isClearable
-                        disabled={readonly || !adHoc}
-                    />
-                </FormItem>
-                <FormItem label={t('intakePolicy.field.model')}>
-                    <SelectModel
-                        envId={config?.environment}
-                        selectedModelId={config?.model}
-                        onChange={(model) => onChange(updateExecutionModel(config, model?.id))}
-                        isClearable
-                        disabled={readonly || !adHoc || !config?.environment}
-                    />
-                </FormItem>
-            </div>
+            {adHoc && (
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <FormItem label={t('intakePolicy.field.environment')}>
+                        <SelectEnvironment
+                            selectedEnvId={config?.environment}
+                            onChange={(environment) => onChange(updateExecutionEnvironment(config, environment?.id))}
+                            isClearable
+                            disabled={readonly || !adHoc}
+                        />
+                    </FormItem>
+                    <FormItem label={t('intakePolicy.field.model')}>
+                        <SelectModel
+                            envId={config?.environment}
+                            selectedModelId={config?.model}
+                            onChange={(model) => onChange(updateExecutionModel(config, model?.id))}
+                            isClearable
+                            disabled={readonly || !adHoc || !config?.environment}
+                        />
+                    </FormItem>
+                </div>
+            )}
+            {adHoc && config?.environment && config?.model && (
+                <IntakeModelOptions config={config} onChange={onChange} readonly={readonly} />
+            )}
         </div>
+    );
+}
+
+function InteractionField({
+    title,
+    fallback,
+    description,
+    value,
+    choices,
+    onChange,
+    readonly,
+}: {
+    title: string;
+    fallback?: string;
+    description?: string;
+    value?: string;
+    choices: IntakeInteractionChoices;
+    onChange: (value: string | undefined) => void;
+    readonly: boolean;
+}) {
+    const { t } = useUITranslation();
+    const inherit = '__inherit__';
+    const entries = new Map<string, { value: string; label: string; group: string }>();
+    entries.set(inherit, { value: inherit, label: t('intakePolicy.option.inherit'), group: '' });
+    for (const item of choices.items) {
+        const stored = item.type === 'stored' || item.type === 'draft';
+        const reference = stored ? `${item.name}${item.type === 'draft' ? '@draft' : ''}` : item.id;
+        const group = t(stored ? 'intakePolicy.option.databaseInteraction' : 'intakePolicy.option.codeInteraction');
+        entries.set(reference, { value: reference, label: `${item.title ?? item.name} (${reference})`, group });
+        if (stored && item.published && item.version !== undefined) {
+            const version = `${item.name}@${item.version}`;
+            entries.set(version, { value: version, label: `${item.title ?? item.name} (${version})`, group });
+        }
+        for (const tag of stored ? (item.tags ?? []) : []) {
+            const tagged = `${item.name}@${tag}`;
+            entries.set(tagged, { value: tagged, label: `${item.title ?? item.name} (${tagged})`, group });
+        }
+    }
+    if (value && !entries.has(value)) entries.set(value, { value, label: value, group: '' });
+    const options = [...entries.values()].sort((a, b) =>
+        a.value === inherit ? -1 : b.value === inherit ? 1 : a.label.localeCompare(b.label),
+    );
+    return (
+        <FormItem
+            className="w-full md:max-w-sm"
+            label={t('intakePolicy.field.interaction')}
+            description={
+                description ??
+                (fallback ? t('intakePolicy.help.mediaInteraction', { interaction: fallback }) : undefined)
+            }
+            helpText={choices.error ? t('intakePolicy.error.loadInteractions') : undefined}
+        >
+            <SelectBox
+                aria-label={`${title}: ${t('intakePolicy.field.interaction')}`}
+                options={options}
+                value={entries.get(value ?? inherit)}
+                by="value"
+                optionLabel={(item) => item.label}
+                groupBy={(item) => item.group}
+                filterBy={(item) => `${item.label} ${item.value}`}
+                onChange={(item) => onChange(item && item.value !== inherit ? item.value : undefined)}
+                isLoading={choices.loading}
+                disabled={readonly}
+            />
+        </FormItem>
     );
 }
 

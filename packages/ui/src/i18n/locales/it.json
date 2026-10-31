@@ -1296,5 +1296,19 @@
     "agent.runBudgetRemainingUsd": "Budget rimanente: {{remaining}} USD / {{limit}} USD",
     "agent.runBudgetRemainingFallback": "Token di riserva rimanenti: {{remaining}} / {{limit}}",
     "agent.runBudgetRemainingTokens": "Budget rimanente: {{remaining}} / {{limit}} token",
-    "agent.runBudgetIncomplete": "Contabilizzazione incompleta; il budget rimanente potrebbe essere sovrastimato."
+    "agent.runBudgetIncomplete": "Contabilizzazione incompleta; il budget rimanente potrebbe essere sovrastimato.",
+    "modelOptions.min": "Min.: {{value}}",
+    "modelOptions.max": "Max.: {{value}}",
+    "modelOptions.default": "Predefinito: {{value}}",
+    "modelOptions.reset": "Ripristina",
+    "modelOptions.resetLabel": "Ripristina {{label}} al valore del modello",
+    "modelOptions.modelDefault": "Valore del modello",
+    "modelOptions.numericListError": "Ogni valore deve essere un numero.",
+    "modelOptions.jsonObjectError": "Il valore deve essere un oggetto JSON.",
+    "modelOptions.unsupported": "Tipo di opzione sconosciuto",
+    "modelOptions.loadError": "Impossibile caricare le opzioni del modello. Verifica l’ambiente selezionato.",
+    "modelOptions.title": "Opzioni del modello",
+    "intakePolicy.option.databaseInteraction": "Interazioni del database",
+    "intakePolicy.option.codeInteraction": "Interazioni di codice",
+    "intakePolicy.error.loadInteractions": "Impossibile caricare le interazioni. I riferimenti esistenti sono conservati."
 }
