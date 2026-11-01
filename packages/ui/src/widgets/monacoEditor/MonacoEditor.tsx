@@ -153,6 +153,10 @@ export function MonacoEditor({
     // Callers may pass an explicit `path`; otherwise one is generated when a schema is set.
     const [generatedPath] = useState(() => `inmemory://vertesia/json/${++jsonSchemaModelCounter}.json`);
     const modelPath = path ?? (jsonSchema ? generatedPath : undefined);
+    // @monaco-editor/react retains its initial onMount callback while the runtime loads.
+    // Resource catalogs can update the schema during that wait.
+    const schemaSettingsRef = useRef({ jsonSchema, modelPath, language });
+    schemaSettingsRef.current = { jsonSchema, modelPath, language };
     const { theme } = useTheme();
     const resolvedTheme =
         theme === 'system' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme;
@@ -236,8 +240,9 @@ export function MonacoEditor({
             editorInstanceRef.current = editor;
             monacoInstanceRef.current = monacoInstance;
 
-            if (jsonSchema && modelPath && language === 'json') {
-                jsonSchemaRegistry.set(modelPath, jsonSchema);
+            const settings = schemaSettingsRef.current;
+            if (settings.jsonSchema && settings.modelPath && settings.language === 'json') {
+                jsonSchemaRegistry.set(settings.modelPath, settings.jsonSchema);
                 applyJsonSchemas(monacoInstance);
             }
 
@@ -258,7 +263,7 @@ export function MonacoEditor({
             // Call custom onMount if provided
             onMount?.(editor, monacoInstance);
         },
-        [onMount, useCustomFolding, foldAllCodeBlocks, jsonSchema, modelPath, language],
+        [onMount, useCustomFolding, foldAllCodeBlocks],
     );
 
     // Catalogs may arrive after the editor mounts, and selecting another workflow changes its schema.

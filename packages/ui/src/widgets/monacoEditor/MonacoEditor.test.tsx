@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { act, cleanup, render, waitFor } from '@testing-library/react';
 import { useEffect, useRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MonacoEditor } from './MonacoEditor.js';
@@ -7,6 +7,8 @@ import { MonacoEditor } from './MonacoEditor.js';
 const mocks = vi.hoisted(() => ({
     runtime: {} as Record<string, unknown>,
     mounted: vi.fn(),
+    deferMount: false,
+    pendingMounts: [] as (() => void)[],
     diagnostics: vi.fn<(options: { schemas: { fileMatch: string[]; schema: object }[] }) => void>(),
     editor: { getValue: () => '{}', setValue: vi.fn(), hasTextFocus: () => false },
 }));
@@ -16,8 +18,12 @@ vi.mock('./loadMonaco.js', () => ({
         Editor: ({ onMount }: { onMount: (editor: typeof mocks.editor, runtime: typeof mocks.runtime) => void }) => {
             const initialMount = useRef(onMount);
             useEffect(() => {
-                initialMount.current(mocks.editor, mocks.runtime);
-                mocks.mounted();
+                const mount = () => {
+                    initialMount.current(mocks.editor, mocks.runtime);
+                    mocks.mounted();
+                };
+                if (mocks.deferMount) mocks.pendingMounts.push(mount);
+                else mount();
             }, []);
             return <div />;
         },
@@ -25,6 +31,8 @@ vi.mock('./loadMonaco.js', () => ({
 }));
 
 beforeEach(() => {
+    mocks.deferMount = false;
+    mocks.pendingMounts = [];
     mocks.runtime = { json: { jsonDefaults: { setDiagnosticsOptions: mocks.diagnostics } } };
 });
 afterEach(() => {
@@ -44,6 +52,24 @@ describe('Monaco JSON schema registration', () => {
             expect(latestSchemas()).toEqual([expect.objectContaining({ fileMatch: ['variables.json'], schema })]),
         );
     });
+
+    it.each([undefined, schema])(
+        'uses the latest schema when data arrives before delayed editor mount (%j)',
+        async (initial) => {
+            mocks.deferMount = true;
+            const view = render(<MonacoEditor language="json" path="variables.json" jsonSchema={initial} />);
+            await waitFor(() => expect(mocks.pendingMounts).toHaveLength(1));
+            const enriched = {
+                ...schema,
+                'x-vertesia-resource-suggestions': [{ label: 'Project profile', bodyText: '"profile-id"' }],
+            };
+            view.rerender(<MonacoEditor language="json" path="variables.json" jsonSchema={enriched} />);
+            act(() => mocks.pendingMounts[0]());
+            expect(latestSchemas()).toEqual([
+                expect.objectContaining({ fileMatch: ['variables.json'], schema: enriched }),
+            ]);
+        },
+    );
 
     it('updates a schema arriving after mount without losing another editor schema', async () => {
         const conditionSchema = { type: 'object', properties: { and: { type: 'array' } } };
