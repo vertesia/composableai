@@ -109,7 +109,7 @@ export const CollectionMembersUpdateResultSchema = z
 export const CollectionMembersUpdatePayloadSchema = z
     .strictObject({
         action: z.enum(['add', 'delete']),
-        members: z.array(z.string()),
+        members: z.array(z.string()).min(1),
     })
     .meta({ id: 'CollectionMembersUpdatePayload' });
 
@@ -122,7 +122,7 @@ export const CollectionChildrenUpdateResultSchema = z
 export const CollectionChildrenUpdatePayloadSchema = z
     .strictObject({
         action: z.enum(['add', 'delete']),
-        children: z.array(z.string()),
+        children: z.array(z.string()).min(1),
     })
     .meta({ id: 'CollectionChildrenUpdatePayload' });
 
@@ -366,7 +366,7 @@ const collectionPayloadFields = {
 export const CreateCollectionPayloadSchema = z
     .strictObject({
         ...collectionPayloadFields,
-        name: z.string().meta({ description: 'Name of the collection' }),
+        name: z.string().min(1).meta({ description: 'Name of the collection' }),
         dynamic: z.boolean().meta({
             description: 'When true, membership is determined by `query`; when false, members are added explicitly',
         }),

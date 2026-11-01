@@ -132,10 +132,10 @@ export const PendingAskDataSchema = z
 
 export const RegisterPendingAskRequestSchema = z
     .strictObject({
-        runId: z.string(),
-        workflowId: z.string(),
-        agentName: z.string(),
-        questions: z.array(z.string()),
+        runId: z.string().min(1),
+        workflowId: z.string().min(1),
+        agentName: z.string().min(1),
+        questions: z.array(z.string()).min(1),
         timeoutHours: z.number().optional(),
         userChannels: z.array(UserChannelSchema),
         taskFields: z.array(TaskFieldSchema).optional(),

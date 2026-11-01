@@ -995,7 +995,7 @@ export const AgentRunSchema = z
 
 export const CreateAgentRunPayloadSchema = z
     .strictObject({
-        interaction: z.string().meta({ description: 'Interaction ID or code (e.g. "sys:generic_question").' }),
+        interaction: z.string().min(1).meta({ description: 'Interaction ID or code (e.g. "sys:generic_question").' }),
         ...ConversationEnrichmentFields,
         evaluate: AgentEvaluateRequestSchema,
         data: z.looseObject({}).meta({ description: 'Input parameters, typed per interaction' }).optional(),

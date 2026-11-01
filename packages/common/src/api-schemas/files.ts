@@ -17,7 +17,7 @@ export const FileListResponseSchema = z
 
 export const GetUploadUrlPayloadSchema = z
     .strictObject({
-        name: z.string(),
+        name: z.string().min(1),
         id: z.string().optional(),
         mime_type: z.string().optional(),
         ttl: z.number().optional(),
@@ -47,7 +47,7 @@ export const GetFileUrlResponseSchema = z
 
 export const GetFileUrlPayloadSchema = z
     .strictObject({
-        file: z.string(),
+        file: z.string().min(1),
         name: z.string().optional(),
         disposition: z.enum(['inline', 'attachment']).optional(),
     })
@@ -61,13 +61,16 @@ export const BulkUploadUrlsResponseSchema = z
 
 export const BulkUploadUrlsPayloadSchema = z
     .strictObject({
-        files: z.array(
-            z.strictObject({
-                name: z.string(),
-                mime_type: z.string().optional(),
-                id: z.string().optional(),
-            }),
-        ),
+        files: z
+            .array(
+                z.strictObject({
+                    name: z.string().min(1),
+                    mime_type: z.string().optional(),
+                    id: z.string().optional(),
+                }),
+            )
+            .min(1)
+            .max(10000),
     })
     .meta({ id: 'BulkUploadUrlsPayload' });
 
@@ -97,14 +100,14 @@ export const CopyFileResponseSchema = z
 
 export const CopyFilePayloadSchema = z
     .strictObject({
-        source: z.string(),
-        dest: z.string(),
+        source: z.string().min(1),
+        dest: z.string().min(1),
     })
     .meta({ id: 'CopyFilePayload' });
 
 export const SetFileMetadataPayloadSchema = z
     .strictObject({
-        file: z.string().meta({ description: 'The file path (relative to bucket) or full URI' }),
+        file: z.string().min(1).meta({ description: 'The file path (relative to bucket) or full URI' }),
         metadata: StringValueMapSchema.meta({ description: 'Custom metadata key-value pairs to set on the file' }),
     })
     .meta({ id: 'SetFileMetadataPayload' });
@@ -118,7 +121,7 @@ export const SetFileMetadataPayloadSchema = z
  */
 export const FileMetadataQuerySchema = z
     .strictObject({
-        file: z.string(),
+        file: z.string().min(1),
     })
     .meta({ id: 'FileMetadataQuery' });
 

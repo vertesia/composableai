@@ -644,7 +644,7 @@ export const BranchNodeBranchDefinitionSchema: z.ZodType = z
 
 export const CreateProcessDefinitionPayloadSchema: z.ZodType = z
     .strictObject({
-        name: z.string(),
+        name: z.string().min(1),
         description: z.string().optional(),
         status: ProcessDefinitionStatusSchema.meta({
             description:
@@ -840,10 +840,18 @@ const legacyWorkflowDefinitionUpsertFields = {
         .optional(),
 };
 
+/**
+ * A stored definition needs a name, so the request payloads refuse an empty one. The spec's own `name`
+ * stays unbounded: it is also the shape of a child workflow's inline spec and of every response.
+ * Overriding the spread field keeps its position, so the generated clients' argument order does not move.
+ */
+const workflowDefinitionPayloadName = z.string().min(1);
+
 export const WorkflowDefinitionPayloadWithActivitiesSchema: z.ZodType = z
     .strictObject({
         ...dslWorkflowSpecBaseFields,
         ...legacyWorkflowDefinitionUpsertFields,
+        name: workflowDefinitionPayloadName,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)).optional(),
         activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta),
         spec_format: z.literal('activities'),
@@ -854,6 +862,7 @@ export const WorkflowDefinitionPayloadWithStepsSchema: z.ZodType = z
     .strictObject({
         ...dslWorkflowSpecBaseFields,
         ...legacyWorkflowDefinitionUpsertFields,
+        name: workflowDefinitionPayloadName,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)),
         activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta).optional(),
         spec_format: z.literal('steps'),
@@ -870,6 +879,7 @@ export const WorkflowDefinitionPayloadSchema: z.ZodType = z
 export const UpdateWorkflowDefinitionPayloadWithActivitiesSchema: z.ZodType = z
     .strictObject({
         ...dslWorkflowSpecBaseFields,
+        name: workflowDefinitionPayloadName,
         expected_edit_revision: ExpectedEditRevisionSchema,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)).optional(),
         activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta),
@@ -880,6 +890,7 @@ export const UpdateWorkflowDefinitionPayloadWithActivitiesSchema: z.ZodType = z
 export const UpdateWorkflowDefinitionPayloadWithStepsSchema: z.ZodType = z
     .strictObject({
         ...dslWorkflowSpecBaseFields,
+        name: workflowDefinitionPayloadName,
         expected_edit_revision: ExpectedEditRevisionSchema,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)),
         activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta).optional(),

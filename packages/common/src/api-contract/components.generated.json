@@ -26892,15 +26892,19 @@
     "type": "object",
     "properties": {
       "runId": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "workflowId": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "agentName": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "questions": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -27131,10 +27135,12 @@
     "type": "object",
     "properties": {
       "source": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "dest": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -27267,7 +27273,8 @@
     "type": "object",
     "properties": {
       "file": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "name": {
         "type": "string"
@@ -27312,7 +27319,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "id": {
         "type": "string"
@@ -27333,12 +27341,15 @@
     "type": "object",
     "properties": {
       "files": {
+        "minItems": 1,
+        "maxItems": 10000,
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
             "name": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "mime_type": {
               "type": "string"
@@ -27379,6 +27390,7 @@
     "properties": {
       "file": {
         "type": "string",
+        "minLength": 1,
         "description": "The file path (relative to bucket) or full URI"
       },
       "metadata": {
@@ -27396,7 +27408,8 @@
     "type": "object",
     "properties": {
       "file": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -27556,7 +27569,8 @@
         ]
       },
       "run_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "node": {
         "type": "string"
@@ -27647,7 +27661,8 @@
     "type": "object",
     "properties": {
       "title": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -27985,6 +28000,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Human-readable name or title"
       },
       "description": {
@@ -28038,6 +28054,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Human-readable name or title"
       },
       "description": {
@@ -28900,7 +28917,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -28967,7 +28985,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29055,7 +29074,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29116,7 +29136,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29655,7 +29676,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -35123,6 +35145,7 @@
         ]
       },
       "members": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -35158,6 +35181,7 @@
         ]
       },
       "children": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -35289,6 +35313,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Name of the collection"
       },
       "dynamic": {
@@ -36874,6 +36899,7 @@
     "properties": {
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "Interaction ID or code (e.g. \"sys:generic_question\")."
       },
       "title": {
