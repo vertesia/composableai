@@ -39879,6 +39879,12 @@
     "properties": {
       "success": {
         "type": "boolean"
+      },
+      "timestamp": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "The `timestamp` the published update carries in the run stream, in epoch milliseconds. Absent from servers that predate it."
       }
     },
     "required": [

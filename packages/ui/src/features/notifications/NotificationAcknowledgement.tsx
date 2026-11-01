@@ -12,8 +12,9 @@ export interface NotificationOccurrence {
     id: string;
     /**
      * For `agent_turn` and `object`, which name the latest of something: the server time of the version
-     * on screen (a document's `updated_at`). Only notifications that occurred by then are read, so one
-     * that arrives before the view shows it stays unread until the view refreshes and reports again.
+     * on screen (the answer's stream timestamp, a document's `updated_at`). Only notifications that occurred
+     * by then are read, so one that arrives before the view shows it stays unread until the view refreshes
+     * and reports again.
      */
     as_of?: string;
 }

@@ -9210,6 +9210,7 @@ export type WorkflowRunStreamQuery = {
 };
 export type WorkflowUpdatePublishResponse = {
     success: boolean;
+    timestamp?: number | undefined;
 };
 export type WorkflowActionResponse = {
     message: string;

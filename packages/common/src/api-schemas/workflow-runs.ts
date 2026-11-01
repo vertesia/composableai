@@ -38,6 +38,15 @@ export const WorkflowQueryResultSchema = JSONValueSchema.meta({ id: 'WorkflowQue
 export const WorkflowUpdatePublishResponseSchema = z
     .strictObject({
         success: z.boolean(),
+        timestamp: z
+            .number()
+            .int()
+            .optional()
+            .meta({
+                description:
+                    'The `timestamp` the published update carries in the run stream, in epoch milliseconds. ' +
+                    'Absent from servers that predate it.',
+            }),
     })
     .meta({ id: 'WorkflowUpdatePublishResponse' });
 

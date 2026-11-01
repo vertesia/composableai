@@ -81,6 +81,10 @@ export interface AgentAcknowledgementState {
  * - a REQUEST_INPUT message: its `agent_request`;
  * - the latest answer of a run that ended: `agent_run_end`, and `agent_turn` for the turns before it;
  * - the latest answer of an interactive run waiting for the user: `agent_turn`.
+ *
+ * `agent_turn` is bounded by the answer's stream timestamp, which the server gives the turn the answer
+ * ended: a later turn is never read on the strength of an older answer, even when the acknowledgement
+ * is retried after it arrived.
  */
 export function getAgentMessageAcknowledgement(
     message: AgentMessage,
@@ -91,6 +95,11 @@ export function getAgentMessageAcknowledgement(
     const request = getRequestInputOccurrence(agentRunId, message);
     if (request) return [request];
     if (!state.latestAnswer || !isSameMessage(message, state.latestAnswer) || state.isAgentWorking) return undefined;
-    const turn: NotificationOccurrence = { type: 'agent_turn', id: agentRunId };
+    const answeredAt = new Date(message.timestamp);
+    const turn: NotificationOccurrence = {
+        type: 'agent_turn',
+        id: agentRunId,
+        ...(Number.isNaN(answeredAt.getTime()) ? {} : { as_of: answeredAt.toISOString() }),
+    };
     return state.isRunCompleted ? [{ type: 'agent_run_end', id: agentRunId }, turn] : [turn];
 }

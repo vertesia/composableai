@@ -83,6 +83,7 @@ describe('hasAgentRunEnded', () => {
 
 describe('getAgentMessageAcknowledgement', () => {
     const answer = message(AgentMessageType.ANSWER, 10);
+    const turn = { type: 'agent_turn', id: 'run-1', as_of: new Date(10).toISOString() };
     const base = { agentRunId: 'run-1', latestAnswer: answer, isRunCompleted: false, isAgentWorking: false };
 
     it('acknowledges a request', () => {
@@ -93,17 +94,17 @@ describe('getAgentMessageAcknowledgement', () => {
     });
 
     it('acknowledges the turn when an interactive run waits for the user', () => {
-        expect(getAgentMessageAcknowledgement(answer, base)).toEqual([{ type: 'agent_turn', id: 'run-1' }]);
+        expect(getAgentMessageAcknowledgement(answer, base)).toEqual([turn]);
     });
 
     it('matches a copied latest answer', () => {
-        expect(getAgentMessageAcknowledgement({ ...answer }, base)).toEqual([{ type: 'agent_turn', id: 'run-1' }]);
+        expect(getAgentMessageAcknowledgement({ ...answer }, base)).toEqual([turn]);
     });
 
     it('acknowledges the run end and the turns when the run ended', () => {
         expect(getAgentMessageAcknowledgement(answer, { ...base, isRunCompleted: true })).toEqual([
             { type: 'agent_run_end', id: 'run-1' },
-            { type: 'agent_turn', id: 'run-1' },
+            turn,
         ]);
     });
 

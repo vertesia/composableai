@@ -39,16 +39,6 @@ export type NotificationPreferences = Wire.NotificationPreferences;
 
 export type NotificationStreamEvent = Wire.NotificationStreamEvent;
 
-/** The category each kind belongs to, before the outcome is known (a failed run moves to `failures`). */
-export const NOTIFICATION_KIND_CATEGORY: Record<NotificationKind, NotificationCategory> = {
-    'agent.question': 'actions',
-    'agent.approval': 'actions',
-    'task.assigned': 'actions',
-    'agent.finished': 'results',
-    'agent.turn_finished': 'results',
-    'intake.finished': 'results',
-};
-
 /**
  * The occurrence of a task assignment. Each assignment revision is its own occurrence, so reading one
  * assignment never reads a later one: in Alice → Bob → Alice, Alice's second notification stays unread
@@ -56,9 +46,4 @@ export const NOTIFICATION_KIND_CATEGORY: Record<NotificationKind, NotificationCa
  */
 export function taskNotificationOccurrence(task: { id: string; assignment_rev?: number }): NotificationRef {
     return { type: 'task', id: `${task.id}:${task.assignment_rev ?? 1}` };
-}
-
-/** Redis pub/sub channel that tells a user's open clients their project inbox changed. */
-export function notificationChannelName(accountId: string, projectId: string, userId: string): string {
-    return `notif:${accountId}:${projectId}:${userId}`;
 }
