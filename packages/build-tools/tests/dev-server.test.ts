@@ -99,12 +99,13 @@ describe('vertesiaDevServerPlugin', () => {
             expect(resolved).toBe(join(workDir, 'src', 'skills', 'my-skill.md?skill'));
         });
 
+        // A collection id names a module that does not exist (`all`) inside the scanned directory.
         it('resolves a root-relative ?skills collection URL under the Vite root', () => {
             mkdirSync(join(workDir, 'src', 'skills', 'group'), { recursive: true });
             const plugin = getPlugin();
             plugin.configResolved({ root: workDir });
-            expect(plugin.resolveId('/src/skills/group?skills', undefined)).toBe(
-                join(workDir, 'src', 'skills', 'group?skills'),
+            expect(plugin.resolveId('/src/skills/group/all?skills', undefined)).toBe(
+                join(workDir, 'src', 'skills', 'group', 'all?skills'),
             );
         });
 
@@ -121,6 +122,11 @@ describe('vertesiaDevServerPlugin', () => {
             const plugin = getPlugin();
             plugin.configResolved({ root: join(workDir, 'app') });
             expect(plugin.resolveId(`/@fs${file}?skill`, undefined)).toBe(`${file}?skill`);
+        });
+
+        it('drops the /@fs/ slash before a Windows drive letter', () => {
+            const plugin = getPlugin();
+            expect(plugin.resolveId('/@fs/C:/repo/skills/x.md?skill', undefined)).toBe('C:/repo/skills/x.md?skill');
         });
 
         it('keeps an absolute filesystem path when nothing exists at that path under the root', () => {
@@ -215,6 +221,26 @@ describe('vertesiaDevServerPlugin', () => {
             try {
                 const result = await server.transformRequest('/src/skills/served-skill.md?skill');
                 expect(result?.code).toContain('"name": "served-skill"');
+            } finally {
+                await server.close();
+            }
+        });
+
+        it('transforms a collection requested by its root-relative URL', async () => {
+            const skillDir = join(workDir, 'src', 'skills', 'one');
+            mkdirSync(skillDir, { recursive: true });
+            writeFileSync(join(skillDir, 'SKILL.md'), '---\nname: one\ndescription: d\n---\n# Hello\n', 'utf-8');
+            const server = await createServer({
+                root: workDir,
+                configFile: false,
+                logLevel: 'silent',
+                appType: 'custom',
+                server: { middlewareMode: true, hmr: false, ws: false },
+                plugins: [vertesiaDevServerPlugin({ skillCatalog: false })],
+            });
+            try {
+                const result = await server.transformRequest('/src/skills/all?skills');
+                expect(result?.code).toContain('/one/SKILL.md');
             } finally {
                 await server.close();
             }

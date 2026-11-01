@@ -109,7 +109,11 @@ export function vertesiaDevServerPlugin(options: VertesiaDevServerPluginOptions 
                 // `/@fs/<abs>` is Vite's URL for a file outside the root; this hook runs before
                 // Vite's resolver, so the prefix is still on the id here.
                 let base = source.slice(0, source.length - suffix.length);
-                if (base.startsWith(FS_PREFIX)) base = base.slice(FS_PREFIX.length - 1);
+                if (base.startsWith(FS_PREFIX)) {
+                    // Keep the leading `/` of a POSIX path, but not before a Windows drive letter.
+                    const fsPath = base.slice(FS_PREFIX.length);
+                    base = WINDOWS_VOLUME.test(fsPath) ? fsPath : `/${fsPath}`;
+                }
                 // Only relative specifiers can be resolved meaningfully against an importer.
                 if (base.startsWith('.') && importer) {
                     base = normalizePath(path.resolve(path.dirname(stripQuery(importer)), base));
@@ -120,7 +124,9 @@ export function vertesiaDevServerPlugin(options: VertesiaDevServerPluginOptions 
                 // first, and as a filesystem path only when nothing exists there.
                 if (base.startsWith('/') && !base.startsWith(`${root}/`)) {
                     const underRoot = normalizePath(path.join(root, base)) + suffix;
-                    if (existsSync(stripQuery(underRoot))) return underRoot;
+                    // A collection id names a module that does not exist inside the directory it scans.
+                    const target = transformer.virtual ? path.dirname(stripQuery(underRoot)) : stripQuery(underRoot);
+                    if (existsSync(target)) return underRoot;
                 }
                 // Bare or absolute matches are returned as-is.
                 return base + suffix;
@@ -170,6 +176,7 @@ export function vertesiaDevServerPlugin(options: VertesiaDevServerPluginOptions 
 
 // Vite's prefix for ids outside the root; it is not part of Vite's public exports.
 const FS_PREFIX = '/@fs/';
+const WINDOWS_VOLUME = /^[A-Za-z]:/;
 
 function findMatchingTransformer(id: string, transformers: TransformerRule[]): TransformerRule | undefined {
     for (const t of transformers) {
