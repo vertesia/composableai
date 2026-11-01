@@ -8,8 +8,6 @@ export class ServerError extends Error {
      */
     errorCode?: string;
     expose = true; // this will expose the error to the client - see error handling in @koa-stack/server
-    /** Response headers the error handler sets on the error response, such as `Allow` on a 405. */
-    headers?: Record<string, string>;
     constructor(msgOrCode1: string | number, msgOrCode2?: number | string, details?: string) {
         super();
         this.name = 'ServerError';

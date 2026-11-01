@@ -296,9 +296,8 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         }
         if (ctx.$router._maybe405) {
             const error = new ServerError(405, `Method ${ctx.method} not allowed on endpoint ${ctx.$router._maybe405}`);
-            // RFC 9110 requires a 405 to list the methods the resource supports.
-            error.headers = { Allow: [...(ctx.$router._allowedMethods ?? [])].join(', ') };
-            throw error;
+            // RFC 9110 requires a 405 to list the methods the resource supports; the error handler sets `headers`.
+            throw Object.assign(error, { headers: { Allow: [...(ctx.$router._allowedMethods ?? [])].join(', ') } });
         } else {
             ctx.throw(404);
         }
