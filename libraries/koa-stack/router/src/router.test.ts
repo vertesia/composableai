@@ -18,6 +18,9 @@ beforeAll(async () => {
     router.head('/items/:id', async (ctx) => {
         ctx.status = 200;
     });
+    router.post('/items/export', async (ctx) => {
+        ctx.status = 204;
+    });
     const projects = router.mount('/projects/:projectId');
     projects.get('/objects/:objectId', async (ctx) => {
         ctx.body = { ...ctx.$router.params };
@@ -39,6 +42,14 @@ describe('Router', () => {
 
         expect(res.status).toBe(405);
         expect(res.headers.get('allow')?.split(', ').sort()).toEqual(['GET', 'HEAD', 'PUT']);
+    });
+
+    test('lists the methods of the most specific endpoint in Allow', async () => {
+        // `/items/export` also matches `/items/:id`, but the request names the export resource.
+        const res = await fetch(`${baseUrl}/items/export`, { method: 'PATCH' });
+
+        expect(res.status).toBe(405);
+        expect(res.headers.get('allow')).toBe('POST');
     });
 
     test('routes HEAD to a head() endpoint', async () => {
