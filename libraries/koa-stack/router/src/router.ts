@@ -49,6 +49,8 @@ export class RouterContext {
     // used internally to indicate that the path matched at least an endpoint but the method does not
     // in case of a 405 the value is the endpoint pattern
     _maybe405?: string;
+    // the methods of the endpoints whose path matched, sent as the `Allow` header of a 405
+    _allowedMethods?: Set<string>;
 
     constructor(ctx: Context) {
         this.path = normalizePath(ctx.path);
@@ -118,6 +120,8 @@ export class EndpointRoute implements Route {
         // path matches
         if (this.method && this.method !== ctx.method) {
             ctx.$router._maybe405 = this.absPathPattern;
+            if (!ctx.$router._allowedMethods) ctx.$router._allowedMethods = new Set();
+            ctx.$router._allowedMethods.add(this.method);
             return false;
         }
         // path and method matches
@@ -290,10 +294,11 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
                 return await route.dispatch(ctx);
             }
         }
-        //TODO add support for 405 method not allowed
         if (ctx.$router._maybe405) {
-            throw new ServerError(405, `Method ${ctx.method} not allowed on endpoint ${ctx.$router._maybe405}`);
-            //ctx.throw(405, 'Method ' + ctx.method + ' not allowed on endpoint ' + ctx.$router._maybe405);
+            const error = new ServerError(405, `Method ${ctx.method} not allowed on endpoint ${ctx.$router._maybe405}`);
+            // RFC 9110 requires a 405 to list the methods the resource supports.
+            error.headers = { Allow: [...(ctx.$router._allowedMethods ?? [])].join(', ') };
+            throw error;
         } else {
             ctx.throw(404);
         }
@@ -443,7 +448,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         this.route('GET', pattern, target, thisArg);
     }
     head(pattern: string, target: RouteTarget, thisArg?: unknown) {
-        this.route('HED', pattern, target, thisArg);
+        this.route('HEAD', pattern, target, thisArg);
     }
     options(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('OPTIONS', pattern, target, thisArg);

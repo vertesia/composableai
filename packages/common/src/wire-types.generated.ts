@@ -4227,7 +4227,7 @@ export type InteractionRefWithSchema = {
 export type InteractionsExportPayload = {
     name?: string | undefined;
     tags?: string[] | undefined;
-    versions?: (number | 'draft' | 'latest')[] | undefined;
+    versions?: (number | 'draft')[] | undefined;
 };
 /**
  * Schema can be stored or specified as a reference to an external schema.
