@@ -41676,10 +41676,12 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot name (must be unique within dashboard)"
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot description/message"
       }
     },
@@ -42071,6 +42073,7 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Dashboard name (unique within store)"
       },
       "summary": {
@@ -42111,6 +42114,7 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Dashboard name"
       },
       "summary": {
@@ -42338,15 +42342,19 @@
     "type": "object",
     "properties": {
       "queries": {
+        "minItems": 1,
+        "maxItems": 50,
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
             "name": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "sql": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             }
           },
           "required": [
@@ -42561,6 +42569,8 @@
     "type": "object",
     "properties": {
       "queries": {
+        "minItems": 1,
+        "maxItems": 20,
         "type": "array",
         "items": {
           "type": "object",
@@ -42569,7 +42579,8 @@
               "type": "string"
             },
             "sql": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "limit": {
               "type": "number"
@@ -42633,6 +42644,7 @@
     "properties": {
       "sql": {
         "type": "string",
+        "minLength": 1,
         "description": "SQL query (SELECT only)"
       },
       "params": {
@@ -42692,10 +42704,12 @@
     "properties": {
       "sql": {
         "type": "string",
+        "minLength": 1,
         "description": "SQL statement. Only UPDATE and DELETE statements are accepted."
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message recorded on the resulting data store version."
       },
       "allow_full_table": {
@@ -42937,10 +42951,12 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot name (must be unique within store)"
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot description"
       }
     },
@@ -43628,6 +43644,7 @@
     "type": "object",
     "properties": {
       "tables": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/CreateTablePayload"
@@ -43636,6 +43653,7 @@
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message"
       }
     },
@@ -43714,6 +43732,7 @@
     "type": "object",
     "properties": {
       "changes": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/AlterTableOperation"
@@ -43757,6 +43776,7 @@
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message (required)"
       }
     },
@@ -44007,6 +44027,7 @@
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message"
       }
     },

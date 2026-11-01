@@ -144,8 +144,8 @@ export const DashboardArchiveResultSchema = z
 
 export const CreateDashboardSnapshotPayloadSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'Snapshot name (must be unique within dashboard)' }),
-        message: z.string().meta({ description: 'Snapshot description/message' }),
+        name: z.string().min(1).meta({ description: 'Snapshot name (must be unique within dashboard)' }),
+        message: z.string().min(1).meta({ description: 'Snapshot description/message' }),
     })
     .meta({ id: 'CreateDashboardSnapshotPayload', description: 'Payload for creating a named snapshot.' });
 
@@ -317,7 +317,7 @@ export const DashboardSchema = DashboardItemSchema.extend({
 
 export const CreateDashboardPayloadSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'Dashboard name (unique within store)' }),
+        name: z.string().min(1).meta({ description: 'Dashboard name (unique within store)' }),
         summary: z.string().meta({ description: 'Dashboard summary' }).optional(),
         dataSource: DashboardDataSourceSchema.meta({
             description: 'Data source used to populate Vega `data.values`.',
@@ -348,7 +348,7 @@ export const CreateDashboardPayloadSchema = z
 export const UpdateDashboardPayloadSchema = CreateDashboardPayloadSchema.partial()
     .extend({
         expected_edit_revision: ExpectedEditRevisionSchema,
-        name: z.string().meta({ description: 'Dashboard name' }).optional(),
+        name: z.string().min(1).meta({ description: 'Dashboard name' }).optional(),
         skip_versioning: z.boolean().meta({ description: 'Skip auto-version creation' }).optional(),
     })
     .meta({ id: 'UpdateDashboardPayload', description: 'Payload for updating a dashboard.' });
