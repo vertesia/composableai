@@ -39,8 +39,8 @@ export interface IRequestRetryPolicy {
      */
     maxDelayMs?: number;
     /**
-     * Use full jitter for client-computed backoff delays. Server retry floors are never shortened.
-     * Defaults to true.
+     * Use full jitter for client-computed backoff. Server floors get up to 10% additional jitter,
+     * capped at 1000 ms, and are never shortened. Defaults to true.
      */
     jitter?: boolean;
     /**
@@ -250,19 +250,26 @@ function pacingDelayMs(res: Response, pacing: NormalizedPacingPolicy): number | 
     if (res.status !== 429 || res.headers.get(RATELIMIT_REASON_HEADER) !== 'pacing') {
         return undefined;
     }
-    // Every valid server hint is a minimum, including the ceiled Retry-After value.
-    const delay = retryAfterDelayMs(res);
+    const delay = pacingRetryAfterDelayMs(res);
     if (delay === undefined || delay > pacing.maxWaitMs || delay > MAX_RETRY_TIMER_MS) {
         return undefined;
     }
     return delay;
 }
 
+function pacingRetryAfterDelayMs(res: Response): number | undefined {
+    // Recognised pacing responses define this as the authoritative hint, already jittered by
+    // the server. Retry-After is its rounded compatibility fallback for ordinary HTTP clients.
+    const raw = res.headers.get(RATELIMIT_RETRY_MS_HEADER)?.trim();
+    const exact = raw ? Number(raw) : Number.NaN;
+    return Number.isFinite(exact) && exact >= 0 ? exact : retryAfterDelayMs(res);
+}
+
 function rateLimitMetadata(res: Response): RateLimitMetadata | undefined {
     if (res.status !== 429) return undefined;
     const reason = res.headers.get(RATELIMIT_REASON_HEADER);
     if (reason !== 'pacing' && reason !== 'quota') return undefined;
-    const retryAfterMs = retryAfterDelayMs(res);
+    const retryAfterMs = reason === 'pacing' ? pacingRetryAfterDelayMs(res) : retryAfterDelayMs(res);
     if (retryAfterMs === undefined) return undefined;
     return {
         reason,
@@ -278,7 +285,10 @@ function sleep(ms: number): Promise<void> {
 
 function retryDelayMs(policy: NormalizedRetryPolicy, attempt: number, res?: Response): number {
     const retryAfter = res ? retryAfterDelayMs(res) : undefined;
-    if (retryAfter !== undefined) return retryAfter;
+    if (retryAfter !== undefined) {
+        const jitterRange = Math.min(retryAfter * 0.1, 1000, Math.max(0, MAX_RETRY_TIMER_MS - retryAfter));
+        return retryAfter + (policy.jitter ? Math.floor(Math.random() * jitterRange) : 0);
+    }
     const delay = Math.min(policy.maxDelayMs, policy.baseDelayMs * 2 ** attempt);
     return policy.jitter ? Math.floor(Math.random() * delay) : delay;
 }
@@ -522,14 +532,15 @@ export abstract class ClientBase {
                 }
             }
         }
+        const rateLimit = rateLimitMetadata(res);
         return new ServerError(
             message,
             req,
             res.status,
             payload,
             this.verboseErrors,
-            rateLimitMetadata(res),
-            retryAfterDelayMs(res),
+            rateLimit,
+            rateLimit?.retryAfterMs ?? retryAfterDelayMs(res),
         );
     }
 
