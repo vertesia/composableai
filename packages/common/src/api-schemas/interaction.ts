@@ -464,7 +464,14 @@ export const PromptTemplateCreatePayloadSchema = PromptTemplateSchema.pick({
     content: true,
     content_type: true,
     inputSchema: true,
-}).meta({ id: 'PromptTemplateCreatePayload' });
+})
+    // The stored prompt requires both, so an empty one is refused. `extend` keeps each field's position, which
+    // the Go constructor follows.
+    .extend({
+        name: z.string().min(1),
+        content: z.string().min(1),
+    })
+    .meta({ id: 'PromptTemplateCreatePayload' });
 
 export const PromptTemplateUpdatePayloadSchema = PromptTemplateSchema.omit(SERVER_OWNED_PROMPT_FIELD_KEYS)
     .partial()
@@ -852,7 +859,7 @@ export const InCodePromptSchema = z
 
 export const RateLimitRequestPayloadSchema = z
     .strictObject({
-        interaction: z.string(),
+        interaction: z.string().min(1),
         environment_id: z.string().optional(),
         inference_profile: InferenceProfileIdSchema.nullable().optional(),
         inherit_model_config: z.boolean().optional(),
@@ -951,7 +958,7 @@ export const InteractionCreatePayloadSchema = z
         cache_policy: CachePolicySchema.optional(),
         prompts: z.array(InteractionPromptSegmentInputSchema),
         last_published_at: z.string().meta({ format: 'date-time' }).optional(),
-        name: z.string(),
+        name: z.string().min(1),
         description: z.string().optional(),
         agent_runner_options: AgentRunnerOptionsSchema.optional(),
         result_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
@@ -1958,7 +1965,7 @@ export const NamedInteractionExecutionPayloadSchema = z
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
         }).optional(),
-        interaction: z.string().meta({
+        interaction: z.string().min(1).meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
@@ -2009,7 +2016,7 @@ export const InteractionExecutionPayloadSchema = z
 
 export const AsyncInteractionExecutionPayloadSchema = z
     .object({
-        interaction: z.string().meta({
+        interaction: z.string().min(1).meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
@@ -2105,7 +2112,7 @@ export const ConversationEnrichmentFields = {
 
 export const AsyncConversationExecutionPayloadSchema = z
     .object({
-        interaction: z.string().meta({
+        interaction: z.string().min(1).meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
@@ -2363,7 +2370,7 @@ export const RunCreatePayloadSchema = z
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
         }).optional(),
-        interaction: z.string().meta({
+        interaction: z.string().min(1).meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),

@@ -406,7 +406,7 @@ export const AppManifestDataSchema = z
             })
             .optional(),
         oauth_client: AppOAuthClientConfigSchema.optional(),
-        name: z.string().meta({
+        name: z.string().min(1).meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
         }),
         visibility: z.enum(['public', 'private', 'vertesia']).meta({

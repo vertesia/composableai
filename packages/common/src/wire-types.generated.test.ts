@@ -546,6 +546,10 @@ interface Checks {
         W.AppDevelopmentTaskDetails,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDevelopmentTaskDetailsSchema>
     >;
+    CreateAppRepoBranchRequest: Same<
+        W.CreateAppRepoBranchRequest,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppRepoBranchRequestSchema>
+    >;
     AppRepoBranch: Same<W.AppRepoBranch, z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoBranchSchema>>;
     AppPackageEventHook: Same<
         W.AppPackageEventHook,
@@ -4636,6 +4640,10 @@ interface Checks {
     AppPackageScopeWire: Same<
         W.AppPackageScopeWire,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageScopeSchema>
+    >;
+    AppRepoFileQuery: Same<
+        W.AppRepoFileQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoFileQuerySchema>
     >;
     AppVersionLaunchTargetArray: Same<
         W.AppVersionLaunchTargetArray,
@@ -8979,6 +8987,14 @@ interface Checks {
         W.ApiComponentTypes['AppRepoBranch'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoBranchSchema>
     >;
+    'component:CreateAppRepoBranchRequest': Same<
+        W.ApiComponentTypes['CreateAppRepoBranchRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppRepoBranchRequestSchema>
+    >;
+    'component:AppRepoFileQuery': Same<
+        W.ApiComponentTypes['AppRepoFileQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoFileQuerySchema>
+    >;
     'component:AppRepoDocumentCommit': Same<
         W.ApiComponentTypes['AppRepoDocumentCommit'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoDocumentCommitSchema>
@@ -9873,6 +9889,7 @@ const checks: Checks = {
     AppDevelopmentTask: true,
     AppDevelopmentTaskList: true,
     AppDevelopmentTaskDetails: true,
+    CreateAppRepoBranchRequest: true,
     AppRepoBranch: true,
     AppPackageEventHook: true,
     AppPackageHooks: true,
@@ -11006,6 +11023,7 @@ const checks: Checks = {
     ViewExperienceArray: true,
     Extract_AppVersionGitRefType_branch_tag_commit: true,
     AppPackageScopeWire: true,
+    AppRepoFileQuery: true,
     AppVersionLaunchTargetArray: true,
     AppVersionRecordArray: true,
     AppToolCollectionArray: true,
@@ -12093,6 +12111,8 @@ const checks: Checks = {
     'component:DeleteAppVersionResponse': true,
     'component:AppDeleteSummary': true,
     'component:AppRepoBranch': true,
+    'component:CreateAppRepoBranchRequest': true,
+    'component:AppRepoFileQuery': true,
     'component:AppRepoDocumentCommit': true,
     'component:AppVersionGitSource': true,
     'component:AppGithubConfiguration': true,
@@ -12282,6 +12302,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2558);
+        expect(Object.keys(checks)).toHaveLength(2562);
     });
 });

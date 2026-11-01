@@ -1122,6 +1122,11 @@ export type AppDevelopmentTaskDetails = {
     commit_date?: string | undefined;
     agent_run?: AgentRunSearchHit | undefined;
 };
+/** Request to create a branch from an existing branch, tag, or commit. */
+export type CreateAppRepoBranchRequest = {
+    name: string;
+    source_ref: string;
+};
 /** A newly created app repository branch. */
 export type AppRepoBranch = {
     name: string;
@@ -10926,6 +10931,10 @@ export type AppPackageScopeWire =
     | 'hooks'
     | 'subscriptions'
     | 'all';
+export type AppRepoFileQuery = {
+    path: string;
+    ref?: string | undefined;
+};
 export type AppVersionLaunchTargetArray = AppVersionLaunchTarget[];
 export type AppVersionRecordArray = AppVersionRecord[];
 export type AppToolCollectionArray = AppToolCollection[];
@@ -12044,6 +12053,8 @@ export interface ApiComponentTypes {
     DeleteAppVersionResponse: DeleteAppVersionResponse;
     AppDeleteSummary: AppDeleteSummary;
     AppRepoBranch: AppRepoBranch;
+    CreateAppRepoBranchRequest: CreateAppRepoBranchRequest;
+    AppRepoFileQuery: AppRepoFileQuery;
     AppRepoDocumentCommit: AppRepoDocumentCommit;
     AppVersionGitSource: AppVersionGitSource;
     AppGithubConfiguration: AppGithubConfiguration;

@@ -42,17 +42,25 @@ const nullableToolAllowlistSchema: z.ZodType<string[] | null> = z
     .any()
     .meta({ type: ['array', 'null'], items: { type: 'string' } });
 
+// An allowlist is either `null`, for no restriction, or names at least one tool: an empty list would block every
+// tool, which the server refuses. `minItems` applies to the array branch only.
+const nonEmptyNullableToolAllowlistSchema: z.ZodType<string[] | null> = z
+    .any()
+    .meta({ type: ['array', 'null'], items: { type: 'string' }, minItems: 1 });
+
 export const UpdateAppInstallationToolAllowlistPayloadSchema = z
     .strictObject({
-        tool_allowlist: nullableToolAllowlistSchema,
+        tool_allowlist: nonEmptyNullableToolAllowlistSchema.meta({
+            description: 'Tool names agents may use. An empty list is refused: send null to remove the restriction.',
+        }),
     })
     .meta({ id: 'UpdateAppInstallationToolAllowlistPayload' });
 
 export const UpdateAppInstallationToolPermissionsPayloadSchema = z
     .strictObject({
-        tool_allowlist: nullableToolAllowlistSchema.optional().meta({
+        tool_allowlist: nonEmptyNullableToolAllowlistSchema.optional().meta({
             description:
-                'Tool names agents may use. Null removes the restriction; omit to leave the allowlist unchanged.',
+                'Tool names agents may use, at least one. Null removes the restriction; omit to leave the allowlist unchanged.',
         }),
         tools_requiring_approval: nullableToolAllowlistSchema.optional().meta({
             description:
@@ -82,7 +90,7 @@ export const ValidateUrlResponseSchema = z
 
 export const ValidateUrlRequestSchema = z
     .strictObject({
-        url: z.string(),
+        url: z.string().min(1),
     })
     .meta({ id: 'ValidateUrlRequest' });
 
@@ -400,6 +408,20 @@ export const AppDeleteSummarySchema = z
         description:
             'Result of `DELETE /apps/:id`. Doubles as the dry-run preview: without `?confirm=true` the same ' +
             'shape comes back with `deleted: false` describing what the cascade would remove.',
+    });
+
+export const CreateAppRepoBranchRequestSchema = z
+    .strictObject({
+        // Both are trimmed, and a blank one is refused.
+        name: z.string().regex(/\S/).meta({ description: 'The new branch name.' }),
+        source_ref: z
+            .string()
+            .regex(/\S/)
+            .meta({ description: 'The existing branch, tag or commit the new branch starts from.' }),
+    })
+    .meta({
+        id: 'CreateAppRepoBranchRequest',
+        description: 'Request to create a branch from an existing branch, tag, or commit.',
     });
 
 export const AppRepoBranchSchema = z
@@ -1029,9 +1051,10 @@ export const UpsertAppVersionRequestSchema = z
             .meta({ description: 'Existing version record to update in place, used by reproducible rebuilds.' })
             .optional(),
         app: z.string().optional(),
-        app_id: z.string(),
+        // Both are trimmed and refused when blank, so a whitespace-only value is refused here too.
+        app_id: z.string().regex(/\S/),
         app_name: z.string().optional(),
-        version_id: z.string(),
+        version_id: z.string().regex(/\S/),
         kind: AppVersionKindSchema,
         state: AppVersionStateSchema.optional(),
         target: AppVersionTargetSchema.optional(),
@@ -1180,6 +1203,14 @@ export const AppInstallationsQuerySchema = z
         }).optional(),
     })
     .meta({ id: 'AppInstallationsQuery' });
+
+export const AppRepoFileQuerySchema = z
+    .strictObject({
+        // Trimmed, and refused when blank.
+        path: z.string().regex(/\S/).meta({ description: 'Path of the file, relative to the repository root.' }),
+        ref: z.string().meta({ description: 'Branch, tag or commit. Defaults to the default branch.' }).optional(),
+    })
+    .meta({ id: 'AppRepoFileQuery' });
 
 export const AppInstallationProjectsQuerySchema = z
     .strictObject({

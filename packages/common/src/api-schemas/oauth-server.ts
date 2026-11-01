@@ -278,7 +278,8 @@ export const CreateOAuthClientPayloadSchema = z
     .strictObject({
         client_name: z.string(),
         client_type: OAuthClientTypeSchema.optional(),
-        redirect_uris: z.array(z.string()),
+        // Every client registers at least one redirect URI, which the server checks on create and on update.
+        redirect_uris: z.array(z.string()).min(1),
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
@@ -302,7 +303,7 @@ export const CreateOAuthClientPayloadSchema = z
 export const UpdateOAuthClientPayloadSchema = z
     .strictObject({
         client_name: z.string().optional(),
-        redirect_uris: z.array(z.string()).optional(),
+        redirect_uris: z.array(z.string()).min(1).optional(),
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
