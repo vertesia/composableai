@@ -4812,6 +4812,12 @@ export type NotificationRef = {
     type: string;
     id: string;
 };
+/** An occurrence the client rendered, with the version it displayed for one that happens again. */
+export type NotificationOccurrenceAck = {
+    type: string;
+    id: string;
+    as_of?: string | undefined;
+};
 export type NotificationPayload = {
     title: string;
     body?: string | undefined;
@@ -4858,7 +4864,7 @@ export type MarkNotificationsSeenPayload = {
 };
 export type MarkNotificationsReadPayload = {
     ids?: string[] | undefined;
-    occurrences?: NotificationRef[] | undefined;
+    occurrences?: NotificationOccurrenceAck[] | undefined;
 };
 export type MarkAllNotificationsReadPayload = {
     before: string;
@@ -11448,6 +11454,7 @@ export interface ApiComponentTypes {
     NotificationCategory: NotificationCategory;
     NotificationChannel: NotificationChannel;
     NotificationRef: NotificationRef;
+    NotificationOccurrenceAck: NotificationOccurrenceAck;
     NotificationPayload: NotificationPayload;
     Notification: Notification;
     ListNotificationsQuery: ListNotificationsQuery;

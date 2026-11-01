@@ -9,6 +9,9 @@ export type NotificationChannel = Wire.NotificationChannel;
 /** A typed reference to the item a notification is about (`{ type: 'task', id }`, ...). */
 export type NotificationRef = Wire.NotificationRef;
 
+/** An occurrence the client rendered, with the version it displayed for one that happens again. */
+export type NotificationOccurrenceAck = Wire.NotificationOccurrenceAck;
+
 export type NotificationPayload = Wire.NotificationPayload;
 
 /** One notification in the current user's project inbox. Timestamps are ISO strings. */

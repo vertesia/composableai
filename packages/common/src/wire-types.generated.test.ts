@@ -1931,6 +1931,10 @@ interface Checks {
         W.NotificationRef,
         z.infer<typeof import('./api-schemas/notifications.js').NotificationRefSchema>
     >;
+    NotificationOccurrenceAck: Same<
+        W.NotificationOccurrenceAck,
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationOccurrenceAckSchema>
+    >;
     NotificationPayload: Same<
         W.NotificationPayload,
         z.infer<typeof import('./api-schemas/notifications.js').NotificationPayloadSchema>
@@ -6308,6 +6312,10 @@ interface Checks {
         W.ApiComponentTypes['NotificationRef'],
         z.infer<typeof import('./api-schemas/notifications.js').NotificationRefSchema>
     >;
+    'component:NotificationOccurrenceAck': Same<
+        W.ApiComponentTypes['NotificationOccurrenceAck'],
+        z.infer<typeof import('./api-schemas/notifications.js').NotificationOccurrenceAckSchema>
+    >;
     'component:NotificationPayload': Same<
         W.ApiComponentTypes['NotificationPayload'],
         z.infer<typeof import('./api-schemas/notifications.js').NotificationPayloadSchema>
@@ -10386,6 +10394,7 @@ const checks: Checks = {
     NotificationCategory: true,
     NotificationChannel: true,
     NotificationRef: true,
+    NotificationOccurrenceAck: true,
     NotificationPayload: true,
     Notification: true,
     ListNotificationsQuery: true,
@@ -11559,6 +11568,7 @@ const checks: Checks = {
     'component:NotificationCategory': true,
     'component:NotificationChannel': true,
     'component:NotificationRef': true,
+    'component:NotificationOccurrenceAck': true,
     'component:NotificationPayload': true,
     'component:Notification': true,
     'component:ListNotificationsQuery': true,
@@ -12449,6 +12459,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2592);
+        expect(Object.keys(checks)).toHaveLength(2594);
     });
 });

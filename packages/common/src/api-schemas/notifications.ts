@@ -116,11 +116,23 @@ export const MarkNotificationsSeenPayloadSchema = z
     })
     .meta({ id: 'MarkNotificationsSeenPayload' });
 
+export const NotificationOccurrenceAckSchema = NotificationRefSchema.extend({
+    as_of: z
+        .string()
+        .meta({
+            format: 'date-time',
+            description:
+                'For an occurrence that happens again (`agent_turn`, `object`): the version the client displayed. ' +
+                'Only notifications that occurred by then are read, now or when written later. Defaults to now.',
+        })
+        .optional(),
+}).meta({ id: 'NotificationOccurrenceAck', description: 'An occurrence the client rendered.' });
+
 export const MarkNotificationsReadPayloadSchema = z
     .strictObject({
         ids: z.array(z.string()).max(200).optional(),
         occurrences: z
-            .array(NotificationRefSchema)
+            .array(NotificationOccurrenceAckSchema)
             .max(200)
             .optional()
             .meta({

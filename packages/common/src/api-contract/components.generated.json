@@ -27839,6 +27839,30 @@
     "additionalProperties": false,
     "description": "A typed reference to the item a notification is about."
   },
+  "NotificationOccurrenceAck": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "minLength": 1
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "as_of": {
+        "type": "string",
+        "format": "date-time",
+        "description": "For an occurrence that happens again (`agent_turn`, `object`): the version the client displayed. Only notifications that occurred by then are read, now or when written later. Defaults to now."
+      }
+    },
+    "required": [
+      "type",
+      "id"
+    ],
+    "additionalProperties": false,
+    "description": "An occurrence the client rendered."
+  },
   "NotificationPayload": {
     "type": "object",
     "properties": {
@@ -28044,7 +28068,7 @@
         "maxItems": 200,
         "type": "array",
         "items": {
-          "$ref": "#/components/schemas/NotificationRef"
+          "$ref": "#/components/schemas/NotificationOccurrenceAck"
         },
         "description": "Occurrences the client rendered. An occurrence with no notification yet is remembered for a day and applied when its notification is written."
       }

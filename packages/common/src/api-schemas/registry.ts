@@ -1422,6 +1422,7 @@ const NOTIFICATION_SCHEMAS = {
     NotificationCategory: NotificationSchemas.NotificationCategorySchema,
     NotificationChannel: NotificationSchemas.NotificationChannelSchema,
     NotificationRef: NotificationSchemas.NotificationRefSchema,
+    NotificationOccurrenceAck: NotificationSchemas.NotificationOccurrenceAckSchema,
     NotificationPayload: NotificationSchemas.NotificationPayloadSchema,
     Notification: NotificationSchemas.NotificationSchema,
     ListNotificationsQuery: NotificationSchemas.ListNotificationsQuerySchema,
@@ -2894,6 +2895,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // `rejectUndeclaredQuery` rejects against; `GET /tasks` does not opt in today.
     'ListTasksQuery',
     'NotificationRef',
+    'NotificationOccurrenceAck',
     'NotificationPayload',
     'Notification',
     'ListNotificationsQuery',
