@@ -37,6 +37,8 @@ export interface Route {
 
 export interface EndpointRouteOptions {
     version?: string | number;
+    /** Original resource method, retained for route instrumentation and policy inspection. */
+    handlerName?: string;
     /** Override the lazy request-body parser limit for this endpoint only. */
     bodyLimit?: string | number;
 }
@@ -79,6 +81,7 @@ export class EndpointRoute implements Route {
     // a unique key for the route in his router. Can be used as a local identifier
     key: string;
     bodyLimit?: string | number;
+    handlerName?: string;
 
     constructor(
         router: Router,
@@ -96,6 +99,7 @@ export class EndpointRoute implements Route {
         this.target = target.bind(thisArg);
         this.key = `${this.method || 'ALL'}:${this.pathPattern}`;
         this.bodyLimit = opts?.bodyLimit;
+        this.handlerName = opts?.handlerName;
     }
 
     withVersion(version: string | number) {
@@ -157,15 +161,22 @@ export class EndpointRoute implements Route {
 /**
  * A route which serve static files given a path mapping
  */
-class ServeRoute implements Route {
+export class ServeRoute implements Route {
+    router: Router;
+    pathPattern: string;
     matcher: PrefixMatcher;
     target: string;
     opts: send.SendOptions;
 
-    constructor(prefix: string, target: string, opts: send.SendOptions = {}) {
-        this.matcher = createSimplePrefixMatcher(normalizePath(prefix));
+    constructor(router: Router, prefix: string, target: string, opts: send.SendOptions = {}) {
+        this.router = router;
+        this.pathPattern = normalizePath(prefix);
+        this.matcher = createSimplePrefixMatcher(this.pathPattern);
         this.target = target;
         this.opts = opts;
+    }
+    get absPathPattern() {
+        return this.router.getAbsPath(this.pathPattern);
     }
     match(ctx: Context, path: string): boolean {
         switch (ctx.method) {
@@ -201,6 +212,9 @@ type RouterOpts = {
     errorHandlers?: ErrorHandlerOpts;
 };
 
+export type RegisteredRoute = EndpointRoute | ServeRoute;
+export type RouteInitializer = (route: RegisteredRoute) => void;
+
 export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Route {
     parent?: AbstractRouter<T>;
     _absPrefix?: string;
@@ -219,6 +233,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
     webRoot: string;
     errorHandlerOpts?: ErrorHandlerOpts;
     interceptor: EndpointInterceptorFn | null = null;
+    routeInitializers: RouteInitializer[] = [];
     // used to select versioned endpoints when defined
     versionHeader?: string;
 
@@ -229,6 +244,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         this.prefixMatcher = createPathPrefixMatcherUnsafe(this.prefix);
         this.parent = parent;
         this.interceptor = parent ? parent.interceptor : null;
+        this.routeInitializers = parent ? [...parent.routeInitializers] : [];
         this.versionHeader = parent?.versionHeader;
     }
 
@@ -359,6 +375,12 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         return this;
     }
 
+    /** Instrument future registrations, including descendants, without replacing interceptors. */
+    withRouteInitializer(initializer: RouteInitializer) {
+        this.routeInitializers.push(initializer);
+        return this;
+    }
+
     withGuard(guard: RouterGuard) {
         this.guard = guard;
         return this;
@@ -393,6 +415,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         } else {
             this.routes.push(route);
         }
+        for (const initialize of this.routeInitializers) initialize(route);
     }
 
     routeAll(path: string, target: RouteTarget) {
@@ -429,7 +452,9 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
 
     serve(pattern: string, target: string, opts: send.SendOptions = {}) {
         if (!opts.root) opts.root = this.webRoot;
-        this.routes.push(new ServeRoute(pattern, resolvePath(this.webRoot, target), opts));
+        const route = new ServeRoute(this, pattern, resolvePath(this.webRoot, target), opts);
+        for (const initialize of this.routeInitializers) initialize(route);
+        this.routes.push(route);
     }
 
     redirect(method: string | null | undefined, pattern: string, target: string) {

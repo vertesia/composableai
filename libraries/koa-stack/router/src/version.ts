@@ -6,12 +6,16 @@ const BINARY_SEARCH_THRESHOLD = 16;
 
 export type VersionedEndpointRoute = Omit<EndpointRoute, 'version'> & { version: number };
 
-export class EndpointVersions {
+export class EndpointVersions implements Iterable<VersionedEndpointRoute> {
     private versions: VersionedEndpointRoute[] = [];
     private _sorted: boolean = false;
 
     get length() {
         return this.versions.length;
+    }
+
+    [Symbol.iterator](): ArrayIterator<VersionedEndpointRoute> {
+        return this.versions.values();
     }
 
     add(route: VersionedEndpointRoute) {
