@@ -1494,8 +1494,8 @@ export const SearchAgentRunsQuerySchema = z
             .string()
             .meta({ description: 'Only return runs started at or before this date', format: 'date-time' })
             .optional(),
-        limit: z.number().meta({ description: 'Maximum number of results (default: 50)' }).optional(),
-        offset: z.number().meta({ description: 'Offset for pagination' }).optional(),
+        limit: z.number().min(0).meta({ description: 'Maximum number of results (default: 50)' }).optional(),
+        offset: z.number().min(0).meta({ description: 'Offset for pagination' }).optional(),
         sort: z
             .array(z.string())
             .meta({

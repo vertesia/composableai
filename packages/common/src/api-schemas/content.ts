@@ -1011,8 +1011,8 @@ export const ComplexSearchPayloadSchema = z
                     'If the facets should be limited to the current page of results. Defaults to false. When false, the facets are independent of the search results page.',
             })
             .optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
+        limit: z.number().min(0).optional(),
+        offset: z.number().min(0).optional(),
         select: z.string().optional(),
         all_revisions: z.boolean().optional(),
         from_root: z.string().optional(),

@@ -379,7 +379,15 @@ const oauthGrantFilterFields = {
     sort_order: OAuthGrantSortOrderSchema.optional(),
 };
 
-export const ListOAuthGrantsQuerySchema = z.strictObject(oauthGrantFilterFields).meta({ id: 'ListOAuthGrantsQuery' });
+// The listing refuses a negative page. Its cap on `limit` is a clamp, not a refusal, so it is not published. The bulk
+// revoke payload shares the filter fields but ignores the page, so the bound is the listing's alone.
+export const ListOAuthGrantsQuerySchema = z
+    .strictObject({
+        ...oauthGrantFilterFields,
+        limit: z.number().min(0).optional(),
+        offset: z.number().min(0).optional(),
+    })
+    .meta({ id: 'ListOAuthGrantsQuery' });
 
 export const RevokeOAuthGrantQuerySchema = z
     .strictObject({

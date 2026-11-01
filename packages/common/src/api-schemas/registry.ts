@@ -546,6 +546,7 @@ import {
     InteractionExecutionPayloadSchema,
     InteractionExecutionResultSchema,
     InteractionForkPayloadSchema,
+    InteractionListQuerySchema,
     InteractionNameArraySchema,
     InteractionNameSchema,
     InteractionPromptSegmentInputSchema,
@@ -1199,6 +1200,7 @@ const INTERACTION_SCHEMAS = {
     InteractionForkPayload: InteractionForkPayloadSchema,
     InteractionsExportPayload: InteractionsExportPayloadSchema,
     InteractionSearchQuery: InteractionSearchQuerySchema,
+    InteractionListQuery: InteractionListQuerySchema,
     ResolveInteractionQuery: ResolveInteractionQuerySchema,
     // The catalog — in-code interactions an app or the system provides, alongside stored ones.
     CatalogInteractionRef: CatalogInteractionRefSchema,

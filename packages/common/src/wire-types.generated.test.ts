@@ -4119,6 +4119,10 @@ interface Checks {
         W.InteractionEndpointArray,
         z.infer<typeof import('./api-schemas/interaction.js').InteractionEndpointArraySchema>
     >;
+    InteractionListQuery: Same<
+        W.InteractionListQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionListQuerySchema>
+    >;
     CatalogInteractionRefArray: Same<
         W.CatalogInteractionRefArray,
         z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefArraySchema>
@@ -5713,6 +5717,10 @@ interface Checks {
     'component:InteractionSearchQuery': Same<
         W.ApiComponentTypes['InteractionSearchQuery'],
         z.infer<typeof import('./api-schemas/interaction.js').InteractionSearchQuerySchema>
+    >;
+    'component:InteractionListQuery': Same<
+        W.ApiComponentTypes['InteractionListQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionListQuerySchema>
     >;
     'component:ResolveInteractionQuery': Same<
         W.ApiComponentTypes['ResolveInteractionQuery'],
@@ -10882,6 +10890,7 @@ const checks: Checks = {
     InteractionRefWithSchemaArray: true,
     InteractionTagsArray: true,
     InteractionEndpointArray: true,
+    InteractionListQuery: true,
     CatalogInteractionRefArray: true,
     CatalogTagQueryWire: true,
     StoredCatalogInteractionsQueryWire: true,
@@ -11292,6 +11301,7 @@ const checks: Checks = {
     'component:InteractionForkPayload': true,
     'component:InteractionsExportPayload': true,
     'component:InteractionSearchQuery': true,
+    'component:InteractionListQuery': true,
     'component:ResolveInteractionQuery': true,
     'component:CatalogInteractionRef': true,
     'component:CatalogInteractionRefArray': true,
@@ -12302,6 +12312,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2562);
+        expect(Object.keys(checks)).toHaveLength(2564);
     });
 });

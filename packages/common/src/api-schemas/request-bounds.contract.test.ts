@@ -4,7 +4,8 @@ import { validateApiRequest } from './registry.js';
 
 /**
  * The bounds request components publish for rules their endpoints already enforced: a value that must not be
- * empty, or blank where the server trims it, a list that needs at least one item, a name in the server's format.
+ * empty, or blank where the server trims it, a list that needs at least one item, a name in the server's format, a
+ * page window the route accepts.
  *
  * Each case checks one field by its own path, so a body only needs that field: what else the component requires
  * is reported at the root and does not count. A refused value must be reported at the field; a value the server
@@ -262,6 +263,103 @@ const bounds: FieldBounds[] = [
     nonEmpty('UpdateDashboardPayload', 'name'),
     nonEmpty('CreateDashboardSnapshotPayload', 'name'),
     nonEmpty('CreateDashboardSnapshotPayload', 'message'),
+    // Page windows, each as its route reads it
+    ...(['limit', 'offset'] as const).map(
+        (field): FieldBounds => ({
+            component: 'InteractionListQuery',
+            field,
+            refused: [
+                ['a fraction', 1.5],
+                ['an unsafe integer', 2 ** 53],
+                ['a negative number', -1],
+                ...(field === 'limit' ? ([['0', 0]] as Case[]) : []),
+            ],
+            accepted: [
+                ['1', 1],
+                ['the largest safe integer', Number.MAX_SAFE_INTEGER],
+                ...(field === 'offset' ? ([['0', 0]] as Case[]) : []),
+            ],
+        }),
+    ),
+    ...(['ListOAuthGrantsQuery', 'SearchAgentRunsQuery', 'ComplexSearchPayload'] as const).flatMap((component) =>
+        (['limit', 'offset'] as const).map(
+            (field): FieldBounds => ({
+                component,
+                field,
+                // Fractions are truncated and large values clamped or refused by the handler, so only the sign is
+                // published.
+                refused: [
+                    ['a negative number', -1],
+                    ['a negative fraction', -0.5],
+                ],
+                accepted: [
+                    ['0', 0],
+                    ['a fraction', 2.5],
+                    ['a large number', 1e9],
+                ],
+            }),
+        ),
+    ),
+    ...(['ExecuteViewRequest', 'PreviewViewExperienceRequest'] as const).flatMap((component): FieldBounds[] => [
+        {
+            component,
+            field: 'limit',
+            refused: [
+                ['0', 0],
+                ['201', 201],
+                ['a fraction', 1.5],
+            ],
+            accepted: [
+                ['1', 1],
+                ['200', 200],
+            ],
+        },
+        {
+            component,
+            field: 'offset',
+            refused: [
+                ['a negative number', -1],
+                ['50,001', 50_001],
+                ['a fraction', 2.5],
+            ],
+            accepted: [
+                ['0', 0],
+                ['50,000', 50_000],
+            ],
+        },
+    ]),
+    {
+        component: 'UpdateViewExperienceRequest',
+        field: 'revision',
+        refused: [
+            ['0', 0],
+            ['a fraction', 1.5],
+        ],
+        accepted: [
+            ['1', 1],
+            ['a large revision', 2 ** 40],
+        ],
+    },
+    // Components that share these fields with routes that ignore them keep accepting any number.
+    ...(
+        [
+            ['InteractionSearchQuery', 'limit'],
+            ['ComputeInteractionFacetPayload', 'query/limit'],
+            ['BulkRevokeOAuthGrantsPayload', 'offset'],
+            ['ComplexSearchQuery', 'limit'],
+            ['ComputeObjectFacetPayload', 'query/offset'],
+        ] as const
+    ).map(
+        ([component, field]): FieldBounds => ({
+            component,
+            field,
+            refused: [],
+            accepted: [
+                ['a negative number', -1],
+                ['a fraction', 1.5],
+            ],
+        }),
+    ),
 ];
 
 /**
@@ -274,6 +372,11 @@ const declaredFields: Array<[ApiComponentName, string]> = [
     ['UpdateOAuthProviderPayload', 'name'],
     ['WebsiteCredentialMetadataUpdate', 'name'],
     ['ProjectTokenRequest', 'account_id'],
+    ['InteractionSearchQuery', 'limit'],
+    ['ComputeInteractionFacetPayload', 'query/limit'],
+    ['BulkRevokeOAuthGrantsPayload', 'offset'],
+    ['ComplexSearchQuery', 'limit'],
+    ['ComputeObjectFacetPayload', 'query/offset'],
 ];
 
 describe.each(bounds)('$component $field', ({ component, field, refused, accepted }) => {
@@ -287,6 +390,8 @@ describe.each(bounds)('$component $field', ({ component, field, refused, accepte
     });
 });
 
+// A value of the wrong type is reported at a declared field, a string field refusing a number and a number field a
+// string. An undeclared one is reported at the body instead.
 it.each(declaredFields)('%s declares %s', (component, field) => {
-    expect(issuesAt(component, field, 42)).not.toEqual([]);
+    expect([...issuesAt(component, field, 42), ...issuesAt(component, field, 'x')]).not.toEqual([]);
 });

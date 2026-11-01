@@ -559,7 +559,7 @@ export const UpdateViewExperienceRequestSchema = z
         results: ViewResultsConfigurationSchema.optional(),
         description: viewExperienceDescription,
         version: ViewExperienceSchemaVersionSchema,
-        revision: z.number(),
+        revision: z.number().min(1).multipleOf(1),
     })
     .meta({
         id: 'UpdateViewExperienceRequest',

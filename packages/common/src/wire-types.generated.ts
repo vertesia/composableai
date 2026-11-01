@@ -10273,6 +10273,22 @@ export type PromptSegmentRef_ExportedPromptTemplateRef = {
 export type InteractionRefWithSchemaArray = InteractionRefWithSchema[];
 export type InteractionTagsArray = InteractionTags[];
 export type InteractionEndpointArray = InteractionEndpoint[];
+export type InteractionListQuery = {
+    name?: string | undefined;
+    status?: string[] | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    prompt?: string | undefined;
+    tags?: string[] | undefined;
+    version?: string | undefined;
+    model?: string | undefined;
+    environment?: string | undefined;
+    is_agent?: boolean | undefined;
+    is_tool?: boolean | undefined;
+    is_skill?: boolean | undefined;
+    is_basic?: boolean | undefined;
+    is_sub_agent?: boolean | undefined;
+};
 export type CatalogInteractionRefArray = CatalogInteractionRef[];
 export type CatalogTagQueryWire = {
     tag?: string | undefined;
@@ -11234,6 +11250,7 @@ export interface ApiComponentTypes {
     InteractionForkPayload: InteractionForkPayload;
     InteractionsExportPayload: InteractionsExportPayload;
     InteractionSearchQuery: InteractionSearchQuery;
+    InteractionListQuery: InteractionListQuery;
     ResolveInteractionQuery: ResolveInteractionQuery;
     CatalogInteractionRef: CatalogInteractionRef;
     CatalogInteractionRefArray: CatalogInteractionRefArray;

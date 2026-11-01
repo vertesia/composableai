@@ -572,6 +572,13 @@ export const InteractionSearchQuerySchema = z
     })
     .meta({ id: 'InteractionSearchQuery' });
 
+// The query of the interaction list routes, which refuse a page that is not a whole number or a size below one. The
+// facet payload carries InteractionSearchQuery and ignores its page, so the bounds are the list routes' alone.
+export const InteractionListQuerySchema = InteractionSearchQuerySchema.extend({
+    limit: z.number().min(1).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
+    offset: z.number().min(0).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
+}).meta({ id: 'InteractionListQuery' });
+
 export const AsyncExecutionResultSchema = z
     .strictObject({
         runId: z.string(),
