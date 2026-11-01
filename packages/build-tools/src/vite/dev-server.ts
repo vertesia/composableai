@@ -30,9 +30,9 @@
  * ```
  */
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import type { Plugin } from 'vite';
+import { normalizePath, type Plugin } from 'vite';
 import { loadSkillCatalog, readPackageJson, resolveSkillCatalogPath } from '../core/skill-markdown/load-catalog.js';
 import type { PreprocessSkillMarkdownOptions } from '../core/skill-markdown/preprocess.js';
 import { createSkillTransformer, isSkillTransformer } from '../core/transformers/skill.js';
@@ -64,7 +64,7 @@ export function vertesiaDevServerPlugin(options: VertesiaDevServerPluginOptions 
 
     // Resolved once, lazily: the catalog module is compiled output, so it may not exist when the
     // config is first evaluated.
-    let root = process.cwd();
+    let root = normalizePath(process.cwd());
 
     let boundPromise: Promise<TransformerRule | null> | undefined;
 
@@ -94,31 +94,42 @@ export function vertesiaDevServerPlugin(options: VertesiaDevServerPluginOptions 
         enforce: 'pre',
 
         configResolved(config: { root?: string }) {
-            if (config.root) root = config.root;
+            if (config.root) root = normalizePath(config.root);
         },
 
         /**
-         * Map relative query-style imports to absolute paths so Vite's loader
-         * sees a stable id keyed by the original file location. The query
-         * suffix is preserved in the id and used by `load` to pick the right
-         * transformer.
+         * Map relative and root-relative query-style imports to absolute paths so Vite's loader
+         * sees a stable id keyed by the original file location. The query suffix is preserved in
+         * the id and used by `load` to pick the right transformer.
          */
         resolveId(source: string, importer: string | undefined) {
             for (const transformer of transformers) {
                 if (!transformer.pattern.test(source)) continue;
+                const suffix = source.match(transformer.pattern)?.[0] ?? '';
+                // `/@fs/<abs>` is Vite's URL for a file outside the root; this hook runs before
+                // Vite's resolver, so the prefix is still on the id here.
+                let base = source.slice(0, source.length - suffix.length);
+                if (base.startsWith(FS_PREFIX)) {
+                    // Keep the leading `/` of a POSIX path, but not before a Windows drive letter.
+                    const fsPath = base.slice(FS_PREFIX.length);
+                    base = WINDOWS_VOLUME.test(fsPath) ? fsPath : `/${fsPath}`;
+                }
                 // Only relative specifiers can be resolved meaningfully against an importer.
-                if (source.startsWith('.') && importer) {
-                    const cleanSource = source.replace(transformer.pattern, '');
-                    const cleanImporter = importer.includes('?')
-                        ? importer.substring(0, importer.indexOf('?'))
-                        : importer;
-                    const baseDir = path.dirname(cleanImporter);
-                    const resolved = path.resolve(baseDir, cleanSource);
-                    const suffix = source.match(transformer.pattern)?.[0] ?? '';
-                    return resolved + suffix;
+                if (base.startsWith('.') && importer) {
+                    base = normalizePath(path.resolve(path.dirname(stripQuery(importer)), base));
+                }
+                // Vite also requests modules by their root-relative URL (`/src/x.md?skill`), e.g.
+                // when it replays a cached transform, and may hand such a URL over as the importer
+                // of a relative import. Like Vite's own resolver, read a `/` id under the root
+                // first, and as a filesystem path only when nothing exists there.
+                if (base.startsWith('/') && !base.startsWith(`${root}/`)) {
+                    const underRoot = normalizePath(path.join(root, base)) + suffix;
+                    // A collection id names a module that does not exist inside the directory it scans.
+                    const target = transformer.virtual ? path.dirname(stripQuery(underRoot)) : stripQuery(underRoot);
+                    if (existsSync(target)) return underRoot;
                 }
                 // Bare or absolute matches are returned as-is.
-                return source;
+                return base + suffix;
             }
             return null;
         },
@@ -162,6 +173,10 @@ export function vertesiaDevServerPlugin(options: VertesiaDevServerPluginOptions 
         },
     };
 }
+
+// Vite's prefix for ids outside the root; it is not part of Vite's public exports.
+const FS_PREFIX = '/@fs/';
+const WINDOWS_VOLUME = /^[A-Za-z]:/;
 
 function findMatchingTransformer(id: string, transformers: TransformerRule[]): TransformerRule | undefined {
     for (const t of transformers) {
