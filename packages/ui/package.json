@@ -40,6 +40,7 @@
     "dependencies": {
         "@floating-ui/dom": "^1.8.0",
         "@floating-ui/react": "^0.27.20",
+        "@llumiverse/common": "workspace:*",
         "@monaco-editor/react": "^4.7.0",
         "@radix-ui/react-checkbox": "^1.4.1",
         "@radix-ui/react-collapsible": "^1.2.1",
