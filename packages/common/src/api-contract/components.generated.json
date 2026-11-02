@@ -198,17 +198,17 @@
       "processId": {
         "type": "string",
         "pattern": "^app(:|$)",
-        "description": "The app process, as `app:<app name>:<local id>`."
+        "description": "The app process, as `app:<app name>:<local id>`. Only the `app` prefix is checked as a format; a reference without an app name or local id is refused by the lookup, as forbidden or not found."
       },
       "templateId": {
         "type": "string",
         "pattern": "^app(:|$)",
-        "description": "The app rendering template, as `app:<app name>:<local id>`."
+        "description": "The app rendering template, as `app:<app name>:<local id>`. Only the `app` prefix is checked as a format; a reference without an app name or local id is refused by the lookup, as forbidden or not found."
       },
       "typeId": {
         "type": "string",
         "pattern": "^app(:|$)",
-        "description": "The app content type, as `app:<app name>:<local id>`."
+        "description": "The app content type, as `app:<app name>:<local id>`. Only the `app` prefix is checked as a format; a reference without an app name or local id is refused by the lookup, as forbidden or not found."
       },
       "viewId": {
         "type": "string",

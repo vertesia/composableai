@@ -17,12 +17,20 @@ function objectId(description: string) {
         .meta({ description: `${description}, as 24 hexadecimal characters.` });
 }
 
-/** A reference to a capability an installed app contributes: `app:<app name>:<local id>`. */
+/**
+ * A reference to a capability an installed app contributes: `app:<app name>:<local id>`. Only the `app` prefix is a
+ * format check: the server answers 400 without it, and looks every other value up, so a reference missing its app name
+ * or local id keeps the lookup's 403 or 404.
+ */
 function appReference(what: string) {
     return z
         .string()
         .regex(/^app(:|$)/)
-        .meta({ description: `The ${what}, as \`app:<app name>:<local id>\`.` });
+        .meta({
+            description:
+                `The ${what}, as \`app:<app name>:<local id>\`. Only the \`app\` prefix is checked as a format; ` +
+                'a reference without an app name or local id is refused by the lookup, as forbidden or not found.',
+        });
 }
 
 export const DashboardPathParamsSchema = z
