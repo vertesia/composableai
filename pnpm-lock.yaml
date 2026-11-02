@@ -19,7 +19,7 @@ overrides:
   diff@>=6.0.0 <8.0.3: ^8.0.3
   dompurify@<=3.4.11: ^3.4.12
   fast-uri@>=3.0.0 <3.1.5: ^3.1.5
-  hono@<4.12.34: ^4.12.34
+  hono@<4.12.34: ^4.13.11
   '@hono/node-server@<2.0.10': ^2.0.10
   js-yaml@>=4.0.0 <4.3.0: ^4.3.0
   postcss@<=8.5.22: ^8.5.23
@@ -311,7 +311,7 @@ importers:
     devDependencies:
       '@hono/node-server':
         specifier: ^2.0.10
-        version: 2.0.12(hono@4.12.34)
+        version: 2.0.12(hono@4.13.14)
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -747,8 +747,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       hono:
-        specifier: ^4.12.34
-        version: 4.12.34
+        specifier: ^4.13.11
+        version: 4.13.14
       jose:
         specifier: ^6.2.3
         version: 6.2.3
@@ -1168,7 +1168,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^2.0.10
-        version: 2.0.12(hono@4.12.34)
+        version: 2.0.12(hono@4.13.14)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1191,8 +1191,8 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       hono:
-        specifier: ^4.12.34
-        version: 4.12.34
+        specifier: ^4.13.11
+        version: 4.13.14
       lucide-react:
         specifier: ^1.21.0
         version: 1.21.0(react@19.2.7)
@@ -1202,7 +1202,7 @@ importers:
         version: 2.5.0
       '@hono/vite-dev-server':
         specifier: ^0.26.0
-        version: 0.26.0(hono@4.12.34)
+        version: 0.26.0(hono@4.13.14)
       '@tailwindcss/forms':
         specifier: ^0.5.11
         version: 0.5.11(tailwindcss@4.3.1)
@@ -1924,13 +1924,13 @@ packages:
     resolution: {integrity: sha512-eWpQYr67tqJLeaSUl0Q+TquuYfUdTibpOJlUMV2FfUP7+KqCC5TufnwnlXL6mobZBJbGAYRd7ZvEBDCbLInjhg==}
     engines: {node: '>=20'}
     peerDependencies:
-      hono: ^4.12.34
+      hono: ^4.13.11
 
   '@hono/vite-dev-server@0.26.0':
     resolution: {integrity: sha512-DYHht1lge/SRGd1dpOgwhS6DpamSaDtxAOlwl2RkcYyLFy769DZPEX6CeRaUzeDNgClO9JAuT83VptxB5mH5jA==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
-      hono: ^4.12.34
+      hono: ^4.13.11
       miniflare: '*'
       wrangler: '*'
     peerDependenciesMeta:
@@ -3340,6 +3340,7 @@ packages:
   '@smithy/core@3.29.3':
     resolution: {integrity: sha512-L+Ys6ecjk5vwPMAKHBpPKlJ3DkqwNcnfEISXBZIsVvWG/XKXfsAP8mwIYlTeLcd2ElHdesPI8OuOmJSFAPhm6A==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.4.8':
     resolution: {integrity: sha512-q9J7JTiXrAhB8sDp4px97uEPT7CwKH61Co78grdNQvU8QZAdiuaSRhP0tUVf2ogy36RZTrlMU1rBmDEH+cnkiA==}
@@ -5041,8 +5042,8 @@ packages:
     resolution: {integrity: sha512-EQfezRg0NCZGNlhlDR3Evrw1FVL2G3LhU7EgPoxufQKruNBSYA8MiRPHeWbU+36o+Fhel0wMwM+sLEiBAlNLJA==}
     engines: {node: '>=10.0.0'}
 
-  hono@4.12.34:
-    resolution: {integrity: sha512-GqXJqY/xJkJmuloTrnV1ZEXG3fqte+VjkUqoRNZXcrUidiUOP4fMSIHHY4tsqZBK++kVyWmt/AAfSUuy57/eSA==}
+  hono@4.13.14:
+    resolution: {integrity: sha512-yhRLQ21U6qa9Hsu2N7Qcbh8tE+WKEcoErjIo56LeSGiGXGp9sA7UpE86Ui9uexb61KakiGwuHMn2QdV7w6i6kQ==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@6.0.0:
@@ -7895,14 +7896,14 @@ snapshots:
       protobufjs: 7.6.5
       yargs: 17.7.2
 
-  '@hono/node-server@2.0.12(hono@4.12.34)':
+  '@hono/node-server@2.0.12(hono@4.13.14)':
     dependencies:
-      hono: 4.12.34
+      hono: 4.13.14
 
-  '@hono/vite-dev-server@0.26.0(hono@4.12.34)':
+  '@hono/vite-dev-server@0.26.0(hono@4.13.14)':
     dependencies:
-      '@hono/node-server': 2.0.12(hono@4.12.34)
-      hono: 4.12.34
+      '@hono/node-server': 2.0.12(hono@4.13.14)
+      hono: 4.13.14
       minimatch: 9.0.9
 
   '@iconify/types@2.0.0': {}
@@ -10941,7 +10942,7 @@ snapshots:
 
   heap-js@2.7.1: {}
 
-  hono@4.12.34: {}
+  hono@4.13.14: {}
 
   html-encoding-sniffer@6.0.0(@noble/hashes@1.8.0):
     dependencies:
