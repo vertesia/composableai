@@ -5625,6 +5625,15 @@ export type AppEventDeliveryTargetInput = {
     url: string;
     timeout_ms?: number | undefined;
 };
+export type IntakeMediaAnalysisOverride = {
+    interaction?: string | undefined;
+    config?: InteractionExecutionConfiguration | undefined;
+};
+export type IntakeMediaAnalysisOverrides = {
+    image?: IntakeMediaAnalysisOverride | undefined;
+    video?: IntakeMediaAnalysisOverride | undefined;
+    audio?: IntakeMediaAnalysisOverride | undefined;
+};
 export type EventDeliveryIntentSummary = {
     id: string;
     event_id: string;
@@ -6750,6 +6759,31 @@ export type UpdateSecretRequest = {
 };
 export type DeleteSecretResponse = {
     ok: boolean;
+};
+/** Packaged workflows supported by event subscriptions. */
+export type SubscriptionWorkflowDefinition = {
+    endpoint: string;
+    title: string;
+    description: string;
+    variables_schema: JSONSchema;
+    variables_template: JSONObject;
+    templates?:
+        | {
+              name: string;
+              title: string;
+              description: string;
+              variables: JSONObject;
+          }[]
+        | undefined;
+    system_targets?:
+        | {
+              run_as_role: (typeof SystemRoles)[keyof typeof SystemRoles];
+              task_queue?: string | undefined;
+          }[]
+        | undefined;
+};
+export type SubscriptionWorkflowCatalog = {
+    workflows: SubscriptionWorkflowDefinition[];
 };
 export type AgentToolApprovalMode = 'ask' | 'auto_review' | 'full_control';
 export type ToolApprovalGrant = {
@@ -8307,6 +8341,7 @@ export type ContentTypeExtractionGroundingPolicy = {
     review?: ContentTypeExtractionGroundingReviewPolicy | undefined;
 };
 export type ContentTypeIntakePolicy = {
+    media_analysis?: IntakeMediaAnalysisOverrides | undefined;
     mode?: 'programmatic' | 'agentic' | undefined;
     identification?:
         | {
@@ -11661,6 +11696,8 @@ export interface ApiComponentTypes {
     ComputeObjectFacetPayload: ComputeObjectFacetPayload;
     ComplexSearchPayload: ComplexSearchPayload;
     ObjectSearchResponse: ObjectSearchResponse;
+    IntakeMediaAnalysisOverride: IntakeMediaAnalysisOverride;
+    IntakeMediaAnalysisOverrides: IntakeMediaAnalysisOverrides;
     EventPriority: EventPriority;
     WorkflowRuleInputType: WorkflowRuleInputTypeWire;
     WorkflowRuleItem: WorkflowRuleItem;
@@ -11867,6 +11904,8 @@ export interface ApiComponentTypes {
     ActivityPropertyDefinition: ActivityPropertyDefinitionWire;
     ActivityDefinition: ActivityDefinitionWire;
     ActivityCatalog: ActivityCatalogWire;
+    SubscriptionWorkflowDefinition: SubscriptionWorkflowDefinition;
+    SubscriptionWorkflowCatalog: SubscriptionWorkflowCatalog;
     WorkflowInteractionVars: WorkflowInteractionVars;
     ListWorkflowInteractionsResponse: ListWorkflowInteractionsResponse;
     RestartAgentRunPayload: RestartAgentRunPayload;
