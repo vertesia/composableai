@@ -217,6 +217,7 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
     // reports its size.
     const videoFile = await saveBlobToTempFile(client, inputObject.content.source, undefined, {
         maxBytes: getSourceLimits().mediaMaxBytes,
+        limit: 'media',
     });
     let tempOutputDir: string | undefined;
 

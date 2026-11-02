@@ -8,6 +8,7 @@ import { log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import tmp from 'tmp';
 import { DocumentNotFoundError, SourceTooLargeError } from '../errors.js';
+import { logSourceLimitExceeded, type SourceLimitName } from './source-limits.js';
 
 // Process-wide: other tmp users rely on exit-time cleanup. saveBlobToTempFile registers nothing with tmp.
 tmp.setGracefulCleanup();
@@ -70,6 +71,8 @@ export interface BlobDownloadOptions {
      * download when the store reports the blob's size, otherwise as soon as the download goes over.
      */
     maxBytes?: number;
+    /** The limit `maxBytes` enforces, as a larger blob is logged. */
+    limit?: SourceLimitName;
 }
 
 /**
@@ -94,9 +97,15 @@ export async function getBlobSize(client: VertesiaClient, blobUri: string): Prom
  * Fail with a {@link SourceTooLargeError} when the store reports a blob larger than `maxBytes`. A blob whose size is
  * unknown passes: a capped download ({@link BlobDownloadOptions.maxBytes}) still stops it.
  */
-export async function assertBlobSizeWithin(client: VertesiaClient, blobUri: string, maxBytes: number): Promise<void> {
+export async function assertBlobSizeWithin(
+    client: VertesiaClient,
+    blobUri: string,
+    maxBytes: number,
+    limit: SourceLimitName = 'download',
+): Promise<void> {
     const size = await getBlobSize(client, blobUri);
     if (size !== undefined && size > maxBytes) {
+        logSourceLimitExceeded({ source: blobUri, limit, max_bytes: maxBytes, size, outcome: 'rejected' });
         throw new SourceTooLargeError(blobUri, maxBytes, size);
     }
 }
@@ -204,13 +213,13 @@ async function saveBlobToNewFile(
     client: VertesiaClient,
     blobUri: string,
     file: string,
-    { maxBytes }: BlobDownloadOptions,
+    { maxBytes, limit }: BlobDownloadOptions,
 ): Promise<void> {
     // Create the file before downloading: a name that is already taken fails before any request.
     const handle = await open(file, 'wx', 0o600);
     try {
         if (maxBytes !== undefined) {
-            await assertBlobSizeWithin(client, blobUri, maxBytes);
+            await assertBlobSizeWithin(client, blobUri, maxBytes, limit);
         }
         const stream = await fetchBlobAsStream(client, blobUri);
         // The write stream closes the descriptor once the pipeline settles. A failure destroys the source, which
@@ -218,7 +227,7 @@ async function saveBlobToNewFile(
         if (maxBytes === undefined) {
             await pipeline(Readable.from(stream), handle.createWriteStream());
         } else {
-            await pipeline(Readable.from(stream), limitBytes(blobUri, maxBytes), handle.createWriteStream());
+            await pipeline(Readable.from(stream), limitBytes(blobUri, maxBytes, limit), handle.createWriteStream());
         }
     } catch (err: unknown) {
         // A failed download never handed the descriptor to a write stream; closing an already closed one is a no-op.
@@ -228,12 +237,17 @@ async function saveBlobToNewFile(
 }
 
 /** Pass bytes through until more than `maxBytes` went by, then fail with a {@link SourceTooLargeError}. */
-function limitBytes(blobUri: string, maxBytes: number): Transform {
+function limitBytes(blobUri: string, maxBytes: number, limit: SourceLimitName = 'download'): Transform {
     let size = 0;
     return new Transform({
         transform(chunk: Buffer, _encoding, callback) {
             size += chunk.length;
-            callback(size > maxBytes ? new SourceTooLargeError(blobUri, maxBytes) : null, chunk);
+            if (size <= maxBytes) {
+                callback(null, chunk);
+                return;
+            }
+            logSourceLimitExceeded({ source: blobUri, limit, max_bytes: maxBytes, outcome: 'rejected' });
+            callback(new SourceTooLargeError(blobUri, maxBytes));
         },
     });
 }

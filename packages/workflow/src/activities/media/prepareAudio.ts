@@ -242,6 +242,7 @@ export async function prepareAudio(
     // before any download when the store reports its size.
     const audioFile = await saveBlobToTempFile(client, inputObject.content.source, undefined, {
         maxBytes: getSourceLimits().mediaMaxBytes,
+        limit: 'media',
     });
     // Created inside the try, so a failure here still removes the download in the finally.
     let tempOutputDir: string | undefined;

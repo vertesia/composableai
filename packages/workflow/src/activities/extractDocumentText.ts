@@ -9,7 +9,7 @@ import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, SourceTooLargeError } from '../errors.js';
 import { type TextExtractionResult, TextExtractionStatus } from '../result-types.js';
 import { fetchBlobHead, md5, withBlobTempFile } from '../utils/blobs.js';
-import { getSourceLimits } from '../utils/source-limits.js';
+import { getSourceLimits, logSourceLimitExceeded } from '../utils/source-limits.js';
 import { createFileSourceResult, uploadTextPreviewToStorage } from '../utils/text-preview-utils.js';
 import { countTokens } from '../utils/tokens.js';
 import { initializeActivityCommandDeadline } from './media/exec.js';
@@ -114,7 +114,13 @@ async function extractFromObject(
     const limitedText = truncateExtractedText(extractedText);
     const txt = limitedText.text;
     if (limitedText.truncated) {
-        log.warn(`Extracted text for object ${doc.id} exceeded ${MAX_EXTRACTED_TEXT_BYTES} bytes and was truncated`);
+        logSourceLimitExceeded({
+            source: doc.content.source,
+            object_id: doc.id,
+            limit: 'extracted_text',
+            max_bytes: MAX_EXTRACTED_TEXT_BYTES,
+            outcome: 'truncated',
+        });
     }
 
     const tokensData = countTokens(txt);
@@ -158,7 +164,12 @@ async function extractFromFileSource(
     const limitedText = extractedText ? truncateExtractedText(extractedText) : undefined;
     const txt = limitedText?.text ?? null;
     if (limitedText?.truncated) {
-        log.warn(`Extracted text for ${input_file.url} exceeded ${MAX_EXTRACTED_TEXT_BYTES} bytes and was truncated`);
+        logSourceLimitExceeded({
+            source: input_file.url,
+            limit: 'extracted_text',
+            max_bytes: MAX_EXTRACTED_TEXT_BYTES,
+            outcome: 'truncated',
+        });
     }
 
     // Upload extracted text to storage
@@ -235,18 +246,14 @@ async function extractTextFromSource(client: VertesiaClient, source: string, mim
         try {
             const text = await withBlobTempFile(client, source, converter.ext, (file) => converter.convert(file), {
                 maxBytes,
+                limit: 'converter',
             });
             return { text };
         } catch (err: unknown) {
             if (!(err instanceof SourceTooLargeError)) {
                 throw err;
             }
-            log.warn('Skipping text extraction of a source over the converter size limit', {
-                source,
-                mime_type: mimeType,
-                size: err.size,
-                max_bytes: maxBytes,
-            });
+            // The download logged the source over the limit.
             return { text: null, skipped: `Source too large for text extraction: over ${maxBytes / MiB} MiB` };
         }
     }

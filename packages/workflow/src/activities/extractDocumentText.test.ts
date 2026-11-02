@@ -285,6 +285,7 @@ describe('extractDocumentText', () => {
                 expect.any(Function),
                 {
                     maxBytes: 1024 * MiB,
+                    limit: 'converter',
                 },
             );
             expect(mutoolPdfToText).toHaveBeenCalledExactlyOnceWith('/tmp/source.pdf');
@@ -303,7 +304,10 @@ describe('extractDocumentText', () => {
 
                 await testEnv.run(extractDocumentText, createPayload());
 
-                expect(vi.mocked(withBlobTempFile).mock.calls[0]?.[4]).toEqual({ maxBytes: 2048 * MiB });
+                expect(vi.mocked(withBlobTempFile).mock.calls[0]?.[4]).toEqual({
+                    maxBytes: 2048 * MiB,
+                    limit: 'converter',
+                });
             } finally {
                 vi.unstubAllEnvs();
             }

@@ -105,6 +105,7 @@ describe('prepareVideo source limits', () => {
             undefined,
             {
                 maxBytes: 8192 * 1024 * 1024,
+                limit: 'media',
             },
         );
     });

@@ -7,6 +7,7 @@ import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SourceTooLargeError } from '../errors.js';
 import { assertBlobSizeWithin, getBlobSize, removeTempFiles, saveBlobToTempFile, withBlobTempFile } from './blobs.js';
+import { SOURCE_LIMIT_EXCEEDED_MESSAGE } from './source-limits.js';
 
 // Pass-through, so a test can make the cleanup of a failed download fail.
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -273,6 +274,44 @@ describe('blob size limits', () => {
         }
         expect(openDescriptorCount()).toBe(before);
         expect(fs.readdirSync(tempDir)).toEqual([]);
+    });
+
+    it('logs each blob over the limit once, with the limit it went over', async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+        await expect(
+            saveBlobToTempFile(clientWith('x'.repeat(100), 100), 'gs://b/known', 'mxf', {
+                maxBytes: 99,
+                limit: 'media',
+            }),
+        ).rejects.toBeInstanceOf(SourceTooLargeError);
+        await expect(
+            saveBlobToTempFile(clientWith('x'.repeat(100), undefined), 'gs://b/unknown', 'mxf', { maxBytes: 99 }),
+        ).rejects.toBeInstanceOf(SourceTooLargeError);
+
+        expect(warn.mock.calls).toEqual([
+            [
+                SOURCE_LIMIT_EXCEEDED_MESSAGE,
+                {
+                    event: 'source_limit_exceeded',
+                    source: 'gs://b/known',
+                    limit: 'media',
+                    max_bytes: 99,
+                    size: 100,
+                    outcome: 'rejected',
+                },
+            ],
+            [
+                SOURCE_LIMIT_EXCEEDED_MESSAGE,
+                {
+                    event: 'source_limit_exceeded',
+                    source: 'gs://b/unknown',
+                    limit: 'download',
+                    max_bytes: 99,
+                    outcome: 'rejected',
+                },
+            ],
+        ]);
     });
 
     it('fails on a taken name before asking the store anything', async () => {
