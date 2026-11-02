@@ -32,5 +32,17 @@ describe('paged list contracts', () => {
         expect(validateApiRequest(component, { offset: 1.2 }).valid).toBe(false);
         expect(validateApiRequest(component, { offset: -1 }).valid).toBe(false);
         expect(validateApiRequest(component, { limit: -1 }).valid).toBe(false);
+        // Past the largest safe integer a count loses precision, and Mongo refuses it in `$skip`.
+        expect(validateApiRequest(component, { offset: Number.MAX_SAFE_INTEGER }).valid).toBe(true);
+        expect(validateApiRequest(component, { offset: 2 ** 63 }).valid).toBe(false);
+    });
+});
+
+describe('UpdateAppInstallationToolPermissionsPayload', () => {
+    it('refuses an empty body, which would change nothing', () => {
+        const component = 'UpdateAppInstallationToolPermissionsPayload';
+        expect(validateApiRequest(component, {}).valid).toBe(false);
+        expect(validateApiRequest(component, { tool_allowlist: null }).valid).toBe(true);
+        expect(validateApiRequest(component, { tools_requiring_approval: ['search'] }).valid).toBe(true);
     });
 });

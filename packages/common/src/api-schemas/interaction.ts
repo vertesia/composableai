@@ -398,7 +398,7 @@ export const InteractionsExportPayloadSchema = z
             })
             .optional(),
         tags: z.array(z.string()).optional(),
-        versions: z.array(z.union([z.number(), z.literal('draft'), z.literal('latest')])).optional(),
+        versions: z.array(z.union([z.number(), z.literal('draft')])).optional(),
     })
     .meta({ id: 'InteractionsExportPayload' });
 
