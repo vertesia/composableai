@@ -21,6 +21,101 @@ export const nullableNumberSchema = z
 // Capped at the largest safe integer: a larger count loses precision, and Mongo rejects it in `$skip`/`$limit`.
 export const PageCountSchema = z.number().multipleOf(1).min(0).max(Number.MAX_SAFE_INTEGER);
 
+/**
+ * A JSON Schema conditional, for a rule over several fields of one request: spread into a component's `.meta()`.
+ *
+ * Validators enforce `if`/`then`/`else`, and the Java, Go and Python generators ignore them, so each generated model
+ * keeps its plain fields. A component-level `anyOf` or `oneOf` of required fragments would instead turn the model
+ * into a wrapper class.
+ */
+export function conditional(
+    condition: Record<string, unknown>,
+    consequence: Record<string, unknown>,
+    alternative?: Record<string, unknown>,
+): Record<string, unknown> {
+    return {
+        if: condition,
+        // biome-ignore lint/suspicious/noThenProperty: the JSON Schema `then` keyword, read by validators, never awaited.
+        then: consequence,
+        ...(alternative ? { else: alternative } : {}),
+    };
+}
+
+/** The `if`/`then` fragment for a string field that is present and not empty. */
+export function nonEmpty(field: string): Record<string, unknown> {
+    return { required: [field], properties: { [field]: { minLength: 1 } } };
+}
+
+// A Mongo field name: non-empty, without `.` or NUL, not starting with `$`. A field path joins such names with `.`.
+const MONGO_FIELD_NAME = '[^$.\\x00][^.\\x00]*';
+const MONGO_FIELD_PATH = `${MONGO_FIELD_NAME}(\\.${MONGO_FIELD_NAME})*`;
+
+/**
+ * The facets of a payload whose endpoint runs them as a Mongo `$facet`: each `name` becomes a field name, so it is a
+ * Mongo field name other than `total`, which the response keeps for the match count, and each `field` is a field path.
+ * Spread into the payload's `.meta()`. The Elasticsearch-backed facet payloads accept dotted names, so the shared
+ * `FacetSpec` stays as it is.
+ */
+export const mongoFacetsRule = conditional(
+    { required: ['facets'] },
+    {
+        properties: {
+            facets: {
+                items: {
+                    properties: {
+                        name: { pattern: `^${MONGO_FIELD_NAME}$`, not: { const: 'total' } },
+                        field: { pattern: `^${MONGO_FIELD_PATH}$` },
+                    },
+                },
+            },
+        },
+    },
+);
+
+export const MONGO_FACETS_DESCRIPTION =
+    'Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not ' +
+    '`total`. Each `field` is a dotted path of such names.';
+
+/**
+ * The facets of a payload whose endpoint runs them as Elasticsearch aggregations: each `name` becomes an aggregation
+ * name, which Elasticsearch refuses when empty or containing `[`, `]` or `>`, and is not `total`, which the response
+ * keeps for the match count. Spread into the payload's `.meta()`, like {@link mongoFacetsRule}.
+ */
+export const searchFacetsRule = conditional(
+    { required: ['facets'] },
+    {
+        properties: {
+            facets: { items: { properties: { name: { pattern: '^[^\\[\\]>]+$', not: { const: 'total' } } } } },
+        },
+    },
+);
+
+export const SEARCH_FACETS_DESCRIPTION =
+    'Each facet `name` is an Elasticsearch aggregation name: non-empty, without `[`, `]` or `>`, and not `total`.';
+
+/**
+ * A caller's Mongo filter in the payload's `field`: its top-level keys are field paths, or `$and`, `$or` and `$nor`.
+ * Spread into the payload's `.meta()`. The server checks the rest of the grammar: the operators a condition may use,
+ * the nesting depth and the number of clauses.
+ *
+ * Stated on the payload rather than on the filter: a description or `propertyNames` on the free-form map makes the
+ * Java and Python generators drop its nullability and give it an empty default.
+ */
+export function mongoFilterKeysRule(field: string): Record<string, unknown> {
+    return conditional(
+        { required: [field] },
+        { properties: { [field]: { propertyNames: { pattern: `^(\\$(and|or|nor)|${MONGO_FIELD_PATH})$` } } } },
+    );
+}
+
+export function mongoFilterDescription(field: string): string {
+    return (
+        `\`${field}\` is a Mongo filter. Its keys are dotted field paths or \`$and\`, \`$or\` and \`$nor\`, and a ` +
+        'condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, ' +
+        '`$regex`, `$not` and `$elemMatch`.'
+    );
+}
+
 /** Monotonic token for optimistic concurrency on mutable, user-authored resources. */
 export const EditRevisionSchema = z
     .number()

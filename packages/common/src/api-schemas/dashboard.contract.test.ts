@@ -47,15 +47,19 @@ describe('dashboard request validation', () => {
         spec: { mark: 'bar' },
     };
 
-    it('accepts the two documented data-source branches', () => {
-        expect(validateApiRequest('CreateDashboardPayload', create)).toMatchObject({ valid: true });
-        expect(
-            validateApiRequest('CreateDashboardPayload', {
-                ...create,
-                dataSource: { kind: 'store_es_dsl', dsl: { size: 20 }, result: { type: 'hits' } },
-            }),
-        ).toMatchObject({ valid: true });
-    });
+    // A stored dashboard keeps a SQL query, and nothing runs an Elasticsearch source for it.
+    it.each(['CreateDashboardPayload', 'UpdateDashboardPayload'] as const)(
+        '%s accepts a SQL data source and refuses an Elasticsearch one',
+        (name) => {
+            expect(validateApiRequest(name, create)).toMatchObject({ valid: true });
+            expect(
+                validateApiRequest(name, {
+                    ...create,
+                    dataSource: { kind: 'store_es_dsl', dsl: { size: 20 }, result: { type: 'hits' } },
+                }).valid,
+            ).toBe(false);
+        },
+    );
 
     it('rejects an unknown data-source discriminator and undeclared payload fields', () => {
         expect(

@@ -105,6 +105,7 @@ const UserGroupWritableSchema = UserGroupSchema.pick({
  */
 export const CreateUserGroupPayloadSchema = UserGroupWritableSchema.partial({ tags: true })
     .extend({
+        name: z.string().min(1),
         allowed_projects: z
             .array(z.string())
             .optional()
@@ -131,6 +132,8 @@ export const UpdateUserGroupPayloadSchema = UserGroupSchema.pick({
     allowed_projects: true,
 })
     .partial({ tags: true })
+    // Only the payloads refuse an empty name: the `UserGroup` response keeps whatever is stored.
+    .extend({ name: z.string().min(1) })
     .meta({ id: 'UpdateUserGroupPayload' });
 
 /**

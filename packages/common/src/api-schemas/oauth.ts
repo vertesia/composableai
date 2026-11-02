@@ -92,24 +92,35 @@ export const OAuthProviderArraySchema = z.array(OAuthProviderSchema).meta({ id: 
  * keeping the two schemas separate is what makes it structural rather than a convention the next
  * handler has to remember.
  */
-export const CreateOAuthProviderPayloadSchema = z
-    .strictObject({
-        name: z.string(),
-        display_name: z.string(),
-        grant_type: z.enum(['authorization_code', 'client_credentials']).optional(),
-        authorization_endpoint: z.string().optional(),
-        token_endpoint: z.string().optional(),
-        client_id: z.string(),
-        client_secret: z
-            .string()
-            .meta({
-                description:
-                    'Optional client secret for confidential clients. Will be encrypted at rest and never returned in API responses.',
-            })
-            .optional(),
-        default_scopes: z.array(z.string()).optional(),
-        use_pkce: z.boolean().optional(),
-        revocation_endpoint: z.string().optional(),
+const oauthProviderPayloadSchema = z.strictObject({
+    name: z.string(),
+    display_name: z.string(),
+    grant_type: z.enum(['authorization_code', 'client_credentials']).optional(),
+    authorization_endpoint: z.string().optional(),
+    token_endpoint: z.string().optional(),
+    client_id: z.string(),
+    client_secret: z
+        .string()
+        .meta({
+            description:
+                'Optional client secret for confidential clients. Will be encrypted at rest and never returned in API responses.',
+        })
+        .optional(),
+    default_scopes: z.array(z.string()).optional(),
+    use_pkce: z.boolean().optional(),
+    revocation_endpoint: z.string().optional(),
+});
+
+/**
+ * A provider is created with a kebab-case name and a display name and client id that are not empty, as the server
+ * already requires. The update payload stays unbounded: it writes only the fields present, and narrowing it would
+ * refuse updates the server accepts today.
+ */
+export const CreateOAuthProviderPayloadSchema = oauthProviderPayloadSchema
+    .extend({
+        name: z.string().regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/),
+        display_name: z.string().min(1),
+        client_id: z.string().min(1),
     })
     .meta({
         id: 'CreateOAuthProviderPayload',
@@ -121,7 +132,7 @@ export const CreateOAuthProviderPayloadSchema = z
  * The update contract shares the create fields but makes each optional; the handler writes only the
  * fields present in the request.
  */
-export const UpdateOAuthProviderPayloadSchema = CreateOAuthProviderPayloadSchema.partial().meta({
+export const UpdateOAuthProviderPayloadSchema = oauthProviderPayloadSchema.partial().meta({
     id: 'UpdateOAuthProviderPayload',
     description:
         'Payload for updating an OAuth Provider. All fields are optional — only provided fields are updated. To clear the client_secret, set it to an empty string.',

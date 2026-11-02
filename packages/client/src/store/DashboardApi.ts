@@ -64,30 +64,24 @@ export class DashboardApi extends ApiTopic {
     /**
      * Create a new dashboard.
      *
-     * @param payload - Dashboard configuration with queries and panels
+     * @param payload - Dashboard name, SQL data source and Vega-Lite spec
      * @returns The created dashboard
      *
      * @example
      * ```typescript
      * const dashboard = await client.data.dashboards(storeId).create({
      *   name: 'Sales Overview',
-     *   queries: [
-     *     { name: 'revenue', sql: 'SELECT month, SUM(amount) FROM sales GROUP BY month' }
-     *   ],
-     *   panels: [
-     *     {
-     *       title: 'Monthly Revenue',
-     *       dataSources: ['revenue'],
-     *       position: { row: 0, col: 0 },
-     *       spec: {
-     *         mark: 'bar',
-     *         encoding: {
-     *           x: { field: 'month', type: 'ordinal' },
-     *           y: { field: 'sum_amount', type: 'quantitative' }
-     *         }
-     *       }
+     *   dataSource: {
+     *     kind: 'data_sql',
+     *     query: 'SELECT month, SUM(amount) AS revenue FROM sales GROUP BY month',
+     *   },
+     *   spec: {
+     *     mark: 'bar',
+     *     encoding: {
+     *       x: { field: 'month', type: 'ordinal' },
+     *       y: { field: 'revenue', type: 'quantitative' }
      *     }
-     *   ]
+     *   }
      * });
      * ```
      */
