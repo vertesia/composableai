@@ -49,10 +49,9 @@ export class RouterContext {
     // used internally to indicate that the path matched at least an endpoint but the method does not
     // in case of a 405 the value is the endpoint pattern
     _maybe405?: string;
-    // the methods of the most specific endpoints whose path matched (fewest params), sent as the `Allow` header of a
-    // 405: `/items/export` is the resource a request names, not the `/items/:id` it also happens to match
+    // the methods of every endpoint whose path matched, sent as the `Allow` header of a 405: dispatch serves a request
+    // from any of them, so `GET /items/export` reaches `/items/:id` even when `/items/export` only takes POST
     _allowedMethods?: Set<string>;
-    _allowedParamCount?: number;
 
     constructor(ctx: Context) {
         this.path = normalizePath(ctx.path);
@@ -123,12 +122,8 @@ export class EndpointRoute implements Route {
         if (this.method && this.method !== ctx.method) {
             const $router = ctx.$router;
             $router._maybe405 = this.absPathPattern;
-            const paramCount = this.absPathPattern.split(/[:*]/).length - 1;
-            if (!$router._allowedMethods || paramCount < ($router._allowedParamCount ?? Infinity)) {
-                $router._allowedMethods = new Set();
-                $router._allowedParamCount = paramCount;
-            }
-            if (paramCount === $router._allowedParamCount) $router._allowedMethods.add(this.method);
+            $router._allowedMethods ??= new Set();
+            $router._allowedMethods.add(this.method);
             return false;
         }
         // path and method matches
