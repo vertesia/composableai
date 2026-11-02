@@ -1,5 +1,8 @@
 import type { ContentSecurity } from '@vertesia/common';
 
+export { assertTokenPermissionClaims, InvalidTokenPermissionClaimsError } from './permission-validation.js';
+export { readTokenPermissionClaims, type TokenPermissionClaims } from './permissions.js';
+
 /** Values stored behind one opaque token-claim reference. Additional claims can be added later. */
 export interface ReferencedTokenClaims {
     abac?: ContentSecurity;

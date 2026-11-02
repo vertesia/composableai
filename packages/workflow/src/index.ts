@@ -33,6 +33,7 @@ export * from './utils/activity-info.js';
 export * from './utils/blobs.js';
 export * from './utils/client.js';
 export * from './utils/renditions.js';
+export * from './utils/source-limits.js';
 export * from './utils/storage.js';
 export * from './utils/text-preview-utils.js';
 export * from './utils/tokens.js';

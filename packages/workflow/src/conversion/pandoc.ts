@@ -1,40 +1,19 @@
-import { spawn } from 'node:child_process';
-import { PassThrough } from 'node:stream';
-import { log } from '@temporalio/activity';
+import { convertWithTool } from './convert-with-tool.js';
 
-export function markdownWithPandoc(buffer: Buffer, fromFormat: string): Promise<string> {
-    const fromType = undefined;
-
-    return new Promise((resolve, reject) => {
-        log.info(`Converting ${fromType} to markdown`);
-        const input = new PassThrough();
-        input.end(buffer);
-
-        const result: string[] = [];
-
-        const command = spawn('pandoc', ['-t', 'markdown', '-f', fromFormat], {
-            stdio: 'pipe',
-        });
-        input.pipe(command.stdin);
-
-        command.stdout.on('data', (data: string) => {
-            result.push(data.toString());
-        });
-        command.on('exit', (code) => {
-            if (code) {
-                reject(new Error(`pandoc exited with code ${code}`));
-            }
-        });
-        command.on('close', (code) => {
-            if (code) {
-                reject(new Error(`pandoc exited with code ${code}`));
-            } else {
-                resolve(result.join(''));
-            }
-        });
-
-        command.on('error', (err) => {
-            reject(err);
-        });
-    });
+/**
+ * Convert a document to markdown with pandoc.
+ *
+ * @param file the document, or the path of a document file, which keeps a large document out of memory
+ * @param fromFormat the pandoc input format of the document (e.g. `html`, `odt`, `rtf`)
+ */
+export function markdownWithPandoc(file: Buffer | string, fromFormat: string): Promise<string> {
+    return convertWithTool('pandoc', file, fromFormat, 'md', (inputFile, outputFile) => [
+        '-f',
+        fromFormat,
+        '-t',
+        'markdown',
+        '-o',
+        outputFile,
+        inputFile,
+    ]);
 }

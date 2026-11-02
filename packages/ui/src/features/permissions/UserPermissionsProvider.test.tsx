@@ -1,9 +1,15 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { VertesiaClient } from '@vertesia/client';
-import type { AuthTokenPayload, SystemRoleDefinition } from '@vertesia/common';
+import {
+    type AuthTokenPayload,
+    Permission,
+    PrincipalType,
+    type SystemRoleDefinition,
+    SystemRoles,
+} from '@vertesia/common';
 import { Button } from '@vertesia/ui/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type PermissionLoadingScreenProps, UserPermissionProvider } from './UserPermissionsProvider';
+import { type PermissionLoadingScreenProps, UserPermissionProvider, UserPermissions } from './UserPermissionsProvider';
 
 const session = {
     client: new VertesiaClient({ serverUrl: 'https://studio.example.test', storeUrl: 'https://store.example.test' }),
@@ -164,7 +170,7 @@ describe('role mapping recovery', () => {
     });
 
     it('uses permissions embedded in the token without fetching mappings', () => {
-        session.authToken = { ...session.authToken, permissions: [] };
+        session.authToken = { ...session.authToken, permissions: [], account_permissions: [] };
         const fetch = vi.spyOn(session.client.iam.roles, 'listSystem');
         renderProvider();
         expect(screen.getByText('Protected workspace')).toBeTruthy();
@@ -217,5 +223,61 @@ describe('role mapping recovery', () => {
         expect(screen.queryByText('Protected workspace')).toBeNull();
         await advance(1_000);
         expect(screen.getByText('Protected workspace')).toBeTruthy();
+    });
+});
+
+describe('effective permission claims', () => {
+    const token = { sub: 'user-a', account_roles: [] } as unknown as AuthTokenPayload;
+    const roleCatalog: SystemRoleDefinition[] = [
+        { name: SystemRoles.admin, domain: 'system', permissions: [Permission.account_admin, Permission.content_read] },
+        { name: SystemRoles.member, domain: 'system', permissions: [Permission.account_member] },
+    ];
+
+    it('checks normalized claims without needing role mappings', () => {
+        const permissions = new UserPermissions({
+            ...token,
+            account_roles: [SystemRoles.admin],
+            permissions: [Permission.content_read],
+            account_permissions: [],
+        });
+        expect(permissions.hasPermission(Permission.content_read)).toBe(true);
+        expect(permissions.hasPermission(Permission.account_admin)).toBe(false);
+        expect(permissions.hasAccountPermission(Permission.account_admin)).toBe(false);
+    });
+
+    it('uses the validated account provenance without inferring account access from project grants', () => {
+        const permissions = new UserPermissions({
+            ...token,
+            account_roles: [],
+            permissions: [Permission.content_read, Permission.account_admin],
+            account_permissions: [Permission.account_admin],
+        });
+        expect(permissions.hasAccountPermission(Permission.account_admin)).toBe(true);
+        expect(permissions.hasAccountPermission(Permission.content_write)).toBe(false);
+        expect(permissions.hasAccountPermission(Permission.content_read)).toBe(false);
+    });
+
+    it('does not fall back to roles for an empty normalized grant', () => {
+        const permissions = new UserPermissions(
+            { ...token, account_roles: [SystemRoles.admin], permissions: [], account_permissions: [] },
+            roleCatalog,
+        );
+        expect(permissions.hasPermission(Permission.account_admin)).toBe(false);
+        expect(permissions.hasAccountPermission(Permission.account_admin)).toBe(false);
+    });
+
+    it('retains role resolution and OAuth caps for legacy tokens', () => {
+        const permissions = new UserPermissions(
+            {
+                ...token,
+                type: PrincipalType.OAuthAccess,
+                account_roles: [SystemRoles.admin],
+                permissions: [Permission.content_read, Permission.content_write],
+            },
+            roleCatalog,
+        );
+        expect(permissions.hasPermission(Permission.content_read)).toBe(true);
+        expect(permissions.hasPermission(Permission.content_write)).toBe(false);
+        expect(permissions.hasAccountPermission(Permission.account_admin)).toBe(false);
     });
 });

@@ -543,6 +543,7 @@ export function decodeJWT(jwt: string): AuthTokenPayload {
         throw new Error(`Invalid auth token: payload segment is not base64url (${(err as Error).message})`);
     }
 
+    // Decoding is not authentication; servers verify the signature and permission contract.
     try {
         return JSON.parse(decodedJson);
     } catch {
