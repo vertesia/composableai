@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { FacetSpecSchema, PromptTemplateRefSchema } from './interaction.js';
-import { PageCountSchema } from './schema-primitives.js';
+import { MONGO_FACETS_DESCRIPTION, mongoFacetsRule, PageCountSchema } from './schema-primitives.js';
 
 // The prompt-authoring contracts: what a fork, a render and a prompt search publish, and how a
 // prompt's interaction usages are reported. `PromptTemplate` itself and its two write payloads live
@@ -80,7 +80,7 @@ export const ComputePromptFacetPayloadSchema = z
         facets: z.array(FacetSpecSchema),
         query: PromptSearchQuerySchema.optional(),
     })
-    .meta({ id: 'ComputePromptFacetPayload' });
+    .meta({ id: 'ComputePromptFacetPayload', description: MONGO_FACETS_DESCRIPTION, ...mongoFacetsRule });
 
 export const PromptTemplateInteractionsResponseSchema = z
     .strictObject({

@@ -4,6 +4,7 @@ import { JSONObjectSchema, JSONSchemaSchema, JSONValueSchema } from '@llumiverse
 import { z } from 'zod';
 import type { ActivityTypeDefinition } from '../store/activity-catalog.js';
 import { CompactMessageSchema } from './agent-runs.js';
+import { SystemRolesSchema } from './apikey.js';
 import { AgentRunStatusSchema, ConversationActivityStateSchema } from './app-lifecycle.js';
 import { WorkflowExecutionStatusSchema } from './document-processing.js';
 import {
@@ -96,6 +97,47 @@ export const ActivityCatalogSchema = z
         activities: z.array(ActivityDefinitionSchema),
     })
     .meta({ id: 'ActivityCatalog' });
+
+export const SubscriptionWorkflowDefinitionSchema = z
+    .strictObject({
+        endpoint: z.string(),
+        title: z.string(),
+        description: z.string(),
+        variables_schema: JSONSchemaSchema,
+        variables_template: JSONObjectSchema,
+        templates: z
+            .array(
+                z.strictObject({
+                    name: z.string().min(1),
+                    title: z.string().min(1),
+                    description: z.string(),
+                    variables: JSONObjectSchema,
+                }),
+            )
+            .min(1)
+            .optional(),
+        system_targets: z
+            .array(
+                z.strictObject({
+                    run_as_role: SystemRolesSchema,
+                    task_queue: z.string().optional(),
+                }),
+            )
+            .meta({
+                description: 'Code-defined system targets for this workflow, used to resolve managed execution roles.',
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'SubscriptionWorkflowDefinition',
+        description: 'A packaged workflow supported as an event subscription target.',
+    });
+
+export const SubscriptionWorkflowCatalogSchema = z
+    .strictObject({
+        workflows: z.array(SubscriptionWorkflowDefinitionSchema),
+    })
+    .meta({ id: 'SubscriptionWorkflowCatalog' });
 
 export const WorkflowInteractionVarsSchema = z
     .strictObject({

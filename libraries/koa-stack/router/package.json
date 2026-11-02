@@ -6,7 +6,8 @@
     "scripts": {
         "build": "tsc --checkers 1 -p tsconfig.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "test": "vitest run"
+        "test": "vitest run",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit"
     },
     "files": [
         "lib",
