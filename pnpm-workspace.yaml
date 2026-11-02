@@ -155,6 +155,15 @@ overrides:
   "@vercel/node>undici": ^7.30.1
   # GHSA-2g4f-4pwh-qvx6: ReDoS with the $data option; @vercel/static-config pins ajv 8.6.3.
   "@vercel/static-config>ajv": ^8.20.0
+  # GHSA-g3hv-75wg-m249: minimatch DoS through globparts amplification, fixed only in 11.0.1.
+  # GHSA-3g3m-2fjr-6pw4: glob AbortSignal bypass, fixed only in 14.0.2 (glob 14 uses minimatch 11).
+  # Every consumer calls glob()/globSync()/hasMagic(), Glob#patterns or minimatch()/Minimatch,
+  # which glob 14 and minimatch 11 keep; their removals (makeRe, AST, Pattern#isRegExp) are unused.
+  # The exception is ts-morph 12 (create-plugin's @vercel/node): @ts-morph/common 0.11 calls the
+  # minimatch 3 default export, but only from in-memory file system globbing, which @vercel/node
+  # never uses (it reads one entrypoint from disk). Every @vercel/node release still pins ts-morph 12.
+  "minimatch@<11.0.1": ^11.0.1
+  "glob@>=9.0.0 <14.0.2": ^14.0.2
 
 # Share package directories across local worktrees.
 virtualStoreType: global
