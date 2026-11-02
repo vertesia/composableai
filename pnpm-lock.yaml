@@ -889,8 +889,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       katex:
-        specifier: ^0.17.0
-        version: 0.17.0
+        specifier: ^0.18.0
+        version: 0.18.11
       lodash-es:
         specifier: ^4.18.1
         version: 4.18.1
@@ -3340,6 +3340,7 @@ packages:
   '@smithy/core@3.29.3':
     resolution: {integrity: sha512-L+Ys6ecjk5vwPMAKHBpPKlJ3DkqwNcnfEISXBZIsVvWG/XKXfsAP8mwIYlTeLcd2ElHdesPI8OuOmJSFAPhm6A==}
     engines: {node: '>=18.0.0'}
+    deprecated: Deprecated due to a bug in custom logger data redaction. See https://github.com/aws/aws-sdk-js-v3/issues/8393.
 
   '@smithy/credential-provider-imds@4.4.8':
     resolution: {integrity: sha512-q9J7JTiXrAhB8sDp4px97uEPT7CwKH61Co78grdNQvU8QZAdiuaSRhP0tUVf2ogy36RZTrlMU1rBmDEH+cnkiA==}
@@ -5281,16 +5282,13 @@ packages:
     resolution: {integrity: sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==}
     engines: {node: '>=18'}
 
-  katex@0.16.28:
-    resolution: {integrity: sha512-YHzO7721WbmAL6Ov1uzN/l5mY5WWWhJBSW+jq4tkfZfsxmo1hu6frS0EOswvjBUnWE6NtjEs48SFn5CQESRLZg==}
-    hasBin: true
-
   katex@0.16.47:
     resolution: {integrity: sha512-Eeo8Ys1doU1z+x8AZsPpQu+p/QcZBI5PeOo7QGQdy2x2m0MU/hYagBbGOmXwr5KVbEfVuWv9LpnQWeehogurjg==}
     hasBin: true
 
-  katex@0.17.0:
-    resolution: {integrity: sha512-Vdw0ATsQ9V+LuegM/BTwQqV/6cTl5lbGcIrU+BCgLxyf6bo38ybOr372tuSIxir3CN720flu1meYR6XzNMwQnw==}
+  katex@0.18.11:
+    resolution: {integrity: sha512-yvyz/2VMKqoho/35Hat5w37wIEdWJ5ElVMidTAlWrxr5uW4aBGsEpveTmKh18/zw08v/7lGswCPon4OhqmqrTA==}
+    deprecated: Accidentally published with breaking changes. Use 0.19.0 instead.
     hasBin: true
 
   keygrip@1.1.0:
@@ -11202,17 +11200,13 @@ snapshots:
 
   jwt-decode@4.0.0: {}
 
-  katex@0.16.28:
-    dependencies:
-      commander: 8.3.0
-
   katex@0.16.47:
     dependencies:
       commander: 8.3.0
 
-  katex@0.17.0:
+  katex@0.18.11:
     dependencies:
-      commander: 8.3.0
+      commander: 15.0.0
 
   keygrip@1.1.0:
     dependencies:
@@ -11732,7 +11726,7 @@ snapshots:
     dependencies:
       '@types/katex': 0.16.8
       devlop: 1.1.0
-      katex: 0.16.28
+      katex: 0.16.47
       micromark-factory-space: 2.0.1
       micromark-util-character: 2.1.1
       micromark-util-symbol: 2.0.1
@@ -12297,7 +12291,7 @@ snapshots:
       '@types/katex': 0.16.8
       hast-util-from-html-isomorphic: 2.0.0
       hast-util-to-text: 4.0.2
-      katex: 0.16.28
+      katex: 0.16.47
       unist-util-visit-parents: 6.0.2
       vfile: 6.0.3
 
