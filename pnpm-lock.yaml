@@ -1090,6 +1090,9 @@ importers:
       '@vertesia/rich-text':
         specifier: workspace:*
         version: link:../rich-text
+      '@vertesia/studio-utils':
+        specifier: workspace:*
+        version: link:../studio-utils
       ajv:
         specifier: ^8.20.0
         version: 8.20.0

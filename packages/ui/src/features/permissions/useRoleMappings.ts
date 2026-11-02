@@ -32,7 +32,7 @@ export function useRoleMappings(client: VertesiaClient, authToken?: AuthTokenPay
     // Preserve all claims in the identity: subject/account/expiry can stay the same
     // when project, roles, or other authorization claims change.
     const tokenKey = useMemo(() => (authToken ? JSON.stringify(authToken) : undefined), [authToken]);
-    const needsMappings = Boolean(authToken && !authToken.permissions);
+    const needsMappings = Boolean(authToken && authToken.account_permissions === undefined);
     const [attempt, setAttempt] = useState(0);
     const [result, setResult] = useState<{
         client: VertesiaClient;

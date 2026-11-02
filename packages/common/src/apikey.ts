@@ -160,7 +160,18 @@ export interface AuthTokenPayload {
     exp: number; //expires in (EPOC seconds)
     tags?: string[]; //tags
 
-    permissions?: string[]; //permissions
+    /**
+     * Final effective platform permissions, after role expansion and any credential/OAuth limits.
+     * New access tokens always include this together with `account_permissions`. Older OAuth
+     * tokens carry only `permissions`, where it is a scope cap rather than resolved authority.
+     */
+    permissions?: string[];
+    /**
+     * Effective permissions backed by account-level grants, always a subset of `permissions`.
+     * Its presence identifies the normalized permission contract; an empty array grants no
+     * account-level authority. Absent only on legacy tokens, whose roles still need resolving.
+     */
+    account_permissions?: string[];
     /** Standard OAuth space-delimited scope claim. */
     scope?: string;
 
