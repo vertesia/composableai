@@ -6,7 +6,11 @@ import {
     type AuthTokenResponse,
     type ContentSecurity,
 } from '@vertesia/common';
-import { resolveAbacClaim, TokenClaimReferenceError } from '@vertesia/studio-utils/token-claims';
+import {
+    assertTokenPermissionClaims,
+    resolveAbacClaim,
+    TokenClaimReferenceError,
+} from '@vertesia/studio-utils/token-claims';
 import AccountApi from './AccountApi.js';
 import AccountsApi from './AccountsApi.js';
 import AnalyticsApi from './AnalyticsApi.js';
@@ -543,11 +547,14 @@ export function decodeJWT(jwt: string): AuthTokenPayload {
         throw new Error(`Invalid auth token: payload segment is not base64url (${(err as Error).message})`);
     }
 
+    let payload: AuthTokenPayload;
     try {
-        return JSON.parse(decodedJson);
+        payload = JSON.parse(decodedJson);
     } catch {
         throw new Error('Invalid auth token: payload segment is not JSON');
     }
+    assertTokenPermissionClaims(payload);
+    return payload;
 }
 
 type RuntimeProcess = {

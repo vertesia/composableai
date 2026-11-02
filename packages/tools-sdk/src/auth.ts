@@ -1,5 +1,6 @@
 import { decodeEndpoints, VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload } from '@vertesia/common';
+import { assertTokenPermissionClaims } from '@vertesia/studio-utils/token-claims';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { createLocalJWKSet, decodeJwt, type JSONWebKeySet, type JWTVerifyGetKey, jwtVerify } from 'jose';
@@ -35,7 +36,9 @@ export async function verifyToken(token: string) {
         throw new Error(`Issuer is not allowed: ${decodedJwt.iss}`);
     }
     const jwks = await getJwks(`${decodedJwt.iss}/.well-known/jwks`);
-    return await jwtVerify<AuthTokenPayload>(token, jwks);
+    const verified = await jwtVerify<AuthTokenPayload>(token, jwks);
+    assertTokenPermissionClaims(verified.payload);
+    return verified;
 }
 
 export interface EndpointOverrides {

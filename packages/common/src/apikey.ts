@@ -169,7 +169,9 @@ export interface AuthTokenPayload {
     /**
      * Effective permissions backed by account-level grants, always a subset of `permissions`.
      * Its presence identifies the normalized permission contract; an empty array grants no
-     * account-level authority. Absent only on legacy tokens, whose roles still need resolving.
+     * account-level authority. Legacy access tokens (issued before permission normalization)
+     * lack this claim, so consumers must resolve their roles and apply any OAuth permission cap.
+     * Raw issuer payloads also omit it until mint-time permission resolution is complete.
      */
     account_permissions?: string[];
     /** Standard OAuth space-delimited scope claim. */

@@ -308,6 +308,16 @@ describe('unknown constructor options', () => {
 });
 
 describe('decodeJWT', () => {
+    test('validates normalized claims when admitting a decoded token', () => {
+        const valid = { permissions: ['content:read'], account_permissions: [] };
+        const encode = (payload: unknown) =>
+            `header.${Buffer.from(JSON.stringify(payload)).toString('base64url')}.signature`;
+        expect(decodeJWT(encode(valid))).toEqual(valid);
+        expect(() => decodeJWT(encode({ ...valid, account_permissions: ['content:write'] }))).toThrow(
+            'Invalid token permission claims',
+        );
+    });
+
     // An empty or non-JWT credential used to reach `''.split('.')[1]` and die inside the base64
     // decoder with a TypeError naming neither the token nor the caller.
     test.each([

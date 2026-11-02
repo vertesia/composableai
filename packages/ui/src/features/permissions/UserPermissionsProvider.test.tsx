@@ -245,12 +245,12 @@ describe('effective permission claims', () => {
         expect(permissions.hasAccountPermission(Permission.account_admin)).toBe(false);
     });
 
-    it('preserves account provenance without granting permissions outside the effective list', () => {
+    it('uses the validated account provenance without inferring account access from project grants', () => {
         const permissions = new UserPermissions({
             ...token,
             account_roles: [],
             permissions: [Permission.content_read, Permission.account_admin],
-            account_permissions: [Permission.account_admin, Permission.content_write],
+            account_permissions: [Permission.account_admin],
         });
         expect(permissions.hasAccountPermission(Permission.account_admin)).toBe(true);
         expect(permissions.hasAccountPermission(Permission.content_write)).toBe(false);

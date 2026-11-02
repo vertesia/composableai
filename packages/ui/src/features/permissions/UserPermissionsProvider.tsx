@@ -33,7 +33,7 @@ export class UserPermissions {
             return;
         }
 
-        // Legacy tokens resolve roles from the API catalog. New tokens need no catalog request.
+        // LEGACY_PERMISSION_CLAIMS: remove this branch and getPermissionsForRolesFromMappings together.
         const accountPermissions = getPermissionsForRolesFromMappings(authToken.account_roles ?? [], roles);
         const accountGranted = new Set(accountPermissions);
         const rolePermissions = getPermissionsForRolesFromMappings(roleNames, roles).filter(
@@ -119,6 +119,7 @@ export function UserPermissionProvider({ children, loadingIcon, LoadingScreen }:
         if (authToken.account_permissions !== undefined) {
             return new UserPermissions(authToken);
         }
+        // LEGACY_PERMISSION_CLAIMS: remove catalog loading/recovery when every session has final claims.
         if (state.status === 'ready') {
             return new UserPermissions(authToken, state.roles);
         }

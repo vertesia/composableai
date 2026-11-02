@@ -118,6 +118,14 @@ describe('UserSession.signOut', () => {
 });
 
 describe('UserSession credential provider', () => {
+    it('rejects malformed normalized claims before publishing a login', async () => {
+        const { session } = createSession(async () => ({}));
+        session.authToken = undefined;
+        const rawToken = encodeToken({ ...projectToken, permissions: [], account_permissions: ['content:read'] });
+        await expect(session.login(rawToken)).rejects.toThrow('Invalid token permission claims');
+        expect(session.authToken).toBeUndefined();
+    });
+
     it('keeps the accepted token session after the fragment state is consumed', async () => {
         const rawToken = encodeToken(projectToken);
         vi.spyOn(composable, 'getComposableToken').mockResolvedValue({ rawToken, token: projectToken, error: false });
