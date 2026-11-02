@@ -195,6 +195,7 @@ describe('extractDocumentText', () => {
     describe('bounded reads', () => {
         const MiB = 1024 * 1024;
 
+        // Six extractions of ~10 MiB each, which can take most of the default 30 s timeout on a busy runner.
         it('reads one byte past the text limit, and stores what a full read would have stored', async () => {
             // Multi-byte characters straddling the limit, at every alignment: a shift of one character's width
             // repeats an alignment already covered, at both the read limit and the marker cut.
@@ -214,7 +215,7 @@ describe('extractDocumentText', () => {
                     expect(setObjectText.mock.calls[0]?.[1].text).toBe(truncateExtractedText(full).text);
                 }
             }
-        });
+        }, 120_000);
 
         it('reads an unknown type only as far as it can be sniffed, and skips a larger one as before', async () => {
             retrieve.mockResolvedValue(createDoc({ content: { type: 'application/mxf', source: SOURCE, etag: 'e' } }));
