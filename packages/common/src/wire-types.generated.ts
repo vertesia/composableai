@@ -1924,6 +1924,13 @@ export type AuditAggregationResponse = {
     from: string;
     to: string;
 };
+/** Several audit aggregation queries answered by one request. */
+export type AuditAggregationBatchQuery = {
+    queries: AuditAggregationQuery[];
+};
+export type AuditAggregationBatchResponse = {
+    results: AuditAggregationResponse[];
+};
 export type AuditAdoptionFilter = {
     actions?: AuditActionWire[] | undefined;
     resourceTypes?: string[] | undefined;
@@ -12075,6 +12082,8 @@ export interface ApiComponentTypes {
     AuditAggregationFilter: AuditAggregationFilter;
     AuditTrailResponse: AuditTrailResponse;
     AuditAggregationQuery: AuditAggregationQuery;
+    AuditAggregationBatchQuery: AuditAggregationBatchQuery;
+    AuditAggregationBatchResponse: AuditAggregationBatchResponse;
     AuditTrailQuery: AuditTrailQuery;
     ViewExperienceSchemaVersion: ViewExperienceSchemaVersionWire;
     ViewSortClause: ViewSortClause;

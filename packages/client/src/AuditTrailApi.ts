@@ -2,6 +2,8 @@ import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
     AuditAdoptionQuery,
     AuditAdoptionResponse,
+    AuditAggregationBatchQuery,
+    AuditAggregationBatchResponse,
     AuditAggregationQuery,
     AuditAggregationResponse,
     AuditTrailQuery,
@@ -36,6 +38,15 @@ export default class AuditTrailApi extends ApiTopic {
 
     aggregate(query: AuditAggregationQuery): Promise<AuditAggregationResponse> {
         return this.post('/aggregate', { payload: query });
+    }
+
+    /**
+     * Run several aggregations in one request. `results[i]` is what `aggregate(queries[i])` returns; the server
+     * computes the queries that share a scope, time range and filter in one pass over the audit events.
+     */
+    aggregateBatch(queries: AuditAggregationQuery[]): Promise<AuditAggregationBatchResponse> {
+        const payload: AuditAggregationBatchQuery = { queries };
+        return this.post('/aggregate/batch', { payload });
     }
 
     adoption(query: AuditAdoptionQuery = {}): Promise<AuditAdoptionResponse> {
