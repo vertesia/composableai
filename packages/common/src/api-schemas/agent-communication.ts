@@ -136,7 +136,11 @@ export const RegisterPendingAskRequestSchema = z
         workflowId: z.string().min(1),
         agentName: z.string().min(1),
         questions: z.array(z.string()).min(1),
-        timeoutHours: z.number().optional(),
+        timeoutHours: z
+            .number()
+            .positive()
+            .optional()
+            .meta({ description: 'Hours before the question expires; more than 0. Defaults to 48.' }),
         userChannels: z.array(UserChannelSchema),
         taskFields: z.array(TaskFieldSchema).optional(),
         /**

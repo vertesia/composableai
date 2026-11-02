@@ -27283,7 +27283,9 @@
         }
       },
       "timeoutHours": {
-        "type": "number"
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "Hours before the question expires; more than 0. Defaults to 48."
       },
       "userChannels": {
         "type": "array",
