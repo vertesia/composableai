@@ -22,6 +22,10 @@ export enum Permission {
     account_api_key_manage = 'account:api_key:manage',
     account_billing_status_read = 'account:billing:status_read',
     account_billing_portal_create = 'account:billing:portal_create',
+    /** Create, edit and delete the account's OAuth clients. */
+    account_oauth_client_manage = 'account:oauth_client:manage',
+    /** Create, delete and list every project of the account. */
+    account_project_manage = 'account:project:manage',
 
     schedule_delegate = 'schedule:delegate',
     int_read = 'interaction:read',
@@ -38,6 +42,8 @@ export enum Permission {
     project_admin = 'project:admin',
     project_integration_read = 'project:integration_read',
     project_settings_write = 'project:settings_write',
+    /** Decide who has access to the project: its access entries, invites, and other users' delegations. */
+    project_membership_manage = 'project:membership:manage',
 
     api_key_create = 'api_key:create',
     api_key_read = 'api_key:read',
@@ -136,4 +142,6 @@ export const ACCOUNT_SCOPED_PERMISSIONS: readonly Permission[] = [
     Permission.account_api_key_manage,
     Permission.account_billing_status_read,
     Permission.account_billing_portal_create,
+    Permission.account_oauth_client_manage,
+    Permission.account_project_manage,
 ];

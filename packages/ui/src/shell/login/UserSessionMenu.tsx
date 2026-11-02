@@ -55,7 +55,10 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
     const { user } = session;
     if (!session || !user) return null;
 
-    const isProjectManager = perms.hasPermission(Permission.project_admin);
+    // `project_admin` is accepted until release 1.7 removes it.
+    const canOpenSettings =
+        perms.hasProjectPermission(Permission.project_settings_write) ||
+        perms.hasProjectPermission(Permission.project_admin);
 
     return (
         <Popover click>
@@ -85,7 +88,7 @@ function UserSessionPopup({ className, asMenuTrigger = false }: UserSessionPopup
                     </div>
                     <div className="py-2">
                         <MenuList>
-                            {isProjectManager && (
+                            {canOpenSettings && (
                                 <MenuList.Item
                                     className="px-2"
                                     onClick={() => navigate('/settings', { replace: true })}
