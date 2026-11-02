@@ -1122,6 +1122,11 @@ export type AppDevelopmentTaskDetails = {
     commit_date?: string | undefined;
     agent_run?: AgentRunSearchHit | undefined;
 };
+/** Request to create a branch from an existing branch, tag, or commit. */
+export type CreateAppRepoBranchRequest = {
+    name: string;
+    source_ref: string;
+};
 /** A newly created app repository branch. */
 export type AppRepoBranch = {
     name: string;
@@ -1918,6 +1923,13 @@ export type AuditAggregationResponse = {
     rows: AuditAggregationRow[];
     from: string;
     to: string;
+};
+/** Several audit aggregation queries answered by one request. */
+export type AuditAggregationBatchQuery = {
+    queries: AuditAggregationQuery[];
+};
+export type AuditAggregationBatchResponse = {
+    results: AuditAggregationResponse[];
 };
 export type AuditAdoptionFilter = {
     actions?: AuditActionWire[] | undefined;
@@ -2891,6 +2903,9 @@ export type DashboardArchiveResult = {
     id: string;
     status: DashboardStatus;
 };
+export type DashboardBulkIdsPayload = {
+    [k: string]: string[];
+};
 export type DashboardBulkArchiveResult = {
     archived: number;
     failed: number;
@@ -3166,7 +3181,7 @@ export type Dashboard = {
 export type CreateDashboardPayload = {
     name: string;
     summary?: string | undefined;
-    dataSource?: DashboardDataSource | undefined;
+    dataSource?: DashboardSqlDataSource | undefined;
     query?: string | undefined;
     queryLimit?: number | undefined;
     queryParameters?: StringValueMap | undefined;
@@ -3180,7 +3195,7 @@ export type CreateDashboardPayload = {
 export type UpdateDashboardPayload = {
     name?: string | undefined;
     summary?: string | undefined | undefined;
-    dataSource?: DashboardDataSource | undefined | undefined;
+    dataSource?: DashboardSqlDataSource | undefined | undefined;
     query?: string | undefined | undefined;
     queryLimit?: number | undefined | undefined;
     queryParameters?: StringValueMap | undefined | undefined;
@@ -4227,7 +4242,7 @@ export type InteractionRefWithSchema = {
 export type InteractionsExportPayload = {
     name?: string | undefined;
     tags?: string[] | undefined;
-    versions?: (number | 'draft' | 'latest')[] | undefined;
+    versions?: (number | 'draft')[] | undefined;
 };
 /**
  * Schema can be stored or specified as a reference to an external schema.
@@ -5619,6 +5634,15 @@ export type AppEventDeliveryTargetInput = {
     url: string;
     timeout_ms?: number | undefined;
 };
+export type IntakeMediaAnalysisOverride = {
+    interaction?: string | undefined;
+    config?: InteractionExecutionConfiguration | undefined;
+};
+export type IntakeMediaAnalysisOverrides = {
+    image?: IntakeMediaAnalysisOverride | undefined;
+    video?: IntakeMediaAnalysisOverride | undefined;
+    audio?: IntakeMediaAnalysisOverride | undefined;
+};
 export type EventDeliveryIntentSummary = {
     id: string;
     event_id: string;
@@ -6744,6 +6768,31 @@ export type UpdateSecretRequest = {
 };
 export type DeleteSecretResponse = {
     ok: boolean;
+};
+/** Packaged workflows supported by event subscriptions. */
+export type SubscriptionWorkflowDefinition = {
+    endpoint: string;
+    title: string;
+    description: string;
+    variables_schema: JSONSchema;
+    variables_template: JSONObject;
+    templates?:
+        | {
+              name: string;
+              title: string;
+              description: string;
+              variables: JSONObject;
+          }[]
+        | undefined;
+    system_targets?:
+        | {
+              run_as_role: (typeof SystemRoles)[keyof typeof SystemRoles];
+              task_queue?: string | undefined;
+          }[]
+        | undefined;
+};
+export type SubscriptionWorkflowCatalog = {
+    workflows: SubscriptionWorkflowDefinition[];
 };
 export type AgentToolApprovalMode = 'ask' | 'auto_review' | 'full_control';
 export type ToolApprovalGrant = {
@@ -8301,6 +8350,7 @@ export type ContentTypeExtractionGroundingPolicy = {
     review?: ContentTypeExtractionGroundingReviewPolicy | undefined;
 };
 export type ContentTypeIntakePolicy = {
+    media_analysis?: IntakeMediaAnalysisOverrides | undefined;
     mode?: 'programmatic' | 'agentic' | undefined;
     identification?:
         | {
@@ -10269,6 +10319,22 @@ export type PromptSegmentRef_ExportedPromptTemplateRef = {
 export type InteractionRefWithSchemaArray = InteractionRefWithSchema[];
 export type InteractionTagsArray = InteractionTags[];
 export type InteractionEndpointArray = InteractionEndpoint[];
+export type InteractionListQuery = {
+    name?: string | undefined;
+    status?: string[] | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    prompt?: string | undefined;
+    tags?: string[] | undefined;
+    version?: string | undefined;
+    model?: string | undefined;
+    environment?: string | undefined;
+    is_agent?: boolean | undefined;
+    is_tool?: boolean | undefined;
+    is_skill?: boolean | undefined;
+    is_basic?: boolean | undefined;
+    is_sub_agent?: boolean | undefined;
+};
 export type CatalogInteractionRefArray = CatalogInteractionRef[];
 export type CatalogTagQueryWire = {
     tag?: string | undefined;
@@ -10927,6 +10993,14 @@ export type AppPackageScopeWire =
     | 'hooks'
     | 'subscriptions'
     | 'all';
+export type AppRepoFileQuery = {
+    path: string;
+    ref?: string | undefined;
+};
+export type AppRepoTreeQuery = {
+    prefix?: string | undefined;
+    ref?: string | undefined;
+};
 export type AppVersionLaunchTargetArray = AppVersionLaunchTarget[];
 export type AppVersionRecordArray = AppVersionRecord[];
 export type AppToolCollectionArray = AppToolCollection[];
@@ -10964,6 +11038,53 @@ export type AppInstallationArray = AppInstallation[];
 export type AppInstallationWithManifestArray = AppInstallationWithManifest[];
 export type AppInstallationListEntryArray = AppInstallationListEntry[];
 export type BinaryFileResponse = string;
+export type DashboardPathParams = {
+    storeId?: string | undefined;
+    dashboardId?: string | undefined;
+    versionId?: string | undefined;
+};
+export type DataStoreImportPathParams = {
+    importId?: string | undefined;
+};
+export type DataStoreVersionPathParams = {
+    versionId?: string | undefined;
+};
+export type ContentObjectExportPathParams = {
+    exportId?: string | undefined;
+    role?: 'data' | 'manifest' | undefined;
+};
+export type ProcessTestRunPathParams = {
+    runId?: string | undefined;
+};
+export type ProcessPathParams = {
+    processId?: string | undefined;
+    runId?: string | undefined;
+    suiteId?: string | undefined;
+};
+export type TaskPathParams = {
+    taskId?: string | undefined;
+};
+export type AgentRunPathParams = {
+    agentRunId?: string | undefined;
+};
+export type AppVersionPathParams = {
+    id?: string | undefined;
+};
+export type AppInstallationPathParams = {
+    installId?: string | undefined;
+};
+export type DelegationGrantPathParams = {
+    grantId?: string | undefined;
+};
+export type OAuthProviderPathParams = {
+    id?: string | undefined;
+};
+export type ProjectAppCapabilityPathParams = {
+    processId?: string | undefined;
+    templateId?: string | undefined;
+    typeId?: string | undefined;
+    viewId?: string | undefined;
+};
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
     Account: AccountFromSchema;
@@ -11226,6 +11347,7 @@ export interface ApiComponentTypes {
     InteractionForkPayload: InteractionForkPayload;
     InteractionsExportPayload: InteractionsExportPayload;
     InteractionSearchQuery: InteractionSearchQuery;
+    InteractionListQuery: InteractionListQuery;
     ResolveInteractionQuery: ResolveInteractionQuery;
     CatalogInteractionRef: CatalogInteractionRef;
     CatalogInteractionRefArray: CatalogInteractionRefArray;
@@ -11390,6 +11512,7 @@ export interface ApiComponentTypes {
     CreateDashboardSnapshotPayload: CreateDashboardSnapshotPayload;
     DashboardBulkArchiveResult: DashboardBulkArchiveResult;
     StringArrayMap: StringArrayMap;
+    DashboardBulkIdsPayload: DashboardBulkIdsPayload;
     DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSource;
     DashboardVersionItemArray: DashboardVersionItemArray;
     DashboardItem: DashboardItem;
@@ -11655,6 +11778,8 @@ export interface ApiComponentTypes {
     ComputeObjectFacetPayload: ComputeObjectFacetPayload;
     ComplexSearchPayload: ComplexSearchPayload;
     ObjectSearchResponse: ObjectSearchResponse;
+    IntakeMediaAnalysisOverride: IntakeMediaAnalysisOverride;
+    IntakeMediaAnalysisOverrides: IntakeMediaAnalysisOverrides;
     EventPriority: EventPriority;
     WorkflowRuleInputType: WorkflowRuleInputTypeWire;
     WorkflowRuleItem: WorkflowRuleItem;
@@ -11861,6 +11986,8 @@ export interface ApiComponentTypes {
     ActivityPropertyDefinition: ActivityPropertyDefinitionWire;
     ActivityDefinition: ActivityDefinitionWire;
     ActivityCatalog: ActivityCatalogWire;
+    SubscriptionWorkflowDefinition: SubscriptionWorkflowDefinition;
+    SubscriptionWorkflowCatalog: SubscriptionWorkflowCatalog;
     WorkflowInteractionVars: WorkflowInteractionVars;
     ListWorkflowInteractionsResponse: ListWorkflowInteractionsResponse;
     RestartAgentRunPayload: RestartAgentRunPayload;
@@ -11956,6 +12083,8 @@ export interface ApiComponentTypes {
     AuditAggregationFilter: AuditAggregationFilter;
     AuditTrailResponse: AuditTrailResponse;
     AuditAggregationQuery: AuditAggregationQuery;
+    AuditAggregationBatchQuery: AuditAggregationBatchQuery;
+    AuditAggregationBatchResponse: AuditAggregationBatchResponse;
     AuditTrailQuery: AuditTrailQuery;
     ViewExperienceSchemaVersion: ViewExperienceSchemaVersionWire;
     ViewSortClause: ViewSortClause;
@@ -12045,6 +12174,9 @@ export interface ApiComponentTypes {
     DeleteAppVersionResponse: DeleteAppVersionResponse;
     AppDeleteSummary: AppDeleteSummary;
     AppRepoBranch: AppRepoBranch;
+    CreateAppRepoBranchRequest: CreateAppRepoBranchRequest;
+    AppRepoFileQuery: AppRepoFileQuery;
+    AppRepoTreeQuery: AppRepoTreeQuery;
     AppRepoDocumentCommit: AppRepoDocumentCommit;
     AppVersionGitSource: AppVersionGitSource;
     AppGithubConfiguration: AppGithubConfiguration;
@@ -12229,4 +12361,17 @@ export interface ApiComponentTypes {
     DelegationGrantArray: DelegationGrantArray;
     RunBudgetCapability: RunBudgetCapability;
     RunBudgetCapabilityQuery: RunBudgetCapabilityQuery;
+    DashboardPathParams: DashboardPathParams;
+    DataStoreImportPathParams: DataStoreImportPathParams;
+    DataStoreVersionPathParams: DataStoreVersionPathParams;
+    ContentObjectExportPathParams: ContentObjectExportPathParams;
+    ProcessTestRunPathParams: ProcessTestRunPathParams;
+    ProcessPathParams: ProcessPathParams;
+    TaskPathParams: TaskPathParams;
+    AgentRunPathParams: AgentRunPathParams;
+    AppVersionPathParams: AppVersionPathParams;
+    AppInstallationPathParams: AppInstallationPathParams;
+    DelegationGrantPathParams: DelegationGrantPathParams;
+    OAuthProviderPathParams: OAuthProviderPathParams;
+    ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
 }

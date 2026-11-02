@@ -37,6 +37,8 @@ export interface Route {
 
 export interface EndpointRouteOptions {
     version?: string | number;
+    /** Original resource method, retained for route instrumentation and policy inspection. */
+    handlerName?: string;
     /** Override the lazy request-body parser limit for this endpoint only. */
     bodyLimit?: string | number;
 }
@@ -49,6 +51,9 @@ export class RouterContext {
     // used internally to indicate that the path matched at least an endpoint but the method does not
     // in case of a 405 the value is the endpoint pattern
     _maybe405?: string;
+    // the methods of every endpoint whose path matched, sent as the `Allow` header of a 405: dispatch serves a request
+    // from any of them, so `GET /items/export` reaches `/items/:id` even when `/items/export` only takes POST
+    _allowedMethods?: Set<string>;
 
     constructor(ctx: Context) {
         this.path = normalizePath(ctx.path);
@@ -79,6 +84,7 @@ export class EndpointRoute implements Route {
     // a unique key for the route in his router. Can be used as a local identifier
     key: string;
     bodyLimit?: string | number;
+    handlerName?: string;
 
     constructor(
         router: Router,
@@ -96,6 +102,7 @@ export class EndpointRoute implements Route {
         this.target = target.bind(thisArg);
         this.key = `${this.method || 'ALL'}:${this.pathPattern}`;
         this.bodyLimit = opts?.bodyLimit;
+        this.handlerName = opts?.handlerName;
     }
 
     withVersion(version: string | number) {
@@ -117,7 +124,10 @@ export class EndpointRoute implements Route {
         }
         // path matches
         if (this.method && this.method !== ctx.method) {
-            ctx.$router._maybe405 = this.absPathPattern;
+            const $router = ctx.$router;
+            $router._maybe405 = this.absPathPattern;
+            $router._allowedMethods ??= new Set();
+            $router._allowedMethods.add(this.method);
             return false;
         }
         // path and method matches
@@ -157,15 +167,22 @@ export class EndpointRoute implements Route {
 /**
  * A route which serve static files given a path mapping
  */
-class ServeRoute implements Route {
+export class ServeRoute implements Route {
+    router: Router;
+    pathPattern: string;
     matcher: PrefixMatcher;
     target: string;
     opts: send.SendOptions;
 
-    constructor(prefix: string, target: string, opts: send.SendOptions = {}) {
-        this.matcher = createSimplePrefixMatcher(normalizePath(prefix));
+    constructor(router: Router, prefix: string, target: string, opts: send.SendOptions = {}) {
+        this.router = router;
+        this.pathPattern = normalizePath(prefix);
+        this.matcher = createSimplePrefixMatcher(this.pathPattern);
         this.target = target;
         this.opts = opts;
+    }
+    get absPathPattern() {
+        return this.router.getAbsPath(this.pathPattern);
     }
     match(ctx: Context, path: string): boolean {
         switch (ctx.method) {
@@ -201,6 +218,9 @@ type RouterOpts = {
     errorHandlers?: ErrorHandlerOpts;
 };
 
+export type RegisteredRoute = EndpointRoute | ServeRoute;
+export type RouteInitializer = (route: RegisteredRoute) => void;
+
 export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Route {
     parent?: AbstractRouter<T>;
     _absPrefix?: string;
@@ -219,6 +239,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
     webRoot: string;
     errorHandlerOpts?: ErrorHandlerOpts;
     interceptor: EndpointInterceptorFn | null = null;
+    routeInitializers: RouteInitializer[] = [];
     // used to select versioned endpoints when defined
     versionHeader?: string;
 
@@ -290,10 +311,10 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
                 return await route.dispatch(ctx);
             }
         }
-        //TODO add support for 405 method not allowed
         if (ctx.$router._maybe405) {
-            throw new ServerError(405, `Method ${ctx.method} not allowed on endpoint ${ctx.$router._maybe405}`);
-            //ctx.throw(405, 'Method ' + ctx.method + ' not allowed on endpoint ' + ctx.$router._maybe405);
+            const error = new ServerError(405, `Method ${ctx.method} not allowed on endpoint ${ctx.$router._maybe405}`);
+            // RFC 9110 requires a 405 to list the methods the resource supports; the error handler sets `headers`.
+            throw Object.assign(error, { headers: { Allow: [...(ctx.$router._allowedMethods ?? [])].join(', ') } });
         } else {
             ctx.throw(404);
         }
@@ -359,6 +380,17 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         return this;
     }
 
+    /** Instrument future registrations on existing and future descendants; existing routes are not replayed. */
+    withRouteInitializer(initializer: RouteInitializer) {
+        this.routeInitializers.push(initializer);
+        return this;
+    }
+
+    protected initializeRoute(route: RegisteredRoute): void {
+        this.parent?.initializeRoute(route);
+        for (const initialize of this.routeInitializers) initialize(route);
+    }
+
     withGuard(guard: RouterGuard) {
         this.guard = guard;
         return this;
@@ -393,6 +425,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         } else {
             this.routes.push(route);
         }
+        this.initializeRoute(route);
     }
 
     routeAll(path: string, target: RouteTarget) {
@@ -429,7 +462,9 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
 
     serve(pattern: string, target: string, opts: send.SendOptions = {}) {
         if (!opts.root) opts.root = this.webRoot;
-        this.routes.push(new ServeRoute(pattern, resolvePath(this.webRoot, target), opts));
+        const route = new ServeRoute(this, pattern, resolvePath(this.webRoot, target), opts);
+        this.initializeRoute(route);
+        this.routes.push(route);
     }
 
     redirect(method: string | null | undefined, pattern: string, target: string) {
@@ -443,7 +478,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         this.route('GET', pattern, target, thisArg);
     }
     head(pattern: string, target: RouteTarget, thisArg?: unknown) {
-        this.route('HED', pattern, target, thisArg);
+        this.route('HEAD', pattern, target, thisArg);
     }
     options(pattern: string, target: RouteTarget, thisArg?: unknown) {
         this.route('OPTIONS', pattern, target, thisArg);

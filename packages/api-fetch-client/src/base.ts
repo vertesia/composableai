@@ -34,11 +34,13 @@ export interface IRequestRetryPolicy {
      */
     baseDelayMs?: number;
     /**
-     * Maximum backoff delay in milliseconds. Defaults to 4000.
+     * Maximum client-computed backoff in milliseconds. Server retry floors may exceed this.
+     * Defaults to 4000.
      */
     maxDelayMs?: number;
     /**
-     * Use full jitter for backoff delays. Defaults to true.
+     * Use full jitter for client-computed backoff. Server floors get up to 10% additional jitter,
+     * capped at 1000 ms, and are never shortened. Defaults to true.
      */
     jitter?: boolean;
     /**
@@ -97,6 +99,8 @@ type NormalizedPacingPolicy = { maxWaitMs: number; attempts: number };
 
 const DEFAULT_PACING_MAX_WAIT_MS = 3000;
 const DEFAULT_PACING_ATTEMPTS = 2;
+// setTimeout overflows above this value and would otherwise turn a long server floor into 1 ms.
+const MAX_RETRY_TIMER_MS = 2_147_483_647;
 const RATELIMIT_REASON_HEADER = 'x-ratelimit-reason';
 const RATELIMIT_RETRY_MS_HEADER = 'x-ratelimit-retry-ms';
 
@@ -220,50 +224,52 @@ function normalizeRetryPolicy(policy: IRequestRetryPolicy): NormalizedRetryPolic
 }
 
 function retryAfterDelayMs(res: Response): number | undefined {
-    const exact = res.headers.get('x-retry-after-ms');
-    if (exact) {
-        const exactMs = Number(exact);
-        if (Number.isFinite(exactMs) && exactMs >= 0) {
-            return exactMs;
+    let minimum: number | undefined;
+    for (const header of ['x-retry-after-ms', RATELIMIT_RETRY_MS_HEADER]) {
+        const raw = res.headers.get(header);
+        if (!raw) continue;
+        const value = Number(raw);
+        if (Number.isFinite(value) && value >= 0) {
+            minimum = Math.max(minimum ?? 0, value);
         }
     }
     const retryAfter = res.headers.get('retry-after');
-    if (!retryAfter) {
-        return undefined;
+    if (retryAfter) {
+        const seconds = Number(retryAfter);
+        if (Number.isFinite(seconds)) {
+            if (seconds >= 0) minimum = Math.max(minimum ?? 0, seconds * 1000);
+        } else {
+            const retryAt = Date.parse(retryAfter);
+            if (!Number.isNaN(retryAt)) minimum = Math.max(minimum ?? 0, retryAt - Date.now());
+        }
     }
-    const seconds = Number(retryAfter);
-    if (Number.isFinite(seconds) && seconds >= 0) {
-        return seconds * 1000;
-    }
-    const retryAt = Date.parse(retryAfter);
-    if (!Number.isNaN(retryAt)) {
-        return Math.max(0, retryAt - Date.now());
-    }
-    return undefined;
+    return minimum;
 }
 
 function pacingDelayMs(res: Response, pacing: NormalizedPacingPolicy): number | undefined {
     if (res.status !== 429 || res.headers.get(RATELIMIT_REASON_HEADER) !== 'pacing') {
         return undefined;
     }
-    // Treat an absent/empty header as "no hint" — Number(null) and Number('') are 0, which
-    // would otherwise turn a pacing 429 carrying only Retry-After into an immediate retry.
-    const rawRetryMs = res.headers.get(RATELIMIT_RETRY_MS_HEADER);
-    const retryMs = rawRetryMs ? Number(rawRetryMs) : Number.NaN;
-    const delay = Number.isFinite(retryMs) && retryMs >= 0 ? retryMs : retryAfterDelayMs(res);
-    if (delay === undefined || delay > pacing.maxWaitMs) {
+    const delay = pacingRetryAfterDelayMs(res);
+    if (delay === undefined || delay > pacing.maxWaitMs || delay > MAX_RETRY_TIMER_MS) {
         return undefined;
     }
     return delay;
+}
+
+function pacingRetryAfterDelayMs(res: Response): number | undefined {
+    // Recognised pacing responses define this as the authoritative hint, already jittered by
+    // the server. Retry-After is its rounded compatibility fallback for ordinary HTTP clients.
+    const raw = res.headers.get(RATELIMIT_RETRY_MS_HEADER)?.trim();
+    const exact = raw ? Number(raw) : Number.NaN;
+    return Number.isFinite(exact) && exact >= 0 ? exact : retryAfterDelayMs(res);
 }
 
 function rateLimitMetadata(res: Response): RateLimitMetadata | undefined {
     if (res.status !== 429) return undefined;
     const reason = res.headers.get(RATELIMIT_REASON_HEADER);
     if (reason !== 'pacing' && reason !== 'quota') return undefined;
-    const exact = res.headers.get(RATELIMIT_RETRY_MS_HEADER);
-    const exactMs = exact ? Number(exact) : Number.NaN;
-    const retryAfterMs = Number.isFinite(exactMs) && exactMs >= 0 ? exactMs : retryAfterDelayMs(res);
+    const retryAfterMs = reason === 'pacing' ? pacingRetryAfterDelayMs(res) : retryAfterDelayMs(res);
     if (retryAfterMs === undefined) return undefined;
     return {
         reason,
@@ -279,7 +285,11 @@ function sleep(ms: number): Promise<void> {
 
 function retryDelayMs(policy: NormalizedRetryPolicy, attempt: number, res?: Response): number {
     const retryAfter = res ? retryAfterDelayMs(res) : undefined;
-    const delay = retryAfter ?? Math.min(policy.maxDelayMs, policy.baseDelayMs * 2 ** attempt);
+    if (retryAfter !== undefined) {
+        const jitterRange = Math.min(retryAfter * 0.1, 1000, Math.max(0, MAX_RETRY_TIMER_MS - retryAfter));
+        return retryAfter + (policy.jitter ? Math.floor(Math.random() * jitterRange) : 0);
+    }
+    const delay = Math.min(policy.maxDelayMs, policy.baseDelayMs * 2 ** attempt);
     return policy.jitter ? Math.floor(Math.random() * delay) : delay;
 }
 
@@ -522,14 +532,15 @@ export abstract class ClientBase {
                 }
             }
         }
+        const rateLimit = rateLimitMetadata(res);
         return new ServerError(
             message,
             req,
             res.status,
             payload,
             this.verboseErrors,
-            rateLimitMetadata(res),
-            retryAfterDelayMs(res),
+            rateLimit,
+            rateLimit?.retryAfterMs ?? retryAfterDelayMs(res),
         );
     }
 
@@ -690,10 +701,13 @@ export abstract class ClientBase {
                 }
             }
             if (retryPolicy && this.shouldRetryResponse(retryPolicy, normalizedMethod, attempt, replayableBody, res)) {
-                await discardBody(res);
-                await this.waitBeforeRetry(retryPolicy, attempt, res);
-                attempt++;
-                continue;
+                const delay = retryDelayMs(retryPolicy, attempt, res);
+                if (delay <= MAX_RETRY_TIMER_MS) {
+                    await discardBody(res);
+                    await sleep(delay);
+                    attempt++;
+                    continue;
+                }
             }
             if (retryPolicy && attempt >= retryPolicy.attempts) {
                 break;
@@ -760,9 +774,8 @@ export abstract class ClientBase {
         );
     }
 
-    private waitBeforeRetry(policy: NormalizedRetryPolicy, attempt: number, res?: Response) {
-        const delay = retryDelayMs(policy, attempt, res);
-        return new Promise<void>((resolve) => setTimeout(resolve, delay));
+    private waitBeforeRetry(policy: NormalizedRetryPolicy, attempt: number) {
+        return sleep(retryDelayMs(policy, attempt));
     }
 
     /**

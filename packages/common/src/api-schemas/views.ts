@@ -506,17 +506,24 @@ export const ViewResultsConfigurationSchema = z
     })
     .meta({ id: 'ViewResultsConfiguration' });
 
+// The bounds of the persisted View configuration that the server validates every create and update against.
+const viewExperienceName = z.string().min(1).max(120);
+const viewExperienceDescription = z.string().regex(/\S/).max(4000);
+
 export const CreateViewExperienceRequestSchema = z
     .strictObject({
-        name: z.string(),
+        name: viewExperienceName,
         enabled: z.boolean().optional(),
         layout: ViewExperienceLayoutSchema.optional(),
         scope: ViewExperienceScopeSchema.optional(),
         navigation: z.array(ViewNavigationItemSchema).optional(),
         search: ViewSearchConfigurationSchema.optional(),
         results: ViewResultsConfigurationSchema.optional(),
-        description: z.string(),
-        id: z.string(),
+        description: viewExperienceDescription,
+        id: z
+            .string()
+            .max(64)
+            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
         version: ViewExperienceSchemaVersionSchema.optional(),
     })
     .meta({ id: 'CreateViewExperienceRequest' });
@@ -543,16 +550,16 @@ export const ViewExperienceSchema = z
 
 export const UpdateViewExperienceRequestSchema = z
     .strictObject({
-        name: z.string(),
+        name: viewExperienceName,
         enabled: z.boolean().optional(),
         layout: ViewExperienceLayoutSchema.optional(),
         scope: ViewExperienceScopeSchema.optional(),
         navigation: z.array(ViewNavigationItemSchema).optional(),
         search: ViewSearchConfigurationSchema.optional(),
         results: ViewResultsConfigurationSchema.optional(),
-        description: z.string(),
+        description: viewExperienceDescription,
         version: ViewExperienceSchemaVersionSchema,
-        revision: z.number(),
+        revision: z.number().min(1).multipleOf(1),
     })
     .meta({
         id: 'UpdateViewExperienceRequest',

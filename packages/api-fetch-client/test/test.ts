@@ -1,10 +1,21 @@
 import assert from 'node:assert';
+import { mock } from 'node:test';
 import { KoaServer } from '@koa-stack/server';
 import { FetchClient, generateIdempotencyKey, RequestError } from '../src/index.js';
 import Endpoints from './endpoints.js';
 
 const HOST = '127.0.0.1';
 const server = new KoaServer();
+
+function captureRetryDelays() {
+    const delays: number[] = [];
+    const original = globalThis.setTimeout;
+    const timer = mock.method(globalThis, 'setTimeout', (callback: () => void, delay = 0) => {
+        delays.push(delay);
+        return original(callback, 0);
+    });
+    return { delays, restore: () => timer.mock.restore() };
+}
 
 server.mount('/api/v1', Endpoints);
 
@@ -133,7 +144,7 @@ describe('Test requests', () => {
         assert.equal((error as { rateLimit?: unknown }).rateLimit, undefined);
         assert.equal((error as { retryAfterMs?: number }).retryAfterMs, 1_000);
     });
-    it('preserves an exact generic retry delay without typing it as an API quota response', async () => {
+    it('uses the larger generic retry floor without typing it as an API quota response', async () => {
         const unknownClient = new FetchClient(
             'http://example.test',
             async () =>
@@ -149,10 +160,102 @@ describe('Test requests', () => {
 
         await assert.rejects(unknownClient.get('/execute'), (error: unknown) => {
             assert.equal((error as { rateLimit?: unknown }).rateLimit, undefined);
-            assert.equal((error as { retryAfterMs?: number }).retryAfterMs, 1_234);
+            assert.equal((error as { retryAfterMs?: number }).retryAfterMs, 2_000);
             return true;
         });
     });
+    it('does not shorten a server retry floor through jitter or a client cap', async () => {
+        let attempts = 0;
+        const startedAt = Date.now();
+        const originalRandom = Math.random;
+        Math.random = () => 0;
+        try {
+            const retryClient = new FetchClient('http://example.test', async () => {
+                attempts++;
+                return new Response(JSON.stringify({ attempts }), {
+                    status: attempts === 1 ? 503 : 200,
+                    headers: { 'content-type': 'application/json', 'retry-after': '0.05' },
+                });
+            }).withRetryPolicy({ attempts: 2, jitter: true, baseDelayMs: 0, maxDelayMs: 1 });
+            await retryClient.get('/unstable');
+            assert.equal(attempts, 2);
+            assert.ok(Date.now() - startedAt >= 50);
+        } finally {
+            Math.random = originalRandom;
+        }
+    });
+
+    it('adds bounded nonnegative jitter above transient server floors only when enabled', async () => {
+        const random = mock.method(Math, 'random', () => 0.5);
+        try {
+            for (const status of [502, 503, 504]) {
+                for (const jitter of [false, true]) {
+                    const captured = captureRetryDelays();
+                    try {
+                        let attempts = 0;
+                        const retryClient = new FetchClient('http://example.test', async () => {
+                            attempts++;
+                            return new Response('{}', {
+                                status: attempts === 1 ? status : 200,
+                                headers: { 'content-type': 'application/json', 'retry-after': '5' },
+                            });
+                        }).withRetryPolicy({ attempts: 2, jitter, maxDelayMs: 1 });
+                        await retryClient.get('/unstable');
+                        assert.equal(attempts, 2);
+                        assert.deepEqual(captured.delays, [jitter ? 5_250 : 5_000]);
+                    } finally {
+                        captured.restore();
+                    }
+                }
+            }
+        } finally {
+            random.mock.restore();
+        }
+    });
+
+    it('preserves valid millisecond and HTTP-date floors while ignoring malformed hints', async () => {
+        const originalNow = Date.now;
+        Date.now = () => 1_000_000;
+        try {
+            for (const [headers, expected] of [
+                [{ 'retry-after': new Date(1_005_000).toUTCString(), 'x-retry-after-ms': '1234' }, 5_000],
+                [{ 'retry-after': 'invalid', 'x-retry-after-ms': '1234' }, 1_234],
+                [{ 'retry-after': '1', 'x-ratelimit-retry-ms': '1500' }, 1_500],
+            ] as const) {
+                const retryClient = new FetchClient(
+                    'http://example.test',
+                    async () =>
+                        new Response(JSON.stringify({ message: 'busy' }), {
+                            status: 429,
+                            headers: { 'content-type': 'application/json', ...headers },
+                        }),
+                );
+                await assert.rejects(retryClient.get('/busy'), (error: unknown) => {
+                    assert.equal((error as { retryAfterMs?: number }).retryAfterMs, expected);
+                    return true;
+                });
+            }
+        } finally {
+            Date.now = originalNow;
+        }
+    });
+
+    it('returns a refusal whose retry floor exceeds timer capacity instead of retrying early', async () => {
+        let attempts = 0;
+        const retryClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(JSON.stringify({ message: 'busy' }), {
+                status: 503,
+                headers: { 'content-type': 'application/json', 'retry-after': '2147484' },
+            });
+        }).withRetryPolicy({ attempts: 2 });
+        await assert.rejects(retryClient.get('/busy'), (error: unknown) => {
+            assert.equal((error as { retryAfterMs?: number }).retryAfterMs, 2_147_484_000);
+            return true;
+        });
+        assert.equal(attempts, 1);
+    });
+
     it('retries opted-in transient responses for idempotent methods', async () => {
         let attempts = 0;
         const retryClient = new FetchClient('http://example.test', async () => {
@@ -172,9 +275,9 @@ describe('Test requests', () => {
         assert.equal(attempts, 2);
         assert.equal(payload.attempts, 2);
     });
-    it('auto-retries pacing 429s with the exact server hint, POST included, without a retry policy', async () => {
+    it('preserves the exact server pacing hint and jitter despite a rounded Retry-After', async () => {
         let attempts = 0;
-        const startedAt = Date.now();
+        const captured = captureRetryDelays();
         const pacingClient = new FetchClient('http://example.test', async () => {
             attempts++;
             if (attempts === 1) {
@@ -194,13 +297,64 @@ describe('Test requests', () => {
             });
         });
 
-        const payload = (await pacingClient.post('/objects', { payload: { name: 'x' } })) as { attempts: number };
+        try {
+            const payload = (await pacingClient.post('/objects', {
+                payload: { name: 'x' },
+                pacingRetry: { maxWaitMs: 100 },
+            })) as { attempts: number };
+            assert.equal(attempts, 2);
+            assert.equal(payload.attempts, 2);
+            assert.deepEqual(captured.delays, [60]);
+        } finally {
+            captured.restore();
+        }
+    });
 
-        assert.equal(attempts, 2);
-        assert.equal(payload.attempts, 2);
-        // Waited the precise ms hint, not the 1s Retry-After.
-        assert.ok(Date.now() - startedAt >= 55);
-        assert.ok(Date.now() - startedAt < 900);
+    it('falls back to standard retry timing when the pacing millisecond hint is missing or invalid', async () => {
+        for (const hint of [undefined, '', ' ', '-1', 'invalid', 'Infinity']) {
+            const captured = captureRetryDelays();
+            try {
+                let attempts = 0;
+                const pacingClient = new FetchClient('http://example.test', async () => {
+                    attempts++;
+                    const headers = new Headers({
+                        'content-type': 'application/json',
+                        'retry-after': '1',
+                        'x-ratelimit-reason': 'pacing',
+                    });
+                    if (hint !== undefined) headers.set('x-ratelimit-retry-ms', hint);
+                    return new Response('{}', { status: attempts === 1 ? 429 : 200, headers });
+                });
+                await pacingClient.get('/objects');
+                assert.equal(attempts, 2);
+                assert.deepEqual(captured.delays, [1000]);
+            } finally {
+                captured.restore();
+            }
+        }
+    });
+
+    it('reports the canonical pacing delay consistently when automatic pacing is disabled', async () => {
+        for (const hint of [0, 60, 999]) {
+            const pacingClient = new FetchClient(
+                'http://example.test',
+                async () =>
+                    new Response('{}', {
+                        status: 429,
+                        headers: {
+                            'content-type': 'application/json',
+                            'retry-after': '1',
+                            'x-ratelimit-reason': 'pacing',
+                            'x-ratelimit-retry-ms': String(hint),
+                        },
+                    }),
+            );
+            await assert.rejects(pacingClient.get('/objects', { pacingRetry: false }), (error: unknown) => {
+                assert.equal((error as RequestError).rateLimit?.retryAfterMs, hint);
+                assert.equal((error as RequestError).retryAfterMs, hint);
+                return true;
+            });
+        }
     });
     it('never auto-retries quota 429s and respects the pacing budget and maxWaitMs', async () => {
         let attempts = 0;

@@ -546,6 +546,10 @@ interface Checks {
         W.AppDevelopmentTaskDetails,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDevelopmentTaskDetailsSchema>
     >;
+    CreateAppRepoBranchRequest: Same<
+        W.CreateAppRepoBranchRequest,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppRepoBranchRequestSchema>
+    >;
     AppRepoBranch: Same<W.AppRepoBranch, z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoBranchSchema>>;
     AppPackageEventHook: Same<
         W.AppPackageEventHook,
@@ -845,6 +849,14 @@ interface Checks {
     AuditAggregationResponse: Same<
         W.AuditAggregationResponse,
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationResponseSchema>
+    >;
+    AuditAggregationBatchQuery: Same<
+        W.AuditAggregationBatchQuery,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationBatchQuerySchema>
+    >;
+    AuditAggregationBatchResponse: Same<
+        W.AuditAggregationBatchResponse,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationBatchResponseSchema>
     >;
     AuditAdoptionFilter: Same<
         W.AuditAdoptionFilter,
@@ -1195,6 +1207,10 @@ interface Checks {
     DashboardArchiveResult: Same<
         W.DashboardArchiveResult,
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardArchiveResultSchema>
+    >;
+    DashboardBulkIdsPayload: Same<
+        W.DashboardBulkIdsPayload,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardBulkIdsPayloadSchema>
     >;
     DashboardBulkArchiveResult: Same<
         W.DashboardBulkArchiveResult,
@@ -2267,6 +2283,14 @@ interface Checks {
         W.AppEventDeliveryTargetInput,
         z.infer<typeof import('./api-schemas/events.js').AppEventDeliveryTargetInputSchema>
     >;
+    IntakeMediaAnalysisOverride: Same<
+        W.IntakeMediaAnalysisOverride,
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverrideSchema>
+    >;
+    IntakeMediaAnalysisOverrides: Same<
+        W.IntakeMediaAnalysisOverrides,
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverridesSchema>
+    >;
     EventDeliveryIntentSummary: Same<
         W.EventDeliveryIntentSummary,
         z.infer<typeof import('./api-schemas/events.js').EventDeliveryIntentSummarySchema>
@@ -2689,6 +2713,14 @@ interface Checks {
     DeleteSecretResponse: Same<
         W.DeleteSecretResponse,
         z.infer<typeof import('./api-schemas/secrets.js').DeleteSecretResponseSchema>
+    >;
+    SubscriptionWorkflowDefinition: Same<
+        W.SubscriptionWorkflowDefinition,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowDefinitionSchema>
+    >;
+    SubscriptionWorkflowCatalog: Same<
+        W.SubscriptionWorkflowCatalog,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowCatalogSchema>
     >;
     AgentToolApprovalMode: Same<
         W.AgentToolApprovalMode,
@@ -4115,6 +4147,10 @@ interface Checks {
         W.InteractionEndpointArray,
         z.infer<typeof import('./api-schemas/interaction.js').InteractionEndpointArraySchema>
     >;
+    InteractionListQuery: Same<
+        W.InteractionListQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionListQuerySchema>
+    >;
     CatalogInteractionRefArray: Same<
         W.CatalogInteractionRefArray,
         z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefArraySchema>
@@ -4637,6 +4673,14 @@ interface Checks {
         W.AppPackageScopeWire,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppPackageScopeSchema>
     >;
+    AppRepoFileQuery: Same<
+        W.AppRepoFileQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoFileQuerySchema>
+    >;
+    AppRepoTreeQuery: Same<
+        W.AppRepoTreeQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoTreeQuerySchema>
+    >;
     AppVersionLaunchTargetArray: Same<
         W.AppVersionLaunchTargetArray,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetArraySchema>
@@ -4748,6 +4792,58 @@ interface Checks {
     BinaryFileResponse: Same<
         W.BinaryFileResponse,
         z.infer<typeof import('./api-schemas/app-runtime.js').BinaryFileResponseSchema>
+    >;
+    DashboardPathParams: Same<
+        W.DashboardPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').DashboardPathParamsSchema>
+    >;
+    DataStoreImportPathParams: Same<
+        W.DataStoreImportPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').DataStoreImportPathParamsSchema>
+    >;
+    DataStoreVersionPathParams: Same<
+        W.DataStoreVersionPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').DataStoreVersionPathParamsSchema>
+    >;
+    ContentObjectExportPathParams: Same<
+        W.ContentObjectExportPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentObjectExportPathParamsSchema>
+    >;
+    ProcessTestRunPathParams: Same<
+        W.ProcessTestRunPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProcessTestRunPathParamsSchema>
+    >;
+    ProcessPathParams: Same<
+        W.ProcessPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProcessPathParamsSchema>
+    >;
+    TaskPathParams: Same<
+        W.TaskPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').TaskPathParamsSchema>
+    >;
+    AgentRunPathParams: Same<
+        W.AgentRunPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').AgentRunPathParamsSchema>
+    >;
+    AppVersionPathParams: Same<
+        W.AppVersionPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').AppVersionPathParamsSchema>
+    >;
+    AppInstallationPathParams: Same<
+        W.AppInstallationPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').AppInstallationPathParamsSchema>
+    >;
+    DelegationGrantPathParams: Same<
+        W.DelegationGrantPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').DelegationGrantPathParamsSchema>
+    >;
+    OAuthProviderPathParams: Same<
+        W.OAuthProviderPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').OAuthProviderPathParamsSchema>
+    >;
+    ProjectAppCapabilityPathParams: Same<
+        W.ProjectAppCapabilityPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
     >;
     'component:Account': Same<
         W.ApiComponentTypes['Account'],
@@ -5706,6 +5802,10 @@ interface Checks {
         W.ApiComponentTypes['InteractionSearchQuery'],
         z.infer<typeof import('./api-schemas/interaction.js').InteractionSearchQuerySchema>
     >;
+    'component:InteractionListQuery': Same<
+        W.ApiComponentTypes['InteractionListQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').InteractionListQuerySchema>
+    >;
     'component:ResolveInteractionQuery': Same<
         W.ApiComponentTypes['ResolveInteractionQuery'],
         z.infer<typeof import('./api-schemas/interaction.js').ResolveInteractionQuerySchema>
@@ -6358,6 +6458,10 @@ interface Checks {
     'component:StringArrayMap': Same<
         W.ApiComponentTypes['StringArrayMap'],
         z.infer<typeof import('./api-schemas/dashboard.js').StringArrayMapSchema>
+    >;
+    'component:DashboardBulkIdsPayload': Same<
+        W.ApiComponentTypes['DashboardBulkIdsPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardBulkIdsPayloadSchema>
     >;
     'component:DashboardStoreElasticsearchDataSource': Same<
         W.ApiComponentTypes['DashboardStoreElasticsearchDataSource'],
@@ -7419,6 +7523,14 @@ interface Checks {
         W.ApiComponentTypes['ObjectSearchResponse'],
         z.infer<typeof import('./api-schemas/content.js').ObjectSearchResponseSchema>
     >;
+    'component:IntakeMediaAnalysisOverride': Same<
+        W.ApiComponentTypes['IntakeMediaAnalysisOverride'],
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverrideSchema>
+    >;
+    'component:IntakeMediaAnalysisOverrides': Same<
+        W.ApiComponentTypes['IntakeMediaAnalysisOverrides'],
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverridesSchema>
+    >;
     'component:EventPriority': Same<
         W.ApiComponentTypes['EventPriority'],
         z.infer<typeof import('./api-schemas/events.js').EventPrioritySchema>
@@ -8243,6 +8355,14 @@ interface Checks {
         W.ApiComponentTypes['ActivityCatalog'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityCatalogSchema>
     >;
+    'component:SubscriptionWorkflowDefinition': Same<
+        W.ApiComponentTypes['SubscriptionWorkflowDefinition'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowDefinitionSchema>
+    >;
+    'component:SubscriptionWorkflowCatalog': Same<
+        W.ApiComponentTypes['SubscriptionWorkflowCatalog'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowCatalogSchema>
+    >;
     'component:WorkflowInteractionVars': Same<
         W.ApiComponentTypes['WorkflowInteractionVars'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInteractionVarsSchema>
@@ -8623,6 +8743,14 @@ interface Checks {
         W.ApiComponentTypes['AuditAggregationQuery'],
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationQuerySchema>
     >;
+    'component:AuditAggregationBatchQuery': Same<
+        W.ApiComponentTypes['AuditAggregationBatchQuery'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationBatchQuerySchema>
+    >;
+    'component:AuditAggregationBatchResponse': Same<
+        W.ApiComponentTypes['AuditAggregationBatchResponse'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationBatchResponseSchema>
+    >;
     'component:AuditTrailQuery': Same<
         W.ApiComponentTypes['AuditTrailQuery'],
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditTrailQuerySchema>
@@ -8978,6 +9106,18 @@ interface Checks {
     'component:AppRepoBranch': Same<
         W.ApiComponentTypes['AppRepoBranch'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoBranchSchema>
+    >;
+    'component:CreateAppRepoBranchRequest': Same<
+        W.ApiComponentTypes['CreateAppRepoBranchRequest'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').CreateAppRepoBranchRequestSchema>
+    >;
+    'component:AppRepoFileQuery': Same<
+        W.ApiComponentTypes['AppRepoFileQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoFileQuerySchema>
+    >;
+    'component:AppRepoTreeQuery': Same<
+        W.ApiComponentTypes['AppRepoTreeQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoTreeQuerySchema>
     >;
     'component:AppRepoDocumentCommit': Same<
         W.ApiComponentTypes['AppRepoDocumentCommit'],
@@ -9715,6 +9855,58 @@ interface Checks {
         W.ApiComponentTypes['RunBudgetCapabilityQuery'],
         z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilityQuerySchema>
     >;
+    'component:DashboardPathParams': Same<
+        W.ApiComponentTypes['DashboardPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').DashboardPathParamsSchema>
+    >;
+    'component:DataStoreImportPathParams': Same<
+        W.ApiComponentTypes['DataStoreImportPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').DataStoreImportPathParamsSchema>
+    >;
+    'component:DataStoreVersionPathParams': Same<
+        W.ApiComponentTypes['DataStoreVersionPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').DataStoreVersionPathParamsSchema>
+    >;
+    'component:ContentObjectExportPathParams': Same<
+        W.ApiComponentTypes['ContentObjectExportPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentObjectExportPathParamsSchema>
+    >;
+    'component:ProcessTestRunPathParams': Same<
+        W.ApiComponentTypes['ProcessTestRunPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProcessTestRunPathParamsSchema>
+    >;
+    'component:ProcessPathParams': Same<
+        W.ApiComponentTypes['ProcessPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProcessPathParamsSchema>
+    >;
+    'component:TaskPathParams': Same<
+        W.ApiComponentTypes['TaskPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').TaskPathParamsSchema>
+    >;
+    'component:AgentRunPathParams': Same<
+        W.ApiComponentTypes['AgentRunPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').AgentRunPathParamsSchema>
+    >;
+    'component:AppVersionPathParams': Same<
+        W.ApiComponentTypes['AppVersionPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').AppVersionPathParamsSchema>
+    >;
+    'component:AppInstallationPathParams': Same<
+        W.ApiComponentTypes['AppInstallationPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').AppInstallationPathParamsSchema>
+    >;
+    'component:DelegationGrantPathParams': Same<
+        W.ApiComponentTypes['DelegationGrantPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').DelegationGrantPathParamsSchema>
+    >;
+    'component:OAuthProviderPathParams': Same<
+        W.ApiComponentTypes['OAuthProviderPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').OAuthProviderPathParamsSchema>
+    >;
+    'component:ProjectAppCapabilityPathParams': Same<
+        W.ApiComponentTypes['ProjectAppCapabilityPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
+    >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
 }
@@ -9873,6 +10065,7 @@ const checks: Checks = {
     AppDevelopmentTask: true,
     AppDevelopmentTaskList: true,
     AppDevelopmentTaskDetails: true,
+    CreateAppRepoBranchRequest: true,
     AppRepoBranch: true,
     AppPackageEventHook: true,
     AppPackageHooks: true,
@@ -9954,6 +10147,8 @@ const checks: Checks = {
     AuditAggregationQuery: true,
     AuditAggregationRow: true,
     AuditAggregationResponse: true,
+    AuditAggregationBatchQuery: true,
+    AuditAggregationBatchResponse: true,
     AuditAdoptionFilter: true,
     AuditAdoptionQuery: true,
     AuditAdoptionPeriod: true,
@@ -10055,6 +10250,7 @@ const checks: Checks = {
     DataStoreTableDetail: true,
     DataStoreTableDropResult: true,
     DashboardArchiveResult: true,
+    DashboardBulkIdsPayload: true,
     DashboardBulkArchiveResult: true,
     DashboardBulkDeleteResult: true,
     DashboardVersioningStatusResponse: true,
@@ -10343,6 +10539,8 @@ const checks: Checks = {
     WorkflowEventDeliveryTargetInput: true,
     WebhookEventDeliveryTargetInput: true,
     AppEventDeliveryTargetInput: true,
+    IntakeMediaAnalysisOverride: true,
+    IntakeMediaAnalysisOverrides: true,
     EventDeliveryIntentSummary: true,
     EventDeliverySummary: true,
     EventDeliverySortField: true,
@@ -10457,6 +10655,8 @@ const checks: Checks = {
     CreateSecretRequest: true,
     UpdateSecretRequest: true,
     DeleteSecretResponse: true,
+    SubscriptionWorkflowDefinition: true,
+    SubscriptionWorkflowCatalog: true,
     AgentToolApprovalMode: true,
     ToolApprovalGrant: true,
     PendingToolApprovalResults: true,
@@ -10865,6 +11065,7 @@ const checks: Checks = {
     InteractionRefWithSchemaArray: true,
     InteractionTagsArray: true,
     InteractionEndpointArray: true,
+    InteractionListQuery: true,
     CatalogInteractionRefArray: true,
     CatalogTagQueryWire: true,
     StoredCatalogInteractionsQueryWire: true,
@@ -11006,6 +11207,8 @@ const checks: Checks = {
     ViewExperienceArray: true,
     Extract_AppVersionGitRefType_branch_tag_commit: true,
     AppPackageScopeWire: true,
+    AppRepoFileQuery: true,
+    AppRepoTreeQuery: true,
     AppVersionLaunchTargetArray: true,
     AppVersionRecordArray: true,
     AppToolCollectionArray: true,
@@ -11034,6 +11237,19 @@ const checks: Checks = {
     AppInstallationWithManifestArray: true,
     AppInstallationListEntryArray: true,
     BinaryFileResponse: true,
+    DashboardPathParams: true,
+    DataStoreImportPathParams: true,
+    DataStoreVersionPathParams: true,
+    ContentObjectExportPathParams: true,
+    ProcessTestRunPathParams: true,
+    ProcessPathParams: true,
+    TaskPathParams: true,
+    AgentRunPathParams: true,
+    AppVersionPathParams: true,
+    AppInstallationPathParams: true,
+    DelegationGrantPathParams: true,
+    OAuthProviderPathParams: true,
+    ProjectAppCapabilityPathParams: true,
     'component:Account': true,
     'component:UpdateAccountPayload': true,
     'component:StripeBillingStatusResponse': true,
@@ -11274,6 +11490,7 @@ const checks: Checks = {
     'component:InteractionForkPayload': true,
     'component:InteractionsExportPayload': true,
     'component:InteractionSearchQuery': true,
+    'component:InteractionListQuery': true,
     'component:ResolveInteractionQuery': true,
     'component:CatalogInteractionRef': true,
     'component:CatalogInteractionRefArray': true,
@@ -11438,6 +11655,7 @@ const checks: Checks = {
     'component:CreateDashboardSnapshotPayload': true,
     'component:DashboardBulkArchiveResult': true,
     'component:StringArrayMap': true,
+    'component:DashboardBulkIdsPayload': true,
     'component:DashboardStoreElasticsearchDataSource': true,
     'component:DashboardVersionItemArray': true,
     'component:DashboardItem': true,
@@ -11703,6 +11921,8 @@ const checks: Checks = {
     'component:ComputeObjectFacetPayload': true,
     'component:ComplexSearchPayload': true,
     'component:ObjectSearchResponse': true,
+    'component:IntakeMediaAnalysisOverride': true,
+    'component:IntakeMediaAnalysisOverrides': true,
     'component:EventPriority': true,
     'component:WorkflowRuleInputType': true,
     'component:WorkflowRuleItem': true,
@@ -11909,6 +12129,8 @@ const checks: Checks = {
     'component:ActivityPropertyDefinition': true,
     'component:ActivityDefinition': true,
     'component:ActivityCatalog': true,
+    'component:SubscriptionWorkflowDefinition': true,
+    'component:SubscriptionWorkflowCatalog': true,
     'component:WorkflowInteractionVars': true,
     'component:ListWorkflowInteractionsResponse': true,
     'component:RestartAgentRunPayload': true,
@@ -12004,6 +12226,8 @@ const checks: Checks = {
     'component:AuditAggregationFilter': true,
     'component:AuditTrailResponse': true,
     'component:AuditAggregationQuery': true,
+    'component:AuditAggregationBatchQuery': true,
+    'component:AuditAggregationBatchResponse': true,
     'component:AuditTrailQuery': true,
     'component:ViewExperienceSchemaVersion': true,
     'component:ViewSortClause': true,
@@ -12093,6 +12317,9 @@ const checks: Checks = {
     'component:DeleteAppVersionResponse': true,
     'component:AppDeleteSummary': true,
     'component:AppRepoBranch': true,
+    'component:CreateAppRepoBranchRequest': true,
+    'component:AppRepoFileQuery': true,
+    'component:AppRepoTreeQuery': true,
     'component:AppRepoDocumentCommit': true,
     'component:AppVersionGitSource': true,
     'component:AppGithubConfiguration': true,
@@ -12277,11 +12504,24 @@ const checks: Checks = {
     'component:DelegationGrantArray': true,
     'component:RunBudgetCapability': true,
     'component:RunBudgetCapabilityQuery': true,
+    'component:DashboardPathParams': true,
+    'component:DataStoreImportPathParams': true,
+    'component:DataStoreVersionPathParams': true,
+    'component:ContentObjectExportPathParams': true,
+    'component:ProcessTestRunPathParams': true,
+    'component:ProcessPathParams': true,
+    'component:TaskPathParams': true,
+    'component:AgentRunPathParams': true,
+    'component:AppVersionPathParams': true,
+    'component:AppInstallationPathParams': true,
+    'component:DelegationGrantPathParams': true,
+    'component:OAuthProviderPathParams': true,
+    'component:ProjectAppCapabilityPathParams': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2558);
+        expect(Object.keys(checks)).toHaveLength(2606);
     });
 });
