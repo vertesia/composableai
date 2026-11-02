@@ -44,12 +44,19 @@ describe('Router', () => {
         expect(res.headers.get('allow')?.split(', ').sort()).toEqual(['GET', 'HEAD', 'PUT']);
     });
 
-    test('lists the methods of the most specific endpoint in Allow', async () => {
-        // `/items/export` also matches `/items/:id`, but the request names the export resource.
+    test('lists in Allow the methods of every endpoint the path matches', async () => {
+        // `/items/export` also matches `/items/:id`, and dispatch serves a request from either.
         const res = await fetch(`${baseUrl}/items/export`, { method: 'PATCH' });
 
         expect(res.status).toBe(405);
-        expect(res.headers.get('allow')).toBe('POST');
+        expect(res.headers.get('allow')?.split(', ').sort()).toEqual(['GET', 'HEAD', 'POST', 'PUT']);
+    });
+
+    test('serves a method Allow lists from the less specific endpoint', async () => {
+        const res = await fetch(`${baseUrl}/items/export`);
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({ id: 'export' });
     });
 
     test('routes HEAD to a head() endpoint', async () => {
