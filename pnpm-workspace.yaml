@@ -31,8 +31,8 @@ minimumReleaseAgeExclude:
   # Additional excludes, due to CVEs etc.
   # GHSA-8j4g-w8fx-2239 (ReDoS in CORS middleware): 4.12.34 is the patched
   # release and lands within the 3-day cooldown window, so version-scope an
-  # exception to receive the fix now.
-  - hono@4.12.34
+  # exception to receive the fix now. || 4.13.11
+  - hono@4.12.34 || 4.13.11
 overrides:
   # ============================
   # Special Overrides
