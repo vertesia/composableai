@@ -299,7 +299,8 @@ export default class InteractionsApi extends ApiTopic {
     /**
      * Request a time slot to execute an interaction with a given environment / model
      * @param payload RateLimitRequestPayload
-     * @returns RateLimitRequestResponse with delay_ms
+     * @returns RateLimitRequestResponse with delay_ms and, when the request holds a slot, its rate_limit_grant.
+     * Once admitted (delay_ms is 0), send the grant back as `workflow.rate_limit_id` when executing
      */
     requestSlot(payload: RateLimitRequestPayload): Promise<RateLimitRequestResponse> {
         return checkRateLimit(this.client as VertesiaClient, payload);

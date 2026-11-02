@@ -192,6 +192,22 @@ export enum ContentNature {
     Other = 'other',
 }
 
+/** Video containers registered under `application/*` rather than `video/*`: MXF (RFC 4539). */
+const APPLICATION_VIDEO_CONTENT_TYPES = new Set(['application/mxf']);
+
+/**
+ * Whether a MIME type is a video: any `video/*` type, or a video container registered under `application/*`.
+ * Types that may hold audio only, such as `application/mp4` and `application/ogg`, are not counted. MIME types are
+ * case-insensitive and may carry parameters (`application/MXF; foo=bar`), so both are ignored.
+ */
+export function isVideoContentType(contentType: string | undefined): boolean {
+    const essence = contentType?.split(';')[0].trim().toLowerCase();
+    if (!essence) {
+        return false;
+    }
+    return essence.startsWith('video/') || APPLICATION_VIDEO_CONTENT_TYPES.has(essence);
+}
+
 export interface Dimensions {
     width: number;
     height: number;
@@ -607,6 +623,8 @@ const RENDITION_COMPATIBILITY: Record<string, RenditionFormat[]> = {
     'image/*': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png, ImageRenditionFormat.webp],
     // Video formats can generate: jpeg, png (thumbnails)
     'video/*': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png],
+    // MXF, a video container registered as application/mxf
+    'application/mxf': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png],
     // PDF can generate: jpeg, png, webp (page images)
     'application/pdf': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png, ImageRenditionFormat.webp],
     // Markdown can generate: pdf, docx (NOT jpeg/png)

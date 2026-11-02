@@ -1,20 +1,8 @@
-import type { AuthTokenPayload } from '@vertesia/common';
+import { decodeJWT } from '@vertesia/client';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { rememberScopeSelection } from './scopeSelection';
 import { UserSession, UserSessionContext } from './UserSession';
-
-function decodeJwtPayload(token: string): AuthTokenPayload {
-    const [, payload] = token.split('.');
-    if (!payload) {
-        throw new Error('Invalid Vertesia auth token');
-    }
-    const padded = payload
-        .replace(/-/g, '+')
-        .replace(/_/g, '/')
-        .padEnd(Math.ceil(payload.length / 4) * 4, '=');
-    return JSON.parse(atob(padded)) as AuthTokenPayload;
-}
 
 interface DevSessionProviderProps {
     children: ReactNode;
@@ -27,7 +15,7 @@ export function DevSessionProvider({ children, token }: DevSessionProviderProps)
         next.isLoading = false;
 
         try {
-            next.authToken = decodeJwtPayload(token);
+            next.authToken = decodeJWT(token);
             next.client.withAuthCallback(() => Promise.resolve(`Bearer ${token}`));
 
             rememberScopeSelection(next.authToken.account.id, next.authToken.project?.id);

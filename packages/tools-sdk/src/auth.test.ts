@@ -1,9 +1,9 @@
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-async function signedBy(issuer: string) {
+async function signedBy(issuer: string, claims: Record<string, unknown> = {}) {
     const { privateKey, publicKey } = await generateKeyPair('ES256');
-    const token = await new SignJWT({ account: { id: 'a' }, project: { id: 'p' }, endpoints: {} })
+    const token = await new SignJWT({ account: { id: 'a' }, project: { id: 'p' }, endpoints: {}, ...claims })
         .setProtectedHeader({ alg: 'ES256' })
         .setIssuer(issuer)
         .setExpirationTime('1h')
@@ -20,6 +20,16 @@ async function loadVerifyToken() {
 }
 
 describe('verifyToken issuer allowlist', () => {
+    it('rejects malformed permission claims from a trusted issuer', async () => {
+        vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
+        const { token } = await signedBy('http://localhost:8202', {
+            permissions: [],
+            account_permissions: ['content:read'],
+        });
+        const verifyToken = await loadVerifyToken();
+        await expect(verifyToken(token)).rejects.toThrow('Invalid token permission claims');
+    });
+
     afterEach(() => {
         vi.unstubAllGlobals();
         vi.unstubAllEnvs();

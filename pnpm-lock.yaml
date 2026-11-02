@@ -984,6 +984,9 @@ importers:
       '@vertesia/common':
         specifier: workspace:*
         version: link:../common
+      '@vertesia/studio-utils':
+        specifier: workspace:*
+        version: link:../studio-utils
       hono:
         specifier: ^4.13.13
         version: 4.13.13
@@ -1090,6 +1093,9 @@ importers:
       '@vertesia/rich-text':
         specifier: workspace:*
         version: link:../rich-text
+      '@vertesia/studio-utils':
+        specifier: workspace:*
+        version: link:../studio-utils
       ajv:
         specifier: ^8.20.0
         version: 8.20.0

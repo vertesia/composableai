@@ -42,6 +42,7 @@
         "@llumiverse/common": "workspace:*",
         "@vertesia/client": "workspace:*",
         "@vertesia/common": "workspace:*",
+        "@vertesia/studio-utils": "workspace:*",
         "jose": "^6.2.13",
         "zod": "catalog:"
     },

@@ -7,10 +7,11 @@ import { convertWithTool, runTool } from './convert-with-tool.js';
 
 /**
  * Convert a pdf file to text
- * TODO: pass file reference instead of Buffer
+ *
+ * @param file the PDF, or the path of a PDF file, which keeps a large PDF out of memory
  */
-export function mutoolPdfToText(buffer: Buffer): Promise<string> {
-    return convertWithTool('mutool', buffer, 'pdf', 'txt', (inputFile, outputFile) => [
+export function mutoolPdfToText(file: Buffer | string): Promise<string> {
+    return convertWithTool('mutool', file, 'pdf', 'txt', (inputFile, outputFile) => [
         'convert',
         '-o',
         outputFile,
