@@ -1214,14 +1214,20 @@ export const AppRepoFileQuerySchema = z
 
 export const AppInstallationProjectsQuerySchema = z
     .strictObject({
-        name: z.string().meta({ description: 'App manifest name. One of `name` or `id` is required.' }).optional(),
-        id: z.string().meta({ description: 'App manifest id. One of `name` or `id` is required.' }).optional(),
+        name: z
+            .string()
+            .meta({ description: 'App manifest name. At least one of `name` or `id` is required.' })
+            .optional(),
+        id: z
+            .string()
+            .meta({ description: 'App manifest id. At least one of `name` or `id` is required; it wins over `name`.' })
+            .optional(),
     })
     .meta({
         id: 'AppInstallationProjectsQuery',
         description:
-            'Exactly one of `name` or `id` identifies the app. Neither is required by the component ' +
-            'because the endpoint answers 400 for the empty case with a message naming both.',
+            'At least one of `name` or `id` identifies the app, and `id` takes precedence when both are given. ' +
+            'Query parameters cannot state that rule, so the endpoint answers 400 when neither is set.',
     });
 
 export const SystemPackageQuerySchema = z

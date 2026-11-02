@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { conditional } from './schema-primitives.js';
+import { conditional, nonEmpty } from './schema-primitives.js';
 
-const sql = { required: ['sql'], properties: { sql: { minLength: 1 } } };
-const esql = { required: ['esql'], properties: { esql: { minLength: 1 } } };
+const sql = nonEmpty('sql');
+const esql = nonEmpty('esql');
 
 export const ContentQueryPayloadSchema = z
     .strictObject({

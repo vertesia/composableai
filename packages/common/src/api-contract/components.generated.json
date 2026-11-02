@@ -21703,15 +21703,15 @@
     "properties": {
       "name": {
         "type": "string",
-        "description": "App manifest name. One of `name` or `id` is required."
+        "description": "App manifest name. At least one of `name` or `id` is required."
       },
       "id": {
         "type": "string",
-        "description": "App manifest id. One of `name` or `id` is required."
+        "description": "App manifest id. At least one of `name` or `id` is required; it wins over `name`."
       }
     },
     "additionalProperties": false,
-    "description": "Exactly one of `name` or `id` identifies the app. Neither is required by the component because the endpoint answers 400 for the empty case with a message naming both."
+    "description": "At least one of `name` or `id` identifies the app, and `id` takes precedence when both are given. Query parameters cannot state that rule, so the endpoint answers 400 when neither is set."
   },
   "AppPackageQuery": {
     "type": "object",
@@ -44743,7 +44743,54 @@
         "description": "Scope: 'project' (default, current project) or 'org'"
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "run_id"
+            ],
+            "properties": {
+              "run_id": {
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "agent_run_id"
+            ],
+            "properties": {
+              "agent_run_id": {
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "workflow_id"
+            ],
+            "properties": {
+              "workflow_id": {
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "then": {
+      "required": [
+        "workflow_run_id"
+      ],
+      "properties": {
+        "workflow_run_id": {
+          "minLength": 1
+        }
+      }
+    },
+    "description": "Identifies the run to price by at least one of `run_id`, `agent_run_id`, `workflow_id` or `workflow_run_id`. An empty identifier counts as absent."
   },
   "CostModelPricesQuery": {
     "type": "object",

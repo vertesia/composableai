@@ -77,6 +77,18 @@ const rules: Array<[ApiComponentName, string, Array<[string, unknown, boolean]>]
             ['esql and dsl', { esql: 'FROM x', dsl: {} }, false],
         ],
     ],
+    [
+        'CostRunPriceQuery',
+        'needs a run identifier',
+        [
+            ['a run id', { run_id: 'run' }, true],
+            ['a workflow run id beside an empty run id', { run_id: '', workflow_run_id: 'run' }, true],
+            ['a whitespace agent run id', { agent_run_id: ' ' }, true],
+            ['no identifier', {}, false],
+            ['only empty identifiers', { run_id: '', agent_run_id: '', workflow_id: '', workflow_run_id: '' }, false],
+            ['only a project', { project_id: 'p' }, false],
+        ],
+    ],
 ];
 
 describe.each(rules)('%s %s', (component, _rule, cases) => {

@@ -41,6 +41,11 @@ export function conditional(
     };
 }
 
+/** The `if`/`then` fragment for a string field that is present and not empty. */
+export function nonEmpty(field: string): Record<string, unknown> {
+    return { required: [field], properties: { [field]: { minLength: 1 } } };
+}
+
 /** Monotonic token for optimistic concurrency on mutable, user-authored resources. */
 export const EditRevisionSchema = z
     .number()
