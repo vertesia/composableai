@@ -18,7 +18,8 @@ export const nullableNumberSchema = z
  * Published as `type: number` with `multipleOf: 1` rather than `type: integer`, so the generated Java and Go
  * clients keep the parameter types they already expose while the contract enforcer answers 400.
  */
-export const PageCountSchema = z.number().multipleOf(1).min(0);
+// Capped at the largest safe integer: a larger count loses precision, and Mongo rejects it in `$skip`/`$limit`.
+export const PageCountSchema = z.number().multipleOf(1).min(0).max(Number.MAX_SAFE_INTEGER);
 
 /** Monotonic token for optimistic concurrency on mutable, user-authored resources. */
 export const EditRevisionSchema = z
