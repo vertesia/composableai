@@ -435,10 +435,7 @@ export type AppDevelopmentTaskList = Wire.AppDevelopmentTaskList;
 export type AppDevelopmentTaskDetails = Wire.AppDevelopmentTaskDetails;
 
 /** Request to create a branch from an existing branch, tag, or commit. */
-export interface CreateAppRepoBranchRequest {
-    name: string;
-    source_ref: string;
-}
+export type CreateAppRepoBranchRequest = Wire.CreateAppRepoBranchRequest;
 
 /** A newly created app repository branch. */
 export type AppRepoBranch = Wire.AppRepoBranch;

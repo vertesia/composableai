@@ -995,7 +995,7 @@ export const AgentRunSchema = z
 
 export const CreateAgentRunPayloadSchema = z
     .strictObject({
-        interaction: z.string().meta({ description: 'Interaction ID or code (e.g. "sys:generic_question").' }),
+        interaction: z.string().min(1).meta({ description: 'Interaction ID or code (e.g. "sys:generic_question").' }),
         ...ConversationEnrichmentFields,
         evaluate: AgentEvaluateRequestSchema,
         data: z.looseObject({}).meta({ description: 'Input parameters, typed per interaction' }).optional(),
@@ -1494,8 +1494,8 @@ export const SearchAgentRunsQuerySchema = z
             .string()
             .meta({ description: 'Only return runs started at or before this date', format: 'date-time' })
             .optional(),
-        limit: z.number().meta({ description: 'Maximum number of results (default: 50)' }).optional(),
-        offset: z.number().meta({ description: 'Offset for pagination' }).optional(),
+        limit: z.number().min(0).meta({ description: 'Maximum number of results (default: 50)' }).optional(),
+        offset: z.number().min(0).meta({ description: 'Offset for pagination' }).optional(),
         sort: z
             .array(z.string())
             .meta({

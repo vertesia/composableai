@@ -107,13 +107,23 @@ export function createSimplePrefixMatcher(prefix: string): PrefixMatcher {
 }
 
 function createRegexpPrefixMatcher(prefix: string): PrefixMatcher {
-    const matcher = createRegexPathMatcher(`${prefix}{/*_}`);
+    // The rest of the path stays encoded: the routes below match it again and decode their own params, so a `%25` or
+    // `%2F` is decoded once, by the route that reads it, and cannot add a path segment.
+    const matcher = match(`${prefix}{/*_}`, { decode: false });
     return (ctx: Context, path: string) => {
         const m = matcher(path);
         if (m) {
-            const params = m.params as { _?: string[] };
-            ctx.$router.path = params._ ? `/${params._.join('/')}` : '/';
-            ctx.$router.update(params);
+            // Without a decoder path-to-regexp returns the wildcard as the raw, unsplit rest of the path.
+            const { _: rest, ...params } = m.params as { _?: string } & ParamData;
+            ctx.$router.path = rest ? `/${rest}` : '/';
+            ctx.$router.update(
+                Object.fromEntries(
+                    Object.entries(params).map(([name, value]) => [
+                        name,
+                        Array.isArray(value) ? value.map(decode) : value && decode(value),
+                    ]),
+                ),
+            );
             return true;
         }
         return false;

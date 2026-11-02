@@ -44,6 +44,179 @@
     "additionalProperties": false,
     "description": "Selected model and requested serving tier for run budget admission."
   },
+  "DashboardPathParams": {
+    "type": "object",
+    "properties": {
+      "storeId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The data store ID, as 24 hexadecimal characters."
+      },
+      "dashboardId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The dashboard ID, as 24 hexadecimal characters."
+      },
+      "versionId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The dashboard version ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "DataStoreImportPathParams": {
+    "type": "object",
+    "properties": {
+      "importId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The import job ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "DataStoreVersionPathParams": {
+    "type": "object",
+    "properties": {
+      "versionId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The data store version ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ContentObjectExportPathParams": {
+    "type": "object",
+    "properties": {
+      "exportId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The content object export ID, as 24 hexadecimal characters."
+      },
+      "role": {
+        "type": "string",
+        "enum": [
+          "data",
+          "manifest"
+        ],
+        "description": "The export file: its data or its manifest."
+      }
+    }
+  },
+  "ProcessTestRunPathParams": {
+    "type": "object",
+    "properties": {
+      "runId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process test run ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ProcessPathParams": {
+    "type": "object",
+    "properties": {
+      "processId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process definition ID, as 24 hexadecimal characters."
+      },
+      "runId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process test run ID, as 24 hexadecimal characters."
+      },
+      "suiteId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process test suite ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "TaskPathParams": {
+    "type": "object",
+    "properties": {
+      "taskId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The task ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "AgentRunPathParams": {
+    "type": "object",
+    "properties": {
+      "agentRunId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The agent run ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "AppVersionPathParams": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The app version ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "AppInstallationPathParams": {
+    "type": "object",
+    "properties": {
+      "installId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The app installation ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "DelegationGrantPathParams": {
+    "type": "object",
+    "properties": {
+      "grantId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The delegation grant ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "OAuthProviderPathParams": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The OAuth provider ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ProjectAppCapabilityPathParams": {
+    "type": "object",
+    "properties": {
+      "processId": {
+        "type": "string",
+        "pattern": "^app(:|$)",
+        "description": "The app process, as `app:<app name>:<local id>`. Only the `app` prefix is checked as a format; a reference without an app name or local id is refused by the lookup, as forbidden or not found."
+      },
+      "templateId": {
+        "type": "string",
+        "pattern": "^app(:|$)",
+        "description": "The app rendering template, as `app:<app name>:<local id>`. Only the `app` prefix is checked as a format; a reference without an app name or local id is refused by the lookup, as forbidden or not found."
+      },
+      "typeId": {
+        "type": "string",
+        "pattern": "^app(:|$)",
+        "description": "The app content type, as `app:<app name>:<local id>`. Only the `app` prefix is checked as a format; a reference without an app name or local id is refused by the lookup, as forbidden or not found."
+      },
+      "viewId": {
+        "type": "string",
+        "pattern": "^app:[A-Za-z0-9][A-Za-z0-9._@-]*:[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "description": "The app View, as `app:<app name>:<local id>`."
+      }
+    }
+  },
   "CreateDelegationGrantPayload": {
     "type": "object",
     "properties": {
@@ -1008,7 +1181,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -1060,7 +1234,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -4747,33 +4922,46 @@
     "additionalProperties": false,
     "description": "HTTP timeouts applied to a driver's upstream LLM-provider calls.\n\nAll values are in milliseconds. Drivers should map these onto whatever HTTP client their SDK uses; the defaults applied in `@llumiverse/core/createDriverHttpAgent` are:   - headersTimeout:   900_000   - bodyTimeout:      900_000   - connectTimeout:   60_000   - keepAliveTimeout: 300_000\n\nThe response defaults are deliberately longer than the hosting request boundary. Application-level cancellation should end user work first; driver timeouts are bounded-resource safety nets."
   },
-  "IntakePageScope": {
-    "type": "string",
-    "enum": [
-      "all",
-      "located"
-    ],
-    "description": "Named page scope for intake conversion/extraction: everything or the locate-pass result. Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as a SEPARATE field because scalar-or-collection unions generate unstable API clients."
-  },
-  "IntakePageRanges": {
-    "type": "array",
-    "items": {
-      "minItems": 2,
-      "maxItems": 2,
-      "type": "array",
-      "items": {
-        "type": "integer",
-        "minimum": -2147483648,
-        "maximum": 2147483647
+  "IntakeMediaAnalysisOverrides": {
+    "type": "object",
+    "properties": {
+      "image": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride",
+        "description": "Image property-analysis settings. Inherits extraction interaction/config defaults at each policy layer unless explicitly overridden here."
+      },
+      "video": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride",
+        "description": "Video analysis interaction and model settings. The built-in interaction is sys:AnalyzeVideo; these settings do not change transcription."
+      },
+      "audio": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverride",
+        "description": "Audio analysis interaction and model settings. The built-in interaction is sys:AnalyzeAudio; these settings do not change transcription."
       }
     },
-    "description": "Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the document ([[1, 2], [-1, -1]] = first two pages plus the last page)."
+    "additionalProperties": false,
+    "description": "Per-media analysis settings shared by StandardIntake variables and intake policies."
+  },
+  "IntakeMediaAnalysisOverride": {
+    "type": "object",
+    "properties": {
+      "interaction": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "Interaction ID or qualified name for this media analysis step. Omit to inherit the type/project setting or built-in interaction; image analysis also inherits extraction.interaction."
+      },
+      "config": {
+        "$ref": "#/components/schemas/InteractionExecutionConfiguration",
+        "description": "Execution configuration for this media analysis step only. Omitted fields inherit; inference_profile: null bypasses profile defaults."
+      }
+    },
+    "additionalProperties": false
   },
   "InteractionExecutionConfiguration": {
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "description": "Optional configuration identifier. Normally omit this when overriding intake settings."
       },
       "inference_profile": {
         "anyOf": [
@@ -4791,19 +4979,24 @@
         "description": "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them."
       },
       "environment": {
-        "type": "string"
+        "type": "string",
+        "description": "Execution environment ID for the selected model. Supply with model to replace inherited profile routing."
       },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Model name within the execution environment. Changing model or profile drops inherited model options."
       },
       "do_validate": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Validate the interaction output against its result schema. Omit to inherit validation settings."
       },
       "run_data": {
-        "$ref": "#/components/schemas/RunDataStorageLevel"
+        "$ref": "#/components/schemas/RunDataStorageLevel",
+        "description": "Run-data storage level: controls which execution inputs and outputs are retained. Omit to inherit."
       },
       "configMode": {
-        "$ref": "#/components/schemas/ConfigModes"
+        "$ref": "#/components/schemas/ConfigModes",
+        "description": "How configuration combines with the interaction configuration. Normally omit to use the default merge behavior."
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
@@ -4861,6 +5054,28 @@
       "off",
       "required"
     ]
+  },
+  "IntakePageScope": {
+    "type": "string",
+    "enum": [
+      "all",
+      "located"
+    ],
+    "description": "Named page scope for intake conversion/extraction: everything or the locate-pass result. Static page ranges live in the sibling `page_ranges` field (which wins when set) — kept as a SEPARATE field because scalar-or-collection unions generate unstable API clients."
+  },
+  "IntakePageRanges": {
+    "type": "array",
+    "items": {
+      "minItems": 2,
+      "maxItems": 2,
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": -2147483648,
+        "maximum": 2147483647
+      }
+    },
+    "description": "Static page ranges: inclusive [start, end] pairs; negative indexes count from the end of the document ([[1, 2], [-1, -1]] = first two pages plus the last page)."
   },
   "IntakeVisionDetail": {
     "type": "string",
@@ -4988,13 +5203,16 @@
     "type": "object",
     "properties": {
       "text": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Generate embeddings from object text. False disables this step; true still requires text embeddings to be enabled in the project."
       },
       "image": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Generate image embeddings when applicable. False disables this step; true still requires image embeddings to be enabled in the project."
       },
       "properties": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Generate embeddings from extracted properties. False disables this step; true still requires property embeddings to be enabled in the project."
       }
     },
     "additionalProperties": false
@@ -5002,28 +5220,35 @@
   "ContentTypeIntakePolicy": {
     "type": "object",
     "properties": {
+      "media_analysis": {
+        "$ref": "#/components/schemas/IntakeMediaAnalysisOverrides",
+        "description": "Media analysis defaults. Subscription settings override the content type, which overrides project defaults."
+      },
       "mode": {
         "type": "string",
         "enum": [
           "programmatic",
           "agentic"
         ],
-        "description": "Intake orchestration mode for this type."
+        "description": "Intake orchestration: programmatic runs the standard processing pipeline; agentic delegates processing to the intake agent. Omit to inherit; platform default programmatic."
       },
       "identification": {
         "type": "object",
         "properties": {
           "guidance": {
-            "type": "string"
+            "type": "string",
+            "description": "Describe when this content type should be selected. This is type-identification metadata, not a workflow parameter."
           },
           "distinguish_from": {
-            "type": "string"
+            "type": "string",
+            "description": "Explain how to distinguish this type from similar types to improve type selection."
           },
           "examples": {
             "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "description": "Representative examples or identifying characteristics that help the type selector recognize this type."
           }
         },
         "additionalProperties": false,
@@ -5061,7 +5286,8 @@
         "type": "object",
         "properties": {
           "enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Run source-to-text conversion before extraction. False skips conversion; omission inherits the next policy layer."
           },
           "method": {
             "type": "string",
@@ -5070,29 +5296,35 @@
               "basic",
               "llm",
               "custom"
-            ]
+            ],
+            "description": "Conversion strategy: basic uses mechanical extraction; llm uses visual conversion to Markdown; custom uses a supplied interaction. Standard Intake resolves auto to its platform semantic-conversion default."
           },
           "custom": {
             "type": "object",
             "properties": {
               "interaction": {
-                "type": "string"
+                "type": "string",
+                "description": "Interaction ID or qualified name to use when method is custom."
               },
               "agent": {
-                "type": "string"
+                "type": "string",
+                "description": "Reserved custom-agent conversion target. Standard Intake currently supports custom.interaction only."
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Custom conversion target, used with method: custom. Set interaction; agent conversion is not implemented."
           },
           "instructions": {
-            "type": "string"
+            "type": "string",
+            "description": "Additional conversion guidance, such as which sections to retain or how to describe tables and figures."
           },
           "output_format": {
             "type": "string",
             "enum": [
               "markdown",
               "text"
-            ]
+            ],
+            "description": "Output format requested from custom conversion. Visual llm conversion always produces Markdown."
           },
           "scope": {
             "$ref": "#/components/schemas/IntakePageScope",
@@ -5110,7 +5342,7 @@
           },
           "config": {
             "$ref": "#/components/schemas/InteractionExecutionConfiguration",
-            "description": "Model execution config for the page-conversion interaction (method 'llm'/'auto' -> sys:ConvertPageToMarkdown, method 'custom' -> the custom interaction). Lets the visual conversion run on a cheaper/faster model (e.g. a flash model) than extraction. When unset, conversion uses the run's model config or the project default model."
+            "description": "Model execution config for the page-conversion interaction (method 'llm'/'auto' -> sys:ConvertPageToMarkdown, method 'custom' -> the custom interaction). Lets the visual conversion run on a cheaper/faster model than extraction. Fields inherit across policy layers: subscription phase settings (including legacy run-wide config) override content-type settings, which override project policy defaults. Unspecified routing uses interaction/project model defaults."
           }
         },
         "additionalProperties": false,
@@ -5120,7 +5352,8 @@
         "type": "object",
         "properties": {
           "enabled": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Extract structured properties using the content-type schema. False skips property extraction; omission inherits."
           },
           "source": {
             "type": "string",
@@ -5129,17 +5362,20 @@
               "text",
               "vision",
               "mixed"
-            ]
+            ],
+            "description": "Evidence used for property extraction: text uses object text, vision uses page images, mixed uses both, and auto selects appropriate evidence for the source."
           },
           "instructions": {
-            "type": "string"
+            "type": "string",
+            "description": "Additional instructions for extracting this type's properties, appended to the extraction prompt."
           },
           "interaction": {
-            "type": "string"
+            "type": "string",
+            "description": "Property-extraction interaction ID or qualified name. The built-in default is sys:ExtractInformation; media-specific analysis may override it."
           },
           "config": {
             "$ref": "#/components/schemas/InteractionExecutionConfiguration",
-            "description": "Model execution config for the standard property-extraction interaction (sys:ExtractInformation). Lets extraction run on a different model/environment than the visual page conversion. When unset, extraction uses the run's model config or the project default model. (Grounded extraction is configured separately via grounding.config.)"
+            "description": "Model execution config for the standard property-extraction interaction (sys:ExtractInformation). Lets extraction run on a different model/environment than the visual page conversion. Subscription phase settings (including legacy run-wide config) override content-type settings, which override project policy defaults; omitted fields inherit. Unspecified routing uses interaction/project model defaults. Grounded extraction uses grounding.config."
           },
           "scope": {
             "$ref": "#/components/schemas/IntakePageScope",
@@ -5159,13 +5395,15 @@
             "type": "object",
             "properties": {
               "default_detail": {
-                "$ref": "#/components/schemas/IntakeVisionDetail"
+                "$ref": "#/components/schemas/IntakeVisionDetail",
+                "description": "Default visual evidence detail: low, standard, or high. References a platform/project rendering profile; default standard."
               },
               "allowed_details": {
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/IntakeVisionDetail"
-                }
+                },
+                "description": "Visual detail levels the evidence planner may choose. Omit to use the platform-supported levels."
               },
               "max_image_tokens": {
                 "type": "integer",
@@ -5192,36 +5430,44 @@
             "type": "object",
             "properties": {
               "enabled": {
-                "type": "boolean"
+                "type": "boolean",
+                "description": "Reserved verification switch. Standard Intake does not currently execute this verification pass; use grounding.review for implemented grounded-extraction review."
               },
               "model": {
-                "type": "string"
+                "type": "string",
+                "description": "Reserved model name for the verification pass; not currently used by Standard Intake."
               },
               "environment": {
-                "type": "string"
+                "type": "string",
+                "description": "Reserved execution environment for the verification model; not currently used by Standard Intake."
               },
               "materiality": {
-                "type": "string"
+                "type": "string",
+                "description": "Reserved guidance describing which extraction discrepancies matter; not currently used by Standard Intake."
               },
               "threshold": {
                 "type": "number",
                 "minimum": 0,
-                "maximum": 1
+                "maximum": 1,
+                "description": "Reserved verification score threshold between 0 and 1; not currently used by Standard Intake."
               },
               "max_retries": {
                 "type": "integer",
                 "minimum": 0,
-                "maximum": 2147483647
+                "maximum": 2147483647,
+                "description": "Reserved verification retry limit; not currently used by Standard Intake."
               },
               "on_fail": {
                 "type": "string",
                 "enum": [
                   "flag",
                   "block"
-                ]
+                ],
+                "description": "Reserved action for failed verification: flag or block. Not currently used by Standard Intake."
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "Reserved verification configuration. Standard Intake currently implements grounding.review instead of this pass."
           },
           "grounding": {
             "$ref": "#/components/schemas/ContentTypeExtractionGroundingPolicy",
@@ -5237,7 +5483,7 @@
       },
       "embeddings": {
         "$ref": "#/components/schemas/EmbeddingTypeEnabledMap",
-        "description": "Per-type embedding switches. Unspecified values inherit the project policy."
+        "description": "Embedding generation switches. Omitted fields inherit type/project policy; project embedding availability remains a hard limit."
       },
       "generate_toc": {
         "type": "boolean",
@@ -5256,7 +5502,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "Per-content-type policy for the standard intake workflows."
+    "description": "Shared intake processing policy. Workflow parameters override content-type policy, which overrides project defaults. Omitted processing fields inherit from the next layer."
   },
   "IntakeVisionProfileSettingsMap": {
     "type": "object",
@@ -5312,7 +5558,7 @@
       },
       "default_policy": {
         "$ref": "#/components/schemas/ContentTypeIntakePolicy",
-        "description": "Project-level intake policy defaults. Same shape as the per-content-type policy; a type's `intake` block wins field-by-field over these defaults, which in turn win over the legacy flat fields below. `identification` is type-specific and ignored here."
+        "description": "Project-level intake policy defaults. The same processing fields are used by workflow overrides and type policy. A type's `intake` block wins field-by-field over these defaults, which in turn win over the legacy flat fields below. `identification` is type-specific and ignored here."
       },
       "vision_profiles": {
         "$ref": "#/components/schemas/IntakeVisionProfileSettingsMap",
@@ -6403,10 +6649,12 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
       },
       "display_name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "grant_type": {
         "type": "string",
@@ -6422,7 +6670,8 @@
         "type": "string"
       },
       "client_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "client_secret": {
         "type": "string",
@@ -7755,6 +8004,7 @@
         "$ref": "#/components/schemas/OAuthClientType"
       },
       "redirect_uris": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -7821,6 +8071,7 @@
         "type": "string"
       },
       "redirect_uris": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -7994,10 +8245,12 @@
         ]
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0
       },
       "sort_by": {
         "$ref": "#/components/schemas/OAuthGrantSortField"
@@ -10167,7 +10420,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "parent": {
         "type": "string"
@@ -10195,7 +10449,8 @@
         "$ref": "#/components/schemas/PromptRole"
       },
       "content": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "content_type": {
         "$ref": "#/components/schemas/TemplateType"
@@ -10976,11 +11231,13 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "status": {
@@ -11061,7 +11318,8 @@
         "format": "date-time"
       },
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -11309,10 +11567,6 @@
             {
               "type": "string",
               "const": "draft"
-            },
-            {
-              "type": "string",
-              "const": "latest"
             }
           ]
         }
@@ -11373,6 +11627,65 @@
       }
     },
     "additionalProperties": false
+  },
+  "InteractionListQuery": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "status": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "limit": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "multipleOf": 1
+      },
+      "offset": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "multipleOf": 1
+      },
+      "prompt": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "version": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "environment": {
+        "type": "string"
+      },
+      "is_agent": {
+        "type": "boolean"
+      },
+      "is_tool": {
+        "type": "boolean"
+      },
+      "is_skill": {
+        "type": "boolean"
+      },
+      "is_basic": {
+        "type": "boolean"
+      },
+      "is_sub_agent": {
+        "type": "boolean"
+      }
+    }
   },
   "ResolveInteractionQuery": {
     "type": "object",
@@ -11839,7 +12152,32 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^$.\\x00][^.\\x00]*$",
+                "not": {
+                  "const": "total"
+                }
+              },
+              "field": {
+                "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not `total`. Each `field` is a dotted path of such names."
   },
   "ComputedFacetResponse": {
     "type": "object",
@@ -13480,6 +13818,7 @@
       },
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
       }
     },
@@ -13646,9 +13985,10 @@
       "environment": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
         },
-        "description": "Environment ids to filter by."
+        "description": "Environment ids to filter by, as 24 hexadecimal characters."
       },
       "status": {
         "type": "array",
@@ -13711,11 +14051,13 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "select": {
@@ -13865,6 +14207,7 @@
       },
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
       }
     },
@@ -14677,6 +15020,7 @@
     "properties": {
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
       },
       "title": {
@@ -15125,6 +15469,7 @@
     "properties": {
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
       },
       "data": {
@@ -15241,7 +15586,8 @@
     "type": "object",
     "properties": {
       "interaction": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "environment_id": {
         "type": "string"
@@ -15906,12 +16252,14 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1,
         "description": "Maximum number of prompts to return. Defaults to 100."
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1,
         "description": "Number of prompts to skip."
       },
@@ -15972,7 +16320,32 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^$.\\x00][^.\\x00]*$",
+                "not": {
+                  "const": "total"
+                }
+              },
+              "field": {
+                "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not `total`. Each `field` is a dotted path of such names."
   },
   "PromptTemplateInteractionsResponse": {
     "type": "object",
@@ -17691,6 +18064,41 @@
     "additionalProperties": false,
     "description": "Safe audit aggregation query. The server always applies the authenticated account scope and, for project-scoped principals, replaces projectId with the authenticated project."
   },
+  "AuditAggregationBatchQuery": {
+    "type": "object",
+    "properties": {
+      "queries": {
+        "minItems": 1,
+        "maxItems": 12,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditAggregationQuery"
+        },
+        "description": "The aggregations to run, at most 12. Each one has the same semantics as a single aggregation request."
+      }
+    },
+    "required": [
+      "queries"
+    ],
+    "additionalProperties": false,
+    "description": "Several audit aggregation queries answered by one request. The server may compute queries that share a scope, time range and filter in a single pass over the audit events."
+  },
+  "AuditAggregationBatchResponse": {
+    "type": "object",
+    "properties": {
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditAggregationResponse"
+        },
+        "description": "One result per query, in the order of the request. Each equals the single aggregation result."
+      }
+    },
+    "required": [
+      "results"
+    ],
+    "additionalProperties": false
+  },
   "AuditTrailQuery": {
     "type": "object",
     "properties": {
@@ -17743,12 +18151,14 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1,
         "description": "Pagination: number of items to return (default 50, max 200)"
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1,
         "description": "Pagination: offset"
       }
@@ -17908,7 +18318,8 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "description": "Optional configuration identifier. Normally omit this when overriding intake settings."
       },
       "inference_profile": {
         "anyOf": [
@@ -17926,19 +18337,24 @@
         "description": "Treat the supplied environment, model and inference_profile as the caller's settings, inherited as a fallback: the interaction's bound or attached profile, or its own model, replaces them."
       },
       "environment": {
-        "type": "string"
+        "type": "string",
+        "description": "Execution environment ID for the selected model. Supply with model to replace inherited profile routing."
       },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Model name within the execution environment. Changing model or profile drops inherited model options."
       },
       "do_validate": {
-        "type": "boolean"
+        "type": "boolean",
+        "description": "Validate the interaction output against its result schema. Omit to inherit validation settings."
       },
       "run_data": {
-        "$ref": "#/components/schemas/RunDataStorageLevel"
+        "$ref": "#/components/schemas/RunDataStorageLevel",
+        "description": "Run-data storage level: controls which execution inputs and outputs are retained. Omit to inherit."
       },
       "configMode": {
-        "$ref": "#/components/schemas/ConfigModes"
+        "$ref": "#/components/schemas/ConfigModes",
+        "description": "How configuration combines with the interaction configuration. Normally omit to use the default merge behavior."
       },
       "model_options": {
         "type": "object",
@@ -19035,7 +19451,9 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "enabled": {
         "type": "boolean"
@@ -19059,10 +19477,14 @@
         "$ref": "#/components/schemas/ViewResultsConfiguration"
       },
       "description": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 4000,
+        "pattern": "\\S"
       },
       "id": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 64,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
       },
       "version": {
         "$ref": "#/components/schemas/ViewExperienceSchemaVersion"
@@ -19144,7 +19566,9 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "enabled": {
         "type": "boolean"
@@ -19168,13 +19592,17 @@
         "$ref": "#/components/schemas/ViewResultsConfiguration"
       },
       "description": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 4000,
+        "pattern": "\\S"
       },
       "version": {
         "$ref": "#/components/schemas/ViewExperienceSchemaVersion"
       },
       "revision": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "multipleOf": 1
       }
     },
     "required": [
@@ -19234,7 +19662,9 @@
         ],
         "items": {
           "type": "string"
-        }
+        },
+        "minItems": 1,
+        "description": "Tool names agents may use. An empty list is refused: send null to remove the restriction."
       }
     },
     "required": [
@@ -19253,7 +19683,8 @@
         "items": {
           "type": "string"
         },
-        "description": "Tool names agents may use. Null removes the restriction; omit to leave the allowlist unchanged."
+        "minItems": 1,
+        "description": "Tool names agents may use, at least one. Null removes the restriction; omit to leave the allowlist unchanged."
       },
       "tools_requiring_approval": {
         "type": [
@@ -19267,6 +19698,7 @@
       }
     },
     "additionalProperties": false,
+    "minProperties": 1,
     "description": "Updates the tool allowlist and the tools requiring approval of an app installation in one atomic write."
   },
   "ValidateUrlResponse": {
@@ -19285,7 +19717,8 @@
     "type": "object",
     "properties": {
       "url": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -19997,6 +20430,59 @@
     ],
     "additionalProperties": false,
     "description": "A newly created app repository branch."
+  },
+  "CreateAppRepoBranchRequest": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "The new branch name."
+      },
+      "source_ref": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "The existing branch, tag or commit the new branch starts from."
+      }
+    },
+    "required": [
+      "name",
+      "source_ref"
+    ],
+    "additionalProperties": false,
+    "description": "Request to create a branch from an existing branch, tag, or commit."
+  },
+  "AppRepoFileQuery": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "Path of the file, relative to the repository root."
+      },
+      "ref": {
+        "type": "string",
+        "description": "Branch, tag or commit. Defaults to the default branch."
+      }
+    },
+    "required": [
+      "path"
+    ],
+    "additionalProperties": false
+  },
+  "AppRepoTreeQuery": {
+    "type": "object",
+    "properties": {
+      "prefix": {
+        "type": "string",
+        "description": "Directory to list, relative to the repository root. Defaults to the root."
+      },
+      "ref": {
+        "type": "string",
+        "description": "Branch, tag or commit. Defaults to the default branch."
+      }
+    },
+    "additionalProperties": false
   },
   "AppRepoDocumentCommit": {
     "type": "object",
@@ -21262,13 +21748,15 @@
         "type": "string"
       },
       "app_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "\\S"
       },
       "app_name": {
         "type": "string"
       },
       "version_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "\\S"
       },
       "kind": {
         "$ref": "#/components/schemas/AppVersionKind"
@@ -21565,15 +22053,15 @@
     "properties": {
       "name": {
         "type": "string",
-        "description": "App manifest name. One of `name` or `id` is required."
+        "description": "App manifest name. At least one of `name` or `id` is required."
       },
       "id": {
         "type": "string",
-        "description": "App manifest id. One of `name` or `id` is required."
+        "description": "App manifest id. At least one of `name` or `id` is required; it wins over `name`."
       }
     },
     "additionalProperties": false,
-    "description": "Exactly one of `name` or `id` identifies the app. Neither is required by the component because the endpoint answers 400 for the empty case with a message naming both."
+    "description": "At least one of `name` or `id` identifies the app, and `id` takes precedence when both are given. Query parameters cannot state that rule, so the endpoint answers 400 when neither is set."
   },
   "AppPackageQuery": {
     "type": "object",
@@ -21923,9 +22411,11 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "pattern": "\\S"
       },
       "websites": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/WebsiteCredentialWebsite"
@@ -21980,9 +22470,11 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "pattern": "\\S"
       },
       "websites": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/WebsiteCredentialWebsite"
@@ -23925,6 +24417,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app)."
       },
       "visibility": {
@@ -24076,6 +24569,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app)."
       },
       "visibility": {
@@ -26135,7 +26629,8 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "key": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -26194,7 +26689,8 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "account_id": {
         "type": "string"
@@ -26222,16 +26718,20 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "environment_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "environment_name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "account_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -26267,16 +26767,19 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "account_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "name": {
         "type": "string"
       },
       "on_behalf_of": {
         "type": "string",
+        "minLength": 1,
         "description": "User information.\n\nThe value of this field can be either:   - a signed Vertesia token used to verify the user context   - a user ID prefixed with `user:` to indicate the user on behalf of whom the agent is     acting."
       }
     },
@@ -26304,10 +26807,12 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "account_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "roles": {
         "type": "array",
@@ -26887,22 +27392,28 @@
     "type": "object",
     "properties": {
       "runId": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "workflowId": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "agentName": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "questions": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
         }
       },
       "timeoutHours": {
-        "type": "number"
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "Hours before the question expires; more than 0. Defaults to 48."
       },
       "userChannels": {
         "type": "array",
@@ -27043,7 +27554,95 @@
         ]
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "sql"
+                ],
+                "properties": {
+                  "sql": {
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "required": [
+                  "esql"
+                ],
+                "properties": {
+                  "esql": {
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "then": {
+          "required": [
+            "dsl"
+          ]
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "sql"
+          ],
+          "properties": {
+            "sql": {
+              "minLength": 1
+            }
+          }
+        },
+        "then": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "esql"
+                ],
+                "properties": {
+                  "esql": {
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "required": [
+                  "dsl"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "esql"
+          ],
+          "properties": {
+            "esql": {
+              "minLength": 1
+            }
+          }
+        },
+        "then": {
+          "not": {
+            "required": [
+              "dsl"
+            ]
+          }
+        }
+      }
+    ],
+    "description": "Exactly one of `sql`, `esql` or `dsl`. An empty `sql` or `esql` counts as absent."
   },
   "ContentQueryResult": {
     "type": "object",
@@ -27126,10 +27725,12 @@
     "type": "object",
     "properties": {
       "source": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "dest": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -27262,7 +27863,8 @@
     "type": "object",
     "properties": {
       "file": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "name": {
         "type": "string"
@@ -27307,7 +27909,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "id": {
         "type": "string"
@@ -27328,12 +27931,15 @@
     "type": "object",
     "properties": {
       "files": {
+        "minItems": 1,
+        "maxItems": 10000,
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
             "name": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "mime_type": {
               "type": "string"
@@ -27374,6 +27980,7 @@
     "properties": {
       "file": {
         "type": "string",
+        "minLength": 1,
         "description": "The file path (relative to bucket) or full URI"
       },
       "metadata": {
@@ -27391,7 +27998,8 @@
     "type": "object",
     "properties": {
       "file": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -27551,7 +28159,8 @@
         ]
       },
       "run_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "node": {
         "type": "string"
@@ -27642,7 +28251,8 @@
     "type": "object",
     "properties": {
       "title": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -27757,11 +28367,13 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       }
     },
@@ -27978,6 +28590,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Human-readable name or title"
       },
       "description": {
@@ -28031,6 +28644,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Human-readable name or title"
       },
       "description": {
@@ -28154,11 +28768,13 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       }
     },
@@ -28182,11 +28798,13 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       }
     },
@@ -28889,7 +29507,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -28956,7 +29575,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29044,7 +29664,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29105,7 +29726,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29644,7 +30266,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -30228,7 +30851,57 @@
       }
     },
     "additionalProperties": false,
-    "description": "When creating from an uploaded file the content should be an URL to the uploaded file"
+    "if": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "content"
+            ],
+            "properties": {
+              "content": {
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "then": {
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "source": {
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "description": "When creating from an uploaded file the content should be an URL to the uploaded file. `name` is required unless `content.name` or `content.source` is given; it then defaults to the content file name."
   },
   "UpdateContentObjectPayload": {
     "type": "object",
@@ -31668,7 +32341,22 @@
     "required": [
       "query"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "`query` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "ComputeObjectFacetPayload": {
     "type": "object",
@@ -31686,7 +32374,29 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^\\[\\]>]+$",
+                "not": {
+                  "const": "total"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is an Elasticsearch aggregation name: non-empty, without `[`, `]` or `>`, and not `total`."
   },
   "ComplexSearchPayload": {
     "type": "object",
@@ -31702,10 +32412,12 @@
         "description": "If the facets should be limited to the current page of results. Defaults to false. When false, the facets are independent of the search results page."
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0
       },
       "select": {
         "type": "string"
@@ -31732,7 +32444,29 @@
         "$ref": "#/components/schemas/ComplexSearchQuery"
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^\\[\\]>]+$",
+                "not": {
+                  "const": "total"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is an Elasticsearch aggregation name: non-empty, without `[`, `]` or `>`, and not `total`."
   },
   "ObjectSearchResponse": {
     "type": "object",
@@ -32460,7 +33194,8 @@
       },
       "vars": {
         "type": "object",
-        "additionalProperties": true
+        "additionalProperties": true,
+        "description": "Workflow-specific variables. Known catalog workflows validate their own schema."
       },
       "input_type": {
         "$ref": "#/components/schemas/WorkflowRuleInputType"
@@ -32806,6 +33541,11 @@
       "name": {
         "type": "string"
       },
+      "overrides_system_subscription_id": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "Fully replace this code-defined system subscription in the current project. Only one replacement per system subscription is allowed. Disabling the replacement keeps the default suppressed; deleting it restores the default. Immutable after creation."
+      },
       "description": {
         "type": "string"
       },
@@ -32859,7 +33599,8 @@
       },
       "vars": {
         "type": "object",
-        "additionalProperties": true
+        "additionalProperties": true,
+        "description": "Workflow-specific variables. Known catalog workflows validate their own schema."
       },
       "input_type": {
         "$ref": "#/components/schemas/WorkflowRuleInputType"
@@ -33058,7 +33799,7 @@
       },
       "overrides_system_subscription_id": {
         "type": "string",
-        "description": "System subscription ID replaced by this stored subscription. Set only for tenant-specific system overrides created by migrations or platform code."
+        "description": "System subscription ID fully replaced by this stored project subscription. Disabling the replacement keeps the default suppressed; deleting it restores the default."
       },
       "customer_override": {
         "type": "boolean",
@@ -35112,6 +35853,7 @@
         ]
       },
       "members": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -35147,6 +35889,7 @@
         ]
       },
       "children": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -35278,6 +36021,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Name of the collection"
       },
       "dynamic": {
@@ -35289,7 +36033,22 @@
       "name",
       "dynamic"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "`query` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "UpdateCollectionPayload": {
     "type": "object",
@@ -35385,7 +36144,21 @@
         "description": "When true, membership is determined by `query`; when false, members are added explicitly"
       }
     },
-    "description": "Fields to change on a collection. All optional."
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "Fields to change on a collection. All optional. `query` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "ComplexCollectionSearchQuery": {
     "type": "object",
@@ -35405,11 +36178,13 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "name": {
@@ -35429,7 +36204,22 @@
         "additionalProperties": true
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "match"
+      ]
+    },
+    "then": {
+      "properties": {
+        "match": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "`match` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "Collection": {
     "type": "object",
@@ -35578,7 +36368,32 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^$.\\x00][^.\\x00]*$",
+                "not": {
+                  "const": "total"
+                }
+              },
+              "field": {
+                "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not `total`. Each `field` is a dotted path of such names."
   },
   "CollectionArray": {
     "type": "array",
@@ -35598,11 +36413,13 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1
       }
     }
@@ -36859,6 +37676,7 @@
     "properties": {
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "Interaction ID or code (e.g. \"sys:generic_question\")."
       },
       "title": {
@@ -37702,12 +38520,14 @@
       "limit": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1,
         "description": "Maximum number of results (default: 50)"
       },
       "offset": {
         "type": "number",
         "minimum": 0,
+        "maximum": 9007199254740991,
         "multipleOf": 1,
         "description": "Offset for pagination"
       },
@@ -37915,10 +38735,12 @@
       },
       "limit": {
         "type": "number",
+        "minimum": 0,
         "description": "Maximum number of results (default: 50)"
       },
       "offset": {
         "type": "number",
+        "minimum": 0,
         "description": "Offset for pagination"
       },
       "sort": {
@@ -40954,6 +41776,99 @@
     ],
     "additionalProperties": false
   },
+  "SubscriptionWorkflowDefinition": {
+    "type": "object",
+    "properties": {
+      "endpoint": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "variables_schema": {
+        "$ref": "#/components/schemas/JSONSchema"
+      },
+      "variables_template": {
+        "$ref": "#/components/schemas/JSONObject"
+      },
+      "templates": {
+        "minItems": 1,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "type": "string"
+            },
+            "variables": {
+              "$ref": "#/components/schemas/JSONObject"
+            }
+          },
+          "required": [
+            "name",
+            "title",
+            "description",
+            "variables"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "system_targets": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "run_as_role": {
+              "$ref": "#/components/schemas/SystemRoles"
+            },
+            "task_queue": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "run_as_role"
+          ],
+          "additionalProperties": false
+        },
+        "description": "Code-defined system targets for this workflow, used to resolve managed execution roles."
+      }
+    },
+    "required": [
+      "endpoint",
+      "title",
+      "description",
+      "variables_schema",
+      "variables_template"
+    ],
+    "additionalProperties": false,
+    "description": "A packaged workflow supported as an event subscription target."
+  },
+  "SubscriptionWorkflowCatalog": {
+    "type": "object",
+    "properties": {
+      "workflows": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/SubscriptionWorkflowDefinition"
+        }
+      }
+    },
+    "required": [
+      "workflows"
+    ],
+    "additionalProperties": false
+  },
   "WorkflowInteractionVars": {
     "type": "object",
     "properties": {
@@ -41160,10 +42075,16 @@
         "type": "string"
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "maximum": 50000,
+        "multipleOf": 1
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 200,
+        "multipleOf": 1
       }
     },
     "additionalProperties": false
@@ -41501,10 +42422,16 @@
         "type": "string"
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "maximum": 50000,
+        "multipleOf": 1
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 200,
+        "multipleOf": 1
       },
       "configuration": {
         "$ref": "#/components/schemas/ViewExperienceConfiguration",
@@ -41659,10 +42586,12 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot name (must be unique within dashboard)"
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot description/message"
       }
     },
@@ -41688,6 +42617,30 @@
       "failed"
     ],
     "additionalProperties": false
+  },
+  "DashboardBulkIdsPayload": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "if": {},
+    "then": {
+      "required": [
+        "ids"
+      ],
+      "properties": {
+        "ids": {
+          "minItems": 1,
+          "items": {
+            "pattern": "^[0-9a-fA-F]{24}$"
+          }
+        }
+      }
+    },
+    "description": "The dashboards to act on, as an `ids` list of at least one dashboard ID (24 hexadecimal characters)."
   },
   "DashboardVersionItemArray": {
     "type": "array",
@@ -42054,6 +43007,7 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Dashboard name (unique within store)"
       },
       "summary": {
@@ -42061,8 +43015,8 @@
         "description": "Dashboard summary"
       },
       "dataSource": {
-        "$ref": "#/components/schemas/DashboardDataSource",
-        "description": "Data source used to populate Vega `data.values`."
+        "$ref": "#/components/schemas/DashboardSqlDataSource",
+        "description": "SQL data source used to populate Vega `data.values`. Its query, limit and parameters are stored as the dashboard's own; a top-level `query`, `queryLimit` or `queryParameters` sent alongside takes precedence."
       },
       "query": {
         "type": "string",
@@ -42087,13 +43041,40 @@
       "spec"
     ],
     "additionalProperties": false,
-    "description": "Payload for creating a new dashboard. Requires a data source and spec (Vega-Lite)."
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "minLength": 1
+        }
+      }
+    },
+    "else": {
+      "required": [
+        "dataSource"
+      ],
+      "properties": {
+        "dataSource": {
+          "properties": {
+            "query": {
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "description": "Payload for creating a new dashboard. Requires a SQL data source, as `dataSource` or `query`, and a Vega-Lite spec."
   },
   "UpdateDashboardPayload": {
     "type": "object",
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Dashboard name"
       },
       "summary": {
@@ -42101,8 +43082,8 @@
         "description": "Dashboard summary"
       },
       "dataSource": {
-        "$ref": "#/components/schemas/DashboardDataSource",
-        "description": "Data source used to populate Vega `data.values`."
+        "$ref": "#/components/schemas/DashboardSqlDataSource",
+        "description": "SQL data source used to populate Vega `data.values`. Its query, limit and parameters are stored as the dashboard's own; a top-level `query`, `queryLimit` or `queryParameters` sent alongside takes precedence."
       },
       "query": {
         "type": "string",
@@ -42321,15 +43302,19 @@
     "type": "object",
     "properties": {
       "queries": {
+        "minItems": 1,
+        "maxItems": 50,
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
             "name": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "sql": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             }
           },
           "required": [
@@ -42544,6 +43529,8 @@
     "type": "object",
     "properties": {
       "queries": {
+        "minItems": 1,
+        "maxItems": 20,
         "type": "array",
         "items": {
           "type": "object",
@@ -42552,7 +43539,8 @@
               "type": "string"
             },
             "sql": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "limit": {
               "type": "number"
@@ -42616,6 +43604,7 @@
     "properties": {
       "sql": {
         "type": "string",
+        "minLength": 1,
         "description": "SQL query (SELECT only)"
       },
       "params": {
@@ -42675,10 +43664,12 @@
     "properties": {
       "sql": {
         "type": "string",
+        "minLength": 1,
         "description": "SQL statement. Only UPDATE and DELETE statements are accepted."
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message recorded on the resulting data store version."
       },
       "allow_full_table": {
@@ -42920,10 +43911,12 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot name (must be unique within store)"
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot description"
       }
     },
@@ -43611,6 +44604,7 @@
     "type": "object",
     "properties": {
       "tables": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/CreateTablePayload"
@@ -43619,6 +44613,7 @@
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message"
       }
     },
@@ -43697,6 +44692,7 @@
     "type": "object",
     "properties": {
       "changes": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/AlterTableOperation"
@@ -43740,6 +44736,7 @@
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message (required)"
       }
     },
@@ -43990,6 +44987,7 @@
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message"
       }
     },
@@ -44350,7 +45348,54 @@
         "description": "Scope: 'project' (default, current project) or 'org'"
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "run_id"
+            ],
+            "properties": {
+              "run_id": {
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "agent_run_id"
+            ],
+            "properties": {
+              "agent_run_id": {
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "workflow_id"
+            ],
+            "properties": {
+              "workflow_id": {
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "then": {
+      "required": [
+        "workflow_run_id"
+      ],
+      "properties": {
+        "workflow_run_id": {
+          "minLength": 1
+        }
+      }
+    },
+    "description": "Identifies the run to price by at least one of `run_id`, `agent_run_id`, `workflow_id` or `workflow_run_id`. An empty identifier counts as absent."
   },
   "CostModelPricesQuery": {
     "type": "object",
@@ -45177,7 +46222,7 @@
       "params": {
         "type": "object",
         "additionalProperties": true,
-        "description": "The operation parameters."
+        "description": "The operation parameters. `create` takes the objects to create as `objects`, 1 to 10000."
       }
     },
     "required": [
@@ -45185,7 +46230,33 @@
       "ids",
       "params"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "const": "create"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "params": {
+          "required": [
+            "objects"
+          ],
+          "properties": {
+            "objects": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 10000
+            }
+          }
+        }
+      }
+    }
   },
   "BulkOperationResponse": {
     "oneOf": [

@@ -26,8 +26,8 @@
 
 import { type JsonObject, resolveSchemaRef } from './adapter.js';
 
-/** Where a parameter arrives. Decides name matching, and nothing else. */
-export type ApiParameterLocation = 'query' | 'header';
+/** Where a parameter arrives. Decides name matching and whether undeclared names are reported. */
+export type ApiParameterLocation = 'query' | 'header' | 'path';
 
 /**
  * Parameters as the transport presents them: text, possibly repeated, possibly absent.
@@ -254,7 +254,7 @@ function parameterObjectSchema(
     const properties = resolved?.properties;
     if (!resolved || declaredType(resolved) !== 'object' || !isPlainObject(properties)) {
         throw new Error(
-            `Component '${component}' is declared as a query or header contract, but it is not an object ` +
+            `Component '${component}' is declared as a query, header or path contract, but it is not an object ` +
                 'schema with properties, so it cannot be expanded into named parameters. Declare it as an ' +
                 'object whose properties are the parameters.',
         );
@@ -275,6 +275,9 @@ function parameterObjectSchema(
  * component declaring `X-Request-Id` would never match a real request without this. The output is
  * keyed by the DECLARED spelling, because that is the name the component validates and the spec
  * publishes.
+ *
+ * Path parameters match exactly, like query parameters, but report nothing undeclared: the route
+ * template fixes which ones exist, and a component may describe only those whose format it states.
  */
 export function normalizeParameters(
     component: string,
@@ -305,6 +308,6 @@ export function normalizeParameters(
         // `fromEntries` rather than assignment, so a component that declares `__proto__` gets an own
         // property instead of reassigning the copy's prototype.
         value: Object.fromEntries(entries),
-        undeclared: caseInsensitive ? [] : Object.keys(raw).filter((key) => !matched.has(key)),
+        undeclared: location === 'query' ? Object.keys(raw).filter((key) => !matched.has(key)) : [],
     };
 }

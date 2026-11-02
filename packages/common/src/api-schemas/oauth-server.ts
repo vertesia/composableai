@@ -278,7 +278,8 @@ export const CreateOAuthClientPayloadSchema = z
     .strictObject({
         client_name: z.string(),
         client_type: OAuthClientTypeSchema.optional(),
-        redirect_uris: z.array(z.string()),
+        // Every client registers at least one redirect URI, which the server checks on create and on update.
+        redirect_uris: z.array(z.string()).min(1),
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
@@ -302,7 +303,7 @@ export const CreateOAuthClientPayloadSchema = z
 export const UpdateOAuthClientPayloadSchema = z
     .strictObject({
         client_name: z.string().optional(),
-        redirect_uris: z.array(z.string()).optional(),
+        redirect_uris: z.array(z.string()).min(1).optional(),
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
@@ -378,7 +379,15 @@ const oauthGrantFilterFields = {
     sort_order: OAuthGrantSortOrderSchema.optional(),
 };
 
-export const ListOAuthGrantsQuerySchema = z.strictObject(oauthGrantFilterFields).meta({ id: 'ListOAuthGrantsQuery' });
+// The listing refuses a negative page. Its cap on `limit` is a clamp, not a refusal, so it is not published. The bulk
+// revoke payload shares the filter fields but ignores the page, so the bound is the listing's alone.
+export const ListOAuthGrantsQuerySchema = z
+    .strictObject({
+        ...oauthGrantFilterFields,
+        limit: z.number().min(0).optional(),
+        offset: z.number().min(0).optional(),
+    })
+    .meta({ id: 'ListOAuthGrantsQuery' });
 
 export const RevokeOAuthGrantQuerySchema = z
     .strictObject({

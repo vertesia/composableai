@@ -19,7 +19,7 @@ export const DurableTaskStatusSchema = z.enum(['pending', 'in_progress', 'comple
 export const TaskSourceSchema = z
     .strictObject({
         type: z.enum(['process', 'agent']),
-        run_id: z.string(),
+        run_id: z.string().min(1),
         node: z.string().optional(),
         ask_id: z.string().optional(),
     })
@@ -38,7 +38,7 @@ export const TaskFieldSchema = z
 
 export const CreateTaskPayloadSchema = z
     .strictObject({
-        title: z.string(),
+        title: z.string().min(1),
         description: z.string().optional(),
         assignee: z.string().optional(),
         fields: z.array(TaskFieldSchema).optional(),

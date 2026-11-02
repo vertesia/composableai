@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import { conditional, nonEmpty } from './schema-primitives.js';
+
+const sql = nonEmpty('sql');
+const esql = nonEmpty('esql');
 
 export const ContentQueryPayloadSchema = z
     .strictObject({
@@ -15,7 +19,15 @@ export const ContentQueryPayloadSchema = z
             .optional(),
         format: z.enum(['json', 'csv', 'table']).optional(),
     })
-    .meta({ id: 'ContentQueryPayload' });
+    .meta({
+        id: 'ContentQueryPayload',
+        description: 'Exactly one of `sql`, `esql` or `dsl`. An empty `sql` or `esql` counts as absent.',
+        allOf: [
+            conditional({ not: { anyOf: [sql, esql] } }, { required: ['dsl'] }),
+            conditional(sql, { not: { anyOf: [esql, { required: ['dsl'] }] } }),
+            conditional(esql, { not: { required: ['dsl'] } }),
+        ],
+    });
 
 export const ContentQueryResultSchema = z
     .strictObject({

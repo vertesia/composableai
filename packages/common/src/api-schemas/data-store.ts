@@ -24,12 +24,15 @@ export const GetDataStoreTableQuerySchema = z
 
 export const QueryValidationPayloadSchema = z
     .strictObject({
-        queries: z.array(
-            z.strictObject({
-                name: z.string(),
-                sql: z.string(),
-            }),
-        ),
+        queries: z
+            .array(
+                z.strictObject({
+                    name: z.string().min(1),
+                    sql: z.string().min(1),
+                }),
+            )
+            .min(1)
+            .max(50),
     })
     .meta({ id: 'QueryValidationPayload' });
 
@@ -93,13 +96,16 @@ export const QueryResultColumnSchema = z
 
 export const BatchQueryPayloadSchema = z
     .strictObject({
-        queries: z.array(
-            z.strictObject({
-                name: z.string(),
-                sql: z.string(),
-                limit: z.number().optional(),
-            }),
-        ),
+        queries: z
+            .array(
+                z.strictObject({
+                    name: z.string(),
+                    sql: z.string().min(1),
+                    limit: z.number().optional(),
+                }),
+            )
+            .min(1)
+            .max(20),
     })
     .meta({ id: 'BatchQueryPayload' });
 
@@ -115,7 +121,7 @@ export const QueryResultSchema = z
 
 export const QueryPayloadSchema = z
     .strictObject({
-        sql: z.string().meta({ description: 'SQL query (SELECT only)' }),
+        sql: z.string().min(1).meta({ description: 'SQL query (SELECT only)' }),
         params: z.looseObject({}).meta({ description: 'Query parameters (for prepared statements)' }).optional(),
         limit: z.number().meta({ description: 'Maximum rows to return' }).optional(),
         version_id: z.string().meta({ description: 'Query against a specific version (optional)' }).optional(),
@@ -135,8 +141,11 @@ export const DataStoreMutateRowsResultSchema = z
 
 export const DataStoreMutateRowsPayloadSchema = z
     .strictObject({
-        sql: z.string().meta({ description: 'SQL statement. Only UPDATE and DELETE statements are accepted.' }),
-        message: z.string().meta({ description: 'Commit message recorded on the resulting data store version.' }),
+        sql: z.string().min(1).meta({ description: 'SQL statement. Only UPDATE and DELETE statements are accepted.' }),
+        message: z
+            .string()
+            .min(1)
+            .meta({ description: 'Commit message recorded on the resulting data store version.' }),
         allow_full_table: z
             .boolean()
             .meta({ description: 'Allow UPDATE/DELETE statements without a WHERE clause. Defaults to false.' })
@@ -227,8 +236,8 @@ export const DataStoreArchiveResultSchema = z
 
 export const CreateSnapshotPayloadSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'Snapshot name (must be unique within store)' }),
-        message: z.string().meta({ description: 'Snapshot description' }),
+        name: z.string().min(1).meta({ description: 'Snapshot name (must be unique within store)' }),
+        message: z.string().min(1).meta({ description: 'Snapshot description' }),
     })
     .meta({ id: 'CreateSnapshotPayload', description: 'Payload for creating a named snapshot.' });
 
@@ -444,8 +453,8 @@ export const ImportJobSchema = z
 
 export const CreateTablesPayloadSchema = z
     .strictObject({
-        tables: z.array(CreateTablePayloadSchema).meta({ description: 'Table definitions to create' }),
-        message: z.string().meta({ description: 'Commit message' }),
+        tables: z.array(CreateTablePayloadSchema).min(1).meta({ description: 'Table definitions to create' }),
+        message: z.string().min(1).meta({ description: 'Commit message' }),
     })
     .meta({ id: 'CreateTablesPayload', description: 'Payload for creating multiple tables atomically.' });
 
@@ -468,7 +477,7 @@ export const DataTableSchema = z
 
 export const AlterTablePayloadSchema = z
     .strictObject({
-        changes: z.array(AlterTableOperationSchema).meta({ description: 'List of schema changes to apply' }),
+        changes: z.array(AlterTableOperationSchema).min(1).meta({ description: 'List of schema changes to apply' }),
     })
     .meta({ id: 'AlterTablePayload', description: 'Payload for altering a table schema.' });
 
@@ -478,7 +487,7 @@ export const UpdateSchemaPayloadSchema = z
         tables: z.array(CreateTablePayloadSchema).meta({ description: 'Tables to create or update' }).optional(),
         relationships: z.array(DataRelationshipSchema).meta({ description: 'Relationships to set' }).optional(),
         drop_tables: z.array(z.string()).meta({ description: 'Tables to drop' }).optional(),
-        message: z.string().meta({ description: 'Commit message (required)' }),
+        message: z.string().min(1).meta({ description: 'Commit message (required)' }),
     })
     .meta({ id: 'UpdateSchemaPayload', description: 'Payload for AI-driven bulk schema updates.' });
 
@@ -556,7 +565,7 @@ export const ImportDataPayloadSchema = z
             .optional(),
         tables: ImportTableDataMapSchema.meta({ description: 'Map of table name to data specification' }),
         mode: z.enum(['append', 'replace']).meta({ description: 'Import mode' }),
-        message: z.string().meta({ description: 'Commit message' }),
+        message: z.string().min(1).meta({ description: 'Commit message' }),
     })
     .meta({ id: 'ImportDataPayload', description: 'Payload for importing data into tables.' });
 
