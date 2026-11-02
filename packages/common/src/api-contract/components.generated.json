@@ -27201,7 +27201,95 @@
         ]
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "sql"
+                ],
+                "properties": {
+                  "sql": {
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "required": [
+                  "esql"
+                ],
+                "properties": {
+                  "esql": {
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "then": {
+          "required": [
+            "dsl"
+          ]
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "sql"
+          ],
+          "properties": {
+            "sql": {
+              "minLength": 1
+            }
+          }
+        },
+        "then": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "esql"
+                ],
+                "properties": {
+                  "esql": {
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "required": [
+                  "dsl"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "esql"
+          ],
+          "properties": {
+            "esql": {
+              "minLength": 1
+            }
+          }
+        },
+        "then": {
+          "not": {
+            "required": [
+              "dsl"
+            ]
+          }
+        }
+      }
+    ],
+    "description": "Exactly one of `sql`, `esql` or `dsl`. An empty `sql` or `esql` counts as absent."
   },
   "ContentQueryResult": {
     "type": "object",
@@ -30410,7 +30498,57 @@
       }
     },
     "additionalProperties": false,
-    "description": "When creating from an uploaded file the content should be an URL to the uploaded file"
+    "if": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "content"
+            ],
+            "properties": {
+              "content": {
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "then": {
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "source": {
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "description": "When creating from an uploaded file the content should be an URL to the uploaded file. `name` is required unless `content.name` or `content.source` is given; it then defaults to the content file name."
   },
   "UpdateContentObjectPayload": {
     "type": "object",
@@ -42298,6 +42436,32 @@
       "spec"
     ],
     "additionalProperties": false,
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "minLength": 1
+        }
+      }
+    },
+    "else": {
+      "required": [
+        "dataSource"
+      ],
+      "properties": {
+        "dataSource": {
+          "properties": {
+            "query": {
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
     "description": "Payload for creating a new dashboard. Requires a SQL data source, as `dataSource` or `query`, and a Vega-Lite spec."
   },
   "UpdateDashboardPayload": {
@@ -45406,7 +45570,7 @@
       "params": {
         "type": "object",
         "additionalProperties": true,
-        "description": "The operation parameters."
+        "description": "The operation parameters. `create` takes the objects to create as `objects`, 1 to 10000."
       }
     },
     "required": [
@@ -45414,7 +45578,33 @@
       "ids",
       "params"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "const": "create"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "params": {
+          "required": [
+            "objects"
+          ],
+          "properties": {
+            "objects": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 10000
+            }
+          }
+        }
+      }
+    }
   },
   "BulkOperationResponse": {
     "oneOf": [

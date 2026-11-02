@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { DashboardExportStatus, DashboardStatus } from '../data-platform.js';
 import { StringValueMapSchema } from './files.js';
-import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
+import { conditional, EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 
 export const DashboardElasticsearchResultMappingSchema = z
     .discriminatedUnion('type', [
@@ -346,6 +346,12 @@ export const CreateDashboardPayloadSchema = z
         id: 'CreateDashboardPayload',
         description:
             'Payload for creating a new dashboard. Requires a SQL data source, as `dataSource` or `query`, and a Vega-Lite spec.',
+        // A top-level `query` replaces the data source's, so an empty one is refused even beside a data source.
+        ...conditional(
+            { required: ['query'] },
+            { properties: { query: { minLength: 1 } } },
+            { required: ['dataSource'], properties: { dataSource: { properties: { query: { minLength: 1 } } } } },
+        ),
     });
 
 export const UpdateDashboardPayloadSchema = CreateDashboardPayloadSchema.partial()

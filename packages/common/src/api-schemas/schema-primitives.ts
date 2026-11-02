@@ -21,6 +21,26 @@ export const nullableNumberSchema = z
 // Capped at the largest safe integer: a larger count loses precision, and Mongo rejects it in `$skip`/`$limit`.
 export const PageCountSchema = z.number().multipleOf(1).min(0).max(Number.MAX_SAFE_INTEGER);
 
+/**
+ * A JSON Schema conditional, for a rule over several fields of one request: spread into a component's `.meta()`.
+ *
+ * Validators enforce `if`/`then`/`else`, and the Java, Go and Python generators ignore them, so each generated model
+ * keeps its plain fields. A component-level `anyOf` or `oneOf` of required fragments would instead turn the model
+ * into a wrapper class.
+ */
+export function conditional(
+    condition: Record<string, unknown>,
+    consequence: Record<string, unknown>,
+    alternative?: Record<string, unknown>,
+): Record<string, unknown> {
+    return {
+        if: condition,
+        // biome-ignore lint/suspicious/noThenProperty: the JSON Schema `then` keyword, read by validators, never awaited.
+        then: consequence,
+        ...(alternative ? { else: alternative } : {}),
+    };
+}
+
 /** Monotonic token for optimistic concurrency on mutable, user-authored resources. */
 export const EditRevisionSchema = z
     .number()

@@ -7,7 +7,7 @@ import { ContentObjectStatus } from '../store/store.js';
 import { ContentObjectTypeRefSchema } from './app-lifecycle.js';
 import { StringArrayMapSchema } from './dashboard.js';
 import { ComputedFacetResponseSchema, FacetSpecSchema, SortOptionSchema } from './interaction.js';
-import { nullableStringSchema, PageCountSchema } from './schema-primitives.js';
+import { conditional, nullableStringSchema, PageCountSchema } from './schema-primitives.js';
 import { ColumnLayoutSchema, ContentObjectTypeSchema, EmbeddingTypeEnabledMapSchema } from './store.js';
 
 export const scoreAggregationTypesSchema = z.enum(['rrf', 'rsf', 'smart']).meta({ id: 'scoreAggregationTypes' });
@@ -677,7 +677,27 @@ export const CreateContentObjectPayloadSchema = z
     })
     .meta({
         id: 'CreateContentObjectPayload',
-        description: 'When creating from an uploaded file the content should be an URL to the uploaded file',
+        description:
+            'When creating from an uploaded file the content should be an URL to the uploaded file. `name` is ' +
+            'required unless `content.name` or `content.source` is given; it then defaults to the content file name.',
+        // The object needs a name: its own, or one derived from the content's name or source.
+        ...conditional(
+            {
+                not: {
+                    anyOf: [
+                        { required: ['name'], properties: { name: { minLength: 1 } } },
+                        {
+                            required: ['content'],
+                            properties: { content: { required: ['name'], properties: { name: { minLength: 1 } } } },
+                        },
+                    ],
+                },
+            },
+            {
+                required: ['content'],
+                properties: { content: { required: ['source'], properties: { source: { minLength: 1 } } } },
+            },
+        ),
     });
 
 export const ComputeCollectionFacetPayloadSchema = z
