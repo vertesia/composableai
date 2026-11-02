@@ -2567,6 +2567,7 @@ const API_SCHEMA_GROUPS = [
  * intersected with a second schema.
  */
 type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
+    typeof PATH_PARAMETER_SCHEMAS &
     typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
