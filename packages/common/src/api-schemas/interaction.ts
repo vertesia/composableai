@@ -28,7 +28,13 @@ import { InferenceProfileIdSchema, InferenceProfileSnapshotSchema } from './infe
 import { AccountRefSchema } from './invites.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
-import { EditRevisionSchema, ExpectedEditRevisionSchema, PageCountSchema } from './schema-primitives.js';
+import {
+    EditRevisionSchema,
+    ExpectedEditRevisionSchema,
+    MONGO_FACETS_DESCRIPTION,
+    mongoFacetsRule,
+    PageCountSchema,
+} from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
 /**
@@ -1032,7 +1038,7 @@ export const ComputeInteractionFacetPayloadSchema = z
         facets: z.array(FacetSpecSchema),
         query: InteractionSearchQuerySchema.optional(),
     })
-    .meta({ id: 'ComputeInteractionFacetPayload' });
+    .meta({ id: 'ComputeInteractionFacetPayload', description: MONGO_FACETS_DESCRIPTION, ...mongoFacetsRule });
 
 export const CatalogInteractionRefSchema = z
     .strictObject({

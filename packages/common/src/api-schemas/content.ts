@@ -7,7 +7,15 @@ import { ContentObjectStatus } from '../store/store.js';
 import { ContentObjectTypeRefSchema } from './app-lifecycle.js';
 import { StringArrayMapSchema } from './dashboard.js';
 import { ComputedFacetResponseSchema, FacetSpecSchema, SortOptionSchema } from './interaction.js';
-import { conditional, nullableStringSchema, PageCountSchema } from './schema-primitives.js';
+import {
+    conditional,
+    MONGO_FACETS_DESCRIPTION,
+    mongoFacetsRule,
+    mongoFilterDescription,
+    mongoFilterKeysRule,
+    nullableStringSchema,
+    PageCountSchema,
+} from './schema-primitives.js';
 import { ColumnLayoutSchema, ContentObjectTypeSchema, EmbeddingTypeEnabledMapSchema } from './store.js';
 
 export const scoreAggregationTypesSchema = z.enum(['rrf', 'rsf', 'smart']).meta({ id: 'scoreAggregationTypes' });
@@ -371,7 +379,11 @@ export const CreateCollectionPayloadSchema = z
             description: 'When true, membership is determined by `query`; when false, members are added explicitly',
         }),
     })
-    .meta({ id: 'CreateCollectionPayload' });
+    .meta({
+        id: 'CreateCollectionPayload',
+        description: mongoFilterDescription('query'),
+        ...mongoFilterKeysRule('query'),
+    });
 
 /**
  * `PUT /collections/:id` applies whatever fields the body carries. It is not the create payload:
@@ -389,7 +401,11 @@ export const UpdateCollectionPayloadSchema = z
             })
             .optional(),
     })
-    .meta({ id: 'UpdateCollectionPayload', description: 'Fields to change on a collection. All optional.' });
+    .meta({
+        id: 'UpdateCollectionPayload',
+        description: `Fields to change on a collection. All optional. ${mongoFilterDescription('query')}`,
+        ...mongoFilterKeysRule('query'),
+    });
 
 export const FindPayloadSchema = z
     .strictObject({
@@ -400,7 +416,7 @@ export const FindPayloadSchema = z
         all_revisions: z.boolean().optional(),
         from_root: z.string().optional(),
     })
-    .meta({ id: 'FindPayload' });
+    .meta({ id: 'FindPayload', description: mongoFilterDescription('query'), ...mongoFilterKeysRule('query') });
 
 export const TranscriptSchema = z
     .strictObject({
@@ -464,7 +480,11 @@ export const ComplexCollectionSearchQuerySchema = z
         types: z.array(z.string()).optional(),
         match: z.looseObject({}).optional(),
     })
-    .meta({ id: 'ComplexCollectionSearchQuery' });
+    .meta({
+        id: 'ComplexCollectionSearchQuery',
+        description: mongoFilterDescription('match'),
+        ...mongoFilterKeysRule('match'),
+    });
 
 export const CollectionSchema = z
     .strictObject({
@@ -705,7 +725,7 @@ export const ComputeCollectionFacetPayloadSchema = z
         facets: z.array(FacetSpecSchema),
         query: ComplexCollectionSearchQuerySchema.optional(),
     })
-    .meta({ id: 'ComputeCollectionFacetPayload' });
+    .meta({ id: 'ComputeCollectionFacetPayload', description: MONGO_FACETS_DESCRIPTION, ...mongoFacetsRule });
 
 export const UpdateContentObjectPayloadSchema = z
     .strictObject({

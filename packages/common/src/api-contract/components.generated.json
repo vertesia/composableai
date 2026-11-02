@@ -11908,7 +11908,32 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^$.\\x00][^.\\x00]*$",
+                "not": {
+                  "const": "total"
+                }
+              },
+              "field": {
+                "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not `total`. Each `field` is a dotted path of such names."
   },
   "ComputedFacetResponse": {
     "type": "object",
@@ -16050,7 +16075,32 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^$.\\x00][^.\\x00]*$",
+                "not": {
+                  "const": "total"
+                }
+              },
+              "field": {
+                "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not `total`. Each `field` is a dotted path of such names."
   },
   "PromptTemplateInteractionsResponse": {
     "type": "object",
@@ -31988,7 +32038,22 @@
     "required": [
       "query"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "`query` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "ComputeObjectFacetPayload": {
     "type": "object",
@@ -35614,7 +35679,22 @@
       "name",
       "dynamic"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "`query` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "UpdateCollectionPayload": {
     "type": "object",
@@ -35710,7 +35790,21 @@
         "description": "When true, membership is determined by `query`; when false, members are added explicitly"
       }
     },
-    "description": "Fields to change on a collection. All optional."
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "Fields to change on a collection. All optional. `query` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "ComplexCollectionSearchQuery": {
     "type": "object",
@@ -35756,7 +35850,22 @@
         "additionalProperties": true
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "match"
+      ]
+    },
+    "then": {
+      "properties": {
+        "match": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "`match` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "Collection": {
     "type": "object",
@@ -35905,7 +36014,32 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^$.\\x00][^.\\x00]*$",
+                "not": {
+                  "const": "total"
+                }
+              },
+              "field": {
+                "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not `total`. Each `field` is a dotted path of such names."
   },
   "CollectionArray": {
     "type": "array",
