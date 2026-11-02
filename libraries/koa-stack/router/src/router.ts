@@ -244,7 +244,6 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         this.prefixMatcher = createPathPrefixMatcherUnsafe(this.prefix);
         this.parent = parent;
         this.interceptor = parent ? parent.interceptor : null;
-        this.routeInitializers = parent ? [...parent.routeInitializers] : [];
         this.versionHeader = parent?.versionHeader;
     }
 
@@ -375,10 +374,15 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         return this;
     }
 
-    /** Instrument future registrations, including descendants, without replacing interceptors. */
+    /** Instrument future registrations on existing and future descendants; existing routes are not replayed. */
     withRouteInitializer(initializer: RouteInitializer) {
         this.routeInitializers.push(initializer);
         return this;
+    }
+
+    protected initializeRoute(route: RegisteredRoute): void {
+        this.parent?.initializeRoute(route);
+        for (const initialize of this.routeInitializers) initialize(route);
     }
 
     withGuard(guard: RouterGuard) {
@@ -415,7 +419,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
         } else {
             this.routes.push(route);
         }
-        for (const initialize of this.routeInitializers) initialize(route);
+        this.initializeRoute(route);
     }
 
     routeAll(path: string, target: RouteTarget) {
@@ -453,7 +457,7 @@ export abstract class AbstractRouter<T extends AbstractRouter<T>> implements Rou
     serve(pattern: string, target: string, opts: send.SendOptions = {}) {
         if (!opts.root) opts.root = this.webRoot;
         const route = new ServeRoute(this, pattern, resolvePath(this.webRoot, target), opts);
-        for (const initialize of this.routeInitializers) initialize(route);
+        this.initializeRoute(route);
         this.routes.push(route);
     }
 

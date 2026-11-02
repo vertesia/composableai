@@ -20,6 +20,17 @@ class ChildResource extends BaseResource {
 class RootResource extends Resource {}
 
 describe('route registration initializers', () => {
+    it('uses hooks added after a descendant was mounted for its future registrations', () => {
+        const captured: string[] = [];
+        const root = new Router();
+        const child = root.mount('/child');
+        const grandchild = child.mount('/nested');
+        child.get('/before', async () => 'before');
+        root.withRouteInitializer((route) => captured.push(`root:${route.absPathPattern}`));
+        child.withRouteInitializer((route) => captured.push(`child:${route.absPathPattern}`));
+        grandchild.get('/after', async () => 'after');
+        expect(captured).toEqual(['root:/child/nested/after', 'child:/child/nested/after']);
+    });
     it('inherits through mounts and exposes original handler names and endpoint versions', () => {
         const captured: RegisteredRoute[] = [];
         const router = new Router().withRouteInitializer((route) => captured.push(route));
