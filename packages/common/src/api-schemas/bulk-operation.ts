@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { conditional } from './schema-primitives.js';
 
 export const BulkObjectDeleteResultSchema = z
     .strictObject({
@@ -61,9 +62,24 @@ export const BulkOperationPayloadSchema = z
             .enum(['change_type', 'create', 'delete', 'start_workflow', 'update'])
             .meta({ description: 'The operation name' }),
         ids: z.array(z.string()).meta({ description: 'The IDs of the objects to operate on' }),
-        params: z.looseObject({}).meta({ description: 'The operation parameters.' }),
+        params: z.looseObject({}).meta({
+            description: 'The operation parameters. `create` takes the objects to create as `objects`, 1 to 10000.',
+        }),
     })
-    .meta({ id: 'BulkOperationPayload' });
+    .meta({
+        id: 'BulkOperationPayload',
+        ...conditional(
+            { required: ['name'], properties: { name: { const: 'create' } } },
+            {
+                properties: {
+                    params: {
+                        required: ['objects'],
+                        properties: { objects: { type: 'array', minItems: 1, maxItems: 10_000 } },
+                    },
+                },
+            },
+        ),
+    });
 
 export const BulkOperationResponseSchema = z
     .discriminatedUnion('operation', [

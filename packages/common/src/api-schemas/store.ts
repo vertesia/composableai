@@ -741,7 +741,7 @@ export const CreateContentObjectTypePayloadSchema = z
         table_layout: contentTypeFields.table_layout,
         object_schema: contentTypeFields.object_schema,
         strict_mode: contentTypeFields.strict_mode,
-        name: contentTypeFields.name,
+        name: z.string().min(1).meta({ description: 'Human-readable name or title' }),
         description: contentTypeFields.description,
         tags: contentTypeFields.tags,
     })

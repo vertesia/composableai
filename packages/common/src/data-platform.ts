@@ -291,6 +291,8 @@ export type DataStoreTableDropResult = Wire.DataStoreTableDropResult;
 
 export type DashboardArchiveResult = Wire.DashboardArchiveResult;
 
+export type DashboardBulkIdsPayload = Wire.DashboardBulkIdsPayload;
+
 export type DashboardBulkArchiveResult = Wire.DashboardBulkArchiveResult;
 
 export type DashboardBulkDeleteResult = Wire.DashboardBulkDeleteResult;
