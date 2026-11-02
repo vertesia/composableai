@@ -156,6 +156,14 @@ describe('instance selection', () => {
 });
 
 describe('install and partial settings updates', () => {
+    it('can install without granting app OAuth access', async () => {
+        await command('install', 'manifest-crm', '--approved-scopes', '');
+        expect(await payload()).toEqual({ app_id: 'manifest-crm', approved_scopes: [] });
+    });
+    it('forwards the selected app OAuth approval scopes', async () => {
+        await command('install', 'manifest-crm', '--approved-scopes', 'openid, content:read');
+        expect(await payload()).toEqual({ app_id: 'manifest-crm', approved_scopes: ['openid', 'content:read'] });
+    });
     it('keeps legacy installation payloads compatible', async () => {
         await command('install', 'manifest-crm', '--settings', '{"region":"eu"}');
         expect(await payload()).toEqual({ app_id: 'manifest-crm', settings: { region: 'eu' } });
