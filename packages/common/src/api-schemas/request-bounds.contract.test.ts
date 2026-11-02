@@ -145,13 +145,7 @@ const bounds: FieldBounds[] = [
     nonBlank('WebsiteCredentialMetadata', 'name'),
     nonEmptyList('WebsiteCredentialMetadata', 'websites', { host: 'example.com' }),
     nonEmptyList('WebsiteCredentialMetadataUpdate', 'websites', { host: 'example.com' }),
-    {
-        // The update keeps its name unbounded: the server accepts a blank one when no website is sent.
-        component: 'WebsiteCredentialMetadataUpdate',
-        field: 'name',
-        refused: [],
-        accepted: [['an empty string', '']],
-    },
+    nonBlank('WebsiteCredentialMetadataUpdate', 'name'),
     // Views
     ...(['CreateViewExperienceRequest', 'UpdateViewExperienceRequest'] as const).flatMap((component) => [
         {
@@ -370,7 +364,6 @@ const bounds: FieldBounds[] = [
 const declaredFields: Array<[ApiComponentName, string]> = [
     ['UpdateAppInstallationToolPermissionsPayload', 'tools_requiring_approval'],
     ['UpdateOAuthProviderPayload', 'name'],
-    ['WebsiteCredentialMetadataUpdate', 'name'],
     ['ProjectTokenRequest', 'account_id'],
     ['InteractionSearchQuery', 'limit'],
     ['ComputeInteractionFacetPayload', 'query/limit'],

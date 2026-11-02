@@ -167,8 +167,12 @@ export const DashboardBulkIdsPayloadSchema = z
     .catchall(z.array(z.string()))
     .meta({
         id: 'DashboardBulkIdsPayload',
-        description: 'The dashboards to act on, as an `ids` list of at least one dashboard ID.',
-        ...conditional({}, { required: ['ids'], properties: { ids: { minItems: 1 } } }),
+        description:
+            'The dashboards to act on, as an `ids` list of at least one dashboard ID (24 hexadecimal characters).',
+        ...conditional(
+            {},
+            { required: ['ids'], properties: { ids: { minItems: 1, items: { pattern: '^[0-9a-fA-F]{24}$' } } } },
+        ),
     });
 
 export const DashboardStoreElasticsearchDataSourceSchema = z

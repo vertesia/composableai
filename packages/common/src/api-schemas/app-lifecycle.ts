@@ -1204,6 +1204,16 @@ export const AppInstallationsQuerySchema = z
     })
     .meta({ id: 'AppInstallationsQuery' });
 
+export const AppRepoTreeQuerySchema = z
+    .strictObject({
+        prefix: z
+            .string()
+            .meta({ description: 'Directory to list, relative to the repository root. Defaults to the root.' })
+            .optional(),
+        ref: z.string().meta({ description: 'Branch, tag or commit. Defaults to the default branch.' }).optional(),
+    })
+    .meta({ id: 'AppRepoTreeQuery' });
+
 export const AppRepoFileQuerySchema = z
     .strictObject({
         // Trimmed, and refused when blank.

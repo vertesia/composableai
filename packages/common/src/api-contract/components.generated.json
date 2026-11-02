@@ -13914,9 +13914,10 @@
       "environment": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
         },
-        "description": "Environment ids to filter by."
+        "description": "Environment ids to filter by, as 24 hexadecimal characters."
       },
       "status": {
         "type": "array",
@@ -20357,6 +20358,20 @@
     ],
     "additionalProperties": false
   },
+  "AppRepoTreeQuery": {
+    "type": "object",
+    "properties": {
+      "prefix": {
+        "type": "string",
+        "description": "Directory to list, relative to the repository root. Defaults to the root."
+      },
+      "ref": {
+        "type": "string",
+        "description": "Branch, tag or commit. Defaults to the default branch."
+      }
+    },
+    "additionalProperties": false
+  },
   "AppRepoDocumentCommit": {
     "type": "object",
     "properties": {
@@ -22343,7 +22358,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "pattern": "\\S"
       },
       "websites": {
         "minItems": 1,
@@ -42405,11 +42421,14 @@
       ],
       "properties": {
         "ids": {
-          "minItems": 1
+          "minItems": 1,
+          "items": {
+            "pattern": "^[0-9a-fA-F]{24}$"
+          }
         }
       }
     },
-    "description": "The dashboards to act on, as an `ids` list of at least one dashboard ID."
+    "description": "The dashboards to act on, as an `ids` list of at least one dashboard ID (24 hexadecimal characters)."
   },
   "DashboardVersionItemArray": {
     "type": "array",

@@ -10954,6 +10954,10 @@ export type AppRepoFileQuery = {
     path: string;
     ref?: string | undefined;
 };
+export type AppRepoTreeQuery = {
+    prefix?: string | undefined;
+    ref?: string | undefined;
+};
 export type AppVersionLaunchTargetArray = AppVersionLaunchTarget[];
 export type AppVersionRecordArray = AppVersionRecord[];
 export type AppToolCollectionArray = AppToolCollection[];
@@ -12123,6 +12127,7 @@ export interface ApiComponentTypes {
     AppRepoBranch: AppRepoBranch;
     CreateAppRepoBranchRequest: CreateAppRepoBranchRequest;
     AppRepoFileQuery: AppRepoFileQuery;
+    AppRepoTreeQuery: AppRepoTreeQuery;
     AppRepoDocumentCommit: AppRepoDocumentCommit;
     AppVersionGitSource: AppVersionGitSource;
     AppGithubConfiguration: AppGithubConfiguration;

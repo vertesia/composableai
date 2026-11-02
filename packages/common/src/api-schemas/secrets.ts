@@ -185,7 +185,8 @@ export const WebsiteCredentialMetadataSchema = z
 
 export const WebsiteCredentialMetadataUpdateSchema = z
     .strictObject({
-        name: z.string().optional(),
+        // As on create: the server trims the name and refuses a blank one.
+        name: z.string().regex(/\S/).optional(),
         websites: z.array(WebsiteCredentialWebsiteSchema).min(1).optional(),
         username: z.string().optional(),
         username_hint: z.string().optional(),

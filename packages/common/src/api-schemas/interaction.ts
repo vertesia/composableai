@@ -692,7 +692,10 @@ export const RunListQuerySchema = z
             .meta({ description: 'Interaction ids, or in-code interaction names, to filter by.' })
             .optional(),
         model: z.array(z.string()).meta({ description: 'Model ids to filter by.' }).optional(),
-        environment: z.array(z.string()).meta({ description: 'Environment ids to filter by.' }).optional(),
+        environment: z
+            .array(z.string().regex(/^[0-9a-fA-F]{24}$/))
+            .meta({ description: 'Environment ids to filter by, as 24 hexadecimal characters.' })
+            .optional(),
         status: z.array(ExecutionRunStatusSchema).meta({ description: 'Run statuses to filter by.' }).optional(),
         tag: z.array(z.string()).meta({ description: 'Run tags to filter by.' }).optional(),
         parent: z

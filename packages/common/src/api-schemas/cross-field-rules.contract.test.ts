@@ -36,8 +36,9 @@ const rules: Array<[ApiComponentName, string, Array<[string, unknown, boolean]>]
         'DashboardBulkIdsPayload',
         'needs at least one dashboard ID',
         [
-            ['one ID', { ids: ['d'] }, true],
-            ['a whitespace ID', { ids: [' '] }, true],
+            ['one ID', { ids: ['0123456789abcdef01234567'] }, true],
+            ['an ID that is not an ObjectId', { ids: ['0123456789abcdef01234567', 'd'] }, false],
+            ['a whitespace ID', { ids: [' '] }, false],
             ['no IDs', {}, false],
             ['an empty list', { ids: [] }, false],
             ['IDs under another key', { other: ['d'] }, false],

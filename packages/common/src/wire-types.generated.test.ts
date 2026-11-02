@@ -4653,6 +4653,10 @@ interface Checks {
         W.AppRepoFileQuery,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoFileQuerySchema>
     >;
+    AppRepoTreeQuery: Same<
+        W.AppRepoTreeQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoTreeQuerySchema>
+    >;
     AppVersionLaunchTargetArray: Same<
         W.AppVersionLaunchTargetArray,
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppVersionLaunchTargetArraySchema>
@@ -9063,6 +9067,10 @@ interface Checks {
         W.ApiComponentTypes['AppRepoFileQuery'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoFileQuerySchema>
     >;
+    'component:AppRepoTreeQuery': Same<
+        W.ApiComponentTypes['AppRepoTreeQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoTreeQuerySchema>
+    >;
     'component:AppRepoDocumentCommit': Same<
         W.ApiComponentTypes['AppRepoDocumentCommit'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoDocumentCommitSchema>
@@ -11146,6 +11154,7 @@ const checks: Checks = {
     Extract_AppVersionGitRefType_branch_tag_commit: true,
     AppPackageScopeWire: true,
     AppRepoFileQuery: true,
+    AppRepoTreeQuery: true,
     AppVersionLaunchTargetArray: true,
     AppVersionRecordArray: true,
     AppToolCollectionArray: true,
@@ -12250,6 +12259,7 @@ const checks: Checks = {
     'component:AppRepoBranch': true,
     'component:CreateAppRepoBranchRequest': true,
     'component:AppRepoFileQuery': true,
+    'component:AppRepoTreeQuery': true,
     'component:AppRepoDocumentCommit': true,
     'component:AppVersionGitSource': true,
     'component:AppGithubConfiguration': true,
@@ -12452,6 +12462,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2592);
+        expect(Object.keys(checks)).toHaveLength(2594);
     });
 });
