@@ -48,7 +48,6 @@ export const EXTERNALS = [
     'debounce',
     'fast-xml-parser',
     // verteisa deps
-    '@llumiverse/common',
     '@vertesia/client',
     '@vertesia/common',
     '@vertesia/fusion-ux',
@@ -87,6 +86,8 @@ export const EXTERNALS = [
 // Only safe for packages with no cross-bundle module state — see the react-direction and
 // scroll-lock notes in EXTERNALS above. katex stays external: it is large, shared, and cacheable.
 const INLINED_DEPS = [
+    // Browser-safe model metadata has no cross-bundle context or mutable shared state.
+    '@llumiverse/common',
     'lucide-react',
     '@radix-ui/react-checkbox',
     '@radix-ui/react-collapsible',
