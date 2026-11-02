@@ -44,6 +44,179 @@
     "additionalProperties": false,
     "description": "Selected model and requested serving tier for run budget admission."
   },
+  "DashboardPathParams": {
+    "type": "object",
+    "properties": {
+      "storeId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The data store ID, as 24 hexadecimal characters."
+      },
+      "dashboardId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The dashboard ID, as 24 hexadecimal characters."
+      },
+      "versionId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The dashboard version ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "DataStoreImportPathParams": {
+    "type": "object",
+    "properties": {
+      "importId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The import job ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "DataStoreVersionPathParams": {
+    "type": "object",
+    "properties": {
+      "versionId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The data store version ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ContentObjectExportPathParams": {
+    "type": "object",
+    "properties": {
+      "exportId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The content object export ID, as 24 hexadecimal characters."
+      },
+      "role": {
+        "type": "string",
+        "enum": [
+          "data",
+          "manifest"
+        ],
+        "description": "The export file: its data or its manifest."
+      }
+    }
+  },
+  "ProcessTestRunPathParams": {
+    "type": "object",
+    "properties": {
+      "runId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process test run ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ProcessPathParams": {
+    "type": "object",
+    "properties": {
+      "processId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process definition ID, as 24 hexadecimal characters."
+      },
+      "runId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process test run ID, as 24 hexadecimal characters."
+      },
+      "suiteId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process test suite ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "TaskPathParams": {
+    "type": "object",
+    "properties": {
+      "taskId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The task ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "AgentRunPathParams": {
+    "type": "object",
+    "properties": {
+      "agentRunId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The agent run ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "AppVersionPathParams": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The app version ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "AppInstallationPathParams": {
+    "type": "object",
+    "properties": {
+      "installId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The app installation ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "DelegationGrantPathParams": {
+    "type": "object",
+    "properties": {
+      "grantId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The delegation grant ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "OAuthProviderPathParams": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The OAuth provider ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ProjectAppCapabilityPathParams": {
+    "type": "object",
+    "properties": {
+      "processId": {
+        "type": "string",
+        "pattern": "^app(:|$)",
+        "description": "The app process, as `app:<app name>:<local id>`."
+      },
+      "templateId": {
+        "type": "string",
+        "pattern": "^app(:|$)",
+        "description": "The app rendering template, as `app:<app name>:<local id>`."
+      },
+      "typeId": {
+        "type": "string",
+        "pattern": "^app(:|$)",
+        "description": "The app content type, as `app:<app name>:<local id>`."
+      },
+      "viewId": {
+        "type": "string",
+        "pattern": "^app:[A-Za-z0-9][A-Za-z0-9._@-]*:[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "description": "The app View, as `app:<app name>:<local id>`."
+      }
+    }
+  },
   "CreateDelegationGrantPayload": {
     "type": "object",
     "properties": {

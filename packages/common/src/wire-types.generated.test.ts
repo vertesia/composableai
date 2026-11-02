@@ -4765,6 +4765,58 @@ interface Checks {
         W.BinaryFileResponse,
         z.infer<typeof import('./api-schemas/app-runtime.js').BinaryFileResponseSchema>
     >;
+    DashboardPathParams: Same<
+        W.DashboardPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').DashboardPathParamsSchema>
+    >;
+    DataStoreImportPathParams: Same<
+        W.DataStoreImportPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').DataStoreImportPathParamsSchema>
+    >;
+    DataStoreVersionPathParams: Same<
+        W.DataStoreVersionPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').DataStoreVersionPathParamsSchema>
+    >;
+    ContentObjectExportPathParams: Same<
+        W.ContentObjectExportPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentObjectExportPathParamsSchema>
+    >;
+    ProcessTestRunPathParams: Same<
+        W.ProcessTestRunPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProcessTestRunPathParamsSchema>
+    >;
+    ProcessPathParams: Same<
+        W.ProcessPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProcessPathParamsSchema>
+    >;
+    TaskPathParams: Same<
+        W.TaskPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').TaskPathParamsSchema>
+    >;
+    AgentRunPathParams: Same<
+        W.AgentRunPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').AgentRunPathParamsSchema>
+    >;
+    AppVersionPathParams: Same<
+        W.AppVersionPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').AppVersionPathParamsSchema>
+    >;
+    AppInstallationPathParams: Same<
+        W.AppInstallationPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').AppInstallationPathParamsSchema>
+    >;
+    DelegationGrantPathParams: Same<
+        W.DelegationGrantPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').DelegationGrantPathParamsSchema>
+    >;
+    OAuthProviderPathParams: Same<
+        W.OAuthProviderPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').OAuthProviderPathParamsSchema>
+    >;
+    ProjectAppCapabilityPathParams: Same<
+        W.ProjectAppCapabilityPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
+    >;
     'component:Account': Same<
         W.ApiComponentTypes['Account'],
         z.infer<typeof import('./api-schemas/account.js').AccountSchema>
@@ -9747,6 +9799,58 @@ interface Checks {
         W.ApiComponentTypes['RunBudgetCapabilityQuery'],
         z.infer<typeof import('./api-schemas/run-budget.js').RunBudgetCapabilityQuerySchema>
     >;
+    'component:DashboardPathParams': Same<
+        W.ApiComponentTypes['DashboardPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').DashboardPathParamsSchema>
+    >;
+    'component:DataStoreImportPathParams': Same<
+        W.ApiComponentTypes['DataStoreImportPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').DataStoreImportPathParamsSchema>
+    >;
+    'component:DataStoreVersionPathParams': Same<
+        W.ApiComponentTypes['DataStoreVersionPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').DataStoreVersionPathParamsSchema>
+    >;
+    'component:ContentObjectExportPathParams': Same<
+        W.ApiComponentTypes['ContentObjectExportPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ContentObjectExportPathParamsSchema>
+    >;
+    'component:ProcessTestRunPathParams': Same<
+        W.ApiComponentTypes['ProcessTestRunPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProcessTestRunPathParamsSchema>
+    >;
+    'component:ProcessPathParams': Same<
+        W.ApiComponentTypes['ProcessPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProcessPathParamsSchema>
+    >;
+    'component:TaskPathParams': Same<
+        W.ApiComponentTypes['TaskPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').TaskPathParamsSchema>
+    >;
+    'component:AgentRunPathParams': Same<
+        W.ApiComponentTypes['AgentRunPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').AgentRunPathParamsSchema>
+    >;
+    'component:AppVersionPathParams': Same<
+        W.ApiComponentTypes['AppVersionPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').AppVersionPathParamsSchema>
+    >;
+    'component:AppInstallationPathParams': Same<
+        W.ApiComponentTypes['AppInstallationPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').AppInstallationPathParamsSchema>
+    >;
+    'component:DelegationGrantPathParams': Same<
+        W.ApiComponentTypes['DelegationGrantPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').DelegationGrantPathParamsSchema>
+    >;
+    'component:OAuthProviderPathParams': Same<
+        W.ApiComponentTypes['OAuthProviderPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').OAuthProviderPathParamsSchema>
+    >;
+    'component:ProjectAppCapabilityPathParams': Same<
+        W.ApiComponentTypes['ProjectAppCapabilityPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
+    >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
 }
@@ -11070,6 +11174,19 @@ const checks: Checks = {
     AppInstallationWithManifestArray: true,
     AppInstallationListEntryArray: true,
     BinaryFileResponse: true,
+    DashboardPathParams: true,
+    DataStoreImportPathParams: true,
+    DataStoreVersionPathParams: true,
+    ContentObjectExportPathParams: true,
+    ProcessTestRunPathParams: true,
+    ProcessPathParams: true,
+    TaskPathParams: true,
+    AgentRunPathParams: true,
+    AppVersionPathParams: true,
+    AppInstallationPathParams: true,
+    DelegationGrantPathParams: true,
+    OAuthProviderPathParams: true,
+    ProjectAppCapabilityPathParams: true,
     'component:Account': true,
     'component:UpdateAccountPayload': true,
     'component:StripeBillingStatusResponse': true,
@@ -12317,11 +12434,24 @@ const checks: Checks = {
     'component:DelegationGrantArray': true,
     'component:RunBudgetCapability': true,
     'component:RunBudgetCapabilityQuery': true,
+    'component:DashboardPathParams': true,
+    'component:DataStoreImportPathParams': true,
+    'component:DataStoreVersionPathParams': true,
+    'component:ContentObjectExportPathParams': true,
+    'component:ProcessTestRunPathParams': true,
+    'component:ProcessPathParams': true,
+    'component:TaskPathParams': true,
+    'component:AgentRunPathParams': true,
+    'component:AppVersionPathParams': true,
+    'component:AppInstallationPathParams': true,
+    'component:DelegationGrantPathParams': true,
+    'component:OAuthProviderPathParams': true,
+    'component:ProjectAppCapabilityPathParams': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2566);
+        expect(Object.keys(checks)).toHaveLength(2592);
     });
 });

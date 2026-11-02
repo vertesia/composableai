@@ -10991,6 +10991,53 @@ export type AppInstallationArray = AppInstallation[];
 export type AppInstallationWithManifestArray = AppInstallationWithManifest[];
 export type AppInstallationListEntryArray = AppInstallationListEntry[];
 export type BinaryFileResponse = string;
+export type DashboardPathParams = {
+    storeId?: string | undefined;
+    dashboardId?: string | undefined;
+    versionId?: string | undefined;
+};
+export type DataStoreImportPathParams = {
+    importId?: string | undefined;
+};
+export type DataStoreVersionPathParams = {
+    versionId?: string | undefined;
+};
+export type ContentObjectExportPathParams = {
+    exportId?: string | undefined;
+    role?: 'data' | 'manifest' | undefined;
+};
+export type ProcessTestRunPathParams = {
+    runId?: string | undefined;
+};
+export type ProcessPathParams = {
+    processId?: string | undefined;
+    runId?: string | undefined;
+    suiteId?: string | undefined;
+};
+export type TaskPathParams = {
+    taskId?: string | undefined;
+};
+export type AgentRunPathParams = {
+    agentRunId?: string | undefined;
+};
+export type AppVersionPathParams = {
+    id?: string | undefined;
+};
+export type AppInstallationPathParams = {
+    installId?: string | undefined;
+};
+export type DelegationGrantPathParams = {
+    grantId?: string | undefined;
+};
+export type OAuthProviderPathParams = {
+    id?: string | undefined;
+};
+export type ProjectAppCapabilityPathParams = {
+    processId?: string | undefined;
+    templateId?: string | undefined;
+    typeId?: string | undefined;
+    viewId?: string | undefined;
+};
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
     Account: AccountFromSchema;
@@ -12260,4 +12307,17 @@ export interface ApiComponentTypes {
     DelegationGrantArray: DelegationGrantArray;
     RunBudgetCapability: RunBudgetCapability;
     RunBudgetCapabilityQuery: RunBudgetCapabilityQuery;
+    DashboardPathParams: DashboardPathParams;
+    DataStoreImportPathParams: DataStoreImportPathParams;
+    DataStoreVersionPathParams: DataStoreVersionPathParams;
+    ContentObjectExportPathParams: ContentObjectExportPathParams;
+    ProcessTestRunPathParams: ProcessTestRunPathParams;
+    ProcessPathParams: ProcessPathParams;
+    TaskPathParams: TaskPathParams;
+    AgentRunPathParams: AgentRunPathParams;
+    AppVersionPathParams: AppVersionPathParams;
+    AppInstallationPathParams: AppInstallationPathParams;
+    DelegationGrantPathParams: DelegationGrantPathParams;
+    OAuthProviderPathParams: OAuthProviderPathParams;
+    ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
 }

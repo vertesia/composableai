@@ -691,6 +691,7 @@ import {
     UpdateOAuthClientPayloadSchema,
     UpdateOAuthClientStatusPayloadSchema,
 } from './oauth-server.js';
+import * as PathParameterSchemas from './path-parameters.js';
 import * as ProcessSchemas from './process.js';
 import {
     CountResultSchema,
@@ -2482,8 +2483,24 @@ const RUN_BUDGET_SCHEMAS = {
     RunBudgetCapability: RunBudgetSchemas.RunBudgetCapabilitySchema,
     RunBudgetCapabilityQuery: RunBudgetSchemas.RunBudgetCapabilityQuerySchema,
 };
+const PATH_PARAMETER_SCHEMAS = {
+    DashboardPathParams: PathParameterSchemas.DashboardPathParamsSchema,
+    DataStoreImportPathParams: PathParameterSchemas.DataStoreImportPathParamsSchema,
+    DataStoreVersionPathParams: PathParameterSchemas.DataStoreVersionPathParamsSchema,
+    ContentObjectExportPathParams: PathParameterSchemas.ContentObjectExportPathParamsSchema,
+    ProcessTestRunPathParams: PathParameterSchemas.ProcessTestRunPathParamsSchema,
+    ProcessPathParams: PathParameterSchemas.ProcessPathParamsSchema,
+    TaskPathParams: PathParameterSchemas.TaskPathParamsSchema,
+    AgentRunPathParams: PathParameterSchemas.AgentRunPathParamsSchema,
+    AppVersionPathParams: PathParameterSchemas.AppVersionPathParamsSchema,
+    AppInstallationPathParams: PathParameterSchemas.AppInstallationPathParamsSchema,
+    DelegationGrantPathParams: PathParameterSchemas.DelegationGrantPathParamsSchema,
+    OAuthProviderPathParams: PathParameterSchemas.OAuthProviderPathParamsSchema,
+    ProjectAppCapabilityPathParams: PathParameterSchemas.ProjectAppCapabilityPathParamsSchema,
+};
 const API_SCHEMA_GROUPS = [
     RUN_BUDGET_SCHEMAS,
+    PATH_PARAMETER_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
