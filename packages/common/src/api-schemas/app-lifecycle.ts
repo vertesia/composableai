@@ -61,6 +61,8 @@ export const UpdateAppInstallationToolPermissionsPayloadSchema = z
     })
     .meta({
         id: 'UpdateAppInstallationToolPermissionsPayload',
+        // An empty body changes nothing, so the contract refuses it rather than accept it as a no-op write.
+        minProperties: 1,
         description:
             'Updates the tool allowlist and the tools requiring approval of an app installation in one atomic write.',
     });
