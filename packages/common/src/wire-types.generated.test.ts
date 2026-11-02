@@ -1968,10 +1968,6 @@ interface Checks {
         W.NotificationCounts,
         z.infer<typeof import('./api-schemas/notifications.js').NotificationCountsSchema>
     >;
-    MarkNotificationsSeenPayload: Same<
-        W.MarkNotificationsSeenPayload,
-        z.infer<typeof import('./api-schemas/notifications.js').MarkNotificationsSeenPayloadSchema>
-    >;
     MarkNotificationsReadPayload: Same<
         W.MarkNotificationsReadPayload,
         z.infer<typeof import('./api-schemas/notifications.js').MarkNotificationsReadPayloadSchema>
@@ -6436,10 +6432,6 @@ interface Checks {
         W.ApiComponentTypes['NotificationCounts'],
         z.infer<typeof import('./api-schemas/notifications.js').NotificationCountsSchema>
     >;
-    'component:MarkNotificationsSeenPayload': Same<
-        W.ApiComponentTypes['MarkNotificationsSeenPayload'],
-        z.infer<typeof import('./api-schemas/notifications.js').MarkNotificationsSeenPayloadSchema>
-    >;
     'component:MarkNotificationsReadPayload': Same<
         W.ApiComponentTypes['MarkNotificationsReadPayload'],
         z.infer<typeof import('./api-schemas/notifications.js').MarkNotificationsReadPayloadSchema>
@@ -10596,7 +10588,6 @@ const checks: Checks = {
     ListNotificationsQuery: true,
     ListNotificationsResponse: true,
     NotificationCounts: true,
-    MarkNotificationsSeenPayload: true,
     MarkNotificationsReadPayload: true,
     MarkAllNotificationsReadPayload: true,
     ArchiveNotificationsPayload: true,
@@ -11791,7 +11782,6 @@ const checks: Checks = {
     'component:ListNotificationsQuery': true,
     'component:ListNotificationsResponse': true,
     'component:NotificationCounts': true,
-    'component:MarkNotificationsSeenPayload': true,
     'component:MarkNotificationsReadPayload': true,
     'component:MarkAllNotificationsReadPayload': true,
     'component:ArchiveNotificationsPayload': true,
@@ -12699,6 +12689,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2642);
+        expect(Object.keys(checks)).toHaveLength(2640);
     });
 });

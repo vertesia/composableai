@@ -23,8 +23,6 @@ export type ListNotificationsResponse = Wire.ListNotificationsResponse;
 
 export type NotificationCounts = Wire.NotificationCounts;
 
-export type MarkNotificationsSeenPayload = Wire.MarkNotificationsSeenPayload;
-
 export type MarkNotificationsReadPayload = Wire.MarkNotificationsReadPayload;
 
 export type MarkAllNotificationsReadPayload = Wire.MarkAllNotificationsReadPayload;

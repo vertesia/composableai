@@ -4853,7 +4853,6 @@ export type Notification = {
     payload_version: number;
     occurred_at: string;
     created_at: string;
-    seen_at?: string | undefined;
     read_at?: string | undefined;
     archived_at?: string | undefined;
     resolved_at?: string | undefined;
@@ -4871,11 +4870,8 @@ export type ListNotificationsResponse = {
     read_all_before: string;
 };
 export type NotificationCounts = {
-    unseen: number;
+    unread: number;
     needs_action: number;
-};
-export type MarkNotificationsSeenPayload = {
-    ids: string[];
 };
 export type MarkNotificationsReadPayload = {
     ids?: string[] | undefined;
@@ -11583,7 +11579,6 @@ export interface ApiComponentTypes {
     ListNotificationsQuery: ListNotificationsQuery;
     ListNotificationsResponse: ListNotificationsResponse;
     NotificationCounts: NotificationCounts;
-    MarkNotificationsSeenPayload: MarkNotificationsSeenPayload;
     MarkNotificationsReadPayload: MarkNotificationsReadPayload;
     MarkAllNotificationsReadPayload: MarkAllNotificationsReadPayload;
     ArchiveNotificationsPayload: ArchiveNotificationsPayload;

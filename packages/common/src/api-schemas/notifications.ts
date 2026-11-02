@@ -65,7 +65,6 @@ export const NotificationSchema = z
         payload_version: z.number().int(),
         occurred_at: z.string().meta({ format: 'date-time' }),
         created_at: z.string().meta({ format: 'date-time' }),
-        seen_at: z.string().meta({ format: 'date-time' }).optional(),
         read_at: z.string().meta({ format: 'date-time' }).optional(),
         archived_at: z.string().meta({ format: 'date-time' }).optional(),
         resolved_at: z
@@ -103,18 +102,12 @@ export const ListNotificationsResponseSchema = z
 
 export const NotificationCountsSchema = z
     .strictObject({
-        unseen: z.number().int().meta({
-            description: 'Inbox notifications not seen, archived or resolved. Counted up to 100.',
+        unread: z.number().int().meta({
+            description: 'Inbox notifications not read, archived or resolved. Counted up to 100.',
         }),
         needs_action: z.number().int().meta({ description: 'Open tasks assigned to the user. Counted up to 100.' }),
     })
     .meta({ id: 'NotificationCounts' });
-
-export const MarkNotificationsSeenPayloadSchema = z
-    .strictObject({
-        ids: z.array(z.string()).min(1).max(200),
-    })
-    .meta({ id: 'MarkNotificationsSeenPayload' });
 
 export const NotificationOccurrenceAckSchema = NotificationRefSchema.extend({
     as_of: z

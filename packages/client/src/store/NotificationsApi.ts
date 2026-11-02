@@ -5,7 +5,6 @@ import type {
     ListNotificationsResponse,
     MarkAllNotificationsReadPayload,
     MarkNotificationsReadPayload,
-    MarkNotificationsSeenPayload,
     Notification,
     NotificationCounts,
     NotificationPreferences,
@@ -48,11 +47,6 @@ export class NotificationsApi extends ApiTopic {
 
     counts(): Promise<NotificationCounts> {
         return this.get('/counts');
-    }
-
-    /** Marks notifications displayed in an open inbox list as seen, which clears the badge. */
-    markSeen(payload: MarkNotificationsSeenPayload): Promise<NotificationUpdateResult> {
-        return this.post('/seen', { payload });
     }
 
     /**

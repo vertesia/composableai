@@ -64,7 +64,7 @@ export function registerNotificationsCommand(program: Command) {
         .action(async (id: string) => print(await (await getClient(program)).store.notifications.retrieve(id)));
     command
         .command('counts')
-        .description('Show the unseen and needs-action counts')
+        .description('Show the unread and needs-action counts')
         .action(async () => print(await (await getClient(program)).store.notifications.counts()));
     command
         .command('read <ids...>')

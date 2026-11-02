@@ -28545,10 +28545,6 @@
         "type": "string",
         "format": "date-time"
       },
-      "seen_at": {
-        "type": "string",
-        "format": "date-time"
-      },
       "read_at": {
         "type": "string",
         "format": "date-time"
@@ -28631,11 +28627,11 @@
   "NotificationCounts": {
     "type": "object",
     "properties": {
-      "unseen": {
+      "unread": {
         "type": "integer",
         "minimum": -9007199254740991,
         "maximum": 9007199254740991,
-        "description": "Inbox notifications not seen, archived or resolved. Counted up to 100."
+        "description": "Inbox notifications not read, archived or resolved. Counted up to 100."
       },
       "needs_action": {
         "type": "integer",
@@ -28645,25 +28641,8 @@
       }
     },
     "required": [
-      "unseen",
+      "unread",
       "needs_action"
-    ],
-    "additionalProperties": false
-  },
-  "MarkNotificationsSeenPayload": {
-    "type": "object",
-    "properties": {
-      "ids": {
-        "minItems": 1,
-        "maxItems": 200,
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      }
-    },
-    "required": [
-      "ids"
     ],
     "additionalProperties": false
   },
