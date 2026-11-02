@@ -67,6 +67,9 @@ export const AUDIT_AGGREGATION_DIMENSIONS = [
     'model',
 ] as const;
 
+/** Maximum number of queries one audit aggregation batch request may carry. */
+export const AUDIT_AGGREGATION_BATCH_MAX_QUERIES = 12;
+
 export type AuditAggregationDimension = (typeof AUDIT_AGGREGATION_DIMENSIONS)[number];
 export type AuditAggregationResolution = Wire.AuditAggregationResolution;
 export type AuditAggregationDetailField = Wire.AuditAggregationDetailField;
@@ -90,6 +93,11 @@ export type AuditAggregationQuery = Wire.AuditAggregationQuery;
 export type AuditAggregationRow = Wire.AuditAggregationRow;
 
 export type AuditAggregationResponse = Wire.AuditAggregationResponse;
+
+/** Several audit aggregation queries answered by one request. */
+export type AuditAggregationBatchQuery = Wire.AuditAggregationBatchQuery;
+
+export type AuditAggregationBatchResponse = Wire.AuditAggregationBatchResponse;
 
 export type AuditAdoptionFilter = Wire.AuditAdoptionFilter;
 export type AuditAdoptionQuery = Wire.AuditAdoptionQuery;
