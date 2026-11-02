@@ -33,6 +33,8 @@ minimumReleaseAgeExclude:
   # release and lands within the 3-day cooldown window, so version-scope an
   # exception to receive the fix now.
   - hono@4.12.34
+  # Renovate security update: qs@6.16.1
+  - qs@6.16.1
 overrides:
   # ============================
   # Special Overrides
