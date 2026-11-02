@@ -1,3 +1,4 @@
+import type * as Wire from '../wire-types.generated.js';
 export type TsPropType =
     | 'string'
     | 'number'
@@ -57,3 +58,7 @@ export interface ActivityDefinition {
 export interface ActivityCatalog {
     activities: ActivityDefinition[];
 }
+
+/** Packaged workflows supported by event subscriptions. */
+export type SubscriptionWorkflowDefinition = Wire.SubscriptionWorkflowDefinition;
+export type SubscriptionWorkflowCatalog = Wire.SubscriptionWorkflowCatalog;

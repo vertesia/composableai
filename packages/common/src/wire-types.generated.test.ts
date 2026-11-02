@@ -2267,6 +2267,14 @@ interface Checks {
         W.AppEventDeliveryTargetInput,
         z.infer<typeof import('./api-schemas/events.js').AppEventDeliveryTargetInputSchema>
     >;
+    IntakeMediaAnalysisOverride: Same<
+        W.IntakeMediaAnalysisOverride,
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverrideSchema>
+    >;
+    IntakeMediaAnalysisOverrides: Same<
+        W.IntakeMediaAnalysisOverrides,
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverridesSchema>
+    >;
     EventDeliveryIntentSummary: Same<
         W.EventDeliveryIntentSummary,
         z.infer<typeof import('./api-schemas/events.js').EventDeliveryIntentSummarySchema>
@@ -2689,6 +2697,14 @@ interface Checks {
     DeleteSecretResponse: Same<
         W.DeleteSecretResponse,
         z.infer<typeof import('./api-schemas/secrets.js').DeleteSecretResponseSchema>
+    >;
+    SubscriptionWorkflowDefinition: Same<
+        W.SubscriptionWorkflowDefinition,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowDefinitionSchema>
+    >;
+    SubscriptionWorkflowCatalog: Same<
+        W.SubscriptionWorkflowCatalog,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowCatalogSchema>
     >;
     AgentToolApprovalMode: Same<
         W.AgentToolApprovalMode,
@@ -7419,6 +7435,14 @@ interface Checks {
         W.ApiComponentTypes['ObjectSearchResponse'],
         z.infer<typeof import('./api-schemas/content.js').ObjectSearchResponseSchema>
     >;
+    'component:IntakeMediaAnalysisOverride': Same<
+        W.ApiComponentTypes['IntakeMediaAnalysisOverride'],
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverrideSchema>
+    >;
+    'component:IntakeMediaAnalysisOverrides': Same<
+        W.ApiComponentTypes['IntakeMediaAnalysisOverrides'],
+        z.infer<typeof import('./api-schemas/events.js').IntakeMediaAnalysisOverridesSchema>
+    >;
     'component:EventPriority': Same<
         W.ApiComponentTypes['EventPriority'],
         z.infer<typeof import('./api-schemas/events.js').EventPrioritySchema>
@@ -8242,6 +8266,14 @@ interface Checks {
     'component:ActivityCatalog': Same<
         W.ApiComponentTypes['ActivityCatalog'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').ActivityCatalogSchema>
+    >;
+    'component:SubscriptionWorkflowDefinition': Same<
+        W.ApiComponentTypes['SubscriptionWorkflowDefinition'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowDefinitionSchema>
+    >;
+    'component:SubscriptionWorkflowCatalog': Same<
+        W.ApiComponentTypes['SubscriptionWorkflowCatalog'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowCatalogSchema>
     >;
     'component:WorkflowInteractionVars': Same<
         W.ApiComponentTypes['WorkflowInteractionVars'],
@@ -10343,6 +10375,8 @@ const checks: Checks = {
     WorkflowEventDeliveryTargetInput: true,
     WebhookEventDeliveryTargetInput: true,
     AppEventDeliveryTargetInput: true,
+    IntakeMediaAnalysisOverride: true,
+    IntakeMediaAnalysisOverrides: true,
     EventDeliveryIntentSummary: true,
     EventDeliverySummary: true,
     EventDeliverySortField: true,
@@ -10457,6 +10491,8 @@ const checks: Checks = {
     CreateSecretRequest: true,
     UpdateSecretRequest: true,
     DeleteSecretResponse: true,
+    SubscriptionWorkflowDefinition: true,
+    SubscriptionWorkflowCatalog: true,
     AgentToolApprovalMode: true,
     ToolApprovalGrant: true,
     PendingToolApprovalResults: true,
@@ -11703,6 +11739,8 @@ const checks: Checks = {
     'component:ComputeObjectFacetPayload': true,
     'component:ComplexSearchPayload': true,
     'component:ObjectSearchResponse': true,
+    'component:IntakeMediaAnalysisOverride': true,
+    'component:IntakeMediaAnalysisOverrides': true,
     'component:EventPriority': true,
     'component:WorkflowRuleInputType': true,
     'component:WorkflowRuleItem': true,
@@ -11909,6 +11947,8 @@ const checks: Checks = {
     'component:ActivityPropertyDefinition': true,
     'component:ActivityDefinition': true,
     'component:ActivityCatalog': true,
+    'component:SubscriptionWorkflowDefinition': true,
+    'component:SubscriptionWorkflowCatalog': true,
     'component:WorkflowInteractionVars': true,
     'component:ListWorkflowInteractionsResponse': true,
     'component:RestartAgentRunPayload': true,
@@ -12282,6 +12322,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2558);
+        expect(Object.keys(checks)).toHaveLength(2566);
     });
 });
