@@ -33,6 +33,17 @@ const rules: Array<[ApiComponentName, string, Array<[string, unknown, boolean]>]
         ],
     ],
     [
+        'DashboardBulkIdsPayload',
+        'needs at least one dashboard ID',
+        [
+            ['one ID', { ids: ['d'] }, true],
+            ['a whitespace ID', { ids: [' '] }, true],
+            ['no IDs', {}, false],
+            ['an empty list', { ids: [] }, false],
+            ['IDs under another key', { other: ['d'] }, false],
+        ],
+    ],
+    [
         'CreateContentObjectPayload',
         'needs a name of its own or one to derive from the content',
         [

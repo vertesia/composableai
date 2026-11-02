@@ -32071,7 +32071,29 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^\\[\\]>]+$",
+                "not": {
+                  "const": "total"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is an Elasticsearch aggregation name: non-empty, without `[`, `]` or `>`, and not `total`."
   },
   "ComplexSearchPayload": {
     "type": "object",
@@ -32119,7 +32141,29 @@
         "$ref": "#/components/schemas/ComplexSearchQuery"
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^\\[\\]>]+$",
+                "not": {
+                  "const": "total"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is an Elasticsearch aggregation name: non-empty, without `[`, `]` or `>`, and not `total`."
   },
   "ObjectSearchResponse": {
     "type": "object",
@@ -42170,6 +42214,27 @@
       "failed"
     ],
     "additionalProperties": false
+  },
+  "DashboardBulkIdsPayload": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "if": {},
+    "then": {
+      "required": [
+        "ids"
+      ],
+      "properties": {
+        "ids": {
+          "minItems": 1
+        }
+      }
+    },
+    "description": "The dashboards to act on, as an `ids` list of at least one dashboard ID."
   },
   "DashboardVersionItemArray": {
     "type": "array",

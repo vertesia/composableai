@@ -2896,6 +2896,9 @@ export type DashboardArchiveResult = {
     id: string;
     status: DashboardStatus;
 };
+export type DashboardBulkIdsPayload = {
+    [k: string]: string[];
+};
 export type DashboardBulkArchiveResult = {
     archived: number;
     failed: number;
@@ -11415,6 +11418,7 @@ export interface ApiComponentTypes {
     CreateDashboardSnapshotPayload: CreateDashboardSnapshotPayload;
     DashboardBulkArchiveResult: DashboardBulkArchiveResult;
     StringArrayMap: StringArrayMap;
+    DashboardBulkIdsPayload: DashboardBulkIdsPayload;
     DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSource;
     DashboardVersionItemArray: DashboardVersionItemArray;
     DashboardItem: DashboardItem;

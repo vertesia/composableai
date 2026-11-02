@@ -15,6 +15,8 @@ import {
     mongoFilterKeysRule,
     nullableStringSchema,
     PageCountSchema,
+    SEARCH_FACETS_DESCRIPTION,
+    searchFacetsRule,
 } from './schema-primitives.js';
 import { ColumnLayoutSchema, ContentObjectTypeSchema, EmbeddingTypeEnabledMapSchema } from './store.js';
 
@@ -985,7 +987,7 @@ export const ComputeObjectFacetPayloadSchema = z
         facets: z.array(FacetSpecSchema),
         query: ComplexSearchQuerySchema.optional(),
     })
-    .meta({ id: 'ComputeObjectFacetPayload' });
+    .meta({ id: 'ComputeObjectFacetPayload', description: SEARCH_FACETS_DESCRIPTION, ...searchFacetsRule });
 
 export const ContentObjectItemApiResponseSchema = z
     .strictObject({
@@ -1071,7 +1073,7 @@ export const ComplexSearchPayloadSchema = z
             .optional(),
         query: ComplexSearchQuerySchema.optional(),
     })
-    .meta({ id: 'ComplexSearchPayload' });
+    .meta({ id: 'ComplexSearchPayload', description: SEARCH_FACETS_DESCRIPTION, ...searchFacetsRule });
 
 export const ContentObjectItemApiResponseArraySchema = z
     .array(ContentObjectItemApiResponseSchema)

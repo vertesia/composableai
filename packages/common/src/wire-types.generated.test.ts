@@ -1200,6 +1200,10 @@ interface Checks {
         W.DashboardArchiveResult,
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardArchiveResultSchema>
     >;
+    DashboardBulkIdsPayload: Same<
+        W.DashboardBulkIdsPayload,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardBulkIdsPayloadSchema>
+    >;
     DashboardBulkArchiveResult: Same<
         W.DashboardBulkArchiveResult,
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardBulkArchiveResultSchema>
@@ -6375,6 +6379,10 @@ interface Checks {
         W.ApiComponentTypes['StringArrayMap'],
         z.infer<typeof import('./api-schemas/dashboard.js').StringArrayMapSchema>
     >;
+    'component:DashboardBulkIdsPayload': Same<
+        W.ApiComponentTypes['DashboardBulkIdsPayload'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardBulkIdsPayloadSchema>
+    >;
     'component:DashboardStoreElasticsearchDataSource': Same<
         W.ApiComponentTypes['DashboardStoreElasticsearchDataSource'],
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardStoreElasticsearchDataSourceSchema>
@@ -10080,6 +10088,7 @@ const checks: Checks = {
     DataStoreTableDetail: true,
     DataStoreTableDropResult: true,
     DashboardArchiveResult: true,
+    DashboardBulkIdsPayload: true,
     DashboardBulkArchiveResult: true,
     DashboardBulkDeleteResult: true,
     DashboardVersioningStatusResponse: true,
@@ -11466,6 +11475,7 @@ const checks: Checks = {
     'component:CreateDashboardSnapshotPayload': true,
     'component:DashboardBulkArchiveResult': true,
     'component:StringArrayMap': true,
+    'component:DashboardBulkIdsPayload': true,
     'component:DashboardStoreElasticsearchDataSource': true,
     'component:DashboardVersionItemArray': true,
     'component:DashboardItem': true,
@@ -12312,6 +12322,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2564);
+        expect(Object.keys(checks)).toHaveLength(2566);
     });
 });

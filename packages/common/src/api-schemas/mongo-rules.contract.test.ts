@@ -36,9 +36,31 @@ describe.each([
     });
 });
 
-// The ES-backed facets accept dotted names, so the shared FacetSpec does not carry the Mongo rule.
-it('leaves the dotted names of the content object facets alone', () => {
-    expect(valid('ComputeObjectFacetPayload', { facets: [{ name: 'type.name', field: 'type.name' }] })).toBe(true);
+// The facets of these payloads run as Elasticsearch aggregations, which accept dotted names but not `[`, `]` or `>`.
+describe.each(['ComputeObjectFacetPayload', 'ComplexSearchPayload'] as const)('%s facets', (component) => {
+    const facets = (name: string) => ({ facets: [{ name, field: 'type.name' }] });
+
+    it.each([
+        ['a dotted name', facets('type.name')],
+        ['a name starting with a dollar sign', facets('$type')],
+        ['white space', facets(' ')],
+    ])('accept %s', (_case, body) => {
+        expect(valid(component, body)).toBe(true);
+    });
+
+    it.each([
+        ['an empty name', facets('')],
+        ['a name with a bracket', facets('type[0]')],
+        ['a name with a closing bracket', facets('type]')],
+        ['a name with an angle bracket', facets('a>b')],
+        ['the reserved name', facets('total')],
+    ])('refuse %s', (_case, body) => {
+        expect(valid(component, body)).toBe(false);
+    });
+});
+
+it('leaves a search without facets alone', () => {
+    expect(valid('ComplexSearchPayload', {})).toBe(true);
 });
 
 describe.each([

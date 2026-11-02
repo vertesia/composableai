@@ -77,6 +77,23 @@ export const MONGO_FACETS_DESCRIPTION =
     '`total`. Each `field` is a dotted path of such names.';
 
 /**
+ * The facets of a payload whose endpoint runs them as Elasticsearch aggregations: each `name` becomes an aggregation
+ * name, which Elasticsearch refuses when empty or containing `[`, `]` or `>`, and is not `total`, which the response
+ * keeps for the match count. Spread into the payload's `.meta()`, like {@link mongoFacetsRule}.
+ */
+export const searchFacetsRule = conditional(
+    { required: ['facets'] },
+    {
+        properties: {
+            facets: { items: { properties: { name: { pattern: '^[^\\[\\]>]+$', not: { const: 'total' } } } } },
+        },
+    },
+);
+
+export const SEARCH_FACETS_DESCRIPTION =
+    'Each facet `name` is an Elasticsearch aggregation name: non-empty, without `[`, `]` or `>`, and not `total`.';
+
+/**
  * A caller's Mongo filter in the payload's `field`: its top-level keys are field paths, or `$and`, `$or` and `$nor`.
  * Spread into the payload's `.meta()`. The server checks the rest of the grammar: the operators a condition may use,
  * the nesting depth and the number of clauses.

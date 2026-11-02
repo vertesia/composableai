@@ -158,6 +158,19 @@ export const DashboardBulkArchiveResultSchema = z
 
 export const StringArrayMapSchema = z.object({}).catchall(z.array(z.string())).meta({ id: 'StringArrayMap' });
 
+/**
+ * The dashboards a bulk archive or delete acts on. It keeps the map shape of `StringArrayMap`, which the two routes
+ * used to name, so the generated clients keep their map argument; the `if`, which always holds, carries the rule.
+ */
+export const DashboardBulkIdsPayloadSchema = z
+    .object({})
+    .catchall(z.array(z.string()))
+    .meta({
+        id: 'DashboardBulkIdsPayload',
+        description: 'The dashboards to act on, as an `ids` list of at least one dashboard ID.',
+        ...conditional({}, { required: ['ids'], properties: { ids: { minItems: 1 } } }),
+    });
+
 export const DashboardStoreElasticsearchDataSourceSchema = z
     .strictObject({
         kind: z.literal('store_es_dsl'),
