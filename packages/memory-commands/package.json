@@ -18,7 +18,7 @@
     "devDependencies": {
         "@types/node": "^24.13.2",
         "@vertesia/tsconfig": "workspace:*",
-        "vitest": "^4.1.9"
+        "vitest": "^4.1.11"
     },
     "dependencies": {
         "@vertesia/memory": "workspace:*",
