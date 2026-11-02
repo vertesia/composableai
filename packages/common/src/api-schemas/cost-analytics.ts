@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { conditional, nonEmpty } from './schema-primitives.js';
 
 // Zod renders a union as `anyOf`, while the published contract uses JSON Schema's compact type
 // array. Runtime enforcement compiles the emitted JSON Schema with AJV, so the metadata is both the
@@ -127,7 +128,16 @@ export const CostRunPriceQuerySchema = z
             .meta({ description: "Scope: 'project' (default, current project) or 'org'" })
             .optional(),
     })
-    .meta({ id: 'CostRunPriceQuery' });
+    .meta({
+        id: 'CostRunPriceQuery',
+        description:
+            'Identifies the run to price by at least one of `run_id`, `agent_run_id`, `workflow_id` or ' +
+            '`workflow_run_id`. An empty identifier counts as absent.',
+        ...conditional(
+            { not: { anyOf: ['run_id', 'agent_run_id', 'workflow_id'].map(nonEmpty) } },
+            nonEmpty('workflow_run_id'),
+        ),
+    });
 
 export const CostModelPricesQuerySchema = z
     .object({

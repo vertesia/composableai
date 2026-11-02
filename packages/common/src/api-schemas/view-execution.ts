@@ -45,6 +45,10 @@ export const ViewQueryPlanningFailureCodeSchema = z
     .enum(['interaction_failed', 'invalid_output', 'invalid_query', 'low_confidence', 'timeout', 'unknown'])
     .meta({ id: 'ViewQueryPlanningFailureCode' });
 
+// The page window a View execution accepts: whole numbers, at most 200 rows from an offset of at most 50,000.
+const viewPageOffset = z.number().min(0).max(50_000).multipleOf(1);
+const viewPageLimit = z.number().min(1).max(200).multipleOf(1);
+
 export const ExecuteViewRequestSchema = z
     .strictObject({
         query: z.string().optional(),
@@ -55,8 +59,8 @@ export const ExecuteViewRequestSchema = z
         }).optional(),
         display: z.string().optional(),
         sort: z.string().optional(),
-        offset: z.number().optional(),
-        limit: z.number().optional(),
+        offset: viewPageOffset.optional(),
+        limit: viewPageLimit.optional(),
     })
     .meta({ id: 'ExecuteViewRequest' });
 
@@ -213,8 +217,8 @@ export const PreviewViewExperienceRequestSchema = z
         }).optional(),
         display: z.string().optional(),
         sort: z.string().optional(),
-        offset: z.number().optional(),
-        limit: z.number().optional(),
+        offset: viewPageOffset.optional(),
+        limit: viewPageLimit.optional(),
         configuration: ViewExperienceConfigurationSchema.meta({
             description: 'The unsaved View configuration to validate and execute.',
         }),
