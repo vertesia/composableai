@@ -319,7 +319,7 @@ export class DataApi extends ApiTopic {
      * Named snapshots are kept indefinitely (not subject to 30-day cleanup).
      *
      * @param id - Data store ID
-     * @param payload - Snapshot name and optional message
+     * @param payload - Snapshot name and message, both non-empty
      * @returns The created version/snapshot
      *
      * @example

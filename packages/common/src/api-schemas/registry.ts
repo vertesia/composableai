@@ -116,9 +116,11 @@ import {
     AppRepoCommitSchema,
     AppRepoCommitsSchema,
     AppRepoDocumentCommitSchema,
+    AppRepoFileQuerySchema,
     AppRepoRefSchema,
     AppRepoRefsSchema,
     AppRepoTreeEntrySchema,
+    AppRepoTreeQuerySchema,
     AppRepoTreeSchema,
     AppScaffoldModuleSchema,
     AppScaffoldProgressSchema,
@@ -140,6 +142,7 @@ import {
     AppVersionUrlsSchema,
     ContentObjectTypeRefSchema,
     ConversationActivityStateSchema,
+    CreateAppRepoBranchRequestSchema,
     CreateAppVersionLaunchRequestSchema,
     CreateAppVersionLaunchResponseSchema,
     DeleteAppVersionResponseSchema,
@@ -265,6 +268,7 @@ import {
     DashboardArchiveResultSchema,
     DashboardBulkArchiveResultSchema,
     DashboardBulkDeleteResultSchema,
+    DashboardBulkIdsPayloadSchema,
     DashboardDataSourceSchema,
     DashboardElasticsearchDslSchema,
     DashboardElasticsearchResultMappingSchema,
@@ -546,6 +550,7 @@ import {
     InteractionExecutionPayloadSchema,
     InteractionExecutionResultSchema,
     InteractionForkPayloadSchema,
+    InteractionListQuerySchema,
     InteractionNameArraySchema,
     InteractionNameSchema,
     InteractionPromptSegmentInputSchema,
@@ -689,6 +694,7 @@ import {
     UpdateOAuthClientPayloadSchema,
     UpdateOAuthClientStatusPayloadSchema,
 } from './oauth-server.js';
+import * as PathParameterSchemas from './path-parameters.js';
 import * as ProcessSchemas from './process.js';
 import {
     CountResultSchema,
@@ -1225,6 +1231,7 @@ const INTERACTION_SCHEMAS = {
     InteractionForkPayload: InteractionForkPayloadSchema,
     InteractionsExportPayload: InteractionsExportPayloadSchema,
     InteractionSearchQuery: InteractionSearchQuerySchema,
+    InteractionListQuery: InteractionListQuerySchema,
     ResolveInteractionQuery: ResolveInteractionQuerySchema,
     // The catalog — in-code interactions an app or the system provides, alongside stored ones.
     CatalogInteractionRef: CatalogInteractionRefSchema,
@@ -1496,6 +1503,7 @@ const DASHBOARD_SCHEMAS = {
     CreateDashboardSnapshotPayload: CreateDashboardSnapshotPayloadSchema,
     DashboardBulkArchiveResult: DashboardBulkArchiveResultSchema,
     StringArrayMap: StringArrayMapSchema,
+    DashboardBulkIdsPayload: DashboardBulkIdsPayloadSchema,
     DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSourceSchema,
     DashboardVersionItemArray: DashboardVersionItemArraySchema,
     DashboardItem: DashboardItemSchema,
@@ -2294,6 +2302,9 @@ const APP_LIFECYCLE_SCHEMAS = {
     DeleteAppVersionResponse: DeleteAppVersionResponseSchema,
     AppDeleteSummary: AppDeleteSummarySchema,
     AppRepoBranch: AppRepoBranchSchema,
+    CreateAppRepoBranchRequest: CreateAppRepoBranchRequestSchema,
+    AppRepoFileQuery: AppRepoFileQuerySchema,
+    AppRepoTreeQuery: AppRepoTreeQuerySchema,
     AppRepoDocumentCommit: AppRepoDocumentCommitSchema,
     AppVersionGitSource: AppVersionGitSourceSchema,
     AppGithubConfiguration: AppGithubConfigurationSchema,
@@ -2508,8 +2519,24 @@ const RUN_BUDGET_SCHEMAS = {
     RunBudgetCapability: RunBudgetSchemas.RunBudgetCapabilitySchema,
     RunBudgetCapabilityQuery: RunBudgetSchemas.RunBudgetCapabilityQuerySchema,
 };
+const PATH_PARAMETER_SCHEMAS = {
+    DashboardPathParams: PathParameterSchemas.DashboardPathParamsSchema,
+    DataStoreImportPathParams: PathParameterSchemas.DataStoreImportPathParamsSchema,
+    DataStoreVersionPathParams: PathParameterSchemas.DataStoreVersionPathParamsSchema,
+    ContentObjectExportPathParams: PathParameterSchemas.ContentObjectExportPathParamsSchema,
+    ProcessTestRunPathParams: PathParameterSchemas.ProcessTestRunPathParamsSchema,
+    ProcessPathParams: PathParameterSchemas.ProcessPathParamsSchema,
+    TaskPathParams: PathParameterSchemas.TaskPathParamsSchema,
+    AgentRunPathParams: PathParameterSchemas.AgentRunPathParamsSchema,
+    AppVersionPathParams: PathParameterSchemas.AppVersionPathParamsSchema,
+    AppInstallationPathParams: PathParameterSchemas.AppInstallationPathParamsSchema,
+    DelegationGrantPathParams: PathParameterSchemas.DelegationGrantPathParamsSchema,
+    OAuthProviderPathParams: PathParameterSchemas.OAuthProviderPathParamsSchema,
+    ProjectAppCapabilityPathParams: PathParameterSchemas.ProjectAppCapabilityPathParamsSchema,
+};
 const API_SCHEMA_GROUPS = [
     RUN_BUDGET_SCHEMAS,
+    PATH_PARAMETER_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2576,6 +2603,7 @@ const API_SCHEMA_GROUPS = [
  * intersected with a second schema.
  */
 type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
+    typeof PATH_PARAMETER_SCHEMAS &
     typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
@@ -3561,6 +3589,9 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DeleteAppVersionResponse',
     'AppDeleteSummary',
     'AppRepoBranch',
+    'CreateAppRepoBranchRequest',
+    'AppRepoFileQuery',
+    'AppRepoTreeQuery',
     'AppRepoDocumentCommit',
     'AppVersionGitSource',
     'StartAppScaffoldRequest',

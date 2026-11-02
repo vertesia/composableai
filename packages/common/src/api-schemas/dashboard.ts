@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { DashboardExportStatus, DashboardStatus } from '../data-platform.js';
 import { StringValueMapSchema } from './files.js';
-import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
+import { conditional, EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 
 export const DashboardElasticsearchResultMappingSchema = z
     .discriminatedUnion('type', [
@@ -144,8 +144,8 @@ export const DashboardArchiveResultSchema = z
 
 export const CreateDashboardSnapshotPayloadSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'Snapshot name (must be unique within dashboard)' }),
-        message: z.string().meta({ description: 'Snapshot description/message' }),
+        name: z.string().min(1).meta({ description: 'Snapshot name (must be unique within dashboard)' }),
+        message: z.string().min(1).meta({ description: 'Snapshot description/message' }),
     })
     .meta({ id: 'CreateDashboardSnapshotPayload', description: 'Payload for creating a named snapshot.' });
 
@@ -157,6 +157,23 @@ export const DashboardBulkArchiveResultSchema = z
     .meta({ id: 'DashboardBulkArchiveResult' });
 
 export const StringArrayMapSchema = z.object({}).catchall(z.array(z.string())).meta({ id: 'StringArrayMap' });
+
+/**
+ * The dashboards a bulk archive or delete acts on. It keeps the map shape of `StringArrayMap`, which the two routes
+ * used to name, so the generated clients keep their map argument; the `if`, which always holds, carries the rule.
+ */
+export const DashboardBulkIdsPayloadSchema = z
+    .object({})
+    .catchall(z.array(z.string()))
+    .meta({
+        id: 'DashboardBulkIdsPayload',
+        description:
+            'The dashboards to act on, as an `ids` list of at least one dashboard ID (24 hexadecimal characters).',
+        ...conditional(
+            {},
+            { required: ['ids'], properties: { ids: { minItems: 1, items: { pattern: '^[0-9a-fA-F]{24}$' } } } },
+        ),
+    });
 
 export const DashboardStoreElasticsearchDataSourceSchema = z
     .strictObject({
@@ -317,10 +334,12 @@ export const DashboardSchema = DashboardItemSchema.extend({
 
 export const CreateDashboardPayloadSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'Dashboard name (unique within store)' }),
+        name: z.string().min(1).meta({ description: 'Dashboard name (unique within store)' }),
         summary: z.string().meta({ description: 'Dashboard summary' }).optional(),
-        dataSource: DashboardDataSourceSchema.meta({
-            description: 'Data source used to populate Vega `data.values`.',
+        // Only the SQL source: a stored dashboard keeps its rows' query, and nothing runs an Elasticsearch source.
+        dataSource: DashboardSqlDataSourceSchema.meta({
+            description:
+                "SQL data source used to populate Vega `data.values`. Its query, limit and parameters are stored as the dashboard's own; a top-level `query`, `queryLimit` or `queryParameters` sent alongside takes precedence.",
         }).optional(),
         query: z
             .string()
@@ -342,13 +361,20 @@ export const CreateDashboardPayloadSchema = z
     })
     .meta({
         id: 'CreateDashboardPayload',
-        description: 'Payload for creating a new dashboard. Requires a data source and spec (Vega-Lite).',
+        description:
+            'Payload for creating a new dashboard. Requires a SQL data source, as `dataSource` or `query`, and a Vega-Lite spec.',
+        // A top-level `query` replaces the data source's, so an empty one is refused even beside a data source.
+        ...conditional(
+            { required: ['query'] },
+            { properties: { query: { minLength: 1 } } },
+            { required: ['dataSource'], properties: { dataSource: { properties: { query: { minLength: 1 } } } } },
+        ),
     });
 
 export const UpdateDashboardPayloadSchema = CreateDashboardPayloadSchema.partial()
     .extend({
         expected_edit_revision: ExpectedEditRevisionSchema,
-        name: z.string().meta({ description: 'Dashboard name' }).optional(),
+        name: z.string().min(1).meta({ description: 'Dashboard name' }).optional(),
         skip_versioning: z.boolean().meta({ description: 'Skip auto-version creation' }).optional(),
     })
     .meta({ id: 'UpdateDashboardPayload', description: 'Payload for updating a dashboard.' });

@@ -44,6 +44,179 @@
     "additionalProperties": false,
     "description": "Selected model and requested serving tier for run budget admission."
   },
+  "DashboardPathParams": {
+    "type": "object",
+    "properties": {
+      "storeId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The data store ID, as 24 hexadecimal characters."
+      },
+      "dashboardId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The dashboard ID, as 24 hexadecimal characters."
+      },
+      "versionId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The dashboard version ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "DataStoreImportPathParams": {
+    "type": "object",
+    "properties": {
+      "importId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The import job ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "DataStoreVersionPathParams": {
+    "type": "object",
+    "properties": {
+      "versionId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The data store version ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ContentObjectExportPathParams": {
+    "type": "object",
+    "properties": {
+      "exportId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The content object export ID, as 24 hexadecimal characters."
+      },
+      "role": {
+        "type": "string",
+        "enum": [
+          "data",
+          "manifest"
+        ],
+        "description": "The export file: its data or its manifest."
+      }
+    }
+  },
+  "ProcessTestRunPathParams": {
+    "type": "object",
+    "properties": {
+      "runId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process test run ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ProcessPathParams": {
+    "type": "object",
+    "properties": {
+      "processId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process definition ID, as 24 hexadecimal characters."
+      },
+      "runId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process test run ID, as 24 hexadecimal characters."
+      },
+      "suiteId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The process test suite ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "TaskPathParams": {
+    "type": "object",
+    "properties": {
+      "taskId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The task ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "AgentRunPathParams": {
+    "type": "object",
+    "properties": {
+      "agentRunId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The agent run ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "AppVersionPathParams": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The app version ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "AppInstallationPathParams": {
+    "type": "object",
+    "properties": {
+      "installId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The app installation ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "DelegationGrantPathParams": {
+    "type": "object",
+    "properties": {
+      "grantId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The delegation grant ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "OAuthProviderPathParams": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The OAuth provider ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "ProjectAppCapabilityPathParams": {
+    "type": "object",
+    "properties": {
+      "processId": {
+        "type": "string",
+        "pattern": "^app(:|$)",
+        "description": "The app process, as `app:<app name>:<local id>`. Only the `app` prefix is checked as a format; a reference without an app name or local id is refused by the lookup, as forbidden or not found."
+      },
+      "templateId": {
+        "type": "string",
+        "pattern": "^app(:|$)",
+        "description": "The app rendering template, as `app:<app name>:<local id>`. Only the `app` prefix is checked as a format; a reference without an app name or local id is refused by the lookup, as forbidden or not found."
+      },
+      "typeId": {
+        "type": "string",
+        "pattern": "^app(:|$)",
+        "description": "The app content type, as `app:<app name>:<local id>`. Only the `app` prefix is checked as a format; a reference without an app name or local id is refused by the lookup, as forbidden or not found."
+      },
+      "viewId": {
+        "type": "string",
+        "pattern": "^app:[A-Za-z0-9][A-Za-z0-9._@-]*:[A-Za-z0-9][A-Za-z0-9._:-]*$",
+        "description": "The app View, as `app:<app name>:<local id>`."
+      }
+    }
+  },
   "CreateDelegationGrantPayload": {
     "type": "object",
     "properties": {
@@ -1008,7 +1181,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -1060,7 +1234,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -6474,10 +6649,12 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
       },
       "display_name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "grant_type": {
         "type": "string",
@@ -6493,7 +6670,8 @@
         "type": "string"
       },
       "client_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "client_secret": {
         "type": "string",
@@ -7826,6 +8004,7 @@
         "$ref": "#/components/schemas/OAuthClientType"
       },
       "redirect_uris": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -7892,6 +8071,7 @@
         "type": "string"
       },
       "redirect_uris": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -8065,10 +8245,12 @@
         ]
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0
       },
       "sort_by": {
         "$ref": "#/components/schemas/OAuthGrantSortField"
@@ -10238,7 +10420,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "parent": {
         "type": "string"
@@ -10266,7 +10449,8 @@
         "$ref": "#/components/schemas/PromptRole"
       },
       "content": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "content_type": {
         "$ref": "#/components/schemas/TemplateType"
@@ -11134,7 +11318,8 @@
         "format": "date-time"
       },
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -11442,6 +11627,65 @@
       }
     },
     "additionalProperties": false
+  },
+  "InteractionListQuery": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "status": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "limit": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "multipleOf": 1
+      },
+      "offset": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "multipleOf": 1
+      },
+      "prompt": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "version": {
+        "type": "string"
+      },
+      "model": {
+        "type": "string"
+      },
+      "environment": {
+        "type": "string"
+      },
+      "is_agent": {
+        "type": "boolean"
+      },
+      "is_tool": {
+        "type": "boolean"
+      },
+      "is_skill": {
+        "type": "boolean"
+      },
+      "is_basic": {
+        "type": "boolean"
+      },
+      "is_sub_agent": {
+        "type": "boolean"
+      }
+    }
   },
   "ResolveInteractionQuery": {
     "type": "object",
@@ -11908,7 +12152,32 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^$.\\x00][^.\\x00]*$",
+                "not": {
+                  "const": "total"
+                }
+              },
+              "field": {
+                "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not `total`. Each `field` is a dotted path of such names."
   },
   "ComputedFacetResponse": {
     "type": "object",
@@ -13549,6 +13818,7 @@
       },
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
       }
     },
@@ -13715,9 +13985,10 @@
       "environment": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
         },
-        "description": "Environment ids to filter by."
+        "description": "Environment ids to filter by, as 24 hexadecimal characters."
       },
       "status": {
         "type": "array",
@@ -13936,6 +14207,7 @@
       },
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
       }
     },
@@ -14748,6 +15020,7 @@
     "properties": {
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
       },
       "title": {
@@ -15196,6 +15469,7 @@
     "properties": {
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag"
       },
       "data": {
@@ -15312,7 +15586,8 @@
     "type": "object",
     "properties": {
       "interaction": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "environment_id": {
         "type": "string"
@@ -16045,7 +16320,32 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^$.\\x00][^.\\x00]*$",
+                "not": {
+                  "const": "total"
+                }
+              },
+              "field": {
+                "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not `total`. Each `field` is a dotted path of such names."
   },
   "PromptTemplateInteractionsResponse": {
     "type": "object",
@@ -19151,7 +19451,9 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "enabled": {
         "type": "boolean"
@@ -19175,10 +19477,14 @@
         "$ref": "#/components/schemas/ViewResultsConfiguration"
       },
       "description": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 4000,
+        "pattern": "\\S"
       },
       "id": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 64,
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
       },
       "version": {
         "$ref": "#/components/schemas/ViewExperienceSchemaVersion"
@@ -19260,7 +19566,9 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "enabled": {
         "type": "boolean"
@@ -19284,13 +19592,17 @@
         "$ref": "#/components/schemas/ViewResultsConfiguration"
       },
       "description": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 4000,
+        "pattern": "\\S"
       },
       "version": {
         "$ref": "#/components/schemas/ViewExperienceSchemaVersion"
       },
       "revision": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "multipleOf": 1
       }
     },
     "required": [
@@ -19350,7 +19662,9 @@
         ],
         "items": {
           "type": "string"
-        }
+        },
+        "minItems": 1,
+        "description": "Tool names agents may use. An empty list is refused: send null to remove the restriction."
       }
     },
     "required": [
@@ -19369,7 +19683,8 @@
         "items": {
           "type": "string"
         },
-        "description": "Tool names agents may use. Null removes the restriction; omit to leave the allowlist unchanged."
+        "minItems": 1,
+        "description": "Tool names agents may use, at least one. Null removes the restriction; omit to leave the allowlist unchanged."
       },
       "tools_requiring_approval": {
         "type": [
@@ -19402,7 +19717,8 @@
     "type": "object",
     "properties": {
       "url": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -20114,6 +20430,59 @@
     ],
     "additionalProperties": false,
     "description": "A newly created app repository branch."
+  },
+  "CreateAppRepoBranchRequest": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "The new branch name."
+      },
+      "source_ref": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "The existing branch, tag or commit the new branch starts from."
+      }
+    },
+    "required": [
+      "name",
+      "source_ref"
+    ],
+    "additionalProperties": false,
+    "description": "Request to create a branch from an existing branch, tag, or commit."
+  },
+  "AppRepoFileQuery": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "Path of the file, relative to the repository root."
+      },
+      "ref": {
+        "type": "string",
+        "description": "Branch, tag or commit. Defaults to the default branch."
+      }
+    },
+    "required": [
+      "path"
+    ],
+    "additionalProperties": false
+  },
+  "AppRepoTreeQuery": {
+    "type": "object",
+    "properties": {
+      "prefix": {
+        "type": "string",
+        "description": "Directory to list, relative to the repository root. Defaults to the root."
+      },
+      "ref": {
+        "type": "string",
+        "description": "Branch, tag or commit. Defaults to the default branch."
+      }
+    },
+    "additionalProperties": false
   },
   "AppRepoDocumentCommit": {
     "type": "object",
@@ -21379,13 +21748,15 @@
         "type": "string"
       },
       "app_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "\\S"
       },
       "app_name": {
         "type": "string"
       },
       "version_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "\\S"
       },
       "kind": {
         "$ref": "#/components/schemas/AppVersionKind"
@@ -21682,15 +22053,15 @@
     "properties": {
       "name": {
         "type": "string",
-        "description": "App manifest name. One of `name` or `id` is required."
+        "description": "App manifest name. At least one of `name` or `id` is required."
       },
       "id": {
         "type": "string",
-        "description": "App manifest id. One of `name` or `id` is required."
+        "description": "App manifest id. At least one of `name` or `id` is required; it wins over `name`."
       }
     },
     "additionalProperties": false,
-    "description": "Exactly one of `name` or `id` identifies the app. Neither is required by the component because the endpoint answers 400 for the empty case with a message naming both."
+    "description": "At least one of `name` or `id` identifies the app, and `id` takes precedence when both are given. Query parameters cannot state that rule, so the endpoint answers 400 when neither is set."
   },
   "AppPackageQuery": {
     "type": "object",
@@ -22040,9 +22411,11 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "pattern": "\\S"
       },
       "websites": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/WebsiteCredentialWebsite"
@@ -22097,9 +22470,11 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "pattern": "\\S"
       },
       "websites": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/WebsiteCredentialWebsite"
@@ -24042,6 +24417,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app)."
       },
       "visibility": {
@@ -24193,6 +24569,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app)."
       },
       "visibility": {
@@ -26252,7 +26629,8 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "key": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -26311,7 +26689,8 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "account_id": {
         "type": "string"
@@ -26339,16 +26718,20 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "environment_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "environment_name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "account_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -26384,16 +26767,19 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "account_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "name": {
         "type": "string"
       },
       "on_behalf_of": {
         "type": "string",
+        "minLength": 1,
         "description": "User information.\n\nThe value of this field can be either:   - a signed Vertesia token used to verify the user context   - a user ID prefixed with `user:` to indicate the user on behalf of whom the agent is     acting."
       }
     },
@@ -26421,10 +26807,12 @@
         "description": "Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility."
       },
       "account_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "roles": {
         "type": "array",
@@ -27004,22 +27392,28 @@
     "type": "object",
     "properties": {
       "runId": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "workflowId": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "agentName": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "questions": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
         }
       },
       "timeoutHours": {
-        "type": "number"
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "description": "Hours before the question expires; more than 0. Defaults to 48."
       },
       "userChannels": {
         "type": "array",
@@ -27160,7 +27554,95 @@
         ]
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "if": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "sql"
+                ],
+                "properties": {
+                  "sql": {
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "required": [
+                  "esql"
+                ],
+                "properties": {
+                  "esql": {
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "then": {
+          "required": [
+            "dsl"
+          ]
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "sql"
+          ],
+          "properties": {
+            "sql": {
+              "minLength": 1
+            }
+          }
+        },
+        "then": {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "esql"
+                ],
+                "properties": {
+                  "esql": {
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "required": [
+                  "dsl"
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "if": {
+          "required": [
+            "esql"
+          ],
+          "properties": {
+            "esql": {
+              "minLength": 1
+            }
+          }
+        },
+        "then": {
+          "not": {
+            "required": [
+              "dsl"
+            ]
+          }
+        }
+      }
+    ],
+    "description": "Exactly one of `sql`, `esql` or `dsl`. An empty `sql` or `esql` counts as absent."
   },
   "ContentQueryResult": {
     "type": "object",
@@ -27243,10 +27725,12 @@
     "type": "object",
     "properties": {
       "source": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "dest": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -27379,7 +27863,8 @@
     "type": "object",
     "properties": {
       "file": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "name": {
         "type": "string"
@@ -27424,7 +27909,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "id": {
         "type": "string"
@@ -27445,12 +27931,15 @@
     "type": "object",
     "properties": {
       "files": {
+        "minItems": 1,
+        "maxItems": 10000,
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
             "name": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "mime_type": {
               "type": "string"
@@ -27491,6 +27980,7 @@
     "properties": {
       "file": {
         "type": "string",
+        "minLength": 1,
         "description": "The file path (relative to bucket) or full URI"
       },
       "metadata": {
@@ -27508,7 +27998,8 @@
     "type": "object",
     "properties": {
       "file": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       }
     },
     "required": [
@@ -27668,7 +28159,8 @@
         ]
       },
       "run_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "node": {
         "type": "string"
@@ -27759,7 +28251,8 @@
     "type": "object",
     "properties": {
       "title": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -28097,6 +28590,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Human-readable name or title"
       },
       "description": {
@@ -28150,6 +28644,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Human-readable name or title"
       },
       "description": {
@@ -29012,7 +29507,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29079,7 +29575,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29167,7 +29664,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29228,7 +29726,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29767,7 +30266,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -30351,7 +30851,57 @@
       }
     },
     "additionalProperties": false,
-    "description": "When creating from an uploaded file the content should be an URL to the uploaded file"
+    "if": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "content"
+            ],
+            "properties": {
+              "content": {
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "then": {
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "source": {
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "description": "When creating from an uploaded file the content should be an URL to the uploaded file. `name` is required unless `content.name` or `content.source` is given; it then defaults to the content file name."
   },
   "UpdateContentObjectPayload": {
     "type": "object",
@@ -31791,7 +32341,22 @@
     "required": [
       "query"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "`query` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "ComputeObjectFacetPayload": {
     "type": "object",
@@ -31809,7 +32374,29 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^\\[\\]>]+$",
+                "not": {
+                  "const": "total"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is an Elasticsearch aggregation name: non-empty, without `[`, `]` or `>`, and not `total`."
   },
   "ComplexSearchPayload": {
     "type": "object",
@@ -31825,10 +32412,12 @@
         "description": "If the facets should be limited to the current page of results. Defaults to false. When false, the facets are independent of the search results page."
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0
       },
       "select": {
         "type": "string"
@@ -31855,7 +32444,29 @@
         "$ref": "#/components/schemas/ComplexSearchQuery"
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^\\[\\]>]+$",
+                "not": {
+                  "const": "total"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is an Elasticsearch aggregation name: non-empty, without `[`, `]` or `>`, and not `total`."
   },
   "ObjectSearchResponse": {
     "type": "object",
@@ -35242,6 +35853,7 @@
         ]
       },
       "members": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -35277,6 +35889,7 @@
         ]
       },
       "children": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "type": "string"
@@ -35408,6 +36021,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Name of the collection"
       },
       "dynamic": {
@@ -35419,7 +36033,22 @@
       "name",
       "dynamic"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "`query` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "UpdateCollectionPayload": {
     "type": "object",
@@ -35515,7 +36144,21 @@
         "description": "When true, membership is determined by `query`; when false, members are added explicitly"
       }
     },
-    "description": "Fields to change on a collection. All optional."
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "Fields to change on a collection. All optional. `query` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "ComplexCollectionSearchQuery": {
     "type": "object",
@@ -35561,7 +36204,22 @@
         "additionalProperties": true
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "match"
+      ]
+    },
+    "then": {
+      "properties": {
+        "match": {
+          "propertyNames": {
+            "pattern": "^(\\$(and|or|nor)|[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*)$"
+          }
+        }
+      }
+    },
+    "description": "`match` is a Mongo filter. Its keys are dotted field paths or `$and`, `$or` and `$nor`, and a condition is a literal or uses the comparison operators, `$in`, `$nin`, `$all`, `$exists`, `$type`, `$size`, `$regex`, `$not` and `$elemMatch`."
   },
   "Collection": {
     "type": "object",
@@ -35710,7 +36368,32 @@
     "required": [
       "facets"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "facets"
+      ]
+    },
+    "then": {
+      "properties": {
+        "facets": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^[^$.\\x00][^.\\x00]*$",
+                "not": {
+                  "const": "total"
+                }
+              },
+              "field": {
+                "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each facet `name` is a Mongo field name: non-empty, without `.` or NUL, not starting with `$`, and not `total`. Each `field` is a dotted path of such names."
   },
   "CollectionArray": {
     "type": "array",
@@ -36993,6 +37676,7 @@
     "properties": {
       "interaction": {
         "type": "string",
+        "minLength": 1,
         "description": "Interaction ID or code (e.g. \"sys:generic_question\")."
       },
       "title": {
@@ -38051,10 +38735,12 @@
       },
       "limit": {
         "type": "number",
+        "minimum": 0,
         "description": "Maximum number of results (default: 50)"
       },
       "offset": {
         "type": "number",
+        "minimum": 0,
         "description": "Offset for pagination"
       },
       "sort": {
@@ -41389,10 +42075,16 @@
         "type": "string"
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "maximum": 50000,
+        "multipleOf": 1
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 200,
+        "multipleOf": 1
       }
     },
     "additionalProperties": false
@@ -41730,10 +42422,16 @@
         "type": "string"
       },
       "offset": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "maximum": 50000,
+        "multipleOf": 1
       },
       "limit": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 200,
+        "multipleOf": 1
       },
       "configuration": {
         "$ref": "#/components/schemas/ViewExperienceConfiguration",
@@ -41888,10 +42586,12 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot name (must be unique within dashboard)"
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot description/message"
       }
     },
@@ -41917,6 +42617,30 @@
       "failed"
     ],
     "additionalProperties": false
+  },
+  "DashboardBulkIdsPayload": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "if": {},
+    "then": {
+      "required": [
+        "ids"
+      ],
+      "properties": {
+        "ids": {
+          "minItems": 1,
+          "items": {
+            "pattern": "^[0-9a-fA-F]{24}$"
+          }
+        }
+      }
+    },
+    "description": "The dashboards to act on, as an `ids` list of at least one dashboard ID (24 hexadecimal characters)."
   },
   "DashboardVersionItemArray": {
     "type": "array",
@@ -42283,6 +43007,7 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Dashboard name (unique within store)"
       },
       "summary": {
@@ -42290,8 +43015,8 @@
         "description": "Dashboard summary"
       },
       "dataSource": {
-        "$ref": "#/components/schemas/DashboardDataSource",
-        "description": "Data source used to populate Vega `data.values`."
+        "$ref": "#/components/schemas/DashboardSqlDataSource",
+        "description": "SQL data source used to populate Vega `data.values`. Its query, limit and parameters are stored as the dashboard's own; a top-level `query`, `queryLimit` or `queryParameters` sent alongside takes precedence."
       },
       "query": {
         "type": "string",
@@ -42316,13 +43041,40 @@
       "spec"
     ],
     "additionalProperties": false,
-    "description": "Payload for creating a new dashboard. Requires a data source and spec (Vega-Lite)."
+    "if": {
+      "required": [
+        "query"
+      ]
+    },
+    "then": {
+      "properties": {
+        "query": {
+          "minLength": 1
+        }
+      }
+    },
+    "else": {
+      "required": [
+        "dataSource"
+      ],
+      "properties": {
+        "dataSource": {
+          "properties": {
+            "query": {
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "description": "Payload for creating a new dashboard. Requires a SQL data source, as `dataSource` or `query`, and a Vega-Lite spec."
   },
   "UpdateDashboardPayload": {
     "type": "object",
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Dashboard name"
       },
       "summary": {
@@ -42330,8 +43082,8 @@
         "description": "Dashboard summary"
       },
       "dataSource": {
-        "$ref": "#/components/schemas/DashboardDataSource",
-        "description": "Data source used to populate Vega `data.values`."
+        "$ref": "#/components/schemas/DashboardSqlDataSource",
+        "description": "SQL data source used to populate Vega `data.values`. Its query, limit and parameters are stored as the dashboard's own; a top-level `query`, `queryLimit` or `queryParameters` sent alongside takes precedence."
       },
       "query": {
         "type": "string",
@@ -42550,15 +43302,19 @@
     "type": "object",
     "properties": {
       "queries": {
+        "minItems": 1,
+        "maxItems": 50,
         "type": "array",
         "items": {
           "type": "object",
           "properties": {
             "name": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "sql": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             }
           },
           "required": [
@@ -42773,6 +43529,8 @@
     "type": "object",
     "properties": {
       "queries": {
+        "minItems": 1,
+        "maxItems": 20,
         "type": "array",
         "items": {
           "type": "object",
@@ -42781,7 +43539,8 @@
               "type": "string"
             },
             "sql": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "limit": {
               "type": "number"
@@ -42845,6 +43604,7 @@
     "properties": {
       "sql": {
         "type": "string",
+        "minLength": 1,
         "description": "SQL query (SELECT only)"
       },
       "params": {
@@ -42904,10 +43664,12 @@
     "properties": {
       "sql": {
         "type": "string",
+        "minLength": 1,
         "description": "SQL statement. Only UPDATE and DELETE statements are accepted."
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message recorded on the resulting data store version."
       },
       "allow_full_table": {
@@ -43149,10 +43911,12 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot name (must be unique within store)"
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Snapshot description"
       }
     },
@@ -43840,6 +44604,7 @@
     "type": "object",
     "properties": {
       "tables": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/CreateTablePayload"
@@ -43848,6 +44613,7 @@
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message"
       }
     },
@@ -43926,6 +44692,7 @@
     "type": "object",
     "properties": {
       "changes": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/AlterTableOperation"
@@ -43969,6 +44736,7 @@
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message (required)"
       }
     },
@@ -44219,6 +44987,7 @@
       },
       "message": {
         "type": "string",
+        "minLength": 1,
         "description": "Commit message"
       }
     },
@@ -44579,7 +45348,54 @@
         "description": "Scope: 'project' (default, current project) or 'org'"
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "run_id"
+            ],
+            "properties": {
+              "run_id": {
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "agent_run_id"
+            ],
+            "properties": {
+              "agent_run_id": {
+                "minLength": 1
+              }
+            }
+          },
+          {
+            "required": [
+              "workflow_id"
+            ],
+            "properties": {
+              "workflow_id": {
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "then": {
+      "required": [
+        "workflow_run_id"
+      ],
+      "properties": {
+        "workflow_run_id": {
+          "minLength": 1
+        }
+      }
+    },
+    "description": "Identifies the run to price by at least one of `run_id`, `agent_run_id`, `workflow_id` or `workflow_run_id`. An empty identifier counts as absent."
   },
   "CostModelPricesQuery": {
     "type": "object",
@@ -45406,7 +46222,7 @@
       "params": {
         "type": "object",
         "additionalProperties": true,
-        "description": "The operation parameters."
+        "description": "The operation parameters. `create` takes the objects to create as `objects`, 1 to 10000."
       }
     },
     "required": [
@@ -45414,7 +46230,33 @@
       "ids",
       "params"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "const": "create"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "params": {
+          "required": [
+            "objects"
+          ],
+          "properties": {
+            "objects": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 10000
+            }
+          }
+        }
+      }
+    }
   },
   "BulkOperationResponse": {
     "oneOf": [

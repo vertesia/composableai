@@ -17,7 +17,7 @@ export const ApiKeyTokenRequestSchema = z
     .strictObject({
         type: z.literal('apikey'),
         ...baseTokenRequestShape,
-        key: z.string(),
+        key: z.string().min(1),
     })
     .meta({ id: 'ApiKeyTokenRequest', required: ['key', 'type'] });
 
@@ -37,7 +37,7 @@ export const ProjectTokenRequestSchema = z
     .strictObject({
         type: z.literal('project'),
         ...baseTokenRequestShape,
-        project_id: z.string(),
+        project_id: z.string().min(1),
         account_id: z.string(),
     })
     .meta({ id: 'ProjectTokenRequest', required: ['account_id', 'project_id', 'type'] });
@@ -46,10 +46,10 @@ export const EnvironmentTokenRequestSchema = z
     .strictObject({
         type: z.literal('environment'),
         ...baseTokenRequestShape,
-        environment_id: z.string(),
-        environment_name: z.string(),
-        project_id: z.string(),
-        account_id: z.string(),
+        environment_id: z.string().min(1),
+        environment_name: z.string().min(1),
+        project_id: z.string().min(1),
+        account_id: z.string().min(1),
     })
     .meta({
         id: 'EnvironmentTokenRequest',
@@ -63,10 +63,10 @@ export const AgentTokenRequestSchema = z
         delegation_policy_hash: z.string().optional(),
         continuation_token: z.string().optional(),
         ...baseTokenRequestShape,
-        account_id: z.string(),
-        project_id: z.string(),
+        account_id: z.string().min(1),
+        project_id: z.string().min(1),
         name: z.string().optional(),
-        on_behalf_of: z.string().meta({
+        on_behalf_of: z.string().min(1).meta({
             description:
                 'User information.\n\nThe value of this field can be either:   - a signed Vertesia token used to verify the user context   - a user ID prefixed with `user:` to indicate the user on behalf of whom the agent is     acting.',
         }),
@@ -82,8 +82,8 @@ export const ServiceAccountTokenRequestSchema = z
     .strictObject({
         type: z.literal('service_account'),
         ...baseTokenRequestShape,
-        account_id: z.string(),
-        project_id: z.string(),
+        account_id: z.string().min(1),
+        project_id: z.string().min(1),
         roles: z.array(SystemRolesSchema).optional(),
         name: z.string().optional(),
         email: z.string().optional(),

@@ -259,6 +259,19 @@ describe('undeclared parameters', () => {
         );
         expect(undeclared).toEqual([]);
     });
+
+    it('never reports undeclared path parameters, which the route template fixes', () => {
+        // A path component states the format of the parameters it names; the others are plain strings.
+        const { value, undeclared } = normalizeParameters(
+            'Params',
+            { name: 'a', storeId: 'b' },
+            'path',
+            COMPONENTS.Params,
+            COMPONENTS,
+        );
+        expect(value).toEqual({ name: 'a' });
+        expect(undeclared).toEqual([]);
+    });
 });
 
 describe('header name casing', () => {
