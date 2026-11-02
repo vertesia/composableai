@@ -4726,6 +4726,7 @@ export type RateLimitRequestPayload = {
 };
 export type RateLimitRequestResponse = {
     delay_ms: number;
+    rate_limit_grant?: string | undefined;
 };
 /**
  * Resolved environment information
