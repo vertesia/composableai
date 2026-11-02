@@ -42272,8 +42272,8 @@
         "description": "Dashboard summary"
       },
       "dataSource": {
-        "$ref": "#/components/schemas/DashboardDataSource",
-        "description": "Data source used to populate Vega `data.values`."
+        "$ref": "#/components/schemas/DashboardSqlDataSource",
+        "description": "SQL data source used to populate Vega `data.values`. Its query, limit and parameters are stored as the dashboard's own; a top-level `query`, `queryLimit` or `queryParameters` sent alongside takes precedence."
       },
       "query": {
         "type": "string",
@@ -42298,7 +42298,7 @@
       "spec"
     ],
     "additionalProperties": false,
-    "description": "Payload for creating a new dashboard. Requires a data source and spec (Vega-Lite)."
+    "description": "Payload for creating a new dashboard. Requires a SQL data source, as `dataSource` or `query`, and a Vega-Lite spec."
   },
   "UpdateDashboardPayload": {
     "type": "object",
@@ -42313,8 +42313,8 @@
         "description": "Dashboard summary"
       },
       "dataSource": {
-        "$ref": "#/components/schemas/DashboardDataSource",
-        "description": "Data source used to populate Vega `data.values`."
+        "$ref": "#/components/schemas/DashboardSqlDataSource",
+        "description": "SQL data source used to populate Vega `data.values`. Its query, limit and parameters are stored as the dashboard's own; a top-level `query`, `queryLimit` or `queryParameters` sent alongside takes precedence."
       },
       "query": {
         "type": "string",

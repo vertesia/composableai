@@ -319,8 +319,10 @@ export const CreateDashboardPayloadSchema = z
     .strictObject({
         name: z.string().min(1).meta({ description: 'Dashboard name (unique within store)' }),
         summary: z.string().meta({ description: 'Dashboard summary' }).optional(),
-        dataSource: DashboardDataSourceSchema.meta({
-            description: 'Data source used to populate Vega `data.values`.',
+        // Only the SQL source: a stored dashboard keeps its rows' query, and nothing runs an Elasticsearch source.
+        dataSource: DashboardSqlDataSourceSchema.meta({
+            description:
+                "SQL data source used to populate Vega `data.values`. Its query, limit and parameters are stored as the dashboard's own; a top-level `query`, `queryLimit` or `queryParameters` sent alongside takes precedence.",
         }).optional(),
         query: z
             .string()
@@ -342,7 +344,8 @@ export const CreateDashboardPayloadSchema = z
     })
     .meta({
         id: 'CreateDashboardPayload',
-        description: 'Payload for creating a new dashboard. Requires a data source and spec (Vega-Lite).',
+        description:
+            'Payload for creating a new dashboard. Requires a SQL data source, as `dataSource` or `query`, and a Vega-Lite spec.',
     });
 
 export const UpdateDashboardPayloadSchema = CreateDashboardPayloadSchema.partial()

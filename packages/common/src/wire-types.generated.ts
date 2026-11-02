@@ -3171,7 +3171,7 @@ export type Dashboard = {
 export type CreateDashboardPayload = {
     name: string;
     summary?: string | undefined;
-    dataSource?: DashboardDataSource | undefined;
+    dataSource?: DashboardSqlDataSource | undefined;
     query?: string | undefined;
     queryLimit?: number | undefined;
     queryParameters?: StringValueMap | undefined;
@@ -3185,7 +3185,7 @@ export type CreateDashboardPayload = {
 export type UpdateDashboardPayload = {
     name?: string | undefined;
     summary?: string | undefined | undefined;
-    dataSource?: DashboardDataSource | undefined | undefined;
+    dataSource?: DashboardSqlDataSource | undefined | undefined;
     query?: string | undefined | undefined;
     queryLimit?: number | undefined | undefined;
     queryParameters?: StringValueMap | undefined | undefined;
