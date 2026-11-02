@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AUDIT_ACTIONS, AUDIT_AGGREGATION_DIMENSIONS } from '../audit-trail.js';
+import { AUDIT_ACTIONS, AUDIT_AGGREGATION_BATCH_MAX_QUERIES, AUDIT_AGGREGATION_DIMENSIONS } from '../audit-trail.js';
 import { NumberValueMapSchema } from './interaction.js';
 import { PageCountSchema } from './schema-primitives.js';
 
@@ -210,6 +210,31 @@ export const AuditAggregationQuerySchema = z
         description:
             'Safe audit aggregation query. The server always applies the authenticated account scope and, for project-scoped principals, replaces projectId with the authenticated project.',
     });
+
+export const AuditAggregationBatchQuerySchema = z
+    .strictObject({
+        queries: z
+            .array(AuditAggregationQuerySchema)
+            .min(1)
+            .max(AUDIT_AGGREGATION_BATCH_MAX_QUERIES)
+            .meta({
+                description: `The aggregations to run, at most ${AUDIT_AGGREGATION_BATCH_MAX_QUERIES}. Each one has the same semantics as a single aggregation request.`,
+            }),
+    })
+    .meta({
+        id: 'AuditAggregationBatchQuery',
+        description:
+            'Several audit aggregation queries answered by one request. The server may compute queries that share a scope, time range and filter in a single pass over the audit events.',
+    });
+
+export const AuditAggregationBatchResponseSchema = z
+    .strictObject({
+        results: z.array(AuditAggregationResponseSchema).meta({
+            description:
+                'One result per query, in the order of the request. Each equals the single aggregation result.',
+        }),
+    })
+    .meta({ id: 'AuditAggregationBatchResponse' });
 
 // Query contracts are registry components even though the scanner expands them into parameters.
 export const AuditTrailQuerySchema = z

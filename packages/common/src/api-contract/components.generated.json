@@ -18064,6 +18064,41 @@
     "additionalProperties": false,
     "description": "Safe audit aggregation query. The server always applies the authenticated account scope and, for project-scoped principals, replaces projectId with the authenticated project."
   },
+  "AuditAggregationBatchQuery": {
+    "type": "object",
+    "properties": {
+      "queries": {
+        "minItems": 1,
+        "maxItems": 12,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditAggregationQuery"
+        },
+        "description": "The aggregations to run, at most 12. Each one has the same semantics as a single aggregation request."
+      }
+    },
+    "required": [
+      "queries"
+    ],
+    "additionalProperties": false,
+    "description": "Several audit aggregation queries answered by one request. The server may compute queries that share a scope, time range and filter in a single pass over the audit events."
+  },
+  "AuditAggregationBatchResponse": {
+    "type": "object",
+    "properties": {
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AuditAggregationResponse"
+        },
+        "description": "One result per query, in the order of the request. Each equals the single aggregation result."
+      }
+    },
+    "required": [
+      "results"
+    ],
+    "additionalProperties": false
+  },
   "AuditTrailQuery": {
     "type": "object",
     "properties": {
