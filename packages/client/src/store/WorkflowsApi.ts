@@ -20,6 +20,7 @@ import {
     type RunsByAgentAnalyticsResponse,
     type SignalAgentPayload,
     type SignalAgentResponse,
+    type SubscriptionWorkflowCatalog,
     type TimeToFirstResponseAnalyticsResponse,
     type TokenUsageAnalyticsResponse,
     type ToolAnalyticsResponse,
@@ -53,6 +54,10 @@ import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream
 export class WorkflowsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/workflows');
+    }
+
+    getSubscriptionWorkflowCatalog(): Promise<SubscriptionWorkflowCatalog> {
+        return this.get('/subscription-catalog');
     }
 
     getActivityCatalog(): Promise<ActivityCatalog> {
