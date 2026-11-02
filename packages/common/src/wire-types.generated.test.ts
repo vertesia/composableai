@@ -850,6 +850,14 @@ interface Checks {
         W.AuditAggregationResponse,
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationResponseSchema>
     >;
+    AuditAggregationBatchQuery: Same<
+        W.AuditAggregationBatchQuery,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationBatchQuerySchema>
+    >;
+    AuditAggregationBatchResponse: Same<
+        W.AuditAggregationBatchResponse,
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationBatchResponseSchema>
+    >;
     AuditAdoptionFilter: Same<
         W.AuditAdoptionFilter,
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditAdoptionFilterSchema>
@@ -8876,6 +8884,14 @@ interface Checks {
         W.ApiComponentTypes['AuditAggregationQuery'],
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationQuerySchema>
     >;
+    'component:AuditAggregationBatchQuery': Same<
+        W.ApiComponentTypes['AuditAggregationBatchQuery'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationBatchQuerySchema>
+    >;
+    'component:AuditAggregationBatchResponse': Same<
+        W.ApiComponentTypes['AuditAggregationBatchResponse'],
+        z.infer<typeof import('./api-schemas/audit-trail.js').AuditAggregationBatchResponseSchema>
+    >;
     'component:AuditTrailQuery': Same<
         W.ApiComponentTypes['AuditTrailQuery'],
         z.infer<typeof import('./api-schemas/audit-trail.js').AuditTrailQuerySchema>
@@ -10272,6 +10288,8 @@ const checks: Checks = {
     AuditAggregationQuery: true,
     AuditAggregationRow: true,
     AuditAggregationResponse: true,
+    AuditAggregationBatchQuery: true,
+    AuditAggregationBatchResponse: true,
     AuditAdoptionFilter: true,
     AuditAdoptionQuery: true,
     AuditAdoptionPeriod: true,
@@ -12385,6 +12403,8 @@ const checks: Checks = {
     'component:AuditAggregationFilter': true,
     'component:AuditTrailResponse': true,
     'component:AuditAggregationQuery': true,
+    'component:AuditAggregationBatchQuery': true,
+    'component:AuditAggregationBatchResponse': true,
     'component:AuditTrailQuery': true,
     'component:ViewExperienceSchemaVersion': true,
     'component:ViewSortClause': true,
@@ -12679,6 +12699,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2638);
+        expect(Object.keys(checks)).toHaveLength(2642);
     });
 });

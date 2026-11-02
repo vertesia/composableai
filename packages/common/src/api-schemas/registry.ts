@@ -202,6 +202,8 @@ import {
     AuditAdoptionProjectSchema,
     AuditAdoptionQuerySchema,
     AuditAdoptionResponseSchema,
+    AuditAggregationBatchQuerySchema,
+    AuditAggregationBatchResponseSchema,
     AuditAggregationDetailFieldSchema,
     AuditAggregationDetailFilterSchema,
     AuditAggregationDimensionMapSchema,
@@ -2214,6 +2216,8 @@ const AUDIT_TRAIL_SCHEMAS = {
     AuditAggregationFilter: AuditAggregationFilterSchema,
     AuditTrailResponse: AuditTrailResponseSchema,
     AuditAggregationQuery: AuditAggregationQuerySchema,
+    AuditAggregationBatchQuery: AuditAggregationBatchQuerySchema,
+    AuditAggregationBatchResponse: AuditAggregationBatchResponseSchema,
     AuditTrailQuery: AuditTrailQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
 
@@ -3551,6 +3555,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AuditAggregationFilter',
     'AuditTrailResponse',
     'AuditAggregationQuery',
+    'AuditAggregationBatchQuery',
+    'AuditAggregationBatchResponse',
     'AuditAdoptionActiveDays',
     'AuditAdoptionBucket',
     'AuditAdoptionFilter',
