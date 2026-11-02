@@ -1,6 +1,5 @@
 import { decodeJWT, VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload } from '@vertesia/common';
-import { assertTokenPermissionClaims } from '@vertesia/studio-utils/token-claims';
 import { Env } from '@vertesia/ui/env';
 import { createContext, useContext } from 'react';
 
@@ -189,9 +188,8 @@ class UserSession {
     }
 
     async loginGatewaySession() {
-        const payload = await loadGatewaySession();
-        assertTokenPermissionClaims(payload);
-        this.authToken = payload;
+        // The gateway has already authenticated the token; the UI uses its projected claims directly.
+        this.authToken = await loadGatewaySession();
         this.client.withAuthCallback(undefined);
         this.authError = undefined;
         this.isLoading = false;

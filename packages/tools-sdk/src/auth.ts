@@ -37,6 +37,8 @@ export async function verifyToken(token: string) {
     }
     const jwks = await getJwks(`${decodedJwt.iss}/.well-known/jwks`);
     const verified = await jwtVerify<AuthTokenPayload>(token, jwks);
+    // This SDK has its own authentication boundary, independent of cloud's verifyAuthToken.
+    // Validate once here so tool handlers can use the final claims directly.
     assertTokenPermissionClaims(verified.payload);
     return verified;
 }

@@ -3,8 +3,9 @@ import type { AuthTokenPayload } from '@vertesia/common';
 export type TokenPermissionClaims = Required<Pick<AuthTokenPayload, 'permissions' | 'account_permissions'>>;
 
 /**
- * Read final permission claims without copying, filtering, or expanding them. Authentication
- * boundaries must verify the JWT and call assertTokenPermissionClaims before consumers use it.
+ * Read final permission claims without copying, filtering, or expanding them. STS validates them
+ * before signing; backends verify the signature and claims at their authentication boundary.
+ * Browser decoding and downstream permission checks do not repeat that validation.
  *
  * A legacy access token was minted by an issuer without the normalized permission contract:
  * it lacks `account_permissions`, and `permissions` may be absent or only an OAuth scope cap.
@@ -20,7 +21,9 @@ export type TokenPermissionClaims = Required<Pick<AuthTokenPayload, 'permissions
 export function readTokenPermissionClaims(
     token: Pick<AuthTokenPayload, 'permissions' | 'account_permissions'>,
 ): TokenPermissionClaims | undefined {
-    // LEGACY_PERMISSION_CLAIMS: remove this alternate format after the issuer/expiry migration.
+    // TODO(2026-11-02, LEGACY_PERMISSION_CLAIMS): remove pre-normalization compatibility after
+    // all issuers are upgraded in prod and old tokens expire. See Studio docs/jwt-permission-claims-migration.md.
+    // Require both claims and remove this undefined return; empty arrays still mean no grants.
     if (token.account_permissions === undefined) return undefined;
     const claims = token as TokenPermissionClaims;
     return {
