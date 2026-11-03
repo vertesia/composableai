@@ -283,18 +283,16 @@ it('preserves data import IDs across retries and gives distinct operations diffe
     expect(first[0]).not.toBe(first[1]);
 });
 
-function mockEnvironment(info?: ConstructorParameters<typeof MockActivityEnvironment>[0]): MockActivityEnvironment {
+function mockEnvironment(info?: ConstructorParameters<typeof MockActivityEnvironment>[0]) {
     const environment = new MockActivityEnvironment(info);
-    environment.run = new Proxy(environment.run, {
-        apply(target, receiver, args: unknown[]) {
-            const activity = args[0] as (...parameters: unknown[]) => unknown;
-            return Reflect.apply(target, receiver, [
-                (...parameters: unknown[]) => withWorkflowHttpExecution(() => activity(...parameters)),
-                ...args.slice(1),
-            ]);
+    return {
+        run<P extends unknown[], R>(activity: (...parameters: P) => Promise<R>, ...args: P): Promise<R> {
+            const scoped = (...parameters: P) => withWorkflowHttpExecution(() => activity(...parameters));
+            // Temporal's result type is a separate generic and is not inferred from its function constraint.
+            return environment.run<P, R, typeof scoped>(scoped, ...args);
         },
-    });
-    return environment;
+        cancel: () => environment.cancel(),
+    };
 }
 it('preserves public SDK retry defaults outside the opt-in worker scope', async () => {
     await new MockActivityEnvironment().run(async () => {
