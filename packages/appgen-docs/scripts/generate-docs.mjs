@@ -7,8 +7,8 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(SCRIPT_DIR, '..');
 const REPO_ROOT = join(PACKAGE_ROOT, '..', '..');
-// Keep generated docs beside the package entrypoint so Turbo's existing lib/** output captures
-// them on cache writes and restores. Consumers resolve this directory through appgenDocsRoot.
+// Keep generated docs beside the package entrypoint, where consumers resolve them through
+// appgenDocsRoot. The build:docs task (turbo.json) caches and restores them as its output.
 const DOCS_ROOT = join(PACKAGE_ROOT, 'lib', 'docs');
 const TOOL_SERVER_RESOURCE_REFERENCE_PATH = join(
     REPO_ROOT,
@@ -20,7 +20,7 @@ const TOOL_SERVER_RESOURCE_REFERENCE_PATH = join(
     'REFERENCE.md',
 );
 
-// Turbo builds these workspace dependencies before this package. Generating from their local
+// Turbo builds these workspace dependencies before build:docs. Generating from their local
 // outputs keeps one composableai snapshot internally consistent and avoids requiring an earlier
 // npm publication before the documentation package can be built.
 const UI_TYPES_ROOT = join(REPO_ROOT, 'packages', 'ui', 'lib');
