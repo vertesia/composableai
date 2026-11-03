@@ -238,7 +238,7 @@ export type ApiKeyFromSchema = {
     id: string;
     name: string;
     type: (typeof ApiKeyTypes)['secret'];
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     maskedValue?: string | undefined;
     can_retrieve_value?: boolean | undefined;
     account: string;
@@ -259,7 +259,7 @@ export type ApiKeyWithValueFromSchema = {
     id: string;
     name: string;
     type: (typeof ApiKeyTypes)['secret'];
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     maskedValue?: string | undefined;
     can_retrieve_value?: boolean | undefined;
     account: string;
@@ -278,7 +278,7 @@ export type ApiKeyWithValueFromSchema = {
 };
 export type CreateApiKeyPayloadFromSchema = {
     name: string;
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     type?: (typeof ApiKeyTypes)['secret'] | undefined;
     expires_at?: string | undefined | undefined;
     scim_provisioning?: boolean | undefined;
@@ -288,7 +288,7 @@ export type CreateApiKeyPayloadFromSchema = {
 };
 export type UpdateApiKeyPayloadFromSchema = {
     name?: string | undefined;
-    role?: (typeof SystemRoles)[keyof typeof SystemRoles] | undefined;
+    role?: AssignableRoleName | undefined;
     enabled?: boolean | undefined;
     scim_provisioning?: boolean | undefined | undefined;
     properties?: Record<string, unknown> | undefined | undefined;
@@ -305,7 +305,7 @@ export type AuthTokenResponseFromSchema = {
 export type UserGroupArrayFromSchema = UserGroup[];
 export type UserInviteTokenDataFromSchema = {
     email: string;
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     account: AccountRef;
     project?: ProjectRef | undefined;
     invited_by: UserRefFromSchema;
@@ -322,7 +322,7 @@ export type UserInviteTokenFromSchema = {
 export type UserInviteTokenArrayFromSchema = UserInviteTokenFromSchema[];
 export type InviteUserRequestPayloadFromSchema = {
     email: string;
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
 };
 export type InviteUserResponsePayloadFromSchema = {
     action: 'invited' | 'added';
@@ -2473,6 +2473,19 @@ export type CostRunPriceResponse = {
     pricing_source: 'list' | 'historical';
     matched_events: number;
 };
+export type CustomRoleDefinition = {
+    name: string;
+    title: string;
+    description?: string | undefined;
+    permissions: (typeof Permission)[keyof typeof Permission][];
+};
+export type CreateCustomRolePayload = CustomRoleDefinition;
+export type UpdateCustomRolePayload = {
+    title?: string | undefined;
+    description?: string | undefined | undefined;
+    permissions?: (typeof Permission)[keyof typeof Permission][] | undefined;
+};
+export type AssignableRoleName = (typeof SystemRoles)[keyof typeof SystemRoles] | string;
 export type DataColumnType = (typeof DataColumnTypeValues)[keyof typeof DataColumnTypeValues];
 export type SemanticColumnType = (typeof SemanticColumnTypeValues)[keyof typeof SemanticColumnTypeValues];
 /**
@@ -10286,6 +10299,8 @@ export type UpdateContentObjectPayloadWire = {
     type?: string | undefined;
     generation_run_info?: GenerationRunMetadata | undefined;
 };
+export type CustomRoleDefinitionArray = CustomRoleDefinition[];
+export type PermissionArray = (typeof Permission)[keyof typeof Permission][];
 export type ResourceVisibilityWire = (typeof ResourceVisibility)[keyof typeof ResourceVisibility];
 export type OAuthProviderArray = OAuthProvider[];
 export type OAuthClientArray = OAuthClient[];
@@ -11087,6 +11102,11 @@ export type ProjectAppCapabilityPathParams = {
 };
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
+    CustomRoleDefinition: CustomRoleDefinition;
+    CustomRoleDefinitionArray: CustomRoleDefinitionArray;
+    CreateCustomRolePayload: CustomRoleDefinition;
+    UpdateCustomRolePayload: UpdateCustomRolePayload;
+    PermissionArray: PermissionArray;
     Account: AccountFromSchema;
     UpdateAccountPayload: UpdateAccountPayloadFromSchema;
     StripeBillingStatusResponse: StripeBillingStatusResponseFromSchema;

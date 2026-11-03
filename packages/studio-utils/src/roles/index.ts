@@ -1,4 +1,10 @@
-import type { AbacScope, RoleDomain } from '@vertesia/common';
+import {
+    type AbacScope,
+    CUSTOM_ROLE_PREFIX,
+    type CustomRoleDefinition,
+    isCustomRoleName,
+    type RoleDomain,
+} from '@vertesia/common';
 import { agentRunPartition } from './agent-runs.js';
 import { AbacRole, type Role, type RolePartition, SystemRole } from './classes.js';
 import { contentPartition } from './content.js';
@@ -7,6 +13,23 @@ import { systemPartition } from './system.js';
 export { AgentRunRoleNames } from './agent-runs.js';
 export { AbacRole, Role, type RolePartition, SystemRole } from './classes.js';
 export { ContentRoleNames } from './content.js';
+
+export type RoleResolver = (name: string) => Role;
+
+/** Never add account definitions to the global registry: identical names may grant different rights in other accounts. */
+export function createAccountRoleResolver(definitions: readonly CustomRoleDefinition[]): RoleResolver {
+    const roles = new Map(
+        definitions.map((definition) => [
+            CUSTOM_ROLE_PREFIX + definition.name,
+            new SystemRole(CUSTOM_ROLE_PREFIX + definition.name, definition.permissions),
+        ]),
+    );
+    return (name) => {
+        if (!isCustomRoleName(name)) return getRoleByName(name);
+        // Stale/deleted references must not grant authority. Assignment validation checks existence separately.
+        return roles.get(name) ?? new SystemRole(name, []);
+    };
+}
 
 /**
  * The ordered partition registry. Partitions are queried in this order — first
@@ -97,8 +120,8 @@ export function getDelegablePermissionsForRole(roleName: string): string[] {
 export class RoleList {
     private constructor(public readonly roles: Role[]) {}
 
-    static fromRoleNames(roleNames: string[]): RoleList {
-        const roles = roleNames.map((r) => getRoleByName(r));
+    static fromRoleNames(roleNames: string[], resolve: RoleResolver = getRoleByName): RoleList {
+        const roles = roleNames.map(resolve);
         return new RoleList(roles);
     }
 

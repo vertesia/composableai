@@ -344,6 +344,130 @@
       "$ref": "#/components/schemas/DelegationGrant"
     }
   },
+  "Permission": {
+    "type": "string",
+    "enum": [
+      "account:user:read",
+      "account:user:manage",
+      "account:group:read",
+      "account:group:manage",
+      "account:membership:read",
+      "account:membership:manage",
+      "account:api_key:read",
+      "account:api_key:manage",
+      "account:billing:status_read",
+      "account:billing:portal_create",
+      "schedule:delegate",
+      "interaction:read",
+      "interaction:write",
+      "interaction:delete",
+      "interaction:execute",
+      "run:read",
+      "run:write",
+      "environment:admin",
+      "app:manage",
+      "project:admin",
+      "project:integration_read",
+      "project:settings_write",
+      "api_key:create",
+      "api_key:read",
+      "api_key:secret_read",
+      "api_key:update",
+      "api_key:delete",
+      "account:read",
+      "account:write",
+      "account:admin",
+      "account:billing",
+      "billing:read",
+      "audit:read",
+      "account:member",
+      "content:read",
+      "content:read_all",
+      "content:write",
+      "content:delete",
+      "content:admin",
+      "content:superadmin",
+      "workflow:read",
+      "workflow:run",
+      "workflow:admin",
+      "workflow:superadmin",
+      "agent_run:read",
+      "task:read",
+      "task:manage",
+      "iam:impersonate",
+      "studio:access"
+    ]
+  },
+  "CustomRoleDefinition": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$",
+        "description": "Immutable snake_case name without the c: prefix. References in ACEs and tokens use c:<name>."
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "permissions": {
+        "maxItems": 49,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Permission"
+        }
+      }
+    },
+    "required": [
+      "name",
+      "title",
+      "permissions"
+    ],
+    "additionalProperties": false
+  },
+  "CustomRoleDefinitionArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/CustomRoleDefinition"
+    }
+  },
+  "CreateCustomRolePayload": {
+    "$ref": "#/components/schemas/CustomRoleDefinition"
+  },
+  "UpdateCustomRolePayload": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "description": {
+        "type": "string",
+        "maxLength": 1000
+      },
+      "permissions": {
+        "maxItems": 49,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Permission"
+        }
+      }
+    },
+    "additionalProperties": false
+  },
+  "PermissionArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/Permission"
+    }
+  },
   "AccountType": {
     "type": "string",
     "enum": [
@@ -1338,7 +1462,7 @@
     "properties": {
       "role": {
         "type": "string",
-        "description": "Role name. Typed as `string` because role names now span multiple partitions: `SystemRoles` enum values for system-domain roles, and bare strings for ABAC-domain roles (e.g. `'content:reader'`, `'content:writer'`, `'content:manager'`, `'agent_runs:reader'`). Mongoose schema validates the value against the registered role catalog via `getAllRoleNames()`."
+        "description": "Role name. Typed as `string` because role names now span multiple partitions: `SystemRoles` enum values for system-domain roles, c:<name> for account-defined custom roles, and bare strings for ABAC-domain roles (e.g. `'content:reader'`, `'content:writer'`, `'content:manager'`, `'agent_runs:reader'`). Mongoose schema validates syntax; assignment checks resolve custom names in the current account. Custom roles cannot be used in ResourceSets."
       },
       "resource_type": {
         "$ref": "#/components/schemas/AccessControlResourceType"
@@ -1404,7 +1528,7 @@
     "properties": {
       "role": {
         "type": "string",
-        "description": "Role name. Typed as `string` because role names now span multiple partitions: `SystemRoles` enum values for system-domain roles, and bare strings for ABAC-domain roles (e.g. `'content:reader'`, `'content:writer'`, `'content:manager'`, `'agent_runs:reader'`). Mongoose schema validates the value against the registered role catalog via `getAllRoleNames()`."
+        "description": "Role name. Typed as `string` because role names now span multiple partitions: `SystemRoles` enum values for system-domain roles, c:<name> for account-defined custom roles, and bare strings for ABAC-domain roles (e.g. `'content:reader'`, `'content:writer'`, `'content:manager'`, `'agent_runs:reader'`). Mongoose schema validates syntax; assignment checks resolve custom names in the current account. Custom roles cannot be used in ResourceSets."
       },
       "resource_type": {
         "$ref": "#/components/schemas/AccessControlResourceType"
@@ -1454,7 +1578,7 @@
     "properties": {
       "role": {
         "type": "string",
-        "description": "Role name. Typed as `string` because role names now span multiple partitions: `SystemRoles` enum values for system-domain roles, and bare strings for ABAC-domain roles (e.g. `'content:reader'`, `'content:writer'`, `'content:manager'`, `'agent_runs:reader'`). Mongoose schema validates the value against the registered role catalog via `getAllRoleNames()`."
+        "description": "Role name. Typed as `string` because role names now span multiple partitions: `SystemRoles` enum values for system-domain roles, c:<name> for account-defined custom roles, and bare strings for ABAC-domain roles (e.g. `'content:reader'`, `'content:writer'`, `'content:manager'`, `'agent_runs:reader'`). Mongoose schema validates syntax; assignment checks resolve custom names in the current account. Custom roles cannot be used in ResourceSets."
       },
       "resource_type": {
         "$ref": "#/components/schemas/AccessControlResourceType"
@@ -1587,60 +1711,6 @@
     "additionalProperties": false,
     "description": "Tightly-typed view of a system-domain role: permissions are central `Permission` enum values. Returned by `client.iam.roles.listSystem()` and by the server's `/roles/system` endpoint."
   },
-  "Permission": {
-    "type": "string",
-    "enum": [
-      "account:user:read",
-      "account:user:manage",
-      "account:group:read",
-      "account:group:manage",
-      "account:membership:read",
-      "account:membership:manage",
-      "account:api_key:read",
-      "account:api_key:manage",
-      "account:billing:status_read",
-      "account:billing:portal_create",
-      "schedule:delegate",
-      "interaction:read",
-      "interaction:write",
-      "interaction:delete",
-      "interaction:execute",
-      "run:read",
-      "run:write",
-      "environment:admin",
-      "app:manage",
-      "project:admin",
-      "project:integration_read",
-      "project:settings_write",
-      "api_key:create",
-      "api_key:read",
-      "api_key:secret_read",
-      "api_key:update",
-      "api_key:delete",
-      "account:read",
-      "account:write",
-      "account:admin",
-      "account:billing",
-      "billing:read",
-      "audit:read",
-      "account:member",
-      "content:read",
-      "content:read_all",
-      "content:write",
-      "content:delete",
-      "content:admin",
-      "content:superadmin",
-      "workflow:read",
-      "workflow:run",
-      "workflow:admin",
-      "workflow:superadmin",
-      "agent_run:read",
-      "task:read",
-      "task:manage",
-      "iam:impersonate",
-      "studio:access"
-    ]
-  },
   "SystemRoleDefinitionArray": {
     "type": "array",
     "items": {
@@ -1673,6 +1743,19 @@
       "content_superadmin"
     ]
   },
+  "AssignableRoleName": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/SystemRoles"
+      },
+      {
+        "type": "string",
+        "maxLength": 66,
+        "pattern": "^c:[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+      }
+    ],
+    "description": "Built-in system role or account-local c:<name> reference. ABAC roles are excluded."
+  },
   "ApiKey": {
     "type": "object",
     "properties": {
@@ -1686,7 +1769,7 @@
         "$ref": "#/components/schemas/ApiKeyTypes"
       },
       "role": {
-        "$ref": "#/components/schemas/SystemRoles"
+        "$ref": "#/components/schemas/AssignableRoleName"
       },
       "maskedValue": {
         "type": "string"
@@ -1776,7 +1859,7 @@
         "$ref": "#/components/schemas/ApiKeyTypes"
       },
       "role": {
-        "$ref": "#/components/schemas/SystemRoles"
+        "$ref": "#/components/schemas/AssignableRoleName"
       },
       "maskedValue": {
         "type": "string"
@@ -2026,7 +2109,7 @@
         "type": "string"
       },
       "role": {
-        "$ref": "#/components/schemas/SystemRoles"
+        "$ref": "#/components/schemas/AssignableRoleName"
       },
       "type": {
         "$ref": "#/components/schemas/ApiKeyTypes"
@@ -2069,7 +2152,7 @@
         "type": "string"
       },
       "role": {
-        "$ref": "#/components/schemas/SystemRoles"
+        "$ref": "#/components/schemas/AssignableRoleName"
       },
       "enabled": {
         "type": "boolean"
@@ -2132,7 +2215,7 @@
         "type": "string"
       },
       "role": {
-        "$ref": "#/components/schemas/SystemRoles"
+        "$ref": "#/components/schemas/AssignableRoleName"
       }
     },
     "required": [
@@ -2274,7 +2357,7 @@
         "type": "string"
       },
       "role": {
-        "$ref": "#/components/schemas/SystemRoles"
+        "$ref": "#/components/schemas/AssignableRoleName"
       },
       "account": {
         "$ref": "#/components/schemas/AccountRef"

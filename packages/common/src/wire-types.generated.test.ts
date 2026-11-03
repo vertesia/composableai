@@ -1048,6 +1048,22 @@ interface Checks {
         W.CostRunPriceResponse,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostRunPriceResponseSchema>
     >;
+    CustomRoleDefinition: Same<
+        W.CustomRoleDefinition,
+        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
+    >;
+    CreateCustomRolePayload: Same<
+        W.CreateCustomRolePayload,
+        z.infer<typeof import('./api-schemas/custom-roles.js').CreateCustomRolePayloadSchema>
+    >;
+    UpdateCustomRolePayload: Same<
+        W.UpdateCustomRolePayload,
+        z.infer<typeof import('./api-schemas/custom-roles.js').UpdateCustomRolePayloadSchema>
+    >;
+    AssignableRoleName: Same<
+        W.AssignableRoleName,
+        z.infer<typeof import('./api-schemas/apikey.js').AssignableRoleNameSchema>
+    >;
     DataColumnType: Same<W.DataColumnType, z.infer<typeof import('./api-schemas/data-store.js').DataColumnTypeSchema>>;
     SemanticColumnType: Same<
         W.SemanticColumnType,
@@ -4075,6 +4091,14 @@ interface Checks {
         W.UpdateContentObjectPayloadWire,
         z.infer<typeof import('./api-schemas/content.js').UpdateContentObjectPayloadSchema>
     >;
+    CustomRoleDefinitionArray: Same<
+        W.CustomRoleDefinitionArray,
+        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionArraySchema>
+    >;
+    PermissionArray: Same<
+        W.PermissionArray,
+        z.infer<typeof import('./api-schemas/custom-roles.js').PermissionArraySchema>
+    >;
     ResourceVisibilityWire: Same<
         W.ResourceVisibilityWire,
         z.infer<typeof import('./api-schemas/project-configuration.js').ResourceVisibilitySchema>
@@ -4844,6 +4868,26 @@ interface Checks {
     ProjectAppCapabilityPathParams: Same<
         W.ProjectAppCapabilityPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
+    >;
+    'component:CustomRoleDefinition': Same<
+        W.ApiComponentTypes['CustomRoleDefinition'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
+    >;
+    'component:CustomRoleDefinitionArray': Same<
+        W.ApiComponentTypes['CustomRoleDefinitionArray'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionArraySchema>
+    >;
+    'component:CreateCustomRolePayload': Same<
+        W.ApiComponentTypes['CreateCustomRolePayload'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').CreateCustomRolePayloadSchema>
+    >;
+    'component:UpdateCustomRolePayload': Same<
+        W.ApiComponentTypes['UpdateCustomRolePayload'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').UpdateCustomRolePayloadSchema>
+    >;
+    'component:PermissionArray': Same<
+        W.ApiComponentTypes['PermissionArray'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').PermissionArraySchema>
     >;
     'component:Account': Same<
         W.ApiComponentTypes['Account'],
@@ -10201,6 +10245,10 @@ const checks: Checks = {
     CostAnalyticsResponse: true,
     CostRunPriceQuery: true,
     CostRunPriceResponse: true,
+    CustomRoleDefinition: true,
+    CreateCustomRolePayload: true,
+    UpdateCustomRolePayload: true,
+    AssignableRoleName: true,
     DataColumnType: true,
     SemanticColumnType: true,
     DataColumn: true,
@@ -11047,6 +11095,8 @@ const checks: Checks = {
     SubmitProcessTestRunPayloadWire: true,
     CreateContentObjectPayloadWire: true,
     UpdateContentObjectPayloadWire: true,
+    CustomRoleDefinitionArray: true,
+    PermissionArray: true,
     ResourceVisibilityWire: true,
     OAuthProviderArray: true,
     OAuthClientArray: true,
@@ -11250,6 +11300,11 @@ const checks: Checks = {
     DelegationGrantPathParams: true,
     OAuthProviderPathParams: true,
     ProjectAppCapabilityPathParams: true,
+    'component:CustomRoleDefinition': true,
+    'component:CustomRoleDefinitionArray': true,
+    'component:CreateCustomRolePayload': true,
+    'component:UpdateCustomRolePayload': true,
+    'component:PermissionArray': true,
     'component:Account': true,
     'component:UpdateAccountPayload': true,
     'component:StripeBillingStatusResponse': true,
@@ -12522,6 +12577,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2606);
+        expect(Object.keys(checks)).toHaveLength(2617);
     });
 });

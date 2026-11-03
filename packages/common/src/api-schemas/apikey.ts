@@ -2,6 +2,7 @@ import { z } from 'zod';
 // From the values modules, never from `../apikey.js` / `../project.js`: both derive their public
 // types from the schemas below, so importing them here would invert the dependency.
 import { ApiKeyTypes } from '../apikey-values.js';
+import { CUSTOM_ROLE_NAME_MAX_LENGTH } from '../custom-role-values.js';
 import { SystemRoles } from '../project-values.js';
 import type * as Wire from '../wire-types.generated.js';
 import { ProjectSchema } from './project.js';
@@ -25,6 +26,18 @@ export const ApiKeyListQuerySchema = z
 export const ApiKeyTypesSchema = z.literal(ApiKeyTypes.secret).meta({ id: 'ApiKeyTypes' });
 
 export const SystemRolesSchema = z.enum(SystemRoles).meta({ id: 'SystemRoles' });
+export const AssignableRoleNameSchema = z
+    .union([
+        SystemRolesSchema,
+        z
+            .string()
+            .max(CUSTOM_ROLE_NAME_MAX_LENGTH + 2)
+            .regex(/^c:[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/),
+    ])
+    .meta({
+        id: 'AssignableRoleName',
+        description: 'Built-in system role or account-local c:<name> reference. ABAC roles are excluded.',
+    });
 
 /**
  * The compact project shape embedded in other resources' responses.
@@ -72,7 +85,7 @@ export const ApiKeySchema = z
         id: z.string(),
         name: z.string(),
         type: ApiKeyTypesSchema,
-        role: SystemRolesSchema,
+        role: AssignableRoleNameSchema,
         maskedValue: z.string().optional(),
         can_retrieve_value: z.boolean().optional(),
         account: z.string(),

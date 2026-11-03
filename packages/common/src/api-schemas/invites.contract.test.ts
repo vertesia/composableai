@@ -140,7 +140,7 @@ describe('gate 2 — the published components match the closure the types come f
         expect(props.account).toEqual({ $ref: '#/components/schemas/AccountRef' });
         expect(props.project).toEqual({ $ref: '#/components/schemas/ProjectRef' });
         expect(props.invited_by).toEqual({ $ref: '#/components/schemas/UserRef' });
-        expect(props.role).toEqual({ $ref: '#/components/schemas/SystemRoles' });
+        expect(props.role).toEqual({ $ref: '#/components/schemas/AssignableRoleName' });
     });
 
     it('closes both invite components', () => {
@@ -151,6 +151,17 @@ describe('gate 2 — the published components match the closure the types come f
 });
 
 describe('gate 3 — AJV validates the same canonical objects that are published', () => {
+    it('accepts prefixed custom roles in invitations and their requests', () => {
+        expect(
+            compile('TransientToken_UserInviteTokenData_')({
+                ...VALID_INVITE,
+                data: { ...VALID_INVITE.data, role: 'c:document_reviewer' },
+            }),
+        ).toBe(true);
+        const validate = compile('InviteUserRequestPayload');
+        expect(validate({ email: 'g@acme.test', role: 'c:document_reviewer' })).toBe(true);
+        expect(validate({ email: 'g@acme.test', role: 'c:Not valid' })).toBe(false);
+    });
     it('accepts a minimal invite and rejects a missing required field', () => {
         const validate = compile('TransientToken_UserInviteTokenData_');
         expect(validate(VALID_INVITE)).toBe(true);

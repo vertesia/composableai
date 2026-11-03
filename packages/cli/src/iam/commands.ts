@@ -1,9 +1,4 @@
-import type {
-    AccessControlPrincipalType,
-    AccessControlResourceType,
-    CreateUserPayload,
-    SystemRoles,
-} from '@vertesia/common';
+import type { AccessControlPrincipalType, AccessControlResourceType, CreateUserPayload } from '@vertesia/common';
 import colors from 'ansi-colors';
 import type { Command } from 'commander';
 import { getClient } from '../client.js';
@@ -14,7 +9,7 @@ type CreateAceOptions = CliOptions<{
     principalType?: AccessControlPrincipalType;
     resource?: string;
     resourceType?: AccessControlResourceType;
-    role?: SystemRoles;
+    role?: string;
     principalProps?: string;
     resourceProps?: string;
 }>;

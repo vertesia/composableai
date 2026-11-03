@@ -263,6 +263,13 @@ import {
     PricingSyncResultSchema,
 } from './cost-analytics.js';
 import {
+    CreateCustomRolePayloadSchema,
+    CustomRoleDefinitionArraySchema,
+    CustomRoleDefinitionSchema,
+    PermissionArraySchema,
+    UpdateCustomRolePayloadSchema,
+} from './custom-roles.js';
+import {
     CreateDashboardPayloadSchema,
     CreateDashboardSnapshotPayloadSchema,
     DashboardArchiveResultSchema,
@@ -870,6 +877,11 @@ import * as WorkflowRunSchemas from './workflow-runs.js';
  * group approaches the proven-safe size.
  */
 const IAM_AND_ACCOUNT_SCHEMAS = {
+    CustomRoleDefinition: CustomRoleDefinitionSchema,
+    CustomRoleDefinitionArray: CustomRoleDefinitionArraySchema,
+    CreateCustomRolePayload: CreateCustomRolePayloadSchema,
+    UpdateCustomRolePayload: UpdateCustomRolePayloadSchema,
+    PermissionArray: PermissionArraySchema,
     Account: AccountSchema,
     UpdateAccountPayload: UpdateAccountPayloadSchema,
     StripeBillingStatusResponse: StripeBillingStatusResponseSchema,
@@ -2678,6 +2690,9 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'CustomRoleDefinition',
+    'CreateCustomRolePayload',
+    'UpdateCustomRolePayload',
     'IntakeMediaAnalysisOverride',
     'IntakeMediaAnalysisOverrides',
     'OidcFederationConnectionPayload',
