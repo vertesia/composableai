@@ -1,8 +1,8 @@
 import { log } from '@temporalio/activity';
-import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
+import { type DSLActivityExecutionPayload, type DSLActivitySpec, WEB_VIDEO_RENDITION_NAME } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
-import { updateObjectMetadata } from '../../utils/metadata.js';
+import { renditionStorageKey, updateObjectMetadata } from '../../utils/metadata.js';
 import { initializeActivityCommandDeadline, isUnusableVideoContent, rethrowIfActivityStopped } from './exec.js';
 import { type PrepareVideoResult, toPrepareVideoMetadata } from './prepareVideo.js';
 import {
@@ -22,6 +22,14 @@ export interface ExtractVideoAssetsParams {
     thumbnailSize?: number; // Max size (longest side) for thumbnail image, default 256
     posterSize?: number; // Max size (longest side) for poster image, default 1920
     generateAudio?: boolean; // Generate audio-only rendition (AAC), default true
+    // Whether the web transcode is skipped. Unless it is, the stored metadata marks the web rendition as pending, so
+    // readers waiting for it are not satisfied by the poster and audio alone. addObjectRendition clears the mark.
+    skipTranscode?: boolean;
+}
+
+export interface ExtractVideoAssetsResult extends PrepareVideoResult {
+    /** The content etag the assets were made from; pass it to addObjectRendition. */
+    etag?: string;
 }
 
 export interface ExtractVideoAssets extends DSLActivitySpec<ExtractVideoAssetsParams> {
@@ -37,15 +45,21 @@ export interface ExtractVideoAssets extends DSLActivitySpec<ExtractVideoAssetsPa
  */
 export async function extractVideoAssets(
     payload: DSLActivityExecutionPayload<ExtractVideoAssetsParams>,
-): Promise<PrepareVideoResult> {
+): Promise<ExtractVideoAssetsResult> {
     initializeActivityCommandDeadline();
     const { client, objectId, params } = await setupActivity<ExtractVideoAssetsParams>(payload);
 
     const thumbnailSize = params.thumbnailSize ?? DEFAULT_THUMBNAIL_SIZE;
     const posterSize = params.posterSize ?? DEFAULT_POSTER_SIZE;
     const generateAudio = params.generateAudio ?? DEFAULT_GENERATE_AUDIO;
+    const webRenditionPending = params.skipTranscode !== true;
 
-    log.debug(`Extracting video assets for ${objectId}`, { thumbnailSize, posterSize, generateAudio });
+    log.debug(`Extracting video assets for ${objectId}`, {
+        thumbnailSize,
+        posterSize,
+        generateAudio,
+        webRenditionPending,
+    });
 
     const inputObject = await retrieveVideoObject(client, objectId);
     const source = inputObject.content?.source as string;
@@ -62,12 +76,24 @@ export async function extractVideoAssets(
                 log.info('Skipping audio rendition - video has no audio track');
             }
 
-            const etag = inputObject.content?.etag ?? inputObject.id;
-            const renditions = await uploadVideoAssets(client, frames, audioFile, thumbnailSize, posterSize, etag);
+            const storageKey = renditionStorageKey(inputObject);
+            const renditions = await uploadVideoAssets(
+                client,
+                frames,
+                audioFile,
+                thumbnailSize,
+                posterSize,
+                storageKey,
+            );
 
             // Read generation_runs fresh rather than from the object retrieved before the extraction.
             await updateObjectMetadata(client, objectId, (current) => ({
-                metadata: buildVideoMetadata(metadata, renditions, current.metadata),
+                metadata: {
+                    ...buildVideoMetadata(metadata, renditions, current.metadata),
+                    ...(webRenditionPending
+                        ? { pending_renditions: { etag: storageKey, names: [WEB_VIDEO_RENDITION_NAME] } }
+                        : {}),
+                },
             }));
 
             log.info(`Extracted video assets for ${objectId}`, {
@@ -82,6 +108,7 @@ export async function extractVideoAssets(
                 metadata: toPrepareVideoMetadata(metadata),
                 renditions,
                 status: 'success',
+                etag: inputObject.content?.etag,
             };
         } catch (error) {
             rethrowIfActivityStopped(error);

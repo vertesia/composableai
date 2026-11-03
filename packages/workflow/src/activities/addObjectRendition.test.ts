@@ -99,6 +99,47 @@ describe('addObjectRendition', () => {
         expect(result.status).toBe('skipped');
     });
 
+    it('clears the pending mark of the rendition it stores', async () => {
+        const params = { rendition: newWeb, etag: 'etag-1' };
+        await setup(params, {
+            metadata: { renditions: [poster], pending_renditions: { etag: 'etag-1', names: ['Web'] } },
+            content: { etag: 'etag-1' },
+        });
+
+        expect((await run(params)).status).toBe('added');
+        const written = objects.update.mock.calls[0][1].metadata;
+        expect(written.renditions).toEqual([poster, newWeb]);
+        expect(written.pending_renditions).toBeUndefined();
+    });
+
+    it('records that a pending rendition is not coming', async () => {
+        const params = { rendition: null, name: 'Web', etag: 'etag-1' };
+        await setup(params, {
+            metadata: { renditions: [poster], pending_renditions: { etag: 'etag-1', names: ['Web'] } },
+            content: { etag: 'etag-1' },
+        });
+
+        expect((await run(params)).status).toBe('cleared');
+        const written = objects.update.mock.calls[0][1].metadata;
+        expect(written.renditions).toEqual([poster]);
+        expect(written.pending_renditions).toBeUndefined();
+    });
+
+    it('writes nothing when no rendition is given and none is pending', async () => {
+        const params = { rendition: null, name: 'Web', etag: 'etag-1' };
+        await setup(params, { metadata: { renditions: [poster] }, content: { etag: 'etag-1' } });
+
+        expect((await run(params)).status).toBe('skipped');
+        expect(objects.update).not.toHaveBeenCalled();
+    });
+
+    it('requires a name when no rendition is given', async () => {
+        const params = { rendition: null };
+        await setup(params, { metadata: {}, content: { etag: 'etag-1' } });
+
+        await expect(run(params)).rejects.toThrow();
+    });
+
     it('rethrows other update failures', async () => {
         const params = { rendition: newWeb, etag: 'etag-1' };
         await setup(params, { metadata: {}, content: { etag: 'etag-1' } });

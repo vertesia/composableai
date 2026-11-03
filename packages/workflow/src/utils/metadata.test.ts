@@ -1,7 +1,7 @@
 import type { VertesiaClient } from '@vertesia/client';
 import type { Rendition } from '@vertesia/common';
 import { describe, expect, it, vi } from 'vitest';
-import { updateObjectMetadata, upsertRendition } from './metadata.js';
+import { removePendingRendition, renditionStorageKey, updateObjectMetadata, upsertRendition } from './metadata.js';
 
 function rendition(name: string, source: string): Rendition {
     return { name, content: { source, type: 'image/jpeg', name: `${name}.jpg` } };
@@ -61,5 +61,26 @@ describe('updateObjectMetadata', () => {
 
         expect(updated).toBe(false);
         expect(c.objects.update).not.toHaveBeenCalled();
+    });
+});
+
+describe('removePendingRendition', () => {
+    it('removes one name and keeps the rest', () => {
+        expect(removePendingRendition({ etag: 'e1', names: ['Web', 'Other'] }, 'Web')).toEqual({
+            etag: 'e1',
+            names: ['Other'],
+        });
+    });
+
+    it('drops the marker once no name is left', () => {
+        expect(removePendingRendition({ etag: 'e1', names: ['Web'] }, 'Web')).toBeUndefined();
+        expect(removePendingRendition(undefined, 'Web')).toBeUndefined();
+    });
+});
+
+describe('renditionStorageKey', () => {
+    it('uses the content etag, or the object id when the content has none', () => {
+        expect(renditionStorageKey({ id: 'object-1', content: { etag: 'etag-1' } })).toBe('etag-1');
+        expect(renditionStorageKey({ id: 'object-1', content: { source: 'gs://b/o' } })).toBe('object-1');
     });
 });

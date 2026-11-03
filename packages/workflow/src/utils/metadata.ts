@@ -1,5 +1,5 @@
 import type { VertesiaClient } from '@vertesia/client';
-import type { ContentObject, Rendition } from '@vertesia/common';
+import type { ContentObject, PendingRenditionNames, Rendition } from '@vertesia/common';
 
 type ObjectMetadata = NonNullable<ContentObject['metadata']>;
 type ObjectUpdate = Parameters<VertesiaClient['objects']['update']>[1];
@@ -45,4 +45,21 @@ export async function updateObjectMetadata(
 export function upsertRendition<R extends Rendition>(renditions: readonly R[] | undefined, rendition: R): R[] {
     const others = (renditions ?? []).filter((existing) => existing.name !== rendition.name);
     return [...others, rendition];
+}
+
+/** The key renditions of an object's current content are stored under: the content etag, or the object id. */
+export function renditionStorageKey(object: Pick<ContentObject, 'id' | 'content'>): string {
+    return object.content?.etag ?? object.id;
+}
+
+/** Return `pending` without `name`, or undefined when no name is left. */
+export function removePendingRendition(
+    pending: PendingRenditionNames | undefined,
+    name: string,
+): PendingRenditionNames | undefined {
+    if (!pending) {
+        return undefined;
+    }
+    const names = pending.names.filter((pendingName) => pendingName !== name);
+    return names.length > 0 ? { ...pending, names } : undefined;
 }
