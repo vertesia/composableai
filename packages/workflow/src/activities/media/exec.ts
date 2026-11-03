@@ -253,9 +253,10 @@ export function createFfmpegProgressTracker(): ProgressTracker {
  *
  * The worker heartbeats every Activity on a fixed interval, so a wedged ffmpeg child that stops emitting progress would
  * otherwise keep the Activity alive until its multi-hour Start-to-Close timeout. Watching ffmpeg's progress markers lets
- * us terminate a stalled encode within `stallTimeoutMs` so Temporal retries it promptly (escalating to a faster preset
- * on the next attempt). A stall is surfaced as a `killed` error so it propagates as an Activity failure via
- * {@link rethrowIfActivityStopped} instead of being swallowed into a missing rendition.
+ * us terminate a stalled encode within `stallTimeoutMs` so Temporal retries it promptly. A stall is surfaced as a
+ * `killed` error so it propagates as an Activity failure via {@link rethrowIfActivityStopped} instead of being
+ * swallowed into a missing rendition. A child still running at the Activity's deadline is killed the same way, and its
+ * error is marked so callers can tell it apart ({@link isActivityDeadlineExceeded}).
  */
 export async function execActivityFileWithProgress(
     command: string,
@@ -272,9 +273,15 @@ export async function execActivityFileWithProgress(
     return await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
         const child = spawn(command, args, {
             signal: Context.current().cancellationSignal,
-            timeout: activityTimeoutMs,
             killSignal: 'SIGKILL',
         });
+        // The Activity deadline, kept here rather than as spawn's `timeout` so its kill is distinguishable from a stall.
+        let deadlineExceeded = false;
+        const deadlineTimer = setTimeout(() => {
+            deadlineExceeded = true;
+            child.kill('SIGKILL');
+        }, activityTimeoutMs);
+        deadlineTimer.unref?.();
 
         let stdout = '';
         let stderr = '';
@@ -352,6 +359,7 @@ export async function execActivityFileWithProgress(
             if (stallTimer) {
                 clearTimeout(stallTimer);
             }
+            clearTimeout(deadlineTimer);
             finish();
         };
 
@@ -369,6 +377,14 @@ export async function execActivityFileWithProgress(
                                 `${command} was projected to take ${minutes(overBudget.projectedMs)} min after ` +
                                 `${minutes(overBudget.elapsedMs)} min, more than its ` +
                                 `${minutes(completionBudget?.budgetMs ?? 0)} min budget, and was stopped`,
+                        }),
+                    );
+                } else if (deadlineExceeded) {
+                    const seconds = Math.round(activityTimeoutMs / 1000);
+                    reject(
+                        Object.assign(new Error(`${command} was still running at the ${seconds}s Activity deadline`), {
+                            killed: true,
+                            deadlineExceeded: true,
                         }),
                     );
                 } else if (stalled) {
@@ -394,6 +410,13 @@ export async function execActivityFileWithProgress(
             }),
         );
     });
+}
+
+/** Whether a command was killed for running into its Activity's deadline (not a stall, a budget stop or cancellation). */
+export function isActivityDeadlineExceeded(error: unknown): boolean {
+    return (
+        typeof error === 'object' && error !== null && 'deadlineExceeded' in error && error.deadlineExceeded === true
+    );
 }
 
 /** Failure `type` of a file without a usable video stream: a property of the content, logged at warn. */

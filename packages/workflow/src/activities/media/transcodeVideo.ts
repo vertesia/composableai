@@ -11,6 +11,7 @@ import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import {
     initializeActivityCommandDeadline,
+    isActivityDeadlineExceeded,
     isUnusableVideoContent,
     rethrowIfActivityStopped,
     TRANSCODE_EXCEEDS_TIME_BUDGET,
@@ -18,8 +19,10 @@ import {
 import {
     calculateScaledDimensions,
     DEFAULT_MAX_RESOLUTION,
+    FASTEST_VIDEO_PRESET,
     generateRenditionWithDimensions,
     getVideoMetadata,
+    presetForAttempt,
     resolveVideoPreset,
     retrieveVideoObject,
     uploadWebRendition,
@@ -155,7 +158,7 @@ function assertFitsInTime(object: ContentObject, maxResolution: number): void {
 
 export interface TranscodeVideoParams {
     maxResolution?: number; // Max resolution (longest side) for the web rendition, default 1920 (1080p)
-    videoPreset?: VideoPreset; // FFmpeg encoding preset, default veryfast
+    videoPreset?: VideoPreset; // FFmpeg encoding preset, default veryfast; each retry moves one preset faster
 }
 
 export interface TranscodeVideo extends DSLActivitySpec<TranscodeVideoParams> {
@@ -187,7 +190,8 @@ export async function transcodeVideo(
     const { client, objectId, params } = await setupActivity<TranscodeVideoParams>(payload);
 
     const maxResolution = params.maxResolution ?? DEFAULT_MAX_RESOLUTION;
-    const videoPreset = resolveVideoPreset(params.videoPreset);
+    // A retry moves to a faster preset, so a transcode that keeps running into its deadline stops at the fastest one.
+    const videoPreset = presetForAttempt(resolveVideoPreset(params.videoPreset), Context.current().info.attempt);
 
     log.debug(`Transcoding video for ${objectId}`, { maxResolution, videoPreset });
 
@@ -218,6 +222,21 @@ export async function transcodeVideo(
 
             return { objectId, rendition, etag: inputObject.content?.etag };
         } catch (error) {
+            // The encode outlasted the Activity, typically because the duration was unknown so neither budget check
+            // could run. Retry once more at a faster preset; at the fastest there is nothing left to try.
+            if (isActivityDeadlineExceeded(error)) {
+                if (videoPreset === FASTEST_VIDEO_PRESET) {
+                    throw ApplicationFailure.nonRetryable(
+                        `Transcoding ${objectId} did not finish within the Activity's run time, even at ${videoPreset}`,
+                        TRANSCODE_EXCEEDS_TIME_BUDGET,
+                    );
+                }
+                throw ApplicationFailure.retryable(
+                    `Transcoding ${objectId} at ${videoPreset} did not finish within the Activity's run time; ` +
+                        'retrying at a faster preset',
+                    'TranscodeDeadlineExceeded',
+                );
+            }
             rethrowIfActivityStopped(error);
             // The metadata probe already logged it at warn; keep its type and non-retryable flag.
             if (isUnusableVideoContent(error)) {

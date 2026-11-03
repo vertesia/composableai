@@ -175,3 +175,62 @@ describe('transcodeVideo time check', () => {
         expect(budgetMs).toBeLessThanOrEqual(55 * 60_000);
     });
 });
+
+describe('transcodeVideo deadline', () => {
+    function run(attempt: number) {
+        vi.mocked(video.retrieveVideoObject).mockResolvedValue({
+            id: 'object-1',
+            content: { source: 'gs://b/live.webm', type: 'video/webm', etag: 'etag-1' },
+            // Live-recorded WebM: no duration, so neither budget check can run.
+            metadata: {},
+        } as Awaited<ReturnType<typeof video.retrieveVideoObject>>);
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: { files: { getMetadata: vi.fn().mockResolvedValue({ size: 100e6 }) } } as unknown as VertesiaClient,
+            objectId: 'object-1',
+            params: {},
+        } as unknown as Awaited<ReturnType<typeof setupActivity>>);
+        return new MockActivityEnvironment({ startToCloseTimeoutMs: 60 * 60_000, attempt }).run(
+            transcodeVideo,
+            {} as Parameters<typeof transcodeVideo>[0],
+        );
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(video.withVideoWorkspace).mockImplementation(((_client, _source, _prefix, work) =>
+            work('/tmp/in.webm', '/tmp/out')) as typeof video.withVideoWorkspace);
+        vi.mocked(video.getVideoMetadata).mockResolvedValue({
+            duration: 0,
+            width: 1280,
+            height: 720,
+            codec: 'vp8',
+            bitrate: 0,
+            fps: 30,
+            hasAudio: true,
+        });
+    });
+
+    const deadlineKill = () =>
+        Object.assign(new Error('ffmpeg was still running at the deadline'), { killed: true, deadlineExceeded: true });
+
+    it('retries at a faster preset when the encode runs into the deadline at veryfast', async () => {
+        vi.mocked(video.generateRenditionWithDimensions).mockRejectedValue(deadlineKill());
+
+        await expect(run(1)).rejects.toMatchObject({ type: 'TranscodeDeadlineExceeded', nonRetryable: false });
+        expect(vi.mocked(video.generateRenditionWithDimensions).mock.calls[0][4]).toBe('veryfast');
+    });
+
+    it('uses ultrafast on the retry, and fails without retrying when that also runs into the deadline', async () => {
+        vi.mocked(video.generateRenditionWithDimensions).mockRejectedValue(deadlineKill());
+
+        await expect(run(2)).rejects.toMatchObject({ type: TRANSCODE_EXCEEDS_TIME_BUDGET, nonRetryable: true });
+        expect(vi.mocked(video.generateRenditionWithDimensions).mock.calls[0][4]).toBe('ultrafast');
+    });
+
+    it('keeps a stall retryable, as before', async () => {
+        const stall = Object.assign(new Error('ffmpeg made no progress'), { killed: true, stalled: true });
+        vi.mocked(video.generateRenditionWithDimensions).mockRejectedValue(stall);
+
+        await expect(run(1)).rejects.toBe(stall);
+    });
+});

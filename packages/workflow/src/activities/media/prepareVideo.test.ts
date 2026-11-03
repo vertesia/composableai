@@ -7,6 +7,7 @@ import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
 import { execActivityFile } from './exec.js';
 import { buildWebRenditionArgs, prepareVideo, resolveVideoPreset, shouldTranscodeVideo } from './prepareVideo.js';
+import { presetForAttempt } from './video.js';
 
 vi.mock('@temporalio/activity', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@temporalio/activity')>()),
@@ -95,5 +96,17 @@ describe('resolveVideoPreset', () => {
         expect(() => resolveVideoPreset('slow')).toThrow(
             expect.objectContaining({ type: 'InvalidVideoPreset', nonRetryable: true }),
         );
+    });
+});
+
+describe('presetForAttempt', () => {
+    it.each([
+        ['veryfast', 1, 'veryfast'],
+        ['veryfast', 2, 'ultrafast'],
+        ['veryfast', 9, 'ultrafast'],
+        ['medium', 2, 'fast'],
+        ['ultrafast', 1, 'ultrafast'],
+    ] as const)('uses %s on attempt %i as %s', (preset, attempt, expected) => {
+        expect(presetForAttempt(preset, attempt)).toBe(expected);
     });
 });

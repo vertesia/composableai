@@ -10,6 +10,7 @@ import {
     execActivityFileWithProgress,
     ffmpegInputThreadArgs,
     ffmpegOutputThreadArgs,
+    isActivityDeadlineExceeded,
     isTranscodeExceedsTimeBudget,
     libx264ThreadArgs,
     projectCompletionMs,
@@ -311,6 +312,34 @@ describe('transcode time budget', () => {
         await expect(activityEnv().run(async () => rethrowIfActivityStopped(failure))).rejects.toBe(failure);
         await expect(activityEnv().run(async () => rethrowIfActivityStopped(new Error('ffmpeg failed')))).resolves.toBe(
             undefined,
+        );
+    });
+});
+
+describe('activity deadline', () => {
+    it('marks a command still progressing at the Activity deadline as deadline-exceeded, not stalled', async () => {
+        // A 3s Activity leaves the command about 2.7s; the child keeps reporting progress for far longer.
+        const env = new MockActivityEnvironment({
+            currentAttemptScheduledTimestampMs: Date.now(),
+            startToCloseTimeoutMs: 3_000,
+        });
+        const script = [
+            'let s = 0;',
+            'setInterval(() => process.stderr.write(`frame=${++s} time=00:00:0${s % 10}.00\\r`), 50);',
+        ].join('\n');
+
+        const failure = await env
+            .run(() => execActivityFileWithProgress(process.execPath, ['-e', script]))
+            .catch((error: unknown) => error);
+
+        expect(isActivityDeadlineExceeded(failure)).toBe(true);
+        expect(failure).toMatchObject({ killed: true });
+        expect(failure).not.toHaveProperty('stalled');
+    }, 20_000);
+
+    it('does not mark a stall as deadline-exceeded', () => {
+        expect(isActivityDeadlineExceeded(Object.assign(new Error('stall'), { killed: true, stalled: true }))).toBe(
+            false,
         );
     });
 });

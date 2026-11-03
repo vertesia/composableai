@@ -67,6 +67,19 @@ export function resolveVideoPreset(preset?: string): VideoPreset {
     return preset as VideoPreset;
 }
 
+/** The fastest preset; a transcode too slow at it gets no faster preset to retry with. */
+export const FASTEST_VIDEO_PRESET: VideoPreset = VIDEO_PRESETS[VIDEO_PRESETS.length - 1];
+
+/**
+ * The preset for a transcode attempt: `preset` on the first attempt, then one step faster on each retry, up to
+ * {@link FASTEST_VIDEO_PRESET}. A transcode that ran into its deadline is retried this way at most until it reaches
+ * the fastest preset.
+ */
+export function presetForAttempt(preset: VideoPreset, attempt: number): VideoPreset {
+    const index = VIDEO_PRESETS.indexOf(preset);
+    return VIDEO_PRESETS[Math.min(index + Math.max(attempt - 1, 0), VIDEO_PRESETS.length - 1)];
+}
+
 export interface VideoMetadataExtended {
     duration: number;
     width: number;
