@@ -73,10 +73,6 @@ export type AuthTokenResponse = Wire.AuthTokenResponse;
 export type ApiKeyListQuery = Wire.ApiKeyListQuery;
 
 export interface AuthTokenPayload {
-    /** Revocable, finite, job/child-bound execution authority. */
-    workflow_job_delegation?: import('./workflow-jobs.js').WorkflowJobDelegation;
-    workflow_job_permissions?: import('./access-control-values.js').Permission[];
-
     credential_scope?: 'project' | 'account';
     credential_profile?: 'account_admin_v1';
     delegation?: import('./delegation.js').DelegationTokenClaim;

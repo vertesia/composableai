@@ -126,4 +126,4 @@ export * from './versions.js';
 export * from './views.js';
 export * from './workflow-analytics.js';
 
-export * from './workflow-jobs.js';
+export type * from './workflow-usage.js';

@@ -51,13 +51,11 @@ import {
 import type { VertesiaClient } from '../client.js';
 import { EventSourceProvider } from '../execute.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
-import { WorkflowJobsApi } from './WorkflowJobsApi.js';
 
 export class WorkflowsApi extends ApiTopic {
     usage(query?: WorkflowUsageQuery): Promise<WorkflowUsageStanding> {
         return this.get('/usage', { query });
     }
-    readonly jobs = new WorkflowJobsApi(this.client);
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/workflows');
     }

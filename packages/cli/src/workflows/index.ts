@@ -11,12 +11,12 @@ import {
     terminateWorkflowRun,
     transpileWorkflow,
 } from './commands.js';
-import { registerWorkflowJobs } from './jobs.js';
 import { streamRun } from './streams.js';
+import { registerWorkflowUsage } from './usage.js';
 
 export function registerWorkflowsCommand(program: Command) {
     const workflows = program.command('workflows');
-    registerWorkflowJobs(program, workflows);
+    registerWorkflowUsage(program, workflows);
     workflows
         .command('catalog')
         .description(

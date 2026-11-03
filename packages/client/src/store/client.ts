@@ -37,7 +37,7 @@ export interface ZenoClientProps {
     apikey?: string;
     /** Supplies the complete Authorization header; takes precedence over apikey. */
     authCallback?: () => Promise<string>;
-    onRequest?: (request: Request) => unknown;
+    onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
     retryPolicy?: IRequestRetryPolicy;
     pacingRetry?: IPacingRetryPolicy | false;

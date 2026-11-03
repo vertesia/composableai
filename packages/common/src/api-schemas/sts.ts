@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { ISSUE_TOKEN_FORBIDDEN_ERROR_CODES } from '../sts-errors.js';
 import { SystemRolesSchema } from './apikey.js';
-import { WorkflowJobDelegationSchema } from './workflow-jobs.js';
 
 const ALGORITHM_DESCRIPTION = 'Signing algorithm - defaults to ES256. Use RS256 for Azure AD compatibility.';
 
@@ -60,7 +59,6 @@ export const EnvironmentTokenRequestSchema = z
 export const AgentTokenRequestSchema = z
     .strictObject({
         type: z.literal('agent'),
-        workflow_job: WorkflowJobDelegationSchema.optional(),
         delegation_grant_id: z.string().optional(),
         delegation_policy_hash: z.string().optional(),
         continuation_token: z.string().optional(),

@@ -4042,27 +4042,6 @@ interface Checks {
         W.ViewExecutionResult,
         z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionResultSchema>
     >;
-    WorkflowJobDelegation: Same<
-        W.WorkflowJobDelegation,
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobDelegationSchema>
-    >;
-    CreateWorkflowJobPayload: Same<
-        W.CreateWorkflowJobPayload,
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').CreateWorkflowJobPayloadSchema>
-    >;
-    WorkflowJob: Same<W.WorkflowJob, z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobSchema>>;
-    WorkflowJobChild: Same<
-        W.WorkflowJobChild,
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobChildSchema>
-    >;
-    WorkflowJobChildrenQuery: Same<
-        W.WorkflowJobChildrenQuery,
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobChildrenQuerySchema>
-    >;
-    WorkflowJobChildren: Same<
-        W.WorkflowJobChildren,
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobChildrenSchema>
-    >;
     WorkflowUsageQuery: Same<
         W.WorkflowUsageQuery,
         z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
@@ -4074,10 +4053,6 @@ interface Checks {
     WorkflowUsageStanding: Same<
         W.WorkflowUsageStanding,
         z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageStandingSchema>
-    >;
-    WorkflowJobPathParams: Same<
-        W.WorkflowJobPathParams,
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobPathParamsSchema>
     >;
     AgentRunWire: Same<W.AgentRunWire, z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunSchema>>;
     CreateAgentRunPayloadWire: Same<
@@ -9944,10 +9919,6 @@ interface Checks {
         W.ApiComponentTypes['ProjectAppCapabilityPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
     >;
-    'component:WorkflowJobPathParams': Same<
-        W.ApiComponentTypes['WorkflowJobPathParams'],
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobPathParamsSchema>
-    >;
     'component:WorkflowUsageQuery': Same<
         W.ApiComponentTypes['WorkflowUsageQuery'],
         z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
@@ -9959,30 +9930,6 @@ interface Checks {
     'component:WorkflowUsageStanding': Same<
         W.ApiComponentTypes['WorkflowUsageStanding'],
         z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageStandingSchema>
-    >;
-    'component:WorkflowJobDelegation': Same<
-        W.ApiComponentTypes['WorkflowJobDelegation'],
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobDelegationSchema>
-    >;
-    'component:CreateWorkflowJobPayload': Same<
-        W.ApiComponentTypes['CreateWorkflowJobPayload'],
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').CreateWorkflowJobPayloadSchema>
-    >;
-    'component:WorkflowJob': Same<
-        W.ApiComponentTypes['WorkflowJob'],
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobSchema>
-    >;
-    'component:WorkflowJobChildrenQuery': Same<
-        W.ApiComponentTypes['WorkflowJobChildrenQuery'],
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobChildrenQuerySchema>
-    >;
-    'component:WorkflowJobChild': Same<
-        W.ApiComponentTypes['WorkflowJobChild'],
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobChildSchema>
-    >;
-    'component:WorkflowJobChildren': Same<
-        W.ApiComponentTypes['WorkflowJobChildren'],
-        z.infer<typeof import('./api-schemas/workflow-jobs.js').WorkflowJobChildrenSchema>
     >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
@@ -11115,16 +11062,9 @@ const checks: Checks = {
     ViewExecutionSearchConfiguration: true,
     ViewExecutionDefinition: true,
     ViewExecutionResult: true,
-    WorkflowJobDelegation: true,
-    CreateWorkflowJobPayload: true,
-    WorkflowJob: true,
-    WorkflowJobChild: true,
-    WorkflowJobChildrenQuery: true,
-    WorkflowJobChildren: true,
     WorkflowUsageQuery: true,
     WorkflowUsageClass: true,
     WorkflowUsageStanding: true,
-    WorkflowJobPathParams: true,
     AgentRunWire: true,
     CreateAgentRunPayloadWire: true,
     DSLActivitySpecWire: true,
@@ -12604,21 +12544,14 @@ const checks: Checks = {
     'component:DelegationGrantPathParams': true,
     'component:OAuthProviderPathParams': true,
     'component:ProjectAppCapabilityPathParams': true,
-    'component:WorkflowJobPathParams': true,
     'component:WorkflowUsageQuery': true,
     'component:WorkflowUsageClass': true,
     'component:WorkflowUsageStanding': true,
-    'component:WorkflowJobDelegation': true,
-    'component:CreateWorkflowJobPayload': true,
-    'component:WorkflowJob': true,
-    'component:WorkflowJobChildrenQuery': true,
-    'component:WorkflowJobChild': true,
-    'component:WorkflowJobChildren': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2626);
+        expect(Object.keys(checks)).toHaveLength(2612);
     });
 });

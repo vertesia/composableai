@@ -9313,7 +9313,6 @@ export type EnvironmentTokenRequest = {
  */
 export type AgentTokenRequest = {
     type: 'agent';
-    workflow_job?: WorkflowJobDelegation | undefined;
     delegation_grant_id?: string | undefined;
     delegation_policy_hash?: string | undefined;
     continuation_token?: string | undefined;
@@ -10001,67 +10000,6 @@ export type ViewExecutionResult = {
     navigation: ViewNavigationResultMap;
     took: number;
 };
-export type WorkflowJobDelegation = {
-    job_id: string;
-    grant_id: string;
-    child_id: string;
-    environment: string;
-    policy_hash: string;
-};
-export type CreateWorkflowJobPayload = {
-    target:
-        | {
-              type: 'workflow';
-              name: string;
-          }
-        | {
-              type: 'rule';
-              id: string;
-          };
-    object_ids: string[];
-    vars?:
-        | {
-              [k: string]: unknown;
-          }
-        | undefined;
-    task_queue?: string | undefined;
-    expires_at: string;
-    idempotency_key?: string | undefined;
-};
-export type WorkflowJob = {
-    id: string;
-    status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
-    created_at: string;
-    progress: {
-        total: number;
-        pending: number;
-        running: number;
-        succeeded: number;
-        failed: number;
-        cancelled: number;
-    };
-    delegation: {
-        id: string;
-        expires_at: string;
-        revoked_at: string | null;
-    };
-};
-export type WorkflowJobChild = {
-    id: string;
-    object_id: string;
-    status: string;
-    workflow_id: string | null;
-    run_id: string | null;
-    error: string | null;
-};
-export type WorkflowJobChildrenQuery = {
-    after?: string | undefined;
-    limit?: number | undefined;
-};
-export type WorkflowJobChildren = {
-    items: WorkflowJobChild[];
-    next: string | null;
-};
 export type WorkflowUsageQuery = {
     workflow_class?: string | undefined;
 };
@@ -10099,9 +10037,6 @@ export type WorkflowUsageStanding = {
     start_governance_enabled: boolean;
     truncated: boolean;
     classes: WorkflowUsageClass[];
-};
-export type WorkflowJobPathParams = {
-    jobId: string;
 };
 export type AgentRunWire = {
     interaction: string;
@@ -12478,14 +12413,7 @@ export interface ApiComponentTypes {
     DelegationGrantPathParams: DelegationGrantPathParams;
     OAuthProviderPathParams: OAuthProviderPathParams;
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
-    WorkflowJobPathParams: WorkflowJobPathParams;
     WorkflowUsageQuery: WorkflowUsageQuery;
     WorkflowUsageClass: WorkflowUsageClass;
     WorkflowUsageStanding: WorkflowUsageStanding;
-    WorkflowJobDelegation: WorkflowJobDelegation;
-    CreateWorkflowJobPayload: CreateWorkflowJobPayload;
-    WorkflowJob: WorkflowJob;
-    WorkflowJobChildrenQuery: WorkflowJobChildrenQuery;
-    WorkflowJobChild: WorkflowJobChild;
-    WorkflowJobChildren: WorkflowJobChildren;
 }

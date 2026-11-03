@@ -97,7 +97,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         }
         this.response = undefined;
         const request = await super.createRequest(url, init);
-        await this.onRequest?.(request);
+        this.onRequest?.(request);
         return request;
     }
 

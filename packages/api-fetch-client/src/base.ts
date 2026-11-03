@@ -7,9 +7,9 @@ type IPrimitives = string | number | boolean | null | undefined | string[] | num
 
 export interface IRequestRetryPolicy {
     /** Stable create-operation key provider for durable callers; requires idempotencyKeys. */
-    idempotencyKey?: () => string;
+    idempotencyKey?: (operationPayload?: unknown) => string;
     /** Stable ObjectId provider for durable data imports; requires idempotencyKeys. */
-    importId?: () => string;
+    importId?: (operationPayload?: unknown) => string;
     /**
      * Total attempts, including the first request. Defaults to 3 when a retry policy is enabled.
      */

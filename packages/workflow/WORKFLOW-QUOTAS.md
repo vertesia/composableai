@@ -1,53 +1,36 @@
-# Workflow quotas and durable jobs
+# Workflow quotas and durable retries
 
-Workflow starts and HTTP calls consume separate project budgets. An HTTP execute call that starts
-several workflows needs one start intent per child; retrying a transport must preserve those intents.
+Workflow starts and HTTP calls consume separate project budgets. Workflow-name execution, agents and
+processes normally start one workflow per request. This SDK adds usage reporting and retry controls;
+it adds no accepted-job or batch-execution API.
 
-For multi-object execution, use the accepted-job API:
+`client.store.workflows.usage({ workflow_class: 'conversation' })` reports start-window usage,
+occupancy, backlog and confirmed starts separately. Null means unavailable or incomplete observation,
+not zero. Check availability, freshness and `start_governance_enabled`. The CLI exposes `workflows usage`.
 
-```ts
-const job = await client.store.workflows.jobs.create({
-    target: { type: 'workflow', name: 'MyWorkflow' },
-    object_ids: objectIds,
-    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-    idempotency_key: 'import-2026-11-03',
-});
-const progress = await client.store.workflows.jobs.retrieve(job.id);
-const page = await client.store.workflows.jobs.children(job.id, { limit: 100 });
-// page.next is the cursor for the next page.
-await client.store.workflows.jobs.revoke(job.id);
-```
-
-Acceptance is durable. Reuse the same key and input after an ambiguous response; changing input under
-that key is rejected. Child IDs and acknowledged results survive retries. Supply a finite expiry that
-covers the intended queue duration. The job uses a bounded grant derived from the original caller;
-it cannot gain project-wide authority when that caller's token expires. Revocation stops unfinished
-starts and renewals; it does not forcibly terminate children already running. Credentials already
-minted remain valid until their short expiry.
-
-`client.store.workflows.usage({ workflow_class: 'conversation' })` returns start-window usage,
-occupancy, backlog and confirmed starts as separate quantities. Null usage means unavailable or
-incomplete observation, not zero. Check availability/freshness and `start_governance_enabled`.
-The CLI exposes `workflows jobs create|get|children|revoke` and `workflows usage`.
-
-Within a Temporal activity, the workflow client disables SDK pacing sleeps and generic retries so
-Temporal owns typed quota waits. The default operation identity includes workflow, run, activity and
-request order, scoped to method, URL and JSON input. For conditional/reordered calls, use explicit
-business phase identities:
+Public SDK users retain default pacing retries. A worker that installs a durable quota retry interceptor
+can opt in by wrapping **each activity attempt** in `withWorkflowHttpExecution`. This disables SDK pacing
+and generic retry loops for that attempt and shares counters across all clients its helpers construct.
+Without that wrapper, the SDK does not assume the worker has durable quota retry support.
 
 ```ts
-import { withWorkflowOperation } from '@vertesia/workflow';
+import { withWorkflowHttpExecution, withWorkflowOperation } from '@vertesia/workflow';
 
+// Inside an activity interceptor that owns typed quota/dependency retry delays:
+return withWorkflowHttpExecution(() => next(input));
+
+// Inside the activity, use stable phases for conditional/reordered operations:
 await withWorkflowOperation(`document:${objectId}:update-title`, () =>
     client.store.objects.update(objectId, { name: 'Updated title' }),
 );
 ```
 
-Choose one stable phase per logical operation. Quota deduplication does not make arbitrary writes
-exactly once: use endpoint idempotency keys or separate durable activities for independent mutations.
-Continue-as-new creates a new run identity; carry explicit application keys when the same business
-operation must span runs. Cancellation/deadlines stop a caller waiting for credential refresh without
-cancelling refresh work shared by other callers. Narrow job authority is preserved on every renewal.
+Request IDs have fixed length, include execution/operation and method/URL scope, and do not buffer
+request bodies. Create/import helpers bind generated keys to input and preserve them across retries.
+Agent credentials do not grant trust in caller-supplied quota identities: an ID alone cannot bypass
+metering. Endpoint idempotency is still required to avoid duplicate writes; arbitrary writes are not
+made exactly once by a request ID. Use separate durable activities for independent mutations where
+appropriate. Carry explicit business keys when an operation must span continue-as-new.
 
-Server activation requires compatible workers. A server may keep accepted jobs disabled until its
-start-governance setting is enabled; handle a 503 without treating the job as accepted.
+Request-observation hooks remain synchronous/fire-and-forget; async logging is not awaited.
+Cancellation and activity/request deadlines still stop HTTP work through the workflow fetch wrapper.
