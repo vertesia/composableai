@@ -1,0 +1,18 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    // The entrypoint compiles from this package alone. Without this override `^build` would wait for
+    // @vertesia/ui, which is a devDependency only so that build:docs runs after it.
+    "build": {
+      "dependsOn": []
+    },
+    "build:docs": {
+      "dependsOn": ["build", "^build"],
+      "outputs": ["lib/docs/**"]
+    },
+    "test": {
+      "dependsOn": ["build:docs"]
+    }
+  }
+}
