@@ -1,4 +1,9 @@
-import { AbstractFetchClient, type FETCH_FN, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
+import {
+    AbstractFetchClient,
+    type FETCH_FN,
+    type IPacingRetryPolicy,
+    type IRequestRetryPolicy,
+} from '@vertesia/api-fetch-client';
 import type { AppSessionTokenRequest, AppSessionTokenResponse } from '@vertesia/common';
 import {
     APP_VERSION_HEADER,
@@ -74,10 +79,13 @@ export type VertesiaClientProps = {
     storeUrl?: string;
     tokenServerUrl?: string;
     apikey?: string;
+    /** Supplies the complete Authorization header; takes precedence over apikey. */
+    authCallback?: () => Promise<string>;
     sessionTags?: string | string[];
-    onRequest?: (request: Request) => void;
+    onRequest?: (request: Request) => unknown;
     onResponse?: (response: Response) => void;
     retryPolicy?: IRequestRetryPolicy;
+    pacingRetry?: IPacingRetryPolicy | false;
     /**
      * Default request timeout in ms applied to every request (studio + store) unless overridden
      * per-request via `timeoutMs`. `false`/`null`/`0` disables it. Aborts the whole request
@@ -98,10 +106,12 @@ const KNOWN_CLIENT_OPTIONS: Record<keyof Required<VertesiaClientProps>, true> = 
     storeUrl: true,
     tokenServerUrl: true,
     apikey: true,
+    authCallback: true,
     sessionTags: true,
     onRequest: true,
     onResponse: true,
     retryPolicy: true,
+    pacingRetry: true,
     timeout: true,
     fetch: true,
 };
@@ -237,9 +247,11 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             serverUrl: zenoServerUrl,
             tokenServerUrl: this.tokenServerUrl,
             apikey: opts.apikey,
+            authCallback: opts.authCallback,
             onRequest: opts.onRequest,
             onResponse: opts.onResponse,
             retryPolicy: opts.retryPolicy,
+            pacingRetry: opts.pacingRetry,
             timeout: opts.timeout,
             fetch: opts.fetch,
         });
@@ -249,11 +261,17 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             this.withRetryPolicy(opts.retryPolicy);
         }
 
+        if (opts.pacingRetry !== undefined) {
+            this.withPacingRetry(opts.pacingRetry);
+        }
+
         if (opts.timeout !== undefined) {
             this.withTimeout(opts.timeout);
         }
 
-        if (opts.apikey) {
+        if (opts.authCallback) {
+            this.withAuthCallback(opts.authCallback);
+        } else if (opts.apikey) {
             void this.withApiKey(opts.apikey);
         }
 

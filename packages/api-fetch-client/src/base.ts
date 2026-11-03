@@ -6,6 +6,10 @@ export type FETCH_FN = (input: RequestInfo, init?: RequestInit) => Promise<Respo
 type IPrimitives = string | number | boolean | null | undefined | string[] | number[] | boolean[];
 
 export interface IRequestRetryPolicy {
+    /** Stable create-operation key provider for durable callers; requires idempotencyKeys. */
+    idempotencyKey?: () => string;
+    /** Stable ObjectId provider for durable data imports; requires idempotencyKeys. */
+    importId?: () => string;
     /**
      * Total attempts, including the first request. Defaults to 3 when a retry policy is enabled.
      */
@@ -266,9 +270,14 @@ function pacingRetryAfterDelayMs(res: Response): number | undefined {
 }
 
 function rateLimitMetadata(res: Response): RateLimitMetadata | undefined {
-    if (res.status !== 429) return undefined;
     const reason = res.headers.get(RATELIMIT_REASON_HEADER);
-    if (reason !== 'pacing' && reason !== 'quota') return undefined;
+    if (
+        !(
+            (res.status === 429 && (reason === 'pacing' || reason === 'quota')) ||
+            (res.status === 503 && reason === 'dependency_unavailable')
+        )
+    )
+        return undefined;
     const retryAfterMs = reason === 'pacing' ? pacingRetryAfterDelayMs(res) : retryAfterDelayMs(res);
     if (retryAfterMs === undefined) return undefined;
     return {

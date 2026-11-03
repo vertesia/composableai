@@ -1,6 +1,7 @@
 import {
     AbstractFetchClient,
     type FETCH_FN,
+    type IPacingRetryPolicy,
     type IRequestRetryPolicy,
     type RequestError,
 } from '@vertesia/api-fetch-client';
@@ -34,9 +35,12 @@ export interface ZenoClientProps {
     serverUrl?: string;
     tokenServerUrl?: string;
     apikey?: string;
-    onRequest?: (request: Request) => void;
+    /** Supplies the complete Authorization header; takes precedence over apikey. */
+    authCallback?: () => Promise<string>;
+    onRequest?: (request: Request) => unknown;
     onResponse?: (response: Response) => void;
     retryPolicy?: IRequestRetryPolicy;
+    pacingRetry?: IPacingRetryPolicy | false;
     timeout?: number | false | null;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
 }
@@ -46,9 +50,11 @@ const KNOWN_STORE_OPTIONS: Record<keyof Required<ZenoClientProps>, true> = {
     serverUrl: true,
     tokenServerUrl: true,
     apikey: true,
+    authCallback: true,
     onRequest: true,
     onResponse: true,
     retryPolicy: true,
+    pacingRetry: true,
     timeout: true,
     fetch: true,
 };
@@ -64,12 +70,18 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     constructor(opts: ZenoClientProps = {}) {
         warnUnknownOptions('ZenoClient', opts, KNOWN_STORE_OPTIONS);
         super(ensureDefined(opts.serverUrl), opts.fetch);
-        if (opts.apikey) {
+        if (opts.authCallback) {
+            this.withAuthCallback(opts.authCallback);
+        } else if (opts.apikey) {
             this.withApiKey(opts.apikey);
         }
         if (opts.retryPolicy) {
             this.withRetryPolicy(opts.retryPolicy);
         }
+        if (opts.pacingRetry !== undefined) {
+            this.withPacingRetry(opts.pacingRetry);
+        }
+
         if (opts.timeout !== undefined) {
             this.withTimeout(opts.timeout);
         }

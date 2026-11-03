@@ -24,7 +24,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
     headers: Record<string, string>;
     _auth?: () => Promise<string>;
     // callbacks useful to log requests and responses
-    onRequest?: (req: Request) => void;
+    onRequest?: (req: Request) => unknown;
     onResponse?: (res: Response, req: Request) => void;
     // the last response. Can be used to inspect the response headers
     response?: Response;
@@ -97,7 +97,7 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         }
         this.response = undefined;
         const request = await super.createRequest(url, init);
-        this.onRequest?.(request);
+        await this.onRequest?.(request);
         return request;
     }
 

@@ -2,12 +2,42 @@
  * get a zeno client for a given token
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { createHash } from 'node:crypto';
 import { Context } from '@temporalio/activity';
 import type { FETCH_FN } from '@vertesia/api-fetch-client';
 import { decodeEndpoints, decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
-import type { WorkflowExecutionBaseParams } from '@vertesia/common';
+import type { WorkflowExecutionBaseParams, WorkflowJobDelegation } from '@vertesia/common';
 import type { Dispatcher } from 'undici';
 import { WorkflowParamNotFoundError } from '../errors.js';
+
+const logicalOperation = new AsyncLocalStorage<string>();
+
+export interface WorkflowJobTokenScope {
+    accountId: string;
+    projectId: string;
+    grant: WorkflowJobDelegation;
+    tokenServerUrl: string;
+}
+const delegatedJob = new AsyncLocalStorage<WorkflowJobTokenScope>();
+export function withWorkflowJobDelegation<T>(scope: WorkflowJobTokenScope, action: () => T): T {
+    return delegatedJob.run(scope, action);
+}
+let refreshJobToken: ((scope: WorkflowJobTokenScope) => Promise<string>) | undefined;
+/** Workers install their attested, scope-preserving job-grant renewal provider. */
+export function configureWorkflowJobTokenRefresh(provider: NonNullable<typeof refreshJobToken>): void {
+    refreshJobToken = provider;
+}
+
+/**
+ * Give a logical HTTP operation an identity stable across activity retries and continue-as-new.
+ * Choose a separate key for each intended operation; this deduplicates quota debits, not writes.
+ * The key must be scoped to the business operation (e.g. batch id + child id + phase).
+ */
+export function withWorkflowOperation<T>(operationId: string, operation: () => T): T {
+    if (!operationId.trim()) throw new Error('A logical workflow operation ID is required');
+    return logicalOperation.run(operationId, operation);
+}
 
 // Short default timeout for ordinary workflow -> server/store calls (object GETs, status updates,
 // etc.). A stale/dead pooled connection (a server pod scaled down/rolled mid-request) should fail
@@ -98,20 +128,45 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
     const tokenEndpoints = token.endpoints ? decodeEndpoints(token.endpoints) : {};
 
     let requestSequence = 0;
+    let mutationSequence = 0;
     let requestPrefix: string | undefined;
+    let logicalWorkflowId: string | undefined;
     let activitySignal: AbortSignal | undefined;
+    let activityDeadline: number | undefined;
+    let originalScheduledAt = Date.now();
     try {
         const context = Context.current();
         const info = context.info;
+        originalScheduledAt = info.scheduledTimestampMs;
+        const deadlines = [
+            info.startToCloseTimeoutMs > 0
+                ? info.currentAttemptScheduledTimestampMs + info.startToCloseTimeoutMs
+                : Infinity,
+            info.scheduleToCloseTimeoutMs > 0 ? info.scheduledTimestampMs + info.scheduleToCloseTimeoutMs : Infinity,
+        ];
+        if (Number.isFinite(Math.min(...deadlines))) activityDeadline = Math.min(...deadlines);
         activitySignal = context.cancellationSignal;
         const execution = info.workflowExecution;
         if (execution) {
+            logicalWorkflowId = execution.workflowId;
             requestPrefix = `workflow:${execution.workflowId}:${execution.runId}:${info.activityId}`;
         }
     } catch {
         // Option construction is also used outside an activity by tests and utility callers.
     }
 
+    const { account_id: accountId, project_id: projectId, auth_token: authToken } = payload;
+    const mutationKey = () =>
+        createHash('sha256')
+            .update(
+                JSON.stringify([
+                    accountId,
+                    projectId,
+                    logicalWorkflowId,
+                    logicalOperation.getStore() ?? `${requestPrefix}:${mutationSequence++}`,
+                ]),
+            )
+            .digest('hex');
     return {
         serverUrl: payload.config.studio_url,
         storeUrl: payload.config.store_url,
@@ -120,13 +175,62 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
         // and tools-sdk use. This keeps `iss` as the stable identity (WIF/JWKS) while letting a branch
         // STS on its own host be the mint endpoint.
         tokenServerUrl: tokenEndpoints.token || token.iss,
-        apikey: payload.auth_token,
+        ...(delegatedJob.getStore() || token.workflow_job_delegation
+            ? {
+                  authCallback: jobAuthorization(
+                      { account_id: accountId, project_id: projectId, auth_token: authToken },
+                      tokenEndpoints.token || token.iss,
+                      activitySignal,
+                      activityDeadline,
+                  ),
+              }
+            : { apikey: payload.auth_token }),
         timeout: parseWorkflowFetchTimeoutMs(),
+        // Temporal owns pacing/quota waits, cancellation and the activity deadline.
+        pacingRetry: false,
+        retryPolicy: {
+            attempts: 1,
+            ...(requestPrefix
+                ? {
+                      idempotencyKeys: true,
+                      idempotencyKey: mutationKey,
+                      importId: () =>
+                          Math.floor(originalScheduledAt / 1000)
+                              .toString(16)
+                              .padStart(8, '0') + mutationKey().slice(0, 16),
+                  }
+                : {}),
+        },
         fetch: createWorkflowFetch(activitySignal),
         ...(requestPrefix
             ? {
-                  onRequest: (request: Request) => {
-                      request.headers.set('x-request-id', `${requestPrefix}:${requestSequence++}`);
+                  onRequest: async (request: Request) => {
+                      const bodyHash = createHash('sha256')
+                          .update(
+                              request.headers.get('content-type')?.includes('application/json')
+                                  ? new Uint8Array(await request.clone().arrayBuffer())
+                                  : '',
+                          )
+                          .digest('hex');
+                      const operationId = logicalOperation.getStore();
+                      const identity = operationId
+                          ? `workflow:operation:${createHash('sha256')
+                                .update(
+                                    JSON.stringify([
+                                        accountId,
+                                        projectId,
+                                        logicalWorkflowId,
+                                        operationId,
+                                        request.method,
+                                        request.url,
+                                        bodyHash,
+                                    ]),
+                                )
+                                .digest('hex')}`
+                          : `${requestPrefix}:${requestSequence++}:${createHash('sha256')
+                                .update(JSON.stringify([request.method, request.url, bodyHash]))
+                                .digest('hex')}`;
+                      request.headers.set('x-request-id', identity);
                   },
               }
             : {}),
@@ -157,4 +261,63 @@ function parseWorkflowFetchTimeoutMs(): number | false {
         return DEFAULT_WORKFLOW_FETCH_TIMEOUT_MS;
     }
     return Number.parseInt(normalized, 10);
+}
+
+function jobAuthorization(
+    payload: Pick<WorkflowExecutionBaseParams<unknown>, 'account_id' | 'project_id' | 'auth_token'>,
+    tokenServerUrl: string,
+    signal?: AbortSignal,
+    deadline?: number,
+): () => Promise<string> {
+    const override = delegatedJob.getStore();
+    let current = override ? '' : (payload.auth_token ?? '');
+    return async () => {
+        if (!current && override) {
+            if (!refreshJobToken) throw new Error('The worker has no workflow job-grant renewal provider');
+            current = await waitForJobRefresh(refreshJobToken(override), signal, deadline);
+        }
+        const decoded = decodeJWT(current);
+        if (!decoded.exp || decoded.exp * 1000 - Date.now() <= 60_000) {
+            if (!refreshJobToken || !decoded.workflow_job_delegation)
+                throw new Error('The worker has no workflow job-grant renewal provider');
+            current = await waitForJobRefresh(
+                refreshJobToken(
+                    override ?? {
+                        accountId: payload.account_id,
+                        projectId: payload.project_id,
+                        grant: decoded.workflow_job_delegation,
+                        tokenServerUrl,
+                    },
+                ),
+                signal,
+                deadline,
+            );
+        }
+        return `Bearer ${current}`;
+    };
+}
+
+/** Cancel this waiter without cancelling a refresh shared by other activities. */
+async function waitForJobRefresh(
+    promise: Promise<string>,
+    callerSignal?: AbortSignal,
+    deadline?: number,
+): Promise<string> {
+    const requestTimeout = parseWorkflowFetchTimeoutMs();
+    const duration = Math.min(
+        requestTimeout === false ? Infinity : requestTimeout,
+        deadline === undefined ? Infinity : Math.max(1, deadline - Date.now()),
+    );
+    const timeout = Number.isFinite(duration) ? AbortSignal.timeout(Math.ceil(duration)) : undefined;
+    const signal = callerSignal && timeout ? AbortSignal.any([callerSignal, timeout]) : (callerSignal ?? timeout);
+    if (!signal) return promise;
+    signal.throwIfAborted();
+    return new Promise<string>((resolve, reject) => {
+        const abort = () => reject(signal.reason);
+        signal.addEventListener('abort', abort, { once: true });
+        promise
+            .then(resolve, reject)
+            .finally(() => signal.removeEventListener('abort', abort))
+            .catch(() => {});
+    });
 }

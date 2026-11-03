@@ -31,7 +31,7 @@ function createMessage(message: string, request: Request, status: number, payloa
 }
 
 export interface RateLimitMetadata {
-    reason: 'pacing' | 'quota';
+    reason: 'pacing' | 'quota' | 'dependency_unavailable';
     retryAfterMs: number;
     resource?: string;
     window?: string;

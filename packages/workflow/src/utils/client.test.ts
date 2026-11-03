@@ -5,7 +5,12 @@ import { MockActivityEnvironment } from '@temporalio/testing';
 import { VertesiaClient } from '@vertesia/client';
 import type { WorkflowExecutionBaseParams } from '@vertesia/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getVertesiaClientOptions } from './client.js';
+import {
+    configureWorkflowJobTokenRefresh,
+    getVertesiaClientOptions,
+    withWorkflowJobDelegation,
+    withWorkflowOperation,
+} from './client.js';
 
 const TOKEN =
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature';
@@ -25,7 +30,7 @@ async function captureRequestIdentity(input: WorkflowExecutionBaseParams): Promi
 }> {
     const options = getVertesiaClientOptions(input);
     const requests = [new Request('https://studio.example.com/one'), new Request('https://store.example.com/two')];
-    for (const request of requests) options.onRequest?.(request);
+    for (const request of requests) await options.onRequest?.(request);
     return {
         requestIds: requests.map((request) => request.headers.get('x-request-id') ?? ''),
     };
@@ -61,8 +66,49 @@ describe('workflow API request provenance', () => {
         assertRequestIdentity(retryAttempt);
 
         expect(firstAttempt).toEqual(retryAttempt);
-        expect(firstAttempt.requestIds[0]).toMatch(/:0$/);
-        expect(firstAttempt.requestIds[1]).toMatch(/:1$/);
+        expect(firstAttempt.requestIds[0]).toMatch(/:0:[a-f0-9]{64}$/);
+        expect(firstAttempt.requestIds[1]).toMatch(/:1:[a-f0-9]{64}$/);
+    });
+
+    it('keeps explicitly named operations stable when call order changes', async () => {
+        const environment = new MockActivityEnvironment();
+        const execute = (order: string[]) =>
+            environment.run(async () => {
+                const options = getVertesiaClientOptions(payload());
+                return Object.fromEntries(
+                    order.map((key) =>
+                        withWorkflowOperation(key, () => {
+                            const request = new Request(`https://store.example.com/${key}`);
+                            options.onRequest?.(request);
+                            return [key, request.headers.get('x-request-id')];
+                        }),
+                    ),
+                );
+            });
+        const first = await execute(['first', 'second']);
+        expect(await execute(['second', 'first'])).toEqual(first);
+        expect(first.first).not.toEqual(first.second);
+    });
+
+    it('surfaces pacing immediately on both API clients for durable Temporal retries', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async () =>
+                new Response('{}', {
+                    status: 429,
+                    headers: {
+                        'content-type': 'application/json',
+                        'x-ratelimit-reason': 'pacing',
+                        'x-ratelimit-retry-ms': '50',
+                    },
+                }),
+        );
+        const environment = new MockActivityEnvironment();
+        await environment.run(async () => {
+            const client = new VertesiaClient(getVertesiaClientOptions(payload()));
+            await expect(client.get('/one')).rejects.toMatchObject({ status: 429 });
+            await expect(client.store.get('/two')).rejects.toMatchObject({ status: 429 });
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
     it('cancels workflow HTTP requests when the Temporal activity is cancelled', async () => {
@@ -217,4 +263,85 @@ describe('workflow client token server URL resolution', () => {
             }),
         ).toBe('https://sts.us1.vertesia.io');
     });
+});
+
+describe('durable workflow job authorization', () => {
+    const grant = {
+        job_id: '1'.repeat(24),
+        grant_id: '2'.repeat(24),
+        child_id: '3'.repeat(24),
+        environment: 'test',
+        policy_hash: 'a'.repeat(64),
+    };
+    it('does not install a deterministic create key for callers outside an activity', () => {
+        expect(getVertesiaClientOptions(payload()).retryPolicy?.idempotencyKey).toBeUndefined();
+    });
+    it('cancels one waiter without cancelling another caller of the shared renewal', async () => {
+        let resolve!: (value: string) => void;
+        const shared = new Promise<string>((done) => {
+            resolve = done;
+        });
+        const provider = vi.fn(() => shared);
+        configureWorkflowJobTokenRefresh(provider);
+        const token = tokenWithClaims({ iss: 'https://sts.example', exp: 1, workflow_job_delegation: grant });
+        const first = new MockActivityEnvironment();
+        const second = new MockActivityEnvironment();
+        const invoke = async () => {
+            const callback = getVertesiaClientOptions(payloadWithToken(token)).authCallback;
+            if (!callback) throw new Error('Job authorization is missing');
+            return callback();
+        };
+        const one = first.run(invoke);
+        const two = second.run(invoke);
+        const cancelled = expect(one).rejects.toBeDefined();
+        await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+        first.cancel();
+        await cancelled;
+        const issued = tokenWithClaims({
+            iss: 'https://sts.example',
+            exp: Date.now() / 1000 + 300,
+            workflow_job_delegation: grant,
+        });
+        resolve(issued);
+        expect(await two).toBe(`Bearer ${issued}`);
+    });
+    it('preserves the installed delegation scope on every renewal', async () => {
+        const override = {
+            accountId: 'captured-account',
+            projectId: 'captured-project',
+            grant,
+            tokenServerUrl: 'https://captured-sts.example',
+        };
+        const issued = tokenWithClaims({
+            iss: 'https://captured-sts.example',
+            exp: Date.now() / 1000 + 1,
+            workflow_job_delegation: grant,
+        });
+        const provider = vi.fn(async (_scope: import('./client.js').WorkflowJobTokenScope) => issued);
+        configureWorkflowJobTokenRefresh(provider);
+        const callback = withWorkflowJobDelegation(override, () => getVertesiaClientOptions(payload()).authCallback);
+        if (!callback) throw new Error('Job authorization is missing');
+        await callback();
+        await callback();
+        expect(provider.mock.calls.length).toBeGreaterThanOrEqual(2);
+        for (const [scope] of provider.mock.calls) expect(scope).toEqual(override);
+    });
+});
+
+it('preserves data import IDs across retries and gives distinct operations different IDs', async () => {
+    const environment = new MockActivityEnvironment();
+    const run = () =>
+        environment.run(async () => {
+            const policy = getVertesiaClientOptions(payload()).retryPolicy;
+            if (!policy || typeof policy === 'boolean' || !policy.importId)
+                throw new Error('Expected durable import identity');
+            return [
+                withWorkflowOperation('import-one', policy.importId),
+                withWorkflowOperation('import-two', policy.importId),
+            ];
+        });
+    const first = await run();
+    expect(await run()).toEqual(first);
+    expect(first[0]).toMatch(/^[a-f0-9]{24}$/);
+    expect(first[0]).not.toBe(first[1]);
 });

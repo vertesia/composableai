@@ -10,7 +10,7 @@ export function withIdempotencyKey<T extends { idempotency_key?: string }>(clien
     if (payload.idempotency_key || !client.getRetryPolicy()?.idempotencyKeys) {
         return payload;
     }
-    return { ...payload, idempotency_key: generateIdempotencyKey() };
+    return { ...payload, idempotency_key: client.getRetryPolicy()?.idempotencyKey?.() ?? generateIdempotencyKey() };
 }
 
 /**
@@ -22,6 +22,8 @@ export function withImportId<T extends { import_id?: string }>(client: ClientBas
     if (payload.import_id || !client.getRetryPolicy()?.idempotencyKeys) {
         return payload;
     }
+    const durableId = client.getRetryPolicy()?.importId?.();
+    if (durableId) return { ...payload, import_id: durableId };
     const seconds = Math.floor(Date.now() / 1000)
         .toString(16)
         .padStart(8, '0');
