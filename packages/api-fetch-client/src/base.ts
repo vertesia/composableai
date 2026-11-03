@@ -271,13 +271,7 @@ function pacingRetryAfterDelayMs(res: Response): number | undefined {
 
 function rateLimitMetadata(res: Response): RateLimitMetadata | undefined {
     const reason = res.headers.get(RATELIMIT_REASON_HEADER);
-    if (
-        !(
-            (res.status === 429 && (reason === 'pacing' || reason === 'quota')) ||
-            (res.status === 503 && reason === 'dependency_unavailable')
-        )
-    )
-        return undefined;
+    if (res.status !== 429 || (reason !== 'pacing' && reason !== 'quota')) return undefined;
     const retryAfterMs = reason === 'pacing' ? pacingRetryAfterDelayMs(res) : retryAfterDelayMs(res);
     if (retryAfterMs === undefined) return undefined;
     return {
@@ -394,6 +388,9 @@ async function discardBody(res: Response) {
     }
 }
 
+/** Synchronous logical-call identity, captured before authentication and reused by transport retries. */
+export type RequestIdentityProvider = (request: { url: string; method: string; body?: BodyInit }) => string | undefined;
+
 export abstract class ClientBase {
     _fetch: Promise<FETCH_FN>;
     baseUrl: string;
@@ -401,6 +398,7 @@ export abstract class ClientBase {
     verboseErrors = true;
     retryPolicy?: IRequestRetryPolicy;
     pacingRetry?: IPacingRetryPolicy | false;
+    requestIdentity?: RequestIdentityProvider;
     defaultTimeoutMs?: number;
 
     abstract get headers(): Record<string, string>;
@@ -542,7 +540,7 @@ export abstract class ClientBase {
             }
         }
         const rateLimit = rateLimitMetadata(res);
-        return new ServerError(
+        const error = new ServerError(
             message,
             req,
             res.status,
@@ -551,6 +549,13 @@ export abstract class ClientBase {
             rateLimit,
             rateLimit?.retryAfterMs ?? retryAfterDelayMs(res),
         );
+        if (
+            res.status === 503 &&
+            res.headers.get(RATELIMIT_REASON_HEADER) === 'dependency_unavailable' &&
+            error.retryAfterMs !== undefined
+        )
+            error.dependencyUnavailable = { retryAfterMs: error.retryAfterMs };
+        return error;
     }
 
     async readJSONPayload(res: Response) {
@@ -646,6 +651,8 @@ export abstract class ClientBase {
         }
 
         const normalizedMethod = method.toUpperCase();
+        const identity = this.requestIdentity?.({ url, method: normalizedMethod, body });
+        if (identity) headers['x-request-id'] = identity;
         // Resolved once; createRequestInit() then mints a FRESH timeout signal per attempt so each
         // retry gets its own deadline. The signal is set on the Request, so it bounds the connection,
         // the wait for response headers, AND body consumption (handleResponse reads res.text()).

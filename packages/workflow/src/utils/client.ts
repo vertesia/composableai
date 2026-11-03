@@ -7,25 +7,45 @@ import { createHash } from 'node:crypto';
 import { Context } from '@temporalio/activity';
 import type { FETCH_FN } from '@vertesia/api-fetch-client';
 import { decodeEndpoints, decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
-import type { WorkflowExecutionBaseParams } from '@vertesia/common';
+import { PrincipalType, type WorkflowExecutionBaseParams } from '@vertesia/common';
 import type { Dispatcher } from 'undici';
 import { WorkflowParamNotFoundError } from '../errors.js';
 
-const logicalOperation = new AsyncLocalStorage<string>();
-const workflowHttpExecution = new AsyncLocalStorage<{ requestSequence: number; mutationSequence: number }>();
+const logicalOperation = new AsyncLocalStorage<{
+    id: string;
+    createdAtMs?: number;
+    requestOccurrences: Map<string, number>;
+}>();
+const workflowHttpExecution = new AsyncLocalStorage<{
+    requestOccurrences: Map<string, number>;
+    mutationSequence: number;
+}>();
 /** Install around one activity attempt only when a durable quota retry interceptor owns its waits. */
 export function withWorkflowHttpExecution<T>(action: () => T): T {
-    return workflowHttpExecution.run({ requestSequence: 0, mutationSequence: 0 }, action);
+    return workflowHttpExecution.run({ requestOccurrences: new Map<string, number>(), mutationSequence: 0 }, action);
 }
 
 /**
  * Give a logical HTTP operation an identity stable across activity retries and continue-as-new.
  * Choose a separate key for each intended operation; server trust and endpoint idempotency still apply.
  * The key must be scoped to the business operation (e.g. batch id + child id + phase).
+ * Named data imports also require a retained createdAtMs (or an explicit import_id) across runs.
  */
-export function withWorkflowOperation<T>(operationId: string, operation: () => T): T {
+export function withWorkflowOperation<T>(
+    operationId: string,
+    operation: () => T,
+    options: { createdAtMs?: number } = {},
+): T {
     if (!operationId.trim()) throw new Error('A logical workflow operation ID is required');
-    return logicalOperation.run(operationId, operation);
+    if (
+        options.createdAtMs !== undefined &&
+        (!Number.isFinite(options.createdAtMs) || options.createdAtMs < 0 || options.createdAtMs >= 0x100000000 * 1000)
+    )
+        throw new Error('Operation createdAtMs must be an ObjectId-compatible timestamp');
+    return logicalOperation.run(
+        { id: operationId, createdAtMs: options.createdAtMs, requestOccurrences: new Map() },
+        operation,
+    );
 }
 
 // Short default timeout for ordinary workflow -> server/store calls (object GETs, status updates,
@@ -117,7 +137,7 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
     const tokenEndpoints = token.endpoints ? decodeEndpoints(token.endpoints) : {};
 
     const httpExecution = workflowHttpExecution.getStore();
-    const counters = httpExecution ?? { requestSequence: 0, mutationSequence: 0 };
+    const counters = httpExecution ?? { requestOccurrences: new Map<string, number>(), mutationSequence: 0 };
     let requestPrefix: string | undefined;
     let logicalWorkflowId: string | undefined;
     let activitySignal: AbortSignal | undefined;
@@ -144,7 +164,7 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
                     accountId,
                     projectId,
                     logicalWorkflowId,
-                    logicalOperation.getStore() ?? `${requestPrefix}:${counters.mutationSequence++}`,
+                    logicalOperation.getStore()?.id ?? `${requestPrefix}:${counters.mutationSequence++}`,
                     operationPayload,
                 ]),
             )
@@ -169,33 +189,53 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
                           ? {
                                 idempotencyKeys: true,
                                 idempotencyKey: mutationKey,
-                                importId: (operationPayload?: unknown) =>
-                                    Math.floor(originalScheduledAt / 1000)
-                                        .toString(16)
-                                        .padStart(8, '0') + mutationKey(operationPayload).slice(0, 16),
+                                importId: (operationPayload?: unknown) => {
+                                    const operation = logicalOperation.getStore();
+                                    if (operation && operation.createdAtMs === undefined)
+                                        throw new Error(
+                                            'Named imports require a stable createdAtMs or an explicit import_id',
+                                        );
+                                    return (
+                                        Math.floor((operation?.createdAtMs ?? originalScheduledAt) / 1000)
+                                            .toString(16)
+                                            .padStart(8, '0') + mutationKey(operationPayload).slice(0, 16)
+                                    );
+                                },
                             }
                           : {}),
                   },
               }
             : {}),
         fetch: createWorkflowFetch(activitySignal),
-        ...(requestPrefix
+        ...(requestPrefix &&
+        httpExecution &&
+        token.trusted_request_identity === true &&
+        token.type === PrincipalType.ServiceAccount
             ? {
-                  onRequest: (request: Request) => {
-                      const operationId = logicalOperation.getStore();
-                      const identity = createHash('sha256')
+                  requestIdentity: ({ url, method, body }) => {
+                      const operationId = logicalOperation.getStore()?.id;
+                      // Body is already serialized by the HTTP client; never clone/buffer a Request.
+                      const bodyHash = createHash('sha256')
+                          .update(typeof body === 'string' ? body : '')
+                          .digest('hex');
+                      const fingerprint = createHash('sha256')
                           .update(
                               JSON.stringify([
                                   accountId,
                                   projectId,
                                   operationId ? logicalWorkflowId : requestPrefix,
-                                  operationId ?? counters.requestSequence++,
-                                  request.method,
-                                  request.url,
+                                  operationId,
+                                  method,
+                                  url,
+                                  bodyHash,
                               ]),
                           )
                           .digest('hex');
-                      request.headers.set('x-request-id', `workflow:operation:${identity}`);
+                      const occurrences =
+                          logicalOperation.getStore()?.requestOccurrences ?? counters.requestOccurrences;
+                      const occurrence = occurrences.get(fingerprint) ?? 0;
+                      occurrences.set(fingerprint, occurrence + 1);
+                      return `workflow:operation:${createHash('sha256').update(`${fingerprint}:${occurrence}`).digest('hex')}`;
                   },
               }
             : {}),

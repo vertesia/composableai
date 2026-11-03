@@ -31,7 +31,7 @@ function createMessage(message: string, request: Request, status: number, payloa
 }
 
 export interface RateLimitMetadata {
-    reason: 'pacing' | 'quota' | 'dependency_unavailable';
+    reason: 'pacing' | 'quota';
     retryAfterMs: number;
     resource?: string;
     window?: string;
@@ -45,6 +45,8 @@ export class RequestError extends Error {
     displayDetails: boolean;
     original_message: string;
     rateLimit?: RateLimitMetadata;
+    /** Typed quota-backend outage; distinct from customer pacing/quota exhaustion. */
+    dependencyUnavailable?: { retryAfterMs: number };
     /** Retry timing supplied by an upstream service, including untyped provider 429 responses. */
     retryAfterMs?: number;
     constructor(

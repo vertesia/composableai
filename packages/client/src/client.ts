@@ -3,6 +3,7 @@ import {
     type FETCH_FN,
     type IPacingRetryPolicy,
     type IRequestRetryPolicy,
+    type RequestIdentityProvider,
 } from '@vertesia/api-fetch-client';
 import type { AppSessionTokenRequest, AppSessionTokenResponse } from '@vertesia/common';
 import {
@@ -82,6 +83,7 @@ export type VertesiaClientProps = {
     /** Supplies the complete Authorization header; takes precedence over apikey. */
     authCallback?: () => Promise<string>;
     sessionTags?: string | string[];
+    requestIdentity?: RequestIdentityProvider;
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
     retryPolicy?: IRequestRetryPolicy;
@@ -108,6 +110,7 @@ const KNOWN_CLIENT_OPTIONS: Record<keyof Required<VertesiaClientProps>, true> = 
     apikey: true,
     authCallback: true,
     sessionTags: true,
+    requestIdentity: true,
     onRequest: true,
     onResponse: true,
     retryPolicy: true,
@@ -248,6 +251,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             tokenServerUrl: this.tokenServerUrl,
             apikey: opts.apikey,
             authCallback: opts.authCallback,
+            requestIdentity: opts.requestIdentity,
             onRequest: opts.onRequest,
             onResponse: opts.onResponse,
             retryPolicy: opts.retryPolicy,
@@ -275,6 +279,7 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             void this.withApiKey(opts.apikey);
         }
 
+        this.requestIdentity = opts.requestIdentity;
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
         this.sessionTags = opts.sessionTags;

@@ -3,12 +3,16 @@ import type { AddressInfo } from 'node:net';
 import { CancelledFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { VertesiaClient } from '@vertesia/client';
-import type { WorkflowExecutionBaseParams } from '@vertesia/common';
+import { PrincipalType, type WorkflowExecutionBaseParams } from '@vertesia/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getVertesiaClientOptions, withWorkflowHttpExecution, withWorkflowOperation } from './client.js';
 
-const TOKEN =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwOi8vbW9jay10b2tlbi1zZXJ2ZXIiLCJzdWIiOiJ0ZXN0In0.signature';
+const TOKEN = tokenWithClaims({
+    iss: 'http://mock-token-server',
+    sub: 'test',
+    type: PrincipalType.ServiceAccount,
+    trusted_request_identity: true,
+});
 
 function payload(): WorkflowExecutionBaseParams {
     return {
@@ -25,7 +29,7 @@ async function captureRequestIdentity(input: WorkflowExecutionBaseParams): Promi
 }> {
     const options = getVertesiaClientOptions(input);
     const requests = [new Request('https://studio.example.com/one'), new Request('https://store.example.com/two')];
-    for (const request of requests) await options.onRequest?.(request);
+    for (const request of requests) stamp(options, request);
     return {
         requestIds: requests.map((request) => request.headers.get('x-request-id') ?? ''),
     };
@@ -74,7 +78,7 @@ describe('workflow API request provenance', () => {
                     order.map((key) =>
                         withWorkflowOperation(key, () => {
                             const request = new Request(`https://store.example.com/${key}`);
-                            options.onRequest?.(request);
+                            stamp(options, request);
                             return [key, request.headers.get('x-request-id')];
                         }),
                     ),
@@ -262,14 +266,15 @@ describe('workflow client token server URL resolution', () => {
 
 it('preserves data import IDs across retries and gives distinct operations different IDs', async () => {
     const environment = mockEnvironment();
+    const createdAtMs = Date.now();
     const run = () =>
         environment.run(async () => {
             const policy = getVertesiaClientOptions(payload()).retryPolicy;
             if (!policy || typeof policy === 'boolean' || !policy.importId)
                 throw new Error('Expected durable import identity');
             return [
-                withWorkflowOperation('import-one', policy.importId),
-                withWorkflowOperation('import-two', policy.importId),
+                withWorkflowOperation('import-one', policy.importId, { createdAtMs }),
+                withWorkflowOperation('import-two', policy.importId, { createdAtMs }),
             ];
         });
     const first = await run();
@@ -330,9 +335,73 @@ it('uses a fixed-size request ID for maximum-length workflow and activity identi
             body: JSON.stringify({ large: 'x'.repeat(1000000) }),
         });
         const clone = vi.spyOn(request, 'clone');
-        options.onRequest?.(request);
+        stamp(options, request);
         expect(clone).not.toHaveBeenCalled();
         return request.headers.get('x-request-id');
     });
     expect(result?.length).toBeLessThan(100);
+});
+
+function stamp(options: ReturnType<typeof getVertesiaClientOptions>, request: Request): void {
+    const id = options.requestIdentity?.({ url: request.url, method: request.method });
+    if (id) request.headers.set('x-request-id', id);
+}
+it('preserves named import IDs across continue-as-new using a retained operation timestamp', async () => {
+    const createdAtMs = Date.now();
+    const run = (runId: string, scheduledTimestampMs: number) =>
+        mockEnvironment({
+            scheduledTimestampMs,
+            workflowExecution: { workflowId: 'same-business-workflow', runId },
+        }).run(async () => {
+            const policy = getVertesiaClientOptions(payload()).retryPolicy;
+            if (!policy?.importId) throw new Error('Missing import key provider');
+            expect(() => withWorkflowOperation('batch-7:import', () => policy.importId?.({ path: 'same' }))).toThrow(
+                'createdAtMs',
+            );
+            return withWorkflowOperation('batch-7:import', () => policy.importId?.({ path: 'same' }), { createdAtMs });
+        });
+    expect(await run('run-a', createdAtMs)).toBe(await run('run-b', createdAtMs + 3600000));
+});
+it('binds concurrent same-URL POST identities to their bodies before authentication resolves', async () => {
+    const environment = mockEnvironment();
+    const run = (reverse: boolean) =>
+        environment.run(async () => {
+            const captured: Record<string, string | null> = {};
+            let calls = 0;
+            const client = new VertesiaClient({
+                ...getVertesiaClientOptions(payload()),
+                authCallback: () =>
+                    new Promise((resolve) => {
+                        const i = calls++;
+                        setTimeout(() => resolve('Bearer test'), (reverse ? i === 0 : i === 1) ? 15 : 0);
+                    }),
+                fetch: async (input) => {
+                    const request = input as Request;
+                    const body = (await request.clone().json()) as { object: string };
+                    captured[body.object] = request.headers.get('x-request-id');
+                    return Response.json({});
+                },
+            });
+            await withWorkflowOperation('batch', () =>
+                Promise.all([
+                    client.post('/same', { payload: { object: 'a' } }),
+                    client.post('/same', { payload: { object: 'b' } }),
+                ]),
+            );
+            return captured;
+        });
+    const first = await run(false);
+    expect(first.a).not.toBe(first.b);
+    expect(await run(true)).toEqual(first);
+});
+
+it('does not hash request bodies for agent credentials that cannot attest quota identity', async () => {
+    await mockEnvironment().run(async () => {
+        const token = tokenWithClaims({
+            iss: 'https://sts.example',
+            type: PrincipalType.Agent,
+            trusted_request_identity: true,
+        });
+        expect(getVertesiaClientOptions(payloadWithToken(token)).requestIdentity).toBeUndefined();
+    });
 });

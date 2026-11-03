@@ -53,11 +53,12 @@ import { EventSourceProvider } from '../execute.js';
 import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream-termination.js';
 
 export class WorkflowsApi extends ApiTopic {
-    usage(query?: WorkflowUsageQuery): Promise<WorkflowUsageStanding> {
-        return this.get('/usage', { query });
-    }
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/workflows');
+    }
+
+    usage(query?: WorkflowUsageQuery): Promise<WorkflowUsageStanding> {
+        return this.get('/usage', { query });
     }
 
     getSubscriptionWorkflowCatalog(): Promise<SubscriptionWorkflowCatalog> {

@@ -30,14 +30,14 @@ describe('subscription workflow catalog SDK', () => {
 });
 
 it('keeps async request-observation hooks detached from request dispatch', async () => {
-    const rejectedLog = Promise.reject(new Error('logger unavailable'));
-    void rejectedLog.catch(() => {});
     const fetch = vi.fn(async () => Response.json({ classes: [] }));
     const client = new VertesiaClient({
         serverUrl: 'https://api.example.test',
         storeUrl: 'https://store.example.test',
         fetch,
-        onRequest: () => rejectedLog,
+        onRequest: async () => {
+            throw new Error('logger unavailable');
+        },
     });
     await expect(client.store.workflows.usage()).resolves.toEqual({ classes: [] });
     expect(fetch).toHaveBeenCalledTimes(1);

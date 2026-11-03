@@ -97,7 +97,11 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         }
         this.response = undefined;
         const request = await super.createRequest(url, init);
-        this.onRequest?.(request);
+        const observation = this.onRequest?.(request);
+        if (observation !== undefined) {
+            // Observation hooks are detached; their rejected promises must not crash the caller.
+            void Promise.resolve(observation).catch(() => {});
+        }
         return request;
     }
 
