@@ -33,6 +33,15 @@ metering, and the SDK does not install a body-hashing identity provider for thos
 made exactly once by a request ID. Use separate durable activities for independent mutations where
 appropriate. Carry explicit business keys when an operation must span continue-as-new.
 
+The serialized request body must be identical across retries, even inside `withWorkflowOperation`.
+Persist timestamps, random IDs and other generated fields in workflow state or the activity input;
+do not recompute them on each attempt. Changing a body creates a new identity and can consume another
+admission. The body hash protects against treating different operations as one; the operation key alone
+is not an exactly-once guarantee.
+
+All other activity calls retain the `workflow:<workflow-id>:<run-id>:<activity-id>:<sequence>`
+correlation header. Correlation alone does not attest a quota replay identity.
+
 Request-observation hooks remain synchronous/fire-and-forget; async logging is not awaited.
 Cancellation and activity/request deadlines still stop HTTP work through the workflow fetch wrapper.
 

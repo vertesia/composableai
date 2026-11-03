@@ -29,6 +29,8 @@ export function withWorkflowHttpExecution<T>(action: () => T): T {
  * Give a logical HTTP operation an identity stable across activity retries and continue-as-new.
  * Choose a separate key for each intended operation; server trust and endpoint idempotency still apply.
  * The key must be scoped to the business operation (e.g. batch id + child id + phase).
+ * Request bodies must serialize identically on every retry, including named operations. Persist timestamps
+ * and generated values in workflow state/input; changing the body intentionally creates a new identity.
  * Named data imports also require a retained createdAtMs (or an explicit import_id) across runs.
  */
 export function withWorkflowOperation<T>(
@@ -238,7 +240,13 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
                       return `workflow:operation:${createHash('sha256').update(`${fingerprint}:${occurrence}`).digest('hex')}`;
                   },
               }
-            : {}),
+            : requestPrefix
+              ? {
+                    // Correlation is useful for every activity, even without attested quota identity.
+                    // Only the trusted path above hashes bodies for replay identity.
+                    requestIdentity: () => `${requestPrefix}:${counters.mutationSequence++}`,
+                }
+              : {}),
     };
 }
 

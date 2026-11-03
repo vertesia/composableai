@@ -400,6 +400,41 @@ it('does not hash request bodies for agent credentials that cannot attest quota 
             type: PrincipalType.Agent,
             trusted_request_identity: true,
         });
-        expect(getVertesiaClientOptions(payloadWithToken(token)).requestIdentity).toBeUndefined();
+        const options = getVertesiaClientOptions(payloadWithToken(token));
+        const identity = options.requestIdentity?.({
+            url: 'https://store.example/same',
+            method: 'POST',
+            get body(): string {
+                throw new Error('Untrusted correlation must not read the body');
+            },
+        });
+        expect(identity).toMatch(/^workflow:.*:0$/);
+        expect(identity).not.toMatch(/^workflow:operation:/);
     });
 });
+
+it.each([PrincipalType.ServiceAccount, PrincipalType.User])(
+    'keeps correlation headers and pacing retries without a durable wrapper for %s',
+    async (type) => {
+        await new MockActivityEnvironment({
+            workflowExecution: { workflowId: 'workflow-a', runId: 'run-a' },
+            activityId: 'activity-a',
+        }).run(async () => {
+            const token = tokenWithClaims({ iss: 'https://sts.example', type, trusted_request_identity: true });
+            const options = getVertesiaClientOptions(payloadWithToken(token));
+            expect(options.pacingRetry).toBeUndefined();
+            const ids: string[] = [];
+            const client = new VertesiaClient({
+                ...options,
+                authCallback: async () => 'Bearer test',
+                fetch: async (input) => {
+                    ids.push((input as Request).headers.get('x-request-id') ?? '');
+                    return Response.json({});
+                },
+            });
+            await client.get('/one');
+            await client.get('/two');
+            expect(ids).toEqual(['workflow:workflow-a:run-a:activity-a:0', 'workflow:workflow-a:run-a:activity-a:1']);
+        });
+    },
+);
