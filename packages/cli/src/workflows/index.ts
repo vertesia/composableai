@@ -51,7 +51,7 @@ export function registerWorkflowsCommand(program: Command) {
             console.debug('Executing workflow', workflowName, 'with options', options);
             await executeWorkflowByName(program, workflowName, options);
         });
-    const definitions = workflows.command('definitions');
+    const definitions = workflows.command('definitions').description('Manage workflow definitions (deprecated).');
 
     workflows
         .command('stream <workflowId> <runId>')
