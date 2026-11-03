@@ -35,7 +35,6 @@ export * from './result-types.js';
 export * from './utils/activity-info.js';
 export * from './utils/blobs.js';
 export * from './utils/client.js';
-export * from './utils/metadata.js';
 export * from './utils/renditions.js';
 export * from './utils/storage.js';
 export * from './utils/text-preview-utils.js';

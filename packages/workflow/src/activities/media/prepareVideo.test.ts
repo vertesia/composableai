@@ -7,7 +7,7 @@ import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
 import { execActivityFile } from './exec.js';
 import { buildWebRenditionArgs, prepareVideo, resolveVideoPreset, shouldTranscodeVideo } from './prepareVideo.js';
-import { presetForAttempt } from './video.js';
+import { presetAfterDeadline } from './video.js';
 
 vi.mock('@temporalio/activity', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@temporalio/activity')>()),
@@ -99,14 +99,15 @@ describe('resolveVideoPreset', () => {
     });
 });
 
-describe('presetForAttempt', () => {
+describe('presetAfterDeadline', () => {
     it.each([
-        ['veryfast', 1, 'veryfast'],
-        ['veryfast', 2, 'ultrafast'],
-        ['veryfast', 9, 'ultrafast'],
-        ['medium', 2, 'fast'],
-        ['ultrafast', 1, 'ultrafast'],
-    ] as const)('uses %s on attempt %i as %s', (preset, attempt, expected) => {
-        expect(presetForAttempt(preset, attempt)).toBe(expected);
+        ['veryfast', undefined, 'veryfast'],
+        ['veryfast', 'veryfast', 'ultrafast'],
+        ['veryfast', 'ultrafast', 'ultrafast'],
+        ['medium', 'medium', 'fast'],
+        ['medium', 'fast', 'veryfast'],
+        ['ultrafast', undefined, 'ultrafast'],
+    ] as const)('uses %s after a deadline at %s as %s', (preset, deadlinePreset, expected) => {
+        expect(presetAfterDeadline(preset, deadlinePreset)).toBe(expected);
     });
 });

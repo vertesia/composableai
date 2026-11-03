@@ -33,27 +33,33 @@ describe('transcodeDiskBudgetBytes', () => {
         expect(transcodeDiskBudgetBytes({ WORKER_EPHEMERAL_STORAGE_BYTES: String(20 * GiB) })).toBe(19 * GiB);
     });
 
-    it('assumes 10 GiB when it is not configured or not a number', () => {
-        expect(transcodeDiskBudgetBytes({})).toBe(9 * GiB);
-        expect(transcodeDiskBudgetBytes({ WORKER_EPHEMERAL_STORAGE_BYTES: 'lots' })).toBe(9 * GiB);
+    it('has no budget when the worker does not state its storage', () => {
+        expect(transcodeDiskBudgetBytes({})).toBeUndefined();
+        expect(transcodeDiskBudgetBytes({ WORKER_EPHEMERAL_STORAGE_BYTES: 'lots' })).toBeUndefined();
     });
 });
 
 describe('estimateTranscodeDiskBytes', () => {
     it('adds the rendition, sized from the duration, to the source', () => {
-        // One hour at 12 Mbit/s is 5.4 GB.
-        expect(estimateTranscodeDiskBytes(1e9, 3600)).toBe(1e9 + 5.4e9);
+        // One hour of 1080p at 8 Mbit/s is 3.6 GB.
+        expect(estimateTranscodeDiskBytes(1e9, 3600, { width: 1920, height: 1080 })).toBe(1e9 + 3.6e9);
     });
 
-    it('sizes the rendition as twice the source when the duration is unknown', () => {
-        expect(estimateTranscodeDiskBytes(1e9, undefined)).toBe(3e9);
+    it('scales the rendition by the output pixels', () => {
+        // 480p has a ninth of 1080p's pixels.
+        expect(estimateTranscodeDiskBytes(1e9, 3600, { width: 640, height: 360 })).toBeCloseTo(1e9 + 0.4e9, -3);
+    });
+
+    it('sizes the rendition as twice the source when the duration or dimensions are unknown', () => {
+        expect(estimateTranscodeDiskBytes(1e9, undefined, { width: 1920, height: 1080 })).toBe(3e9);
+        expect(estimateTranscodeDiskBytes(1e9, 3600)).toBe(3e9);
     });
 });
 
 describe('transcodeVideo disk check', () => {
     let files: { getMetadata: ReturnType<typeof vi.fn> };
 
-    function run(metadata: Record<string, unknown> = { duration: 600 }) {
+    function run(metadata: Record<string, unknown> = { duration: 600, dimensions: { width: 1920, height: 1080 } }) {
         vi.mocked(video.retrieveVideoObject).mockResolvedValue({
             id: 'object-1',
             content: { source: 'gs://b/source.mov', type: 'video/quicktime', etag: 'etag-1' },
@@ -72,6 +78,8 @@ describe('transcodeVideo disk check', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.unstubAllEnvs();
+        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(10 * GiB));
         files = { getMetadata: vi.fn() };
     });
 
@@ -99,6 +107,21 @@ describe('transcodeVideo disk check', () => {
         files.getMetadata.mockRejectedValue(new Error('no such file'));
 
         await expect(run({ duration: 600 })).resolves.toBe('transcoded');
+    });
+
+    it('transcodes a long phone video whose 1080p rendition fits beside it', async () => {
+        // 45 min at 20 Mbit/s is 6.75 GB; its 1080p rendition is estimated at 2.7 GB.
+        files.getMetadata.mockResolvedValue({ size: 6.75e9 });
+
+        await expect(run({ duration: 45 * 60, dimensions: { width: 1920, height: 1080 } })).resolves.toBe('transcoded');
+    });
+
+    it('does not check the disk when the worker does not state its storage', async () => {
+        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', '');
+        files.getMetadata.mockResolvedValue({ size: 50e9 });
+
+        await expect(run()).resolves.toBe('transcoded');
+        expect(files.getMetadata).not.toHaveBeenCalled();
     });
 });
 
@@ -139,15 +162,12 @@ describe('transcodeVideo time check', () => {
     });
 
     it('fails without retrying, before downloading, when the encode cannot fit in the hour', async () => {
-        // Plenty of disk, so only the time check can reject it.
-        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB));
         // 3h of 1080p at the default 2x realtime is about 90 min, over the 55 min left after the margin.
         await expect(run({ duration: 3 * 3600, dimensions: { width: 1920, height: 1080 } })).rejects.toMatchObject({
             type: TRANSCODE_EXCEEDS_TIME_BUDGET,
             nonRetryable: true,
         });
         expect(video.withVideoWorkspace).not.toHaveBeenCalled();
-        vi.unstubAllEnvs();
     });
 
     it('transcodes a video that fits, judging the 4K source by its 1080p output', async () => {
@@ -177,7 +197,7 @@ describe('transcodeVideo time check', () => {
 });
 
 describe('transcodeVideo deadline', () => {
-    function run(attempt: number) {
+    function run(heartbeatDetails?: unknown) {
         vi.mocked(video.retrieveVideoObject).mockResolvedValue({
             id: 'object-1',
             content: { source: 'gs://b/live.webm', type: 'video/webm', etag: 'etag-1' },
@@ -189,14 +209,17 @@ describe('transcodeVideo deadline', () => {
             objectId: 'object-1',
             params: {},
         } as unknown as Awaited<ReturnType<typeof setupActivity>>);
-        return new MockActivityEnvironment({ startToCloseTimeoutMs: 60 * 60_000, attempt }).run(
-            transcodeVideo,
-            {} as Parameters<typeof transcodeVideo>[0],
-        );
+        env = new MockActivityEnvironment({ startToCloseTimeoutMs: 60 * 60_000, attempt: 2, heartbeatDetails });
+        env.on('heartbeat', (details: unknown) => heartbeats.push(details));
+        return env.run(transcodeVideo, {} as Parameters<typeof transcodeVideo>[0]);
     }
+
+    let env: MockActivityEnvironment;
+    let heartbeats: unknown[];
 
     beforeEach(() => {
         vi.clearAllMocks();
+        heartbeats = [];
         vi.mocked(video.withVideoWorkspace).mockImplementation(((_client, _source, _prefix, work) =>
             work('/tmp/in.webm', '/tmp/out')) as typeof video.withVideoWorkspace);
         vi.mocked(video.getVideoMetadata).mockResolvedValue({
@@ -216,15 +239,26 @@ describe('transcodeVideo deadline', () => {
     it('retries at a faster preset when the encode runs into the deadline at veryfast', async () => {
         vi.mocked(video.generateRenditionWithDimensions).mockRejectedValue(deadlineKill());
 
-        await expect(run(1)).rejects.toMatchObject({ type: 'TranscodeDeadlineExceeded', nonRetryable: false });
+        await expect(run()).rejects.toMatchObject({ type: 'TranscodeDeadlineExceeded', nonRetryable: false });
         expect(vi.mocked(video.generateRenditionWithDimensions).mock.calls[0][4]).toBe('veryfast');
+        expect(heartbeats).toContainEqual({ deadlinePreset: 'veryfast' });
     });
 
-    it('uses ultrafast on the retry, and fails without retrying when that also runs into the deadline', async () => {
+    it('uses ultrafast after a deadline at veryfast, and fails without retrying when that also runs into it', async () => {
         vi.mocked(video.generateRenditionWithDimensions).mockRejectedValue(deadlineKill());
 
-        await expect(run(2)).rejects.toMatchObject({ type: TRANSCODE_EXCEEDS_TIME_BUDGET, nonRetryable: true });
+        await expect(run({ deadlinePreset: 'veryfast' })).rejects.toMatchObject({
+            type: TRANSCODE_EXCEEDS_TIME_BUDGET,
+            nonRetryable: true,
+        });
         expect(vi.mocked(video.generateRenditionWithDimensions).mock.calls[0][4]).toBe('ultrafast');
+    });
+
+    it('keeps the preset on a retry after any other failure', async () => {
+        vi.mocked(video.generateRenditionWithDimensions).mockResolvedValue(null);
+
+        await expect(run()).resolves.toMatchObject({ rendition: null });
+        expect(vi.mocked(video.generateRenditionWithDimensions).mock.calls[0][4]).toBe('veryfast');
     });
 
     it('keeps a stall retryable, as before', async () => {

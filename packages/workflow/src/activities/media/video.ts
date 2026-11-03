@@ -51,7 +51,8 @@ export type VideoPreset = (typeof VIDEO_PRESETS)[number];
 const DEFAULT_VIDEO_PRESET: VideoPreset = 'veryfast';
 
 /**
- * Returns the requested preset, or the default when none is set. Retries keep the same preset.
+ * Returns the requested preset, or the default when none is set. Retries keep the same preset, except a transcode
+ * retried after running into its deadline (see {@link presetAfterDeadline}).
  * Workflow definitions can pass any string, so an unknown preset fails the activity without retrying.
  */
 export function resolveVideoPreset(preset?: string): VideoPreset {
@@ -71,13 +72,16 @@ export function resolveVideoPreset(preset?: string): VideoPreset {
 export const FASTEST_VIDEO_PRESET: VideoPreset = VIDEO_PRESETS[VIDEO_PRESETS.length - 1];
 
 /**
- * The preset for a transcode attempt: `preset` on the first attempt, then one step faster on each retry, up to
- * {@link FASTEST_VIDEO_PRESET}. A transcode that ran into its deadline is retried this way at most until it reaches
- * the fastest preset.
+ * The preset for a transcode attempt: `preset`, or, when an earlier attempt ran into its deadline at `deadlinePreset`,
+ * one step faster than that, up to {@link FASTEST_VIDEO_PRESET}. An attempt that failed for any other reason (a lost
+ * worker, a failed download) does not change the preset.
  */
-export function presetForAttempt(preset: VideoPreset, attempt: number): VideoPreset {
-    const index = VIDEO_PRESETS.indexOf(preset);
-    return VIDEO_PRESETS[Math.min(index + Math.max(attempt - 1, 0), VIDEO_PRESETS.length - 1)];
+export function presetAfterDeadline(preset: VideoPreset, deadlinePreset?: VideoPreset): VideoPreset {
+    if (deadlinePreset === undefined) {
+        return preset;
+    }
+    const index = Math.max(VIDEO_PRESETS.indexOf(preset), VIDEO_PRESETS.indexOf(deadlinePreset) + 1);
+    return VIDEO_PRESETS[Math.min(index, VIDEO_PRESETS.length - 1)];
 }
 
 export interface VideoMetadataExtended {

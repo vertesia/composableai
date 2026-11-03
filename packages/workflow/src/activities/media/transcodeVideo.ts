@@ -22,47 +22,59 @@ import {
     FASTEST_VIDEO_PRESET,
     generateRenditionWithDimensions,
     getVideoMetadata,
-    presetForAttempt,
+    presetAfterDeadline,
     resolveVideoPreset,
     retrieveVideoObject,
     uploadWebRendition,
+    VIDEO_PRESETS,
     type VideoPreset,
     withVideoWorkspace,
 } from './video.js';
 
 const GiB = 1024 ** 3;
 
-/** Ephemeral storage assumed when WORKER_EPHEMERAL_STORAGE_BYTES is not set. */
-const DEFAULT_EPHEMERAL_STORAGE_BYTES = 10 * GiB;
-
 /** Kept free of the transcode for the container's own writes (logs, the worker's temp files). */
 const EPHEMERAL_STORAGE_HEADROOM_BYTES = GiB;
 
-/** Upper estimate of the web rendition's bitrate (1080p H.264 at CRF 23 plus AAC audio), for sizing its file. */
-const WEB_RENDITION_ESTIMATED_BITS_PER_SECOND = 12_000_000;
+/** Pixels in a 1080p frame, the size the bitrate estimate and the realtime factor are stated for. */
+const PIXELS_1080P = 1920 * 1080;
+
+/**
+ * Estimate of the web rendition's bitrate at 1080p (H.264 at CRF 23 plus AAC audio), for sizing its file. Typical
+ * footage encodes well below it; it is scaled by the output's pixels for smaller renditions.
+ */
+const WEB_RENDITION_1080P_BITS_PER_SECOND = 8_000_000;
 
 /** Failure `type` of a transcode whose source and output would not fit in the worker's ephemeral storage. */
 export const TRANSCODE_EXCEEDS_DISK_BUDGET = 'TranscodeExceedsDiskBudget';
 
 /**
  * Disk the transcode may use: the container's ephemeral storage (WORKER_EPHEMERAL_STORAGE_BYTES, in bytes) less
- * headroom. A container that writes past its ephemeral storage is evicted, which loses the attempt only after its
- * heartbeat times out, and every retry is evicted the same way.
+ * headroom, or undefined when the worker does not state it, so the transcode runs without a disk check. A container
+ * that writes past its ephemeral storage is evicted, which loses the attempt only after its heartbeat times out, and
+ * every retry is evicted the same way.
  */
-export function transcodeDiskBudgetBytes(env: NodeJS.ProcessEnv = process.env): number {
+export function transcodeDiskBudgetBytes(env: NodeJS.ProcessEnv = process.env): number | undefined {
     const configured = Number(env.WORKER_EPHEMERAL_STORAGE_BYTES);
-    const storage = Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_EPHEMERAL_STORAGE_BYTES;
-    return storage - EPHEMERAL_STORAGE_HEADROOM_BYTES;
+    return Number.isFinite(configured) && configured > 0 ? configured - EPHEMERAL_STORAGE_HEADROOM_BYTES : undefined;
 }
 
 /**
- * Disk a transcode needs: the downloaded source plus the rendition. The rendition is sized from the duration when it
- * is known, and as twice the source otherwise (an already-compressed upload can grow when re-encoded).
+ * Disk a transcode needs: the downloaded source plus the rendition. The rendition is sized from the duration and the
+ * output's pixels when both are known, and as twice the source otherwise (an already-compressed upload can grow when
+ * re-encoded).
  */
-export function estimateTranscodeDiskBytes(sourceBytes: number, durationSeconds: number | undefined): number {
+export function estimateTranscodeDiskBytes(
+    sourceBytes: number,
+    durationSeconds: number | undefined,
+    output?: { width: number; height: number },
+): number {
     const renditionBytes =
-        durationSeconds && durationSeconds > 0
-            ? (durationSeconds * WEB_RENDITION_ESTIMATED_BITS_PER_SECOND) / 8
+        durationSeconds && durationSeconds > 0 && output && output.width > 0 && output.height > 0
+            ? (durationSeconds *
+                  WEB_RENDITION_1080P_BITS_PER_SECOND *
+                  ((output.width * output.height) / PIXELS_1080P)) /
+              8
             : sourceBytes * 2;
     return sourceBytes + renditionBytes;
 }
@@ -81,15 +93,22 @@ async function sourceSizeBytes(client: VertesiaClient, object: ContentObject): P
 /**
  * Fail without retrying when the source and rendition would not fit on disk, before downloading anything.
  */
-async function assertFitsOnDisk(client: VertesiaClient, object: ContentObject): Promise<void> {
+async function assertFitsOnDisk(client: VertesiaClient, object: ContentObject, maxResolution: number): Promise<void> {
+    const budget = transcodeDiskBudgetBytes();
+    if (budget === undefined) {
+        log.debug('WORKER_EPHEMERAL_STORAGE_BYTES is not set; transcoding without a disk check');
+        return;
+    }
     const sourceBytes = await sourceSizeBytes(client, object);
     if (sourceBytes === undefined) {
         log.warn(`Size of the source of ${object.id} is unknown; transcoding without a disk check`);
         return;
     }
-    const duration = (object.metadata as VideoMetadata | undefined)?.duration;
-    const needed = estimateTranscodeDiskBytes(sourceBytes, duration);
-    const budget = transcodeDiskBudgetBytes();
+    const metadata = object.metadata as VideoMetadata | undefined;
+    const width = metadata?.dimensions?.width;
+    const height = metadata?.dimensions?.height;
+    const output = width && height ? calculateScaledDimensions(width, height, maxResolution) : undefined;
+    const needed = estimateTranscodeDiskBytes(sourceBytes, metadata?.duration, output);
     if (needed > budget) {
         const toGiB = (bytes: number) => (bytes / GiB).toFixed(1);
         throw ApplicationFailure.nonRetryable(
@@ -99,9 +118,6 @@ async function assertFitsOnDisk(client: VertesiaClient, object: ContentObject): 
         );
     }
 }
-
-/** Pixels in a 1080p frame, the size the realtime factor is stated for. */
-const PIXELS_1080P = 1920 * 1080;
 
 /**
  * How many seconds of 1080p video a transcode is assumed to encode per second of wall time when no
@@ -156,9 +172,20 @@ function assertFitsInTime(object: ContentObject, maxResolution: number): void {
     }
 }
 
+/** Heartbeat details an attempt leaves when its encode runs into the deadline, read by the next attempt. */
+interface TranscodeHeartbeatDetails {
+    deadlinePreset?: VideoPreset;
+}
+
+/** The preset an earlier attempt of this Activity ran into its deadline at, from its last heartbeat. */
+function previousDeadlinePreset(): VideoPreset | undefined {
+    const preset = (Context.current().info.heartbeatDetails as TranscodeHeartbeatDetails | undefined)?.deadlinePreset;
+    return (VIDEO_PRESETS as readonly unknown[]).includes(preset) ? preset : undefined;
+}
+
 export interface TranscodeVideoParams {
     maxResolution?: number; // Max resolution (longest side) for the web rendition, default 1920 (1080p)
-    videoPreset?: VideoPreset; // FFmpeg encoding preset, default veryfast; each retry moves one preset faster
+    videoPreset?: VideoPreset; // FFmpeg encoding preset, default veryfast; a retry after a deadline moves one faster
 }
 
 export interface TranscodeVideo extends DSLActivitySpec<TranscodeVideoParams> {
@@ -190,14 +217,15 @@ export async function transcodeVideo(
     const { client, objectId, params } = await setupActivity<TranscodeVideoParams>(payload);
 
     const maxResolution = params.maxResolution ?? DEFAULT_MAX_RESOLUTION;
-    // A retry moves to a faster preset, so a transcode that keeps running into its deadline stops at the fastest one.
-    const videoPreset = presetForAttempt(resolveVideoPreset(params.videoPreset), Context.current().info.attempt);
+    // A retry after a deadline moves to a faster preset, so a transcode that keeps running into its deadline stops at
+    // the fastest one. Retries for other reasons keep the preset.
+    const videoPreset = presetAfterDeadline(resolveVideoPreset(params.videoPreset), previousDeadlinePreset());
 
     log.debug(`Transcoding video for ${objectId}`, { maxResolution, videoPreset });
 
     const inputObject = await retrieveVideoObject(client, objectId);
     const source = inputObject.content?.source as string;
-    await assertFitsOnDisk(client, inputObject);
+    await assertFitsOnDisk(client, inputObject, maxResolution);
     assertFitsInTime(inputObject, maxResolution);
 
     return await withVideoWorkspace(client, source, 'transcode-video-', async (videoFile, outputDir) => {
@@ -231,6 +259,8 @@ export async function transcodeVideo(
                         TRANSCODE_EXCEEDS_TIME_BUDGET,
                     );
                 }
+                // The worker flushes this last heartbeat before reporting the failure, so the retry reads it.
+                Context.current().heartbeat({ deadlinePreset: videoPreset } satisfies TranscodeHeartbeatDetails);
                 throw ApplicationFailure.retryable(
                     `Transcoding ${objectId} at ${videoPreset} did not finish within the Activity's run time; ` +
                         'retrying at a faster preset',
