@@ -1,11 +1,12 @@
 import type { VertesiaClient } from '@vertesia/client';
-import { normalizeToolCollection } from '@vertesia/common';
 import { FusionFragmentHandler } from '@vertesia/fusion-ux';
+import { Env } from '@vertesia/ui/env';
 import { useUserSession } from '@vertesia/ui/session';
 import { type CodeBlockRendererProps, CodeBlockRendererProvider } from '@vertesia/ui/widgets';
 import { memo, useEffect, useMemo, useState } from 'react';
 import type { VegaLiteChartSpec } from './AgentChart';
 import { ProposalCodeBlockHandler } from './ProposalCodeBlockHandler';
+import { parseSkillWidgets, type SkillWidgetSource, skillWidgetSources } from './skillWidgetSources';
 import { VegaLiteChart } from './VegaLiteChart';
 
 interface SkillWidgetProviderProperties {
@@ -96,55 +97,44 @@ function RemoteWidgetComponent({ url, code }: { url: string; code: string }) {
     return Component ? <Component code={code} /> : null;
 }
 
+async function loadSkillWidgets(client: VertesiaClient, source: SkillWidgetSource): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
+    if (source.type === 'package' && source.authenticated) {
+        const jwt = await client.getRawJWT();
+        if (jwt) headers.Authorization = `Bearer ${jwt}`;
+    }
+    const r = await fetch(source.url, { headers });
+    // Most tool servers define no widgets. A gateway package always exists, so its 404 is a real failure.
+    if (r.status === 404 && source.type === 'widgets') return {};
+    if (!r.ok) {
+        throw new Error(`Failed to fetch widgets: ${r.status} ${r.statusText}`);
+    }
+    return parseSkillWidgets(await r.json(), source.url);
+}
+
 async function fetchSkillWidgets(
     client: VertesiaClient,
 ): Promise<Record<string, React.FunctionComponent<CodeBlockRendererProps>>> {
     const installedApps = await client.apps.getInstalledApps('tools');
-    const urls = new Set<string>();
-    for (const app of installedApps) {
-        if (app.manifest.tool_collections && app.manifest.tool_collections.length > 0) {
-            for (const item of app.manifest.tool_collections || []) {
-                const collection = normalizeToolCollection(item);
-                const collUrl = collection.url;
-                if (collUrl.startsWith('http://') || collUrl.startsWith('https://')) {
-                    const i = collUrl.indexOf('/api/');
-                    if (i > 0) {
-                        const url = collUrl.substring(0, i);
-                        urls.add(`${url}/api/widgets`);
-                    }
-                }
-            }
-        }
-        if (app.manifest.endpoint && app.manifest.capabilities?.includes('tools')) {
-            urls.add(new URL('/api/widgets', app.manifest.endpoint).toString());
-        }
-    }
+    const sources = skillWidgetSources(
+        installedApps.map((app) => app.manifest),
+        { gateway: Env.endpoints.gateway },
+    );
 
     const allWidgets = await Promise.all(
-        Array.from(urls).map((url) => {
-            return fetch(url)
-                .then((r) => {
-                    if (!r.ok) {
-                        throw new Error(`Failed to fetch widgets: ${r.status} ${r.statusText}`);
-                    }
-                    return r.json();
-                })
-                .then((data) => {
-                    const widgets: { name: string; component: React.FunctionComponent<CodeBlockRendererProps> }[] = [];
-                    const widgetsMap = data.widgets as Record<string, { url: string }>;
-                    for (const [name, value] of Object.entries(widgetsMap)) {
-                        widgets.push({
-                            name,
-                            component: (props: CodeBlockRendererProps) => (
-                                <RemoteWidgetComponent url={value.url} code={props.code} />
-                            ),
-                        });
-                    }
-                    return widgets;
-                })
+        sources.map((source) => {
+            return loadSkillWidgets(client, source)
+                .then((widgetUrls) =>
+                    Object.entries(widgetUrls).map(([name, widgetUrl]) => ({
+                        name,
+                        component: (props: CodeBlockRendererProps) => (
+                            <RemoteWidgetComponent url={widgetUrl} code={props.code} />
+                        ),
+                    })),
+                )
                 .catch((err: unknown) => {
                     // The chat still renders; only that app's custom widgets are missing.
-                    console.warn('Failed to fetch skill widgets from', url, err);
+                    console.warn('Failed to fetch skill widgets from', source.url, err);
                     return null;
                 });
         }),

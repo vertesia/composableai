@@ -3,6 +3,7 @@ import { PROCESS_DEFINITION_FORMAT_VERSION, SystemRoles, TemplateType } from '@v
 import { describe, expect, it } from 'vitest';
 import { ContentTypesCollection } from '../ContentTypesCollection.js';
 import { InteractionCollection } from '../InteractionCollection.js';
+import { SkillCollection } from '../SkillCollection.js';
 import { buildAppPackage } from './app-package.js';
 import type { ToolServerConfig } from './types.js';
 
@@ -125,6 +126,31 @@ describe('buildAppPackage', () => {
 
         expect(pkg.types?.map((type) => type.id)).toEqual(['claim']);
         expect(pkg.interactions).toBeUndefined();
+    });
+
+    it('lists every skill widget under its widget name', async () => {
+        const skill = (name: string, widgets?: string[]) => ({
+            name,
+            description: name,
+            instructions: name,
+            content_type: 'md' as const,
+            widgets,
+        });
+        const config = {
+            skills: [
+                new SkillCollection({
+                    name: 'charts',
+                    skills: [skill('plotting', ['bar-chart', 'pie-chart']), skill('no-widgets')],
+                }),
+            ],
+        } satisfies ToolServerConfig;
+
+        const pkg = await buildAppPackage(config);
+
+        expect(pkg.widgets).toEqual({
+            'bar-chart': { skill: 'plotting', collection: 'charts', url: '/widgets/bar-chart.js' },
+            'pie-chart': { skill: 'plotting', collection: 'charts', url: '/widgets/pie-chart.js' },
+        });
     });
 
     it('returns lifecycle and event hook metadata for the hooks scope', async () => {
