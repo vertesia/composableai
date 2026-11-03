@@ -82,6 +82,7 @@ export async function executeInteraction<P = unknown>(
  * @param payload
  * @param onChunk
  * @param query response options, e.g. `{ include_prompt: false }` to omit the rendered prompt
+ * @param headers extra request headers
  * @returns
  */
 export async function executeInteractionByName<P = unknown>(
@@ -90,10 +91,12 @@ export async function executeInteractionByName<P = unknown>(
     payload: InteractionExecutionPayload = {},
     onChunk?: (chunk: string) => void,
     query?: ExecuteNamedInteractionQuery,
+    headers?: Record<string, string>,
 ): Promise<InteractionExecutionResult<P>> {
     const stream = !!onChunk;
     const response = await client.post<InteractionExecutionResult<P>>('/api/v1/execute', {
         query,
+        headers,
         payload: {
             ...payload,
             interaction,

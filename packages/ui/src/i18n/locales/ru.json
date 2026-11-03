@@ -157,6 +157,7 @@
     "agent.remaining": "{{seconds}}с осталось",
     "agent.removeFile": "Удалить {{name}}",
     "agent.removeFileFailed": "Не удалось удалить файл",
+    "agent.requestInputReadOnly": "Агент ожидает ответа от пользователя, которому разрешено управлять этим запуском.",
     "agent.resourceActionCreated": "Создано",
     "agent.resourceActionDeleted": "Удалено",
     "agent.resourceActionUpdated": "Обновлено",

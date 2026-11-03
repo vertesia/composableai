@@ -1,5 +1,5 @@
 import { ApplicationFailure } from '@temporalio/workflow';
-import type { DSLActivitySpec, DSLWorkflowSpec } from '@vertesia/common';
+import type { DSLActivitySpec, DSLWorkflowSpec, PendingRendition } from '@vertesia/common';
 
 export class DocumentNotFoundError extends ApplicationFailure {
     constructor(
@@ -111,6 +111,18 @@ export class WorkflowExecutionError extends ApplicationFailure {
             true, // non-retryable
         );
     }
+}
+
+/** ApplicationFailure type raised when an execution sent with RENDITION_WAIT_HEADER waits for renditions. */
+export const RENDITION_PENDING_ERROR = 'RenditionPendingError';
+
+/** Details of a RENDITION_PENDING_ERROR failure. */
+export interface RenditionPendingDetails {
+    pending: PendingRendition[];
+    /** Suggested delay before checking again. */
+    retry_after_ms?: number;
+    /** The run the server rejected. */
+    run_id?: string;
 }
 
 export const WF_NON_RETRYABLE_ERRORS = [

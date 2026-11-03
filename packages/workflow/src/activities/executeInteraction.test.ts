@@ -286,6 +286,101 @@ describe('executeInteraction retryability', () => {
         expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
+    describe('when the workflow waits for renditions', () => {
+        const pendingRunBody = {
+            id: 'rejected-run',
+            status: ExecutionRunStatus.failed,
+            error: {
+                code: 'rendition_pending',
+                message: 'Rendition for object video-1 is in progress',
+                retry_after_ms: 30_000,
+                data: { pending: [{ object_id: 'video-1', kind: 'video' }, { object_id: 'bad' }] },
+            },
+        };
+
+        async function mockWaitingExecution(executeByName: ReturnType<typeof vi.fn>) {
+            const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+            const payload = createPayload();
+            payload.params.wait_for_renditions = true;
+            vi.mocked(setupActivity).mockResolvedValue({
+                client: {
+                    interactions: { requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }), executeByName },
+                } as unknown as VertesiaClient,
+                inputType: 'objectIds',
+                params: payload.params,
+            } as unknown as ActivityContext<ExecuteInteractionParams>);
+            return payload;
+        }
+
+        it('sends the rendition wait header', async () => {
+            const executeByName = vi.fn().mockResolvedValue({
+                id: 'run-id',
+                status: ExecutionRunStatus.completed,
+                result: [],
+            });
+            const payload = await mockWaitingExecution(executeByName);
+
+            await testEnv.run(executeInteraction, payload);
+
+            expect(executeByName.mock.calls[0][4]).toEqual({ 'x-vertesia-rendition-wait': '1' });
+        });
+
+        it('fails without retry, listing the pending renditions, when the server answers 412', async () => {
+            const error = new ServerError(
+                'Precondition Failed',
+                new Request('http://mock-studio'),
+                412,
+                pendingRunBody,
+            );
+            const payload = await mockWaitingExecution(vi.fn().mockRejectedValue(error));
+
+            await expect(testEnv.run(executeInteraction, payload)).rejects.toMatchObject({
+                type: 'RenditionPendingError',
+                nonRetryable: true,
+                details: [
+                    {
+                        pending: [{ object_id: 'video-1', kind: 'video' }],
+                        retry_after_ms: 30_000,
+                        run_id: 'rejected-run',
+                    },
+                ],
+            });
+            expect(activityLogger.error).not.toHaveBeenCalled();
+        });
+
+        it('keeps a 412 that lists no pending renditions retryable', async () => {
+            const error = new ServerError('Precondition Failed', new Request('http://mock-studio'), 412, {
+                id: 'rejected-run',
+                error: { message: 'Rendition for object image-1 is in progress' },
+            });
+            const payload = await mockWaitingExecution(vi.fn().mockRejectedValue(error));
+
+            await expect(testEnv.run(executeInteraction, payload)).rejects.not.toMatchObject({
+                type: 'RenditionPendingError',
+            });
+            await expect(testEnv.run(executeInteraction, payload)).rejects.not.toMatchObject({ nonRetryable: true });
+        });
+    });
+
+    it('does not send the rendition wait header by default', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const executeByName = vi
+            .fn()
+            .mockResolvedValue({ id: 'run-id', status: ExecutionRunStatus.completed, result: [] });
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: {
+                interactions: { requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }), executeByName },
+            } as unknown as VertesiaClient,
+            inputType: 'objectIds',
+            params: createPayload().params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        await testEnv.run(executeInteraction, createPayload());
+
+        // Other callers keep their exact arguments: no headers argument at all.
+        expect(executeByName.mock.calls[0]).toHaveLength(4);
+    });
+
     it.each([
         ['status', { status: 412 }],
         ['code', { code: 412 }],

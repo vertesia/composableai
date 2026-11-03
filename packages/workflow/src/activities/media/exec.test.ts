@@ -62,23 +62,31 @@ describe('execActivityFile', () => {
 
     it('should wait for a cancelled child to exit before rejecting', async () => {
         const marker = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'exec-test-')), 'exited');
+        const readyMarker = path.join(path.dirname(marker), 'ready');
         const testEnv = new MockActivityEnvironment({ startToCloseTimeoutMs: 60_000 });
         // The child takes a moment to shut down after SIGTERM and writes a marker as it exits.
         const script = `process.on('SIGTERM', () => setTimeout(() => {
             require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'done');
             process.exit(0);
         }, 300));
-        setInterval(() => undefined, 1_000);`;
+        setInterval(() => undefined, 1_000);
+        require('node:fs').writeFileSync(${JSON.stringify(readyMarker)}, 'ready');`;
         const execution = testEnv.run(() => execActivityFile(process.execPath, ['-e', script]));
         const rejection = expect(execution).rejects.toMatchObject({ name: 'AbortError' });
 
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        testEnv.cancel();
-        await rejection;
+        try {
+            // Cancel only after the child has installed its handler, even on a busy CI runner.
+            await vi.waitFor(() => expect(fs.existsSync(readyMarker)).toBe(true), { timeout: 5_000 });
+            testEnv.cancel();
+            await rejection;
 
-        expect(fs.existsSync(marker)).toBe(true);
-        fs.rmSync(path.dirname(marker), { recursive: true, force: true });
-    });
+            expect(fs.existsSync(marker)).toBe(true);
+        } finally {
+            testEnv.cancel();
+            await rejection;
+            fs.rmSync(path.dirname(marker), { recursive: true, force: true });
+        }
+    }, 20_000);
 
     it('should terminate the child process before the Activity StartToClose timeout', async () => {
         const testEnv = new MockActivityEnvironment({
