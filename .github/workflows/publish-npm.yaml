@@ -125,7 +125,7 @@ jobs:
 
   build-macos-cli:
     name: Build and sign macOS CLI
-    runs-on: macos-14
+    runs-on: macos-26
     timeout-minutes: 20
     needs: prepare-release
     environment: build
@@ -541,7 +541,7 @@ jobs:
 
   macos-cli-integration-test:
     name: Integration test (published macOS CLI)
-    runs-on: macos-14
+    runs-on: macos-26
     timeout-minutes: 10
     needs:
       - publish
