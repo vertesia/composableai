@@ -48,7 +48,10 @@ await withWorkflowOperation('batch-7:import', () => client.store.data.import(sto
 
 Named imports without that timestamp must supply `import_id`; otherwise the SDK rejects them rather
 than silently generating a different ID in a later run. Unnamed imports preserve the original activity
-schedule timestamp and are stable across retries of that activity. Use distinct named phases for
+schedule timestamp and are stable across retries of that activity. The server rejects an unknown
+import ID older than 24 hours: if the first attempt never reached the server, a retained timestamp
+can therefore expire; start a new logical import with a fresh timestamp rather than retrying that
+expired ID indefinitely. Use distinct named phases for
 independent mutations, particularly concurrent identical requests.
 
 Typed admission dependency outages are exposed as `error.dependencyUnavailable`, separately from the
