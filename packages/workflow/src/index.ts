@@ -21,6 +21,7 @@ export * from './activities/media/extractVideoAssets.js';
 export * from './activities/media/prepareAudio.js';
 export * from './activities/media/prepareVideo.js';
 export * from './activities/media/transcodeVideo.js';
+export type { VideoInput } from './activities/media/videoSource.js';
 export * from './activities/notifyWebhook.js';
 export * from './activities/rateLimiter.js';
 export * from './activities/renditions/generateImageRendition.js';

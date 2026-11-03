@@ -11,10 +11,10 @@ vi.mock('./video.js', async (importOriginal) => {
     return {
         ...actual,
         retrieveVideoObject: vi.fn(),
-        withVideoWorkspace: vi.fn((_client, _source, _prefix, work) => work('/tmp/in.mp4', '/tmp/out')),
-        getVideoMetadata: vi.fn(),
+        withVideoSource: vi.fn((_client, _source, _prefix, work) => work({}, '/tmp/out')),
+        probeVideoSource: vi.fn(),
         extractVideoFrames: vi.fn(),
-        generateAudioRendition: vi.fn(),
+        extractAudioRendition: vi.fn(),
         uploadVideoAssets: vi.fn(),
     };
 });
@@ -46,7 +46,7 @@ beforeEach(() => {
         id: 'object-1',
         content: { source: 'gs://b/source.mov', type: 'video/quicktime', etag: 'etag-1' },
     } as Awaited<ReturnType<typeof video.retrieveVideoObject>>);
-    vi.mocked(video.getVideoMetadata).mockResolvedValue({
+    vi.mocked(video.probeVideoSource).mockResolvedValue({
         duration: 60,
         width: 1920,
         height: 1080,
@@ -54,9 +54,13 @@ beforeEach(() => {
         bitrate: 1,
         fps: 30,
         hasAudio: true,
+        formatName: 'mov,mp4,m4a,3gp,3g2,mj2',
+        audioStreams: 1,
+        audioCodec: 'aac',
+        audioChannels: 2,
     });
-    vi.mocked(video.extractVideoFrames).mockResolvedValue({ thumbnail: null, poster: null });
-    vi.mocked(video.generateAudioRendition).mockResolvedValue(null);
+    vi.mocked(video.extractVideoFrames).mockResolvedValue({ thumbnail: undefined, poster: undefined });
+    vi.mocked(video.extractAudioRendition).mockResolvedValue(null);
     vi.mocked(video.uploadVideoAssets).mockResolvedValue([poster]);
 });
 

@@ -53,6 +53,8 @@ describe('estimateTranscodeDiskBytes', () => {
     it('sizes the rendition as twice the source when the duration or dimensions are unknown', () => {
         expect(estimateTranscodeDiskBytes(1e9, undefined, { width: 1920, height: 1080 })).toBe(3e9);
         expect(estimateTranscodeDiskBytes(1e9, 3600)).toBe(3e9);
+        // A video whose probe found no duration, such as browser-recorded WebM, is stored with duration 0.
+        expect(estimateTranscodeDiskBytes(1e9, 0, { width: 1920, height: 1080 })).toBe(3e9);
     });
 });
 
@@ -174,6 +176,14 @@ describe('transcodeVideo time check', () => {
         await expect(run({ duration: 90 * 60, dimensions: { width: 3840, height: 2160 } })).resolves.toBe('transcoded');
     });
 
+    it('treats a zero duration as unknown and transcodes without the pre-check', async () => {
+        // Browser-recorded WebM is stored with duration 0; that is no duration, not an instant encode.
+        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB));
+        await expect(run({ duration: 0, dimensions: { width: 3840, height: 2160 } })).resolves.toBe('transcoded');
+        expect(video.withVideoWorkspace).toHaveBeenCalled();
+        vi.unstubAllEnvs();
+    });
+
     it('passes the budget to the encode and keeps an overrun non-retryable', async () => {
         vi.mocked(video.withVideoWorkspace).mockImplementation(((_client, _source, _prefix, work) =>
             work('/tmp/in.mov', '/tmp/out')) as typeof video.withVideoWorkspace);
@@ -185,6 +195,8 @@ describe('transcodeVideo time check', () => {
             bitrate: 1,
             fps: 30,
             hasAudio: true,
+            formatName: 'mov,mp4,m4a,3gp,3g2,mj2',
+            audioStreams: 1,
         });
         const overrun = ApplicationFailure.create({ type: TRANSCODE_EXCEEDS_TIME_BUDGET, nonRetryable: true });
         vi.mocked(video.generateRenditionWithDimensions).mockRejectedValue(overrun);
@@ -230,6 +242,8 @@ describe('transcodeVideo deadline', () => {
             bitrate: 0,
             fps: 30,
             hasAudio: true,
+            formatName: 'matroska,webm',
+            audioStreams: 1,
         });
     });
 

@@ -3,9 +3,26 @@ import { RequestError } from '@vertesia/api-fetch-client';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../../errors.js';
-import { execActivityFile, initializeActivityCommandDeadline, rethrowIfActivityStopped } from './exec.js';
+import { initializeActivityCommandDeadline, rethrowIfActivityStopped } from './exec.js';
+import { execOnVideoInput, type VideoInput, videoInputOptions } from './videoSource.js';
 
-const FFPROBE_MAX_BUFFER = 1024 * 1024; // 1MB is more than enough for stream metadata JSON
+/**
+ * ffprobe arguments that list the streams of `input` as JSON. `-probesize 32k` caps how much is read to find the
+ * streams, so over a URL ffprobe reads only the container headers with range requests.
+ */
+export function buildStreamProbeArgs(input: Extract<VideoInput, { kind: 'url' }>): string[] {
+    return [
+        '-v',
+        'quiet',
+        '-probesize',
+        '32k',
+        '-print_format',
+        'json',
+        '-show_streams',
+        ...videoInputOptions(input),
+        input.url,
+    ];
+}
 
 export interface ProbeMediaStreamsResult {
     hasVideo: boolean;
@@ -50,18 +67,14 @@ export async function probeMediaStreams(
         throw new DocumentNotFoundError(`Failed to get download URL for object ${objectId}`);
     }
 
-    // ffprobe reads only the container headers via HTTP range requests.
-    // -probesize 32k caps the amount read from the network to ~32 KB.
-    // ffprobe emits no frame=/time= progress, so the stall watchdog does not apply here; the shared exec wrapper still
-    // propagates Activity cancellation and bounds the read by the Activity deadline, and passing the URL as an argv
-    // entry (not a shell string) removes the shell-interpolation surface.
+    // ffprobe emits no frame=/time= progress, so the stall watchdog does not apply here. The reconnect options and
+    // their read timeout bound a stalled connection, the exec wrapper propagates Activity cancellation, and the signed
+    // URL is redacted from any error. Passing the URL as an argv entry (not a shell string) removes the
+    // shell-interpolation surface.
+    const input = { kind: 'url', url } as const;
     let stdout: string;
     try {
-        ({ stdout } = await execActivityFile(
-            'ffprobe',
-            ['-v', 'quiet', '-probesize', '32k', '-print_format', 'json', '-show_streams', url],
-            { maxBuffer: FFPROBE_MAX_BUFFER },
-        ));
+        ({ stdout } = await execOnVideoInput(input, 'ffprobe', buildStreamProbeArgs(input)));
     } catch (err: unknown) {
         rethrowIfActivityStopped(err);
         const message = err instanceof Error ? err.message : String(err);

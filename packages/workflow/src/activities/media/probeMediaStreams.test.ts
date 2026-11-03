@@ -4,7 +4,13 @@ import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/co
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../../dsl/setup/ActivityContext.js';
 import { execActivityFile } from './exec.js';
-import { type ProbeMediaStreamsParams, type ProbeMediaStreamsResult, probeMediaStreams } from './probeMediaStreams.js';
+import {
+    buildStreamProbeArgs,
+    type ProbeMediaStreamsParams,
+    type ProbeMediaStreamsResult,
+    probeMediaStreams,
+} from './probeMediaStreams.js';
+import { HTTP_INPUT_OPTIONS } from './videoSource.js';
 
 vi.mock('../../dsl/setup/ActivityContext.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../dsl/setup/ActivityContext.js')>();
@@ -119,5 +125,34 @@ describe('probeMediaStreams', () => {
         } as unknown as ActivityContext<ProbeMediaStreamsParams>);
 
         await expect(testEnv.run(probeMediaStreams, createPayload())).rejects.toThrow('has no source');
+    });
+});
+
+describe('probeMediaStreams over a signed URL', () => {
+    const SIGNED_URL = 'https://storage.example.com/bucket/file.mp4?X-Signature=secret';
+
+    it('caps the probe size and puts the reconnect options before the URL', () => {
+        const args = buildStreamProbeArgs({ kind: 'url', url: SIGNED_URL });
+
+        expect(args).toEqual(expect.arrayContaining(['-probesize', '32k', '-show_streams']));
+        expect(args.at(-1)).toBe(SIGNED_URL);
+        expect(args.slice(-1 - HTTP_INPUT_OPTIONS.length, -1)).toEqual([...HTTP_INPUT_OPTIONS]);
+    });
+
+    it('keeps the signed URL out of the error when ffprobe fails', async () => {
+        await setupMockContext('test-object-id', SIGNED_URL);
+        vi.mocked(execActivityFile).mockRejectedValue(
+            Object.assign(new Error(`Command failed: ffprobe ${SIGNED_URL}\n${SIGNED_URL}: Server returned 403`), {
+                cmd: `ffprobe ${SIGNED_URL}`,
+            }),
+        );
+
+        const failure = (await testEnv
+            .run(probeMediaStreams, createPayload())
+            .catch((error: unknown) => error)) as Error;
+
+        expect(failure).toBeInstanceOf(Error);
+        expect(failure.message).toContain('Failed to probe media streams');
+        expect(failure.message).not.toContain('secret');
     });
 });

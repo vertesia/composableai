@@ -10,12 +10,12 @@ import {
     DEFAULT_GENERATE_AUDIO,
     DEFAULT_POSTER_SIZE,
     DEFAULT_THUMBNAIL_SIZE,
+    extractAudioRendition,
     extractVideoFrames,
-    generateAudioRendition,
-    getVideoMetadata,
+    probeVideoSource,
     retrieveVideoObject,
     uploadVideoAssets,
-    withVideoWorkspace,
+    withVideoSource,
 } from './video.js';
 
 export interface ExtractVideoAssetsParams {
@@ -64,14 +64,16 @@ export async function extractVideoAssets(
     const inputObject = await retrieveVideoObject(client, objectId);
     const source = inputObject.content?.source as string;
 
-    return await withVideoWorkspace(client, source, 'extract-video-assets-', async (videoFile, outputDir) => {
+    // The probe and frames read the source over a signed URL. An AAC audio track is copied over it too; only another
+    // audio codec, or a failed read, downloads the file.
+    return await withVideoSource(client, source, 'extract-video-assets-', async (videoSource, outputDir) => {
         try {
-            const metadata = await getVideoMetadata(videoFile);
-            const frames = await extractVideoFrames(videoFile, outputDir, metadata, thumbnailSize, posterSize);
+            const metadata = await probeVideoSource(videoSource);
+            const frames = await extractVideoFrames(videoSource, outputDir, metadata, thumbnailSize, posterSize);
 
-            let audioFile: string | null = null;
+            let audio: Awaited<ReturnType<typeof extractAudioRendition>> = null;
             if (generateAudio && metadata.hasAudio) {
-                audioFile = await generateAudioRendition(videoFile, outputDir);
+                audio = await extractAudioRendition(videoSource, outputDir, metadata);
             } else if (generateAudio && !metadata.hasAudio) {
                 log.info('Skipping audio rendition - video has no audio track');
             }
@@ -80,7 +82,7 @@ export async function extractVideoAssets(
             const renditions = await uploadVideoAssets(
                 client,
                 frames,
-                audioFile,
+                audio?.file ?? null,
                 thumbnailSize,
                 posterSize,
                 storageKey,
@@ -100,6 +102,11 @@ export async function extractVideoAssets(
                 duration: metadata.duration,
                 dimensions: `${metadata.width}x${metadata.height}`,
                 hasAudio: metadata.hasAudio,
+                container: metadata.formatName,
+                audioCodec: metadata.audioCodec,
+                audioChannels: metadata.audioChannels,
+                audioStreams: metadata.audioStreams,
+                audioRendition: audio?.mode ?? 'none',
                 renditionsGenerated: renditions.length,
             });
 
