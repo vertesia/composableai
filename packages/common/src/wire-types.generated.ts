@@ -2479,6 +2479,8 @@ export type CustomRoleDefinition = {
     description?: string | undefined;
     permissions: (typeof Permission)[keyof typeof Permission][];
 };
+export type CustomRoleDefinitionArray = CustomRoleDefinition[];
+export type PermissionArray = (typeof Permission)[keyof typeof Permission][];
 export type CreateCustomRolePayload = CustomRoleDefinition;
 export type UpdateCustomRolePayload = {
     title?: string | undefined;
@@ -10299,8 +10301,6 @@ export type UpdateContentObjectPayloadWire = {
     type?: string | undefined;
     generation_run_info?: GenerationRunMetadata | undefined;
 };
-export type CustomRoleDefinitionArray = CustomRoleDefinition[];
-export type PermissionArray = (typeof Permission)[keyof typeof Permission][];
 export type ResourceVisibilityWire = (typeof ResourceVisibility)[keyof typeof ResourceVisibility];
 export type OAuthProviderArray = OAuthProvider[];
 export type OAuthClientArray = OAuthClient[];

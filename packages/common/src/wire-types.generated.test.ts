@@ -1052,6 +1052,14 @@ interface Checks {
         W.CustomRoleDefinition,
         z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
     >;
+    CustomRoleDefinitionArray: Same<
+        W.CustomRoleDefinitionArray,
+        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionArraySchema>
+    >;
+    PermissionArray: Same<
+        W.PermissionArray,
+        z.infer<typeof import('./api-schemas/custom-roles.js').PermissionArraySchema>
+    >;
     CreateCustomRolePayload: Same<
         W.CreateCustomRolePayload,
         z.infer<typeof import('./api-schemas/custom-roles.js').CreateCustomRolePayloadSchema>
@@ -4090,14 +4098,6 @@ interface Checks {
     UpdateContentObjectPayloadWire: Same<
         W.UpdateContentObjectPayloadWire,
         z.infer<typeof import('./api-schemas/content.js').UpdateContentObjectPayloadSchema>
-    >;
-    CustomRoleDefinitionArray: Same<
-        W.CustomRoleDefinitionArray,
-        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionArraySchema>
-    >;
-    PermissionArray: Same<
-        W.PermissionArray,
-        z.infer<typeof import('./api-schemas/custom-roles.js').PermissionArraySchema>
     >;
     ResourceVisibilityWire: Same<
         W.ResourceVisibilityWire,
@@ -10246,6 +10246,8 @@ const checks: Checks = {
     CostRunPriceQuery: true,
     CostRunPriceResponse: true,
     CustomRoleDefinition: true,
+    CustomRoleDefinitionArray: true,
+    PermissionArray: true,
     CreateCustomRolePayload: true,
     UpdateCustomRolePayload: true,
     AssignableRoleName: true,
@@ -11095,8 +11097,6 @@ const checks: Checks = {
     SubmitProcessTestRunPayloadWire: true,
     CreateContentObjectPayloadWire: true,
     UpdateContentObjectPayloadWire: true,
-    CustomRoleDefinitionArray: true,
-    PermissionArray: true,
     ResourceVisibilityWire: true,
     OAuthProviderArray: true,
     OAuthClientArray: true,
