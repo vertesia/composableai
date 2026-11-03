@@ -95,6 +95,80 @@ describe('fetchCachedProject', () => {
         expect(recovered.id).toBe('p1');
     });
 
+    describe('with cancellable callers', () => {
+        /** A client that, like an activity's client, aborts its requests when its activity is cancelled. */
+        function cancellableClient(signal: AbortSignal) {
+            const pending: Array<(p: Project) => void> = [];
+            const { client, retrieve } = mockClient(
+                (id) =>
+                    new Promise<Project>((resolve, reject) => {
+                        signal.addEventListener('abort', () => reject(new Error(`request for ${id} aborted`)), {
+                            once: true,
+                        });
+                        pending.push(resolve);
+                    }),
+            );
+            const resolveAll = (p: Project) => {
+                for (const resolve of pending.splice(0)) {
+                    resolve(p);
+                }
+            };
+            return { client, retrieve, resolveAll };
+        }
+
+        it('refetches with its own client when the caller that started the shared fetch is cancelled', async () => {
+            const first = new AbortController();
+            const second = new AbortController();
+            const a = cancellableClient(first.signal);
+            const b = cancellableClient(second.signal);
+
+            const firstResult = fetchCachedProject(a.client, 'p1', first.signal);
+            const secondResult = fetchCachedProject(b.client, 'p1', second.signal);
+            first.abort(new Error('first activity cancelled'));
+
+            await expect(firstResult).rejects.toThrow('request for p1 aborted');
+            await vi.waitFor(() => expect(b.retrieve).toHaveBeenCalledTimes(1));
+            b.resolveAll(project('p1'));
+
+            await expect(secondResult).resolves.toMatchObject({ id: 'p1' });
+            expect(a.retrieve).toHaveBeenCalledTimes(1);
+        });
+
+        it("ends only the cancelled caller's wait on a shared fetch", async () => {
+            const first = new AbortController();
+            const second = new AbortController();
+            const a = cancellableClient(first.signal);
+            const b = cancellableClient(second.signal);
+
+            const firstResult = fetchCachedProject(a.client, 'p1', first.signal);
+            const secondResult = fetchCachedProject(b.client, 'p1', second.signal);
+            const reason = new Error('second activity cancelled');
+            second.abort(reason);
+
+            await expect(secondResult).rejects.toBe(reason);
+            a.resolveAll(project('p1'));
+            await expect(firstResult).resolves.toMatchObject({ id: 'p1' });
+            expect(b.retrieve).not.toHaveBeenCalled();
+        });
+
+        it('still shares a fetch that fails for another reason', async () => {
+            const first = new AbortController();
+            const second = new AbortController();
+            const error = new Error('studio unavailable');
+            const a = mockClient(() => Promise.reject(error));
+            const b = mockClient(async (id) => project(id));
+
+            const results = [
+                fetchCachedProject(a.client, 'p1', first.signal),
+                fetchCachedProject(b.client, 'p1', second.signal),
+            ];
+
+            await expect(results[0]).rejects.toBe(error);
+            await expect(results[1]).rejects.toBe(error);
+            expect(b.retrieve).not.toHaveBeenCalled();
+        });
+    });
+
     it('gives each caller its own copy', async () => {
         const { client } = mockClient(async (id) => project(id));
 
