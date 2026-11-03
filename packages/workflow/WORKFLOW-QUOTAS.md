@@ -12,6 +12,11 @@ Public SDK users retain default pacing retries. A worker that installs a durable
 can opt in by wrapping **each activity attempt** in `withWorkflowHttpExecution`. This disables SDK pacing
 and generic retry loops for that attempt and shares counters across all clients its helpers construct.
 Without that wrapper, the SDK does not assume the worker has durable quota retry support.
+Workers whose activities catch API errors can preserve bounded short pacing waits with
+`withWorkflowHttpExecution(action, { pacingRetry: { maxWaitMs: 3000, attempts: 2 } })`.
+Generic retries remain disabled. Longer or exhausted refusals require propagation out of the activity
+for a durable retry interceptor to handle them. Correlation headers use a separate sequence from
+mutation/import keys, so cached reads do not change write identity on an activity retry.
 
 ```ts
 import { withWorkflowHttpExecution, withWorkflowOperation } from '@vertesia/workflow';

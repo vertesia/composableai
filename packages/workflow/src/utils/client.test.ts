@@ -438,3 +438,37 @@ it.each([PrincipalType.ServiceAccount, PrincipalType.User])(
         });
     },
 );
+
+it.each([PrincipalType.User, PrincipalType.Agent])(
+    'keeps mutation keys stable across a cache miss and lost response for %s',
+    async (type) => {
+        const environment = mockEnvironment();
+        const token = tokenWithClaims({ iss: 'https://sts.example', type });
+        const bodies: { idempotency_key: string }[] = [];
+        const attempt = (readProject: boolean, loseResponse: boolean) =>
+            environment.run(async () => {
+                const client = new VertesiaClient({
+                    ...getVertesiaClientOptions(payloadWithToken(token)),
+                    authCallback: async () => 'Bearer test',
+                    fetch: async (input) => {
+                        const request = input as Request;
+                        if (request.method === 'GET') return Response.json({ id: 'project' });
+                        bodies.push((await request.json()) as { idempotency_key: string });
+                        if (loseResponse) throw new TypeError('Lost response after create');
+                        return Response.json({ id: 'same-object' });
+                    },
+                });
+                if (readProject) await client.get('/projects');
+                await client.store.objects.create({ name: 'stable' });
+                const policy = getVertesiaClientOptions(payloadWithToken(token)).retryPolicy;
+                return policy?.importId?.({ path: 'stable' });
+            });
+        await expect(attempt(true, true)).rejects.toThrow();
+        const firstImport = await attempt(false, false);
+        const retryImport = await attempt(true, false);
+        expect(bodies).toHaveLength(3);
+        expect(bodies[0].idempotency_key).toMatch(/^[a-f0-9]{64}$/);
+        expect(new Set(bodies.map((body) => body.idempotency_key)).size).toBe(1);
+        expect(firstImport).toBe(retryImport);
+    },
+);

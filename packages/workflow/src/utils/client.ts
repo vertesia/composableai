@@ -5,7 +5,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash } from 'node:crypto';
 import { Context } from '@temporalio/activity';
-import type { FETCH_FN } from '@vertesia/api-fetch-client';
+import type { FETCH_FN, IPacingRetryPolicy } from '@vertesia/api-fetch-client';
 import { decodeEndpoints, decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
 import { PrincipalType, type WorkflowExecutionBaseParams } from '@vertesia/common';
 import type { Dispatcher } from 'undici';
@@ -19,10 +19,23 @@ const logicalOperation = new AsyncLocalStorage<{
 const workflowHttpExecution = new AsyncLocalStorage<{
     requestOccurrences: Map<string, number>;
     mutationSequence: number;
+    correlationSequence: number;
+    pacingRetry: IPacingRetryPolicy | false;
 }>();
 /** Install around one activity attempt only when a durable quota retry interceptor owns its waits. */
-export function withWorkflowHttpExecution<T>(action: () => T): T {
-    return workflowHttpExecution.run({ requestOccurrences: new Map<string, number>(), mutationSequence: 0 }, action);
+export function withWorkflowHttpExecution<T>(
+    action: () => T,
+    options: { pacingRetry?: IPacingRetryPolicy | false } = {},
+): T {
+    return workflowHttpExecution.run(
+        {
+            requestOccurrences: new Map<string, number>(),
+            mutationSequence: 0,
+            correlationSequence: 0,
+            pacingRetry: options.pacingRetry ?? false,
+        },
+        action,
+    );
 }
 
 /**
@@ -139,7 +152,11 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
     const tokenEndpoints = token.endpoints ? decodeEndpoints(token.endpoints) : {};
 
     const httpExecution = workflowHttpExecution.getStore();
-    const counters = httpExecution ?? { requestOccurrences: new Map<string, number>(), mutationSequence: 0 };
+    const counters = httpExecution ?? {
+        requestOccurrences: new Map<string, number>(),
+        mutationSequence: 0,
+        correlationSequence: 0,
+    };
     let requestPrefix: string | undefined;
     let logicalWorkflowId: string | undefined;
     let activitySignal: AbortSignal | undefined;
@@ -184,7 +201,7 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
         // Public workers retain SDK defaults. The activity owner opts into durable retries explicitly.
         ...(httpExecution
             ? {
-                  pacingRetry: false,
+                  pacingRetry: httpExecution.pacingRetry,
                   retryPolicy: {
                       attempts: 1,
                       ...(requestPrefix
@@ -244,7 +261,7 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
               ? {
                     // Correlation is useful for every activity, even without attested quota identity.
                     // Only the trusted path above hashes bodies for replay identity.
-                    requestIdentity: () => `${requestPrefix}:${counters.mutationSequence++}`,
+                    requestIdentity: () => `${requestPrefix}:${counters.correlationSequence++}`,
                 }
               : {}),
     };
