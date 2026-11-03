@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -9,7 +10,11 @@ import {
     execActivityFileWithProgress,
     ffmpegInputThreadArgs,
     ffmpegOutputThreadArgs,
+    isTranscodeExceedsTimeBudget,
     libx264ThreadArgs,
+    projectCompletionMs,
+    rethrowIfActivityStopped,
+    TRANSCODE_EXCEEDS_TIME_BUDGET,
 } from './exec.js';
 
 describe('ffmpeg thread arguments', () => {
@@ -253,4 +258,59 @@ describe('execActivityFileWithProgress', () => {
         },
         TIMING_TEST_TIMEOUT_MS,
     );
+});
+
+describe('transcode time budget', () => {
+    const activityEnv = () =>
+        new MockActivityEnvironment({
+            currentAttemptScheduledTimestampMs: Date.now(),
+            startToCloseTimeoutMs: 60_000,
+        });
+
+    // A child that reports `time=` advancing by one media second every 50ms, i.e. 20x realtime.
+    const progressScript = [
+        'let s = 0;',
+        'const tick = setInterval(() => {',
+        '    s += 1;',
+        "    process.stderr.write(`frame=${s * 30} time=00:00:${String(s).padStart(2, '0')}.00\\r`);",
+        '    if (s >= 10) { clearInterval(tick); process.exit(0); }',
+        '}, 50);',
+    ].join('\n');
+
+    it('projects the finish time from the share of the media processed', () => {
+        expect(projectCompletionMs(60_000, 30, 120)).toBe(240_000);
+        expect(projectCompletionMs(60_000, 0, 120)).toBeUndefined();
+        // Never projects below the time already spent when ffmpeg reports past the probed duration.
+        expect(projectCompletionMs(60_000, 150, 120)).toBe(60_000);
+    });
+
+    it('stops a command projected to overrun its budget, without retrying', async () => {
+        const execution = activityEnv().run(() =>
+            execActivityFileWithProgress(process.execPath, ['-e', progressScript], {
+                // 1000 media seconds at 20x realtime is about 50s, far over a 1s budget.
+                completionBudget: { mediaDurationSeconds: 1000, budgetMs: 1_000, judgeAfterMs: 120 },
+            }),
+        );
+
+        await expect(execution).rejects.toMatchObject({ type: TRANSCODE_EXCEEDS_TIME_BUDGET, nonRetryable: true });
+    }, 20_000);
+
+    it('lets a command on track for its budget finish', async () => {
+        const result = (await activityEnv().run(() =>
+            execActivityFileWithProgress(process.execPath, ['-e', progressScript], {
+                completionBudget: { mediaDurationSeconds: 10, budgetMs: 10_000, judgeAfterMs: 120 },
+            }),
+        )) as { stderr: string };
+
+        expect(result.stderr).toContain('time=00:00:10.00');
+    }, 20_000);
+
+    it('is re-thrown past rendition fallbacks, so it is not swallowed into a missing rendition', async () => {
+        const failure = ApplicationFailure.create({ type: TRANSCODE_EXCEEDS_TIME_BUDGET, nonRetryable: true });
+        expect(isTranscodeExceedsTimeBudget(failure)).toBe(true);
+        await expect(activityEnv().run(async () => rethrowIfActivityStopped(failure))).rejects.toBe(failure);
+        await expect(activityEnv().run(async () => rethrowIfActivityStopped(new Error('ffmpeg failed')))).resolves.toBe(
+            undefined,
+        );
+    });
 });

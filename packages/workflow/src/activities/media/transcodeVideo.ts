@@ -1,4 +1,4 @@
-import { ApplicationFailure, log } from '@temporalio/activity';
+import { ApplicationFailure, Context, log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
 import type {
     ContentObject,
@@ -9,8 +9,14 @@ import type {
 } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
-import { initializeActivityCommandDeadline, isUnusableVideoContent, rethrowIfActivityStopped } from './exec.js';
 import {
+    initializeActivityCommandDeadline,
+    isUnusableVideoContent,
+    rethrowIfActivityStopped,
+    TRANSCODE_EXCEEDS_TIME_BUDGET,
+} from './exec.js';
+import {
+    calculateScaledDimensions,
     DEFAULT_MAX_RESOLUTION,
     generateRenditionWithDimensions,
     getVideoMetadata,
@@ -91,6 +97,62 @@ async function assertFitsOnDisk(client: VertesiaClient, object: ContentObject): 
     }
 }
 
+/** Pixels in a 1080p frame, the size the realtime factor is stated for. */
+const PIXELS_1080P = 1920 * 1080;
+
+/**
+ * How many seconds of 1080p video a transcode is assumed to encode per second of wall time when no
+ * WORKER_TRANSCODE_REALTIME_FACTOR is set. A dedicated multi-core worker encodes the veryfast preset several times
+ * faster than realtime; 2 is below that on purpose, so the pre-check rejects only transcodes that clearly cannot
+ * finish. The in-flight check catches slower encodes from their measured speed.
+ */
+const DEFAULT_TRANSCODE_REALTIME_FACTOR = 2;
+
+/** Part of the Activity's run time kept free for the download, upload and probe around the encode. */
+const TRANSCODE_TIME_MARGIN_MS = 5 * 60_000;
+
+/** WORKER_TRANSCODE_REALTIME_FACTOR, or the default when it is unset or not a positive number. */
+export function transcodeRealtimeFactor(env: NodeJS.ProcessEnv = process.env): number {
+    const configured = Number(env.WORKER_TRANSCODE_REALTIME_FACTOR);
+    return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_TRANSCODE_REALTIME_FACTOR;
+}
+
+/** Estimated encode time of `durationSeconds` of video at `width`×`height`, scaled from the 1080p realtime factor. */
+export function estimateTranscodeMs(
+    durationSeconds: number,
+    width: number,
+    height: number,
+    realtimeFactor: number,
+): number {
+    return ((durationSeconds * ((width * height) / PIXELS_1080P)) / realtimeFactor) * 1000;
+}
+
+/**
+ * Fail without retrying, before downloading, when the encode alone is estimated to outlast the Activity's run time.
+ * A transcode that times out would be retried, and every retry would time out the same way.
+ */
+function assertFitsInTime(object: ContentObject, maxResolution: number): void {
+    const metadata = object.metadata as VideoMetadata | undefined;
+    const duration = metadata?.duration;
+    const width = metadata?.dimensions?.width;
+    const height = metadata?.dimensions?.height;
+    if (!duration || !width || !height) {
+        log.warn(`Duration or dimensions of ${object.id} are unknown; transcoding without a time pre-check`);
+        return;
+    }
+    const output = calculateScaledDimensions(width, height, maxResolution);
+    const estimateMs = estimateTranscodeMs(duration, output.width, output.height, transcodeRealtimeFactor());
+    const budgetMs = Context.current().info.startToCloseTimeoutMs - TRANSCODE_TIME_MARGIN_MS;
+    if (estimateMs > budgetMs) {
+        const minutes = (ms: number) => Math.round(ms / 60_000);
+        throw ApplicationFailure.nonRetryable(
+            `Transcoding ${object.id} (${Math.round(duration / 60)} min at ${output.width}x${output.height}) is ` +
+                `estimated to take ${minutes(estimateMs)} min, more than the ${minutes(budgetMs)} min available`,
+            TRANSCODE_EXCEEDS_TIME_BUDGET,
+        );
+    }
+}
+
 export interface TranscodeVideoParams {
     maxResolution?: number; // Max resolution (longest side) for the web rendition, default 1920 (1080p)
     videoPreset?: VideoPreset; // FFmpeg encoding preset, default veryfast
@@ -112,8 +174,11 @@ export interface TranscodeVideoResult {
  * Transcode a video to the H.264 web rendition and upload it.
  *
  * Writes nothing to the object: the caller stores the returned rendition with addObjectRendition once no other step is
- * writing the object's metadata. Fails with {@link TRANSCODE_EXCEEDS_DISK_BUDGET}, before downloading, when the source
- * and rendition would not fit in the worker's ephemeral storage.
+ * writing the object's metadata. Fails without retrying, so a slow or oversized transcode does not burn every attempt:
+ * - with {@link TRANSCODE_EXCEEDS_DISK_BUDGET}, before downloading, when the source and rendition would not fit in the
+ *   worker's ephemeral storage;
+ * - with TRANSCODE_EXCEEDS_TIME_BUDGET, before downloading, when the encode is estimated to outlast the Activity's run
+ *   time, or during the encode, when its measured speed projects it past that time.
  */
 export async function transcodeVideo(
     payload: DSLActivityExecutionPayload<TranscodeVideoParams>,
@@ -129,16 +194,20 @@ export async function transcodeVideo(
     const inputObject = await retrieveVideoObject(client, objectId);
     const source = inputObject.content?.source as string;
     await assertFitsOnDisk(client, inputObject);
+    assertFitsInTime(inputObject, maxResolution);
 
     return await withVideoWorkspace(client, source, 'transcode-video-', async (videoFile, outputDir) => {
         try {
             const metadata = await getVideoMetadata(videoFile);
+            // Whatever the Activity has left, less the margin for the upload, is the encode's budget.
+            const encodeBudgetMs = initializeActivityCommandDeadline() - Date.now() - TRANSCODE_TIME_MARGIN_MS;
             const result = await generateRenditionWithDimensions(
                 videoFile,
                 outputDir,
                 metadata,
                 maxResolution,
                 videoPreset,
+                Math.max(1, encodeBudgetMs),
             );
 
             const rendition = result

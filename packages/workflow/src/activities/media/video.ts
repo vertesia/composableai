@@ -145,7 +145,7 @@ export async function getVideoMetadata(videoPath: string): Promise<VideoMetadata
  * Calculate scaled dimensions maintaining aspect ratio
  * Scales based on longest side, ensuring dimensions are even (required for H.264)
  */
-function calculateScaledDimensions(
+export function calculateScaledDimensions(
     width: number,
     height: number,
     maxResolution: number,
@@ -229,6 +229,7 @@ export async function generateRenditionWithDimensions(
     metadata: VideoMetadataExtended,
     maxResolution: number,
     videoPreset: VideoPreset,
+    timeBudgetMs?: number,
 ): Promise<MediaResult | null> {
     const outputFile = path.join(outputDir, `rendition_${maxResolution}p.mp4`);
 
@@ -244,7 +245,15 @@ export async function generateRenditionWithDimensions(
     log.debug(`Generating ${maxResolution}p video rendition`, { command: 'ffmpeg', args: command });
 
     try {
-        const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
+        // With a time budget, a transcode that is not going to finish in time is stopped early instead of running into
+        // its Activity timeout, which Temporal would retry.
+        const { stderr } = await execActivityFileWithProgress(
+            'ffmpeg',
+            command,
+            timeBudgetMs && metadata.duration > 0
+                ? { completionBudget: { mediaDurationSeconds: metadata.duration, budgetMs: timeBudgetMs } }
+                : {},
+        );
         const stderrText = stderr.toString();
 
         if (stderrText && !stderrText.includes('frame=')) {
