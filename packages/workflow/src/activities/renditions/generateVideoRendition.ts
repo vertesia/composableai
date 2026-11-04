@@ -10,6 +10,8 @@ import { type ImageRenditionParams, uploadRenditionPages } from '../../utils/ren
 import {
     execActivityFile,
     execActivityFileWithProgress,
+    ffmpegInputThreadArgs,
+    ffmpegOutputThreadArgs,
     initializeActivityCommandDeadline,
     isUnusableVideoContent,
     rethrowIfActivityStopped,
@@ -132,6 +134,7 @@ async function generateThumbnail(
 
     const command = [
         '-y', // Overwrite output files
+        ...ffmpegInputThreadArgs(),
         '-ss',
         timestamp.toString(), // Seek to timestamp
         '-i',
@@ -142,6 +145,7 @@ async function generateThumbnail(
         scaleFilter, // Scale maintaining aspect ratio
         '-q:v',
         '2', // High quality
+        ...ffmpegOutputThreadArgs(),
         outputFile,
     ];
     log.info(`Generating thumbnail at ${timestamp}s`, { command: 'ffmpeg', args: command });

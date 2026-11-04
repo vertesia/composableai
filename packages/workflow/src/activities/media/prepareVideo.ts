@@ -1,47 +1,29 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { ApplicationFailure, log } from '@temporalio/activity';
-import { RequestError } from '@vertesia/api-fetch-client';
-import type { VertesiaClient } from '@vertesia/client';
-import {
-    AUDIO_RENDITION_NAME,
-    ContentNature,
-    type DSLActivityExecutionPayload,
-    type DSLActivitySpec,
-    POSTER_RENDITION_NAME,
-    type RenditionWithDimensions,
-    type VideoMetadata,
-    WEB_VIDEO_RENDITION_NAME,
-} from '@vertesia/common';
+import { log } from '@temporalio/activity';
+import type { DSLActivityExecutionPayload, DSLActivitySpec, RenditionWithDimensions } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
-import { saveBlobToTempFile } from '../../utils/blobs.js';
+import { initializeActivityCommandDeadline, isUnusableVideoContent, rethrowIfActivityStopped } from './exec.js';
 import {
-    execActivityFile,
-    execActivityFileWithProgress,
-    initializeActivityCommandDeadline,
-    isUnusableVideoContent,
-    rethrowIfActivityStopped,
-    UNUSABLE_VIDEO_CONTENT,
-} from './exec.js';
+    buildVideoMetadata,
+    DEFAULT_GENERATE_AUDIO,
+    DEFAULT_MAX_RESOLUTION,
+    DEFAULT_POSTER_SIZE,
+    DEFAULT_THUMBNAIL_SIZE,
+    extractVideoFrames,
+    generateAudioRendition,
+    generateRenditionWithDimensions,
+    getVideoMetadata,
+    type MediaResult,
+    resolveVideoPreset,
+    retrieveVideoObject,
+    uploadVideoAssets,
+    uploadWebRendition,
+    type VideoMetadataExtended,
+    type VideoPreset,
+    withVideoWorkspace,
+} from './video.js';
 
-// Default configuration constants
-const DEFAULT_MAX_RESOLUTION = 1920; // Max resolution for video rendition (produces 1080p)
-const DEFAULT_THUMBNAIL_SIZE = 256; // Thumbnail longest side in pixels
-const DEFAULT_POSTER_SIZE = 1920; // Poster longest side in pixels
-const DEFAULT_GENERATE_AUDIO = true; // Generate audio-only rendition by default
-
-// Timestamp calculation constants for screenshots
-const THUMBNAIL_TIMESTAMP_RATIO = 0.25; // Extract thumbnail at 25% of video duration
-const POSTER_TIMESTAMP_RATIO = 0.05; // Extract poster at 5% of video duration
-const POSTER_TIMESTAMP_MAX = 2; // Maximum poster timestamp in seconds
-const MIN_SCREENSHOT_TIMESTAMP = 1; // Minimum timestamp for screenshots in seconds
-
-// FFmpeg configuration constants
-const VIDEO_CRF = '23'; // Constant Rate Factor for video quality (18-28, lower = better)
-const AUDIO_BITRATE = '128k'; // Audio bitrate for AAC encoding
-const JPEG_QUALITY = '2'; // JPEG quality for screenshots (1-31, lower = better)
+export { buildWebRenditionArgs, resolveVideoPreset, VIDEO_PRESETS, type VideoPreset } from './video.js';
 
 export interface PrepareVideoParams {
     maxResolution?: number; // Max resolution (longest side) for video rendition, default 1920 (produces 1080p: 1920x1080 landscape or 1080x1920 portrait)
@@ -52,144 +34,12 @@ export interface PrepareVideoParams {
     skipTranscode?: boolean; // Skip the main video re-encode, default false
 }
 
-export const VIDEO_PRESETS = ['medium', 'fast', 'veryfast', 'ultrafast'] as const;
-export type VideoPreset = (typeof VIDEO_PRESETS)[number];
-const DEFAULT_VIDEO_PRESET: VideoPreset = 'veryfast';
-
 export function shouldTranscodeVideo(skipTranscode?: boolean): boolean {
     return skipTranscode !== true;
 }
 
-/**
- * Returns the requested preset, or the default when none is set. Retries keep the same preset.
- * Workflow definitions can pass any string, so an unknown preset fails the activity without retrying.
- */
-export function resolveVideoPreset(preset?: string): VideoPreset {
-    if (preset === undefined) {
-        return DEFAULT_VIDEO_PRESET;
-    }
-    if (!(VIDEO_PRESETS as readonly string[]).includes(preset)) {
-        throw ApplicationFailure.nonRetryable(
-            `Invalid videoPreset "${preset}"; expected one of: ${VIDEO_PRESETS.join(', ')}`,
-            'InvalidVideoPreset',
-        );
-    }
-    return preset as VideoPreset;
-}
-
 export interface PrepareVideo extends DSLActivitySpec<PrepareVideoParams> {
     name: 'prepareVideo';
-}
-
-interface VideoMetadataExtended {
-    duration: number;
-    width: number;
-    height: number;
-    codec: string;
-    bitrate: number;
-    fps: number;
-    hasAudio: boolean;
-}
-
-interface FFProbeStream {
-    codec_type: string;
-    codec_name?: string;
-    width?: number;
-    height?: number;
-    r_frame_rate?: string;
-}
-
-interface FFProbeFormat {
-    duration?: string;
-    bit_rate?: string;
-}
-
-interface FFProbeOutput {
-    streams: FFProbeStream[];
-    format: FFProbeFormat;
-}
-
-/**
- * Extract comprehensive video metadata using ffprobe
- */
-async function getVideoMetadata(videoPath: string): Promise<VideoMetadataExtended> {
-    try {
-        const args = ['-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams', videoPath];
-        const { stdout } = await execActivityFile('ffprobe', args);
-        const metadata = JSON.parse(stdout.toString()) as FFProbeOutput;
-
-        const videoStream = metadata.streams.find((stream) => stream.codec_type === 'video');
-
-        if (!videoStream) {
-            throw ApplicationFailure.nonRetryable('No video stream found in file', UNUSABLE_VIDEO_CONTENT);
-        }
-
-        const duration = parseFloat(metadata.format.duration ?? '0') || 0;
-        const width = videoStream.width || 0;
-        const height = videoStream.height || 0;
-        const codec = videoStream.codec_name || 'unknown';
-        const bitrate = parseInt(metadata.format.bit_rate ?? '0', 10) || 0;
-
-        // Calculate FPS from r_frame_rate (e.g., "30/1" or "24000/1001")
-        let fps = 0;
-        if (videoStream.r_frame_rate) {
-            const [num, den] = videoStream.r_frame_rate.split('/').map(Number);
-            fps = den > 0 ? num / den : 0;
-        }
-
-        // Check if video has an audio stream
-        const audioStream = metadata.streams.find((stream) => stream.codec_type === 'audio');
-        const hasAudio = !!audioStream;
-
-        return { duration, width, height, codec, bitrate, fps, hasAudio };
-    } catch (error) {
-        rethrowIfActivityStopped(error);
-        const message = `Failed to get video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`;
-        if (error instanceof ApplicationFailure) {
-            // Raised above: the file has no usable video stream, a property of the content.
-            log.warn(message);
-            throw error;
-        }
-        log.error(message);
-        throw new Error(`Failed to probe video metadata: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
-}
-
-/**
- * Calculate scaled dimensions maintaining aspect ratio
- * Scales based on longest side, ensuring dimensions are even (required for H.264)
- */
-function calculateScaledDimensions(
-    width: number,
-    height: number,
-    maxResolution: number,
-): { width: number; height: number } {
-    const longestSide = Math.max(width, height);
-    let newWidth: number;
-    let newHeight: number;
-
-    if (longestSide > maxResolution) {
-        // Scale down if video is larger than max resolution
-        const scale = maxResolution / longestSide;
-        newWidth = Math.floor(width * scale);
-        newHeight = Math.floor(height * scale);
-    } else {
-        // Keep original dimensions if video is smaller
-        newWidth = width;
-        newHeight = height;
-    }
-
-    // Ensure dimensions are divisible by 2 (required for H.264/image processing)
-    const adjustedWidth = newWidth % 2 === 0 ? newWidth : newWidth - 1;
-    const adjustedHeight = newHeight % 2 === 0 ? newHeight : newHeight - 1;
-
-    return { width: adjustedWidth, height: adjustedHeight };
-}
-
-interface MediaResult {
-    file: string;
-    width: number;
-    height: number;
 }
 
 export interface PrepareVideoMetadata {
@@ -209,247 +59,23 @@ export interface PrepareVideoResult {
     status: 'success';
 }
 
-/**
- * Generate a video rendition with resolution limited to maxResolution (e.g., 1080p)
- * Uses H.264 codec for broad compatibility
- */
-async function generateRenditionWithDimensions(
-    videoPath: string,
-    outputDir: string,
-    metadata: VideoMetadataExtended,
-    maxResolution: number,
-    videoPreset: VideoPreset,
-): Promise<MediaResult | null> {
-    const outputFile = path.join(outputDir, `rendition_${maxResolution}p.mp4`);
-
-    // Calculate scaled dimensions
-    const dimensions = calculateScaledDimensions(metadata.width, metadata.height, maxResolution);
-
-    log.debug(
-        `Video rendition dimensions: ${metadata.width}x${metadata.height} -> ${dimensions.width}x${dimensions.height}`,
-    );
-
-    // Combine scale with color space conversion for maximum web compatibility
-    // format=yuv420p converts to 4:2:0 chroma subsampling (from ProRes 4:2:2 or higher)
-    const videoFilters = `scale=${dimensions.width}:${dimensions.height},format=yuv420p`;
-
-    const command = [
-        '-y', // Overwrite output
-        '-i',
-        videoPath,
-        '-vf',
-        videoFilters,
-        '-c:v',
-        'libx264', // H.264 codec
-        '-preset',
-        videoPreset,
-        '-crf',
-        VIDEO_CRF, // Constant Rate Factor (18-28, lower = better quality)
-        '-pix_fmt',
-        'yuv420p', // Explicitly set pixel format for compatibility
-        '-c:a',
-        'aac', // Audio codec
-        '-b:a',
-        AUDIO_BITRATE, // Audio bitrate
-        '-movflags',
-        '+faststart', // Enable streaming
-        '-max_muxing_queue_size',
-        '1024', // Prevent muxing issues
-        outputFile,
-    ];
-
-    log.debug(`Generating ${maxResolution}p video rendition`, { command: 'ffmpeg', args: command });
-
-    try {
-        const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
-        const stderrText = stderr.toString();
-
-        if (stderrText && !stderrText.includes('frame=')) {
-            log.debug(`FFmpeg stderr for video rendition: ${stderrText}`);
-        }
-
-        // Verify output file was created
-        try {
-            await fs.promises.access(outputFile, fs.constants.F_OK);
-            log.debug(`Generated ${maxResolution}p video rendition: ${outputFile}`);
-            return {
-                file: outputFile,
-                width: dimensions.width,
-                height: dimensions.height,
-            };
-        } catch {
-            log.warn(`Video rendition not generated`);
-            return null;
-        }
-    } catch (error) {
-        rethrowIfActivityStopped(error);
-        log.error(`Failed to generate video rendition: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return null;
-    }
-}
-
-/**
- * Extract audio track from video as AAC audio file
- */
-async function generateAudioRendition(videoPath: string, outputDir: string): Promise<string | null> {
-    const outputFile = path.join(outputDir, 'audio.m4a');
-
-    const command = [
-        '-y', // Overwrite output
-        '-i',
-        videoPath,
-        '-vn', // No video
-        '-c:a',
-        'aac', // Audio codec
-        '-b:a',
-        AUDIO_BITRATE, // Audio bitrate
-        outputFile,
-    ];
-
-    log.debug('Generating audio-only rendition', { command: 'ffmpeg', args: command });
-
-    try {
-        const { stderr } = await execActivityFileWithProgress('ffmpeg', command);
-        const stderrText = stderr.toString();
-
-        if (stderrText && !stderrText.includes('frame=')) {
-            log.debug(`FFmpeg stderr for audio rendition: ${stderrText}`);
-        }
-
-        // Verify output file was created
-        try {
-            await fs.promises.access(outputFile, fs.constants.F_OK);
-            log.debug(`Generated audio rendition: ${outputFile}`);
-            return outputFile;
-        } catch {
-            log.warn('Audio rendition not generated');
-            return null;
-        }
-    } catch (error) {
-        rethrowIfActivityStopped(error);
-        log.error(`Failed to generate audio rendition: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return null;
-    }
-}
-
-/**
- * Extract a screenshot frame from the video at a specific timestamp
- */
-async function generateScreenshot(
-    videoPath: string,
-    outputDir: string,
-    timestamp: number,
-    maxSize: number,
-    name: string,
-    metadata: VideoMetadataExtended,
-): Promise<MediaResult | null> {
-    const outputFile = path.join(outputDir, `${name}.jpg`);
-
-    // Calculate scaled dimensions
-    const dimensions = calculateScaledDimensions(metadata.width, metadata.height, maxSize);
-
-    const scaleFilter = `scale=${dimensions.width}:${dimensions.height}`;
-
-    const command = [
-        '-y',
-        '-ss',
-        timestamp.toString(),
-        '-i',
-        videoPath,
-        '-vframes',
-        '1',
-        '-vf',
-        scaleFilter,
-        '-q:v',
-        JPEG_QUALITY, // High quality JPEG
-        outputFile,
-    ];
-
-    log.debug(`Generating ${name} at ${timestamp}s`, { command: 'ffmpeg', args: command });
-
-    try {
-        const { stderr } = await execActivityFile('ffmpeg', command);
-        const stderrText = stderr.toString();
-
-        if (stderrText && !stderrText.includes('frame=')) {
-            log.debug(`FFmpeg stderr for ${name}: ${stderrText}`);
-        }
-
-        // Verify output file was created
-        try {
-            await fs.promises.access(outputFile, fs.constants.F_OK);
-            log.debug(`Generated ${name}: ${outputFile}`);
-            return {
-                file: outputFile,
-                width: dimensions.width,
-                height: dimensions.height,
-            };
-        } catch {
-            log.warn(`${name} not generated`);
-            return null;
-        }
-    } catch (error) {
-        rethrowIfActivityStopped(error);
-        log.error(`Failed to generate ${name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        return null;
-    }
-}
-
-/**
- * Upload a file to the storage and return its URI
- */
-async function uploadFile(
-    client: VertesiaClient,
-    filePath: string,
-    mimeType: string,
-    fileName: string,
-    storagePath: string,
-): Promise<string> {
-    const { NodeStreamSource } = await import('@vertesia/client/node');
-    const fileStream = fs.createReadStream(filePath);
-    const source = new NodeStreamSource(fileStream, fileName, mimeType, storagePath);
-
-    try {
-        const result = await client.files.uploadFile(source);
-        log.debug(`Uploaded file to ${storagePath}`, { result });
-        return result;
-    } finally {
-        // An upload that fails before reading the body leaves the file open.
-        fileStream.destroy();
-    }
-}
-
-/**
- * Upload a media result and create a rendition entry
- */
-async function uploadMediaAsRendition(
-    client: VertesiaClient,
-    result: MediaResult,
-    renditionName: string,
-    fileName: string,
-    mimeType: string,
-    etag: string,
-    pathSegment: string,
-): Promise<RenditionWithDimensions> {
-    const storagePath = `renditions/${etag}/${pathSegment}/${fileName}`;
-    const uri = await uploadFile(client, result.file, mimeType, fileName, storagePath);
-
+export function toPrepareVideoMetadata(metadata: VideoMetadataExtended): PrepareVideoMetadata {
     return {
-        name: renditionName,
-        dimensions: {
-            width: result.width,
-            height: result.height,
-        },
-        content: {
-            source: uri,
-            type: mimeType,
-            name: fileName,
-        },
+        duration: metadata.duration,
+        width: metadata.width,
+        height: metadata.height,
+        codec: metadata.codec,
+        bitrate: metadata.bitrate,
+        fps: metadata.fps,
+        hasAudio: metadata.hasAudio,
     };
 }
 
 /**
  * Main activity: Prepare video by extracting metadata and generating renditions
+ *
+ * Runs the transcode and the frame and audio extraction in one Activity. StandardVideoIntake now runs them as
+ * extractVideoAssets, transcodeVideo and addObjectRendition; this stays for histories and DSL definitions that schedule it.
  */
 export async function prepareVideo(
     payload: DSLActivityExecutionPayload<PrepareVideoParams>,
@@ -472,202 +98,89 @@ export async function prepareVideo(
         videoPreset,
     });
 
-    // Retrieve the content object
-    const inputObject = await client.objects.retrieve(objectId).catch((err: unknown) => {
-        log.error(`Failed to retrieve document ${objectId}`, { err });
-        if (err instanceof RequestError && err.status === 404) {
-            throw new DocumentNotFoundError(`Document ${objectId} not found`, [objectId]);
-        }
-        throw err;
-    });
+    const inputObject = await retrieveVideoObject(client, objectId);
+    const source = inputObject.content?.source as string;
 
-    if (!inputObject.content?.source) {
-        log.error(`Document ${objectId} has no source`);
-        throw new DocumentNotFoundError(`Document ${objectId} has no source`, [objectId]);
-    }
+    return await withVideoWorkspace(client, source, 'prepare-video-', async (videoFile, tempOutputDir) => {
+        try {
+            // Step 1: Extract video metadata
+            log.info('Extracting video metadata');
+            const metadata = await getVideoMetadata(videoFile);
 
-    if (!inputObject.content.type?.startsWith('video/')) {
-        log.error(`Document ${objectId} is not a video: ${inputObject.content.type}`);
-        throw new InvalidContentTypeError(objectId, 'video/*', inputObject.content.type || 'unknown');
-    }
+            // Step 2: Generate video rendition
+            let renditionResult: MediaResult | null = null;
+            if (!shouldTranscodeVideo(skipTranscode)) {
+                log.info('Skipping video rendition transcode by configuration');
+            } else {
+                log.debug('Generating video rendition');
+                renditionResult = await generateRenditionWithDimensions(
+                    videoFile,
+                    tempOutputDir,
+                    metadata,
+                    maxResolution,
+                    videoPreset,
+                );
+            }
 
-    // Download video to temp file
-    const videoFile = await saveBlobToTempFile(client, inputObject.content.source);
-    // Created inside the try, so a failure here still removes the download in the finally.
-    let tempOutputDir: string | undefined;
+            // Step 3 & 4: Generate thumbnail and poster in parallel
+            log.debug('Generating thumbnail and poster');
+            const frames = await extractVideoFrames(videoFile, tempOutputDir, metadata, thumbnailSize, posterSize);
 
-    try {
-        tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prepare-video-'));
-        // Step 1: Extract video metadata
-        log.info('Extracting video metadata');
-        const metadata = await getVideoMetadata(videoFile);
+            // Step 5: Generate audio rendition (if video has audio and requested)
+            let audioFile: string | null = null;
+            if (generateAudio && metadata.hasAudio) {
+                log.debug('Generating audio rendition');
+                audioFile = await generateAudioRendition(videoFile, tempOutputDir);
+            } else if (generateAudio && !metadata.hasAudio) {
+                log.info('Skipping audio rendition - video has no audio track');
+            }
 
-        // Step 2: Generate video rendition
-        let renditionResult: MediaResult | null = null;
-        if (!shouldTranscodeVideo(skipTranscode)) {
-            log.info('Skipping video rendition transcode by configuration');
-        } else {
-            log.debug('Generating video rendition');
-            renditionResult = await generateRenditionWithDimensions(
-                videoFile,
-                tempOutputDir,
-                metadata,
-                maxResolution,
-                videoPreset,
-            );
-        }
+            // Step 6: Upload generated files
+            const renditions: RenditionWithDimensions[] = [];
+            const etag = inputObject.content?.etag ?? inputObject.id;
 
-        // Step 3 & 4: Generate thumbnail and poster in parallel
-        log.debug('Generating thumbnail and poster');
-        const thumbnailTimestamp = Math.max(metadata.duration * THUMBNAIL_TIMESTAMP_RATIO, MIN_SCREENSHOT_TIMESTAMP);
-        const posterTimestamp = Math.max(
-            Math.min(metadata.duration * POSTER_TIMESTAMP_RATIO, POSTER_TIMESTAMP_MAX),
-            MIN_SCREENSHOT_TIMESTAMP,
-        );
+            if (renditionResult) {
+                renditions.push(await uploadWebRendition(client, renditionResult, maxResolution, etag));
+            }
+            renditions.push(...(await uploadVideoAssets(client, frames, audioFile, thumbnailSize, posterSize, etag)));
 
-        const [thumbnailResult, posterResult] = await Promise.all([
-            generateScreenshot(videoFile, tempOutputDir, thumbnailTimestamp, thumbnailSize, 'thumbnail', metadata),
-            generateScreenshot(videoFile, tempOutputDir, posterTimestamp, posterSize, 'poster', metadata),
-        ]);
+            // Step 7: Update content object with metadata and renditions
+            await client.objects.update(objectId, {
+                metadata: buildVideoMetadata(metadata, renditions, inputObject.metadata),
+            });
 
-        // Step 5: Generate audio rendition (if video has audio and requested)
-        let audioFile: string | null = null;
-        if (generateAudio && metadata.hasAudio) {
-            log.debug('Generating audio rendition');
-            audioFile = await generateAudioRendition(videoFile, tempOutputDir);
-        } else if (generateAudio && !metadata.hasAudio) {
-            log.info('Skipping audio rendition - video has no audio track');
-        }
-
-        // Step 6: Upload generated files
-        const renditions: RenditionWithDimensions[] = [];
-        const etag = inputObject.content.etag ?? inputObject.id;
-
-        if (renditionResult) {
-            const videoRendition = await uploadMediaAsRendition(
-                client,
-                renditionResult,
-                WEB_VIDEO_RENDITION_NAME,
-                `${maxResolution}px.mp4`,
-                'video/mp4',
-                etag,
-                'video',
-            );
-            renditions.push(videoRendition);
-        }
-
-        if (thumbnailResult) {
-            const fileName = 'thumbnail.jpg';
-            const storagePath = `renditions/${etag}/${thumbnailSize}/${fileName}`;
-            await uploadFile(client, thumbnailResult.file, 'image/jpeg', fileName, storagePath);
-        }
-
-        if (posterResult) {
-            const posterRendition = await uploadMediaAsRendition(
-                client,
-                posterResult,
-                POSTER_RENDITION_NAME,
-                'poster.jpg',
-                'image/jpeg',
-                etag,
-                `${posterSize}`,
-            );
-            renditions.push(posterRendition);
-        }
-
-        if (audioFile) {
-            const audioRendition = await uploadMediaAsRendition(
-                client,
-                { file: audioFile, width: 0, height: 0 },
-                AUDIO_RENDITION_NAME,
-                'audio.m4a',
-                'audio/mp4',
-                etag,
-                'audio',
-            );
-            renditions.push(audioRendition);
-        }
-
-        // Step 7: Update content object with metadata and renditions
-        const generationRuns = Array.isArray(inputObject.metadata?.generation_runs)
-            ? inputObject.metadata.generation_runs
-            : [];
-        const videoMetadata: VideoMetadata = {
-            type: ContentNature.Video,
-            duration: metadata.duration,
-            dimensions: {
-                width: metadata.width,
-                height: metadata.height,
-            },
-            renditions,
-            hasAudio: metadata.hasAudio,
-            generation_runs: generationRuns,
-        };
-
-        await client.objects.update(objectId, {
-            metadata: videoMetadata,
-        });
-
-        log.info(`Successfully prepared video ${objectId}`, {
-            duration: metadata.duration,
-            dimensions: `${metadata.width}x${metadata.height}`,
-            codec: metadata.codec,
-            bitrate: metadata.bitrate,
-            fps: metadata.fps,
-            hasAudio: metadata.hasAudio,
-            renditionsGenerated: renditions.length,
-        });
-
-        return {
-            objectId,
-            metadata: {
+            log.info(`Successfully prepared video ${objectId}`, {
                 duration: metadata.duration,
-                width: metadata.width,
-                height: metadata.height,
+                dimensions: `${metadata.width}x${metadata.height}`,
                 codec: metadata.codec,
                 bitrate: metadata.bitrate,
                 fps: metadata.fps,
                 hasAudio: metadata.hasAudio,
-            },
-            renditions: renditions,
-            status: 'success',
-        };
-    } catch (error) {
-        rethrowIfActivityStopped(error);
-        // The metadata probe already logged it at warn; keep its type and non-retryable flag.
-        if (isUnusableVideoContent(error)) {
-            throw error;
+                renditionsGenerated: renditions.length,
+            });
+
+            return {
+                objectId,
+                metadata: toPrepareVideoMetadata(metadata),
+                renditions: renditions,
+                status: 'success',
+            };
+        } catch (error) {
+            rethrowIfActivityStopped(error);
+            // The metadata probe already logged it at warn; keep its type and non-retryable flag.
+            if (isUnusableVideoContent(error)) {
+                throw error;
+            }
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            log.error(`Error preparing video: ${errorMessage}`, { error });
+
+            // Re-throw known errors as-is
+            if (error instanceof DocumentNotFoundError || error instanceof InvalidContentTypeError) {
+                throw error;
+            }
+
+            // Wrap unknown errors in Error
+            throw new Error(`Failed to prepare video ${objectId}: ${errorMessage}`);
         }
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        log.error(`Error preparing video: ${errorMessage}`, { error });
-
-        // Re-throw known errors as-is
-        if (error instanceof DocumentNotFoundError || error instanceof InvalidContentTypeError) {
-            throw error;
-        }
-
-        // Wrap unknown errors in Error
-        throw new Error(`Failed to prepare video ${objectId}: ${errorMessage}`);
-    } finally {
-        // Clean up temporary files
-        const cleanupPromises: Promise<void>[] = [];
-
-        if (videoFile) {
-            cleanupPromises.push(
-                fs.promises.unlink(videoFile).catch((err) => {
-                    log.warn(`Failed to cleanup video file: ${videoFile}`, { err });
-                }),
-            );
-        }
-
-        if (tempOutputDir) {
-            cleanupPromises.push(
-                fs.promises.rm(tempOutputDir, { recursive: true, force: true }).catch((err) => {
-                    log.warn(`Failed to cleanup temp directory: ${tempOutputDir}`, { err });
-                }),
-            );
-        }
-
-        await Promise.allSettled(cleanupPromises);
-    }
+    });
 }
