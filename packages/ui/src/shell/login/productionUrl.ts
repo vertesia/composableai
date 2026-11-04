@@ -1,5 +1,3 @@
-import { isLoopbackHostname } from '@vertesia/ui/env';
-
 /**
  * Resolve the URL of the production Vertesia web application for a given deployment region. Used by
  * the "restricted environment" sign-in step to send a user without early access to production, where
@@ -18,19 +16,17 @@ import { isLoopbackHostname } from '@vertesia/ui/env';
  * Region is preferred over parsing the current hostname because it is well-defined for every serving
  * pattern (including the direct-routing `*.ui.{region}.vertesia.io` hosts, which carry no
  * `preview.`/`preprod.` prefix to strip). Callers pass `Env.region` from `@vertesia/ui/env`.
+ *
+ * A deployment on its own domain has no such site, so it states its URL: callers pass `Env.publicUrl`,
+ * which wins over the region.
  */
 const DEV_REGION_TO_PRODUCTION_REGION: Record<string, string> = {
     // dev1 (us-central1) is a dev mirror of the us1 production region.
     dev1: 'us1',
 };
 
-const VERTESIA_HOSTNAME = /(?:^|\.)(?:vertesia\.(?:io|dev|app)|run\.app|vercel\.app)$/;
-
-export function getProductionAppUrl(region?: string, location?: Pick<Location, 'hostname' | 'origin'>): string {
-    // A deployment on its own domain has no production site under vertesia.io: stay on its own origin.
-    if (location && !VERTESIA_HOSTNAME.test(location.hostname) && !isLoopbackHostname(location.hostname)) {
-        return `${location.origin}/`;
-    }
+export function getProductionAppUrl(region?: string, publicUrl?: string): string {
+    if (publicUrl) return `${publicUrl.replace(/\/+$/, '')}/`;
     const prodRegion = (region && DEV_REGION_TO_PRODUCTION_REGION[region]) || region;
     return prodRegion ? `https://cloud.${prodRegion}.vertesia.io/` : 'https://cloud.vertesia.io/';
 }

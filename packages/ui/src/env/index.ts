@@ -76,6 +76,11 @@ export interface EnvProps {
     /** Default workspace selection when the URL does not explicitly select an account or project. */
     defaultAuthSelection?: { accountId?: string; projectId?: string };
     region?: string;
+    /**
+     * This application's own public URL, on a deployment with no production site under vertesia.io.
+     * The restricted-environment sign-in step sends a user there instead of deriving a site from `region`.
+     */
+    publicUrl?: string;
     datadogRum?: boolean;
     datadogLogs?: boolean;
     /**
@@ -303,6 +308,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get region() {
         return this._props?.region;
+    }
+
+    get publicUrl() {
+        return this._props?.publicUrl;
     }
 
     /**

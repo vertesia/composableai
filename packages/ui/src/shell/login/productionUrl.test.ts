@@ -15,15 +15,9 @@ describe('getProductionAppUrl', () => {
         expect(getProductionAppUrl('dev1')).toBe('https://cloud.us1.vertesia.io/');
     });
 
-    it('stays on the origin of a deployment on its own domain', () => {
-        const location = { hostname: 'studio.example.com', origin: 'https://studio.example.com' };
-        expect(getProductionAppUrl('region1', location)).toBe('https://studio.example.com/');
-        expect(getProductionAppUrl(undefined, location)).toBe('https://studio.example.com/');
-    });
-
-    it('keeps sending a Vertesia host to the production site', () => {
-        const location = { hostname: 'preview.cloud.eu1.vertesia.io', origin: 'https://preview.cloud.eu1.vertesia.io' };
-        expect(getProductionAppUrl('eu1', location)).toBe('https://cloud.eu1.vertesia.io/');
+    it('prefers the URL a deployment on its own domain states over its region', () => {
+        expect(getProductionAppUrl('region1', 'https://app.example.com')).toBe('https://app.example.com/');
+        expect(getProductionAppUrl(undefined, 'https://app.example.com/')).toBe('https://app.example.com/');
     });
 
     it('falls back to the canonical non-regional site when the region is unknown', () => {
