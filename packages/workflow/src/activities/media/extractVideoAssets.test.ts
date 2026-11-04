@@ -1,4 +1,5 @@
 import { MockActivityEnvironment } from '@temporalio/testing';
+import { RequestError } from '@vertesia/api-fetch-client';
 import type { VertesiaClient } from '@vertesia/client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
@@ -72,6 +73,27 @@ describe('extractVideoAssets', () => {
         expect(written.renditions).toEqual([poster]);
         expect(written.pending_renditions).toEqual({ etag: 'etag-1', names: ['Web'] });
         expect(result).toMatchObject({ etag: 'etag-1', status: 'success' });
+    });
+
+    it('guards the write with the content etag the assets were made from', async () => {
+        await run({});
+
+        expect(objects.update.mock.calls[0][2]).toEqual({ ifMatch: 'etag-1' });
+    });
+
+    it('stores nothing when the content changed during the extraction', async () => {
+        objects.retrieve.mockResolvedValue({ metadata: {}, content: { etag: 'etag-2' } });
+
+        await expect(run({})).resolves.toMatchObject({ status: 'success' });
+        expect(objects.update).not.toHaveBeenCalled();
+    });
+
+    it('stores nothing when the content changes between the read and the write', async () => {
+        objects.update.mockRejectedValue(
+            new RequestError('Precondition Failed', new Request('http://test-store/objects/object-1'), 412, {}),
+        );
+
+        await expect(run({})).resolves.toMatchObject({ status: 'success' });
     });
 
     it('marks nothing pending when the transcode is skipped', async () => {

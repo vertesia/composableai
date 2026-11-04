@@ -127,8 +127,13 @@ async function assertFitsOnDisk(client: VertesiaClient, object: ContentObject, m
  */
 const DEFAULT_TRANSCODE_REALTIME_FACTOR = 2;
 
-/** Part of the Activity's run time kept free for the download, upload and probe around the encode. */
-const TRANSCODE_TIME_MARGIN_MS = 5 * 60_000;
+/**
+ * Part of the Activity's run time kept free for the download, upload and probe around the encode: 5 minutes, or a
+ * tenth of a shorter run time, so a short Start-to-Close timeout still leaves the encode a budget.
+ */
+function transcodeTimeMarginMs(startToCloseTimeoutMs: number): number {
+    return Math.min(5 * 60_000, startToCloseTimeoutMs / 10);
+}
 
 /** WORKER_TRANSCODE_REALTIME_FACTOR, or the default when it is unset or not a positive number. */
 export function transcodeRealtimeFactor(env: NodeJS.ProcessEnv = process.env): number {
@@ -161,7 +166,8 @@ function assertFitsInTime(object: ContentObject, maxResolution: number): void {
     }
     const output = calculateScaledDimensions(width, height, maxResolution);
     const estimateMs = estimateTranscodeMs(duration, output.width, output.height, transcodeRealtimeFactor());
-    const budgetMs = Context.current().info.startToCloseTimeoutMs - TRANSCODE_TIME_MARGIN_MS;
+    const { startToCloseTimeoutMs } = Context.current().info;
+    const budgetMs = startToCloseTimeoutMs - transcodeTimeMarginMs(startToCloseTimeoutMs);
     if (estimateMs > budgetMs) {
         const minutes = (ms: number) => Math.round(ms / 60_000);
         throw ApplicationFailure.nonRetryable(
@@ -233,7 +239,10 @@ export async function transcodeVideo(
             // The encode reads the whole file, so probe the download rather than the URL.
             const metadata = await getVideoMetadata({ kind: 'file', path: videoFile });
             // Whatever the Activity has left, less the margin for the upload, is the encode's budget.
-            const encodeBudgetMs = initializeActivityCommandDeadline() - Date.now() - TRANSCODE_TIME_MARGIN_MS;
+            const encodeBudgetMs =
+                initializeActivityCommandDeadline() -
+                Date.now() -
+                transcodeTimeMarginMs(Context.current().info.startToCloseTimeoutMs);
             const result = await generateRenditionWithDimensions(
                 videoFile,
                 outputDir,

@@ -208,6 +208,30 @@ describe('transcodeVideo time check', () => {
     });
 });
 
+describe('transcodeVideo with a short timeout', () => {
+    it('keeps a budget for a short video under a five-minute Start-to-Close timeout', async () => {
+        vi.clearAllMocks();
+        vi.mocked(video.withVideoWorkspace).mockResolvedValue('transcoded' as never);
+        vi.mocked(video.retrieveVideoObject).mockResolvedValue({
+            id: 'object-1',
+            content: { source: 'gs://b/clip.mp4', type: 'video/mp4', etag: 'etag-1' },
+            metadata: { duration: 30, dimensions: { width: 1280, height: 720 } },
+        } as Awaited<ReturnType<typeof video.retrieveVideoObject>>);
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: { files: { getMetadata: vi.fn().mockResolvedValue({ size: 10e6 }) } } as unknown as VertesiaClient,
+            objectId: 'object-1',
+            params: {},
+        } as unknown as Awaited<ReturnType<typeof setupActivity>>);
+
+        await expect(
+            new MockActivityEnvironment({ startToCloseTimeoutMs: 5 * 60_000 }).run(
+                transcodeVideo,
+                {} as Parameters<typeof transcodeVideo>[0],
+            ),
+        ).resolves.toBe('transcoded');
+    });
+});
+
 describe('transcodeVideo deadline', () => {
     function run(heartbeatDetails?: unknown) {
         vi.mocked(video.retrieveVideoObject).mockResolvedValue({

@@ -1,4 +1,5 @@
 import { log } from '@temporalio/activity';
+import { RequestError } from '@vertesia/api-fetch-client';
 import { type DSLActivityExecutionPayload, type DSLActivitySpec, WEB_VIDEO_RENDITION_NAME } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
@@ -88,15 +89,36 @@ export async function extractVideoAssets(
                 storageKey,
             );
 
-            // Read generation_runs fresh rather than from the object retrieved before the extraction.
-            await updateObjectMetadata(client, objectId, (current) => ({
-                metadata: {
-                    ...buildVideoMetadata(metadata, renditions, current.metadata),
-                    ...(webRenditionPending
-                        ? { pending_renditions: { etag: storageKey, names: [WEB_VIDEO_RENDITION_NAME] } }
-                        : {}),
-                },
-            }));
+            // Read generation_runs fresh rather than from the object retrieved before the extraction. Write nothing
+            // when the content changed meanwhile: these assets belong to the earlier content, and the intake the change
+            // starts extracts the new one.
+            const contentEtag = inputObject.content?.etag;
+            try {
+                await updateObjectMetadata(
+                    client,
+                    objectId,
+                    (current) => {
+                        if (contentEtag && current.etag !== contentEtag) {
+                            log.info(`Content of ${objectId} changed during asset extraction; not storing its assets`);
+                            return undefined;
+                        }
+                        return {
+                            metadata: {
+                                ...buildVideoMetadata(metadata, renditions, current.metadata),
+                                ...(webRenditionPending
+                                    ? { pending_renditions: { etag: storageKey, names: [WEB_VIDEO_RENDITION_NAME] } }
+                                    : {}),
+                            },
+                        };
+                    },
+                    contentEtag ? { ifMatch: contentEtag } : undefined,
+                );
+            } catch (error) {
+                if (!(error instanceof RequestError && error.status === 412)) {
+                    throw error;
+                }
+                log.info(`Content of ${objectId} changed while storing its video assets; not storing them`);
+            }
 
             log.info(`Extracted video assets for ${objectId}`, {
                 duration: metadata.duration,
