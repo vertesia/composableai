@@ -18,7 +18,10 @@ const FFMPEG_STALL_TIMEOUT_MS = 120_000;
 
 // ffmpeg streams encoding progress as `frame=`/`time=` stats. We track the *advance* of these monotonic fields (rather
 // than mere presence) so a wedged encoder that keeps re-emitting an identical status line is still detected as stalled.
-const FFMPEG_TIME_PATTERN = /time=\s*(\d+):([0-5]?\d):([0-5]?\d(?:\.\d+)?)/;
+// `H:MM:SS[.fraction]`, as ffmpeg prints `time=` and Matroska stores a stream's DURATION tag.
+const TIMESTAMP_SOURCE = String.raw`(\d+):([0-5]?\d):([0-5]?\d(?:\.\d+)?)`;
+const TIMESTAMP_PATTERN = new RegExp(`^${TIMESTAMP_SOURCE}$`);
+const FFMPEG_TIME_PATTERN = new RegExp(`time=\\s*${TIMESTAMP_SOURCE}`);
 const FFMPEG_FRAME_PATTERN = /frame=\s*(\d+)/;
 // ffmpeg delimits stats snapshots with a carriage return, so the carry buffer normally stays tiny. These bounds are a
 // defensive guard against an unterminated stream, retaining enough of a tail to reunite a marker split at the boundary.
@@ -55,6 +58,22 @@ export function libx264ThreadArgs(): string[] {
 }
 
 const activityCommandDeadlines = new WeakMap<Context, number>();
+
+/** Characters of stderr quoted in a command error. */
+const ERROR_STDERR_CHARS = 2000;
+
+/**
+ * The last `maxChars` of `text`, starting at a line boundary so no line is cut in half. Redaction then sees whole
+ * lines: a secret printed on one line is either kept whole or dropped. Falls back to a plain cut for one huge line.
+ */
+export function keepTailLines(text: string, maxChars: number): string {
+    if (text.length <= maxChars) {
+        return text;
+    }
+    const tail = text.slice(text.length - maxChars);
+    const lineStart = tail.search(/[\r\n]/);
+    return lineStart >= 0 ? tail.slice(lineStart + 1) : tail;
+}
 
 /**
  * Anchor the child-process deadline at the moment the Activity starts, so every later command derives its timeout from a
@@ -137,6 +156,11 @@ export interface ProgressAwareOptions {
     maxBuffer?: number;
     stallTimeoutMs?: number;
     /**
+     * Applied to the retained stdout and stderr before they are returned or quoted in an error. Output is retained whole
+     * lines at a time, so a secret printed on one line is never cut in half before this sees it.
+     */
+    redact?: (text: string) => string;
+    /**
      * Stop the command early, without retrying, when it is not going to finish in time: once `judgeAfterMs` has
      * passed, its finish time is projected from how much of `mediaDurationSeconds` ffmpeg has processed, and if that
      * exceeds `budgetMs` (counted from the command's start) it is killed and fails with
@@ -177,12 +201,22 @@ export function projectCompletionMs(
     return (elapsedMs * mediaDurationSeconds) / Math.min(processedSeconds, mediaDurationSeconds);
 }
 
+function timestampSeconds(match: RegExpExecArray): number {
+    return Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+}
+
+/** Seconds in an `H:MM:SS[.fraction]` timestamp, or undefined when `text` is not one. */
+export function parseTimestampSeconds(text: string): number | undefined {
+    const match = TIMESTAMP_PATTERN.exec(text);
+    return match ? timestampSeconds(match) : undefined;
+}
+
 function parseFfmpegTimeCentis(text: string): number | undefined {
     const match = FFMPEG_TIME_PATTERN.exec(text);
     if (!match) {
         return undefined;
     }
-    const totalSeconds = Number(match[1]) * 3600 + Number(match[2]) * 60 + Number(match[3]);
+    const totalSeconds = timestampSeconds(match);
     return Number.isFinite(totalSeconds) ? Math.round(totalSeconds * 100) : undefined;
 }
 
@@ -265,6 +299,7 @@ export async function execActivityFileWithProgress(
         maxBuffer = FFMPEG_MAX_BUFFER,
         stallTimeoutMs = FFMPEG_STALL_TIMEOUT_MS,
         completionBudget,
+        redact = (text) => text,
     }: ProgressAwareOptions = {},
 ): Promise<{ stdout: string; stderr: string }> {
     const activityTimeoutMs = getActivityCommandTimeoutMs();
@@ -305,7 +340,7 @@ export async function execActivityFileWithProgress(
 
         const append = (current: string, chunk: string): string => {
             const combined = current + chunk;
-            return combined.length > maxBuffer ? combined.slice(combined.length - maxBuffer) : combined;
+            return keepTailLines(combined, maxBuffer);
         };
 
         // ffmpeg writes progress to stderr by default, but track both streams so the watchdog works regardless of where
@@ -396,11 +431,13 @@ export async function execActivityFileWithProgress(
                         }),
                     );
                 } else if (code === 0) {
-                    resolve({ stdout, stderr });
+                    resolve({ stdout: redact(stdout), stderr: redact(stderr) });
                 } else {
                     const detail = signal ? `signal ${signal}` : `code ${code}`;
+                    // Redact a line-aligned window, not the whole buffer, then quote its tail.
+                    const quoted = redact(keepTailLines(stderr, 16 * ERROR_STDERR_CHARS)).slice(-ERROR_STDERR_CHARS);
                     reject(
-                        Object.assign(new Error(`${command} exited with ${detail}: ${stderr.slice(-2000)}`), {
+                        Object.assign(new Error(`${command} exited with ${detail}: ${quoted}`), {
                             killed: child.killed || signal != null,
                             code,
                             signal,
@@ -417,6 +454,11 @@ export function isActivityDeadlineExceeded(error: unknown): boolean {
     return (
         typeof error === 'object' && error !== null && 'deadlineExceeded' in error && error.deadlineExceeded === true
     );
+}
+
+/** Whether a command was killed by the progress-stall watchdog of {@link execActivityFileWithProgress}. */
+export function isCommandStalled(error: unknown): boolean {
+    return typeof error === 'object' && error !== null && 'stalled' in error && error.stalled === true;
 }
 
 /** Failure `type` of a file without a usable video stream: a property of the content, logged at warn. */
