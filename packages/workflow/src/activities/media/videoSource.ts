@@ -266,7 +266,12 @@ export class VideoSource {
             // A late fallback must not leave a download behind that nothing will remove.
             throw new Error('The video source was disposed before it was downloaded');
         }
-        this.download ??= saveBlobToTempFile(this.client, this.source);
+        this.download ??= saveBlobToTempFile(this.client, this.source).catch((error: unknown) => {
+            // An HTTPS source is itself a signed URL, and a failed download quotes its source in the error.
+            throw this.source.startsWith('https:')
+                ? redactVideoInputError(error, { kind: 'url', url: this.source })
+                : error;
+        });
         return await this.download;
     }
 

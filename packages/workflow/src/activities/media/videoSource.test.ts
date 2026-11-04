@@ -246,6 +246,21 @@ describe('VideoSource', () => {
         expect(saveBlobToTempFile).toHaveBeenCalledTimes(1);
     });
 
+    it('keeps a signed HTTPS source out of a failed download fallback', async () => {
+        const source = await VideoSource.open(
+            clientWithUrl(() => Promise.reject(new Error('unused'))),
+            SIGNED_URL,
+        );
+        vi.mocked(saveBlobToTempFile).mockRejectedValue(new Error(`Forbidden at ${SIGNED_URL}: download forbidden`));
+        const command = (input: VideoInput) =>
+            input.kind === 'url' ? Promise.reject(new Error('HTTP error 403')) : Promise.resolve('local');
+
+        const failure = (await runInActivity(() => source.withFallback(command)).catch((error) => error)) as Error;
+
+        expect(failure.message).toBe('Forbidden at <signed source URL>: download forbidden');
+        expect(failure.stack).not.toContain('secret');
+    });
+
     it('downloads up front when no URL can be obtained', async () => {
         const source = await runInActivity(() =>
             VideoSource.open(
