@@ -30,6 +30,7 @@ export * from './browser-credentials.js';
 export * from './common.js';
 export * from './content-query.js';
 export * from './cost-analytics.js';
+export * from './custom-roles.js';
 export * from './data-platform.js';
 export type {
     CreateDelegationGrantPayload,

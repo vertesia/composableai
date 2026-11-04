@@ -107,10 +107,10 @@ describe('gate 2 — the published components match the closure the types come f
         expect(ApiSchemaComponents.ApiKeyTypes).toEqual({ type: 'string', const: 'sk' });
     });
 
-    it('keeps ProjectRef and SystemRoles as shared components rather than inlining them', () => {
+    it('keeps ProjectRef and assignable roles as shared components rather than inlining them', () => {
         const props = ApiSchemaComponents.ApiKey.properties as Record<string, JsonObject>;
         expect(props.project).toEqual({ $ref: '#/components/schemas/ProjectRef' });
-        expect(props.role).toEqual({ $ref: '#/components/schemas/SystemRoles' });
+        expect(props.role).toEqual({ $ref: '#/components/schemas/AssignableRoleName' });
         expect(props.type).toEqual({ $ref: '#/components/schemas/ApiKeyTypes' });
         expect(ApiSchemaComponents.SystemRoles.enum).toContain('content_superadmin');
     });
@@ -139,6 +139,13 @@ describe('gate 2 — the published components match the closure the types come f
 });
 
 describe('gate 3 — AJV validates the same canonical objects that are published', () => {
+    it('accepts prefixed custom roles but rejects malformed references', () => {
+        const validate = compile('ApiKey');
+        expect(validate({ ...VALID_KEY, role: 'c:document_reviewer' })).toBe(true);
+        for (const role of ['document_reviewer', 'c:', 'c:Not valid', `c:${'a'.repeat(65)}`]) {
+            expect(validate({ ...VALID_KEY, role })).toBe(false);
+        }
+    });
     it('accepts a minimal key and rejects a missing required field', () => {
         const validate = compile('ApiKey');
         expect(validate(VALID_KEY)).toBe(true);

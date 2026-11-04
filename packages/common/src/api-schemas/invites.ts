@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { TransientTokenType } from '../transient-tokens-values.js';
 import type * as Wire from '../wire-types.generated.js';
 import { AccountSchema } from './account.js';
-import { ProjectRefSchema, SystemRolesSchema } from './apikey.js';
+import { AssignableRoleNameSchema, ProjectRefSchema } from './apikey.js';
 import { UserRefSchema } from './user.js';
 
 /**
@@ -36,7 +36,7 @@ export const AccountRefSchema = AccountSchema.pick({
 export const UserInviteTokenDataSchema = z
     .object({
         email: z.string(),
-        role: SystemRolesSchema,
+        role: AssignableRoleNameSchema,
         account: AccountRefSchema,
         project: ProjectRefSchema.optional(),
         invited_by: UserRefSchema,
