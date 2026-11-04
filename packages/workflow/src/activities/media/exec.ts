@@ -1,4 +1,5 @@
 import { type ChildProcess, type ExecFileOptions, execFile as execFileCallback, spawn } from 'node:child_process';
+import os from 'node:os';
 import { promisify } from 'node:util';
 import { ApplicationFailure, Context } from '@temporalio/activity';
 
@@ -23,6 +24,35 @@ const FFMPEG_FRAME_PATTERN = /frame=\s*(\d+)/;
 // defensive guard against an unterminated stream, retaining enough of a tail to reunite a marker split at the boundary.
 const PROGRESS_CARRY_LIMIT = 64 * 1024;
 const PROGRESS_CARRY_TAIL = 512;
+
+/**
+ * CPUs ffmpeg may actually use. Left to itself, ffmpeg (and libx264) sizes its thread pools from the process's CPU
+ * affinity mask, which in a container is usually the host's CPUs rather than the container's CPU limit, so a small
+ * container on a large host starts far more threads than it has CPU time for. `os.availableParallelism()` also honours
+ * the cgroup CPU limit.
+ */
+export function ffmpegThreadCount(): number {
+    return Math.max(1, os.availableParallelism());
+}
+
+/** Options placed before `-i`: size the input decoder and the filter graph to the available CPUs. */
+export function ffmpegInputThreadArgs(): string[] {
+    const threads = String(ffmpegThreadCount());
+    return ['-filter_threads', threads, '-threads', threads];
+}
+
+/** Options placed before the output file: size the output encoder to the available CPUs. */
+export function ffmpegOutputThreadArgs(): string[] {
+    return ['-threads', String(ffmpegThreadCount())];
+}
+
+/**
+ * libx264 encoder threads. Keeps x264's own automatic rule (1.5 threads per CPU, so frame threads waiting on a
+ * reference frame do not leave a CPU idle) but applies it to the available CPUs instead of the affinity mask.
+ */
+export function libx264ThreadArgs(): string[] {
+    return ['-threads', String(Math.floor((ffmpegThreadCount() * 3) / 2))];
+}
 
 const activityCommandDeadlines = new WeakMap<Context, number>();
 
@@ -106,6 +136,45 @@ export interface ProgressAwareOptions {
      */
     maxBuffer?: number;
     stallTimeoutMs?: number;
+    /**
+     * Stop the command early, without retrying, when it is not going to finish in time: once `judgeAfterMs` has
+     * passed, its finish time is projected from how much of `mediaDurationSeconds` ffmpeg has processed, and if that
+     * exceeds `budgetMs` (counted from the command's start) it is killed and fails with
+     * {@link TRANSCODE_EXCEEDS_TIME_BUDGET}.
+     */
+    completionBudget?: CompletionBudget;
+}
+
+export interface CompletionBudget {
+    mediaDurationSeconds: number;
+    budgetMs: number;
+    /** How long to let the command run before judging its speed. Default 3 minutes. */
+    judgeAfterMs?: number;
+}
+
+const DEFAULT_COMPLETION_JUDGE_AFTER_MS = 3 * 60_000;
+
+/** Failure `type` of a transcode that would not finish within its time budget. Never retried. */
+export const TRANSCODE_EXCEEDS_TIME_BUDGET = 'TranscodeExceedsTimeBudget';
+
+/** Whether a failure is the {@link TRANSCODE_EXCEEDS_TIME_BUDGET} of a transcode that would not finish in time. */
+export function isTranscodeExceedsTimeBudget(error: unknown): error is ApplicationFailure {
+    return error instanceof ApplicationFailure && error.type === TRANSCODE_EXCEEDS_TIME_BUDGET;
+}
+
+/**
+ * The projected total run time of a command that has run `elapsedMs` and processed `processedSeconds` of
+ * `mediaDurationSeconds`, or undefined before any progress.
+ */
+export function projectCompletionMs(
+    elapsedMs: number,
+    processedSeconds: number,
+    mediaDurationSeconds: number,
+): number | undefined {
+    if (processedSeconds <= 0 || mediaDurationSeconds <= 0) {
+        return undefined;
+    }
+    return (elapsedMs * mediaDurationSeconds) / Math.min(processedSeconds, mediaDurationSeconds);
 }
 
 function parseFfmpegTimeCentis(text: string): number | undefined {
@@ -125,6 +194,8 @@ function parseFfmpegFrame(text: string): number | undefined {
 export interface ProgressTracker {
     /** Feed a raw output chunk; returns true when a monotonic progress field advanced past its previous maximum. */
     observe(chunk: string): boolean;
+    /** Media seconds processed so far, from the furthest `time=` seen; 0 before any. */
+    mediaSeconds(): number;
 }
 
 /**
@@ -170,6 +241,9 @@ export function createFfmpegProgressTracker(): ProgressTracker {
             }
             return advanced;
         },
+        mediaSeconds(): number {
+            return maxTimeCentis > 0 ? maxTimeCentis / 100 : 0;
+        },
     };
 }
 
@@ -179,14 +253,19 @@ export function createFfmpegProgressTracker(): ProgressTracker {
  *
  * The worker heartbeats every Activity on a fixed interval, so a wedged ffmpeg child that stops emitting progress would
  * otherwise keep the Activity alive until its multi-hour Start-to-Close timeout. Watching ffmpeg's progress markers lets
- * us terminate a stalled encode within `stallTimeoutMs` so Temporal retries it promptly (escalating to a faster preset
- * on the next attempt). A stall is surfaced as a `killed` error so it propagates as an Activity failure via
- * {@link rethrowIfActivityStopped} instead of being swallowed into a missing rendition.
+ * us terminate a stalled encode within `stallTimeoutMs` so Temporal retries it promptly. A stall is surfaced as a
+ * `killed` error so it propagates as an Activity failure via {@link rethrowIfActivityStopped} instead of being
+ * swallowed into a missing rendition. A child still running at the Activity's deadline is killed the same way, and its
+ * error is marked so callers can tell it apart ({@link isActivityDeadlineExceeded}).
  */
 export async function execActivityFileWithProgress(
     command: string,
     args: string[],
-    { maxBuffer = FFMPEG_MAX_BUFFER, stallTimeoutMs = FFMPEG_STALL_TIMEOUT_MS }: ProgressAwareOptions = {},
+    {
+        maxBuffer = FFMPEG_MAX_BUFFER,
+        stallTimeoutMs = FFMPEG_STALL_TIMEOUT_MS,
+        completionBudget,
+    }: ProgressAwareOptions = {},
 ): Promise<{ stdout: string; stderr: string }> {
     const activityTimeoutMs = getActivityCommandTimeoutMs();
     const stallWindowMs = Math.max(1, Math.min(stallTimeoutMs, activityTimeoutMs));
@@ -194,14 +273,22 @@ export async function execActivityFileWithProgress(
     return await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
         const child = spawn(command, args, {
             signal: Context.current().cancellationSignal,
-            timeout: activityTimeoutMs,
             killSignal: 'SIGKILL',
         });
+        // The Activity deadline, kept here rather than as spawn's `timeout` so its kill is distinguishable from a stall.
+        let deadlineExceeded = false;
+        const deadlineTimer = setTimeout(() => {
+            deadlineExceeded = true;
+            child.kill('SIGKILL');
+        }, activityTimeoutMs);
+        deadlineTimer.unref?.();
 
         let stdout = '';
         let stderr = '';
         let settled = false;
         let stalled = false;
+        let overBudget: { projectedMs: number; elapsedMs: number } | undefined;
+        const startedAt = Date.now();
         let stallTimer: NodeJS.Timeout | undefined;
 
         const armStallTimer = () => {
@@ -226,18 +313,39 @@ export async function execActivityFileWithProgress(
         const stdoutProgress = createFfmpegProgressTracker();
         const stderrProgress = createFfmpegProgressTracker();
 
+        const checkCompletionBudget = (progress: ProgressTracker) => {
+            if (!completionBudget || overBudget) {
+                return;
+            }
+            const elapsedMs = Date.now() - startedAt;
+            if (elapsedMs < (completionBudget.judgeAfterMs ?? DEFAULT_COMPLETION_JUDGE_AFTER_MS)) {
+                return;
+            }
+            const projectedMs = projectCompletionMs(
+                elapsedMs,
+                progress.mediaSeconds(),
+                completionBudget.mediaDurationSeconds,
+            );
+            if (projectedMs !== undefined && projectedMs > completionBudget.budgetMs) {
+                overBudget = { projectedMs, elapsedMs };
+                child.kill('SIGKILL');
+            }
+        };
+
         child.stdout?.setEncoding('utf8');
         child.stderr?.setEncoding('utf8');
         child.stdout?.on('data', (chunk: string) => {
             stdout = append(stdout, chunk);
             if (stdoutProgress.observe(chunk)) {
                 armStallTimer();
+                checkCompletionBudget(stdoutProgress);
             }
         });
         child.stderr?.on('data', (chunk: string) => {
             stderr = append(stderr, chunk);
             if (stderrProgress.observe(chunk)) {
                 armStallTimer();
+                checkCompletionBudget(stderrProgress);
             }
         });
 
@@ -251,6 +359,7 @@ export async function execActivityFileWithProgress(
             if (stallTimer) {
                 clearTimeout(stallTimer);
             }
+            clearTimeout(deadlineTimer);
             finish();
         };
 
@@ -258,7 +367,27 @@ export async function execActivityFileWithProgress(
 
         child.on('close', (code, signal) =>
             settle(() => {
-                if (stalled) {
+                if (overBudget) {
+                    const minutes = (ms: number) => Math.round(ms / 60_000);
+                    reject(
+                        ApplicationFailure.create({
+                            type: TRANSCODE_EXCEEDS_TIME_BUDGET,
+                            nonRetryable: true,
+                            message:
+                                `${command} was projected to take ${minutes(overBudget.projectedMs)} min after ` +
+                                `${minutes(overBudget.elapsedMs)} min, more than its ` +
+                                `${minutes(completionBudget?.budgetMs ?? 0)} min budget, and was stopped`,
+                        }),
+                    );
+                } else if (deadlineExceeded) {
+                    const seconds = Math.round(activityTimeoutMs / 1000);
+                    reject(
+                        Object.assign(new Error(`${command} was still running at the ${seconds}s Activity deadline`), {
+                            killed: true,
+                            deadlineExceeded: true,
+                        }),
+                    );
+                } else if (stalled) {
                     const seconds = Math.round(stallWindowMs / 1000);
                     reject(
                         Object.assign(new Error(`${command} made no progress for ${seconds}s and was terminated`), {
@@ -283,6 +412,13 @@ export async function execActivityFileWithProgress(
     });
 }
 
+/** Whether a command was killed for running into its Activity's deadline (not a stall, a budget stop or cancellation). */
+export function isActivityDeadlineExceeded(error: unknown): boolean {
+    return (
+        typeof error === 'object' && error !== null && 'deadlineExceeded' in error && error.deadlineExceeded === true
+    );
+}
+
 /** Failure `type` of a file without a usable video stream: a property of the content, logged at warn. */
 export const UNUSABLE_VIDEO_CONTENT = 'UnusableVideoContent';
 
@@ -297,7 +433,7 @@ export function isUnusableVideoContent(error: unknown): error is ApplicationFail
  */
 export function rethrowIfActivityStopped(error: unknown): void {
     const commandTimedOut = typeof error === 'object' && error !== null && 'killed' in error && error.killed === true;
-    if (Context.current().cancellationSignal.aborted || commandTimedOut) {
+    if (Context.current().cancellationSignal.aborted || commandTimedOut || isTranscodeExceedsTimeBudget(error)) {
         throw error;
     }
 }
