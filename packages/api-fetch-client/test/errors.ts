@@ -143,3 +143,26 @@ describe('handled transport failures', () => {
         assert.equal(requestErrorDetail(new RequestError('not found', request, 404, undefined)), 'not found');
     });
 });
+
+describe('typed admission dependency failures', () => {
+    it('keeps 503 dependency outages outside the existing pacing/quota metadata union', async () => {
+        const client = new FetchClient(
+            'https://api.example.test',
+            async () =>
+                new Response('{}', {
+                    status: 503,
+                    headers: {
+                        'content-type': 'application/json',
+                        'x-ratelimit-reason': 'dependency_unavailable',
+                        'retry-after': '3',
+                    },
+                }),
+        );
+        await assert.rejects(client.get('/'), (error: unknown) => {
+            assert.ok(error instanceof RequestError);
+            assert.equal(error.rateLimit, undefined);
+            assert.deepEqual(error.dependencyUnavailable, { retryAfterMs: 3000 });
+            return true;
+        });
+    });
+});

@@ -401,6 +401,7 @@ export type QuotaStandingAdmissionClassFromSchema = {
     tenant_active: number;
 };
 export type QuotaStandingResponseFromSchema = {
+    workflow_usage?: WorkflowUsageStanding | undefined;
     tenant_id: string;
     available: boolean;
     base_tier: string;
@@ -10016,6 +10017,44 @@ export type ViewExecutionResult = {
     navigation: ViewNavigationResultMap;
     took: number;
 };
+export type WorkflowUsageQuery = {
+    workflow_class?: string | undefined;
+};
+export type WorkflowUsageClass = {
+    workflow_class: string;
+    strategy: 'rate' | 'concurrency';
+    mode: 'active' | 'dry-run' | 'disabled';
+    available: boolean;
+    observed_at: string | null;
+    freshness: 'fresh' | 'stale' | 'unavailable';
+    start_window: {
+        limit: number;
+        window_ms: number;
+        used: number | null;
+    } | null;
+    occupancy: {
+        limit: number | null;
+        tenant_limit: number;
+        active: number | null;
+        tenant_active: number | null;
+    } | null;
+    backlog: {
+        pending: number | null;
+        deferred: number | null;
+        oldest_deferred_at: string | null;
+    };
+    actual_starts: {
+        count: number | null;
+        window_ms: number;
+    };
+};
+export type WorkflowUsageStanding = {
+    tenant_id: string;
+    available: boolean;
+    start_governance_enabled: boolean;
+    truncated: boolean;
+    classes: WorkflowUsageClass[];
+};
 export type AgentRunWire = {
     interaction: string;
     data?:
@@ -12396,4 +12435,7 @@ export interface ApiComponentTypes {
     DelegationGrantPathParams: DelegationGrantPathParams;
     OAuthProviderPathParams: OAuthProviderPathParams;
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
+    WorkflowUsageQuery: WorkflowUsageQuery;
+    WorkflowUsageClass: WorkflowUsageClass;
+    WorkflowUsageStanding: WorkflowUsageStanding;
 }

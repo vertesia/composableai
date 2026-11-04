@@ -1,4 +1,5 @@
 import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fetch-client';
+import type { WorkflowUsageQuery, WorkflowUsageStanding } from '@vertesia/common';
 import {
     type ActivityCatalog,
     type AgentEvent,
@@ -54,6 +55,10 @@ import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream
 export class WorkflowsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/workflows');
+    }
+
+    usage(query?: WorkflowUsageQuery): Promise<WorkflowUsageStanding> {
+        return this.get('/usage', { query });
     }
 
     getSubscriptionWorkflowCatalog(): Promise<SubscriptionWorkflowCatalog> {

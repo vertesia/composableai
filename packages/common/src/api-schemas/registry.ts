@@ -33,6 +33,7 @@ import {
 } from '@llumiverse/common/schemas';
 import type { z } from 'zod';
 import type { ApiComponentType } from '../api-contract/types.js';
+import * as WorkflowUsageSchemas from './workflow-usage.js';
 
 export type { ApiComponentType } from '../api-contract/types.js';
 
@@ -2546,7 +2547,13 @@ const PATH_PARAMETER_SCHEMAS = {
     OAuthProviderPathParams: PathParameterSchemas.OAuthProviderPathParamsSchema,
     ProjectAppCapabilityPathParams: PathParameterSchemas.ProjectAppCapabilityPathParamsSchema,
 };
+const WORKFLOW_USAGE_SCHEMAS = {
+    WorkflowUsageQuery: WorkflowUsageSchemas.WorkflowUsageQuerySchema,
+    WorkflowUsageClass: WorkflowUsageSchemas.WorkflowUsageClassSchema,
+    WorkflowUsageStanding: WorkflowUsageSchemas.WorkflowUsageStandingSchema,
+} as const;
 const API_SCHEMA_GROUPS = [
+    WORKFLOW_USAGE_SCHEMAS,
     RUN_BUDGET_SCHEMAS,
     PATH_PARAMETER_SCHEMAS,
     DELEGATION_SCHEMAS,
@@ -2614,7 +2621,8 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
+type ApiSchemaMap = typeof WORKFLOW_USAGE_SCHEMAS &
+    typeof RUN_BUDGET_SCHEMAS &
     typeof PATH_PARAMETER_SCHEMAS &
     typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &

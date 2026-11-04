@@ -126,3 +126,5 @@ export type * from './utils/type-helpers.js';
 export * from './versions.js';
 export * from './views.js';
 export * from './workflow-analytics.js';
+
+export type { WorkflowUsageClass, WorkflowUsageQuery, WorkflowUsageStanding } from './workflow-usage.js';

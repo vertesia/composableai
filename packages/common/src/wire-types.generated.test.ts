@@ -4066,6 +4066,18 @@ interface Checks {
         W.ViewExecutionResult,
         z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionResultSchema>
     >;
+    WorkflowUsageQuery: Same<
+        W.WorkflowUsageQuery,
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
+    >;
+    WorkflowUsageClass: Same<
+        W.WorkflowUsageClass,
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageClassSchema>
+    >;
+    WorkflowUsageStanding: Same<
+        W.WorkflowUsageStanding,
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageStandingSchema>
+    >;
     AgentRunWire: Same<W.AgentRunWire, z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunSchema>>;
     CreateAgentRunPayloadWire: Same<
         W.CreateAgentRunPayloadWire,
@@ -9951,6 +9963,18 @@ interface Checks {
         W.ApiComponentTypes['ProjectAppCapabilityPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
     >;
+    'component:WorkflowUsageQuery': Same<
+        W.ApiComponentTypes['WorkflowUsageQuery'],
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
+    >;
+    'component:WorkflowUsageClass': Same<
+        W.ApiComponentTypes['WorkflowUsageClass'],
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageClassSchema>
+    >;
+    'component:WorkflowUsageStanding': Same<
+        W.ApiComponentTypes['WorkflowUsageStanding'],
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageStandingSchema>
+    >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
 }
@@ -11088,6 +11112,9 @@ const checks: Checks = {
     ViewExecutionSearchConfiguration: true,
     ViewExecutionDefinition: true,
     ViewExecutionResult: true,
+    WorkflowUsageQuery: true,
+    WorkflowUsageClass: true,
+    WorkflowUsageStanding: true,
     AgentRunWire: true,
     CreateAgentRunPayloadWire: true,
     DSLActivitySpecWire: true,
@@ -12572,11 +12599,14 @@ const checks: Checks = {
     'component:DelegationGrantPathParams': true,
     'component:OAuthProviderPathParams': true,
     'component:ProjectAppCapabilityPathParams': true,
+    'component:WorkflowUsageQuery': true,
+    'component:WorkflowUsageClass': true,
+    'component:WorkflowUsageStanding': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2617);
+        expect(Object.keys(checks)).toHaveLength(2623);
     });
 });
