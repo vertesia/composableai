@@ -3,20 +3,34 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getFirebaseAnalytics } from './auth/firebase';
 import { useUXTracking } from './useUXTracking';
 
-vi.mock('@vertesia/ui/env', () => ({
-    Env: { isProd: true, firebase: { apiKey: 'test-api-key' } },
+const env = vi.hoisted(() => ({
+    isProd: true,
+    firebase: { apiKey: 'test-api-key', analytics: undefined as boolean | undefined },
 }));
+
+vi.mock('@vertesia/ui/env', () => ({ Env: env }));
 vi.mock('firebase/analytics', () => ({ logEvent: vi.fn() }));
 vi.mock('./auth/firebase', () => ({ getFirebaseAnalytics: vi.fn(() => ({})) }));
 
 describe('useUXTracking.trackEvent', () => {
-    beforeEach(() => vi.clearAllMocks());
+    beforeEach(() => {
+        vi.clearAllMocks();
+        env.firebase.analytics = undefined;
+    });
     afterEach(() => vi.restoreAllMocks());
 
     it('logs the event when online', () => {
         vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
         useUXTracking().trackEvent('test_event', { key: 'value' });
         expect(logEvent).toHaveBeenCalledWith({}, 'test_event', { key: 'value', debug_mode: false });
+    });
+
+    it('does not initialize Analytics on a deployment that turned it off', () => {
+        vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(true);
+        env.firebase.analytics = false;
+        useUXTracking().trackEvent('test_event');
+        expect(getFirebaseAnalytics).not.toHaveBeenCalled();
+        expect(logEvent).not.toHaveBeenCalled();
     });
 
     it('does not initialize Analytics while offline', () => {
