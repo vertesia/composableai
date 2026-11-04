@@ -72,6 +72,8 @@ export interface EnvProps {
         providerType?: string;
         /** Fixed Identity Platform tenant, preserved throughout sign-in. */
         tenantId?: string;
+        /** `false` keeps Firebase Analytics off while Firebase still signs users in. */
+        analytics?: boolean;
     };
     /** Default workspace selection when the URL does not explicitly select an account or project. */
     defaultAuthSelection?: { accountId?: string; projectId?: string };
