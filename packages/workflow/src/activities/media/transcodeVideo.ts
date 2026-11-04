@@ -192,6 +192,9 @@ function previousDeadlinePreset(): VideoPreset | undefined {
 export interface TranscodeVideoParams {
     maxResolution?: number; // Max resolution (longest side) for the web rendition, default 1920 (1080p)
     videoPreset?: VideoPreset; // FFmpeg encoding preset, default veryfast; a retry after a deadline moves one faster
+    // The content etag the intake prepared the video's other assets from. When the content has changed since, nothing is
+    // transcoded: the intake the change started transcodes the new content.
+    etag?: string;
 }
 
 export interface TranscodeVideo extends DSLActivitySpec<TranscodeVideoParams> {
@@ -230,6 +233,10 @@ export async function transcodeVideo(
     log.debug(`Transcoding video for ${objectId}`, { maxResolution, videoPreset });
 
     const inputObject = await retrieveVideoObject(client, objectId);
+    if (params.etag && inputObject.content?.etag !== params.etag) {
+        log.info(`Content of ${objectId} changed since its intake started; not transcoding it`);
+        return { objectId, rendition: null, etag: params.etag };
+    }
     const source = inputObject.content?.source as string;
     await assertFitsOnDisk(client, inputObject, maxResolution);
     assertFitsInTime(inputObject, maxResolution);

@@ -220,6 +220,32 @@ describe('transcodeVideo with a short timeout', () => {
     });
 });
 
+describe('transcodeVideo for content that changed', () => {
+    it('transcodes nothing when the content changed since the given etag', async () => {
+        vi.clearAllMocks();
+        vi.mocked(video.retrieveVideoObject).mockResolvedValue({
+            id: 'object-1',
+            content: { source: 'gs://b/new.mp4', type: 'video/mp4', etag: 'etag-2' },
+            metadata: { duration: 30, dimensions: { width: 1280, height: 720 } },
+        } as Awaited<ReturnType<typeof video.retrieveVideoObject>>);
+        const getMetadata = vi.fn();
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: { files: { getMetadata } } as unknown as VertesiaClient,
+            objectId: 'object-1',
+            params: { etag: 'etag-1' },
+        } as unknown as Awaited<ReturnType<typeof setupActivity>>);
+
+        await expect(
+            new MockActivityEnvironment({ startToCloseTimeoutMs: 60 * 60_000 }).run(
+                transcodeVideo,
+                {} as Parameters<typeof transcodeVideo>[0],
+            ),
+        ).resolves.toEqual({ objectId: 'object-1', rendition: null, etag: 'etag-1' });
+        expect(video.withVideoWorkspace).not.toHaveBeenCalled();
+        expect(getMetadata).not.toHaveBeenCalled();
+    });
+});
+
 describe('transcodeVideo deadline', () => {
     function run(heartbeatDetails?: unknown) {
         vi.mocked(video.retrieveVideoObject).mockResolvedValue({
