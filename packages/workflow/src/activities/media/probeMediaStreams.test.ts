@@ -1,10 +1,19 @@
+import { ApplicationFailure, log } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
 import { ContentEventName, type DSLActivityExecutionPayload } from '@vertesia/common';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError } from '../../errors.js';
+import { saveBlobToTempFile } from '../../utils/blobs.js';
 import { execActivityFile } from './exec.js';
-import { type ProbeMediaStreamsParams, type ProbeMediaStreamsResult, probeMediaStreams } from './probeMediaStreams.js';
+import {
+    buildStreamProbeArgs,
+    type ProbeMediaStreamsParams,
+    type ProbeMediaStreamsResult,
+    probeMediaStreams,
+} from './probeMediaStreams.js';
+import { HTTP_INPUT_OPTIONS } from './videoSource.js';
 
 vi.mock('../../dsl/setup/ActivityContext.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../dsl/setup/ActivityContext.js')>();
@@ -18,6 +27,10 @@ vi.mock('./exec.js', async (importOriginal) => {
     return { ...actual, execActivityFile: vi.fn() };
 });
 
+vi.mock('../../utils/blobs.js', () => ({ saveBlobToTempFile: vi.fn() }));
+
+const DOWNLOADED = '/tmp/probe-media-streams-test.mp4';
+
 let testEnv: MockActivityEnvironment;
 
 beforeAll(async () => {
@@ -26,6 +39,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(saveBlobToTempFile).mockResolvedValue(DOWNLOADED);
 });
 
 const createPayload = (objectId = 'test-object-id'): DSLActivityExecutionPayload<ProbeMediaStreamsParams> => ({
@@ -98,9 +112,13 @@ describe('probeMediaStreams', () => {
         await setupMockContext('test-object-id', 'https://storage.example.com/bad.mp4');
         mockExec(JSON.stringify({ streams: [] }));
 
-        await expect(testEnv.run(probeMediaStreams, createPayload())).rejects.toThrow(
-            'No audio or video streams found in container',
-        );
+        const failure = await testEnv.run(probeMediaStreams, createPayload()).catch((error: unknown) => error);
+
+        expect(failure).toBeInstanceOf(ApplicationFailure);
+        expect(failure).toMatchObject({ nonRetryable: true });
+        expect((failure as Error).message).toContain('No audio or video streams found in container');
+        // Confirmed on the download, not decided by the 32k read over HTTP.
+        expect(saveBlobToTempFile).toHaveBeenCalledTimes(1);
     });
 
     it('should throw DocumentNotFoundError when the object has no source', async () => {
@@ -119,5 +137,85 @@ describe('probeMediaStreams', () => {
         } as unknown as ActivityContext<ProbeMediaStreamsParams>);
 
         await expect(testEnv.run(probeMediaStreams, createPayload())).rejects.toThrow('has no source');
+    });
+});
+
+describe('probeMediaStreams over a signed URL', () => {
+    const SIGNED_URL = 'https://storage.example.com/bucket/file.mp4?X-Signature=secret';
+
+    it('caps the probe size and puts the reconnect options before the URL', () => {
+        const args = buildStreamProbeArgs({ kind: 'url', url: SIGNED_URL });
+
+        expect(args).toEqual(expect.arrayContaining(['-probesize', '32k', '-show_streams']));
+        expect(args.at(-1)).toBe(SIGNED_URL);
+        expect(args.slice(-1 - HTTP_INPUT_OPTIONS.length, -1)).toEqual([...HTTP_INPUT_OPTIONS]);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    /** Fake ffprobe: `url` and `local` give the outcome of a probe of the URL and of the download. */
+    function mockProbe(url: string | Error, local: string | Error) {
+        vi.mocked(execActivityFile).mockImplementation((_command, args) => {
+            const outcome = args.at(-1) === DOWNLOADED ? local : url;
+            return outcome instanceof Error
+                ? Promise.reject(
+                      Object.assign(new Error(`Command failed: ffprobe ${args.join(' ')}\n${outcome.message}`), {
+                          cmd: `ffprobe ${args.join(' ')}`,
+                      }),
+                  )
+                : Promise.resolve({ stdout: outcome, stderr: '' });
+        });
+    }
+
+    it('probes the download when ffprobe fails over the URL', async () => {
+        await setupMockContext('test-object-id', SIGNED_URL);
+        mockProbe(new Error('Server returned 403 Forbidden'), JSON.stringify({ streams: [{ codec_type: 'video' }] }));
+
+        const result = await testEnv.run(probeMediaStreams, createPayload());
+
+        expect(result).toEqual({ hasVideo: true, hasAudio: false });
+        expect(saveBlobToTempFile).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(execActivityFile).mock.calls.map(([, args]) => args.at(-1))).toEqual([SIGNED_URL, DOWNLOADED]);
+    });
+
+    it('confirms a URL probe that finds no stream on the download', async () => {
+        await setupMockContext('test-object-id', SIGNED_URL);
+        mockProbe(JSON.stringify({ streams: [] }), JSON.stringify({ streams: [{ codec_type: 'audio' }] }));
+
+        const result = await testEnv.run(probeMediaStreams, createPayload());
+
+        expect(result).toEqual({ hasVideo: false, hasAudio: true });
+        expect(saveBlobToTempFile).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the signed URL out of logs and the error when both probes fail', async () => {
+        await setupMockContext('test-object-id', SIGNED_URL);
+        mockProbe(new Error(`${SIGNED_URL}: Server returned 403`), new Error('Invalid data found'));
+        const warn = vi.spyOn(log, 'warn');
+        const error = vi.spyOn(log, 'error');
+
+        const failure = (await testEnv
+            .run(probeMediaStreams, createPayload())
+            .catch((caught: unknown) => caught)) as Error;
+
+        expect(failure).toBeInstanceOf(Error);
+        expect(failure.message).toContain('Failed to probe media streams');
+        expect(failure.message).not.toContain('secret');
+        expect(JSON.stringify([warn.mock.calls, error.mock.calls])).not.toContain('secret');
+        expect(warn).toHaveBeenCalledWith(
+            'Reading the video over its signed URL failed; downloading it instead',
+            expect.anything(),
+        );
+    });
+
+    it('keeps the type of a failed download', async () => {
+        await setupMockContext('test-object-id', SIGNED_URL);
+        mockProbe(new Error('Server returned 404'), JSON.stringify({ streams: [] }));
+        const notFound = new DocumentNotFoundError('Not found at gs://bucket/file.mp4', []);
+        vi.mocked(saveBlobToTempFile).mockRejectedValue(notFound);
+
+        await expect(testEnv.run(probeMediaStreams, createPayload())).rejects.toBe(notFound);
     });
 });
