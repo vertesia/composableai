@@ -277,18 +277,18 @@ export function createApiContract<T extends object>(ApiSchemaComponents: Readonl
         // from another, and the value under evaluation, which is what a failed union is re-checked
         // against. Both are populated only when validation fails, and both are references rather than
         // copies.
-        // `allowUnionTypes` because a few published components declare `type: [...]` on purpose:
-        // `DurationValue` is `['string', 'number']` specifically so the generated Java client gets one
-        // writable property instead of the unusable `AnyOfnumber` an `anyOf` produces. AJV's
-        // `strictTypes` default of "log" reported that deliberate choice to its logger on every startup.
-        // The default logger is `console`, so the notice left on stderr, where log collectors routinely
-        // classify it as an error — turning a healthy design decision into recurring server error noise.
+        // `strictTypes: false` because the published components leave `type` out on purpose: `DurationValue` is
+        // `['string', 'number']` so the generated Java client gets one writable property, and an `if`/`then` rule
+        // restates `minLength` on a field whose base schema already types it, so generators keep their plain models.
+        // A keyword only applies to values of its own type, so this changes no validation result. AJV's default of
+        // "log" reports each such schema once per process on `console.warn`, and that stderr line is classified
+        // as an error by log collectors, once per compiled component and restart.
         const ajv = new Ajv2020({
             strictSchema: false,
+            strictTypes: false,
             allErrors: true,
             discriminator: true,
             verbose: true,
-            allowUnionTypes: true,
         });
         // Without this, AJV treats `format` as an annotation and ignores it, so a `date-time` property
         // would document a constraint nothing checks — the exact spec/enforcement gap this design is
