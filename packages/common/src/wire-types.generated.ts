@@ -2477,6 +2477,7 @@ export type CustomRoleDefinition = {
     name: string;
     title: string;
     description?: string | undefined;
+    base_roles?: AssignableRoleName[] | undefined;
     permissions: (typeof Permission)[keyof typeof Permission][];
 };
 export type CustomRoleDefinitionArray = CustomRoleDefinition[];
@@ -2485,6 +2486,7 @@ export type CreateCustomRolePayload = CustomRoleDefinition;
 export type UpdateCustomRolePayload = {
     title?: string | undefined;
     description?: string | undefined | undefined;
+    base_roles?: AssignableRoleName[] | undefined | undefined;
     permissions?: (typeof Permission)[keyof typeof Permission][] | undefined;
 };
 export type AssignableRoleName = (typeof SystemRoles)[keyof typeof SystemRoles] | string;

@@ -17,11 +17,11 @@ describe('AccountApi', () => {
                 return new Response(JSON.stringify([]), { headers: { 'content-type': 'application/json' } });
             },
         });
-        const definition = { name: 'reviewer', title: 'Reviewer', permissions: [] };
+        const definition = { name: 'reviewer', title: 'Reviewer', permissions: [], base_roles: ['auditor', 'c:base'] };
         await client.account.roles.list();
         await client.account.roles.permissions();
         await client.account.roles.create(definition);
-        await client.account.roles.update('reviewer', { title: 'Document Reviewer' });
+        await client.account.roles.update('reviewer', { title: 'Document Reviewer', base_roles: [] });
         await client.account.roles.delete('reviewer');
         expect(requests).toEqual([
             { url: 'https://api.example.com/api/v1/account/roles', method: 'GET', body: undefined },
@@ -30,7 +30,7 @@ describe('AccountApi', () => {
             {
                 url: 'https://api.example.com/api/v1/account/roles/reviewer',
                 method: 'PUT',
-                body: { title: 'Document Reviewer' },
+                body: { title: 'Document Reviewer', base_roles: [] },
             },
             { url: 'https://api.example.com/api/v1/account/roles/reviewer', method: 'DELETE', body: undefined },
         ]);

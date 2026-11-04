@@ -32,13 +32,18 @@ describe('custom role CLI', () => {
         expect(mocks.permissions).toHaveBeenCalledOnce();
     });
     it('creates, updates and deletes using unprefixed names', async () => {
-        const definition = { name: 'reviewer', title: 'Reviewer', permissions: ['content:read'] };
+        const definition = {
+            name: 'reviewer',
+            title: 'Reviewer',
+            permissions: ['content:read'],
+            base_roles: ['auditor', 'c:base'],
+        };
         mocks.readFile.mockResolvedValueOnce(JSON.stringify(definition));
         await command('create', 'role.json');
         expect(mocks.create).toHaveBeenCalledWith(definition);
-        mocks.readFile.mockResolvedValueOnce(JSON.stringify({ title: 'New Title' }));
+        mocks.readFile.mockResolvedValueOnce(JSON.stringify({ title: 'New Title', base_roles: [] }));
         await command('update', 'reviewer', 'role.json');
-        expect(mocks.update).toHaveBeenCalledWith('reviewer', { title: 'New Title' });
+        expect(mocks.update).toHaveBeenCalledWith('reviewer', { title: 'New Title', base_roles: [] });
         await command('delete', 'reviewer');
         expect(mocks.delete).toHaveBeenCalledWith('reviewer');
     });
@@ -48,6 +53,13 @@ describe('custom role CLI', () => {
         mocks.readFile.mockResolvedValueOnce(JSON.stringify({ permissions: ['unknown:permission'] }));
         await expect(command('update', 'reviewer', 'role.json')).rejects.toThrow('Invalid custom role');
         expect(mocks.create).not.toHaveBeenCalled();
+        expect(mocks.update).not.toHaveBeenCalled();
+    });
+    it('rejects ABAC and malformed bases before sending a request', async () => {
+        for (const base of ['content:reader', 'c:not-valid', 'not_a_system_role']) {
+            mocks.readFile.mockResolvedValueOnce(JSON.stringify({ base_roles: [base] }));
+            await expect(command('update', 'reviewer', 'role.json')).rejects.toThrow('Invalid custom role');
+        }
         expect(mocks.update).not.toHaveBeenCalled();
     });
 });

@@ -344,6 +344,28 @@
       "$ref": "#/components/schemas/DelegationGrant"
     }
   },
+  "SystemRoles": {
+    "type": "string",
+    "enum": [
+      "owner",
+      "admin",
+      "app_admin",
+      "manager",
+      "developer",
+      "application",
+      "automation",
+      "content_processor",
+      "consumer",
+      "executor",
+      "reader",
+      "auditor",
+      "support",
+      "billing",
+      "member",
+      "app_member",
+      "content_superadmin"
+    ]
+  },
   "Permission": {
     "type": "string",
     "enum": [
@@ -398,6 +420,19 @@
       "studio:access"
     ]
   },
+  "AssignableRoleName": {
+    "anyOf": [
+      {
+        "$ref": "#/components/schemas/SystemRoles"
+      },
+      {
+        "type": "string",
+        "maxLength": 66,
+        "pattern": "^c:[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+      }
+    ],
+    "description": "Built-in system role or account-local c:<name> reference. ABAC roles are excluded."
+  },
   "CustomRoleDefinition": {
     "type": "object",
     "properties": {
@@ -415,6 +450,13 @@
       "description": {
         "type": "string",
         "maxLength": 1000
+      },
+      "base_roles": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AssignableRoleName"
+        },
+        "description": "Roles whose permissions are inherited, in addition to permissions below. Use built-in system role names or c:<name> references in this account. Cycles and ABAC roles are not allowed. Changes to a base role apply to newly minted tokens."
       },
       "permissions": {
         "maxItems": 49,
@@ -451,6 +493,13 @@
       "description": {
         "type": "string",
         "maxLength": 1000
+      },
+      "base_roles": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AssignableRoleName"
+        },
+        "description": "Roles whose permissions are inherited, in addition to permissions below. Use built-in system role names or c:<name> references in this account. Cycles and ABAC roles are not allowed. Changes to a base role apply to newly minted tokens."
       },
       "permissions": {
         "maxItems": 49,
@@ -1720,41 +1769,6 @@
   "ApiKeyTypes": {
     "type": "string",
     "const": "sk"
-  },
-  "SystemRoles": {
-    "type": "string",
-    "enum": [
-      "owner",
-      "admin",
-      "app_admin",
-      "manager",
-      "developer",
-      "application",
-      "automation",
-      "content_processor",
-      "consumer",
-      "executor",
-      "reader",
-      "auditor",
-      "support",
-      "billing",
-      "member",
-      "app_member",
-      "content_superadmin"
-    ]
-  },
-  "AssignableRoleName": {
-    "anyOf": [
-      {
-        "$ref": "#/components/schemas/SystemRoles"
-      },
-      {
-        "type": "string",
-        "maxLength": 66,
-        "pattern": "^c:[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
-      }
-    ],
-    "description": "Built-in system role or account-local c:<name> reference. ABAC roles are excluded."
   },
   "ApiKey": {
     "type": "object",
