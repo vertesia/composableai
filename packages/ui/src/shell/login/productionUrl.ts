@@ -1,3 +1,5 @@
+import { isLoopbackHostname } from '@vertesia/ui/env';
+
 /**
  * Resolve the URL of the production Vertesia web application for a given deployment region. Used by
  * the "restricted environment" sign-in step to send a user without early access to production, where
@@ -22,7 +24,13 @@ const DEV_REGION_TO_PRODUCTION_REGION: Record<string, string> = {
     dev1: 'us1',
 };
 
-export function getProductionAppUrl(region?: string): string {
+const VERTESIA_HOSTNAME = /(?:^|\.)(?:vertesia\.(?:io|dev|app)|run\.app|vercel\.app)$/;
+
+export function getProductionAppUrl(region?: string, location?: Pick<Location, 'hostname' | 'origin'>): string {
+    // A deployment on its own domain has no production site under vertesia.io: stay on its own origin.
+    if (location && !VERTESIA_HOSTNAME.test(location.hostname) && !isLoopbackHostname(location.hostname)) {
+        return `${location.origin}/`;
+    }
     const prodRegion = (region && DEV_REGION_TO_PRODUCTION_REGION[region]) || region;
     return prodRegion ? `https://cloud.${prodRegion}.vertesia.io/` : 'https://cloud.vertesia.io/';
 }

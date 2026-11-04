@@ -24,7 +24,7 @@ const AUTO_REDIRECT_SECONDS = 15;
 export default function SignInRestrictedEnvStep({ onUseDifferentEmail }: SignInRestrictedEnvStepProps) {
     // Region-aware: send the user to their own region's production site, never another region's (an
     // EU user must not be redirected to the US site). Falls back to the canonical site when unknown.
-    const productionUrl = getProductionAppUrl(Env.region);
+    const productionUrl = getProductionAppUrl(Env.region, window.location);
     const [secondsLeft, setSecondsLeft] = useState(AUTO_REDIRECT_SECONDS);
 
     // Clear the rejected session (Firebase sign-out + cached login) once the screen is shown, so a
