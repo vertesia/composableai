@@ -1,4 +1,265 @@
 {
+  "WorkflowUsageQuery": {
+    "type": "object",
+    "properties": {
+      "workflow_class": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    }
+  },
+  "WorkflowUsageClass": {
+    "type": "object",
+    "properties": {
+      "workflow_class": {
+        "type": "string"
+      },
+      "strategy": {
+        "type": "string",
+        "enum": [
+          "rate",
+          "concurrency"
+        ]
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "active",
+          "dry-run",
+          "disabled"
+        ]
+      },
+      "available": {
+        "type": "boolean"
+      },
+      "observed_at": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "freshness": {
+        "type": "string",
+        "enum": [
+          "fresh",
+          "stale",
+          "unavailable"
+        ]
+      },
+      "start_window": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "number",
+                "minimum": 0
+              },
+              "window_ms": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "used": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "limit",
+              "window_ms",
+              "used"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "occupancy": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "tenant_limit": {
+                "type": "number",
+                "minimum": 0
+              },
+              "active": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "tenant_active": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "limit",
+              "tenant_limit",
+              "active",
+              "tenant_active"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "backlog": {
+        "type": "object",
+        "properties": {
+          "pending": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deferred": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "oldest_deferred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "pending",
+          "deferred",
+          "oldest_deferred_at"
+        ],
+        "additionalProperties": false
+      },
+      "actual_starts": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "window_ms": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        },
+        "required": [
+          "count",
+          "window_ms"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "workflow_class",
+      "strategy",
+      "mode",
+      "available",
+      "observed_at",
+      "freshness",
+      "start_window",
+      "occupancy",
+      "backlog",
+      "actual_starts"
+    ]
+  },
+  "WorkflowUsageStanding": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {
+        "type": "string"
+      },
+      "available": {
+        "type": "boolean"
+      },
+      "start_governance_enabled": {
+        "type": "boolean"
+      },
+      "truncated": {
+        "type": "boolean"
+      },
+      "classes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowUsageClass"
+        }
+      }
+    },
+    "required": [
+      "tenant_id",
+      "available",
+      "start_governance_enabled",
+      "truncated",
+      "classes"
+    ]
+  },
   "RunBudgetCapability": {
     "type": "object",
     "properties": {
@@ -664,6 +925,9 @@
   "QuotaStandingResponse": {
     "type": "object",
     "properties": {
+      "workflow_usage": {
+        "$ref": "#/components/schemas/WorkflowUsageStanding"
+      },
       "tenant_id": {
         "type": "string"
       },
