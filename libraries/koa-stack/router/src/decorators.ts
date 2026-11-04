@@ -133,7 +133,7 @@ function _route(method: string, path: string, opts?: EndpointRouteOptions) {
         getOrCreateSetupChain(target.constructor as DecoratedResourceClass).push(
             (resource: Resource, router: Router) => {
                 const handler = (resource as ResourceMembers<RouteTarget>)[propertyKey];
-                router.route(method, path, handler, resource, opts);
+                router.route(method, path, handler, resource, { ...opts, handlerName: propertyKey });
             },
         );
     };

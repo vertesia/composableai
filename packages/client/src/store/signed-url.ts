@@ -36,12 +36,17 @@ export interface SignedUrlFetchOptions {
     retryableStatuses?: ReadonlySet<number>;
 }
 
-const AZURE_BLOB_HOST_SUFFIX = '.blob.core.windows.net';
+/** Blob Storage host suffixes of the public Azure cloud and Azure Government. */
+const AZURE_BLOB_HOST_SUFFIXES = ['.blob.core.windows.net', '.blob.core.usgovcloudapi.net'];
 
-/** Whether a signed URL points at Azure Blob Storage (a SAS URL on `<account>.blob.core.windows.net`). */
+/**
+ * Whether a signed URL points at Azure Blob Storage: a SAS URL on `<account>.blob.core.windows.net`, or
+ * `<account>.blob.core.usgovcloudapi.net` in Azure Government.
+ */
 export function isAzureBlobUrl(url: string): boolean {
     try {
-        return new URL(url).hostname.toLowerCase().endsWith(AZURE_BLOB_HOST_SUFFIX);
+        const hostname = new URL(url).hostname.toLowerCase();
+        return AZURE_BLOB_HOST_SUFFIXES.some((suffix) => hostname.endsWith(suffix));
     } catch {
         return false;
     }

@@ -16,6 +16,8 @@
  * A consumer that already holds the module (a static `import { Editor } from '@monaco-editor/react'`
  * in a route chunk, where the deferred-loading rule above does not apply) calls
  * {@link configureMonacoLoader} with its own `loader` instead, so both paths share this version.
+ *
+ * An app that serves the Monaco runtime itself calls {@link setMonacoRuntimeUrl} at startup.
  */
 
 /**
@@ -25,23 +27,37 @@
  * diagnostics via `monaco.json.jsonDefaults` fail at runtime with "Cannot read properties of
  * undefined (reading 'jsonDefaults')".
  */
-const MONACO_VS_URL = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs';
+const DEFAULT_MONACO_VS_URL = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs';
+
+let monacoVsUrl = DEFAULT_MONACO_VS_URL;
 
 /** The slice of `@monaco-editor/loader` this module needs, kept structural to avoid an import. */
 interface MonacoLoader {
     config(params: { paths: { vs: string } }): unknown;
 }
 
-let configured = false;
+let configuredLoader: MonacoLoader | undefined;
+
+/**
+ * Load the Monaco runtime from `vsUrl`, the `min/vs` directory of a `monaco-editor` build, instead
+ * of the public CDN: for example a copy the app serves from its own origin, so its Content Security
+ * Policy does not have to allow a third-party script host. Call it at startup, before any editor
+ * mounts: the loader reads the location when it initializes, and ignores later changes.
+ */
+export function setMonacoRuntimeUrl(vsUrl: string): void {
+    monacoVsUrl = vsUrl;
+    // A module that configures the loader at import time can run before the app's startup code.
+    configuredLoader?.config({ paths: { vs: vsUrl } });
+}
 
 /**
  * Point the Monaco loader at the pinned runtime. Idempotent: `config()` is a no-op once the loader
  * has initialized, so repeat calls from several consumers must not fight over it.
  */
 export function configureMonacoLoader(loader: MonacoLoader): void {
-    if (configured) return;
-    loader.config({ paths: { vs: MONACO_VS_URL } });
-    configured = true;
+    if (configuredLoader) return;
+    loader.config({ paths: { vs: monacoVsUrl } });
+    configuredLoader = loader;
 }
 
 let monacoReact: Promise<typeof import('@monaco-editor/react')> | undefined;

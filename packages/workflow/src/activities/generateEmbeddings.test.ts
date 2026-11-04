@@ -120,6 +120,33 @@ describe('generateEmbeddings', () => {
         });
     });
 
+    it('should skip property embeddings the store rejects as computed from a changed source (409)', async () => {
+        const document = { id: 'changed-object', properties: { title: 'Changed' } } satisfies Partial<ContentObject>;
+        const { client, payload } = await setupPropertiesEmbedding(document);
+        vi.mocked(client.objects.setEmbedding).mockRejectedValue(
+            Object.assign(new Error('409 - Stale properties embedding'), { status: 409 }),
+        );
+
+        const result = await testEnv.run(generateEmbeddings, payload);
+
+        expect(result).toEqual({
+            id: document.id,
+            type: SupportedEmbeddingTypes.properties,
+            status: 'skipped',
+            message: 'source changed while embeddings were computed',
+        });
+    });
+
+    it('should fail when storing the embedding fails for another reason', async () => {
+        const document = { id: 'store-down-object', properties: { title: 'Down' } } satisfies Partial<ContentObject>;
+        const { client, payload } = await setupPropertiesEmbedding(document);
+        vi.mocked(client.objects.setEmbedding).mockRejectedValue(
+            Object.assign(new Error('500 - store unavailable'), { status: 500 }),
+        );
+
+        await expect(testEnv.run(generateEmbeddings, payload)).rejects.toThrow('500 - store unavailable');
+    });
+
     it('should skip property embeddings when the object has no properties', async () => {
         const document = { id: 'empty-properties-object', properties: {} } satisfies Partial<ContentObject>;
         const { client, payload } = await setupPropertiesEmbedding(document);

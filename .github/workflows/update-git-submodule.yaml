@@ -124,7 +124,9 @@ jobs:
           restore-keys: pnpm-store-${{ runner.os }}-${{ runner.arch }}-
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          # Older release refs predate .node-version; preserve their Node 24 setup.
+          node-version: ${{ hashFiles('.node-version') == '' && '24' || '' }}
+          node-version-file: ${{ hashFiles('.node-version') != '' && '.node-version' || '' }}
 
       - name: Check if submodule update is needed
         id: precheck

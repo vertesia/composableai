@@ -1,6 +1,8 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { CancelledFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
+import { VertesiaClient } from '@vertesia/client';
 import type { WorkflowExecutionBaseParams } from '@vertesia/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getVertesiaClientOptions } from './client.js';
@@ -82,13 +84,47 @@ describe('workflow API request provenance', () => {
             if (!configuredFetch) throw new Error('Workflow fetch is not configured');
             return configuredFetch(new Request('https://studio.example.com/api/v1/execute'));
         });
-        const rejection = expect(execution).rejects.toBeDefined();
+        const rejection = expect(execution).rejects.toMatchObject({
+            name: 'AbortError',
+            cause: expect.any(CancelledFailure),
+        });
 
         await fetchStarted;
         environment.cancel();
 
         await rejection;
         expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it('does not log a request cancelled with its Temporal activity as a connection failure', async () => {
+        let markFetchStarted: (() => void) | undefined;
+        const fetchStarted = new Promise<void>((resolve) => {
+            markFetchStarted = resolve;
+        });
+        vi.spyOn(globalThis, 'fetch').mockImplementation((_input, init) => {
+            const signal = init?.signal;
+            markFetchStarted?.();
+            return new Promise<Response>((_resolve, reject) => {
+                signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+            });
+        });
+        const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const environment = new MockActivityEnvironment();
+        const execution = environment.run(() =>
+            new VertesiaClient(getVertesiaClientOptions(payload())).agents.updateStatus('run-1', {
+                status: 'cancelled',
+            }),
+        );
+        const rejection = expect(execution).rejects.toMatchObject({
+            status: 0,
+            payload: { name: 'AbortError', cause: expect.any(CancelledFailure) },
+        });
+
+        await fetchStarted;
+        environment.cancel();
+
+        await rejection;
+        expect(consoleError).not.toHaveBeenCalled();
     });
 
     it('closes a pending workflow HTTP request when the Temporal activity is cancelled', async () => {

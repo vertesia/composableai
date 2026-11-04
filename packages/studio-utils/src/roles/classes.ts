@@ -16,7 +16,7 @@ import type { AbacScope, Permission, RoleDomain } from '@vertesia/common';
  *  - **ABAC roles** (`AbacRole`) declare `extends Role<string>` — permissions
  *    are bare verbs (`'read'`, `'write'`, `'delete'`, future domain-specific
  *    verbs) consumed by the JWT generator to form `{scope}:{verb}` keys in
- *    `content_security`.
+ *    `abac`.
  *
  * The registry stores `Role` (defaulting to `Role<string>`) — the loose type
  * is the lowest common denominator. Tight typing is only enforced at

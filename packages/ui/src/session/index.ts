@@ -9,6 +9,16 @@ export {
 } from './auth/domainRouting';
 export * from './auth/firebase';
 export { isAppOAuthLoginPending, revokeAppOAuthSession, startAppOAuthLogin } from './auth/oauth';
+export {
+    clearOidcSession,
+    completeOidcSignIn,
+    getOidcIdToken,
+    OIDC_CALLBACK_PATH,
+    OidcSignInError,
+    startOidcSignIn,
+    usesOidcSignIn,
+} from './auth/oidc';
+export { claimOidcAutoStart, clearOidcSignOut, recordOidcSignOut } from './auth/oidcAutoStart';
 export * from './auth/useAuthState';
 export * from './auth/useCurrentTenant';
 export * from './DevSessionProvider';

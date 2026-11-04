@@ -5,7 +5,8 @@ The ModernAgentOutput component now supports displaying images that are sent fro
 ## How it works
 
 1. **Tool Output**: When a tool like `analyze_image` generates an image, it posts a message with markdown image syntax:
-   ```
+
+   ```text
    ![alt text](image:path/to/image.jpg)
    ```
 

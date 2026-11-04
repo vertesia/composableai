@@ -308,6 +308,13 @@ export const AppInstallationSchema = z
                     'Admin-managed allowlist of tool names permitted for this installation. When undefined, all tools from the app are permitted. When set, only listed tool names are available for agent configuration and execution.',
             })
             .optional(),
+        tools_requiring_approval: z
+            .array(z.string())
+            .meta({
+                description:
+                    "Admin-managed list of tool names from this installation that always require human approval before an agent runs them, regardless of the run's tool approval mode. When undefined, the default approval behavior applies.",
+            })
+            .optional(),
         oauth_bindings: z
             .array(AppInstallationOAuthBindingSchema)
             .meta({
@@ -371,11 +378,15 @@ export const AppDashboardDefinitionSchema = z
 export const AppOAuthClientConfigSchema = z
     .strictObject({
         redirect_uris: z.array(z.string().url()).min(1),
+        require_consent: z.boolean().optional().meta({
+            description:
+                'Deprecated compatibility field. Vertesia-managed apps are authorized by project installation approval, while generic third-party OAuth clients retain per-user consent.',
+        }),
     })
     .meta({
         id: 'AppOAuthClientConfig',
         description:
-            'Standalone public PKCE OAuth. Installation automatically provisions an app client with these exact callback URLs.',
+            'Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs.',
     });
 
 export const AppManifestDataSchema = z
@@ -387,9 +398,15 @@ export const AppManifestDataSchema = z
                 description:
                     'Shared MCP installation parameters available to every collection. Collection-local names must not overlap.',
             }),
-        oauth_scopes: z.array(z.string()).optional(),
+        oauth_scopes: z
+            .array(z.string())
+            .meta({
+                description:
+                    'Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling.',
+            })
+            .optional(),
         oauth_client: AppOAuthClientConfigSchema.optional(),
-        name: z.string().meta({
+        name: z.string().min(1).meta({
             description: 'The name of the app, used as the id in the system. Must be in kebab case (e.g. my-app).',
         }),
         visibility: z.enum(['public', 'private', 'vertesia']).meta({
@@ -570,7 +587,13 @@ export const CompositeAppMessageOverridesSchema = z
 export const AppManifestSchema = z
     .strictObject({
         parameters: AppManifestDataSchema.shape.parameters,
-        oauth_scopes: z.array(z.string()).optional(),
+        oauth_scopes: z
+            .array(z.string())
+            .meta({
+                description:
+                    'Publisher-managed maximum OAuth scopes this app may request. App code and version promotion cannot expand this permission ceiling.',
+            })
+            .optional(),
         oauth_client: AppOAuthClientConfigSchema.optional(),
         edit_revision: EditRevisionSchema,
         name: z.string().meta({
@@ -718,6 +741,13 @@ export const AppInstallationWithManifestSchema = z
                     'Admin-managed allowlist of tool names permitted for this installation. When undefined, all tools from the app are permitted. When set, only listed tool names are available for agent configuration and execution.',
             })
             .optional(),
+        tools_requiring_approval: z
+            .array(z.string())
+            .meta({
+                description:
+                    "Admin-managed list of tool names from this installation that always require human approval before an agent runs them, regardless of the run's tool approval mode. When undefined, the default approval behavior applies.",
+            })
+            .optional(),
         oauth_bindings: z
             .array(AppInstallationOAuthBindingSchema)
             .meta({
@@ -774,6 +804,13 @@ export const AppInstallationListEntrySchema = z
             .meta({
                 description:
                     'Admin-managed allowlist of tool names permitted for this installation. When undefined, all tools from the app are permitted. When set, only listed tool names are available for agent configuration and execution.',
+            })
+            .optional(),
+        tools_requiring_approval: z
+            .array(z.string())
+            .meta({
+                description:
+                    "Admin-managed list of tool names from this installation that always require human approval before an agent runs them, regardless of the run's tool approval mode. When undefined, the default approval behavior applies.",
             })
             .optional(),
         oauth_bindings: z
@@ -1007,7 +1044,10 @@ export const AppPackageSchema = z
         oauth_client: AppOAuthClientConfigSchema.optional(),
         oauth_scopes: z
             .array(z.string())
-            .meta({ description: 'OAuth scopes requested by the app. Users must consent to project permissions.' })
+            .meta({
+                description:
+                    'Scopes requested by app code. These do not replace the publisher-managed permission ceiling in the app manifest.',
+            })
             .optional(),
         ui: AppUIConfigSchema.meta({ description: 'The UI configuration of the app' }).optional(),
         tools: z

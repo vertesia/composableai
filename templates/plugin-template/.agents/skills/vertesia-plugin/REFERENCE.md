@@ -105,30 +105,30 @@ const routes: Route[] = [
 
 ### API endpoints fetched
 
-| Endpoint | Data |
-|----------|------|
-| `GET /api` | Server info (name, version, endpoints) |
-| `GET /api/interactions` | Interaction collections and refs |
-| `GET /api/tools` | Tool collections and definitions |
-| `GET /api/skills` | Skill collections (exposed as tools) |
-| `GET /api/types` | Content type collections and schemas |
-| `GET /api/templates` | Template collections and refs |
-| `GET /api/package?scope=widgets` | Widget info per skill collection |
+| Endpoint                         | Data                                   |
+| -------------------------------- | -------------------------------------- |
+| `GET /api`                       | Server info (name, version, endpoints) |
+| `GET /api/interactions`          | Interaction collections and refs       |
+| `GET /api/tools`                 | Tool collections and definitions       |
+| `GET /api/skills`                | Skill collections (exposed as tools)   |
+| `GET /api/types`                 | Content type collections and schemas   |
+| `GET /api/templates`             | Template collections and refs          |
+| `GET /api/package?scope=widgets` | Widget info per skill collection       |
 
 ### Routes
 
-| Route | Shows |
-|-------|-------|
-| `/` | Collection cards grouped by type, or search results |
-| `/tools/:collection` | Tool definitions with input schemas |
-| `/skills/:collection` | Skill list with widgets summary |
-| `/skills/:collection/:name` | Full skill: widgets, scripts, instructions, schema |
-| `/interactions/:collection` | Interaction list |
-| `/interactions/:collection/:name` | Prompts, result schema, agent runner flags |
-| `/types/:collection` | Content type list |
-| `/types/:collection/:name` | Object schema, table layout, flags |
-| `/templates/:collection` | Template list |
-| `/templates/:collection/:name` | Instructions, assets, type |
+| Route                             | Shows                                               |
+| --------------------------------- | --------------------------------------------------- |
+| `/`                               | Collection cards grouped by type, or search results |
+| `/tools/:collection`              | Tool definitions with input schemas                 |
+| `/skills/:collection`             | Skill list with widgets summary                     |
+| `/skills/:collection/:name`       | Full skill: widgets, scripts, instructions, schema  |
+| `/interactions/:collection`       | Interaction list                                    |
+| `/interactions/:collection/:name` | Prompts, result schema, agent runner flags          |
+| `/types/:collection`              | Content type list                                   |
+| `/types/:collection/:name`        | Object schema, table layout, flags                  |
+| `/templates/:collection`          | Template list                                       |
+| `/templates/:collection/:name`    | Instructions, assets, type                          |
 
 ### Standalone development
 

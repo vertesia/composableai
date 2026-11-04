@@ -3,6 +3,7 @@ export * from './AuthScreenPreview';
 export * from './apps/index';
 export * from './BrandedAuthScreens';
 export * from './login/InviteAcceptModal';
+export * from './login/OidcSignInStep';
 export * from './login/SignInFlow';
 export * from './login/SignInPageShell';
 export * from './login/SigninScreen';

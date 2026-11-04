@@ -17,13 +17,21 @@ import {
     ExecutionRunStatus,
     type ExecutionRunWorkflow,
     type InteractionExecutionConfiguration,
+    type PendingRendition,
+    RENDITION_WAIT_HEADER,
     type RunSearchPayload,
 } from '@vertesia/common';
 import mime from 'mime';
 import { projectResult } from '../dsl/projections.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
-import { ActivityParamInvalidError, ActivityParamNotFoundError, ResourceExhaustedError } from '../errors.js';
-import { activityWorkflowExecution } from '../utils/activity-info.js';
+import {
+    ActivityParamInvalidError,
+    ActivityParamNotFoundError,
+    RENDITION_PENDING_ERROR,
+    type RenditionPendingDetails,
+    ResourceExhaustedError,
+} from '../errors.js';
+import { activityWillRetry, activityWorkflowExecution } from '../utils/activity-info.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 
 //Example:
@@ -189,6 +197,15 @@ export interface InteractionExecutionParams {
      * activity won't be retried if it fails due to resource exhaustion (429)
      */
     exit_on_resource_exhaustion?: boolean;
+
+    /**
+     * The calling workflow waits for media renditions that are still being generated. A media input
+     * without its rendition then fails the activity with a non-retryable RENDITION_PENDING_ERROR
+     * listing the pending objects, instead of being rendered from its original source. Only set it from a
+     * workflow that catches that failure, waits, and executes again; otherwise the step fails.
+     * @internal
+     */
+    wait_for_renditions?: boolean;
 }
 
 /**
@@ -308,6 +325,21 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             throw rateLimitFailure;
         }
         const executionError = toExecutionError(error);
+        if (params.wait_for_renditions && isRenditionPending(executionError)) {
+            const details = getRenditionPendingDetails(error);
+            if (details) {
+                // The workflow waits for the renditions, then executes again: not a retry of this attempt.
+                log.info(`Interaction ${interactionName} is waiting for media renditions`, {
+                    pending: details.pending,
+                });
+                throw ApplicationFailure.create({
+                    message: `Interaction ${interactionName} is waiting for media renditions`,
+                    type: RENDITION_PENDING_ERROR,
+                    nonRetryable: true,
+                    details: [details],
+                });
+            }
+        }
         if (isRenditionPending(executionError)) {
             log.warn(`Interaction ${interactionName} is waiting for a rendition`, { error: executionError });
         } else if (executionError.statusCode === 429) {
@@ -317,8 +349,10 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
             log.warn(`Transient server failure while executing interaction ${interactionName}`, {
                 error: executionError,
             });
-        } else {
-            log.error(`Failed to execute interaction ${interactionName}`, { error: executionError });
+        } else if (!(error instanceof InteractionRunFailedError)) {
+            log[interactionFailureLogLevel(error)](`Failed to execute interaction ${interactionName}`, {
+                error: executionError,
+            });
         }
         if (executionError.statusCode === 429 && params.exit_on_resource_exhaustion) {
             throw new ResourceExhaustedError(executionError.statusCode, 'Resource exhausted - rate limit exceeded');
@@ -381,6 +415,44 @@ export async function executeInteraction(payload: DSLActivityExecutionPayload<Ex
  */
 function projectionReadsPrompt(projection: unknown): boolean {
     return projection !== undefined && /#(?!\.)|#\.prompt\b/.test(JSON.stringify(projection));
+}
+
+/**
+ * Takes the admission slot one interaction execution of the current activity runs under. When the
+ * slot is not free yet, throws an `InteractionRateLimitRetry` failure whose `nextRetryDelay` is the
+ * server's delay, so Temporal retries the activity then. Returns the id to send as
+ * `workflow.rate_limit_id`, which tells the server which slot to release when the run finishes.
+ */
+export async function requestInteractionSlot(
+    client: VertesiaClient,
+    interactionName: string,
+    config: Pick<
+        InteractionExecutionConfiguration,
+        'inference_profile' | 'inherit_model_config' | 'environment' | 'model'
+    >,
+): Promise<string> {
+    const info = activityInfo();
+    const rateLimitId = `${activityWorkflowExecution(info).runId}:${info.activityId}:${interactionName}`;
+    const slot = await client.interactions.requestSlot({
+        interaction: interactionName,
+        inference_profile: config.inference_profile,
+        inherit_model_config: config.inherit_model_config,
+        environment_id: config.environment,
+        model_id: config.model,
+        rate_limit_id: rateLimitId,
+    });
+    if (slot.delay_ms > 0) {
+        throw ApplicationFailure.create({
+            message: `Interaction admission delayed for ${slot.delay_ms}ms`,
+            type: 'InteractionRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: slot.delay_ms,
+            details: [{ interactionName, rateLimitId, delayMs: slot.delay_ms }],
+        });
+    }
+    // The grant names the slot and the scope it was admitted in, so the server releases exactly that
+    // slot however the run's model is resolved later. Older servers return none: send our own id.
+    return slot.rate_limit_grant ?? rateLimitId;
 }
 
 export async function executeInteractionFromActivity(
@@ -456,25 +528,7 @@ export async function executeInteractionFromActivity(
 
     const result_schema = params.result_schema;
 
-    const rateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
-    const slot = await client.interactions.requestSlot({
-        interaction: interactionName,
-        inference_profile: config.inference_profile,
-        inherit_model_config: config.inherit_model_config,
-        environment_id: config.environment,
-        model_id: config.model,
-        rate_limit_id: rateLimitId,
-    });
-    if (slot.delay_ms > 0) {
-        throw ApplicationFailure.create({
-            message: `Interaction admission delayed for ${slot.delay_ms}ms`,
-            type: 'InteractionRateLimitRetry',
-            nonRetryable: false,
-            nextRetryDelay: slot.delay_ms,
-            details: [{ interactionName, rateLimitId, delayMs: slot.delay_ms }],
-        });
-    }
-    workflow.rate_limit_id = rateLimitId;
+    workflow.rate_limit_id = await requestInteractionSlot(client, interactionName, config);
 
     log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags, workflow });
 
@@ -490,7 +544,13 @@ export async function executeInteractionFromActivity(
                 workflow,
             },
             undefined,
-            options.includePrompt ? undefined : { query: { include_prompt: false } },
+            // Only a waiting workflow sends the header; other calls keep their exact request options.
+            options.includePrompt && !params.wait_for_renditions
+                ? undefined
+                : {
+                      ...(options.includePrompt ? {} : { query: { include_prompt: false } }),
+                      ...(params.wait_for_renditions ? { headers: { [RENDITION_WAIT_HEADER]: '1' } } : {}),
+                  },
         )
         .catch((error: unknown) => {
             // Logged once by the caller's catch (executeInteraction) — do not log here as well.
@@ -503,17 +563,13 @@ export async function executeInteractionFromActivity(
     }
 
     if (res.error || res.status === ExecutionRunStatus.failed) {
-        log.error(`Error executing interaction ${interactionName}`, { error: res.error });
-
-        // Create error with retryability information
-        const errorMessage = `Interaction Execution failed ${interactionName}: ${res.error?.message || 'Unknown error'}`;
-        const error = new Error(errorMessage);
-
-        // Attach retryable property so the catch block can access it
-        const executionError = error as Error & { retryable?: boolean; errorCode?: string };
-        executionError.retryable = res.error?.retryable;
-        executionError.errorCode = res.error?.code;
-
+        // Carries retryability so the caller's catch can decide whether Temporal retries it.
+        const error = new InteractionRunFailedError(
+            `Interaction Execution failed ${interactionName}: ${res.error?.message || 'Unknown error'}`,
+            res.error?.code,
+            res.error?.retryable,
+        );
+        log[interactionFailureLogLevel(error)](`Error executing interaction ${interactionName}`, { error: res.error });
         throw error;
     }
 
@@ -546,6 +602,72 @@ function isTransientServerFailure(error: ExecutionError): boolean {
 
 function isRenditionPending(error: ExecutionError): boolean {
     return (error.statusCode ?? error.status ?? error.code) === 412 && error.retryable !== false;
+}
+
+/**
+ * The run came back failed. executeInteractionFromActivity logs it once, so callers rethrow it without
+ * logging it again.
+ */
+export class InteractionRunFailedError extends Error {
+    constructor(
+        message: string,
+        readonly errorCode?: string,
+        readonly retryable?: boolean,
+    ) {
+        super(message);
+        this.name = 'InteractionRunFailedError';
+    }
+}
+
+/** Run error codes for a model answer that the result schema or the provider's content policy rejected. */
+const MODEL_OUTPUT_ERROR_CODES = new Set(['validation_error', 'json_error', 'content_policy_violation']);
+
+/**
+ * The level for an interaction failure, chosen by who has to act on it, not by whether Temporal retries it:
+ * - a model answer rejected by the result schema or a content policy is an outcome of the run: warn;
+ * - a 4xx rejects what the caller sent (an unknown interaction or model, an oversized prompt): warn. 401 and 403
+ *   are excluded, because the platform rejecting a worker's own token is our failure;
+ * - anything else is ours: warn while Temporal will retry it, error on the attempt that ends the activity.
+ */
+export function interactionFailureLogLevel(error: unknown): 'warn' | 'error' {
+    const failure = toExecutionError(error);
+    if (typeof failure.errorCode === 'string' && MODEL_OUTPUT_ERROR_CODES.has(failure.errorCode)) {
+        return 'warn';
+    }
+    const status = failure.statusCode ?? failure.status ?? failure.code;
+    if (typeof status === 'number' && status >= 400 && status < 500 && status !== 401 && status !== 403) {
+        return 'warn';
+    }
+    return activityWillRetry(error) ? 'warn' : 'error';
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+    return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
+}
+
+function isPendingRendition(value: unknown): value is PendingRendition {
+    const item = asRecord(value);
+    return typeof item?.object_id === 'string' && (item.kind === 'video' || item.kind === 'image');
+}
+
+/**
+ * Read the pending renditions from a 412 response, whose body is the rejected run: the server lists them
+ * in `error.data.pending`. Undefined when the response names none.
+ */
+function getRenditionPendingDetails(error: unknown): RenditionPendingDetails | undefined {
+    const run = asRecord(asRecord(error)?.payload);
+    const runError = asRecord(run?.error);
+    const data = asRecord(runError?.data);
+    const pending = Array.isArray(data?.pending) ? data.pending.filter(isPendingRendition) : [];
+    if (pending.length === 0) {
+        return undefined;
+    }
+    const retryAfterMs = runError?.retry_after_ms;
+    return {
+        pending: pending.map(({ object_id, kind }) => ({ object_id, kind })),
+        ...(typeof retryAfterMs === 'number' ? { retry_after_ms: retryAfterMs } : {}),
+        ...(typeof run?.id === 'string' ? { run_id: run.id } : {}),
+    };
 }
 
 function toExecutionError(error: unknown): ExecutionError {

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { DashboardStatus } from '../data-platform.js';
+import { DashboardExportStatus, DashboardStatus } from '../data-platform.js';
 import { StringValueMapSchema } from './files.js';
-import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
+import { conditional, EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 
 export const DashboardElasticsearchResultMappingSchema = z
     .discriminatedUnion('type', [
@@ -144,8 +144,8 @@ export const DashboardArchiveResultSchema = z
 
 export const CreateDashboardSnapshotPayloadSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'Snapshot name (must be unique within dashboard)' }),
-        message: z.string().meta({ description: 'Snapshot description/message' }),
+        name: z.string().min(1).meta({ description: 'Snapshot name (must be unique within dashboard)' }),
+        message: z.string().min(1).meta({ description: 'Snapshot description/message' }),
     })
     .meta({ id: 'CreateDashboardSnapshotPayload', description: 'Payload for creating a named snapshot.' });
 
@@ -157,6 +157,23 @@ export const DashboardBulkArchiveResultSchema = z
     .meta({ id: 'DashboardBulkArchiveResult' });
 
 export const StringArrayMapSchema = z.object({}).catchall(z.array(z.string())).meta({ id: 'StringArrayMap' });
+
+/**
+ * The dashboards a bulk archive or delete acts on. It keeps the map shape of `StringArrayMap`, which the two routes
+ * used to name, so the generated clients keep their map argument; the `if`, which always holds, carries the rule.
+ */
+export const DashboardBulkIdsPayloadSchema = z
+    .object({})
+    .catchall(z.array(z.string()))
+    .meta({
+        id: 'DashboardBulkIdsPayload',
+        description:
+            'The dashboards to act on, as an `ids` list of at least one dashboard ID (24 hexadecimal characters).',
+        ...conditional(
+            {},
+            { required: ['ids'], properties: { ids: { minItems: 1, items: { pattern: '^[0-9a-fA-F]{24}$' } } } },
+        ),
+    });
 
 export const DashboardStoreElasticsearchDataSourceSchema = z
     .strictObject({
@@ -317,10 +334,12 @@ export const DashboardSchema = DashboardItemSchema.extend({
 
 export const CreateDashboardPayloadSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'Dashboard name (unique within store)' }),
+        name: z.string().min(1).meta({ description: 'Dashboard name (unique within store)' }),
         summary: z.string().meta({ description: 'Dashboard summary' }).optional(),
-        dataSource: DashboardDataSourceSchema.meta({
-            description: 'Data source used to populate Vega `data.values`.',
+        // Only the SQL source: a stored dashboard keeps its rows' query, and nothing runs an Elasticsearch source.
+        dataSource: DashboardSqlDataSourceSchema.meta({
+            description:
+                "SQL data source used to populate Vega `data.values`. Its query, limit and parameters are stored as the dashboard's own; a top-level `query`, `queryLimit` or `queryParameters` sent alongside takes precedence.",
         }).optional(),
         query: z
             .string()
@@ -342,13 +361,120 @@ export const CreateDashboardPayloadSchema = z
     })
     .meta({
         id: 'CreateDashboardPayload',
-        description: 'Payload for creating a new dashboard. Requires a data source and spec (Vega-Lite).',
+        description:
+            'Payload for creating a new dashboard. Requires a SQL data source, as `dataSource` or `query`, and a Vega-Lite spec.',
+        // A top-level `query` replaces the data source's, so an empty one is refused even beside a data source.
+        ...conditional(
+            { required: ['query'] },
+            { properties: { query: { minLength: 1 } } },
+            { required: ['dataSource'], properties: { dataSource: { properties: { query: { minLength: 1 } } } } },
+        ),
     });
 
 export const UpdateDashboardPayloadSchema = CreateDashboardPayloadSchema.partial()
     .extend({
         expected_edit_revision: ExpectedEditRevisionSchema,
-        name: z.string().meta({ description: 'Dashboard name' }).optional(),
+        name: z.string().min(1).meta({ description: 'Dashboard name' }).optional(),
         skip_versioning: z.boolean().meta({ description: 'Skip auto-version creation' }).optional(),
     })
     .meta({ id: 'UpdateDashboardPayload', description: 'Payload for updating a dashboard.' });
+
+const DashboardExportFormatSchema = z.enum(['png']).meta({ description: 'Image format. Only PNG is supported.' });
+
+const DashboardExportRenderOptions = {
+    format: DashboardExportFormatSchema.optional(),
+    scale: z
+        .number()
+        .positive()
+        .max(4)
+        .meta({ description: 'Render scale factor for higher resolution images (default: 1, maximum: 4).' })
+        .optional(),
+    background_color: z
+        .string()
+        .max(64)
+        .meta({ description: "CSS background color of the image (default: '#ffffff')." })
+        .optional(),
+};
+
+export const ExportDashboardPayloadSchema = z
+    .strictObject({
+        parameter_values: StringValueMapSchema.meta({
+            description: "Values for the dashboard's SQL {{param}} placeholders, overriding its saved defaults.",
+        }).optional(),
+        ...DashboardExportRenderOptions,
+    })
+    .meta({ id: 'ExportDashboardPayload', description: 'Options for exporting a saved dashboard as an image.' });
+
+export const ExportDashboardPreviewPayloadSchema = z
+    .strictObject({
+        query: z.string().meta({ description: 'SQL query that returns all data for the dashboard.' }),
+        queryLimit: z
+            .number()
+            .meta({ description: 'Maximum rows to return from the query (default: 10000)' })
+            .optional(),
+        queryParameters: StringValueMapSchema.meta({
+            description: 'Values for SQL {{param}} placeholders',
+        }).optional(),
+        spec: z
+            .looseObject({})
+            .meta({ description: 'Complete Vega-Lite specification (use vconcat/hconcat for multiple panels)' }),
+        ...DashboardExportRenderOptions,
+    })
+    .meta({
+        id: 'ExportDashboardPreviewPayload',
+        description: 'An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.',
+    });
+
+export const DashboardExportStatusSchema = z
+    .enum(DashboardExportStatus)
+    .meta({ id: 'DashboardExportStatus', description: 'Status of a dashboard export.' });
+
+export const DashboardExportErrorSchema = z
+    .strictObject({
+        code: z.string().meta({
+            description:
+                'Why the export failed: `spec_invalid`, `query_invalid`, `parameter_invalid`, `not_renderable`, ' +
+                '`data_access_denied` and `data_not_found` describe the dashboard or its data; `export_failed` means ' +
+                'the export could not complete. More codes may be added.',
+        }),
+        message: z.string().meta({ description: 'What went wrong.' }),
+        retryable: z.boolean().meta({
+            description:
+                'Whether starting the same export again may succeed. False when the dashboard, its query or its ' +
+                'parameters must change first.',
+        }),
+    })
+    .meta({ id: 'DashboardExportError', description: 'Why a dashboard export failed.' });
+
+export const DashboardExportSchema = z
+    .strictObject({
+        export_id: z.string().meta({ description: 'Identifier of this export. Every export creates a new image.' }),
+        status: DashboardExportStatusSchema,
+        started_at: z.string().meta({ format: 'date-time', description: 'When the export was started.' }),
+        completed_at: z
+            .string()
+            .meta({ format: 'date-time', description: 'When the export completed or failed.' })
+            .optional(),
+        url: z
+            .string()
+            .meta({
+                description:
+                    'Signed URL to download the image, set when the export is `completed`. It expires at ' +
+                    '`expires_at`; fetch the export again for a new one.',
+            })
+            .optional(),
+        content_type: z.string().meta({ description: 'Media type of the image.' }).optional(),
+        expires_at: z.string().meta({ format: 'date-time', description: 'When the download URL expires.' }).optional(),
+        width: z.number().meta({ description: 'Image width in pixels.' }).optional(),
+        height: z.number().meta({ description: 'Image height in pixels.' }).optional(),
+        row_count: z.number().meta({ description: 'Number of rows the query returned.' }).optional(),
+        error: DashboardExportErrorSchema.meta({
+            description: 'Why the export failed, set when it is `failed`.',
+        }).optional(),
+    })
+    .meta({
+        id: 'DashboardExport',
+        description:
+            'A dashboard export. Starting an export returns it `running`; poll it until it is `completed`, with ' +
+            'a signed download URL, or `failed`, with the reason.',
+    });

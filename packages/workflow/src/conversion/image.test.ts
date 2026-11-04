@@ -1,4 +1,4 @@
-import { exec, execFile } from 'node:child_process';
+import { type ExecFileOptions, exec, execFile } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -14,6 +14,24 @@ vi.mock('@temporalio/activity', () => ({
         error: vi.fn(),
     },
 }));
+
+// Record the arguments of every promisified `convert` call, then run the real command.
+const { convertCalls } = vi.hoisted(() => ({ convertCalls: [] as string[][] }));
+vi.mock('node:child_process', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('node:child_process')>();
+    const { promisify } = await import('node:util');
+    const execFileAsync = promisify(actual.execFile);
+    function execFile(this: unknown, ...args: unknown[]) {
+        return Reflect.apply(actual.execFile, this, args);
+    }
+    execFile[promisify.custom] = (file: string, args: readonly string[] = [], options: ExecFileOptions = {}) => {
+        if (file === 'convert') {
+            convertCalls.push([...args]);
+        }
+        return execFileAsync(file, args, options);
+    };
+    return { ...actual, execFile };
+});
 
 // Import after mocking
 import { imageResizer } from '../conversion/image.js';
@@ -252,6 +270,32 @@ describe('ImageMagick image resizing', () => {
                 'info:',
             ]);
             expect(isRedDominant.trim()).toBe('1');
+        } finally {
+            await fs.promises.unlink(resizedImagePath);
+        }
+    });
+
+    test.each([
+        {
+            name: 'an optimized GIF subframe',
+            file: () => path.join(animatedFixturesDir, 'optimized.gif'),
+            coalesce: true,
+        },
+        {
+            name: 'a full-canvas animated GIF',
+            file: () => path.join(animatedFixturesDir, 'animated.gif'),
+            coalesce: false,
+        },
+        { name: 'a JPEG', file: () => path.join(__dirname, '../../fixtures', 'cat-picture.jpg'), coalesce: false },
+    ])('should coalesce $name only when the first frame does not fill its canvas', async ({ file, coalesce }) => {
+        const inputImagePath = file();
+        convertCalls.length = 0;
+        const resizedImagePath = await imageResizer(inputImagePath, 20, 'png');
+
+        try {
+            const resizeArgs = convertCalls.find((args) => args.includes(resizedImagePath));
+            expect(resizeArgs).toBeDefined();
+            expect(resizeArgs?.includes('-coalesce')).toBe(coalesce);
         } finally {
             await fs.promises.unlink(resizedImagePath);
         }

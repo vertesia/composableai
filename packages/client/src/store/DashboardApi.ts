@@ -6,12 +6,16 @@ import {
     type DashboardArchiveResult,
     type DashboardBulkArchiveResult,
     type DashboardBulkDeleteResult,
+    type DashboardExport,
+    DashboardExportStatus,
     type DashboardItem,
     type DashboardStatus,
     type DashboardVersion,
     type DashboardVersionItem,
     type DashboardVersioningStatusResponse,
     DataStoreApiHeaders,
+    type ExportDashboardPayload,
+    type ExportDashboardPreviewPayload,
     type PromoteDashboardVersionPayload,
     type UpdateDashboardPayload,
 } from '@vertesia/common';
@@ -23,7 +27,9 @@ import {
  * - Multi-panel Vega/Vega-Lite visualizations
  * - SQL-backed data sources via named queries
  *
- * Note: Rendering is handled by the tools (data_preview_dashboard, data_render_dashboard).
+ * - PNG export of a saved dashboard ({@link DashboardApi.export}) or of an unsaved one
+ *   ({@link DashboardApi.exportPreview}). Exports run in the background: poll them with
+ *   {@link DashboardApi.getExport}, or wait for them with {@link DashboardApi.waitForExport}.
  */
 export class DashboardApi extends ApiTopic {
     private readonly storeId: string;
@@ -58,30 +64,24 @@ export class DashboardApi extends ApiTopic {
     /**
      * Create a new dashboard.
      *
-     * @param payload - Dashboard configuration with queries and panels
+     * @param payload - Dashboard name, SQL data source and Vega-Lite spec
      * @returns The created dashboard
      *
      * @example
      * ```typescript
      * const dashboard = await client.data.dashboards(storeId).create({
      *   name: 'Sales Overview',
-     *   queries: [
-     *     { name: 'revenue', sql: 'SELECT month, SUM(amount) FROM sales GROUP BY month' }
-     *   ],
-     *   panels: [
-     *     {
-     *       title: 'Monthly Revenue',
-     *       dataSources: ['revenue'],
-     *       position: { row: 0, col: 0 },
-     *       spec: {
-     *         mark: 'bar',
-     *         encoding: {
-     *           x: { field: 'month', type: 'ordinal' },
-     *           y: { field: 'sum_amount', type: 'quantitative' }
-     *         }
-     *       }
+     *   dataSource: {
+     *     kind: 'data_sql',
+     *     query: 'SELECT month, SUM(amount) AS revenue FROM sales GROUP BY month',
+     *   },
+     *   spec: {
+     *     mark: 'bar',
+     *     encoding: {
+     *       x: { field: 'month', type: 'ordinal' },
+     *       y: { field: 'revenue', type: 'quantitative' }
      *     }
-     *   ]
+     *   }
      * });
      * ```
      */
@@ -108,6 +108,67 @@ export class DashboardApi extends ApiTopic {
      */
     update(id: string, payload: UpdateDashboardPayload): Promise<Dashboard> {
         return this.put(`/${id}`, { payload, headers: this.storeHeaders() });
+    }
+
+    /**
+     * Start rendering a saved dashboard as an image.
+     *
+     * Every call renders a new image from the current data. The export starts `running`: poll it
+     * with {@link getExport} or wait for it with {@link waitForExport}.
+     *
+     * @param id - Dashboard ID
+     * @param payload - Parameter values and render options
+     * @returns The started export
+     */
+    export(id: string, payload: ExportDashboardPayload = {}): Promise<DashboardExport> {
+        return this.post(`/${id}/export`, { payload, headers: this.storeHeaders() });
+    }
+
+    /**
+     * Start rendering an unsaved dashboard (SQL query and Vega-Lite spec) as an image, without saving it.
+     *
+     * Use it to check a spec before creating or updating a dashboard: an invalid spec or query makes
+     * the export fail with the list of problems.
+     *
+     * @param payload - The query, spec and render options
+     * @returns The started export
+     */
+    exportPreview(payload: ExportDashboardPreviewPayload): Promise<DashboardExport> {
+        return this.post('/export', { payload, headers: this.storeHeaders() });
+    }
+
+    /**
+     * Get the status of an export. Once it is `completed`, each call returns a fresh download URL.
+     *
+     * @param exportId - The `export_id` returned when the export was started
+     * @returns The export
+     */
+    getExport(exportId: string): Promise<DashboardExport> {
+        return this.get(`/exports/${exportId}`, { headers: this.storeHeaders() });
+    }
+
+    /**
+     * Poll an export until it is `completed` or `failed`.
+     *
+     * @param exportId - The `export_id` returned when the export was started
+     * @param options - Poll interval (default: 1s) and timeout (default: 5 minutes)
+     * @returns The completed or failed export
+     * @throws Error when the export is still running after `timeoutMs`
+     */
+    async waitForExport(exportId: string, options: DashboardExportWaitOptions = {}): Promise<DashboardExport> {
+        const pollIntervalMs = options.pollIntervalMs ?? 1000;
+        const timeoutMs = options.timeoutMs ?? 5 * 60 * 1000;
+        const deadline = Date.now() + timeoutMs;
+        while (true) {
+            const current = await this.getExport(exportId);
+            if (current.status !== DashboardExportStatus.RUNNING) {
+                return current;
+            }
+            if (Date.now() >= deadline) {
+                throw new Error(`Dashboard export ${exportId} is still running after ${timeoutMs}ms`);
+            }
+            await sleep(pollIntervalMs);
+        }
     }
 
     /**
@@ -214,4 +275,18 @@ export class DashboardApi extends ApiTopic {
     setVersioningEnabled(dashboardId: string, enabled: boolean): Promise<DashboardVersioningStatusResponse> {
         return this.put(`/${dashboardId}/versioning`, { payload: { enabled }, headers: this.storeHeaders() });
     }
+}
+
+/**
+ * Options for {@link DashboardApi.waitForExport}.
+ */
+export interface DashboardExportWaitOptions {
+    /** Delay between status checks, in milliseconds (default: 1000) */
+    pollIntervalMs?: number;
+    /** How long to wait before giving up, in milliseconds (default: 5 minutes) */
+    timeoutMs?: number;
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }

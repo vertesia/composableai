@@ -92,7 +92,7 @@ export function DotBadge({
 }: DotBadgeProps) {
     return (
         <span className={cn(dotBadgeVariants({ variant }), className)} {...props}>
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
                 <svg className={cn(dotVariants({ variant }), dotClassName)} viewBox="0 0 6 6" aria-hidden="true">
                     <circle cx={3} cy={3} r={3} />
                 </svg>

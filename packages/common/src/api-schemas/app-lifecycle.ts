@@ -42,11 +42,38 @@ const nullableToolAllowlistSchema: z.ZodType<string[] | null> = z
     .any()
     .meta({ type: ['array', 'null'], items: { type: 'string' } });
 
+// An allowlist is either `null`, for no restriction, or names at least one tool: an empty list would block every
+// tool, which the server refuses. `minItems` applies to the array branch only.
+const nonEmptyNullableToolAllowlistSchema: z.ZodType<string[] | null> = z
+    .any()
+    .meta({ type: ['array', 'null'], items: { type: 'string' }, minItems: 1 });
+
 export const UpdateAppInstallationToolAllowlistPayloadSchema = z
     .strictObject({
-        tool_allowlist: nullableToolAllowlistSchema,
+        tool_allowlist: nonEmptyNullableToolAllowlistSchema.meta({
+            description: 'Tool names agents may use. An empty list is refused: send null to remove the restriction.',
+        }),
     })
     .meta({ id: 'UpdateAppInstallationToolAllowlistPayload' });
+
+export const UpdateAppInstallationToolPermissionsPayloadSchema = z
+    .strictObject({
+        tool_allowlist: nonEmptyNullableToolAllowlistSchema.optional().meta({
+            description:
+                'Tool names agents may use, at least one. Null removes the restriction; omit to leave the allowlist unchanged.',
+        }),
+        tools_requiring_approval: nullableToolAllowlistSchema.optional().meta({
+            description:
+                'Tool names that always require human approval before an agent runs them. Null clears the list; omit to leave it unchanged.',
+        }),
+    })
+    .meta({
+        id: 'UpdateAppInstallationToolPermissionsPayload',
+        // An empty body changes nothing, so the contract refuses it rather than accept it as a no-op write.
+        minProperties: 1,
+        description:
+            'Updates the tool allowlist and the tools requiring approval of an app installation in one atomic write.',
+    });
 
 export const UpdateAppInstallationOAuthApprovalPayloadSchema = z
     .strictObject({ approved_scopes: z.array(z.string().min(1)).max(200) })
@@ -63,7 +90,7 @@ export const ValidateUrlResponseSchema = z
 
 export const ValidateUrlRequestSchema = z
     .strictObject({
-        url: z.string(),
+        url: z.string().min(1),
     })
     .meta({ id: 'ValidateUrlRequest' });
 
@@ -381,6 +408,20 @@ export const AppDeleteSummarySchema = z
         description:
             'Result of `DELETE /apps/:id`. Doubles as the dry-run preview: without `?confirm=true` the same ' +
             'shape comes back with `deleted: false` describing what the cascade would remove.',
+    });
+
+export const CreateAppRepoBranchRequestSchema = z
+    .strictObject({
+        // Both are trimmed, and a blank one is refused.
+        name: z.string().regex(/\S/).meta({ description: 'The new branch name.' }),
+        source_ref: z
+            .string()
+            .regex(/\S/)
+            .meta({ description: 'The existing branch, tag or commit the new branch starts from.' }),
+    })
+    .meta({
+        id: 'CreateAppRepoBranchRequest',
+        description: 'Request to create a branch from an existing branch, tag, or commit.',
     });
 
 export const AppRepoBranchSchema = z
@@ -1010,9 +1051,10 @@ export const UpsertAppVersionRequestSchema = z
             .meta({ description: 'Existing version record to update in place, used by reproducible rebuilds.' })
             .optional(),
         app: z.string().optional(),
-        app_id: z.string(),
+        // Both are trimmed and refused when blank, so a whitespace-only value is refused here too.
+        app_id: z.string().regex(/\S/),
         app_name: z.string().optional(),
-        version_id: z.string(),
+        version_id: z.string().regex(/\S/),
         kind: AppVersionKindSchema,
         state: AppVersionStateSchema.optional(),
         target: AppVersionTargetSchema.optional(),
@@ -1081,6 +1123,14 @@ export const AppInstallationPayloadSchema = z
             .meta({
                 description:
                     "Per-installation override of the manifest's `access_control` policy. When provided, takes precedence over the manifest default for every access check. Sibling of `settings` — admin-controlled, not part of the app's own settings JSON.\n\nThree send-time semantics on update:  - Field omitted entirely from the payload → leave the existing override unchanged.  - Explicit `null` → clear the override, fall back to the manifest default.  - String enum → set the override to that value.\n\n(On install, the same shape applies; omit or pass `null` to use the manifest default.)",
+            })
+            .optional(),
+        approved_scopes: z
+            .array(z.string().min(1))
+            .max(200)
+            .meta({
+                description:
+                    'OAuth scopes approved by the project manager during installation. The server records the approving user and timestamp; omitted defaults to all scopes requested by the selected deployment.',
             })
             .optional(),
         oauth_params: AppOAuthCollectionParamsSchema.meta({
@@ -1154,16 +1204,40 @@ export const AppInstallationsQuerySchema = z
     })
     .meta({ id: 'AppInstallationsQuery' });
 
+export const AppRepoTreeQuerySchema = z
+    .strictObject({
+        prefix: z
+            .string()
+            .meta({ description: 'Directory to list, relative to the repository root. Defaults to the root.' })
+            .optional(),
+        ref: z.string().meta({ description: 'Branch, tag or commit. Defaults to the default branch.' }).optional(),
+    })
+    .meta({ id: 'AppRepoTreeQuery' });
+
+export const AppRepoFileQuerySchema = z
+    .strictObject({
+        // Trimmed, and refused when blank.
+        path: z.string().regex(/\S/).meta({ description: 'Path of the file, relative to the repository root.' }),
+        ref: z.string().meta({ description: 'Branch, tag or commit. Defaults to the default branch.' }).optional(),
+    })
+    .meta({ id: 'AppRepoFileQuery' });
+
 export const AppInstallationProjectsQuerySchema = z
     .strictObject({
-        name: z.string().meta({ description: 'App manifest name. One of `name` or `id` is required.' }).optional(),
-        id: z.string().meta({ description: 'App manifest id. One of `name` or `id` is required.' }).optional(),
+        name: z
+            .string()
+            .meta({ description: 'App manifest name. At least one of `name` or `id` is required.' })
+            .optional(),
+        id: z
+            .string()
+            .meta({ description: 'App manifest id. At least one of `name` or `id` is required; it wins over `name`.' })
+            .optional(),
     })
     .meta({
         id: 'AppInstallationProjectsQuery',
         description:
-            'Exactly one of `name` or `id` identifies the app. Neither is required by the component ' +
-            'because the endpoint answers 400 for the empty case with a message naming both.',
+            'At least one of `name` or `id` identifies the app, and `id` takes precedence when both are given. ' +
+            'Query parameters cannot state that rule, so the endpoint answers 400 when neither is set.',
     });
 
 export const SystemPackageQuerySchema = z

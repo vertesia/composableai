@@ -4,14 +4,17 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import {
     AuthenticationServiceError,
     CredentialError,
+    InviteRequiredError,
     NoAccessibleAccountError,
     RequestedScopeUnavailableError,
     RestrictedEnvironmentError,
     UserNotFoundError,
+    usesOidcSignIn,
     useUserSession,
     useUXTracking,
 } from '@vertesia/ui/session';
 import { type ComponentType, type ReactNode, useCallback, useEffect } from 'react';
+import { OidcSignInStep } from './OidcSignInStep';
 import { type SignInFlowController, SignInFlowSteps, useSignInFlow } from './SignInFlow';
 import { SignInPageShell } from './SignInPageShell';
 import SignInRecoveryStep, { type SignInRecoveryKind } from './SignInRecoveryStep';
@@ -169,8 +172,10 @@ function SigninScreenImpl({
         } else if (authError instanceof AuthenticationServiceError) {
             setMode('serviceFailure');
         } else if (isInviteRequiredError(authError)) {
-            const pending = readPendingSignin();
-            if (pending) setEmail(pending.email);
+            // After a central-auth sign-in this origin recorded no pending sign-in; the error carries the address.
+            const email =
+                readPendingSignin()?.email ?? (authError instanceof InviteRequiredError ? authError.email : undefined);
+            if (email) setEmail(email);
             setMode('blocked');
         }
     }, [authError, setEmail, setMode]);
@@ -286,11 +291,26 @@ function SigninScreenImpl({
             />
         );
     } else if (mode === 'signup' && !isTenantSignIn()) {
-        content = <SignupForm onSignup={onSignup} goBack={startOver} />;
+        const notFound = authError instanceof UserNotFoundError ? authError : undefined;
+        content = (
+            <SignupForm
+                onSignup={onSignup}
+                goBack={startOver}
+                idToken={notFound?.idToken}
+                identity={
+                    notFound?.idToken ? { email: notFound.email, displayName: notFound.displayName ?? null } : undefined
+                }
+            />
+        );
     } else {
         // Every remaining mode is a core one; an unmatched recovery mode falls through to the
-        // email step, exactly as it did when this chain owned all twelve branches.
-        content = <SignInFlowSteps flow={flow} />;
+        // email step, exactly as it did when this chain owned all twelve branches. A page whose
+        // users all come from one OIDC provider has no email step: only the hand-off to it.
+        content = usesOidcSignIn() ? (
+            <OidcSignInStep hasError={authError !== undefined} />
+        ) : (
+            <SignInFlowSteps flow={flow} />
+        );
     }
 
     const notice = authError && !isDedicatedAuthError(authError) && !isInviteRequiredError(authError) && (

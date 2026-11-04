@@ -258,7 +258,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                 <Button variant="ghost" size="xs" onClick={goPrev} title={t('pdf.previousPage')}>
                     <ChevronsUp className="size-4" />
                 </Button>
-                <div className="absolute start-2 flex items-center gap-x-1">
+                <div className="absolute inset-s-2 flex items-center gap-x-1">
                     <ImageTypeButton
                         type={ImageType.original}
                         currentType={imageType}
@@ -283,7 +283,7 @@ export function AnnotatedImageSlider({ className, currentPage, onChange }: Annot
                         canZoomOut={zoom > ZOOM_LEVELS[0]}
                     />
                 </div>
-                <div className="absolute end-2">
+                <div className="absolute inset-e-2">
                     <PageNavigator currentPage={currentPage} totalPages={count} onChange={onChange} />
                 </div>
             </div>

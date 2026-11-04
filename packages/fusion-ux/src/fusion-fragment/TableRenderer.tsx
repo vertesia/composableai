@@ -116,17 +116,12 @@ function formatCellValue(value: unknown, column: ColumnTemplate): string {
  */
 export function TableRenderer({ columns, rows }: TableRendererProps): ReactElement {
     const alignmentStyle = useMemo(() => {
-        return columns.reduce(
-            (acc, col) => {
-                acc[col.key] =
-                    col.align ||
-                    (col.format === 'number' || col.format === 'currency' || col.format === 'percent'
-                        ? 'right'
-                        : 'left');
-                return acc;
-            },
-            {} as Record<string, string>,
-        );
+        return columns.reduce<Record<string, string>>((acc, col) => {
+            acc[col.key] =
+                col.align ||
+                (col.format === 'number' || col.format === 'currency' || col.format === 'percent' ? 'right' : 'left');
+            return acc;
+        }, {});
     }, [columns]);
 
     if (rows.length === 0) {

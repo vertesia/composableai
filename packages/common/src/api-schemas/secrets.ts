@@ -161,8 +161,9 @@ export const DeleteSecretResponseSchema = z
 
 export const WebsiteCredentialMetadataSchema = z
     .strictObject({
-        name: z.string(),
-        websites: z.array(WebsiteCredentialWebsiteSchema),
+        // The server trims the name and refuses a blank one, and needs at least one website.
+        name: z.string().regex(/\S/),
+        websites: z.array(WebsiteCredentialWebsiteSchema).min(1),
         username: z.string().optional(),
         username_hint: z.string().optional(),
         username_secret: z.boolean().optional(),
@@ -184,8 +185,9 @@ export const WebsiteCredentialMetadataSchema = z
 
 export const WebsiteCredentialMetadataUpdateSchema = z
     .strictObject({
-        name: z.string().optional(),
-        websites: z.array(WebsiteCredentialWebsiteSchema).optional(),
+        // As on create: the server trims the name and refuses a blank one.
+        name: z.string().regex(/\S/).optional(),
+        websites: z.array(WebsiteCredentialWebsiteSchema).min(1).optional(),
         username: z.string().optional(),
         username_hint: z.string().optional(),
         username_secret: z.boolean().optional(),

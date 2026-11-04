@@ -29,6 +29,12 @@ export function useUXTracking() {
         if (!Env.firebase?.apiKey) {
             return;
         }
+        // The first event initializes Analytics, which registers a Firebase installation. Offline,
+        // that registration rejects with installations/app-offline, and the SDK caches the rejected
+        // initialization: every later event in the session would log the same FirebaseError.
+        if (!navigator.onLine) {
+            return;
+        }
         logEvent(getFirebaseAnalytics(), eventName, { ...eventProperties, debug_mode: !Env.isProd });
     };
 

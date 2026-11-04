@@ -61,7 +61,7 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
                         {/* Close button */}
                         <Button
                             variant="unstyled"
-                            className="absolute top-2 end-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+                            className="absolute top-2 inset-e-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
                             onClick={closeImage}
                             title={t('agent.close')}
                         >
@@ -72,7 +72,7 @@ export function ImageLightboxProvider({ children }: ImageLightboxProviderProps) 
                             href={image.src}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="absolute bottom-2 end-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
+                            className="absolute bottom-2 inset-e-2 text-white bg-black/50 rounded-full p-2 hover:bg-black/70 transition-colors"
                             onClick={(e) => e.stopPropagation()}
                             title={t('agent.openInNewTab')}
                         >

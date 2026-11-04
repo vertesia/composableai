@@ -1,5 +1,5 @@
 import { ApplicationFailure } from '@temporalio/workflow';
-import type { DSLActivitySpec, DSLWorkflowSpec } from '@vertesia/common';
+import type { DSLActivitySpec, DSLWorkflowSpec, PendingRendition } from '@vertesia/common';
 
 export class DocumentNotFoundError extends ApplicationFailure {
     constructor(
@@ -81,6 +81,28 @@ export class InvalidContentTypeError extends ApplicationFailure {
     }
 }
 
+/** Failure `type` of {@link SourceTooLargeError}, as a workflow sees it in an `ActivityFailure` cause. */
+export const SOURCE_TOO_LARGE_ERROR = 'SourceTooLargeError';
+
+/**
+ * A source is larger than the most an activity will read. Retrying reads the same source, so it is not retried; an
+ * intake may catch it by its type to complete without the step that needed the source.
+ */
+export class SourceTooLargeError extends ApplicationFailure {
+    constructor(
+        public source: string,
+        public maxBytes: number,
+        public size?: number,
+    ) {
+        super(
+            `Source ${source} is ${size === undefined ? 'larger than' : `${size} bytes, over`} the ${maxBytes}-byte limit`,
+            SOURCE_TOO_LARGE_ERROR,
+            true, // non-retryable
+            [{ source, max_bytes: maxBytes, size }],
+        );
+    }
+}
+
 export class ImageConversionError extends ApplicationFailure {
     constructor(message: string, cause?: Error) {
         super(message, 'ImageConversionError', true, undefined, cause);
@@ -113,12 +135,25 @@ export class WorkflowExecutionError extends ApplicationFailure {
     }
 }
 
+/** ApplicationFailure type raised when an execution sent with RENDITION_WAIT_HEADER waits for renditions. */
+export const RENDITION_PENDING_ERROR = 'RenditionPendingError';
+
+/** Details of a RENDITION_PENDING_ERROR failure. */
+export interface RenditionPendingDetails {
+    pending: PendingRendition[];
+    /** Suggested delay before checking again. */
+    retry_after_ms?: number;
+    /** The run the server rejected. */
+    run_id?: string;
+}
+
 export const WF_NON_RETRYABLE_ERRORS = [
     'DocumentNotFoundError',
     'ActivityParamInvalidError',
     'ActivityParamNotFoundError',
     'WorkflowParamNotFoundError',
     'InvalidContentTypeError',
+    SOURCE_TOO_LARGE_ERROR,
     'ImageConversionError',
     'TokenExpiredError',
     'ZenoClientNotFoundError',

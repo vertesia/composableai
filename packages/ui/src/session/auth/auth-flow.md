@@ -23,6 +23,7 @@ Firebase authentication instead of the central broker.
 The diagrams below use the default hostname; redirects use the selected broker.
 
 ### STS Endpoints
+
 - Production/Preview: `https://sts.vertesia.io`
 - Staging: `https://sts.dev1.vertesia.io`
 
@@ -38,7 +39,7 @@ The diagrams below use the default hostname; redirects use the selected broker.
 
 ## Complete Authentication Flow
 
-```
+```text
   ┌─────────────────────────────────────────────────────────────────────────────┐
   │                      APP LOADS (NO AUTHENTICATION)                           │
   └────────────────────────────────────────────┬────────────────────────────────┘
@@ -340,6 +341,7 @@ The diagrams below use the default hostname; redirects use the selected broker.
 ## Key Differences Between Authentication Paths
 
 ### Path A: Central Auth (Option 1) - Returns with JWT
+
 1. User clicks "Continue with Central Auth"
 2. Redirects to auth.vertesia.io
 3. Central auth authenticates user and gets Firebase token
@@ -350,6 +352,7 @@ The diagrams below use the default hostname; redirects use the selected broker.
 8. **onAuthStateChanged may fire separately but login already happened**
 
 ### Path B: Standard/SSO (Options 2 & 3) - Firebase First
+
 1. User clicks provider button (Google/GitHub/Microsoft/Enterprise)
 2. Firebase authentication flow (OAuth or SAML)
 3. **Firebase creates session (NO token in URL)**
@@ -360,20 +363,20 @@ The diagrams below use the default hostname; redirects use the selected broker.
 
 ### Summary Table
 
-| Aspect | Central Auth (Option 1) | Standard/SSO (Options 2 & 3) |
-|--------|------------------------|------------------------------|
-| **Token in URL?** | YES - Vertesia JWT | NO |
-| **Initial trigger** | URL token processing | onAuthStateChanged listener |
-| **Who calls STS?** | Central auth server | Your app (in onAuthStateChanged) |
-| **STS call location** | Server-side (central auth) | Client-side (browser) |
-| **Firebase session** | Created by central auth | Created directly by Firebase |
-| **Login order** | 1. session.login()<br>2. onAuthStateChanged fires | 1. onAuthStateChanged fires<br>2. session.login() |
+| Aspect                | Central Auth (Option 1)                           | Standard/SSO (Options 2 & 3)                      |
+| --------------------- | ------------------------------------------------- | ------------------------------------------------- |
+| **Token in URL?**     | YES - Vertesia JWT                                | NO                                                |
+| **Initial trigger**   | URL token processing                              | onAuthStateChanged listener                       |
+| **Who calls STS?**    | Central auth server                               | Your app (in onAuthStateChanged)                  |
+| **STS call location** | Server-side (central auth)                        | Client-side (browser)                             |
+| **Firebase session**  | Created by central auth                           | Created directly by Firebase                      |
+| **Login order**       | 1. session.login()<br>2. onAuthStateChanged fires | 1. onAuthStateChanged fires<br>2. session.login() |
 
 ---
 
 ## Signup Flow (UserNotFoundError)
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         UserNotFoundError Handling                           │
 └────────────────────────────────────────────┬────────────────────────────────┘
@@ -454,7 +457,7 @@ The diagrams below use the default hostname; redirects use the selected broker.
 
 ## Logout Flow
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              User Logout                                     │
 └────────────────────────────────────────────┬────────────────────────────────┘
@@ -525,7 +528,7 @@ The diagrams below use the default hostname; redirects use the selected broker.
 
 ## Account/Project Switching
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                          Account/Project Switching                           │
 └────────────────────────────────────────┬────────────────────────────────────┘
@@ -681,13 +684,13 @@ When `false`: Shows Google/GitHub/Microsoft/Enterprise sign-in buttons
 
 ## Error Handling Summary
 
-| Error Type | Flow | Action |
-|------------|------|--------|
-| **UserNotFoundError** | Token exchange | Show SignupForm, don't logout, don't redirect |
-| **Invalid state** | State validation | Show SigninScreen with error |
-| **Network/API error** | Token exchange | Show SigninScreen with error message |
-| **Type loading error** | session.login() | Set authError, partial login (may show app with limitations) |
-| **Onboarding fetch error** | session.login() | Log error, continue (onboardingComplete=false) |
+| Error Type                 | Flow             | Action                                                       |
+| -------------------------- | ---------------- | ------------------------------------------------------------ |
+| **UserNotFoundError**      | Token exchange   | Show SignupForm, don't logout, don't redirect                |
+| **Invalid state**          | State validation | Show SigninScreen with error                                 |
+| **Network/API error**      | Token exchange   | Show SigninScreen with error message                         |
+| **Type loading error**     | session.login()  | Set authError, partial login (may show app with limitations) |
+| **Onboarding fetch error** | session.login()  | Log error, continue (onboardingComplete=false)               |
 
 ---
 

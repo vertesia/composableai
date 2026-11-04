@@ -457,7 +457,7 @@ function MessageItemComponent({
         return (
             <div
                 className={cn(
-                    'vprose prose  prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] break-words',
+                    'vprose prose  prose-p:leading-relaxed prose-p:my-3 prose-headings:font-semibold prose-headings:tracking-normal prose-headings:mt-6 prose-headings:mb-3 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-li:my-1 prose-ul:my-3 prose-ol:my-3 prose-table:my-5 prose-pre:my-4 prose-hr:my-6 max-w-none text-[15px] wrap-break-word',
                     resolvedStyle.proseClassName,
                 )}
                 style={{ overflowWrap: 'anywhere' }}
@@ -680,7 +680,7 @@ function MessageItemComponent({
                     ) : (
                         visibleMessageContent && (
                             <div
-                                className="message-content break-words w-full"
+                                className="message-content wrap-break-word w-full"
                                 style={{ overflowWrap: 'anywhere', wordBreak: 'break-word' }}
                             >
                                 {renderContent(processedContent || visibleMessageContent)}

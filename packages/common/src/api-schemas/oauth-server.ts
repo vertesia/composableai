@@ -222,7 +222,7 @@ export const OAuthTokenResponseSchema = z
 export const OAuthClientDataSchema = z.strictObject({
     app_id: z.string().optional().meta({
         description:
-            'App associated with this client. Authorization requires an installation explicitly enabling this client and current user app access.',
+            'App managing this client. Generic updates and deletion are prohibited; configure it through the app. Authorization requires a current installation and user app access.',
     }),
     client_name: z.string(),
     client_type: OAuthClientTypeSchema,
@@ -278,7 +278,8 @@ export const CreateOAuthClientPayloadSchema = z
     .strictObject({
         client_name: z.string(),
         client_type: OAuthClientTypeSchema.optional(),
-        redirect_uris: z.array(z.string()),
+        // Every client registers at least one redirect URI, which the server checks on create and on update.
+        redirect_uris: z.array(z.string()).min(1),
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
@@ -302,7 +303,7 @@ export const CreateOAuthClientPayloadSchema = z
 export const UpdateOAuthClientPayloadSchema = z
     .strictObject({
         client_name: z.string().optional(),
-        redirect_uris: z.array(z.string()).optional(),
+        redirect_uris: z.array(z.string()).min(1).optional(),
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
@@ -320,6 +321,12 @@ export const UpdateOAuthClientPayloadSchema = z
         metadata: z.looseObject({}).optional(),
     })
     .meta({ id: 'UpdateOAuthClientPayload' });
+
+export const UpdateOAuthClientStatusPayloadSchema = z
+    .strictObject({
+        status: OAuthClientStatusSchema,
+    })
+    .meta({ id: 'UpdateOAuthClientStatusPayload' });
 
 export const OAuthGrantSchema = z
     .strictObject({
@@ -372,7 +379,15 @@ const oauthGrantFilterFields = {
     sort_order: OAuthGrantSortOrderSchema.optional(),
 };
 
-export const ListOAuthGrantsQuerySchema = z.strictObject(oauthGrantFilterFields).meta({ id: 'ListOAuthGrantsQuery' });
+// The listing refuses a negative page. Its cap on `limit` is a clamp, not a refusal, so it is not published. The bulk
+// revoke payload shares the filter fields but ignores the page, so the bound is the listing's alone.
+export const ListOAuthGrantsQuerySchema = z
+    .strictObject({
+        ...oauthGrantFilterFields,
+        limit: z.number().min(0).optional(),
+        offset: z.number().min(0).optional(),
+    })
+    .meta({ id: 'ListOAuthGrantsQuery' });
 
 export const RevokeOAuthGrantQuerySchema = z
     .strictObject({

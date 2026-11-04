@@ -165,7 +165,7 @@ export const PublishProcessDefinitionPayloadSchema = z
                     'idempotent: a repeat of a publish that already succeeded is rejected because the revision ' +
                     'is no longer a draft. When the revision was published by a request with the same key and ' +
                     'the same body, the repeat returns that revision instead. Reusing the key with a different ' +
-                    'body is rejected with 409. The key is bound to the revision it published.',
+                    'body is rejected with 422. The key is bound to the revision it published.',
             })
             .optional(),
     })
@@ -644,7 +644,7 @@ export const BranchNodeBranchDefinitionSchema: z.ZodType = z
 
 export const CreateProcessDefinitionPayloadSchema: z.ZodType = z
     .strictObject({
-        name: z.string(),
+        name: z.string().min(1),
         description: z.string().optional(),
         status: ProcessDefinitionStatusSchema.meta({
             description:
@@ -840,10 +840,18 @@ const legacyWorkflowDefinitionUpsertFields = {
         .optional(),
 };
 
+/**
+ * A stored definition needs a name, so the request payloads refuse an empty one. The spec's own `name`
+ * stays unbounded: it is also the shape of a child workflow's inline spec and of every response.
+ * Overriding the spread field keeps its position, so the generated clients' argument order does not move.
+ */
+const workflowDefinitionPayloadName = z.string().min(1);
+
 export const WorkflowDefinitionPayloadWithActivitiesSchema: z.ZodType = z
     .strictObject({
         ...dslWorkflowSpecBaseFields,
         ...legacyWorkflowDefinitionUpsertFields,
+        name: workflowDefinitionPayloadName,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)).optional(),
         activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta),
         spec_format: z.literal('activities'),
@@ -854,6 +862,7 @@ export const WorkflowDefinitionPayloadWithStepsSchema: z.ZodType = z
     .strictObject({
         ...dslWorkflowSpecBaseFields,
         ...legacyWorkflowDefinitionUpsertFields,
+        name: workflowDefinitionPayloadName,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)),
         activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta).optional(),
         spec_format: z.literal('steps'),
@@ -870,6 +879,7 @@ export const WorkflowDefinitionPayloadSchema: z.ZodType = z
 export const UpdateWorkflowDefinitionPayloadWithActivitiesSchema: z.ZodType = z
     .strictObject({
         ...dslWorkflowSpecBaseFields,
+        name: workflowDefinitionPayloadName,
         expected_edit_revision: ExpectedEditRevisionSchema,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)).optional(),
         activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta),
@@ -880,6 +890,7 @@ export const UpdateWorkflowDefinitionPayloadWithActivitiesSchema: z.ZodType = z
 export const UpdateWorkflowDefinitionPayloadWithStepsSchema: z.ZodType = z
     .strictObject({
         ...dslWorkflowSpecBaseFields,
+        name: workflowDefinitionPayloadName,
         expected_edit_revision: ExpectedEditRevisionSchema,
         steps: z.array(z.lazy(() => DSLWorkflowStepSchema)),
         activities: z.array(DSLActivitySpecSchema).meta(deprecatedActivitiesMeta).optional(),
@@ -1212,7 +1223,7 @@ const ProcessTestRunIdempotencyKeySchema = z
         description:
             'Client-chosen key, unique per intended run, that makes this request safe to retry. A repeat of ' +
             'the request with the same key and the same body returns the run the first request started ' +
-            'instead of starting another. Reusing a key with a different body is rejected with 409. Keys ' +
+            'instead of starting another. Reusing a key with a different body is rejected with 422. Keys ' +
             'are scoped to the project and stay bound to their run for as long as it exists; once the run ' +
             'is deleted, the same key starts a new one.',
     });

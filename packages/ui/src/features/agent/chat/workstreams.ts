@@ -142,8 +142,7 @@ export function getWorkstreamLifecycleStatus(message: AgentMessage): WorkstreamI
 
 export function isWorkstreamTerminalMessage(message: AgentMessage): boolean {
     const status = getWorkstreamLifecycleStatus(message);
-    if (status === 'completed' || status === 'canceled' || status === 'failed' || status === 'timeout') return true;
-    return false;
+    return status === 'completed' || status === 'canceled' || status === 'failed' || status === 'timeout';
 }
 
 export function getWorkstreamLaunchDetails(message: AgentMessage): WorkstreamLaunchDetails | null {

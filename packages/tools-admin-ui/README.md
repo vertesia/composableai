@@ -13,31 +13,31 @@ The admin UI is a React component library that ships as a single ES module (`lib
 
 On load, the admin UI fetches the tool server's API endpoints in parallel:
 
-| Endpoint | Returns |
-|----------|---------|
-| `GET /api` | Server info (name, version, endpoints) |
-| `GET /api/interactions` | Interaction collections and refs |
-| `GET /api/tools` | Tool collections and definitions |
-| `GET /api/skills` | Skill collections (exposed as tools) |
-| `GET /api/types` | Content type collections and schemas |
-| `GET /api/templates` | Template collections and refs |
+| Endpoint                | Returns                                |
+| ----------------------- | -------------------------------------- |
+| `GET /api`              | Server info (name, version, endpoints) |
+| `GET /api/interactions` | Interaction collections and refs       |
+| `GET /api/tools`        | Tool collections and definitions       |
+| `GET /api/skills`       | Skill collections (exposed as tools)   |
+| `GET /api/types`        | Content type collections and schemas   |
+| `GET /api/templates`    | Template collections and refs          |
 
 MCP providers are derived from the server info (`endpoints.mcp`).
 
 ### Pages and routing
 
-| Route | Page | Description |
-|-------|------|-------------|
-| `/` | Home | Collection cards grouped by type, or search results |
-| `/tools/:collection` | Tool collection | Lists tools with input schemas |
-| `/skills/:collection` | Skill collection | Lists skills with widgets summary |
-| `/skills/:collection/:name` | Skill detail | Full definition: instructions, schema, related tools |
-| `/interactions/:collection` | Interaction collection | Lists interactions in a collection |
-| `/interactions/:collection/:name` | Interaction detail | Prompts, result schema, agent runner flags |
-| `/types/:collection` | Type collection | Lists content types |
-| `/types/:collection/:name` | Type detail | Object schema, table layout, flags |
-| `/templates/:collection` | Template collection | Lists rendering templates |
-| `/templates/:collection/:name` | Template detail | Instructions, assets, type |
+| Route                             | Page                   | Description                                          |
+| --------------------------------- | ---------------------- | ---------------------------------------------------- |
+| `/`                               | Home                   | Collection cards grouped by type, or search results  |
+| `/tools/:collection`              | Tool collection        | Lists tools with input schemas                       |
+| `/skills/:collection`             | Skill collection       | Lists skills with widgets summary                    |
+| `/skills/:collection/:name`       | Skill detail           | Full definition: instructions, schema, related tools |
+| `/interactions/:collection`       | Interaction collection | Lists interactions in a collection                   |
+| `/interactions/:collection/:name` | Interaction detail     | Prompts, result schema, agent runner flags           |
+| `/types/:collection`              | Type collection        | Lists content types                                  |
+| `/types/:collection/:name`        | Type detail            | Object schema, table layout, flags                   |
+| `/templates/:collection`          | Template collection    | Lists rendering templates                            |
+| `/templates/:collection/:name`    | Template detail        | Instructions, assets, type                           |
 
 The home page has two modes:
 - **Browse** (no search) — shows collection cards grouped by resource type
@@ -61,7 +61,7 @@ cp packages/tools-admin-ui/.env.local.example packages/tools-admin-ui/.env.local
 
 Edit `.env.local` to point to your running tool server:
 
-```
+```text
 VITE_API_BASE_URL=http://localhost:3000/api
 ```
 

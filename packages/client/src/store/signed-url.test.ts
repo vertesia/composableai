@@ -211,9 +211,11 @@ describe('Azure Blob uploads', () => {
     it('recognizes Azure Blob hosts only', () => {
         expect(isAzureBlobUrl(azureUrl)).toBe(true);
         expect(isAzureBlobUrl('https://VertesiaStore.Blob.Core.Windows.Net/c/f')).toBe(true);
+        expect(isAzureBlobUrl('https://vertesiagov.blob.core.usgovcloudapi.net/c/f?sig=abc')).toBe(true);
         expect(isAzureBlobUrl(gcsUrl)).toBe(false);
         expect(isAzureBlobUrl(s3Url)).toBe(false);
         expect(isAzureBlobUrl('https://blob.core.windows.net.example.com/c/f')).toBe(false);
+        expect(isAzureBlobUrl('https://blob.core.usgovcloudapi.net.example.com/c/f')).toBe(false);
         expect(isAzureBlobUrl('not a url')).toBe(false);
     });
 

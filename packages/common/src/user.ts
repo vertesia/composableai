@@ -14,6 +14,7 @@ export * from './account-values.js';
  */
 export type User = Wire.User;
 export type UpdateUserPayload = Wire.UpdateUserPayload;
+export type CreateUserPayload = Wire.CreateUserPayload;
 
 /**
  * The compact user shape embedded in other resources' responses, derived from `UserRefSchema`.

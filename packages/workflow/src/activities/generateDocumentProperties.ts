@@ -4,6 +4,7 @@ import {
     type ContentSource,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
+    type InteractionExecutionConfiguration,
     type JSONObject,
     mergePreservingNonExtractable,
     PDF_RENDITION_NAME,
@@ -13,7 +14,12 @@ import {
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { md5 } from '../utils/blobs.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
-import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
+import {
+    executeInteractionFromActivity,
+    type InteractionExecutionParams,
+    InteractionRunFailedError,
+    interactionFailureLogLevel,
+} from './executeInteraction.js';
 
 const INT_EXTRACT_INFORMATION = 'sys:ExtractInformation';
 
@@ -69,6 +75,10 @@ export interface GenerateDocumentPropertiesParams extends InteractionExecutionPa
      * `payload.vars.forceGeneration` bypasses the skip.
      */
     skip_if_fresh?: boolean;
+
+    /** Opt-in cache identity for an explicit per-media execution override. Legacy config alone
+     * does not change existing extraction fingerprints. */
+    fingerprint_config?: InteractionExecutionConfiguration;
 }
 export interface GenerateDocumentProperties extends DSLActivitySpec<GenerateDocumentPropertiesParams> {
     name: 'generateDocumentProperties';
@@ -77,6 +87,19 @@ export type GenerateDocumentPropertiesResult =
     | { status: 'completed' }
     | { status: 'failed'; error: string }
     | { document: string; status: 'skipped'; message: string };
+
+function normalizeFingerprintValue(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map(normalizeFingerprintValue);
+    if (value && typeof value === 'object') {
+        return Object.fromEntries(
+            Object.entries(value)
+                .filter(([, item]) => item !== undefined)
+                .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+                .map(([key, item]) => [key, normalizeFingerprintValue(item)]),
+        );
+    }
+    return value;
+}
 
 /**
  * Stable fingerprint of the inputs that determine the extraction output. Key order is fixed by
@@ -97,7 +120,12 @@ export function computeExtractionFingerprint(input: {
      *  re-conversion, manual edit) and text-consuming extractions must invalidate.
      *  Undefined (vision-only callers) keeps previously stored hashes valid. */
     text_etag?: string | null;
+    /** Model/profile changes must invalidate extracted properties. */
+    config?: InteractionExecutionConfiguration;
 }): string {
+    const normalizedConfig = input.config
+        ? (normalizeFingerprintValue(input.config) as Record<string, unknown>)
+        : undefined;
     return md5(
         JSON.stringify({
             content_etag: input.content_etag,
@@ -105,6 +133,7 @@ export function computeExtractionFingerprint(input: {
             source: input.source,
             instructions: input.instructions,
             interactionName: input.interactionName,
+            ...(normalizedConfig && Object.keys(normalizedConfig).length ? { config: normalizedConfig } : {}),
             object_schema: input.object_schema,
             ...(input.evidence ? { evidence: input.evidence } : {}),
             ...(input.text_etag !== undefined ? { text_etag: input.text_etag } : {}),
@@ -172,6 +201,7 @@ export async function generateDocumentProperties(
         source,
         instructions: params.instructions,
         interactionName,
+        config: params.fingerprint_config,
         object_schema: type.object_schema,
         evidence: evidenceImages?.map((image) => image.source ?? image.name ?? ''),
         // text may change under the same content etag; only vision-only extraction ignores it
@@ -261,10 +291,13 @@ export async function generateDocumentProperties(
         );
     } catch (error: unknown) {
         const extractionError = toRetryableError(error);
-        log.error(`Failed to extract document properties for ${objectId}`, {
-            error: extractionError,
-            retryable: extractionError.retryable,
-        });
+        // A failed run was already logged by executeInteractionFromActivity.
+        if (!(error instanceof InteractionRunFailedError)) {
+            log[interactionFailureLogLevel(error)](`Failed to extract document properties for ${objectId}`, {
+                error: extractionError,
+                retryable: extractionError.retryable,
+            });
+        }
 
         const isRetryable = extractionError.retryable !== undefined ? extractionError.retryable !== false : undefined;
 

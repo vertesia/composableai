@@ -11,7 +11,7 @@ import {
 } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
-import { executeInteractionFromActivity } from './executeInteraction.js';
+import { executeInteractionFromActivity, InteractionRunFailedError } from './executeInteraction.js';
 import {
     computeExtractionFingerprint,
     type GenerateDocumentPropertiesParams,
@@ -159,6 +159,37 @@ describe('generateDocumentProperties', () => {
             nonRetryable: false,
             nextRetryDelay: 12_345,
         } satisfies Partial<ApplicationFailure>);
+    });
+
+    it('does not log a failed run that executeInteractionFromActivity already logged', async () => {
+        await mockSetup({ text: 'source text', contentType: 'text/plain' });
+        const logger = { log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        const env = new MockActivityEnvironment({}, { logger });
+        const error = new InteractionRunFailedError(
+            'Interaction Execution failed sys:ExtractInformation: /processing_hint: must be object',
+            'validation_error',
+        );
+        vi.mocked(executeInteractionFromActivity).mockRejectedValue(error);
+
+        await expect(env.run(generateDocumentProperties, payload({}))).rejects.toBe(error);
+        const messages = [...logger.warn.mock.calls, ...logger.error.mock.calls].map(([message]) => message);
+        expect(messages).not.toContain('Failed to extract document properties for object-1');
+    });
+
+    it('logs a 4xx rejection of the extraction request at warn', async () => {
+        await mockSetup({ text: 'source text', contentType: 'text/plain' });
+        const logger = { log: vi.fn(), trace: vi.fn(), debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+        const env = new MockActivityEnvironment({}, { logger });
+        vi.mocked(executeInteractionFromActivity).mockRejectedValue(
+            Object.assign(new Error('model not found'), { statusCode: 404 }),
+        );
+
+        await expect(env.run(generateDocumentProperties, payload({}))).rejects.toThrow('model not found');
+        expect(logger.warn).toHaveBeenCalledWith(
+            'Failed to extract document properties for object-1',
+            expect.any(Object),
+        );
+        expect(logger.error).not.toHaveBeenCalled();
     });
 
     it('does not execute extraction when no text or supported vision source is available', async () => {
@@ -406,6 +437,36 @@ describe('generateDocumentProperties', () => {
             );
         });
 
+        it('invalidates extraction when the inference profile changes', () => {
+            const base = { source: 'vision' as const, interactionName: 'sys:ExtractInformation' };
+            const fingerprint = computeExtractionFingerprint({ ...base, config: { inference_profile: 'profile-1' } });
+            expect(computeExtractionFingerprint({ ...base, config: { inference_profile: 'profile-2' } })).not.toBe(
+                fingerprint,
+            );
+            expect(computeExtractionFingerprint({ ...base, config: { inference_profile: null } })).not.toBe(
+                fingerprint,
+            );
+            expect(computeExtractionFingerprint({ ...base, config: undefined })).toBe(
+                computeExtractionFingerprint(base),
+            );
+        });
+
+        it('normalizes configuration key order and treats empty overrides as absent', () => {
+            const base = { source: 'vision' as const, interactionName: 'sys:ExtractInformation' };
+            expect(computeExtractionFingerprint({ ...base, config: {} })).toBe(computeExtractionFingerprint(base));
+            expect(
+                computeExtractionFingerprint({
+                    ...base,
+                    config: { environment: 'env', model_options: { temperature: 0.2, max_tokens: 100 } },
+                }),
+            ).toBe(
+                computeExtractionFingerprint({
+                    ...base,
+                    config: { model_options: { max_tokens: 100, temperature: 0.2 }, environment: 'env' },
+                }),
+            );
+        });
+
         it('folds the evidence refs into the extraction fingerprint (absent = legacy hash)', () => {
             const base = {
                 content_etag: 'etag-1',
@@ -541,6 +602,54 @@ describe('generateDocumentProperties', () => {
             });
             expect(executeInteractionFromActivity).not.toHaveBeenCalled();
             expect(update).not.toHaveBeenCalled();
+        });
+
+        it('keeps pre-existing fingerprints fresh when a legacy run config is present', async () => {
+            await mockSetup(freshSetupOptions());
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({
+                    skip_if_fresh: true,
+                    config: { inference_profile: 'existing-profile', environment: 'env', model: 'model' },
+                }),
+            );
+            expect(result.status).toBe('skipped');
+            expect(executeInteractionFromActivity).not.toHaveBeenCalled();
+        });
+
+        it('hits the cache for a previously stored explicit media override', async () => {
+            const config = { inference_profile: 'media-profile' };
+            const fingerprint = computeExtractionFingerprint({
+                content_etag: CONTENT_ETAG,
+                type_id: 'type-1',
+                source: 'auto',
+                interactionName: 'sys:ExtractInformation',
+                object_schema: DEFAULT_OBJECT_SCHEMA,
+                text_etag: 'source-etag',
+                config,
+            });
+            await mockSetup(
+                freshSetupOptions({
+                    generationRuns: [
+                        {
+                            id: 'run-media',
+                            date: '2026-01-01T00:00:00.000Z',
+                            model: 'model-1',
+                            extraction_fingerprint: fingerprint,
+                        },
+                    ],
+                }),
+            );
+            const result: GenerateDocumentPropertiesResult = await testEnv.run(
+                generateDocumentProperties,
+                payload({
+                    skip_if_fresh: true,
+                    config,
+                    fingerprint_config: config,
+                }),
+            );
+            expect(result.status).toBe('skipped');
+            expect(executeInteractionFromActivity).not.toHaveBeenCalled();
         });
 
         it('scans backwards past generation runs written without a fingerprint', async () => {

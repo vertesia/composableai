@@ -38,7 +38,7 @@
         "@types/node": "catalog:",
         "@types/react": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "react": "19.3.0",
+        "react": "19.3.1",
         "rolldown": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"

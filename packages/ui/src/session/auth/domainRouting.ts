@@ -6,10 +6,11 @@ import { Env } from '@vertesia/ui/env';
 import { generateAuthState } from './authState';
 import { gatewayLoginUrl, usesGatewaySession } from './gateway';
 import { getAppOAuthToken, usesAppOAuth } from './oauth';
+import { usesOidcSignIn } from './oidc';
 
 declare global {
     interface Window {
-        AUTH_MODE?: 'firebase' | 'central';
+        AUTH_MODE?: 'firebase' | 'central' | 'oidc';
     }
 }
 
@@ -30,8 +31,9 @@ export function shouldUseFirebaseAuth(_hostname?: string) {
     return window.AUTH_MODE === 'firebase';
 }
 
+/** Whether sign-in goes through the central broker: not when this page signs in itself, with Firebase or OIDC. */
 export function shouldRedirectToCentralAuth(_hostname?: string) {
-    return !shouldUseFirebaseAuth();
+    return !shouldUseFirebaseAuth() && !usesOidcSignIn();
 }
 
 interface AuthSelection {

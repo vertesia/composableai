@@ -22,13 +22,13 @@ export function AnimatedThinkingDots({ className, inline = false, color = 'blue'
     return (
         <div className={cn('flex items-center gap-1.5', inline ? 'inline-flex' : '', className)}>
             <div
-                className={`w-2 h-2 bg-gradient-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_infinite]`}
+                className={`w-2 h-2 bg-linear-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_infinite]`}
             />
             <div
-                className={`w-2 h-2 bg-gradient-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_0.2s_infinite]`}
+                className={`w-2 h-2 bg-linear-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_0.2s_infinite]`}
             />
             <div
-                className={`w-2 h-2 bg-gradient-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_0.4s_infinite]`}
+                className={`w-2 h-2 bg-linear-to-r ${gradientClass} rounded-full animate-[bounce_1.2s_ease-in-out_0.4s_infinite]`}
             />
         </div>
     );

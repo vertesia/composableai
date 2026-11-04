@@ -284,37 +284,37 @@ console.log('Headers:', client.response?.headers.get('X-Custom-Header'));
 
 The main client class for making HTTP requests.
 
-| Method | Description |
-|--------|-------------|
-| `get(path, params?)` | Make a GET request |
-| `post(path, params?)` | Make a POST request |
-| `put(path, params?)` | Make a PUT request |
-| `delete(path, params?)` | Make a DELETE request |
-| `withAuthCallback(cb)` | Set authentication callback |
-| `withHeaders(headers)` | Add default headers |
-| `withLang(locale)` | Set Accept-Language header |
-| `withErrorFactory(factory)` | Set custom error factory |
+| Method                      | Description                 |
+| --------------------------- | --------------------------- |
+| `get(path, params?)`        | Make a GET request          |
+| `post(path, params?)`       | Make a POST request         |
+| `put(path, params?)`        | Make a PUT request          |
+| `delete(path, params?)`     | Make a DELETE request       |
+| `withAuthCallback(cb)`      | Set authentication callback |
+| `withHeaders(headers)`      | Add default headers         |
+| `withLang(locale)`          | Set Accept-Language header  |
+| `withErrorFactory(factory)` | Set custom error factory    |
 
 ### Request Parameters
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `query` | `Record<string, primitive>` | Query string parameters |
-| `headers` | `Record<string, string>` | Request headers |
-| `payload` | `object \| BodyInit` | Request body |
-| `reader` | `'sse' \| function` | Custom response reader |
-| `jsonPayload` | `boolean` | Auto-serialize payload as JSON (default: true) |
-| `retryPolicy` | `IRequestRetryPolicy \| false` | Per-request retry policy; `false` disables the client default |
-| `timeoutMs` | `number \| false \| null` | Per-request timeout (ms). Positive sets it; `false`/`null`/`0` disables; omitted uses the client default |
-| `signal` | `AbortSignal` | Caller abort signal, merged with the timeout signal |
+| Option        | Type                           | Description                                                                                              |
+| ------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `query`       | `Record<string, primitive>`    | Query string parameters                                                                                  |
+| `headers`     | `Record<string, string>`       | Request headers                                                                                          |
+| `payload`     | `object \| BodyInit`           | Request body                                                                                             |
+| `reader`      | `'sse' \| function`            | Custom response reader                                                                                   |
+| `jsonPayload` | `boolean`                      | Auto-serialize payload as JSON (default: true)                                                           |
+| `retryPolicy` | `IRequestRetryPolicy \| false` | Per-request retry policy; `false` disables the client default                                            |
+| `timeoutMs`   | `number \| false \| null`      | Per-request timeout (ms). Positive sets it; `false`/`null`/`0` disables; omitted uses the client default |
+| `signal`      | `AbortSignal`                  | Caller abort signal, merged with the timeout signal                                                      |
 
 ### Error Classes
 
-| Class | Description |
-|-------|-------------|
-| `RequestError` | Base class for all request errors |
-| `ServerError` | HTTP error responses (4xx, 5xx) |
-| `ConnectionError` | Network/connection failures |
+| Class             | Description                       |
+| ----------------- | --------------------------------- |
+| `RequestError`    | Base class for all request errors |
+| `ServerError`     | HTTP error responses (4xx, 5xx)   |
+| `ConnectionError` | Network/connection failures       |
 
 ## License
 

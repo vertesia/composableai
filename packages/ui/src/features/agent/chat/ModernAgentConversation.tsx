@@ -14,6 +14,7 @@ import {
     FileProcessingStatus,
     type McpConnectUxConfig,
     normalizeAgentToolApprovalMode,
+    Permission,
     type Plan,
     type StopSignal,
     type UserInputSignal,
@@ -41,8 +42,9 @@ import {
 } from '@vertesia/ui/widgets';
 import { ArrowUpIcon, Bot, CheckCircle, ChevronDown, Cpu, FileTextIcon, UploadIcon, XIcon } from 'lucide-react';
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { McpConnectionsActionMenu } from '../../oauth/McpConnectionsButton.js';
+import { UserPermissionsContext } from '../../permissions/UserPermissionsProvider.js';
 import { AgentApprovalModeSelector } from './AgentApprovalModeSelector';
 import {
     AgentBudgetPauseOverlay,
@@ -526,7 +528,7 @@ function PendingStartConversation({ message, startedAt }: { message: string; sta
                 <div
                     className={cn(
                         'max-w-[min(44rem,82%)] rounded-[1.35rem] bg-mixer-muted/35 px-4 py-2.5',
-                        'break-words text-sm font-normal leading-6 text-foreground/90 bg-mixer-muted/35 shadow-sm [overflow-wrap:anywhere]',
+                        'wrap-break-word text-sm font-normal leading-6 text-foreground/90 bg-mixer-muted/35 shadow-sm [overflow-wrap:anywhere]',
                     )}
                 >
                     <div className="whitespace-pre-wrap">{message}</div>
@@ -1601,10 +1603,125 @@ function ModernAgentConversationInner({
         updateDocumentTitle,
     } = useDocumentPanel(messages);
 
+    const lastMainMessage = useMemo(() => {
+        const mainMessages = messages.filter((m) => (m.workstream_id || 'main') === 'main');
+        return mainMessages[mainMessages.length - 1];
+    }, [messages]);
+
+    // Derive effective status from AgentRun state; main workstream terminal events cover live-stream races.
+    const effectiveWorkflowStatus = useMemo(() => {
+        if (lastMainMessage?.type === AgentMessageType.TERMINATED) return 'TERMINATED';
+        if (lastMainMessage?.type === AgentMessageType.COMPLETE && (!agentRunStatus || agentRunStatus === 'RUNNING')) {
+            return 'COMPLETED';
+        }
+        return agentRunStatus;
+    }, [lastMainMessage, agentRunStatus]);
+
+    const isWorkflowTerminal = useMemo(
+        () => isTerminalWorkflowStatus(effectiveWorkflowStatus),
+        [effectiveWorkflowStatus],
+    );
+
+    // When a terminal conversation can be restarted (host provided a restart handler),
+    // we keep the composer visible and seamlessly resume the agent on the next message
+    // instead of forcing the user to click "Continue Conversation".
+    // FAILED runs are excluded: a failed run is a dead end, so we surface the failed box /
+    // `failedAction` (e.g. an explicit Restart button) instead of silently resuming.
+    const canContinueConversation = useMemo(
+        () => canContinueWorkflowStatus(effectiveWorkflowStatus, !!onRestart),
+        [effectiveWorkflowStatus, onRestart],
+    );
+    const shouldRenderMessageInputArea = !hideMessageInput || canContinueConversation;
+
+    // A failed run is a dead end: the input box must never show, in any state. We key off
+    // both effectiveWorkflowStatus and the authoritative API status (agentRunStatus) so the
+    // loading race (status fetch vs. message stream, where `showInput` defaults to `true`)
+    // can't transiently re-show the composer once we know the run failed.
+    const isFailed = useMemo(
+        () => effectiveWorkflowStatus?.toUpperCase() === 'FAILED' || agentRunStatus?.toUpperCase() === 'FAILED',
+        [effectiveWorkflowStatus, agentRunStatus],
+    );
+    const workflowFailureReason = useMemo(() => {
+        for (let index = messages.length - 1; index >= 0; index--) {
+            const message = messages[index];
+            if (message.type !== AgentMessageType.ERROR) continue;
+            if (getWorkstreamId(message) !== 'main') continue;
+            const text = typeof message.message === 'string' ? message.message.trim() : '';
+            if (text) return text;
+        }
+        return undefined;
+    }, [messages]);
+
+    // Read inside handleSendMessage (a stable callback) without widening its deps.
+    const isWorkflowTerminalRef = useRef(isWorkflowTerminal);
+    isWorkflowTerminalRef.current = isWorkflowTerminal;
+    const canContinueConversationRef = useRef(canContinueConversation);
+    canContinueConversationRef.current = canContinueConversation;
+    const canRestartRef = useRef(!!onRestart);
+    canRestartRef.current = !!onRestart;
+
+    // The restart of the current ended run, shared by every signal that continues it. The view still
+    // shows the run as ended until the reconnected stream reports it running again, so a second upload
+    // or a message sent in that window reuses this restart instead of restarting a running run (400).
+    // Cleared whenever the view's terminal state changes, so the next time the run ends restarts it again.
+    const runRestartRef = useRef<Promise<void> | null>(null);
+    useEffect(() => {
+        void isWorkflowTerminal;
+        runRestartRef.current = null;
+    }, [isWorkflowTerminal]);
+
+    const restartAndReconnect = useCallback((): Promise<void> => {
+        if (!runRestartRef.current) {
+            const restart = client.agents.restart(agentRunId).then(() => reconnectStream());
+            runRestartRef.current = restart;
+            restart.catch(() => {
+                if (runRestartRef.current === restart) runRestartRef.current = null;
+            });
+        }
+        return runRestartRef.current;
+    }, [agentRunId, client, reconnectStream]);
+
+    // Delivers a signal that continues the conversation (a message, an uploaded file). When the run has
+    // ended and can be continued, it is restarted first so it resumes from the existing conversation
+    // history; Temporal buffers the signal until the new run is ready to receive it. We reconnect the
+    // stream in place (rather than remounting via onRestart) so the existing timeline is preserved and
+    // the new exchange appends seamlessly at the bottom.
+    const signalContinuingRun = useCallback(
+        async (sendSignal: () => Promise<unknown>): Promise<void> => {
+            if (isWorkflowTerminalRef.current && canContinueConversationRef.current) {
+                await restartAndReconnect();
+            }
+            try {
+                await sendSignal();
+            } catch (err: unknown) {
+                // The run can end while this view still shows it running — for example when it
+                // reaches its maximum duration while idle — and the signal then answers 409.
+                // Re-read its status and, if it ended and can be continued, continue it the way
+                // a run already known to be ended is continued above.
+                if (!isConflictError(err)) throw err;
+                const run = await client.agents.retrieve(agentRunId);
+                if (!canContinueWorkflowStatus(run.status, canRestartRef.current)) {
+                    // Reconnecting re-reads the status, so the view shows how the run ended.
+                    if (isTerminalWorkflowStatus(run.status)) reconnectStream();
+                    throw err;
+                }
+                await restartAndReconnect();
+                await sendSignal();
+            }
+        },
+        [agentRunId, client, reconnectStream, restartAndReconnect],
+    );
+
     const deliveredArtifactRefs = useMemo(() => collectDeliveredArtifactRefs(messages), [messages]);
     const { processingFiles, hasProcessingFiles, handleFileUpload, removeProcessingFile, clearProcessingFiles } =
-        useFileProcessing(client, agentRunId, serverFileUpdates, toast, deliveredArtifactRefs);
+        useFileProcessing(client, agentRunId, serverFileUpdates, toast, deliveredArtifactRefs, signalContinuingRun);
     const canUploadFiles = interactive && !hideFileUpload;
+    // Answering a pending question or tool approval signals the run, which the server only allows with
+    // workflow_run. A read-only viewer (auditor, support) still sees the question, but not the controls
+    // it could never use. Hosts without a permissions provider keep the answer controls: the server
+    // remains the authority there.
+    const userPermissions = useContext(UserPermissionsContext);
+    const canSignalRun = !userPermissions || userPermissions.hasPermission(Permission.workflow_run);
 
     const handleRemoveProcessingFile = useCallback(
         (fileId: string) => {
@@ -1682,63 +1799,6 @@ function ModernAgentConversationInner({
     hasProcessingFilesRef.current = hasProcessingFiles;
     const processingFilesRef = useRef(processingFiles);
     processingFilesRef.current = processingFiles;
-
-    const lastMainMessage = useMemo(() => {
-        const mainMessages = messages.filter((m) => (m.workstream_id || 'main') === 'main');
-        return mainMessages[mainMessages.length - 1];
-    }, [messages]);
-
-    // Derive effective status from AgentRun state; main workstream terminal events cover live-stream races.
-    const effectiveWorkflowStatus = useMemo(() => {
-        if (lastMainMessage?.type === AgentMessageType.TERMINATED) return 'TERMINATED';
-        if (lastMainMessage?.type === AgentMessageType.COMPLETE && (!agentRunStatus || agentRunStatus === 'RUNNING')) {
-            return 'COMPLETED';
-        }
-        return agentRunStatus;
-    }, [lastMainMessage, agentRunStatus]);
-
-    const isWorkflowTerminal = useMemo(
-        () => isTerminalWorkflowStatus(effectiveWorkflowStatus),
-        [effectiveWorkflowStatus],
-    );
-
-    // When a terminal conversation can be restarted (host provided a restart handler),
-    // we keep the composer visible and seamlessly resume the agent on the next message
-    // instead of forcing the user to click "Continue Conversation".
-    // FAILED runs are excluded: a failed run is a dead end, so we surface the failed box /
-    // `failedAction` (e.g. an explicit Restart button) instead of silently resuming.
-    const canContinueConversation = useMemo(
-        () => canContinueWorkflowStatus(effectiveWorkflowStatus, !!onRestart),
-        [effectiveWorkflowStatus, onRestart],
-    );
-    const shouldRenderMessageInputArea = !hideMessageInput || canContinueConversation;
-
-    // A failed run is a dead end: the input box must never show, in any state. We key off
-    // both effectiveWorkflowStatus and the authoritative API status (agentRunStatus) so the
-    // loading race (status fetch vs. message stream, where `showInput` defaults to `true`)
-    // can't transiently re-show the composer once we know the run failed.
-    const isFailed = useMemo(
-        () => effectiveWorkflowStatus?.toUpperCase() === 'FAILED' || agentRunStatus?.toUpperCase() === 'FAILED',
-        [effectiveWorkflowStatus, agentRunStatus],
-    );
-    const workflowFailureReason = useMemo(() => {
-        for (let index = messages.length - 1; index >= 0; index--) {
-            const message = messages[index];
-            if (message.type !== AgentMessageType.ERROR) continue;
-            if (getWorkstreamId(message) !== 'main') continue;
-            const text = typeof message.message === 'string' ? message.message.trim() : '';
-            if (text) return text;
-        }
-        return undefined;
-    }, [messages]);
-
-    // Read inside handleSendMessage (a stable callback) without widening its deps.
-    const isWorkflowTerminalRef = useRef(isWorkflowTerminal);
-    isWorkflowTerminalRef.current = isWorkflowTerminal;
-    const canContinueConversationRef = useRef(canContinueConversation);
-    canContinueConversationRef.current = canContinueConversation;
-    const canRestartRef = useRef(!!onRestart);
-    canRestartRef.current = !!onRestart;
 
     // ────────────────────────────────────────────
     // Computed values
@@ -2292,7 +2352,7 @@ function ModernAgentConversationInner({
 
     const waitForPendingToolApprovalModeChange = useCallback(async () => {
         const pendingChange = pendingToolApprovalModeChangeRef.current;
-        if (pendingChange) {
+        if (pendingChange !== null) {
             await pendingChange;
         }
     }, []);
@@ -2391,40 +2451,12 @@ function ModernAgentConversationInner({
                 clearProcessingFiles();
             };
 
-            // When the workflow has already completed, restart it first so it resumes
-            // from the existing conversation history, then deliver the message. Temporal
-            // buffers the signal until the new run is ready to receive it. We reconnect
-            // the stream in place (rather than remounting via onRestart) so the existing
-            // timeline is preserved and the new exchange appends seamlessly at the bottom.
             if (requestInputId) {
                 markRequestInputIdAnsweredForSession(agentRunId, requestInputId);
             }
-            const restartAndReconnect = async () => {
-                await client.agents.restart(agentRunId);
-                reconnectStream();
-            };
             const deliver = (async () => {
                 await waitForPendingToolApprovalModeChange();
-                if (isWorkflowTerminalRef.current) {
-                    await restartAndReconnect();
-                }
-                try {
-                    await sendUserInput();
-                } catch (err: unknown) {
-                    // The run can end while this view still shows it running — for example when it
-                    // reaches its maximum duration while idle — and the signal then answers 409.
-                    // Re-read its status and, if it ended and can be continued, continue it the way
-                    // a run already known to be ended is continued above.
-                    if (!isConflictError(err)) throw err;
-                    const run = await client.agents.retrieve(agentRunId);
-                    if (!canContinueWorkflowStatus(run.status, canRestartRef.current)) {
-                        // Reconnecting re-reads the status, so the view shows how the run ended.
-                        if (isTerminalWorkflowStatus(run.status)) reconnectStream();
-                        throw err;
-                    }
-                    await restartAndReconnect();
-                    await sendUserInput();
-                }
+                await signalContinuingRun(sendUserInput);
                 markReceived();
             })();
 
@@ -2453,7 +2485,7 @@ function ModernAgentConversationInner({
             getMessageContext,
             onAttachmentsSent,
             clearProcessingFiles,
-            reconnectStream,
+            signalContinuingRun,
             addOptimisticMessage,
             updateOptimisticMessageStatus,
             t,
@@ -2877,16 +2909,16 @@ function ModernAgentConversationInner({
             )}
         >
             {!hideHeader && headerVariant === 'compact' && (
-                <div className="flex flex-shrink-0 justify-end border-b border-border/60 px-2 py-1 lg:hidden">
+                <div className="flex shrink-0 justify-end border-b border-border/60 px-2 py-1 lg:hidden">
                     {renderConversationHeader('compact')}
                 </div>
             )}
             {!hideHeader && headerVariant !== 'compact' && (
-                <div className="flex-shrink-0">{renderConversationHeader(headerVariant)}</div>
+                <div className="shrink-0">{renderConversationHeader(headerVariant)}</div>
             )}
 
             {isPlaybackEnabled && (
-                <div className="flex flex-shrink-0 justify-end px-2 py-1.5">
+                <div className="flex shrink-0 justify-end px-2 py-1.5">
                     <AgentChatPlaybackControls
                         cursor={clampedPlaybackCursor}
                         messages={playbackSourceMessages}
@@ -2913,7 +2945,7 @@ function ModernAgentConversationInner({
                         onChangePlan={handleChangePlan}
                         taskLabels={taskLabels}
                         streamingMessages={displayedStreamingMessages}
-                        onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
+                        onSendMessage={isPlaybackLive && canSignalRun ? handleSendMessage : undefined}
                         onOpenArtifact={showArtifacts ? handleOpenArtifact : undefined}
                         messageItemClassNames={messageItemClassNames}
                         messageStyleOverrides={messageStyleOverrides}
@@ -2947,9 +2979,10 @@ function ModernAgentConversationInner({
             {shouldShowRequestInputOverlay && !(hasBudgetOverride && shouldShowBudgetPauseOverlay) ? (
                 <AgentRequestInputOverlay
                     message={pendingRequestInputMessage}
-                    onSendMessage={isPlaybackLive ? handleSendMessage : undefined}
-                    onMcpConnected={isPlaybackLive ? handleMcpConnected : undefined}
+                    onSendMessage={isPlaybackLive && canSignalRun ? handleSendMessage : undefined}
+                    onMcpConnected={isPlaybackLive && canSignalRun ? handleMcpConnected : undefined}
                     disabled={isUploading || !isPlaybackLive}
+                    readOnly={!canSignalRun}
                     isLoading={isSending || isUploading}
                 />
             ) : shouldShowBudgetPauseOverlay && budgetPause ? (
@@ -2964,7 +2997,7 @@ function ModernAgentConversationInner({
                     disabled={!isPlaybackLive || !allowWorkflowControl}
                 />
             ) : isViewingPlaybackHistory && playbackActiveWorkstreams.length > 0 ? (
-                <div className="flex-shrink-0 pb-safe-area">
+                <div className="shrink-0 pb-safe-area">
                     <ActiveWorkstreamsSummary
                         activeWorkstreams={playbackActiveWorkstreams}
                         onSelectWorkstream={setActiveWorkstream}
@@ -2972,7 +3005,7 @@ function ModernAgentConversationInner({
                 </div>
             ) : (
                 shouldRenderLiveMessageInputArea && (
-                    <div className="flex-shrink-0 pb-safe-area">
+                    <div className="shrink-0 pb-safe-area">
                         {isFailed ? (
                             // FAILED takes priority over every other branch so the composer can
                             // never render for a failed run. Use the caller's action when provided,

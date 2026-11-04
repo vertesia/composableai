@@ -127,19 +127,19 @@ export interface AuthTokenPayload {
     /** groups */
     groups?: UserGroupRef[]; //group ids
 
-    /** Scoped ABAC conditions keyed by operation.
-     *  Each resource consumer defines its baseline/restrict composition.
-     *
-     *  Transitional: this field is being renamed to `abac` (see [[pending-migrations]]).
-     *  Both fields are typed so consumers can dual-read during the transition.
-     *  Only one will ever be populated in a given token. */
+    /**
+     * Initial name for the ABAC claim, created when property-based authorization
+     * applied only to content resources. The model now covers multiple resource
+     * scopes, so new tokens use the generic `abac` name. Consumers must retain
+     * this fallback while previously issued tokens can circulate.
+     * @deprecated Read `abac` first and fall back to this field.
+     */
     content_security?: ContentSecurity;
     /**
-     * New name for `content_security`. Consumers should prefer this field and
-     * fall back to `content_security`. Sts will be flipped to emit this field
-     * once all consumers have shipped their dual-read.
+     * Scoped ABAC conditions keyed by operation, or an opaque reference to conditions stored by STS.
+     * Resource servers resolve references after verifying the JWT and before constructing a principal.
      */
-    abac?: ContentSecurity;
+    abac?: ContentSecurity | string;
 
     /**
      * API endpoints information to be used with this token.
@@ -160,8 +160,22 @@ export interface AuthTokenPayload {
     exp: number; //expires in (EPOC seconds)
     tags?: string[]; //tags
 
-    permissions?: string[]; //permissions
-    scopes?: string[]; //scopes
+    /**
+     * Final effective platform permissions, after role expansion and any credential/OAuth limits.
+     * New access tokens always include this together with `account_permissions`. Older OAuth
+     * tokens carry only `permissions`, where it is a scope cap rather than resolved authority.
+     */
+    permissions?: string[];
+    /**
+     * Effective permissions backed by account-level grants, always a subset of `permissions`.
+     * Its presence identifies the normalized permission contract; an empty array grants no
+     * account-level authority. Legacy access tokens (issued before permission normalization)
+     * lack this claim, so consumers must resolve their roles and apply any OAuth permission cap.
+     * Raw issuer payloads also omit it until mint-time permission resolution is complete.
+     */
+    account_permissions?: string[];
+    /** Standard OAuth space-delimited scope claim. */
+    scope?: string;
 
     /**
      * Service caller information for agent and service account tokens.

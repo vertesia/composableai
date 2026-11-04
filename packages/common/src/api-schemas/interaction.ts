@@ -28,7 +28,13 @@ import { InferenceProfileIdSchema, InferenceProfileSnapshotSchema } from './infe
 import { AccountRefSchema } from './invites.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 import { AgentBudgetConfigurationSchema, AgentCheckpointConfigurationSchema } from './project-configuration.js';
-import { EditRevisionSchema, ExpectedEditRevisionSchema, PageCountSchema } from './schema-primitives.js';
+import {
+    EditRevisionSchema,
+    ExpectedEditRevisionSchema,
+    MONGO_FACETS_DESCRIPTION,
+    mongoFacetsRule,
+    PageCountSchema,
+} from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
 
 /**
@@ -353,6 +359,16 @@ export const SchemaRefSchema = z
 export const RateLimitRequestResponseSchema = z
     .strictObject({
         delay_ms: z.number(),
+        rate_limit_grant: z
+            .string()
+            .meta({
+                description:
+                    'Opaque token for the slot this request holds: admitted when `delay_ms` is 0, otherwise queued ' +
+                    'until the caller asks again after the delay. Once admitted, send it back unchanged as ' +
+                    '`workflow.rate_limit_id` when executing, so completion releases exactly this slot. Absent when ' +
+                    'the request holds no slot.',
+            })
+            .optional(),
     })
     .meta({ id: 'RateLimitRequestResponse' });
 
@@ -398,7 +414,7 @@ export const InteractionsExportPayloadSchema = z
             })
             .optional(),
         tags: z.array(z.string()).optional(),
-        versions: z.array(z.union([z.number(), z.literal('draft'), z.literal('latest')])).optional(),
+        versions: z.array(z.union([z.number(), z.literal('draft')])).optional(),
     })
     .meta({ id: 'InteractionsExportPayload' });
 
@@ -464,7 +480,14 @@ export const PromptTemplateCreatePayloadSchema = PromptTemplateSchema.pick({
     content: true,
     content_type: true,
     inputSchema: true,
-}).meta({ id: 'PromptTemplateCreatePayload' });
+})
+    // The stored prompt requires both, so an empty one is refused. `extend` keeps each field's position, which
+    // the Go constructor follows.
+    .extend({
+        name: z.string().min(1),
+        content: z.string().min(1),
+    })
+    .meta({ id: 'PromptTemplateCreatePayload' });
 
 export const PromptTemplateUpdatePayloadSchema = PromptTemplateSchema.omit(SERVER_OWNED_PROMPT_FIELD_KEYS)
     .partial()
@@ -536,38 +559,7 @@ export const InteractionEndpointQuerySchema = z
     })
     .meta({ id: 'InteractionEndpointQuery', description: 'The payload to query the interaction endpoints' });
 
-export const ImprovePromptPayloadConfigSchema = z
-    .strictObject({
-        config: InteractionExecutionConfigurationSchema,
-    })
-    .meta({ id: 'ImprovePromptPayloadConfig' });
-
-export const ImprovePromptPayloadSchema = z
-    .strictObject({
-        config: InteractionExecutionConfigurationSchema,
-        interaction_name: z.string(),
-        context: z.string().optional(),
-        prompt: z.array(
-            z.strictObject({
-                name: z.string(),
-                content: z.string(),
-            }),
-        ),
-        result_schema: JSONSchemaSchema.optional(),
-    })
-    .meta({ id: 'ImprovePromptPayload' });
-
 export const GeneratedTestDataRecordSchema = z.object({}).catchall(z.unknown()).meta({ id: 'GeneratedTestDataRecord' });
-
-export const GeneratedInteractionPromptTemplateSchema = z
-    .strictObject({
-        role: z.enum(['safety', 'system', 'user']),
-        name: z.string(),
-        content: z.string(),
-        content_type: z.literal('jst'),
-        inputSchema: JSONSchemaSchema,
-    })
-    .meta({ id: 'GeneratedInteractionPromptTemplate' });
 
 export const GenerateTestDataPayloadSchema = z
     .strictObject({
@@ -576,13 +568,6 @@ export const GenerateTestDataPayloadSchema = z
         config: InteractionExecutionConfigurationSchema,
     })
     .meta({ id: 'GenerateTestDataPayload' });
-
-export const GenerateInteractionPayloadSchema = z
-    .strictObject({
-        description: z.string(),
-        config: InteractionExecutionConfigurationSchema,
-    })
-    .meta({ id: 'GenerateInteractionPayload' });
 
 export const InteractionSearchQuerySchema = z
     .strictObject({
@@ -602,6 +587,13 @@ export const InteractionSearchQuerySchema = z
         is_sub_agent: z.boolean().optional(),
     })
     .meta({ id: 'InteractionSearchQuery' });
+
+// The query of the interaction list routes, which refuse a page that is not a whole number or a size below one. The
+// facet payload carries InteractionSearchQuery and ignores its page, so the bounds are the list routes' alone.
+export const InteractionListQuerySchema = InteractionSearchQuerySchema.extend({
+    limit: z.number().min(1).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
+    offset: z.number().min(0).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
+}).meta({ id: 'InteractionListQuery' });
 
 export const AsyncExecutionResultSchema = z
     .strictObject({
@@ -710,7 +702,10 @@ export const RunListQuerySchema = z
             .meta({ description: 'Interaction ids, or in-code interaction names, to filter by.' })
             .optional(),
         model: z.array(z.string()).meta({ description: 'Model ids to filter by.' }).optional(),
-        environment: z.array(z.string()).meta({ description: 'Environment ids to filter by.' }).optional(),
+        environment: z
+            .array(z.string().regex(/^[0-9a-fA-F]{24}$/))
+            .meta({ description: 'Environment ids to filter by, as 24 hexadecimal characters.' })
+            .optional(),
         status: z.array(ExecutionRunStatusSchema).meta({ description: 'Run statuses to filter by.' }).optional(),
         tag: z.array(z.string()).meta({ description: 'Run tags to filter by.' }).optional(),
         parent: z
@@ -890,7 +885,7 @@ export const InCodePromptSchema = z
 
 export const RateLimitRequestPayloadSchema = z
     .strictObject({
-        interaction: z.string(),
+        interaction: z.string().min(1),
         environment_id: z.string().optional(),
         inference_profile: InferenceProfileIdSchema.nullable().optional(),
         inherit_model_config: z.boolean().optional(),
@@ -989,7 +984,7 @@ export const InteractionCreatePayloadSchema = z
         cache_policy: CachePolicySchema.optional(),
         prompts: z.array(InteractionPromptSegmentInputSchema),
         last_published_at: z.string().meta({ format: 'date-time' }).optional(),
-        name: z.string(),
+        name: z.string().min(1),
         description: z.string().optional(),
         agent_runner_options: AgentRunnerOptionsSchema.optional(),
         result_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
@@ -1051,19 +1046,12 @@ export const GeneratedTestDataRecordArraySchema = z
     .array(GeneratedTestDataRecordSchema)
     .meta({ id: 'GeneratedTestDataRecordArray' });
 
-export const GeneratedInteractionPromptSegmentSchema = z
-    .strictObject({
-        type: z.literal('template'),
-        template: GeneratedInteractionPromptTemplateSchema,
-    })
-    .meta({ id: 'GeneratedInteractionPromptSegment' });
-
 export const ComputeInteractionFacetPayloadSchema = z
     .strictObject({
         facets: z.array(FacetSpecSchema),
         query: InteractionSearchQuerySchema.optional(),
     })
-    .meta({ id: 'ComputeInteractionFacetPayload' });
+    .meta({ id: 'ComputeInteractionFacetPayload', description: MONGO_FACETS_DESCRIPTION, ...mongoFacetsRule });
 
 export const CatalogInteractionRefSchema = z
     .strictObject({
@@ -1211,12 +1199,6 @@ export const ToolResultMetaSchema = z
             'Metadata a tool executor may attach to its result. Kept as an open record for forward compatibility while typing the fields the runtime interprets.',
     });
 
-export const PromptImprovementResponseSchema = z
-    .strictObject({
-        result: z.array(CompletionResultSchema),
-    })
-    .meta({ id: 'PromptImprovementResponse' });
-
 export const PromptSegmentRef_PromptTemplateRefSchema = z
     .strictObject({
         id: z.string(),
@@ -1263,18 +1245,6 @@ export const InteractionEndpointArraySchema = z
     .meta({ id: 'InteractionEndpointArray' });
 
 export const InteractionArraySchema = z.array(InteractionSchema).meta({ id: 'InteractionArray' });
-
-export const GeneratedInteractionDefinitionSchema = z
-    .strictObject({
-        name: z.string(),
-        description: z.string(),
-        temperature: z.number(),
-        prompts: z.array(GeneratedInteractionPromptSegmentSchema),
-        max_tokens: z.number().optional(),
-        result_schema: JSONSchemaSchema,
-        tags: z.array(z.enum(['generated', 'agent'])),
-    })
-    .meta({ id: 'GeneratedInteractionDefinition' });
 
 export const CatalogInteractionRefArraySchema = z
     .array(CatalogInteractionRefSchema)
@@ -1401,10 +1371,6 @@ export const InteractionRefWithSchemaSchema = InteractionRefSchema.extend({
 export const InteractionRefWithSchemaArraySchema = z
     .array(InteractionRefWithSchemaSchema)
     .meta({ id: 'InteractionRefWithSchemaArray' });
-
-export const GeneratedInteractionDefinitionArraySchema = z
-    .array(GeneratedInteractionDefinitionSchema)
-    .meta({ id: 'GeneratedInteractionDefinitionArray' });
 
 export const PendingToolApprovalResultsSchema = z
     .strictObject({
@@ -2096,7 +2062,7 @@ export const NamedInteractionExecutionPayloadSchema = z
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
         }).optional(),
-        interaction: z.string().meta({
+        interaction: z.string().min(1).meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
@@ -2147,7 +2113,7 @@ export const InteractionExecutionPayloadSchema = z
 
 export const AsyncInteractionExecutionPayloadSchema = z
     .object({
-        interaction: z.string().meta({
+        interaction: z.string().min(1).meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
@@ -2212,7 +2178,7 @@ export const AgentRunIdempotencyKeySchema = z
         description:
             'Client-chosen key, unique per intended run, that makes this request safe to retry. A repeat of ' +
             'the request with the same key and the same body returns the agent run the first request started ' +
-            'instead of starting another. Reusing a key with a different body is rejected with 409, and a ' +
+            'instead of starting another. Reusing a key with a different body is rejected with 422, and a ' +
             'repeat that arrives while the first request is still starting the run may be answered with 503 ' +
             'and `Retry-After`. Keys are scoped to the project and stay bound to their run for as long as it ' +
             'exists; once the run is deleted, the same key starts a new one.',
@@ -2243,7 +2209,7 @@ export const ConversationEnrichmentFields = {
 
 export const AsyncConversationExecutionPayloadSchema = z
     .object({
-        interaction: z.string().meta({
+        interaction: z.string().min(1).meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),
@@ -2501,7 +2467,7 @@ export const RunCreatePayloadSchema = z
             description:
                 'Options for async completion and/or streaming LLM response chunks to Redis. Used by agent workflows for async activity completion and real-time streaming.',
         }).optional(),
-        interaction: z.string().meta({
+        interaction: z.string().min(1).meta({
             description:
                 'The interaction name and suffixed by an optional tag or version separated from the name using a @ character If no version/tag part is specified then the latest version is used. Example: ReviewContract, ReviewContract@draft, ReviewContract@1, ReviewContract@some-tag',
         }),

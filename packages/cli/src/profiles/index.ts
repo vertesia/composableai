@@ -303,7 +303,7 @@ export class Config {
     }
 
     hasProfile(name: string) {
-        return !!this.profiles.find((p) => p.name === name);
+        return this.profiles.some((p) => p.name === name);
     }
 
     getProfile(name: string) {
@@ -321,7 +321,7 @@ export class Config {
     }
 
     add(profile: Profile) {
-        if (this.profiles.find((p) => p.name === profile.name)) {
+        if (this.profiles.some((p) => p.name === profile.name)) {
             console.error(`A configuration named ${profile.name} already exists`);
         } else {
             this.profiles.push(profile);

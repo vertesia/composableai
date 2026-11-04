@@ -3,6 +3,19 @@ import { describe, expect, it, vi } from 'vitest';
 import { VertesiaClient } from './client.js';
 
 describe('AppsApi', () => {
+    it('retrieves an app OAuth registration with an encoded app identifier', async () => {
+        const requests: Request[] = [];
+        const client = new VertesiaClient({
+            serverUrl: 'https://api.example.com',
+            storeUrl: 'https://store.example.com',
+            fetch: vi.fn(async () => Response.json({ client_id: 'vts_shared' })),
+            onRequest: (request) => requests.push(request),
+        });
+        expect(await client.apps.getOAuthClient('app/name')).toEqual({ client_id: 'vts_shared' });
+        expect(requests[0]?.method).toBe('GET');
+        expect(requests[0]?.url).toBe('https://api.example.com/api/v1/apps/app%2Fname/oauth-client');
+    });
+
     it('loads a package from a selected deployment alias', async () => {
         const requests: Request[] = [];
         const client = new VertesiaClient({

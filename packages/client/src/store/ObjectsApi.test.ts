@@ -48,3 +48,40 @@ describe('ObjectsApi revision labels', () => {
         expect(requests[0].headers.has('x-revision-label')).toBe(false);
     });
 });
+
+describe('ObjectsApi.create idempotency keys', () => {
+    /** Fails the first attempt with a retryable 503 and records the body of every attempt. */
+    function createRetryingClient(bodies: string[], idempotencyKeys: boolean) {
+        let attempt = 0;
+        return new ZenoClient({
+            serverUrl: 'https://zeno.example.com',
+            retryPolicy: { attempts: 3, methods: ['POST'], baseDelayMs: 0, jitter: false, idempotencyKeys },
+            fetch: vi.fn(async (input: unknown) => {
+                bodies.push(input instanceof Request ? await input.text() : '');
+                attempt++;
+                return attempt === 1
+                    ? new Response('unavailable', { status: 503 })
+                    : Response.json({ id: 'document-id' }, { status: 200 });
+            }),
+        });
+    }
+
+    it('sends one generated key on every attempt when the policy asks for idempotency keys', async () => {
+        const bodies: string[] = [];
+        await createRetryingClient(bodies, true).objects.create({ name: 'keyed' });
+
+        expect(bodies).toHaveLength(2);
+        expect(bodies[1]).toBe(bodies[0]);
+        expect(JSON.parse(bodies[0] ?? '{}').idempotency_key).toMatch(/^[0-9a-f-]{36}$/);
+    });
+
+    it('keeps a caller key, and sends none without the opt-in', async () => {
+        const keyed: string[] = [];
+        await createRetryingClient(keyed, true).objects.create({ name: 'keyed', idempotency_key: 'key-1' });
+        const plain: string[] = [];
+        await createRetryingClient(plain, false).objects.create({ name: 'plain' });
+
+        expect(JSON.parse(keyed[0] ?? '{}')).toMatchObject({ idempotency_key: 'key-1' });
+        expect(JSON.parse(plain[0] ?? '{}')).not.toHaveProperty('idempotency_key');
+    });
+});

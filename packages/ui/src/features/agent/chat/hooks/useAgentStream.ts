@@ -131,7 +131,7 @@ function summarizeMessage(message: AgentMessage | undefined): Record<string, unk
 }
 
 function insertTimelineMessage(prev: AgentMessage[], message: AgentMessage): AgentMessage[] {
-    if (prev.find((m) => m.timestamp === message.timestamp)) {
+    if (prev.some((m) => m.timestamp === message.timestamp)) {
         return prev;
     }
 

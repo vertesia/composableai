@@ -34,13 +34,36 @@ export interface IRequestRetryPolicy {
      */
     baseDelayMs?: number;
     /**
-     * Maximum backoff delay in milliseconds. Defaults to 4000.
+     * Maximum client-computed backoff in milliseconds. Server retry floors may exceed this.
+     * Defaults to 4000.
      */
     maxDelayMs?: number;
     /**
-     * Use full jitter for backoff delays. Defaults to true.
+     * Use full jitter for client-computed backoff. Server floors get up to 10% additional jitter,
+     * capped at 1000 ms, and are never shortened. Defaults to true.
      */
     jitter?: boolean;
+    /**
+     * Have SDK methods whose request body accepts an `idempotency_key` generate one when the caller
+     * set none, so this policy can retry those POSTs without the server repeating them: a retry with
+     * the same key returns what the first attempt created. Every attempt of a call reuses its key.
+     * Other POSTs are unaffected. Defaults to false.
+     */
+    idempotencyKeys?: boolean;
+}
+
+/** Generate a fresh idempotency key (a random UUID). */
+export function generateIdempotencyKey(): string {
+    const cryptoImpl = globalThis.crypto;
+    if (typeof cryptoImpl.randomUUID === 'function') {
+        return cryptoImpl.randomUUID();
+    }
+    // Browsers expose `randomUUID` only in secure contexts; `getRandomValues` is always there.
+    const bytes = cryptoImpl.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
 type NormalizedRetryPolicy = {
@@ -76,6 +99,8 @@ type NormalizedPacingPolicy = { maxWaitMs: number; attempts: number };
 
 const DEFAULT_PACING_MAX_WAIT_MS = 3000;
 const DEFAULT_PACING_ATTEMPTS = 2;
+// setTimeout overflows above this value and would otherwise turn a long server floor into 1 ms.
+const MAX_RETRY_TIMER_MS = 2_147_483_647;
 const RATELIMIT_REASON_HEADER = 'x-ratelimit-reason';
 const RATELIMIT_RETRY_MS_HEADER = 'x-ratelimit-retry-ms';
 
@@ -148,7 +173,7 @@ export interface IRequestParamsWithPayload extends IRequestParams {
 }
 
 export function fetchPromise(fetchImpl?: FETCH_FN | Promise<FETCH_FN>) {
-    if (fetchImpl) {
+    if (fetchImpl !== undefined) {
         return Promise.resolve(fetchImpl);
     } else if (typeof globalThis.fetch === 'function') {
         return Promise.resolve(globalThis.fetch);
@@ -199,50 +224,52 @@ function normalizeRetryPolicy(policy: IRequestRetryPolicy): NormalizedRetryPolic
 }
 
 function retryAfterDelayMs(res: Response): number | undefined {
-    const exact = res.headers.get('x-retry-after-ms');
-    if (exact) {
-        const exactMs = Number(exact);
-        if (Number.isFinite(exactMs) && exactMs >= 0) {
-            return exactMs;
+    let minimum: number | undefined;
+    for (const header of ['x-retry-after-ms', RATELIMIT_RETRY_MS_HEADER]) {
+        const raw = res.headers.get(header);
+        if (!raw) continue;
+        const value = Number(raw);
+        if (Number.isFinite(value) && value >= 0) {
+            minimum = Math.max(minimum ?? 0, value);
         }
     }
     const retryAfter = res.headers.get('retry-after');
-    if (!retryAfter) {
-        return undefined;
+    if (retryAfter) {
+        const seconds = Number(retryAfter);
+        if (Number.isFinite(seconds)) {
+            if (seconds >= 0) minimum = Math.max(minimum ?? 0, seconds * 1000);
+        } else {
+            const retryAt = Date.parse(retryAfter);
+            if (!Number.isNaN(retryAt)) minimum = Math.max(minimum ?? 0, retryAt - Date.now());
+        }
     }
-    const seconds = Number(retryAfter);
-    if (Number.isFinite(seconds) && seconds >= 0) {
-        return seconds * 1000;
-    }
-    const retryAt = Date.parse(retryAfter);
-    if (!Number.isNaN(retryAt)) {
-        return Math.max(0, retryAt - Date.now());
-    }
-    return undefined;
+    return minimum;
 }
 
 function pacingDelayMs(res: Response, pacing: NormalizedPacingPolicy): number | undefined {
     if (res.status !== 429 || res.headers.get(RATELIMIT_REASON_HEADER) !== 'pacing') {
         return undefined;
     }
-    // Treat an absent/empty header as "no hint" — Number(null) and Number('') are 0, which
-    // would otherwise turn a pacing 429 carrying only Retry-After into an immediate retry.
-    const rawRetryMs = res.headers.get(RATELIMIT_RETRY_MS_HEADER);
-    const retryMs = rawRetryMs ? Number(rawRetryMs) : Number.NaN;
-    const delay = Number.isFinite(retryMs) && retryMs >= 0 ? retryMs : retryAfterDelayMs(res);
-    if (delay === undefined || delay > pacing.maxWaitMs) {
+    const delay = pacingRetryAfterDelayMs(res);
+    if (delay === undefined || delay > pacing.maxWaitMs || delay > MAX_RETRY_TIMER_MS) {
         return undefined;
     }
     return delay;
+}
+
+function pacingRetryAfterDelayMs(res: Response): number | undefined {
+    // Recognised pacing responses define this as the authoritative hint, already jittered by
+    // the server. Retry-After is its rounded compatibility fallback for ordinary HTTP clients.
+    const raw = res.headers.get(RATELIMIT_RETRY_MS_HEADER)?.trim();
+    const exact = raw ? Number(raw) : Number.NaN;
+    return Number.isFinite(exact) && exact >= 0 ? exact : retryAfterDelayMs(res);
 }
 
 function rateLimitMetadata(res: Response): RateLimitMetadata | undefined {
     if (res.status !== 429) return undefined;
     const reason = res.headers.get(RATELIMIT_REASON_HEADER);
     if (reason !== 'pacing' && reason !== 'quota') return undefined;
-    const exact = res.headers.get(RATELIMIT_RETRY_MS_HEADER);
-    const exactMs = exact ? Number(exact) : Number.NaN;
-    const retryAfterMs = Number.isFinite(exactMs) && exactMs >= 0 ? exactMs : retryAfterDelayMs(res);
+    const retryAfterMs = reason === 'pacing' ? pacingRetryAfterDelayMs(res) : retryAfterDelayMs(res);
     if (retryAfterMs === undefined) return undefined;
     return {
         reason,
@@ -258,12 +285,27 @@ function sleep(ms: number): Promise<void> {
 
 function retryDelayMs(policy: NormalizedRetryPolicy, attempt: number, res?: Response): number {
     const retryAfter = res ? retryAfterDelayMs(res) : undefined;
-    const delay = retryAfter ?? Math.min(policy.maxDelayMs, policy.baseDelayMs * 2 ** attempt);
+    if (retryAfter !== undefined) {
+        const jitterRange = Math.min(retryAfter * 0.1, 1000, Math.max(0, MAX_RETRY_TIMER_MS - retryAfter));
+        return retryAfter + (policy.jitter ? Math.floor(Math.random() * jitterRange) : 0);
+    }
+    const delay = Math.min(policy.maxDelayMs, policy.baseDelayMs * 2 ** attempt);
     return policy.jitter ? Math.floor(Math.random() * delay) : delay;
 }
 
 function toError(err: unknown): Error {
     return err instanceof Error ? err : new Error(String(err));
+}
+
+/**
+ * A 2xx response whose body could not be read, e.g. because the page navigated away mid-download.
+ * There is no result to hand back, so it fails like a connection error instead.
+ */
+class ResponseBodyError extends Error {
+    constructor(err: unknown) {
+        super(`Unable to load response content: ${toError(err).message}`);
+        this.name = 'ResponseBodyError';
+    }
 }
 
 /**
@@ -281,13 +323,17 @@ function isAbortError(err: unknown): boolean {
 }
 
 /**
- * True only for a CALLER abort — `controller.abort()` on the signal they supplied, which surfaces as
- * `AbortError`. Our own `timeoutMs` surfaces as `TimeoutError` and is deliberately excluded: a
- * timeout is a transient failure, and `createRequestInit()` mints a fresh timeout signal per attempt,
- * so retrying one is both meaningful and intended. A caller's signal stays aborted across attempts,
- * so retrying that can only burn the budget.
+ * True only for a CALLER abort — `controller.abort()` on the signal they supplied. The runtime rejects
+ * with the signal's reason, which is an `AbortError` only when the caller gave none: a signal aborted
+ * with a reason rejects with that reason, whatever its type. So the caller's own signal is checked as
+ * well as the error name. Our own `timeoutMs` surfaces as `TimeoutError` and
+ * never aborts the caller's signal, so it is deliberately excluded: a timeout is a transient failure,
+ * and `createRequestInit()` mints a fresh timeout signal per attempt, so retrying one is both
+ * meaningful and intended. A caller's signal stays aborted across attempts, so retrying that can only
+ * burn the budget.
  */
-function isCallerAbortError(err: unknown): boolean {
+function isCallerAbortError(err: unknown, callerSignal: AbortSignal | undefined): boolean {
+    if (callerSignal?.aborted) return true;
     return typeof err === 'object' && err !== null && 'name' in err && (err as { name: unknown }).name === 'AbortError';
 }
 
@@ -486,14 +532,15 @@ export abstract class ClientBase {
                 }
             }
         }
+        const rateLimit = rateLimitMetadata(res);
         return new ServerError(
             message,
             req,
             res.status,
             payload,
             this.verboseErrors,
-            rateLimitMetadata(res),
-            retryAfterDelayMs(res),
+            rateLimit,
+            rateLimit?.retryAfterMs ?? retryAfterDelayMs(res),
         );
     }
 
@@ -521,6 +568,10 @@ export abstract class ClientBase {
                 // swallowing it into an error payload that would otherwise be returned as the result.
                 if (isAbortError(err)) {
                     throw err;
+                }
+                // Same for a successful response: the error payload would be returned as the result.
+                if (res.ok) {
+                    throw new ResponseBodyError(err);
                 }
                 return {
                     status: res.status,
@@ -625,7 +676,7 @@ export abstract class ClientBase {
                 // retrying cannot help: their signal stays aborted, so each further attempt rejects at
                 // once. A TIMEOUT is not included — it is transient, and each attempt gets a fresh
                 // timeout signal, so it retries as before. Still thrown, wrapping the original.
-                const aborted = isCallerAbortError(err);
+                const aborted = isCallerAbortError(err, params?.signal);
                 if (
                     aborted ||
                     !retryPolicy ||
@@ -650,10 +701,13 @@ export abstract class ClientBase {
                 }
             }
             if (retryPolicy && this.shouldRetryResponse(retryPolicy, normalizedMethod, attempt, replayableBody, res)) {
-                await discardBody(res);
-                await this.waitBeforeRetry(retryPolicy, attempt, res);
-                attempt++;
-                continue;
+                const delay = retryDelayMs(retryPolicy, attempt, res);
+                if (delay <= MAX_RETRY_TIMER_MS) {
+                    await discardBody(res);
+                    await sleep(delay);
+                    attempt++;
+                    continue;
+                }
             }
             if (retryPolicy && attempt >= retryPolicy.attempts) {
                 break;
@@ -661,11 +715,11 @@ export abstract class ClientBase {
             try {
                 return await this.handleResponse<T>(req, res, params);
             } catch (err: unknown) {
-                // Body consumption can time out after fetch has returned the headers. Preserve
+                // Body consumption can time out or break after fetch has returned the headers. Preserve
                 // HTTP/custom-reader errors, and do not replay a request already accepted upstream.
-                if (!isAbortError(err)) throw err;
+                if (!isAbortError(err) && !(err instanceof ResponseBodyError)) throw err;
                 const connectionError = new ConnectionError(req, toError(err));
-                if (!isCallerAbortError(err)) this.handleConnectionError(connectionError);
+                if (!isCallerAbortError(err, params?.signal)) this.handleConnectionError(connectionError);
                 this.throwError(connectionError);
             }
         }
@@ -720,9 +774,8 @@ export abstract class ClientBase {
         );
     }
 
-    private waitBeforeRetry(policy: NormalizedRetryPolicy, attempt: number, res?: Response) {
-        const delay = retryDelayMs(policy, attempt, res);
-        return new Promise<void>((resolve) => setTimeout(resolve, delay));
+    private waitBeforeRetry(policy: NormalizedRetryPolicy, attempt: number) {
+        return sleep(retryDelayMs(policy, attempt));
     }
 
     /**

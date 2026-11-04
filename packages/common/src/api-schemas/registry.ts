@@ -116,9 +116,11 @@ import {
     AppRepoCommitSchema,
     AppRepoCommitsSchema,
     AppRepoDocumentCommitSchema,
+    AppRepoFileQuerySchema,
     AppRepoRefSchema,
     AppRepoRefsSchema,
     AppRepoTreeEntrySchema,
+    AppRepoTreeQuerySchema,
     AppRepoTreeSchema,
     AppScaffoldModuleSchema,
     AppScaffoldProgressSchema,
@@ -140,6 +142,7 @@ import {
     AppVersionUrlsSchema,
     ContentObjectTypeRefSchema,
     ConversationActivityStateSchema,
+    CreateAppRepoBranchRequestSchema,
     CreateAppVersionLaunchRequestSchema,
     CreateAppVersionLaunchResponseSchema,
     DeleteAppVersionResponseSchema,
@@ -163,6 +166,7 @@ import {
     SystemPackageQuerySchema,
     UpdateAppInstallationOAuthApprovalPayloadSchema,
     UpdateAppInstallationToolAllowlistPayloadSchema,
+    UpdateAppInstallationToolPermissionsPayloadSchema,
     UpsertAppVersionRequestSchema,
     ValidateUrlRequestSchema,
     ValidateUrlResponseSchema,
@@ -198,6 +202,8 @@ import {
     AuditAdoptionProjectSchema,
     AuditAdoptionQuerySchema,
     AuditAdoptionResponseSchema,
+    AuditAggregationBatchQuerySchema,
+    AuditAggregationBatchResponseSchema,
     AuditAggregationDetailFieldSchema,
     AuditAggregationDetailFilterSchema,
     AuditAggregationDimensionMapSchema,
@@ -262,9 +268,13 @@ import {
     DashboardArchiveResultSchema,
     DashboardBulkArchiveResultSchema,
     DashboardBulkDeleteResultSchema,
+    DashboardBulkIdsPayloadSchema,
     DashboardDataSourceSchema,
     DashboardElasticsearchDslSchema,
     DashboardElasticsearchResultMappingSchema,
+    DashboardExportErrorSchema,
+    DashboardExportSchema,
+    DashboardExportStatusSchema,
     DashboardItemArraySchema,
     DashboardItemSchema,
     DashboardLayoutSchema,
@@ -280,6 +290,8 @@ import {
     DashboardVersioningPayloadSchema,
     DashboardVersioningStatusResponseSchema,
     DashboardVersionSchema,
+    ExportDashboardPayloadSchema,
+    ExportDashboardPreviewPayloadSchema,
     PromoteDashboardVersionPayloadSchema,
     StringArrayMapSchema,
     UpdateDashboardPayloadSchema,
@@ -527,17 +539,10 @@ import {
     FacetSpecSchema,
     FindRunResultArraySchema,
     FindRunResultSchema,
-    GeneratedInteractionDefinitionArraySchema,
-    GeneratedInteractionDefinitionSchema,
-    GeneratedInteractionPromptSegmentSchema,
-    GeneratedInteractionPromptTemplateSchema,
     GeneratedTestDataRecordArraySchema,
     GeneratedTestDataRecordSchema,
-    GenerateInteractionPayloadSchema,
     GenerateTestDataPayloadSchema,
     GetRunQuerySchema,
-    ImprovePromptPayloadConfigSchema,
-    ImprovePromptPayloadSchema,
     InCodeInteractionSchema,
     InCodePromptSchema,
     InitialToolCallSchema,
@@ -550,6 +555,7 @@ import {
     InteractionExecutionPayloadSchema,
     InteractionExecutionResultSchema,
     InteractionForkPayloadSchema,
+    InteractionListQuerySchema,
     InteractionNameArraySchema,
     InteractionNameSchema,
     InteractionPromptSegmentInputSchema,
@@ -579,7 +585,6 @@ import {
     PlanSchema,
     PlanTaskSchema,
     PopulatedExecutionRunResultSchema,
-    PromptImprovementResponseSchema,
     PromptModalitiesSchema,
     PromptSegmentDefSchema,
     PromptSegmentDefTypeSchema,
@@ -692,7 +697,9 @@ import {
     OidcFederationConnectionSchema,
     RevokeOAuthGrantQuerySchema,
     UpdateOAuthClientPayloadSchema,
+    UpdateOAuthClientStatusPayloadSchema,
 } from './oauth-server.js';
+import * as PathParameterSchemas from './path-parameters.js';
 import * as ProcessSchemas from './process.js';
 import {
     CountResultSchema,
@@ -778,6 +785,7 @@ import {
     ValidateToolNamesResponseSchema,
 } from './tools.js';
 import {
+    CreateUserPayloadSchema,
     DeleteByIdResultSchema,
     PrincipalIdentitySchema,
     SignupDataSchema,
@@ -876,6 +884,7 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     User: UserSchema,
     UserArray: UserArraySchema,
     UpdateUserPayload: UpdateUserPayloadSchema,
+    CreateUserPayload: CreateUserPayloadSchema,
     DeleteByIdResult: DeleteByIdResultSchema,
     PrincipalIdentity: PrincipalIdentitySchema,
     SignupData: SignupDataSchema,
@@ -926,7 +935,33 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     RenderingTemplateDefinitionRef: RenderingTemplateDefinitionRefSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-const PROJECT_AND_APP_SCHEMAS = {
+// Preserve named schema types instead of expanding the full project/policy tree in declaration output.
+type ProjectAndAppSchemaMap = {
+    ProjectModelDefaults: typeof ProjectModelDefaultsSchema;
+    ResourceVisibility: typeof ResourceVisibilitySchema;
+    ProjectIndexingConfiguration: typeof ProjectIndexingConfigurationSchema;
+    ProjectConfigurationEmbedding: typeof ProjectConfigurationEmbeddingSchema;
+    BrowserUseProjectConfiguration: typeof BrowserUseProjectConfigurationSchema;
+    ProjectIntakeSniffConfiguration: typeof ProjectIntakeSniffConfigurationSchema;
+    JSONSchema: typeof JSONSchemaSchema;
+    ModelOptions: typeof ModelOptionsSchema;
+    HttpTimeoutOptions: typeof HttpTimeoutOptionsSchema;
+    ContentTypeIntakePolicy: typeof ContentTypeIntakePolicySchema;
+    ProjectIntakeConfiguration: typeof ProjectIntakeConfigurationSchema;
+    ProjectConfiguration: typeof ProjectConfigurationSchema;
+    Project: typeof ProjectSchema;
+    UpdateProjectPayload: typeof UpdateProjectPayloadSchema;
+    UpdateProjectConfigurationPayload: typeof UpdateProjectConfigurationPayloadSchema;
+    ToolCollectionObject: typeof ToolCollectionObjectSchema;
+    AppUIConfig: typeof AppUIConfigSchema;
+    AppCapabilities: typeof AppCapabilitiesSchema;
+    AppAccessControl: typeof AppAccessControlSchema;
+    AppSourceConfig: typeof AppSourceConfigSchema;
+    AppGitSourceProvider: typeof AppGitSourceProviderSchema;
+    AppManifestSource: typeof AppManifestSourceSchema;
+};
+
+const PROJECT_AND_APP_SCHEMAS: ProjectAndAppSchemaMap = {
     // Leaves of the ProjectConfiguration closure. Each is hoisted by `ProjectConfiguration` rather
     // than named by an endpoint, so only the roots that nothing else here references are listed;
     // `ModelDefault`, the two search enums, `ProjectSearchPropertyMapping(+Map)` and the two
@@ -1032,6 +1067,7 @@ const OAUTH_SCHEMAS = {
     OAuthClientScopeMetadata: OAuthClientScopeMetadataSchema,
     CreateOAuthClientPayload: CreateOAuthClientPayloadSchema,
     UpdateOAuthClientPayload: UpdateOAuthClientPayloadSchema,
+    UpdateOAuthClientStatusPayload: UpdateOAuthClientStatusPayloadSchema,
     // Grants. The two query components are registered like any other — they are expanded into
     // parameters rather than published as component bodies, which is what every query contract does.
     OAuthGrant: OAuthGrantSchema,
@@ -1200,6 +1236,7 @@ const INTERACTION_SCHEMAS = {
     InteractionForkPayload: InteractionForkPayloadSchema,
     InteractionsExportPayload: InteractionsExportPayloadSchema,
     InteractionSearchQuery: InteractionSearchQuerySchema,
+    InteractionListQuery: InteractionListQuerySchema,
     ResolveInteractionQuery: ResolveInteractionQuerySchema,
     // The catalog — in-code interactions an app or the system provides, alongside stored ones.
     CatalogInteractionRef: CatalogInteractionRefSchema,
@@ -1226,18 +1263,10 @@ const INTERACTION_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const INTERACTION_AUTHORING_SCHEMAS = {
-    // Prompt improvement, and the two generators behind the authoring screens.
-    ImprovePromptPayloadConfig: ImprovePromptPayloadConfigSchema,
-    ImprovePromptPayload: ImprovePromptPayloadSchema,
-    PromptImprovementResponse: PromptImprovementResponseSchema,
+    // The test-data generator behind the authoring screens.
     GenerateTestDataPayload: GenerateTestDataPayloadSchema,
     GeneratedTestDataRecord: GeneratedTestDataRecordSchema,
     GeneratedTestDataRecordArray: GeneratedTestDataRecordArraySchema,
-    GenerateInteractionPayload: GenerateInteractionPayloadSchema,
-    GeneratedInteractionDefinition: GeneratedInteractionDefinitionSchema,
-    GeneratedInteractionDefinitionArray: GeneratedInteractionDefinitionArraySchema,
-    GeneratedInteractionPromptTemplate: GeneratedInteractionPromptTemplateSchema,
-    GeneratedInteractionPromptSegment: GeneratedInteractionPromptSegmentSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const AGENT_CONVERSATION_SCHEMAS = {
@@ -1485,6 +1514,7 @@ const DASHBOARD_SCHEMAS = {
     CreateDashboardSnapshotPayload: CreateDashboardSnapshotPayloadSchema,
     DashboardBulkArchiveResult: DashboardBulkArchiveResultSchema,
     StringArrayMap: StringArrayMapSchema,
+    DashboardBulkIdsPayload: DashboardBulkIdsPayloadSchema,
     DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSourceSchema,
     DashboardVersionItemArray: DashboardVersionItemArraySchema,
     DashboardItem: DashboardItemSchema,
@@ -1495,6 +1525,11 @@ const DASHBOARD_SCHEMAS = {
     Dashboard: DashboardSchema,
     CreateDashboardPayload: CreateDashboardPayloadSchema,
     UpdateDashboardPayload: UpdateDashboardPayloadSchema,
+    ExportDashboardPayload: ExportDashboardPayloadSchema,
+    ExportDashboardPreviewPayload: ExportDashboardPreviewPayloadSchema,
+    DashboardExportStatus: DashboardExportStatusSchema,
+    DashboardExportError: DashboardExportErrorSchema,
+    DashboardExport: DashboardExportSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const DATA_STORE_CORE_SCHEMAS = {
@@ -1793,6 +1828,8 @@ const CONTENT_SEARCH_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const EVENT_SUBSCRIPTION_SCHEMAS = {
+    IntakeMediaAnalysisOverride: EventSchemas.IntakeMediaAnalysisOverrideSchema,
+    IntakeMediaAnalysisOverrides: EventSchemas.IntakeMediaAnalysisOverridesSchema,
     EventPriority: EventSchemas.EventPrioritySchema,
     WorkflowRuleInputType: EventSchemas.WorkflowRuleInputTypeSchema,
     WorkflowRuleItem: EventSchemas.WorkflowRuleItemSchema,
@@ -2020,6 +2057,8 @@ const WORKFLOW_RUN_SCHEMAS = {
     ActivityPropertyDefinition: WorkflowRunSchemas.ActivityPropertyDefinitionSchema,
     ActivityDefinition: WorkflowRunSchemas.ActivityDefinitionSchema,
     ActivityCatalog: WorkflowRunSchemas.ActivityCatalogSchema,
+    SubscriptionWorkflowDefinition: WorkflowRunSchemas.SubscriptionWorkflowDefinitionSchema,
+    SubscriptionWorkflowCatalog: WorkflowRunSchemas.SubscriptionWorkflowCatalogSchema,
     WorkflowInteractionVars: WorkflowRunSchemas.WorkflowInteractionVarsSchema,
     ListWorkflowInteractionsResponse: WorkflowRunSchemas.ListWorkflowInteractionsResponseSchema,
 } as const satisfies Record<string, z.ZodType>;
@@ -2166,6 +2205,8 @@ const AUDIT_TRAIL_SCHEMAS = {
     AuditAggregationFilter: AuditAggregationFilterSchema,
     AuditTrailResponse: AuditTrailResponseSchema,
     AuditAggregationQuery: AuditAggregationQuerySchema,
+    AuditAggregationBatchQuery: AuditAggregationBatchQuerySchema,
+    AuditAggregationBatchResponse: AuditAggregationBatchResponseSchema,
     AuditTrailQuery: AuditTrailQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
 
@@ -2234,6 +2275,7 @@ const APP_LIFECYCLE_SCHEMAS = {
     // development tasks, installations and inspection.
     UpdateAppInstallationOAuthApprovalPayload: UpdateAppInstallationOAuthApprovalPayloadSchema,
     UpdateAppInstallationToolAllowlistPayload: UpdateAppInstallationToolAllowlistPayloadSchema,
+    UpdateAppInstallationToolPermissionsPayload: UpdateAppInstallationToolPermissionsPayloadSchema,
     ValidateUrlResponse: ValidateUrlResponseSchema,
     ValidateUrlRequest: ValidateUrlRequestSchema,
     AppVersionUrls: AppVersionUrlsSchema,
@@ -2271,6 +2313,9 @@ const APP_LIFECYCLE_SCHEMAS = {
     DeleteAppVersionResponse: DeleteAppVersionResponseSchema,
     AppDeleteSummary: AppDeleteSummarySchema,
     AppRepoBranch: AppRepoBranchSchema,
+    CreateAppRepoBranchRequest: CreateAppRepoBranchRequestSchema,
+    AppRepoFileQuery: AppRepoFileQuerySchema,
+    AppRepoTreeQuery: AppRepoTreeQuerySchema,
     AppRepoDocumentCommit: AppRepoDocumentCommitSchema,
     AppVersionGitSource: AppVersionGitSourceSchema,
     AppGithubConfiguration: AppGithubConfigurationSchema,
@@ -2485,8 +2530,24 @@ const RUN_BUDGET_SCHEMAS = {
     RunBudgetCapability: RunBudgetSchemas.RunBudgetCapabilitySchema,
     RunBudgetCapabilityQuery: RunBudgetSchemas.RunBudgetCapabilityQuerySchema,
 };
+const PATH_PARAMETER_SCHEMAS = {
+    DashboardPathParams: PathParameterSchemas.DashboardPathParamsSchema,
+    DataStoreImportPathParams: PathParameterSchemas.DataStoreImportPathParamsSchema,
+    DataStoreVersionPathParams: PathParameterSchemas.DataStoreVersionPathParamsSchema,
+    ContentObjectExportPathParams: PathParameterSchemas.ContentObjectExportPathParamsSchema,
+    ProcessTestRunPathParams: PathParameterSchemas.ProcessTestRunPathParamsSchema,
+    ProcessPathParams: PathParameterSchemas.ProcessPathParamsSchema,
+    TaskPathParams: PathParameterSchemas.TaskPathParamsSchema,
+    AgentRunPathParams: PathParameterSchemas.AgentRunPathParamsSchema,
+    AppVersionPathParams: PathParameterSchemas.AppVersionPathParamsSchema,
+    AppInstallationPathParams: PathParameterSchemas.AppInstallationPathParamsSchema,
+    DelegationGrantPathParams: PathParameterSchemas.DelegationGrantPathParamsSchema,
+    OAuthProviderPathParams: PathParameterSchemas.OAuthProviderPathParamsSchema,
+    ProjectAppCapabilityPathParams: PathParameterSchemas.ProjectAppCapabilityPathParamsSchema,
+};
 const API_SCHEMA_GROUPS = [
     RUN_BUDGET_SCHEMAS,
+    PATH_PARAMETER_SCHEMAS,
     DELEGATION_SCHEMAS,
     IAM_AND_ACCOUNT_SCHEMAS,
     PROJECT_AND_APP_SCHEMAS,
@@ -2553,6 +2614,7 @@ const API_SCHEMA_GROUPS = [
  * intersected with a second schema.
  */
 type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
+    typeof PATH_PARAMETER_SCHEMAS &
     typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
     typeof PROJECT_AND_APP_SCHEMAS &
@@ -2627,6 +2689,8 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'IntakeMediaAnalysisOverride',
+    'IntakeMediaAnalysisOverrides',
     'OidcFederationConnectionPayload',
     'OidcFederationConnection',
     'OAuthTokenExchangeRequest',
@@ -2708,6 +2772,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // so it has no component of its own to list.
     'User',
     'UpdateUserPayload',
+    'CreateUserPayload',
     'DeleteByIdResult',
     'PrincipalIdentity',
     'SignupData',
@@ -2916,6 +2981,10 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'Dashboard',
     'CreateDashboardPayload',
     'UpdateDashboardPayload',
+    'ExportDashboardPayload',
+    'ExportDashboardPreviewPayload',
+    'DashboardExportError',
+    'DashboardExport',
     // Data stores. Map, array, enum and discriminated-union components carry no component-level
     // additionalProperties policy; every named object below is already closed in the published spec.
     'QueryValidationError',
@@ -3264,6 +3333,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OAuthClientScopeMetadata',
     'CreateOAuthClientPayload',
     'UpdateOAuthClientPayload',
+    'UpdateOAuthClientStatusPayload',
     'OAuthGrant',
     'BulkRevokeOAuthGrantsPayload',
     'OAuthGrantListResponse',
@@ -3361,14 +3431,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ResolvedInteractionExecutionInfo',
     'FacetSpec',
     'ComputeInteractionFacetPayload',
-    'ImprovePromptPayloadConfig',
-    'ImprovePromptPayload',
-    'PromptImprovementResponse',
     'GenerateTestDataPayload',
-    'GenerateInteractionPayload',
-    'GeneratedInteractionDefinition',
-    'GeneratedInteractionPromptTemplate',
-    'GeneratedInteractionPromptSegment',
     'AgentRunnerOptions',
     'SkillContextTriggers',
     'InitialToolCall',
@@ -3466,6 +3529,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AuditAggregationFilter',
     'AuditTrailResponse',
     'AuditAggregationQuery',
+    'AuditAggregationBatchQuery',
+    'AuditAggregationBatchResponse',
     'AuditAdoptionActiveDays',
     'AuditAdoptionBucket',
     'AuditAdoptionFilter',
@@ -3511,6 +3576,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'AuditTrailQuery',
     'ViewExperienceListQuery',
     'UpdateAppInstallationToolAllowlistPayload',
+    'UpdateAppInstallationToolPermissionsPayload',
     'UpdateAppInstallationOAuthApprovalPayload',
     'ValidateUrlResponse',
     'ValidateUrlRequest',
@@ -3536,6 +3602,9 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DeleteAppVersionResponse',
     'AppDeleteSummary',
     'AppRepoBranch',
+    'CreateAppRepoBranchRequest',
+    'AppRepoFileQuery',
+    'AppRepoTreeQuery',
     'AppRepoDocumentCommit',
     'AppVersionGitSource',
     'StartAppScaffoldRequest',
@@ -3649,6 +3718,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ActivityPropertyDefinition',
     'ActivityDefinition',
     'ActivityCatalog',
+    'SubscriptionWorkflowDefinition',
+    'SubscriptionWorkflowCatalog',
     'WorkflowInteractionVars',
     'ListWorkflowInteractionsResponse',
 ]);

@@ -15,7 +15,7 @@ For full code examples of all resource types, see REFERENCE.md.
 
 ## Project Structure
 
-```
+```text
 src/
   tool-server/           # Backend (Hono) - compiled by Rollup
     server.ts            # Hono server entry (createToolServer from @vertesia/tools-sdk)
@@ -69,12 +69,12 @@ lib/                     # Compiled server JS (ESM)
 
 Two independent build pipelines:
 
-| Build | Tool | Entry | Output | Config Files |
-|-------|------|-------|--------|--------------|
-| Tool Server | Rollup | `src/tool-server/server.ts` | `lib/*.js` (ESM) | `rollup.config.js`, `tsconfig.tool-server.json` |
-| UI Plugin (library) | Vite | `src/ui/plugin.tsx` | `dist/lib/plugin.js` | `vite.config.ts --mode lib`, `tsconfig.ui.json` |
-| UI App (standalone) | Vite | `src/ui/main.tsx` | `dist/ui/` | `vite.config.ts --mode app`, `tsconfig.ui.json` |
-| Skill Widgets | Rollup (via build-tools) | `skills/**/*.tsx` | `dist/widgets/*.js` | `tsconfig.widgets.json` |
+| Build               | Tool                     | Entry                       | Output               | Config Files                                    |
+| ------------------- | ------------------------ | --------------------------- | -------------------- | ----------------------------------------------- |
+| Tool Server         | Rollup                   | `src/tool-server/server.ts` | `lib/*.js` (ESM)     | `rollup.config.js`, `tsconfig.tool-server.json` |
+| UI Plugin (library) | Vite                     | `src/ui/plugin.tsx`         | `dist/lib/plugin.js` | `vite.config.ts --mode lib`, `tsconfig.ui.json` |
+| UI App (standalone) | Vite                     | `src/ui/main.tsx`           | `dist/ui/`           | `vite.config.ts --mode app`, `tsconfig.ui.json` |
+| Skill Widgets       | Rollup (via build-tools) | `skills/**/*.tsx`           | `dist/widgets/*.js`  | `tsconfig.widgets.json`                         |
 
 ### Commands
 
@@ -94,15 +94,15 @@ pnpm start:debug           # Run with --inspect for Node debugger
 
 These Rollup import transformations only work in `src/tool-server/` code:
 
-| Import | Produces |
-|--------|----------|
-| `import x from './my-skill/SKILL.md'` | `SkillDefinition` object (convention-based) |
-| `import x from './definition.md?skill'` | `SkillDefinition` object (query-based) |
-| `import x from './all?skills'` | `SkillDefinition[]` (auto-discovers subdirs with SKILL.md) |
-| `import x from './my-template/TEMPLATE.md'` | `RenderingTemplateDefinition` object |
-| `import x from './all?templates'` | `RenderingTemplateDefinition[]` (auto-discovers TEMPLATE.md) |
-| `import x from './prompt.hbs?prompt'` | `PromptDefinition { role, content, content_type, schema? }` |
-| `import x from './file.html?raw'` | Raw string content |
+| Import                                      | Produces                                                     |
+| ------------------------------------------- | ------------------------------------------------------------ |
+| `import x from './my-skill/SKILL.md'`       | `SkillDefinition` object (convention-based)                  |
+| `import x from './definition.md?skill'`     | `SkillDefinition` object (query-based)                       |
+| `import x from './all?skills'`              | `SkillDefinition[]` (auto-discovers subdirs with SKILL.md)   |
+| `import x from './my-template/TEMPLATE.md'` | `RenderingTemplateDefinition` object                         |
+| `import x from './all?templates'`           | `RenderingTemplateDefinition[]` (auto-discovers TEMPLATE.md) |
+| `import x from './prompt.hbs?prompt'`       | `PromptDefinition { role, content, content_type, schema? }`  |
+| `import x from './file.html?raw'`           | Raw string content                                           |
 
 ## Creating Resources
 
@@ -175,16 +175,16 @@ Do not keep spawning new local ports and quick tunnels after an auth failure. Th
 
 ## Key Dependencies
 
-| Package | Role |
-|---------|------|
-| `@vertesia/tools-sdk` | Tool server framework: `createToolServer`, `ToolCollection`, `SkillCollection`, auth |
-| `@vertesia/tools-admin-ui` | Admin UI: browsable interface for all plugin resources |
-| `@vertesia/build-tools` | Rollup import plugins: `?skill`, `?skills`, `?template`, `?templates`, `?prompt`, `?raw` |
-| `@vertesia/plugin-builder` | Vite plugin for UI library builds (CSS extraction/injection) |
-| `@vertesia/client` | Vertesia API client for tool implementations |
-| `@vertesia/common` | Shared types: `InteractionSpec`, `InCodeTypeSpec`, etc. |
-| `@vertesia/ui` | UI component library: `core`, `features`, `router`, `layout`, `session`, `shell` |
-| `hono` | Lightweight web framework for the tool server |
+| Package                    | Role                                                                                     |
+| -------------------------- | ---------------------------------------------------------------------------------------- |
+| `@vertesia/tools-sdk`      | Tool server framework: `createToolServer`, `ToolCollection`, `SkillCollection`, auth     |
+| `@vertesia/tools-admin-ui` | Admin UI: browsable interface for all plugin resources                                   |
+| `@vertesia/build-tools`    | Rollup import plugins: `?skill`, `?skills`, `?template`, `?templates`, `?prompt`, `?raw` |
+| `@vertesia/plugin-builder` | Vite plugin for UI library builds (CSS extraction/injection)                             |
+| `@vertesia/client`         | Vertesia API client for tool implementations                                             |
+| `@vertesia/common`         | Shared types: `InteractionSpec`, `InCodeTypeSpec`, etc.                                  |
+| `@vertesia/ui`             | UI component library: `core`, `features`, `router`, `layout`, `session`, `shell`         |
+| `hono`                     | Lightweight web framework for the tool server                                            |
 
 ## Code Conventions
 

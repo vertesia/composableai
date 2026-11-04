@@ -42,7 +42,7 @@ function SearchBox(_props: SearchBoxProps) {
                 {t('layout.search')}
             </label>
             <Search
-                className="pointer-events-none absolute inset-y-0 start-0 h-full w-5 text-muted"
+                className="pointer-events-none absolute inset-y-0 inset-s-0 h-full w-5 text-muted"
                 aria-hidden="true"
             />
             <input

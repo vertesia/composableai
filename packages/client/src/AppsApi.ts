@@ -38,6 +38,7 @@ import type {
     DeleteAppVersionResponse,
     ExchangeAppGithubAuthorizationResponse,
     McpApiKeyStatus,
+    OAuthClient,
     ProjectRef,
     PromoteAppVersionResponse,
     RequireAtLeastOne,
@@ -50,6 +51,7 @@ import type {
     StartAppScaffoldResponse,
     UpdateAppInstallationOAuthApprovalPayload,
     UpdateAppInstallationToolAllowlistPayload,
+    UpdateAppInstallationToolPermissionsPayload,
     UpdateAppPayload,
     UpsertAppVersionRequest,
     ValidateUrlRequest,
@@ -61,6 +63,11 @@ export type { OrphanedAppInstallation } from '@vertesia/common';
 export default class AppsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/apps');
+    }
+
+    /** The publisher-managed OAuth registration shared by all installations of an app. */
+    getOAuthClient(appId: string): Promise<OAuthClient> {
+        return this.get(`/${encodeURIComponent(appId)}/oauth-client`);
     }
 
     create(manifest: AppManifestData): Promise<AppManifest> {
@@ -449,7 +456,7 @@ export default class AppsApi extends ApiTopic {
         mcpSharedParameters?: AppInstallationPayload['mcp_shared_parameters'],
         installation?: Pick<
             AppInstallationPayload,
-            'deployment_alias' | 'instance_key' | 'display_name' | 'namespace_overrides'
+            'approved_scopes' | 'deployment_alias' | 'instance_key' | 'display_name' | 'namespace_overrides'
         >,
     ): Promise<AppInstallation> {
         return this.post(`/install`, {
@@ -590,6 +597,17 @@ export default class AppsApi extends ApiTopic {
         return this.put(`/installations/${installId}/tool-allowlist`, {
             payload: { tool_allowlist } satisfies UpdateAppInstallationToolAllowlistPayload,
         });
+    }
+
+    /**
+     * Update the tool allowlist and the tools requiring human approval of an app installation in one atomic write.
+     * Omit a field to leave it unchanged; pass null to clear it.
+     */
+    updateToolPermissions(
+        installId: string,
+        payload: UpdateAppInstallationToolPermissionsPayload,
+    ): Promise<AppInstallationWithManifest> {
+        return this.put(`/installations/${installId}/tool-permissions`, { payload });
     }
 
     /**

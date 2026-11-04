@@ -212,7 +212,7 @@ function BatchProgressPanelComponent({
                             )}
                         >
                             {/* Status icon */}
-                            <div className="w-4 flex-shrink-0">
+                            <div className="w-4 shrink-0">
                                 {item.status === 'success' && <CheckCircle className="size-3 text-success" />}
                                 {item.status === 'error' && <AlertCircle className="size-3 text-destructive" />}
                                 {item.status === 'running' && <Loader2 className="size-3 text-info animate-spin" />}
@@ -222,7 +222,7 @@ function BatchProgressPanelComponent({
                             </div>
 
                             {/* Item ID */}
-                            <span className="font-mono text-muted w-24 truncate flex-shrink-0" title={item.id}>
+                            <span className="font-mono text-muted w-24 truncate shrink-0" title={item.id}>
                                 {item.id}
                             </span>
 
@@ -233,9 +233,7 @@ function BatchProgressPanelComponent({
 
                             {/* Duration */}
                             {item.duration_ms !== undefined && (
-                                <span className="text-muted flex-shrink-0">
-                                    {(item.duration_ms / 1000).toFixed(1)}s
-                                </span>
+                                <span className="text-muted shrink-0">{(item.duration_ms / 1000).toFixed(1)}s</span>
                             )}
                         </div>
                     ))}

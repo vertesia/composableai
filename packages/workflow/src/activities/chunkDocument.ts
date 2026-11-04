@@ -2,7 +2,12 @@ import { ApplicationFailure, log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import type { DocPart } from '../utils/chunks.js';
-import { executeInteractionFromActivity, type InteractionExecutionParams } from './executeInteraction.js';
+import {
+    executeInteractionFromActivity,
+    type InteractionExecutionParams,
+    InteractionRunFailedError,
+    interactionFailureLogLevel,
+} from './executeInteraction.js';
 
 const INT_CHUNK_DOCUMENT = 'sys:ChunkDocument';
 
@@ -98,7 +103,13 @@ export async function chunkDocument(
         });
     } catch (error: unknown) {
         const chunkError = toRetryableError(error);
-        log.error(`Failed to chunk document ${objectId}`, { error: chunkError, retryable: chunkError.retryable });
+        // A failed run was already logged by executeInteractionFromActivity.
+        if (!(error instanceof InteractionRunFailedError)) {
+            log[interactionFailureLogLevel(error)](`Failed to chunk document ${objectId}`, {
+                error: chunkError,
+                retryable: chunkError.retryable,
+            });
+        }
 
         // Check retryability and convert to ApplicationFailure for Temporal
         const isRetryable = chunkError.retryable !== undefined ? chunkError.retryable !== false : undefined;

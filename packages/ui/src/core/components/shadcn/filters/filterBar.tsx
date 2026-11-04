@@ -369,7 +369,7 @@ const FilterClear = ({ className }: { className?: string }) => {
     const { filters, setFilters } = React.useContext(FilterContext);
     const { t } = useUITranslation();
 
-    const hasActiveFilters = filters.filter((filter) => filter.value?.length > 0).length > 0;
+    const hasActiveFilters = filters.some((filter) => filter.value?.length > 0);
 
     if (!hasActiveFilters) {
         return null;

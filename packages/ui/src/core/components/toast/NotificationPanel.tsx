@@ -71,11 +71,11 @@ export function NotificationPanel({ data, onClose }: NotificationPanelProps) {
                                         <Icon className={`size-6 ${color}`} aria-hidden="true" />
                                     </div>
                                     <div className="ms-3 flex-1 pt-0.5 min-w-0">
-                                        <p className="text-sm font-semibold text-foreground break-words">
+                                        <p className="text-sm font-semibold text-foreground wrap-break-word">
                                             {data.title}
                                         </p>
                                         {data.description && (
-                                            <p className="mt-2 text-sm text-muted break-words whitespace-pre-wrap leading-relaxed">
+                                            <p className="mt-2 text-sm text-muted wrap-break-word whitespace-pre-wrap leading-relaxed">
                                                 {data.description}
                                             </p>
                                         )}

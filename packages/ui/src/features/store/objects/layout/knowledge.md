@@ -1,11 +1,13 @@
 # Layout System Knowledge
 
 ## Overview
+
 The layout system provides a flexible way to define table and grid layouts for content objects and documents.
 
 ## Column Layout System
 
 ### Column Layout Definition
+
 ```typescript
 interface ColumnLayout {
     name: string;       // Display name of the column
@@ -17,6 +19,7 @@ interface ColumnLayout {
 ```
 
 ### Field Path Notation
+
 - Uses dot notation to access nested properties
 - Example: `properties.title` accesses title in properties object
 - Special path "." returns the entire object
@@ -25,6 +28,7 @@ interface ColumnLayout {
 - Array access: `items.0.name`
 
 ### Available Column Types
+
 Complete list of supported types:
 
 1. **string** - Text display
@@ -32,9 +36,10 @@ Complete list of supported types:
 3. **date** - Date/time display
 4. **objectId** - object id with preview button
 5. **objectName** - object name display
-6. **objectLink** - *(deprecated)* alias for objectId, kept for backward compatibility
+6. **objectLink** - _(deprecated)_ alias for objectId, kept for backward compatibility
 
 ### Column Types and Renderers
+
 Built-in renderers with parameters:
 
 1. **string**
@@ -58,6 +63,7 @@ Built-in renderers with parameters:
 
 
 ### Parameter Syntax
+
 Parameters are added using URL query string syntax:
 ```typescript
 "type": "string?max_length=50&ellipsis"
@@ -68,6 +74,7 @@ Parameters are added using URL query string syntax:
 ## Layout Configuration Examples
 
 ### Basic Table Layout
+
 ```json
 {
   "layout": [
@@ -87,6 +94,7 @@ Parameters are added using URL query string syntax:
 ```
 
 ### Complex Table Layout
+
 ```json
 {
   "layout": [
@@ -121,6 +129,7 @@ Parameters are added using URL query string syntax:
 ```
 
 ### Search Results Layout
+
 ```json
 {
   "layout": [
@@ -146,16 +155,19 @@ Parameters are added using URL query string syntax:
 ## Common Error Cases
 
 ### Field Path Errors
+
 - Invalid path: Using undefined nested properties
 - Wrong case: Property names are case-sensitive
 - Missing fallback: No fallback for potentially undefined fields
 
 ### Type Parameter Errors
+
 - Invalid parameter names: Using undefined parameters
 - Wrong parameter values: Using incorrect value types
 - Missing required parameters: Not providing required parameters
 
 ### Best Practices to Avoid Errors
+
 - Always validate field paths exist in your data
 - Provide fallbacks for optional fields
 - Use type parameters appropriately
@@ -165,12 +177,14 @@ Parameters are added using URL query string syntax:
 ## Grid Layout System
 
 ### Document Grid Layout
+
 - Supports responsive grid layouts
 - Default configuration: `lg:grid-cols-6`
 - Handles document icons and empty states
 - Supports drag and drop functionality
 
 ### Grid Layout Features
+
 - Responsive column sizing
 - Empty state handling
 - Loading states
@@ -180,6 +194,7 @@ Parameters are added using URL query string syntax:
 ## Best Practices
 
 ### Column Definition
+
 - Always provide a name for clarity
 - Use fallbacks for critical fields
 - Specify type when needed for formatting
@@ -187,6 +202,7 @@ Parameters are added using URL query string syntax:
 - Use type parameters for fine-grained control
 
 ### Layout Implementation
+
 - Use consistent naming conventions
 - Implement proper loading states
 - Handle empty states gracefully
@@ -194,6 +210,7 @@ Parameters are added using URL query string syntax:
 - Consider selection requirements
 
 ### Data Access
+
 - Use dot notation for nested data
 - Provide fallback values
 - Handle missing data gracefully
@@ -203,16 +220,19 @@ Parameters are added using URL query string syntax:
 ## Validation Rules
 
 ### Field Names
+
 - Must be valid JavaScript property names
 - Case-sensitive
 - No spaces or special characters (except dots)
 
 ### Type Names
+
 - Must be one of the defined types
 - Case-sensitive
 - Parameters must be valid for the type
 
 ### Parameter Values
+
 - Must match expected types
 - Numbers must be valid numbers
 - Booleans must be "true" or "false"
@@ -221,18 +241,21 @@ Parameters are added using URL query string syntax:
 ## Integration Points
 
 ### With Search Results
+
 - Used in SearchResults component
 - Supports filtering and sorting
 - Handles pagination
 - Supports custom layouts
 
 ### With Document Display
+
 - Used in DocumentGridLayout
 - Supports document icons
 - Handles file uploads
 - Manages type selection
 
 ### With Selection System
+
 - Supports single/multi select
 - Range selection with shift-click
 - Selection persistence

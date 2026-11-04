@@ -20,7 +20,7 @@ function PanelErrorFallback({ error }: ErrorFallbackComponentProps) {
                 .
             </div>
 
-            {message && <code className="w-full mt-4 text-sm text-muted break-words">{message}</code>}
+            {message && <code className="w-full mt-4 text-sm text-muted wrap-break-word">{message}</code>}
         </MessageBox>
     );
 }

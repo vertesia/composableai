@@ -13,7 +13,7 @@ The `template.config.json` file is placed in the root of your GitHub template re
 
 ## File Location
 
-```
+```text
 your-template-repo/
 ├── template.config.json    # ← Configuration file
 ├── package.json
@@ -138,18 +138,23 @@ interface PromptConfig {
 #### Prompt Config Fields
 
 ##### `type` (required)
+
 Prompt type: `"text"`, `"number"`, `"confirm"`, `"select"`, or `"multiselect"`
 
 ##### `name` (required)
+
 Variable name used for replacement. In template files, use `{{NAME}}` where `NAME` is this value.
 
 ##### `message` (required)
+
 Question text shown to the user.
 
 ##### `initial` (optional)
+
 Default value. Can include `${PROJECT_NAME}` which will be replaced with the user's project name.
 
 ##### `validate` (optional)
+
 JavaScript expression (as string) to validate input. Return `true` if valid, or error message string if invalid.
 
 **Example:**
@@ -160,6 +165,7 @@ JavaScript expression (as string) to validate input. Return `true` if valid, or 
 ```
 
 ##### `format` (optional)
+
 JavaScript expression (as string) to format the value before saving.
 
 **Example:**
@@ -170,6 +176,7 @@ JavaScript expression (as string) to format the value before saving.
 ```
 
 ##### `skip` (optional)
+
 JavaScript expression (as string) that returns `true` to skip this prompt based on previous answers.
 
 **Example:**
@@ -348,7 +355,7 @@ export default function AnalyticsDashboard({ slot }: { slot: string }) {
 **Type:** `Record<string, Record<string, string[]>>`
 
 **Description:** Conditionally remove files based on user answers. The structure is:
-```
+```json
 {
   "VARIABLE_NAME": {
     "value1": ["files", "to", "remove"],
@@ -588,6 +595,7 @@ When a user runs `pnpm create @vertesia/tools my-project`, the installer:
 ## Best Practices
 
 ### 1. Keep Prompts Minimal
+
 Only ask for essential information. Too many prompts overwhelm users.
 
 ```json
@@ -613,6 +621,7 @@ Only ask for essential information. Too many prompts overwhelm users.
 ```
 
 ### 2. Provide Sensible Defaults
+
 Use `initial` values that work for most users.
 
 ```json
@@ -625,6 +634,7 @@ Use `initial` values that work for most users.
 ```
 
 ### 3. Use PROJECT_NAME in Initial Values
+
 Reference the project name in defaults when appropriate.
 
 ```json
@@ -637,6 +647,7 @@ Reference the project name in defaults when appropriate.
 ```
 
 ### 4. Document Variables in Template Files
+
 Add comments to help template maintainers.
 
 ```typescript
@@ -649,6 +660,7 @@ const server = createToolServer({
 ```
 
 ### 5. Test Your Template Config
+
 Create test installations to verify:
 - All prompts work correctly
 - Variable replacement works in all files
@@ -663,14 +675,17 @@ pnpm dev
 ```
 
 ### 6. Keep Files List Updated
+
 When adding new template files with variables, remember to add them to `files` array.
 
 ### 7. Use Conditional Remove Wisely
+
 Only remove files that truly aren't needed. Don't be too aggressive - users can delete files themselves.
 
 ## Testing Your Template
 
 1. **Test locally first:**
+
    ```bash
    # Create test installation
    cd /tmp
@@ -728,6 +743,7 @@ Only remove files that truly aren't needed. Don't be too aggressive - users can 
 ## Version History
 
 ### Version 1.0 (Current)
+
 - Initial template configuration format
 - Support for prompts, file replacement, and conditional removal
 

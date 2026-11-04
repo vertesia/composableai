@@ -30,6 +30,7 @@ vi.mock('@vertesia/ui/session', () => ({
     NoAccessibleAccountError: session.OtherAuthError,
     RequestedScopeUnavailableError: session.OtherAuthError,
     RestrictedEnvironmentError: session.OtherAuthError,
+    usesOidcSignIn: () => false,
     useUserSession: () => ({
         isLoading: false,
         user: undefined,

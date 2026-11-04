@@ -1,10 +1,18 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { type AgentMessage, AgentMessageType, type ConversationFile, FileProcessingStatus } from '@vertesia/common';
+import {
+    type AgentMessage,
+    AgentMessageType,
+    type AuthTokenPayload,
+    type ConversationFile,
+    FileProcessingStatus,
+    Permission,
+} from '@vertesia/common';
 import type React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../../../__tests__/test-utils.js';
 import { ToastContext } from '../../../core/components/toast/ToastContext.js';
+import { UserPermissions, UserPermissionsContext } from '../../permissions/UserPermissionsProvider.js';
 import { ModernAgentConversation } from './ModernAgentConversation';
 
 const mocks = vi.hoisted(() => ({
@@ -633,6 +641,110 @@ describe('ModernAgentConversation send handling', () => {
         expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.reconnect.mock.invocationCallOrder[0]).toBeLessThan(mocks.sendSignal.mock.invocationCallOrder[0]);
         expect(mocks.updateOptimisticMessageStatus).toHaveBeenCalledWith(expect.any(String), 'received');
+    });
+
+    describe('uploading a file', () => {
+        // The view hands useFileProcessing the function that delivers its FileUploaded signal.
+        function latestSignalUpload() {
+            const calls = mocks.useFileProcessing.mock.calls;
+            return calls[calls.length - 1]?.[5] as (sendSignal: () => Promise<unknown>) => Promise<unknown>;
+        }
+
+        it('restarts a terminal continuable run before signaling the upload', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+                agentRunStatus: 'COMPLETED',
+            });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation({ onRestart: vi.fn() });
+            await act(async () => {
+                await latestSignalUpload()(sendFileUploaded);
+            });
+
+            expect(mocks.restart).toHaveBeenCalledWith('agent-run-1');
+            expect(mocks.reconnect).toHaveBeenCalledTimes(1);
+            expect(sendFileUploaded).toHaveBeenCalledTimes(1);
+            expect(mocks.restart.mock.invocationCallOrder[0]).toBeLessThan(
+                sendFileUploaded.mock.invocationCallOrder[0],
+            );
+        });
+
+        it('restarts once for uploads and a message sent before the view sees the run running', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+                agentRunStatus: 'COMPLETED',
+            });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation({ onRestart: vi.fn() });
+            await act(async () => {
+                await Promise.all([latestSignalUpload()(sendFileUploaded), latestSignalUpload()(sendFileUploaded)]);
+            });
+            fireEvent.click(screen.getByRole('button', { name: 'inline send' }));
+
+            await waitFor(() => {
+                expect(mocks.sendSignal).toHaveBeenCalledWith(
+                    'agent-run-1',
+                    'UserInput',
+                    expect.objectContaining({ message: 'follow up' }),
+                );
+            });
+            expect(sendFileUploaded).toHaveBeenCalledTimes(2);
+            expect(mocks.restart).toHaveBeenCalledTimes(1);
+        });
+
+        it('restarts again after a failed restart', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+                agentRunStatus: 'COMPLETED',
+            });
+            mocks.restart.mockRejectedValueOnce(new Error('unavailable')).mockResolvedValueOnce({ id: 'agent-run-1' });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation({ onRestart: vi.fn() });
+            await act(async () => {
+                await expect(latestSignalUpload()(sendFileUploaded)).rejects.toThrow('unavailable');
+            });
+            expect(sendFileUploaded).not.toHaveBeenCalled();
+
+            await act(async () => {
+                await latestSignalUpload()(sendFileUploaded);
+            });
+            expect(mocks.restart).toHaveBeenCalledTimes(2);
+            expect(sendFileUploaded).toHaveBeenCalledTimes(1);
+        });
+
+        it('signals the upload without restarting while the run is active', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.ANSWER, 'still running')],
+                agentRunStatus: 'RUNNING',
+            });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation({ onRestart: vi.fn() });
+            await act(async () => {
+                await latestSignalUpload()(sendFileUploaded);
+            });
+
+            expect(sendFileUploaded).toHaveBeenCalledTimes(1);
+            expect(mocks.restart).not.toHaveBeenCalled();
+        });
+
+        it('does not restart a terminal run that cannot continue', async () => {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.COMPLETE, 'done')],
+                agentRunStatus: 'COMPLETED',
+            });
+            const sendFileUploaded = vi.fn().mockResolvedValue({});
+
+            renderConversation();
+            await act(async () => {
+                await latestSignalUpload()(sendFileUploaded);
+            });
+
+            expect(mocks.restart).not.toHaveBeenCalled();
+        });
     });
 
     it('opens a Markdown artifact in the side panel and allows collaboration for an active run', async () => {
@@ -2291,6 +2403,88 @@ describe('ModernAgentConversation send handling', () => {
                 }),
             }),
         );
+    });
+
+    describe('when the viewer cannot signal the run', () => {
+        function mockPendingToolApproval() {
+            mockStreamState({
+                messages: [
+                    {
+                        ...createMessage(AgentMessageType.REQUEST_INPUT, 'Approve Delete Prompt?'),
+                        details: {
+                            tool_approval: {
+                                tool_name: 'delete_prompt',
+                                approval_key: 'delete_prompt:id:prompt-1',
+                            },
+                            ux: {
+                                options: [
+                                    { id: 'allow_once', label: 'Allow once' },
+                                    { id: 'deny', label: 'Deny' },
+                                ],
+                                free_response: {
+                                    placeholder: 'No, and tell the agent what to do differently',
+                                    submit_label: 'Submit',
+                                },
+                            },
+                        },
+                    },
+                ],
+                isCompleted: false,
+                agentRunStatus: 'RUNNING',
+            });
+        }
+
+        function renderWithPermissions(permissions: Permission[]) {
+            const token = {
+                permissions,
+                account_permissions: [],
+                account_roles: [],
+                project_roles: [],
+            } as unknown as AuthTokenPayload;
+            return renderWithProviders(
+                <UserPermissionsContext.Provider value={new UserPermissions(token)}>
+                    <ModernAgentConversation
+                        agentRunId="agent-run-1"
+                        title="Agent"
+                        hideHeader
+                        hideMessageInput
+                        showRightPanel={false}
+                    />
+                </UserPermissionsContext.Provider>,
+            );
+        }
+
+        function latestInlineSendHandler() {
+            const calls = mocks.allMessagesMixedProps.mock.calls;
+            return (calls[calls.length - 1]?.[0] as { onSendMessage?: unknown } | undefined)?.onSendMessage;
+        }
+
+        it('shows a pending tool approval without answer controls to a viewer lacking workflow_run', () => {
+            mockPendingToolApproval();
+
+            renderWithPermissions([Permission.agent_run_read, Permission.workflow_read]);
+
+            expect(screen.getByText('Approve Delete Prompt?')).not.toBeNull();
+            expect(
+                screen.getByText('The agent is waiting for a response from someone allowed to act on this run.'),
+            ).not.toBeNull();
+            expect(screen.queryByRole('button', { name: /Allow once/ })).toBeNull();
+            expect(screen.queryByRole('button', { name: /Deny/ })).toBeNull();
+            expect(screen.queryByRole('button', { name: 'Submit' })).toBeNull();
+            expect(screen.queryByPlaceholderText('No, and tell the agent what to do differently')).toBeNull();
+            expect(latestInlineSendHandler()).toBeUndefined();
+            expect(mocks.sendSignal).not.toHaveBeenCalled();
+        });
+
+        it('keeps the answer controls for a viewer holding workflow_run', () => {
+            mockPendingToolApproval();
+
+            renderWithPermissions([Permission.agent_run_read, Permission.workflow_run]);
+
+            expect(screen.getByRole('button', { name: /Allow once/ })).not.toBeNull();
+            expect(screen.getByRole('button', { name: 'Submit' })).not.toBeNull();
+            expect(latestInlineSendHandler()).toBeTypeOf('function');
+        });
     });
 
     it('passes approval option metadata through the request overlay signal', async () => {

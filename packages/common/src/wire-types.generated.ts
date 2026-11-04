@@ -37,6 +37,7 @@ import type { AccountType, BillingMethod, QuotaTier } from './account-values.js'
 import type { ApiKeyTypes } from './apikey-values.js';
 import type { AppUINavItem, CompositeAppMenuNavItem } from './apps.js';
 import type {
+    DashboardExportStatus as DashboardExportStatusValues,
     DashboardStatus as DashboardStatusValues,
     DataColumnType as DataColumnTypeValues,
     DataStoreStatus as DataStoreStatusValues,
@@ -552,6 +553,7 @@ export type AppUIConfig = {
 };
 export type AppOAuthClientConfig = {
     redirect_uris: string[];
+    require_consent?: boolean | undefined;
 };
 export type AppInstallationProjectsQuery = {
     name?: string | undefined;
@@ -1120,6 +1122,11 @@ export type AppDevelopmentTaskDetails = {
     commit_date?: string | undefined;
     agent_run?: AgentRunSearchHit | undefined;
 };
+/** Request to create a branch from an existing branch, tag, or commit. */
+export type CreateAppRepoBranchRequest = {
+    name: string;
+    source_ref: string;
+};
 /** A newly created app repository branch. */
 export type AppRepoBranch = {
     name: string;
@@ -1372,6 +1379,7 @@ export type AppInstallation = {
           }
         | undefined;
     tool_allowlist?: string[] | undefined;
+    tools_requiring_approval?: string[] | undefined;
     oauth_bindings?: AppInstallationOAuthBinding[] | undefined;
     provider_bindings?: AppInstallationProviderBinding[] | undefined;
     access_control?: AppAccessControl | undefined;
@@ -1411,6 +1419,7 @@ export type AppInstallationWithManifest = {
           }
         | undefined;
     tool_allowlist?: string[] | undefined;
+    tools_requiring_approval?: string[] | undefined;
     oauth_bindings?: AppInstallationOAuthBinding[] | undefined;
     provider_bindings?: AppInstallationProviderBinding[] | undefined;
     access_control?: AppAccessControl | undefined;
@@ -1452,6 +1461,7 @@ export type AppInstallationListEntry = {
           }
         | undefined;
     tool_allowlist?: string[] | undefined;
+    tools_requiring_approval?: string[] | undefined;
     oauth_bindings?: AppInstallationOAuthBinding[] | undefined;
     provider_bindings?: AppInstallationProviderBinding[] | undefined;
     access_control?: AppAccessControl | undefined;
@@ -1491,12 +1501,17 @@ export type AppInstallationPayload = {
           }
         | undefined;
     access_control?: AppAccessControl | null | undefined;
+    approved_scopes?: string[] | undefined;
     oauth_params?: AppOAuthCollectionParams | undefined;
     oauth_provider_params?: AppOAuthCollectionParams | undefined;
     api_key_params?: AppApiKeyCollectionParams | undefined;
 };
 export type UpdateAppInstallationToolAllowlistPayload = {
     tool_allowlist: string[] | null;
+};
+export type UpdateAppInstallationToolPermissionsPayload = {
+    tool_allowlist?: string[] | null | undefined;
+    tools_requiring_approval?: string[] | null | undefined;
 };
 export type AppInstallationKind = 'ui' | 'tools' | 'all';
 /**
@@ -1908,6 +1923,13 @@ export type AuditAggregationResponse = {
     rows: AuditAggregationRow[];
     from: string;
     to: string;
+};
+/** Several audit aggregation queries answered by one request. */
+export type AuditAggregationBatchQuery = {
+    queries: AuditAggregationQuery[];
+};
+export type AuditAggregationBatchResponse = {
+    results: AuditAggregationResponse[];
 };
 export type AuditAdoptionFilter = {
     actions?: AuditActionWire[] | undefined;
@@ -2881,6 +2903,9 @@ export type DashboardArchiveResult = {
     id: string;
     status: DashboardStatus;
 };
+export type DashboardBulkIdsPayload = {
+    [k: string]: string[];
+};
 export type DashboardBulkArchiveResult = {
     archived: number;
     failed: number;
@@ -3156,7 +3181,7 @@ export type Dashboard = {
 export type CreateDashboardPayload = {
     name: string;
     summary?: string | undefined;
-    dataSource?: DashboardDataSource | undefined;
+    dataSource?: DashboardSqlDataSource | undefined;
     query?: string | undefined;
     queryLimit?: number | undefined;
     queryParameters?: StringValueMap | undefined;
@@ -3170,7 +3195,7 @@ export type CreateDashboardPayload = {
 export type UpdateDashboardPayload = {
     name?: string | undefined;
     summary?: string | undefined | undefined;
-    dataSource?: DashboardDataSource | undefined | undefined;
+    dataSource?: DashboardSqlDataSource | undefined | undefined;
     query?: string | undefined | undefined;
     queryLimit?: number | undefined | undefined;
     queryParameters?: StringValueMap | undefined | undefined;
@@ -3181,6 +3206,54 @@ export type UpdateDashboardPayload = {
         | undefined;
     expected_edit_revision?: number | undefined;
     skip_versioning?: boolean | undefined;
+};
+/**
+ * Options for exporting a saved dashboard as an image.
+ */
+export type ExportDashboardPayload = {
+    parameter_values?: StringValueMap | undefined;
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+/**
+ * An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.
+ */
+export type ExportDashboardPreviewPayload = {
+    query: string;
+    queryLimit?: number | undefined;
+    queryParameters?: StringValueMap | undefined;
+    spec: {
+        [k: string]: unknown;
+    };
+    format?: 'png' | undefined;
+    scale?: number | undefined;
+    background_color?: string | undefined;
+};
+export type DashboardExportStatus = (typeof DashboardExportStatusValues)[keyof typeof DashboardExportStatusValues];
+/**
+ * Why a dashboard export failed.
+ */
+export type DashboardExportError = {
+    code: string;
+    message: string;
+    retryable: boolean;
+};
+/**
+ * A dashboard export: `running` until it is `completed`, with a signed download URL, or `failed`.
+ */
+export type DashboardExport = {
+    export_id: string;
+    status: DashboardExportStatus;
+    started_at: string;
+    completed_at?: string | undefined;
+    url?: string | undefined;
+    content_type?: string | undefined;
+    expires_at?: string | undefined;
+    width?: number | undefined;
+    height?: number | undefined;
+    row_count?: number | undefined;
+    error?: DashboardExportError | undefined;
 };
 /**
  * A point-in-time version of a dashboard.
@@ -3592,6 +3665,7 @@ export type ExecutionEnvironment = {
     settings?: ExecutionEnvironmentSettings | undefined;
     account: string;
     allowed_projects?: string[] | undefined;
+    managed?: boolean | undefined;
     created_by: string;
     updated_by: string;
     created_at: string;
@@ -3605,6 +3679,7 @@ export type ExecutionEnvironmentRef = {
     default_model?: string | undefined;
     endpoint_url?: string | undefined;
     allowed_projects?: string[] | undefined;
+    managed?: boolean | undefined;
     account: string;
     created_by: string;
     updated_by: string;
@@ -4209,7 +4284,7 @@ export type InteractionRefWithSchema = {
 export type InteractionsExportPayload = {
     name?: string | undefined;
     tags?: string[] | undefined;
-    versions?: (number | 'draft' | 'latest')[] | undefined;
+    versions?: (number | 'draft')[] | undefined;
 };
 /**
  * Schema can be stored or specified as a reference to an external schema.
@@ -4673,10 +4748,6 @@ export type InteractionExecutionConfiguration = {
     prompt_cache_schema_suffix?: boolean | undefined;
     http_timeout?: HttpTimeoutOptions | undefined;
 };
-export type GenerateInteractionPayload = {
-    description: string;
-    config: InteractionExecutionConfiguration;
-};
 export type GenerateTestDataPayload = {
     message?: string | undefined;
     count?: number | undefined;
@@ -4684,42 +4755,6 @@ export type GenerateTestDataPayload = {
 };
 export type GeneratedTestDataRecord = {
     [k: string]: unknown;
-};
-export type ImprovePromptPayloadConfig = {
-    config: InteractionExecutionConfiguration;
-};
-export type ImprovePromptPayload = {
-    config: InteractionExecutionConfiguration;
-    interaction_name: string;
-    context?: string | undefined;
-    prompt: {
-        name: string;
-        content: string;
-    }[];
-    result_schema?: JSONSchema | undefined;
-};
-export type GeneratedInteractionPromptTemplate = {
-    role: 'safety' | 'system' | 'user';
-    name: string;
-    content: string;
-    content_type: 'jst';
-    inputSchema: JSONSchema;
-};
-export type GeneratedInteractionPromptSegment = {
-    type: 'template';
-    template: GeneratedInteractionPromptTemplate;
-};
-export type GeneratedInteractionDefinition = {
-    name: string;
-    description: string;
-    temperature: number;
-    prompts: GeneratedInteractionPromptSegment[];
-    max_tokens?: number | undefined;
-    result_schema: JSONSchema;
-    tags: ('generated' | 'agent')[];
-};
-export type PromptImprovementResponse = {
-    result: CompletionResult[];
 };
 export type RateLimitRequestPayload = {
     interaction: string;
@@ -4733,6 +4768,7 @@ export type RateLimitRequestPayload = {
 };
 export type RateLimitRequestResponse = {
     delay_ms: number;
+    rate_limit_grant?: string | undefined;
 };
 /**
  * Resolved environment information
@@ -5031,6 +5067,9 @@ export type UpdateOAuthClientPayload = {
               [k: string]: unknown;
           }
         | undefined;
+};
+export type UpdateOAuthClientStatusPayload = {
+    status: OAuthClientStatus;
 };
 export type OAuthAuthorizationServerMetadata = {
     issuer: string;
@@ -5637,6 +5676,15 @@ export type AppEventDeliveryTargetInput = {
     url: string;
     timeout_ms?: number | undefined;
 };
+export type IntakeMediaAnalysisOverride = {
+    interaction?: string | undefined;
+    config?: InteractionExecutionConfiguration | undefined;
+};
+export type IntakeMediaAnalysisOverrides = {
+    image?: IntakeMediaAnalysisOverride | undefined;
+    video?: IntakeMediaAnalysisOverride | undefined;
+    audio?: IntakeMediaAnalysisOverride | undefined;
+};
 export type EventDeliveryIntentSummary = {
     id: string;
     event_id: string;
@@ -5935,6 +5983,7 @@ export type ProjectConfiguration = {
     inference?: ProjectInferenceProfiles | undefined;
     default_visibility?: ResourceVisibilityWire | undefined;
     sync_content_properties?: boolean | undefined;
+    shared_content_enabled?: boolean | undefined;
     embeddings: {
         text?: ProjectConfigurationEmbedding | undefined;
         image?: ProjectConfigurationEmbedding | undefined;
@@ -6178,6 +6227,7 @@ export type UpdateProjectConfigurationPayload = {
     inference?: ProjectInferenceProfiles | undefined | undefined;
     default_visibility?: ResourceVisibilityWire | undefined | undefined;
     sync_content_properties?: boolean | undefined | undefined;
+    shared_content_enabled?: boolean | undefined | undefined;
     embeddings?:
         | {
               text?: ProjectConfigurationEmbedding | undefined;
@@ -6473,7 +6523,7 @@ export type ResourceRef = {
 /**
  * Kind of object a ResourceSet's `resource_props` matches at query time. Used
  * in `AceConditions.scope` (validated at runtime against this list) and as
- * the prefix in JWT `content_security` keys (e.g. `collection:read`).
+ * the prefix in JWT `abac` keys (e.g. `collection:read`).
  *
  * Each scope is owned by exactly one partition. When adding a new partition
  * (e.g. tasks), extend `AbacScopes` with the new scope(s) AND extend
@@ -6760,6 +6810,31 @@ export type UpdateSecretRequest = {
 };
 export type DeleteSecretResponse = {
     ok: boolean;
+};
+/** Packaged workflows supported by event subscriptions. */
+export type SubscriptionWorkflowDefinition = {
+    endpoint: string;
+    title: string;
+    description: string;
+    variables_schema: JSONSchema;
+    variables_template: JSONObject;
+    templates?:
+        | {
+              name: string;
+              title: string;
+              description: string;
+              variables: JSONObject;
+          }[]
+        | undefined;
+    system_targets?:
+        | {
+              run_as_role: (typeof SystemRoles)[keyof typeof SystemRoles];
+              task_queue?: string | undefined;
+          }[]
+        | undefined;
+};
+export type SubscriptionWorkflowCatalog = {
+    workflows: SubscriptionWorkflowDefinition[];
 };
 export type AgentToolApprovalMode = 'ask' | 'auto_review' | 'full_control';
 export type ToolApprovalGrant = {
@@ -8317,6 +8392,7 @@ export type ContentTypeExtractionGroundingPolicy = {
     review?: ContentTypeExtractionGroundingReviewPolicy | undefined;
 };
 export type ContentTypeIntakePolicy = {
+    media_analysis?: IntakeMediaAnalysisOverrides | undefined;
     mode?: 'programmatic' | 'agentic' | undefined;
     identification?:
         | {
@@ -9426,6 +9502,16 @@ export type UserInviteTokenData = UserInviteTokenDataFromSchema;
  */
 export type User = UserFromSchema;
 export type UpdateUserPayload = UpdateUserPayloadFromSchema;
+export type CreateUserPayload = {
+    name?: string | undefined;
+    language?: string | undefined | undefined;
+    phone?: string | undefined | undefined;
+    properties?: Record<string, unknown> | undefined | undefined;
+    clearance?: number | undefined | undefined;
+    compartments?: string[] | undefined | undefined;
+    email: string;
+    groups?: string[] | undefined;
+};
 /**
  * The compact user shape embedded in other resources' responses, derived from `UserRefSchema`.
  *
@@ -10192,6 +10278,7 @@ export type CreateContentObjectPayloadWire = {
     id?: string | undefined;
     type?: string | undefined;
     generation_run_info?: GenerationRunMetadata | undefined;
+    idempotency_key?: string | undefined;
 };
 export type UpdateContentObjectPayloadWire = {
     text?: string | undefined;
@@ -10274,6 +10361,22 @@ export type PromptSegmentRef_ExportedPromptTemplateRef = {
 export type InteractionRefWithSchemaArray = InteractionRefWithSchema[];
 export type InteractionTagsArray = InteractionTags[];
 export type InteractionEndpointArray = InteractionEndpoint[];
+export type InteractionListQuery = {
+    name?: string | undefined;
+    status?: string[] | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+    prompt?: string | undefined;
+    tags?: string[] | undefined;
+    version?: string | undefined;
+    model?: string | undefined;
+    environment?: string | undefined;
+    is_agent?: boolean | undefined;
+    is_tool?: boolean | undefined;
+    is_skill?: boolean | undefined;
+    is_basic?: boolean | undefined;
+    is_sub_agent?: boolean | undefined;
+};
 export type CatalogInteractionRefArray = CatalogInteractionRef[];
 export type CatalogTagQueryWire = {
     tag?: string | undefined;
@@ -10288,7 +10391,6 @@ export type NumberValueMap = {
     [k: string]: number;
 };
 export type GeneratedTestDataRecordArray = GeneratedTestDataRecord[];
-export type GeneratedInteractionDefinitionArray = GeneratedInteractionDefinition[];
 export type AgentSearchScopeWire = (typeof AgentSearchScope)['Collection'];
 export type AgentSearchScope_Collection = (typeof AgentSearchScope)['Collection'];
 export type LlmCallTypeWire = (typeof LlmCallType)[keyof typeof LlmCallType];
@@ -10933,6 +11035,14 @@ export type AppPackageScopeWire =
     | 'hooks'
     | 'subscriptions'
     | 'all';
+export type AppRepoFileQuery = {
+    path: string;
+    ref?: string | undefined;
+};
+export type AppRepoTreeQuery = {
+    prefix?: string | undefined;
+    ref?: string | undefined;
+};
 export type AppVersionLaunchTargetArray = AppVersionLaunchTarget[];
 export type AppVersionRecordArray = AppVersionRecord[];
 export type AppToolCollectionArray = AppToolCollection[];
@@ -10970,6 +11080,53 @@ export type AppInstallationArray = AppInstallation[];
 export type AppInstallationWithManifestArray = AppInstallationWithManifest[];
 export type AppInstallationListEntryArray = AppInstallationListEntry[];
 export type BinaryFileResponse = string;
+export type DashboardPathParams = {
+    storeId?: string | undefined;
+    dashboardId?: string | undefined;
+    versionId?: string | undefined;
+};
+export type DataStoreImportPathParams = {
+    importId?: string | undefined;
+};
+export type DataStoreVersionPathParams = {
+    versionId?: string | undefined;
+};
+export type ContentObjectExportPathParams = {
+    exportId?: string | undefined;
+    role?: 'data' | 'manifest' | undefined;
+};
+export type ProcessTestRunPathParams = {
+    runId?: string | undefined;
+};
+export type ProcessPathParams = {
+    processId?: string | undefined;
+    runId?: string | undefined;
+    suiteId?: string | undefined;
+};
+export type TaskPathParams = {
+    taskId?: string | undefined;
+};
+export type AgentRunPathParams = {
+    agentRunId?: string | undefined;
+};
+export type AppVersionPathParams = {
+    id?: string | undefined;
+};
+export type AppInstallationPathParams = {
+    installId?: string | undefined;
+};
+export type DelegationGrantPathParams = {
+    grantId?: string | undefined;
+};
+export type OAuthProviderPathParams = {
+    id?: string | undefined;
+};
+export type ProjectAppCapabilityPathParams = {
+    processId?: string | undefined;
+    templateId?: string | undefined;
+    typeId?: string | undefined;
+    viewId?: string | undefined;
+};
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
     Account: AccountFromSchema;
@@ -10981,6 +11138,7 @@ export interface ApiComponentTypes {
     User: UserFromSchema;
     UserArray: UserArrayFromSchema;
     UpdateUserPayload: UpdateUserPayloadFromSchema;
+    CreateUserPayload: CreateUserPayload;
     DeleteByIdResult: DeleteByIdResultFromSchema;
     PrincipalIdentity: PrincipalIdentityFromSchema;
     SignupData: SignupData;
@@ -11097,6 +11255,7 @@ export interface ApiComponentTypes {
     OAuthClientScopeMetadata: OAuthClientScopeMetadata;
     CreateOAuthClientPayload: CreateOAuthClientPayload;
     UpdateOAuthClientPayload: UpdateOAuthClientPayload;
+    UpdateOAuthClientStatusPayload: UpdateOAuthClientStatusPayload;
     OAuthGrant: OAuthGrant;
     ListOAuthGrantsQuery: ListOAuthGrantsQuery;
     RevokeOAuthGrantQuery: RevokeOAuthGrantQuery;
@@ -11230,6 +11389,7 @@ export interface ApiComponentTypes {
     InteractionForkPayload: InteractionForkPayload;
     InteractionsExportPayload: InteractionsExportPayload;
     InteractionSearchQuery: InteractionSearchQuery;
+    InteractionListQuery: InteractionListQuery;
     ResolveInteractionQuery: ResolveInteractionQuery;
     CatalogInteractionRef: CatalogInteractionRef;
     CatalogInteractionRefArray: CatalogInteractionRefArray;
@@ -11249,17 +11409,9 @@ export interface ApiComponentTypes {
     NumberValueMap: NumberValueMap;
     ComputeInteractionFacetPayload: ComputeInteractionFacetPayload;
     ComputedFacetResponse: ComputedFacetResponse;
-    ImprovePromptPayloadConfig: ImprovePromptPayloadConfig;
-    ImprovePromptPayload: ImprovePromptPayload;
-    PromptImprovementResponse: PromptImprovementResponse;
     GenerateTestDataPayload: GenerateTestDataPayload;
     GeneratedTestDataRecord: GeneratedTestDataRecord;
     GeneratedTestDataRecordArray: GeneratedTestDataRecordArray;
-    GenerateInteractionPayload: GenerateInteractionPayload;
-    GeneratedInteractionDefinition: GeneratedInteractionDefinition;
-    GeneratedInteractionDefinitionArray: GeneratedInteractionDefinitionArray;
-    GeneratedInteractionPromptTemplate: GeneratedInteractionPromptTemplate;
-    GeneratedInteractionPromptSegment: GeneratedInteractionPromptSegment;
     AgentRunnerOptions: AgentRunnerOptions;
     AgentSearchScope: AgentSearchScopeWire;
     AgentSearchScope_Collection: AgentSearchScope_Collection;
@@ -11407,6 +11559,7 @@ export interface ApiComponentTypes {
     CreateDashboardSnapshotPayload: CreateDashboardSnapshotPayload;
     DashboardBulkArchiveResult: DashboardBulkArchiveResult;
     StringArrayMap: StringArrayMap;
+    DashboardBulkIdsPayload: DashboardBulkIdsPayload;
     DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSource;
     DashboardVersionItemArray: DashboardVersionItemArray;
     DashboardItem: DashboardItem;
@@ -11417,6 +11570,11 @@ export interface ApiComponentTypes {
     Dashboard: Dashboard;
     CreateDashboardPayload: CreateDashboardPayload;
     UpdateDashboardPayload: UpdateDashboardPayload;
+    ExportDashboardPayload: ExportDashboardPayload;
+    ExportDashboardPreviewPayload: ExportDashboardPreviewPayload;
+    DashboardExportStatus: DashboardExportStatus;
+    DashboardExportError: DashboardExportError;
+    DashboardExport: DashboardExport;
     QueryValidationError: QueryValidationError;
     QueryValidationPayload: QueryValidationPayload;
     ListDataStoreVersionsQuery: ListDataStoreVersionsQuery;
@@ -11667,6 +11825,8 @@ export interface ApiComponentTypes {
     ComputeObjectFacetPayload: ComputeObjectFacetPayload;
     ComplexSearchPayload: ComplexSearchPayload;
     ObjectSearchResponse: ObjectSearchResponse;
+    IntakeMediaAnalysisOverride: IntakeMediaAnalysisOverride;
+    IntakeMediaAnalysisOverrides: IntakeMediaAnalysisOverrides;
     EventPriority: EventPriority;
     WorkflowRuleInputType: WorkflowRuleInputTypeWire;
     WorkflowRuleItem: WorkflowRuleItem;
@@ -11873,6 +12033,8 @@ export interface ApiComponentTypes {
     ActivityPropertyDefinition: ActivityPropertyDefinitionWire;
     ActivityDefinition: ActivityDefinitionWire;
     ActivityCatalog: ActivityCatalogWire;
+    SubscriptionWorkflowDefinition: SubscriptionWorkflowDefinition;
+    SubscriptionWorkflowCatalog: SubscriptionWorkflowCatalog;
     WorkflowInteractionVars: WorkflowInteractionVars;
     ListWorkflowInteractionsResponse: ListWorkflowInteractionsResponse;
     RestartAgentRunPayload: RestartAgentRunPayload;
@@ -11968,6 +12130,8 @@ export interface ApiComponentTypes {
     AuditAggregationFilter: AuditAggregationFilter;
     AuditTrailResponse: AuditTrailResponse;
     AuditAggregationQuery: AuditAggregationQuery;
+    AuditAggregationBatchQuery: AuditAggregationBatchQuery;
+    AuditAggregationBatchResponse: AuditAggregationBatchResponse;
     AuditTrailQuery: AuditTrailQuery;
     ViewExperienceSchemaVersion: ViewExperienceSchemaVersionWire;
     ViewSortClause: ViewSortClause;
@@ -12019,6 +12183,7 @@ export interface ApiComponentTypes {
     ViewExperienceListQuery: ViewExperienceListQuery;
     UpdateAppInstallationOAuthApprovalPayload: UpdateAppInstallationOAuthApprovalPayload;
     UpdateAppInstallationToolAllowlistPayload: UpdateAppInstallationToolAllowlistPayload;
+    UpdateAppInstallationToolPermissionsPayload: UpdateAppInstallationToolPermissionsPayload;
     ValidateUrlResponse: ValidateUrlResponse;
     ValidateUrlRequest: ValidateUrlRequest;
     AppVersionUrls: AppVersionUrls;
@@ -12056,6 +12221,9 @@ export interface ApiComponentTypes {
     DeleteAppVersionResponse: DeleteAppVersionResponse;
     AppDeleteSummary: AppDeleteSummary;
     AppRepoBranch: AppRepoBranch;
+    CreateAppRepoBranchRequest: CreateAppRepoBranchRequest;
+    AppRepoFileQuery: AppRepoFileQuery;
+    AppRepoTreeQuery: AppRepoTreeQuery;
     AppRepoDocumentCommit: AppRepoDocumentCommit;
     AppVersionGitSource: AppVersionGitSource;
     AppGithubConfiguration: AppGithubConfiguration;
@@ -12240,4 +12408,17 @@ export interface ApiComponentTypes {
     DelegationGrantArray: DelegationGrantArray;
     RunBudgetCapability: RunBudgetCapability;
     RunBudgetCapabilityQuery: RunBudgetCapabilityQuery;
+    DashboardPathParams: DashboardPathParams;
+    DataStoreImportPathParams: DataStoreImportPathParams;
+    DataStoreVersionPathParams: DataStoreVersionPathParams;
+    ContentObjectExportPathParams: ContentObjectExportPathParams;
+    ProcessTestRunPathParams: ProcessTestRunPathParams;
+    ProcessPathParams: ProcessPathParams;
+    TaskPathParams: TaskPathParams;
+    AgentRunPathParams: AgentRunPathParams;
+    AppVersionPathParams: AppVersionPathParams;
+    AppInstallationPathParams: AppInstallationPathParams;
+    DelegationGrantPathParams: DelegationGrantPathParams;
+    OAuthProviderPathParams: OAuthProviderPathParams;
+    ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
 }

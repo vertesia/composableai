@@ -49,6 +49,21 @@ export interface EnvProps {
         /** RFC 8707 audience, independent of the logical issuer; defaults to the discovered issuer. */
         resource?: string;
     };
+    /**
+     * The environment's own OpenID Connect user identity provider, used instead of Firebase when set:
+     * a dedicated deployment whose users all sign in through one directory (Entra ID, Okta,
+     * Keycloak). The page is a public PKCE client of the provider; see `session/auth/oidc`.
+     */
+    oidc?: {
+        /** The provider's issuer, exactly as its ID tokens carry it. */
+        issuer: string;
+        /** This page's client ID at the provider. */
+        clientId: string;
+        /** Defaults to `openid email profile`. */
+        scopes?: string[];
+        /** The provider's name on the sign-in button, such as `Agency SSO`. */
+        label?: string;
+    };
     firebase?: {
         apiKey: string;
         authDomain: string;
@@ -99,6 +114,12 @@ export type VertesiaRuntimeConfig = (
           };
       }
     | {
+          /** Sign in on the application's own page through the environment's OIDC provider. */
+          authMode: 'oidc';
+          allowLegacyIframeAuth?: boolean;
+          oidc: NonNullable<EnvProps['oidc']>;
+      }
+    | {
           authMode: 'central';
           allowLegacyIframeAuth?: boolean;
           oauth?: EnvProps['oauth'];
@@ -118,7 +139,7 @@ export type VertesiaRuntimeConfig = (
 
 declare global {
     interface Window {
-        AUTH_MODE?: 'firebase' | 'central';
+        AUTH_MODE?: 'firebase' | 'central' | 'oidc';
         __VERTESIA_RUNTIME_CONFIG__?: VertesiaRuntimeConfig;
     }
 }
@@ -127,6 +148,12 @@ function injectedRuntimeConfig(): VertesiaRuntimeConfig | undefined {
     if (typeof window === 'undefined') return undefined;
     const runtimeConfig = window.__VERTESIA_RUNTIME_CONFIG__;
     if (runtimeConfig?.authMode === 'central') return runtimeConfig;
+    if (runtimeConfig?.authMode === 'oidc') {
+        const oidc = runtimeConfig.oidc;
+        return typeof oidc?.issuer === 'string' && oidc.issuer && typeof oidc.clientId === 'string' && oidc.clientId
+            ? runtimeConfig
+            : undefined;
+    }
     if (runtimeConfig?.authMode !== 'firebase') return undefined;
 
     const firebase = runtimeConfig.firebase;
@@ -183,6 +210,9 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
         const runtimeConfig = injectedRuntimeConfig() ?? buildRuntimeConfig(buildEnv);
         const runtimeFirebase = runtimeConfig?.authMode === 'firebase' ? runtimeConfig.firebase : undefined;
         this._props = props && runtimeFirebase && !props.firebase ? { ...props, firebase: runtimeFirebase } : props;
+        if (this._props && runtimeConfig?.authMode === 'oidc' && !this._props.oidc) {
+            this._props = { ...this._props, oidc: runtimeConfig.oidc };
+        }
         const authUrl = runtimeConfig?.authMode === 'central' ? runtimeConfig.authUrl?.trim() : undefined;
         if (this._props && authUrl && isTrustedAuthBrokerUrl(authUrl, { allowLoopback: this._props.isLocalDev })) {
             this._props = { ...this._props, endpoints: { ...this._props.endpoints, auth: authUrl } };
@@ -305,6 +335,10 @@ export class VertesiaEnvironment implements Readonly<EnvProps> {
 
     get oauth() {
         return this._props?.oauth;
+    }
+
+    get oidc() {
+        return this._props?.oidc;
     }
 
     get authTokenProvider() {

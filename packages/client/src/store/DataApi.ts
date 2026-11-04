@@ -26,6 +26,7 @@ import {
     type QueryValidationResult,
     type UpdateSchemaPayload,
 } from '@vertesia/common';
+import { withImportId } from '../idempotency-key.js';
 import { DashboardApi } from './DashboardApi.js';
 
 /**
@@ -279,7 +280,10 @@ export class DataApi extends ApiTopic {
      * the moment 1.5 is deployed, not at their next upgrade.
      */
     import(id: string, payload: ImportDataPayload): Promise<ImportJob> {
-        return this.post(`/${id}/import`, { payload, headers: this.storeHeaders(id) });
+        return this.post(`/${id}/import`, {
+            payload: withImportId(this.client, payload),
+            headers: this.storeHeaders(id),
+        });
     }
 
     /**
@@ -315,7 +319,7 @@ export class DataApi extends ApiTopic {
      * Named snapshots are kept indefinitely (not subject to 30-day cleanup).
      *
      * @param id - Data store ID
-     * @param payload - Snapshot name and optional message
+     * @param payload - Snapshot name and message, both non-empty
      * @returns The created version/snapshot
      *
      * @example
@@ -487,21 +491,21 @@ export class DataApi extends ApiTopic {
      * // List dashboards
      * const dashboards = await client.data.dashboards(storeId).list();
      *
-     * // Preview a dashboard before creating
-     * const preview = await client.data.dashboards(storeId).preview({
-     *   queries: [{ name: 'sales', sql: 'SELECT * FROM sales' }],
-     *   panels: [{ title: 'Sales', dataSources: ['sales'], ... }]
+     * // Preview a dashboard before creating it
+     * const preview = await client.data.dashboards(storeId).exportPreview({
+     *   query: 'SELECT region, SUM(amount) AS total FROM sales GROUP BY region',
+     *   spec: { mark: 'bar', encoding: { ... } },
      * });
      *
      * // Create a dashboard
      * const dashboard = await client.data.dashboards(storeId).create({
      *   name: 'Sales Overview',
-     *   queries: [...],
-     *   panels: [...]
+     *   query: 'SELECT region, SUM(amount) AS total FROM sales GROUP BY region',
+     *   spec: { mark: 'bar', encoding: { ... } },
      * });
      *
-     * // Render dashboard to PNG
-     * const result = await client.data.dashboards(storeId).render(dashboardId);
+     * // Export the dashboard as a PNG (signed download URL)
+     * const { url } = await client.data.dashboards(storeId).export(dashboard.id);
      * ```
      */
     dashboards(storeId: string): DashboardApi {

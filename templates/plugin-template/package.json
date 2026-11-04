@@ -70,11 +70,11 @@
         "mcp"
     ],
     "peerDependencies": {
-        "react": "^19.3.0",
-        "react-dom": "^19.3.0"
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.5.15",
+        "@biomejs/biome": "2.6.3",
         "@hono/vite-dev-server": "^0.26.1",
         "@playwright/test": "^1.64.1",
         "@tailwindcss/forms": "^0.5.11",
@@ -98,7 +98,7 @@
         "vite": "catalog:",
         "vitest": "catalog:",
         "vite-plugin-serve-static": "^2.2.1",
-        "workerd": "1.20261014.1"
+        "workerd": "1.20261027.1"
     },
     "dependencies": {
         "@hono/node-server": "^2.1.5",
@@ -108,10 +108,10 @@
         "@vertesia/tools-admin-ui": "workspace:*",
         "@vertesia/tools-sdk": "workspace:*",
         "@vertesia/ui": "workspace:*",
-        "dotenv": "^18.0.7",
-        "hono": "^4.13.13",
+        "dotenv": "^18.0.9",
+        "hono": "^4.13.14",
         "html-parse-stringify": "^4.0.1",
-        "lucide-react": "^1.55.0",
+        "lucide-react": "^1.61.0",
         "react-vega": "^8.0.0",
         "use-sync-external-store": "^1.7.0",
         "vega": "^6.4.0",

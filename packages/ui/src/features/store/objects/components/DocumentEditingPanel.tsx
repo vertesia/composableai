@@ -199,7 +199,7 @@ function DocumentWorkingCopyDiff({ original, workingCopy }: { original: string; 
                 <span className="text-success">+{counts.added}</span>
             </div>
             <div className="min-h-0 flex-1 overflow-auto p-5">
-                <pre className="mx-auto max-w-5xl whitespace-pre-wrap break-words rounded-lg border border-mixer-muted/25 bg-background p-5 font-mono text-xs leading-6 shadow-sm">
+                <pre className="mx-auto max-w-5xl whitespace-pre-wrap wrap-break-word rounded-lg border border-mixer-muted/25 bg-background p-5 font-mono text-xs leading-6 shadow-sm">
                     {segments.map((segment, index) => {
                         if (segment.type === 'removed') {
                             return (

@@ -6,6 +6,7 @@ import type {
     OAuthClientScopeMetadata,
     SuccessResponse,
     UpdateOAuthClientPayload,
+    UpdateOAuthClientStatusPayload,
 } from '@vertesia/common';
 
 export default class OAuthClientsApi extends ApiTopic {
@@ -31,6 +32,11 @@ export default class OAuthClientsApi extends ApiTopic {
 
     update(clientId: string, payload: UpdateOAuthClientPayload): Promise<OAuthClient> {
         return this.put(`/${clientId}`, { payload });
+    }
+
+    /** Enable or disable sign-in without changing application-managed configuration. */
+    setStatus(clientId: string, payload: UpdateOAuthClientStatusPayload): Promise<OAuthClient> {
+        return this.put(`/${encodeURIComponent(clientId)}/status`, { payload });
     }
 
     remove(clientId: string): Promise<SuccessResponse> {

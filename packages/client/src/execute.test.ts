@@ -200,13 +200,13 @@ describe('executeInteractionByName request options', () => {
 
 describe('executeInteractionAsync retries', () => {
     /** A client whose own policy retries POST; the server fails the first attempt with a retryable 503. */
-    function createRetryingClient(bodies: string[]) {
+    function createRetryingClient(bodies: string[], idempotencyKeys = false) {
         let attempt = 0;
         return new VertesiaClient({
             serverUrl: 'https://api.example.com',
             storeUrl: 'https://api.example.com',
             apikey: 'test-token',
-            retryPolicy: { attempts: 3, methods: ['POST'], baseDelayMs: 0, jitter: false },
+            retryPolicy: { attempts: 3, methods: ['POST'], baseDelayMs: 0, jitter: false, idempotencyKeys },
             fetch: vi.fn(async (input: RequestInfo) => {
                 bodies.push(input instanceof Request ? await input.text() : '');
                 attempt++;
@@ -238,6 +238,16 @@ describe('executeInteractionAsync retries', () => {
         });
         expect(bodies).toHaveLength(2);
         expect(bodies[1]).toBe(bodies[0]);
+    });
+
+    it('keys and retries an unkeyed conversation when the policy sends idempotency keys', async () => {
+        const bodies: string[] = [];
+        const client = createRetryingClient(bodies, true);
+
+        await client.interactions.executeAsync({ type: 'conversation', interaction: 'sys:GeneralAgent' });
+        expect(bodies).toHaveLength(2);
+        expect(bodies[1]).toBe(bodies[0]);
+        expect(JSON.parse(bodies[0] ?? '{}').idempotency_key).toMatch(/^[0-9a-f-]{36}$/);
     });
 
     it('keeps the client policy for an interaction execution', async () => {

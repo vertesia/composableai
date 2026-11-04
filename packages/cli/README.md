@@ -3,11 +3,11 @@
 This is a command line application that can be used to access your Vertesia projects.
 It was designed to fulfil the following main use cases:
 
-* List and switch between your Vertesia projects
-* List the existing interactions and execution environments
-* Run interactions once or multiple times over a set of different data inputs.
-* Generate data inputs to run the interactions against.
-* Search through the history of runs to inspect detailed results.
+- List and switch between your Vertesia projects
+- List the existing interactions and execution environments
+- Run interactions once or multiple times over a set of different data inputs.
+- Generate data inputs to run the interactions against.
+- Search through the history of runs to inspect detailed results.
 
 ## Requirements
 

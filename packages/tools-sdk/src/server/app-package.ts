@@ -121,15 +121,14 @@ const builders: Record<Exclude<AppPackageScope, 'all'>, AppPackageBuilder> = {
     async widgets(pkg: AppPackage, config: ToolServerConfig) {
         const { skills: skillCollections = [] } = config;
         const widgets: Record<string, AppWidgetInfo> = {};
+        // Keyed by widget name, the code block language the agent chat renders it for (same as /api/widgets).
         for (const coll of skillCollections) {
-            for (const skill of coll.getSkillDefinitions()) {
-                if (skill.widgets && skill.widgets.length > 0) {
-                    widgets[skill.name] = {
-                        skill: skill.name,
-                        collection: coll.name,
-                        url: `/widgets/${skill.widgets[0]}.js`,
-                    } satisfies AppWidgetInfo;
-                }
+            for (const widget of coll.getWidgets()) {
+                widgets[widget.name] = {
+                    skill: widget.skill,
+                    collection: coll.name,
+                    url: `/widgets/${widget.name}.js`,
+                } satisfies AppWidgetInfo;
             }
         }
         pkg.widgets = widgets;

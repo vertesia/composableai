@@ -465,7 +465,7 @@ export default function MessageInput({
         // biome-ignore lint/a11y/noStaticElementInteractions: drag/drop target only; file selection is also exposed via the upload button.
         <div
             className={cn(
-                'px-3 py-3 flex-shrink-0 transition-all fixed lg:sticky bottom-0 start-0 end-0 lg:start-auto lg:end-auto w-full bg-background/95 backdrop-blur z-10',
+                'px-3 py-3 shrink-0 transition-all fixed lg:sticky bottom-0 inset-s-0 inset-e-0 lg:inset-s-auto lg:inset-e-auto w-full bg-background/95 backdrop-blur z-10',
                 isDragOver && canDropFiles && 'bg-info/10 border-info',
                 className,
             )}

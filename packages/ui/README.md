@@ -151,10 +151,10 @@ The legacy `alt` prop is `@deprecated` — it is forwarded to `aria-label` for o
 
 ### Deprecated props (slated for next major)
 
-| Prop | Migration |
-|---|---|
-| `Button.alt` | Use `aria-label` for the accessible name. For a visual tooltip, wrap in `<VTooltip>` or pass `title`. |
-| `CopyButton.alt` | Use `aria-label`. |
+| Prop             | Migration                                                                                             |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| `Button.alt`     | Use `aria-label` for the accessible name. For a visual tooltip, wrap in `<VTooltip>` or pass `title`. |
+| `CopyButton.alt` | Use `aria-label`.                                                                                     |
 
 Both still work for one release and emit a single deduped console warning per session.
 

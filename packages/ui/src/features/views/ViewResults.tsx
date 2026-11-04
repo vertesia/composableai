@@ -174,7 +174,7 @@ function resolveMediaOnce(
 ): Promise<string | undefined> {
     const inFlight = inFlightMediaResolutionsFor(resolver);
     const pending = inFlight.get(key);
-    if (pending) return pending;
+    if (pending !== undefined) return pending;
     const started = resolve().finally(() => {
         inFlight.delete(key);
     });
@@ -549,7 +549,7 @@ function ResultCard({
             className={`relative flex h-full min-w-0 flex-col overflow-hidden ${selection?.isSelected(hit.id) ? 'ring-2 ring-primary' : ''}`}
         >
             {selection && (
-                <div className="absolute start-2 top-2 z-10 rounded bg-background/80 p-1">
+                <div className="absolute inset-s-2 top-2 z-10 rounded bg-background/80 p-1">
                     <HitSelectionCheckbox hit={hit} page={page} selection={selection} />
                 </div>
             )}
@@ -637,7 +637,7 @@ function GalleryResults({
                     className={`relative overflow-hidden ${selection?.isSelected(hit.id) ? 'ring-2 ring-primary' : ''}`}
                 >
                     {selection && (
-                        <div className="absolute start-2 top-2 z-10 rounded bg-background/80 p-1">
+                        <div className="absolute inset-s-2 top-2 z-10 rounded bg-background/80 p-1">
                             <HitSelectionCheckbox hit={hit} page={hits} selection={selection} />
                         </div>
                     )}

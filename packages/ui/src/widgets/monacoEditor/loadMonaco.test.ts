@@ -25,6 +25,27 @@ describe('loadMonacoReact', () => {
         expect(config).toHaveBeenCalledWith({ paths: { vs: expect.stringContaining('monaco-editor@') } });
     });
 
+    it('loads the runtime from the location the app set', async () => {
+        const config = vi.fn();
+        vi.doMock('@monaco-editor/react', () => ({ loader: { config }, Editor: () => null }));
+        const { loadMonacoReact, setMonacoRuntimeUrl } = await import('./loadMonaco.js');
+
+        setMonacoRuntimeUrl('/static/monaco/vs');
+        await loadMonacoReact();
+
+        expect(config).toHaveBeenCalledWith({ paths: { vs: '/static/monaco/vs' } });
+    });
+
+    it('repoints a loader that a module configured before the app set the location', async () => {
+        const config = vi.fn();
+        const { configureMonacoLoader, setMonacoRuntimeUrl } = await import('./loadMonaco.js');
+
+        configureMonacoLoader({ config });
+        setMonacoRuntimeUrl('/static/monaco/vs');
+
+        expect(config).toHaveBeenLastCalledWith({ paths: { vs: '/static/monaco/vs' } });
+    });
+
     // A memoized rejection would make every later attempt fail instantly for the rest of the
     // session, turning one transient chunk error into an editor that never opens again.
     it('retries after a failed import instead of caching the failure', async () => {

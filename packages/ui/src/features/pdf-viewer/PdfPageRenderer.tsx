@@ -2,6 +2,11 @@ import { Loader2 } from 'lucide-react';
 import { createContext, Suspense, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Document, Page } from './lazyReactPdf';
 
+// Every Document below sets `suspense={false}`, which its pages inherit, so that the `loading` and
+// `onLoadError` props apply. With react-pdf's default Suspense, a page that loads for the first time
+// suspends up to the boundary around its Document: the thumbnail list was replaced by a spinner each
+// time a page scrolled into view, and its scroll position went back to the top.
+
 // Loading spinner component
 function LoadingSpinner({ className, size = 'md' }: { className?: string; size?: 'sm' | 'md' | 'lg' }) {
     const sizeClasses = {
@@ -63,7 +68,13 @@ export function PdfPageRenderer({
         <div className={className}>
             {loading && <LoadingSpinner className="py-4" size="md" />}
             <Suspense fallback={null}>
-                <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} onLoadError={handleError} loading={null}>
+                <Document
+                    file={pdfUrl}
+                    onLoadSuccess={handleLoadSuccess}
+                    onLoadError={handleError}
+                    loading={null}
+                    suspense={false}
+                >
                     <Page
                         pageNumber={pageNumber}
                         width={width}
@@ -179,6 +190,7 @@ export function SharedPdfProvider({ pdfUrl, urlLoading = false, children, onLoad
                         onLoadSuccess={handleLoadSuccess}
                         onLoadError={handleError}
                         loading={<LoadingSpinner className="py-4" size="md" />}
+                        suspense={false}
                     >
                         {children(renderPage)}
                     </Document>
@@ -487,6 +499,7 @@ export function PdfThumbnailList({
                     onLoadSuccess={handleLoadSuccess}
                     onLoadError={handleError}
                     loading={<LoadingSpinner className="py-4" size="md" />}
+                    suspense={false}
                 >
                     {hasAspectRatio ? (
                         <>
@@ -579,7 +592,13 @@ export function PdfDocumentRenderer({
         <div className={className}>
             {loading && <LoadingSpinner className="py-8" size="lg" />}
             <Suspense fallback={null}>
-                <Document file={pdfUrl} onLoadSuccess={handleLoadSuccess} onLoadError={handleError} loading={null}>
+                <Document
+                    file={pdfUrl}
+                    onLoadSuccess={handleLoadSuccess}
+                    onLoadError={handleError}
+                    loading={null}
+                    suspense={false}
+                >
                     <Page
                         pageNumber={Math.min(pageNumber, numPages || 1)}
                         width={width}

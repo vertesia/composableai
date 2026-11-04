@@ -7,7 +7,7 @@ import type { NodeStreamSource } from '@vertesia/client/node';
 import { ContentEventName, type DSLActivityExecutionPayload, ExecutionRunStatus } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
-import { type ExecuteInteractionParams, executeInteraction } from './executeInteraction.js';
+import { type ExecuteInteractionParams, executeInteraction, requestInteractionSlot } from './executeInteraction.js';
 
 vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../dsl/setup/ActivityContext.js')>();
@@ -286,6 +286,31 @@ describe('executeInteraction retryability', () => {
         expect(requestSlot.mock.calls[0][0].rate_limit_id).toBe(executeByName.mock.calls[0][1].workflow.rate_limit_id);
     });
 
+    it('should execute under the slot grant the admission returned', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const executeByName = vi.fn().mockResolvedValue({
+            id: 'run-id',
+            status: ExecutionRunStatus.completed,
+            result: [],
+        });
+        const mockClient = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0, rate_limit_grant: 'grant-token' }),
+                executeByName,
+            },
+        } as unknown as VertesiaClient;
+        const payload = createPayload();
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            inputType: 'objectIds',
+            params: payload.params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        await testEnv.run(executeInteraction, payload);
+
+        expect(executeByName.mock.calls[0][1].workflow.rate_limit_id).toBe('grant-token');
+    });
+
     async function runWithProjection(projection: Record<string, unknown>) {
         const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
         const executeByName = vi.fn().mockResolvedValue({
@@ -382,6 +407,102 @@ describe('executeInteraction retryability', () => {
         expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
+    describe('when the workflow waits for renditions', () => {
+        const pendingRunBody = {
+            id: 'rejected-run',
+            status: ExecutionRunStatus.failed,
+            error: {
+                code: 'rendition_pending',
+                message: 'Rendition for object video-1 is in progress',
+                retry_after_ms: 30_000,
+                data: { pending: [{ object_id: 'video-1', kind: 'video' }, { object_id: 'bad' }] },
+            },
+        };
+
+        async function mockWaitingExecution(executeByName: ReturnType<typeof vi.fn>) {
+            const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+            const payload = createPayload();
+            payload.params.wait_for_renditions = true;
+            vi.mocked(setupActivity).mockResolvedValue({
+                client: {
+                    interactions: { requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }), executeByName },
+                } as unknown as VertesiaClient,
+                inputType: 'objectIds',
+                params: payload.params,
+            } as unknown as ActivityContext<ExecuteInteractionParams>);
+            return payload;
+        }
+
+        it('sends the rendition wait header', async () => {
+            const executeByName = vi.fn().mockResolvedValue({
+                id: 'run-id',
+                status: ExecutionRunStatus.completed,
+                result: [],
+            });
+            const payload = await mockWaitingExecution(executeByName);
+
+            await testEnv.run(executeInteraction, payload);
+
+            expect(executeByName.mock.calls[0][3]).toMatchObject({ headers: { 'x-vertesia-rendition-wait': '1' } });
+        });
+
+        it('fails without retry, listing the pending renditions, when the server answers 412', async () => {
+            const error = new ServerError(
+                'Precondition Failed',
+                new Request('http://mock-studio'),
+                412,
+                pendingRunBody,
+            );
+            const payload = await mockWaitingExecution(vi.fn().mockRejectedValue(error));
+
+            await expect(testEnv.run(executeInteraction, payload)).rejects.toMatchObject({
+                type: 'RenditionPendingError',
+                nonRetryable: true,
+                details: [
+                    {
+                        pending: [{ object_id: 'video-1', kind: 'video' }],
+                        retry_after_ms: 30_000,
+                        run_id: 'rejected-run',
+                    },
+                ],
+            });
+            expect(activityLogger.error).not.toHaveBeenCalled();
+        });
+
+        it('keeps a 412 that lists no pending renditions retryable', async () => {
+            const error = new ServerError('Precondition Failed', new Request('http://mock-studio'), 412, {
+                id: 'rejected-run',
+                error: { message: 'Rendition for object image-1 is in progress' },
+            });
+            const payload = await mockWaitingExecution(vi.fn().mockRejectedValue(error));
+
+            await expect(testEnv.run(executeInteraction, payload)).rejects.not.toMatchObject({
+                type: 'RenditionPendingError',
+            });
+            await expect(testEnv.run(executeInteraction, payload)).rejects.not.toMatchObject({ nonRetryable: true });
+        });
+    });
+
+    it('does not send the rendition wait header by default', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const executeByName = vi
+            .fn()
+            .mockResolvedValue({ id: 'run-id', status: ExecutionRunStatus.completed, result: [] });
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: {
+                interactions: { requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }), executeByName },
+            } as unknown as VertesiaClient,
+            inputType: 'objectIds',
+            params: createPayload().params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        await testEnv.run(executeInteraction, createPayload());
+
+        // Other callers keep their exact request options: no headers at all.
+        expect(executeByName.mock.calls[0]).toHaveLength(4);
+        expect(executeByName.mock.calls[0][3]).not.toHaveProperty('headers');
+    });
+
     it.each([
         ['status', { status: 412 }],
         ['code', { code: 412 }],
@@ -426,16 +547,32 @@ describe('executeInteraction retryability', () => {
         expect(activityLogger.error).toHaveBeenCalled();
     });
 
-    it('should mark other 4xx failures as non-retryable', async () => {
+    it('should mark other 4xx failures as non-retryable and log them at warn', async () => {
         await mockInteractionError(Object.assign(new Error('bad request'), { statusCode: 400 }));
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
-        expect(activityLogger.error).toHaveBeenCalled();
+        expect(activityLogger.warn).toHaveBeenCalledWith(
+            'Failed to execute interaction testInteraction',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
-    it('keeps explicitly permanent 412 failures at error level', async () => {
+    it.each([401, 403])('logs a %s at error: the platform rejected the worker itself', async (statusCode) => {
+        await mockInteractionError(Object.assign(new Error('unauthorized'), { statusCode }));
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+        expect(activityLogger.error).toHaveBeenCalledWith(
+            'Failed to execute interaction testInteraction',
+            expect.any(Object),
+        );
+    });
+
+    it('logs explicitly permanent 412 failures at warn', async () => {
         await mockInteractionError(
             Object.assign(new Error('permanent precondition failure'), {
                 statusCode: 412,
@@ -446,16 +583,24 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
-        expect(activityLogger.error).toHaveBeenCalled();
+        expect(activityLogger.warn).toHaveBeenCalledWith(
+            'Failed to execute interaction testInteraction',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
-    it('does not retry unavailable rendition responses', async () => {
+    it('does not retry unavailable rendition responses, and logs them at warn', async () => {
         await mockInteractionError(Object.assign(new Error('rendition unavailable'), { statusCode: 422 }));
 
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
-        expect(activityLogger.error).toHaveBeenCalled();
+        expect(activityLogger.warn).toHaveBeenCalledWith(
+            'Failed to execute interaction testInteraction',
+            expect.any(Object),
+        );
+        expect(activityLogger.error).not.toHaveBeenCalled();
     });
 
     it('should honor explicitly retryable 4xx execution errors', async () => {
@@ -477,5 +622,112 @@ describe('executeInteraction retryability', () => {
         await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
             nonRetryable: true,
         } satisfies Partial<ApplicationFailure>);
+    });
+});
+
+describe('executeInteraction failed run log level', () => {
+    async function mockFailedRun(error: { code: string; message: string; retryable?: boolean }): Promise<void> {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const mockClient = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }),
+                executeByName: vi.fn().mockResolvedValue({ id: 'run', status: ExecutionRunStatus.failed, error }),
+            },
+        } as unknown as VertesiaClient;
+
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            inputType: 'objectIds',
+            params: createPayload().params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+    }
+
+    /** This activity's own lines: the SDK also logs `Activity failed` at warn when the activity throws. */
+    function messagesLoggedAt(level: 'warn' | 'error'): unknown[] {
+        return activityLogger[level].mock.calls
+            .map(([message]) => message)
+            .filter((message) => String(message).includes('interaction testInteraction'));
+    }
+
+    it.each(['validation_error', 'json_error', 'content_policy_violation'])(
+        'logs a %s once at warn: the model answer is an outcome of the run',
+        async (code) => {
+            await mockFailedRun({ code, message: '/processing_hint: must be object' });
+
+            await expect(testEnv.run(executeInteraction, createPayload())).rejects.toThrow(
+                'Interaction Execution failed testInteraction: /processing_hint: must be object',
+            );
+            expect(messagesLoggedAt('warn')).toEqual(['Error executing interaction testInteraction']);
+            expect(messagesLoggedAt('error')).toEqual([]);
+        },
+    );
+
+    it('logs another failed run once at error on the attempt that ends the activity', async () => {
+        await mockFailedRun({ code: 'error', message: 'store failed', retryable: false });
+
+        await expect(testEnv.run(executeInteraction, createPayload())).rejects.toMatchObject({
+            nonRetryable: true,
+        } satisfies Partial<ApplicationFailure>);
+        expect(messagesLoggedAt('error')).toEqual(['Error executing interaction testInteraction']);
+        expect(messagesLoggedAt('warn')).toEqual([]);
+    });
+
+    it('logs another failed run at warn while Temporal will retry it', async () => {
+        await mockFailedRun({ code: 'error', message: 'store failed' });
+        const env = new MockActivityEnvironment(
+            { attempt: 2, retryPolicy: { maximumAttempts: 15 } },
+            { logger: activityLogger },
+        );
+
+        await expect(env.run(executeInteraction, createPayload())).rejects.toThrow('store failed');
+        expect(messagesLoggedAt('warn')).toEqual(['Error executing interaction testInteraction']);
+        expect(messagesLoggedAt('error')).toEqual([]);
+    });
+});
+
+describe('requestInteractionSlot', () => {
+    const config = { environment: 'env-1', model: 'model-1' };
+    const slotEnv = new MockActivityEnvironment(
+        { activityId: 'act-1', workflowExecution: { workflowId: 'wf-1', runId: 'run-1' } },
+        { logger: activityLogger },
+    );
+    const clientFor = (requestSlot: ReturnType<typeof vi.fn>) =>
+        ({ interactions: { requestSlot } }) as unknown as VertesiaClient;
+
+    it('requests the slot under this activity and returns the grant', async () => {
+        const requestSlot = vi.fn().mockResolvedValue({ delay_ms: 0, rate_limit_grant: 'grant-token' });
+
+        await expect(slotEnv.run(requestInteractionSlot, clientFor(requestSlot), 'sys:Page', config)).resolves.toBe(
+            'grant-token',
+        );
+        expect(requestSlot).toHaveBeenCalledWith(
+            expect.objectContaining({
+                interaction: 'sys:Page',
+                environment_id: 'env-1',
+                model_id: 'model-1',
+                rate_limit_id: 'run-1:act-1:sys:Page',
+            }),
+        );
+    });
+
+    it('returns its own id when the server returns no grant', async () => {
+        const requestSlot = vi.fn().mockResolvedValue({ delay_ms: 0 });
+
+        await expect(slotEnv.run(requestInteractionSlot, clientFor(requestSlot), 'sys:Page', config)).resolves.toBe(
+            'run-1:act-1:sys:Page',
+        );
+    });
+
+    it('defers the activity by the delay when the slot is not free', async () => {
+        const requestSlot = vi.fn().mockResolvedValue({ delay_ms: 1500 });
+
+        const error = (await slotEnv
+            .run(requestInteractionSlot, clientFor(requestSlot), 'sys:Page', config)
+            .catch((e: unknown) => e)) as ApplicationFailure;
+        expect(error).toMatchObject({
+            type: 'InteractionRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: 1500,
+        });
     });
 });

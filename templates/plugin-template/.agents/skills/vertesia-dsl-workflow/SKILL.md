@@ -9,13 +9,13 @@ DSL workflows are declarative step-by-step pipelines defined as JSON. They can c
 
 ## Key Source Files
 
-| File | Purpose |
-|------|---------|
-| `composableai/packages/workflow/src/dsl/dsl-workflow.ts` | DSL engine: variable init, step execution, remote activity calls |
-| `composableai/packages/workflow/src/dsl/vars.ts` | `Vars` class: variable storage, resolution (`${varName}`), dotted path access |
-| `composableai/packages/workflow/src/dsl/conditions.ts` | `matchCondition()`: operator-based condition matching |
-| `composableai/packages/workflow/src/activities/getObjectFromStore.ts` | Built-in activity to load a ContentObject into workflow vars |
-| `composableai/packages/tools-sdk/src/ActivityCollection.ts` | `ActivityCollection` class for registering plugin activities |
+| File                                                                  | Purpose                                                                       |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `composableai/packages/workflow/src/dsl/dsl-workflow.ts`              | DSL engine: variable init, step execution, remote activity calls              |
+| `composableai/packages/workflow/src/dsl/vars.ts`                      | `Vars` class: variable storage, resolution (`${varName}`), dotted path access |
+| `composableai/packages/workflow/src/dsl/conditions.ts`                | `matchCondition()`: operator-based condition matching                         |
+| `composableai/packages/workflow/src/activities/getObjectFromStore.ts` | Built-in activity to load a ContentObject into workflow vars                  |
+| `composableai/packages/tools-sdk/src/ActivityCollection.ts`           | `ActivityCollection` class for registering plugin activities                  |
 
 ## Workflow Definition Structure
 
@@ -36,11 +36,11 @@ await client.workflows.definitions.create({
 
 Common built-in activities available in all DSL workflows:
 
-| Activity | Purpose | Key Params |
-|----------|---------|------------|
-| `setDocumentStatus` | Set document status | `{ status: 'processing' \| 'completed' \| ... }` |
-| `getObjectFromStore` | Load ContentObject into vars | `{ }` (uses objectId automatically) |
-| `generateEmbeddings` | Compute embeddings | `{ type: 'text' \| 'properties' }` |
+| Activity             | Purpose                      | Key Params                                       |
+| -------------------- | ---------------------------- | ------------------------------------------------ |
+| `setDocumentStatus`  | Set document status          | `{ status: 'processing' \| 'completed' \| ... }` |
+| `getObjectFromStore` | Load ContentObject into vars | `{ }` (uses objectId automatically)              |
+| `generateEmbeddings` | Compute embeddings           | `{ type: 'text' \| 'properties' }`               |
 
 ### `getObjectFromStore` Pattern
 
@@ -55,7 +55,7 @@ Use `output` to store the loaded object in a named variable, then access nested 
 
 Plugin activities registered via `ActivityCollection` are invoked as DSL steps using the naming convention:
 
-```
+```text
 app:<plugin-name>:<collection-name>:<activity-name>
 ```
 
@@ -63,7 +63,7 @@ Example: `app:bpce-orchestrator:intake:categorize_task`
 
 App interactions used by `executeInteraction` follow a similar pattern:
 
-```
+```text
 app:<plugin-name>:<collection-name>:<interaction-name>
 ```
 
@@ -111,18 +111,18 @@ Conditions use operator objects from `conditions.ts`. The `matchCondition()` fun
 
 **Available operators:**
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `$eq` | Equals | `{ $eq: 'value' }` |
-| `$ne` | Not equals | `{ $ne: 'value' }` |
-| `$in` | In array | `{ $in: ['a', 'b'] }` |
-| `$nin` | Not in array | `{ $nin: ['a', 'b'] }` |
-| `$exists` | Field exists | `{ $exists: true }` |
-| `$null` | Is null/undefined | `{ $null: true }` |
-| `$gt`, `$gte`, `$lt`, `$lte` | Comparisons | `{ $gt: 50 }` |
-| `$regexp` | Regex match | `{ $regexp: '^EPR-' }` |
-| `$startsWith`, `$endsWith`, `$contains` | String ops | `{ $contains: 'text' }` |
-| `$or` | OR conditions | `{ $or: [{ $eq: 'a' }, { $eq: 'b' }] }` |
+| Operator                                | Description       | Example                                 |
+| --------------------------------------- | ----------------- | --------------------------------------- |
+| `$eq`                                   | Equals            | `{ $eq: 'value' }`                      |
+| `$ne`                                   | Not equals        | `{ $ne: 'value' }`                      |
+| `$in`                                   | In array          | `{ $in: ['a', 'b'] }`                   |
+| `$nin`                                  | Not in array      | `{ $nin: ['a', 'b'] }`                  |
+| `$exists`                               | Field exists      | `{ $exists: true }`                     |
+| `$null`                                 | Is null/undefined | `{ $null: true }`                       |
+| `$gt`, `$gte`, `$lt`, `$lte`            | Comparisons       | `{ $gt: 50 }`                           |
+| `$regexp`                               | Regex match       | `{ $regexp: '^EPR-' }`                  |
+| `$startsWith`, `$endsWith`, `$contains` | String ops        | `{ $contains: 'text' }`                 |
+| `$or`                                   | OR conditions     | `{ $or: [{ $eq: 'a' }, { $eq: 'b' }] }` |
 
 ### CRITICAL: Always Use Operator Objects
 

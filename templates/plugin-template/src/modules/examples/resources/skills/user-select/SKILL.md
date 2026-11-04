@@ -54,6 +54,7 @@ When you need the user to select from options, output a code block with the `use
 ## Examples
 
 ### Simple Single Choice
+
 ```user-select
 {
   "options": [
@@ -65,6 +66,7 @@ When you need the user to select from options, output a code block with the `use
 ```
 
 ### Multiple Selection
+
 ```user-select
 {
   "options": [
@@ -78,6 +80,7 @@ When you need the user to select from options, output a code block with the `use
 ```
 
 ### Environment Selection
+
 ```user-select
 {
   "options": [
@@ -89,6 +92,7 @@ When you need the user to select from options, output a code block with the `use
 ```
 
 ### Feature Selection
+
 ```user-select
 {
   "options": [

@@ -8,7 +8,7 @@ A post-`tsc` import transformer. It reads the JavaScript `tsc` has already emitt
 replaces Vertesia query-style import specifiers (`?skill`, `?raw`, …) with generated sibling
 modules, and rewrites the importing files in place.
 
-The unit of work is a *file already on disk*, not a module graph. That is the whole design
+The unit of work is a _file already on disk_, not a module graph. That is the whole design
 constraint, and it is what makes the package independent of any bundler.
 
 ## Why post-`tsc`
@@ -53,15 +53,15 @@ src/
 
 `import-transform/` is one module per stage, orchestrated by `index.ts`:
 
-| Module | Responsibility |
-| ------ | -------------- |
-| `patterns.ts` | `SNIFF_PATTERN` — a coarse regex pre-filter, explicitly *not* a decision procedure. |
-| `scanner.ts` | Walk `libDir`, return `.js` files whose contents match the sniff, with content captured. |
-| `detector.ts` | Lex a file and return the specifiers that match a transformer, with quote offsets. |
-| `resolver.ts` | Map a specifier to its `srcDir` asset, its chunk path, and the replacement specifier. |
-| `chunk-emitter.ts` | Run the transformer, validate, write the chunk. |
-| `rewriter.ts` | Splice replacement specifiers over the original quoted ranges. |
-| `builtins.ts` | Name → `TransformerRule` registry for the CLI and the Vite plugin. |
+| Module             | Responsibility                                                                           |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| `patterns.ts`      | `SNIFF_PATTERN` — a coarse regex pre-filter, explicitly _not_ a decision procedure.      |
+| `scanner.ts`       | Walk `libDir`, return `.js` files whose contents match the sniff, with content captured. |
+| `detector.ts`      | Lex a file and return the specifiers that match a transformer, with quote offsets.       |
+| `resolver.ts`      | Map a specifier to its `srcDir` asset, its chunk path, and the replacement specifier.    |
+| `chunk-emitter.ts` | Run the transformer, validate, write the chunk.                                          |
+| `rewriter.ts`      | Splice replacement specifiers over the original quoted ranges.                           |
+| `builtins.ts`      | Name → `TransformerRule` registry for the CLI and the Vite plugin.                       |
 
 ### Path mapping
 
@@ -93,8 +93,8 @@ comment problem at all. Lexing the module handles comments, template literals, r
 static imports, `export … from` and dynamic `import()` in one pass, and still yields the offsets
 the rewriter needs.
 
-One wrinkle the lexer imposes: it reports specifiers *without* surrounding quotes for static
-imports but *with* them for dynamic ones. `quoteBounds()` normalizes this so the rewriter has a
+One wrinkle the lexer imposes: it reports specifiers _without_ surrounding quotes for static
+imports but _with_ them for dynamic ones. `quoteBounds()` normalizes this so the rewriter has a
 single convention; a dynamic import with a computed specifier yields no bounds and is skipped.
 
 ### Fail-closed behavior
@@ -216,12 +216,12 @@ catalog is asynchronous I/O, and `resolveConfig` is meant to stay pure.
 
 14 files, 143 tests (`pnpm test`), all unit-level — no fixture builds are spawned.
 
-| Area | Files |
-| ---- | ----- |
-| Pipeline | `detector`, `import-transform`, `import-transform-units`, `builtins` |
-| Transformers | `skill`, `skill-assets`, `prompt`, `raw` |
-| Skill Markdown | `skill-markdown` (35 tests: rendering, every fail-closed path, mutation cases) |
-| Support | `frontmatter`, `asset-discovery`, `bin-config`, `widget-compiler`, `dev-server` |
+| Area           | Files                                                                           |
+| -------------- | ------------------------------------------------------------------------------- |
+| Pipeline       | `detector`, `import-transform`, `import-transform-units`, `builtins`            |
+| Transformers   | `skill`, `skill-assets`, `prompt`, `raw`                                        |
+| Skill Markdown | `skill-markdown` (35 tests: rendering, every fail-closed path, mutation cases)  |
+| Support        | `frontmatter`, `asset-discovery`, `bin-config`, `widget-compiler`, `dev-server` |
 
 Coverage of the preprocessor is verified by mutation rather than by assertion count: known-bad
 inputs (an unknown tool name, a payload with a wrong field name under a `tool=` tag) must fail, and
@@ -229,14 +229,14 @@ tests assert the failure, so a regression that weakens a check is caught.
 
 ## Dependencies
 
-| Package | Used for |
-| ------- | -------- |
-| `js-yaml` | Frontmatter parsing. |
-| `zod` | Transformer output schemas, validated in the emitter. |
-| `ajv` | Tagged-example validation, mirroring the agent runtime's config. |
-| `es-module-lexer` | Import detection. |
-| `esbuild` | Widget bundling. |
-| `vite`, `@hono/node-server` | Optional peers, dev path only. |
+| Package                     | Used for                                                         |
+| --------------------------- | ---------------------------------------------------------------- |
+| `js-yaml`                   | Frontmatter parsing.                                             |
+| `zod`                       | Transformer output schemas, validated in the emitter.            |
+| `ajv`                       | Tagged-example validation, mirroring the agent runtime's config. |
+| `es-module-lexer`           | Import detection.                                                |
+| `esbuild`                   | Widget bundling.                                                 |
+| `vite`, `@hono/node-server` | Optional peers, dev path only.                                   |
 
 No bundler is used to build this package: `build` is `clean:lib && tsc -p tsconfig.json && chmod +x
 ./lib/bin/build.js`.

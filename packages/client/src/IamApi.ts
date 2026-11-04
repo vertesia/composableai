@@ -51,7 +51,7 @@ export class RolesApi extends ApiTopic {
     /**
      * List system-domain roles only. Permissions are tightly typed as `Permission[]` —
      * suited for client-side permission gating (button visibility, route guards).
-     * ABAC roles are excluded and must be consumed via the JWT `content_security` claim.
+     * ABAC roles are excluded and must be consumed via the JWT `abac` claim.
      */
     listSystem(options?: IRequestParams): Promise<SystemRoleDefinition[]> {
         return this.get('/system', options);

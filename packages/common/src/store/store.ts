@@ -192,6 +192,22 @@ export enum ContentNature {
     Other = 'other',
 }
 
+/** Video containers registered under `application/*` rather than `video/*`: MXF (RFC 4539). */
+const APPLICATION_VIDEO_CONTENT_TYPES = new Set(['application/mxf']);
+
+/**
+ * Whether a MIME type is a video: any `video/*` type, or a video container registered under `application/*`.
+ * Types that may hold audio only, such as `application/mp4` and `application/ogg`, are not counted. MIME types are
+ * case-insensitive and may carry parameters (`application/MXF; foo=bar`), so both are ignored.
+ */
+export function isVideoContentType(contentType: string | undefined): boolean {
+    const essence = contentType?.split(';')[0].trim().toLowerCase();
+    if (!essence) {
+        return false;
+    }
+    return essence.startsWith('video/') || APPLICATION_VIDEO_CONTENT_TYPES.has(essence);
+}
+
 export interface Dimensions {
     width: number;
     height: number;
@@ -219,6 +235,19 @@ export const POSTER_RENDITION_NAME = 'Poster';
 export const AUDIO_RENDITION_NAME = 'Audio';
 export const WEB_VIDEO_RENDITION_NAME = 'Web';
 export const PDF_RENDITION_NAME = 'PDF';
+
+/**
+ * Request header sent by a workflow that can wait for media renditions still being generated. With it,
+ * the execute endpoint answers 412 and lists the pending objects instead of rendering a media input from
+ * its original source.
+ */
+export const RENDITION_WAIT_HEADER = 'x-vertesia-rendition-wait';
+
+/** A media input whose rendition is still being generated. */
+export interface PendingRendition {
+    object_id: string;
+    kind: 'video' | 'image';
+}
 
 export interface ContentMetadata {
     // Common fields for all media types
@@ -594,6 +623,8 @@ const RENDITION_COMPATIBILITY: Record<string, RenditionFormat[]> = {
     'image/*': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png, ImageRenditionFormat.webp],
     // Video formats can generate: jpeg, png (thumbnails)
     'video/*': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png],
+    // MXF, a video container registered as application/mxf
+    'application/mxf': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png],
     // PDF can generate: jpeg, png, webp (page images)
     'application/pdf': [ImageRenditionFormat.jpeg, ImageRenditionFormat.png, ImageRenditionFormat.webp],
     // Markdown can generate: pdf, docx (NOT jpeg/png)
@@ -634,11 +665,7 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
     const [category] = contentType.split('/');
     const wildcardKey = `${category}/*`;
     const wildcardMatch = RENDITION_COMPATIBILITY[wildcardKey];
-    if (wildcardMatch?.some((f) => f === formatStr)) {
-        return true;
-    }
-
-    return false;
+    return !!wildcardMatch?.some((f) => f === formatStr);
 }
 
 export type GetUploadUrlPayload = Wire.GetUploadUrlPayload;

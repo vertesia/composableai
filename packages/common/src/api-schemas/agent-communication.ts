@@ -132,11 +132,15 @@ export const PendingAskDataSchema = z
 
 export const RegisterPendingAskRequestSchema = z
     .strictObject({
-        runId: z.string(),
-        workflowId: z.string(),
-        agentName: z.string(),
-        questions: z.array(z.string()),
-        timeoutHours: z.number().optional(),
+        runId: z.string().min(1),
+        workflowId: z.string().min(1),
+        agentName: z.string().min(1),
+        questions: z.array(z.string()).min(1),
+        timeoutHours: z
+            .number()
+            .positive()
+            .optional()
+            .meta({ description: 'Hours before the question expires; more than 0. Defaults to 48.' }),
         userChannels: z.array(UserChannelSchema),
         taskFields: z.array(TaskFieldSchema).optional(),
         /**

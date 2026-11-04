@@ -264,4 +264,22 @@ describe('AgentRequestInputOverlay', () => {
         expect(screen.getByText('Approve Write Artifact: quotes.md?')).not.toBeNull();
         expect(screen.queryByText('Approve Write Artifact: name quotes.md?')).toBeNull();
     });
+
+    it('shows a tool approval to a read-only viewer without any way to answer it', () => {
+        renderWithProviders(<AgentRequestInputOverlay message={createToolApprovalRequestMessage()} readOnly />);
+
+        expect(screen.getByText('Approve Write Artifact: quotes.md?')).not.toBeNull();
+        expect(
+            screen.getByText('The agent is waiting for a response from someone allowed to act on this run.'),
+        ).not.toBeNull();
+        expect(screen.queryAllByRole('button')).toHaveLength(0);
+        expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+    });
+
+    it('shows an MCP connection request to a read-only viewer without the connect or decline controls', () => {
+        renderWithProviders(<AgentRequestInputOverlay message={createMcpRequestMessage()} readOnly />);
+
+        expect(screen.getByText('Connect to Jira to continue.')).not.toBeNull();
+        expect(screen.queryAllByRole('button')).toHaveLength(0);
+    });
 });

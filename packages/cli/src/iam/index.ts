@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { createAce, deleteAce, listAces, listRoles } from './commands.js';
+import { createAce, createUser, deleteAce, listAces, listRoles } from './commands.js';
 
 export function registerIamCommand(program: Command) {
     const iam = program.command('iam').description('Manage access control entries and roles');
@@ -29,6 +29,26 @@ export function registerIamCommand(program: Command) {
         .description('Delete an access control entry')
         .action(async (aceId: string) => {
             await deleteAce(program, aceId);
+        });
+
+    // --- Users ---
+
+    const users = iam.command('users').description('Manage the users of the current account');
+
+    users
+        .command('create <email>')
+        .description(
+            'Add a user to the current account with the member role, without sending an invitation. ' +
+                'Creates the user when no user has this address.',
+        )
+        .option('--name <name>', 'Display name; defaults to the address')
+        .option('--group <groupId...>', 'Add the user to these groups of the account')
+        .option('--properties <json>', 'ABAC properties as a JSON object')
+        .option('--clearance <level>', 'ABAC clearance level')
+        .option('--compartment <name...>', 'ABAC compartments')
+        .option('--json', 'Print the full user')
+        .action(async (email: string, options: Record<string, unknown>) => {
+            await createUser(program, email, options);
         });
 
     // --- Roles ---

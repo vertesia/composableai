@@ -6,7 +6,8 @@
     "scripts": {
         "build": "tsc --checkers 1 -p tsconfig.json",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "test": "vitest run"
+        "test": "vitest run",
+        "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit"
     },
     "files": [
         "lib",
@@ -30,7 +31,7 @@
         "koa": "^3.2.1",
         "koa-compose": "^4.1.0",
         "koa-send": "^5.0.1",
-        "path-to-regexp": "^8.4.2",
+        "path-to-regexp": "^9.0.0",
         "statuses": "^2.0.2"
     },
     "devDependencies": {

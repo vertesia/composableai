@@ -367,20 +367,14 @@ export function isStreamReplacedByMessage(streaming: StreamingData, messages: Ag
             if (message.details?.display_role === 'thinking') {
                 return getMessageComparableText(message) === streamingText;
             }
-            if (isToolCallMessage(message) || message.details?.tool_status) {
-                return false;
-            }
-            return true;
+            return !(isToolCallMessage(message) || message.details?.tool_status);
         }
 
         if (streaming.activityId && message.details?.activity_id === streaming.activityId) {
             if (message.details?.display_role === 'thinking') {
                 return getMessageComparableText(message) === streamingText;
             }
-            if (isToolCallMessage(message) || message.details?.tool_status) {
-                return false;
-            }
-            return true;
+            return !(isToolCallMessage(message) || message.details?.tool_status);
         }
 
         if (
@@ -495,9 +489,7 @@ export function isToolActivityMessage(message: AgentMessage): boolean {
     if (message.type !== AgentMessageType.THOUGHT) return false;
 
     const details = message.details as { display_role?: string; tools?: unknown } | undefined;
-    if (Array.isArray(details?.tools) && details.tools.length > 0) return true;
-
-    return false;
+    return Array.isArray(details?.tools) && details.tools.length > 0;
 }
 
 /**

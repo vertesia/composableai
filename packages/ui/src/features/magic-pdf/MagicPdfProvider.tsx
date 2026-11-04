@@ -45,7 +45,7 @@ export class PageImageProvider {
 
         // Return pending promise if already fetching
         const pending = this.pending.get(key);
-        if (pending) return pending;
+        if (pending !== undefined) return pending;
 
         // Fetch the URL
         const promise = this.fetchImageUrl(page, type);
@@ -94,7 +94,7 @@ class PageLayoutProvider {
 
         // Return pending promise if already fetching
         const pending = this.pending.get(page);
-        if (pending) return pending;
+        if (pending !== undefined) return pending;
 
         // Fetch the layout
         const promise = this.fetchPageLayout(page);

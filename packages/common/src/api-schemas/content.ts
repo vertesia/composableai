@@ -7,7 +7,17 @@ import { ContentObjectStatus } from '../store/store.js';
 import { ContentObjectTypeRefSchema } from './app-lifecycle.js';
 import { StringArrayMapSchema } from './dashboard.js';
 import { ComputedFacetResponseSchema, FacetSpecSchema, SortOptionSchema } from './interaction.js';
-import { nullableStringSchema, PageCountSchema } from './schema-primitives.js';
+import {
+    conditional,
+    MONGO_FACETS_DESCRIPTION,
+    mongoFacetsRule,
+    mongoFilterDescription,
+    mongoFilterKeysRule,
+    nullableStringSchema,
+    PageCountSchema,
+    SEARCH_FACETS_DESCRIPTION,
+    searchFacetsRule,
+} from './schema-primitives.js';
 import { ColumnLayoutSchema, ContentObjectTypeSchema, EmbeddingTypeEnabledMapSchema } from './store.js';
 
 export const scoreAggregationTypesSchema = z.enum(['rrf', 'rsf', 'smart']).meta({ id: 'scoreAggregationTypes' });
@@ -109,7 +119,7 @@ export const CollectionMembersUpdateResultSchema = z
 export const CollectionMembersUpdatePayloadSchema = z
     .strictObject({
         action: z.enum(['add', 'delete']),
-        members: z.array(z.string()),
+        members: z.array(z.string()).min(1),
     })
     .meta({ id: 'CollectionMembersUpdatePayload' });
 
@@ -122,7 +132,7 @@ export const CollectionChildrenUpdateResultSchema = z
 export const CollectionChildrenUpdatePayloadSchema = z
     .strictObject({
         action: z.enum(['add', 'delete']),
-        children: z.array(z.string()),
+        children: z.array(z.string()).min(1),
     })
     .meta({ id: 'CollectionChildrenUpdatePayload' });
 
@@ -366,12 +376,16 @@ const collectionPayloadFields = {
 export const CreateCollectionPayloadSchema = z
     .strictObject({
         ...collectionPayloadFields,
-        name: z.string().meta({ description: 'Name of the collection' }),
+        name: z.string().min(1).meta({ description: 'Name of the collection' }),
         dynamic: z.boolean().meta({
             description: 'When true, membership is determined by `query`; when false, members are added explicitly',
         }),
     })
-    .meta({ id: 'CreateCollectionPayload' });
+    .meta({
+        id: 'CreateCollectionPayload',
+        description: mongoFilterDescription('query'),
+        ...mongoFilterKeysRule('query'),
+    });
 
 /**
  * `PUT /collections/:id` applies whatever fields the body carries. It is not the create payload:
@@ -389,7 +403,11 @@ export const UpdateCollectionPayloadSchema = z
             })
             .optional(),
     })
-    .meta({ id: 'UpdateCollectionPayload', description: 'Fields to change on a collection. All optional.' });
+    .meta({
+        id: 'UpdateCollectionPayload',
+        description: `Fields to change on a collection. All optional. ${mongoFilterDescription('query')}`,
+        ...mongoFilterKeysRule('query'),
+    });
 
 export const FindPayloadSchema = z
     .strictObject({
@@ -400,7 +418,7 @@ export const FindPayloadSchema = z
         all_revisions: z.boolean().optional(),
         from_root: z.string().optional(),
     })
-    .meta({ id: 'FindPayload' });
+    .meta({ id: 'FindPayload', description: mongoFilterDescription('query'), ...mongoFilterKeysRule('query') });
 
 export const TranscriptSchema = z
     .strictObject({
@@ -464,7 +482,11 @@ export const ComplexCollectionSearchQuerySchema = z
         types: z.array(z.string()).optional(),
         match: z.looseObject({}).optional(),
     })
-    .meta({ id: 'ComplexCollectionSearchQuery' });
+    .meta({
+        id: 'ComplexCollectionSearchQuery',
+        description: mongoFilterDescription('match'),
+        ...mongoFilterKeysRule('match'),
+    });
 
 export const CollectionSchema = z
     .strictObject({
@@ -567,6 +589,18 @@ export const ContentObjectExportStatusResponseSchema = z
     })
     .meta({ id: 'ContentObjectExportStatusResponse' });
 
+export const ContentObjectIdempotencyKeySchema = z
+    .string()
+    .min(1)
+    .max(256)
+    .meta({
+        description:
+            'Client-chosen key, unique per intended object, that makes this request safe to retry. A repeat of ' +
+            'the request with the same key, body, collection and processing priority returns the object the ' +
+            'first request created instead of creating another. Reusing a key with different input is rejected ' +
+            'with 409. Keys are scoped to the project and stay bound to their object for as long as it exists.',
+    });
+
 export const CreateContentObjectPayloadSchema = z
     .strictObject({
         text: z.string().optional(),
@@ -661,10 +695,31 @@ export const CreateContentObjectPayloadSchema = z
         id: z.string().optional(),
         type: z.string().optional(),
         generation_run_info: GenerationRunMetadataSchema.optional(),
+        idempotency_key: ContentObjectIdempotencyKeySchema.optional(),
     })
     .meta({
         id: 'CreateContentObjectPayload',
-        description: 'When creating from an uploaded file the content should be an URL to the uploaded file',
+        description:
+            'When creating from an uploaded file the content should be an URL to the uploaded file. `name` is ' +
+            'required unless `content.name` or `content.source` is given; it then defaults to the content file name.',
+        // The object needs a name: its own, or one derived from the content's name or source.
+        ...conditional(
+            {
+                not: {
+                    anyOf: [
+                        { required: ['name'], properties: { name: { minLength: 1 } } },
+                        {
+                            required: ['content'],
+                            properties: { content: { required: ['name'], properties: { name: { minLength: 1 } } } },
+                        },
+                    ],
+                },
+            },
+            {
+                required: ['content'],
+                properties: { content: { required: ['source'], properties: { source: { minLength: 1 } } } },
+            },
+        ),
     });
 
 export const ComputeCollectionFacetPayloadSchema = z
@@ -672,7 +727,7 @@ export const ComputeCollectionFacetPayloadSchema = z
         facets: z.array(FacetSpecSchema),
         query: ComplexCollectionSearchQuerySchema.optional(),
     })
-    .meta({ id: 'ComputeCollectionFacetPayload' });
+    .meta({ id: 'ComputeCollectionFacetPayload', description: MONGO_FACETS_DESCRIPTION, ...mongoFacetsRule });
 
 export const UpdateContentObjectPayloadSchema = z
     .strictObject({
@@ -932,7 +987,7 @@ export const ComputeObjectFacetPayloadSchema = z
         facets: z.array(FacetSpecSchema),
         query: ComplexSearchQuerySchema.optional(),
     })
-    .meta({ id: 'ComputeObjectFacetPayload' });
+    .meta({ id: 'ComputeObjectFacetPayload', description: SEARCH_FACETS_DESCRIPTION, ...searchFacetsRule });
 
 export const ContentObjectItemApiResponseSchema = z
     .strictObject({
@@ -998,8 +1053,8 @@ export const ComplexSearchPayloadSchema = z
                     'If the facets should be limited to the current page of results. Defaults to false. When false, the facets are independent of the search results page.',
             })
             .optional(),
-        limit: z.number().optional(),
-        offset: z.number().optional(),
+        limit: z.number().min(0).optional(),
+        offset: z.number().min(0).optional(),
         select: z.string().optional(),
         all_revisions: z.boolean().optional(),
         from_root: z.string().optional(),
@@ -1018,7 +1073,7 @@ export const ComplexSearchPayloadSchema = z
             .optional(),
         query: ComplexSearchQuerySchema.optional(),
     })
-    .meta({ id: 'ComplexSearchPayload' });
+    .meta({ id: 'ComplexSearchPayload', description: SEARCH_FACETS_DESCRIPTION, ...searchFacetsRule });
 
 export const ContentObjectItemApiResponseArraySchema = z
     .array(ContentObjectItemApiResponseSchema)

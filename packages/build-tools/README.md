@@ -6,11 +6,11 @@ JavaScript modules, with schema validation.
 
 Ships three entry points:
 
-| Entry point | Used for |
-| ----------- | -------- |
-| `vertesia-build` CLI | Build-time. Runs as a post-`tsc` step over the emitted `lib/`. |
-| `@vertesia/build-tools/vite` | Dev-time. Same transformers applied to sources at request time. |
-| `@vertesia/build-tools` | Programmatic. `transformImports()`, the transformers, the skill preprocessor. |
+| Entry point                  | Used for                                                                      |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| `vertesia-build` CLI         | Build-time. Runs as a post-`tsc` step over the emitted `lib/`.                |
+| `@vertesia/build-tools/vite` | Dev-time. Same transformers applied to sources at request time.               |
+| `@vertesia/build-tools`      | Programmatic. `transformImports()`, the transformers, the skill preprocessor. |
 
 > **Not a bundler plugin.** Earlier versions of this package were a Rollup plugin
 > (`vertesiaImportPlugin`). It is now a standalone post-`tsc` transformer: it reads the JavaScript
@@ -84,16 +84,16 @@ set. Asset copying and widget bundling are build-time concerns and are skipped i
 
 ## Transformers
 
-| Name | Matches | Produces |
-| ---- | ------- | -------- |
-| `skill` | `*.md?skill`, `*/SKILL.md` | `SkillDefinition` object |
-| `skills` | `<dir>/<name>?skills` | Array of `SkillDefinition`, one per `SKILL.md` in the subdirectories |
-| `template` | `*.md?template`, `*/TEMPLATE.md` | `RenderingTemplateDefinition` |
-| `templates` | `<dir>/<name>?templates` | Array of rendering templates |
-| `prompt` | `*?prompt` | `PromptDefinition` |
-| `raw` | `*?raw` | The file contents as a string |
+| Name        | Matches                          | Produces                                                             |
+| ----------- | -------------------------------- | -------------------------------------------------------------------- |
+| `skill`     | `*.md?skill`, `*/SKILL.md`       | `SkillDefinition` object                                             |
+| `skills`    | `<dir>/<name>?skills`            | Array of `SkillDefinition`, one per `SKILL.md` in the subdirectories |
+| `template`  | `*.md?template`, `*/TEMPLATE.md` | `RenderingTemplateDefinition`                                        |
+| `templates` | `<dir>/<name>?templates`         | Array of rendering templates                                         |
+| `prompt`    | `*?prompt`                       | `PromptDefinition`                                                   |
+| `raw`       | `*?raw`                          | The file contents as a string                                        |
 
-The two collection transformers are *virtual*: there is no file at `./all?skills`, the name before
+The two collection transformers are _virtual_: there is no file at `./all?skills`, the name before
 the query is simply the generated module's name. That name is required, so two collections in the
 same directory cannot collide.
 
@@ -195,12 +195,12 @@ preprocessor makes the references explicit so the build can verify them.
 
 Four constructs, all optional:
 
-| Written | Rendered | Verified |
-| ------- | -------- | -------- |
-| `{@tool fetch_document}` | `` `fetch_document` `` | tool exists, name unambiguous |
-| `{@skill web_search}` | `` `learn_web_search` `` | skill exists, name unambiguous |
-| `{@param fetch_document.format}` | `` `format` `` | that tool's schema declares the field |
-| ` ```json tool=fetch_document ` | plain ` ```json ` fence | payload validates against the tool's schema |
+| Written                          | Rendered                 | Verified                                    |
+| -------------------------------- | ------------------------ | ------------------------------------------- |
+| `{@tool fetch_document}`         | `` `fetch_document` ``   | tool exists, name unambiguous               |
+| `{@skill web_search}`            | `` `learn_web_search` `` | skill exists, name unambiguous              |
+| `{@param fetch_document.format}` | `` `format` ``           | that tool's schema declares the field       |
+| ` ```json tool=fetch_document `  | plain ` ```json ` fence  | payload validates against the tool's schema |
 
 ````markdown
 Call {@tool fetch_document} to load the object — {@param fetch_document.format} selects the
@@ -251,7 +251,7 @@ export const exampleLanguages = new Set(['json']);   // default
 ```
 
 `createSchemaExampleValidator` (also exported from this package) validates a payload against the
-tool's AJV schema, and additionally resolves *dispatcher* fields — a `string` parameter that carries
+tool's AJV schema, and additionally resolves _dispatcher_ fields — a `string` parameter that carries
 another tool's name, such as `batch_execute.tool_name` — which JSON Schema alone cannot check.
 `createSchemaFieldValidator` walks a `{@param …}` path through the same schemas, descending into
 `anyOf`/`oneOf`/`allOf` branches and following local `$ref`s (resolved against the innermost
@@ -268,15 +268,15 @@ fails, rather than shipping a raw `{@tool …}` to the model.
 
 All paths are resolved relative to the package directory.
 
-| Key | Type | Default | Meaning |
-| --- | ---- | ------- | ------- |
-| `libDir` | string | *required* | Root of the compiled output to transform. |
-| `srcDir` | string | *required* | Root of the sources, mirroring `libDir`. |
-| `transformers` | string[] | *required* | Names from the table above. Non-empty. |
-| `assetsDir` | string \| false | `libDir` | Where scripts and widgets are emitted; `false` disables both. |
-| `widgetsDir` | string | `'widgets'` | Sub-directory of `assetsDir` for widget bundles. |
-| `widgetConfig` | object | — | Options forwarded to the esbuild widget bundler, e.g. `{ "minify": true }`. |
-| `skillCatalog` | string | — | Module supplying `{ tools, skills, … }` for the preprocessor. |
+| Key            | Type            | Default     | Meaning                                                                     |
+| -------------- | --------------- | ----------- | --------------------------------------------------------------------------- |
+| `libDir`       | string          | _required_  | Root of the compiled output to transform.                                   |
+| `srcDir`       | string          | _required_  | Root of the sources, mirroring `libDir`.                                    |
+| `transformers` | string[]        | _required_  | Names from the table above. Non-empty.                                      |
+| `assetsDir`    | string \| false | `libDir`    | Where scripts and widgets are emitted; `false` disables both.               |
+| `widgetsDir`   | string          | `'widgets'` | Sub-directory of `assetsDir` for widget bundles.                            |
+| `widgetConfig` | object          | —           | Options forwarded to the esbuild widget bundler, e.g. `{ "minify": true }`. |
+| `skillCatalog` | string          | —           | Module supplying `{ tools, skills, … }` for the preprocessor.               |
 
 ## Programmatic API
 
@@ -336,13 +336,13 @@ await transformImports({
 
 `transform` returns a `TransformResult`:
 
-| Field | Meaning |
-| ----- | ------- |
-| `data` | Value to export as the module default (serialized to JSON). |
-| `code` | Custom module source, used *instead* of the JSON export. |
+| Field     | Meaning                                                          |
+| --------- | ---------------------------------------------------------------- |
+| `data`    | Value to export as the module default (serialized to JSON).      |
+| `code`    | Custom module source, used _instead_ of the JSON export.         |
 | `imports` | Extra import lines to inject at the top of the generated module. |
-| `assets` | Files to copy into `assetsDir`. |
-| `widgets` | Widget entries to bundle. |
+| `assets`  | Files to copy into `assetsDir`.                                  |
+| `widgets` | Widget entries to bundle.                                        |
 
 Set `virtual: true` on the rule when the specifier does not name a real file, as the collection
 transformers do.
@@ -351,7 +351,7 @@ transformers do.
 
 1. **Scan** — walk `libDir` for `.js` files containing a query-import marker.
 2. **Detect** — lex each file with `es-module-lexer` and match the specifiers against the
-   transformers. A real lexer rather than a regex, because a regex matches anything that *looks*
+   transformers. A real lexer rather than a regex, because a regex matches anything that _looks_
    like a specifier: a doc comment mentioning `` `?skill` ``, or a plain constant holding a path,
    were both picked up as imports.
 3. **Resolve** — map the specifier back to its source asset under `srcDir`.

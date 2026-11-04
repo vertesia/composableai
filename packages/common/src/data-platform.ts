@@ -291,6 +291,8 @@ export type DataStoreTableDropResult = Wire.DataStoreTableDropResult;
 
 export type DashboardArchiveResult = Wire.DashboardArchiveResult;
 
+export type DashboardBulkIdsPayload = Wire.DashboardBulkIdsPayload;
+
 export type DashboardBulkArchiveResult = Wire.DashboardBulkArchiveResult;
 
 export type DashboardBulkDeleteResult = Wire.DashboardBulkDeleteResult;
@@ -476,6 +478,40 @@ export type CreateDashboardPayload = Wire.CreateDashboardPayload;
  * Payload for updating a dashboard.
  */
 export type UpdateDashboardPayload = Wire.UpdateDashboardPayload;
+
+/**
+ * Options for exporting a saved dashboard as an image.
+ */
+export type ExportDashboardPayload = Wire.ExportDashboardPayload;
+
+/**
+ * An unsaved dashboard (SQL query and Vega-Lite spec) to render as an image.
+ */
+export type ExportDashboardPreviewPayload = Wire.ExportDashboardPreviewPayload;
+
+/**
+ * Status of a dashboard export.
+ */
+export const DashboardExportStatus = {
+    /** The image is being rendered */
+    RUNNING: 'running',
+    /** The image is ready to download */
+    COMPLETED: 'completed',
+    /** The export failed; its `error` says why */
+    FAILED: 'failed',
+} as const;
+
+export type DashboardExportStatus = Wire.DashboardExportStatus;
+
+/**
+ * Why a dashboard export failed.
+ */
+export type DashboardExportError = Wire.DashboardExportError;
+
+/**
+ * A dashboard export: `running` until it is `completed`, with a signed download URL, or `failed`.
+ */
+export type DashboardExport = Wire.DashboardExport;
 
 /**
  * Options for rendering a dashboard.

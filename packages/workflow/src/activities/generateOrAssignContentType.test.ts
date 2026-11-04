@@ -1,3 +1,4 @@
+import { ApplicationFailure } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
 import {
@@ -243,6 +244,88 @@ describe('generateOrAssignContentType', () => {
             id: 'type-MarketPresentation',
             isNew: false,
             name: 'MarketPresentation',
+        });
+    });
+
+    describe('selection failure log level', () => {
+        type TestLogger = NonNullable<NonNullable<ConstructorParameters<typeof MockActivityEnvironment>[1]>['logger']>;
+
+        function capturingEnv(attempt: number) {
+            const logger = {
+                log: vi.fn(),
+                trace: vi.fn(),
+                debug: vi.fn(),
+                info: vi.fn(),
+                warn: vi.fn(),
+                error: vi.fn(),
+            };
+            const env = new MockActivityEnvironment(
+                { attempt, retryPolicy: { maximumAttempts: 15 } },
+                { logger: logger as unknown as TestLogger },
+            );
+            return { env, logger };
+        }
+
+        function loggedWith(fn: ReturnType<typeof vi.fn>, message: string): boolean {
+            return fn.mock.calls.some((call) => call[0] === message);
+        }
+
+        it('logs a failure at warn while Temporal will retry the activity', async () => {
+            await mockSetup([typeItem('Invoice', 'active')]);
+            const failure = new Error('503 - Error executing interaction sys:SelectDocumentType');
+            vi.mocked(executeInteractionFromActivity).mockRejectedValue(failure);
+            const { env, logger } = capturingEnv(2);
+
+            await expect(env.run(generateOrAssignContentType, payload({ allowNewContentTypes: false }))).rejects.toBe(
+                failure,
+            );
+
+            expect(loggedWith(logger.warn, 'Failed to select document type')).toBe(true);
+            expect(loggedWith(logger.error, 'Failed to select document type')).toBe(false);
+        });
+
+        it('logs the last attempt of a server failure at error', async () => {
+            await mockSetup([typeItem('Invoice', 'active')]);
+            vi.mocked(executeInteractionFromActivity).mockRejectedValue(
+                Object.assign(new Error('500 - execution failed'), { status: 500 }),
+            );
+            const { env, logger } = capturingEnv(15);
+
+            await expect(
+                env.run(generateOrAssignContentType, payload({ allowNewContentTypes: false })),
+            ).rejects.toThrow('500 - execution failed');
+
+            expect(loggedWith(logger.error, 'Failed to select document type')).toBe(true);
+            expect(loggedWith(logger.warn, 'Failed to select document type')).toBe(false);
+        });
+
+        it.each([502, 503, 504])('logs an execution API %s at warn even on the last attempt', async (status) => {
+            await mockSetup([typeItem('Invoice', 'active')]);
+            vi.mocked(executeInteractionFromActivity).mockRejectedValue(
+                Object.assign(new Error(`${status} - provider unavailable`), { status }),
+            );
+            const { env, logger } = capturingEnv(15);
+
+            await expect(
+                env.run(generateOrAssignContentType, payload({ allowNewContentTypes: false })),
+            ).rejects.toThrow('provider unavailable');
+
+            expect(loggedWith(logger.warn, 'Failed to select document type')).toBe(true);
+            expect(loggedWith(logger.error, 'Failed to select document type')).toBe(false);
+        });
+
+        it('logs a non-retryable failure at error on an early attempt', async () => {
+            await mockSetup([typeItem('Invoice', 'active')]);
+            vi.mocked(executeInteractionFromActivity).mockRejectedValue(
+                ApplicationFailure.nonRetryable('interaction not found'),
+            );
+            const { env, logger } = capturingEnv(1);
+
+            await expect(
+                env.run(generateOrAssignContentType, payload({ allowNewContentTypes: false })),
+            ).rejects.toThrow('interaction not found');
+
+            expect(loggedWith(logger.error, 'Failed to select document type')).toBe(true);
         });
     });
 });

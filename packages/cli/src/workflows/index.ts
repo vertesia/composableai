@@ -1,4 +1,5 @@
 import type { Command } from 'commander';
+import { getClient } from '../client.js';
 import {
     cancelWorkflowRun,
     createOrUpdateWorkflowDefinition,
@@ -14,6 +15,21 @@ import { streamRun } from './streams.js';
 
 export function registerWorkflowsCommand(program: Command) {
     const workflows = program.command('workflows');
+    workflows
+        .command('catalog')
+        .description(
+            'List packaged workflows supported as event subscription targets, with variable schemas and templates',
+        )
+        .option('--json', 'Print the full catalog as JSON')
+        .action(async (options: { json?: boolean }) => {
+            const client = await getClient(program);
+            const catalog = await client.store.workflows.getSubscriptionWorkflowCatalog();
+            if (options.json) console.log(JSON.stringify(catalog, null, 2));
+            else
+                console.table(
+                    catalog.workflows.map(({ endpoint, title, description }) => ({ endpoint, title, description })),
+                );
+        });
 
     workflows
         .command('execute <workflowName>')
@@ -33,7 +49,7 @@ export function registerWorkflowsCommand(program: Command) {
             console.debug('Executing workflow', workflowName, 'with options', options);
             await executeWorkflowByName(program, workflowName, options);
         });
-    const definitions = workflows.command('definitions');
+    const definitions = workflows.command('definitions').description('Manage workflow definitions (deprecated).');
 
     workflows
         .command('stream <workflowId> <runId>')

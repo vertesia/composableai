@@ -22,6 +22,12 @@ export interface AgentRequestInputOverlayProps {
     onMcpConnected?: (cfg: McpConnectUxConfig, metadata?: Record<string, unknown>) => void;
     isLoading?: boolean;
     disabled?: boolean;
+    /**
+     * Show the pending question without any way to answer it, for a viewer who may read the run but
+     * not signal it. Unlike `disabled`, which greys the controls out while the run cannot take input
+     * right now, this renders no options, text field or connect button at all.
+     */
+    readOnly?: boolean;
     className?: string;
 }
 
@@ -83,6 +89,7 @@ function PendingRequestInputOverlay({
     onMcpConnected,
     isLoading = false,
     disabled = false,
+    readOnly = false,
     className,
 }: AgentRequestInputOverlayProps & { message: RequestInputMessageWithUx }) {
     const { t } = useUITranslation();
@@ -120,6 +127,18 @@ function PendingRequestInputOverlay({
             </Button>
         </VTooltip>
     );
+
+    if (readOnly) {
+        return (
+            <ComposerOverlay className={className} data-agent-request-input-overlay>
+                <ComposerOverlayQuestion
+                    question={displayText}
+                    description={t('agent.requestInputReadOnly')}
+                    variant={uxConfig.variant}
+                />
+            </ComposerOverlay>
+        );
+    }
 
     return (
         <ComposerOverlay className={className} data-agent-request-input-overlay>

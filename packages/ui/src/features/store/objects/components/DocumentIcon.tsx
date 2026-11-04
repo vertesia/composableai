@@ -84,12 +84,12 @@ export function DocumentIcon({
             onClick={() => onRowClick?.(document)}
         >
             {isHighlighted && (
-                <div className="absolute top-2 end-8 z-10">
+                <div className="absolute top-2 inset-e-8 z-10">
                     <CheckIcon className="size-4 text-info" />
                 </div>
             )}
             {selection && (
-                <div className="absolute top-2 start-2 z-10 flex flex-col items-center gap-1">
+                <div className="absolute top-2 inset-s-2 z-10 flex flex-col items-center gap-1">
                     <input
                         checked={selection.isSelected(document.id)}
                         type="checkbox"
@@ -99,7 +99,7 @@ export function DocumentIcon({
                 </div>
             )}
 
-            <div className="absolute top-1 end-1 z-10 flex flex-col items-center">
+            <div className="absolute top-1 inset-e-1 z-10 flex flex-col items-center">
                 <Button
                     variant="ghost"
                     size="sm"

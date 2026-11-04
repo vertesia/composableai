@@ -163,7 +163,7 @@ export function ContentObjectTypesSearch({ isDirty = false }: ContentObjectTypes
 
     return (
         <div className="flex flex-col flex-1 min-h-0">
-            <div className="flex flex-shrink-0 gap-4 items-center">
+            <div className="flex shrink-0 gap-4 items-center">
                 <Input placeholder={t('store.filterByName')} value={searchTerm} onChange={setSearchTerm} />
                 <SelectBox
                     className="w-60"
