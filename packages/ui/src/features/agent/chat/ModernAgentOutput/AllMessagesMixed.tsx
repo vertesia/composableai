@@ -107,6 +107,8 @@ import WorkstreamTabs, { extractWorkstreams, filterMessagesByWorkstream } from '
 
 export type AgentConversationViewMode = 'stacked' | 'sliding';
 
+export type AgentWorkingDisplay = 'steps' | 'summary' | 'minimal';
+
 export interface AgentInitialRequestTemplateContext {
     data: unknown;
     schema?: JSONSchema | null;
@@ -1723,6 +1725,29 @@ function mergeSummaryToolMessages(messages: AgentMessage[]): AgentMessage[] {
     return [...ungrouped, ...grouped].sort((a, b) => a.index - b.index).map(({ message }) => message);
 }
 
+function getSummaryToolCallCounts(messages: AgentMessage[]): Map<string, number> {
+    const counts = new Map<string, number>();
+    // Count invocations, not their started/progress/completed messages or model preambles.
+    const calls = messages.filter(
+        (message) => isToolActivityMessage(message) && !isTransientWorkStatusMessage(message),
+    );
+    for (const message of mergeSummaryToolMessages(calls)) {
+        for (const tool of new Set(getToolNames(getDetailsRecord(message)))) {
+            const kind = getToolDetailKind({ ...message, details: { ...message.details, tool } });
+            const category =
+                kind === 'command'
+                    ? 'Code Execution'
+                    : kind === 'skill'
+                      ? 'Skills'
+                      : kind === 'tool' || kind === 'discover'
+                        ? 'Tools'
+                        : getToolDetailLabel(kind);
+            counts.set(category, (counts.get(category) ?? 0) + 1);
+        }
+    }
+    return counts;
+}
+
 function buildSummaryToolDetailItems(messages: AgentMessage[]): SummaryToolDetailItem[] {
     const seen = new Set<string>();
     const items: SummaryToolDetailItem[] = [];
@@ -2217,8 +2242,8 @@ function SummaryActivityRow({
     showElapsed,
     details,
     emptyDetailsLabel,
-    defaultExpanded = false,
-    disablePreambleCollapse = false,
+    isActive = false,
+    workingDisplay = 'steps',
     className,
     artifactRunId,
     onSendMessage,
@@ -2232,20 +2257,29 @@ function SummaryActivityRow({
     showElapsed?: boolean;
     details?: AgentMessage[];
     emptyDetailsLabel?: string;
-    defaultExpanded?: boolean;
-    disablePreambleCollapse?: boolean;
+    isActive?: boolean;
+    workingDisplay?: AgentWorkingDisplay;
     className?: string;
     artifactRunId?: string;
     onSendMessage?: (message: string, metadata?: Record<string, unknown>) => void;
     answeredToolApprovalRequestInputKeys?: Set<string>;
     resolvedToolApprovalKeys?: Set<string>;
 }) {
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const showLiveSteps = workingDisplay === 'steps';
+    const [isExpanded, setIsExpanded] = useState(showLiveSteps && isActive && Boolean(details?.length));
+    const thinkingMessageIndex = useRotatingThinkingMessageIndex(isActive && !showLiveSteps);
     const isLiveElapsed = showElapsed && durationSeconds === undefined;
     const liveElapsed = useLiveElapsedSeconds(timestamp, isLiveElapsed);
     const elapsed = durationSeconds ?? liveElapsed;
     const shouldShowElapsed = showElapsed && timestamp !== undefined;
-    const detailItems = useMemo(() => buildSummaryToolDetailItems(details ?? []), [details]);
+    const detailItems = useMemo(
+        () => (isActive && !showLiveSteps ? [] : buildSummaryToolDetailItems(details ?? [])),
+        [details, isActive, showLiveSteps],
+    );
+    const toolCallCounts = useMemo(
+        () => (workingDisplay === 'summary' ? getSummaryToolCallCounts(details ?? []) : new Map<string, number>()),
+        [details, workingDisplay],
+    );
     const requestInputMessages = useMemo(
         () =>
             (details ?? []).filter(
@@ -2259,99 +2293,137 @@ function SummaryActivityRow({
             ),
         [answeredToolApprovalRequestInputKeys, details, resolvedToolApprovalKeys],
     );
-    const canExpand = detailItems.length > 0 || requestInputMessages.length > 0 || Boolean(emptyDetailsLabel);
+    const canExpand = (!isActive || showLiveSteps) && (detailItems.length > 0 || Boolean(emptyDetailsLabel));
 
     return (
         <div className={cn('mx-auto w-full max-w-3xl px-1', className)}>
             <div className="border-b border-border/70 pb-3 text-sm text-muted">
-                <button
-                    type="button"
-                    className={cn(
-                        'inline-flex max-w-full items-center gap-2 text-start outline-none',
-                        'focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4',
-                        canExpand ? 'cursor-pointer hover:text-foreground' : 'cursor-default',
+                <div className="flex items-center justify-between gap-3">
+                    {isActive && !showLiveSteps ? (
+                        <div role="status" className="inline-flex max-w-full items-center gap-2">
+                            <span aria-hidden="true">
+                                <AnimatedThinkingDots inline />
+                            </span>
+                            <span className="font-medium">{label}</span>
+                            {shouldShowElapsed ? (
+                                <span aria-hidden="true" className="shrink-0 text-muted/75">
+                                    for {formatDuration(elapsed)}
+                                </span>
+                            ) : null}
+                        </div>
+                    ) : (
+                        <Button
+                            type="button"
+                            variant="unstyled"
+                            size="none"
+                            className={cn(
+                                'inline-flex max-w-full items-center gap-2 text-start outline-none',
+                                'focus-visible:text-foreground focus-visible:underline focus-visible:underline-offset-4',
+                                canExpand ? 'cursor-pointer hover:text-foreground' : 'cursor-default',
+                            )}
+                            onClick={() => canExpand && setIsExpanded((current) => !current)}
+                            aria-expanded={canExpand ? isExpanded : undefined}
+                            disabled={!canExpand}
+                        >
+                            <span className="min-w-0 truncate font-medium">{label}</span>
+                            {shouldShowElapsed ? (
+                                <span className="shrink-0 text-muted/75">for {formatDuration(elapsed)}</span>
+                            ) : null}
+                            {canExpand ? (
+                                isExpanded ? (
+                                    <ChevronDown className="size-4 shrink-0 opacity-50" />
+                                ) : (
+                                    <ChevronRight className="size-4 shrink-0 opacity-50" />
+                                )
+                            ) : null}
+                        </Button>
                     )}
-                    onClick={() => canExpand && setIsExpanded((current) => !current)}
-                    aria-expanded={canExpand ? isExpanded : undefined}
-                    disabled={!canExpand}
-                >
-                    <span className="min-w-0 truncate font-medium">{label}</span>
-                    {shouldShowElapsed ? (
-                        <span className="shrink-0 text-muted/75">for {formatDuration(elapsed)}</span>
+                    {workingDisplay === 'summary' && toolCallCounts.size > 0 ? (
+                        <div
+                            className="ms-auto flex shrink-0 items-center gap-1"
+                            data-testid="summary-tool-call-counts"
+                        >
+                            {Array.from(toolCallCounts, ([category, count]) => (
+                                <VTooltip
+                                    key={category}
+                                    description={`Agent made ${count} ${category.toLowerCase().replace(/s$/, '')} calls`}
+                                    asChild
+                                >
+                                    <Badge
+                                        variant="outline"
+                                        className="gap-1 rounded-full px-1.5 py-0 text-[10px] leading-4 text-muted"
+                                        tabIndex={0}
+                                    >
+                                        <span>{category}</span>
+                                        <span className="font-semibold tabular-nums">{count}</span>
+                                    </Badge>
+                                </VTooltip>
+                            ))}
+                        </div>
                     ) : null}
-                    {canExpand ? (
-                        isExpanded ? (
-                            <ChevronDown className="size-4 shrink-0 opacity-50" />
-                        ) : (
-                            <ChevronRight className="size-4 shrink-0 opacity-50" />
-                        )
-                    ) : null}
-                </button>
+                </div>
+                {isActive && !showLiveSteps ? (
+                    <div className="mt-1 truncate text-xs text-muted/80" aria-hidden="true">
+                        {ThinkingMessages[thinkingMessageIndex]}
+                    </div>
+                ) : null}
                 {canExpand && isExpanded ? (
-                    detailItems.length > 0 || requestInputMessages.length > 0 ? (
-                        <>
-                            {detailItems.length > 0 ? (
-                                <SummaryToolTimeline
-                                    items={detailItems}
-                                    artifactRunId={artifactRunId}
-                                    disablePreambleCollapse={disablePreambleCollapse}
-                                />
-                            ) : null}
-                            {requestInputMessages.length > 0 ? (
-                                <div className="mt-3 space-y-3">
-                                    {requestInputMessages.map((message) => {
-                                        const uxConfig = message.details.ux;
-                                        const hasSelectableOptions =
-                                            isAskUserOptions(uxConfig.options) && uxConfig.options.length > 0;
-                                        return (
-                                            <AskUserWidget
-                                                key={getAgentMessageRenderKey(message, 'work-request-input')}
-                                                question={getRequestInputDisplayText(message)}
-                                                options={hasSelectableOptions ? uxConfig.options : undefined}
-                                                variant={uxConfig.variant}
-                                                multiSelect={uxConfig.multiSelect}
-                                                onSelect={(optionId) =>
-                                                    sendRequestInputResponse(
-                                                        onSendMessage,
-                                                        message,
-                                                        optionId,
-                                                        getToolApprovalResponseMetadata(message, optionId),
-                                                    )
-                                                }
-                                                onMultiSelect={(optionIds) =>
-                                                    sendRequestInputResponse(
-                                                        onSendMessage,
-                                                        message,
-                                                        optionIds.join(', '),
-                                                    )
-                                                }
-                                                allowFreeResponse={!hasSelectableOptions || !!uxConfig.free_response}
-                                                placeholder={uxConfig.free_response?.placeholder}
-                                                submitLabel={uxConfig.free_response?.submit_label}
-                                                onSubmit={(value) =>
-                                                    sendRequestInputResponse(
-                                                        onSendMessage,
-                                                        message,
-                                                        value,
-                                                        uxConfig.free_response?.metadata,
-                                                    )
-                                                }
-                                                hideBorder
-                                                compact
-                                                className="my-0"
-                                                cardClassName="bg-background/60 shadow-none"
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            ) : null}
-                        </>
+                    detailItems.length > 0 ? (
+                        <SummaryToolTimeline
+                            items={detailItems}
+                            artifactRunId={artifactRunId}
+                            disablePreambleCollapse={isActive && showLiveSteps}
+                        />
                     ) : (
                         <div className="mt-3 flex items-center gap-2 text-sm text-muted">
                             <Terminal className="size-4 opacity-70" aria-hidden="true" />
                             <span>{emptyDetailsLabel}</span>
                         </div>
                     )
+                ) : null}
+                {requestInputMessages.length > 0 ? (
+                    <div className="mt-3 space-y-3">
+                        {requestInputMessages.map((message) => {
+                            const uxConfig = message.details.ux;
+                            const hasSelectableOptions =
+                                isAskUserOptions(uxConfig.options) && uxConfig.options.length > 0;
+                            return (
+                                <AskUserWidget
+                                    key={getAgentMessageRenderKey(message, 'work-request-input')}
+                                    question={getRequestInputDisplayText(message)}
+                                    options={hasSelectableOptions ? uxConfig.options : undefined}
+                                    variant={uxConfig.variant}
+                                    multiSelect={uxConfig.multiSelect}
+                                    onSelect={(optionId) =>
+                                        sendRequestInputResponse(
+                                            onSendMessage,
+                                            message,
+                                            optionId,
+                                            getToolApprovalResponseMetadata(message, optionId),
+                                        )
+                                    }
+                                    onMultiSelect={(optionIds) =>
+                                        sendRequestInputResponse(onSendMessage, message, optionIds.join(', '))
+                                    }
+                                    allowFreeResponse={!hasSelectableOptions || !!uxConfig.free_response}
+                                    placeholder={uxConfig.free_response?.placeholder}
+                                    submitLabel={uxConfig.free_response?.submit_label}
+                                    onSubmit={(value) =>
+                                        sendRequestInputResponse(
+                                            onSendMessage,
+                                            message,
+                                            value,
+                                            uxConfig.free_response?.metadata,
+                                        )
+                                    }
+                                    hideBorder
+                                    compact
+                                    className="my-0"
+                                    cardClassName="bg-background/60 shadow-none"
+                                />
+                            );
+                        })}
+                    </div>
                 ) : null}
             </div>
         </div>
@@ -2453,6 +2525,7 @@ interface AllMessagesMixedProps {
     workstreamSourceMessages?: AgentMessage[];
     bottomRef: React.RefObject<HTMLDivElement>;
     viewMode?: 'stacked' | 'sliding';
+    workingDisplay?: AgentWorkingDisplay;
     isCompleted?: boolean;
     plan?: Plan;
     workstreamStatus?: Map<string, 'pending' | 'in_progress' | 'completed'>;
@@ -2523,6 +2596,7 @@ function AllMessagesMixedComponent({
     workstreamSourceMessages,
     bottomRef,
     viewMode = 'stacked',
+    workingDisplay = 'steps',
     isCompleted = false,
     streamingMessages = new Map(),
     onSendMessage,
@@ -3012,9 +3086,10 @@ function AllMessagesMixedComponent({
         isAgentWorking,
         incompleteStreaming.length > 0,
     );
-    const summaryActivityFallbackLabel = isInitialSummaryActivityFallback(summaryConversationItems)
-        ? t('agent.preparing')
-        : t('agent.working');
+    const summaryActivityFallbackLabel =
+        !isSummaryView && isInitialSummaryActivityFallback(summaryConversationItems)
+            ? t('agent.preparing')
+            : t('agent.working');
     const showInitialRequestWaitingCard =
         displayMessages.length === 0 &&
         hasRenderableInitialRequest &&
@@ -3436,13 +3511,23 @@ function AllMessagesMixedComponent({
                             CollectionLinkComponent={CollectionLinkComponent}
                         />
                     )}
-                    {showInitialRequestWaitingCard && (
-                        <InitialRequestWaitingCard
-                            label={summaryActivityFallbackLabel}
-                            timestamp={activityStartedTimestamp}
-                            className={workingIndicatorClassName}
-                        />
-                    )}
+                    {showInitialRequestWaitingCard &&
+                        (isSummaryView && workingDisplay !== 'steps' ? (
+                            <SummaryActivityRow
+                                workingDisplay={workingDisplay}
+                                label={summaryActivityFallbackLabel}
+                                isActive
+                                timestamp={activityStartedTimestamp}
+                                showElapsed
+                                className={workingIndicatorClassName}
+                            />
+                        ) : (
+                            <InitialRequestWaitingCard
+                                label={summaryActivityFallbackLabel}
+                                timestamp={activityStartedTimestamp}
+                                className={workingIndicatorClassName}
+                            />
+                        ))}
                     {/* Show either all messages or just sliding view depending on viewMode */}
                     {viewMode === 'stacked' ? (
                         // Details view - show ALL messages with streaming interleaved
@@ -3647,6 +3732,7 @@ function AllMessagesMixedComponent({
 
                                     return (
                                         <SummaryActivityRow
+                                            workingDisplay={workingDisplay}
                                             key={`work-${item.id}-${item.isActive ? 'active' : 'done'}-${item.status}`}
                                             label={getSummaryActivityLabel(item.isActive)}
                                             status={item.status}
@@ -3658,8 +3744,7 @@ function AllMessagesMixedComponent({
                                             }
                                             showElapsed
                                             details={isThinkingOnlyWork ? undefined : item.messages}
-                                            defaultExpanded={item.isActive && !isThinkingOnlyWork}
-                                            disablePreambleCollapse={item.isActive}
+                                            isActive={item.isActive}
                                             className={workingIndicatorClassName}
                                             onSendMessage={onSendMessage}
                                             answeredToolApprovalRequestInputKeys={answeredToolApprovalRequestInputKeys}
@@ -3721,7 +3806,7 @@ function AllMessagesMixedComponent({
                                     artifactRunId={artifactRunId}
                                 />
                             ))}
-                            {showPostToolThinking && (
+                            {workingDisplay === 'steps' && showPostToolThinking && (
                                 <div
                                     className={cn(
                                         'mx-auto w-full max-w-3xl px-1 text-sm text-muted',
@@ -3735,7 +3820,9 @@ function AllMessagesMixedComponent({
                             {/* Activity fallback - shown before any tool/thought message has arrived */}
                             {showActivityFallback && !showInitialRequestWaitingCard && (
                                 <SummaryActivityRow
+                                    workingDisplay={workingDisplay}
                                     label={summaryActivityFallbackLabel}
+                                    isActive
                                     status="running"
                                     timestamp={activityStartedTimestamp}
                                     showElapsed

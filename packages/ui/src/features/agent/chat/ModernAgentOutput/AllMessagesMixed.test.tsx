@@ -65,6 +65,7 @@ function renderSummary(
                         messages={currentMessages}
                         bottomRef={bottomRef}
                         viewMode="sliding"
+                        workingDisplay="summary"
                         isCompleted={currentIsCompleted}
                         artifactRunId="run-1"
                         streamingMessages={currentStreamingMessages}
@@ -297,7 +298,7 @@ describe('AllMessagesMixed summary view', () => {
         fireEvent.click(workedRow);
 
         expect(workedRow.getAttribute('aria-expanded')).toBe('true');
-        expect(screen.queryByText('Search')).toBeNull();
+        expect(within(screen.getByTestId('summary-tool-call-counts')).getByText('Search')).not.toBeNull();
         expect(screen.getByText('Japan news')).not.toBeNull();
 
         const toolRow = screen.getByRole('button', { name: /Japan news/ });
@@ -331,11 +332,11 @@ describe('AllMessagesMixed summary view', () => {
             false,
         );
 
-        expect(screen.getAllByRole('button', { name: /Working.*for/ })).toHaveLength(1);
+        expect(screen.getAllByRole('status')).toHaveLength(1);
         expect(screen.queryByTestId('post-tool-thinking-indicator')).toBeNull();
     });
 
-    it('shows thinking below the active work group after its latest tool completes', () => {
+    it('keeps one Working indicator after its latest tool completes', () => {
         renderSummary(
             [
                 makeMessage({
@@ -366,11 +367,12 @@ describe('AllMessagesMixed summary view', () => {
         );
 
         expect(screen.queryByRole('button', { name: /Worked\s*for/ })).toBeNull();
-        expect(screen.getAllByRole('button', { name: /Working.*for/ })).toHaveLength(1);
-        expect(screen.getByTestId('post-tool-thinking-indicator').textContent).toBe('Thinking...');
+        expect(screen.getAllByRole('status')).toHaveLength(1);
+        expect(screen.queryByTestId('post-tool-thinking-indicator')).toBeNull();
+        expect(screen.queryByText('Thinking...')).toBeNull();
     });
 
-    it('keeps showing thinking when the current display-role marker follows a completed tool', () => {
+    it('hides the thinking marker following a completed tool', () => {
         renderSummary(
             [
                 makeMessage({
@@ -414,8 +416,9 @@ describe('AllMessagesMixed summary view', () => {
             false,
         );
 
-        expect(screen.getAllByRole('button', { name: /Working.*for/ })).toHaveLength(1);
-        expect(screen.getByTestId('post-tool-thinking-indicator').textContent).toBe('Thinking...');
+        expect(screen.getAllByRole('status')).toHaveLength(1);
+        expect(screen.queryByTestId('post-tool-thinking-indicator')).toBeNull();
+        expect(screen.queryByText('Thinking...')).toBeNull();
     });
 
     it('replaces a completed tool’s progress title with an immediately visible resource deep link', () => {
@@ -562,37 +565,107 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText('launch_workstream')).not.toBeNull();
     });
 
-    it('renders active tool activity as an expanded Working row', () => {
-        renderSummary([
-            makeMessage({
-                timestamp: Date.now() - 2_000,
-                type: AgentMessageType.QUESTION,
-                message: 'Check the latest build status.',
-            }),
-            makeMessage({
-                timestamp: Date.now() - 1_000,
-                message: 'Running build',
-                details: {
-                    tool: 'bash',
-                    tool_status: 'running',
-                    tool_run_id: 'tool-1',
-                    command: 'pnpm run build',
-                },
-            }),
-        ]);
+    it('hides live steps and exposes collapsed details once the work completes', () => {
+        const question = makeMessage({
+            timestamp: 1_000,
+            type: AgentMessageType.QUESTION,
+            message: 'Check the build.',
+        });
+        const tool = makeMessage({
+            timestamp: 2_000,
+            message: 'Running build',
+            details: { tool: 'bash', tool_status: 'running', tool_run_id: 'tool-1', command: 'pnpm run build' },
+        });
+        const view = renderSummary([question, tool]);
+        expect(screen.getByRole('status').textContent).toContain('Working');
+        expect(screen.queryByRole('button', { name: /Working/ })).toBeNull();
+        expect(screen.queryByText('Running build')).toBeNull();
+        expect(screen.getByText('Check the build.')).not.toBeNull();
 
-        const workingRow = screen.getByRole('button', { name: /Working\s*for\s*1s/ });
-        expect(workingRow.getAttribute('aria-expanded')).toBe('true');
-        expect(screen.queryByText('Bash')).toBeNull();
+        const answer = makeMessage({ timestamp: 4_000, type: AgentMessageType.ANSWER, message: 'Build succeeded.' });
+        view.rerenderSummary([question, tool, answer], true);
+        expect(screen.queryByRole('status')).toBeNull();
+        expect(screen.getByText('Build succeeded.')).not.toBeNull();
+        const workedRow = screen.getByRole('button', { name: /Worked\s*for\s*2s/ });
+        expect(workedRow.getAttribute('aria-expanded')).toBe('false');
+        expect(screen.queryByText('Running build')).toBeNull();
+        fireEvent.click(workedRow);
         expect(screen.getByText('Running build')).not.toBeNull();
-        expect(screen.queryByText('$ pnpm run build')).toBeNull();
+    });
 
-        const toolRow = screen.getByRole('button', { name: /Running build/ });
-        fireEvent.click(toolRow);
+    it('aggregates distinct calls into major categories without counting lifecycle updates or preambles', () => {
+        const question = makeMessage({
+            timestamp: 1_000,
+            type: AgentMessageType.QUESTION,
+            message: 'Research and write.',
+        });
+        const tool = (name: string, id: string, timestamp: number, status: 'running' | 'completed' = 'running') =>
+            makeMessage({
+                timestamp,
+                message: `Private step ${id}`,
+                details: {
+                    tool: name,
+                    tool_use_id: id,
+                    activity_group_id: 'activity-1',
+                    tool_status: status,
+                    tool_event: status === 'running' ? 'started' : 'completed',
+                },
+            });
+        const first = tool('web_search', 'search-1', 2_000);
+        const progress: AgentMessage = {
+            ...first,
+            timestamp: 2_500,
+            details: { ...first.details, tool_event: 'progress' },
+        };
+        const complete = tool('web_search', 'search-1', 3_000, 'completed');
+        const preamble = makeMessage({
+            timestamp: 1_500,
+            message: 'Planning the search.',
+            details: { display_role: 'tool_preamble', tools: ['web_search'] },
+        });
+        const messages = [question, preamble, first, progress, complete];
+        const view = renderSummary(messages);
+        const badges = () => within(screen.getByTestId('summary-tool-call-counts'));
+        expect(badges().getByText('Search').parentElement?.textContent).toBe('Search1');
+        expect(screen.queryByText('Private step search-1')).toBeNull();
+        expect(screen.queryByText('Planning the search.')).toBeNull();
 
-        expect(screen.queryByText('Shell')).toBeNull();
-        expect(screen.getByText('$ pnpm run build')).not.toBeNull();
-        expect(screen.queryByText('Running')).toBeNull();
+        const more = [
+            ...messages,
+            tool('search_documents', 'search-2', 4_000),
+            tool('write_artifact', 'write-1', 5_000),
+        ];
+        view.rerenderSummary(more);
+        expect(badges().getByText('Search').parentElement?.textContent).toBe('Search2');
+        expect(badges().getByText('Edit').parentElement?.textContent).toBe('Edit1');
+        expect(screen.queryByText('Private step search-2')).toBeNull();
+        expect(screen.queryByText('Private step write-1')).toBeNull();
+
+        view.rerenderSummary(
+            [...more, makeMessage({ timestamp: 6_000, type: AgentMessageType.ANSWER, message: 'Done.' })],
+            true,
+        );
+        expect(badges().getByText('Search').parentElement?.textContent).toBe('Search2');
+        expect(screen.getByRole('button', { name: /Worked/ }).getAttribute('aria-expanded')).toBe('false');
+    });
+
+    it('keeps answer tokens streaming while live tool details stay hidden', () => {
+        const messages = [
+            makeMessage({ timestamp: 1_000, type: AgentMessageType.QUESTION, message: 'Check the build.' }),
+            makeMessage({
+                timestamp: 2_000,
+                message: 'Running build',
+                details: { tool: 'bash', tool_status: 'running' },
+            }),
+        ];
+        const stream = (text: string) =>
+            new Map<string, StreamingData>([['answer', { text, startTimestamp: 3_000, activityId: 'answer-1' }]]);
+        const view = renderSummary(messages, false, stream('The build'));
+        expect(screen.getByText('The build')).not.toBeNull();
+        expect(screen.queryByText('Running build')).toBeNull();
+        view.rerenderSummary(messages, false, stream('The build succeeded.'));
+        expect(screen.getByText('The build succeeded.')).not.toBeNull();
+        expect(screen.queryByText('Running build')).toBeNull();
     });
 
     it('keeps a pending tool approval prompt inside the active work row', () => {
@@ -647,9 +720,9 @@ describe('AllMessagesMixed summary view', () => {
         );
 
         expect(screen.queryByRole('button', { name: /Worked\s*for/ })).toBeNull();
-        const workingRow = screen.getByRole('button', { name: /Working\s*for/ });
-        expect(workingRow.getAttribute('aria-expanded')).toBe('true');
-        expect(screen.getByText('Creating document from artifact...')).not.toBeNull();
+        const workingRow = screen.getByRole('status');
+        expect(workingRow.hasAttribute('aria-expanded')).toBe(false);
+        expect(screen.queryByText('Creating document from artifact...')).toBeNull();
         expect(screen.getByText('Approve Create Document: News Headlines Today?')).not.toBeNull();
         expect(screen.queryByText('Approve Create Document: name News Headlines Today?')).toBeNull();
 
@@ -663,6 +736,44 @@ describe('AllMessagesMixed summary view', () => {
             request_input_response: {
                 request_id: 'create_document:name:News Headlines Today',
             },
+        });
+    });
+
+    it('keeps a pending approval visible even when assistant prose closes its work group', () => {
+        const onSendMessage = vi.fn();
+        renderSummary(
+            [
+                makeMessage({ timestamp: 1_000, type: AgentMessageType.QUESTION, message: 'Run the command.' }),
+                makeMessage({
+                    timestamp: 2_000,
+                    type: AgentMessageType.REQUEST_INPUT,
+                    message: 'Approve command?',
+                    details: {
+                        request_id: 'approval-1',
+                        tool_approval: { approval_key: 'approval-1', tool_name: 'bash', tool_title: 'Command' },
+                        ux: {
+                            options: [
+                                { id: 'allow_once', label: 'Allow once' },
+                                { id: 'deny', label: 'Deny' },
+                            ],
+                        },
+                    },
+                }),
+                makeMessage({
+                    timestamp: 3_000,
+                    type: AgentMessageType.ANSWER,
+                    message: 'Please approve to continue.',
+                }),
+            ],
+            false,
+            new Map(),
+            { onSendMessage },
+        );
+        expect(screen.getByText('Please approve to continue.')).not.toBeNull();
+        fireEvent.click(screen.getByRole('button', { name: /Allow once/ }));
+        expect(onSendMessage).toHaveBeenCalledWith('allow_once', {
+            tool_approval_response: { decision: 'allow_once', approval_key: 'approval-1' },
+            request_input_response: { request_id: 'approval-1' },
         });
     });
 
@@ -718,10 +829,10 @@ describe('AllMessagesMixed summary view', () => {
         );
 
         expect(screen.queryByRole('button', { name: /Worked\s*for/ })).toBeNull();
-        expect(screen.getAllByRole('button', { name: /Working\s*for/ })).toHaveLength(1);
+        expect(screen.getAllByRole('status')).toHaveLength(1);
         expect(
-            screen.getByText('Creating the permanent news report document in the project repository...'),
-        ).not.toBeNull();
+            screen.queryByText('Creating the permanent news report document in the project repository...'),
+        ).toBeNull();
         expect(screen.queryByText('Approve Create Document: Japan Daily News Report - June 22, 2026?')).toBeNull();
         expect(screen.queryByText('allow_for_run')).toBeNull();
     });
@@ -969,8 +1080,8 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText('Create Bookmark')).toBeNull();
         expect(screen.queryByText('Error')).toBeNull();
         expect(screen.queryByRole('button', { name: /Work needs attention/ })).toBeNull();
-        expect(screen.getByRole('button', { name: /Working/ })).not.toBeNull();
-        expect(screen.getByText(/Failed to provision browser sandbox/)).not.toBeNull();
+        expect(screen.getByRole('status')).not.toBeNull();
+        expect(screen.queryByText(/Failed to provision browser sandbox/)).toBeNull();
     });
 
     it('suppresses JSON-only child workstream results in summary view', () => {
@@ -2275,7 +2386,7 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.getByText(/This should keep the tool work visible/)).not.toBeNull();
     });
 
-    it('does not collapse long tool preambles while the summary work row is active', () => {
+    it('hides long tool preambles while the summary work row is active', () => {
         const longPreamble = [
             'I will now create a plan to retrieve the latest news headlines from France today.',
             'To do this, I will first activate the web search skill.',
@@ -2315,13 +2426,11 @@ describe('AllMessagesMixed summary view', () => {
             }),
         ]);
 
-        expect(screen.getByRole('button', { name: /Working\s*for/ }).getAttribute('aria-expanded')).toBe('true');
+        expect(screen.queryByRole('button', { name: /Working/ })).toBeNull();
         expect(screen.queryByRole('button', { name: /Show more/ })).toBeNull();
         expect(screen.queryByRole('button', { name: /Show less/ })).toBeNull();
-        expect(screen.getByText(/Finally I will produce a concise answer/)).not.toBeNull();
-
-        const prose = screen.getByTestId('summary-thought-prose');
-        expect(prose.getAttribute('class') ?? '').not.toContain('[-webkit-line-clamp:6]');
+        expect(screen.queryByText(/Finally I will produce a concise answer/)).toBeNull();
+        expect(screen.queryByTestId('summary-thought-prose')).toBeNull();
     });
 
     it('renders completed streaming answers as visible summary prose before later tool activity', () => {
@@ -2780,5 +2889,32 @@ describe('AllMessagesMixed resource summary — same-timestamp cursor clipping',
 
         expect(screen.getByText('Doc A')).not.toBeNull();
         expect(screen.queryByText('Doc B')).toBeNull();
+    });
+});
+
+describe('working display modes', () => {
+    const toolMessage = makeMessage({
+        message: 'Executing a sample tool',
+        details: { tool: 'web_search', tool_status: 'running', tool_run_id: 'mode-test' },
+    });
+
+    it('defaults to expanded live steps without badges', () => {
+        renderSummary([toolMessage], false, new Map(), { workingDisplay: undefined });
+        expect(screen.getByRole('button', { name: /Working/ }).getAttribute('aria-expanded')).toBe('true');
+        expect(screen.getByText('Executing a sample tool')).not.toBeNull();
+        expect(screen.queryByTestId('summary-tool-call-counts')).toBeNull();
+    });
+
+    it('minimal keeps the indicator and completed details without badges', () => {
+        const { rerenderSummary } = renderSummary([toolMessage], false, new Map(), { workingDisplay: 'minimal' });
+        expect(screen.getByRole('status').textContent).toContain('Working');
+        expect(screen.queryByText('Executing a sample tool')).toBeNull();
+        expect(screen.queryByTestId('summary-tool-call-counts')).toBeNull();
+        rerenderSummary([toolMessage], true, new Map(), { workingDisplay: 'minimal' });
+        const worked = screen.getByRole('button', { name: /Worked/ });
+        expect(worked.getAttribute('aria-expanded')).toBe('false');
+        fireEvent.click(worked);
+        expect(screen.getByText('Executing a sample tool')).not.toBeNull();
+        expect(screen.queryByTestId('summary-tool-call-counts')).toBeNull();
     });
 });

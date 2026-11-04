@@ -59,6 +59,7 @@ import type {
     AgentConversationViewMode,
     AgentInitialRequestTemplate,
     AgentInitialRequestTemplateContext,
+    AgentWorkingDisplay,
 } from './ModernAgentOutput/AllMessagesMixed';
 import AllMessagesMixed from './ModernAgentOutput/AllMessagesMixed';
 import { collectDeliveredArtifactRefs } from './ModernAgentOutput/AttachmentPreview';
@@ -683,6 +684,11 @@ export interface ModernAgentConversationProps {
 
     /** Controlled view mode — when provided, overrides internal state */
     viewMode?: AgentConversationViewMode;
+    /**
+     * Default-view activity presentation: steps (default), summary (indicator and call badges),
+     * or minimal (indicator only). Detailed view is unaffected.
+     */
+    workingDisplay?: AgentWorkingDisplay;
     /** Called when view mode changes (for external control) */
     onViewModeChange?: (mode: AgentConversationViewMode) => void;
     /** Called when follow-up input availability is determined (after messages load) */
@@ -1511,6 +1517,7 @@ function ModernAgentConversationInner({
     onWorkstreamStatusChange,
     // External view mode control
     viewMode: controlledViewMode,
+    workingDisplay,
     onViewModeChange: onViewModeChangeProp,
     onShowInputChange,
     // External stop API
@@ -2879,6 +2886,7 @@ function ModernAgentConversationInner({
                     batchProgressPanelClassNames={batchProgressPanelClassNames}
                     artifactRunId={agentRunId}
                     viewMode={viewMode}
+                    workingDisplay={workingDisplay}
                     hideWorkstreamTabs={hideWorkstreamTabs}
                     workingIndicatorClassName={workingIndicatorClassName}
                     messageListClassName={messageListClassName}
