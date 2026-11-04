@@ -1,7 +1,7 @@
 import { log } from '@temporalio/activity';
 import type { DSLActivityExecutionPayload, DSLActivitySpec, RenditionWithDimensions } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
-import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
+import { DocumentNotFoundError, InvalidContentTypeError, SourceTooLargeError } from '../../errors.js';
 import { initializeActivityCommandDeadline, isUnusableVideoContent, rethrowIfActivityStopped } from './exec.js';
 import {
     buildVideoMetadata,
@@ -9,18 +9,18 @@ import {
     DEFAULT_MAX_RESOLUTION,
     DEFAULT_POSTER_SIZE,
     DEFAULT_THUMBNAIL_SIZE,
+    extractAudioRendition,
     extractVideoFrames,
-    generateAudioRendition,
     generateRenditionWithDimensions,
-    getVideoMetadata,
     type MediaResult,
+    probeVideoSource,
     resolveVideoPreset,
     retrieveVideoObject,
     uploadVideoAssets,
     uploadWebRendition,
     type VideoMetadataExtended,
     type VideoPreset,
-    withVideoWorkspace,
+    withVideoSource,
 } from './video.js';
 
 export {
@@ -108,11 +108,12 @@ export async function prepareVideo(
     const inputObject = await retrieveVideoObject(client, objectId);
     const source = inputObject.content?.source as string;
 
-    return await withVideoWorkspace(client, source, 'prepare-video-', async (videoFile, tempOutputDir) => {
+    // The probe and frames read the source over a signed URL. The transcode downloads it, and later steps reuse the copy.
+    return await withVideoSource(client, source, 'prepare-video-', async (videoSource, tempOutputDir) => {
         try {
             // Step 1: Extract video metadata
             log.info('Extracting video metadata');
-            const metadata = await getVideoMetadata(videoFile);
+            const metadata = await probeVideoSource(videoSource);
 
             // Step 2: Generate video rendition
             let renditionResult: MediaResult | null = null;
@@ -121,7 +122,7 @@ export async function prepareVideo(
             } else {
                 log.debug('Generating video rendition');
                 renditionResult = await generateRenditionWithDimensions(
-                    videoFile,
+                    await videoSource.localPath(),
                     tempOutputDir,
                     metadata,
                     maxResolution,
@@ -131,13 +132,14 @@ export async function prepareVideo(
 
             // Step 3 & 4: Generate thumbnail and poster in parallel
             log.debug('Generating thumbnail and poster');
-            const frames = await extractVideoFrames(videoFile, tempOutputDir, metadata, thumbnailSize, posterSize);
+            const frames = await extractVideoFrames(videoSource, tempOutputDir, metadata, thumbnailSize, posterSize);
 
-            // Step 5: Generate audio rendition (if video has audio and requested)
-            let audioFile: string | null = null;
+            // Step 5: Generate audio rendition (if video has audio and requested). Copies an eligible source track;
+            // encodes from the download otherwise.
+            let audio: Awaited<ReturnType<typeof extractAudioRendition>> = null;
             if (generateAudio && metadata.hasAudio) {
                 log.debug('Generating audio rendition');
-                audioFile = await generateAudioRendition(videoFile, tempOutputDir);
+                audio = await extractAudioRendition(videoSource, tempOutputDir, metadata);
             } else if (generateAudio && !metadata.hasAudio) {
                 log.info('Skipping audio rendition - video has no audio track');
             }
@@ -149,7 +151,9 @@ export async function prepareVideo(
             if (renditionResult) {
                 renditions.push(await uploadWebRendition(client, renditionResult, maxResolution, etag));
             }
-            renditions.push(...(await uploadVideoAssets(client, frames, audioFile, thumbnailSize, posterSize, etag)));
+            renditions.push(
+                ...(await uploadVideoAssets(client, frames, audio?.file ?? null, thumbnailSize, posterSize, etag)),
+            );
 
             // Step 7: Update content object with metadata and renditions
             await client.objects.update(objectId, {
@@ -163,6 +167,11 @@ export async function prepareVideo(
                 bitrate: metadata.bitrate,
                 fps: metadata.fps,
                 hasAudio: metadata.hasAudio,
+                container: metadata.formatName,
+                audioCodec: metadata.audioCodec,
+                audioChannels: metadata.audioChannels,
+                audioStreams: metadata.audioStreams,
+                audioRendition: audio?.mode ?? 'none',
                 renditionsGenerated: renditions.length,
             });
 
@@ -174,8 +183,9 @@ export async function prepareVideo(
             };
         } catch (error) {
             rethrowIfActivityStopped(error);
-            // The metadata probe already logged it at warn; keep its type and non-retryable flag.
-            if (isUnusableVideoContent(error)) {
+            // The metadata probe already logged it at warn, and a download over the media limit logged its
+            // rejection; keep their type and non-retryable flag.
+            if (isUnusableVideoContent(error) || error instanceof SourceTooLargeError) {
                 throw error;
             }
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
