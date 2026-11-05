@@ -12073,6 +12073,16 @@
     },
     "additionalProperties": false
   },
+  "DeleteInteractionQuery": {
+    "type": "object",
+    "properties": {
+      "cascade": {
+        "type": "boolean",
+        "description": "Set to true on a draft to also delete its published versions. A cascade never deletes a version's draft, sibling versions, or forks."
+      }
+    },
+    "additionalProperties": false
+  },
   "CatalogInteractionRef": {
     "type": "object",
     "properties": {
@@ -20723,6 +20733,16 @@
     ],
     "additionalProperties": false
   },
+  "AppDeleteQuery": {
+    "type": "object",
+    "properties": {
+      "confirm": {
+        "type": "boolean",
+        "description": "Set to true to delete the app. When omitted or false this is a dry run: nothing is removed, and the response describes what the cascade would remove."
+      }
+    },
+    "additionalProperties": false
+  },
   "AppDeleteSummary": {
     "type": "object",
     "properties": {
@@ -21563,6 +21583,31 @@
     ],
     "additionalProperties": false,
     "description": "Commit history in an app git repository, optionally filtered to a file."
+  },
+  "AppRepoCommitsQuery": {
+    "type": "object",
+    "properties": {
+      "path": {
+        "type": "string",
+        "description": "Only list commits that changed this file, relative to the repository root."
+      },
+      "ref": {
+        "type": "string",
+        "description": "Branch, tag or commit to start from. Defaults to the default branch."
+      },
+      "limit": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "multipleOf": 1,
+        "description": "Maximum number of commits in the page."
+      },
+      "cursor": {
+        "type": "string",
+        "description": "The `next_cursor` of the previous page."
+      }
+    },
+    "additionalProperties": false
   },
   "ContentObjectTypeRef": {
     "oneOf": [
@@ -36906,6 +36951,16 @@
       }
     }
   },
+  "TerminateAgentRunQuery": {
+    "type": "object",
+    "properties": {
+      "reason": {
+        "type": "string",
+        "description": "Why the run is being terminated. Takes precedence over a `reason` in the body."
+      }
+    },
+    "additionalProperties": false
+  },
   "TerminateAgentRunResponse": {
     "type": "object",
     "properties": {
@@ -43013,6 +43068,33 @@
       "$ref": "#/components/schemas/DashboardVersionItem"
     }
   },
+  "ListDashboardsQuery": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "$ref": "#/components/schemas/DashboardStatus",
+        "description": "Only list dashboards with this status. Defaults to `active`."
+      }
+    },
+    "additionalProperties": false
+  },
+  "ListDashboardVersionsQuery": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "multipleOf": 1,
+        "description": "Maximum number of versions to return. Defaults to 50."
+      },
+      "snapshots_only": {
+        "type": "boolean",
+        "description": "Only list named snapshots."
+      }
+    },
+    "additionalProperties": false
+  },
   "DashboardItem": {
     "type": "object",
     "properties": {
@@ -43712,6 +43794,43 @@
     "properties": {
       "sample": {
         "type": "boolean"
+      }
+    },
+    "additionalProperties": false
+  },
+  "GetDataStoreSchemaQuery": {
+    "type": "object",
+    "properties": {
+      "format": {
+        "type": "string",
+        "enum": [
+          "full",
+          "ai"
+        ],
+        "description": "`ai` returns a condensed schema for AI context. Defaults to `full`."
+      }
+    },
+    "additionalProperties": false
+  },
+  "ListDataStoreSchemaHistoryQuery": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 9007199254740991,
+        "multipleOf": 1,
+        "description": "Maximum number of versions to return. Defaults to 50."
+      }
+    },
+    "additionalProperties": false
+  },
+  "CreateDataStoreDownloadUrlQuery": {
+    "type": "object",
+    "properties": {
+      "version_id": {
+        "type": "string",
+        "description": "The stored version or snapshot to download. Defaults to the current database."
       }
     },
     "additionalProperties": false
