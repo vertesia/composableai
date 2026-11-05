@@ -497,19 +497,31 @@ describe('prepareVideo audio rendition', () => {
         expect(probes[1][1].at(-1)).toBe(downloaded);
     });
 
-    it('encodes from a download when the copy comes out truncated', async () => {
+    it('keeps a copy shorter than the track states without downloading the source to encode it', async () => {
+        // A copy that exits cleanly under -xerror read every packet, as a truncated upload does: an encode would
+        // read the same packets.
         setup(sourceProbe({ codec_name: 'aac', channels: 2 }), '78.3');
+
+        await run();
+
+        expect(saveBlobToTempFile).not.toHaveBeenCalled();
+        expect(audioCommands()).toEqual([expect.arrayContaining(['-i', SIGNED_URL, '-c:a', 'copy'])]);
+        expect(log.warn).toHaveBeenCalledWith(
+            'Copied audio track is shorter than the source states; the source holds no more audio',
+            { actual: 78.3, expected: 300 },
+        );
+        expect(successLog()).toMatchObject({ audioRendition: 'copy' });
+        expect(log.error).not.toHaveBeenCalled();
+    });
+
+    it('encodes from a download when the copy writes no readable audio', async () => {
+        setup(sourceProbe({ codec_name: 'aac', channels: 2 }), '');
 
         await run();
 
         expect(saveBlobToTempFile).toHaveBeenCalledTimes(1);
         expect(audioCommands()[1]).toEqual(expect.arrayContaining(['-i', downloaded, '-c:a', 'aac']));
-        expect(log.warn).toHaveBeenCalledWith('Copied audio track is incomplete; encoding it from a download instead', {
-            actual: 78.3,
-            expected: 300,
-        });
         expect(successLog()).toMatchObject({ audioRendition: 'encode' });
-        expect(log.error).not.toHaveBeenCalled();
     });
 
     it('encodes from a download when the copy fails', async () => {

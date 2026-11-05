@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { saveBlobToTempFile } from '../../utils/blobs.js';
 import { uploadRenditionPages } from '../../utils/renditions.js';
-import { execActivityFile, execActivityFileWithProgress } from '../media/exec.js';
+import { execActivityFile, execActivityFileWithProgress, rethrowIfActivityStopped } from '../media/exec.js';
 import {
     calculateThumbnailTimestamps,
     generateThumbnailsWithFallback,
@@ -167,13 +167,11 @@ describe('generateVideoRendition source reads', () => {
         expect(JSON.stringify(vi.mocked(log.warn).mock.calls)).not.toContain('secret');
     });
 
-    it.each(['error', 'missing output'])('retries only the failed URL frame after %s', async (failure) => {
+    it.each(['error', 'missing output'])('keeps the other URL frames without downloading after %s', async (failure) => {
         setup(() => Promise.resolve({ url: SIGNED_URL }));
-        const downloaded = path.join(os.tmpdir(), 'missing-video.mp4');
-        vi.mocked(saveBlobToTempFile).mockResolvedValue(downloaded);
         const failedTimestamp = calculateThumbnailTimestamps(30, 3)[1].toString();
         vi.mocked(execActivityFileWithProgress).mockImplementation((_command, args) => {
-            if (args.includes(SIGNED_URL) && args[args.indexOf('-ss') + 1] === failedTimestamp) {
+            if (args[args.indexOf('-ss') + 1] === failedTimestamp) {
                 return failure === 'error'
                     ? Promise.reject(new Error(`Server returned 403 Forbidden for ${SIGNED_URL}`))
                     : Promise.resolve({ stdout: '', stderr: '' });
@@ -187,14 +185,73 @@ describe('generateVideoRendition source reads', () => {
             {} as Parameters<typeof generateVideoRendition>[0],
         );
 
-        expect(result).toMatchObject({ status: 'success', thumbnailCount: 3 });
-        expect(saveBlobToTempFile).toHaveBeenCalledTimes(1);
-        const commands = vi.mocked(execActivityFileWithProgress).mock.calls.map(([, args]) => args);
-        expect(commands.filter((args) => args.includes(SIGNED_URL))).toHaveLength(3);
-        const local = commands.filter((args) => args.includes(downloaded));
-        expect(local).toHaveLength(1);
-        expect(local[0][local[0].indexOf('-ss') + 1]).toBe(failedTimestamp);
+        expect(result).toMatchObject({ status: 'success', thumbnailCount: 2 });
+        expect(saveBlobToTempFile).not.toHaveBeenCalled();
+        expect(vi.mocked(execActivityFileWithProgress)).toHaveBeenCalledTimes(3);
         expect(log.error).not.toHaveBeenCalled();
+    });
+
+    it('grabs every frame from a download when one grab over the URL stalls', async () => {
+        setup(() => Promise.resolve({ url: SIGNED_URL }));
+        const downloaded = path.join(os.tmpdir(), 'missing-video.mp4');
+        vi.mocked(saveBlobToTempFile).mockResolvedValue(downloaded);
+        const stalledTimestamp = calculateThumbnailTimestamps(30, 3)[1].toString();
+        const actual = await vi.importActual<typeof import('../media/exec.js')>('../media/exec.js');
+        vi.mocked(rethrowIfActivityStopped).mockImplementation(actual.rethrowIfActivityStopped);
+        vi.mocked(execActivityFileWithProgress).mockImplementation((_command, args) => {
+            if (args.includes(SIGNED_URL) && args[args.indexOf('-ss') + 1] === stalledTimestamp) {
+                return Promise.reject(
+                    Object.assign(new Error('ffmpeg made no progress'), { killed: true, stalled: true }),
+                );
+            }
+            fs.writeFileSync(args[args.length - 1], 'jpeg');
+            return Promise.resolve({ stdout: '', stderr: '' });
+        });
+
+        try {
+            const result = await new MockActivityEnvironment().run(
+                generateVideoRendition,
+                {} as Parameters<typeof generateVideoRendition>[0],
+            );
+
+            expect(result).toMatchObject({ status: 'success', thumbnailCount: 3 });
+            expect(saveBlobToTempFile).toHaveBeenCalledTimes(1);
+            const commands = vi.mocked(execActivityFileWithProgress).mock.calls.map(([, args]) => args);
+            expect(commands.filter((args) => args.includes(downloaded))).toHaveLength(3);
+        } finally {
+            vi.mocked(rethrowIfActivityStopped).mockReset();
+        }
+    });
+
+    it('grabs frame zero over the URL instead of downloading when every seek is past the last frame', async () => {
+        setup(() => Promise.resolve({ url: SIGNED_URL }));
+        // A half-second clip whose only frames precede every scheduled seek.
+        vi.mocked(execActivityFile).mockResolvedValue({
+            ...videoProbe,
+            stdout: JSON.stringify({
+                streams: [{ codec_type: 'video', width: 640, height: 360 }],
+                format: { duration: '0.5' },
+            }),
+        });
+        vi.mocked(execActivityFileWithProgress).mockImplementation((_command, args) => {
+            if (args[args.indexOf('-ss') + 1] !== '0') {
+                // Recent ffmpeg (seen on 9) exits non-zero when a seek past the end writes nothing.
+                return Promise.reject(new Error('Nothing was written into output file'));
+            }
+            fs.writeFileSync(args[args.length - 1], 'jpeg');
+            return Promise.resolve({ stdout: '', stderr: '' });
+        });
+
+        const result = await new MockActivityEnvironment().run(
+            generateVideoRendition,
+            {} as Parameters<typeof generateVideoRendition>[0],
+        );
+
+        expect(result).toMatchObject({ status: 'success', thumbnailCount: 1 });
+        expect(saveBlobToTempFile).not.toHaveBeenCalled();
+        const commands = vi.mocked(execActivityFileWithProgress).mock.calls.map(([, args]) => args);
+        expect(commands).toHaveLength(4);
+        expect(commands.at(-1)).toEqual(expect.arrayContaining(['-ss', '0', '-i', SIGNED_URL]));
     });
 
     it('retries locally when an HTTP probe cannot determine duration', async () => {

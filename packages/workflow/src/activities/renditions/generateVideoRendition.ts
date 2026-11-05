@@ -248,11 +248,15 @@ export async function generateVideoRendition(payload: DSLActivityExecutionPayloa
                     tempOutputDir: outputDir,
                 });
 
-                // Generate thumbnails using command line ffmpeg
-                const thumbnails = await generateThumbnailsWithFallback(timestamps, (timestamp) =>
-                    source.withFallback((input) => generateThumbnail(input, outputDir, timestamp, params.max_hw)),
-                );
-                const generatedThumbnails = requireGeneratedThumbnails(thumbnails, objectId);
+                // Grab every frame, and the frame-zero retry, over the URL; download only when none comes out. A seek
+                // past the last frame of a short video produces no frame from a download either.
+                const thumbnails = await source.withFallback(async (input) => {
+                    const grabbed = await generateThumbnailsWithFallback(timestamps, (timestamp) =>
+                        generateThumbnail(input, outputDir, timestamp, params.max_hw),
+                    );
+                    return grabbed.some((thumbnail) => thumbnail !== undefined) ? grabbed : undefined;
+                });
+                const generatedThumbnails = requireGeneratedThumbnails(thumbnails ?? [], objectId);
 
                 log.info(`Successfully generated ${generatedThumbnails.length} thumbnails for ${objectId}`, {
                     objectId,
