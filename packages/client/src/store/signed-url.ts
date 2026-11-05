@@ -10,11 +10,11 @@
  *
  * Note on streamed bodies: a `ReadableStream` body cannot be replayed once it has
  * been consumed. Up to {@link MAX_BUFFERED_STREAM_BYTES} of it is buffered so that
- * small bodies keep their retries. A longer stream is never held whole in memory:
- * where the storage service accepts a body of unknown length it is sent once, as a
- * stream, without retries (see {@link acceptsStreamedUpload}). Send a `Blob` backed by
- * a local file (Node's `fs.openAsBlob`) to keep retries for large files without a
- * copy in memory.
+ * small bodies keep their retries. In Node.js, a longer stream is never held whole in
+ * memory: where the storage service accepts a body of unknown length it is sent once,
+ * as a stream, without retries (see {@link acceptsStreamedUpload}). Send a `Blob` backed
+ * by a local file (Node's `fs.openAsBlob`) to keep retries for large files without a
+ * copy in memory. A browser buffers a stream whole, as most browsers cannot send one.
  *
  * A stream whose length the caller declares in a `Content-Length` header is, in Node.js,
  * streamed with that length to any service, and fails if it ends short of it or runs
@@ -26,6 +26,7 @@
  */
 import { hasNodeHttp, nodeRequest } from './node-request.js';
 import { chunkToBlobPart, continueStream } from './stream-bytes.js';
+import { ContentLengthMismatchError, contentLengthHeader } from './upload-runtime.js';
 
 /** HTTP statuses that storage backends return for transient, retryable conditions. */
 const DEFAULT_RETRYABLE_STATUSES: ReadonlySet<number> = new Set([429, 500, 502, 503, 504]);
@@ -100,14 +101,6 @@ export function acceptsStreamedUpload(url: string): boolean {
 
 function isStream(body: BodyInit | null | undefined): boolean {
     return typeof ReadableStream !== 'undefined' && body instanceof ReadableStream;
-}
-
-/** The `Content-Length` a caller declared, in any letter case; undefined when absent or not a byte count. */
-function contentLengthHeader(headers: Record<string, string> | undefined): number | undefined {
-    const entry = Object.entries(headers ?? {}).find(([name]) => name.toLowerCase() === 'content-length');
-    if (!entry || !/^\d+$/.test(entry[1].trim())) return undefined;
-    const length = Number(entry[1].trim());
-    return Number.isSafeInteger(length) ? length : undefined;
 }
 
 function withoutContentLength(headers: Record<string, string> | undefined): Record<string, string> | undefined {
@@ -225,29 +218,33 @@ export async function fetchSignedUrl(url: string, options: SignedUrlFetchOptions
         retryableStatuses = DEFAULT_RETRYABLE_STATUSES,
     } = options;
 
-    // A stream longer than the buffer is sent once as a stream where that works: to a service that accepts a body
-    // of unknown length, or, in Node.js, with the length the caller declared. Elsewhere it is still buffered whole:
-    // S3 and Azure reject a body without a length, and a browser cannot set one.
+    // In Node.js, a stream longer than the buffer is sent once as a stream where that works: to a service that
+    // accepts a body of unknown length, or with the length the caller declared. Elsewhere it is still buffered
+    // whole: S3 and Azure reject a body without a length, and browsers can neither set one nor, in most of them,
+    // send a stream at all.
     const declaredLength = isStream(options.body) ? contentLengthHeader(headers) : undefined;
-    const streamable = acceptsStreamedUpload(url) || (declaredLength !== undefined && hasNodeHttp());
+    const streamable = hasNodeHttp() && (acceptsStreamedUpload(url) || declaredLength !== undefined);
     const { body, replayable } = await prepareBody(options.body, MAX_BUFFERED_STREAM_BYTES, !streamable);
     let sendHeaders = headers;
     if (declaredLength !== undefined && body instanceof Blob) {
         if (body.size !== declaredLength) {
-            throw new Error(`Upload body is ${body.size} bytes, but its declared length is ${declaredLength}`);
+            throw new ContentLengthMismatchError(
+                declaredLength,
+                body.size,
+                body.size < declaredLength ? 'short' : 'long',
+            );
         }
         // the buffered body sets its own length
         sendHeaders = withoutContentLength(headers);
     }
     const requestHeaders = method.toUpperCase() === 'PUT' ? signedUrlUploadHeaders(url, sendHeaders) : sendHeaders;
-    // `duplex` is required by fetch for a stream body; it is missing from the DOM `RequestInit` type.
-    const init = { method, headers: requestHeaders, body, ...(replayable ? {} : { duplex: 'half' }) } as RequestInit;
     const maxAttempts = replayable ? attempts : 1;
+    // Only Node.js streams a body (`streamable`), and always with Node's http client, so fetch only gets buffered ones.
     const large = !replayable || (body instanceof Blob && body.size > MAX_BUFFERED_STREAM_BYTES);
     const send =
         large && hasNodeHttp()
             ? () => nodeRequest(url, { method, headers: requestHeaders, body: body as Blob | ReadableStream })
-            : () => fetch(url, init);
+            : () => fetch(url, { method, headers: requestHeaders, body });
 
     let lastError: unknown;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {

@@ -358,7 +358,7 @@ describe('stream bodies longer than the retry buffer', () => {
 
         await expect(
             fetchSignedUrl(s3Url, { method: 'PUT', body: generated(2), headers: { 'Content-Length': String(CHUNK) } }),
-        ).rejects.toThrow(/declared length/);
+        ).rejects.toMatchObject({ name: 'ContentLengthMismatchError', declared: CHUNK, actual: 2 * CHUNK });
         expect(bodies).toHaveLength(1);
     });
 
@@ -389,14 +389,12 @@ describe('stream bodies longer than the retry buffer', () => {
     });
 
     it('sends a longer stream to GCS once, as a stream, with every byte in order', async () => {
-        const seen: { init: RequestInit; digest: Awaited<ReturnType<typeof digest>> }[] = [];
-        vi.stubGlobal(
-            'fetch',
-            vi.fn(async (_url: string, init: RequestInit) => {
-                seen.push({ init, digest: await digest(init.body as BodyInit) });
-                return new Response(null, { status: 503 });
-            }),
-        );
+        nodeHttp.available = true;
+        const seen: { init: { body: BodyInit }; digest: Awaited<ReturnType<typeof digest>> }[] = [];
+        nodeHttp.request.mockImplementation(async (_url: string, init: { body: BodyInit }) => {
+            seen.push({ init, digest: await digest(init.body) });
+            return new Response(null, { status: 503 });
+        });
         const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 8;
         const res = await fetchSignedUrl(gcsUrl, { method: 'PUT', body: generated(chunks), baseDelayMs: 0 });
 
@@ -404,20 +402,34 @@ describe('stream bodies longer than the retry buffer', () => {
         expect(res.status).toBe(503);
         expect(seen).toHaveLength(1);
         expect(seen[0].init.body).toBeInstanceOf(ReadableStream);
-        expect((seen[0].init as RequestInit & { duplex?: string }).duplex).toBe('half');
         expect(seen[0].digest).toEqual({ size: chunks * CHUNK, first: 0, last: (chunks - 1) % 256 });
     });
 
     it('does not retry a connection error on a streamed body', async () => {
-        const fetchMock = vi.fn(async () => {
-            throw new TypeError('fetch failed');
-        });
-        vi.stubGlobal('fetch', fetchMock);
+        nodeHttp.available = true;
+        nodeHttp.request.mockRejectedValue(new Error('socket hang up'));
         const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 1;
         await expect(
             fetchSignedUrl(gcsUrl, { method: 'PUT', body: generated(chunks), baseDelayMs: 0 }),
-        ).rejects.toThrow('fetch failed');
-        expect(fetchMock).toHaveBeenCalledOnce();
+        ).rejects.toThrow('socket hang up');
+        expect(nodeHttp.request).toHaveBeenCalledOnce();
+    });
+
+    it('buffers a longer stream to GCS outside Node.js, since most browsers cannot send one', async () => {
+        const bodies: BodyInit[] = [];
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async (_url: string, init: RequestInit) => {
+                bodies.push(init.body as BodyInit);
+                return new Response(null, { status: bodies.length === 1 ? 503 : 200 });
+            }),
+        );
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 2;
+        const res = await fetchSignedUrl(gcsUrl, { method: 'PUT', body: generated(chunks), baseDelayMs: 0 });
+        expect(res.status).toBe(200);
+        // buffered whole, so it is retried
+        expect(bodies).toHaveLength(2);
+        expect((bodies[0] as Blob).size).toBe(chunks * CHUNK);
     });
 
     it.each([
@@ -454,14 +466,12 @@ describe('stream bodies longer than the retry buffer', () => {
             },
             { highWaterMark: 0 },
         );
-        vi.stubGlobal(
-            'fetch',
-            vi.fn(async (_url: string, init: RequestInit) => {
-                pulledBeforeSend = pulled;
-                await (init.body as ReadableStream).cancel();
-                return new Response(null, { status: 200 });
-            }),
-        );
+        nodeHttp.available = true;
+        nodeHttp.request.mockImplementation(async (_url: string, init: { body: ReadableStream }) => {
+            pulledBeforeSend = pulled;
+            await init.body.cancel();
+            return new Response(null, { status: 200 });
+        });
         await fetchSignedUrl(gcsUrl, { method: 'PUT', body });
         // 16 MiB buffered, plus the chunk that crossed the limit.
         expect(pulledBeforeSend).toBe(MAX_BUFFERED_STREAM_BYTES / CHUNK + 1);

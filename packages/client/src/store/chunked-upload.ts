@@ -18,11 +18,14 @@
  */
 import type { CompletedUploadPart, S3MultipartUploadSession, UploadSession } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
+// hasNodeHttp from node-request, whose browser build answers false: a bundle without the Node transport never
+// opens a session.
+import { hasNodeHttp } from './node-request.js';
 import { uploadAzureBlocks, uploadGcsResumable } from './node-sessions.js';
 import { fetchSignedUrl, MAX_BUFFERED_STREAM_BYTES } from './signed-url.js';
 import { chunkToBlobPart, continueStream } from './stream-bytes.js';
 import { getUploadBody, type UploadBody } from './upload-body.js';
-import { ContentLengthMismatchError, hasNodeHttp } from './upload-runtime.js';
+import { ContentLengthMismatchError } from './upload-runtime.js';
 
 export { UploadSessionUnavailableError } from './upload-runtime.js';
 

@@ -21,6 +21,10 @@ describe('the browser builds of the Node-only upload modules', () => {
         });
     });
 
+    it('never report the Node transport as available', () => {
+        expect(requestBrowser.hasNodeHttp()).toBe(false);
+    });
+
     it('fail loudly if a Node transport is ever called', () => {
         expect(() => requestBrowser.nodeRequest()).toThrow('only available in Node.js');
         expect(() => sessionsBrowser.uploadGcsResumable()).toThrow('only available in Node.js');
