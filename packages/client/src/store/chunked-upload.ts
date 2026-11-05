@@ -24,8 +24,8 @@ import { hasNodeHttp } from './node-request.js';
 import { uploadAzureBlocks, uploadGcsResumable } from './node-sessions.js';
 import { fetchSignedUrl, MAX_BUFFERED_STREAM_BYTES } from './signed-url.js';
 import { chunkToBlobPart, continueStream } from './stream-bytes.js';
-import { getUploadBody, type UploadBody } from './upload-body.js';
-import { ContentLengthMismatchError } from './upload-runtime.js';
+import { getUploadBody, type UploadBody, unquoteEtag } from './upload-body.js';
+import { ContentLengthMismatchError, UploadSessionUnavailableError } from './upload-runtime.js';
 
 export { UploadSessionUnavailableError } from './upload-runtime.js';
 
@@ -44,7 +44,7 @@ const AZURE_MAX_BLOCKS = 50_000;
  * Part URLs are signed this many at a time, and signed again once this old, since they expire (S3 default, one hour,
  * or sooner with the signer's credentials) while a slow source fills the parts before them.
  */
-const PART_URL_BATCH = 10;
+const PART_URL_BATCH = 100;
 const PART_URL_MAX_AGE_MS = 15 * 60_000;
 
 /** Content to send in parts, with its declared length when it is a stream whose length is known. */
@@ -122,13 +122,18 @@ export async function uploadInParts(
         case 'gcs_resumable':
             return uploadGcsResumable(session, parts);
         case 'azure_block_blob':
-            return unquote(
+            return unquoteEtag(
                 await uploadAzureBlocks(
                     session.url,
                     fitParts(session.part_size, knownSize(parts), AZURE_MAX_BLOCKS),
                     session.mime_type,
                     parts,
                 ),
+            );
+        default:
+            // A protocol from a newer server: upload in one request instead, before reading anything.
+            throw new UploadSessionUnavailableError(
+                `support for the ${(session as { protocol: unknown }).protocol} protocol`,
             );
     }
 }
@@ -257,13 +262,9 @@ async function uploadS3Parts(
             throw new ContentLengthMismatchError(parts.size, sent, 'short');
         }
         const completed = await api.completeUploadSession({ id, upload_id, parts: uploaded });
-        return unquote(completed.etag);
+        return unquoteEtag(completed.etag);
     } catch (err) {
         await api.abortUploadSession({ id, upload_id }).catch(() => undefined);
         throw err;
     }
-}
-
-function unquote(etag: string | undefined): string | undefined {
-    return etag?.replace(/^"(.*)"$/, '$1');
 }

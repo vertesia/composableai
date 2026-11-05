@@ -65,6 +65,7 @@ const azure = vi.hoisted(() => ({
     urls: [] as string[],
     calls: [] as { bufferSize: number; maxConcurrency: number; options: unknown }[],
     received: [] as Buffer[],
+    fail: false,
 }));
 
 vi.mock('@azure/storage-blob', () => ({
@@ -79,6 +80,7 @@ vi.mock('@azure/storage-blob', () => ({
             options: unknown,
         ) {
             azure.calls.push({ bufferSize, maxConcurrency, options });
+            if (azure.fail) throw new Error('403 AuthenticationFailed');
             for await (const chunk of stream) azure.received.push(chunk);
             return { etag: '"0x8DC1"' };
         }
@@ -243,7 +245,7 @@ describe('uploadInParts on S3', () => {
         expect(received.map((r) => r.body)).toEqual(['hello', ' worl', 'd!']);
         expect(received[1].url).toBe('https://bucket.s3.amazonaws.com/big.bin?part=2');
         expect(api.getUploadPartUrls).toHaveBeenCalledTimes(1);
-        expect(api.getUploadPartUrls.mock.calls[0][0].part_numbers).toHaveLength(10);
+        expect(api.getUploadPartUrls.mock.calls[0][0].part_numbers).toHaveLength(100);
         expect(api.completeUploadSession).toHaveBeenCalledWith({
             id: 's3://bucket/big.bin',
             upload_id: 'upload-1',
@@ -262,15 +264,19 @@ describe('uploadInParts on S3', () => {
         expect(received.map((r) => r.body)).toEqual(['01234', '56789', 'ab']);
     });
 
-    it('signs part URLs ten at a time, as they are needed', async () => {
+    it('signs part URLs 100 at a time, as they are needed', async () => {
         const api = fakeApi();
-        await uploadInParts(api, s3Session(), { body: new Blob([new Uint8Array(5 * 21)]) });
-        expect(api.getUploadPartUrls.mock.calls.map((call) => call[0].part_numbers)).toEqual([
-            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
-            [21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
-        ]);
-        expect(api.completeUploadSession.mock.calls[0][0].parts).toHaveLength(21);
+        await uploadInParts(api, s3Session(), { body: new Blob([new Uint8Array(5 * 101)]) });
+        expect(api.getUploadPartUrls.mock.calls.map((call) => call[0].part_numbers[0])).toEqual([1, 101]);
+        expect(api.getUploadPartUrls.mock.calls[0][0].part_numbers).toHaveLength(100);
+        expect(api.completeUploadSession.mock.calls[0][0].parts).toHaveLength(101);
+    });
+
+    it('refuses a protocol it does not know, before reading anything', async () => {
+        const body = textStream('hello');
+        const session = { ...s3Session(), protocol: 'r2_multipart' } as unknown as UploadSession;
+        await expect(uploadInParts(fakeApi(), session, { body })).rejects.toThrow('the r2_multipart protocol');
+        expect(body.locked).toBe(false);
     });
 
     it('signs the URLs again once they are old', async () => {
@@ -421,6 +427,7 @@ describe('uploadInParts on Azure Blob Storage', () => {
         azure.urls = [];
         azure.calls = [];
         azure.received = [];
+        azure.fail = false;
     });
 
     const session: UploadSession = {
@@ -440,6 +447,21 @@ describe('uploadInParts on Azure Blob Storage', () => {
         ]);
         expect(Buffer.concat(azure.received).toString()).toBe('hello world');
         expect(etag).toBe('0x8DC1');
+    });
+
+    it('cancels the source when the upload fails', async () => {
+        azure.fail = true;
+        let cancelled = false;
+        const body = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                controller.enqueue(new Uint8Array(1024));
+            },
+            cancel() {
+                cancelled = true;
+            },
+        });
+        await expect(uploadInParts(fakeApi(), session, { body })).rejects.toThrow('403');
+        await vi.waitFor(() => expect(cancelled).toBe(true));
     });
 
     it('fails the upload, before it is committed, for a stream short of its declared length', async () => {

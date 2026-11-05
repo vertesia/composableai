@@ -42,7 +42,8 @@ function clientWith(routes: Record<string, (payload: Record<string, unknown>) =>
         calls.push({ path, payload });
         const route = routes[path];
         if (!route) return Response.json({ message: `no route ${path}` }, { status: 404 });
-        return Response.json(route(payload));
+        const answer = route(payload);
+        return answer instanceof Response ? answer : Response.json(answer);
     });
     return { client: new ZenoClient({ serverUrl: 'https://store.test', apikey: 'token', fetch: api }), calls };
 }
@@ -203,13 +204,42 @@ describe('uploads of long streams', () => {
         expect(storage).toEqual([{ url: 'https://bucket.s3.amazonaws.com/big', size: 20 * mib }]);
     });
 
-    it('fails when starting a session fails for another reason', async () => {
+    it('fails, and cancels the source, when starting a session fails for another reason', async () => {
         const { client } = clientWith({ '/files/upload-sessions': () => ({}) });
         vi.spyOn(client.files, 'createUploadSession').mockRejectedValueOnce(new Error('forbidden'));
-        await expect(client.files.uploadFile(new StreamSource(zeroStream(20 * mib), 'big.bin'))).rejects.toThrow(
-            'forbidden',
-        );
+        let cancelled = false;
+        let produced = 0;
+        const body = new ReadableStream<Uint8Array>({
+            pull(controller) {
+                produced += mib;
+                controller.enqueue(new Uint8Array(mib));
+            },
+            cancel() {
+                cancelled = true;
+            },
+        });
+        await expect(client.files.uploadFile(new StreamSource(body, 'big.bin'))).rejects.toThrow('forbidden');
         expect(storage).toEqual([]);
+        expect(cancelled).toBe(true);
+        expect(produced).toBeLessThanOrEqual(18 * mib);
+    });
+
+    it('retries completing the upload after a gateway error, instead of aborting it', async () => {
+        let completions = 0;
+        const { client, calls } = clientWith({
+            ...s3Routes,
+            '/files/upload-sessions/complete': () => {
+                completions++;
+                return completions === 1
+                    ? Response.json({ message: 'busy' }, { status: 503 })
+                    : { id: s3Session.id, path: s3Session.path, etag: 'multi-3' };
+            },
+        });
+        await expect(client.files.uploadFile(new StreamSource(zeroStream(20 * mib), 'big.bin'))).resolves.toBe(
+            's3://bucket/big.bin',
+        );
+        expect(completions).toBe(2);
+        expect(calls.map((c) => c.path)).not.toContain('/files/upload-sessions/abort');
     });
 
     it('aborts the session and fails when a part cannot be uploaded', async () => {

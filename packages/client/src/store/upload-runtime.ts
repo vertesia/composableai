@@ -21,13 +21,14 @@ export class ContentLengthMismatchError extends Error {
     }
 }
 
-/** The SDK an upload session needs is not installed. */
+/** This client cannot use the upload session: an SDK it needs is not installed, or it does not know its protocol. */
 export class UploadSessionUnavailableError extends Error {
     constructor(
-        readonly packageName: string,
-        cause: unknown,
+        /** What is missing, such as `the optional package @azure/storage-blob`. */
+        readonly requirement: string,
+        cause?: unknown,
     ) {
-        super(`Uploading in parts needs the optional package ${packageName}`, { cause });
+        super(`Uploading in parts needs ${requirement}`, { cause });
         this.name = 'UploadSessionUnavailableError';
     }
 }

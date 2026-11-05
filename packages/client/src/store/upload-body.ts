@@ -30,3 +30,8 @@ export function uploadHeaders(upload: UploadBody, contentType: string | undefine
     if (upload.contentLength !== undefined) headers['Content-Length'] = String(upload.contentLength);
     return Object.keys(headers).length > 0 ? headers : undefined;
 }
+
+/** An ETag without the quotes HTTP puts around it (RFC 9110), as the upload methods return it. */
+export function unquoteEtag(etag: string | undefined): string | undefined {
+    return etag?.replace(/^"(.*)"$/, '$1');
+}

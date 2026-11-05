@@ -63,6 +63,7 @@ import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 import type { ZenoClient } from './client.js';
 import { fetchSignedUrl } from './signed-url.js';
+import { uploadContent } from './upload-content.js';
 import { getUploadMimeTypeHint } from './uploadMimeType.js';
 import { zenoBulkBaseUrl } from './zeno-bulk.js';
 
@@ -286,7 +287,7 @@ export class ObjectsApi extends ApiTopic {
             mime_type: getUploadMimeTypeHint(source.type),
         };
         // A signed URL for the object's content file, or an upload session for a long stream.
-        const { id, mime_type, etag } = await this.client.files.uploadContent(source, request, () =>
+        const { id, mime_type, etag } = await uploadContent(this.client.files, source, request, () =>
             this.getUploadUrl(request),
         );
         return {

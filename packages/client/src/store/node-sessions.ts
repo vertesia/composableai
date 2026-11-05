@@ -16,7 +16,7 @@ async function importOptional<T>(name: string, load: () => Promise<T>): Promise<
     } catch (err: unknown) {
         const code = (err as { code?: unknown } | undefined)?.code;
         if (code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND') {
-            throw new UploadSessionUnavailableError(name, err);
+            throw new UploadSessionUnavailableError(`the optional package ${name}`, err);
         }
         throw err;
     }
@@ -69,8 +69,15 @@ export async function uploadAzureBlocks(
     parts: PartsBody,
 ): Promise<string | undefined> {
     const { BlockBlobClient } = await importOptional('@azure/storage-blob', () => import('@azure/storage-blob'));
-    const response = await new BlockBlobClient(url).uploadStream(await nodeReadable(parts), blockSize, 1, {
-        blobHTTPHeaders: { blobContentType: contentType },
-    });
-    return response.etag;
+    const readable = await nodeReadable(parts);
+    try {
+        const response = await new BlockBlobClient(url).uploadStream(readable, blockSize, 1, {
+            blobHTTPHeaders: { blobContentType: contentType },
+        });
+        return response.etag;
+    } catch (err: unknown) {
+        // The SDK stops reading but leaves the stream open; destroying it cancels the source.
+        readable.destroy();
+        throw err;
+    }
 }

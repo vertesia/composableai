@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase, type IRequestRetryPolicy, RequestError } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
 import type {
     AbortUploadSessionPayload,
     AbortUploadSessionResponse,
@@ -27,10 +27,9 @@ import type {
     UploadSession,
 } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
-import { partsAsUploadBody, planUpload, UploadSessionUnavailableError, uploadInParts } from './chunked-upload.js';
 import { fetchSignedUrl } from './signed-url.js';
-import { type UploadBody, uploadHeaders } from './upload-body.js';
-import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
+import { fileLocationForError, sanitizedErrorCause, uploadContent } from './upload-content.js';
+import { getUploadMimeTypeHint } from './uploadMimeType.js';
 
 export const MEMORIES_PREFIX = 'memories';
 export const ARTIFACTS_PREFIX = 'agents';
@@ -40,25 +39,6 @@ const FILE_SIGNING_RETRY_POLICY: IRequestRetryPolicy = {
     methods: ['POST'],
     statuses: [502, 503, 504],
 };
-
-function fileLocationForError(location: string): string {
-    try {
-        const url = new URL(location);
-        return `${url.protocol}//${url.host}${url.pathname}`;
-    } catch {
-        return location.split(/[?#]/, 1)[0] || 'unknown file';
-    }
-}
-
-function sanitizedErrorCause(error: unknown): Error | undefined {
-    if (!(error instanceof Error)) {
-        return undefined;
-    }
-    const message = error.message.replace(/https?:\/\/[^\s)\]}>"']+/g, (url) => fileLocationForError(url));
-    const cause = new Error(message);
-    cause.name = error.name;
-    return cause;
-}
 
 function fileDownloadFailureReason(status?: number, statusText?: string): string {
     if (status === 404) return 'not found';
@@ -181,7 +161,9 @@ export class FilesApi extends ApiTopic {
 
     /** Assemble the uploaded parts of an `s3_multipart` upload session into the file. */
     completeUploadSession(payload: CompleteUploadSessionPayload): Promise<CompleteUploadSessionResponse> {
-        return this.post('/upload-sessions/complete', { payload });
+        // Retried like the other calls: aborting all the uploaded parts for one gateway error costs far more than a
+        // retry of a completion that already went through, which S3 answers or refuses without harm.
+        return this.post('/upload-sessions/complete', { payload, retryPolicy: FILE_SIGNING_RETRY_POLICY });
     }
 
     /** Discard an unfinished `s3_multipart` upload session and its parts. */
@@ -235,7 +217,8 @@ export class FilesApi extends ApiTopic {
             await Promise.all(
                 batch.map(async (source, j) => {
                     const idx = i + j;
-                    const { id, mime_type, etag } = await this.uploadContent(
+                    const { id, mime_type, etag } = await uploadContent(
+                        this,
                         source,
                         fileDescriptors[idx],
                         async () => files[idx],
@@ -275,85 +258,14 @@ export class FilesApi extends ApiTopic {
         fileId: string | undefined,
         name: string,
     ): Promise<{ id: string; path: string }> {
-        const { id, path } = await this.uploadContent(
+        const { id, path } = await uploadContent(
+            this,
             source,
             { id: fileId, name, mime_type: getUploadMimeTypeHint(source.type) },
             undefined,
             'application/gzip',
         );
         return { id, path };
-    }
-
-    /**
-     * Upload a source to the file `request` names: in one signed PUT, or, for a stream source longer than one part
-     * in Node.js, in parts through an upload session (see `chunked-upload.ts`).
-     *
-     * @param signUpload the signed PUT URL to use, when the caller already has one or signs it another way
-     * @param fallbackMimeType the content type when neither the source nor the server names one
-     * @internal used by the upload methods of this API and of `ObjectsApi`
-     */
-    async uploadContent(
-        source: StreamSource | File,
-        request: CreateUploadSessionPayload,
-        signUpload: () => Promise<GetFileUrlResponse> = () => this.getUploadUrl(request),
-        fallbackMimeType?: string,
-    ): Promise<{ id: string; path: string; mime_type?: string; etag?: string }> {
-        const plan = await planUpload(source);
-        let upload: UploadBody;
-        if (plan.kind === 'parts') {
-            const session = await this.createUploadSession(request).catch((err: unknown) => {
-                // A server without upload sessions, or whose storage has none.
-                if (err instanceof RequestError && (err.status === 404 || err.status === 501)) return undefined;
-                throw err;
-            });
-            if (!session) {
-                console.warn(`Upload sessions are not available; uploading ${request.name} in a single request`);
-                upload = partsAsUploadBody(plan.parts);
-            } else {
-                try {
-                    const etag = await uploadInParts(this, session, plan.parts);
-                    const mime_type = resolveUploadMimeType(source.type, session.mime_type) || fallbackMimeType;
-                    return { id: session.id, path: session.path, mime_type, etag };
-                } catch (err: unknown) {
-                    if (!(err instanceof UploadSessionUnavailableError)) {
-                        console.error('Failed to upload file', { err: sanitizedErrorCause(err), id: session.id });
-                        throw err;
-                    }
-                    console.warn(`${err.message}; uploading ${session.path} in a single request instead`);
-                    upload = partsAsUploadBody(plan.parts);
-                }
-            }
-        } else {
-            upload = plan.upload;
-        }
-
-        const { url, id, path, mime_type } = await signUpload();
-        const sourceMimeType = resolveUploadMimeType(source.type, mime_type) || fallbackMimeType;
-        const res = await fetchSignedUrl(url, {
-            method: 'PUT',
-            body: upload.body,
-            headers: uploadHeaders(upload, sourceMimeType),
-        }).catch((err) => {
-            console.error('Failed to upload file', { err, location: fileLocationForError(url), id, path });
-            throw err;
-        });
-        if (!res.ok) {
-            console.error('Failed to upload file', {
-                status: res.status,
-                statusText: res.statusText,
-                location: fileLocationForError(url),
-                id,
-                path,
-            });
-            throw new Error(`Failed to upload file ${source.name}: ${res.statusText}`);
-        }
-
-        //Etag need to be unquoted
-        //When a server returns an ETag header, it includes the quotes around the actual hash value.
-        //This is part of the HTTP specification (RFC 7232), which states that ETags should be
-        //enclosed in double quotes.
-        const etag = res.headers.get('etag')?.replace(/^"(.*)"$/, '$1');
-        return { id, path, mime_type: sourceMimeType, etag };
     }
 
     /**
