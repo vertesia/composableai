@@ -14,7 +14,9 @@ export default defineConfig({
         sourcemap: true,
         minify: true,
     },
-    external: ['@vertesia/common', 'eventsource', 'ajv'],
+    // Node built-ins are loaded on demand by the Node-only upload transport (store/node-request), which a
+    // browser never calls.
+    external: ['@vertesia/common', 'eventsource', 'ajv', /^node:/],
     resolve: {
         mainFields: ['browser', 'module', 'main'],
         conditionNames: ['browser', 'import', 'default'],
