@@ -4127,6 +4127,48 @@ export type CatalogInteractionRef = {
     title: string;
     description?: string | undefined;
 };
+export type CatalogAgentSearchQuery = {
+    name?: string | undefined;
+    tags?: string[] | undefined;
+    model?: string | undefined;
+    prompt?: string | undefined;
+    is_sub_agent?: boolean | undefined;
+};
+export type CatalogCallSearchQuery = {
+    name?: string | undefined;
+    tags?: string[] | undefined;
+    model?: string | undefined;
+    prompt?: string | undefined;
+    is_basic?: boolean | undefined;
+    is_tool?: boolean | undefined;
+    is_skill?: boolean | undefined;
+};
+/** An interaction found by a catalog search: a system or app interaction, or a stored one with its model, prompts and update time. */
+export type CatalogSearchInteractionRef = {
+    type: 'sys' | 'app' | 'stored' | 'draft';
+    id: string;
+    name: string;
+    version?: number | undefined;
+    published?: boolean | undefined;
+    tags: string[];
+    agent_runner_options?: AgentRunnerOptions | undefined;
+    title: string;
+    description?: string | undefined;
+    model?: string | undefined;
+    prompts?: PromptSegmentRef_PromptTemplateRef[] | undefined;
+    updated_at?: string | undefined;
+    inference_profile?: InferenceProfileId | undefined;
+};
+export type CatalogTagCount = {
+    tag: string;
+    count: number;
+};
+/** A catalog search result: the matching interactions, their tag counts and the total. */
+export type CatalogSearchResult = {
+    total: number;
+    tags: CatalogTagCount[];
+    interactions: CatalogSearchInteractionRef[];
+};
 export type ExecuteNamedInteractionQuery = {
     include_prompt?: boolean | undefined;
 };
@@ -11450,6 +11492,11 @@ export interface ApiComponentTypes {
     ResolvedCatalogInteraction: ResolvedCatalogInteraction;
     CatalogTagQuery: CatalogTagQueryWire;
     StoredCatalogInteractionsQuery: StoredCatalogInteractionsQueryWire;
+    CatalogAgentSearchQuery: CatalogAgentSearchQuery;
+    CatalogCallSearchQuery: CatalogCallSearchQuery;
+    CatalogSearchInteractionRef: CatalogSearchInteractionRef;
+    CatalogTagCount: CatalogTagCount;
+    CatalogSearchResult: CatalogSearchResult;
     ModelSource: ModelSourceWire;
     ResolvedEnvironmentInfo: ResolvedEnvironmentInfo;
     ResolvedInteractionExecutionInfo: ResolvedInteractionExecutionInfo;
