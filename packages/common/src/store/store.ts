@@ -682,6 +682,9 @@ export function canGenerateRendition(contentType: string | undefined, format: Re
 
 export type GetUploadUrlPayload = Wire.GetUploadUrlPayload;
 
+/** The longest lifetime a signed download URL can be given (`GetFileUrlPayload.ttl`): 7 days, the providers' own maximum. */
+export const SIGNED_URL_MAX_TTL_SECONDS = 7 * 24 * 60 * 60;
+
 export type GetFileUrlPayload = Wire.GetFileUrlPayload;
 
 export type GetFileUrlResponse = Wire.GetFileUrlResponse;

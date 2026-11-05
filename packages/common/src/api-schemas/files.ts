@@ -1,7 +1,5 @@
 import { z } from 'zod';
-
-/** The longest lifetime a signed download URL can be given: 7 days, the providers' own maximum. */
-const SIGNED_URL_MAX_TTL_SECONDS = 7 * 24 * 60 * 60;
+import { SIGNED_URL_MAX_TTL_SECONDS } from '../store/store.js';
 
 export const StringValueMapSchema = z.object({}).catchall(z.string()).meta({ id: 'StringValueMap' });
 

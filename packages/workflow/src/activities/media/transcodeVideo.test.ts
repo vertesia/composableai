@@ -31,7 +31,7 @@ vi.mock('./video.js', async (importOriginal) => {
     return {
         ...actual,
         retrieveVideoObject: vi.fn(),
-        probeVideoSource: vi.fn(),
+        getVideoMetadata: vi.fn(),
         generateRenditionWithDimensions: vi.fn(),
         uploadWebRendition: vi.fn(),
     };
@@ -97,7 +97,6 @@ describe('transcode time estimate', () => {
     });
 });
 
-const GiB_ = 1024 ** 3;
 const SIGNED_URL = 'https://storage.example.com/b/source.mov?X-Signature=secret';
 const DOWNLOAD = '/tmp/transcode-test-source.mov';
 const RENDITION = { file: '/tmp/out/rendition_1920p.mp4', width: 1920, height: 1080 };
@@ -163,9 +162,9 @@ beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllEnvs();
     heartbeats = [];
-    vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(6 * GiB_));
+    vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(6 * GiB));
     vi.mocked(saveBlobToTempFile).mockResolvedValue(DOWNLOAD);
-    vi.mocked(video.probeVideoSource).mockResolvedValue(probed(600));
+    vi.mocked(video.getVideoMetadata).mockResolvedValue(probed(600));
     vi.mocked(video.generateRenditionWithDimensions).mockResolvedValue(RENDITION);
     vi.mocked(video.uploadWebRendition).mockResolvedValue(UPLOADED as never);
 });
@@ -202,14 +201,25 @@ describe('transcodeVideo over the signed URL', () => {
         expect(video.generateRenditionWithDimensions).not.toHaveBeenCalled();
     });
 
+    it('keeps a URL probe that finds no duration instead of downloading to probe again', async () => {
+        // Browser-recorded WebM states no duration. Its 2.5 GB source does not fit beside the 5 GB rendition estimate.
+        vi.mocked(video.getVideoMetadata).mockResolvedValue(probed(0));
+        await expect(
+            run({ size: 2.5e9, metadata: { duration: 0, dimensions: { width: 1920, height: 1080 } } }),
+        ).resolves.toMatchObject({ rendition: UPLOADED });
+        expect(vi.mocked(video.getVideoMetadata).mock.calls.map(([input]) => input.kind)).toEqual(['url']);
+        expect(encodeInputs()).toEqual(['url']);
+        expect(saveBlobToTempFile).not.toHaveBeenCalled();
+    });
+
     it('does not check the disk when the worker does not state its storage', async () => {
         vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', '');
         await expect(run({ size: 8e9, metadata: {} })).resolves.toMatchObject({ rendition: UPLOADED });
     });
 
     it('keeps the media size limit, though nothing is downloaded', async () => {
-        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB_));
-        await expect(run({ size: 9 * GiB_ })).rejects.toMatchObject({
+        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB));
+        await expect(run({ size: 9 * GiB })).rejects.toMatchObject({
             type: SOURCE_TOO_LARGE_ERROR,
             nonRetryable: true,
         });
@@ -246,10 +256,11 @@ describe('transcodeVideo fallback to the download', () => {
         expect(fileBudget).toBeGreaterThan(24 * 60_000);
     });
 
-    it('retries, without downloading, when the URL encode failed with no time left', async () => {
+    it('retries, without downloading, when the URL encode left too little time to encode again', async () => {
+        // The 10-minute source is estimated to encode in 5 minutes; 4 are left after the upload margin.
         vi.useFakeTimers({ toFake: ['Date'] });
         vi.mocked(video.generateRenditionWithDimensions).mockImplementationOnce(() => {
-            vi.setSystemTime(Date.now() + 57 * 60_000);
+            vi.setSystemTime(Date.now() + 51 * 60_000);
             return Promise.reject(expired());
         });
 
@@ -269,13 +280,26 @@ describe('transcodeVideo fallback to the download', () => {
         expect(heartbeats.at(-1)).toEqual({ downloadSource: true, deadlinePreset: undefined });
     });
 
-    it('retries the URL failure, without downloading, when the source would not fit beside the rendition', async () => {
-        const failure = expired();
-        vi.mocked(video.generateRenditionWithDimensions).mockRejectedValueOnce(failure);
+    it('fails without retrying, quoting the URL failure, when the source would not fit beside the rendition', async () => {
+        // A retry would read the URL again, and a failure that recurs, such as undecodable content, fails every attempt.
+        vi.mocked(video.generateRenditionWithDimensions).mockRejectedValueOnce(expired());
 
-        await expect(run({ size: 5.5e9 })).rejects.toThrow(/Failed to transcode video object-1: HTTP error 403/);
+        const error = await run({ size: 5.5e9 }).catch((e: unknown) => e);
+        expect(error).toMatchObject({ type: TRANSCODE_EXCEEDS_DISK_BUDGET, nonRetryable: true });
+        expect((error as Error).message).toMatch(/after reading its URL failed \(HTTP error 403 Forbidden/);
         expect(saveBlobToTempFile).not.toHaveBeenCalled();
         expect(encodeInputs()).toEqual(['url']);
+    });
+
+    it('fails without retrying when the URL probe fails and the source would not fit beside the rendition', async () => {
+        vi.mocked(video.getVideoMetadata).mockRejectedValueOnce(expired());
+
+        await expect(run({ size: 5.5e9 })).rejects.toMatchObject({
+            type: TRANSCODE_EXCEEDS_DISK_BUDGET,
+            nonRetryable: true,
+        });
+        expect(saveBlobToTempFile).not.toHaveBeenCalled();
+        expect(video.generateRenditionWithDimensions).not.toHaveBeenCalled();
     });
 
     it('keeps the signed URL out of the failure', async () => {
@@ -344,7 +368,7 @@ describe('transcodeVideo after an attempt whose URL read failed', () => {
 describe('transcodeVideo time check', () => {
     it('fails without retrying, before reading the source, when the encode cannot fit in the hour', async () => {
         // 3h of 1080p at the default 2x realtime is about 90 min, over the 55 min left after the margin.
-        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB_));
+        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB));
         await expect(
             run({ size: 100e6, metadata: { duration: 3 * 3600, dimensions: { width: 1920, height: 1080 } } }),
         ).rejects.toMatchObject({ type: TRANSCODE_EXCEEDS_TIME_BUDGET, nonRetryable: true });
@@ -352,7 +376,7 @@ describe('transcodeVideo time check', () => {
     });
 
     it('transcodes a video that fits, judging the 4K source by its 1080p output', async () => {
-        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB_));
+        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB));
         await expect(
             run({ size: 100e6, metadata: { duration: 90 * 60, dimensions: { width: 3840, height: 2160 } } }),
         ).resolves.toMatchObject({ rendition: UPLOADED });
@@ -360,7 +384,7 @@ describe('transcodeVideo time check', () => {
 
     it('treats a zero duration as unknown and transcodes without the pre-check', async () => {
         // Browser-recorded WebM is stored with duration 0; that is no duration, not an instant encode.
-        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB_));
+        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB));
         await expect(
             run({ size: 100e6, metadata: { duration: 0, dimensions: { width: 3840, height: 2160 } } }),
         ).resolves.toMatchObject({ rendition: UPLOADED });
@@ -421,8 +445,8 @@ describe('transcodeVideo deadline', () => {
         Object.assign(new Error('ffmpeg was still running at the deadline'), { killed: true, deadlineExceeded: true });
 
     beforeEach(() => {
-        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB_));
-        vi.mocked(video.probeVideoSource).mockResolvedValue({ ...probed(0), width: 1280, height: 720 });
+        vi.stubEnv('WORKER_EPHEMERAL_STORAGE_BYTES', String(100 * GiB));
+        vi.mocked(video.getVideoMetadata).mockResolvedValue({ ...probed(0), width: 1280, height: 720 });
     });
 
     it('retries at a faster preset when the encode runs into the deadline at veryfast', async () => {

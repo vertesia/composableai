@@ -318,13 +318,6 @@ describe('VideoSource download guard', () => {
             ),
         );
 
-    it('signs for the requested lifetime, including when signing again', async () => {
-        const client = clientWithUrl(() => Promise.resolve({ url: SIGNED_URL }));
-        await VideoSource.open(client, 'gs://bucket/video.mp4', { ttlSeconds: 3600 });
-
-        expect(client.files.getDownloadUrl).toHaveBeenCalledWith('gs://bucket/video.mp4', undefined, undefined, 3600);
-    });
-
     it('passes the failed URL read to the guard before the fallback download', async () => {
         const guard = vi.fn();
         const failure = new Error('HTTP error 403');
@@ -440,6 +433,20 @@ describe('VideoSource URL lifetime', () => {
             url: `${SIGNED_URL}&n=2`,
         });
         expect(getDownloadUrl).toHaveBeenCalledTimes(2);
+    });
+
+    it('signs for the requested lifetime, including when signing again', async () => {
+        const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+        const client = clientWithUrl(() => Promise.resolve({ url: SIGNED_URL }));
+        const source = await VideoSource.open(client, 'gs://bucket/video.mp4', { ttlSeconds: 3600 });
+
+        now.mockReturnValue(1_000_000 + 6 * 60_000);
+        await runInActivity(() => source.partialInput());
+
+        expect(vi.mocked(client.files.getDownloadUrl).mock.calls).toEqual([
+            ['gs://bucket/video.mp4', undefined, undefined, 3600],
+            ['gs://bucket/video.mp4', undefined, undefined, 3600],
+        ]);
     });
 
     it('signs an old URL once for concurrent commands', async () => {
