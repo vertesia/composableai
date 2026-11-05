@@ -5,31 +5,14 @@
  * file through it costs the file's size in memory even when the body is a stream or a file-backed `Blob`. `http`
  * writes the body with backpressure and releases each chunk once it is sent.
  *
- * The Node modules are imported on first use, so this file is safe to load in a browser, which never calls it.
+ * Node.js only. Browser bundles get `node-request.browser.ts` instead, through the `browser` field of `package.json`,
+ * so they never resolve the Node modules this file imports.
  */
+import { ContentLengthMismatchError } from './upload-runtime.js';
 
-/** Whether this runtime has Node's `http` client (Node.js, and runtimes compatible with it such as Bun). */
-export function hasNodeHttp(): boolean {
-    return typeof process !== 'undefined' && typeof process.versions?.node === 'string';
-}
+export { ContentLengthMismatchError, hasNodeHttp } from './upload-runtime.js';
 
 type WebReadableStream = Parameters<typeof import('node:stream').Readable.fromWeb>[0];
-
-/** The error for a body whose size differs from its declared `Content-Length`. */
-export class ContentLengthMismatchError extends Error {
-    constructor(
-        readonly declared: number,
-        readonly actual: number,
-        readonly direction: 'short' | 'long',
-    ) {
-        super(
-            direction === 'short'
-                ? `Upload body ended after ${actual} bytes, short of its declared length of ${declared}`
-                : `Upload body ran past its declared length of ${declared} bytes`,
-        );
-        this.name = 'ContentLengthMismatchError';
-    }
-}
 
 function declaredLength(headers: Record<string, string>): number | undefined {
     const entry = Object.entries(headers).find(([name]) => name.toLowerCase() === 'content-length');
