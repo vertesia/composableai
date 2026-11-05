@@ -33,14 +33,17 @@ export class NodeStreamSource extends StreamSource {
 
 /**
  * The path of the file a stream reads, when it reads all of it from the start: an `fs.ReadStream` opened by
- * path with no range that nothing has read yet. Any other stream (a range, a descriptor, a stream already
- * consumed, or one that is not a file) has no path, and is uploaded as a stream.
+ * path with no range or encoding that nothing has read yet. Any other stream (a range, a descriptor, one that
+ * decodes the file to text, a stream already consumed, or one that is not a file) has no path, and is uploaded as
+ * a stream.
  */
 function wholeFilePath(stream: Readable): string | undefined {
     if (!(stream instanceof fs.ReadStream)) return undefined;
     const { path, start, end } = stream as fs.ReadStream & { start?: number; end?: number };
     if (typeof path !== 'string') return undefined;
     if ((start ?? 0) !== 0 || end !== Infinity) return undefined;
+    // an encoding uploads the decoded text (e.g. base64), not the file's bytes
+    if (stream.readableEncoding) return undefined;
     if (stream.bytesRead > 0 || stream.readableDidRead) return undefined;
     return path;
 }
