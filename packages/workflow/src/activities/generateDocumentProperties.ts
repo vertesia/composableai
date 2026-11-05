@@ -12,7 +12,7 @@ import {
     schemaForExtraction,
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
-import { md5 } from '../utils/blobs.js';
+import { contentHash } from '../utils/blobs.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 import {
     executeInteractionFromActivity,
@@ -126,7 +126,7 @@ export function computeExtractionFingerprint(input: {
     const normalizedConfig = input.config
         ? (normalizeFingerprintValue(input.config) as Record<string, unknown>)
         : undefined;
-    return md5(
+    return contentHash(
         JSON.stringify({
             content_etag: input.content_etag,
             type_id: input.type_id,
