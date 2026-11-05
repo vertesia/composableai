@@ -171,7 +171,7 @@ describe('uploads of long streams', () => {
         expect(warn).toHaveBeenCalledWith(expect.stringContaining('@google-cloud/storage'));
     });
 
-    it.each([404, 501])('falls back to a single signed PUT when starting a session answers %i', async (status) => {
+    it.each([404, 405, 501])('falls back to a single signed PUT when starting a session answers %i', async (status) => {
         nodeRequest.mockImplementation(async (url: string, init: { body: Blob }) => {
             storage.push({ url, size: init.body.size });
             return new Response(null, { status: 200 });

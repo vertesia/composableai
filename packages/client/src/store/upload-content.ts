@@ -32,6 +32,12 @@ export function sanitizedErrorCause(error: unknown): Error | undefined {
     return cause;
 }
 
+/**
+ * The statuses of a server without upload sessions (404, or 405 where another route matches the path), or whose
+ * storage has none (501).
+ */
+const NO_UPLOAD_SESSION_STATUSES: ReadonlySet<number> = new Set([404, 405, 501]);
+
 /** The stream of a plan, which a failed upload must cancel to release what it holds (a socket, a file). */
 function planStream(plan: UploadPlan): ReadableStream | undefined {
     const body = plan.kind === 'parts' ? plan.parts.body : plan.upload.body;
@@ -75,8 +81,7 @@ async function sendPlan(
     let upload: UploadBody;
     if (plan.kind === 'parts') {
         const session = await files.createUploadSession(request).catch((err: unknown) => {
-            // A server without upload sessions, or whose storage has none.
-            if (err instanceof RequestError && (err.status === 404 || err.status === 501)) return undefined;
+            if (err instanceof RequestError && NO_UPLOAD_SESSION_STATUSES.has(err.status)) return undefined;
             throw err;
         });
         if (!session) {
