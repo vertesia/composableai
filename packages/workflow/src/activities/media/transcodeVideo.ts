@@ -10,6 +10,7 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
+import { getBlobSize } from '../../utils/blobs.js';
 import {
     initializeActivityCommandDeadline,
     isActivityDeadlineExceeded,
@@ -88,15 +89,20 @@ export function estimateTranscodeDiskBytes(
     return sourceBytes + estimateRenditionBytes(sourceBytes, durationSeconds, output);
 }
 
-async function sourceSizeBytes(client: VertesiaClient, object: ContentObject): Promise<number | undefined> {
-    const source = object.content?.source as string;
-    try {
-        return (await client.files.getMetadata(source)).size;
-    } catch (error) {
-        log.warn(`Could not read the size of ${source}`, { error });
-        const size = object.metadata?.size;
-        return typeof size === 'number' && size > 0 ? size : undefined;
+/**
+ * Size of the object's source: as the store reports it (`verified`), or as recorded on the object when the store
+ * cannot say, as for an HTTPS source or a failed lookup.
+ */
+async function sourceSize(
+    client: VertesiaClient,
+    object: ContentObject,
+): Promise<{ bytes: number | undefined; verified: boolean }> {
+    const stored = await getBlobSize(client, object.content?.source as string);
+    if (stored !== undefined) {
+        return { bytes: stored, verified: true };
     }
+    const recorded = object.metadata?.size;
+    return { bytes: typeof recorded === 'number' && recorded > 0 ? recorded : undefined, verified: false };
 }
 
 /** The disk a transcode may use and the estimated sizes of what it writes there. */
@@ -108,17 +114,16 @@ interface TranscodeDiskNeed {
 }
 
 /** The transcode's disk budget and needs, or undefined when the budget or the source size is unknown. */
-async function transcodeDiskNeed(
-    client: VertesiaClient,
+function transcodeDiskNeed(
     object: ContentObject,
+    sourceBytes: number | undefined,
     maxResolution: number,
-): Promise<TranscodeDiskNeed | undefined> {
+): TranscodeDiskNeed | undefined {
     const budgetBytes = transcodeDiskBudgetBytes();
     if (budgetBytes === undefined) {
         log.debug('WORKER_EPHEMERAL_STORAGE_BYTES is not set; transcoding without a disk check');
         return undefined;
     }
-    const sourceBytes = await sourceSizeBytes(client, object);
     if (sourceBytes === undefined) {
         log.warn(`Size of the source of ${object.id} is unknown; transcoding without a disk check`);
         return undefined;
@@ -303,9 +308,8 @@ export async function transcodeVideo(
     // A retry after a deadline moves to a faster preset, so a transcode that keeps running into its deadline stops at
     // the fastest one. Retries for other reasons keep the preset.
     const videoPreset = presetAfterDeadline(resolveVideoPreset(params.videoPreset), previous.deadlinePreset);
-    const downloadFirst = previous.downloadSource === true;
 
-    log.debug(`Transcoding video for ${objectId}`, { maxResolution, videoPreset, downloadFirst });
+    log.debug(`Transcoding video for ${objectId}`, { maxResolution, videoPreset });
 
     const inputObject = await retrieveVideoObject(client, objectId);
     if (params.etag && inputObject.content?.etag !== params.etag) {
@@ -313,7 +317,14 @@ export async function transcodeVideo(
         return { objectId, rendition: null, etag: params.etag };
     }
     const source = inputObject.content?.source as string;
-    const diskNeed = await transcodeDiskNeed(client, inputObject, maxResolution);
+    const size = await sourceSize(client, inputObject);
+    // The media size limit is checked from the store's size before any read. Without one, only the capped download
+    // enforces it, so the source is downloaded rather than read whole over the URL.
+    const downloadFirst = previous.downloadSource === true || !size.verified;
+    if (!size.verified) {
+        log.info(`The store does not report the size of the source of ${objectId}; downloading it to transcode`);
+    }
+    const diskNeed = transcodeDiskNeed(inputObject, size.bytes, maxResolution);
     const preCheck = diskBudgetFailure(diskNeed, { downloaded: downloadFirst });
     if (preCheck) {
         throw preCheck;

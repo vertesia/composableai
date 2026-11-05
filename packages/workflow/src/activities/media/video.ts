@@ -274,7 +274,10 @@ export interface MediaResult {
 
 /**
  * ffmpeg arguments for the web (H.264) rendition, with every thread pool sized to the CPUs the worker may use. A URL
- * input is read front to back over HTTP, reconnecting at the same offset when the connection drops.
+ * input is read front to back over HTTP, reconnecting at the same offset when the connection drops. Over a URL,
+ * `-xerror` fails the encode when the input breaks off, such as a reconnect refused once the signature has expired:
+ * without it ffmpeg finishes the rendition at the break and exits 0, and the cut-short file would be uploaded instead
+ * of encoding again from the download.
  */
 export function buildWebRenditionArgs(
     input: VideoInput,
@@ -288,6 +291,7 @@ export function buildWebRenditionArgs(
 
     return [
         '-y', // Overwrite output
+        ...(input.kind === 'url' ? ['-xerror'] : []),
         ...ffmpegInputThreadArgs(),
         ...ffmpegInputArgs(input),
         '-vf',

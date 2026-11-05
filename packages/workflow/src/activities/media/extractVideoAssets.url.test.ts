@@ -50,6 +50,7 @@ function setup(audioCodec: string, probe = sourceProbe(audioCodec)) {
     const client = {
         files: {
             getDownloadUrl: vi.fn().mockResolvedValue({ url: SIGNED_URL }),
+            getMetadata: vi.fn().mockResolvedValue({ size: 50_000_000 }),
             uploadFile: vi.fn().mockResolvedValue('gs://bucket/rendition'),
         },
         objects: {
@@ -194,7 +195,7 @@ describe('transcodeVideo', () => {
             '-i',
             SIGNED_URL,
         ]);
-        expect(encode).toEqual(expect.arrayContaining(['-movflags', '+faststart']));
+        expect(encode).toEqual(expect.arrayContaining(['-xerror', '-movflags', '+faststart']));
         expect(JSON.stringify(vi.mocked(log.debug).mock.calls)).not.toContain('secret');
     });
 

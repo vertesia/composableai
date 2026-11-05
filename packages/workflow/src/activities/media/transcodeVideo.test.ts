@@ -122,6 +122,8 @@ interface Run {
     size?: number;
     metadata?: Record<string, unknown>;
     signs?: boolean;
+    /** Whether the store reports the source's size. */
+    sized?: boolean;
     heartbeatDetails?: unknown;
     startToCloseTimeoutMs?: number;
 }
@@ -133,6 +135,7 @@ function run({
     size = 500e6,
     metadata = { duration: 600, dimensions: { width: 1920, height: 1080 } },
     signs = true,
+    sized = true,
     heartbeatDetails,
     startToCloseTimeoutMs = 60 * 60_000,
 }: Run = {}) {
@@ -142,7 +145,8 @@ function run({
         metadata,
     } as Awaited<ReturnType<typeof video.retrieveVideoObject>>);
     getDownloadUrl = vi.fn(() => (signs ? Promise.resolve({ url: SIGNED_URL }) : Promise.reject(new Error('503'))));
-    const client = { files: { getMetadata: vi.fn().mockResolvedValue({ size }), getDownloadUrl } };
+    const getMetadata = sized ? vi.fn().mockResolvedValue({ size }) : vi.fn().mockRejectedValue(new Error('503'));
+    const client = { files: { getMetadata, getDownloadUrl } };
     vi.mocked(setupActivity).mockResolvedValue({
         client: client as unknown as VertesiaClient,
         objectId: 'object-1',
@@ -210,6 +214,18 @@ describe('transcodeVideo over the signed URL', () => {
         expect(vi.mocked(video.getVideoMetadata).mock.calls.map(([input]) => input.kind)).toEqual(['url']);
         expect(encodeInputs()).toEqual(['url']);
         expect(saveBlobToTempFile).not.toHaveBeenCalled();
+    });
+
+    it('downloads, under the media limit, a source whose size the store does not report', async () => {
+        // Only the capped download can enforce the media limit on a source of unknown size.
+        await expect(run({ sized: false })).resolves.toMatchObject({ rendition: UPLOADED });
+        expect(encodeInputs()).toEqual(['file']);
+        expect(saveBlobToTempFile).toHaveBeenCalledWith(
+            expect.anything(),
+            'gs://b/source.mov',
+            undefined,
+            expect.objectContaining({ maxBytes: 8 * GiB, limit: 'media' }),
+        );
     });
 
     it('does not check the disk when the worker does not state its storage', async () => {
