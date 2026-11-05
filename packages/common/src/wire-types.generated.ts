@@ -2631,6 +2631,7 @@ export type DataStore = {
     storage_bytes: number;
     last_import_at?: string | undefined;
     version_count: number;
+    current_version?: string | undefined;
     schema: DataSchema;
     gcs_bucket: string;
     gcs_path: string;
