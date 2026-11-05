@@ -45436,6 +45436,10 @@
         "type": "number",
         "description": "Number of versions stored"
       },
+      "current_version": {
+        "type": "string",
+        "description": "ID of the version this store serves. Automatic version records expire, so this version can be missing from the version list while its data stays readable. Absent on a store not written to since immutable versions were introduced."
+      },
       "schema": {
         "$ref": "#/components/schemas/DataSchema",
         "description": "Complete schema definition"
