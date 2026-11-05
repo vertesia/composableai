@@ -10,16 +10,20 @@ import type { PartsBody } from './chunked-upload.js';
 import { exactLength } from './node-request.js';
 import { UploadSessionUnavailableError } from './upload-runtime.js';
 
-async function importOptional<T>(name: string, load: () => Promise<T>): Promise<T> {
-    try {
-        return await load();
-    } catch (err: unknown) {
+/**
+ * The `catch` handler of an optional package's `import()`: a missing package means uploads in parts are unavailable.
+ *
+ * Each `import()` of an optional package carries webpack's `webpackIgnore` comment and chains this handler directly,
+ * the forms webpack and esbuild leave to run time, so a consumer's Node.js bundle builds without the packages.
+ */
+function missingPackage(name: string): (err: unknown) => never {
+    return (err) => {
         const code = (err as { code?: unknown } | undefined)?.code;
         if (code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND') {
             throw new UploadSessionUnavailableError(`the optional package ${name}`, err);
         }
         throw err;
-    }
+    };
 }
 
 /** The content as a Node stream that fails, before it ends, when it does not match its declared length. */
@@ -41,8 +45,8 @@ export async function uploadGcsResumable(
     parts: PartsBody,
 ): Promise<string | undefined> {
     const [{ Storage }, { PassThroughClient }] = await Promise.all([
-        importOptional('@google-cloud/storage', () => import('@google-cloud/storage')),
-        importOptional('google-auth-library', () => import('google-auth-library')),
+        import(/* webpackIgnore: true */ '@google-cloud/storage').catch(missingPackage('@google-cloud/storage')),
+        import(/* webpackIgnore: true */ 'google-auth-library').catch(missingPackage('google-auth-library')),
     ]);
     const { pipeline } = await import('node:stream/promises');
     const slash = session.path.indexOf('/');
@@ -68,7 +72,9 @@ export async function uploadAzureBlocks(
     contentType: string | undefined,
     parts: PartsBody,
 ): Promise<string | undefined> {
-    const { BlockBlobClient } = await importOptional('@azure/storage-blob', () => import('@azure/storage-blob'));
+    const { BlockBlobClient } = await import(/* webpackIgnore: true */ '@azure/storage-blob').catch(
+        missingPackage('@azure/storage-blob'),
+    );
     const readable = await nodeReadable(parts);
     try {
         const response = await new BlockBlobClient(url).uploadStream(readable, blockSize, 1, {
