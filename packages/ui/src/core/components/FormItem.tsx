@@ -115,10 +115,10 @@ export function FormItem({
                       : 'flex-col',
             )}
         >
-            <div className={clsx('flex items-center gap-1 mb-0', fullWidthLabel && 'w-full')}>
+            <div className={clsx('flex items-center gap-1 mb-1', fullWidthLabel && 'w-full')}>
                 <label
                     htmlFor={labelHtmlFor}
-                    className={`text-sm font-medium mb-1 ${disabled ? 'text-muted' : ''} ${fullWidthLabel && 'flex-1'}`}
+                    className={`text-sm font-medium ${disabled ? 'text-muted' : ''} ${fullWidthLabel && 'flex-1'}`}
                 >
                     {label}
                     {required ? <span className="text-destructive -mt-4 ms-1">*</span> : ''}
