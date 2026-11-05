@@ -7945,6 +7945,7 @@ export type RenderMarkdownStatusResponse = {
     download_url?: string | undefined;
     file_uri?: string | undefined;
     error?: string | undefined;
+    warnings?: string[] | undefined;
 };
 export type RenderMarkdownStatusQuery = {
     workflow_id: string;
