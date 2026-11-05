@@ -331,6 +331,10 @@ export const RenderMarkdownStatusResponseSchema = z
         download_url: z.string().meta({ description: 'Download URL for completed output' }).optional(),
         file_uri: z.string().meta({ description: 'File URI in storage for completed output' }).optional(),
         error: z.string().meta({ description: 'Error details for failed/terminated runs' }).optional(),
+        warnings: z
+            .array(z.string())
+            .meta({ description: 'Content left out of a completed output, such as an image that was not embedded' })
+            .optional(),
     })
     .meta({
         id: 'RenderMarkdownStatusResponse',
