@@ -457,9 +457,15 @@ async function probeDuration(file: string): Promise<number | undefined> {
 
 /**
  * Fast path for the audio rendition: copy the source's AAC track.
- * Returns the file, or undefined when the copy fails or comes out shorter than `expected` seconds.
+ * Returns the file, or undefined when the copy fails or writes no audio. `-xerror` fails a read that is cut short, so
+ * a copy that ends before `expected` seconds comes from a source holding less audio than it states, such as a truncated
+ * upload. Encoding reads the same packets and comes out no longer, so the copy is kept.
  */
-async function copyAudioRendition(input: VideoInput, outputDir: string, expected: number): Promise<string | undefined> {
+async function copyAudioRendition(
+    input: VideoInput,
+    outputDir: string,
+    expected: number | undefined,
+): Promise<string | undefined> {
     const outputFile = path.join(outputDir, 'audio.m4a');
     try {
         await execOnVideoInput(input, 'ffmpeg', buildAudioCopyArgs(input, outputFile), {
@@ -467,9 +473,15 @@ async function copyAudioRendition(input: VideoInput, outputDir: string, expected
             logMessage: 'Copying audio track for audio-only rendition',
         });
         const actual = await probeDuration(outputFile);
-        if (actual === undefined || !isAudioDurationComplete(actual, expected)) {
-            log.warn('Copied audio track is incomplete; encoding it from a download instead', { actual, expected });
+        if (actual === undefined) {
+            log.warn('Copied audio track has no duration; encoding it from a download instead');
             return undefined;
+        }
+        if (expected !== undefined && !isAudioDurationComplete(actual, expected)) {
+            log.warn('Copied audio track is shorter than the source states; the source holds no more audio', {
+                actual,
+                expected,
+            });
         }
         return outputFile;
     } catch (error) {
@@ -492,11 +504,10 @@ export async function extractAudioRendition(
     outputDir: string,
     metadata: VideoMetadataExtended,
 ): Promise<{ file: string; mode: AudioRenditionMode } | null> {
-    // A copy needs a single track, so the probed track is the one copied.
-    const expected = metadata.audioDuration ?? metadata.duration;
-    // Without a reference duration a truncated copy cannot be detected, so encode instead.
-    if (isAudioCopyEligible(metadata) && expected > 0) {
-        const copied = await copyAudioRendition(await source.partialInput(), outputDir, expected);
+    if (isAudioCopyEligible(metadata)) {
+        // A copy needs a single track, so the probed track is the one copied. The container duration is no reference:
+        // an audio track may end before the video.
+        const copied = await copyAudioRendition(await source.partialInput(), outputDir, metadata.audioDuration);
         if (copied) {
             return { file: copied, mode: 'copy' };
         }
