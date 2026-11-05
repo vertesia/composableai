@@ -151,6 +151,16 @@ export type ListDataStoreVersionsQuery = Wire.ListDataStoreVersionsQuery;
 
 export type GetDataStoreTableQuery = Wire.GetDataStoreTableQuery;
 
+export type GetDataStoreSchemaQuery = Wire.GetDataStoreSchemaQuery;
+
+export type ListDataStoreSchemaHistoryQuery = Wire.ListDataStoreSchemaHistoryQuery;
+
+export type CreateDataStoreDownloadUrlQuery = Wire.CreateDataStoreDownloadUrlQuery;
+
+export type ListDashboardsQuery = Wire.ListDashboardsQuery;
+
+export type ListDashboardVersionsQuery = Wire.ListDashboardVersionsQuery;
+
 // ============================================================================
 // Import Types
 // ============================================================================

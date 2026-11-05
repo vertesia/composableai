@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { DashboardExportStatus, DashboardStatus } from '../data-platform.js';
 import { StringValueMapSchema } from './files.js';
-import { conditional, EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
+import { conditional, EditRevisionSchema, ExpectedEditRevisionSchema, PageCountSchema } from './schema-primitives.js';
 
 export const DashboardElasticsearchResultMappingSchema = z
     .discriminatedUnion('type', [
@@ -91,6 +91,23 @@ export const DashboardVersionItemSchema = z
 export const DashboardStatusSchema = z
     .enum(DashboardStatus)
     .meta({ id: 'DashboardStatus', description: 'Dashboard lifecycle status.' });
+
+export const ListDashboardsQuerySchema = z
+    .strictObject({
+        status: DashboardStatusSchema.meta({
+            description: 'Only list dashboards with this status. Defaults to `active`.',
+        }).optional(),
+    })
+    .meta({ id: 'ListDashboardsQuery' });
+
+export const ListDashboardVersionsQuerySchema = z
+    .strictObject({
+        limit: PageCountSchema.meta({
+            description: 'Maximum number of versions to return. Defaults to 50.',
+        }).optional(),
+        snapshots_only: z.boolean().meta({ description: 'Only list named snapshots.' }).optional(),
+    })
+    .meta({ id: 'ListDashboardVersionsQuery' });
 
 export const DashboardLayoutSchema = z
     .strictObject({

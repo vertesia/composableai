@@ -568,6 +568,15 @@ export type AppListScope = 'account' | 'project';
 export type AppsQuery = {
     scope?: AppListScope | undefined;
 };
+export type AppDeleteQuery = {
+    confirm?: boolean | undefined;
+};
+export type AppRepoCommitsQuery = {
+    path?: string | undefined;
+    ref?: string | undefined;
+    limit?: number | undefined;
+    cursor?: string | undefined;
+};
 export type ToolCollectionAuthType = 'none' | 'oauth' | 'api_key' | 'other';
 export type MCPOAuthConfig = {
     name?: string | undefined;
@@ -2666,6 +2675,22 @@ export type ListDataStoreVersionsQuery = {
 export type GetDataStoreTableQuery = {
     sample?: boolean | undefined;
 };
+export type GetDataStoreSchemaQuery = {
+    format?: 'full' | 'ai' | undefined;
+};
+export type ListDataStoreSchemaHistoryQuery = {
+    limit?: number | undefined;
+};
+export type CreateDataStoreDownloadUrlQuery = {
+    version_id?: string | undefined;
+};
+export type ListDashboardsQuery = {
+    status?: DashboardStatus | undefined;
+};
+export type ListDashboardVersionsQuery = {
+    limit?: number | undefined;
+    snapshots_only?: boolean | undefined;
+};
 export type ImportStatus = (typeof ImportStatusValues)[keyof typeof ImportStatusValues];
 /**
  * Import job tracking.
@@ -4119,6 +4144,9 @@ export type ResolveInteractionQuery = {
     inherit_model_config?: boolean | undefined;
     hasImage?: boolean | undefined;
     hasVideo?: boolean | undefined;
+};
+export type DeleteInteractionQuery = {
+    cascade?: boolean | undefined;
 };
 export type InCodePrompt = {
     role: (typeof PromptRole)[keyof typeof PromptRole];
@@ -6862,6 +6890,9 @@ export type BindRunWorkflowPayload = {
     first_workflow_run_id: string;
     status?: AgentRunStatus | undefined;
     activity_state?: ConversationActivityState | undefined;
+};
+export type TerminateAgentRunQuery = {
+    reason?: string | undefined;
 };
 export type TerminateAgentRunResponse = {
     message: string;
@@ -11412,6 +11443,7 @@ export interface ApiComponentTypes {
     InteractionSearchQuery: InteractionSearchQuery;
     InteractionListQuery: InteractionListQuery;
     ResolveInteractionQuery: ResolveInteractionQuery;
+    DeleteInteractionQuery: DeleteInteractionQuery;
     CatalogInteractionRef: CatalogInteractionRef;
     CatalogInteractionRefArray: CatalogInteractionRefArray;
     InCodeInteraction: InCodeInteraction;
@@ -11578,6 +11610,8 @@ export interface ApiComponentTypes {
     DashboardBulkIdsPayload: DashboardBulkIdsPayload;
     DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSource;
     DashboardVersionItemArray: DashboardVersionItemArray;
+    ListDashboardsQuery: ListDashboardsQuery;
+    ListDashboardVersionsQuery: ListDashboardVersionsQuery;
     DashboardItem: DashboardItem;
     DashboardPanel: DashboardPanel;
     DashboardDataSource: DashboardDataSource;
@@ -11595,6 +11629,9 @@ export interface ApiComponentTypes {
     QueryValidationPayload: QueryValidationPayload;
     ListDataStoreVersionsQuery: ListDataStoreVersionsQuery;
     GetDataStoreTableQuery: GetDataStoreTableQuery;
+    GetDataStoreSchemaQuery: GetDataStoreSchemaQuery;
+    ListDataStoreSchemaHistoryQuery: ListDataStoreSchemaHistoryQuery;
+    CreateDataStoreDownloadUrlQuery: CreateDataStoreDownloadUrlQuery;
     DataTableSemanticType: DataTableSemanticType;
     DataIndex: DataIndex;
     DataForeignKey: DataForeignKey;
@@ -11972,6 +12009,7 @@ export interface ApiComponentTypes {
     AgentRunArtifactUploadHeaders: AgentRunArtifactUploadHeaders;
     AgentRunArtifactQuery: AgentRunArtifactQuery;
     AgentRunArtifactsQuery: AgentRunArtifactsQuery;
+    TerminateAgentRunQuery: TerminateAgentRunQuery;
     TerminateAgentRunResponse: TerminateAgentRunResponse;
     SignalAgentPayload: SignalAgentPayloadWire;
     PostAgentRunUpdateResponse: PostAgentRunUpdateResponse;
@@ -12235,6 +12273,7 @@ export interface ApiComponentTypes {
     RunType: RunType;
     AppBuildProgressStatus: AppBuildProgressStatus;
     DeleteAppVersionResponse: DeleteAppVersionResponse;
+    AppDeleteQuery: AppDeleteQuery;
     AppDeleteSummary: AppDeleteSummary;
     AppRepoBranch: AppRepoBranch;
     CreateAppRepoBranchRequest: CreateAppRepoBranchRequest;
@@ -12270,6 +12309,7 @@ export interface ApiComponentTypes {
     AppRepoTree: AppRepoTree;
     AppRepoRefs: AppRepoRefs;
     AppRepoCommits: AppRepoCommits;
+    AppRepoCommitsQuery: AppRepoCommitsQuery;
     ContentObjectTypeRef: ContentObjectApiTypeRef;
     AppVersionLaunchTarget: AppVersionLaunchTarget;
     AppVersionLaunchTargetArray: AppVersionLaunchTargetArray;

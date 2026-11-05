@@ -560,6 +560,15 @@ export const UpdateAgentArtifactContentPayloadSchema = z
     })
     .meta({ id: 'UpdateAgentArtifactContentPayload', description: 'Conditional text update for an agent artifact.' });
 
+export const TerminateAgentRunQuerySchema = z
+    .strictObject({
+        reason: z
+            .string()
+            .meta({ description: 'Why the run is being terminated. Takes precedence over a `reason` in the body.' })
+            .optional(),
+    })
+    .meta({ id: 'TerminateAgentRunQuery' });
+
 export const TerminateAgentRunResponseSchema = z
     .strictObject({
         message: z.string(),

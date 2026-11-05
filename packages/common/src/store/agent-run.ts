@@ -243,6 +243,8 @@ export type RecordRunPayload<TData = Record<string, unknown>, TSource = RunSourc
  */
 export type BindRunWorkflowPayload = Wire.BindRunWorkflowPayload;
 
+export type TerminateAgentRunQuery = Wire.TerminateAgentRunQuery;
+
 export type TerminateAgentRunResponse = Wire.TerminateAgentRunResponse;
 
 export type AgentRunFeedbackRating = Wire.AgentRunFeedbackRating;
