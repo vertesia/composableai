@@ -1349,9 +1349,6 @@ importers:
       seedrandom:
         specifier: ^3.0.5
         version: 3.0.5
-      sharp:
-        specifier: ^0.35.5
-        version: 0.35.5(@types/node@24.19.2)
       tiktoken:
         specifier: ^1.0.22
         version: 1.0.22
