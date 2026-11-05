@@ -150,17 +150,20 @@ describe('extractVideoAssets without a duration', () => {
         expect(log.error).not.toHaveBeenCalled();
     });
 
-    it('encodes an AAC track instead of copying it when there is no duration to check the copy against', async () => {
+    it('copies an AAC track that states no duration instead of encoding it', async () => {
         setup('aac', durationlessWebm('aac'));
 
         const result = await run();
 
         expect(result.renditions.map((rendition) => rendition.name)).toContain('Audio');
-        expect(ffmpegCalls().some(([, args]) => args.includes('copy'))).toBe(false);
+        // The probe fallback already downloaded the source, so the copy reads it.
+        expect(vi.mocked(execActivityFileWithProgress).mock.calls.map(([, args]) => args)).toEqual([
+            expect.arrayContaining(['-i', downloaded, '-c:a', 'copy']),
+        ]);
         const extracted = vi
             .mocked(log.info)
             .mock.calls.find(([message]) => String(message).startsWith('Extracted video assets'));
-        expect(extracted?.[1]).toMatchObject({ audioRendition: 'encode' });
+        expect(extracted?.[1]).toMatchObject({ audioRendition: 'copy' });
     });
 });
 
