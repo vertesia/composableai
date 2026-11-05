@@ -14,13 +14,14 @@ vi.mock('@temporalio/activity', async (importOriginal) => ({
 }));
 
 /**
- * The web rendition encoded by the real ffmpeg from a URL served here. In `cut` mode the server sends half of the file,
- * drops the connection, and refuses the reconnect with a 403, as a store does once a signature has expired.
+ * The web rendition encoded by the real ffmpeg from a URL served here. In `cut` and `drop` modes the server sends half
+ * of the file and drops the connection. In `cut` it refuses the reconnect with a 403, as a store does once a signature
+ * has expired; in `drop` it serves the reconnect's range, as after a network blip.
  */
 let dir: string;
 let source: string;
 let server: http.Server;
-let mode: 'whole' | 'cut' = 'whole';
+let mode: 'whole' | 'cut' | 'drop' = 'whole';
 let requests = 0;
 
 const DURATION_SECONDS = 4;
@@ -52,7 +53,7 @@ function serve(req: http.IncomingMessage, res: http.ServerResponse) {
         'Content-Type': 'video/mp4',
         ...(range ? { 'Content-Range': `bytes ${start}-${end}/${size}` } : {}),
     });
-    if (mode === 'whole') {
+    if (mode === 'whole' || (mode === 'drop' && requests > 1)) {
         fs.createReadStream(source, { start, end }).pipe(res);
         return;
     }
@@ -113,6 +114,15 @@ describe('web rendition over a URL, with the real ffmpeg', () => {
         const result = await encode();
 
         expect(result).not.toBeNull();
+        expect(durationOf(result?.file ?? '')).toBeCloseTo(DURATION_SECONDS, 0);
+    });
+
+    it('reconnects and encodes the whole source after a dropped connection', { timeout: 60_000 }, async () => {
+        // -xerror fails only an input that cannot be read again, not one ffmpeg reconnects to.
+        mode = 'drop';
+        const result = await encode();
+
+        expect(requests).toBeGreaterThan(1);
         expect(durationOf(result?.file ?? '')).toBeCloseTo(DURATION_SECONDS, 0);
     });
 
