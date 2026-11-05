@@ -588,6 +588,13 @@ export const DataStoreSchema = z
         storage_bytes: z.number().meta({ description: 'Storage size in bytes' }),
         last_import_at: z.string().meta({ description: 'Last import timestamp' }).optional(),
         version_count: z.number().meta({ description: 'Number of versions stored' }),
+        current_version: z
+            .string()
+            .meta({
+                description:
+                    'ID of the version this store serves. Automatic version records expire, so this version can be missing from the version list while its data stays readable. Absent on a store not written to since immutable versions were introduced.',
+            })
+            .optional(),
         schema: DataSchemaSchema.meta({ description: 'Complete schema definition' }),
         gcs_bucket: z.string().meta({ description: 'GCS bucket name' }),
         gcs_path: z.string().meta({ description: 'Path prefix within the bucket' }),
