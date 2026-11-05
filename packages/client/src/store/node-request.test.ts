@@ -21,6 +21,10 @@ describe('nodeRequest', () => {
                 received.push({ headers: req.headers, body: Buffer.concat(chunks).toString() });
                 if (req.url === '/empty') {
                     res.writeHead(204).end();
+                } else if (req.url === '/silent') {
+                    // never answers
+                } else if (req.url === '/odd-status') {
+                    res.writeHead(600).end();
                 } else {
                     res.writeHead(201, 'Stored', { etag: '"abc"', 'x-multi': ['a', 'b'] }).end('stored');
                 }
@@ -36,6 +40,18 @@ describe('nodeRequest', () => {
 
     it('runs in Node', () => {
         expect(hasNodeHttp()).toBe(true);
+    });
+
+    it('fails a request whose connection stays idle', async () => {
+        await expect(
+            nodeRequest(`${base}/silent`, { method: 'PUT', body: new Blob(['x']), idleTimeoutMs: 100 }),
+        ).rejects.toThrow('idle for 100 ms');
+    });
+
+    it('rejects, instead of throwing from the event loop, a status a Response cannot carry', async () => {
+        await expect(nodeRequest(`${base}/odd-status`, { method: 'PUT', body: new Blob(['x']) })).rejects.toThrow(
+            RangeError,
+        );
     });
 
     it('sends a Blob with its length and returns the response', async () => {

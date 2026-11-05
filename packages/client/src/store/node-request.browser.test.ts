@@ -13,6 +13,10 @@ describe('the browser build of node-request', () => {
         expect(pkg.browser).toEqual({ './lib/store/node-request.js': './lib/store/node-request.browser.js' });
     });
 
+    it('never reports the Node transport as available', () => {
+        expect(browser.hasNodeHttp()).toBe(false);
+    });
+
     it('fails loudly if the Node transport is ever called', () => {
         expect(() => browser.nodeRequest()).toThrow('only available in Node.js');
     });

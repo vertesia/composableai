@@ -20,3 +20,11 @@ export class ContentLengthMismatchError extends Error {
         this.name = 'ContentLengthMismatchError';
     }
 }
+
+/** The `Content-Length` in `headers`, in any letter case; undefined when absent or not a whole byte count. */
+export function contentLengthHeader(headers: Record<string, string> | undefined): number | undefined {
+    const entry = Object.entries(headers ?? {}).find(([name]) => name.toLowerCase() === 'content-length');
+    if (!entry || !/^\d+$/.test(entry[1].trim())) return undefined;
+    const length = Number(entry[1].trim());
+    return Number.isSafeInteger(length) ? length : undefined;
+}
