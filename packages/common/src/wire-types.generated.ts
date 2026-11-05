@@ -8686,6 +8686,7 @@ export type GetFileUrlPayload = {
     file: string;
     name?: string | undefined;
     disposition?: 'inline' | 'attachment' | undefined;
+    ttl?: number | undefined;
 };
 export type GetFileUrlResponse = {
     url: string;

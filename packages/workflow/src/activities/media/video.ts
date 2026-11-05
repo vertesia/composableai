@@ -15,7 +15,7 @@ import {
     WEB_VIDEO_RENDITION_NAME,
 } from '@vertesia/common';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
-import { assertBlobSizeWithin, removeTempFiles, saveBlobToTempFile } from '../../utils/blobs.js';
+import { assertBlobSizeWithin, removeTempFiles } from '../../utils/blobs.js';
 import { getSourceLimits } from '../../utils/source-limits.js';
 import { closeUploadStream, createUploadStream } from '../../utils/upload-stream.js';
 import {
@@ -38,6 +38,7 @@ import {
     rethrowIfStoppedReading,
     type VideoInput,
     VideoSource,
+    type VideoSourceOptions,
 } from './videoSource.js';
 
 // Shared steps of the video activities: prepareVideo runs them all in one Activity, while extractVideoAssets,
@@ -272,10 +273,11 @@ export interface MediaResult {
 }
 
 /**
- * ffmpeg arguments for the web (H.264) rendition, with every thread pool sized to the CPUs the worker may use.
+ * ffmpeg arguments for the web (H.264) rendition, with every thread pool sized to the CPUs the worker may use. A URL
+ * input is read front to back over HTTP, reconnecting at the same offset when the connection drops.
  */
 export function buildWebRenditionArgs(
-    videoPath: string,
+    input: VideoInput,
     outputFile: string,
     dimensions: { width: number; height: number },
     videoPreset: VideoPreset,
@@ -287,8 +289,7 @@ export function buildWebRenditionArgs(
     return [
         '-y', // Overwrite output
         ...ffmpegInputThreadArgs(),
-        '-i',
-        videoPath,
+        ...ffmpegInputArgs(input),
         '-vf',
         videoFilters,
         '-c:v',
@@ -315,9 +316,12 @@ export function buildWebRenditionArgs(
 /**
  * Generate a video rendition with resolution limited to maxResolution (e.g., 1080p)
  * Uses H.264 codec for broad compatibility
+ *
+ * A failed encode returns null on a local file. Over a URL it throws, with the URL redacted, so
+ * {@link VideoSource.withFallback} can run it again on the download.
  */
 export async function generateRenditionWithDimensions(
-    videoPath: string,
+    input: VideoInput,
     outputDir: string,
     metadata: VideoMetadataExtended,
     maxResolution: number,
@@ -333,20 +337,19 @@ export async function generateRenditionWithDimensions(
         `Video rendition dimensions: ${metadata.width}x${metadata.height} -> ${dimensions.width}x${dimensions.height}`,
     );
 
-    const command = buildWebRenditionArgs(videoPath, outputFile, dimensions, videoPreset);
-
-    log.debug(`Generating ${maxResolution}p video rendition`, { command: 'ffmpeg', args: command });
+    const command = buildWebRenditionArgs(input, outputFile, dimensions, videoPreset);
 
     try {
         // With a time budget, a transcode that is not going to finish in time is stopped early instead of running into
         // its Activity timeout, which Temporal would retry.
-        const { stderr } = await execActivityFileWithProgress(
-            'ffmpeg',
-            command,
-            timeBudgetMs && metadata.duration > 0
-                ? { completionBudget: { mediaDurationSeconds: metadata.duration, budgetMs: timeBudgetMs } }
-                : {},
-        );
+        const { stderr } = await execOnVideoInput(input, 'ffmpeg', command, {
+            progress: true,
+            logMessage: `Generating ${maxResolution}p video rendition`,
+            completionBudget:
+                timeBudgetMs && metadata.duration > 0
+                    ? { mediaDurationSeconds: metadata.duration, budgetMs: timeBudgetMs }
+                    : undefined,
+        });
         const stderrText = stderr.toString();
 
         if (stderrText && !stderrText.includes('frame=')) {
@@ -367,6 +370,9 @@ export async function generateRenditionWithDimensions(
             return null;
         }
     } catch (error) {
+        if (input.kind === 'url') {
+            throw error;
+        }
         rethrowIfActivityStopped(error);
         log.error(`Failed to generate video rendition: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return null;
@@ -657,32 +663,6 @@ export async function retrieveVideoObject(client: VertesiaClient, objectId: stri
 }
 
 /**
- * Download the video to a temp file, create a temp output directory, run `work`, then remove both.
- */
-export async function withVideoWorkspace<T>(
-    client: VertesiaClient,
-    source: string,
-    outputDirPrefix: string,
-    work: (videoFile: string, outputDir: string) => Promise<T>,
-): Promise<T> {
-    // A source over the media limit fails with a non-retryable SourceTooLargeError, before any download when the
-    // store reports its size.
-    const videoFile = await saveBlobToTempFile(client, source, undefined, {
-        maxBytes: getSourceLimits().mediaMaxBytes,
-        limit: 'media',
-    });
-    // Created inside the try, so a failure here still removes the download in the finally.
-    let tempOutputDir: string | undefined;
-
-    try {
-        tempOutputDir = fs.mkdtempSync(path.join(os.tmpdir(), outputDirPrefix));
-        return await work(videoFile, tempOutputDir);
-    } finally {
-        await removeTempFiles(videoFile, tempOutputDir);
-    }
-}
-
-/**
  * Open the video for reading over a signed URL, create a temp output directory, run `work`, then remove the directory
  * and any download the work made. Probes and frame grabs read the URL; a step that needs the whole file downloads it
  * once with {@link VideoSource.localPath}.
@@ -692,11 +672,12 @@ export async function withVideoSource<T>(
     sourceUri: string,
     outputDirPrefix: string,
     work: (source: VideoSource, outputDir: string) => Promise<T>,
+    options?: VideoSourceOptions,
 ): Promise<T> {
     // A source over the media limit fails with a non-retryable SourceTooLargeError before any read, when the store
     // reports its size; a download of a source of unknown size stops at the limit.
     await assertBlobSizeWithin(client, sourceUri, getSourceLimits().mediaMaxBytes, 'media');
-    const source = await VideoSource.open(client, sourceUri);
+    const source = await VideoSource.open(client, sourceUri, options);
     let tempOutputDir: string | undefined;
 
     try {

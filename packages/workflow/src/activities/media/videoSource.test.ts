@@ -138,7 +138,19 @@ describe('getSignedVideoUrl', () => {
         const client = clientWithUrl(() => Promise.resolve({ url: SIGNED_URL }));
 
         await expect(getSignedVideoUrl(client, 'gs://bucket/video.mp4')).resolves.toBe(SIGNED_URL);
-        expect(client.files.getDownloadUrl).toHaveBeenCalledWith('gs://bucket/video.mp4');
+        expect(client.files.getDownloadUrl).toHaveBeenCalledWith(
+            'gs://bucket/video.mp4',
+            undefined,
+            undefined,
+            undefined,
+        );
+    });
+
+    it('signs for the requested lifetime', async () => {
+        const client = clientWithUrl(() => Promise.resolve({ url: SIGNED_URL }));
+
+        await expect(getSignedVideoUrl(client, 'gs://bucket/video.mp4', 3600)).resolves.toBe(SIGNED_URL);
+        expect(client.files.getDownloadUrl).toHaveBeenCalledWith('gs://bucket/video.mp4', undefined, undefined, 3600);
     });
 
     it('uses an HTTPS source as is', async () => {
@@ -287,6 +299,78 @@ describe('VideoSource', () => {
         await source.dispose();
 
         expect(fs.existsSync(file)).toBe(false);
+    });
+});
+
+describe('VideoSource download guard', () => {
+    const downloaded = path.join(os.tmpdir(), 'video-source-guard-test.mp4');
+
+    beforeEach(() => {
+        vi.mocked(saveBlobToTempFile).mockResolvedValue(downloaded);
+    });
+
+    const open = (beforeDownload: (urlError: unknown) => void, signs = true) =>
+        runInActivity(() =>
+            VideoSource.open(
+                clientWithUrl(() => (signs ? Promise.resolve({ url: SIGNED_URL }) : Promise.reject(new Error('503')))),
+                'gs://bucket/video.mp4',
+                { ttlSeconds: 3600, beforeDownload },
+            ),
+        );
+
+    it('signs for the requested lifetime, including when signing again', async () => {
+        const client = clientWithUrl(() => Promise.resolve({ url: SIGNED_URL }));
+        await VideoSource.open(client, 'gs://bucket/video.mp4', { ttlSeconds: 3600 });
+
+        expect(client.files.getDownloadUrl).toHaveBeenCalledWith('gs://bucket/video.mp4', undefined, undefined, 3600);
+    });
+
+    it('passes the failed URL read to the guard before the fallback download', async () => {
+        const guard = vi.fn();
+        const failure = new Error('HTTP error 403');
+        const source = await open(guard);
+        const command = (input: VideoInput) =>
+            input.kind === 'url' ? Promise.reject(failure) : Promise.resolve('local');
+
+        await expect(runInActivity(() => source.withFallback(command))).resolves.toBe('local');
+        expect(guard).toHaveBeenCalledExactlyOnceWith(failure);
+    });
+
+    it('fails with what the guard throws, without downloading', async () => {
+        const failure = new Error('HTTP error 403');
+        const source = await open((urlError) => {
+            throw urlError;
+        });
+        const command = vi.fn((input: VideoInput) =>
+            input.kind === 'url' ? Promise.reject(failure) : Promise.resolve('local'),
+        );
+
+        await expect(runInActivity(() => source.withFallback(command))).rejects.toBe(failure);
+        expect(saveBlobToTempFile).not.toHaveBeenCalled();
+        expect(command).toHaveBeenCalledTimes(1);
+    });
+
+    it('asks the guard with no URL error when the URL read produced nothing or there is no URL', async () => {
+        const guard = vi.fn();
+        const empty = await open(guard);
+        await runInActivity(() =>
+            empty.withFallback((input) => Promise.resolve(input.kind === 'url' ? undefined : 'local')),
+        );
+        const unsigned = await open(guard, false);
+        await runInActivity(() => unsigned.withFallback(() => Promise.resolve('local')));
+
+        expect(guard.mock.calls).toEqual([[undefined], [undefined]]);
+    });
+
+    it('does not ask again once the source is downloaded', async () => {
+        const guard = vi.fn();
+        const source = await open(guard);
+
+        await source.localPath();
+        await source.localPath();
+        await runInActivity(() => source.withFallback(() => Promise.resolve('local')));
+
+        expect(guard).toHaveBeenCalledTimes(1);
     });
 });
 

@@ -12,7 +12,7 @@ import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js'
 import {
     initializeActivityCommandDeadline,
     isActivityDeadlineExceeded,
-    isUnusableVideoContent,
+    isTranscodeExceedsTimeBudget,
     rethrowIfActivityStopped,
     TRANSCODE_EXCEEDS_TIME_BUDGET,
 } from './exec.js';
@@ -21,15 +21,17 @@ import {
     DEFAULT_MAX_RESOLUTION,
     FASTEST_VIDEO_PRESET,
     generateRenditionWithDimensions,
-    getVideoMetadata,
     presetAfterDeadline,
+    probeVideoSource,
     resolveVideoPreset,
     retrieveVideoObject,
     uploadWebRendition,
     VIDEO_PRESETS,
+    type VideoMetadataExtended,
     type VideoPreset,
-    withVideoWorkspace,
+    withVideoSource,
 } from './video.js';
+import type { VideoInput } from './videoSource.js';
 
 const GiB = 1024 ** 3;
 
@@ -45,8 +47,11 @@ const PIXELS_1080P = 1920 * 1080;
  */
 const WEB_RENDITION_1080P_BITS_PER_SECOND = 8_000_000;
 
-/** Failure `type` of a transcode whose source and output would not fit in the worker's ephemeral storage. */
+/** Failure `type` of a transcode whose output, and its source when downloaded, would not fit on the worker's disk. */
 export const TRANSCODE_EXCEEDS_DISK_BUDGET = 'TranscodeExceedsDiskBudget';
+
+/** Failure `type` of an attempt whose URL read failed too late to finish from a download; the retry downloads first. */
+export const TRANSCODE_SOURCE_URL_FAILED = 'TranscodeSourceUrlFailed';
 
 /**
  * Disk the transcode may use: the container's ephemeral storage (WORKER_EPHEMERAL_STORAGE_BYTES, in bytes) less
@@ -60,23 +65,26 @@ export function transcodeDiskBudgetBytes(env: NodeJS.ProcessEnv = process.env): 
 }
 
 /**
- * Disk a transcode needs: the downloaded source plus the rendition. The rendition is sized from the duration and the
- * output's pixels when both are known, and as twice the source otherwise (an already-compressed upload can grow when
- * re-encoded).
+ * Disk the rendition needs, sized from the duration and the output's pixels when both are known, and as twice the source
+ * otherwise (an already-compressed upload can grow when re-encoded).
  */
+export function estimateRenditionBytes(
+    sourceBytes: number,
+    durationSeconds: number | undefined,
+    output?: { width: number; height: number },
+): number {
+    return durationSeconds && durationSeconds > 0 && output && output.width > 0 && output.height > 0
+        ? (durationSeconds * WEB_RENDITION_1080P_BITS_PER_SECOND * ((output.width * output.height) / PIXELS_1080P)) / 8
+        : sourceBytes * 2;
+}
+
+/** Disk a transcode from a downloaded source needs: the source plus the rendition. */
 export function estimateTranscodeDiskBytes(
     sourceBytes: number,
     durationSeconds: number | undefined,
     output?: { width: number; height: number },
 ): number {
-    const renditionBytes =
-        durationSeconds && durationSeconds > 0 && output && output.width > 0 && output.height > 0
-            ? (durationSeconds *
-                  WEB_RENDITION_1080P_BITS_PER_SECOND *
-                  ((output.width * output.height) / PIXELS_1080P)) /
-              8
-            : sourceBytes * 2;
-    return sourceBytes + renditionBytes;
+    return sourceBytes + estimateRenditionBytes(sourceBytes, durationSeconds, output);
 }
 
 async function sourceSizeBytes(client: VertesiaClient, object: ContentObject): Promise<number | undefined> {
@@ -90,33 +98,60 @@ async function sourceSizeBytes(client: VertesiaClient, object: ContentObject): P
     }
 }
 
-/**
- * Fail without retrying when the source and rendition would not fit on disk, before downloading anything.
- */
-async function assertFitsOnDisk(client: VertesiaClient, object: ContentObject, maxResolution: number): Promise<void> {
-    const budget = transcodeDiskBudgetBytes();
-    if (budget === undefined) {
+/** The disk a transcode may use and the estimated sizes of what it writes there. */
+interface TranscodeDiskNeed {
+    objectId: string;
+    budgetBytes: number;
+    sourceBytes: number;
+    renditionBytes: number;
+}
+
+/** The transcode's disk budget and needs, or undefined when the budget or the source size is unknown. */
+async function transcodeDiskNeed(
+    client: VertesiaClient,
+    object: ContentObject,
+    maxResolution: number,
+): Promise<TranscodeDiskNeed | undefined> {
+    const budgetBytes = transcodeDiskBudgetBytes();
+    if (budgetBytes === undefined) {
         log.debug('WORKER_EPHEMERAL_STORAGE_BYTES is not set; transcoding without a disk check');
-        return;
+        return undefined;
     }
     const sourceBytes = await sourceSizeBytes(client, object);
     if (sourceBytes === undefined) {
         log.warn(`Size of the source of ${object.id} is unknown; transcoding without a disk check`);
-        return;
+        return undefined;
     }
     const metadata = object.metadata as VideoMetadata | undefined;
     const width = metadata?.dimensions?.width;
     const height = metadata?.dimensions?.height;
     const output = width && height ? calculateScaledDimensions(width, height, maxResolution) : undefined;
-    const needed = estimateTranscodeDiskBytes(sourceBytes, metadata?.duration, output);
-    if (needed > budget) {
-        const toGiB = (bytes: number) => (bytes / GiB).toFixed(1);
-        throw ApplicationFailure.nonRetryable(
-            `Transcoding ${object.id} needs about ${toGiB(needed)} GiB of disk (source ${toGiB(sourceBytes)} GiB), ` +
-                `more than the ${toGiB(budget)} GiB available`,
-            TRANSCODE_EXCEEDS_DISK_BUDGET,
-        );
+    const renditionBytes = estimateRenditionBytes(sourceBytes, metadata?.duration, output);
+    return { objectId: object.id, budgetBytes, sourceBytes, renditionBytes };
+}
+
+/**
+ * The non-retryable failure of a transcode that would not fit on disk, or undefined when it fits. A transcode over the
+ * signed URL writes only the rendition; one from a download also holds the source.
+ */
+function diskBudgetFailure(
+    need: TranscodeDiskNeed | undefined,
+    { downloaded }: { downloaded: boolean },
+): ApplicationFailure | undefined {
+    if (!need) {
+        return undefined;
     }
+    const neededBytes = need.renditionBytes + (downloaded ? need.sourceBytes : 0);
+    if (neededBytes <= need.budgetBytes) {
+        return undefined;
+    }
+    const toGiB = (bytes: number) => (bytes / GiB).toFixed(1);
+    const from = downloaded ? `downloading its ${toGiB(need.sourceBytes)} GiB source` : 'reading it over its URL';
+    return ApplicationFailure.nonRetryable(
+        `Transcoding ${need.objectId} by ${from} needs about ${toGiB(neededBytes)} GiB of disk, ` +
+            `more than the ${toGiB(need.budgetBytes)} GiB available`,
+        TRANSCODE_EXCEEDS_DISK_BUDGET,
+    );
 }
 
 /**
@@ -133,6 +168,26 @@ const DEFAULT_TRANSCODE_REALTIME_FACTOR = 2;
  */
 function transcodeTimeMarginMs(startToCloseTimeoutMs: number): number {
     return Math.min(5 * 60_000, startToCloseTimeoutMs / 10);
+}
+
+/** What the Activity has left for an encode starting now, less the margin for the upload. */
+function remainingEncodeBudgetMs(): number {
+    return (
+        initializeActivityCommandDeadline() -
+        Date.now() -
+        transcodeTimeMarginMs(Context.current().info.startToCloseTimeoutMs)
+    );
+}
+
+/** Longest lifetime the download-URL API signs a URL for: 7 days. */
+const MAX_SIGNED_URL_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+/**
+ * Lifetime to sign the source URL for: the whole Activity, so an encode that reads the source front to back for most of
+ * the run never meets an expired signature when it reconnects.
+ */
+export function sourceUrlTtlSeconds(startToCloseTimeoutMs: number): number {
+    return Math.min(MAX_SIGNED_URL_TTL_SECONDS, Math.max(1, Math.ceil(startToCloseTimeoutMs / 1000)));
 }
 
 /** WORKER_TRANSCODE_REALTIME_FACTOR, or the default when it is unset or not a positive number. */
@@ -178,15 +233,22 @@ function assertFitsInTime(object: ContentObject, maxResolution: number): void {
     }
 }
 
-/** Heartbeat details an attempt leaves when its encode runs into the deadline, read by the next attempt. */
+/** Heartbeat details an attempt leaves for the next attempt of this Activity. */
 interface TranscodeHeartbeatDetails {
+    /** The preset an encode ran into the deadline at. */
     deadlinePreset?: VideoPreset;
+    /** Reading the source over its URL failed, so later attempts download it from the start. */
+    downloadSource?: boolean;
 }
 
-/** The preset an earlier attempt of this Activity ran into its deadline at, from its last heartbeat. */
-function previousDeadlinePreset(): VideoPreset | undefined {
-    const preset = (Context.current().info.heartbeatDetails as TranscodeHeartbeatDetails | undefined)?.deadlinePreset;
-    return (VIDEO_PRESETS as readonly unknown[]).includes(preset) ? preset : undefined;
+/** What earlier attempts of this Activity left in their last heartbeat, keeping only well-formed fields. */
+function previousHeartbeatDetails(): TranscodeHeartbeatDetails {
+    const details = Context.current().info.heartbeatDetails as TranscodeHeartbeatDetails | undefined;
+    const preset = details?.deadlinePreset;
+    return {
+        deadlinePreset: (VIDEO_PRESETS as readonly unknown[]).includes(preset) ? preset : undefined,
+        downloadSource: details?.downloadSource === true ? true : undefined,
+    };
 }
 
 export interface TranscodeVideoParams {
@@ -212,12 +274,17 @@ export interface TranscodeVideoResult {
 /**
  * Transcode a video to the H.264 web rendition and upload it.
  *
+ * ffmpeg reads the source over a signed URL valid for the whole Activity, so only the rendition is written to disk.
+ * When the URL cannot be signed or reading it fails, the source is downloaded and the encode runs again on the copy,
+ * provided the source and rendition both fit on disk and the Activity has time left; otherwise the URL failure is
+ * retried. Once a URL read has failed, later attempts download the source from the start.
+ *
  * Writes nothing to the object: the caller stores the returned rendition with addObjectRendition once no other step is
  * writing the object's metadata. Fails without retrying, so a slow or oversized transcode does not burn every attempt:
- * - with {@link TRANSCODE_EXCEEDS_DISK_BUDGET}, before downloading, when the source and rendition would not fit in the
- *   worker's ephemeral storage;
- * - with TRANSCODE_EXCEEDS_TIME_BUDGET, before downloading, when the encode is estimated to outlast the Activity's run
- *   time, or during the encode, when its measured speed projects it past that time.
+ * - with {@link TRANSCODE_EXCEEDS_DISK_BUDGET}, before reading the source, when the rendition (and the source, for an
+ *   attempt that downloads it) would not fit in the worker's ephemeral storage;
+ * - with TRANSCODE_EXCEEDS_TIME_BUDGET, before reading the source, when the encode is estimated to outlast the
+ *   Activity's run time, or during the encode, when its measured speed projects it past that time.
  */
 export async function transcodeVideo(
     payload: DSLActivityExecutionPayload<TranscodeVideoParams>,
@@ -226,11 +293,13 @@ export async function transcodeVideo(
     const { client, objectId, params } = await setupActivity<TranscodeVideoParams>(payload);
 
     const maxResolution = params.maxResolution ?? DEFAULT_MAX_RESOLUTION;
+    const previous = previousHeartbeatDetails();
     // A retry after a deadline moves to a faster preset, so a transcode that keeps running into its deadline stops at
     // the fastest one. Retries for other reasons keep the preset.
-    const videoPreset = presetAfterDeadline(resolveVideoPreset(params.videoPreset), previousDeadlinePreset());
+    const videoPreset = presetAfterDeadline(resolveVideoPreset(params.videoPreset), previous.deadlinePreset);
+    const downloadFirst = previous.downloadSource === true;
 
-    log.debug(`Transcoding video for ${objectId}`, { maxResolution, videoPreset });
+    log.debug(`Transcoding video for ${objectId}`, { maxResolution, videoPreset, downloadFirst });
 
     const inputObject = await retrieveVideoObject(client, objectId);
     if (params.etag && inputObject.content?.etag !== params.etag) {
@@ -238,63 +307,131 @@ export async function transcodeVideo(
         return { objectId, rendition: null, etag: params.etag };
     }
     const source = inputObject.content?.source as string;
-    await assertFitsOnDisk(client, inputObject, maxResolution);
+    const diskNeed = await transcodeDiskNeed(client, inputObject, maxResolution);
+    const preCheck = diskBudgetFailure(diskNeed, { downloaded: downloadFirst });
+    if (preCheck) {
+        throw preCheck;
+    }
     assertFitsInTime(inputObject, maxResolution);
 
-    return await withVideoWorkspace(client, source, 'transcode-video-', async (videoFile, outputDir) => {
-        try {
-            // The encode reads the whole file, so probe the download rather than the URL.
-            const metadata = await getVideoMetadata({ kind: 'file', path: videoFile });
-            // Whatever the Activity has left, less the margin for the upload, is the encode's budget.
-            const encodeBudgetMs =
-                initializeActivityCommandDeadline() -
-                Date.now() -
-                transcodeTimeMarginMs(Context.current().info.startToCloseTimeoutMs);
-            const result = await generateRenditionWithDimensions(
-                videoFile,
-                outputDir,
-                metadata,
-                maxResolution,
-                videoPreset,
-                Math.max(1, encodeBudgetMs),
+    // What this attempt leaves for the next one. The worker flushes the last heartbeat before reporting a failure.
+    const details: TranscodeHeartbeatDetails = { ...previous };
+    const recordDownload = () => {
+        // A retry downloads the source from the start, so a fallback's lost time is not lost again.
+        details.downloadSource = true;
+        Context.current().heartbeat({ ...details });
+    };
+    let encodedOverUrl = false;
+    // Set when an encode over the URL failed and the same encode is running again on the download.
+    let encodeFellBack = false;
+
+    const beforeDownload = (urlError: unknown) => {
+        // Over the URL only the rendition was counted; a download must fit beside it. Retry a failed URL read rather
+        // than fill the disk; a source that cannot be read over a URL at all is too large for this worker.
+        const failure = diskBudgetFailure(diskNeed, { downloaded: true });
+        if (failure) {
+            if (urlError !== undefined) {
+                throw urlError;
+            }
+            throw failure;
+        }
+        if (encodedOverUrl && remainingEncodeBudgetMs() <= 0) {
+            recordDownload();
+            throw ApplicationFailure.retryable(
+                `Reading the source of ${objectId} over its URL failed with no time left to download it; retrying`,
+                TRANSCODE_SOURCE_URL_FAILED,
             );
+        }
+        recordDownload();
+    };
 
-            const rendition = result
-                ? await uploadWebRendition(client, result, maxResolution, inputObject.content?.etag ?? inputObject.id)
-                : null;
+    const encode = (input: VideoInput, outputDir: string, metadata: VideoMetadataExtended) => {
+        if (input.kind === 'url') {
+            encodedOverUrl = true;
+        } else if (encodedOverUrl) {
+            encodeFellBack = true;
+        }
+        // Whatever the Activity has left, less the margin for the upload, is the encode's budget: a fallback encode
+        // gets only what the failed one left.
+        return generateRenditionWithDimensions(
+            input,
+            outputDir,
+            metadata,
+            maxResolution,
+            videoPreset,
+            Math.max(1, remainingEncodeBudgetMs()),
+        );
+    };
 
-            log.info(`Transcoded video ${objectId}`, { generated: rendition !== null, videoPreset });
+    return await withVideoSource(
+        client,
+        source,
+        'transcode-video-',
+        async (videoSource, outputDir) => {
+            try {
+                if (downloadFirst) {
+                    await videoSource.localPath();
+                }
+                const metadata = await probeVideoSource(videoSource);
+                // A failed URL encode, including one that stalled, runs again on the download. Cancellation and the
+                // time budget are not retried.
+                const result = await videoSource.withFallback((input) => encode(input, outputDir, metadata));
 
-            return { objectId, rendition, etag: inputObject.content?.etag };
-        } catch (error) {
-            // The encode outlasted the Activity, typically because the duration was unknown so neither budget check
-            // could run. Retry once more at a faster preset; at the fastest there is nothing left to try.
-            if (isActivityDeadlineExceeded(error)) {
-                if (videoPreset === FASTEST_VIDEO_PRESET) {
-                    throw ApplicationFailure.nonRetryable(
-                        `Transcoding ${objectId} did not finish within the Activity's run time, even at ${videoPreset}`,
-                        TRANSCODE_EXCEEDS_TIME_BUDGET,
+                const rendition = result
+                    ? await uploadWebRendition(
+                          client,
+                          result,
+                          maxResolution,
+                          inputObject.content?.etag ?? inputObject.id,
+                      )
+                    : null;
+
+                log.info(`Transcoded video ${objectId}`, { generated: rendition !== null, videoPreset });
+
+                return { objectId, rendition, etag: inputObject.content?.etag };
+            } catch (error) {
+                // The fallback encode ran out of the time the URL encode used. The retry downloads first, at the same
+                // preset, with the whole run time.
+                if (encodeFellBack && (isActivityDeadlineExceeded(error) || isTranscodeExceedsTimeBudget(error))) {
+                    recordDownload();
+                    throw ApplicationFailure.retryable(
+                        `Transcoding ${objectId} from its download, after reading its URL failed, did not finish ` +
+                            "within the Activity's run time; retrying from the download",
+                        TRANSCODE_SOURCE_URL_FAILED,
                     );
                 }
-                // The worker flushes this last heartbeat before reporting the failure, so the retry reads it.
-                Context.current().heartbeat({ deadlinePreset: videoPreset } satisfies TranscodeHeartbeatDetails);
-                throw ApplicationFailure.retryable(
-                    `Transcoding ${objectId} at ${videoPreset} did not finish within the Activity's run time; ` +
-                        'retrying at a faster preset',
-                    'TranscodeDeadlineExceeded',
-                );
+                // The encode outlasted the Activity, typically because the duration was unknown so neither budget
+                // check could run. Retry once more at a faster preset; at the fastest there is nothing left to try.
+                if (isActivityDeadlineExceeded(error)) {
+                    if (videoPreset === FASTEST_VIDEO_PRESET) {
+                        throw ApplicationFailure.nonRetryable(
+                            `Transcoding ${objectId} did not finish within the Activity's run time, even at ${videoPreset}`,
+                            TRANSCODE_EXCEEDS_TIME_BUDGET,
+                        );
+                    }
+                    // The worker flushes this last heartbeat before reporting the failure, so the retry reads it.
+                    details.deadlinePreset = videoPreset;
+                    Context.current().heartbeat({ ...details });
+                    throw ApplicationFailure.retryable(
+                        `Transcoding ${objectId} at ${videoPreset} did not finish within the Activity's run time; ` +
+                            'retrying at a faster preset',
+                        'TranscodeDeadlineExceeded',
+                    );
+                }
+                rethrowIfActivityStopped(error);
+                // The disk check, the media size limit, an unusable source and the retry above keep their type and
+                // retry flag.
+                if (error instanceof ApplicationFailure) {
+                    throw error;
+                }
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                log.error(`Error transcoding video: ${errorMessage}`, { error });
+                if (error instanceof DocumentNotFoundError || error instanceof InvalidContentTypeError) {
+                    throw error;
+                }
+                throw new Error(`Failed to transcode video ${objectId}: ${errorMessage}`);
             }
-            rethrowIfActivityStopped(error);
-            // The metadata probe already logged it at warn; keep its type and non-retryable flag.
-            if (isUnusableVideoContent(error)) {
-                throw error;
-            }
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            log.error(`Error transcoding video: ${errorMessage}`, { error });
-            if (error instanceof DocumentNotFoundError || error instanceof InvalidContentTypeError) {
-                throw error;
-            }
-            throw new Error(`Failed to transcode video ${objectId}: ${errorMessage}`);
-        }
-    });
+        },
+        { ttlSeconds: sourceUrlTtlSeconds(Context.current().info.startToCloseTimeoutMs), beforeDownload },
+    );
 }

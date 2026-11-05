@@ -10,6 +10,7 @@ import { execActivityFile, execActivityFileWithProgress } from './exec.js';
 import { extractVideoAssets } from './extractVideoAssets.js';
 import type { PrepareVideoResult } from './prepareVideo.js';
 import { transcodeVideo } from './transcodeVideo.js';
+import { HTTP_INPUT_OPTIONS } from './videoSource.js';
 
 vi.mock('@temporalio/activity', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@temporalio/activity')>()),
@@ -168,14 +169,49 @@ describe('extractVideoAssets without a duration', () => {
 });
 
 describe('transcodeVideo', () => {
-    it('downloads the source and probes the local copy, without signing a URL', async () => {
+    const run = () =>
+        new MockActivityEnvironment({ startToCloseTimeoutMs: 60 * 60_000 }).run(
+            transcodeVideo,
+            {} as Parameters<typeof transcodeVideo>[0],
+        );
+    const encodes = () =>
+        vi
+            .mocked(execActivityFileWithProgress)
+            .mock.calls.map(([, args]) => args)
+            .filter((args) => args.includes('libx264'));
+
+    it('probes and encodes over a signed URL valid for the Activity, without downloading the source', async () => {
         const client = setup('aac');
 
-        await new MockActivityEnvironment().run(transcodeVideo, {} as Parameters<typeof transcodeVideo>[0]);
+        await expect(run()).resolves.toMatchObject({ rendition: expect.objectContaining({ name: 'Web' }) });
 
-        expect(client.files.getDownloadUrl).not.toHaveBeenCalled();
+        expect(client.files.getDownloadUrl).toHaveBeenCalledWith('gs://bucket/video.mp4', undefined, undefined, 3600);
+        expect(saveBlobToTempFile).not.toHaveBeenCalled();
+        const [encode] = encodes();
+        const input = encode.indexOf('-i');
+        expect(encode.slice(input - HTTP_INPUT_OPTIONS.length, input + 2)).toEqual([
+            ...HTTP_INPUT_OPTIONS,
+            '-i',
+            SIGNED_URL,
+        ]);
+        expect(encode).toEqual(expect.arrayContaining(['-movflags', '+faststart']));
+        expect(JSON.stringify(vi.mocked(log.debug).mock.calls)).not.toContain('secret');
+    });
+
+    it('encodes again on the download when the URL encode fails, keeping the URL out of the logs', async () => {
+        setup('aac');
+        vi.mocked(execActivityFileWithProgress).mockImplementation((_command, args) =>
+            args.includes(SIGNED_URL)
+                ? Promise.reject(new Error(`Server returned 403 Forbidden for ${SIGNED_URL}`))
+                : writeOutput(args),
+        );
+
+        await expect(run()).resolves.toMatchObject({ rendition: expect.objectContaining({ name: 'Web' }) });
+
         expect(saveBlobToTempFile).toHaveBeenCalledTimes(1);
-        const probe = vi.mocked(execActivityFile).mock.calls.find(([command]) => command === 'ffprobe');
-        expect(probe?.[1].at(-1)).toBe(downloaded);
+        expect(encodes().map((args) => args[args.indexOf('-i') + 1])).toEqual([SIGNED_URL, downloaded]);
+        const logged = JSON.stringify([vi.mocked(log.warn).mock.calls, vi.mocked(log.debug).mock.calls]);
+        expect(logged).toContain('403 Forbidden');
+        expect(logged).not.toContain('secret');
     });
 });
