@@ -92,7 +92,9 @@ export async function planUpload(source: StreamSource | File): Promise<UploadPla
             const { done, value } = await reader.read();
             if (done) {
                 reader.releaseLock();
-                return { kind: 'single', upload: { body: new Blob(head), contentLength } };
+                // a declared length is over one part here, so a stream that ended is short of it
+                if (contentLength !== undefined) throw new ContentLengthMismatchError(contentLength, read, 'short');
+                return { kind: 'single', upload: { body: new Blob(head) } };
             }
             const part = chunkToBlobPart(value);
             head.push(part);

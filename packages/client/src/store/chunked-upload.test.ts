@@ -185,6 +185,36 @@ describe('planUpload', () => {
         if (plan.kind === 'parts') expect(plan.parts.size).toBe(size);
     });
 
+    it('rejects a stream declared longer than one part that ends within it', async () => {
+        const declared = UPLOAD_PART_SIZE * 2;
+        const plan = planUpload(new StreamSource(textStream('short'), 'short.bin', undefined, undefined, declared));
+        await expect(plan).rejects.toBeInstanceOf(ContentLengthMismatchError);
+        await expect(plan).rejects.toMatchObject({ declared, actual: 5, direction: 'short' });
+    });
+
+    it('cancels the source when a chunk after the first part cannot be sent', async () => {
+        let pulled = 0;
+        const cancel = vi.fn();
+        const stream = new ReadableStream<unknown>(
+            {
+                pull(controller) {
+                    pulled++;
+                    // an object-mode chunk once more than one part has been read
+                    controller.enqueue(
+                        pulled > UPLOAD_PART_SIZE / 1024 / 1024 + 1 ? { not: 'bytes' } : new Uint8Array(1024 * 1024),
+                    );
+                },
+                cancel,
+            },
+            { highWaterMark: 0 },
+        );
+        const plan = await planUpload(new StreamSource(stream as ReadableStream, 'big.bin'));
+        expect(plan.kind).toBe('parts');
+        if (plan.kind !== 'parts') return;
+        await expect(new Response(plan.parts.body).arrayBuffer()).rejects.toBeInstanceOf(TypeError);
+        expect(cancel).toHaveBeenCalledWith(expect.any(TypeError));
+    });
+
     it('sends a stream declared to fit in one part in one request without reading it', async () => {
         const source = zeroStream(100);
         const plan = await planUpload(new StreamSource(source.stream, 'small.bin', undefined, undefined, 100));
