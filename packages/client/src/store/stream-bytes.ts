@@ -48,16 +48,26 @@ export function continueStream(
                     controller.enqueue(await partToBytes(next));
                     return;
                 }
-                const { done, value } = await reader.read();
-                if (done) {
-                    controller.close();
-                } else {
-                    controller.enqueue(await partToBytes(chunkToBlobPart(value)));
+                try {
+                    const { done, value } = await reader.read();
+                    if (done) {
+                        reader.releaseLock();
+                        controller.close();
+                    } else {
+                        controller.enqueue(await partToBytes(chunkToBlobPart(value)));
+                    }
+                } catch (err) {
+                    // An error in pull errors this stream without calling cancel, so the source is cancelled here.
+                    pending.length = 0;
+                    await reader.cancel(err).catch(() => undefined);
+                    reader.releaseLock();
+                    throw err;
                 }
             },
             async cancel(reason) {
                 pending.length = 0;
                 await reader.cancel(reason);
+                reader.releaseLock();
             },
         },
         { highWaterMark: 0 },

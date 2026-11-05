@@ -41,6 +41,7 @@ describe('NodeStreamSource file-backed body', () => {
     it.each([
         ['a range', (file: string) => createReadStream(file, { start: 2 })],
         ['a stream that is not a file', () => Readable.from(['not a file'])],
+        ['a stream that decodes the file', (file: string) => createReadStream(file, { encoding: 'base64' })],
     ])('offers none for %s', async (_name, open) => {
         const file = join(dir, 'range.txt');
         await writeFile(file, 'hello file');

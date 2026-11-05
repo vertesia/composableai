@@ -450,6 +450,33 @@ describe('stream bodies longer than the retry buffer', () => {
         expect((bodies[0] as Blob).size).toBe(chunks * CHUNK);
     });
 
+    it('cancels the source when a chunk after the buffer cannot be sent', async () => {
+        let pulled = 0;
+        const cancel = vi.fn();
+        const body = new ReadableStream<unknown>(
+            {
+                pull(controller) {
+                    pulled++;
+                    // an object-mode chunk once the buffered prefix has been read
+                    controller.enqueue(
+                        pulled > MAX_BUFFERED_STREAM_BYTES / CHUNK + 1 ? { not: 'bytes' } : new Uint8Array(CHUNK),
+                    );
+                },
+                cancel,
+            },
+            { highWaterMark: 0 },
+        );
+        nodeHttp.available = true;
+        nodeHttp.request.mockImplementation(async (_url: string, init: { body: ReadableStream }) => {
+            await new Response(init.body).arrayBuffer();
+            return new Response(null, { status: 200 });
+        });
+        await expect(fetchSignedUrl(gcsUrl, { method: 'PUT', body: body as ReadableStream })).rejects.toThrow(
+            /Unsupported signed-URL upload chunk/,
+        );
+        expect(cancel).toHaveBeenCalledWith(expect.any(TypeError));
+    });
+
     it('reads no more than the buffer from a long stream before sending it', async () => {
         let pulled = 0;
         let pulledBeforeSend = 0;
