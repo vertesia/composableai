@@ -243,7 +243,7 @@ describe('uploadInParts on S3', () => {
         expect(received.map((r) => r.body)).toEqual(['hello', ' worl', 'd!']);
         expect(received[1].url).toBe('https://bucket.s3.amazonaws.com/big.bin?part=2');
         expect(api.getUploadPartUrls).toHaveBeenCalledTimes(1);
-        expect(api.getUploadPartUrls.mock.calls[0][0].part_numbers).toHaveLength(100);
+        expect(api.getUploadPartUrls.mock.calls[0][0].part_numbers).toHaveLength(10);
         expect(api.completeUploadSession).toHaveBeenCalledWith({
             id: 's3://bucket/big.bin',
             upload_id: 'upload-1',
@@ -262,11 +262,80 @@ describe('uploadInParts on S3', () => {
         expect(received.map((r) => r.body)).toEqual(['01234', '56789', 'ab']);
     });
 
-    it('signs the next batch of part URLs when the first runs out', async () => {
+    it('signs part URLs ten at a time, as they are needed', async () => {
         const api = fakeApi();
-        await uploadInParts(api, s3Session(), { body: new Blob([new Uint8Array(5 * 101)]) });
-        expect(api.getUploadPartUrls.mock.calls.map((call) => call[0].part_numbers[0])).toEqual([1, 101]);
-        expect(api.completeUploadSession.mock.calls[0][0].parts).toHaveLength(101);
+        await uploadInParts(api, s3Session(), { body: new Blob([new Uint8Array(5 * 21)]) });
+        expect(api.getUploadPartUrls.mock.calls.map((call) => call[0].part_numbers)).toEqual([
+            [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+            [21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+        ]);
+        expect(api.completeUploadSession.mock.calls[0][0].parts).toHaveLength(21);
+    });
+
+    it('signs the URLs again once they are old', async () => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        try {
+            const api = fakeApi();
+            let slow = true;
+            vi.stubGlobal(
+                'fetch',
+                vi.fn(async () => {
+                    // the first part takes longer than a URL should be kept
+                    if (slow) vi.setSystemTime(Date.now() + 16 * 60_000);
+                    slow = false;
+                    return new Response(null, { status: 200, headers: { etag: '"e"' } });
+                }),
+            );
+            await uploadInParts(api, s3Session(), { body: new Blob(['0123456789']) });
+            expect(api.getUploadPartUrls.mock.calls.map((call) => call[0].part_numbers[0])).toEqual([1, 2]);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('signs a part URL again when it is refused, once', async () => {
+        let attempts = 0;
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => {
+                attempts++;
+                return attempts === 1
+                    ? new Response('Request has expired', { status: 403 })
+                    : new Response(null, { status: 200, headers: { etag: `"e${attempts}"` } });
+            }),
+        );
+        const api = fakeApi();
+        await uploadInParts(api, s3Session(), { body: new Blob(['01234']) });
+        expect(api.getUploadPartUrls).toHaveBeenCalledTimes(2);
+        expect(api.completeUploadSession.mock.calls[0][0].parts).toEqual([{ part_number: 1, etag: '"e2"' }]);
+    });
+
+    it('sizes the parts of a declared length to fit in 10,000 parts', async () => {
+        const api = fakeApi();
+        const size = 10_000 * 5 + 1;
+        const session = { ...s3Session(), part_size: 5 };
+        // 1 MiB parts, since 5 bytes would need 10,001 of them: the whole length fits in one
+        await uploadInParts(api, session, { body: new Blob([new Uint8Array(size)]) });
+        expect(received.map((r) => r.body.length)).toEqual([size]);
+    });
+
+    it('grows the parts of a stream of unknown length every 2,000 parts', async () => {
+        const api = fakeApi();
+        const session = { ...s3Session(), part_size: 1 };
+        const total = 2_000 + 2 * 3;
+        await uploadInParts(api, session, { body: textStream('x'.repeat(total), 7) });
+        const sizes = received.map((r) => r.body.length);
+        expect(sizes.slice(0, 2_000).every((n) => n === 1)).toBe(true);
+        expect(sizes.slice(2_000)).toEqual([2, 2, 2]);
+    });
+
+    it('refuses a declared length over the 5 TiB S3 limit before sending anything', async () => {
+        const api = fakeApi();
+        const size = 5 * 1024 ** 4 + 1;
+        await expect(uploadInParts(api, s3Session(), { body: textStream('x'), size })).rejects.toThrow('5 TiB');
+        expect(received).toEqual([]);
+        expect(api.abortUploadSession).toHaveBeenCalled();
     });
 
     it('aborts the upload when a part fails', async () => {

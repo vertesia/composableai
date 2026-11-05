@@ -20,3 +20,14 @@ export class ContentLengthMismatchError extends Error {
         this.name = 'ContentLengthMismatchError';
     }
 }
+
+/** The SDK an upload session needs is not installed. */
+export class UploadSessionUnavailableError extends Error {
+    constructor(
+        readonly packageName: string,
+        cause: unknown,
+    ) {
+        super(`Uploading in parts needs the optional package ${packageName}`, { cause });
+        this.name = 'UploadSessionUnavailableError';
+    }
+}

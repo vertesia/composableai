@@ -28604,7 +28604,7 @@
         "type": "integer",
         "minimum": -9007199254740991,
         "maximum": 9007199254740991,
-        "description": "Bytes per part. Every part except the last must be exactly this size."
+        "description": "Bytes per part to start with. GCS chunks are this size. S3 parts and Azure blocks may be larger, to keep within the 10,000 parts S3 allows and the 50,000 blocks Azure does."
       },
       "url": {
         "type": "string",
@@ -28728,7 +28728,7 @@
         "type": "integer",
         "minimum": -9007199254740991,
         "maximum": 9007199254740991,
-        "description": "Bytes per part. Every part except the last must be exactly this size."
+        "description": "Bytes per part to start with. GCS chunks are this size. S3 parts and Azure blocks may be larger, to keep within the 10,000 parts S3 allows and the 50,000 blocks Azure does."
       },
       "url": {
         "type": "string",
@@ -28795,7 +28795,7 @@
         "type": "integer",
         "minimum": -9007199254740991,
         "maximum": 9007199254740991,
-        "description": "Bytes per part. Every part except the last must be exactly this size."
+        "description": "Bytes per part to start with. GCS chunks are this size. S3 parts and Azure blocks may be larger, to keep within the 10,000 parts S3 allows and the 50,000 blocks Azure does."
       },
       "upload_id": {
         "type": "string",

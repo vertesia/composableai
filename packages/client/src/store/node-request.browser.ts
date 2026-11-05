@@ -8,3 +8,7 @@ export { ContentLengthMismatchError, hasNodeHttp } from './upload-runtime.js';
 export function nodeRequest(): never {
     throw new Error('nodeRequest is only available in Node.js');
 }
+
+export function exactLength(): never {
+    throw new Error('exactLength is only available in Node.js');
+}

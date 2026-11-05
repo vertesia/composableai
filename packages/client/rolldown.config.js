@@ -14,17 +14,7 @@ export default defineConfig({
         sourcemap: true,
         minify: true,
     },
-    // Node built-ins and the optional storage SDKs are loaded on demand by the Node-only upload paths
-    // (store/node-request, store/chunked-upload), which a browser never calls.
-    external: [
-        '@vertesia/common',
-        'eventsource',
-        'ajv',
-        /^node:/,
-        '@azure/storage-blob',
-        '@google-cloud/storage',
-        'google-auth-library',
-    ],
+    external: ['@vertesia/common', 'eventsource', 'ajv'],
     resolve: {
         mainFields: ['browser', 'module', 'main'],
         conditionNames: ['browser', 'import', 'default'],

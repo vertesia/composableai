@@ -222,8 +222,10 @@ describe('uploads of long streams', () => {
         await expect(client.files.uploadFile(new StreamSource(zeroStream(20 * mib), 'big.bin'))).rejects.toThrow(
             'Failed to upload part 1',
         );
+        // the refused part is signed again once before the upload is aborted
         expect(calls.map((c) => c.path)).toEqual([
             '/files/upload-sessions',
+            '/files/upload-sessions/parts',
             '/files/upload-sessions/parts',
             '/files/upload-sessions/abort',
         ]);

@@ -213,7 +213,11 @@ const uploadSessionFields = {
     part_size: z
         .number()
         .int()
-        .meta({ description: 'Bytes per part. Every part except the last must be exactly this size.' }),
+        .meta({
+            description:
+                'Bytes per part to start with. GCS chunks are this size. S3 parts and Azure blocks may be larger, to ' +
+                'keep within the 10,000 parts S3 allows and the 50,000 blocks Azure does.',
+        }),
 };
 
 export const GcsResumableUploadSessionSchema = z

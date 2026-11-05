@@ -5,7 +5,8 @@
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
     "browser": {
-        "./lib/store/node-request.js": "./lib/store/node-request.browser.js"
+        "./lib/store/node-request.js": "./lib/store/node-request.browser.js",
+        "./lib/store/node-sessions.js": "./lib/store/node-sessions.browser.js"
     },
     "files": [
         "lib",

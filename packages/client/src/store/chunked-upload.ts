@@ -10,29 +10,39 @@
  * - Amazon S3: a multipart upload. Each part is a `PUT` to a URL the server signs, retried like any signed-URL
  *   transfer, and the server completes the upload, or aborts it when a part cannot be sent.
  *
- * Memory stays about one part per upload, whatever the source's length, and nothing is written to disk.
+ * Memory stays about one part per upload, and nothing is written to disk. Parts are 16 MiB, or larger for content
+ * whose length would need more parts than the store allows: S3 takes 10,000 and Azure 50,000.
  *
  * The two SDKs are optional peer dependencies, loaded only on this path. Without the one a session needs, the
  * upload falls back to a single signed PUT.
  */
-import type {
-    CompletedUploadPart,
-    GcsResumableUploadSession,
-    S3MultipartUploadSession,
-    UploadSession,
-} from '@vertesia/common';
+import type { CompletedUploadPart, S3MultipartUploadSession, UploadSession } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
-import { ContentLengthMismatchError, exactLength, hasNodeHttp } from './node-request.js';
+import { uploadAzureBlocks, uploadGcsResumable } from './node-sessions.js';
 import { fetchSignedUrl, MAX_BUFFERED_STREAM_BYTES } from './signed-url.js';
 import { chunkToBlobPart, continueStream } from './stream-bytes.js';
 import { getUploadBody, type UploadBody } from './upload-body.js';
+import { ContentLengthMismatchError, hasNodeHttp } from './upload-runtime.js';
+
+export { UploadSessionUnavailableError } from './upload-runtime.js';
 
 /** Sources longer than this are sent in parts: the most of a stream that is held in memory at once. */
 export const UPLOAD_PART_SIZE = MAX_BUFFERED_STREAM_BYTES;
 
-/** S3 numbers parts from 1 to 10,000; part URLs are signed this many at a time. */
-const MAX_PARTS = 10_000;
-const PART_URL_BATCH = 100;
+const MiB = 1024 * 1024;
+/** S3 numbers parts from 1 to 10,000 and takes objects up to 5 TiB. */
+const S3_MAX_PARTS = 10_000;
+const S3_MAX_OBJECT_SIZE = 5 * 1024 * 1024 * MiB;
+/** For a stream of unknown length, S3 parts double in size every this many parts: 16 MiB parts reach 968 GiB. */
+const S3_PARTS_PER_SIZE = 2_000;
+/** Azure commits at most 50,000 blocks. */
+const AZURE_MAX_BLOCKS = 50_000;
+/**
+ * Part URLs are signed this many at a time, and signed again once this old, since they expire (S3 default, one hour,
+ * or sooner with the signer's credentials) while a slow source fills the parts before them.
+ */
+const PART_URL_BATCH = 10;
+const PART_URL_MAX_AGE_MS = 15 * 60_000;
 
 /** Content to send in parts, with its declared length when it is a stream whose length is known. */
 export interface PartsBody {
@@ -55,17 +65,6 @@ export interface MultipartUploadApi {
         parts: CompletedUploadPart[];
     }): Promise<{ etag?: string }>;
     abortUploadSession(payload: { id: string; upload_id: string }): Promise<unknown>;
-}
-
-/** The SDK an upload session needs is not installed. */
-export class UploadSessionUnavailableError extends Error {
-    constructor(
-        readonly packageName: string,
-        cause: unknown,
-    ) {
-        super(`Uploading in parts needs the optional package ${packageName}`, { cause });
-        this.name = 'UploadSessionUnavailableError';
-    }
 }
 
 /**
@@ -120,76 +119,53 @@ export async function uploadInParts(
         case 'gcs_resumable':
             return uploadGcsResumable(session, parts);
         case 'azure_block_blob':
-            return uploadAzureBlocks(session.url, session.part_size, session.mime_type, parts);
+            return unquote(
+                await uploadAzureBlocks(
+                    session.url,
+                    fitParts(session.part_size, knownSize(parts), AZURE_MAX_BLOCKS),
+                    session.mime_type,
+                    parts,
+                ),
+            );
     }
 }
 
-async function importOptional<T>(name: string, load: () => Promise<T>): Promise<T> {
-    try {
-        return await load();
-    } catch (err: unknown) {
-        const code = (err as { code?: unknown } | undefined)?.code;
-        if (code === 'ERR_MODULE_NOT_FOUND' || code === 'MODULE_NOT_FOUND') {
-            throw new UploadSessionUnavailableError(name, err);
+function knownSize(parts: PartsBody): number | undefined {
+    return parts.body instanceof Blob ? parts.body.size : parts.size;
+}
+
+/** `base`, or when `size` bytes would need more than `maxParts` parts of it, the whole number of MiB that fits. */
+function fitParts(base: number, size: number | undefined, maxParts: number): number {
+    const needed = size === undefined ? 0 : Math.ceil(size / maxParts);
+    return needed <= base ? base : Math.ceil(needed / MiB) * MiB;
+}
+
+/**
+ * The size of each S3 part. With the length known, one size that fits it in 10,000 parts. Without, parts grow as the
+ * upload does, so a stream of unknown length can reach 968 GiB while short uploads keep small parts.
+ */
+function s3PartSizes(base: number, size: number | undefined): (partNumber: number) => number {
+    if (size !== undefined) {
+        if (size > S3_MAX_OBJECT_SIZE) {
+            throw new Error(`S3 takes objects up to 5 TiB; this upload is declared at ${size} bytes`);
         }
-        throw err;
+        const fixed = fitParts(base, size, S3_MAX_PARTS);
+        return () => fixed;
     }
+    return (partNumber) => base * 2 ** Math.floor((partNumber - 1) / S3_PARTS_PER_SIZE);
 }
 
-/** The content as a Node stream that fails, before it ends, when it does not match its declared length. */
-async function nodeReadable(parts: PartsBody): Promise<import('node:stream').Readable> {
-    const { Readable, Transform } = await import('node:stream');
-    const { pipeline } = await import('node:stream/promises');
-    const web = parts.body instanceof Blob ? parts.body.stream() : parts.body;
-    const source = Readable.fromWeb(web as Parameters<typeof Readable.fromWeb>[0]);
-    if (parts.size === undefined) return source;
-    const counted = exactLength(parts.size, Transform);
-    // The pipeline forwards an error of the source to `counted`, which is what the SDK reads.
-    pipeline(source, counted).catch(() => undefined);
-    return counted;
-}
-
-async function uploadGcsResumable(session: GcsResumableUploadSession, parts: PartsBody): Promise<string | undefined> {
-    const [{ Storage }, { PassThroughClient }] = await Promise.all([
-        importOptional('@google-cloud/storage', () => import('@google-cloud/storage')),
-        importOptional('google-auth-library', () => import('google-auth-library')),
-    ]);
-    const { pipeline } = await import('node:stream/promises');
-    const slash = session.path.indexOf('/');
-    // The session URI is the only credential the upload needs, so requests carry no other.
-    const file = new Storage({ authClient: new PassThroughClient() })
-        .bucket(session.path.slice(0, slash))
-        .file(session.path.slice(slash + 1));
-    const writable = file.createWriteStream({
-        uri: session.url,
-        resumable: true,
-        chunkSize: session.part_size,
-        metadata: { contentType: session.mime_type },
-    });
-    await pipeline(await nodeReadable(parts), writable);
-    // The same ETag a single PUT to the XML API answers with: the object's MD5, in hex.
-    const md5 = file.metadata?.md5Hash;
-    return typeof md5 === 'string' ? Buffer.from(md5, 'base64').toString('hex') : undefined;
-}
-
-async function uploadAzureBlocks(
-    url: string,
-    partSize: number,
-    contentType: string | undefined,
-    parts: PartsBody,
-): Promise<string | undefined> {
-    const { BlockBlobClient } = await importOptional('@azure/storage-blob', () => import('@azure/storage-blob'));
-    const response = await new BlockBlobClient(url).uploadStream(await nodeReadable(parts), partSize, 1, {
-        blobHTTPHeaders: { blobContentType: contentType },
-    });
-    return unquote(response.etag);
-}
-
-/** Splits the content into parts of `partSize` bytes; the last may be shorter. */
-async function* blobParts(body: Blob | ReadableStream<Uint8Array>, partSize: number): AsyncGenerator<Blob> {
+/** Splits the content into parts, part `n` of `partSize(n)` bytes; the last may be shorter. */
+async function* blobParts(
+    body: Blob | ReadableStream<Uint8Array>,
+    partSize: (partNumber: number) => number,
+): AsyncGenerator<Blob> {
+    let partNumber = 1;
     if (body instanceof Blob) {
-        for (let offset = 0; offset < body.size; offset += partSize) {
-            yield body.slice(offset, Math.min(offset + partSize, body.size));
+        for (let offset = 0; offset < body.size; partNumber++) {
+            const end = Math.min(offset + partSize(partNumber), body.size);
+            yield body.slice(offset, end);
+            offset = end;
         }
         return;
     }
@@ -202,10 +178,11 @@ async function* blobParts(body: Blob | ReadableStream<Uint8Array>, partSize: num
             const { done, value } = await reader.read();
             if (done) break;
             let chunk = value;
-            while (pendingBytes + chunk.byteLength >= partSize) {
-                const take = partSize - pendingBytes;
+            while (pendingBytes + chunk.byteLength >= partSize(partNumber)) {
+                const take = partSize(partNumber) - pendingBytes;
                 pending.push(chunk.subarray(0, take));
                 yield new Blob(pending as BlobPart[]);
+                partNumber++;
                 pending = [];
                 pendingBytes = 0;
                 chunk = chunk.subarray(take);
@@ -231,27 +208,38 @@ async function uploadS3Parts(
     const { id, upload_id } = session;
     const uploaded: CompletedUploadPart[] = [];
     let urls = new Map<number, string>();
+    let signedAt = 0;
     let sent = 0;
+
+    async function partUrl(partNumber: number, renew: boolean): Promise<string> {
+        if (renew || !urls.has(partNumber) || Date.now() - signedAt > PART_URL_MAX_AGE_MS) {
+            const last = Math.min(partNumber + PART_URL_BATCH - 1, S3_MAX_PARTS);
+            const part_numbers = Array.from({ length: last - partNumber + 1 }, (_, i) => partNumber + i);
+            const signed = await api.getUploadPartUrls({ id, upload_id, part_numbers });
+            urls = new Map(signed.parts.map((p) => [p.part_number, p.url]));
+            signedAt = Date.now();
+        }
+        const url = urls.get(partNumber);
+        if (!url) throw new Error(`No upload URL was signed for part ${partNumber}`);
+        return url;
+    }
+
     try {
-        for await (const part of blobParts(parts.body, session.part_size)) {
+        for await (const part of blobParts(parts.body, s3PartSizes(session.part_size, knownSize(parts)))) {
             const partNumber = uploaded.length + 1;
-            if (partNumber > MAX_PARTS) {
-                throw new Error(`Upload has more than ${MAX_PARTS} parts of ${session.part_size} bytes`);
+            if (partNumber > S3_MAX_PARTS) {
+                throw new Error(`Upload needs more than ${S3_MAX_PARTS} parts`);
             }
             sent += part.size;
             if (parts.size !== undefined && sent > parts.size) {
                 throw new ContentLengthMismatchError(parts.size, sent, 'long');
             }
-            let url = urls.get(partNumber);
-            if (!url) {
-                const last = Math.min(partNumber + PART_URL_BATCH - 1, MAX_PARTS);
-                const part_numbers = Array.from({ length: last - partNumber + 1 }, (_, i) => partNumber + i);
-                const signed = await api.getUploadPartUrls({ id, upload_id, part_numbers });
-                urls = new Map(signed.parts.map((p) => [p.part_number, p.url]));
-                url = urls.get(partNumber);
-                if (!url) throw new Error(`No upload URL was signed for part ${partNumber}`);
+            let res = await fetchSignedUrl(await partUrl(partNumber, false), { method: 'PUT', body: part });
+            if (res.status === 403) {
+                // An expired URL, or one whose signing credentials expired: sign it again, once.
+                await res.body?.cancel().catch(() => undefined);
+                res = await fetchSignedUrl(await partUrl(partNumber, true), { method: 'PUT', body: part });
             }
-            const res = await fetchSignedUrl(url, { method: 'PUT', body: part });
             const detail = res.ok ? '' : await res.text().catch(() => '');
             if (res.ok) await res.body?.cancel().catch(() => undefined);
             const etag = res.headers.get('etag');
