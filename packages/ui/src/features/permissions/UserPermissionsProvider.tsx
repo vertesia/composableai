@@ -34,9 +34,18 @@ export class UserPermissions {
         // OAuth access tokens are capped to the permissions granted to the token (its scopes).
         const permissionCap =
             authToken.type === PrincipalType.OAuthAccess ? new Set<string>(authToken.permissions ?? []) : undefined;
+        // On any other token the claim is the token's authority, so it replaces the role-derived set.
         this.permissions = new Set(
-            permissionCap ? rolePermissions.filter((permission) => permissionCap.has(permission)) : rolePermissions,
+            permissionCap
+                ? rolePermissions.filter((permission) => permissionCap.has(permission))
+                : (authToken.permissions ?? rolePermissions),
         );
+        // An account-scoped credential holds no roles: its claim is its authority at both scopes.
+        if (authToken.credential_scope === 'account') {
+            this.account_permissions = new Set(authToken.permissions ?? []);
+            this.project_permissions = new Set(authToken.permissions ?? []);
+            return;
+        }
         this.account_permissions = new Set(
             permissionCap
                 ? accountRolePermissions.filter((permission) => permissionCap.has(permission))

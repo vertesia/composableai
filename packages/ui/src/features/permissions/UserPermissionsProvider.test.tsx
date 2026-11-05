@@ -284,4 +284,39 @@ describe('scope-aware permissions', () => {
         expect(oauthPermissions.hasAccountPermission(Permission.project_admin)).toBe(true);
         expect(oauthPermissions.hasProjectPermission(Permission.project_admin)).toBe(true);
     });
+
+    it('keeps the permission claim authoritative on a non-OAuth token and scopes from role mappings', () => {
+        const capped = new UserPermissions(
+            {
+                sub: 'user-a',
+                type: PrincipalType.User,
+                project_roles: [SystemRoles.manager],
+                permissions: [Permission.account_user_manage],
+            } as AuthTokenPayload,
+            roles,
+        );
+
+        expect(capped.hasPermission(Permission.account_user_manage)).toBe(true);
+        expect(capped.hasPermission(Permission.project_admin)).toBe(false);
+        expect(capped.hasAccountPermission(Permission.account_user_manage)).toBe(false);
+        expect(capped.hasProjectPermission(Permission.project_admin)).toBe(true);
+    });
+
+    it('grants an account-scoped credential its claim at both scopes without any role', () => {
+        const accountKey = new UserPermissions(
+            {
+                sub: 'key-a',
+                type: PrincipalType.ApiKey,
+                credential_scope: 'account',
+                permissions: [Permission.account_user_manage],
+            } as AuthTokenPayload,
+            roles,
+        );
+
+        expect(accountKey.hasPermission(Permission.account_user_manage)).toBe(true);
+        expect(accountKey.hasAccountPermission(Permission.account_user_manage)).toBe(true);
+        expect(accountKey.hasProjectPermission(Permission.account_user_manage)).toBe(true);
+        expect(accountKey.hasPermission(Permission.account_admin)).toBe(false);
+        expect(accountKey.hasAccountPermission(Permission.account_admin)).toBe(false);
+    });
 });
