@@ -1,0 +1,157 @@
+import { log } from '@temporalio/activity';
+import { RequestError } from '@vertesia/api-fetch-client';
+import { type DSLActivityExecutionPayload, type DSLActivitySpec, WEB_VIDEO_RENDITION_NAME } from '@vertesia/common';
+import { setupActivity } from '../../dsl/setup/ActivityContext.js';
+import { DocumentNotFoundError, InvalidContentTypeError, SourceTooLargeError } from '../../errors.js';
+import { renditionStorageKey, updateObjectMetadata } from '../../utils/metadata.js';
+import { initializeActivityCommandDeadline, isUnusableVideoContent, rethrowIfActivityStopped } from './exec.js';
+import { type PrepareVideoResult, toPrepareVideoMetadata } from './prepareVideo.js';
+import {
+    buildVideoMetadata,
+    DEFAULT_GENERATE_AUDIO,
+    DEFAULT_POSTER_SIZE,
+    DEFAULT_THUMBNAIL_SIZE,
+    extractAudioRendition,
+    extractVideoFrames,
+    probeVideoSource,
+    retrieveVideoObject,
+    uploadVideoAssets,
+    withVideoSource,
+} from './video.js';
+
+export interface ExtractVideoAssetsParams {
+    thumbnailSize?: number; // Max size (longest side) for thumbnail image, default 256
+    posterSize?: number; // Max size (longest side) for poster image, default 1920
+    generateAudio?: boolean; // Generate audio-only rendition (AAC), default true
+    // Whether the web transcode is skipped. Unless it is, the stored metadata marks the web rendition as pending, so
+    // readers waiting for it are not satisfied by the poster and audio alone. addObjectRendition clears the mark.
+    skipTranscode?: boolean;
+}
+
+export interface ExtractVideoAssetsResult extends PrepareVideoResult {
+    /** The content etag the assets were made from; pass it to addObjectRendition. */
+    etag?: string;
+}
+
+export interface ExtractVideoAssets extends DSLActivitySpec<ExtractVideoAssetsParams> {
+    name: 'extractVideoAssets';
+}
+
+/**
+ * Probe a video, extract its poster, thumbnail and audio rendition, and store the video metadata.
+ *
+ * This is everything prepareVideo does except the web transcode, which transcodeVideo runs separately so it can be
+ * scheduled apart from this quick work. The stored renditions are the poster and audio only: a web rendition from an
+ * earlier run is dropped, and addObjectRendition adds the new one once transcodeVideo has produced it.
+ */
+export async function extractVideoAssets(
+    payload: DSLActivityExecutionPayload<ExtractVideoAssetsParams>,
+): Promise<ExtractVideoAssetsResult> {
+    initializeActivityCommandDeadline();
+    const { client, objectId, params } = await setupActivity<ExtractVideoAssetsParams>(payload);
+
+    const thumbnailSize = params.thumbnailSize ?? DEFAULT_THUMBNAIL_SIZE;
+    const posterSize = params.posterSize ?? DEFAULT_POSTER_SIZE;
+    const generateAudio = params.generateAudio ?? DEFAULT_GENERATE_AUDIO;
+    const webRenditionPending = params.skipTranscode !== true;
+
+    log.debug(`Extracting video assets for ${objectId}`, {
+        thumbnailSize,
+        posterSize,
+        generateAudio,
+        webRenditionPending,
+    });
+
+    const inputObject = await retrieveVideoObject(client, objectId);
+    const source = inputObject.content?.source as string;
+
+    // The probe and frames read the source over a signed URL. An AAC audio track is copied over it too; only another
+    // audio codec, or a failed read, downloads the file.
+    return await withVideoSource(client, source, 'extract-video-assets-', async (videoSource, outputDir) => {
+        try {
+            const metadata = await probeVideoSource(videoSource);
+            const frames = await extractVideoFrames(videoSource, outputDir, metadata, thumbnailSize, posterSize);
+
+            let audio: Awaited<ReturnType<typeof extractAudioRendition>> = null;
+            if (generateAudio && metadata.hasAudio) {
+                audio = await extractAudioRendition(videoSource, outputDir, metadata);
+            } else if (generateAudio && !metadata.hasAudio) {
+                log.info('Skipping audio rendition - video has no audio track');
+            }
+
+            const storageKey = renditionStorageKey(inputObject);
+            const renditions = await uploadVideoAssets(
+                client,
+                frames,
+                audio?.file ?? null,
+                thumbnailSize,
+                posterSize,
+                storageKey,
+            );
+
+            // Read generation_runs fresh rather than from the object retrieved before the extraction. Write nothing
+            // when the content changed meanwhile: these assets belong to the earlier content, and the intake the change
+            // starts extracts the new one.
+            const contentEtag = inputObject.content?.etag;
+            try {
+                await updateObjectMetadata(
+                    client,
+                    objectId,
+                    (current) => {
+                        if (contentEtag && current.etag !== contentEtag) {
+                            log.info(`Content of ${objectId} changed during asset extraction; not storing its assets`);
+                            return undefined;
+                        }
+                        return {
+                            metadata: {
+                                ...buildVideoMetadata(metadata, renditions, current.metadata),
+                                ...(webRenditionPending
+                                    ? { pending_renditions: { etag: storageKey, names: [WEB_VIDEO_RENDITION_NAME] } }
+                                    : {}),
+                            },
+                        };
+                    },
+                    contentEtag ? { ifMatch: contentEtag } : undefined,
+                );
+            } catch (error) {
+                if (!(error instanceof RequestError && error.status === 412)) {
+                    throw error;
+                }
+                log.info(`Content of ${objectId} changed while storing its video assets; not storing them`);
+            }
+
+            log.info(`Extracted video assets for ${objectId}`, {
+                duration: metadata.duration,
+                dimensions: `${metadata.width}x${metadata.height}`,
+                hasAudio: metadata.hasAudio,
+                container: metadata.formatName,
+                audioCodec: metadata.audioCodec,
+                audioChannels: metadata.audioChannels,
+                audioStreams: metadata.audioStreams,
+                audioRendition: audio?.mode ?? 'none',
+                renditionsGenerated: renditions.length,
+            });
+
+            return {
+                objectId,
+                metadata: toPrepareVideoMetadata(metadata),
+                renditions,
+                status: 'success',
+                etag: inputObject.content?.etag,
+            };
+        } catch (error) {
+            rethrowIfActivityStopped(error);
+            // The metadata probe already logged it at warn, and a download over the media limit logged its
+            // rejection; keep their type and non-retryable flag.
+            if (isUnusableVideoContent(error) || error instanceof SourceTooLargeError) {
+                throw error;
+            }
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            log.error(`Error extracting video assets: ${errorMessage}`, { error });
+            if (error instanceof DocumentNotFoundError || error instanceof InvalidContentTypeError) {
+                throw error;
+            }
+            throw new Error(`Failed to extract video assets for ${objectId}: ${errorMessage}`);
+        }
+    });
+}

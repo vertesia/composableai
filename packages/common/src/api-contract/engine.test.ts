@@ -29,3 +29,27 @@ it('compiles the starts_with format without logging and still enforces its patte
     expect(log).not.toHaveBeenCalled();
     expect(error).not.toHaveBeenCalled();
 });
+
+it('compiles untyped conditional and union schemas without logging and still enforces them', () => {
+    const warn = vi.spyOn(console, 'warn');
+    const log = vi.spyOn(console, 'log');
+    const error = vi.spyOn(console, 'error');
+    // The shapes `conditional()` + `nonEmpty()` and a deliberate `type` array produce.
+    const contract = createApiContract<{ Query: { sql?: string; limit?: string | number } }>({
+        Query: {
+            type: 'object',
+            properties: { sql: { type: 'string' }, limit: { type: ['string', 'number'] } },
+            if: { required: ['sql'] },
+            // biome-ignore lint/suspicious/noThenProperty: the JSON Schema `then` keyword, read by validators, never awaited.
+            then: { properties: { sql: { minLength: 1 } } },
+        },
+    });
+
+    expect(contract.validateApiRequest('Query', { sql: 'select 1', limit: '10' }).valid).toBe(true);
+    expect(contract.validateApiRequest('Query', { limit: 10 }).valid).toBe(true);
+    expect(contract.validateApiRequest('Query', { sql: '' }).valid).toBe(false);
+    expect(contract.validateApiRequest('Query', { limit: true }).valid).toBe(false);
+    expect(warn).not.toHaveBeenCalled();
+    expect(log).not.toHaveBeenCalled();
+    expect(error).not.toHaveBeenCalled();
+});

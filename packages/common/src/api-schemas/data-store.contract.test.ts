@@ -133,6 +133,41 @@ describe('data-store API contracts', () => {
         expect(validateApiResponse('ImportJob', { ...response, store_id: undefined }).valid).toBe(false);
     });
 
+    it('publishes the current version on a full store but not on a list item', () => {
+        const store = {
+            id: 'store-1',
+            name: 'sales',
+            tags: [],
+            updated_by: 'user:1',
+            created_by: 'user:1',
+            created_at: '2026-08-02T00:00:00.000Z',
+            updated_at: '2026-08-02T00:00:00.000Z',
+            status: 'active',
+            schema_version: '1.0.0',
+            table_count: 0,
+            total_rows: 0,
+            storage_bytes: 0,
+            version_count: 1,
+            schema: {
+                version: '1.0.0',
+                tables: [],
+                relationships: [],
+                updated_at: '2026-08-02T00:00:00.000Z',
+            },
+            gcs_bucket: 'bucket',
+            gcs_path: 'path',
+        };
+
+        // A store not written to since immutable versions were introduced has no pointer.
+        expect(validateApiResponse('DataStore', store).valid).toBe(true);
+        expect(validateApiResponse('DataStore', { ...store, current_version: 'version-1' }).valid).toBe(true);
+        expect(validateApiResponse('DataStore', { ...store, current_version: 1 }).valid).toBe(false);
+
+        const { schema: _schema, gcs_bucket: _bucket, gcs_path: _path, ...item } = store;
+        expect(validateApiResponse('DataStoreItem', item).valid).toBe(true);
+        expect(validateApiResponse('DataStoreItem', { ...item, current_version: 'version-1' }).valid).toBe(false);
+    });
+
     it('registers the entire data-store reference closure', () => {
         for (const name of [
             'DataStore',

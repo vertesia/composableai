@@ -23,4 +23,9 @@ export default defineConfig({
         mainFields: ['browser', 'module', 'main'],
         conditionNames: ['browser', 'import', 'default'],
     },
+    // @tiptap/react starts with "use client", which bundling drops and warns about. It only means
+    // something to a React Server Components bundler, and this file is loaded in the browser.
+    checks: {
+        moduleLevelDirective: false,
+    },
 });

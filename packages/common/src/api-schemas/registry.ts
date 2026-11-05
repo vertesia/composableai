@@ -33,6 +33,7 @@ import {
 } from '@llumiverse/common/schemas';
 import type { z } from 'zod';
 import type { ApiComponentType } from '../api-contract/types.js';
+import * as WorkflowUsageSchemas from './workflow-usage.js';
 
 export type { ApiComponentType } from '../api-contract/types.js';
 
@@ -82,6 +83,7 @@ import {
     AppBuildProgressSchema,
     AppBuildProgressStatusSchema,
     AppBuildTriggerSchema,
+    AppDeleteQuerySchema,
     AppDeleteSummarySchema,
     AppDeploymentAliasSchema,
     AppDevelopmentTaskDetailsSchema,
@@ -114,6 +116,7 @@ import {
     AppPackageScopeSchema,
     AppRepoBranchSchema,
     AppRepoCommitSchema,
+    AppRepoCommitsQuerySchema,
     AppRepoCommitsSchema,
     AppRepoDocumentCommitSchema,
     AppRepoFileQuerySchema,
@@ -263,6 +266,13 @@ import {
     PricingSyncResultSchema,
 } from './cost-analytics.js';
 import {
+    CreateCustomRolePayloadSchema,
+    CustomRoleDefinitionArraySchema,
+    CustomRoleDefinitionSchema,
+    PermissionArraySchema,
+    UpdateCustomRolePayloadSchema,
+} from './custom-roles.js';
+import {
     CreateDashboardPayloadSchema,
     CreateDashboardSnapshotPayloadSchema,
     DashboardArchiveResultSchema,
@@ -292,6 +302,8 @@ import {
     DashboardVersionSchema,
     ExportDashboardPayloadSchema,
     ExportDashboardPreviewPayloadSchema,
+    ListDashboardsQuerySchema,
+    ListDashboardVersionsQuerySchema,
     PromoteDashboardVersionPayloadSchema,
     StringArrayMapSchema,
     UpdateDashboardPayloadSchema,
@@ -302,6 +314,7 @@ import {
     BatchQueryPayloadSchema,
     BatchQueryResultItemSchema,
     BatchQueryResultSchema,
+    CreateDataStoreDownloadUrlQuerySchema,
     CreateDataStorePayloadSchema,
     CreateSnapshotPayloadSchema,
     CreateTablePayloadSchema,
@@ -342,6 +355,7 @@ import {
     DataTableSemanticTypeSchema,
     DataTableSummaryArraySchema,
     DataTableSummarySchema,
+    GetDataStoreSchemaQuerySchema,
     GetDataStoreTableQuerySchema,
     ImportDataFormatSchema,
     ImportDataPayloadSchema,
@@ -350,6 +364,7 @@ import {
     ImportStatusSchema,
     ImportTableDataMapSchema,
     ImportTableDataSchema,
+    ListDataStoreSchemaHistoryQuerySchema,
     ListDataStoreVersionsQuerySchema,
     QueryPayloadSchema,
     QueryResultColumnSchema,
@@ -521,6 +536,7 @@ import {
     ConversationStateSchema,
     ConversationStripOptionsSchema,
     ConversationVisibilitySchema,
+    DeleteInteractionQuerySchema,
     EmailChannelSchema,
     ExecuteInteractionByEndpointHeadersSchema,
     ExecuteInteractionByEndpointQuerySchema,
@@ -875,6 +891,11 @@ import * as WorkflowRunSchemas from './workflow-runs.js';
  * group approaches the proven-safe size.
  */
 const IAM_AND_ACCOUNT_SCHEMAS = {
+    CustomRoleDefinition: CustomRoleDefinitionSchema,
+    CustomRoleDefinitionArray: CustomRoleDefinitionArraySchema,
+    CreateCustomRolePayload: CreateCustomRolePayloadSchema,
+    UpdateCustomRolePayload: UpdateCustomRolePayloadSchema,
+    PermissionArray: PermissionArraySchema,
     Account: AccountSchema,
     UpdateAccountPayload: UpdateAccountPayloadSchema,
     StripeBillingStatusResponse: StripeBillingStatusResponseSchema,
@@ -1238,6 +1259,7 @@ const INTERACTION_SCHEMAS = {
     InteractionSearchQuery: InteractionSearchQuerySchema,
     InteractionListQuery: InteractionListQuerySchema,
     ResolveInteractionQuery: ResolveInteractionQuerySchema,
+    DeleteInteractionQuery: DeleteInteractionQuerySchema,
     // The catalog — in-code interactions an app or the system provides, alongside stored ones.
     CatalogInteractionRef: CatalogInteractionRefSchema,
     CatalogInteractionRefArray: CatalogInteractionRefArraySchema,
@@ -1517,6 +1539,8 @@ const DASHBOARD_SCHEMAS = {
     DashboardBulkIdsPayload: DashboardBulkIdsPayloadSchema,
     DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSourceSchema,
     DashboardVersionItemArray: DashboardVersionItemArraySchema,
+    ListDashboardsQuery: ListDashboardsQuerySchema,
+    ListDashboardVersionsQuery: ListDashboardVersionsQuerySchema,
     DashboardItem: DashboardItemSchema,
     DashboardPanel: DashboardPanelSchema,
     DashboardDataSource: DashboardDataSourceSchema,
@@ -1537,6 +1561,9 @@ const DATA_STORE_CORE_SCHEMAS = {
     QueryValidationPayload: QueryValidationPayloadSchema,
     ListDataStoreVersionsQuery: ListDataStoreVersionsQuerySchema,
     GetDataStoreTableQuery: GetDataStoreTableQuerySchema,
+    GetDataStoreSchemaQuery: GetDataStoreSchemaQuerySchema,
+    ListDataStoreSchemaHistoryQuery: ListDataStoreSchemaHistoryQuerySchema,
+    CreateDataStoreDownloadUrlQuery: CreateDataStoreDownloadUrlQuerySchema,
     DataTableSemanticType: DataTableSemanticTypeSchema,
     DataIndex: DataIndexSchema,
     DataForeignKey: DataForeignKeySchema,
@@ -1977,6 +2004,7 @@ const AGENT_ARTIFACT_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const AGENT_RUN_SCHEMAS = {
+    TerminateAgentRunQuery: AgentRunSchemas.TerminateAgentRunQuerySchema,
     TerminateAgentRunResponse: AgentRunSchemas.TerminateAgentRunResponseSchema,
     SignalAgentPayload: AgentRunSchemas.SignalAgentPayloadSchema,
     PostAgentRunUpdateResponse: AgentRunSchemas.PostAgentRunUpdateResponseSchema,
@@ -2311,6 +2339,7 @@ const APP_LIFECYCLE_SCHEMAS = {
     RunType: RunTypeSchema,
     AppBuildProgressStatus: AppBuildProgressStatusSchema,
     DeleteAppVersionResponse: DeleteAppVersionResponseSchema,
+    AppDeleteQuery: AppDeleteQuerySchema,
     AppDeleteSummary: AppDeleteSummarySchema,
     AppRepoBranch: AppRepoBranchSchema,
     CreateAppRepoBranchRequest: CreateAppRepoBranchRequestSchema,
@@ -2346,6 +2375,7 @@ const APP_LIFECYCLE_SCHEMAS = {
     AppRepoTree: AppRepoTreeSchema,
     AppRepoRefs: AppRepoRefsSchema,
     AppRepoCommits: AppRepoCommitsSchema,
+    AppRepoCommitsQuery: AppRepoCommitsQuerySchema,
     ContentObjectTypeRef: ContentObjectTypeRefSchema,
     AppVersionLaunchTarget: AppVersionLaunchTargetSchema,
     AppVersionLaunchTargetArray: AppVersionLaunchTargetArraySchema,
@@ -2545,7 +2575,13 @@ const PATH_PARAMETER_SCHEMAS = {
     OAuthProviderPathParams: PathParameterSchemas.OAuthProviderPathParamsSchema,
     ProjectAppCapabilityPathParams: PathParameterSchemas.ProjectAppCapabilityPathParamsSchema,
 };
+const WORKFLOW_USAGE_SCHEMAS = {
+    WorkflowUsageQuery: WorkflowUsageSchemas.WorkflowUsageQuerySchema,
+    WorkflowUsageClass: WorkflowUsageSchemas.WorkflowUsageClassSchema,
+    WorkflowUsageStanding: WorkflowUsageSchemas.WorkflowUsageStandingSchema,
+} as const;
 const API_SCHEMA_GROUPS = [
+    WORKFLOW_USAGE_SCHEMAS,
     RUN_BUDGET_SCHEMAS,
     PATH_PARAMETER_SCHEMAS,
     DELEGATION_SCHEMAS,
@@ -2613,7 +2649,8 @@ const API_SCHEMA_GROUPS = [
  * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
  * intersected with a second schema.
  */
-type ApiSchemaMap = typeof RUN_BUDGET_SCHEMAS &
+type ApiSchemaMap = typeof WORKFLOW_USAGE_SCHEMAS &
+    typeof RUN_BUDGET_SCHEMAS &
     typeof PATH_PARAMETER_SCHEMAS &
     typeof DELEGATION_SCHEMAS &
     typeof IAM_AND_ACCOUNT_SCHEMAS &
@@ -2689,6 +2726,9 @@ const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponen
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'CustomRoleDefinition',
+    'CreateCustomRolePayload',
+    'UpdateCustomRolePayload',
     'IntakeMediaAnalysisOverride',
     'IntakeMediaAnalysisOverrides',
     'OidcFederationConnectionPayload',
@@ -2967,6 +3007,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'DashboardVersioningPayload',
     'PromoteDashboardVersionPayload',
     'DashboardVersionItem',
+    'ListDashboardsQuery',
+    'ListDashboardVersionsQuery',
     'DashboardLayout',
     'DashboardPanelPosition',
     'DashboardQuery',
@@ -2991,6 +3033,9 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'QueryValidationPayload',
     'ListDataStoreVersionsQuery',
     'GetDataStoreTableQuery',
+    'GetDataStoreSchemaQuery',
+    'ListDataStoreSchemaHistoryQuery',
+    'CreateDataStoreDownloadUrlQuery',
     'DataIndex',
     'DataForeignKey',
     'DataColumnUpdate',
@@ -3100,6 +3145,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'CollectionChildrenUpdatePayload',
     'UpdateAgentArtifactContentResponse',
     'UpdateAgentArtifactContentPayload',
+    'TerminateAgentRunQuery',
     'TerminateAgentRunResponse',
     'AgentRunFeedbackPayload',
     'AgentRunFeedbackResponse',
@@ -3486,6 +3532,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'CatalogAgentSearchQuery',
     'CatalogCallSearchQuery',
     'ResolveInteractionQuery',
+    'DeleteInteractionQuery',
     'ExecuteNamedInteractionQuery',
     'GetRunQuery',
     'ExecuteInteractionByEndpointQuery',
@@ -3600,9 +3647,11 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'InCodeTypeRef',
     'StoredTypeRef',
     'DeleteAppVersionResponse',
+    'AppDeleteQuery',
     'AppDeleteSummary',
     'AppRepoBranch',
     'CreateAppRepoBranchRequest',
+    'AppRepoCommitsQuery',
     'AppRepoFileQuery',
     'AppRepoTreeQuery',
     'AppRepoDocumentCommit',

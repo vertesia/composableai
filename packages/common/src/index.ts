@@ -30,6 +30,7 @@ export * from './browser-credentials.js';
 export * from './common.js';
 export * from './content-query.js';
 export * from './cost-analytics.js';
+export * from './custom-roles.js';
 export * from './data-platform.js';
 export type {
     CreateDelegationGrantPayload,
@@ -125,3 +126,5 @@ export type * from './utils/type-helpers.js';
 export * from './versions.js';
 export * from './views.js';
 export * from './workflow-analytics.js';
+
+export type { WorkflowUsageClass, WorkflowUsageQuery, WorkflowUsageStanding } from './workflow-usage.js';

@@ -238,7 +238,7 @@ export type ApiKeyFromSchema = {
     id: string;
     name: string;
     type: (typeof ApiKeyTypes)['secret'];
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     maskedValue?: string | undefined;
     can_retrieve_value?: boolean | undefined;
     account: string;
@@ -259,7 +259,7 @@ export type ApiKeyWithValueFromSchema = {
     id: string;
     name: string;
     type: (typeof ApiKeyTypes)['secret'];
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     maskedValue?: string | undefined;
     can_retrieve_value?: boolean | undefined;
     account: string;
@@ -278,7 +278,7 @@ export type ApiKeyWithValueFromSchema = {
 };
 export type CreateApiKeyPayloadFromSchema = {
     name: string;
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     type?: (typeof ApiKeyTypes)['secret'] | undefined;
     expires_at?: string | undefined | undefined;
     scim_provisioning?: boolean | undefined;
@@ -288,7 +288,7 @@ export type CreateApiKeyPayloadFromSchema = {
 };
 export type UpdateApiKeyPayloadFromSchema = {
     name?: string | undefined;
-    role?: (typeof SystemRoles)[keyof typeof SystemRoles] | undefined;
+    role?: AssignableRoleName | undefined;
     enabled?: boolean | undefined;
     scim_provisioning?: boolean | undefined | undefined;
     properties?: Record<string, unknown> | undefined | undefined;
@@ -305,7 +305,7 @@ export type AuthTokenResponseFromSchema = {
 export type UserGroupArrayFromSchema = UserGroup[];
 export type UserInviteTokenDataFromSchema = {
     email: string;
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     account: AccountRef;
     project?: ProjectRef | undefined;
     invited_by: UserRefFromSchema;
@@ -322,7 +322,7 @@ export type UserInviteTokenFromSchema = {
 export type UserInviteTokenArrayFromSchema = UserInviteTokenFromSchema[];
 export type InviteUserRequestPayloadFromSchema = {
     email: string;
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
 };
 export type InviteUserResponsePayloadFromSchema = {
     action: 'invited' | 'added';
@@ -401,6 +401,7 @@ export type QuotaStandingAdmissionClassFromSchema = {
     tenant_active: number;
 };
 export type QuotaStandingResponseFromSchema = {
+    workflow_usage?: WorkflowUsageStanding | undefined;
     tenant_id: string;
     available: boolean;
     base_tier: string;
@@ -566,6 +567,15 @@ export type AppInstallationsQuery = {
 export type AppListScope = 'account' | 'project';
 export type AppsQuery = {
     scope?: AppListScope | undefined;
+};
+export type AppDeleteQuery = {
+    confirm?: boolean | undefined;
+};
+export type AppRepoCommitsQuery = {
+    path?: string | undefined;
+    ref?: string | undefined;
+    limit?: number | undefined;
+    cursor?: string | undefined;
 };
 export type ToolCollectionAuthType = 'none' | 'oauth' | 'api_key' | 'other';
 export type MCPOAuthConfig = {
@@ -2473,6 +2483,23 @@ export type CostRunPriceResponse = {
     pricing_source: 'list' | 'historical';
     matched_events: number;
 };
+export type CustomRoleDefinition = {
+    name: string;
+    title: string;
+    description?: string | undefined;
+    base_roles?: AssignableRoleName[] | undefined;
+    permissions: (typeof Permission)[keyof typeof Permission][];
+};
+export type CustomRoleDefinitionArray = CustomRoleDefinition[];
+export type PermissionArray = (typeof Permission)[keyof typeof Permission][];
+export type CreateCustomRolePayload = CustomRoleDefinition;
+export type UpdateCustomRolePayload = {
+    title?: string | undefined;
+    description?: string | undefined | undefined;
+    base_roles?: AssignableRoleName[] | undefined | undefined;
+    permissions?: (typeof Permission)[keyof typeof Permission][] | undefined;
+};
+export type AssignableRoleName = (typeof SystemRoles)[keyof typeof SystemRoles] | string;
 export type DataColumnType = (typeof DataColumnTypeValues)[keyof typeof DataColumnTypeValues];
 export type SemanticColumnType = (typeof SemanticColumnTypeValues)[keyof typeof SemanticColumnTypeValues];
 /**
@@ -2613,6 +2640,7 @@ export type DataStore = {
     storage_bytes: number;
     last_import_at?: string | undefined;
     version_count: number;
+    current_version?: string | undefined;
     schema: DataSchema;
     gcs_bucket: string;
     gcs_path: string;
@@ -2646,6 +2674,22 @@ export type ListDataStoreVersionsQuery = {
 };
 export type GetDataStoreTableQuery = {
     sample?: boolean | undefined;
+};
+export type GetDataStoreSchemaQuery = {
+    format?: 'full' | 'ai' | undefined;
+};
+export type ListDataStoreSchemaHistoryQuery = {
+    limit?: number | undefined;
+};
+export type CreateDataStoreDownloadUrlQuery = {
+    version_id?: string | undefined;
+};
+export type ListDashboardsQuery = {
+    status?: DashboardStatus | undefined;
+};
+export type ListDashboardVersionsQuery = {
+    limit?: number | undefined;
+    snapshots_only?: boolean | undefined;
 };
 export type ImportStatus = (typeof ImportStatusValues)[keyof typeof ImportStatusValues];
 /**
@@ -4142,6 +4186,9 @@ export type ResolveInteractionQuery = {
     inherit_model_config?: boolean | undefined;
     hasImage?: boolean | undefined;
     hasVideo?: boolean | undefined;
+};
+export type DeleteInteractionQuery = {
+    cascade?: boolean | undefined;
 };
 export type InCodePrompt = {
     role: (typeof PromptRole)[keyof typeof PromptRole];
@@ -6886,6 +6933,9 @@ export type BindRunWorkflowPayload = {
     status?: AgentRunStatus | undefined;
     activity_state?: ConversationActivityState | undefined;
 };
+export type TerminateAgentRunQuery = {
+    reason?: string | undefined;
+};
 export type TerminateAgentRunResponse = {
     message: string;
     reason?: string | undefined;
@@ -7969,6 +8019,7 @@ export type RenderMarkdownStatusResponse = {
     download_url?: string | undefined;
     file_uri?: string | undefined;
     error?: string | undefined;
+    warnings?: string[] | undefined;
 };
 export type RenderMarkdownStatusQuery = {
     workflow_id: string;
@@ -10041,6 +10092,44 @@ export type ViewExecutionResult = {
     navigation: ViewNavigationResultMap;
     took: number;
 };
+export type WorkflowUsageQuery = {
+    workflow_class?: string | undefined;
+};
+export type WorkflowUsageClass = {
+    workflow_class: string;
+    strategy: 'rate' | 'concurrency';
+    mode: 'active' | 'dry-run' | 'disabled';
+    available: boolean;
+    observed_at: string | null;
+    freshness: 'fresh' | 'stale' | 'unavailable';
+    start_window: {
+        limit: number;
+        window_ms: number;
+        used: number | null;
+    } | null;
+    occupancy: {
+        limit: number | null;
+        tenant_limit: number;
+        active: number | null;
+        tenant_active: number | null;
+    } | null;
+    backlog: {
+        pending: number | null;
+        deferred: number | null;
+        oldest_deferred_at: string | null;
+    };
+    actual_starts: {
+        count: number | null;
+        window_ms: number;
+    };
+};
+export type WorkflowUsageStanding = {
+    tenant_id: string;
+    available: boolean;
+    start_governance_enabled: boolean;
+    truncated: boolean;
+    classes: WorkflowUsageClass[];
+};
 export type AgentRunWire = {
     interaction: string;
     data?:
@@ -11129,6 +11218,11 @@ export type ProjectAppCapabilityPathParams = {
 };
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
+    CustomRoleDefinition: CustomRoleDefinition;
+    CustomRoleDefinitionArray: CustomRoleDefinitionArray;
+    CreateCustomRolePayload: CustomRoleDefinition;
+    UpdateCustomRolePayload: UpdateCustomRolePayload;
+    PermissionArray: PermissionArray;
     Account: AccountFromSchema;
     UpdateAccountPayload: UpdateAccountPayloadFromSchema;
     StripeBillingStatusResponse: StripeBillingStatusResponseFromSchema;
@@ -11391,6 +11485,7 @@ export interface ApiComponentTypes {
     InteractionSearchQuery: InteractionSearchQuery;
     InteractionListQuery: InteractionListQuery;
     ResolveInteractionQuery: ResolveInteractionQuery;
+    DeleteInteractionQuery: DeleteInteractionQuery;
     CatalogInteractionRef: CatalogInteractionRef;
     CatalogInteractionRefArray: CatalogInteractionRefArray;
     InCodeInteraction: InCodeInteraction;
@@ -11562,6 +11657,8 @@ export interface ApiComponentTypes {
     DashboardBulkIdsPayload: DashboardBulkIdsPayload;
     DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSource;
     DashboardVersionItemArray: DashboardVersionItemArray;
+    ListDashboardsQuery: ListDashboardsQuery;
+    ListDashboardVersionsQuery: ListDashboardVersionsQuery;
     DashboardItem: DashboardItem;
     DashboardPanel: DashboardPanel;
     DashboardDataSource: DashboardDataSource;
@@ -11579,6 +11676,9 @@ export interface ApiComponentTypes {
     QueryValidationPayload: QueryValidationPayload;
     ListDataStoreVersionsQuery: ListDataStoreVersionsQuery;
     GetDataStoreTableQuery: GetDataStoreTableQuery;
+    GetDataStoreSchemaQuery: GetDataStoreSchemaQuery;
+    ListDataStoreSchemaHistoryQuery: ListDataStoreSchemaHistoryQuery;
+    CreateDataStoreDownloadUrlQuery: CreateDataStoreDownloadUrlQuery;
     DataTableSemanticType: DataTableSemanticType;
     DataIndex: DataIndex;
     DataForeignKey: DataForeignKey;
@@ -11956,6 +12056,7 @@ export interface ApiComponentTypes {
     AgentRunArtifactUploadHeaders: AgentRunArtifactUploadHeaders;
     AgentRunArtifactQuery: AgentRunArtifactQuery;
     AgentRunArtifactsQuery: AgentRunArtifactsQuery;
+    TerminateAgentRunQuery: TerminateAgentRunQuery;
     TerminateAgentRunResponse: TerminateAgentRunResponse;
     SignalAgentPayload: SignalAgentPayloadWire;
     PostAgentRunUpdateResponse: PostAgentRunUpdateResponse;
@@ -12219,6 +12320,7 @@ export interface ApiComponentTypes {
     RunType: RunType;
     AppBuildProgressStatus: AppBuildProgressStatus;
     DeleteAppVersionResponse: DeleteAppVersionResponse;
+    AppDeleteQuery: AppDeleteQuery;
     AppDeleteSummary: AppDeleteSummary;
     AppRepoBranch: AppRepoBranch;
     CreateAppRepoBranchRequest: CreateAppRepoBranchRequest;
@@ -12254,6 +12356,7 @@ export interface ApiComponentTypes {
     AppRepoTree: AppRepoTree;
     AppRepoRefs: AppRepoRefs;
     AppRepoCommits: AppRepoCommits;
+    AppRepoCommitsQuery: AppRepoCommitsQuery;
     ContentObjectTypeRef: ContentObjectApiTypeRef;
     AppVersionLaunchTarget: AppVersionLaunchTarget;
     AppVersionLaunchTargetArray: AppVersionLaunchTargetArray;
@@ -12421,4 +12524,7 @@ export interface ApiComponentTypes {
     DelegationGrantPathParams: DelegationGrantPathParams;
     OAuthProviderPathParams: OAuthProviderPathParams;
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
+    WorkflowUsageQuery: WorkflowUsageQuery;
+    WorkflowUsageClass: WorkflowUsageClass;
+    WorkflowUsageStanding: WorkflowUsageStanding;
 }

@@ -69,6 +69,8 @@ export interface ExecuteInteractionByEndpointHeaders {
 
 export type ResolveInteractionQuery = Wire.ResolveInteractionQuery;
 
+export type DeleteInteractionQuery = Wire.DeleteInteractionQuery;
+
 export type InCodePrompt = Wire.InCodePrompt;
 export type InCodeInteraction = Wire.InCodeInteraction;
 export type ResolvedCatalogInteraction = Wire.ResolvedCatalogInteraction;

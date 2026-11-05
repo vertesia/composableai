@@ -45,6 +45,8 @@ export class RequestError extends Error {
     displayDetails: boolean;
     original_message: string;
     rateLimit?: RateLimitMetadata;
+    /** Typed quota-backend outage; distinct from customer pacing/quota exhaustion. */
+    dependencyUnavailable?: { retryAfterMs: number };
     /** Retry timing supplied by an upstream service, including untyped provider 429 responses. */
     retryAfterMs?: number;
     constructor(

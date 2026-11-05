@@ -2534,6 +2534,19 @@ export const ExecuteInteractionByEndpointHeadersSchema = z
     })
     .meta({ id: 'ExecuteInteractionByEndpointHeaders' });
 
+export const DeleteInteractionQuerySchema = z
+    .strictObject({
+        cascade: z
+            .boolean()
+            .meta({
+                description:
+                    "Set to true on a draft to also delete its published versions. A cascade never deletes a version's " +
+                    'draft, sibling versions, or forks.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'DeleteInteractionQuery' });
+
 export const ResolveInteractionQuerySchema = z
     .strictObject({
         environment: z.string().optional(),

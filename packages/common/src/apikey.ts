@@ -1,6 +1,6 @@
 import type { PropertyConditions } from './access-control.js';
 import type { UserGroupRef } from './group.js';
-import type { ProjectRef, SystemRoles } from './project.js';
+import type { ProjectRef } from './project.js';
 import type { AccountRef } from './user.js';
 import type * as Wire from './wire-types.generated.js';
 
@@ -84,11 +84,13 @@ export interface AuthTokenPayload {
     type: PrincipalType;
     account: AccountRef;
 
-    account_roles: SystemRoles[];
+    /** Assigned built-in names or c:<name> references. Authorization uses account_permissions. */
+    account_roles: string[];
     accounts: AccountRef[];
 
     project?: ProjectRef;
-    project_roles?: SystemRoles[];
+    /** Assigned built-in names or c:<name> references. Authorization uses permissions. */
+    project_roles?: string[];
 
     /**
      * The app names enabled for this token. Defaults to an empty array if no apps are enabled.

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DataColumnType, DataStoreStatus, ImportStatus, SemanticColumnType } from '../data-platform.js';
 import { NumberValueMapSchema } from './interaction.js';
+import { PageCountSchema } from './schema-primitives.js';
 
 export const QueryValidationErrorSchema = z
     .strictObject({
@@ -21,6 +22,32 @@ export const GetDataStoreTableQuerySchema = z
         sample: z.boolean().optional(),
     })
     .meta({ id: 'GetDataStoreTableQuery' });
+
+export const GetDataStoreSchemaQuerySchema = z
+    .strictObject({
+        format: z
+            .enum(['full', 'ai'])
+            .meta({ description: '`ai` returns a condensed schema for AI context. Defaults to `full`.' })
+            .optional(),
+    })
+    .meta({ id: 'GetDataStoreSchemaQuery' });
+
+export const ListDataStoreSchemaHistoryQuerySchema = z
+    .strictObject({
+        limit: PageCountSchema.meta({
+            description: 'Maximum number of versions to return. Defaults to 50.',
+        }).optional(),
+    })
+    .meta({ id: 'ListDataStoreSchemaHistoryQuery' });
+
+export const CreateDataStoreDownloadUrlQuerySchema = z
+    .strictObject({
+        version_id: z
+            .string()
+            .meta({ description: 'The stored version or snapshot to download. Defaults to the current database.' })
+            .optional(),
+    })
+    .meta({ id: 'CreateDataStoreDownloadUrlQuery' });
 
 export const QueryValidationPayloadSchema = z
     .strictObject({
@@ -588,6 +615,13 @@ export const DataStoreSchema = z
         storage_bytes: z.number().meta({ description: 'Storage size in bytes' }),
         last_import_at: z.string().meta({ description: 'Last import timestamp' }).optional(),
         version_count: z.number().meta({ description: 'Number of versions stored' }),
+        current_version: z
+            .string()
+            .meta({
+                description:
+                    'ID of the version this store serves. Automatic version records expire, so this version can be missing from the version list while its data stays readable. Absent on a store not written to since immutable versions were introduced.',
+            })
+            .optional(),
         schema: DataSchemaSchema.meta({ description: 'Complete schema definition' }),
         gcs_bucket: z.string().meta({ description: 'GCS bucket name' }),
         gcs_path: z.string().meta({ description: 'Path prefix within the bucket' }),

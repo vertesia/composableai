@@ -1,5 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import http from 'node:http';
+import type { AddressInfo } from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { MockActivityEnvironment } from '@temporalio/testing';
@@ -51,6 +53,51 @@ describe('markdownWithPandoc', () => {
             expect(fs.existsSync(html)).toBe(true);
         } finally {
             fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it.each([
+        { fromFormat: 'odt', ext: 'odt' },
+        { fromFormat: 'rtf', ext: 'rtf' },
+    ])('converts $fromFormat with its text, table and embedded image intact', async ({ fromFormat, ext }) => {
+        const dir = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'pandoc-test-'));
+        try {
+            const image =
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+            fs.writeFileSync(path.join(dir, 'pixel.png'), Buffer.from(image, 'base64'));
+            fs.writeFileSync(path.join(dir, 'src.md'), '# Title\n\n| a |\n|---|\n| 1 |\n\n![alt](pixel.png)\n');
+            const document = path.join(dir, `document.${ext}`);
+            const made = spawnSync('pandoc', ['-s', 'src.md', '-o', document], { cwd: dir });
+            expect(made.status).toBe(0);
+
+            const result = await activityContext.run(markdownWithPandoc, document, fromFormat);
+
+            expect(result).toBe(pandocFromStdin(document, fromFormat));
+            expect(result).toContain('Title');
+        } finally {
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it('does not fetch a resource the document references', async () => {
+        const requests: (string | undefined)[] = [];
+        const server = http.createServer((request, response) => {
+            requests.push(request.url);
+            response.setHeader('Content-Type', 'text/html');
+            response.end('<p>fetched</p>');
+        });
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+        const { port } = server.address() as AddressInfo;
+        const html = `<p>before</p><iframe src="http://127.0.0.1:${port}/frame"></iframe><p>after</p>`;
+        try {
+            const result = await activityContext.run(markdownWithPandoc, Buffer.from(html), 'html');
+
+            expect(requests).toEqual([]);
+            expect(result).toContain('before');
+            expect(result).toContain('after');
+            expect(result).not.toContain('fetched');
+        } finally {
+            await new Promise((resolve) => server.close(resolve));
         }
     });
 });

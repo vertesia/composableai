@@ -15,6 +15,11 @@ describe('getProductionAppUrl', () => {
         expect(getProductionAppUrl('dev1')).toBe('https://cloud.us1.vertesia.io/');
     });
 
+    it('prefers the URL a deployment on its own domain states over its region', () => {
+        expect(getProductionAppUrl('region1', 'https://app.example.com')).toBe('https://app.example.com/');
+        expect(getProductionAppUrl(undefined, 'https://app.example.com/')).toBe('https://app.example.com/');
+    });
+
     it('falls back to the canonical non-regional site when the region is unknown', () => {
         expect(getProductionAppUrl(undefined)).toBe('https://cloud.vertesia.io/');
         expect(getProductionAppUrl('')).toBe('https://cloud.vertesia.io/');
