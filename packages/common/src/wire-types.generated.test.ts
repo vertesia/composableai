@@ -300,6 +300,14 @@ interface Checks {
     >;
     AppListScope: Same<W.AppListScope, z.infer<typeof import('./api-schemas/app-lifecycle.js').AppListScopeSchema>>;
     AppsQuery: Same<W.AppsQuery, z.infer<typeof import('./api-schemas/app-lifecycle.js').AppsQuerySchema>>;
+    AppDeleteQuery: Same<
+        W.AppDeleteQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeleteQuerySchema>
+    >;
+    AppRepoCommitsQuery: Same<
+        W.AppRepoCommitsQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoCommitsQuerySchema>
+    >;
     ToolCollectionAuthType: Same<
         W.ToolCollectionAuthType,
         z.infer<typeof import('./api-schemas/apps.js').ToolCollectionAuthTypeSchema>
@@ -1124,6 +1132,26 @@ interface Checks {
         W.GetDataStoreTableQuery,
         z.infer<typeof import('./api-schemas/data-store.js').GetDataStoreTableQuerySchema>
     >;
+    GetDataStoreSchemaQuery: Same<
+        W.GetDataStoreSchemaQuery,
+        z.infer<typeof import('./api-schemas/data-store.js').GetDataStoreSchemaQuerySchema>
+    >;
+    ListDataStoreSchemaHistoryQuery: Same<
+        W.ListDataStoreSchemaHistoryQuery,
+        z.infer<typeof import('./api-schemas/data-store.js').ListDataStoreSchemaHistoryQuerySchema>
+    >;
+    CreateDataStoreDownloadUrlQuery: Same<
+        W.CreateDataStoreDownloadUrlQuery,
+        z.infer<typeof import('./api-schemas/data-store.js').CreateDataStoreDownloadUrlQuerySchema>
+    >;
+    ListDashboardsQuery: Same<
+        W.ListDashboardsQuery,
+        z.infer<typeof import('./api-schemas/dashboard.js').ListDashboardsQuerySchema>
+    >;
+    ListDashboardVersionsQuery: Same<
+        W.ListDashboardVersionsQuery,
+        z.infer<typeof import('./api-schemas/dashboard.js').ListDashboardVersionsQuerySchema>
+    >;
     ImportStatus: Same<W.ImportStatus, z.infer<typeof import('./api-schemas/data-store.js').ImportStatusSchema>>;
     ImportJob: Same<W.ImportJob, z.infer<typeof import('./api-schemas/data-store.js').ImportJobSchema>>;
     CreateDataStorePayload: Same<
@@ -1750,6 +1778,10 @@ interface Checks {
     ResolveInteractionQuery: Same<
         W.ResolveInteractionQuery,
         z.infer<typeof import('./api-schemas/interaction.js').ResolveInteractionQuerySchema>
+    >;
+    DeleteInteractionQuery: Same<
+        W.DeleteInteractionQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').DeleteInteractionQuerySchema>
     >;
     InCodePrompt: Same<W.InCodePrompt, z.infer<typeof import('./api-schemas/interaction.js').InCodePromptSchema>>;
     InCodeInteraction: Same<
@@ -2777,6 +2809,10 @@ interface Checks {
     BindRunWorkflowPayload: Same<
         W.BindRunWorkflowPayload,
         z.infer<typeof import('./api-schemas/workflow-runs.js').BindRunWorkflowPayloadSchema>
+    >;
+    TerminateAgentRunQuery: Same<
+        W.TerminateAgentRunQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').TerminateAgentRunQuerySchema>
     >;
     TerminateAgentRunResponse: Same<
         W.TerminateAgentRunResponse,
@@ -5866,6 +5902,10 @@ interface Checks {
         W.ApiComponentTypes['ResolveInteractionQuery'],
         z.infer<typeof import('./api-schemas/interaction.js').ResolveInteractionQuerySchema>
     >;
+    'component:DeleteInteractionQuery': Same<
+        W.ApiComponentTypes['DeleteInteractionQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').DeleteInteractionQuerySchema>
+    >;
     'component:CatalogInteractionRef': Same<
         W.ApiComponentTypes['CatalogInteractionRef'],
         z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefSchema>
@@ -6527,6 +6567,14 @@ interface Checks {
         W.ApiComponentTypes['DashboardVersionItemArray'],
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersionItemArraySchema>
     >;
+    'component:ListDashboardsQuery': Same<
+        W.ApiComponentTypes['ListDashboardsQuery'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ListDashboardsQuerySchema>
+    >;
+    'component:ListDashboardVersionsQuery': Same<
+        W.ApiComponentTypes['ListDashboardVersionsQuery'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ListDashboardVersionsQuerySchema>
+    >;
     'component:DashboardItem': Same<
         W.ApiComponentTypes['DashboardItem'],
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardItemSchema>
@@ -6594,6 +6642,18 @@ interface Checks {
     'component:GetDataStoreTableQuery': Same<
         W.ApiComponentTypes['GetDataStoreTableQuery'],
         z.infer<typeof import('./api-schemas/data-store.js').GetDataStoreTableQuerySchema>
+    >;
+    'component:GetDataStoreSchemaQuery': Same<
+        W.ApiComponentTypes['GetDataStoreSchemaQuery'],
+        z.infer<typeof import('./api-schemas/data-store.js').GetDataStoreSchemaQuerySchema>
+    >;
+    'component:ListDataStoreSchemaHistoryQuery': Same<
+        W.ApiComponentTypes['ListDataStoreSchemaHistoryQuery'],
+        z.infer<typeof import('./api-schemas/data-store.js').ListDataStoreSchemaHistoryQuerySchema>
+    >;
+    'component:CreateDataStoreDownloadUrlQuery': Same<
+        W.ApiComponentTypes['CreateDataStoreDownloadUrlQuery'],
+        z.infer<typeof import('./api-schemas/data-store.js').CreateDataStoreDownloadUrlQuerySchema>
     >;
     'component:DataTableSemanticType': Same<
         W.ApiComponentTypes['DataTableSemanticType'],
@@ -8103,6 +8163,10 @@ interface Checks {
         W.ApiComponentTypes['AgentRunArtifactsQuery'],
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunArtifactsQuerySchema>
     >;
+    'component:TerminateAgentRunQuery': Same<
+        W.ApiComponentTypes['TerminateAgentRunQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').TerminateAgentRunQuerySchema>
+    >;
     'component:TerminateAgentRunResponse': Same<
         W.ApiComponentTypes['TerminateAgentRunResponse'],
         z.infer<typeof import('./api-schemas/agent-runs.js').TerminateAgentRunResponseSchema>
@@ -9155,6 +9219,10 @@ interface Checks {
         W.ApiComponentTypes['DeleteAppVersionResponse'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').DeleteAppVersionResponseSchema>
     >;
+    'component:AppDeleteQuery': Same<
+        W.ApiComponentTypes['AppDeleteQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeleteQuerySchema>
+    >;
     'component:AppDeleteSummary': Same<
         W.ApiComponentTypes['AppDeleteSummary'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeleteSummarySchema>
@@ -9294,6 +9362,10 @@ interface Checks {
     'component:AppRepoCommits': Same<
         W.ApiComponentTypes['AppRepoCommits'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoCommitsSchema>
+    >;
+    'component:AppRepoCommitsQuery': Same<
+        W.ApiComponentTypes['AppRepoCommitsQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoCommitsQuerySchema>
     >;
     'component:ContentObjectTypeRef': Same<
         W.ApiComponentTypes['ContentObjectTypeRef'],
@@ -10064,6 +10136,8 @@ const checks: Checks = {
     AppInstallationsQuery: true,
     AppListScope: true,
     AppsQuery: true,
+    AppDeleteQuery: true,
+    AppRepoCommitsQuery: true,
     ToolCollectionAuthType: true,
     MCPOAuthConfig: true,
     MCPApiKeyConfig: true,
@@ -10294,6 +10368,11 @@ const checks: Checks = {
     DataStoreVersion: true,
     ListDataStoreVersionsQuery: true,
     GetDataStoreTableQuery: true,
+    GetDataStoreSchemaQuery: true,
+    ListDataStoreSchemaHistoryQuery: true,
+    CreateDataStoreDownloadUrlQuery: true,
+    ListDashboardsQuery: true,
+    ListDashboardVersionsQuery: true,
     ImportStatus: true,
     ImportJob: true,
     CreateDataStorePayload: true,
@@ -10462,6 +10541,7 @@ const checks: Checks = {
     GetRunQuery: true,
     ExecuteInteractionByEndpointQuery: true,
     ResolveInteractionQuery: true,
+    DeleteInteractionQuery: true,
     InCodePrompt: true,
     InCodeInteraction: true,
     ResolvedCatalogInteraction: true,
@@ -10742,6 +10822,7 @@ const checks: Checks = {
     ProcessRunType: true,
     ProcessRunConfig: true,
     BindRunWorkflowPayload: true,
+    TerminateAgentRunQuery: true,
     TerminateAgentRunResponse: true,
     AgentRunFeedbackRating: true,
     AgentRunFeedbackReasonCode: true,
@@ -11574,6 +11655,7 @@ const checks: Checks = {
     'component:InteractionSearchQuery': true,
     'component:InteractionListQuery': true,
     'component:ResolveInteractionQuery': true,
+    'component:DeleteInteractionQuery': true,
     'component:CatalogInteractionRef': true,
     'component:CatalogInteractionRefArray': true,
     'component:InCodeInteraction': true,
@@ -11740,6 +11822,8 @@ const checks: Checks = {
     'component:DashboardBulkIdsPayload': true,
     'component:DashboardStoreElasticsearchDataSource': true,
     'component:DashboardVersionItemArray': true,
+    'component:ListDashboardsQuery': true,
+    'component:ListDashboardVersionsQuery': true,
     'component:DashboardItem': true,
     'component:DashboardPanel': true,
     'component:DashboardDataSource': true,
@@ -11757,6 +11841,9 @@ const checks: Checks = {
     'component:QueryValidationPayload': true,
     'component:ListDataStoreVersionsQuery': true,
     'component:GetDataStoreTableQuery': true,
+    'component:GetDataStoreSchemaQuery': true,
+    'component:ListDataStoreSchemaHistoryQuery': true,
+    'component:CreateDataStoreDownloadUrlQuery': true,
     'component:DataTableSemanticType': true,
     'component:DataIndex': true,
     'component:DataForeignKey': true,
@@ -12134,6 +12221,7 @@ const checks: Checks = {
     'component:AgentRunArtifactUploadHeaders': true,
     'component:AgentRunArtifactQuery': true,
     'component:AgentRunArtifactsQuery': true,
+    'component:TerminateAgentRunQuery': true,
     'component:TerminateAgentRunResponse': true,
     'component:SignalAgentPayload': true,
     'component:PostAgentRunUpdateResponse': true,
@@ -12397,6 +12485,7 @@ const checks: Checks = {
     'component:RunType': true,
     'component:AppBuildProgressStatus': true,
     'component:DeleteAppVersionResponse': true,
+    'component:AppDeleteQuery': true,
     'component:AppDeleteSummary': true,
     'component:AppRepoBranch': true,
     'component:CreateAppRepoBranchRequest': true,
@@ -12432,6 +12521,7 @@ const checks: Checks = {
     'component:AppRepoTree': true,
     'component:AppRepoRefs': true,
     'component:AppRepoCommits': true,
+    'component:AppRepoCommitsQuery': true,
     'component:ContentObjectTypeRef': true,
     'component:AppVersionLaunchTarget': true,
     'component:AppVersionLaunchTargetArray': true,
@@ -12607,6 +12697,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2623);
+        expect(Object.keys(checks)).toHaveLength(2641);
     });
 });

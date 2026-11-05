@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DataColumnType, DataStoreStatus, ImportStatus, SemanticColumnType } from '../data-platform.js';
 import { NumberValueMapSchema } from './interaction.js';
+import { PageCountSchema } from './schema-primitives.js';
 
 export const QueryValidationErrorSchema = z
     .strictObject({
@@ -21,6 +22,32 @@ export const GetDataStoreTableQuerySchema = z
         sample: z.boolean().optional(),
     })
     .meta({ id: 'GetDataStoreTableQuery' });
+
+export const GetDataStoreSchemaQuerySchema = z
+    .strictObject({
+        format: z
+            .enum(['full', 'ai'])
+            .meta({ description: '`ai` returns a condensed schema for AI context. Defaults to `full`.' })
+            .optional(),
+    })
+    .meta({ id: 'GetDataStoreSchemaQuery' });
+
+export const ListDataStoreSchemaHistoryQuerySchema = z
+    .strictObject({
+        limit: PageCountSchema.meta({
+            description: 'Maximum number of versions to return. Defaults to 50.',
+        }).optional(),
+    })
+    .meta({ id: 'ListDataStoreSchemaHistoryQuery' });
+
+export const CreateDataStoreDownloadUrlQuerySchema = z
+    .strictObject({
+        version_id: z
+            .string()
+            .meta({ description: 'The stored version or snapshot to download. Defaults to the current database.' })
+            .optional(),
+    })
+    .meta({ id: 'CreateDataStoreDownloadUrlQuery' });
 
 export const QueryValidationPayloadSchema = z
     .strictObject({

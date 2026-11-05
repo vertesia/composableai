@@ -71,6 +71,10 @@ export type AppListScope = Wire.AppListScope;
 
 export type AppsQuery = Wire.AppsQuery;
 
+export type AppDeleteQuery = Wire.AppDeleteQuery;
+
+export type AppRepoCommitsQuery = Wire.AppRepoCommitsQuery;
+
 export type ToolCollectionAuthType = Wire.ToolCollectionAuthType;
 
 export type MCPOAuthConfig = Wire.MCPOAuthConfig;
