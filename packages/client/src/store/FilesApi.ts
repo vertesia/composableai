@@ -1,9 +1,14 @@
-import { ApiTopic, type ClientBase, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
+import { ApiTopic, type ClientBase, type IRequestRetryPolicy, RequestError } from '@vertesia/api-fetch-client';
 import type {
+    AbortUploadSessionPayload,
+    AbortUploadSessionResponse,
     BucketCreateAccessStatusResponse,
     BucketReadAccessStatusResponse,
     BulkUploadUrlsPayload,
     BulkUploadUrlsResponse,
+    CompleteUploadSessionPayload,
+    CompleteUploadSessionResponse,
+    CreateUploadSessionPayload,
     DeleteFileResult,
     EnsureBucketCreateAccessPayload,
     EnsureBucketCreateAccessResponse,
@@ -15,12 +20,16 @@ import type {
     FileMetadataUpdateResult,
     GetFileUrlPayload,
     GetFileUrlResponse,
+    GetUploadPartUrlsPayload,
     GetUploadUrlPayload,
     SetFileMetadataPayload,
+    UploadPartUrlsResponse,
+    UploadSession,
 } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
+import { partsAsUploadBody, planUpload, UploadSessionUnavailableError, uploadInParts } from './chunked-upload.js';
 import { fetchSignedUrl } from './signed-url.js';
-import { getUploadBody, uploadHeaders } from './upload-body.js';
+import { type UploadBody, uploadHeaders } from './upload-body.js';
 import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 
 export const MEMORIES_PREFIX = 'memories';
@@ -157,6 +166,29 @@ export class FilesApi extends ApiTopic {
         });
     }
 
+    /**
+     * Start an upload in parts, for content too large for one signed PUT. The upload methods of this API use it
+     * for stream sources longer than one part; call it directly only to drive the store's protocol yourself.
+     */
+    createUploadSession(payload: CreateUploadSessionPayload): Promise<UploadSession> {
+        return this.post('/upload-sessions', { payload, retryPolicy: FILE_SIGNING_RETRY_POLICY });
+    }
+
+    /** Signed URLs for parts of an `s3_multipart` upload session. */
+    getUploadPartUrls(payload: GetUploadPartUrlsPayload): Promise<UploadPartUrlsResponse> {
+        return this.post('/upload-sessions/parts', { payload, retryPolicy: FILE_SIGNING_RETRY_POLICY });
+    }
+
+    /** Assemble the uploaded parts of an `s3_multipart` upload session into the file. */
+    completeUploadSession(payload: CompleteUploadSessionPayload): Promise<CompleteUploadSessionResponse> {
+        return this.post('/upload-sessions/complete', { payload });
+    }
+
+    /** Discard an unfinished `s3_multipart` upload session and its parts. */
+    abortUploadSession(payload: AbortUploadSessionPayload): Promise<AbortUploadSessionResponse> {
+        return this.post('/upload-sessions/abort', { payload, retryPolicy: FILE_SIGNING_RETRY_POLICY });
+    }
+
     // Strictly typed: provide either simple args or a full payload via a separate method
     getDownloadUrl(file: string, name?: string, disposition?: 'inline' | 'attachment'): Promise<GetFileUrlResponse> {
         const payload: GetFileUrlPayload = { file, name, disposition };
@@ -203,22 +235,12 @@ export class FilesApi extends ApiTopic {
             await Promise.all(
                 batch.map(async (source, j) => {
                     const idx = i + j;
-                    const { url, id, mime_type } = files[idx];
-                    const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
-
-                    const upload = await getUploadBody(source);
-                    const res = await fetchSignedUrl(url, {
-                        method: 'PUT',
-                        body: upload.body,
-                        headers: uploadHeaders(upload, sourceMimeType),
-                    });
-
-                    if (!res.ok) {
-                        throw new Error(`Failed to upload file ${source.name}: ${res.statusText}`);
-                    }
-
-                    const etag = res.headers.get('etag')?.replace(/^"(.*)"$/, '$1');
-                    results[idx] = { source: id, name: source.name, type: sourceMimeType, etag };
+                    const { id, mime_type, etag } = await this.uploadContent(
+                        source,
+                        fileDescriptors[idx],
+                        async () => files[idx],
+                    );
+                    results[idx] = { source: id, name: source.name, type: mime_type, etag };
                 }),
             );
         }
@@ -253,14 +275,60 @@ export class FilesApi extends ApiTopic {
         fileId: string | undefined,
         name: string,
     ): Promise<{ id: string; path: string }> {
-        const { url, id, path, mime_type } = await this.getUploadUrl({
-            id: fileId,
-            name,
-            mime_type: getUploadMimeTypeHint(source.type),
-        });
-        const sourceMimeType = resolveUploadMimeType(source.type, mime_type) || 'application/gzip';
+        const { id, path } = await this.uploadContent(
+            source,
+            { id: fileId, name, mime_type: getUploadMimeTypeHint(source.type) },
+            undefined,
+            'application/gzip',
+        );
+        return { id, path };
+    }
 
-        const upload = await getUploadBody(source);
+    /**
+     * Upload a source to the file `request` names: in one signed PUT, or, for a stream source longer than one part
+     * in Node.js, in parts through an upload session (see `chunked-upload.ts`).
+     *
+     * @param signUpload the signed PUT URL to use, when the caller already has one or signs it another way
+     * @param fallbackMimeType the content type when neither the source nor the server names one
+     * @internal used by the upload methods of this API and of `ObjectsApi`
+     */
+    async uploadContent(
+        source: StreamSource | File,
+        request: CreateUploadSessionPayload,
+        signUpload: () => Promise<GetFileUrlResponse> = () => this.getUploadUrl(request),
+        fallbackMimeType?: string,
+    ): Promise<{ id: string; path: string; mime_type?: string; etag?: string }> {
+        const plan = await planUpload(source);
+        let upload: UploadBody;
+        if (plan.kind === 'parts') {
+            const session = await this.createUploadSession(request).catch((err: unknown) => {
+                // A server without upload sessions, or whose storage has none.
+                if (err instanceof RequestError && (err.status === 404 || err.status === 501)) return undefined;
+                throw err;
+            });
+            if (!session) {
+                console.warn(`Upload sessions are not available; uploading ${request.name} in a single request`);
+                upload = partsAsUploadBody(plan.parts);
+            } else {
+                try {
+                    const etag = await uploadInParts(this, session, plan.parts);
+                    const mime_type = resolveUploadMimeType(source.type, session.mime_type) || fallbackMimeType;
+                    return { id: session.id, path: session.path, mime_type, etag };
+                } catch (err: unknown) {
+                    if (!(err instanceof UploadSessionUnavailableError)) {
+                        console.error('Failed to upload file', { err: sanitizedErrorCause(err), id: session.id });
+                        throw err;
+                    }
+                    console.warn(`${err.message}; uploading ${session.path} in a single request instead`);
+                    upload = partsAsUploadBody(plan.parts);
+                }
+            }
+        } else {
+            upload = plan.upload;
+        }
+
+        const { url, id, path, mime_type } = await signUpload();
+        const sourceMimeType = resolveUploadMimeType(source.type, mime_type) || fallbackMimeType;
         const res = await fetchSignedUrl(url, {
             method: 'PUT',
             body: upload.body,
@@ -277,10 +345,15 @@ export class FilesApi extends ApiTopic {
                 id,
                 path,
             });
-            throw new Error(`Failed to upload file: ${res.statusText}`);
+            throw new Error(`Failed to upload file ${source.name}: ${res.statusText}`);
         }
 
-        return { id, path };
+        //Etag need to be unquoted
+        //When a server returns an ETag header, it includes the quotes around the actual hash value.
+        //This is part of the HTTP specification (RFC 7232), which states that ETags should be
+        //enclosed in double quotes.
+        const etag = res.headers.get('etag')?.replace(/^"(.*)"$/, '$1');
+        return { id, path, mime_type: sourceMimeType, etag };
     }
 
     /**

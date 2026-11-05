@@ -41,7 +41,7 @@ function declaredLength(headers: Record<string, string>): number | undefined {
  * completes `length` is held until the source ends, so the server never receives a complete body from a stream
  * that turns out to be longer.
  */
-function exactLength(length: number, TransformClass: typeof import('node:stream').Transform) {
+export function exactLength(length: number, TransformClass: typeof import('node:stream').Transform) {
     let seen = 0;
     let last: Buffer | undefined;
     return new TransformClass({

@@ -3615,6 +3615,52 @@ interface Checks {
         W.BulkUploadUrlsResponse,
         z.infer<typeof import('./api-schemas/files.js').BulkUploadUrlsResponseSchema>
     >;
+    CreateUploadSessionPayload: Same<
+        W.CreateUploadSessionPayload,
+        z.infer<typeof import('./api-schemas/files.js').CreateUploadSessionPayloadSchema>
+    >;
+    GcsResumableUploadSession: Same<
+        W.GcsResumableUploadSession,
+        z.infer<typeof import('./api-schemas/files.js').GcsResumableUploadSessionSchema>
+    >;
+    AzureBlockBlobUploadSession: Same<
+        W.AzureBlockBlobUploadSession,
+        z.infer<typeof import('./api-schemas/files.js').AzureBlockBlobUploadSessionSchema>
+    >;
+    S3MultipartUploadSession: Same<
+        W.S3MultipartUploadSession,
+        z.infer<typeof import('./api-schemas/files.js').S3MultipartUploadSessionSchema>
+    >;
+    UploadSession: Same<W.UploadSession, z.infer<typeof import('./api-schemas/files.js').UploadSessionSchema>>;
+    GetUploadPartUrlsPayload: Same<
+        W.GetUploadPartUrlsPayload,
+        z.infer<typeof import('./api-schemas/files.js').GetUploadPartUrlsPayloadSchema>
+    >;
+    UploadPartUrl: Same<W.UploadPartUrl, z.infer<typeof import('./api-schemas/files.js').UploadPartUrlSchema>>;
+    UploadPartUrlsResponse: Same<
+        W.UploadPartUrlsResponse,
+        z.infer<typeof import('./api-schemas/files.js').UploadPartUrlsResponseSchema>
+    >;
+    CompletedUploadPart: Same<
+        W.CompletedUploadPart,
+        z.infer<typeof import('./api-schemas/files.js').CompletedUploadPartSchema>
+    >;
+    CompleteUploadSessionPayload: Same<
+        W.CompleteUploadSessionPayload,
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionPayloadSchema>
+    >;
+    CompleteUploadSessionResponse: Same<
+        W.CompleteUploadSessionResponse,
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionResponseSchema>
+    >;
+    AbortUploadSessionPayload: Same<
+        W.AbortUploadSessionPayload,
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionPayloadSchema>
+    >;
+    AbortUploadSessionResponse: Same<
+        W.AbortUploadSessionResponse,
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionResponseSchema>
+    >;
     FileBucketResponse: Same<
         W.FileBucketResponse,
         z.infer<typeof import('./api-schemas/files.js').FileBucketResponseSchema>
@@ -6385,6 +6431,58 @@ interface Checks {
     'component:EnsureBucketCreateAccessResponse': Same<
         W.ApiComponentTypes['EnsureBucketCreateAccessResponse'],
         z.infer<typeof import('./api-schemas/files.js').EnsureBucketCreateAccessResponseSchema>
+    >;
+    'component:AbortUploadSessionPayload': Same<
+        W.ApiComponentTypes['AbortUploadSessionPayload'],
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionPayloadSchema>
+    >;
+    'component:AbortUploadSessionResponse': Same<
+        W.ApiComponentTypes['AbortUploadSessionResponse'],
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionResponseSchema>
+    >;
+    'component:AzureBlockBlobUploadSession': Same<
+        W.ApiComponentTypes['AzureBlockBlobUploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').AzureBlockBlobUploadSessionSchema>
+    >;
+    'component:CompletedUploadPart': Same<
+        W.ApiComponentTypes['CompletedUploadPart'],
+        z.infer<typeof import('./api-schemas/files.js').CompletedUploadPartSchema>
+    >;
+    'component:CompleteUploadSessionPayload': Same<
+        W.ApiComponentTypes['CompleteUploadSessionPayload'],
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionPayloadSchema>
+    >;
+    'component:CompleteUploadSessionResponse': Same<
+        W.ApiComponentTypes['CompleteUploadSessionResponse'],
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionResponseSchema>
+    >;
+    'component:CreateUploadSessionPayload': Same<
+        W.ApiComponentTypes['CreateUploadSessionPayload'],
+        z.infer<typeof import('./api-schemas/files.js').CreateUploadSessionPayloadSchema>
+    >;
+    'component:GcsResumableUploadSession': Same<
+        W.ApiComponentTypes['GcsResumableUploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').GcsResumableUploadSessionSchema>
+    >;
+    'component:GetUploadPartUrlsPayload': Same<
+        W.ApiComponentTypes['GetUploadPartUrlsPayload'],
+        z.infer<typeof import('./api-schemas/files.js').GetUploadPartUrlsPayloadSchema>
+    >;
+    'component:S3MultipartUploadSession': Same<
+        W.ApiComponentTypes['S3MultipartUploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').S3MultipartUploadSessionSchema>
+    >;
+    'component:UploadPartUrl': Same<
+        W.ApiComponentTypes['UploadPartUrl'],
+        z.infer<typeof import('./api-schemas/files.js').UploadPartUrlSchema>
+    >;
+    'component:UploadPartUrlsResponse': Same<
+        W.ApiComponentTypes['UploadPartUrlsResponse'],
+        z.infer<typeof import('./api-schemas/files.js').UploadPartUrlsResponseSchema>
+    >;
+    'component:UploadSession': Same<
+        W.ApiComponentTypes['UploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').UploadSessionSchema>
     >;
     'component:TaskFieldType': Same<
         W.ApiComponentTypes['TaskFieldType'],
@@ -11036,6 +11134,19 @@ const checks: Checks = {
     FileMetadataUpdateResult: true,
     BulkUploadUrlsPayload: true,
     BulkUploadUrlsResponse: true,
+    CreateUploadSessionPayload: true,
+    GcsResumableUploadSession: true,
+    AzureBlockBlobUploadSession: true,
+    S3MultipartUploadSession: true,
+    UploadSession: true,
+    GetUploadPartUrlsPayload: true,
+    UploadPartUrl: true,
+    UploadPartUrlsResponse: true,
+    CompletedUploadPart: true,
+    CompleteUploadSessionPayload: true,
+    CompleteUploadSessionResponse: true,
+    AbortUploadSessionPayload: true,
+    AbortUploadSessionResponse: true,
     FileBucketResponse: true,
     FileListResponse: true,
     FileMetadataQuery: true,
@@ -11776,6 +11887,19 @@ const checks: Checks = {
     'component:BucketCreateAccessStatusResponse': true,
     'component:EnsureBucketCreateAccessPayload': true,
     'component:EnsureBucketCreateAccessResponse': true,
+    'component:AbortUploadSessionPayload': true,
+    'component:AbortUploadSessionResponse': true,
+    'component:AzureBlockBlobUploadSession': true,
+    'component:CompletedUploadPart': true,
+    'component:CompleteUploadSessionPayload': true,
+    'component:CompleteUploadSessionResponse': true,
+    'component:CreateUploadSessionPayload': true,
+    'component:GcsResumableUploadSession': true,
+    'component:GetUploadPartUrlsPayload': true,
+    'component:S3MultipartUploadSession': true,
+    'component:UploadPartUrl': true,
+    'component:UploadPartUrlsResponse': true,
+    'component:UploadSession': true,
     'component:TaskFieldType': true,
     'component:DurableTaskStatus': true,
     'component:TaskSource': true,
@@ -12697,6 +12821,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2641);
+        expect(Object.keys(checks)).toHaveLength(2667);
     });
 });
