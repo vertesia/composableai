@@ -47095,6 +47095,13 @@
       "error": {
         "type": "string",
         "description": "Error details for failed/terminated runs"
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Content left out of a completed output, such as an image that was not embedded"
       }
     },
     "required": [

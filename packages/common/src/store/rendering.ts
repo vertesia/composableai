@@ -116,8 +116,10 @@ export interface GenerateRenditionsResult {
     format: string;
     status: string;
     fileUri?: string;
-    /** Warnings about rich content blocks that failed to render (document was still produced) */
+    /** Warnings about content that failed to render (document was still produced). May quote tool output. */
     warnings?: string[];
+    /** The same problems, worded for the rendering API's callers: they never quote tool output. */
+    publicWarnings?: string[];
 }
 
 /**
@@ -132,6 +134,8 @@ export interface RenderMarkdownResponse {
     download_url?: string;
     /** File URI in storage */
     file_uri?: string;
+    /** Content left out of the output, such as an image that was not embedded */
+    warnings?: string[];
 }
 
 // ============================================================================
