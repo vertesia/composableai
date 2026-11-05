@@ -58,10 +58,10 @@ describe('estimateRenditionBytes', () => {
 });
 
 describe('sourceUrlTtlSeconds', () => {
-    it('covers the whole Activity, within the 7-day maximum', () => {
+    it('covers the whole Activity, within the 24-hour maximum', () => {
         expect(sourceUrlTtlSeconds(60 * 60_000)).toBe(3600);
         expect(sourceUrlTtlSeconds(1500)).toBe(2);
-        expect(sourceUrlTtlSeconds(30 * 24 * 3600_000)).toBe(7 * 24 * 3600);
+        expect(sourceUrlTtlSeconds(30 * 24 * 3600_000)).toBe(24 * 3600);
     });
 });
 
@@ -122,6 +122,8 @@ interface Run {
     size?: number;
     metadata?: Record<string, unknown>;
     signs?: boolean;
+    /** Whether the processing route grants the long lifetime, as it does for the platform's content processing. */
+    internal?: boolean;
     /** Whether the store reports the source's size. */
     sized?: boolean;
     heartbeatDetails?: unknown;
@@ -130,11 +132,13 @@ interface Run {
 
 let heartbeats: unknown[];
 let getDownloadUrl: ReturnType<typeof vi.fn>;
+let post: ReturnType<typeof vi.fn>;
 
 function run({
     size = 500e6,
     metadata = { duration: 600, dimensions: { width: 1920, height: 1080 } },
     signs = true,
+    internal = true,
     sized = true,
     heartbeatDetails,
     startToCloseTimeoutMs = 60 * 60_000,
@@ -145,8 +149,13 @@ function run({
         metadata,
     } as Awaited<ReturnType<typeof video.retrieveVideoObject>>);
     getDownloadUrl = vi.fn(() => (signs ? Promise.resolve({ url: SIGNED_URL }) : Promise.reject(new Error('503'))));
+    post = vi.fn(() =>
+        signs && internal
+            ? Promise.resolve({ url: SIGNED_URL })
+            : Promise.reject(new Error(signs ? '403 Forbidden' : '503')),
+    );
     const getMetadata = sized ? vi.fn().mockResolvedValue({ size }) : vi.fn().mockRejectedValue(new Error('503'));
-    const client = { files: { getMetadata, getDownloadUrl } };
+    const client = { files: { getMetadata, getDownloadUrl, post } };
     vi.mocked(setupActivity).mockResolvedValue({
         client: client as unknown as VertesiaClient,
         objectId: 'object-1',
@@ -181,11 +190,22 @@ describe('transcodeVideo over the signed URL', () => {
     it('encodes from the URL, signed for the whole Activity, without downloading', async () => {
         await expect(run()).resolves.toEqual({ objectId: 'object-1', rendition: UPLOADED, etag: 'etag-1' });
 
-        expect(getDownloadUrl).toHaveBeenCalledWith('gs://b/source.mov', undefined, undefined, 3600);
+        expect(post).toHaveBeenCalledWith('/processing-download-url', {
+            payload: { file: 'gs://b/source.mov', ttl: 3600 },
+        });
+        expect(getDownloadUrl).not.toHaveBeenCalled();
         expect(vi.mocked(video.generateRenditionWithDimensions).mock.calls[0][0]).toEqual({
             kind: 'url',
             url: SIGNED_URL,
         });
+        expect(saveBlobToTempFile).not.toHaveBeenCalled();
+    });
+
+    it('encodes over a URL of the default lifetime when the processing route refuses the caller', async () => {
+        await expect(run({ internal: false })).resolves.toMatchObject({ rendition: UPLOADED });
+
+        expect(getDownloadUrl).toHaveBeenCalledWith('gs://b/source.mov');
+        expect(encodeInputs()).toEqual(['url']);
         expect(saveBlobToTempFile).not.toHaveBeenCalled();
     });
 
@@ -201,6 +221,7 @@ describe('transcodeVideo over the signed URL', () => {
             type: TRANSCODE_EXCEEDS_DISK_BUDGET,
             nonRetryable: true,
         });
+        expect(post).not.toHaveBeenCalled();
         expect(getDownloadUrl).not.toHaveBeenCalled();
         expect(video.generateRenditionWithDimensions).not.toHaveBeenCalled();
     });
@@ -239,6 +260,7 @@ describe('transcodeVideo over the signed URL', () => {
             type: SOURCE_TOO_LARGE_ERROR,
             nonRetryable: true,
         });
+        expect(post).not.toHaveBeenCalled();
         expect(getDownloadUrl).not.toHaveBeenCalled();
     });
 });
@@ -388,6 +410,7 @@ describe('transcodeVideo time check', () => {
         await expect(
             run({ size: 100e6, metadata: { duration: 3 * 3600, dimensions: { width: 1920, height: 1080 } } }),
         ).rejects.toMatchObject({ type: TRANSCODE_EXCEEDS_TIME_BUDGET, nonRetryable: true });
+        expect(post).not.toHaveBeenCalled();
         expect(getDownloadUrl).not.toHaveBeenCalled();
     });
 
@@ -425,7 +448,9 @@ describe('transcodeVideo time check', () => {
                 startToCloseTimeoutMs: 5 * 60_000,
             }),
         ).resolves.toMatchObject({ rendition: UPLOADED });
-        expect(getDownloadUrl).toHaveBeenCalledWith('gs://b/source.mov', undefined, undefined, 300);
+        expect(post).toHaveBeenCalledWith('/processing-download-url', {
+            payload: { file: 'gs://b/source.mov', ttl: 300 },
+        });
     });
 });
 

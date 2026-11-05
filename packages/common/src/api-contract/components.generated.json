@@ -28285,12 +28285,6 @@
           "inline",
           "attachment"
         ]
-      },
-      "ttl": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 604800,
-        "description": "How long the signed URL stays valid, in seconds, up to 7 days. Defaults to the storage provider's own lifetime when omitted."
       }
     },
     "required": [

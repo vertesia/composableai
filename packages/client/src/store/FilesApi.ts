@@ -157,14 +157,8 @@ export class FilesApi extends ApiTopic {
     }
 
     // Strictly typed: provide either simple args or a full payload via a separate method
-    /** `ttl` is the URL's lifetime in seconds, up to 7 days; the storage provider's default when omitted. */
-    getDownloadUrl(
-        file: string,
-        name?: string,
-        disposition?: 'inline' | 'attachment',
-        ttl?: number,
-    ): Promise<GetFileUrlResponse> {
-        const payload: GetFileUrlPayload = { file, name, disposition, ttl };
+    getDownloadUrl(file: string, name?: string, disposition?: 'inline' | 'attachment'): Promise<GetFileUrlResponse> {
+        const payload: GetFileUrlPayload = { file, name, disposition };
         return this.post('/download-url', { payload });
     }
 

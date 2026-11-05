@@ -183,9 +183,40 @@ export function commandFailureLog(input: VideoInput): typeof log.warn {
 }
 
 /**
- * Sign a GET URL for `source` so ffmpeg can read only the bytes it needs, valid for `ttlSeconds` when given and for the
- * store's default lifetime otherwise. Returns undefined when no HTTP(S) URL can be obtained, and the caller downloads
- * the file instead.
+ * Route that signs a download URL for longer than the store's default lifetime. It serves only the platform's own
+ * content processing, up to {@link PROCESSING_URL_MAX_TTL_SECONDS}; any other caller is refused.
+ */
+const PROCESSING_DOWNLOAD_URL_PATH = '/processing-download-url';
+
+/** Longest lifetime the processing route signs a URL for: 24 hours. */
+export const PROCESSING_URL_MAX_TTL_SECONDS = 24 * 60 * 60;
+
+/**
+ * A signed URL for `source`, valid for `ttlSeconds` when the processing route grants it, and for the store's default
+ * lifetime otherwise: when no lifetime is asked for, when the caller is not the platform's content processing, or when
+ * the server has no such route.
+ */
+async function signSource(client: VertesiaClient, source: string, ttlSeconds: number | undefined): Promise<string> {
+    if (ttlSeconds !== undefined) {
+        try {
+            const { url } = await client.files.post<{ url: string }>(PROCESSING_DOWNLOAD_URL_PATH, {
+                payload: { file: source, ttl: ttlSeconds },
+            });
+            return url;
+        } catch (error) {
+            rethrowIfActivityStopped(error);
+            log.info('Could not sign a longer-lived URL for the video source; using the default lifetime', {
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+    return (await client.files.getDownloadUrl(source)).url;
+}
+
+/**
+ * Sign a GET URL for `source` so ffmpeg can read only the bytes it needs, valid for `ttlSeconds` where the server grants
+ * it ({@link signSource}). Returns undefined when no HTTP(S) URL can be obtained, and the caller downloads the file
+ * instead.
  */
 export async function getSignedVideoUrl(
     client: VertesiaClient,
@@ -194,9 +225,7 @@ export async function getSignedVideoUrl(
 ): Promise<string | undefined> {
     try {
         // Same rule as `client.files.downloadFile`: an HTTPS source is already readable as is.
-        const url = source.startsWith('https:')
-            ? source
-            : (await client.files.getDownloadUrl(source, undefined, undefined, ttlSeconds)).url;
+        const url = source.startsWith('https:') ? source : await signSource(client, source, ttlSeconds);
         const { protocol } = new URL(url);
         if (protocol === 'https:' || protocol === 'http:') {
             return url;
@@ -223,7 +252,10 @@ export async function getSignedVideoUrl(
 const URL_REFRESH_MS = 5 * 60_000;
 
 export interface VideoSourceOptions {
-    /** Lifetime to sign the URL for, in seconds. The store's default when unset. */
+    /**
+     * Lifetime to sign the URL for, in seconds, up to {@link PROCESSING_URL_MAX_TTL_SECONDS}. Granted only to the
+     * platform's content processing; the store's default otherwise, and when unset.
+     */
     ttlSeconds?: number;
     /**
      * Called before the source is first downloaded, with the error of the URL read that failed, or undefined when there

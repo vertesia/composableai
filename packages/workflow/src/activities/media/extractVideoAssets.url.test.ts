@@ -50,6 +50,7 @@ function setup(audioCodec: string, probe = sourceProbe(audioCodec)) {
     const client = {
         files: {
             getDownloadUrl: vi.fn().mockResolvedValue({ url: SIGNED_URL }),
+            post: vi.fn().mockResolvedValue({ url: SIGNED_URL }),
             getMetadata: vi.fn().mockResolvedValue({ size: 50_000_000 }),
             uploadFile: vi.fn().mockResolvedValue('gs://bucket/rendition'),
         },
@@ -186,7 +187,9 @@ describe('transcodeVideo', () => {
 
         await expect(run()).resolves.toMatchObject({ rendition: expect.objectContaining({ name: 'Web' }) });
 
-        expect(client.files.getDownloadUrl).toHaveBeenCalledWith('gs://bucket/video.mp4', undefined, undefined, 3600);
+        expect(client.files.post).toHaveBeenCalledWith('/processing-download-url', {
+            payload: { file: 'gs://bucket/video.mp4', ttl: 3600 },
+        });
         expect(saveBlobToTempFile).not.toHaveBeenCalled();
         const [encode] = encodes();
         const input = encode.indexOf('-i');

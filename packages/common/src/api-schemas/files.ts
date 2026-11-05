@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { SIGNED_URL_MAX_TTL_SECONDS } from '../store/store.js';
 
 export const StringValueMapSchema = z.object({}).catchall(z.string()).meta({ id: 'StringValueMap' });
 
@@ -51,17 +50,6 @@ export const GetFileUrlPayloadSchema = z
         file: z.string().min(1),
         name: z.string().optional(),
         disposition: z.enum(['inline', 'attachment']).optional(),
-        ttl: z
-            .number()
-            .int()
-            .min(1)
-            .max(SIGNED_URL_MAX_TTL_SECONDS)
-            .optional()
-            .meta({
-                description:
-                    'How long the signed URL stays valid, in seconds, up to 7 days. Defaults to the storage ' +
-                    "provider's own lifetime when omitted.",
-            }),
     })
     .meta({ id: 'GetFileUrlPayload' });
 

@@ -1,12 +1,11 @@
 import { ApplicationFailure, Context, log } from '@temporalio/activity';
 import type { VertesiaClient } from '@vertesia/client';
-import {
-    type ContentObject,
-    type DSLActivityExecutionPayload,
-    type DSLActivitySpec,
-    type RenditionWithDimensions,
-    SIGNED_URL_MAX_TTL_SECONDS,
-    type VideoMetadata,
+import type {
+    ContentObject,
+    DSLActivityExecutionPayload,
+    DSLActivitySpec,
+    RenditionWithDimensions,
+    VideoMetadata,
 } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
@@ -33,7 +32,7 @@ import {
     type VideoPreset,
     withVideoSource,
 } from './video.js';
-import type { VideoInput } from './videoSource.js';
+import { PROCESSING_URL_MAX_TTL_SECONDS, type VideoInput } from './videoSource.js';
 
 const GiB = 1024 ** 3;
 
@@ -191,11 +190,11 @@ function remainingEncodeBudgetMs(): number {
 }
 
 /**
- * Lifetime to sign the source URL for: the whole Activity, so an encode that reads the source front to back for most of
- * the run never meets an expired signature when it reconnects.
+ * Lifetime to sign the source URL for: the whole Activity, up to the 24 hours the processing route grants, so an encode
+ * that reads the source front to back for most of the run never meets an expired signature when it reconnects.
  */
 export function sourceUrlTtlSeconds(startToCloseTimeoutMs: number): number {
-    return Math.min(SIGNED_URL_MAX_TTL_SECONDS, Math.max(1, Math.ceil(startToCloseTimeoutMs / 1000)));
+    return Math.min(PROCESSING_URL_MAX_TTL_SECONDS, Math.max(1, Math.ceil(startToCloseTimeoutMs / 1000)));
 }
 
 /** WORKER_TRANSCODE_REALTIME_FACTOR, or the default when it is unset or not a positive number. */
