@@ -322,6 +322,46 @@ describe('stream bodies longer than the retry buffer', () => {
         expect(fetchMock).toHaveBeenCalledOnce();
     });
 
+    it('streams a longer stream with its declared length to S3 in Node, without buffering it', async () => {
+        nodeHttp.available = true;
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 4;
+        nodeHttp.request.mockImplementation(async (_url: string, init: { body: BodyInit }) => {
+            await digest(init.body);
+            return new Response(null, { status: 200 });
+        });
+        await fetchSignedUrl(s3Url, {
+            method: 'PUT',
+            body: generated(chunks),
+            headers: { 'Content-Type': 'video/mp4', 'Content-Length': String(chunks * CHUNK) },
+        });
+        expect(nodeHttp.request).toHaveBeenCalledOnce();
+        const [, init] = nodeHttp.request.mock.calls[0];
+        expect(init.body).toBeInstanceOf(ReadableStream);
+        expect(init.headers).toEqual({ 'Content-Type': 'video/mp4', 'Content-Length': String(chunks * CHUNK) });
+    });
+
+    it('buffers a stream with a declared length where it cannot be streamed, and checks the length', async () => {
+        const bodies: { body: BodyInit; headers?: HeadersInit }[] = [];
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async (_url: string, init: RequestInit) => {
+                bodies.push({ body: init.body as BodyInit, headers: init.headers });
+                return new Response(null, { status: 200 });
+            }),
+        );
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 1;
+        const length = String(chunks * CHUNK);
+        await fetchSignedUrl(s3Url, { method: 'PUT', body: generated(chunks), headers: { 'content-length': length } });
+        expect(bodies[0].body).toBeInstanceOf(Blob);
+        // the buffered Blob sets its own length
+        expect(bodies[0].headers).toEqual({});
+
+        await expect(
+            fetchSignedUrl(s3Url, { method: 'PUT', body: generated(2), headers: { 'Content-Length': String(CHUNK) } }),
+        ).rejects.toThrow(/declared length/);
+        expect(bodies).toHaveLength(1);
+    });
+
     it('recognizes the services that accept an upload of unknown length', () => {
         expect(acceptsStreamedUpload(gcsUrl)).toBe(true);
         expect(acceptsStreamedUpload('https://bucket.storage.googleapis.com/large.bin')).toBe(true);

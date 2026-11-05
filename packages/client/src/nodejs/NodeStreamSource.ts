@@ -14,10 +14,10 @@ import { StreamSource } from '../StreamSource.js';
 export class NodeStreamSource extends StreamSource {
     private readonly filePath: string | undefined;
 
-    constructor(stream: Readable, name: string, type?: string, id?: string) {
+    constructor(stream: Readable, name: string, type?: string, id?: string, size?: number) {
         // read before wrapping: the web stream may start reading the Node.js stream
         const filePath = wholeFilePath(stream);
-        super(readableToWebStream(stream) as ReadableStream, name, type, id);
+        super(readableToWebStream(stream) as ReadableStream, name, type, id, size);
         this.filePath = filePath;
     }
 

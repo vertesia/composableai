@@ -61,8 +61,10 @@ describe('NodeStreamSource file-backed body', () => {
         const file = join(dir, 'upload.txt');
         await writeFile(file, 'hello file');
         const stream = createReadStream(file);
-        const body = await getUploadBody(new NodeStreamSource(stream, 'upload.txt'));
-        expect(body).toBeInstanceOf(Blob);
+        const upload = await getUploadBody(new NodeStreamSource(stream, 'upload.txt', undefined, undefined, 99));
+        expect(upload.body).toBeInstanceOf(Blob);
+        // the file-backed blob carries its own length
+        expect(upload.contentLength).toBeUndefined();
         expect(stream.destroyed).toBe(true);
     });
 
@@ -114,7 +116,7 @@ describe('uploading a large file through fetchSignedUrl', () => {
         await writeFile(file, '');
         await truncate(file, SIZE);
         const stream = createReadStream(file);
-        const body = await getUploadBody(new NodeStreamSource(stream, 'large.bin'));
+        const { body } = await getUploadBody(new NodeStreamSource(stream, 'large.bin'));
 
         const baseline = process.memoryUsage();
         let peakArrayBuffers = 0;

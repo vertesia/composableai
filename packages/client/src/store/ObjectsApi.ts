@@ -63,7 +63,7 @@ import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 import type { ZenoClient } from './client.js';
 import { fetchSignedUrl } from './signed-url.js';
-import { getUploadBody } from './upload-body.js';
+import { getUploadBody, uploadHeaders } from './upload-body.js';
 import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 import { zenoBulkBaseUrl } from './zeno-bulk.js';
 
@@ -291,10 +291,11 @@ export class ObjectsApi extends ApiTopic {
         const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
 
         // upload the file content to the signed URL
+        const upload = await getUploadBody(source);
         const res = await fetchSignedUrl(url, {
             method: 'PUT',
-            body: await getUploadBody(source),
-            headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
+            body: upload.body,
+            headers: uploadHeaders(upload, sourceMimeType),
         }).catch((err) => {
             console.error('Failed to upload file', err);
             throw err;

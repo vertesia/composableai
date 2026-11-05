@@ -15,18 +15,70 @@ export function hasNodeHttp(): boolean {
 
 type WebReadableStream = Parameters<typeof import('node:stream').Readable.fromWeb>[0];
 
+/** The error for a body whose size differs from its declared `Content-Length`. */
+export class ContentLengthMismatchError extends Error {
+    constructor(
+        readonly declared: number,
+        readonly actual: number,
+        readonly direction: 'short' | 'long',
+    ) {
+        super(
+            direction === 'short'
+                ? `Upload body ended after ${actual} bytes, short of its declared length of ${declared}`
+                : `Upload body ran past its declared length of ${declared} bytes`,
+        );
+        this.name = 'ContentLengthMismatchError';
+    }
+}
+
+function declaredLength(headers: Record<string, string>): number | undefined {
+    const entry = Object.entries(headers).find(([name]) => name.toLowerCase() === 'content-length');
+    return entry ? Number(entry[1]) : undefined;
+}
+
+/**
+ * A pass-through that fails once more than `length` bytes go through it, or when it ends with fewer. The chunk that
+ * completes `length` is held until the source ends, so the server never receives a complete body from a stream
+ * that turns out to be longer.
+ */
+function exactLength(length: number, TransformClass: typeof import('node:stream').Transform) {
+    let seen = 0;
+    let last: Buffer | undefined;
+    return new TransformClass({
+        transform(chunk: Buffer, _encoding, callback) {
+            seen += chunk.byteLength;
+            if (seen > length) {
+                callback(new ContentLengthMismatchError(length, seen, 'long'));
+            } else if (seen === length) {
+                last = chunk;
+                callback();
+            } else {
+                callback(null, chunk);
+            }
+        },
+        flush(callback) {
+            if (seen < length) {
+                callback(new ContentLengthMismatchError(length, seen, 'short'));
+            } else {
+                callback(null, last);
+            }
+        },
+    });
+}
+
 const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
 
 /**
  * Send a request with a `Blob` or `ReadableStream` body. A `Blob` is sent with its size as `Content-Length`; a
- * stream of unknown length is sent with chunked transfer encoding. Resolves with the response once its headers
+ * stream with the `Content-Length` header it is given, or with chunked transfer encoding when it has none. A body
+ * that ends short of its `Content-Length` or runs past it fails the request. Resolves with the response once its headers
  * arrive, like `fetch`; rejects on a connection error.
  */
 export async function nodeRequest(
     url: string,
     init: { method: string; headers?: Record<string, string>; body: Blob | ReadableStream },
 ): Promise<Response> {
-    const [http, https, { Readable }, { pipeline }] = await Promise.all([
+    const [http, https, { Readable, Transform }, { pipeline }] = await Promise.all([
         import('node:http'),
         import('node:https'),
         import('node:stream'),
@@ -35,6 +87,9 @@ export async function nodeRequest(
     const { body } = init;
     const headers: Record<string, string> = { ...init.headers };
     if (body instanceof Blob) {
+        for (const name of Object.keys(headers)) {
+            if (name.toLowerCase() === 'content-length') delete headers[name];
+        }
         headers['content-length'] = String(body.size);
     }
     const target = new URL(url);
@@ -62,6 +117,11 @@ export async function nodeRequest(
             bodyError = err;
         });
         req.on('error', (err) => reject(bodyError ?? err));
-        pipeline(source, req).catch((err: unknown) => reject(bodyError ?? err));
+        // A stream that does not match its declared length aborts the request instead of sending a truncated or
+        // overlong body. (`strictContentLength` reports a short body from `end()` outside the pipeline, as an
+        // uncaught exception, so the length is checked here.)
+        const length = declaredLength(headers);
+        const stages = length === undefined ? [source] : [source, exactLength(length, Transform)];
+        pipeline([...stages, req]).catch((err: unknown) => reject(bodyError ?? err));
     });
 }

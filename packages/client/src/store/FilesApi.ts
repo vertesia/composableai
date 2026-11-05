@@ -20,7 +20,7 @@ import type {
 } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
 import { fetchSignedUrl } from './signed-url.js';
-import { getUploadBody } from './upload-body.js';
+import { getUploadBody, uploadHeaders } from './upload-body.js';
 import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 
 export const MEMORIES_PREFIX = 'memories';
@@ -206,10 +206,11 @@ export class FilesApi extends ApiTopic {
                     const { url, id, mime_type } = files[idx];
                     const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
 
+                    const upload = await getUploadBody(source);
                     const res = await fetchSignedUrl(url, {
                         method: 'PUT',
-                        body: await getUploadBody(source),
-                        headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
+                        body: upload.body,
+                        headers: uploadHeaders(upload, sourceMimeType),
                     });
 
                     if (!res.ok) {
@@ -259,12 +260,11 @@ export class FilesApi extends ApiTopic {
         });
         const sourceMimeType = resolveUploadMimeType(source.type, mime_type) || 'application/gzip';
 
+        const upload = await getUploadBody(source);
         const res = await fetchSignedUrl(url, {
             method: 'PUT',
-            body: await getUploadBody(source),
-            headers: {
-                'Content-Type': sourceMimeType,
-            },
+            body: upload.body,
+            headers: uploadHeaders(upload, sourceMimeType),
         }).catch((err) => {
             console.error('Failed to upload file', { err, location: fileLocationForError(url), id, path });
             throw err;

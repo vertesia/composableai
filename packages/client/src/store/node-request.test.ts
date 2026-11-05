@@ -1,7 +1,7 @@
 import { createServer, type IncomingHttpHeaders, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { hasNodeHttp, nodeRequest } from './node-request.js';
+import { ContentLengthMismatchError, hasNodeHttp, nodeRequest } from './node-request.js';
 
 interface Received {
     headers: IncomingHttpHeaders;
@@ -70,6 +70,69 @@ describe('nodeRequest', () => {
         expect(received[0].body).toBe('hello stream');
         expect(received[0].headers['transfer-encoding']).toBe('chunked');
         expect(received[0].headers['content-length']).toBeUndefined();
+    });
+
+    function streamOf(bytes: number): ReadableStream<Uint8Array> {
+        return new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(new Uint8Array(bytes).fill(97));
+                controller.close();
+            },
+        });
+    }
+
+    it('sends a stream with its declared length instead of chunked encoding', async () => {
+        received = [];
+        const res = await nodeRequest(`${base}/declared`, {
+            method: 'PUT',
+            headers: { 'Content-Length': '10' },
+            body: streamOf(10),
+        });
+        expect(res.status).toBe(201);
+        expect(received[0].body).toBe('a'.repeat(10));
+        expect(received[0].headers['content-length']).toBe('10');
+        expect(received[0].headers['transfer-encoding']).toBeUndefined();
+    });
+
+    it.each([
+        ['ends short of', 5],
+        ['runs past', 20],
+    ])('fails when a stream %s its declared length', async (_name, bytes) => {
+        await expect(
+            nodeRequest(`${base}/mismatch`, {
+                method: 'PUT',
+                headers: { 'content-length': '10' },
+                body: streamOf(bytes),
+            }),
+        ).rejects.toBeInstanceOf(ContentLengthMismatchError);
+    });
+
+    it('never completes the body of a stream that runs past its length at a chunk boundary', async () => {
+        received = [];
+        const body = new ReadableStream<Uint8Array>({
+            async pull(controller) {
+                controller.enqueue(new Uint8Array(10).fill(98));
+                // let the first chunk reach the server before the extra one appears
+                await new Promise((resolve) => setTimeout(resolve, 50));
+                controller.enqueue(new Uint8Array(1));
+                controller.close();
+            },
+        });
+        await expect(
+            nodeRequest(`${base}/boundary`, { method: 'PUT', headers: { 'Content-Length': '10' }, body }),
+        ).rejects.toBeInstanceOf(ContentLengthMismatchError);
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        expect(received).toEqual([]);
+    });
+
+    it("sends a Blob's own size over a declared length", async () => {
+        received = [];
+        await nodeRequest(`${base}/blob-length`, {
+            method: 'PUT',
+            headers: { 'Content-Length': '99' },
+            body: new Blob(['four']),
+        });
+        expect(received[0].headers['content-length']).toBe('4');
     });
 
     it('returns a null body for a 204', async () => {
