@@ -14,7 +14,7 @@ export default defineConfig({
         sourcemap: true,
         minify: true,
     },
-    external: ['handlebars', 'acorn', 'acorn-walk', 'dayjs', 'papaparse'],
+    external: ['handlebars', 'acorn', 'acorn-walk', 'dayjs', 'lru-cache', 'papaparse'],
     resolve: {
         mainFields: ['browser', 'module', 'main'],
         conditionNames: ['browser', 'import', 'default'],

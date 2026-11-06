@@ -260,6 +260,9 @@ importers:
       handlebars:
         specifier: '>=4.7.10'
         version: 4.7.10
+      lru-cache:
+        specifier: ^11.5.3
+        version: 11.5.3
       papaparse:
         specifier: ^5.7.0
         version: 5.7.0
