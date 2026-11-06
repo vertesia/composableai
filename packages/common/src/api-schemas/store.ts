@@ -72,9 +72,6 @@ export const IntakePageRangesSchema = z.array(z.array(z.int32()).min(2).max(2)).
         'document ([[1, 2], [-1, -1]] = first two pages plus the last page).',
 });
 
-/** Lets an interface extend an inferred schema type, which declaration emit then references by name. */
-type Declared<T> = T;
-
 export const RunDataStorageLevelSchema = z.enum(RunDataStorageLevel).meta({ id: 'RunDataStorageLevel' });
 
 export const ConfigModesSchema = z.enum(ConfigModes).meta({ id: 'ConfigModes' });
@@ -153,7 +150,7 @@ const interactionExecutionConfigurationSchema = z
 // several times in every intake policy and in event and view schemas, so it is exported through a named type
 // that their declarations reference instead of repeating its fields.
 export interface InteractionExecutionConfigurationSchemaType
-    extends Declared<typeof interactionExecutionConfigurationSchema> {}
+    extends z.core.util.Identity<typeof interactionExecutionConfigurationSchema> {}
 export const InteractionExecutionConfigurationSchema: InteractionExecutionConfigurationSchemaType =
     interactionExecutionConfigurationSchema;
 
@@ -564,7 +561,7 @@ const contentTypeIntakePolicySchema = z
     });
 
 // Exported through a named type for the same reason: every content-type schema embeds this policy.
-export interface ContentTypeIntakePolicySchemaType extends Declared<typeof contentTypeIntakePolicySchema> {}
+export interface ContentTypeIntakePolicySchemaType extends z.core.util.Identity<typeof contentTypeIntakePolicySchema> {}
 export const ContentTypeIntakePolicySchema: ContentTypeIntakePolicySchemaType = contentTypeIntakePolicySchema;
 
 export const ColumnLayoutSchema = z
