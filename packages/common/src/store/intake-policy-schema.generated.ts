@@ -1744,6 +1744,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     additionalProperties: false,
                 },
             },
+            additionalProperties: false,
         },
         OpenAiSpeechOptions: {
             type: 'object',
