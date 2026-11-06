@@ -467,6 +467,11 @@ export async function executeInteractionFromActivity(
          * media is inlined, and it stays stored with the run either way.
          */
         includePrompt?: boolean;
+        /**
+         * The agent run this inference works for, when the calling workflow's ID does not name it. The server records
+         * the inference, and its cost, against this run.
+         */
+        agentRunId?: string;
     } = {},
 ) {
     const userTags = params.tags;
@@ -481,6 +486,7 @@ export async function executeInteractionFromActivity(
         run_id: execution.runId,
         workflow_id: execution.workflowId,
         activity_type: info.activityType,
+        ...(options.agentRunId ? { agent_run_id: options.agentRunId } : {}),
     };
 
     let previousError: ExecutionRunRef['error'];

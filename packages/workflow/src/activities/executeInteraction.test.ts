@@ -7,7 +7,12 @@ import type { NodeStreamSource } from '@vertesia/client/node';
 import { ContentEventName, type DSLActivityExecutionPayload, ExecutionRunStatus } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
-import { type ExecuteInteractionParams, executeInteraction, requestInteractionSlot } from './executeInteraction.js';
+import {
+    type ExecuteInteractionParams,
+    executeInteraction,
+    executeInteractionFromActivity,
+    requestInteractionSlot,
+} from './executeInteraction.js';
 
 vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../dsl/setup/ActivityContext.js')>();
@@ -682,6 +687,25 @@ describe('executeInteraction failed run log level', () => {
         await expect(env.run(executeInteraction, createPayload())).rejects.toThrow('store failed');
         expect(messagesLoggedAt('warn')).toEqual(['Error executing interaction testInteraction']);
         expect(messagesLoggedAt('error')).toEqual([]);
+    });
+});
+
+describe('executeInteractionFromActivity', () => {
+    const execute = async (options?: { agentRunId?: string }) => {
+        const executeByName = vi.fn().mockResolvedValue({ id: 'run-id', status: ExecutionRunStatus.completed });
+        const client = {
+            interactions: { requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0 }), executeByName },
+        } as unknown as VertesiaClient;
+        await testEnv.run(executeInteractionFromActivity, client, 'sys:Page', {}, {}, undefined, options);
+        return executeByName.mock.calls[0][1].workflow;
+    };
+
+    it('records the inference against the agent run the caller names', async () => {
+        expect(await execute({ agentRunId: 'agent-run-1' })).toMatchObject({ agent_run_id: 'agent-run-1' });
+    });
+
+    it('names no agent run when the caller has none', async () => {
+        expect(await execute()).not.toHaveProperty('agent_run_id');
     });
 });
 
