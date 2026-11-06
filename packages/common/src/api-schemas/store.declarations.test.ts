@@ -50,17 +50,19 @@ function emitDeclaration(source: string): string {
 describe('intake schema declarations', () => {
     it('reference the configuration and policy by name where another schema embeds them', { timeout: 60_000 }, () => {
         const declaration = emitDeclaration(
-            `import { ContentTypeIntakePolicySchema, InteractionExecutionConfigurationSchema } from ${JSON.stringify(storeModule)};\n` +
+            'import { ContentTypeIntakePolicySchema, InteractionExecutionConfigurationSchema }\n' +
+                `    from ${JSON.stringify(storeModule)};\n` +
                 'export const Embedded = {\n' +
                 '    config: InteractionExecutionConfigurationSchema.optional(),\n' +
                 '    policy: ContentTypeIntakePolicySchema.optional(),\n' +
                 '};\n',
         );
 
-        expect(declaration).toContain('InteractionExecutionConfigurationSchemaType');
-        expect(declaration).toContain('ContentTypeIntakePolicySchemaType');
+        const unnamed = 'an embedded intake schema is printed in full: keep its exported `*SchemaType` annotation';
+        expect(declaration, unnamed).toContain('InteractionExecutionConfigurationSchemaType');
+        expect(declaration, unnamed).toContain('ContentTypeIntakePolicySchemaType');
         // Printed in full, each type spells out its fields, such as these two.
-        expect(declaration).not.toContain('prompt_cache_ttl_seconds');
-        expect(declaration).not.toContain('generate_toc');
+        expect(declaration, unnamed).not.toContain('prompt_cache_ttl_seconds');
+        expect(declaration, unnamed).not.toContain('generate_toc');
     });
 });
