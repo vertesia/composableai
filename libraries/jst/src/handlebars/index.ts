@@ -72,13 +72,16 @@ export const HANDLEBARS_CONTEXT_HELPERS: readonly string[] = ['each', 'with'];
  * not when it compiles, so a cached template always sees the environment's current helpers.
  *
  * Bounded at 1,000,000 characters of template source (about 25 MB of compiled templates) and 1,000
- * templates. The least recently used templates are evicted first, and a template larger than the
- * whole budget renders without being cached. Exported for tests; not part of the package API.
+ * templates. The least recently used templates are evicted first. A larger template counts as the
+ * whole budget: it evicts every other template and is cached on its own, since the longest templates
+ * are the slowest to compile. Exported for tests; not part of the package API.
  */
+const MAX_CACHED_TEMPLATE_CHARS = 1_000_000;
 export const compiledTemplates = new LRUCache<string, Handlebars.TemplateDelegate>({
     max: 1000,
-    maxSize: 1_000_000,
-    sizeCalculation: (_compiled, template) => Math.max(template.length, 1),
+    maxSize: MAX_CACHED_TEMPLATE_CHARS,
+    // An empty template still takes one unit: lru-cache requires a positive size.
+    sizeCalculation: (_compiled, template) => Math.max(1, Math.min(template.length, MAX_CACHED_TEMPLATE_CHARS)),
 });
 
 export function renderHandlebarsTemplate(template: string, input: unknown): string {

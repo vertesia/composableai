@@ -121,10 +121,21 @@ describe('Handlebars compiled template cache', () => {
         expect(renderHandlebarsTemplate(template(1), { name: 'again' })).toBe(`1:again${body}`);
     });
 
-    test('renders a template larger than the cache budget without caching it', () => {
+    test('caches a template larger than the cache budget on its own, evicting the rest', () => {
+        renderHandlebarsTemplate('small {{name}}', { name: 'a' });
         const template = `{{name}}${'y'.repeat(1_000_001)}`;
+
         expect(renderHandlebarsTemplate(template, { name: 'big' }).startsWith('bigyyy')).toBe(true);
-        expect(compiledTemplates.has(template)).toBe(false);
+        const compiled = compiledTemplates.get(template);
+
+        expect(compiled).toBeDefined();
+        expect(compiledTemplates.size).toBe(1);
         expect(renderHandlebarsTemplate(template, { name: 'again' }).startsWith('againyyy')).toBe(true);
+        expect(compiledTemplates.get(template)).toBe(compiled);
+    });
+
+    test('caches an empty template', () => {
+        expect(renderHandlebarsTemplate('', { name: 'a' })).toBe('');
+        expect(compiledTemplates.has('')).toBe(true);
     });
 });
