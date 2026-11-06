@@ -8,6 +8,11 @@ import type * as Wire from './wire-types.generated.js';
 export type PendingAskStatus = Wire.PendingAskStatus;
 
 /**
+ * What the server does with the response when a pending ask is resolved.
+ */
+export type PendingAskDelivery = Wire.PendingAskDelivery;
+
+/**
  * Data stored in Redis for pending ask_user requests.
  * Tracks which agents are waiting for user input and enables
  * both webhook notifications and portal views.

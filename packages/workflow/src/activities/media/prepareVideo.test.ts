@@ -278,7 +278,9 @@ describe('screenshot extraction fallback', () => {
                     .trim(),
             );
             expect(duration).toBe(3);
-            const env = new MockActivityEnvironment();
+            // Commands are killed at the activity's deadline, and the mock's default of one second is too short for two
+            // real ffmpeg runs on a busy CI machine.
+            const env = new MockActivityEnvironment({ startToCloseTimeoutMs: 60_000 });
             await env.run(async () => {
                 const result = await generateScreenshot(
                     { kind: 'file', path: video },
