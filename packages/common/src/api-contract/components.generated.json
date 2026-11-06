@@ -4484,7 +4484,9 @@
         "enum": [
           "png",
           "jpeg",
-          "webp"
+          "webp",
+          "gif",
+          "svg"
         ]
       },
       "output_compression": {
@@ -4508,6 +4510,24 @@
       },
       "partial_images": {
         "type": "number"
+      },
+      "complexity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
+      "frame_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "frame_duration_ms": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
       },
       "input_image_mask": {
         "$ref": "#/components/schemas/OpenAiImageGenerationMask"
@@ -4831,7 +4851,9 @@
         "enum": [
           "png",
           "webp",
-          "jpeg"
+          "jpeg",
+          "gif",
+          "svg"
         ]
       },
       "n": {
@@ -4858,9 +4880,48 @@
       },
       "partial_images": {
         "type": "number"
+      },
+      "complexity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
+      "frame_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "frame_duration_ms": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "svg": {
+        "$ref": "#/components/schemas/OpenAiImageSvgOptions"
       }
     },
     "additionalProperties": false
+  },
+  "OpenAiImageSvgOptions": {
+    "type": "object",
+    "properties": {
+      "model": {
+        "type": "string",
+        "minLength": 1
+      },
+      "reasoning": {
+        "type": "object",
+        "properties": {
+          "effort": {
+            "$ref": "#/components/schemas/ReasoningEffort"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
   },
   "OpenAiTranscriptionOptions": {
     "type": "object",
