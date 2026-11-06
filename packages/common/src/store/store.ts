@@ -708,6 +708,32 @@ export type BulkUploadUrlsPayload = Wire.BulkUploadUrlsPayload;
 
 export type BulkUploadUrlsResponse = Wire.BulkUploadUrlsResponse;
 
+export type CreateUploadSessionPayload = Wire.CreateUploadSessionPayload;
+
+export type GcsResumableUploadSession = Wire.GcsResumableUploadSession;
+
+export type AzureBlockBlobUploadSession = Wire.AzureBlockBlobUploadSession;
+
+export type S3MultipartUploadSession = Wire.S3MultipartUploadSession;
+
+export type UploadSession = Wire.UploadSession;
+
+export type GetUploadPartUrlsPayload = Wire.GetUploadPartUrlsPayload;
+
+export type UploadPartUrl = Wire.UploadPartUrl;
+
+export type UploadPartUrlsResponse = Wire.UploadPartUrlsResponse;
+
+export type CompletedUploadPart = Wire.CompletedUploadPart;
+
+export type CompleteUploadSessionPayload = Wire.CompleteUploadSessionPayload;
+
+export type CompleteUploadSessionResponse = Wire.CompleteUploadSessionResponse;
+
+export type AbortUploadSessionPayload = Wire.AbortUploadSessionPayload;
+
+export type AbortUploadSessionResponse = Wire.AbortUploadSessionResponse;
+
 export type FileBucketResponse = Wire.FileBucketResponse;
 
 export type FileListResponse = Wire.FileListResponse;

@@ -21,6 +21,18 @@ export class ContentLengthMismatchError extends Error {
     }
 }
 
+/** This client cannot use the upload session: an SDK it needs is not installed, or it does not know its protocol. */
+export class UploadSessionUnavailableError extends Error {
+    constructor(
+        /** What is missing, such as `the optional package @azure/storage-blob`. */
+        readonly requirement: string,
+        cause?: unknown,
+    ) {
+        super(`Uploading in parts needs ${requirement}`, { cause });
+        this.name = 'UploadSessionUnavailableError';
+    }
+}
+
 /** The `Content-Length` in `headers`, in any letter case; undefined when absent or not a whole byte count. */
 export function contentLengthHeader(headers: Record<string, string> | undefined): number | undefined {
     const entry = Object.entries(headers ?? {}).find(([name]) => name.toLowerCase() === 'content-length');

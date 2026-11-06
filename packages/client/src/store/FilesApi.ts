@@ -1,9 +1,14 @@
 import { ApiTopic, type ClientBase, type IRequestRetryPolicy } from '@vertesia/api-fetch-client';
 import type {
+    AbortUploadSessionPayload,
+    AbortUploadSessionResponse,
     BucketCreateAccessStatusResponse,
     BucketReadAccessStatusResponse,
     BulkUploadUrlsPayload,
     BulkUploadUrlsResponse,
+    CompleteUploadSessionPayload,
+    CompleteUploadSessionResponse,
+    CreateUploadSessionPayload,
     DeleteFileResult,
     EnsureBucketCreateAccessPayload,
     EnsureBucketCreateAccessResponse,
@@ -15,13 +20,16 @@ import type {
     FileMetadataUpdateResult,
     GetFileUrlPayload,
     GetFileUrlResponse,
+    GetUploadPartUrlsPayload,
     GetUploadUrlPayload,
     SetFileMetadataPayload,
+    UploadPartUrlsResponse,
+    UploadSession,
 } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
 import { fetchSignedUrl } from './signed-url.js';
-import { getUploadBody, uploadHeaders } from './upload-body.js';
-import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
+import { fileLocationForError, sanitizedErrorCause, uploadContent } from './upload-content.js';
+import { getUploadMimeTypeHint } from './uploadMimeType.js';
 
 export const MEMORIES_PREFIX = 'memories';
 export const ARTIFACTS_PREFIX = 'agents';
@@ -31,25 +39,6 @@ const FILE_SIGNING_RETRY_POLICY: IRequestRetryPolicy = {
     methods: ['POST'],
     statuses: [502, 503, 504],
 };
-
-function fileLocationForError(location: string): string {
-    try {
-        const url = new URL(location);
-        return `${url.protocol}//${url.host}${url.pathname}`;
-    } catch {
-        return location.split(/[?#]/, 1)[0] || 'unknown file';
-    }
-}
-
-function sanitizedErrorCause(error: unknown): Error | undefined {
-    if (!(error instanceof Error)) {
-        return undefined;
-    }
-    const message = error.message.replace(/https?:\/\/[^\s)\]}>"']+/g, (url) => fileLocationForError(url));
-    const cause = new Error(message);
-    cause.name = error.name;
-    return cause;
-}
 
 function fileDownloadFailureReason(status?: number, statusText?: string): string {
     if (status === 404) return 'not found';
@@ -157,6 +146,31 @@ export class FilesApi extends ApiTopic {
         });
     }
 
+    /**
+     * Start an upload in parts, for content too large for one signed PUT. The upload methods of this API use it
+     * for stream sources longer than one part; call it directly only to drive the store's protocol yourself.
+     */
+    createUploadSession(payload: CreateUploadSessionPayload): Promise<UploadSession> {
+        return this.post('/upload-sessions', { payload, retryPolicy: FILE_SIGNING_RETRY_POLICY });
+    }
+
+    /** Signed URLs for parts of an `s3_multipart` upload session. */
+    getUploadPartUrls(payload: GetUploadPartUrlsPayload): Promise<UploadPartUrlsResponse> {
+        return this.post('/upload-sessions/parts', { payload, retryPolicy: FILE_SIGNING_RETRY_POLICY });
+    }
+
+    /** Assemble the uploaded parts of an `s3_multipart` upload session into the file. */
+    completeUploadSession(payload: CompleteUploadSessionPayload): Promise<CompleteUploadSessionResponse> {
+        // Retried like the other calls: aborting all the uploaded parts for one gateway error costs far more than a
+        // retry of a completion that already went through, which S3 answers or refuses without harm.
+        return this.post('/upload-sessions/complete', { payload, retryPolicy: FILE_SIGNING_RETRY_POLICY });
+    }
+
+    /** Discard an unfinished `s3_multipart` upload session and its parts. */
+    abortUploadSession(payload: AbortUploadSessionPayload): Promise<AbortUploadSessionResponse> {
+        return this.post('/upload-sessions/abort', { payload, retryPolicy: FILE_SIGNING_RETRY_POLICY });
+    }
+
     // Strictly typed: provide either simple args or a full payload via a separate method
     getDownloadUrl(file: string, name?: string, disposition?: 'inline' | 'attachment'): Promise<GetFileUrlResponse> {
         const payload: GetFileUrlPayload = { file, name, disposition };
@@ -203,22 +217,13 @@ export class FilesApi extends ApiTopic {
             await Promise.all(
                 batch.map(async (source, j) => {
                     const idx = i + j;
-                    const { url, id, mime_type } = files[idx];
-                    const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
-
-                    const upload = await getUploadBody(source);
-                    const res = await fetchSignedUrl(url, {
-                        method: 'PUT',
-                        body: upload.body,
-                        headers: uploadHeaders(upload, sourceMimeType),
-                    });
-
-                    if (!res.ok) {
-                        throw new Error(`Failed to upload file ${source.name}: ${res.statusText}`);
-                    }
-
-                    const etag = res.headers.get('etag')?.replace(/^"(.*)"$/, '$1');
-                    results[idx] = { source: id, name: source.name, type: sourceMimeType, etag };
+                    const { id, mime_type, etag } = await uploadContent(
+                        this,
+                        source,
+                        fileDescriptors[idx],
+                        async () => files[idx],
+                    );
+                    results[idx] = { source: id, name: source.name, type: mime_type, etag };
                 }),
             );
         }
@@ -253,33 +258,13 @@ export class FilesApi extends ApiTopic {
         fileId: string | undefined,
         name: string,
     ): Promise<{ id: string; path: string }> {
-        const { url, id, path, mime_type } = await this.getUploadUrl({
-            id: fileId,
-            name,
-            mime_type: getUploadMimeTypeHint(source.type),
-        });
-        const sourceMimeType = resolveUploadMimeType(source.type, mime_type) || 'application/gzip';
-
-        const upload = await getUploadBody(source);
-        const res = await fetchSignedUrl(url, {
-            method: 'PUT',
-            body: upload.body,
-            headers: uploadHeaders(upload, sourceMimeType),
-        }).catch((err) => {
-            console.error('Failed to upload file', { err, location: fileLocationForError(url), id, path });
-            throw err;
-        });
-        if (!res.ok) {
-            console.error('Failed to upload file', {
-                status: res.status,
-                statusText: res.statusText,
-                location: fileLocationForError(url),
-                id,
-                path,
-            });
-            throw new Error(`Failed to upload file: ${res.statusText}`);
-        }
-
+        const { id, path } = await uploadContent(
+            this,
+            source,
+            { id: fileId, name, mime_type: getUploadMimeTypeHint(source.type) },
+            undefined,
+            'application/gzip',
+        );
         return { id, path };
     }
 
