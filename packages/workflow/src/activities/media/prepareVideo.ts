@@ -122,7 +122,7 @@ export async function prepareVideo(
             } else {
                 log.debug('Generating video rendition');
                 renditionResult = await generateRenditionWithDimensions(
-                    await videoSource.localPath(),
+                    await videoSource.localInput(),
                     tempOutputDir,
                     metadata,
                     maxResolution,
