@@ -8753,6 +8753,70 @@ export type BulkUploadUrlsPayload = {
 export type BulkUploadUrlsResponse = {
     files: GetFileUrlResponse[];
 };
+export type CreateUploadSessionPayload = {
+    name: string;
+    id?: string | undefined;
+    mime_type?: string | undefined;
+};
+export type GcsResumableUploadSession = {
+    protocol: 'gcs_resumable';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    url: string;
+};
+export type AzureBlockBlobUploadSession = {
+    protocol: 'azure_block_blob';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    url: string;
+};
+export type S3MultipartUploadSession = {
+    protocol: 's3_multipart';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    upload_id: string;
+};
+export type UploadSession = GcsResumableUploadSession | AzureBlockBlobUploadSession | S3MultipartUploadSession;
+export type GetUploadPartUrlsPayload = {
+    id: string;
+    upload_id: string;
+    part_numbers: number[];
+};
+export type UploadPartUrl = {
+    part_number: number;
+    url: string;
+};
+export type UploadPartUrlsResponse = {
+    parts: UploadPartUrl[];
+};
+export type CompletedUploadPart = {
+    part_number: number;
+    etag: string;
+};
+export type CompleteUploadSessionPayload = {
+    id: string;
+    upload_id: string;
+    parts: CompletedUploadPart[];
+};
+export type CompleteUploadSessionResponse = {
+    id: string;
+    path: string;
+    etag?: string | undefined;
+};
+export type AbortUploadSessionPayload = {
+    id: string;
+    upload_id: string;
+};
+export type AbortUploadSessionResponse = {
+    id: string;
+    aborted: boolean;
+};
 export type FileBucketResponse = {
     bucket: string;
     location?: string | undefined;
@@ -11571,6 +11635,19 @@ export interface ApiComponentTypes {
     BucketCreateAccessStatusResponse: BucketCreateAccessStatusResponse;
     EnsureBucketCreateAccessPayload: EnsureBucketCreateAccessPayload;
     EnsureBucketCreateAccessResponse: EnsureBucketCreateAccessResponse;
+    AbortUploadSessionPayload: AbortUploadSessionPayload;
+    AbortUploadSessionResponse: AbortUploadSessionResponse;
+    AzureBlockBlobUploadSession: AzureBlockBlobUploadSession;
+    CompletedUploadPart: CompletedUploadPart;
+    CompleteUploadSessionPayload: CompleteUploadSessionPayload;
+    CompleteUploadSessionResponse: CompleteUploadSessionResponse;
+    CreateUploadSessionPayload: CreateUploadSessionPayload;
+    GcsResumableUploadSession: GcsResumableUploadSession;
+    GetUploadPartUrlsPayload: GetUploadPartUrlsPayload;
+    S3MultipartUploadSession: S3MultipartUploadSession;
+    UploadPartUrl: UploadPartUrl;
+    UploadPartUrlsResponse: UploadPartUrlsResponse;
+    UploadSession: UploadSession;
     TaskFieldType: TaskFieldType;
     DurableTaskStatus: DurableTaskStatus;
     TaskSource: TaskSource;

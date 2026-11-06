@@ -3,6 +3,7 @@ import type { VertesiaClient } from '@vertesia/client';
 import { removeTempFiles, saveBlobToTempFile } from '../../utils/blobs.js';
 import { getSourceLimits } from '../../utils/source-limits.js';
 import {
+    type CompletionBudget,
     execActivityFile,
     execActivityFileWithProgress,
     ffmpegInputThreadArgs,
@@ -134,21 +135,26 @@ export function redactVideoInputError(error: unknown, input: VideoInput): unknow
 
 /**
  * Run ffmpeg or ffprobe with `args` that read `input`, keeping a signed URL out of the logged arguments, the returned
- * output and any error. `progress` runs it under the stall watchdog, for commands that print encoding progress.
+ * output and any error. `progress` runs it under the stall watchdog, for commands that print encoding progress, and
+ * `completionBudget` also stops such a command early when it is not going to finish in time.
  */
 export async function execOnVideoInput(
     input: VideoInput,
     command: 'ffmpeg' | 'ffprobe',
     args: string[],
-    { progress = false, logMessage }: { progress?: boolean; logMessage?: string } = {},
+    {
+        progress = false,
+        logMessage,
+        completionBudget,
+    }: { progress?: boolean; logMessage?: string; completionBudget?: CompletionBudget } = {},
 ): Promise<{ stdout: string; stderr: string }> {
     const redact = (text: string) => redactVideoInput(text, input);
     if (logMessage) {
         log.debug(logMessage, { command, args: args.map(redact) });
     }
     try {
-        if (progress) {
-            return await execActivityFileWithProgress(command, args, { redact });
+        if (progress || completionBudget) {
+            return await execActivityFileWithProgress(command, args, { redact, completionBudget });
         }
         const { stdout, stderr } = await execActivityFile(command, args);
         return { stdout: redact(stdout), stderr: redact(stderr) };
@@ -177,13 +183,49 @@ export function commandFailureLog(input: VideoInput): typeof log.warn {
 }
 
 /**
- * Sign a GET URL for `source` so ffmpeg can read only the bytes it needs. Returns undefined when no HTTP(S) URL can be
- * obtained, and the caller downloads the file instead.
+ * Route that signs a download URL for longer than the store's default lifetime. It serves only the platform's own
+ * content processing, up to {@link PROCESSING_URL_MAX_TTL_SECONDS}; any other caller is refused.
  */
-export async function getSignedVideoUrl(client: VertesiaClient, source: string): Promise<string | undefined> {
+const PROCESSING_DOWNLOAD_URL_PATH = '/processing-download-url';
+
+/** Longest lifetime the processing route signs a URL for: 24 hours. */
+export const PROCESSING_URL_MAX_TTL_SECONDS = 24 * 60 * 60;
+
+/**
+ * A signed URL for `source`, valid for `ttlSeconds` when the processing route grants it, and for the store's default
+ * lifetime otherwise: when no lifetime is asked for, when the caller is not the platform's content processing, or when
+ * the server has no such route.
+ */
+async function signSource(client: VertesiaClient, source: string, ttlSeconds: number | undefined): Promise<string> {
+    if (ttlSeconds !== undefined) {
+        try {
+            const { url } = await client.files.post<{ url: string }>(PROCESSING_DOWNLOAD_URL_PATH, {
+                payload: { file: source, ttl: ttlSeconds },
+            });
+            return url;
+        } catch (error) {
+            rethrowIfActivityStopped(error);
+            log.info('Could not sign a longer-lived URL for the video source; using the default lifetime', {
+                error: error instanceof Error ? error.message : String(error),
+            });
+        }
+    }
+    return (await client.files.getDownloadUrl(source)).url;
+}
+
+/**
+ * Sign a GET URL for `source` so ffmpeg can read only the bytes it needs, valid for `ttlSeconds` where the server grants
+ * it ({@link signSource}). Returns undefined when no HTTP(S) URL can be obtained, and the caller downloads the file
+ * instead.
+ */
+export async function getSignedVideoUrl(
+    client: VertesiaClient,
+    source: string,
+    ttlSeconds?: number,
+): Promise<string | undefined> {
     try {
         // Same rule as `client.files.downloadFile`: an HTTPS source is already readable as is.
-        const url = source.startsWith('https:') ? source : (await client.files.getDownloadUrl(source)).url;
+        const url = source.startsWith('https:') ? source : await signSource(client, source, ttlSeconds);
         const { protocol } = new URL(url);
         if (protocol === 'https:' || protocol === 'http:') {
             return url;
@@ -201,12 +243,26 @@ export async function getSignedVideoUrl(client: VertesiaClient, source: string):
 }
 
 /**
- * Age after which a signed URL is signed again before use. The download-URL API takes no lifetime, and a signed URL
- * can be valid for as little as 15 minutes, so a command handed a URL at most this old has 10 minutes or more before
- * it expires. A command that outlives its URL fails with a 403, which is not retried, and falls back to the
- * download.
+ * Age after which a signed URL is signed again before use. A URL signed without a lifetime can be valid for as little
+ * as 15 minutes, so a command handed a URL at most this old has 10 minutes or more before it expires. A command that
+ * outlives its URL fails with a 403, which is not retried, and falls back to the download. A command that reads its
+ * whole source over the URL, such as a transcode, asks for a lifetime that covers the Activity instead
+ * ({@link VideoSourceOptions.ttlSeconds}).
  */
 const URL_REFRESH_MS = 5 * 60_000;
+
+export interface VideoSourceOptions {
+    /**
+     * Lifetime to sign the URL for, in seconds, up to {@link PROCESSING_URL_MAX_TTL_SECONDS}. Granted only to the
+     * platform's content processing; the store's default otherwise, and when unset.
+     */
+    ttlSeconds?: number;
+    /**
+     * Called before the source is first downloaded, with the error of the URL read that failed, or undefined when there
+     * is no URL or it produced no result. Throw to refuse the download, for example when it would not fit on disk.
+     */
+    beforeDownload?: (urlError: unknown) => void;
+}
 
 /**
  * A source video read over a signed URL where a command needs only part of the file, and downloaded once where a
@@ -226,12 +282,13 @@ export class VideoSource {
         private readonly client: VertesiaClient,
         private readonly source: string,
         url: string | undefined,
+        private readonly options: VideoSourceOptions,
     ) {
         this.signed = url ? { url, at: Date.now() } : undefined;
     }
 
-    static async open(client: VertesiaClient, source: string): Promise<VideoSource> {
-        return new VideoSource(client, source, await getSignedVideoUrl(client, source));
+    static async open(client: VertesiaClient, source: string, options: VideoSourceOptions = {}): Promise<VideoSource> {
+        return new VideoSource(client, source, await getSignedVideoUrl(client, source, options.ttlSeconds), options);
     }
 
     /**
@@ -256,15 +313,21 @@ export class VideoSource {
     }
 
     private async signAgain(): Promise<void> {
-        const url = await getSignedVideoUrl(this.client, this.source);
+        const url = await getSignedVideoUrl(this.client, this.source, this.options.ttlSeconds);
         this.signed = url ? { url, at: Date.now() } : undefined;
     }
 
-    /** Path of the downloaded file, for a command that reads all of it, such as a transcode. Downloads on first use. */
-    async localPath(): Promise<string> {
+    /**
+     * Path of the downloaded file, for a command that reads all of it. Downloads on first use, once
+     * {@link VideoSourceOptions.beforeDownload} allows it; `urlError` is the failed URL read that the download replaces.
+     */
+    async localPath(urlError?: unknown): Promise<string> {
         if (!this.download && this.disposed) {
             // A late fallback must not leave a download behind that nothing will remove.
             throw new Error('The video source was disposed before it was downloaded');
+        }
+        if (!this.download) {
+            this.options.beforeDownload?.(urlError);
         }
         // A source over the media limit fails with a non-retryable SourceTooLargeError.
         const options = { maxBytes: getSourceLimits().mediaMaxBytes, limit: 'media' };
@@ -278,8 +341,8 @@ export class VideoSource {
     }
 
     /** {@link localPath} as a command input. */
-    async localInput(): Promise<VideoInput> {
-        return { kind: 'file', path: await this.localPath() };
+    async localInput(urlError?: unknown): Promise<VideoInput> {
+        return { kind: 'file', path: await this.localPath(urlError) };
     }
 
     /**
@@ -292,6 +355,7 @@ export class VideoSource {
         if (input.kind === 'file') {
             return await command(input);
         }
+        let urlError: unknown;
         try {
             const result = await command(input);
             if (result !== undefined) {
@@ -303,8 +367,9 @@ export class VideoSource {
             log.warn('Reading the video over its signed URL failed; downloading it instead', {
                 error: error instanceof Error ? error.message : String(error),
             });
+            urlError = error;
         }
-        return await command(await this.localInput());
+        return await command(await this.localInput(urlError));
     }
 
     /** Remove the downloaded copy, if any. */
