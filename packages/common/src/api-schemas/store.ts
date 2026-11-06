@@ -72,11 +72,14 @@ export const IntakePageRangesSchema = z.array(z.array(z.int32()).min(2).max(2)).
         'document ([[1, 2], [-1, -1]] = first two pages plus the last page).',
 });
 
+/** Lets an interface extend an inferred schema type, which declaration emit then references by name. */
+type Declared<T> = T;
+
 export const RunDataStorageLevelSchema = z.enum(RunDataStorageLevel).meta({ id: 'RunDataStorageLevel' });
 
 export const ConfigModesSchema = z.enum(ConfigModes).meta({ id: 'ConfigModes' });
 
-export const InteractionExecutionConfigurationSchema = z
+const interactionExecutionConfigurationSchema = z
     .strictObject({
         id: z.string().optional().meta({
             description: 'Optional configuration identifier. Normally omit this when overriding intake settings.',
@@ -145,6 +148,14 @@ export const InteractionExecutionConfigurationSchema = z
         }),
     })
     .meta({ id: 'InteractionExecutionConfiguration' });
+
+// Declaration emit prints an inferred Zod type in full wherever it is used. This configuration is embedded
+// several times in every intake policy and in event and view schemas, so it is exported through a named type
+// that their declarations reference instead of repeating its fields.
+export interface InteractionExecutionConfigurationSchemaType
+    extends Declared<typeof interactionExecutionConfigurationSchema> {}
+export const InteractionExecutionConfigurationSchema: InteractionExecutionConfigurationSchemaType =
+    interactionExecutionConfigurationSchema;
 
 export const ContentTypeExtractionGroundingReviewPolicySchema = z
     .strictObject({
@@ -314,7 +325,7 @@ export const IntakeMediaAnalysisOverridesSchema = z
         description: 'Per-media analysis settings shared by StandardIntake variables and intake policies.',
     });
 
-export const ContentTypeIntakePolicySchema = z
+const contentTypeIntakePolicySchema = z
     .strictObject({
         media_analysis: IntakeMediaAnalysisOverridesSchema.optional().meta({
             description:
@@ -551,6 +562,10 @@ export const ContentTypeIntakePolicySchema = z
         description:
             'Shared intake processing policy. Workflow parameters override content-type policy, which overrides project defaults. Omitted processing fields inherit from the next layer.',
     });
+
+// Exported through a named type for the same reason: every content-type schema embeds this policy.
+export interface ContentTypeIntakePolicySchemaType extends Declared<typeof contentTypeIntakePolicySchema> {}
+export const ContentTypeIntakePolicySchema: ContentTypeIntakePolicySchemaType = contentTypeIntakePolicySchema;
 
 export const ColumnLayoutSchema = z
     .strictObject({
