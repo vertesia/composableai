@@ -2527,6 +2527,7 @@ const AGENT_COMMUNICATION_SCHEMAS = {
     ForwardEmailRequest: AgentCommunicationSchemas.ForwardEmailRequestSchema,
     ForwardEmailResponse: AgentCommunicationSchemas.ForwardEmailResponseSchema,
     PendingAskStatus: AgentCommunicationSchemas.PendingAskStatusSchema,
+    PendingAskDelivery: AgentCommunicationSchemas.PendingAskDeliverySchema,
     PendingAskData: AgentCommunicationSchemas.PendingAskDataSchema,
     RegisterPendingAskRequest: AgentCommunicationSchemas.RegisterPendingAskRequestSchema,
     RegisterPendingAskResponse: AgentCommunicationSchemas.RegisterPendingAskResponseSchema,
