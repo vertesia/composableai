@@ -161,8 +161,17 @@ export const RegisterPendingAskResponseSchema = z
     })
     .meta({ id: 'RegisterPendingAskResponse' });
 
+export const PendingAskDeliverySchema = z.enum(['deliver', 'already_delivered']).meta({
+    id: 'PendingAskDelivery',
+    description:
+        'What the server does with the response. `deliver` sends it to the waiting agent, which then records the resolution itself. `already_delivered` states that the agent has the response, so the server records the resolution and closes the task that backs the question. When omitted, the server only records the resolution: the agent keeps waiting and the task stays open.',
+});
+
 export const ResolvePendingAskRequestSchema = z
-    .strictObject({ response: z.string() })
+    .strictObject({
+        response: z.string(),
+        delivery: PendingAskDeliverySchema.optional(),
+    })
     .meta({ id: 'ResolvePendingAskRequest' });
 
 export const ResolvePendingAskResponseSchema = z
