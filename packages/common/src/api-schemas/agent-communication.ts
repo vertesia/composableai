@@ -26,6 +26,10 @@ export const SendEmailRequestSchema = z
         route_key: z.string().optional(),
         in_reply_to: z.string().optional(),
         references: z.array(z.string()).optional(),
+        request_id: z.string().optional().meta({
+            description:
+                'The agent prompt this email asks. A reply to the email then answers only that prompt, not a newer one.',
+        }),
     })
     .meta({ id: 'SendEmailRequest' });
 
@@ -84,6 +88,10 @@ export const ForwardEmailRequestSchema = z
             text: z.string(),
             html: z.string().optional(),
             message_id: z.string().optional(),
+            in_reply_to: z.string().optional().meta({
+                description:
+                    "The email's In-Reply-To header. When it names an email that asked an agent prompt, the reply answers only that prompt.",
+            }),
         }),
         context: z.record(z.string(), z.unknown()).optional(),
         attachments: z

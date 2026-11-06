@@ -3439,6 +3439,7 @@ export type SendEmailRequest = {
     route_key?: string | undefined;
     in_reply_to?: string | undefined;
     references?: string[] | undefined;
+    request_id?: string | undefined;
 };
 export type SendEmailResponse = {
     success: boolean;
@@ -3488,6 +3489,7 @@ export type ForwardEmailRequest = {
         text: string;
         html?: string | undefined;
         message_id?: string | undefined;
+        in_reply_to?: string | undefined;
     };
     context?: Record<string, unknown> | undefined;
     attachments?:
