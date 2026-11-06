@@ -2228,6 +2228,10 @@ interface Checks {
         W.PendingAskStatus,
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskStatusSchema>
     >;
+    PendingAskDelivery: Same<
+        W.PendingAskDelivery,
+        z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDeliverySchema>
+    >;
     PendingAskData: Same<
         W.PendingAskData,
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDataSchema>
@@ -10029,6 +10033,10 @@ interface Checks {
         W.ApiComponentTypes['PendingAskStatus'],
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskStatusSchema>
     >;
+    'component:PendingAskDelivery': Same<
+        W.ApiComponentTypes['PendingAskDelivery'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDeliverySchema>
+    >;
     'component:PendingAskData': Same<
         W.ApiComponentTypes['PendingAskData'],
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDataSchema>
@@ -10761,6 +10769,7 @@ const checks: Checks = {
     ExportPropertiesPayload: true,
     ExportPropertiesResponse: true,
     PendingAskStatus: true,
+    PendingAskDelivery: true,
     PendingAskData: true,
     RegisterPendingAskRequest: true,
     RegisterPendingAskResponse: true,
@@ -12787,6 +12796,7 @@ const checks: Checks = {
     'component:ForwardEmailRequest': true,
     'component:ForwardEmailResponse': true,
     'component:PendingAskStatus': true,
+    'component:PendingAskDelivery': true,
     'component:PendingAskData': true,
     'component:RegisterPendingAskRequest': true,
     'component:RegisterPendingAskResponse': true,
@@ -12821,6 +12831,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2667);
+        expect(Object.keys(checks)).toHaveLength(2669);
     });
 });

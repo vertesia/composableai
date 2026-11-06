@@ -3439,6 +3439,7 @@ export type SendEmailRequest = {
     route_key?: string | undefined;
     in_reply_to?: string | undefined;
     references?: string[] | undefined;
+    request_id?: string | undefined;
 };
 export type SendEmailResponse = {
     success: boolean;
@@ -3488,6 +3489,7 @@ export type ForwardEmailRequest = {
         text: string;
         html?: string | undefined;
         message_id?: string | undefined;
+        in_reply_to?: string | undefined;
     };
     context?: Record<string, unknown> | undefined;
     attachments?:
@@ -5446,6 +5448,10 @@ export type ExportPropertiesResponse = {
  */
 export type PendingAskStatus = 'pending' | 'resolved' | 'expired';
 /**
+ * What the server does with the response when a pending ask is resolved.
+ */
+export type PendingAskDelivery = 'deliver' | 'already_delivered';
+/**
  * Data stored in Redis for pending ask_user requests.
  * Tracks which agents are waiting for user input and enables
  * both webhook notifications and portal views.
@@ -5488,6 +5494,7 @@ export type RegisterPendingAskResponse = {
 };
 export type ResolvePendingAskRequest = {
     response: string;
+    delivery?: PendingAskDelivery | undefined;
 };
 export type ResolvePendingAskResponse = {
     success: boolean;
@@ -12528,6 +12535,7 @@ export interface ApiComponentTypes {
     ForwardEmailRequest: ForwardEmailRequest;
     ForwardEmailResponse: ForwardEmailResponse;
     PendingAskStatus: PendingAskStatus;
+    PendingAskDelivery: PendingAskDelivery;
     PendingAskData: PendingAskData;
     RegisterPendingAskRequest: RegisterPendingAskRequest;
     RegisterPendingAskResponse: RegisterPendingAskResponse;
