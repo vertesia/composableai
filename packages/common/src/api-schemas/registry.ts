@@ -2810,6 +2810,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // Derive membership so new provider schemas inherit this enforcement check automatically.
     'OpenAiImageGenerationOptions',
     'OpenAiImageGenerationMask',
+    'OpenAiImageSvgOptions',
     ...ModelOptionsSchema.options.map((schema) => {
         const id = schema.meta()?.id;
         if (!id) throw new Error('Model option schemas must declare a component id');

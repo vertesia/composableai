@@ -4921,7 +4921,8 @@
         },
         "additionalProperties": false
       }
-    }
+    },
+    "additionalProperties": false
   },
   "OpenAiTranscriptionOptions": {
     "type": "object",
