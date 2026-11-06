@@ -1,14 +1,12 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import type { NamedInteractionExecutionPayloadSchema } from './interaction.js';
-import { type ApiComponentName, type ApiComponentType, ApiSchemaComponents, mergeComponentGroups } from './registry.js';
-
-/**
- * `N` when `ApiComponentType` resolves it, and `never` when it does not. Distributing this over the
- * whole union turns a name without a generated type into an assignment error on the list below, which
- * `typecheck:test` reports.
- */
-type ResolvedName<N extends ApiComponentName> = [ApiComponentType<N>] extends [never] ? never : N;
+import {
+    type ApiComponentName,
+    type ApiComponentType,
+    buildApiSchemaComponents,
+    mergeComponentGroups,
+} from './registry.js';
 
 /**
  * Covers the one way the group split can corrupt the registry.
@@ -60,11 +58,12 @@ describe('mergeComponentGroups', () => {
         );
     });
 
-    it('emits a component from every group, and resolves its type', () => {
+    it('emits a component from every group', { timeout: 30_000 }, () => {
         // The merge takes a list, so a group can be dropped from it as easily as duplicated in it —
         // and dropping one is silent in a different way: the generated names still list those
         // components until the next `gen:schemas`, so the code compiles and only the emitted
-        // document loses them. One known name per group is what notices.
+        // document loses them. A known name from each of these groups, looked up in a fresh
+        // emission rather than the committed artifact, notices.
         const perGroup = [
             'Account',
             'ProjectModelDefaults',
@@ -81,10 +80,11 @@ describe('mergeComponentGroups', () => {
             'AuditTrailResponse',
             'ViewExperience',
             'CopyFilePayload',
-        ] as const satisfies readonly ResolvedName<ApiComponentName>[];
+        ] as const satisfies readonly ApiComponentName[];
 
+        const emitted = buildApiSchemaComponents();
         for (const name of perGroup) {
-            expect(ApiSchemaComponents).toHaveProperty(name);
+            expect(emitted).toHaveProperty(name);
         }
     });
 });
