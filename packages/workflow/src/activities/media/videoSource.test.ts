@@ -34,8 +34,9 @@ const SIGNED_URL = 'https://storage.example.com/bucket/video.mp4?X-Signature=sec
 const urlInput: VideoInput = { kind: 'url', url: SIGNED_URL };
 const fileInput: VideoInput = { kind: 'file', path: '/tmp/video.mp4' };
 
-function clientWithUrl(getDownloadUrl: () => Promise<{ url: string }>): VertesiaClient {
-    return { files: { getDownloadUrl: vi.fn(getDownloadUrl) } } as unknown as VertesiaClient;
+/** A client whose default and processing signing both answer with `sign`. */
+function clientWithUrl(sign: () => Promise<{ url: string }>): VertesiaClient {
+    return { files: { getDownloadUrl: vi.fn(sign), post: vi.fn(sign) } } as unknown as VertesiaClient;
 }
 
 function runInActivity<T>(fn: () => Promise<T>): Promise<T> {
@@ -138,6 +139,31 @@ describe('getSignedVideoUrl', () => {
         const client = clientWithUrl(() => Promise.resolve({ url: SIGNED_URL }));
 
         await expect(getSignedVideoUrl(client, 'gs://bucket/video.mp4')).resolves.toBe(SIGNED_URL);
+        expect(client.files.getDownloadUrl).toHaveBeenCalledWith('gs://bucket/video.mp4');
+        expect(client.files.post).not.toHaveBeenCalled();
+    });
+
+    it('asks the processing route for the requested lifetime', async () => {
+        const client = clientWithUrl(() => Promise.resolve({ url: SIGNED_URL }));
+
+        await expect(getSignedVideoUrl(client, 'gs://bucket/video.mp4', 3600)).resolves.toBe(SIGNED_URL);
+        expect(client.files.post).toHaveBeenCalledWith('/processing-download-url', {
+            payload: { file: 'gs://bucket/video.mp4', ttl: 3600 },
+        });
+        expect(client.files.getDownloadUrl).not.toHaveBeenCalled();
+    });
+
+    it('signs for the default lifetime when the processing route refuses the caller', async () => {
+        const client = {
+            files: {
+                getDownloadUrl: vi.fn().mockResolvedValue({ url: SIGNED_URL }),
+                post: vi.fn().mockRejectedValue(Object.assign(new Error('403 Forbidden'), { status: 403 })),
+            },
+        } as unknown as VertesiaClient;
+
+        await expect(runInActivity(() => getSignedVideoUrl(client, 'gs://bucket/video.mp4', 3600))).resolves.toBe(
+            SIGNED_URL,
+        );
         expect(client.files.getDownloadUrl).toHaveBeenCalledWith('gs://bucket/video.mp4');
     });
 
@@ -290,6 +316,71 @@ describe('VideoSource', () => {
     });
 });
 
+describe('VideoSource download guard', () => {
+    const downloaded = path.join(os.tmpdir(), 'video-source-guard-test.mp4');
+
+    beforeEach(() => {
+        vi.mocked(saveBlobToTempFile).mockResolvedValue(downloaded);
+    });
+
+    const open = (beforeDownload: (urlError: unknown) => void, signs = true) =>
+        runInActivity(() =>
+            VideoSource.open(
+                clientWithUrl(() => (signs ? Promise.resolve({ url: SIGNED_URL }) : Promise.reject(new Error('503')))),
+                'gs://bucket/video.mp4',
+                { ttlSeconds: 3600, beforeDownload },
+            ),
+        );
+
+    it('passes the failed URL read to the guard before the fallback download', async () => {
+        const guard = vi.fn();
+        const failure = new Error('HTTP error 403');
+        const source = await open(guard);
+        const command = (input: VideoInput) =>
+            input.kind === 'url' ? Promise.reject(failure) : Promise.resolve('local');
+
+        await expect(runInActivity(() => source.withFallback(command))).resolves.toBe('local');
+        expect(guard).toHaveBeenCalledExactlyOnceWith(failure);
+    });
+
+    it('fails with what the guard throws, without downloading', async () => {
+        const failure = new Error('HTTP error 403');
+        const source = await open((urlError) => {
+            throw urlError;
+        });
+        const command = vi.fn((input: VideoInput) =>
+            input.kind === 'url' ? Promise.reject(failure) : Promise.resolve('local'),
+        );
+
+        await expect(runInActivity(() => source.withFallback(command))).rejects.toBe(failure);
+        expect(saveBlobToTempFile).not.toHaveBeenCalled();
+        expect(command).toHaveBeenCalledTimes(1);
+    });
+
+    it('asks the guard with no URL error when the URL read produced nothing or there is no URL', async () => {
+        const guard = vi.fn();
+        const empty = await open(guard);
+        await runInActivity(() =>
+            empty.withFallback((input) => Promise.resolve(input.kind === 'url' ? undefined : 'local')),
+        );
+        const unsigned = await open(guard, false);
+        await runInActivity(() => unsigned.withFallback(() => Promise.resolve('local')));
+
+        expect(guard.mock.calls).toEqual([[undefined], [undefined]]);
+    });
+
+    it('does not ask again once the source is downloaded', async () => {
+        const guard = vi.fn();
+        const source = await open(guard);
+
+        await source.localPath();
+        await source.localPath();
+        await runInActivity(() => source.withFallback(() => Promise.resolve('local')));
+
+        expect(guard).toHaveBeenCalledTimes(1);
+    });
+});
+
 describe('VideoSource cancellation, disposal and settling', () => {
     it('propagates cancellation while signing instead of falling back to a download', async () => {
         const env = new MockActivityEnvironment();
@@ -356,6 +447,18 @@ describe('VideoSource URL lifetime', () => {
             url: `${SIGNED_URL}&n=2`,
         });
         expect(getDownloadUrl).toHaveBeenCalledTimes(2);
+    });
+
+    it('signs for the requested lifetime, including when signing again', async () => {
+        const now = vi.spyOn(Date, 'now').mockReturnValue(1_000_000);
+        const client = clientWithUrl(() => Promise.resolve({ url: SIGNED_URL }));
+        const source = await VideoSource.open(client, 'gs://bucket/video.mp4', { ttlSeconds: 3600 });
+
+        now.mockReturnValue(1_000_000 + 6 * 60_000);
+        await runInActivity(() => source.partialInput());
+
+        const request = ['/processing-download-url', { payload: { file: 'gs://bucket/video.mp4', ttl: 3600 } }];
+        expect(vi.mocked(client.files.post).mock.calls).toEqual([request, request]);
     });
 
     it('signs an old URL once for concurrent commands', async () => {
