@@ -37,6 +37,9 @@ function emitRegistryDeclaration(): string {
  */
 describe('registry declarations', () => {
     it('do not carry the schema groups', { timeout: 120_000 }, () => {
-        expect(emitRegistryDeclaration()).not.toMatch(/_SCHEMAS\b|API_SCHEMA_GROUPS/);
+        expect(
+            emitRegistryDeclaration(),
+            'registry.d.ts names a schema group: derive exported types from the generated ApiComponentTypes map',
+        ).not.toMatch(/_SCHEMAS\b|API_SCHEMA_GROUPS/);
     });
 });
