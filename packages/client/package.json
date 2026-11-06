@@ -4,6 +4,9 @@
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
+    "browser": {
+        "./lib/store/node-request.js": "./lib/store/node-request.browser.js"
+    },
     "files": [
         "lib",
         "src",

@@ -20,6 +20,7 @@ import type {
 } from '@vertesia/common';
 import { StreamSource } from '../StreamSource.js';
 import { fetchSignedUrl } from './signed-url.js';
+import { getUploadBody, uploadHeaders } from './upload-body.js';
 import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
 
 export const MEMORIES_PREFIX = 'memories';
@@ -203,13 +204,13 @@ export class FilesApi extends ApiTopic {
                 batch.map(async (source, j) => {
                     const idx = i + j;
                     const { url, id, mime_type } = files[idx];
-                    const isStream = source instanceof StreamSource;
                     const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
 
+                    const upload = await getUploadBody(source);
                     const res = await fetchSignedUrl(url, {
                         method: 'PUT',
-                        body: isStream ? source.stream : source,
-                        headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
+                        body: upload.body,
+                        headers: uploadHeaders(upload, sourceMimeType),
                     });
 
                     if (!res.ok) {
@@ -243,20 +244,27 @@ export class FilesApi extends ApiTopic {
      * @returns the uploaded file id and storage path
      */
     async uploadFileWithPath(source: StreamSource | File): Promise<{ id: string; path: string }> {
-        const isStream = source instanceof StreamSource;
+        return this.uploadSource(source, source instanceof StreamSource ? source.id : undefined, source.name);
+    }
+
+    /** Upload a source under a file id and name that may differ from its own. */
+    private async uploadSource(
+        source: StreamSource | File,
+        fileId: string | undefined,
+        name: string,
+    ): Promise<{ id: string; path: string }> {
         const { url, id, path, mime_type } = await this.getUploadUrl({
-            id: isStream ? source.id : undefined,
-            name: source.name,
+            id: fileId,
+            name,
             mime_type: getUploadMimeTypeHint(source.type),
         });
         const sourceMimeType = resolveUploadMimeType(source.type, mime_type) || 'application/gzip';
 
+        const upload = await getUploadBody(source);
         const res = await fetchSignedUrl(url, {
             method: 'PUT',
-            body: isStream ? source.stream : source,
-            headers: {
-                'Content-Type': sourceMimeType,
-            },
+            body: upload.body,
+            headers: uploadHeaders(upload, sourceMimeType),
         }).catch((err) => {
             console.error('Failed to upload file', { err, location: fileLocationForError(url), id, path });
             throw err;
@@ -319,12 +327,7 @@ export class FilesApi extends ApiTopic {
     async uploadMemoryPack(source: StreamSource | File): Promise<string> {
         const fileId = getMemoryFilePath(source.name);
         const nameWithExt = source.name.endsWith('.tar.gz') ? source.name : `${source.name}.tar.gz`;
-        if (source instanceof File) {
-            const file = source as File;
-            return this.uploadFile(new StreamSource(file.stream(), nameWithExt, file.type, fileId));
-        } else {
-            return this.uploadFile(new StreamSource(source.stream, nameWithExt, source.type, fileId));
-        }
+        return (await this.uploadSource(source, fileId, nameWithExt)).id;
     }
 
     async downloadMemoryPack(name: string, gunzip: boolean = false): Promise<ReadableStream<Uint8Array>> {
@@ -356,12 +359,7 @@ export class FilesApi extends ApiTopic {
      */
     async uploadArtifact(runId: string, name: string, source: StreamSource | File): Promise<string> {
         const artifactPath = getAgentArtifactPath(runId, name);
-        if (source instanceof File) {
-            const file = source as File;
-            return this.uploadFile(new StreamSource(file.stream(), name, file.type, artifactPath));
-        } else {
-            return this.uploadFile(new StreamSource(source.stream, name, source.type, artifactPath));
-        }
+        return (await this.uploadSource(source, artifactPath, name)).id;
     }
 
     /**
