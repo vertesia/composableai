@@ -29,6 +29,8 @@ export * from './environment.js';
 export * from './events.js';
 export * from './indexing.js';
 export * from './integrations.js';
+// Contracts outside this package build on these payloads. Neither is a published component.
+export { ToolResultsPayloadSchema, UserMessagePayloadSchema } from './interaction.js';
 export * from './oauth-server.js';
 export * from './parameters.js';
 export * from './process.js';
