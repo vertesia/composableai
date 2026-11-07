@@ -142,15 +142,15 @@ it('uses CIMD and PKCE, exchanges the callback once and restores the app deep li
     expect(requests.filter((request) => request.url.endsWith('/oauth/token'))).toHaveLength(1);
 });
 it('requests discovery and the client document together when a login starts', async () => {
-    const realFetch = vi.mocked(fetch).getMockImplementation();
-    if (!realFetch) throw new Error('Expected a fetch stub');
+    const stubbedFetch = vi.mocked(fetch).getMockImplementation();
+    if (!stubbedFetch) throw new Error('Expected a fetch stub');
     let release!: () => void;
     const released = new Promise<void>((resolve) => {
         release = resolve;
     });
     // Hold every response until both requests have been sent: sequential requests would wait forever.
     vi.mocked(fetch).mockImplementation(async (input, init) => {
-        const response = realFetch(input, init);
+        const response = stubbedFetch(input, init);
         await released;
         return response;
     });
@@ -546,6 +546,8 @@ it('keeps refresh credentials only in memory and revokes the latest one on logou
     if (!(exchange?.init?.body instanceof URLSearchParams)) throw new Error('Missing refresh grant');
     expect(exchange.init.body.get('grant_type')).toBe('refresh_token');
     expect(exchange.init.body.get('refresh_token')).toBe('refresh-credential');
+    // A refresh does not redirect, so it must not fetch the client document a new login prefetches.
+    expect(requests.some((request) => request.url === clientId)).toBe(false);
     vi.stubGlobal(
         'fetch',
         vi.fn(async () => new Response(null, { status: 200 })),

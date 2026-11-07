@@ -92,7 +92,9 @@ interface ClientDocument {
 /**
  * Fetch a client ID metadata document (CIMD), honouring the caching its server asks for, so a new tab can reuse a
  * recent copy instead of paying a round trip. The authorization server reads the document itself and enforces its
- * callback list, so a briefly stale copy here can delay a scope change but cannot authorize a removed callback.
+ * callback list, so a stale copy cannot authorize a removed callback. It can, until it expires, reject a callback
+ * that was just added (the check below fails) or keep requesting the old scopes; the document's `max-age` bounds
+ * both, so a client should keep it short.
  */
 async function fetchClientDocument(clientId: string): Promise<ClientDocument> {
     const response = await fetch(validatedEndpointUrl(clientId));
