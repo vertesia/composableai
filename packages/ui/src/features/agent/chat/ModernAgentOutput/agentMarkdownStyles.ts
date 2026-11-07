@@ -210,16 +210,11 @@ export const agentMarkdownStyles = `
     padding: 0.55rem 0.75rem;
     text-align: left;
     vertical-align: top;
-    /* Not "anywhere": that drops a column's minimum width to one letter, so the automatic layout
-       could squeeze a column of short words down to a letter per line. */
+    /* Not "anywhere": that drops a column's minimum width to one letter. Long runs such as hashes
+       and URLs get break points from rehypeTableCellBreaks instead. */
     overflow-wrap: break-word;
     word-break: normal;
     white-space: normal;
-}
-/* Long links and code identifiers may break anywhere instead of forcing the table to scroll. */
-.agent-markdown td a:not(:where(.not-prose, .not-prose *)),
-.agent-markdown td code:not(:where(.not-prose, .not-prose *)) {
-    overflow-wrap: anywhere;
 }
 .agent-markdown th:not(:where(.not-prose, .not-prose *)) {
     color: var(--muted);

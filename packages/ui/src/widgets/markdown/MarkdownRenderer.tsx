@@ -18,6 +18,7 @@ import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import { normalizeDirectives } from './normalizeDirectives';
 import { maskMathDelimiters, preprocessMathDelimiters } from './preprocessMathDelimiters';
 import { rehypeOrderedListMarkerWidth } from './rehypeOrderedListMarkerWidth';
+import { rehypeTableCellBreaks } from './rehypeTableCellBreaks';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 import { remarkRestoreMaskedDollars } from './remarkRestoreMaskedDollars';
 
@@ -32,7 +33,7 @@ type RehypePlugin = RehypePluginList[number];
 // node. Currency is escaped to `\$` by `preprocessMathDelimiters` (or masked by
 // `maskMathDelimiters`), so it does not match.
 const MATH_DELIMITER_REGEX = /(?:^|[^\\])\$/;
-const BASE_REHYPE_PLUGINS: RehypePluginList = [rehypeOrderedListMarkerWidth];
+const BASE_REHYPE_PLUGINS: RehypePluginList = [rehypeOrderedListMarkerWidth, rehypeTableCellBreaks];
 
 let rehypeKatex: RehypePlugin | undefined;
 let rehypeKatexPromise: Promise<RehypePlugin> | undefined;
@@ -74,6 +75,23 @@ function useRehypePlugins(markdown: string): RehypePluginList {
     }, [hasMath, plugin]);
 
     return React.useMemo(() => (plugin ? [...BASE_REHYPE_PLUGINS, plugin] : BASE_REHYPE_PLUGINS), [plugin]);
+}
+
+/**
+ * Scrolls a table sideways when its columns cannot fit their longest words, instead of letting it
+ * overflow the content around it. Callers can replace it through `components.table`.
+ */
+function MarkdownTable({
+    node: _node,
+    ...props
+}: React.TableHTMLAttributes<HTMLTableElement> & {
+    node?: Element;
+}) {
+    return (
+        <div className="overflow-x-auto">
+            <table {...props} />
+        </div>
+    );
 }
 
 // Custom URL schemes that we handle in our components
@@ -345,6 +363,7 @@ export function MarkdownRenderer({
         };
 
         return {
+            table: MarkdownTable,
             ...baseComponents,
             code: CodeComponent,
             a: LinkComponent,

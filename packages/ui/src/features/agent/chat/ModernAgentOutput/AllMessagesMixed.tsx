@@ -358,29 +358,6 @@ function SummaryWorkstreamLaunchMessage({
 const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
 const STORE_LINK_MARKDOWN_RE =
     /\[[^\]]+\]\((?:\/store\/(?:objects|collections)\/|store:|document:|document:\/\/|collection:)[^)]+\)/;
-const DEFAULT_AGENT_MARKDOWN_COMPONENTS: MarkdownRendererProps['components'] = {
-    table: AgentMarkdownTable,
-};
-
-/**
- * Lets a markdown table scroll horizontally when its columns cannot fit their longest words.
- * Column widths come from the browser's automatic table layout (see `agentMarkdownStyles`).
- */
-function AgentMarkdownTable({
-    node: _node,
-    children,
-    ...props
-}: React.TableHTMLAttributes<HTMLTableElement> & {
-    node?: unknown;
-    children?: React.ReactNode;
-}) {
-    return (
-        <div className="overflow-x-auto">
-            <table {...props}>{children}</table>
-        </div>
-    );
-}
-
 function getReactNodeTextLength(node: React.ReactNode): number {
     if (node === null || node === undefined || typeof node === 'boolean') return 0;
     if (typeof node === 'string' || typeof node === 'number') return String(node).length;
@@ -549,7 +526,6 @@ function SummaryMessage({
 
     const markdownComponents = useMemo(
         () => ({
-            ...DEFAULT_AGENT_MARKDOWN_COMPONENTS,
             a: createAgentMarkdownAnchor({
                 StoreLinkComponent,
                 CollectionLinkComponent,
@@ -1964,9 +1940,7 @@ function SummaryThoughtProseItem({
                 className={cn(SUMMARY_PROSE_CLASS, isLong && !disableCollapse && !isExpanded && AGENT_LINE_CLAMP_CLASS)}
                 style={{ overflowWrap: 'anywhere' }}
             >
-                <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
-                    {text}
-                </MarkdownRenderer>
+                <MarkdownRenderer artifactRunId={artifactRunId}>{text}</MarkdownRenderer>
             </div>
             {isLong && !disableCollapse ? (
                 <div className="mt-1.5 flex justify-end">
@@ -2034,9 +2008,7 @@ function SummaryStreamingMessage({
     return (
         <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
             <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
-                <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
-                    {text}
-                </MarkdownRenderer>
+                <MarkdownRenderer artifactRunId={artifactRunId}>{text}</MarkdownRenderer>
             </div>
         </div>
     );

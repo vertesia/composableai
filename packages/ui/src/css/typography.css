@@ -90,6 +90,15 @@
         border-color: var(--tw-prose-td-borders);
     }
 
+    /* Set on the cells so they never inherit "overflow-wrap: anywhere" or "word-break: break-word"
+       from a message container: with either, a table can squeeze a column of ordinary words down to
+       one letter per line. Long runs such as hashes and URLs get break points from
+       rehypeTableCellBreaks instead. */
+    .vprose :where(th, td):not(:where(.not-prose, .not-prose *)) {
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
     .vprose :where(th):not(:where(.not-prose, .not-prose *)) {
         @apply border px-4 py-2 text-start font-bold;
         border-color: var(--tw-prose-th-borders);
