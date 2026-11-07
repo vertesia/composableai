@@ -1124,56 +1124,44 @@ describe('AllMessagesMixed summary view', () => {
         expect(screen.queryByText(/\[tokyo\.png\]/)).toBeNull();
     });
 
-    it('balances markdown table columns from their content size', () => {
-        renderSummary(
-            [
-                makeMessage({
-                    timestamp: 1_000,
-                    type: AgentMessageType.ANSWER,
-                    message: [
-                        '| Requirement | Status | Evidence |',
-                        '| --- | --- | --- |',
-                        '| Hydrate existing app `appgen-6a23acdeac98748242db1da6` via `app_workspace_init` | ✅ | `hydrated_from_git.app_id = appgen-6a23acdeac98748242db1da6`, commit `2fc2f54` |',
-                        '| Do NOT create a new app | ✅ | No `new_app: true` passed; workspace hydrated from git remote |',
-                        '| Add concise subtitle under "Loan Pipeline" heading | ✅ | Replaced static `"Commercial loan origination dashboard"` with dynamic `"N applications · $X total pipeline value"` |',
-                    ].join('\n'),
-                }),
-            ],
-            true,
-        );
-
-        const columns = Array.from(screen.getByRole('table').querySelectorAll('col'));
-        const contentWidths = [columns[0], columns[2]].map((column) =>
-            Number.parseFloat(
-                column.style.getPropertyValue('--agent-markdown-table-column-width').replace('calc(', ''),
-            ),
-        );
-
-        expect(columns).toHaveLength(3);
-        expect(columns[1]?.classList.contains('agent-markdown-table-compact-col')).toBe(true);
-        expect(contentWidths[1]).toBeGreaterThan(contentWidths[0]);
-    });
-
-    it('reserves readable widths for agenda columns beside long descriptions', () => {
+    it('leaves markdown table column widths to the browser inside a horizontal scroll wrapper', () => {
         renderSummary([
             makeMessage({
                 type: AgentMessageType.ANSWER,
                 message: [
-                    '| Time | Duration | Topic | Facilitator |',
-                    '| --- | --- | --- | --- |',
-                    '| 9:15 a.m. | 90 min | Advanced capabilities: sub-agents, workstreams, skills, tools and human review | Vertesia |',
-                    '| 10:45 a.m. | 15 min | Break | All |',
+                    '| Item | Category | Notes |',
+                    '| --- | --- | --- |',
+                    '| A1 — Lorem ipsum dolor | Consectetur adipiscing | Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. |',
+                    '| A2 — Sit amet elit | Tempor | Quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. |',
                 ].join('\n'),
             }),
         ]);
 
         const table = screen.getByRole('table');
-        const widths = Array.from(table.querySelectorAll('col')).map((column) =>
-            column.style.getPropertyValue('--agent-markdown-table-column-width'),
-        );
-        expect(widths).toEqual(['8rem', '8rem', 'calc(100.000% - 24.000rem)', '8rem']);
-        expect(table.style.minWidth).toBe('32rem');
+
+        // Fixed widths computed from text length collapsed short-text columns beside long prose.
+        expect(table.querySelector('colgroup')).toBeNull();
+        expect(table.getAttribute('style')).toBeNull();
         expect(table.parentElement?.classList.contains('overflow-x-auto')).toBe(true);
+    });
+
+    it('sizes ordered-list indents in summary markdown from the widest marker', () => {
+        const { container } = renderSummary([
+            makeMessage({
+                type: AgentMessageType.ANSWER,
+                message: Array.from({ length: 12 }, (_value, index) => `${index + 1}. Lorem ipsum`).join('\n'),
+            }),
+        ]);
+
+        const list = container.querySelector('.agent-markdown ol') as HTMLOListElement;
+        expect(list.style.getPropertyValue('--ol-marker-digits')).toBe('2');
+
+        // The summary stylesheet overrides the .vprose list rule, so it must size the indent from the same
+        // variable: a fixed padding cut the leading digit off "10." and beyond.
+        const styles = Array.from(container.querySelectorAll('style'), (style) => style.textContent).join('\n');
+        const listRules = Array.from(styles.matchAll(/\.agent-markdown ol\s*\{([^}]*)\}/g), (match) => match[1]);
+        expect(listRules.some((rule) => rule.includes('var(--ol-marker-digits'))).toBe(true);
+        expect(listRules.some((rule) => /padding-(left|inline-start):\s*[\d.]+r?em/.test(rule))).toBe(false);
     });
 
     it('merges legacy activity progress rows with different tool run ids', () => {
