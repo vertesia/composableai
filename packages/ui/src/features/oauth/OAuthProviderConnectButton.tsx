@@ -3,7 +3,9 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Spinner } from '../../core/index.js';
+import { Button, Spinner, useToast } from '../../core/index.js';
+import { OAuthStatusUnknown } from './OAuthStatusUnknown.js';
+import { isOAuthStatusUnknownError, oauthErrorDetail } from './oauthStatusError.js';
 import { useOAuthPopup } from './useOAuthPopup.js';
 
 interface OAuthProviderConnectButtonProps {
@@ -18,7 +20,9 @@ interface OAuthProviderConnectButtonProps {
 export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OAuthProviderConnectButtonProps) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
+    const toast = useToast();
     const [status, setStatus] = useState<OAuthProviderAuthStatus | null>(null);
+    const [statusUnknown, setStatusUnknown] = useState(false);
     const [loading, setLoading] = useState(true);
     const [authenticating, setAuthenticating] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
@@ -28,8 +32,10 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
             setLoading(true);
             const data = await client.oauthProviders.getStatus(oauthProviderId);
             setStatus(data);
+            setStatusUnknown(false);
         } catch (err: unknown) {
             console.error('Failed to load OAuth provider status:', err);
+            setStatusUnknown(isOAuthStatusUnknownError(err));
         } finally {
             setLoading(false);
         }
@@ -48,6 +54,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
         onError: (error) => {
             console.error('OAuth provider auth failed:', error);
             setAuthenticating(false);
+            toast({ status: 'error', title: t('oauthStatus.connectFailed'), description: error });
         },
     });
 
@@ -62,6 +69,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
         } catch (err: unknown) {
             console.error('Failed to authorize OAuth provider:', err);
             setAuthenticating(false);
+            toast({ status: 'error', title: t('oauthStatus.connectFailed'), description: oauthErrorDetail(err) });
         }
     };
 
@@ -74,6 +82,7 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
             onAuthChange?.();
         } catch (err: unknown) {
             console.error('Failed to disconnect OAuth provider:', err);
+            toast({ status: 'error', title: t('oauthStatus.disconnectFailed'), description: oauthErrorDetail(err) });
         } finally {
             setDisconnecting(false);
         }
@@ -81,6 +90,10 @@ export function OAuthProviderConnectButton({ oauthProviderId, onAuthChange }: OA
 
     if (loading) {
         return <Spinner className="size-4" />;
+    }
+
+    if (statusUnknown) {
+        return <OAuthStatusUnknown onRetry={() => void loadStatus()} />;
     }
 
     if (status?.authenticated) {
