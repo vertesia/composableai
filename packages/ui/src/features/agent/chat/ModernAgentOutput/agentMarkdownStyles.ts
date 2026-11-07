@@ -219,6 +219,10 @@ export const agentMarkdownStyles = `
 .agent-markdown :is(th, td) :is(a, code):not(:where(.not-prose, .not-prose *)) {
     overflow-wrap: anywhere;
 }
+/* A short value such as a time or status, marked by rehypeTableCellBreaks, stays on one line. */
+.agent-markdown :is(th, td).md-cell-nowrap:not(:where(.not-prose, .not-prose *)) {
+    white-space: nowrap;
+}
 .agent-markdown th:not(:where(.not-prose, .not-prose *)) {
     color: var(--muted);
     font-size: 0.75rem;

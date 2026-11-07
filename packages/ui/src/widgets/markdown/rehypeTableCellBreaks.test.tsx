@@ -3,7 +3,7 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MarkdownRenderer } from './MarkdownRenderer.js';
-import { MAX_UNBROKEN_LENGTH, splitLongRun } from './rehypeTableCellBreaks.js';
+import { MAX_UNBROKEN_LENGTH, ONE_LINE_CELL_CLASS, splitLongRun } from './rehypeTableCellBreaks.js';
 
 afterEach(cleanup);
 
@@ -131,6 +131,29 @@ describe('MarkdownRenderer table cell breaks', () => {
         for (const run of unbrokenRuns(cell as Element)) {
             expect(graphemes(run).length).toBeLessThanOrEqual(MAX_UNBROKEN_LENGTH);
         }
+    });
+
+    it('keeps short values such as times on one line', () => {
+        const container = cellRender(
+            [
+                '| Due date | Time | Status | Topic |',
+                '| --- | --- | --- | --- |',
+                '| 2026-11-07 | 10:45 a.m. | In progress | Advanced capabilities and human review |',
+            ].join('\n'),
+        );
+
+        const oneLine = Array.from(container.querySelectorAll('th, td'))
+            .filter((cell) => cell.classList.contains(ONE_LINE_CELL_CLASS))
+            .map((cell) => cell.textContent);
+        // Single words never wrap anyway, and longer text must stay free to wrap.
+        expect(oneLine).toEqual(['Due date', '10:45 a.m.', 'In progress']);
+    });
+
+    it('keeps the minutes of long time ranges', () => {
+        const range = '09:00–09:15–09:30–09:45';
+        const container = cellRender(['| Slots | End |', '| --- | --- |', `| ${range} | 11:00 |`].join('\n'));
+
+        expect(Array.from(container.querySelectorAll('td'), (cell) => cell.textContent)).toEqual([range, '11:00']);
     });
 
     it('passes link and inline code text to their components as plain strings', () => {

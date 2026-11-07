@@ -1,6 +1,12 @@
 /**
- * Adds `<wbr>` break opportunities inside long unbroken runs of text in table cells.
+ * Controls where text in table cells may wrap, so the browser's automatic table layout gives every
+ * column a readable width.
  *
+ * A short value such as a time, date or status ("10:45 a.m.", "In progress") is kept on one line by
+ * marking its cell with {@link ONE_LINE_CELL_CLASS}: wrapped, "a.m." would sit alone on a second
+ * line, because a column only gets as wide as its longest word when space is tight.
+ *
+ * Long unbroken runs get `<wbr>` break opportunities.
  * A table column is never narrower than the longest unbreakable run in it, so one hash, URL or raw
  * data dump would stretch its table far past the message. `overflow-wrap: anywhere` avoids that,
  * but it also lets the table squeeze a column of ordinary words down to one letter per line.
@@ -38,6 +44,12 @@ const POSSIBLY_LONG_RUN = new RegExp(`(?:\\S|[${NON_BREAKING_SPACES}]){${MAX_UNB
 
 /** Elements whose text stays a plain string for their component (see above). */
 const SKIPPED_TAGS = new Set(['a', 'code']);
+
+/** A cell whose whole text is at most this many characters stays on one line. */
+export const MAX_ONE_LINE_LENGTH = 12;
+
+/** Marks a cell to keep on one line; typography.css and agentMarkdownStyles.ts style it. */
+export const ONE_LINE_CELL_CLASS = 'md-cell-nowrap';
 
 const graphemeSegmenter =
     typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
@@ -99,6 +111,17 @@ function breakText(value: string): ElementContent[] | undefined {
     return changed ? nodes : undefined;
 }
 
+function textOf(node: ElementContent): string {
+    if (node.type === 'text') return node.value;
+    return node.type === 'element' ? node.children.map(textOf).join('') : '';
+}
+
+/** Only a value with a space can wrap at all; a single word already stays on one line. */
+function isShortPhrase(cell: Element): boolean {
+    const text = cell.children.map(textOf).join('').trim();
+    return /\s/.test(text) && splitGraphemes(text).length <= MAX_ONE_LINE_LENGTH;
+}
+
 function addBreaks(parent: Element): void {
     for (let index = 0; index < parent.children.length; index += 1) {
         const child = parent.children[index];
@@ -118,6 +141,10 @@ export function rehypeTableCellBreaks() {
     return (tree: Root) => {
         visit(tree, 'element', (node: Element) => {
             if (node.tagName !== 'td' && node.tagName !== 'th') return;
+            if (isShortPhrase(node)) {
+                const className = node.properties.className;
+                node.properties.className = [...(Array.isArray(className) ? className : []), ONE_LINE_CELL_CLASS];
+            }
             addBreaks(node);
             return SKIP;
         });
