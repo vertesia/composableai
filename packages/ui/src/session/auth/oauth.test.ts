@@ -182,7 +182,7 @@ it('discovers again for a callback whose login predates saved endpoints', async 
     void oauth.getAppOAuthToken();
     await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
     const authorize = new URL(replace.mock.calls[0][0]);
-    const { endpoints: _endpoints, ...older } = JSON.parse(storage.get('vertesia.oauth.transaction') ?? '{}');
+    const { discovered: _discovered, ...older } = JSON.parse(storage.get('vertesia.oauth.transaction') ?? '{}');
     storage.set('vertesia.oauth.transaction', JSON.stringify(older));
     browser.location.href = `${origin}/app?code=one-time-code&state=${authorize.searchParams.get('state')}`;
     const callback = await setup();

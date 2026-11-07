@@ -78,10 +78,11 @@ interface Transaction {
     rememberedScope?: ScopeSelection;
     retryScope?: ScopeSelection;
     /**
-     * The issuer's endpoints, resolved by discovery when the login started, so the callback can exchange the code
-     * without discovering again. Absent in transactions started by older SDK versions.
+     * What discovery resolved when the login started, so the callback can exchange the code without discovering
+     * again. `resource` here is the audience actually requested (the configured one, else the issuer), unlike the
+     * top-level `resource`, which is only the configured one. Absent in transactions started by older SDK versions.
      */
-    endpoints?: { token: string; revocation?: string; resource: string };
+    discovered?: { tokenEndpoint: string; revocationEndpoint?: string; resource: string };
 }
 
 interface ClientDocument {
@@ -200,8 +201,8 @@ async function acquireToken(forceRefresh = false): Promise<string> {
             }
         }
     }
-    // A callback carries the endpoints its login resolved, so the code exchange needs no second discovery.
-    const known = transaction && code ? transaction.endpoints : undefined;
+    // A callback carries what its login discovered, so the code exchange needs no second discovery.
+    const known = transaction && code ? transaction.discovered : undefined;
     // A new login needs the client's metadata document as well as discovery. Fetch both at once rather than one
     // after the other: they are independent requests to different servers. Not for a callback or a refresh, which
     // do not use it; a refresh that fails falls back to fetching it below.
@@ -216,9 +217,11 @@ async function acquireToken(forceRefresh = false): Promise<string> {
     let revocationEndpoint: string | undefined;
     let resource: string;
     if (known) {
-        tokenEndpoint = validatedEndpointUrl(known.token);
+        tokenEndpoint = validatedEndpointUrl(known.tokenEndpoint);
         revocationEndpoint =
-            known.revocation === undefined ? undefined : validatedEndpointUrl(known.revocation).toString();
+            known.revocationEndpoint === undefined
+                ? undefined
+                : validatedEndpointUrl(known.revocationEndpoint).toString();
         resource = known.resource;
     } else {
         const issuerUrl = new URL(issuer);
@@ -382,7 +385,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 : undefined,
         retryScope: explicitScope?.accountId ? { accountId: explicitScope.accountId } : undefined,
         created: Date.now(),
-        endpoints: { token: tokenEndpoint.toString(), revocation: revocationEndpoint, resource },
+        discovered: { tokenEndpoint: tokenEndpoint.toString(), revocationEndpoint, resource },
     };
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
     authorize.searchParams.set('client_id', clientId);
