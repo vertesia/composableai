@@ -23,8 +23,17 @@ function OpenMobileSidebar() {
     );
 }
 
+const initialWidth = window.innerWidth;
+
 function setWidth(width: number) {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+}
+
+function resizeTo(width: number) {
+    act(() => {
+        setWidth(width);
+        window.dispatchEvent(new Event('resize'));
+    });
 }
 
 function renderLayout() {
@@ -40,11 +49,15 @@ function renderLayout() {
 describe('AppLayout', () => {
     afterEach(() => {
         mounts.mockClear();
+        setWidth(initialWidth);
     });
 
-    it('mounts the sidebar once on a large screen', () => {
+    it('mounts the sidebar once on a large screen, even when the mobile panel is asked to open', () => {
         setWidth(1280);
         renderLayout();
+        expect(screen.getAllByTestId('sidebar-content')).toHaveLength(1);
+
+        fireEvent.click(screen.getByRole('button', { name: 'open' }));
         expect(screen.getAllByTestId('sidebar-content')).toHaveLength(1);
         expect(mounts).toHaveBeenCalledTimes(1);
     });
@@ -59,15 +72,15 @@ describe('AppLayout', () => {
         expect(mounts).toHaveBeenCalledTimes(1);
     });
 
-    it('switches to the desktop sidebar when the window grows past the breakpoint', () => {
+    it('follows the breakpoint when the window is resized', () => {
         setWidth(640);
         renderLayout();
         expect(screen.queryAllByTestId('sidebar-content')).toHaveLength(0);
 
-        act(() => {
-            setWidth(1280);
-            window.dispatchEvent(new Event('resize'));
-        });
+        resizeTo(1280);
         expect(screen.getAllByTestId('sidebar-content')).toHaveLength(1);
+
+        resizeTo(640);
+        expect(screen.queryAllByTestId('sidebar-content')).toHaveLength(0);
     });
 });

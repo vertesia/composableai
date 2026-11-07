@@ -64,18 +64,22 @@ export function AppLayout({
         },
     };
 
+    const sidebarContent = (
+        <Sidebar logo={logo} className={sidebarClassName}>
+            {sidebar}
+        </Sidebar>
+    );
+
     return (
         <div className="flex flex-col h-screen overflow-y-hidden">
             <SidebarContext.Provider value={sidebarContextValue}>
                 <div className="w-full">{mainNav}</div>
 
                 <div className="flex h-full overflow-y-auto w-full">
-                    {/* Mount one sidebar, not both hidden with CSS: a hidden copy still renders and runs its fetches. */}
+                    {/* Mount one sidebar: a copy hidden with CSS would still render and run its effects. */}
                     {isLargeScreen ? (
                         <div className={`relative transition-all duration-300 ${desktopSidebarOpen ? 'w-72' : 'w-12'}`}>
-                            <Sidebar logo={logo} className={sidebarClassName}>
-                                {sidebar}
-                            </Sidebar>
+                            {sidebarContent}
                         </div>
                     ) : (
                         <SidePanel
@@ -87,9 +91,7 @@ export function AppLayout({
                             resizable={false}
                             backdrop={true}
                         >
-                            <Sidebar logo={logo} className={sidebarClassName}>
-                                {sidebar}
-                            </Sidebar>
+                            {sidebarContent}
                         </SidePanel>
                     )}
 
