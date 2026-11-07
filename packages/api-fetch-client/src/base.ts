@@ -523,7 +523,7 @@ export abstract class ClientBase {
 
     /** Override at the caller boundary when handled transport failures have their own logging. */
     handleConnectionError(error: ConnectionError): void {
-        console.error(`Failed to connect to ${error.request.url}`, error.payload);
+        console.error(error.message, error.payload);
     }
 
     handleFetchResponse(_req: Request, _res: Response): void {}

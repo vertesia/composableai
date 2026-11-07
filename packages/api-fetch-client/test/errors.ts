@@ -116,6 +116,45 @@ describe('handled transport failures', () => {
         });
     }
 
+    it('logs what failed by default, for a failed connection and a failed body read', async () => {
+        const logged: unknown[][] = [];
+        const previous = console.error;
+        console.error = (...args: unknown[]) => {
+            logged.push(args);
+        };
+        try {
+            const timeout = new DOMException('timed out', 'TimeoutError');
+            await assert.rejects(
+                new FetchClient('https://api.example.test', async () => {
+                    throw timeout;
+                }).get('/items'),
+                ConnectionError,
+            );
+            await assert.rejects(
+                new FetchClient(
+                    'https://api.example.test',
+                    async () =>
+                        new Response(
+                            new ReadableStream({
+                                start(controller) {
+                                    controller.error(timeout);
+                                },
+                            }),
+                            { status: 200 },
+                        ),
+                ).get('/items'),
+                ResponseReadError,
+            );
+        } finally {
+            console.error = previous;
+        }
+        assert.equal(logged.length, 2);
+        assert.match(String(logged[0]?.[0]), /^Failed to connect to server: timed out/);
+        assert.match(String(logged[1]?.[0]), /^Failed to read response body \(HTTP 200\): timed out/);
+        assert.match(String(logged[1]?.[0]), /https:\/\/api\.example\.test\/items/);
+        assert.doesNotMatch(String(logged[1]?.[0]), /Failed to connect/);
+    });
+
     it('does not wrap application or custom-reader errors a second time', async () => {
         const client = new FetchClient('https://api.example.test', async () =>
             Response.json({ message: 'denied' }, { status: 403 }),
