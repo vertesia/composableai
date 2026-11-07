@@ -70,8 +70,14 @@ export function AppLayout({
                 <div className="w-full">{mainNav}</div>
 
                 <div className="flex h-full overflow-y-auto w-full">
-                    {/* Mobile sidebar */}
-                    <div className="lg:hidden">
+                    {/* Mount one sidebar, not both hidden with CSS: a hidden copy still renders and runs its fetches. */}
+                    {isLargeScreen ? (
+                        <div className={`relative transition-all duration-300 ${desktopSidebarOpen ? 'w-72' : 'w-12'}`}>
+                            <Sidebar logo={logo} className={sidebarClassName}>
+                                {sidebar}
+                            </Sidebar>
+                        </div>
+                    ) : (
                         <SidePanel
                             className="bg-sidebar"
                             isOpen={sidebarOpen}
@@ -85,17 +91,7 @@ export function AppLayout({
                                 {sidebar}
                             </Sidebar>
                         </SidePanel>
-                    </div>
-
-                    {/* Static sidebar for desktop */}
-                    <div
-                        className={`hidden lg:block relative transition-all duration-300 ${desktopSidebarOpen ? 'w-72' : 'w-12'}`}
-                    >
-                        {/* Sidebar component, swap this element with another sidebar if you like */}
-                        <Sidebar logo={logo} className={sidebarClassName}>
-                            {sidebar}
-                        </Sidebar>
-                    </div>
+                    )}
 
                     <div className="w-full h-full overflow-y-hidden">
                         {navbar ? (
