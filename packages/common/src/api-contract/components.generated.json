@@ -7669,6 +7669,46 @@
     ],
     "additionalProperties": false
   },
+  "OAuthLoginRequestNotFoundResponse": {
+    "type": "object",
+    "properties": {
+      "error": {
+        "type": "string",
+        "const": "not_found"
+      },
+      "message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "error",
+      "message"
+    ],
+    "additionalProperties": false,
+    "description": "The authorization request, or the client it was issued for, does not exist or is no longer available."
+  },
+  "OAuthLoginNotFoundResponse": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/OAuthLoginUserNotFoundResponse"
+      },
+      {
+        "$ref": "#/components/schemas/OAuthLoginRequestNotFoundResponse"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "error",
+      "mapping": {
+        "user_not_found": "#/components/schemas/OAuthLoginUserNotFoundResponse",
+        "not_found": "#/components/schemas/OAuthLoginRequestNotFoundResponse"
+      }
+    },
+    "type": "object",
+    "required": [
+      "error"
+    ],
+    "description": "Why a login could not complete: `user_not_found` when the user must be provisioned before retrying, `not_found` when the authorization request cannot be completed."
+  },
   "OAuthLoginDecisionResponse": {
     "type": "object",
     "properties": {
