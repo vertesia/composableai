@@ -11,8 +11,9 @@
  *
  * Link and inline code text is left alone: custom `a` and `code` components commonly read their
  * `children` as a string (a document ID label, a file name), and a `<wbr>` would turn it into an
- * array. Those elements may break anywhere instead (see `.vprose` cells in typography.css). Math is
- * still `code` when this plugin runs (rehype-katex runs after it), so it is left alone too.
+ * array. Those elements may break anywhere instead: see the table cell rules in typography.css and
+ * agentMarkdownStyles.ts. Math is still `code` when this plugin runs (rehype-katex runs after it), so
+ * it is left alone too.
  */
 import type { Element, ElementContent, Root } from 'hast';
 import { SKIP, visit } from 'unist-util-visit';
@@ -49,9 +50,9 @@ function splitGraphemes(text: string): string[] {
 }
 
 /**
- * Splits a run without breakable whitespace into pieces that may be separated by line breaks. A run of at most
- * {@link MAX_UNBROKEN_LENGTH} characters comes back whole; a longer one breaks after separators,
- * and after every {@link MAX_UNBROKEN_LENGTH} characters where there is none.
+ * Splits a run without breakable whitespace into pieces that may be separated by line breaks. A run
+ * of at most {@link MAX_UNBROKEN_LENGTH} characters comes back whole; a longer one breaks after
+ * separators, and after every {@link MAX_UNBROKEN_LENGTH} characters where there is none.
  */
 export function splitLongRun(run: string): string[] {
     const graphemes = splitGraphemes(run);

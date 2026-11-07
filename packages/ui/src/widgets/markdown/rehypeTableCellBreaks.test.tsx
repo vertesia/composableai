@@ -105,13 +105,15 @@ describe('splitLongRun', () => {
 describe('MarkdownRenderer table cell breaks', () => {
     it('caps every unbroken stretch of cell text without changing it', () => {
         const hash = '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08';
+        const header = 'loremipsumdolorsitametconsectetur';
         const container = cellRender(
-            ['| Key | Value |', '| --- | --- |', `| hash | ${hash} |`, `| bold | **${hash}** |`].join('\n'),
+            [`| Key | ${header} |`, '| --- | --- |', `| hash | ${hash} |`, `| bold | **${hash}** |`].join('\n'),
         );
 
-        const cells = Array.from(container.querySelectorAll('td'));
-        expect(cells.map((cell) => cell.textContent)).toEqual(['hash', hash, 'bold', hash]);
-        expect(cells[3]?.querySelector('strong wbr')).not.toBeNull();
+        const cells = Array.from(container.querySelectorAll('th, td'));
+        expect(cells.map((cell) => cell.textContent)).toEqual(['Key', header, 'hash', hash, 'bold', hash]);
+        expect(cells[1]?.querySelector('wbr')).not.toBeNull();
+        expect(cells[5]?.querySelector('strong wbr')).not.toBeNull();
         for (const cell of cells) {
             for (const run of unbrokenRuns(cell)) {
                 expect(graphemes(run).length).toBeLessThanOrEqual(MAX_UNBROKEN_LENGTH);
@@ -134,16 +136,16 @@ describe('MarkdownRenderer table cell breaks', () => {
     it('passes link and inline code text to their components as plain strings', () => {
         const documentId = '64f1c2a9e8b7d6c5b4a39281';
         const url = 'https://docs.example.com/lorem/ipsum/dolor/sit-amet-consectetur-adipiscing?elit=sed_do_eiusmod';
-        const received: unknown[] = [];
+        const received = new Set<unknown>();
         const { container } = render(
             <MarkdownRenderer
                 components={{
                     a: ({ href, children }) => {
-                        received.push(children);
+                        received.add(children);
                         return <a href={href}>{children}</a>;
                     },
                     code: ({ children }) => {
-                        received.push(children);
+                        received.add(children);
                         return <code>{children}</code>;
                     },
                 }}
@@ -156,7 +158,8 @@ describe('MarkdownRenderer table cell breaks', () => {
             </MarkdownRenderer>,
         );
 
-        expect(received).toEqual([documentId, url, 'appgen-6a23acdeac98748242db1da6']);
+        // A Set, so the assertion holds however many times the renderer renders.
+        expect([...received].sort()).toEqual(['appgen-6a23acdeac98748242db1da6', documentId, url].sort());
         expect(container.querySelector('td wbr')).toBeNull();
     });
 
