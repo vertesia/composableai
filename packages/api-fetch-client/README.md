@@ -188,6 +188,27 @@ await client.get('/data', { signal: controller.signal, timeoutMs: 5_000 });
 - SSE requests (`reader: 'sse'`) are never given a total-request timeout — they are long-lived by design; apply your own idle/close handling to the stream.
 - `ApiTopic` sub-clients inherit the parent client's default timeout, so setting it once on the root client covers all topics.
 
+## Concurrent identical GETs
+
+By default, a GET that is identical to one already in flight (same URL, headers and credential) does not send a second request: it waits for the first one and gets its own copy of the result, or the same error. This removes the duplicate requests that appear when several parts of an application load the same resource at the same time.
+
+It is not a cache. Nothing is kept once the response arrives, and any other method (POST, PUT, PATCH, DELETE) invalidates in-flight GETs when it starts and when it settles, so a GET issued after a write always reaches the server. A request can only be joined during the first 5 seconds after it starts, so a stalled request does not hold back later ones.
+
+Never shared: SSE and custom readers, requests with a caller `signal`, requests with their own `timeoutMs`, `retryPolicy` or `pacingRetry`, and requests with a payload.
+
+```typescript
+// Send one GET on its own.
+await client.get('/data', { dedupe: false });
+
+// Turn it off for a client (API topics follow their root client).
+client.withInFlightDeduplication(false);
+
+// Share one table between two clients, so a write through either invalidates both.
+const shared = new InFlightRequests();
+studioClient.withInFlightDeduplication(shared);
+storeClient.withInFlightDeduplication(shared);
+```
+
 ### Custom Error Factory
 
 Transform errors before they're thrown:

@@ -77,6 +77,15 @@ export default class OAuthServerApi extends ClientBase {
         return this.parent.getRetryPolicy();
     }
 
+    // Share the parent's in-flight table and credential, so writes through either clear the other's GETs.
+    getInFlightRequests() {
+        return this.parent.getInFlightRequests();
+    }
+
+    resolveRequestAuthorization() {
+        return this.parent.resolveRequestAuthorization();
+    }
+
     createAuthorizationRequest(
         payload: CreateOAuthAuthorizationRequestPayload,
         authorizationServerPath?: string,
