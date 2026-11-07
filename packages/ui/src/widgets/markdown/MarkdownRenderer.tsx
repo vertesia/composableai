@@ -18,7 +18,7 @@ import { normalizeCustomSchemeLinks } from './normalizeCustomSchemeLinks';
 import { normalizeDirectives } from './normalizeDirectives';
 import { maskMathDelimiters, preprocessMathDelimiters } from './preprocessMathDelimiters';
 import { rehypeOrderedListMarkerWidth } from './rehypeOrderedListMarkerWidth';
-import { rehypeTableCellBreaks } from './rehypeTableCellBreaks';
+import { rehypeTableCellWrapping } from './rehypeTableCellWrapping';
 import { remarkDirectiveHandler } from './remarkDirectiveHandler';
 import { remarkRestoreMaskedDollars } from './remarkRestoreMaskedDollars';
 
@@ -33,7 +33,7 @@ type RehypePlugin = RehypePluginList[number];
 // node. Currency is escaped to `\$` by `preprocessMathDelimiters` (or masked by
 // `maskMathDelimiters`), so it does not match.
 const MATH_DELIMITER_REGEX = /(?:^|[^\\])\$/;
-const BASE_REHYPE_PLUGINS: RehypePluginList = [rehypeOrderedListMarkerWidth, rehypeTableCellBreaks];
+const BASE_REHYPE_PLUGINS: RehypePluginList = [rehypeOrderedListMarkerWidth, rehypeTableCellWrapping];
 
 let rehypeKatex: RehypePlugin | undefined;
 let rehypeKatexPromise: Promise<RehypePlugin> | undefined;

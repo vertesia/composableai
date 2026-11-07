@@ -2,18 +2,17 @@
  * Controls where text in table cells may wrap, so the browser's automatic table layout gives every
  * column a readable width.
  *
- * A short value such as a time, date or status ("10:45 a.m.", "In progress") is kept on one line by
- * marking its cell with {@link ONE_LINE_CELL_CLASS}: wrapped, "a.m." would sit alone on a second
- * line, because a column only gets as wide as its longest word when space is tight.
+ * Short values stay on one line. A cell whose whole text is at most {@link MAX_ONE_LINE_LENGTH}
+ * characters (a time, date, status or name) gets {@link ONE_LINE_CELL_CLASS}. Otherwise a column only
+ * gets its narrowest possible width when space is tight: "10:45 a.m." loses "a.m." to a second line,
+ * "Follow-up" splits at its hyphen, and a CJK value such as 進行中です wraps between any two characters.
  *
- * Long unbroken runs get `<wbr>` break opportunities.
- * A table column is never narrower than the longest unbreakable run in it, so one hash, URL or raw
- * data dump would stretch its table far past the message. `overflow-wrap: anywhere` avoids that,
- * but it also lets the table squeeze a column of ordinary words down to one letter per line.
- * Instead, cells keep `overflow-wrap: break-word` and this plugin caps every run at
- * {@link MAX_UNBROKEN_LENGTH} characters: ordinary words stay whole, and long runs can wrap.
- *
- * `<wbr>` adds no characters, so copied text and in-page search are unchanged.
+ * Long runs can wrap. A column is never narrower than the longest unbreakable run in it, so one hash,
+ * URL or raw data dump would stretch its table far past the message. `overflow-wrap: anywhere`
+ * avoids that, but it also lets the table squeeze a column of ordinary words down to one letter per
+ * line. Instead, cells keep `overflow-wrap: break-word` and every run longer than
+ * {@link MAX_UNBROKEN_LENGTH} characters gets `<wbr>` break opportunities. `<wbr>` adds no
+ * characters, so copied text and in-page search are unchanged.
  *
  * Link and inline code text is left alone: custom `a` and `code` components commonly read their
  * `children` as a string (a document ID label, a file name), and a `<wbr>` would turn it into an
@@ -116,10 +115,21 @@ function textOf(node: ElementContent): string {
     return node.type === 'element' ? node.children.map(textOf).join('') : '';
 }
 
-/** Only a value with a space can wrap at all; a single word already stays on one line. */
-function isShortPhrase(cell: Element): boolean {
+/** Whether the text has at most `max` characters, counting no further than needed. */
+function hasAtMostGraphemes(text: string, max: number): boolean {
+    // A character is at least one UTF-16 unit, so text this short cannot have more.
+    if (text.length <= max) return true;
+    let count = 0;
+    for (const _grapheme of graphemeSegmenter ? graphemeSegmenter.segment(text) : text) {
+        count += 1;
+        if (count > max) return false;
+    }
+    return true;
+}
+
+function isShortValue(cell: Element): boolean {
     const text = cell.children.map(textOf).join('').trim();
-    return /\s/.test(text) && splitGraphemes(text).length <= MAX_ONE_LINE_LENGTH;
+    return text.length > 0 && hasAtMostGraphemes(text, MAX_ONE_LINE_LENGTH);
 }
 
 function addBreaks(parent: Element): void {
@@ -137,11 +147,11 @@ function addBreaks(parent: Element): void {
     }
 }
 
-export function rehypeTableCellBreaks() {
+export function rehypeTableCellWrapping() {
     return (tree: Root) => {
         visit(tree, 'element', (node: Element) => {
             if (node.tagName !== 'td' && node.tagName !== 'th') return;
-            if (isShortPhrase(node)) {
+            if (isShortValue(node)) {
                 const className = node.properties.className;
                 node.properties.className = [...(Array.isArray(className) ? className : []), ONE_LINE_CELL_CLASS];
             }

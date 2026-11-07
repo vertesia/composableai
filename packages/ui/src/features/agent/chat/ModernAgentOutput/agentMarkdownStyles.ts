@@ -211,7 +211,7 @@ export const agentMarkdownStyles = `
     text-align: left;
     vertical-align: top;
     /* Not "anywhere": that drops a column's minimum width to one letter. Long runs get break points
-       from rehypeTableCellBreaks, which leaves link and code text alone, so those break anywhere. */
+       from rehypeTableCellWrapping, which leaves link and code text alone, so those break anywhere. */
     overflow-wrap: break-word;
     word-break: normal;
     white-space: normal;
@@ -219,7 +219,7 @@ export const agentMarkdownStyles = `
 .agent-markdown :is(th, td) :is(a, code):not(:where(.not-prose, .not-prose *)) {
     overflow-wrap: anywhere;
 }
-/* A short value such as a time or status, marked by rehypeTableCellBreaks, stays on one line. */
+/* A short value such as a time, status or name, marked by rehypeTableCellWrapping, stays on one line. */
 .agent-markdown :is(th, td).md-cell-nowrap:not(:where(.not-prose, .not-prose *)) {
     white-space: nowrap;
 }

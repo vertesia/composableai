@@ -3,7 +3,7 @@
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { MarkdownRenderer } from './MarkdownRenderer.js';
-import { MAX_UNBROKEN_LENGTH, ONE_LINE_CELL_CLASS, splitLongRun } from './rehypeTableCellBreaks.js';
+import { MAX_UNBROKEN_LENGTH, ONE_LINE_CELL_CLASS, splitLongRun } from './rehypeTableCellWrapping.js';
 
 afterEach(cleanup);
 
@@ -133,20 +133,28 @@ describe('MarkdownRenderer table cell breaks', () => {
         }
     });
 
-    it('keeps short values such as times on one line', () => {
+    it('keeps every short value on one line, whatever could break it', () => {
         const container = cellRender(
             [
-                '| Due date | Time | Status | Topic |',
-                '| --- | --- | --- | --- |',
-                '| 2026-11-07 | 10:45 a.m. | In progress | Advanced capabilities and human review |',
+                '| Due | Time | Status | 状態 | Pending | Topic |',
+                '| --- | --- | --- | --- | --- | --- |',
+                '| 2026-11-07 | 10:45 a.m. | Follow-up | 進行中です | Pending input | Advanced capabilities and human review |',
             ].join('\n'),
         );
 
-        const oneLine = Array.from(container.querySelectorAll('th, td'))
-            .filter((cell) => cell.classList.contains(ONE_LINE_CELL_CLASS))
+        const unmarked = Array.from(container.querySelectorAll('th, td'))
+            .filter((cell) => !cell.classList.contains(ONE_LINE_CELL_CLASS))
             .map((cell) => cell.textContent);
-        // Single words never wrap anyway, and longer text must stay free to wrap.
-        expect(oneLine).toEqual(['Due date', '10:45 a.m.', 'In progress']);
+        // Only text longer than 12 characters stays free to wrap.
+        expect(unmarked).toEqual(['Pending input', 'Advanced capabilities and human review']);
+    });
+
+    it('counts characters, not UTF-16 units, toward the one-line limit', () => {
+        const family = '👨‍👩‍👧‍👦'.repeat(12);
+        const container = cellRender(['| A | B |', '| --- | --- |', `| ${family} | ${family}👨‍👩‍👧‍👦 |`].join('\n'));
+
+        const cells = Array.from(container.querySelectorAll('td'));
+        expect(cells.map((cell) => cell.classList.contains(ONE_LINE_CELL_CLASS))).toEqual([true, false]);
     });
 
     it('keeps the minutes of long time ranges', () => {
