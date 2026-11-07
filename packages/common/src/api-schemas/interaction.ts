@@ -1211,15 +1211,11 @@ export const PromptSegmentRef_PromptTemplateRefSchema = z
 export const InteractionUpdatePayloadSchema = z
     .strictObject({
         expected_edit_revision: ExpectedEditRevisionSchema,
-        status: InteractionStatusSchema.optional(),
-        parent: z.string().optional(),
         visibility: InteractionVisibilitySchema.optional(),
-        version: z.number().optional(),
         test_data: JSONObjectSchema.optional(),
         interaction_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
         cache_policy: CachePolicySchema.optional(),
         prompts: z.array(InteractionPromptSegmentInputSchema).optional(),
-        last_published_at: z.string().meta({ format: 'date-time' }).optional(),
         name: z.string().optional(),
         endpoint: z.string().optional(),
         description: z.string().optional(),

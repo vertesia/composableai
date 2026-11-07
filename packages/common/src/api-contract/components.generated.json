@@ -11824,17 +11824,8 @@
         "maximum": 9007199254740991,
         "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
       },
-      "status": {
-        "$ref": "#/components/schemas/InteractionStatus"
-      },
-      "parent": {
-        "type": "string"
-      },
       "visibility": {
         "$ref": "#/components/schemas/InteractionVisibility"
-      },
-      "version": {
-        "type": "number"
       },
       "test_data": {
         "$ref": "#/components/schemas/JSONObject"
@@ -11857,10 +11848,6 @@
         "items": {
           "$ref": "#/components/schemas/InteractionPromptSegmentInput"
         }
-      },
-      "last_published_at": {
-        "type": "string",
-        "format": "date-time"
       },
       "name": {
         "type": "string"
