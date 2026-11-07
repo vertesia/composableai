@@ -8,6 +8,10 @@
  * {@link MAX_UNBROKEN_LENGTH} characters: ordinary words stay whole, and long runs can wrap.
  *
  * `<wbr>` adds no characters, so copied text and in-page search are unchanged.
+ *
+ * Link and inline code text is left alone: custom `a` and `code` components commonly read their
+ * `children` as a string (a document ID label, a file name), and a `<wbr>` would turn it into an
+ * array. Those elements may break anywhere instead (see `.vprose` cells in typography.css).
  */
 import type { Element, ElementContent, Root } from 'hast';
 import { SKIP, visit } from 'unist-util-visit';
@@ -21,7 +25,10 @@ const SEPARATORS = new Set(['/', '\\', '.', '_', '-', '=', '&', '?', '#', ':', '
 /** Cheap pre-check; counts UTF-16 units, so it may let through a run that is short in characters. */
 const POSSIBLY_LONG_RUN = new RegExp(`\\S{${MAX_UNBROKEN_LENGTH + 1},}`, 'u');
 
-/** Elements whose text is not prose: math source is rendered by KaTeX and must stay intact. */
+/** Elements whose text stays a plain string for their component (see above). */
+const SKIPPED_TAGS = new Set(['a', 'code']);
+
+/** Math source is rendered by KaTeX and must stay intact. */
 const SKIPPED_CLASSES = new Set(['math-inline', 'math-display', 'katex']);
 
 const graphemeSegmenter =
@@ -84,6 +91,7 @@ function breakText(value: string): ElementContent[] | undefined {
 }
 
 function isSkipped(element: Element): boolean {
+    if (SKIPPED_TAGS.has(element.tagName)) return true;
     const className = element.properties.className;
     return Array.isArray(className) && className.some((name) => SKIPPED_CLASSES.has(String(name)));
 }

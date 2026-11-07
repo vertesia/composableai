@@ -99,6 +99,11 @@
         word-break: normal;
     }
 
+    /* rehypeTableCellBreaks leaves link and code text alone, so a long URL or identifier breaks here. */
+    .vprose :where(th, td) :where(a, code):not(:where(.not-prose, .not-prose *)) {
+        overflow-wrap: anywhere;
+    }
+
     .vprose :where(th):not(:where(.not-prose, .not-prose *)) {
         @apply border px-4 py-2 text-start font-bold;
         border-color: var(--tw-prose-th-borders);

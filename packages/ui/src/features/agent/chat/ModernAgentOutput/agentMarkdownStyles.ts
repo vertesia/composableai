@@ -210,8 +210,8 @@ export const agentMarkdownStyles = `
     padding: 0.55rem 0.75rem;
     text-align: left;
     vertical-align: top;
-    /* Not "anywhere": that drops a column's minimum width to one letter. Long runs such as hashes
-       and URLs get break points from rehypeTableCellBreaks instead. */
+    /* Not "anywhere": that drops a column's minimum width to one letter. Long runs get break points
+       from rehypeTableCellBreaks; links and code break anywhere (typography.css). */
     overflow-wrap: break-word;
     word-break: normal;
     white-space: normal;

@@ -101,36 +101,49 @@ describe('splitLongRun', () => {
 });
 
 describe('MarkdownRenderer table cell breaks', () => {
-    it('caps every unbroken stretch in a cell without changing its text', () => {
+    it('caps every unbroken stretch of cell text without changing it', () => {
         const hash = '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08';
-        const url = 'https://docs.example.com/lorem/ipsum/dolor/sit-amet-consectetur-adipiscing?elit=sed_do_eiusmod';
         const container = cellRender(
-            ['| Key | Value |', '| --- | --- |', `| hash | ${hash} |`, `| link | [${url}](${url}) |`].join('\n'),
+            ['| Key | Value |', '| --- | --- |', `| hash | ${hash} |`, `| bold | **${hash}** |`].join('\n'),
         );
 
         const cells = Array.from(container.querySelectorAll('td'));
-        expect(cells.map((cell) => cell.textContent)).toEqual(['hash', hash, 'link', url]);
+        expect(cells.map((cell) => cell.textContent)).toEqual(['hash', hash, 'bold', hash]);
+        expect(cells[3]?.querySelector('strong wbr')).not.toBeNull();
         for (const cell of cells) {
             for (const run of unbrokenRuns(cell)) {
                 expect(graphemes(run).length).toBeLessThanOrEqual(MAX_UNBROKEN_LENGTH);
             }
         }
-        expect(container.querySelector('a')?.getAttribute('href')).toBe(url);
     });
 
-    it('breaks long inline code and leaves ordinary words alone', () => {
-        const container = cellRender(
-            [
-                '| Item | Detail |',
-                '| --- | --- |',
-                '| Language refinement | `appgen-6a23acdeac98748242db1da6appgen` |',
-            ].join('\n'),
+    it('passes link and inline code text to their components as plain strings', () => {
+        const documentId = '64f1c2a9e8b7d6c5b4a39281';
+        const url = 'https://docs.example.com/lorem/ipsum/dolor/sit-amet-consectetur-adipiscing?elit=sed_do_eiusmod';
+        const received: unknown[] = [];
+        const { container } = render(
+            <MarkdownRenderer
+                components={{
+                    a: ({ href, children }) => {
+                        received.push(children);
+                        return <a href={href}>{children}</a>;
+                    },
+                    code: ({ children }) => {
+                        received.push(children);
+                        return <code>{children}</code>;
+                    },
+                }}
+            >
+                {[
+                    '| Document | Link | Code |',
+                    '| --- | --- | --- |',
+                    `| [${documentId}](/store/objects/${documentId}) | [${url}](${url}) | \`appgen-6a23acdeac98748242db1da6\` |`,
+                ].join('\n')}
+            </MarkdownRenderer>,
         );
 
-        const [label, detail] = Array.from(container.querySelectorAll('td'));
-        expect(label?.querySelector('wbr')).toBeNull();
-        expect(detail?.querySelector('code wbr')).not.toBeNull();
-        expect(detail?.textContent).toBe('appgen-6a23acdeac98748242db1da6appgen');
+        expect(received).toEqual([documentId, url, 'appgen-6a23acdeac98748242db1da6']);
+        expect(container.querySelector('td wbr')).toBeNull();
     });
 
     it('leaves text outside tables and math inside them untouched', () => {
