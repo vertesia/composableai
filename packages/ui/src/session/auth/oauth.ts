@@ -77,6 +77,27 @@ interface Transaction {
     target: string;
     rememberedScope?: ScopeSelection;
     retryScope?: ScopeSelection;
+    /**
+     * The issuer's endpoints, resolved by discovery when the login started, so the callback can exchange the code
+     * without discovering again. Absent in transactions started by older SDK versions.
+     */
+    endpoints?: { token: string; revocation?: string; resource: string };
+}
+
+interface ClientDocument {
+    scope?: string;
+    redirect_uris?: string[];
+}
+
+/**
+ * Fetch a client ID metadata document (CIMD), honouring the caching its server asks for, so a new tab can reuse a
+ * recent copy instead of paying a round trip. The authorization server reads the document itself and enforces its
+ * callback list, so a briefly stale copy here can delay a scope change but cannot authorize a removed callback.
+ */
+async function fetchClientDocument(clientId: string): Promise<ClientDocument> {
+    const response = await fetch(validatedEndpointUrl(clientId));
+    if (!response.ok) throw new Error(`Application CIMD unavailable (${response.status})`);
+    return response.json();
 }
 
 export function clearAppOAuth(): void {
@@ -177,27 +198,49 @@ async function acquireToken(forceRefresh = false): Promise<string> {
             }
         }
     }
-    const issuerUrl = new URL(issuer);
-    const discoveryUrl = new URL(
-        `/.well-known/oauth-authorization-server${issuerUrl.pathname.replace(/\/$/, '')}`,
-        issuerUrl.origin,
-    );
-    const discovery = await fetch(discoveryUrl);
-    if (!discovery.ok) throw new Error(`OAuth discovery failed (${discovery.status})`);
-    const metadata: {
-        issuer: string;
-        authorization_endpoint: string;
-        token_endpoint: string;
-        revocation_endpoint?: string;
-    } = await discovery.json();
-    if (metadata.issuer.replace(/\/+$/, '') !== issuer) throw new Error('OAuth issuer mismatch');
-    const authorize = validatedEndpointUrl(metadata.authorization_endpoint);
-    const tokenEndpoint = validatedEndpointUrl(metadata.token_endpoint);
-    const revocationEndpoint =
-        metadata.revocation_endpoint === undefined
-            ? undefined
-            : validatedEndpointUrl(metadata.revocation_endpoint).toString();
-    const resource = configuredResource ?? new URL(metadata.issuer).toString();
+    // A callback carries the endpoints its login resolved, so the code exchange needs no second discovery.
+    const known = transaction && code ? transaction.endpoints : undefined;
+    // A new login needs the client's metadata document as well as discovery. Fetch both at once rather than one
+    // after the other: they are independent requests to different servers. Not for a callback or a refresh, which
+    // do not use it; a refresh that fails falls back to fetching it below.
+    const clientDocument =
+        !(transaction && code) && !refreshCredential && clientId.startsWith('https://')
+            ? fetchClientDocument(clientId)
+            : undefined;
+    // Observed below or on an error path; this only keeps an early discovery failure from leaving it unhandled.
+    clientDocument?.catch(() => {});
+    let authorize: URL | undefined;
+    let tokenEndpoint: URL;
+    let revocationEndpoint: string | undefined;
+    let resource: string;
+    if (known) {
+        tokenEndpoint = validatedEndpointUrl(known.token);
+        revocationEndpoint =
+            known.revocation === undefined ? undefined : validatedEndpointUrl(known.revocation).toString();
+        resource = known.resource;
+    } else {
+        const issuerUrl = new URL(issuer);
+        const discoveryUrl = new URL(
+            `/.well-known/oauth-authorization-server${issuerUrl.pathname.replace(/\/$/, '')}`,
+            issuerUrl.origin,
+        );
+        const discovery = await fetch(discoveryUrl);
+        if (!discovery.ok) throw new Error(`OAuth discovery failed (${discovery.status})`);
+        const metadata: {
+            issuer: string;
+            authorization_endpoint: string;
+            token_endpoint: string;
+            revocation_endpoint?: string;
+        } = await discovery.json();
+        if (metadata.issuer.replace(/\/+$/, '') !== issuer) throw new Error('OAuth issuer mismatch');
+        authorize = validatedEndpointUrl(metadata.authorization_endpoint);
+        tokenEndpoint = validatedEndpointUrl(metadata.token_endpoint);
+        revocationEndpoint =
+            metadata.revocation_endpoint === undefined
+                ? undefined
+                : validatedEndpointUrl(metadata.revocation_endpoint).toString();
+        resource = configuredResource ?? new URL(metadata.issuer).toString();
+    }
     if (refreshCredential) {
         try {
             const response = await fetch(tokenEndpoint, {
@@ -306,11 +349,11 @@ async function acquireToken(forceRefresh = false): Promise<string> {
         window.history.replaceState(window.history.state, '', target);
         return grant.access_token;
     }
+    // Only a callback can skip discovery, and a callback has returned above.
+    if (!authorize) throw new Error('OAuth authorization endpoint unavailable');
     let scopes = config.scopes ?? ['openid', 'profile'];
     if (clientId.startsWith('https://')) {
-        const documentResponse = await fetch(validatedEndpointUrl(clientId), { cache: 'no-store' });
-        if (!documentResponse.ok) throw new Error(`Application CIMD unavailable (${documentResponse.status})`);
-        const document: { scope?: string; redirect_uris?: string[] } = await documentResponse.json();
+        const document = await (clientDocument ?? fetchClientDocument(clientId));
         if (!document.redirect_uris?.includes(redirectUri))
             throw new Error('Application CIMD does not allow this callback');
         if (!config.scopes && document.scope) scopes = document.scope.split(/\s+/);
@@ -337,6 +380,7 @@ async function acquireToken(forceRefresh = false): Promise<string> {
                 : undefined,
         retryScope: explicitScope?.accountId ? { accountId: explicitScope.accountId } : undefined,
         created: Date.now(),
+        endpoints: { token: tokenEndpoint.toString(), revocation: revocationEndpoint, resource },
     };
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
     authorize.searchParams.set('client_id', clientId);
