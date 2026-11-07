@@ -12,7 +12,6 @@ import { Badge, Button, cn, VTooltip } from '@vertesia/ui/core';
 import { i18nInstance, NAMESPACE, useUITranslation } from '@vertesia/ui/i18n';
 import { useRouterContext } from '@vertesia/ui/router';
 import { MarkdownRenderer, type MarkdownRendererProps } from '@vertesia/ui/widgets';
-import type { Element } from 'hast';
 import {
     AlertTriangle,
     ArrowLeft,
@@ -359,182 +358,6 @@ function SummaryWorkstreamLaunchMessage({
 const USER_BUBBLE_COLLAPSE_THRESHOLD = 520;
 const STORE_LINK_MARKDOWN_RE =
     /\[[^\]]+\]\((?:\/store\/(?:objects|collections)\/|store:|document:|document:\/\/|collection:)[^)]+\)/;
-const DEFAULT_AGENT_MARKDOWN_COMPONENTS: MarkdownRendererProps['components'] = {
-    table: AgentMarkdownTable,
-};
-
-type HastTextNode = {
-    value?: unknown;
-    children?: unknown[];
-};
-
-function getHastText(node: unknown): string {
-    if (!node || typeof node !== 'object') return '';
-    const typedNode = node as HastTextNode;
-    if (typeof typedNode.value === 'string') return typedNode.value;
-    if (!Array.isArray(typedNode.children)) return '';
-    return typedNode.children.map(getHastText).join('');
-}
-
-function getElementChildren(node: unknown, tagName?: string): Element[] {
-    if (!node || typeof node !== 'object') return [];
-    const children = (node as { children?: unknown[] }).children;
-    if (!Array.isArray(children)) return [];
-    return children.filter((child): child is Element => {
-        if (!child || typeof child !== 'object') return false;
-        const childElement = child as Element;
-        return tagName ? childElement.tagName === tagName : typeof childElement.tagName === 'string';
-    });
-}
-
-function getTableRows(node?: Element): string[][] {
-    const sections = getElementChildren(node).filter((child) => child.tagName === 'thead' || child.tagName === 'tbody');
-    return sections.flatMap((section) =>
-        getElementChildren(section, 'tr').map((row) =>
-            getElementChildren(row)
-                .filter((cell) => cell.tagName === 'th' || cell.tagName === 'td')
-                .map((cell) => getHastText(cell).replace(/\s+/g, ' ').trim()),
-        ),
-    );
-}
-
-function getTableBodyRows(node?: Element): string[][] {
-    return getElementChildren(node, 'tbody').flatMap((section) =>
-        getElementChildren(section, 'tr').map((row) =>
-            getElementChildren(row, 'td').map((cell) => getHastText(cell).replace(/\s+/g, ' ').trim()),
-        ),
-    );
-}
-
-function getCompactTableColumns(node?: Element): Set<number> {
-    const rows = getTableRows(node);
-    const bodyRows = getTableBodyRows(node);
-    const columnCount = Math.max(0, ...rows.map((row) => row.length));
-    if (columnCount <= 1) return new Set();
-
-    const compactColumns = new Set<number>();
-    for (let columnIndex = 0; columnIndex < columnCount; columnIndex += 1) {
-        const bodyValues = bodyRows
-            .map((row) => row[columnIndex] || '')
-            .map((value) => value.trim())
-            .filter(Boolean);
-        if (bodyValues.length === 0) continue;
-
-        const lengths = bodyValues.map((value) => value.length);
-        const maxLength = Math.max(...lengths);
-        const avgLength = lengths.reduce((sum, length) => sum + length, 0) / lengths.length;
-        const hasLongToken = bodyValues.some((value) => /\S{12,}/.test(value));
-
-        if (maxLength <= 16 && avgLength <= 10 && !hasLongToken) {
-            compactColumns.add(columnIndex);
-        }
-    }
-
-    if (compactColumns.size >= columnCount) {
-        return new Set();
-    }
-
-    return compactColumns;
-}
-
-function clampNumber(value: number, min: number, max: number): number {
-    return Math.min(max, Math.max(min, value));
-}
-
-function getLongestTokenLength(values: string[]): number {
-    return values.reduce((longest, value) => {
-        const tokens = value.match(/\S+/g) || [];
-        return Math.max(longest, ...tokens.map((token) => token.length));
-    }, 0);
-}
-
-interface AgentMarkdownTableColumnLayout {
-    key: string;
-    compact: boolean;
-    width: string;
-}
-
-function getTableColumnLayouts(node?: Element): AgentMarkdownTableColumnLayout[] {
-    const rows = getTableRows(node);
-    const columnCount = Math.max(0, ...rows.map((row) => row.length));
-    if (columnCount <= 1) return [];
-
-    const compactColumns = getCompactTableColumns(node);
-    const weights = Array.from({ length: columnCount }, (_value, columnIndex) => {
-        if (compactColumns.has(columnIndex)) {
-            return 8;
-        }
-
-        const values = rows
-            .map((row) => row[columnIndex] || '')
-            .map((value) => value.trim())
-            .filter(Boolean);
-        if (values.length === 0) return 18;
-
-        const lengths = values.map((value) => value.length);
-        const maxLength = Math.max(...lengths);
-        const avgLength = lengths.reduce((sum, length) => sum + length, 0) / lengths.length;
-        const longestTokenLength = getLongestTokenLength(values);
-
-        return clampNumber(avgLength * 0.7 + maxLength * 0.25 + longestTokenLength * 0.45, 18, 90);
-    });
-
-    const totalWeight = weights.reduce((sum, weight, index) => sum + (compactColumns.has(index) ? 0 : weight), 0);
-    if (totalWeight <= 0) return [];
-
-    return weights.map((weight, columnIndex) => {
-        const share = weight / totalWeight;
-        // Reserve actual space for short values and headers before distributing prose columns.
-        const width = compactColumns.has(columnIndex)
-            ? '8rem'
-            : `calc(${(share * 100).toFixed(3)}% - ${(compactColumns.size * 8 * share).toFixed(3)}rem)`;
-        return {
-            key: `agent-markdown-table-column-${columnIndex}`,
-            compact: compactColumns.has(columnIndex),
-            width,
-        };
-    });
-}
-
-function AgentMarkdownTable({
-    node,
-    className,
-    children,
-    ...props
-}: React.TableHTMLAttributes<HTMLTableElement> & {
-    node?: Element;
-    children?: React.ReactNode;
-}) {
-    const columnLayouts = getTableColumnLayouts(node);
-
-    return (
-        <div className="overflow-x-auto">
-            <table
-                {...props}
-                className={className}
-                style={{ minWidth: `${columnLayouts.length * 8}rem`, ...props.style }}
-            >
-                {columnLayouts.length > 0 ? (
-                    <colgroup>
-                        {columnLayouts.map((columnLayout) => (
-                            <col
-                                key={columnLayout.key}
-                                className={columnLayout.compact ? 'agent-markdown-table-compact-col' : undefined}
-                                style={
-                                    {
-                                        '--agent-markdown-table-column-width': columnLayout.width,
-                                    } as React.CSSProperties
-                                }
-                            />
-                        ))}
-                    </colgroup>
-                ) : null}
-                {children}
-            </table>
-        </div>
-    );
-}
-
 function getReactNodeTextLength(node: React.ReactNode): number {
     if (node === null || node === undefined || typeof node === 'boolean') return 0;
     if (typeof node === 'string' || typeof node === 'number') return String(node).length;
@@ -703,7 +526,6 @@ function SummaryMessage({
 
     const markdownComponents = useMemo(
         () => ({
-            ...DEFAULT_AGENT_MARKDOWN_COMPONENTS,
             a: createAgentMarkdownAnchor({
                 StoreLinkComponent,
                 CollectionLinkComponent,
@@ -2118,9 +1940,7 @@ function SummaryThoughtProseItem({
                 className={cn(SUMMARY_PROSE_CLASS, isLong && !disableCollapse && !isExpanded && AGENT_LINE_CLAMP_CLASS)}
                 style={{ overflowWrap: 'anywhere' }}
             >
-                <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
-                    {text}
-                </MarkdownRenderer>
+                <MarkdownRenderer artifactRunId={artifactRunId}>{text}</MarkdownRenderer>
             </div>
             {isLong && !disableCollapse ? (
                 <div className="mt-1.5 flex justify-end">
@@ -2188,9 +2008,7 @@ function SummaryStreamingMessage({
     return (
         <div className="mx-auto w-full max-w-3xl px-1" data-workstream-id={workstreamId}>
             <div className={SUMMARY_PROSE_CLASS} style={{ overflowWrap: 'anywhere' }}>
-                <MarkdownRenderer artifactRunId={artifactRunId} components={DEFAULT_AGENT_MARKDOWN_COMPONENTS}>
-                    {text}
-                </MarkdownRenderer>
+                <MarkdownRenderer artifactRunId={artifactRunId}>{text}</MarkdownRenderer>
             </div>
         </div>
     );
