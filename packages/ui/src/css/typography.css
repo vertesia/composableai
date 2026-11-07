@@ -79,6 +79,30 @@
     @apply border border-muted/30 px-4 py-2 text-muted;
 }
 
+/* Set on the cells so they never inherit "overflow-wrap: anywhere" or "word-break: break-word"
+   from a message container: with either, a table can squeeze a column of ordinary words down to
+   one letter per line. Long runs such as hashes and URLs get break points from
+   rehypeTableCellWrapping instead. */
+.vprose th,
+.vprose td {
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+/* A short value such as a time, status or name, marked by rehypeTableCellWrapping, stays on one line. */
+.vprose th.md-cell-nowrap,
+.vprose td.md-cell-nowrap {
+    white-space: nowrap;
+}
+
+/* rehypeTableCellWrapping leaves link and code text alone, so a long URL or identifier breaks here. */
+.vprose th a,
+.vprose th code,
+.vprose td a,
+.vprose td code {
+    overflow-wrap: anywhere;
+}
+
 .vprose code {
     @apply font-mono text-sm;
 }
