@@ -163,6 +163,8 @@ it('requests discovery and the client document together when a login starts', as
     );
     release();
     await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    // Never from the browser cache: a deploy that changes callbacks or scopes must apply at the next sign-in.
+    expect(requests.find((request) => request.url === clientId)?.init?.cache).toBe('no-store');
 });
 it('exchanges the callback code without discovering the issuer again', async () => {
     const oauth = await setup();

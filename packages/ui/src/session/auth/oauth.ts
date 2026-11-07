@@ -91,14 +91,13 @@ interface ClientDocument {
 }
 
 /**
- * Fetch a client ID metadata document (CIMD), honouring the caching its server asks for, so a new tab can reuse a
- * recent copy instead of paying a round trip. The authorization server reads the document itself and enforces its
- * callback list, so a stale copy cannot authorize a removed callback. It can, until it expires, reject a callback
- * that was just added (the check below fails) or keep requesting the old scopes; the document's `max-age` bounds
- * both, so a client should keep it short.
+ * Fetch a client ID metadata document (CIMD). `no-store`: a deploy that changes the callback list or scopes must
+ * take effect at the next sign-in. Until it expired, a cached copy would reject a just-added callback, or request the
+ * old scopes, which the session then keeps. A login fetches it in parallel with discovery, so its round trip is
+ * already overlapped.
  */
 async function fetchClientDocument(clientId: string): Promise<ClientDocument> {
-    const response = await fetch(validatedEndpointUrl(clientId));
+    const response = await fetch(validatedEndpointUrl(clientId), { cache: 'no-store' });
     if (!response.ok) throw new Error(`Application CIMD unavailable (${response.status})`);
     return response.json();
 }
