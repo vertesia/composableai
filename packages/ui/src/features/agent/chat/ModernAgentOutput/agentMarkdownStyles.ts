@@ -194,7 +194,9 @@ export const agentMarkdownStyles = `
     border-collapse: collapse;
     border-spacing: 0;
     font-size: 0.8125rem;
-    table-layout: fixed;
+    /* Automatic layout keeps every column at least as wide as its longest word and gives the rest
+       to the columns with the most text. The wrapper scrolls when those words cannot all fit. */
+    table-layout: auto;
     background: transparent;
 }
 .agent-markdown thead:not(:where(.not-prose, .not-prose *)) {
@@ -208,9 +210,16 @@ export const agentMarkdownStyles = `
     padding: 0.55rem 0.75rem;
     text-align: left;
     vertical-align: top;
-    overflow-wrap: anywhere;
+    /* Not "anywhere": that drops a column's minimum width to one letter, so the automatic layout
+       could squeeze a column of short words down to a letter per line. */
+    overflow-wrap: break-word;
     word-break: normal;
     white-space: normal;
+}
+/* Long links and code identifiers may break anywhere instead of forcing the table to scroll. */
+.agent-markdown td a:not(:where(.not-prose, .not-prose *)),
+.agent-markdown td code:not(:where(.not-prose, .not-prose *)) {
+    overflow-wrap: anywhere;
 }
 .agent-markdown th:not(:where(.not-prose, .not-prose *)) {
     color: var(--muted);
@@ -218,7 +227,6 @@ export const agentMarkdownStyles = `
     font-weight: 600;
     letter-spacing: 0;
     text-transform: none;
-    white-space: nowrap;
 }
 .agent-markdown td:not(:where(.not-prose, .not-prose *)) {
     color: inherit;
@@ -226,15 +234,6 @@ export const agentMarkdownStyles = `
 .agent-markdown th + th:not(:where(.not-prose, .not-prose *)),
 .agent-markdown td + td:not(:where(.not-prose, .not-prose *)) {
     padding-inline-start: 1.75rem;
-}
-.agent-markdown th:first-child:not(:where(.not-prose, .not-prose *)),
-.agent-markdown td:first-child:not(:where(.not-prose, .not-prose *)) {
-    min-width: 0;
-    width: auto;
-    white-space: normal;
-}
-.agent-markdown col:not(:where(.not-prose, .not-prose *)) {
-    width: var(--agent-markdown-table-column-width);
 }
 .agent-markdown tr:last-child td:not(:where(.not-prose, .not-prose *)) {
     border-bottom: 0;
