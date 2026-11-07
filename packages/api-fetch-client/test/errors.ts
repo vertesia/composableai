@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { ApiTopic, ConnectionError, FetchClient, RequestError, requestErrorDetail } from '../src/index.js';
+import {
+    ApiTopic,
+    ConnectionError,
+    FetchClient,
+    RequestError,
+    ResponseReadError,
+    requestErrorDetail,
+} from '../src/index.js';
 
 describe('handled transport failures', () => {
     it('throws a connection error without logging it', async () => {
@@ -24,6 +31,7 @@ describe('handled transport failures', () => {
         try {
             await assert.rejects(new ItemsApi(client).get('/'), (error: unknown) => {
                 assert.ok(error instanceof ConnectionError);
+                assert.ok(!(error instanceof ResponseReadError));
                 assert.equal(error.payload, timeout);
                 assert.equal(requestErrorDetail(error), 'Failed to connect to server: request timed out');
                 return true;
@@ -97,7 +105,11 @@ describe('handled transport failures', () => {
                 return wrapped;
             });
             await assert.rejects(topic.get('/'), (error: unknown) => error === wrapped);
+            assert.ok(received instanceof ResponseReadError);
             assert.ok(received instanceof ConnectionError);
+            assert.equal(received.status, 0);
+            assert.equal(received.responseStatus, 200);
+            assert.equal(requestErrorDetail(received), 'Failed to read response body (HTTP 200): body interrupted');
             assert.equal(received.payload, failure);
             assert.equal(attempts, 1);
             assert.deepEqual(reported, name === 'AbortError' ? [] : [received]);
