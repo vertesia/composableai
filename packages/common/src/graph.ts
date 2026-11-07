@@ -1,0 +1,27 @@
+import type * as Wire from './wire-types.generated.js';
+
+export type DocumentEndpointRef = Wire.DocumentEndpointRef;
+export type DocumentVersionEndpointRef = Wire.DocumentVersionEndpointRef;
+export type EndpointRef = Wire.EndpointRef;
+export type RelationshipEvidence = Wire.RelationshipEvidence;
+export type RelationshipDerivation = Wire.RelationshipDerivation;
+export type Relationship = Wire.Relationship;
+export type CreateRelationshipPayload = Wire.CreateRelationshipPayload;
+export type UpdateRelationshipPayload = Wire.UpdateRelationshipPayload;
+export type DeleteRelationshipQuery = Wire.DeleteRelationshipQuery;
+export type UpsertRelationshipItem = Wire.UpsertRelationshipItem;
+export type UpsertRelationshipsPayload = Wire.UpsertRelationshipsPayload;
+export type RelationshipMutationResult = Wire.RelationshipMutationResult;
+export type UpsertRelationshipsResponse = Wire.UpsertRelationshipsResponse;
+export type RelationshipDirection = Wire.RelationshipDirection;
+export type GraphNode = Wire.GraphNode;
+export type FindRelationshipsPayload = Wire.FindRelationshipsPayload;
+export type FindRelationshipsResponse = Wire.FindRelationshipsResponse;
+export type RelationshipTraversalStep = Wire.RelationshipTraversalStep;
+export type TraverseRelationshipsPayload = Wire.TraverseRelationshipsPayload;
+export type TraverseRelationshipsResponse = Wire.TraverseRelationshipsResponse;
+export type RelationshipMapResult = Wire.RelationshipMapResult;
+export type ReconcileRelationshipsPayload = Wire.ReconcileRelationshipsPayload;
+export type ReconcileRelationshipsResponse = Wire.ReconcileRelationshipsResponse;
+export type RelationshipValueHintsPayload = Wire.RelationshipValueHintsPayload;
+export type RelationshipValueHintsResponse = Wire.RelationshipValueHintsResponse;

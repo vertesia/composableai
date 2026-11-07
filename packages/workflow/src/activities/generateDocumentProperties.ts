@@ -2,6 +2,7 @@ import { ApplicationFailure, log } from '@temporalio/activity';
 import {
     type ContentMetadata,
     type ContentSource,
+    type ContentTypeValueHintsPolicy,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
     type InteractionExecutionConfiguration,
@@ -13,6 +14,7 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { md5 } from '../utils/blobs.js';
+import { loadRelationshipValueHints } from '../utils/relationship-value-hints.js';
 import { type TruncateSpec, truncByMaxTokens } from '../utils/tokens.js';
 import {
     executeInteractionFromActivity,
@@ -79,6 +81,8 @@ export interface GenerateDocumentPropertiesParams extends InteractionExecutionPa
     /** Opt-in cache identity for an explicit per-media execution override. Legacy config alone
      * does not change existing extraction fingerprints. */
     fingerprint_config?: InteractionExecutionConfiguration;
+    /** Resolved intake policy. Presence opts into ACL-filtered advisory examples. */
+    value_hints?: ContentTypeValueHintsPolicy;
 }
 export interface GenerateDocumentProperties extends DSLActivitySpec<GenerateDocumentPropertiesParams> {
     name: 'generateDocumentProperties';
@@ -122,6 +126,7 @@ export function computeExtractionFingerprint(input: {
     text_etag?: string | null;
     /** Model/profile changes must invalidate extracted properties. */
     config?: InteractionExecutionConfiguration;
+    value_hints?: ContentTypeValueHintsPolicy;
 }): string {
     const normalizedConfig = input.config
         ? (normalizeFingerprintValue(input.config) as Record<string, unknown>)
@@ -137,6 +142,7 @@ export function computeExtractionFingerprint(input: {
             object_schema: input.object_schema,
             ...(input.evidence ? { evidence: input.evidence } : {}),
             ...(input.text_etag !== undefined ? { text_etag: input.text_etag } : {}),
+            ...(input.value_hints ? { value_hints: normalizeFingerprintValue(input.value_hints) } : {}),
         }),
     );
 }
@@ -202,6 +208,7 @@ export async function generateDocumentProperties(
         instructions: params.instructions,
         interactionName,
         config: params.fingerprint_config,
+        value_hints: params.value_hints,
         object_schema: type.object_schema,
         evidence: evidenceImages?.map((image) => image.source ?? image.name ?? ''),
         // text may change under the same content etag; only vision-only extraction ignores it
@@ -265,6 +272,7 @@ export async function generateDocumentProperties(
         images: scopedImages,
         extraction_instructions: params.instructions,
         human_context: project?.configuration?.human_context ?? undefined,
+        value_hints: await loadRelationshipValueHints(client, objectId, params.value_hints, type.id),
     };
 
     // Strip properties marked x-extract:false so constrained decoding cannot invent them.

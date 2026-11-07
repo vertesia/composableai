@@ -43,6 +43,7 @@ export * from './email.js';
 export * from './embeddings.js';
 export * from './environment.js';
 export * from './facets.js';
+export type * from './graph.js';
 export * from './group.js';
 export type {
     CreateInferenceProfilePayload,

@@ -37,6 +37,7 @@ export * from './utils/activity-info.js';
 export * from './utils/blobs.js';
 export * from './utils/client.js';
 export * from './utils/project-cache.js';
+export * from './utils/relationship-value-hints.js';
 export * from './utils/renditions.js';
 export * from './utils/source-limits.js';
 export * from './utils/storage.js';

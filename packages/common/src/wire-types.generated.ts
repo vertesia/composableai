@@ -3780,6 +3780,165 @@ export type ComputedFacetResponse = {
     total?: number | undefined;
     [k: string]: unknown;
 };
+export type DocumentEndpointRef = {
+    kind: 'document';
+    id: string;
+};
+export type DocumentVersionEndpointRef = {
+    kind: 'document_version';
+    id: string;
+};
+export type EndpointRef = {
+    kind: 'document' | 'document_version';
+    id: string;
+};
+export type RelationshipEvidence = {
+    document?: DocumentEndpointRef | undefined;
+    document_version: DocumentVersionEndpointRef;
+    excerpt?: string | undefined;
+    metadata?: Record<string, unknown> | undefined;
+    extraction_run_id?: string | undefined;
+};
+export type RelationshipDerivation = {
+    map_id: string;
+    source_type: string;
+    source_version: string;
+};
+export type Relationship = {
+    id: string;
+    type: string;
+    source: EndpointRef;
+    target: EndpointRef;
+    properties: Record<string, unknown>;
+    evidence: RelationshipEvidence[];
+    confidence?: number | undefined;
+    origin: 'manual' | 'extraction' | 'field_map';
+    extraction_run_id?: string | undefined;
+    derivation?: RelationshipDerivation | undefined;
+    revision: number;
+    created_at: string;
+    updated_at: string;
+    created_by: string;
+    updated_by: string;
+    deleted_at?: string | undefined;
+    deleted_by?: string | undefined;
+};
+export type CreateRelationshipPayload = {
+    type: string;
+    source: EndpointRef;
+    target: EndpointRef;
+    properties?: Record<string, unknown> | undefined;
+    evidence?: RelationshipEvidence[] | undefined;
+    confidence?: number | undefined;
+    origin?: 'manual' | 'extraction' | undefined;
+    extraction_run_id?: string | undefined;
+    idempotency_key?: string | undefined;
+};
+export type UpdateRelationshipPayload = {
+    type?: string | undefined;
+    source?: EndpointRef | undefined;
+    target?: EndpointRef | undefined;
+    properties?: Record<string, unknown> | undefined | undefined;
+    evidence?: RelationshipEvidence[] | undefined | undefined;
+    confidence?: number | undefined | undefined;
+    origin?: 'manual' | 'extraction' | undefined | undefined;
+    extraction_run_id?: string | undefined | undefined;
+    expected_revision: number;
+};
+export type DeleteRelationshipQuery = {
+    expected_revision: number;
+};
+export type UpsertRelationshipItem = {
+    idempotency_key: string;
+    id?: string | undefined;
+    relationship: CreateRelationshipPayload;
+    expected_revision?: number | undefined;
+};
+export type UpsertRelationshipsPayload = {
+    items: UpsertRelationshipItem[];
+};
+export type RelationshipMutationResult = {
+    idempotency_key: string;
+    relationship?: Relationship | undefined;
+    error?: string | undefined;
+};
+export type UpsertRelationshipsResponse = {
+    results: RelationshipMutationResult[];
+};
+export type RelationshipDirection = 'both' | 'incoming' | 'outgoing';
+export type GraphNode = {
+    ref: EndpointRef;
+    resolved_ref?: EndpointRef | undefined;
+    type?: string | undefined;
+    name?: string | undefined;
+};
+export type FindRelationshipsPayload = {
+    endpoints?: EndpointRef[] | undefined;
+    direction?: RelationshipDirection | undefined;
+    relationship_types?: string[] | undefined;
+    limit?: number | undefined;
+    cursor?: string | undefined;
+    include_deleted?: boolean | undefined;
+    include_nodes?: boolean | undefined;
+};
+export type FindRelationshipsResponse = {
+    relationships: Relationship[];
+    nodes?: GraphNode[] | undefined;
+    cursor?: string | undefined;
+    truncated: boolean;
+    truncation_reasons?: string[] | undefined;
+};
+export type RelationshipTraversalStep = {
+    direction?: RelationshipDirection | undefined;
+    relationship_types?: string[] | undefined;
+};
+export type TraverseRelationshipsPayload = {
+    start: EndpointRef[];
+    steps: RelationshipTraversalStep[];
+    max_nodes?: number | undefined;
+    max_edges?: number | undefined;
+};
+export type TraverseRelationshipsResponse = {
+    nodes: GraphNode[];
+    edges: Relationship[];
+    truncated: boolean;
+    truncation_reasons?: string[] | undefined;
+};
+export type RelationshipMapResult = {
+    map_id: string;
+    status: 'resolved' | 'unresolved' | 'ambiguous' | 'missing' | 'truncated';
+    error?: string | undefined;
+    matched: number;
+    created: number;
+    updated: number;
+    deleted: number;
+};
+export type ReconcileRelationshipsPayload = {
+    document_id: string;
+    dry_run?: boolean | undefined;
+};
+export type ReconcileRelationshipsResponse = {
+    document: DocumentEndpointRef;
+    document_version: DocumentVersionEndpointRef;
+    dry_run: boolean;
+    results: RelationshipMapResult[];
+};
+export type RelationshipValueHintsPayload = {
+    document_id: string;
+    type_id?: string | undefined;
+    config?: ContentTypeValueHintsPolicy | undefined;
+};
+export type RelationshipValueHintsResponse = {
+    fields: {
+        field: string;
+        values: {
+            value: string;
+            count: number;
+        }[];
+    }[];
+    truncated: boolean;
+    scanned_documents: number;
+};
 /**
  * The user group and its payloads as they cross the wire.
  *
@@ -8371,6 +8530,18 @@ export type ColumnLayout = {
     default?: unknown | undefined;
 };
 export type ContentObjectTypeStatus = 'active' | 'draft';
+export type ContentTypeRelationMap = {
+    id: string;
+    source_field: string;
+    target_type: string;
+    target_identity: string;
+    relationship_type: string;
+};
+export type ContentTypeValueHintsPolicy = {
+    fields: string[];
+    max_values_per_field?: number | undefined;
+    max_total_values?: number | undefined;
+};
 export type IntakeVisionDetail = 'low' | 'standard' | 'high';
 export type IntakePageScope = 'all' | 'located';
 /**
@@ -8473,6 +8644,12 @@ export type ContentTypeIntakePolicy = {
                     }
                   | undefined;
               grounding?: ContentTypeExtractionGroundingPolicy | undefined;
+              value_hints?: ContentTypeValueHintsPolicy | undefined;
+          }
+        | undefined;
+    relationships?:
+        | {
+              enabled?: boolean | undefined;
           }
         | undefined;
     rendering_template?: string | undefined;
@@ -8504,6 +8681,23 @@ export type ContentObjectType = {
           }
         | undefined;
     strict_mode?: boolean | undefined;
+    nature?: 'document' | 'relationship' | undefined;
+    relationship?:
+        | {
+              source?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+              target?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+          }
+        | undefined;
+    identity_fields?: string[] | undefined;
+    relation_maps?: ContentTypeRelationMap[] | undefined;
 };
 export type ContentObjectTypeItem = {
     id: string;
@@ -8526,6 +8720,23 @@ export type ContentObjectTypeItem = {
           }
         | undefined;
     strict_mode?: boolean | undefined;
+    nature?: 'document' | 'relationship' | undefined;
+    relationship?:
+        | {
+              source?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+              target?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+          }
+        | undefined;
+    identity_fields?: string[] | undefined;
+    relation_maps?: ContentTypeRelationMap[] | undefined;
 };
 export type InCodeTypeDefinition = {
     id: string;
@@ -8543,6 +8754,23 @@ export type InCodeTypeDefinition = {
     status?: ContentObjectTypeStatus | undefined;
     intake?: ContentTypeIntakePolicy | undefined;
     editing?: ContentTypeEditingPolicy | undefined;
+    nature?: 'document' | 'relationship' | undefined;
+    relationship?:
+        | {
+              source?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+              target?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+          }
+        | undefined;
+    identity_fields?: string[] | undefined;
+    relation_maps?: ContentTypeRelationMap[] | undefined;
     title?: string | undefined;
 };
 export type ContentObjectTypeCatalogEntry = {
@@ -8561,6 +8789,23 @@ export type ContentObjectTypeCatalogEntry = {
     status?: ContentObjectTypeStatus | undefined;
     intake?: ContentTypeIntakePolicy | undefined;
     editing?: ContentTypeEditingPolicy | undefined;
+    nature?: 'document' | 'relationship' | undefined;
+    relationship?:
+        | {
+              source?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+              target?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+          }
+        | undefined;
+    identity_fields?: string[] | undefined;
+    relation_maps?: ContentTypeRelationMap[] | undefined;
     title?: string | undefined;
     updated_by?: string | undefined;
     created_by?: string | undefined;
@@ -8583,6 +8828,23 @@ export type CreateContentObjectTypePayload = {
     name: string;
     description?: string | undefined;
     tags?: string[] | undefined;
+    nature?: 'document' | 'relationship' | undefined;
+    relationship?:
+        | {
+              source?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+              target?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+          }
+        | undefined;
+    identity_fields?: string[] | undefined;
+    relation_maps?: ContentTypeRelationMap[] | undefined;
 };
 export type UpdateContentObjectTypePayload = {
     status?: ContentObjectTypeStatus | undefined | undefined;
@@ -8600,6 +8862,24 @@ export type UpdateContentObjectTypePayload = {
     name?: string | undefined;
     description?: string | undefined | undefined;
     tags?: string[] | undefined | undefined;
+    nature?: 'document' | 'relationship' | undefined | undefined;
+    relationship?:
+        | {
+              source?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+              target?:
+                  | {
+                        types?: string[] | undefined;
+                    }
+                  | undefined;
+          }
+        | undefined
+        | undefined;
+    identity_fields?: string[] | undefined | undefined;
+    relation_maps?: ContentTypeRelationMap[] | undefined | undefined;
     expected_edit_revision?: number | undefined;
 };
 export type WorkflowRuleItem = {
@@ -11661,6 +11941,8 @@ export interface ApiComponentTypes {
     ColumnLayout: ColumnLayout;
     ContentTypeEditingPolicy: ContentTypeEditingPolicy;
     ContentObjectTypeStatus: ContentObjectTypeStatus;
+    ContentTypeRelationMap: ContentTypeRelationMap;
+    ContentTypeValueHintsPolicy: ContentTypeValueHintsPolicy;
     ContentObjectTypeItem: ContentObjectTypeItem;
     ContentObjectTypeItemArray: ContentObjectTypeItemArray;
     ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntry;
@@ -12565,4 +12847,29 @@ export interface ApiComponentTypes {
     WorkflowUsageQuery: WorkflowUsageQuery;
     WorkflowUsageClass: WorkflowUsageClass;
     WorkflowUsageStanding: WorkflowUsageStanding;
+    DocumentEndpointRef: DocumentEndpointRef;
+    DocumentVersionEndpointRef: DocumentVersionEndpointRef;
+    EndpointRef: EndpointRef;
+    RelationshipEvidence: RelationshipEvidence;
+    RelationshipDerivation: RelationshipDerivation;
+    Relationship: Relationship;
+    CreateRelationshipPayload: CreateRelationshipPayload;
+    UpdateRelationshipPayload: UpdateRelationshipPayload;
+    DeleteRelationshipQuery: DeleteRelationshipQuery;
+    UpsertRelationshipItem: UpsertRelationshipItem;
+    UpsertRelationshipsPayload: UpsertRelationshipsPayload;
+    RelationshipMutationResult: RelationshipMutationResult;
+    UpsertRelationshipsResponse: UpsertRelationshipsResponse;
+    RelationshipDirection: RelationshipDirection;
+    GraphNode: GraphNode;
+    FindRelationshipsPayload: FindRelationshipsPayload;
+    FindRelationshipsResponse: FindRelationshipsResponse;
+    RelationshipTraversalStep: RelationshipTraversalStep;
+    TraverseRelationshipsPayload: TraverseRelationshipsPayload;
+    TraverseRelationshipsResponse: TraverseRelationshipsResponse;
+    RelationshipMapResult: RelationshipMapResult;
+    ReconcileRelationshipsPayload: ReconcileRelationshipsPayload;
+    ReconcileRelationshipsResponse: ReconcileRelationshipsResponse;
+    RelationshipValueHintsPayload: RelationshipValueHintsPayload;
+    RelationshipValueHintsResponse: RelationshipValueHintsResponse;
 }

@@ -532,6 +532,8 @@ export type ComplexSearchPayload = Wire.ComplexSearchPayload;
 export type ColumnLayout = Wire.ColumnLayout;
 
 export type ContentObjectTypeStatus = Wire.ContentObjectTypeStatus;
+export type ContentTypeRelationMap = Wire.ContentTypeRelationMap;
+export type ContentTypeValueHintsPolicy = Wire.ContentTypeValueHintsPolicy;
 
 export type IntakeVisionDetail = Wire.IntakeVisionDetail;
 

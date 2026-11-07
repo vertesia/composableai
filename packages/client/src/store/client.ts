@@ -24,6 +24,7 @@ import { PendingAsksApi } from './PendingAsksApi.js';
 import { ProcessApi } from './ProcessApi.js';
 import { ProcessTestRunApi } from './ProcessTestRunApi.js';
 import { QueryApi } from './QueryApi.js';
+import { RelationshipsApi } from './RelationshipsApi.js';
 import { RenderingApi } from './RenderingApi.js';
 import { SchedulesApi } from './SchedulesApi.js';
 import { TaskApi } from './TaskApi.js';
@@ -157,6 +158,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     data = new DataApi(this);
     indexing = new IndexingApi(this);
     query = new QueryApi(this);
+    relationships = new RelationshipsApi(this);
     rendering = new RenderingApi(this);
     views = new StoreViewsApi(this);
 }

@@ -1,4 +1,816 @@
 {
+  "DocumentEndpointRef": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "document"
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "DocumentVersionEndpointRef": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "const": "document_version"
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "EndpointRef": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "document",
+          "document_version"
+        ]
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "kind",
+      "id"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipEvidence": {
+    "type": "object",
+    "properties": {
+      "document": {
+        "$ref": "#/components/schemas/DocumentEndpointRef"
+      },
+      "document_version": {
+        "$ref": "#/components/schemas/DocumentVersionEndpointRef"
+      },
+      "excerpt": {
+        "type": "string",
+        "maxLength": 4000
+      },
+      "metadata": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "extraction_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      }
+    },
+    "required": [
+      "document_version"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipDerivation": {
+    "type": "object",
+    "properties": {
+      "map_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Stable ID of the source content type relation map."
+      },
+      "source_type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Source document content type ID."
+      },
+      "source_version": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Source document version that produced this relationship."
+      }
+    },
+    "required": [
+      "map_id",
+      "source_type",
+      "source_version"
+    ],
+    "additionalProperties": false
+  },
+  "Relationship": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string"
+      },
+      "source": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "target": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "evidence": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipEvidence"
+        }
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "origin": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "extraction",
+          "field_map"
+        ]
+      },
+      "extraction_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "derivation": {
+        "$ref": "#/components/schemas/RelationshipDerivation",
+        "description": "Map provenance for automatically reconciled relationships; read only."
+      },
+      "revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "deleted_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "deleted_by": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "type",
+      "source",
+      "target",
+      "properties",
+      "evidence",
+      "origin",
+      "revision",
+      "created_at",
+      "updated_at",
+      "created_by",
+      "updated_by"
+    ],
+    "additionalProperties": false
+  },
+  "CreateRelationshipPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string"
+      },
+      "source": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "target": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "evidence": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipEvidence"
+        }
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "origin": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "extraction"
+        ],
+        "description": "Defaults to manual."
+      },
+      "extraction_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Optional project-scoped retry key. Repeating the same create request returns the existing relationship; reusing the key with a different request is rejected with 422."
+      }
+    },
+    "required": [
+      "type",
+      "source",
+      "target"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateRelationshipPayload": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string"
+      },
+      "source": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "target": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "properties": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "evidence": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipEvidence"
+        }
+      },
+      "confidence": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "origin": {
+        "type": "string",
+        "enum": [
+          "manual",
+          "extraction"
+        ],
+        "description": "Defaults to manual."
+      },
+      "extraction_run_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "expected_revision"
+    ],
+    "additionalProperties": false
+  },
+  "DeleteRelationshipQuery": {
+    "type": "object",
+    "properties": {
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "expected_revision"
+    ],
+    "additionalProperties": false
+  },
+  "UpsertRelationshipItem": {
+    "type": "object",
+    "properties": {
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/CreateRelationshipPayload"
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "idempotency_key",
+      "relationship"
+    ],
+    "additionalProperties": false
+  },
+  "UpsertRelationshipsPayload": {
+    "type": "object",
+    "properties": {
+      "items": {
+        "minItems": 1,
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/UpsertRelationshipItem"
+        }
+      }
+    },
+    "required": [
+      "items"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipMutationResult": {
+    "type": "object",
+    "properties": {
+      "idempotency_key": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "relationship": {
+        "$ref": "#/components/schemas/Relationship"
+      },
+      "error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "idempotency_key"
+    ],
+    "additionalProperties": false
+  },
+  "UpsertRelationshipsResponse": {
+    "type": "object",
+    "properties": {
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipMutationResult"
+        }
+      }
+    },
+    "required": [
+      "results"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipDirection": {
+    "type": "string",
+    "enum": [
+      "both",
+      "incoming",
+      "outgoing"
+    ]
+  },
+  "GraphNode": {
+    "type": "object",
+    "properties": {
+      "ref": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "resolved_ref": {
+        "$ref": "#/components/schemas/EndpointRef"
+      },
+      "type": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "ref"
+    ],
+    "additionalProperties": false
+  },
+  "FindRelationshipsPayload": {
+    "type": "object",
+    "properties": {
+      "endpoints": {
+        "minItems": 1,
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/EndpointRef"
+        }
+      },
+      "direction": {
+        "$ref": "#/components/schemas/RelationshipDirection",
+        "description": "Defaults to both."
+      },
+      "relationship_types": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "limit": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 1000
+      },
+      "cursor": {
+        "type": "string"
+      },
+      "include_deleted": {
+        "type": "boolean"
+      },
+      "include_nodes": {
+        "type": "boolean",
+        "description": "Include the access-checked endpoint nodes for this relationship page."
+      }
+    },
+    "additionalProperties": false
+  },
+  "FindRelationshipsResponse": {
+    "type": "object",
+    "properties": {
+      "relationships": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Relationship"
+        }
+      },
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GraphNode"
+        }
+      },
+      "cursor": {
+        "type": "string"
+      },
+      "truncated": {
+        "type": "boolean"
+      },
+      "truncation_reasons": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "relationships",
+      "truncated"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipTraversalStep": {
+    "type": "object",
+    "properties": {
+      "direction": {
+        "$ref": "#/components/schemas/RelationshipDirection",
+        "description": "Defaults to both."
+      },
+      "relationship_types": {
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      }
+    },
+    "additionalProperties": false
+  },
+  "TraverseRelationshipsPayload": {
+    "type": "object",
+    "properties": {
+      "start": {
+        "minItems": 1,
+        "maxItems": 100,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/EndpointRef"
+        }
+      },
+      "steps": {
+        "minItems": 1,
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipTraversalStep"
+        }
+      },
+      "max_nodes": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 1000
+      },
+      "max_edges": {
+        "type": "integer",
+        "exclusiveMinimum": 0,
+        "maximum": 5000
+      }
+    },
+    "required": [
+      "start",
+      "steps"
+    ],
+    "additionalProperties": false
+  },
+  "TraverseRelationshipsResponse": {
+    "type": "object",
+    "properties": {
+      "nodes": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/GraphNode"
+        }
+      },
+      "edges": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Relationship"
+        }
+      },
+      "truncated": {
+        "type": "boolean"
+      },
+      "truncation_reasons": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "nodes",
+      "edges",
+      "truncated"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipMapResult": {
+    "type": "object",
+    "properties": {
+      "map_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "resolved",
+          "unresolved",
+          "ambiguous",
+          "missing",
+          "truncated"
+        ]
+      },
+      "error": {
+        "type": "string"
+      },
+      "matched": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "created": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "updated": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      },
+      "deleted": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "map_id",
+      "status",
+      "matched",
+      "created",
+      "updated",
+      "deleted"
+    ],
+    "additionalProperties": false
+  },
+  "ReconcileRelationshipsPayload": {
+    "type": "object",
+    "properties": {
+      "document_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Source document root ID."
+      },
+      "dry_run": {
+        "type": "boolean",
+        "description": "Preview changes without writing. Defaults to true."
+      }
+    },
+    "required": [
+      "document_id"
+    ],
+    "additionalProperties": false
+  },
+  "ReconcileRelationshipsResponse": {
+    "type": "object",
+    "properties": {
+      "document": {
+        "$ref": "#/components/schemas/DocumentEndpointRef"
+      },
+      "document_version": {
+        "$ref": "#/components/schemas/DocumentVersionEndpointRef"
+      },
+      "dry_run": {
+        "type": "boolean"
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/RelationshipMapResult"
+        }
+      }
+    },
+    "required": [
+      "document",
+      "document_version",
+      "dry_run",
+      "results"
+    ],
+    "additionalProperties": false
+  },
+  "ContentTypeValueHintsPolicy": {
+    "type": "object",
+    "properties": {
+      "fields": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+        },
+        "description": "Top-level string property keys to suggest existing values for during extraction. Empty disables inherited hints."
+      },
+      "max_values_per_field": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 50,
+        "description": "Maximum distinct visible string values returned for each field. Default 20."
+      },
+      "max_total_values": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200,
+        "description": "Maximum distinct visible string values returned across all fields. Default 100."
+      }
+    },
+    "required": [
+      "fields"
+    ],
+    "additionalProperties": false,
+    "description": "Opt-in, bounded value hints from visible current-head documents of this type. Only existing string values and string-array elements are suggested."
+  },
+  "RelationshipValueHintsPayload": {
+    "type": "object",
+    "properties": {
+      "document_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Document root ID whose content type selects hint fields."
+      },
+      "type_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Explicit chosen document content type for value hints before the type is assigned."
+      },
+      "config": {
+        "$ref": "#/components/schemas/ContentTypeValueHintsPolicy",
+        "description": "Effective value-hints policy override. Omission uses the document content type configuration."
+      }
+    },
+    "required": [
+      "document_id"
+    ],
+    "additionalProperties": false
+  },
+  "RelationshipValueHintsResponse": {
+    "type": "object",
+    "properties": {
+      "fields": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "values": {
+              "maxItems": 50,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 2147483647
+                  }
+                },
+                "required": [
+                  "value",
+                  "count"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "field",
+            "values"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "truncated": {
+        "type": "boolean"
+      },
+      "scanned_documents": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 2147483647
+      }
+    },
+    "required": [
+      "fields",
+      "truncated",
+      "scanned_documents"
+    ],
+    "additionalProperties": false
+  },
   "WorkflowUsageQuery": {
     "type": "object",
     "properties": {
@@ -5895,10 +6707,25 @@
           "grounding": {
             "$ref": "#/components/schemas/ContentTypeExtractionGroundingPolicy",
             "description": "Controls PDF block-level citation grounding with annotated proof output."
+          },
+          "value_hints": {
+            "$ref": "#/components/schemas/ContentTypeValueHintsPolicy",
+            "description": "Opt-in configured aggregate value hints for extraction."
           }
         },
         "additionalProperties": false,
         "description": "Controls schema-property extraction after type assignment."
+      },
+      "relationships": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Reconcile declared field-to-field relationships after intake. Defaults to false."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Post-intake relationship reconciliation. Omission leaves it disabled."
       },
       "rendering_template": {
         "type": "string",
@@ -25435,6 +26262,68 @@
       "editing": {
         "$ref": "#/components/schemas/ContentTypeEditingPolicy"
       },
+      "nature": {
+        "type": "string",
+        "enum": [
+          "document",
+          "relationship"
+        ],
+        "description": "The kind of content type. An omitted value is treated as document."
+      },
+      "relationship": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed source content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship source documents."
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed target content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship target documents."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Endpoint type restrictions for relationship content types."
+      },
+      "identity_fields": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+        },
+        "description": "Candidate identity keys for documents of this type. Each is a literal top-level property key; duplicates across documents are reported as ambiguous, not treated as unique. Values compare as exact tagged string, finite number, or boolean scalars without trimming, case folding, or coercion."
+      },
+      "relation_maps": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentTypeRelationMap"
+        },
+        "description": "Declared exact field-to-field relationships from this document type. Source values may be a scalar or bounded scalar array; target identity values must be scalar. An empty array removes all maps."
+      },
       "title": {
         "type": "string",
         "description": "Display title. Defaults to `name` or `id`."
@@ -25492,6 +26381,52 @@
     },
     "additionalProperties": false,
     "description": "Per-content-type policy for collaborative document editing."
+  },
+  "ContentTypeRelationMap": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$",
+        "description": "Stable map ID used to track and retire map-owned relationships."
+      },
+      "source_field": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$",
+        "description": "Top-level source document property key."
+      },
+      "target_type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Target document content type ID."
+      },
+      "target_identity": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$",
+        "description": "Top-level target property key declared among target_type identity_fields."
+      },
+      "relationship_type": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256,
+        "description": "Relationship content type ID."
+      }
+    },
+    "required": [
+      "id",
+      "source_field",
+      "target_type",
+      "target_identity",
+      "relationship_type"
+    ],
+    "additionalProperties": false
   },
   "InCodeProcessDefinition": {
     "type": "object",
@@ -29264,6 +30199,68 @@
       "strict_mode": {
         "type": "boolean",
         "description": "Determines if the content will be validated against the object schema a generation time and save/update time."
+      },
+      "nature": {
+        "type": "string",
+        "enum": [
+          "document",
+          "relationship"
+        ],
+        "description": "The kind of content type. An omitted value is treated as document."
+      },
+      "relationship": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed source content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship source documents."
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed target content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship target documents."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Endpoint type restrictions for relationship content types."
+      },
+      "identity_fields": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+        },
+        "description": "Candidate identity keys for documents of this type. Each is a literal top-level property key; duplicates across documents are reported as ambiguous, not treated as unique. Values compare as exact tagged string, finite number, or boolean scalars without trimming, case folding, or coercion."
+      },
+      "relation_maps": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentTypeRelationMap"
+        },
+        "description": "Declared exact field-to-field relationships from this document type. Source values may be a scalar or bounded scalar array; target identity values must be scalar. An empty array removes all maps."
       }
     },
     "required": [
@@ -29333,6 +30330,68 @@
       },
       "editing": {
         "$ref": "#/components/schemas/ContentTypeEditingPolicy"
+      },
+      "nature": {
+        "type": "string",
+        "enum": [
+          "document",
+          "relationship"
+        ],
+        "description": "The kind of content type. An omitted value is treated as document."
+      },
+      "relationship": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed source content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship source documents."
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed target content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship target documents."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Endpoint type restrictions for relationship content types."
+      },
+      "identity_fields": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+        },
+        "description": "Candidate identity keys for documents of this type. Each is a literal top-level property key; duplicates across documents are reported as ambiguous, not treated as unique. Values compare as exact tagged string, finite number, or boolean scalars without trimming, case folding, or coercion."
+      },
+      "relation_maps": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentTypeRelationMap"
+        },
+        "description": "Declared exact field-to-field relationships from this document type. Source values may be a scalar or bounded scalar array; target identity values must be scalar. An empty array removes all maps."
       },
       "title": {
         "type": "string",
@@ -29416,6 +30475,68 @@
           "type": "string"
         },
         "description": "Optional array of categorization tags"
+      },
+      "nature": {
+        "type": "string",
+        "enum": [
+          "document",
+          "relationship"
+        ],
+        "description": "The kind of content type. An omitted value is treated as document."
+      },
+      "relationship": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed source content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship source documents."
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed target content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship target documents."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Endpoint type restrictions for relationship content types."
+      },
+      "identity_fields": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+        },
+        "description": "Candidate identity keys for documents of this type. Each is a literal top-level property key; duplicates across documents are reported as ambiguous, not treated as unique. Values compare as exact tagged string, finite number, or boolean scalars without trimming, case folding, or coercion."
+      },
+      "relation_maps": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentTypeRelationMap"
+        },
+        "description": "Declared exact field-to-field relationships from this document type. Source values may be a scalar or bounded scalar array; target identity values must be scalar. An empty array removes all maps."
       }
     },
     "required": [
@@ -29470,6 +30591,68 @@
           "type": "string"
         },
         "description": "Optional array of categorization tags"
+      },
+      "nature": {
+        "type": "string",
+        "enum": [
+          "document",
+          "relationship"
+        ],
+        "description": "The kind of content type. An omitted value is treated as document."
+      },
+      "relationship": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed source content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship source documents."
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed target content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship target documents."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Endpoint type restrictions for relationship content types."
+      },
+      "identity_fields": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+        },
+        "description": "Candidate identity keys for documents of this type. Each is a literal top-level property key; duplicates across documents are reported as ambiguous, not treated as unique. Values compare as exact tagged string, finite number, or boolean scalars without trimming, case folding, or coercion."
+      },
+      "relation_maps": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentTypeRelationMap"
+        },
+        "description": "Declared exact field-to-field relationships from this document type. Source values may be a scalar or bounded scalar array; target identity values must be scalar. An empty array removes all maps."
       },
       "expected_edit_revision": {
         "type": "integer",
@@ -29553,6 +30736,68 @@
       "strict_mode": {
         "type": "boolean",
         "description": "Determines if the content will be validated against the object schema a generation time and save/update time."
+      },
+      "nature": {
+        "type": "string",
+        "enum": [
+          "document",
+          "relationship"
+        ],
+        "description": "The kind of content type. An omitted value is treated as document."
+      },
+      "relationship": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed source content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship source documents."
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "types": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Allowed target content type IDs."
+              }
+            },
+            "additionalProperties": false,
+            "description": "Optional restrictions on relationship target documents."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Endpoint type restrictions for relationship content types."
+      },
+      "identity_fields": {
+        "maxItems": 10,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+        },
+        "description": "Candidate identity keys for documents of this type. Each is a literal top-level property key; duplicates across documents are reported as ambiguous, not treated as unique. Values compare as exact tagged string, finite number, or boolean scalars without trimming, case folding, or coercion."
+      },
+      "relation_maps": {
+        "maxItems": 20,
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentTypeRelationMap"
+        },
+        "description": "Declared exact field-to-field relationships from this document type. Source values may be a scalar or bounded scalar array; target identity values must be scalar. An empty array removes all maps."
       }
     },
     "required": [

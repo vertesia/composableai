@@ -168,39 +168,47 @@ describe('generateOrAssignContentType', () => {
         expect(result).toEqual({ id: 'app:invoice-app:Invoice', isNew: false, name: 'Invoice' });
     });
 
-    it('excludes draft types from selection and does not assign them if returned by the model', async () => {
-        const { update } = await mockSetup([
-            typeItem('Invoice', 'active'),
-            typeItem('DraftInvoice', 'draft'),
-            typeItem('DocumentPart', 'active'),
-            typeItem('GenericDocument', 'active'),
-            typeItem('Rendition', 'active'),
-        ]);
-        mockSelectionResult('DraftInvoice');
+    it.each(['DraftInvoice', 'Supplies'])(
+        'excludes non-document and draft types and rejects a model selection of %s',
+        async (selected) => {
+            const { update } = await mockSetup([
+                typeItem('Invoice', 'active'),
+                typeItem('DraftInvoice', 'draft'),
+                { ...typeItem('Supplies', 'active'), nature: 'relationship' },
+                typeItem('DocumentPart', 'active'),
+                typeItem('GenericDocument', 'active'),
+                typeItem('Rendition', 'active'),
+            ]);
+            mockSelectionResult(selected);
 
-        const result: GenerateOrAssignContentTypeResult = await testEnv.run(
-            generateOrAssignContentType,
-            payload({ allowNewContentTypes: false }),
-        );
+            const result: GenerateOrAssignContentTypeResult = await testEnv.run(
+                generateOrAssignContentType,
+                payload({ allowNewContentTypes: false }),
+            );
 
-        expect(executeInteractionFromActivity).toHaveBeenCalledWith(
-            expect.anything(),
-            'sys:SelectDocumentType',
-            expect.objectContaining({ allowNewContentTypes: false }),
-            expect.objectContaining({
-                existing_types: [
-                    expect.objectContaining({ name: 'Invoice' }),
-                    expect.objectContaining({ name: 'GenericDocument' }),
-                ],
-            }),
-        );
-        expect(update).toHaveBeenCalledWith('object-1', { type: 'sys:GenericDocument' }, { suppressWorkflows: true });
-        expect(result).toEqual({
-            id: 'sys:GenericDocument',
-            isNew: false,
-            name: 'GenericDocument',
-        });
-    });
+            expect(executeInteractionFromActivity).toHaveBeenCalledWith(
+                expect.anything(),
+                'sys:SelectDocumentType',
+                expect.objectContaining({ allowNewContentTypes: false }),
+                expect.objectContaining({
+                    existing_types: [
+                        expect.objectContaining({ name: 'Invoice' }),
+                        expect.objectContaining({ name: 'GenericDocument' }),
+                    ],
+                }),
+            );
+            expect(update).toHaveBeenCalledWith(
+                'object-1',
+                { type: 'sys:GenericDocument' },
+                { suppressWorkflows: true },
+            );
+            expect(result).toEqual({
+                id: 'sys:GenericDocument',
+                isNew: false,
+                name: 'GenericDocument',
+            });
+        },
+    );
 
     it('uses a PDF rendition as visual evidence for PowerPoint type selection', async () => {
         const pdfRendition = {

@@ -83,6 +83,11 @@ async function mockSetup(options: {
     renditions?: Rendition[];
     properties?: Record<string, unknown>;
     generationRuns?: GenerationRunMetadata[];
+    valueHints?: {
+        fields: { field: string; values: { value: string; count: number }[] }[];
+        truncated: boolean;
+        scanned_documents: number;
+    };
 }) {
     const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
     const update = vi.fn(async () => ({}));
@@ -106,6 +111,7 @@ async function mockSetup(options: {
         name: 'Invoice',
         object_schema: options.objectSchema ?? DEFAULT_OBJECT_SCHEMA,
     }));
+    const valueHints = vi.fn(async () => options.valueHints ?? { fields: [], truncated: false, scanned_documents: 0 });
 
     vi.mocked(setupActivity).mockImplementation(
         async (activityPayload) =>
@@ -114,6 +120,7 @@ async function mockSetup(options: {
                 params: activityPayload.params,
                 fetchProject: vi.fn(async () => ({ configuration: {} })),
                 client: {
+                    store: { relationships: { valueHints } },
                     objects: {
                         retrieve: retrieveObject,
                         update,
@@ -127,10 +134,32 @@ async function mockSetup(options: {
             }) as unknown as ActivityContext<GenerateDocumentPropertiesParams>,
     );
 
-    return { retrieveObject, resolveType, update };
+    return { retrieveObject, resolveType, update, valueHints };
 }
 
 describe('generateDocumentProperties', () => {
+    it('places bounded advisory values in the prompt while extracting from the source', async () => {
+        const { valueHints } = await mockSetup({
+            text: 'Source says Acme',
+            contentType: 'text/plain',
+            valueHints: {
+                fields: [{ field: 'vendor', values: [{ value: 'Acme', count: 4 }] }],
+                truncated: false,
+                scanned_documents: 12,
+            },
+        });
+        mockExtractionResult({ title: 'Acme' });
+        const config = { fields: ['vendor'], max_total_values: 1 };
+        await testEnv.run(generateDocumentProperties, payload({ value_hints: config }));
+        expect(valueHints).toHaveBeenCalledWith({ document_id: 'object-1', config, type_id: 'type-1' });
+        expect(executeInteractionFromActivity).toHaveBeenCalledWith(
+            expect.anything(),
+            'sys:ExtractInformation',
+            expect.anything(),
+            expect.objectContaining({ content: 'Source says Acme', value_hints: 'vendor: "Acme" (4)' }),
+            false,
+        );
+    });
     it('preserves typed API rate-limit metadata for the activity interceptor', async () => {
         await mockSetup({ text: 'source text', contentType: 'text/plain' });
         const error = new ServerError('quota reached', new Request('https://studio.test/api'), 429, {}, true, {
@@ -449,6 +478,13 @@ describe('generateDocumentProperties', () => {
             expect(computeExtractionFingerprint({ ...base, config: undefined })).toBe(
                 computeExtractionFingerprint(base),
             );
+        });
+
+        it('fingerprints the hint policy without depending on live hint values', () => {
+            const base = { source: 'text' as const, interactionName: 'sys:ExtractInformation' };
+            const original = computeExtractionFingerprint({ ...base, value_hints: { fields: ['vendor'] } });
+            expect(computeExtractionFingerprint({ ...base, value_hints: { fields: ['customer'] } })).not.toBe(original);
+            expect(computeExtractionFingerprint({ ...base, value_hints: { fields: ['vendor'] } })).toBe(original);
         });
 
         it('normalizes configuration key order and treats empty overrides as absent', () => {

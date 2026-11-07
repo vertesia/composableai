@@ -5,6 +5,32 @@ import { ConfigModes, RunDataStorageLevel } from '../interaction-values.js';
 import { InferenceProfileIdSchema } from './inference-profile.js';
 import { EditRevisionSchema, ExpectedEditRevisionSchema, PageCountSchema } from './schema-primitives.js';
 
+const contentFieldKeySchema = z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[A-Za-z_][A-Za-z0-9_-]*$/);
+
+export const ContentTypeValueHintsPolicySchema = z
+    .strictObject({
+        fields: z.array(contentFieldKeySchema).max(10).meta({
+            description:
+                'Top-level string property keys to suggest existing values for during extraction. Empty disables inherited hints.',
+        }),
+        max_values_per_field: z.int32().min(1).max(50).optional().meta({
+            description: 'Maximum distinct visible string values returned for each field. Default 20.',
+        }),
+        max_total_values: z.int32().min(1).max(200).optional().meta({
+            description: 'Maximum distinct visible string values returned across all fields. Default 100.',
+        }),
+    })
+    .meta({
+        id: 'ContentTypeValueHintsPolicy',
+        description:
+            'Opt-in, bounded value hints from visible current-head documents of this type. ' +
+            'Only existing string values and string-array elements are suggested.',
+    });
+
 /**
  * Runtime API schemas for the content-intake policy tree.
  *
@@ -536,9 +562,20 @@ const contentTypeIntakePolicySchema = z
                 grounding: ContentTypeExtractionGroundingPolicySchema.optional().meta({
                     description: 'Controls PDF block-level citation grounding with annotated proof output.',
                 }),
+                value_hints: ContentTypeValueHintsPolicySchema.optional().meta({
+                    description: 'Opt-in configured aggregate value hints for extraction.',
+                }),
             })
             .optional()
             .meta({ description: 'Controls schema-property extraction after type assignment.' }),
+        relationships: z
+            .strictObject({
+                enabled: z.boolean().optional().meta({
+                    description: 'Reconcile declared field-to-field relationships after intake. Defaults to false.',
+                }),
+            })
+            .optional()
+            .meta({ description: 'Post-intake relationship reconciliation. Omission leaves it disabled.' }),
         rendering_template: z.string().optional().meta({
             description: 'Handlebars template used to materialize extracted properties into object text.',
         }),
@@ -602,6 +639,20 @@ export const ContentTypeEditingPolicySchema = z
 
 export const ContentObjectTypeStatusSchema = z.enum(['active', 'draft']).meta({ id: 'ContentObjectTypeStatus' });
 
+export const ContentTypeRelationMapSchema = z
+    .strictObject({
+        id: contentFieldKeySchema.meta({
+            description: 'Stable map ID used to track and retire map-owned relationships.',
+        }),
+        source_field: contentFieldKeySchema.meta({ description: 'Top-level source document property key.' }),
+        target_type: z.string().min(1).max(256).meta({ description: 'Target document content type ID.' }),
+        target_identity: contentFieldKeySchema.meta({
+            description: 'Top-level target property key declared among target_type identity_fields.',
+        }),
+        relationship_type: z.string().min(1).max(256).meta({ description: 'Relationship content type ID.' }),
+    })
+    .meta({ id: 'ContentTypeRelationMap' });
+
 /*
  * The five content-type shapes, composed from one field dictionary.
  *
@@ -650,6 +701,45 @@ const contentTypeFields = {
     status: ContentObjectTypeStatusSchema.optional(),
     intake: ContentTypeIntakePolicySchema.optional(),
     editing: ContentTypeEditingPolicySchema.optional(),
+    nature: z.enum(['document', 'relationship']).optional().meta({
+        description: 'The kind of content type. An omitted value is treated as document.',
+    }),
+    relationship: z
+        .strictObject({
+            source: z
+                .strictObject({
+                    types: z.array(z.string()).optional().meta({ description: 'Allowed source content type IDs.' }),
+                })
+                .optional()
+                .meta({ description: 'Optional restrictions on relationship source documents.' }),
+            target: z
+                .strictObject({
+                    types: z.array(z.string()).optional().meta({ description: 'Allowed target content type IDs.' }),
+                })
+                .optional()
+                .meta({ description: 'Optional restrictions on relationship target documents.' }),
+        })
+        .optional()
+        .meta({ description: 'Endpoint type restrictions for relationship content types.' }),
+    identity_fields: z
+        .array(contentFieldKeySchema)
+        .max(10)
+        .optional()
+        .meta({
+            description:
+                'Candidate identity keys for documents of this type. Each is a literal top-level property key; ' +
+                'duplicates across documents are reported as ambiguous, not treated as unique. Values compare as ' +
+                'exact tagged string, finite number, or boolean scalars without trimming, case folding, or coercion.',
+        }),
+    relation_maps: z
+        .array(ContentTypeRelationMapSchema)
+        .max(20)
+        .optional()
+        .meta({
+            description:
+                'Declared exact field-to-field relationships from this document type. Source values may be a scalar ' +
+                'or bounded scalar array; target identity values must be scalar. An empty array removes all maps.',
+        }),
     /**
      * Display title, as every OTHER app-contribution shape already publishes it:
      * `InCodeViewDefinition`, `InCodeProcessDefinition` and `AppDashboardDefinition` all pair the
@@ -728,6 +818,10 @@ const storedContentTypeShape = {
     table_layout: contentTypeFields.table_layout,
     object_schema: contentTypeFields.object_schema,
     strict_mode: contentTypeFields.strict_mode,
+    nature: contentTypeFields.nature,
+    relationship: contentTypeFields.relationship,
+    identity_fields: contentTypeFields.identity_fields,
+    relation_maps: contentTypeFields.relation_maps,
 };
 
 export const ContentObjectTypeItemSchema = z.strictObject(storedContentTypeShape).meta({ id: 'ContentObjectTypeItem' });
@@ -756,6 +850,10 @@ export const CreateContentObjectTypePayloadSchema = z
         name: z.string().min(1).meta({ description: 'Human-readable name or title' }),
         description: contentTypeFields.description,
         tags: contentTypeFields.tags,
+        nature: contentTypeFields.nature,
+        relationship: contentTypeFields.relationship,
+        identity_fields: contentTypeFields.identity_fields,
+        relation_maps: contentTypeFields.relation_maps,
     })
     .meta({ id: 'CreateContentObjectTypePayload' });
 

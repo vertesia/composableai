@@ -277,9 +277,24 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     $ref: '#/$defs/ContentTypeExtractionGroundingPolicy',
                     description: 'Controls PDF block-level citation grounding with annotated proof output.',
                 },
+                value_hints: {
+                    $ref: '#/$defs/ContentTypeValueHintsPolicy',
+                    description: 'Opt-in configured aggregate value hints for extraction.',
+                },
             },
             additionalProperties: false,
             description: 'Controls schema-property extraction after type assignment.',
+        },
+        relationships: {
+            type: 'object',
+            properties: {
+                enabled: {
+                    type: 'boolean',
+                    description: 'Reconcile declared field-to-field relationships after intake. Defaults to false.',
+                },
+            },
+            additionalProperties: false,
+            description: 'Post-intake relationship reconciliation. Omission leaves it disabled.',
         },
         rendering_template: {
             type: 'string',
@@ -988,6 +1003,39 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
             },
             additionalProperties: false,
+        },
+        ContentTypeValueHintsPolicy: {
+            type: 'object',
+            properties: {
+                fields: {
+                    maxItems: 10,
+                    type: 'array',
+                    items: {
+                        type: 'string',
+                        minLength: 1,
+                        maxLength: 64,
+                        pattern: '^[A-Za-z_][A-Za-z0-9_-]*$',
+                    },
+                    description:
+                        'Top-level string property keys to suggest existing values for during extraction. Empty disables inherited hints.',
+                },
+                max_values_per_field: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 50,
+                    description: 'Maximum distinct visible string values returned for each field. Default 20.',
+                },
+                max_total_values: {
+                    type: 'integer',
+                    minimum: 1,
+                    maximum: 200,
+                    description: 'Maximum distinct visible string values returned across all fields. Default 100.',
+                },
+            },
+            required: ['fields'],
+            additionalProperties: false,
+            description:
+                'Opt-in, bounded value hints from visible current-head documents of this type. Only existing string values and string-array elements are suggested.',
         },
         EmbeddingTypeEnabledMap: {
             type: 'object',

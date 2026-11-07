@@ -16,6 +16,7 @@ export * from './PendingAsksApi.js';
 export * from './ProcessApi.js';
 export * from './ProcessTestRunApi.js';
 export * from './QueryApi.js';
+export * from './RelationshipsApi.js';
 export * from './RenderingApi.js';
 export * from './SchedulesApi.js';
 export * from './signed-url.js';

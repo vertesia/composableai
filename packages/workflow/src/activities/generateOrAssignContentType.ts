@@ -170,7 +170,9 @@ export async function generateOrAssignContentType(
     });
 
     //make a list of all existing types, and add hints if any
-    const existing_types = types.filter((t) => !['DocumentPart', 'Rendition'].includes(t.name) && t.status !== 'draft');
+    const existing_types = types.filter(
+        (t) => !['DocumentPart', 'Rendition'].includes(t.name) && t.status !== 'draft' && t.nature !== 'relationship',
+    );
     const content = object.text ? truncByMaxTokens(object.text, params.truncate || 30000) : undefined;
 
     const getImage = async (): Promise<string | ContentSource | undefined> => {

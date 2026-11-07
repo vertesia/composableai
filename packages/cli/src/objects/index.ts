@@ -10,9 +10,11 @@ import {
     searchObjects,
     updateObject,
 } from './commands.js';
+import { registerRelationshipCommands } from './relationships.js';
 
 export function registerObjectsCommand(program: Command) {
     const store = program.command('content');
+    registerRelationshipCommands(store);
 
     store
         .command('post <file...>')

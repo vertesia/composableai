@@ -304,7 +304,18 @@ describe('the five content-type shapes are composed, not repeated', () => {
             'InCodeTypeDefinition',
             'CreateContentObjectTypePayload',
         ];
-        for (const field of ['table_layout', 'object_schema', 'strict_mode', 'intake', 'editing', 'status']) {
+        for (const field of [
+            'table_layout',
+            'object_schema',
+            'strict_mode',
+            'intake',
+            'editing',
+            'status',
+            'nature',
+            'relationship',
+            'identity_fields',
+            'relation_maps',
+        ]) {
             const rendered = shapes.map((shape) => JSON.stringify(property(shape, field)));
             expect(new Set(rendered).size, `${field} differs across the content-type shapes`).toBe(1);
         }
@@ -314,7 +325,7 @@ describe('the five content-type shapes are composed, not repeated', () => {
         // Order is contract: it decides the order of the generated clients' constructor arguments and
         // model fields. The five orders differ because they were derived from five different types.
         expect(properties('ContentObjectTypeItem')).toEqual(properties('ContentObjectType'));
-        expect(properties('ContentObjectTypeCatalogEntry').slice(0, 12)).toEqual(properties('InCodeTypeDefinition'));
+        expect(properties('ContentObjectTypeCatalogEntry').slice(0, 16)).toEqual(properties('InCodeTypeDefinition'));
         expect(properties('CreateContentObjectTypePayload')).toEqual([
             'status',
             'is_chunkable',
@@ -326,6 +337,10 @@ describe('the five content-type shapes are composed, not repeated', () => {
             'name',
             'description',
             'tags',
+            'nature',
+            'relationship',
+            'identity_fields',
+            'relation_maps',
         ]);
     });
 

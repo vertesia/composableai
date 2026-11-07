@@ -1608,6 +1608,97 @@ interface Checks {
         W.ComputedFacetResponse,
         z.infer<typeof import('./api-schemas/interaction.js').ComputedFacetResponseSchema>
     >;
+    DocumentEndpointRef: Same<
+        W.DocumentEndpointRef,
+        z.infer<typeof import('./api-schemas/graph.js').DocumentEndpointRefSchema>
+    >;
+    DocumentVersionEndpointRef: Same<
+        W.DocumentVersionEndpointRef,
+        z.infer<typeof import('./api-schemas/graph.js').DocumentVersionEndpointRefSchema>
+    >;
+    EndpointRef: Same<W.EndpointRef, z.infer<typeof import('./api-schemas/graph.js').EndpointRefSchema>>;
+    RelationshipEvidence: Same<
+        W.RelationshipEvidence,
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipEvidenceSchema>
+    >;
+    RelationshipDerivation: Same<
+        W.RelationshipDerivation,
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipDerivationSchema>
+    >;
+    Relationship: Same<W.Relationship, z.infer<typeof import('./api-schemas/graph.js').RelationshipSchema>>;
+    CreateRelationshipPayload: Same<
+        W.CreateRelationshipPayload,
+        z.infer<typeof import('./api-schemas/graph.js').CreateRelationshipPayloadSchema>
+    >;
+    UpdateRelationshipPayload: Same<
+        W.UpdateRelationshipPayload,
+        z.infer<typeof import('./api-schemas/graph.js').UpdateRelationshipPayloadSchema>
+    >;
+    DeleteRelationshipQuery: Same<
+        W.DeleteRelationshipQuery,
+        z.infer<typeof import('./api-schemas/graph.js').DeleteRelationshipQuerySchema>
+    >;
+    UpsertRelationshipItem: Same<
+        W.UpsertRelationshipItem,
+        z.infer<typeof import('./api-schemas/graph.js').UpsertRelationshipItemSchema>
+    >;
+    UpsertRelationshipsPayload: Same<
+        W.UpsertRelationshipsPayload,
+        z.infer<typeof import('./api-schemas/graph.js').UpsertRelationshipsPayloadSchema>
+    >;
+    RelationshipMutationResult: Same<
+        W.RelationshipMutationResult,
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipMutationResultSchema>
+    >;
+    UpsertRelationshipsResponse: Same<
+        W.UpsertRelationshipsResponse,
+        z.infer<typeof import('./api-schemas/graph.js').UpsertRelationshipsResponseSchema>
+    >;
+    RelationshipDirection: Same<
+        W.RelationshipDirection,
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipDirectionSchema>
+    >;
+    GraphNode: Same<W.GraphNode, z.infer<typeof import('./api-schemas/graph.js').GraphNodeSchema>>;
+    FindRelationshipsPayload: Same<
+        W.FindRelationshipsPayload,
+        z.infer<typeof import('./api-schemas/graph.js').FindRelationshipsPayloadSchema>
+    >;
+    FindRelationshipsResponse: Same<
+        W.FindRelationshipsResponse,
+        z.infer<typeof import('./api-schemas/graph.js').FindRelationshipsResponseSchema>
+    >;
+    RelationshipTraversalStep: Same<
+        W.RelationshipTraversalStep,
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipTraversalStepSchema>
+    >;
+    TraverseRelationshipsPayload: Same<
+        W.TraverseRelationshipsPayload,
+        z.infer<typeof import('./api-schemas/graph.js').TraverseRelationshipsPayloadSchema>
+    >;
+    TraverseRelationshipsResponse: Same<
+        W.TraverseRelationshipsResponse,
+        z.infer<typeof import('./api-schemas/graph.js').TraverseRelationshipsResponseSchema>
+    >;
+    RelationshipMapResult: Same<
+        W.RelationshipMapResult,
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipMapResultSchema>
+    >;
+    ReconcileRelationshipsPayload: Same<
+        W.ReconcileRelationshipsPayload,
+        z.infer<typeof import('./api-schemas/graph.js').ReconcileRelationshipsPayloadSchema>
+    >;
+    ReconcileRelationshipsResponse: Same<
+        W.ReconcileRelationshipsResponse,
+        z.infer<typeof import('./api-schemas/graph.js').ReconcileRelationshipsResponseSchema>
+    >;
+    RelationshipValueHintsPayload: Same<
+        W.RelationshipValueHintsPayload,
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipValueHintsPayloadSchema>
+    >;
+    RelationshipValueHintsResponse: Same<
+        W.RelationshipValueHintsResponse,
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipValueHintsResponseSchema>
+    >;
     UserGroup: Same<W.UserGroup, z.infer<typeof import('./api-schemas/group.js').UserGroupSchema>>;
     CreateUserGroupPayload: Same<
         W.CreateUserGroupPayload,
@@ -3495,6 +3586,14 @@ interface Checks {
     ContentObjectTypeStatus: Same<
         W.ContentObjectTypeStatus,
         z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeStatusSchema>
+    >;
+    ContentTypeRelationMap: Same<
+        W.ContentTypeRelationMap,
+        z.infer<typeof import('./api-schemas/store.js').ContentTypeRelationMapSchema>
+    >;
+    ContentTypeValueHintsPolicy: Same<
+        W.ContentTypeValueHintsPolicy,
+        z.infer<typeof import('./api-schemas/store.js').ContentTypeValueHintsPolicySchema>
     >;
     IntakeVisionDetail: Same<
         W.IntakeVisionDetail,
@@ -6536,6 +6635,14 @@ interface Checks {
     'component:ContentObjectTypeStatus': Same<
         W.ApiComponentTypes['ContentObjectTypeStatus'],
         z.infer<typeof import('./api-schemas/store.js').ContentObjectTypeStatusSchema>
+    >;
+    'component:ContentTypeRelationMap': Same<
+        W.ApiComponentTypes['ContentTypeRelationMap'],
+        z.infer<typeof import('./api-schemas/store.js').ContentTypeRelationMapSchema>
+    >;
+    'component:ContentTypeValueHintsPolicy': Same<
+        W.ApiComponentTypes['ContentTypeValueHintsPolicy'],
+        z.infer<typeof import('./api-schemas/store.js').ContentTypeValueHintsPolicySchema>
     >;
     'component:ContentObjectTypeItem': Same<
         W.ApiComponentTypes['ContentObjectTypeItem'],
@@ -10153,6 +10260,106 @@ interface Checks {
         W.ApiComponentTypes['WorkflowUsageStanding'],
         z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageStandingSchema>
     >;
+    'component:DocumentEndpointRef': Same<
+        W.ApiComponentTypes['DocumentEndpointRef'],
+        z.infer<typeof import('./api-schemas/graph.js').DocumentEndpointRefSchema>
+    >;
+    'component:DocumentVersionEndpointRef': Same<
+        W.ApiComponentTypes['DocumentVersionEndpointRef'],
+        z.infer<typeof import('./api-schemas/graph.js').DocumentVersionEndpointRefSchema>
+    >;
+    'component:EndpointRef': Same<
+        W.ApiComponentTypes['EndpointRef'],
+        z.infer<typeof import('./api-schemas/graph.js').EndpointRefSchema>
+    >;
+    'component:RelationshipEvidence': Same<
+        W.ApiComponentTypes['RelationshipEvidence'],
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipEvidenceSchema>
+    >;
+    'component:RelationshipDerivation': Same<
+        W.ApiComponentTypes['RelationshipDerivation'],
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipDerivationSchema>
+    >;
+    'component:Relationship': Same<
+        W.ApiComponentTypes['Relationship'],
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipSchema>
+    >;
+    'component:CreateRelationshipPayload': Same<
+        W.ApiComponentTypes['CreateRelationshipPayload'],
+        z.infer<typeof import('./api-schemas/graph.js').CreateRelationshipPayloadSchema>
+    >;
+    'component:UpdateRelationshipPayload': Same<
+        W.ApiComponentTypes['UpdateRelationshipPayload'],
+        z.infer<typeof import('./api-schemas/graph.js').UpdateRelationshipPayloadSchema>
+    >;
+    'component:DeleteRelationshipQuery': Same<
+        W.ApiComponentTypes['DeleteRelationshipQuery'],
+        z.infer<typeof import('./api-schemas/graph.js').DeleteRelationshipQuerySchema>
+    >;
+    'component:UpsertRelationshipItem': Same<
+        W.ApiComponentTypes['UpsertRelationshipItem'],
+        z.infer<typeof import('./api-schemas/graph.js').UpsertRelationshipItemSchema>
+    >;
+    'component:UpsertRelationshipsPayload': Same<
+        W.ApiComponentTypes['UpsertRelationshipsPayload'],
+        z.infer<typeof import('./api-schemas/graph.js').UpsertRelationshipsPayloadSchema>
+    >;
+    'component:RelationshipMutationResult': Same<
+        W.ApiComponentTypes['RelationshipMutationResult'],
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipMutationResultSchema>
+    >;
+    'component:UpsertRelationshipsResponse': Same<
+        W.ApiComponentTypes['UpsertRelationshipsResponse'],
+        z.infer<typeof import('./api-schemas/graph.js').UpsertRelationshipsResponseSchema>
+    >;
+    'component:RelationshipDirection': Same<
+        W.ApiComponentTypes['RelationshipDirection'],
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipDirectionSchema>
+    >;
+    'component:GraphNode': Same<
+        W.ApiComponentTypes['GraphNode'],
+        z.infer<typeof import('./api-schemas/graph.js').GraphNodeSchema>
+    >;
+    'component:FindRelationshipsPayload': Same<
+        W.ApiComponentTypes['FindRelationshipsPayload'],
+        z.infer<typeof import('./api-schemas/graph.js').FindRelationshipsPayloadSchema>
+    >;
+    'component:FindRelationshipsResponse': Same<
+        W.ApiComponentTypes['FindRelationshipsResponse'],
+        z.infer<typeof import('./api-schemas/graph.js').FindRelationshipsResponseSchema>
+    >;
+    'component:RelationshipTraversalStep': Same<
+        W.ApiComponentTypes['RelationshipTraversalStep'],
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipTraversalStepSchema>
+    >;
+    'component:TraverseRelationshipsPayload': Same<
+        W.ApiComponentTypes['TraverseRelationshipsPayload'],
+        z.infer<typeof import('./api-schemas/graph.js').TraverseRelationshipsPayloadSchema>
+    >;
+    'component:TraverseRelationshipsResponse': Same<
+        W.ApiComponentTypes['TraverseRelationshipsResponse'],
+        z.infer<typeof import('./api-schemas/graph.js').TraverseRelationshipsResponseSchema>
+    >;
+    'component:RelationshipMapResult': Same<
+        W.ApiComponentTypes['RelationshipMapResult'],
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipMapResultSchema>
+    >;
+    'component:ReconcileRelationshipsPayload': Same<
+        W.ApiComponentTypes['ReconcileRelationshipsPayload'],
+        z.infer<typeof import('./api-schemas/graph.js').ReconcileRelationshipsPayloadSchema>
+    >;
+    'component:ReconcileRelationshipsResponse': Same<
+        W.ApiComponentTypes['ReconcileRelationshipsResponse'],
+        z.infer<typeof import('./api-schemas/graph.js').ReconcileRelationshipsResponseSchema>
+    >;
+    'component:RelationshipValueHintsPayload': Same<
+        W.ApiComponentTypes['RelationshipValueHintsPayload'],
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipValueHintsPayloadSchema>
+    >;
+    'component:RelationshipValueHintsResponse': Same<
+        W.ApiComponentTypes['RelationshipValueHintsResponse'],
+        z.infer<typeof import('./api-schemas/graph.js').RelationshipValueHintsResponseSchema>
+    >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
 }
@@ -10602,6 +10809,31 @@ const checks: Checks = {
     MigrateInteractionsResult: true,
     FacetSpec: true,
     ComputedFacetResponse: true,
+    DocumentEndpointRef: true,
+    DocumentVersionEndpointRef: true,
+    EndpointRef: true,
+    RelationshipEvidence: true,
+    RelationshipDerivation: true,
+    Relationship: true,
+    CreateRelationshipPayload: true,
+    UpdateRelationshipPayload: true,
+    DeleteRelationshipQuery: true,
+    UpsertRelationshipItem: true,
+    UpsertRelationshipsPayload: true,
+    RelationshipMutationResult: true,
+    UpsertRelationshipsResponse: true,
+    RelationshipDirection: true,
+    GraphNode: true,
+    FindRelationshipsPayload: true,
+    FindRelationshipsResponse: true,
+    RelationshipTraversalStep: true,
+    TraverseRelationshipsPayload: true,
+    TraverseRelationshipsResponse: true,
+    RelationshipMapResult: true,
+    ReconcileRelationshipsPayload: true,
+    ReconcileRelationshipsResponse: true,
+    RelationshipValueHintsPayload: true,
+    RelationshipValueHintsResponse: true,
     UserGroup: true,
     CreateUserGroupPayload: true,
     UpdateUserGroupPayload: true,
@@ -11110,6 +11342,8 @@ const checks: Checks = {
     ComplexSearchPayload: true,
     ColumnLayout: true,
     ContentObjectTypeStatus: true,
+    ContentTypeRelationMap: true,
+    ContentTypeValueHintsPolicy: true,
     IntakeVisionDetail: true,
     IntakePageScope: true,
     IntakePageRanges: true,
@@ -11922,6 +12156,8 @@ const checks: Checks = {
     'component:ColumnLayout': true,
     'component:ContentTypeEditingPolicy': true,
     'component:ContentObjectTypeStatus': true,
+    'component:ContentTypeRelationMap': true,
+    'component:ContentTypeValueHintsPolicy': true,
     'component:ContentObjectTypeItem': true,
     'component:ContentObjectTypeItemArray': true,
     'component:ContentObjectTypeCatalogEntry': true,
@@ -12826,11 +13062,36 @@ const checks: Checks = {
     'component:WorkflowUsageQuery': true,
     'component:WorkflowUsageClass': true,
     'component:WorkflowUsageStanding': true,
+    'component:DocumentEndpointRef': true,
+    'component:DocumentVersionEndpointRef': true,
+    'component:EndpointRef': true,
+    'component:RelationshipEvidence': true,
+    'component:RelationshipDerivation': true,
+    'component:Relationship': true,
+    'component:CreateRelationshipPayload': true,
+    'component:UpdateRelationshipPayload': true,
+    'component:DeleteRelationshipQuery': true,
+    'component:UpsertRelationshipItem': true,
+    'component:UpsertRelationshipsPayload': true,
+    'component:RelationshipMutationResult': true,
+    'component:UpsertRelationshipsResponse': true,
+    'component:RelationshipDirection': true,
+    'component:GraphNode': true,
+    'component:FindRelationshipsPayload': true,
+    'component:FindRelationshipsResponse': true,
+    'component:RelationshipTraversalStep': true,
+    'component:TraverseRelationshipsPayload': true,
+    'component:TraverseRelationshipsResponse': true,
+    'component:RelationshipMapResult': true,
+    'component:ReconcileRelationshipsPayload': true,
+    'component:ReconcileRelationshipsResponse': true,
+    'component:RelationshipValueHintsPayload': true,
+    'component:RelationshipValueHintsResponse': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2669);
+        expect(Object.keys(checks)).toHaveLength(2723);
     });
 });

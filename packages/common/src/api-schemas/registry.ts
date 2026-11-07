@@ -33,6 +33,7 @@ import {
 } from '@llumiverse/common/schemas';
 import type { z } from 'zod';
 import type { ApiComponentName, ApiComponentType } from '../api-contract/types.js';
+import * as GraphSchemas from './graph.js';
 import * as WorkflowUsageSchemas from './workflow-usage.js';
 
 export type { ApiComponentName, ApiComponentType } from '../api-contract/types.js';
@@ -776,6 +777,8 @@ import {
     ContentObjectTypeStatusSchema,
     ContentTypeEditingPolicySchema,
     ContentTypeIntakePolicySchema,
+    ContentTypeRelationMapSchema,
+    ContentTypeValueHintsPolicySchema,
     CreateContentObjectTypePayloadSchema,
     InCodeTypeDefinitionSchema,
     InteractionExecutionConfigurationSchema,
@@ -1441,6 +1444,8 @@ const CONTENT_TYPE_CATALOG_SCHEMAS = {
     ColumnLayout: ColumnLayoutSchema,
     ContentTypeEditingPolicy: ContentTypeEditingPolicySchema,
     ContentObjectTypeStatus: ContentObjectTypeStatusSchema,
+    ContentTypeRelationMap: ContentTypeRelationMapSchema,
+    ContentTypeValueHintsPolicy: ContentTypeValueHintsPolicySchema,
     ContentObjectTypeItem: ContentObjectTypeItemSchema,
     ContentObjectTypeItemArray: ContentObjectTypeItemArraySchema,
     ContentObjectTypeCatalogEntry: ContentObjectTypeCatalogEntrySchema,
@@ -2525,7 +2530,35 @@ const WORKFLOW_USAGE_SCHEMAS = {
     WorkflowUsageClass: WorkflowUsageSchemas.WorkflowUsageClassSchema,
     WorkflowUsageStanding: WorkflowUsageSchemas.WorkflowUsageStandingSchema,
 } as const;
+const GRAPH_SCHEMAS = {
+    DocumentEndpointRef: GraphSchemas.DocumentEndpointRefSchema,
+    DocumentVersionEndpointRef: GraphSchemas.DocumentVersionEndpointRefSchema,
+    EndpointRef: GraphSchemas.EndpointRefSchema,
+    RelationshipEvidence: GraphSchemas.RelationshipEvidenceSchema,
+    RelationshipDerivation: GraphSchemas.RelationshipDerivationSchema,
+    Relationship: GraphSchemas.RelationshipSchema,
+    CreateRelationshipPayload: GraphSchemas.CreateRelationshipPayloadSchema,
+    UpdateRelationshipPayload: GraphSchemas.UpdateRelationshipPayloadSchema,
+    DeleteRelationshipQuery: GraphSchemas.DeleteRelationshipQuerySchema,
+    UpsertRelationshipItem: GraphSchemas.UpsertRelationshipItemSchema,
+    UpsertRelationshipsPayload: GraphSchemas.UpsertRelationshipsPayloadSchema,
+    RelationshipMutationResult: GraphSchemas.RelationshipMutationResultSchema,
+    UpsertRelationshipsResponse: GraphSchemas.UpsertRelationshipsResponseSchema,
+    RelationshipDirection: GraphSchemas.RelationshipDirectionSchema,
+    GraphNode: GraphSchemas.GraphNodeSchema,
+    FindRelationshipsPayload: GraphSchemas.FindRelationshipsPayloadSchema,
+    FindRelationshipsResponse: GraphSchemas.FindRelationshipsResponseSchema,
+    RelationshipTraversalStep: GraphSchemas.RelationshipTraversalStepSchema,
+    TraverseRelationshipsPayload: GraphSchemas.TraverseRelationshipsPayloadSchema,
+    TraverseRelationshipsResponse: GraphSchemas.TraverseRelationshipsResponseSchema,
+    RelationshipMapResult: GraphSchemas.RelationshipMapResultSchema,
+    ReconcileRelationshipsPayload: GraphSchemas.ReconcileRelationshipsPayloadSchema,
+    ReconcileRelationshipsResponse: GraphSchemas.ReconcileRelationshipsResponseSchema,
+    RelationshipValueHintsPayload: GraphSchemas.RelationshipValueHintsPayloadSchema,
+    RelationshipValueHintsResponse: GraphSchemas.RelationshipValueHintsResponseSchema,
+} as const;
 const API_SCHEMA_GROUPS = [
+    GRAPH_SCHEMAS,
     WORKFLOW_USAGE_SCHEMAS,
     RUN_BUDGET_SCHEMAS,
     PATH_PARAMETER_SCHEMAS,
@@ -2601,6 +2634,32 @@ const API_SCHEMAS: Readonly<Record<string, z.ZodType>> = mergeComponentGroups(AP
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'DocumentEndpointRef',
+    'DocumentVersionEndpointRef',
+    'EndpointRef',
+    'RelationshipEvidence',
+    'RelationshipDerivation',
+    'Relationship',
+    'CreateRelationshipPayload',
+    'UpdateRelationshipPayload',
+    'DeleteRelationshipQuery',
+    'UpsertRelationshipItem',
+    'UpsertRelationshipsPayload',
+    'RelationshipMutationResult',
+    'UpsertRelationshipsResponse',
+    'GraphNode',
+    'FindRelationshipsPayload',
+    'FindRelationshipsResponse',
+    'RelationshipTraversalStep',
+    'TraverseRelationshipsPayload',
+    'TraverseRelationshipsResponse',
+    'RelationshipMapResult',
+    'ReconcileRelationshipsPayload',
+    'ReconcileRelationshipsResponse',
+    'RelationshipValueHintsPayload',
+    'RelationshipValueHintsResponse',
+    'ContentTypeRelationMap',
+    'ContentTypeValueHintsPolicy',
     'CustomRoleDefinition',
     'CreateCustomRolePayload',
     'UpdateCustomRolePayload',
