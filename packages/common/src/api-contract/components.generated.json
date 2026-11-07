@@ -39236,7 +39236,15 @@
         "type": "string"
       },
       "config": {
-        "$ref": "#/components/schemas/InteractionExecutionConfiguration"
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/InteractionExecutionConfiguration"
+          },
+          {
+            "$ref": "#/components/schemas/ProcessRunConfig"
+          }
+        ],
+        "description": "Execution configuration of the run: an `InteractionExecutionConfiguration` for an agent run, a `ProcessRunConfig` for a process run (see `run_kind`)."
       },
       "interactive": {
         "type": "boolean"
