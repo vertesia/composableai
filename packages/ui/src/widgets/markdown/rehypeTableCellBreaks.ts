@@ -11,7 +11,8 @@
  *
  * Link and inline code text is left alone: custom `a` and `code` components commonly read their
  * `children` as a string (a document ID label, a file name), and a `<wbr>` would turn it into an
- * array. Those elements may break anywhere instead (see `.vprose` cells in typography.css).
+ * array. Those elements may break anywhere instead (see `.vprose` cells in typography.css). Math is
+ * still `code` when this plugin runs (rehype-katex runs after it), so it is left alone too.
  */
 import type { Element, ElementContent, Root } from 'hast';
 import { SKIP, visit } from 'unist-util-visit';
@@ -22,14 +23,20 @@ export const MAX_UNBROKEN_LENGTH = 20;
 /** A run may break after one of these, so URLs, paths and identifiers wrap at natural points. */
 const SEPARATORS = new Set(['/', '\\', '.', '_', '-', '=', '&', '?', '#', ':', ',', ';', '|', '@', '+', '~']);
 
-/** Cheap pre-check; counts UTF-16 units, so it may let through a run that is short in characters. */
-const POSSIBLY_LONG_RUN = new RegExp(`\\S{${MAX_UNBROKEN_LENGTH + 1},}`, 'u');
+/** Spaces a browser never breaks at: they join the text on either side into one run. */
+const NON_BREAKING_SPACES = '\\u00A0\\u2007\\u202F';
+
+/** Whitespace a browser may break at, captured so that splitting keeps it. */
+const BREAKABLE_SPACE = new RegExp(`([^\\S${NON_BREAKING_SPACES}]+)`, 'u');
+
+/**
+ * Cheap pre-check; counts code points, never fewer than graphemes, so it may let through a run that
+ * is short in characters but never skips a long one.
+ */
+const POSSIBLY_LONG_RUN = new RegExp(`(?:\\S|[${NON_BREAKING_SPACES}]){${MAX_UNBROKEN_LENGTH + 1},}`, 'u');
 
 /** Elements whose text stays a plain string for their component (see above). */
 const SKIPPED_TAGS = new Set(['a', 'code']);
-
-/** Math source is rendered by KaTeX and must stay intact. */
-const SKIPPED_CLASSES = new Set(['math-inline', 'math-display', 'katex']);
 
 const graphemeSegmenter =
     typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
@@ -42,7 +49,7 @@ function splitGraphemes(text: string): string[] {
 }
 
 /**
- * Splits a run without whitespace into pieces that may be separated by line breaks. A run of at most
+ * Splits a run without breakable whitespace into pieces that may be separated by line breaks. A run of at most
  * {@link MAX_UNBROKEN_LENGTH} characters comes back whole; a longer one breaks after separators,
  * and after every {@link MAX_UNBROKEN_LENGTH} characters where there is none.
  */
@@ -74,8 +81,9 @@ function breakText(value: string): ElementContent[] | undefined {
     const nodes: ElementContent[] = [];
     let text = '';
     let changed = false;
-    for (const part of value.split(/(\s+)/)) {
-        const pieces = /\s/.test(part) ? [part] : splitLongRun(part);
+    // Splitting on a captured pattern alternates runs (even indexes) and the spaces between them.
+    value.split(BREAKABLE_SPACE).forEach((part, partIndex) => {
+        const pieces = partIndex % 2 === 1 ? [part] : splitLongRun(part);
         pieces.forEach((piece, index) => {
             if (index > 0) {
                 nodes.push({ type: 'text', value: text });
@@ -85,22 +93,16 @@ function breakText(value: string): ElementContent[] | undefined {
             }
             text += piece;
         });
-    }
+    });
     if (text) nodes.push({ type: 'text', value: text });
     return changed ? nodes : undefined;
-}
-
-function isSkipped(element: Element): boolean {
-    if (SKIPPED_TAGS.has(element.tagName)) return true;
-    const className = element.properties.className;
-    return Array.isArray(className) && className.some((name) => SKIPPED_CLASSES.has(String(name)));
 }
 
 function addBreaks(parent: Element): void {
     for (let index = 0; index < parent.children.length; index += 1) {
         const child = parent.children[index];
         if (child.type === 'element') {
-            if (!isSkipped(child)) addBreaks(child);
+            if (!SKIPPED_TAGS.has(child.tagName)) addBreaks(child);
         } else if (child.type === 'text') {
             const replacement = breakText(child.value);
             if (replacement) {

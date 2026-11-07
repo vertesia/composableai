@@ -211,10 +211,13 @@ export const agentMarkdownStyles = `
     text-align: left;
     vertical-align: top;
     /* Not "anywhere": that drops a column's minimum width to one letter. Long runs get break points
-       from rehypeTableCellBreaks; links and code break anywhere (typography.css). */
+       from rehypeTableCellBreaks, which leaves link and code text alone, so those break anywhere. */
     overflow-wrap: break-word;
     word-break: normal;
     white-space: normal;
+}
+.agent-markdown :is(th, td) :is(a, code):not(:where(.not-prose, .not-prose *)) {
+    overflow-wrap: anywhere;
 }
 .agent-markdown th:not(:where(.not-prose, .not-prose *)) {
     color: var(--muted);

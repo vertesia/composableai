@@ -22,8 +22,10 @@ function createRandom(seed: number) {
 const ALPHABET = [
     ...'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
     ...'/\\._-=&?#:,;|@+~',
+    '\u00A0', // no-break space
+    '\u202F', // narrow no-break space
     'é', // precomposed
-    'é', // e + combining acute accent
+    'e\u0301', // e + combining acute accent
     '東',
     '京',
     '😀',
@@ -56,7 +58,7 @@ function unbrokenRuns(cell: Element): string[] {
     };
     walk(cell);
     parts.push(current);
-    return parts.flatMap((part) => part.split(/\s+/)).filter(Boolean);
+    return parts.flatMap((part) => part.split(/[^\S\u00A0\u2007\u202F]+/u)).filter(Boolean);
 }
 
 describe('splitLongRun', () => {
@@ -114,6 +116,18 @@ describe('MarkdownRenderer table cell breaks', () => {
             for (const run of unbrokenRuns(cell)) {
                 expect(graphemes(run).length).toBeLessThanOrEqual(MAX_UNBROKEN_LENGTH);
             }
+        }
+    });
+
+    it('treats text joined by no-break spaces as one run', () => {
+        const amount = '12\u202F345\u202F678\u202F901\u202F234\u202F567\u00A0€';
+        const container = cellRender(['| Amount |', '| --- |', `| ${amount} |`].join('\n'));
+
+        const cell = container.querySelector('td');
+        expect(cell?.textContent).toBe(amount);
+        expect(cell?.querySelector('wbr')).not.toBeNull();
+        for (const run of unbrokenRuns(cell as Element)) {
+            expect(graphemes(run).length).toBeLessThanOrEqual(MAX_UNBROKEN_LENGTH);
         }
     });
 

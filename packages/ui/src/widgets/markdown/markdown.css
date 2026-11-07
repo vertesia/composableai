@@ -205,8 +205,10 @@
     display: none;
 }
 
-/* An equation wider than the message scrolls on its own instead of being cut off by it. */
+/* An equation wider than the message scrolls on its own instead of being cut off by it. KaTeX's own
+   stylesheet, which is not loaded, is what normally makes this span a block. */
 .katex-display {
+    display: block;
     overflow-x: auto;
     overflow-y: hidden;
 }
