@@ -125,7 +125,14 @@ export const agentMarkdownStyles = `
 .agent-markdown ol:not(:where(.not-prose, .not-prose *)) {
     margin-top: 0.55rem;
     margin-bottom: 0.55rem;
+}
+.agent-markdown ul:not(:where(.not-prose, .not-prose *)) {
     padding-left: 1.25rem;
+}
+/* Sized from the widest marker like the .vprose rule in typography.css, which this one overrides:
+   a fixed indent cut the leading digit off "10." and beyond. */
+.agent-markdown ol:not(:where(.not-prose, .not-prose *)) {
+    padding-inline-start: calc((var(--ol-marker-digits, 2) + 1) * 1ch + 0.5em);
 }
 .agent-markdown li:not(:where(.not-prose, .not-prose *)) {
     margin-top: 0.2rem;

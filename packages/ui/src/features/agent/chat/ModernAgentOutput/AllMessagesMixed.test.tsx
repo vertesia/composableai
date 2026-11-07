@@ -8,6 +8,7 @@ import { ReactRouterContext, type RouterContext } from '../../../../router/index
 import { UserSession, UserSessionContext } from '../../../../session/index.js';
 import { AgentResourceResolverProvider } from '../../../../widgets/markdown/AgentResourceResolver';
 import AllMessagesMixed from './AllMessagesMixed';
+import { agentMarkdownStyles } from './agentMarkdownStyles';
 import type { StreamingData } from './utils';
 
 function makeMessage(overrides: Partial<AgentMessage>): AgentMessage {
@@ -1242,6 +1243,29 @@ describe('AllMessagesMixed summary view', () => {
         expect(table.querySelector('colgroup')).toBeNull();
         expect(table.getAttribute('style')).toBeNull();
         expect(table.parentElement?.classList.contains('overflow-x-auto')).toBe(true);
+    });
+
+    it('sizes ordered-list indents in summary markdown from the widest marker', () => {
+        const { container } = renderSummary([
+            makeMessage({
+                type: AgentMessageType.ANSWER,
+                message: Array.from({ length: 12 }, (_value, index) => `${index + 1}. Lorem ipsum`).join('\n'),
+            }),
+        ]);
+
+        const list = container.querySelector('.agent-markdown ol') as HTMLOListElement;
+        expect(list.style.getPropertyValue('--ol-marker-digits')).toBe('2');
+
+        // The summary stylesheet overrides the .vprose list rule, so it must size the indent from the same
+        // variable: a fixed padding cut the leading digit off "10." and beyond.
+        const listRules = Array.from(
+            agentMarkdownStyles.matchAll(
+                /\.agent-markdown ol:not\(:where\(\.not-prose, \.not-prose \*\)\)\s*\{([^}]*)\}/g,
+            ),
+            (match) => match[1],
+        );
+        expect(listRules.some((rule) => rule.includes('var(--ol-marker-digits'))).toBe(true);
+        expect(listRules.some((rule) => /padding-(left|inline-start):\s*[\d.]+r?em/.test(rule))).toBe(false);
     });
 
     it('merges legacy activity progress rows with different tool run ids', () => {
