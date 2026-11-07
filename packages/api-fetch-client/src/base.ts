@@ -170,6 +170,66 @@ export interface IRequestParams {
      * Set to false to surface pacing 429s to the caller.
      */
     pacingRetry?: IPacingRetryPolicy | false | null;
+    /**
+     * Set to false to send this GET on its own even when in-flight deduplication is enabled on the
+     * client (see `ClientBase.withInFlightDeduplication`) and an identical GET is already in flight.
+     */
+    dedupe?: boolean;
+}
+
+/** How long a GET can be joined after it starts, by default. Duplicate GETs from one render start within milliseconds. */
+export const DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS = 5_000;
+
+/**
+ * The GET requests currently in flight, keyed by write generation, URL, headers and credential. A client that has one
+ * shares a single request between concurrent identical GETs instead of sending each (see
+ * `ClientBase.withInFlightDeduplication`).
+ *
+ * It is not a cache: an entry lives only while its request is in flight. Any other request (a write) calls
+ * `invalidate()`, which starts a new generation, so a GET issued after a write never joins one issued before it.
+ * A request can only be joined during `joinWindowMs` after it starts, so a request that stalls cannot hold back
+ * later identical GETs.
+ */
+export class InFlightRequests {
+    private readonly requests = new Map<string, { request: Promise<unknown>; startedAt: number }>();
+    private writes = 0;
+
+    constructor(readonly joinWindowMs: number = DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS) {}
+
+    /**
+     * Incremented by every `invalidate()`. A GET captures it when it is called (before any await) and makes it part of
+     * its key, so a GET issued before a write never shares with one issued after it, even when either resolves its
+     * credential late. Entries of older generations stay until they settle, so GETs issued before the write can still
+     * share among themselves.
+     */
+    get generation(): number {
+        return this.writes;
+    }
+
+    /** Number of requests currently in flight. */
+    get size(): number {
+        return this.requests.size;
+    }
+
+    /** The in-flight request for `key`, if it started less than `joinWindowMs` ago. */
+    get(key: string): Promise<unknown> | undefined {
+        const entry = this.requests.get(key);
+        return entry && Date.now() - entry.startedAt < this.joinWindowMs ? entry.request : undefined;
+    }
+
+    set(key: string, request: Promise<unknown>): void {
+        this.requests.set(key, { request, startedAt: Date.now() });
+    }
+
+    /** Removes `key` only while it still maps to `request`, so a settled request cannot evict a newer one. */
+    release(key: string, request: Promise<unknown>): void {
+        if (this.requests.get(key)?.request === request) this.requests.delete(key);
+    }
+
+    /** Starts a new generation: no GET issued from now on can join a request issued before. */
+    invalidate(): void {
+        this.writes++;
+    }
 }
 
 export interface IRequestParamsWithPayload extends IRequestParams {
@@ -400,6 +460,12 @@ export abstract class ClientBase {
     pacingRetry?: IPacingRetryPolicy | false;
     requestIdentity?: RequestIdentityProvider;
     defaultTimeoutMs?: number;
+    /**
+     * In-flight GET deduplication, on by default; see `withInFlightDeduplication`. `undefined` means the default
+     * table, created on first use (so clients that delegate to a parent, such as API topics, never allocate one);
+     * `null` means turned off.
+     */
+    inFlight?: InFlightRequests | null;
 
     abstract get headers(): Record<string, string>;
 
@@ -442,6 +508,38 @@ export abstract class ClientBase {
 
     getTimeout(): number | undefined {
         return this.defaultTimeoutMs;
+    }
+
+    /**
+     * Share one request between concurrent identical GETs (same URL, headers and credential) instead of sending each.
+     * A caller that joins an in-flight GET gets its own copy of the parsed result, or the same error. On by default.
+     *
+     * Only plain JSON GETs are shared: not SSE or custom readers, not requests with a caller AbortSignal (one caller
+     * aborting must not abort another), not requests with their own `timeoutMs`, `retryPolicy` or `pacingRetry`
+     * (a joiner would inherit the first caller's), and not requests with `dedupe: false`. A request can be joined only
+     * during the table's join window (5 s by default). Any other method starts a new generation when it starts and when it
+     * settles, so reads issued after a write always reach the server.
+     *
+     * Pass an `InFlightRequests` to share one table between clients (e.g. two services behind one session), so a
+     * write through either invalidates both. Pass `false` to turn it off for this client, or set `dedupe: false` on one
+     * request. Clients that delegate to a parent (API topics) always use the parent's table.
+     */
+    withInFlightDeduplication(enabled: boolean | InFlightRequests = true): this {
+        this.inFlight = enabled instanceof InFlightRequests ? enabled : enabled ? new InFlightRequests() : null;
+        return this;
+    }
+
+    getInFlightRequests(): InFlightRequests | undefined {
+        if (this.inFlight === undefined) this.inFlight = new InFlightRequests();
+        return this.inFlight ?? undefined;
+    }
+
+    /**
+     * The credential a request will carry when none is set in its headers, so requests made with different
+     * credentials are never shared. Clients that add authentication in `createRequest()` override this.
+     */
+    resolveRequestAuthorization(): Promise<string | undefined> {
+        return Promise.resolve(undefined);
     }
 
     /**
@@ -622,10 +720,81 @@ export abstract class ClientBase {
     }
 
     async request<T = unknown>(method: string, path: string, params?: IRequestParamsWithPayload): Promise<T> {
-        let url = this.getUrl(path);
-        if (params?.query) {
-            url += `?${buildQueryString(params.query)}`;
+        const inFlight = this.getInFlightRequests();
+        if (!inFlight) {
+            return this.sendRequest<T>(method, path, params);
         }
+        const normalizedMethod = method.toUpperCase();
+        if (normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD' && normalizedMethod !== 'OPTIONS') {
+            // A write: no GET started before it (or while it runs) may be reused after it.
+            inFlight.invalidate();
+            try {
+                return await this.sendRequest<T>(method, path, params);
+            } finally {
+                inFlight.invalidate();
+            }
+        }
+        if (
+            normalizedMethod !== 'GET' ||
+            params?.dedupe === false ||
+            params?.signal ||
+            params?.reader ||
+            params?.payload !== undefined ||
+            // Per-request transport options would otherwise be inherited by joiners from the first caller.
+            params?.timeoutMs !== undefined ||
+            params?.retryPolicy !== undefined ||
+            params?.pacingRetry !== undefined
+        ) {
+            return this.sendRequest<T>(method, path, params);
+        }
+        // Captured before any await: a write that starts while this call resolves its credential bumps the generation.
+        const generation = inFlight.generation;
+        const url = this.buildRequestUrl(path, params);
+        const headers = this.buildRequestHeaders(params);
+        // The credential goes into the headers, which are part of the key, so requests carrying different credentials
+        // are never shared; and it is the one sent, since createRequest() does not resolve a credential already in
+        // the headers again. If it cannot be resolved, send unshared and let the request fail where it always has.
+        if (!headers.authorization) {
+            const credential = await this.resolveRequestAuthorization().catch(() => null);
+            if (credential === null) {
+                return this.sendRequest<T>(method, path, params, { url, headers });
+            }
+            if (credential) headers.authorization = credential;
+        }
+        const key = JSON.stringify([
+            generation,
+            url,
+            Object.entries(headers).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+        ]);
+        const pending = inFlight.get(key);
+        if (pending !== undefined) {
+            // Joiners get their own copy, so one caller mutating its result cannot change another's. A result that
+            // cannot be cloned (a custom jsonParse returning functions) is fetched again instead of failing.
+            return pending.then((result) => {
+                try {
+                    return structuredClone(result) as T;
+                } catch {
+                    return this.sendRequest<T>(method, path, params, { url, headers });
+                }
+            });
+        }
+        const request: Promise<T> = this.sendRequest<T>(method, path, params, { url, headers });
+        inFlight.set(key, request);
+        const release = () => inFlight.release(key, request);
+        request.then(release, release);
+        // The first caller gets the original object. `request()` is async, so its continuation runs only after every
+        // joiner has cloned the result: mutating it straight after `await` cannot leak into a joiner's copy (tested).
+        return request;
+    }
+
+    /** The full request URL for `path` and `params.query`. */
+    protected buildRequestUrl(path: string, params?: IRequestParams): string {
+        const url = this.getUrl(path);
+        return params?.query ? `${url}?${buildQueryString(params.query)}` : url;
+    }
+
+    /** The client headers merged with `params.headers` (lowercased keys), before authentication is added. */
+    protected buildRequestHeaders(params?: IRequestParams): Record<string, string> {
         const headers = this.headers ? Object.assign({}, this.headers) : {};
         const paramsHeaders = params?.headers;
         if (paramsHeaders) {
@@ -633,6 +802,21 @@ export abstract class ClientBase {
                 headers[key.toLowerCase()] = paramsHeaders[key];
             }
         }
+        return headers;
+    }
+
+    /**
+     * Sends one request, with retries, pacing and timeouts. `request()` adds in-flight deduplication on top and
+     * passes the URL and headers it already built as `prepared`.
+     */
+    protected async sendRequest<T = unknown>(
+        method: string,
+        path: string,
+        params?: IRequestParamsWithPayload,
+        prepared?: { url: string; headers: Record<string, string> },
+    ): Promise<T> {
+        const url = prepared?.url ?? this.buildRequestUrl(path, params);
+        const headers = prepared ? Object.assign({}, prepared.headers) : this.buildRequestHeaders(params);
         let body: BodyInit | undefined;
         const payload = params?.payload;
         if (payload) {

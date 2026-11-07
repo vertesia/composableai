@@ -1,6 +1,7 @@
 import {
     AbstractFetchClient,
     type FETCH_FN,
+    InFlightRequests,
     type IPacingRetryPolicy,
     type IRequestRetryPolicy,
     type RequestIdentityProvider,
@@ -94,6 +95,13 @@ export type VertesiaClientProps = {
      * (connection + headers + body) via AbortSignal — browser + Node safe.
      */
     timeout?: number | false | null;
+    /**
+     * Share one request between concurrent identical GETs (studio + store, one shared table), so components
+     * that load the same resource at the same time send it once. Not a cache: nothing is kept after the
+     * response, and any write invalidates in-flight GETs. On by default; `false` turns it off. See
+     * `ClientBase.withInFlightDeduplication`.
+     */
+    inFlightDeduplication?: boolean;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
 };
 
@@ -116,6 +124,7 @@ const KNOWN_CLIENT_OPTIONS: Record<keyof Required<VertesiaClientProps>, true> = 
     retryPolicy: true,
     pacingRetry: true,
     timeout: true,
+    inFlightDeduplication: true,
     fetch: true,
 };
 
@@ -273,6 +282,9 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             this.withTimeout(opts.timeout);
         }
 
+        // On by default, with one table shared by the studio and store clients.
+        this.withInFlightDeduplication(opts.inFlightDeduplication ?? true);
+
         if (opts.authCallback) {
             this.withAuthCallback(opts.authCallback);
         } else if (opts.apikey) {
@@ -334,6 +346,16 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     withTimeout(timeoutMs?: number | false | null) {
         this.store.withTimeout(timeoutMs);
         return super.withTimeout(timeoutMs);
+    }
+
+    /**
+     * Overwrite to give the studio and store clients one shared table, so a write through either one invalidates
+     * the in-flight GETs of both.
+     */
+    withInFlightDeduplication(enabled: boolean | InFlightRequests = true) {
+        const shared = enabled instanceof InFlightRequests ? enabled : enabled ? new InFlightRequests() : false;
+        this.store.withInFlightDeduplication(shared);
+        return super.withInFlightDeduplication(shared);
     }
 
     async withApiKey(apiKey: string | null) {

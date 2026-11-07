@@ -105,6 +105,11 @@ export class AbstractFetchClient<T extends AbstractFetchClient<T>> extends Clien
         return request;
     }
 
+    // The credential createRequest() will add, so in-flight GETs are only shared between callers with the same one.
+    resolveRequestAuthorization(): Promise<string | undefined> {
+        return this._auth ? this._auth() : Promise.resolve(undefined);
+    }
+
     handleFetchResponse(req: Request, res: Response): void {
         this.response = res; // store last response
         this.onResponse?.(res, req);
@@ -155,6 +160,16 @@ export abstract class ApiTopic extends ClientBase {
 
     getTimeout() {
         return this.client.getTimeout();
+    }
+
+    // Topics use their root client's table (never their own), so identical GETs through different topics are shared
+    // and a write through any topic invalidates it.
+    getInFlightRequests() {
+        return this.client.getInFlightRequests();
+    }
+
+    resolveRequestAuthorization() {
+        return this.client.resolveRequestAuthorization();
     }
 
     get headers() {
