@@ -77,6 +77,20 @@ describe('data-store API contracts', () => {
         ).toBe(false);
     });
 
+    it('accepts explanations without breaking older alter-table clients', () => {
+        const changes = [{ op: 'rename_column', from: 'old_name', to: 'new_name' }];
+        expect(validateApiRequest('AlterTablePayload', { changes }).valid).toBe(true);
+        expect(
+            validateApiRequest('AlterTablePayload', {
+                changes,
+                message: 'Rename old_name to new_name to match the source terminology. Existing values are retained.',
+            }).valid,
+        ).toBe(true);
+        for (const message of ['', ' \n ', 'x'.repeat(4001)]) {
+            expect(validateApiRequest('AlterTablePayload', { changes, message }).valid).toBe(false);
+        }
+    });
+
     it('keeps free-form row and parameter maps open', () => {
         expect(
             validateApiRequest('QueryPayload', {

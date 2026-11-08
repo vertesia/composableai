@@ -451,6 +451,13 @@ export const DataTableSchema = z
 export const AlterTablePayloadSchema = z
     .strictObject({
         changes: z.array(AlterTableOperationSchema).meta({ description: 'List of schema changes to apply' }),
+        message: z
+            .string()
+            .min(1)
+            .max(4000)
+            .regex(/\S/)
+            .meta({ description: 'Explanation of what changes, why it is needed, and the expected impact.' })
+            .optional(),
     })
     .meta({ id: 'AlterTablePayload', description: 'Payload for altering a table schema.' });
 
