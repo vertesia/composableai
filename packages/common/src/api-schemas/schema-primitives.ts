@@ -11,6 +11,12 @@ export const nullableNumberSchema = z
     .nullable()
     .meta({ anyOf: undefined, type: ['number', 'null'] });
 
+/** A MongoDB ObjectId: 24 hexadecimal characters, the only spelling the server casts to an id. */
+export const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
+
+/** An ObjectId or the empty string, for a filter the server ignores when it is empty. */
+export const OPTIONAL_OBJECT_ID_PATTERN = /^(?:[0-9a-fA-F]{24})?$/;
+
 /**
  * A `limit` or `offset` query count: a whole number, zero or more. A fraction or a negative count used to
  * reach the database and fail there as a 500.
@@ -48,7 +54,7 @@ export function nonEmpty(field: string): Record<string, unknown> {
 
 // A Mongo field name: non-empty, without `.` or NUL, not starting with `$`. A field path joins such names with `.`.
 const MONGO_FIELD_NAME = '[^$.\\x00][^.\\x00]*';
-const MONGO_FIELD_PATH = `${MONGO_FIELD_NAME}(\\.${MONGO_FIELD_NAME})*`;
+export const MONGO_FIELD_PATH = `${MONGO_FIELD_NAME}(\\.${MONGO_FIELD_NAME})*`;
 
 /**
  * The facets of a payload whose endpoint runs them as a Mongo `$facet`: each `name` becomes a field name, so it is a

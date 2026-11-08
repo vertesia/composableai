@@ -290,7 +290,7 @@ export type UpdateApiKeyPayloadFromSchema = {
     name?: string | undefined;
     role?: AssignableRoleName | undefined;
     enabled?: boolean | undefined;
-    scim_provisioning?: boolean | undefined | undefined;
+    scim_provisioning?: boolean | undefined;
     properties?: Record<string, unknown> | undefined | undefined;
     clearance?: number | undefined | undefined;
     compartments?: string[] | undefined | undefined;
@@ -2202,6 +2202,7 @@ export type BulkOperationPayload = {
     name: 'change_type' | 'create' | 'delete' | 'start_workflow' | 'update';
     ids: string[];
     params: {
+        objects?: CreateContentObjectPayloadWire[] | undefined;
         [k: string]: unknown;
     };
 };
@@ -4811,7 +4812,7 @@ export type ResolvedInteractionExecutionInfo = {
 };
 export type UpdateExecutionRunPayload = {
     id?: string | undefined;
-    parent?: string | ExecutionRunWire | undefined;
+    parent?: string | undefined;
     evaluation?:
         | {
               score?: number | undefined;
@@ -4820,7 +4821,7 @@ export type UpdateExecutionRunPayload = {
           }
         | undefined;
     tags?: string[] | undefined;
-    environment?: ExecutionEnvironmentRef | undefined;
+    environment?: string | undefined;
     modelId?: string | undefined;
     result_schema?: JSONSchema | undefined;
     ttl?: number | undefined;
@@ -4842,7 +4843,7 @@ export type UpdateExecutionRunPayload = {
     created_by?: string | undefined;
     updated_by?: string | undefined;
     workflow?: ExecutionRunWorkflow | undefined;
-    interaction?: InteractionRef | undefined;
+    interaction?: string | undefined;
 };
 /**
  * Stripe billing status, derived from `StripeBillingStatusResponseSchema`.
@@ -6358,7 +6359,7 @@ export type PromptTemplateUpdatePayload = {
     name?: string | undefined;
     status?: PromptStatusWire | undefined;
     version?: number | undefined;
-    parent?: string | undefined | undefined;
+    parent?: string | undefined;
     description?: string | undefined | undefined;
     test_data?: JSONObject | undefined | undefined;
     script?: string | undefined | undefined;
@@ -7280,6 +7281,9 @@ export type CollectionMembersUpdatePayload = {
     action: 'add' | 'delete';
     members: string[];
 };
+export type CollectionPermissionsPayload = Partial<
+    Record<'content:read' | 'content:write' | 'content:delete', string[]>
+>;
 export type CollectionChildrenUpdatePayload = {
     action: 'add' | 'delete';
     children: string[];
@@ -9711,9 +9715,9 @@ export type ViewHierarchyLevel = {
  * Hierarchies represent one selected path, so multi_select may only be false.
  * Selection ids are opaque runtime values and must not be constructed by clients.
  *
- * `multi_select` widens from `false` to `boolean` here, matching the published component and what
- * the endpoint has always accepted. The narrowing was an authoring hint with nothing behind it: the
- * navigation runtime takes the first selection for `source === 'hierarchy'` whatever the flag says.
+ * `multi_select` is typed `boolean` here, as the SDK has always published it, but the published
+ * component and the server accept only `false`: the navigation runtime takes the first selection for
+ * `source === 'hierarchy'` whatever the flag says.
  */
 export type ViewHierarchyNavigation = {
     id: string;
@@ -11212,6 +11216,7 @@ export type DataStoreVersionPathParams = {
 export type ContentObjectExportPathParams = {
     exportId?: string | undefined;
     role?: 'data' | 'manifest' | undefined;
+    runId?: string | undefined;
 };
 export type ProcessTestRunPathParams = {
     runId?: string | undefined;
@@ -11227,11 +11232,19 @@ export type TaskPathParams = {
 export type AgentRunPathParams = {
     agentRunId?: string | undefined;
 };
+export type WorkflowRunActionPathParams = {
+    action?: 'cancel' | 'terminate' | undefined;
+};
 export type AppVersionPathParams = {
     id?: string | undefined;
+    alias?: string | undefined;
 };
 export type AppInstallationPathParams = {
     installId?: string | undefined;
+    app_id?: string | undefined;
+};
+export type InteractionConfigurationPathParams = {
+    interactionId?: string | undefined;
 };
 export type DelegationGrantPathParams = {
     grantId?: string | undefined;
@@ -11239,11 +11252,21 @@ export type DelegationGrantPathParams = {
 export type OAuthProviderPathParams = {
     id?: string | undefined;
 };
+export type UserGroupPathParams = {
+    groupId?: string | undefined;
+    userId?: string | undefined;
+};
 export type ProjectAppCapabilityPathParams = {
     processId?: string | undefined;
     templateId?: string | undefined;
     typeId?: string | undefined;
     viewId?: string | undefined;
+};
+export type EmbeddingTypePathParams = {
+    type?: 'text' | 'image' | 'properties' | undefined;
+};
+export type ToolPathParams = {
+    toolName?: string | undefined;
 };
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
@@ -12074,6 +12097,7 @@ export interface ApiComponentTypes {
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;
+    CollectionPermissionsPayload: CollectionPermissionsPayload;
     CollectionChildrenUpdateResult: CollectionChildrenUpdateResult;
     CollectionChildrenUpdatePayload: CollectionChildrenUpdatePayload;
     CollectionStatus: CollectionStatusWire;
@@ -12557,11 +12581,16 @@ export interface ApiComponentTypes {
     ProcessPathParams: ProcessPathParams;
     TaskPathParams: TaskPathParams;
     AgentRunPathParams: AgentRunPathParams;
+    WorkflowRunActionPathParams: WorkflowRunActionPathParams;
     AppVersionPathParams: AppVersionPathParams;
     AppInstallationPathParams: AppInstallationPathParams;
+    InteractionConfigurationPathParams: InteractionConfigurationPathParams;
     DelegationGrantPathParams: DelegationGrantPathParams;
     OAuthProviderPathParams: OAuthProviderPathParams;
+    UserGroupPathParams: UserGroupPathParams;
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
+    EmbeddingTypePathParams: EmbeddingTypePathParams;
+    ToolPathParams: ToolPathParams;
     WorkflowUsageQuery: WorkflowUsageQuery;
     WorkflowUsageClass: WorkflowUsageClass;
     WorkflowUsageStanding: WorkflowUsageStanding;

@@ -191,7 +191,11 @@ describe('gate 4 — runtime enforcement uses the published components', () => {
     });
 
     it('requires a well-formed address to create a user and keeps login identifiers out', () => {
-        const result = validateApiRequest('CreateUserPayload', { email: 'new@acme.com', groups: ['g1'], clearance: 2 });
+        const result = validateApiRequest('CreateUserPayload', {
+            email: 'new@acme.com',
+            groups: ['0123456789abcdef01234567'],
+            clearance: 2,
+        });
         expect(result.valid).toBe(true);
         if (result.valid) {
             assertType<Equals<typeof result.data, CreateUserPayload>>(true);

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { OPTIONAL_OBJECT_ID_PATTERN } from './schema-primitives.js';
 
 /**
  * The contracts for Vertesia's OWN OAuth server: the clients registered against it and the grants
@@ -274,12 +275,26 @@ export const OAuthClientScopeMetadataSchema = z
     })
     .meta({ id: 'OAuthClientScopeMetadata' });
 
+/**
+ * A redirect URI a client registers. The server parses it as a URL and applies RFC 8252: `https`, `http` on a
+ * loopback host only, or a reverse-domain private-use scheme (`com.example.app:/callback`), with no fragment. Only the
+ * wildcard ban is a pattern: the rest depends on how a URL parser reads the value, which no pattern states exactly.
+ */
+const RedirectUriSchema = z
+    .string()
+    .regex(/^[^*]*$/)
+    .meta({
+        description:
+            'An absolute URI: `https`, `http` on `localhost`, `127.0.0.1` or `[::1]` only, or a reverse-domain ' +
+            'private-use scheme such as `com.example.app:/callback`. Wildcards (`*`) and fragments are refused.',
+    });
+
 export const CreateOAuthClientPayloadSchema = z
     .strictObject({
         client_name: z.string(),
         client_type: OAuthClientTypeSchema.optional(),
         // Every client registers at least one redirect URI, which the server checks on create and on update.
-        redirect_uris: z.array(z.string()).min(1),
+        redirect_uris: z.array(RedirectUriSchema).min(1),
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
@@ -303,7 +318,7 @@ export const CreateOAuthClientPayloadSchema = z
 export const UpdateOAuthClientPayloadSchema = z
     .strictObject({
         client_name: z.string().optional(),
-        redirect_uris: z.array(z.string()).min(1).optional(),
+        redirect_uris: z.array(RedirectUriSchema).min(1).optional(),
         grant_types: z.array(OAuthGrantTypeSchema).optional(),
         response_types: z.array(OAuthResponseTypeSchema).optional(),
         token_endpoint_auth_method: OAuthTokenEndpointAuthMethodSchema.optional(),
@@ -367,9 +382,10 @@ const OAuthGrantStatusFilterSchema = z.enum(['active', 'revoked', 'expired', 'al
  * preview the caller looked at.
  */
 const oauthGrantFilterFields = {
-    account_id: z.string().optional(),
-    project_id: z.string().optional(),
-    user_id: z.string().optional(),
+    // Each ID is cast to an ObjectId, so any other value is refused with a 400; an empty one is no filter.
+    account_id: z.string().regex(OPTIONAL_OBJECT_ID_PATTERN).optional(),
+    project_id: z.string().regex(OPTIONAL_OBJECT_ID_PATTERN).optional(),
+    user_id: z.string().regex(OPTIONAL_OBJECT_ID_PATTERN).optional(),
     client_id: z.string().optional(),
     resource: z.string().optional(),
     status: OAuthGrantStatusFilterSchema.optional(),

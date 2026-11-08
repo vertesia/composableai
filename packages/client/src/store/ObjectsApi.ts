@@ -5,6 +5,7 @@ import {
     type BulkObjectDeleteResult,
     type BulkObjectUpdateOptions,
     type BulkObjectUpdateResult,
+    type BulkOperationPayload,
     type Collection,
     type ComplexSearchPayload,
     type ComputedFacetResponse,
@@ -486,7 +487,9 @@ export class ObjectsApi extends ApiTopic {
         return this.client.runOperation({
             name: 'create',
             ids: [],
-            params: { objects, ...options },
+            // `CreateContentObjectPayload` keeps the known metadata interfaces assignable, so it is wider than the
+            // wire type the bulk payload names; the server checks each object against the single-create contract.
+            params: { objects, ...options } as BulkOperationPayload['params'],
         }) as Promise<BulkObjectCreateResult>;
     }
 

@@ -68,12 +68,16 @@ export const AppUINavItemSchema: z.ZodType<AppUINavItem> = z
 
 export const AppUIConfigSchema = z
     .strictObject({
-        src: z.string().meta({
-            description:
-                'The source URL of the app. The src can be a template which contain a variable named ' +
-                '`buildId` which will be replaced with the current build id. For example: ' +
-                '`/plugins/vertesia-review-center-${buildId}`',
-        }),
+        src: z
+            .string()
+            .min(1)
+            .meta({
+                description:
+                    'The source URL of the app. Must not be empty. The src can be a template which contain a ' +
+                    'variable named ' +
+                    '`buildId` which will be replaced with the current build id. For example: ' +
+                    '`/plugins/vertesia-review-center-${buildId}`',
+            }),
         isolation: z
             .enum(['shadow', 'css', 'iframe'])
             .optional()

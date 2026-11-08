@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { WorkflowRunActionPathParamsSchema } from './path-parameters.js';
 import {
     ProcessBudgetStateSchema,
     ProcessRunConfigSchema,
@@ -8,6 +9,7 @@ import {
     SubmitProcessTestRunPayloadSchema,
 } from './process.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
+import { validateApiRequest } from './registry.js';
 
 describe('ProcessRunConfigSchema', () => {
     it('accepts stable profile IDs and null but rejects profile names', () => {
@@ -180,5 +182,77 @@ describe('process idempotency_key', () => {
         for (const key of ['', 'k'.repeat(257)]) {
             expect(schema.safeParse({ ...base, idempotency_key: key }).success).toBe(false);
         }
+    });
+});
+
+describe('server-owned process definition fields', () => {
+    const definition = {
+        format_version: 1,
+        process: 'P',
+        initial: 'start',
+        context: { schema: {}, initial: {} },
+        nodes: {},
+    };
+
+    it('publishes `confirmed` as a boolean', () => {
+        // The server refuses `false`. Boolean constants are not generator-friendly, so the published schema
+        // keeps a boolean and the description states the rule.
+        for (const component of ['PublishProcessDefinitionPayload', 'RevertProcessDefinitionPayload'] as const) {
+            expect(validateApiRequest(component, { confirmed: true }).valid).toBe(true);
+            expect(validateApiRequest(component, { confirmed: false }).valid).toBe(true);
+        }
+    });
+
+    it('creates a definition only as the first draft', () => {
+        const create = { name: 'p', definition };
+        expect(validateApiRequest('CreateProcessDefinitionPayload', create).valid).toBe(true);
+        expect(
+            validateApiRequest('CreateProcessDefinitionPayload', { ...create, status: 'draft', version: 1 }).valid,
+        ).toBe(true);
+        expect(validateApiRequest('CreateProcessDefinitionPayload', { ...create, status: 'published' }).valid).toBe(
+            false,
+        );
+        expect(validateApiRequest('CreateProcessDefinitionPayload', { ...create, version: 0 }).valid).toBe(false);
+    });
+
+    it('never takes a status or version in an update', () => {
+        expect(validateApiRequest('UpdateProcessDefinitionPayload', { name: 'p' }).valid).toBe(true);
+        expect(validateApiRequest('UpdateProcessDefinitionPayload', { status: 'draft' }).valid).toBe(false);
+        expect(validateApiRequest('UpdateProcessDefinitionPayload', { version: 1 }).valid).toBe(false);
+    });
+
+    it('never empties the name in an update', () => {
+        expect(validateApiRequest('UpdateProcessDefinitionPayload', {}).valid).toBe(true);
+        expect(validateApiRequest('UpdateProcessDefinitionPayload', { name: '' }).valid).toBe(false);
+    });
+});
+
+describe('workflow definition legacy upsert id', () => {
+    it('takes only an ObjectId', () => {
+        const spec = { name: 'w', vars: {}, steps: [], spec_format: 'steps' };
+        expect(validateApiRequest('WorkflowDefinitionPayload', spec).valid).toBe(true);
+        expect(validateApiRequest('WorkflowDefinitionPayload', { ...spec, id: '0123456789abcdef01234567' }).valid).toBe(
+            true,
+        );
+        expect(validateApiRequest('WorkflowDefinitionPayload', { ...spec, id: 'ñ*' }).valid).toBe(false);
+    });
+});
+
+describe('WorkflowRunActionPathParams', () => {
+    it('names the actions the route applies', () => {
+        expect(WorkflowRunActionPathParamsSchema.safeParse({ action: 'cancel' }).success).toBe(true);
+        expect(WorkflowRunActionPathParamsSchema.safeParse({ action: 'terminate' }).success).toBe(true);
+        expect(WorkflowRunActionPathParamsSchema.safeParse({ action: 'create' }).success).toBe(false);
+    });
+});
+
+describe('UpdateAgentArtifactContentPayload', () => {
+    it('needs the generation the update is conditional on', () => {
+        expect(validateApiRequest('UpdateAgentArtifactContentPayload', { content: '', generation: '1' }).valid).toBe(
+            true,
+        );
+        expect(validateApiRequest('UpdateAgentArtifactContentPayload', { content: '', generation: '' }).valid).toBe(
+            false,
+        );
     });
 });
