@@ -32256,7 +32256,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file, and `type`, its MIME type, is then required."
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -32425,7 +32425,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az)://"
+                "pattern": "^(?:gs|s3|az)://[^/]+/.+"
               }
             }
           }
@@ -32461,7 +32461,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az)://"
+                "pattern": "^(?:gs|s3|az)://[^/]+/.+"
               }
             }
           }
@@ -32534,7 +32534,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file, and `type`, its MIME type, is then required."
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -32648,7 +32648,7 @@
               "minLength": 1
             },
             "source": {
-              "pattern": "^(?:gs|s3|az)://"
+              "pattern": "^(?:gs|s3|az)://[^/]+/.+"
             }
           }
         }

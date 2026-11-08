@@ -661,10 +661,11 @@ export const ContentObjectIdempotencyKeySchema = z
     });
 
 /**
- * A content source the server reads from a cloud blob store: `gs://`, `s3://` or `az://`, then the bucket and path.
- * The server opens the file before storing the object, and refuses any other scheme or a relative path.
+ * A content source the server reads from a cloud blob store: `gs://`, `s3://` or `az://`, then a bucket and a
+ * non-empty object path. The server opens the file before storing the object, and refuses any other scheme, a
+ * relative path, or a bucket with no object (`gs://bucket/`).
  */
-const CONTENT_SOURCE_URI_PATTERN = '^(?:gs|s3|az)://';
+const CONTENT_SOURCE_URI_PATTERN = '^(?:gs|s3|az)://[^/]+/.+';
 
 /**
  * The server opens a non-empty `content.source` as a blob URI and stores the file with its MIME type, so the source
@@ -691,7 +692,8 @@ const CONTENT_TYPE_WITH_SOURCE_RULE = conditional(
 );
 
 const CONTENT_SOURCE_DESCRIPTION =
-    'Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file, and ' +
+    'Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket ' +
+    'then a non-empty object path), and ' +
     '`type`, its MIME type, is then required.';
 
 const PARENT_OBJECT_ID_DESCRIPTION = 'ID of the parent object (container or folder), as 24 hexadecimal characters.';

@@ -81,7 +81,14 @@ describe('content object payloads', () => {
             expect(validateApiRequest('CreateContentObjectPayload', source(uri)).valid).toBe(true);
             expect(validateApiRequest('UpdateContentObjectPayload', source(uri)).valid).toBe(true);
         }
-        for (const uri of ['0', 'bucket/a.pdf', 'https://example.com/a.pdf']) {
+        for (const uri of [
+            '0',
+            'bucket/a.pdf',
+            'https://example.com/a.pdf',
+            'gs://bucket/',
+            'gs://bucket',
+            's3:///a.pdf',
+        ]) {
             expect(validateApiRequest('CreateContentObjectPayload', source(uri)).valid).toBe(false);
             expect(validateApiRequest('UpdateContentObjectPayload', source(uri)).valid).toBe(false);
         }
