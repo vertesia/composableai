@@ -190,27 +190,20 @@ export interface CreateProcessDefinitionPayload {
      * @deprecated Process definitions are created as drafts. Use the publish endpoint
      * to create immutable published versions.
      */
-    status?: ProcessDefinitionStatus;
+    status?: 'draft';
     /**
      * @deprecated Version is server-owned. Use the publish endpoint to create the next version.
      */
-    version?: number;
+    version?: 1;
     tags?: string[];
     definition: ProcessDefinitionBody;
 }
 
+/** A draft edit. `status` and `version` are server-owned: use the publish, archive and revert endpoints. */
 export interface UpdateProcessDefinitionPayload {
     expected_edit_revision?: number;
     name?: string;
     description?: string;
-    /**
-     * @deprecated Status is server-owned. Use publish/archive endpoints instead of updating it directly.
-     */
-    status?: ProcessDefinitionStatus;
-    /**
-     * @deprecated Version is server-owned. Use the publish endpoint to create the next version.
-     */
-    version?: number;
     tags?: string[];
     definition?: ProcessDefinitionBody;
 }

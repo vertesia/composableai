@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { conditional } from './schema-primitives.js';
+import { CreateContentObjectPayloadSchema } from './content.js';
+import { conditional, OBJECT_ID_PATTERN } from './schema-primitives.js';
 
 export const BulkObjectDeleteResultSchema = z
     .strictObject({
@@ -61,10 +62,21 @@ export const BulkOperationPayloadSchema = z
         name: z
             .enum(['change_type', 'create', 'delete', 'start_workflow', 'update'])
             .meta({ description: 'The operation name' }),
-        ids: z.array(z.string()).meta({ description: 'The IDs of the objects to operate on' }),
-        params: z.looseObject({}).meta({
-            description: 'The operation parameters. `create` takes the objects to create as `objects`, 1 to 10000.',
+        ids: z.array(z.string()).meta({
+            description:
+                'The IDs of the objects to operate on, each an object ID. `create` ignores them: it makes new objects.',
         }),
+        params: z
+            .looseObject({
+                // The handler checks each object against the single-create contract, so the spec names it.
+                objects: z
+                    .array(CreateContentObjectPayloadSchema)
+                    .meta({ description: 'The objects a `create` makes, 1 to 10000, each a single-create payload.' })
+                    .optional(),
+            })
+            .meta({
+                description: 'The operation parameters. `create` takes the objects to create as `objects`, 1 to 10000.',
+            }),
     })
     .meta({
         id: 'BulkOperationPayload',
@@ -78,6 +90,8 @@ export const BulkOperationPayloadSchema = z
                     },
                 },
             },
+            // Every other operation looks the ids up as object IDs, so anything else fails the cast.
+            { properties: { ids: { items: { type: 'string', pattern: OBJECT_ID_PATTERN.source } } } },
         ),
     });
 

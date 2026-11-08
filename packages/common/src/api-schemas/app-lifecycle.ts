@@ -10,7 +10,7 @@ import {
 } from './apps.js';
 import { EventCategorySchema } from './audit-trail.js';
 import { AgentBudgetConfigurationSchema } from './project-configuration.js';
-import { PageCountSchema } from './schema-primitives.js';
+import { OPTIONAL_OBJECT_ID_PATTERN, PageCountSchema } from './schema-primitives.js';
 
 // The app lifecycle contracts: versions, builds, scaffolds, git repositories, development tasks,
 // installations and inspection. `./apps.js` holds the manifest itself and the tool-collection
@@ -1060,9 +1060,14 @@ export const AgentRunSearchHitSchema = z
 
 export const UpsertAppVersionRequestSchema = z
     .strictObject({
+        // The route casts it to an ObjectId; an empty value is no record.
         record_id: z
             .string()
-            .meta({ description: 'Existing version record to update in place, used by reproducible rebuilds.' })
+            .regex(OPTIONAL_OBJECT_ID_PATTERN)
+            .meta({
+                description:
+                    'Existing version record to update in place, used by reproducible rebuilds, as 24 hexadecimal characters.',
+            })
             .optional(),
         app: z.string().optional(),
         // Both are trimmed and refused when blank, so a whitespace-only value is refused here too.

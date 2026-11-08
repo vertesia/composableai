@@ -34,6 +34,60 @@ describe('data-store API contracts', () => {
         expect(validateApiRequest('ImportDataPayload', { ...input, import_id: 'invalid' }).valid).toBe(false);
     });
 
+    it('publishes the table name and drop list rules the data store enforces', () => {
+        const create = (name: string) =>
+            validateApiRequest('CreateTablesPayload', { message: 'm', tables: [{ name, columns: [] }] }).valid;
+        expect(create('orders')).toBe(true);
+        expect(create('_Orders_2')).toBe(true);
+        expect(create('a'.repeat(64))).toBe(true);
+        expect(create('')).toBe(false);
+        expect(create('2orders')).toBe(false);
+        expect(create('order-lines')).toBe(false);
+        expect(create('a'.repeat(65))).toBe(false);
+
+        const drop = (name: string) => validateApiRequest('UpdateSchemaPayload', { message: 'm', drop_tables: [name] });
+        expect(drop('anything at all').valid).toBe(true);
+        expect(drop('').valid).toBe(false);
+    });
+
+    it('publishes the column name rule of a new table', () => {
+        const create = (name: string) =>
+            validateApiRequest('CreateTablesPayload', {
+                message: 'm',
+                tables: [{ name: 't', columns: [{ name, type: 'INTEGER' }] }],
+            }).valid;
+        expect(create('id')).toBe(true);
+        expect(create('_Total_2')).toBe(true);
+        expect(create('a'.repeat(64))).toBe(true);
+        expect(create('')).toBe(false);
+        expect(create('2id')).toBe(false);
+        expect(create('unit price')).toBe(false);
+        expect(create('\u{a29d7}bì')).toBe(false);
+        expect(create('a'.repeat(65))).toBe(false);
+    });
+
+    it('publishes the named ends of every relationship a schema update sets', () => {
+        const relationship = {
+            name: 'orders_customer',
+            from_table: 'orders',
+            from_column: 'customer_id',
+            to_table: 'customers',
+            to_column: 'id',
+            relationship_type: 'many-to-many',
+        };
+        const update = (overrides: Record<string, string>) =>
+            validateApiRequest('UpdateSchemaPayload', {
+                message: 'm',
+                relationships: [{ ...relationship, ...overrides }],
+            }).valid;
+        expect(update({})).toBe(true);
+        for (const key of ['name', 'from_table', 'from_column', 'to_table', 'to_column']) {
+            expect(update({ [key]: '' }), key).toBe(false);
+        }
+        // A stored relationship in a response keeps the plain component.
+        expect(validateApiResponse('DataRelationship', { ...relationship, name: '' }).valid).toBe(true);
+    });
+
     it('rejects undeclared request fields through the published component', () => {
         expect(
             validateApiRequest('CreateDataStorePayload', {

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { APP_DEPLOYMENT_ALIAS_PATTERN } from '../apps.js';
 
 /**
  * Path parameter components: the format of each identifier a route reads from its path.
@@ -56,6 +57,11 @@ export const ContentObjectExportPathParamsSchema = z
     .object({
         exportId: objectId('The content object export ID'),
         role: z.enum(['data', 'manifest']).meta({ description: 'The export file: its data or its manifest.' }),
+        // Temporal refuses a run ID that is not a UUID as an invalid argument, before looking the run up.
+        runId: z
+            .string()
+            .regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)
+            .meta({ description: 'The run ID of the export workflow, a UUID.' }),
     })
     .partial()
     .meta({ id: 'ContentObjectExportPathParams' });
@@ -79,18 +85,36 @@ export const TaskPathParamsSchema = z
     .partial()
     .meta({ id: 'TaskPathParams' });
 
+export const WorkflowRunActionPathParamsSchema = z
+    .object({
+        action: z
+            .enum(['cancel', 'terminate'])
+            .meta({ description: 'The action to apply: `cancel` asks the run to stop, `terminate` stops it at once.' }),
+    })
+    .partial()
+    .meta({ id: 'WorkflowRunActionPathParams' });
+
 export const AgentRunPathParamsSchema = z
     .object({ agentRunId: objectId('The agent run ID') })
     .partial()
     .meta({ id: 'AgentRunPathParams' });
 
 export const AppVersionPathParamsSchema = z
-    .object({ id: objectId('The app version ID') })
+    .object({
+        id: objectId('The app version ID'),
+        alias: z.string().regex(APP_DEPLOYMENT_ALIAS_PATTERN).meta({
+            description: 'The deployment alias: 1-63 lowercase letters, numbers, or inner hyphens.',
+        }),
+    })
     .partial()
     .meta({ id: 'AppVersionPathParams' });
 
 export const AppInstallationPathParamsSchema = z
-    .object({ installId: objectId('The app installation ID') })
+    .object({
+        installId: objectId('The app installation ID'),
+        // The settings route names its installation `app_id`, for historical reasons; it is the same identifier.
+        app_id: objectId('The app installation ID'),
+    })
     .partial()
     .meta({ id: 'AppInstallationPathParams' });
 
@@ -98,6 +122,14 @@ export const DelegationGrantPathParamsSchema = z
     .object({ grantId: objectId('The delegation grant ID') })
     .partial()
     .meta({ id: 'DelegationGrantPathParams' });
+
+export const UserGroupPathParamsSchema = z
+    .object({
+        groupId: objectId('The user group ID'),
+        userId: objectId('The user ID'),
+    })
+    .partial()
+    .meta({ id: 'UserGroupPathParams' });
 
 export const OAuthProviderPathParamsSchema = z
     .object({ id: objectId('The OAuth provider ID') })
@@ -116,3 +148,46 @@ export const ProjectAppCapabilityPathParamsSchema = z
     })
     .partial()
     .meta({ id: 'ProjectAppCapabilityPathParams' });
+
+/**
+ * The embedding type an embeddings command acts on. The server answers any other value with a 400, so the published
+ * parameter is the enum rather than a plain string. The values are those of `SupportedEmbeddingTypes`, spelled out
+ * rather than imported from the content schemas, so that this module does not load their whole module graph.
+ */
+export const EmbeddingTypePathParamsSchema = z
+    .object({
+        type: z
+            .enum(['text', 'image', 'properties'])
+            .meta({ description: 'The embedding type: `text`, `image` or `properties`.' }),
+    })
+    .partial()
+    .meta({ id: 'EmbeddingTypePathParams' });
+
+/**
+ * The saved configuration of a code interaction: a system interaction `sys:<name>` or an app one
+ * `app:<app name>:<local id>`, at most 300 characters. Stored interactions are configured on the interaction itself.
+ */
+export const InteractionConfigurationPathParamsSchema = z
+    .object({
+        interactionId: z
+            .string()
+            .max(300)
+            .regex(/^(sys:[^:]+|app:[^:]+:.+)$/)
+            .meta({
+                description:
+                    'The code interaction, as `sys:<name>` or `app:<app name>:<local id>`, at most 300 characters.',
+            }),
+    })
+    .partial()
+    .meta({ id: 'InteractionConfigurationPathParams' });
+
+/**
+ * The tool a project tool route inspects. The server trims the name and answers a blank one with a 400 before it looks
+ * anything up; any other name is resolved against the project's tool catalog.
+ */
+export const ToolPathParamsSchema = z
+    .object({
+        toolName: z.string().regex(/\S/).meta({ description: 'The tool name; it must not be blank.' }),
+    })
+    .partial()
+    .meta({ id: 'ToolPathParams' });

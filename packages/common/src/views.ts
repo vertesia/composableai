@@ -30,9 +30,9 @@ export type ViewHierarchyLevel = Wire.ViewHierarchyLevel;
  * Hierarchies represent one selected path, so multi_select may only be false.
  * Selection ids are opaque runtime values and must not be constructed by clients.
  *
- * `multi_select` widens from `false` to `boolean` here, matching the published component and what
- * the endpoint has always accepted. The narrowing was an authoring hint with nothing behind it: the
- * navigation runtime takes the first selection for `source === 'hierarchy'` whatever the flag says.
+ * `multi_select` is typed `boolean` here, as the SDK has always published it, but the published
+ * component and the server accept only `false`: the navigation runtime takes the first selection for
+ * `source === 'hierarchy'` whatever the flag says.
  */
 export type ViewHierarchyNavigation = Wire.ViewHierarchyNavigation;
 

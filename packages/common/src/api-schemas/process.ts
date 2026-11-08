@@ -10,7 +10,7 @@ import { StringValueMapSchema } from './files.js';
 import { ConversationVisibilitySchema, RunSourceSchema } from './interaction.js';
 import { ProcessAgentExecutionPolicySchema } from './process-agent-policy.js';
 import { AgentBudgetConfigurationSchema } from './project-configuration.js';
-import { EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
+import { conditional, EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
 import { TaskFieldSchema } from './task.js';
 
 export const DurationValueSchema = z
@@ -131,7 +131,9 @@ export const ProcessRunTypeSchema = z.enum(['supervised', 'programmatic']).meta(
 
 export const RevertProcessDefinitionPayloadSchema = z
     .strictObject({
-        confirmed: z.boolean().meta({ description: 'Required explicit confirmation from the caller.' }),
+        confirmed: z
+            .boolean()
+            .meta({ description: 'Required explicit confirmation from the caller: only `true` is accepted.' }),
         comment: z
             .string()
             .meta({ description: 'Optional note explaining why this version is being restored as the draft.' })
@@ -148,7 +150,9 @@ export const RetryProcessNodePayloadSchema = z
 
 export const PublishProcessDefinitionPayloadSchema = z
     .strictObject({
-        confirmed: z.boolean().meta({ description: 'Required explicit confirmation from the caller.' }),
+        confirmed: z
+            .boolean()
+            .meta({ description: 'Required explicit confirmation from the caller: only `true` is accepted.' }),
         tags: z
             .array(z.string())
             .meta({ description: 'Optional tags to merge into the published revision.' })
@@ -646,18 +650,24 @@ export const CreateProcessDefinitionPayloadSchema: z.ZodType = z
     .strictObject({
         name: z.string().min(1),
         description: z.string().optional(),
-        status: ProcessDefinitionStatusSchema.meta({
-            description:
-                'Deprecated: Process definitions are created as drafts. Use the publish endpoint\nto create immutable published versions.',
-            deprecated: true,
-            'x-deprecated-message':
-                'Process definitions are created as drafts. Use the publish endpoint\nto create immutable published versions.',
-        }).optional(),
-        version: z
-            .number()
+        // A new definition is always the first draft, so these deprecated fields accept only what it is created as.
+        status: z
+            .literal('draft')
             .meta({
                 description:
-                    'Deprecated: Version is server-owned. Use the publish endpoint to create the next version.',
+                    'Deprecated: Process definitions are created as drafts, so only `draft` is accepted. Use the ' +
+                    'publish endpoint\nto create immutable published versions.',
+                deprecated: true,
+                'x-deprecated-message':
+                    'Process definitions are created as drafts. Use the publish endpoint\nto create immutable published versions.',
+            })
+            .optional(),
+        version: z
+            .literal(1)
+            .meta({
+                description:
+                    'Deprecated: Version is server-owned, so only `1` is accepted. Use the publish endpoint to ' +
+                    'create the next version.',
                 deprecated: true,
                 'x-deprecated-message': 'Version is server-owned. Use the publish endpoint to create the next version.',
             })
@@ -829,9 +839,14 @@ export const DSLWorkflowSpecWithStepsSchema: z.ZodType = z
  * sends a bare spec.
  */
 const legacyWorkflowDefinitionUpsertFields = {
+    // The handler looks the definition up by this id, so a value that is not an ObjectId is refused as a cast error.
     id: z
         .string()
-        .meta({ description: 'Legacy upsert: update this definition instead of creating a new one.' })
+        .regex(/^[0-9a-fA-F]{24}$/)
+        .meta({
+            description:
+                'Legacy upsert: update this definition instead of creating a new one, as 24 hexadecimal characters.',
+        })
         .optional(),
     created_at: z.string().meta({ description: 'Legacy upsert: ignored, the stored value wins.' }).optional(),
     updated_at: z
@@ -1047,28 +1062,19 @@ export const ProcessDefinitionBodySchema: z.ZodType = z
 export const UpdateProcessDefinitionPayloadSchema: z.ZodType = z
     .strictObject({
         expected_edit_revision: ExpectedEditRevisionSchema,
-        name: z.string().optional(),
+        // A definition always has a name: the stored document requires a non-empty one, as a create does.
+        name: z.string().min(1).optional(),
         description: z.string().optional(),
-        status: ProcessDefinitionStatusSchema.meta({
-            description:
-                'Deprecated: Status is server-owned. Use publish/archive endpoints instead of updating it directly.',
-            deprecated: true,
-            'x-deprecated-message':
-                'Status is server-owned. Use publish/archive endpoints instead of updating it directly.',
-        }).optional(),
-        version: z
-            .number()
-            .meta({
-                description:
-                    'Deprecated: Version is server-owned. Use the publish endpoint to create the next version.',
-                deprecated: true,
-                'x-deprecated-message': 'Version is server-owned. Use the publish endpoint to create the next version.',
-            })
-            .optional(),
+        // No `status` or `version`: both are server-owned and an update refuses either whatever its value, so the
+        // strict object refuses them too. Publish, archive and revert are the endpoints that change them.
         tags: z.array(z.string()).optional(),
         definition: z.lazy(() => ProcessDefinitionBodySchema).optional(),
     })
-    .meta({ id: 'UpdateProcessDefinitionPayload' });
+    .meta({
+        id: 'UpdateProcessDefinitionPayload',
+        description:
+            'A draft edit. `status` and `version` are server-owned: use the publish, archive and revert endpoints.',
+    });
 
 export const ListProcessDefinitionsQuerySchema = z
     .object({
@@ -1282,10 +1288,24 @@ export const ProcessTestSubjectSchema = z
  */
 export const ProcessTestTargetByIdSchema = z
     .strictObject({
-        id: z.string(),
-        app_version: z.string().optional(),
+        // A stored definition's ObjectId is refused too: it runs through its own test suites instead.
+        id: z
+            .string()
+            .regex(/^(app|sys):/)
+            .meta({
+                description:
+                    'An in-code process id, `app:<app>:<process>` or `sys:<process>`. A stored process definition is ' +
+                    'tested through `POST /processes/{processId}/test-runs`.',
+            }),
+        app_version: z.string().meta({ description: 'Only for an `app:` id.' }).optional(),
     })
-    .meta({ id: 'ProcessTestTargetById' });
+    .meta({
+        id: 'ProcessTestTargetById',
+        ...conditional(
+            { required: ['id'], properties: { id: { pattern: '^sys:' } } },
+            { not: { required: ['app_version'] } },
+        ),
+    });
 
 /** Tests an ephemeral definition body that is not stored or served by an app. */
 export const ProcessTestTargetWithDefinitionSchema = z

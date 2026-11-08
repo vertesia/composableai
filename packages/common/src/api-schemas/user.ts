@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type * as Wire from '../wire-types.generated.js';
+import { OBJECT_ID_PATTERN } from './schema-primitives.js';
 
 /**
  * Runtime API schemas for the IAM user endpoints.
@@ -186,8 +187,9 @@ export const CreateUserPayloadSchema = UserSchema.pick({
                 'The address the user signs in with. Matched case-insensitively against existing users, so ' +
                 'repeating a request returns the same user.',
         }),
+        // The server refuses an ID that is not an ObjectId with a 400.
         groups: z
-            .array(z.string())
+            .array(z.string().regex(OBJECT_ID_PATTERN))
             .optional()
             .meta({ description: 'IDs of groups of the current account to add the user to.' }),
     })

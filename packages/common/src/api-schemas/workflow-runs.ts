@@ -174,8 +174,22 @@ export const ListWorkflowRunsPayloadSchema = z
         document_id: z.string().meta({ description: 'The document ID passed to a workflow run.' }).optional(),
         event_name: z.string().meta({ description: 'The event name that triggered the workflow.' }).optional(),
         rule_id: z.string().meta({ description: 'Legacy workflow rule ID filter, when applicable.' }).optional(),
-        start: z.string().meta({ description: 'The start time for filtering workflow runs.' }).optional(),
-        end: z.string().meta({ description: 'The end time for filtering workflow runs.' }).optional(),
+        start: z
+            .string()
+            .meta({
+                description:
+                    'The start time for filtering workflow runs: a date such as 2026-10-01T00:00:00.000Z. An empty ' +
+                    'or blank string sets no bound; any other value that is not a date is refused.',
+            })
+            .optional(),
+        end: z
+            .string()
+            .meta({
+                description:
+                    'The end time for filtering workflow runs: a date such as 2026-10-01T00:00:00.000Z. An empty ' +
+                    'or blank string sets no bound; any other value that is not a date is refused.',
+            })
+            .optional(),
         status: z.string().meta({ description: 'The status of the workflow run.' }).optional(),
         search_term: z.string().meta({ description: 'search term to filter on workflow id and run id' }).optional(),
         initiated_by: z
