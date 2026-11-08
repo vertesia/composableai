@@ -219,6 +219,24 @@ describe('Webhook should be notified', () => {
         });
     });
 
+    it.each([400, 401, 403, 404, 409, 410, 422])('does not retry a %i answer', async (status) => {
+        mockFetch.mockResolvedValueOnce(new Response('rejected', { status }));
+
+        await expect(testEnv.run(notifyWebhook, createTestPayload())).rejects.toMatchObject({
+            type: 'WebhookEndpointError',
+            nonRetryable: true,
+        });
+    });
+
+    it.each([408, 425, 429, 503])('retries a %i answer', async (status) => {
+        mockFetch.mockResolvedValueOnce(new Response(null, { status }));
+
+        await expect(testEnv.run(notifyWebhook, createTestPayload())).rejects.toMatchObject({
+            type: 'WebhookEndpointError',
+            nonRetryable: false,
+        });
+    });
+
     it('truncates an oversized error response body instead of buffering it', async () => {
         const chunk = new Uint8Array(16 * 1024).fill(0x61); // 'a'
         let pulled = 0;
@@ -349,6 +367,14 @@ describe('Webhook should be notified', () => {
         const payload = createTestPayload();
 
         await expect(testEnv.run(notifyWebhook, payload)).rejects.toThrow('studio-server unavailable');
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it.each([408, 425, 429])('should retry a %i from central URL validation', async (statusCode) => {
+        const throttled = Object.assign(new Error('try again later'), { statusCode });
+        mockValidateUrl.mockRejectedValueOnce(throttled);
+
+        await expect(testEnv.run(notifyWebhook, createTestPayload())).rejects.toBe(throttled);
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
