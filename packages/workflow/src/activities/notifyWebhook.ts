@@ -242,7 +242,7 @@ export async function notifyWebhook(
             log.debug('Could not read response body for error', { readError });
         }
 
-        // A rejected request (404, 401, 410, ...) fails at once; 5xx, 408, 425 and 429 are retried.
+        // A request the receiver rejected outright fails at once; RETRYABLE_CLIENT_ERROR_STATUSES lists the exceptions.
         throw ApplicationFailure.create({
             message: errorMessage,
             type: WEBHOOK_ENDPOINT_ERROR,

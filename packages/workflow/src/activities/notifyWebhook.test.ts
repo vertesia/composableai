@@ -370,6 +370,16 @@ describe('Webhook should be notified', () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
+    it.each([400, 403, 409])('should block a %i from central URL validation', async (statusCode) => {
+        mockValidateUrl.mockRejectedValueOnce(Object.assign(new Error('rejected'), { statusCode }));
+
+        await expect(testEnv.run(notifyWebhook, createTestPayload())).rejects.toMatchObject({
+            message: 'Webhook endpoint blocked: rejected',
+            nonRetryable: true,
+        });
+        expect(mockFetch).not.toHaveBeenCalled();
+    });
+
     it.each([408, 425, 429])('should retry a %i from central URL validation', async (statusCode) => {
         const throttled = Object.assign(new Error('try again later'), { statusCode });
         mockValidateUrl.mockRejectedValueOnce(throttled);
