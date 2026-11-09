@@ -1,11 +1,14 @@
-import { randomInt } from 'node:crypto';
+import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import enquirer from 'enquirer';
 import open from 'open';
 import { handleCors } from './cors.js';
-import { readRequestBody, startServer } from './server.js';
+import { CALLBACK_HOST, RequestBodyTooLargeError, readRequestBody, startServer } from './server.js';
 
 const { prompt } = enquirer;
+
+/** A login result is a handful of identifiers, URLs and tokens; nothing legitimate comes close to this. */
+const MAX_CALLBACK_BODY_BYTES = 64 * 1024;
 
 export interface ConfigPayload {
     profile?: string;
@@ -106,7 +109,11 @@ export async function startConfigSession(
         process.stdin.on('data', onInput);
     }
 
+    // The short code is only shown to the user for a visual check. The state is the capability that authorizes a
+    // callback: it travels only in the redirect URI handed to the browser, so another local user who reaches the
+    // loopback port cannot complete (or stuff) this login.
     const code = randomInt(1000, 9999);
+    const state = randomBytes(32).toString('base64url');
 
     try {
         // http.createServer ignores the returned promise, so the handler reports its own failures.
@@ -120,18 +127,28 @@ export async function startConfigSession(
                 res.end();
                 return;
             }
-            if (req.url !== '/') {
+            const requestUrl = new URL(req.url ?? '/', `http://${CALLBACK_HOST}`);
+            if (requestUrl.pathname !== '/') {
                 res.statusCode = 404;
+                res.end();
+                return;
+            }
+            // Authorize before reading the body, so an unrelated peer cannot make this process buffer anything.
+            if (!isExpectedState(requestUrl.searchParams.get('state'), state)) {
+                res.statusCode = 403;
+                res.setHeader('Connection', 'close');
+                res.end();
+                return;
+            }
+            if (signal?.aborted || completed) {
+                res.statusCode = 410;
+                res.setHeader('Connection', 'close');
                 res.end();
                 return;
             }
 
             try {
-                const data = await readRequestBody(req);
-                if (typeof data !== 'string') {
-                    throw new Error('Invalid callback payload');
-                }
-                const result = readConfigResult(data);
+                const result = readConfigResult(await readRequestBody(req, MAX_CALLBACK_BODY_BYTES));
                 res.statusCode = 200;
                 res.end();
 
@@ -140,7 +157,13 @@ export async function startConfigSession(
                 }
 
                 await complete(result);
-            } catch (error) {
+            } catch (error: unknown) {
+                if (error instanceof RequestBodyTooLargeError) {
+                    res.statusCode = 413;
+                    res.setHeader('Connection', 'close');
+                    res.end();
+                    return;
+                }
                 res.statusCode = 500;
                 res.end();
                 console.error('Error processing request:', error);
@@ -158,7 +181,9 @@ export async function startConfigSession(
         }
         const port = address.port;
         const params = new URLSearchParams();
-        params.append('redirect_uri', `http://localhost:${port}`);
+        const redirectUri = new URL(`http://${CALLBACK_HOST}:${port}/`);
+        redirectUri.searchParams.set('state', state);
+        params.append('redirect_uri', redirectUri.toString());
         params.append('code', String(code));
         if (payload.profile) params.append('profile', payload.profile);
         if (payload.account) params.append('account', payload.account);
@@ -221,6 +246,15 @@ export async function startConfigSession(
             throw err;
         }
     }
+}
+
+function isExpectedState(received: string | null, expected: string): boolean {
+    if (!received) {
+        return false;
+    }
+    const receivedBytes = Buffer.from(received);
+    const expectedBytes = Buffer.from(expected);
+    return receivedBytes.length === expectedBytes.length && timingSafeEqual(receivedBytes, expectedBytes);
 }
 
 function readConfigResult(raw: string): ConfigResult {
