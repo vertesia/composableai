@@ -29,7 +29,7 @@ VERDACCIO_URL="http://localhost:${VERDACCIO_PORT}"
 VERDACCIO_DIR="/tmp/verdaccio-$$"
 VERDACCIO_PID=""
 # Pinned exactly: a new major (7.0) changed publish authentication and broke this test overnight.
-VERDACCIO_VERSION="7.0.1"
+VERDACCIO_VERSION="7.0.2"
 
 # =============================================================================
 # Functions

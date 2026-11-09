@@ -10,6 +10,7 @@ import {
     type WebHookSpec,
 } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { setOutboundFetch } from '../security/ssrf.js';
 import {
     MAX_ERROR_BODY_BYTES,
     type NotifyWebhookParams,
@@ -379,6 +380,24 @@ describe('Webhook should be notified', () => {
             },
             redirect: 'manual',
         });
+    });
+
+    it('connects through the outbound fetch the host installed, not the global fetch', async () => {
+        // URL validation runs in Studio against the addresses the hostname resolves to then. Only a host-installed
+        // fetch can check the address the worker actually connects to (DNS rebinding).
+        const boundFetch = vi.fn(async () => new Response(null, { status: 200, statusText: 'OK' }));
+        setOutboundFetch(boundFetch);
+        try {
+            await testEnv.run(notifyWebhook, createTestPayload());
+
+            expect(boundFetch).toHaveBeenCalledWith(
+                defaultParams.webhook,
+                expect.objectContaining({ method: 'POST', redirect: 'manual' }),
+            );
+            expect(mockFetch).not.toHaveBeenCalled();
+        } finally {
+            setOutboundFetch(undefined);
+        }
     });
 
     it('should send a raw body when provided', async () => {

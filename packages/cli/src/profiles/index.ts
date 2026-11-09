@@ -1,8 +1,8 @@
-import { existsSync, mkdirSync, statSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { join } from 'node:path';
 import { hasErrorCode } from '../utils/options.js';
-import { readJsonFile, writeJsonFile } from '../utils/stdio.js';
+import { readJsonFile } from '../utils/stdio.js';
 import type { OnResultCallback } from './commands.js';
 import {
     deleteAuthBundle,
@@ -394,12 +394,7 @@ export class Config {
     }
 
     async save() {
-        const dir = getConfigFile();
-        if (!existsSync(dir)) {
-            mkdirSync(dir, { recursive: true });
-        }
-        const file = getConfigFile('profiles.json');
-        writeJsonFile(file, {
+        writePrivateJsonFile(getConfigFile('profiles.json'), {
             default: this.current?.name,
             profiles: await Promise.all(
                 this.profiles.map(async (profile) => {
@@ -470,6 +465,21 @@ export class Config {
         }
         return this;
     }
+}
+
+/**
+ * profiles.json can hold a bearer token (the fallback when no native credential store is available), so the
+ * configuration directory and the file are owner-only. The modes are enforced on every write, not only on creation,
+ * so that a file or directory created by an older CLI under a permissive umask is tightened before a token lands.
+ */
+function writePrivateJsonFile(file: string, data: object) {
+    const dir = getConfigFile();
+    mkdirSync(dir, { recursive: true, mode: 0o700 });
+    chmodSync(dir, 0o700);
+    if (existsSync(file)) {
+        chmodSync(file, 0o600);
+    }
+    writeFileSync(file, JSON.stringify(data, null, 4), { encoding: 'utf8', mode: 0o600 });
 }
 
 export class ProfileAlreadyExistsError extends Error {

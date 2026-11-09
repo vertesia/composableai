@@ -30,6 +30,18 @@ describe('cost analytics API contracts', () => {
         expect(validateApiRequest('CostAnalyticsQuery', { from: 1_786_060_800_000 }).valid).toBe(true);
     });
 
+    it('bounds epoch time boundaries to years 1 to 9999, as the server does', () => {
+        const first = Date.parse('0001-01-01T00:00:00.000Z');
+        const last = Date.parse('9999-12-31T23:59:59.999Z');
+        for (const component of ['CostAnalyticsQuery', 'CostRunPriceQuery'] as const) {
+            expect(validateApiRequest(component, { run_id: 'r', from: first, to: last }).valid).toBe(true);
+            expect(validateApiRequest(component, { run_id: 'r', from: first - 1 }).valid).toBe(false);
+            expect(validateApiRequest(component, { run_id: 'r', to: last + 1 }).valid).toBe(false);
+        }
+        // The bounds constrain numbers only; a string bound is still read by the server.
+        expect(validateApiRequest('CostAnalyticsQuery', { from: '2026-08-01' }).valid).toBe(true);
+    });
+
     it('accepts the optional agent-only scope through the published component', () => {
         expect(validateApiRequest('CostAnalyticsQuery', { agent_only: true }).valid).toBe(true);
         expect(validateApiRequest('CostAnalyticsQuery', { agent_only: false }).valid).toBe(true);

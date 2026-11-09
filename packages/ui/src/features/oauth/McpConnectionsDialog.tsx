@@ -1,5 +1,5 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { Link2, Link2Off } from 'lucide-react';
+import { CircleHelp, Link2, Link2Off } from 'lucide-react';
 import { Badge, Button, Modal, ModalBody, ModalTitle, Spinner, Switch, VTooltip } from '../../core/index.js';
 import { RemoteMcpConnectionButton } from './RemoteMcpConnectionButton.js';
 import {
@@ -69,12 +69,13 @@ export function McpConnectionsDialog({
                             const connected = isGroupConnected(group);
                             const interactiveOAuth =
                                 group.authType === 'oauth' && group.oauthGrantType !== 'client_credentials';
-                            const StatusIcon = connected ? Link2 : Link2Off;
+                            const statusUnknown = !connected && group.statusUnavailable === true;
+                            const StatusIcon = connected ? Link2 : statusUnknown ? CircleHelp : Link2Off;
                             return (
                                 <div key={group.key} className="flex items-center justify-between gap-3 py-3">
                                     <div className="flex min-w-0 items-center gap-2">
                                         <StatusIcon
-                                            className={`size-4 shrink-0 ${connected ? 'text-success' : 'text-muted'}`}
+                                            className={`size-4 shrink-0 ${connected ? 'text-success' : statusUnknown ? 'text-attention' : 'text-muted'}`}
                                             aria-hidden="true"
                                         />
                                         <VTooltip
@@ -115,6 +116,7 @@ export function McpConnectionsDialog({
                                                 collectionId={group.representativeId}
                                                 collectionName={group.label}
                                                 authenticated={group.authStatus?.authenticated}
+                                                statusUnavailable={group.statusUnavailable}
                                                 onAuthChange={handleAuthChange}
                                                 variant="compact"
                                                 showDisconnect

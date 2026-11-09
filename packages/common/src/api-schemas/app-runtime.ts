@@ -506,6 +506,9 @@ export const AppManifestDataSchema = z
 
 export const UpdateAppPayloadSchema = AppManifestDataSchema.extend({
     expected_edit_revision: ExpectedEditRevisionSchema,
+    // Create fills an empty publisher from the name's scope; an update stores the manifest as sent, and a stored
+    // manifest requires one.
+    publisher: z.string().min(1).meta({ description: 'The publisher of the app. Must not be empty.' }),
 }).meta({ id: 'UpdateAppPayload' });
 
 export const CompositeAppMenuNavItemSchema: z.ZodType<CompositeAppMenuNavItem> = z
