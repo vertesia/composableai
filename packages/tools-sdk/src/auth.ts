@@ -36,7 +36,7 @@ export async function verifyToken(token: string) {
         throw new Error(`Issuer is not allowed: ${decodedJwt.iss}`);
     }
     const jwks = await getJwks(`${decodedJwt.iss}/.well-known/jwks`);
-    const verified = await jwtVerify<AuthTokenPayload>(token, jwks);
+    const verified = await jwtVerify<AuthTokenPayload>(token, jwks, { issuer: decodedJwt.iss });
     // This SDK has its own authentication boundary, independent of cloud's verifyAuthToken.
     // Validate once here so tool handlers can use the final claims directly.
     assertTokenPermissionClaims(verified.payload);
@@ -153,8 +153,24 @@ export class AuthSession implements ToolExecutionContext {
     }
 }
 
-function isAllowedIssuer(iss: string) {
-    return getTrustedIssuers().has(iss) || iss.endsWith('.vertesia.io') || iss.endsWith('.becomposable.com');
+/** Vertesia's token servers live under these domains. */
+const TRUSTED_ISSUER_DOMAINS = ['vertesia.io', 'becomposable.com'];
+
+/**
+ * The issuer names the server this SDK fetches verification keys from, so a suffix match on the raw string is not
+ * enough: `https://attacker.example/x.vertesia.io` ends with `.vertesia.io` too. A built-in issuer must be exactly an
+ * HTTPS origin, with no path, port or credentials, whose host is a subdomain of a trusted domain.
+ */
+export function isAllowedIssuer(iss: string): boolean {
+    if (getTrustedIssuers().has(iss)) return true;
+    let url: URL;
+    try {
+        url = new URL(iss);
+    } catch {
+        return false;
+    }
+    if (url.protocol !== 'https:' || url.port !== '' || url.origin !== iss) return false;
+    return TRUSTED_ISSUER_DOMAINS.some((domain) => url.hostname.endsWith(`.${domain}`));
 }
 
 /**

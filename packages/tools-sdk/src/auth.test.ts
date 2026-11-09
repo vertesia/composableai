@@ -60,4 +60,29 @@ describe('verifyToken issuer allowlist', () => {
             expect(jwksFetch).not.toHaveBeenCalled();
         }
     });
+
+    it.each([
+        'https://attacker.example/x.vertesia.io',
+        'https://attacker.example/?.vertesia.io',
+        'https://attacker.example#.becomposable.com',
+        'https://user@attacker.example/.vertesia.io',
+        'http://sts.vertesia.io',
+        'https://sts.vertesia.io:8443',
+        'https://sts.vertesia.io/',
+        'https://evilvertesia.io',
+        'https://vertesia.io.attacker.example',
+    ])('refuses the look-alike built-in issuer %s without fetching its keys', async (issuer) => {
+        const { token, jwksFetch } = await signedBy(issuer);
+        const verifyToken = await loadVerifyToken();
+        await expect(verifyToken(token)).rejects.toThrow('Issuer is not allowed');
+        expect(jwksFetch).not.toHaveBeenCalled();
+    });
+
+    it('accepts an HTTPS origin under a built-in domain', async () => {
+        const { token, jwksFetch } = await signedBy('https://sts.us1.vertesia.io');
+        const verifyToken = await loadVerifyToken();
+        const { payload } = await verifyToken(token);
+        expect(payload.iss).toBe('https://sts.us1.vertesia.io');
+        expect(jwksFetch).toHaveBeenCalledWith('https://sts.us1.vertesia.io/.well-known/jwks');
+    });
 });
