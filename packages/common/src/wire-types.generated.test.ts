@@ -1798,6 +1798,26 @@ interface Checks {
         W.CatalogInteractionRef,
         z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefSchema>
     >;
+    CatalogAgentSearchQuery: Same<
+        W.CatalogAgentSearchQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogAgentSearchQuerySchema>
+    >;
+    CatalogCallSearchQuery: Same<
+        W.CatalogCallSearchQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogCallSearchQuerySchema>
+    >;
+    CatalogSearchInteractionRef: Same<
+        W.CatalogSearchInteractionRef,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchInteractionRefSchema>
+    >;
+    CatalogTagCount: Same<
+        W.CatalogTagCount,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogTagCountSchema>
+    >;
+    CatalogSearchResult: Same<
+        W.CatalogSearchResult,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchResultSchema>
+    >;
     ExecuteNamedInteractionQuery: Same<
         W.ExecuteNamedInteractionQuery,
         z.infer<typeof import('./api-schemas/interaction.js').ExecuteNamedInteractionQuerySchema>
@@ -6055,6 +6075,26 @@ interface Checks {
     'component:StoredCatalogInteractionsQuery': Same<
         W.ApiComponentTypes['StoredCatalogInteractionsQuery'],
         z.infer<typeof import('./api-schemas/interaction.js').StoredCatalogInteractionsQuerySchema>
+    >;
+    'component:CatalogAgentSearchQuery': Same<
+        W.ApiComponentTypes['CatalogAgentSearchQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogAgentSearchQuerySchema>
+    >;
+    'component:CatalogCallSearchQuery': Same<
+        W.ApiComponentTypes['CatalogCallSearchQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogCallSearchQuerySchema>
+    >;
+    'component:CatalogSearchInteractionRef': Same<
+        W.ApiComponentTypes['CatalogSearchInteractionRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchInteractionRefSchema>
+    >;
+    'component:CatalogTagCount': Same<
+        W.ApiComponentTypes['CatalogTagCount'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogTagCountSchema>
+    >;
+    'component:CatalogSearchResult': Same<
+        W.ApiComponentTypes['CatalogSearchResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchResultSchema>
     >;
     'component:ModelSource': Same<
         W.ApiComponentTypes['ModelSource'],
@@ -10803,6 +10843,11 @@ const checks: Checks = {
     InteractionExecutionError: true,
     ConversationStripOptions: true,
     CatalogInteractionRef: true,
+    CatalogAgentSearchQuery: true,
+    CatalogCallSearchQuery: true,
+    CatalogSearchInteractionRef: true,
+    CatalogTagCount: true,
+    CatalogSearchResult: true,
     ExecuteNamedInteractionQuery: true,
     GetRunQuery: true,
     ExecuteInteractionByEndpointQuery: true,
@@ -11953,6 +11998,11 @@ const checks: Checks = {
     'component:ResolvedCatalogInteraction': true,
     'component:CatalogTagQuery': true,
     'component:StoredCatalogInteractionsQuery': true,
+    'component:CatalogAgentSearchQuery': true,
+    'component:CatalogCallSearchQuery': true,
+    'component:CatalogSearchInteractionRef': true,
+    'component:CatalogTagCount': true,
+    'component:CatalogSearchResult': true,
     'component:ModelSource': true,
     'component:ResolvedEnvironmentInfo': true,
     'component:ResolvedInteractionExecutionInfo': true,
@@ -13021,6 +13071,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2707);
+        expect(Object.keys(checks)).toHaveLength(2717);
     });
 });

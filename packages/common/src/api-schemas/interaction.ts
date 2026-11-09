@@ -1541,6 +1541,77 @@ export const ExecutionRunSchema: z.ZodType = z
 
 export const InteractionTagsArraySchema = z.array(InteractionTagsSchema).meta({ id: 'InteractionTagsArray' });
 
+export const CatalogAgentSearchQuerySchema = InteractionSearchQuerySchema.pick({
+    name: true,
+    tags: true,
+    model: true,
+    prompt: true,
+    is_sub_agent: true,
+}).meta({
+    id: 'CatalogAgentSearchQuery',
+    description:
+        'Filters for the agent catalog. `name` is a case-insensitive substring match, `tags` requires every ' +
+        'listed tag, and `is_sub_agent` keeps only agents that can also be called as a tool. `model` and ' +
+        '`prompt` only match stored interactions, so either one excludes the system interactions.',
+});
+
+export const CatalogCallSearchQuerySchema = InteractionSearchQuerySchema.pick({
+    name: true,
+    tags: true,
+    model: true,
+    prompt: true,
+    is_basic: true,
+    is_tool: true,
+    is_skill: true,
+}).meta({
+    id: 'CatalogCallSearchQuery',
+    description:
+        'Filters for the call catalog: interactions that are not agents. `name`, `tags`, `model` and `prompt` ' +
+        'match as in `CatalogAgentSearchQuery`. `is_basic` (neither tool nor skill), `is_tool` and `is_skill` ' +
+        'each select a kind of call; several of them select any of those kinds, and none selects every call.',
+});
+
+export const CatalogSearchInteractionRefSchema = CatalogInteractionRefSchema.extend({
+    model: z.string().meta({ description: 'Only applies for stored interactions. The default model.' }).optional(),
+    prompts: z
+        .array(PromptSegmentRef_PromptTemplateRefSchema)
+        .meta({ description: 'Only applies for stored interactions. The prompt segments.' })
+        .optional(),
+    updated_at: z
+        .string()
+        .meta({ format: 'date-time', description: 'Only applies for stored interactions. The last update time.' })
+        .optional(),
+    inference_profile: InferenceProfileIdSchema.meta({
+        description:
+            'Only applies for in-code interactions. The inference profile the interaction pins; runs of one that ' +
+            'pins none use the project default.',
+    }).optional(),
+}).meta({
+    id: 'CatalogSearchInteractionRef',
+    description: 'An interaction found by a catalog search: a stored, a system or an app interaction.',
+});
+
+export const CatalogTagCountSchema = z
+    .strictObject({
+        tag: z.string(),
+        count: z.number().int().meta({ description: 'The number of matching interactions that carry the tag.' }),
+    })
+    .meta({ id: 'CatalogTagCount' });
+
+export const CatalogSearchResultSchema = z
+    .strictObject({
+        total: z.number().int().meta({ description: 'The number of matching interactions.' }),
+        tags: z.array(CatalogTagCountSchema).meta({
+            description: 'The tags of the matching interactions with their counts, most frequent first.',
+        }),
+        interactions: z.array(CatalogSearchInteractionRefSchema).meta({
+            description:
+                'The matching interactions. Stored interactions are listed most recently updated first; in-code ' +
+                'interactions in the order their source defines them.',
+        }),
+    })
+    .meta({ id: 'CatalogSearchResult' });
+
 export const InteractionExecutionResultSchema = z
     .strictObject({
         id: z.string(),
