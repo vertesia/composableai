@@ -12621,6 +12621,188 @@
     },
     "additionalProperties": false
   },
+  "CatalogAgentSearchQuery": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "model": {
+        "type": "string"
+      },
+      "prompt": {
+        "type": "string"
+      },
+      "is_sub_agent": {
+        "type": "boolean"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Filters for the agent catalog. `name` is a case-insensitive substring match, `tags` requires every listed tag, and `is_sub_agent` keeps only agents that can also be called as a tool. `model` and `prompt` only match stored interactions, so either one excludes the system interactions."
+  },
+  "CatalogCallSearchQuery": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "model": {
+        "type": "string"
+      },
+      "prompt": {
+        "type": "string"
+      },
+      "is_basic": {
+        "type": "boolean"
+      },
+      "is_tool": {
+        "type": "boolean"
+      },
+      "is_skill": {
+        "type": "boolean"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Filters for the call catalog: interactions that are not agents. `name`, `tags`, `model` and `prompt` match as in `CatalogAgentSearchQuery`. `is_basic` (neither tool nor skill), `is_tool` and `is_skill` each select a kind of call; several of them select any of those kinds, and none selects every call."
+  },
+  "CatalogSearchInteractionRef": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "sys",
+          "app",
+          "stored",
+          "draft"
+        ],
+        "description": "The type of interaction"
+      },
+      "id": {
+        "type": "string",
+        "description": "the interaction id that can be used to execute the interaction."
+      },
+      "name": {
+        "type": "string",
+        "description": "The interaction name which identify the interaction in the provider interaction list. For the stored interactions this is the same as the endpoint property. For other types of interactions this is the local name of the interaction."
+      },
+      "version": {
+        "type": "number",
+        "description": "Only applies for stored interactions. The version of the interaction. Undefined for non stored interactions"
+      },
+      "published": {
+        "type": "boolean",
+        "description": "Only applies for stored interactions. Whether the interaction is published or not."
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The tags associated with the interaction."
+      },
+      "agent_runner_options": {
+        "$ref": "#/components/schemas/AgentRunnerOptions",
+        "description": "Agent Runner configuration options."
+      },
+      "title": {
+        "type": "string",
+        "description": "The name of the interaction. For display purposes only."
+      },
+      "description": {
+        "type": "string",
+        "description": "Optional description of the interaction."
+      },
+      "model": {
+        "type": "string",
+        "description": "Only applies for stored interactions. The default model."
+      },
+      "prompts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptSegmentRef_PromptTemplateRef"
+        },
+        "description": "Only applies for stored interactions. The prompt segments."
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Only applies for stored interactions. The last update time."
+      },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileId",
+        "description": "Only applies for in-code interactions. The inference profile the interaction pins; runs of one that pins none use the project default."
+      }
+    },
+    "required": [
+      "type",
+      "id",
+      "name",
+      "tags",
+      "title"
+    ],
+    "description": "An interaction found by a catalog search: a stored, a system or an app interaction."
+  },
+  "CatalogTagCount": {
+    "type": "object",
+    "properties": {
+      "tag": {
+        "type": "string"
+      },
+      "count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "The number of matching interactions that carry the tag."
+      }
+    },
+    "required": [
+      "tag",
+      "count"
+    ]
+  },
+  "CatalogSearchResult": {
+    "type": "object",
+    "properties": {
+      "total": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "The number of matching interactions."
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CatalogTagCount"
+        },
+        "description": "The tags of the matching interactions with their counts, most frequent first."
+      },
+      "interactions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CatalogSearchInteractionRef"
+        },
+        "description": "The matching interactions. Stored interactions are listed most recently updated first; in-code interactions in the order their source defines them."
+      }
+    },
+    "required": [
+      "total",
+      "tags",
+      "interactions"
+    ]
+  },
   "ModelSource": {
     "type": "string",
     "enum": [
