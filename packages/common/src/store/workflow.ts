@@ -220,6 +220,10 @@ export type TimerTask = Wire.TimerTask;
 // Union type for all processed tasks
 export type WorkflowTask = Wire.WorkflowTask;
 
+export type WorkflowEventsHistory = Wire.WorkflowEventsHistory;
+export type WorkflowTasksHistory = Wire.WorkflowTasksHistory;
+export type WorkflowAgentHistory = Wire.WorkflowAgentHistory;
+
 // History format discriminated union
 export type WorkflowHistory = Wire.WorkflowHistory;
 

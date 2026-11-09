@@ -25016,6 +25016,47 @@
     "additionalProperties": false,
     "description": "Elasticsearch DSL supported by dashboard data sources. Queries execute through Vertesia Store, so project/security filtering remains server-side."
   },
+  "DashboardElasticsearchHitsMapping": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "hits"
+      }
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false,
+    "description": "Use the search hits as the Vega rows."
+  },
+  "DashboardElasticsearchAggregationBucketsMapping": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "aggregation_buckets"
+      },
+      "path": {
+        "type": "string",
+        "description": "Dot path under `aggregations` that contains a `buckets` array."
+      },
+      "keyField": {
+        "type": "string",
+        "description": "Output field name for bucket key. Defaults to `key`."
+      },
+      "countField": {
+        "type": "string",
+        "description": "Output field name for doc count. Defaults to `doc_count`."
+      }
+    },
+    "required": [
+      "type",
+      "path"
+    ],
+    "additionalProperties": false,
+    "description": "Use the buckets of one aggregation as the Vega rows."
+  },
   "DashboardQuery": {
     "type": "object",
     "properties": {
@@ -25147,48 +25188,19 @@
   "DashboardElasticsearchResultMapping": {
     "oneOf": [
       {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "hits"
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/DashboardElasticsearchHitsMapping"
       },
       {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "aggregation_buckets"
-          },
-          "path": {
-            "type": "string",
-            "description": "Dot path under `aggregations` that contains a `buckets` array."
-          },
-          "keyField": {
-            "type": "string",
-            "description": "Output field name for bucket key. Defaults to `key`."
-          },
-          "countField": {
-            "type": "string",
-            "description": "Output field name for doc count. Defaults to `doc_count`."
-          }
-        },
-        "required": [
-          "type",
-          "path"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/DashboardElasticsearchAggregationBucketsMapping"
       }
     ],
     "type": "object",
     "discriminator": {
-      "propertyName": "type"
+      "propertyName": "type",
+      "mapping": {
+        "hits": "#/components/schemas/DashboardElasticsearchHitsMapping",
+        "aggregation_buckets": "#/components/schemas/DashboardElasticsearchAggregationBucketsMapping"
+      }
     },
     "required": [
       "type"
@@ -42435,47 +42447,55 @@
     ],
     "additionalProperties": false
   },
+  "WorkflowObjectIdsInput": {
+    "type": "object",
+    "properties": {
+      "inputType": {
+        "type": "string",
+        "const": "objectIds"
+      },
+      "objectIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "inputType",
+      "objectIds"
+    ],
+    "additionalProperties": false,
+    "description": "Run the workflow on existing documents."
+  },
+  "WorkflowFilesInput": {
+    "type": "object",
+    "properties": {
+      "inputType": {
+        "type": "string",
+        "const": "files"
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowInputFile"
+        }
+      }
+    },
+    "required": [
+      "inputType",
+      "files"
+    ],
+    "additionalProperties": false,
+    "description": "Run the workflow on uploaded files."
+  },
   "WorkflowInput": {
     "oneOf": [
       {
-        "type": "object",
-        "properties": {
-          "inputType": {
-            "type": "string",
-            "const": "objectIds"
-          },
-          "objectIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "inputType",
-          "objectIds"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/WorkflowObjectIdsInput"
       },
       {
-        "type": "object",
-        "properties": {
-          "inputType": {
-            "type": "string",
-            "const": "files"
-          },
-          "files": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkflowInputFile"
-            }
-          }
-        },
-        "required": [
-          "inputType",
-          "files"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/WorkflowFilesInput"
       }
     ],
     "type": "object",
@@ -42483,7 +42503,11 @@
       "inputType"
     ],
     "discriminator": {
-      "propertyName": "inputType"
+      "propertyName": "inputType",
+      "mapping": {
+        "objectIds": "#/components/schemas/WorkflowObjectIdsInput",
+        "files": "#/components/schemas/WorkflowFilesInput"
+      }
     }
   },
   "WorkflowRunUpdatesResponse": {
@@ -42542,6 +42566,27 @@
       }
     },
     "additionalProperties": false
+  },
+  "WorkflowEventsHistory": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "events"
+      },
+      "events": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowRunEvent"
+        }
+      }
+    },
+    "required": [
+      "type",
+      "events"
+    ],
+    "additionalProperties": false,
+    "description": "Workflow history as raw workflow events."
   },
   "ActivityTask": {
     "type": "object",
@@ -42864,6 +42909,56 @@
     "type": "string",
     "const": "timer"
   },
+  "WorkflowTask": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ActivityTask"
+      },
+      {
+        "$ref": "#/components/schemas/ChildWorkflowTask"
+      },
+      {
+        "$ref": "#/components/schemas/SignalTask"
+      },
+      {
+        "$ref": "#/components/schemas/TimerTask"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "activity": "#/components/schemas/ActivityTask",
+        "childWorkflow": "#/components/schemas/ChildWorkflowTask",
+        "signal": "#/components/schemas/SignalTask",
+        "timer": "#/components/schemas/TimerTask"
+      }
+    }
+  },
+  "WorkflowTasksHistory": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "tasks"
+      },
+      "tasks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowTask"
+        }
+      }
+    },
+    "required": [
+      "type",
+      "tasks"
+    ],
+    "additionalProperties": false,
+    "description": "Workflow history as processed tasks."
+  },
   "AgentTask": {
     "type": "object",
     "properties": {
@@ -43017,19 +43112,49 @@
     "additionalProperties": false,
     "description": "Agent task information for workflow history UI representation. This is separate from the analytics AgentEvent types. Consistent with WorkflowTask naming convention.\n\nCurrently represents tool calls, but designed to be extensible for other task types (LLM calls, checkpoints, etc.)"
   },
-  "WorkflowTask": {
+  "WorkflowAgentHistory": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "agent"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "snapshot",
+          "delta"
+        ],
+        "description": "Snapshot replaces all history; delta replaces returned rows by history_id and retains other rows."
+      },
+      "next_from": {
+        "type": "string",
+        "description": "Pass as from on the next refresh with the same options. Absence disables incremental refresh."
+      },
+      "agentTasks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AgentTask"
+        }
+      }
+    },
+    "required": [
+      "type",
+      "agentTasks"
+    ],
+    "additionalProperties": false,
+    "description": "Workflow history as agent tasks."
+  },
+  "WorkflowHistory": {
     "oneOf": [
       {
-        "$ref": "#/components/schemas/ActivityTask"
+        "$ref": "#/components/schemas/WorkflowEventsHistory"
       },
       {
-        "$ref": "#/components/schemas/ChildWorkflowTask"
+        "$ref": "#/components/schemas/WorkflowTasksHistory"
       },
       {
-        "$ref": "#/components/schemas/SignalTask"
-      },
-      {
-        "$ref": "#/components/schemas/TimerTask"
+        "$ref": "#/components/schemas/WorkflowAgentHistory"
       }
     ],
     "type": "object",
@@ -43039,94 +43164,10 @@
     "discriminator": {
       "propertyName": "type",
       "mapping": {
-        "activity": "#/components/schemas/ActivityTask",
-        "childWorkflow": "#/components/schemas/ChildWorkflowTask",
-        "signal": "#/components/schemas/SignalTask",
-        "timer": "#/components/schemas/TimerTask"
+        "events": "#/components/schemas/WorkflowEventsHistory",
+        "tasks": "#/components/schemas/WorkflowTasksHistory",
+        "agent": "#/components/schemas/WorkflowAgentHistory"
       }
-    }
-  },
-  "WorkflowHistory": {
-    "oneOf": [
-      {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "events"
-          },
-          "events": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkflowRunEvent"
-            }
-          }
-        },
-        "required": [
-          "type",
-          "events"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "tasks"
-          },
-          "tasks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkflowTask"
-            }
-          }
-        },
-        "required": [
-          "type",
-          "tasks"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "agent"
-          },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "snapshot",
-              "delta"
-            ],
-            "description": "Snapshot replaces all history; delta replaces returned rows by history_id and retains other rows."
-          },
-          "next_from": {
-            "type": "string",
-            "description": "Pass as from on the next refresh with the same options. Absence disables incremental refresh."
-          },
-          "agentTasks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AgentTask"
-            }
-          }
-        },
-        "required": [
-          "type",
-          "agentTasks"
-        ],
-        "additionalProperties": false
-      }
-    ],
-    "type": "object",
-    "required": [
-      "type"
-    ],
-    "discriminator": {
-      "propertyName": "type"
     }
   },
   "PendingActivity": {
@@ -45958,123 +45999,155 @@
     "additionalProperties": false,
     "description": "Column definition for a data table."
   },
+  "AlterTableAddColumnOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "add_column"
+      },
+      "column": {
+        "$ref": "#/components/schemas/DataColumn"
+      }
+    },
+    "required": [
+      "op",
+      "column"
+    ],
+    "additionalProperties": false,
+    "description": "Add a column to the table."
+  },
+  "AlterTableDropColumnOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "drop_column"
+      },
+      "column": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "op",
+      "column"
+    ],
+    "additionalProperties": false,
+    "description": "Drop a column from the table."
+  },
+  "AlterTableRenameColumnOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "rename_column"
+      },
+      "from": {
+        "type": "string"
+      },
+      "to": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "op",
+      "from",
+      "to"
+    ],
+    "additionalProperties": false,
+    "description": "Rename a column."
+  },
+  "AlterTableModifyColumnOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "modify_column"
+      },
+      "column": {
+        "type": "string"
+      },
+      "updates": {
+        "$ref": "#/components/schemas/DataColumnUpdate"
+      }
+    },
+    "required": [
+      "op",
+      "column",
+      "updates"
+    ],
+    "additionalProperties": false,
+    "description": "Change a column's definition."
+  },
+  "AlterTableAddForeignKeyOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "add_foreign_key"
+      },
+      "foreign_key": {
+        "$ref": "#/components/schemas/DataForeignKey"
+      }
+    },
+    "required": [
+      "op",
+      "foreign_key"
+    ],
+    "additionalProperties": false,
+    "description": "Add a foreign key constraint."
+  },
+  "AlterTableDropForeignKeyOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "drop_foreign_key"
+      },
+      "column": {
+        "type": "string",
+        "description": "Column whose foreign key is removed"
+      }
+    },
+    "required": [
+      "op",
+      "column"
+    ],
+    "additionalProperties": false,
+    "description": "Remove the foreign key on a column."
+  },
   "AlterTableOperation": {
     "oneOf": [
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "add_column"
-          },
-          "column": {
-            "$ref": "#/components/schemas/DataColumn"
-          }
-        },
-        "required": [
-          "op",
-          "column"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableAddColumnOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "drop_column"
-          },
-          "column": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "op",
-          "column"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableDropColumnOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "rename_column"
-          },
-          "from": {
-            "type": "string"
-          },
-          "to": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "op",
-          "from",
-          "to"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableRenameColumnOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "modify_column"
-          },
-          "column": {
-            "type": "string"
-          },
-          "updates": {
-            "$ref": "#/components/schemas/DataColumnUpdate"
-          }
-        },
-        "required": [
-          "op",
-          "column",
-          "updates"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableModifyColumnOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "add_foreign_key"
-          },
-          "foreign_key": {
-            "$ref": "#/components/schemas/DataForeignKey"
-          }
-        },
-        "required": [
-          "op",
-          "foreign_key"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableAddForeignKeyOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "drop_foreign_key"
-          },
-          "column": {
-            "type": "string",
-            "description": "Column whose foreign key is removed"
-          }
-        },
-        "required": [
-          "op",
-          "column"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableDropForeignKeyOperation"
       }
     ],
     "type": "object",
     "discriminator": {
-      "propertyName": "op"
+      "propertyName": "op",
+      "mapping": {
+        "add_column": "#/components/schemas/AlterTableAddColumnOperation",
+        "drop_column": "#/components/schemas/AlterTableDropColumnOperation",
+        "rename_column": "#/components/schemas/AlterTableRenameColumnOperation",
+        "modify_column": "#/components/schemas/AlterTableModifyColumnOperation",
+        "add_foreign_key": "#/components/schemas/AlterTableAddForeignKeyOperation",
+        "drop_foreign_key": "#/components/schemas/AlterTableDropForeignKeyOperation"
+      }
     },
     "required": [
       "op"
