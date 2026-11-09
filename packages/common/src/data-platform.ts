@@ -206,6 +206,13 @@ export type QueryValidationPayload = Wire.QueryValidationPayload;
 
 export type BatchQueryPayload = Wire.BatchQueryPayload;
 
+export type AlterTableAddColumnOperation = Wire.AlterTableAddColumnOperation;
+export type AlterTableDropColumnOperation = Wire.AlterTableDropColumnOperation;
+export type AlterTableRenameColumnOperation = Wire.AlterTableRenameColumnOperation;
+export type AlterTableModifyColumnOperation = Wire.AlterTableModifyColumnOperation;
+export type AlterTableAddForeignKeyOperation = Wire.AlterTableAddForeignKeyOperation;
+export type AlterTableDropForeignKeyOperation = Wire.AlterTableDropForeignKeyOperation;
+
 /**
  * Schema change operation types.
  */
@@ -427,6 +434,9 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayout = {
  * Queries execute through Vertesia Store, so project/security filtering remains server-side.
  */
 export type DashboardElasticsearchDsl = Wire.DashboardElasticsearchDsl;
+
+export type DashboardElasticsearchHitsMapping = Wire.DashboardElasticsearchHitsMapping;
+export type DashboardElasticsearchAggregationBucketsMapping = Wire.DashboardElasticsearchAggregationBucketsMapping;
 
 /**
  * How an Elasticsearch DSL result should be converted into Vega rows.

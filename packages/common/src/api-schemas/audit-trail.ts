@@ -85,14 +85,24 @@ export const AuditAggregationRowSchema = z
 
 export const AuditAggregationMetricSchema = z
     .strictObject({
-        id: z.string().meta({
-            description:
-                'Stable key used in response rows. Must contain only letters, numbers, underscores, or hyphens.',
-        }),
+        id: z
+            .string()
+            .regex(/^[A-Za-z0-9_-]{1,64}$/)
+            .meta({
+                description:
+                    'Stable key used in response rows: 1 to 64 letters, numbers, underscores, or hyphens, unique within the query.',
+            }),
         operation: AuditAggregationOperationSchema,
         field: AuditAggregationDistinctFieldSchema.meta({ description: 'Required for count_distinct.' }).optional(),
-        meterCategory: z.string().meta({ description: 'Required for meter operations.' }).optional(),
-        meterType: z.string().meta({ description: 'Required for meter operations.' }).optional(),
+        // Required, and bounded, only for the meter operations: the rule spans two fields, so the descriptions state it.
+        meterCategory: z
+            .string()
+            .meta({ description: 'Required for sum_meter and average_meter, as 1 to 128 characters.' })
+            .optional(),
+        meterType: z
+            .string()
+            .meta({ description: 'Required for sum_meter and average_meter, as 1 to 128 characters.' })
+            .optional(),
     })
     .meta({ id: 'AuditAggregationMetric' });
 
@@ -105,10 +115,15 @@ export const AuditAggregationGroupSchema = z
     })
     .meta({ id: 'AuditAggregationGroup' });
 
+// The aggregation validator's per-field limits. Each value a filter lists is 1 to 256 characters, and each filter list
+// holds at most 50 values.
+const AUDIT_AGGREGATION_MAX_FILTER_VALUES = 50;
+const AuditAggregationFilterValueSchema = z.string().min(1).max(256);
+
 export const AuditAggregationDetailFilterSchema = z
     .strictObject({
         field: AuditAggregationDetailFieldSchema,
-        values: z.array(z.string()),
+        values: z.array(AuditAggregationFilterValueSchema).min(1).max(AUDIT_AGGREGATION_MAX_FILTER_VALUES),
     })
     .meta({ id: 'AuditAggregationDetailFilter' });
 
@@ -167,16 +182,17 @@ export const AuditAggregationResponseSchema = z
 
 export const AuditAggregationFilterSchema = z
     .strictObject({
-        actions: z.array(AuditActionSchema).optional(),
-        resourceTypes: z.array(z.string()).optional(),
-        eventCategories: z.array(EventCategorySchema).optional(),
-        providers: z.array(z.string()).optional(),
+        actions: z.array(AuditActionSchema).max(AUDIT_AGGREGATION_MAX_FILTER_VALUES).optional(),
+        resourceTypes: z.array(AuditAggregationFilterValueSchema).max(AUDIT_AGGREGATION_MAX_FILTER_VALUES).optional(),
+        eventCategories: z.array(EventCategorySchema).max(AUDIT_AGGREGATION_MAX_FILTER_VALUES).optional(),
+        providers: z.array(AuditAggregationFilterValueSchema).max(AUDIT_AGGREGATION_MAX_FILTER_VALUES).optional(),
         principalTypes: z
-            .array(z.string())
+            .array(AuditAggregationFilterValueSchema)
+            .max(AUDIT_AGGREGATION_MAX_FILTER_VALUES)
             .meta({ description: 'Restrict events to top-level actor categories such as user or apikey.' })
             .optional(),
         success: z.boolean().optional(),
-        details: z.array(AuditAggregationDetailFilterSchema).optional(),
+        details: z.array(AuditAggregationDetailFilterSchema).max(10).optional(),
     })
     .meta({ id: 'AuditAggregationFilter' });
 
@@ -201,9 +217,24 @@ export const AuditAggregationQuerySchema = z
             .optional(),
         to: z.string().meta({ description: 'End time; defaults to the current time.' }).optional(),
         filter: AuditAggregationFilterSchema.optional(),
-        groupBy: z.array(AuditAggregationGroupSchema).optional(),
-        metrics: z.array(AuditAggregationMetricSchema),
-        limit: z.number().meta({ description: 'Maximum groups returned (default 50, max 200).' }).optional(),
+        groupBy: z
+            .array(AuditAggregationGroupSchema)
+            .max(2)
+            .meta({ description: 'At most two dimensions, each named once.' })
+            .optional(),
+        metrics: z
+            .array(AuditAggregationMetricSchema)
+            .min(1)
+            .max(12)
+            .meta({ description: 'One to twelve metrics, each with a distinct id.' }),
+        // A whole number like `PageCountSchema`, published as `type: number` so the generated clients keep their types.
+        limit: z
+            .number()
+            .multipleOf(1)
+            .min(1)
+            .max(Number.MAX_SAFE_INTEGER)
+            .meta({ description: 'Maximum groups returned (default 50). A limit above 200 is capped at 200.' })
+            .optional(),
     })
     .meta({
         id: 'AuditAggregationQuery',
@@ -235,6 +266,17 @@ export const AuditAggregationBatchResponseSchema = z
         }),
     })
     .meta({ id: 'AuditAggregationBatchResponse' });
+
+// A `GET /audit-trail` time bound: empty (no bound), or an ISO 8601 date with an optional time and offset, the
+// shape every audit store reads. Years before 0100 are left out because the server reads them as 19xx; the server
+// also refuses a day the month does not have, such as February 30, which a pattern cannot state.
+const auditTimeBoundSchema = z
+    .string()
+    .regex(
+        /^(?:(?:0[1-9]\d{2}|[1-9]\d{3})-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])(?:T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})?)?)?$/,
+    );
+const AUDIT_TIME_BOUND_DESCRIPTION = (bound: string) =>
+    `${bound} time: an ISO 8601 date or date-time, such as 2026-01-31 or 2026-01-31T12:00:00Z. Empty means no bound.`;
 
 // Query contracts are registry components even though the scanner expands them into parameters.
 export const AuditTrailQuerySchema = z
@@ -268,8 +310,8 @@ export const AuditTrailQuerySchema = z
                     'Filter by project ID. Honoured only for account-scoped principals; a project-scoped principal always reads its own project.',
             })
             .optional(),
-        from: z.string().meta({ description: 'Start time (ISO string)' }).optional(),
-        to: z.string().meta({ description: 'End time (ISO string)' }).optional(),
+        from: auditTimeBoundSchema.meta({ description: AUDIT_TIME_BOUND_DESCRIPTION('Start') }).optional(),
+        to: auditTimeBoundSchema.meta({ description: AUDIT_TIME_BOUND_DESCRIPTION('End') }).optional(),
         limit: PageCountSchema.meta({
             description: 'Pagination: number of items to return (default 50, max 200)',
         }).optional(),

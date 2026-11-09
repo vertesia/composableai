@@ -1,4 +1,10 @@
-import { ConnectionError, type RateLimitMetadata, type RequestError, ServerError } from './errors.js';
+import {
+    ConnectionError,
+    type RateLimitMetadata,
+    type RequestError,
+    ResponseReadError,
+    ServerError,
+} from './errors.js';
 import { type ServerSentEvent, sse } from './sse/index.js';
 import { buildQueryString, join, removeTrailingSlash } from './utils.js';
 
@@ -615,7 +621,7 @@ export abstract class ClientBase {
 
     /** Override at the caller boundary when handled transport failures have their own logging. */
     handleConnectionError(error: ConnectionError): void {
-        console.error(`Failed to connect to ${error.request.url}`, error.payload);
+        console.error(error.message, error.payload);
     }
 
     handleFetchResponse(_req: Request, _res: Response): void {}
@@ -918,7 +924,7 @@ export abstract class ClientBase {
                 // Body consumption can time out or break after fetch has returned the headers. Preserve
                 // HTTP/custom-reader errors, and do not replay a request already accepted upstream.
                 if (!isAbortError(err) && !(err instanceof ResponseBodyError)) throw err;
-                const connectionError = new ConnectionError(req, toError(err));
+                const connectionError = new ResponseReadError(req, toError(err), res.status);
                 if (!isCallerAbortError(err, params?.signal)) this.handleConnectionError(connectionError);
                 this.throwError(connectionError);
             }

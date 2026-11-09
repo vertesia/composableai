@@ -5,7 +5,16 @@ import { conditional, nonEmpty } from './schema-primitives.js';
 // array. Runtime enforcement compiles the emitted JSON Schema with AJV, so the metadata is both the
 // published shape and the validator; the annotation keeps the inferred TypeScript type equally
 // narrow.
-const timeBoundarySchema: z.ZodType<string | number> = z.any().meta({ type: ['string', 'number'] });
+//
+// The numeric bounds are the epoch milliseconds of 0001-01-01T00:00:00.000Z and 9999-12-31T23:59:59.999Z, the
+// instants the analytics backends can read; the server refuses an epoch outside them. They apply to the number
+// branch only. A string bound is read by `Date.parse`, whose accepted forms JSON Schema cannot state.
+const timeBoundarySchema: z.ZodType<string | number> = z
+    .any()
+    .meta({ type: ['string', 'number'], minimum: -62_135_596_800_000, maximum: 253_402_300_799_999 });
+
+const TIME_BOUND_DESCRIPTION = '`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999.';
+const ANALYTICS_WINDOW_DESCRIPTION = 'The window from `from` to `to` (now when absent) may span at most 366 days.';
 
 export const PricingSyncPayloadSchema = z
     .strictObject({
@@ -100,7 +109,7 @@ export const CostAnalyticsQuerySchema = z
             .optional(),
         no_cache: z.boolean().meta({ description: 'Skip cache and force fresh query' }).optional(),
     })
-    .meta({ id: 'CostAnalyticsQuery' });
+    .meta({ id: 'CostAnalyticsQuery', description: `${TIME_BOUND_DESCRIPTION} ${ANALYTICS_WINDOW_DESCRIPTION}` });
 
 export const CostRunPriceQuerySchema = z
     .strictObject({
@@ -132,7 +141,8 @@ export const CostRunPriceQuerySchema = z
         id: 'CostRunPriceQuery',
         description:
             'Identifies the run to price by at least one of `run_id`, `agent_run_id`, `workflow_id` or ' +
-            '`workflow_run_id`. An empty identifier counts as absent.',
+            `\`workflow_run_id\`. An empty identifier counts as absent. ${TIME_BOUND_DESCRIPTION} ` +
+            ANALYTICS_WINDOW_DESCRIPTION,
         ...conditional(
             { not: { anyOf: ['run_id', 'agent_run_id', 'workflow_id'].map(nonEmpty) } },
             nonEmpty('workflow_run_id'),
@@ -144,7 +154,7 @@ export const CostModelPricesQuerySchema = z
         from: timeBoundarySchema.meta({ description: 'Start time (ISO string or epoch ms)' }).optional(),
         to: timeBoundarySchema.meta({ description: 'End time (ISO string or epoch ms)' }).optional(),
     })
-    .meta({ id: 'CostModelPricesQuery' });
+    .meta({ id: 'CostModelPricesQuery', description: TIME_BOUND_DESCRIPTION });
 
 export const CostExportQuerySchema = z
     .object({
@@ -157,7 +167,7 @@ export const CostExportQuerySchema = z
         project_id: z.string().meta({ description: 'Filter by project ID (optional, for org scope)' }).optional(),
         workflow_id: z.string().meta({ description: 'Filter by workflow / agent run ID' }).optional(),
     })
-    .meta({ id: 'CostExportQuery' });
+    .meta({ id: 'CostExportQuery', description: `${TIME_BOUND_DESCRIPTION} ${ANALYTICS_WINDOW_DESCRIPTION}` });
 
 export const ModelPricingSchema = z
     .strictObject({

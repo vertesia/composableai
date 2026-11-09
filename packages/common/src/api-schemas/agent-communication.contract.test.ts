@@ -47,7 +47,7 @@ describe('agent communication API contracts', () => {
                 tags: ['internal'],
                 limit: 20,
                 offset: 0,
-                project: 'project-1',
+                project: '0123456789abcdef01234567',
             }).valid,
         ).toBe(true);
         expect(validateApiRequest('ListUserGroupsQuery', { unsupported: true }).valid).toBe(false);

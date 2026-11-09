@@ -360,6 +360,11 @@
           "manifest"
         ],
         "description": "The export file: its data or its manifest."
+      },
+      "runId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+        "description": "The run ID of the export workflow, a UUID."
       }
     }
   },
@@ -413,6 +418,19 @@
       }
     }
   },
+  "WorkflowRunActionPathParams": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "cancel",
+          "terminate"
+        ],
+        "description": "The action to apply: `cancel` asks the run to stop, `terminate` stops it at once."
+      }
+    }
+  },
   "AppVersionPathParams": {
     "type": "object",
     "properties": {
@@ -420,6 +438,11 @@
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$",
         "description": "The app version ID, as 24 hexadecimal characters."
+      },
+      "alias": {
+        "type": "string",
+        "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+        "description": "The deployment alias: 1-63 lowercase letters, numbers, or inner hyphens."
       }
     }
   },
@@ -430,6 +453,22 @@
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$",
         "description": "The app installation ID, as 24 hexadecimal characters."
+      },
+      "app_id": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The app installation ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "InteractionConfigurationPathParams": {
+    "type": "object",
+    "properties": {
+      "interactionId": {
+        "type": "string",
+        "maxLength": 300,
+        "pattern": "^(sys:[^:]+|app:[^:]+:.+)$",
+        "description": "The code interaction, as `sys:<name>` or `app:<app name>:<local id>`, at most 300 characters."
       }
     }
   },
@@ -450,6 +489,21 @@
         "type": "string",
         "pattern": "^[0-9a-fA-F]{24}$",
         "description": "The OAuth provider ID, as 24 hexadecimal characters."
+      }
+    }
+  },
+  "UserGroupPathParams": {
+    "type": "object",
+    "properties": {
+      "groupId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The user group ID, as 24 hexadecimal characters."
+      },
+      "userId": {
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The user ID, as 24 hexadecimal characters."
       }
     }
   },
@@ -475,6 +529,30 @@
         "type": "string",
         "pattern": "^app:[A-Za-z0-9][A-Za-z0-9._@-]*:[A-Za-z0-9][A-Za-z0-9._:-]*$",
         "description": "The app View, as `app:<app name>:<local id>`."
+      }
+    }
+  },
+  "EmbeddingTypePathParams": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "text",
+          "image",
+          "properties"
+        ],
+        "description": "The embedding type: `text`, `image` or `properties`."
+      }
+    }
+  },
+  "ToolPathParams": {
+    "type": "object",
+    "properties": {
+      "toolName": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "The tool name; it must not be blank."
       }
     }
   },
@@ -911,7 +989,8 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "app_access_message": {
         "type": "string",
@@ -1349,7 +1428,8 @@
       "groups": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
         },
         "description": "IDs of groups of the current account to add the user to."
       }
@@ -1627,13 +1707,15 @@
       "tags": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "allowed_projects": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
         },
         "description": "Restrict the new group to the given projects (empty/absent = org-wide)."
       }
@@ -1662,7 +1744,8 @@
         "type": "number"
       },
       "project": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$"
       }
     },
     "additionalProperties": false
@@ -1680,7 +1763,8 @@
       "tags": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "properties": {
@@ -1702,9 +1786,10 @@
       "allowed_projects": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
         },
-        "description": "Projects this group is allowed to be used in. When empty or absent the group is org-wide (usable in any project). When set, the group may only be used to grant permissions in the listed projects."
+        "description": "Projects this group is allowed to be used in, as project IDs. When empty or absent the group is org-wide."
       }
     },
     "required": [
@@ -1884,7 +1969,25 @@
       "principal_type",
       "principal"
     ],
-    "additionalProperties": false
+    "if": {
+      "required": [
+        "resource_type"
+      ],
+      "properties": {
+        "resource_type": {
+          "const": "project"
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "resource": {
+          "pattern": "^[0-9a-fA-F]{24}$"
+        }
+      }
+    },
+    "additionalProperties": false,
+    "description": "On a `project` entry, `resource` is the project ID, as 24 hexadecimal characters. `role` is a built-in role name or the `c:<name>` reference of a custom role defined in the account."
   },
   "ACEUpdatePayload": {
     "type": "object",
@@ -2421,7 +2524,39 @@
       "name",
       "role"
     ],
-    "additionalProperties": false
+    "if": {
+      "required": [
+        "scim_provisioning"
+      ],
+      "properties": {
+        "scim_provisioning": {
+          "const": true
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "role": {
+          "const": "admin"
+        },
+        "properties": {
+          "propertyNames": {
+            "pattern": "^[^\\u0000]*$"
+          }
+        }
+      }
+    },
+    "else": {
+      "properties": {
+        "properties": {
+          "propertyNames": {
+            "pattern": "^[^\\u0000]*$"
+          }
+        }
+      }
+    },
+    "additionalProperties": false,
+    "description": "A SCIM provisioning key (`scim_provisioning: true`) takes the `admin` role. A custom `c:<name>` role must be defined in the account. No key of `properties`, at any depth, may contain a NUL character."
   },
   "UpdateApiKeyPayload": {
     "type": "object",
@@ -2437,7 +2572,7 @@
       },
       "scim_provisioning": {
         "type": "boolean",
-        "description": "Organization-wide SCIM provisioning credential. Only account administrators may create or manage these keys. May be enabled by account administrators on existing keys; disable or delete to revoke access."
+        "description": "Enables SCIM provisioning on an existing admin key. Only `true` is accepted: disable or delete the key to revoke it."
       },
       "properties": {
         "type": "object",
@@ -2456,7 +2591,22 @@
         "description": "Compartments the key belongs to — restricts access to matching documents"
       }
     },
-    "additionalProperties": false
+    "if": {
+      "required": [
+        "properties"
+      ]
+    },
+    "then": {
+      "properties": {
+        "properties": {
+          "propertyNames": {
+            "pattern": "^[^\\u0000]*$"
+          }
+        }
+      }
+    },
+    "additionalProperties": false,
+    "description": "No key of `properties`, at any depth, may contain a NUL character."
   },
   "AuthTokenResponse": {
     "type": "object",
@@ -2699,10 +2849,13 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "namespace": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_[\\]-]+$",
+        "description": "Letters, digits, `-`, `_`, `[` and `]`. Must not be the namespace of another project, which the server answers with a 409."
       },
       "description": {
         "type": "string"
@@ -6819,7 +6972,8 @@
     "properties": {
       "src": {
         "type": "string",
-        "description": "The source URL of the app. The src can be a template which contain a variable named `buildId` which will be replaced with the current build id. For example: `/plugins/vertesia-review-center-${buildId}`"
+        "minLength": 1,
+        "description": "The source URL of the app. Must not be empty. The src can be a template which contain a variable named `buildId` which will be replaced with the current build id. For example: `/plugins/vertesia-review-center-${buildId}`"
       },
       "isolation": {
         "type": "string",
@@ -7125,10 +7279,12 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$"
       },
       "display_name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "grant_type": {
         "type": "string",
@@ -7144,7 +7300,8 @@
         "type": "string"
       },
       "client_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "client_secret": {
         "type": "string",
@@ -8430,7 +8587,9 @@
         "minItems": 1,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[^*]*$",
+          "description": "An absolute URI: `https`, `http` on `localhost`, `127.0.0.1` or `[::1]` only, or a reverse-domain private-use scheme such as `com.example.app:/callback`. Wildcards (`*`) and fragments are refused."
         }
       },
       "grant_types": {
@@ -8497,7 +8656,9 @@
         "minItems": 1,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^[^*]*$",
+          "description": "An absolute URI: `https`, `http` on `localhost`, `127.0.0.1` or `[::1]` only, or a reverse-domain private-use scheme such as `com.example.app:/callback`. Wildcards (`*`) and fragments are refused."
         }
       },
       "grant_types": {
@@ -8644,13 +8805,16 @@
     "type": "object",
     "properties": {
       "account_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$"
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$"
       },
       "user_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$"
       },
       "client_id": {
         "type": "string"
@@ -8697,13 +8861,16 @@
     "type": "object",
     "properties": {
       "account_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$"
       },
       "project_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$"
       },
       "user_id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$"
       },
       "client_id": {
         "type": "string"
@@ -10847,7 +11014,9 @@
         "minLength": 1
       },
       "parent": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "description": "The ID of the prompt this one derives from, as 24 hexadecimal characters."
       },
       "description": {
         "type": "string"
@@ -10897,7 +11066,8 @@
         "$ref": "#/components/schemas/PromptRole"
       },
       "content": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "content_type": {
         "$ref": "#/components/schemas/TemplateType"
@@ -10906,7 +11076,8 @@
         "$ref": "#/components/schemas/JSONSchema"
       },
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "status": {
         "$ref": "#/components/schemas/PromptStatus"
@@ -10915,7 +11086,9 @@
         "type": "number"
       },
       "parent": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "description": "The ID of the prompt this one derives from, as 24 hexadecimal characters."
       },
       "description": {
         "type": "string"
@@ -11763,7 +11936,9 @@
       "environment": {
         "anyOf": [
           {
-            "type": "string"
+            "type": "string",
+            "pattern": "^(?:[0-9a-fA-F]{24})?$",
+            "description": "The environment ID, as 24 hexadecimal characters."
           },
           {
             "$ref": "#/components/schemas/ExecutionEnvironmentRef"
@@ -11962,7 +12137,9 @@
         "type": "boolean"
       },
       "targetProject": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The project to fork into, as its 24-hexadecimal-character ID. Defaults to the current one."
       }
     },
     "additionalProperties": false
@@ -12060,8 +12237,10 @@
       "status": {
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^\\s*(?:(?:draft|published|archived|code|unknown)\\s*)?(?:,\\s*(?:(?:draft|published|archived|code|unknown)\\s*)?)*$"
+        },
+        "description": "Filter by status: draft, published, archived, code, unknown. Each value may list several, separated by commas."
       },
       "limit": {
         "type": "number",
@@ -12085,7 +12264,9 @@
         }
       },
       "version": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:\\s*[+-]?\\d[\\s\\S]*)?$",
+        "description": "Filter by version number. Must start with an integer."
       },
       "model": {
         "type": "string"
@@ -12439,6 +12620,188 @@
       }
     },
     "additionalProperties": false
+  },
+  "CatalogAgentSearchQuery": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "model": {
+        "type": "string"
+      },
+      "prompt": {
+        "type": "string"
+      },
+      "is_sub_agent": {
+        "type": "boolean"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Filters for the agent catalog. `name` is a case-insensitive substring match, `tags` requires every listed tag, and `is_sub_agent` keeps only agents that can also be called as a tool. `model` and `prompt` only match stored interactions, so either one excludes the system interactions."
+  },
+  "CatalogCallSearchQuery": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "model": {
+        "type": "string"
+      },
+      "prompt": {
+        "type": "string"
+      },
+      "is_basic": {
+        "type": "boolean"
+      },
+      "is_tool": {
+        "type": "boolean"
+      },
+      "is_skill": {
+        "type": "boolean"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Filters for the call catalog: interactions that are not agents. `name`, `tags`, `model` and `prompt` match as in `CatalogAgentSearchQuery`. `is_basic` (neither tool nor skill), `is_tool` and `is_skill` each select a kind of call; several of them select any of those kinds, and none selects every call."
+  },
+  "CatalogSearchInteractionRef": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "enum": [
+          "sys",
+          "app",
+          "stored",
+          "draft"
+        ],
+        "description": "The type of interaction"
+      },
+      "id": {
+        "type": "string",
+        "description": "the interaction id that can be used to execute the interaction."
+      },
+      "name": {
+        "type": "string",
+        "description": "The interaction name which identify the interaction in the provider interaction list. For the stored interactions this is the same as the endpoint property. For other types of interactions this is the local name of the interaction."
+      },
+      "version": {
+        "type": "number",
+        "description": "Only applies for stored interactions. The version of the interaction. Undefined for non stored interactions"
+      },
+      "published": {
+        "type": "boolean",
+        "description": "Only applies for stored interactions. Whether the interaction is published or not."
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The tags associated with the interaction."
+      },
+      "agent_runner_options": {
+        "$ref": "#/components/schemas/AgentRunnerOptions",
+        "description": "Agent Runner configuration options."
+      },
+      "title": {
+        "type": "string",
+        "description": "The name of the interaction. For display purposes only."
+      },
+      "description": {
+        "type": "string",
+        "description": "Optional description of the interaction."
+      },
+      "model": {
+        "type": "string",
+        "description": "Only applies for stored interactions. The default model."
+      },
+      "prompts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/PromptSegmentRef_PromptTemplateRef"
+        },
+        "description": "Only applies for stored interactions. The prompt segments."
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Only applies for stored interactions. The last update time."
+      },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileId",
+        "description": "Only applies for in-code interactions. The inference profile the interaction pins; runs of one that pins none use the project default."
+      }
+    },
+    "required": [
+      "type",
+      "id",
+      "name",
+      "tags",
+      "title"
+    ],
+    "description": "An interaction found by a catalog search: a stored, a system or an app interaction."
+  },
+  "CatalogTagCount": {
+    "type": "object",
+    "properties": {
+      "tag": {
+        "type": "string"
+      },
+      "count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "The number of matching interactions that carry the tag."
+      }
+    },
+    "required": [
+      "tag",
+      "count"
+    ]
+  },
+  "CatalogSearchResult": {
+    "type": "object",
+    "properties": {
+      "total": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "The number of matching interactions."
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CatalogTagCount"
+        },
+        "description": "The tags of the matching interactions with their counts, most frequent first."
+      },
+      "interactions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CatalogSearchInteractionRef"
+        },
+        "description": "The matching interactions. Stored interactions are listed most recently updated first; in-code interactions in the order their source defines them."
+      }
+    },
+    "required": [
+      "total",
+      "tags",
+      "interactions"
+    ]
   },
   "ModelSource": {
     "type": "string",
@@ -14008,15 +14371,9 @@
         "type": "string"
       },
       "parent": {
-        "anyOf": [
-          {
-            "type": "string"
-          },
-          {
-            "$ref": "#/components/schemas/ExecutionRun"
-          }
-        ],
-        "description": "Only used by runs that were created by a virtual run to point toward the virtual run parent"
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "Only used by runs that were created by a virtual run to point toward the virtual run parent. The parent run ID, as 24 hexadecimal characters."
       },
       "evaluation": {
         "type": "object",
@@ -14040,8 +14397,9 @@
         }
       },
       "environment": {
-        "$ref": "#/components/schemas/ExecutionEnvironmentRef",
-        "description": "Environment reference - populated with full object in API responses"
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The environment ID, as 24 hexadecimal characters."
       },
       "modelId": {
         "type": "string"
@@ -14114,7 +14472,9 @@
         "description": "The Vertesia Workflow related to this Interaction Run.\n\nThis is only set when the interaction is executed as part of a workflow."
       },
       "interaction": {
-        "$ref": "#/components/schemas/InteractionRef"
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "The interaction ID, as 24 hexadecimal characters."
       }
     },
     "additionalProperties": false
@@ -14194,7 +14554,7 @@
     "type": "object",
     "properties": {
       "data": {
-        "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping."
+        "description": "The input data, which must be a JSON object. If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping."
       },
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
@@ -14314,7 +14674,9 @@
         "type": "string"
       },
       "environment": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[a-fA-F0-9]{24})?$",
+        "description": "Environment id, as 24 hexadecimal characters. An empty string applies no filter."
       },
       "model": {
         "type": "string"
@@ -14341,8 +14703,10 @@
       "parent": {
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^(?:[a-fA-F0-9]{24}|false)$"
+        },
+        "description": "Parent run ids, as 24 hexadecimal characters. The legacy value `false` selects root runs, like `is_root`; it cannot be combined with a parent id."
       },
       "is_root": {
         "type": "boolean"
@@ -14377,8 +14741,10 @@
       "run_ids": {
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{24}$"
+        },
+        "description": "Run ids, as 24 hexadecimal characters."
       },
       "is_agent": {
         "type": "boolean"
@@ -14419,9 +14785,9 @@
         "type": "array",
         "items": {
           "type": "string",
-          "pattern": "^[0-9a-fA-F]{24}$"
+          "pattern": "^\\s*(?:[0-9a-fA-F]{24}\\s*)?(?:,\\s*(?:[0-9a-fA-F]{24}\\s*)?)*$"
         },
-        "description": "Environment ids to filter by, as 24 hexadecimal characters."
+        "description": "Environment ids to filter by, as 24 hexadecimal characters; each value may list several, separated by commas."
       },
       "status": {
         "type": "array",
@@ -14440,9 +14806,10 @@
       "parent": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^\\s*(?:(?:[0-9a-fA-F]{24}|false)\\s*)?(?:,\\s*(?:(?:[0-9a-fA-F]{24}|false)\\s*)?)*$"
         },
-        "description": "Parent run ids to filter by. Mutually exclusive with `is_root=true`."
+        "description": "Parent run ids to filter by, as 24 hexadecimal characters; each value may list several, separated by commas. The legacy value `false` selects root runs. Mutually exclusive with `is_root=true`."
       },
       "is_root": {
         "type": "boolean",
@@ -14521,7 +14888,7 @@
     "type": "object",
     "properties": {
       "data": {
-        "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping."
+        "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping. Must be a JSON object; null is the same as no data."
       },
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
@@ -14583,7 +14950,7 @@
     "type": "object",
     "properties": {
       "data": {
-        "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping."
+        "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping. Must be a JSON object; null is the same as no data."
       },
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
@@ -15483,7 +15850,7 @@
         "description": "Immutable app-version target inherited by this conversation execution. The workflow applies it to app-owned resource resolution; callers normally set the x-vertesia-app-version header instead of populating this field directly."
       },
       "data": {
-        "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping."
+        "description": "If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping. Must be a JSON object: it is passed to the agent run as its input."
       },
       "config": {
         "$ref": "#/components/schemas/InteractionExecutionConfiguration"
@@ -18108,7 +18475,8 @@
     "properties": {
       "id": {
         "type": "string",
-        "description": "Stable key used in response rows. Must contain only letters, numbers, underscores, or hyphens."
+        "pattern": "^[A-Za-z0-9_-]{1,64}$",
+        "description": "Stable key used in response rows: 1 to 64 letters, numbers, underscores, or hyphens, unique within the query."
       },
       "operation": {
         "$ref": "#/components/schemas/AuditAggregationOperation"
@@ -18119,11 +18487,11 @@
       },
       "meterCategory": {
         "type": "string",
-        "description": "Required for meter operations."
+        "description": "Required for sum_meter and average_meter, as 1 to 128 characters."
       },
       "meterType": {
         "type": "string",
-        "description": "Required for meter operations."
+        "description": "Required for sum_meter and average_meter, as 1 to 128 characters."
       }
     },
     "required": [
@@ -18155,9 +18523,13 @@
         "$ref": "#/components/schemas/AuditAggregationDetailField"
       },
       "values": {
+        "minItems": 1,
+        "maxItems": 50,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
         }
       }
     },
@@ -18390,33 +18762,44 @@
     "type": "object",
     "properties": {
       "actions": {
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/AuditAction"
         }
       },
       "resourceTypes": {
+        "maxItems": 50,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
         }
       },
       "eventCategories": {
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/EventCategory"
         }
       },
       "providers": {
+        "maxItems": 50,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
         }
       },
       "principalTypes": {
+        "maxItems": 50,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
         },
         "description": "Restrict events to top-level actor categories such as user or apikey."
       },
@@ -18424,6 +18807,7 @@
         "type": "boolean"
       },
       "details": {
+        "maxItems": 10,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/AuditAggregationDetailFilter"
@@ -18479,20 +18863,28 @@
         "$ref": "#/components/schemas/AuditAggregationFilter"
       },
       "groupBy": {
+        "maxItems": 2,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/AuditAggregationGroup"
-        }
+        },
+        "description": "At most two dimensions, each named once."
       },
       "metrics": {
+        "minItems": 1,
+        "maxItems": 12,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/AuditAggregationMetric"
-        }
+        },
+        "description": "One to twelve metrics, each with a distinct id."
       },
       "limit": {
         "type": "number",
-        "description": "Maximum groups returned (default 50, max 200)."
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "multipleOf": 1,
+        "description": "Maximum groups returned (default 50). A limit above 200 is capped at 200."
       }
     },
     "required": [
@@ -18579,11 +18971,13 @@
       },
       "from": {
         "type": "string",
-        "description": "Start time (ISO string)"
+        "pattern": "^(?:(?:0[1-9]\\d{2}|[1-9]\\d{3})-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])(?:T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,9})?(?:Z|[+-]\\d{2}:\\d{2})?)?)?$",
+        "description": "Start time: an ISO 8601 date or date-time, such as 2026-01-31 or 2026-01-31T12:00:00Z. Empty means no bound."
       },
       "to": {
         "type": "string",
-        "description": "End time (ISO string)"
+        "pattern": "^(?:(?:0[1-9]\\d{2}|[1-9]\\d{3})-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])(?:T(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d{1,9})?(?:Z|[+-]\\d{2}:\\d{2})?)?)?$",
+        "description": "End time: an ISO 8601 date or date-time, such as 2026-01-31 or 2026-01-31T12:00:00Z. Empty means no bound."
       },
       "limit": {
         "type": "number",
@@ -18610,7 +19004,10 @@
     "type": "object",
     "properties": {
       "field": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "order": {
         "type": "string",
@@ -18638,7 +19035,10 @@
         ]
       },
       "field": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "fit": {
         "type": "string",
@@ -18677,13 +19077,17 @@
     "type": "object",
     "properties": {
       "value": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "order": {
-        "type": "number"
+        "type": "number",
+        "multipleOf": 1
       }
     },
     "required": [
@@ -18696,25 +19100,36 @@
     "type": "object",
     "properties": {
       "field": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 120
       },
       "format": {
         "$ref": "#/components/schemas/ViewResultFieldFormat"
       },
       "fallback": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 240
       },
       "width": {
-        "type": "number"
+        "type": "number",
+        "minimum": 40,
+        "maximum": 2000,
+        "multipleOf": 1
       },
       "sortable": {
         "type": "boolean"
       },
       "sort_option": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       }
     },
     "required": [
@@ -18734,10 +19149,14 @@
     "properties": {
       "interaction": {
         "type": "string",
+        "maxLength": 200,
         "description": "Interaction used only for candidate reranking. Defaults to sys:ContentSearchReranker."
       },
       "max_candidates": {
         "type": "number",
+        "minimum": 2,
+        "maximum": 50,
+        "multipleOf": 1,
         "description": "Maximum candidates from the current result page sent to the model."
       },
       "include_why_match": {
@@ -18746,6 +19165,9 @@
       },
       "timeout_ms": {
         "type": "number",
+        "minimum": 1000,
+        "maximum": 60000,
+        "multipleOf": 1,
         "description": "Reranking-stage timeout."
       }
     },
@@ -18827,13 +19249,15 @@
     "type": "object",
     "properties": {
       "interaction": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 200
       },
       "config": {
         "$ref": "#/components/schemas/ViewAgenticExecutionConfiguration"
       },
       "instructions": {
         "type": "string",
+        "maxLength": 4000,
         "description": "View-specific guidance for Elasticsearch query planning."
       },
       "mode": {
@@ -18841,10 +19265,15 @@
         "description": "Generate only Elasticsearch DSL, or generate DSL plus a safe ephemeral result presentation."
       },
       "timeout_ms": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1000,
+        "maximum": 60000,
+        "multipleOf": 1
       },
       "minimum_confidence": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
       },
       "rerank": {
         "$ref": "#/components/schemas/AgenticViewRerankConfiguration",
@@ -18867,10 +19296,15 @@
     "type": "object",
     "properties": {
       "field": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "description": {
         "type": "string",
+        "minLength": 1,
+        "maxLength": 500,
         "description": "Meaning of the field for query planners, for example \"Full OCR text\"."
       },
       "type": {
@@ -18888,6 +19322,8 @@
       },
       "boost": {
         "type": "number",
+        "minimum": 0.1,
+        "maximum": 20,
         "description": "Relative boost when this field participates in multi-field text search."
       }
     },
@@ -18901,10 +19337,15 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "from": {
         "type": "number"
@@ -18923,16 +19364,27 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "field": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "size": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 500,
+        "multipleOf": 1
       },
       "sort": {
         "type": "string",
@@ -18953,10 +19405,15 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "presentation": {
         "type": "string",
@@ -18971,20 +19428,29 @@
         "type": "boolean"
       },
       "order": {
-        "type": "number"
+        "type": "number",
+        "multipleOf": 1
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "source": {
         "type": "string",
         "const": "terms"
       },
       "field": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "size": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 500,
+        "multipleOf": 1
       },
       "sort": {
         "type": "string",
@@ -19006,10 +19472,15 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "presentation": {
         "type": "string",
@@ -19024,19 +19495,24 @@
         "type": "boolean"
       },
       "order": {
-        "type": "number"
+        "type": "number",
+        "multipleOf": 1
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "source": {
         "type": "string",
         "const": "collection"
       },
       "roots": {
+        "maxItems": 50,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "include_descendants": {
@@ -19054,10 +19530,15 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "presentation": {
         "type": "string",
@@ -19072,23 +19553,32 @@
         "type": "boolean"
       },
       "order": {
-        "type": "number"
+        "type": "number",
+        "multipleOf": 1
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "source": {
         "type": "string",
         "const": "location"
       },
       "roots": {
+        "maxItems": 50,
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^\\/"
+        },
+        "description": "Absolute location roots shown by the hierarchy."
       },
       "depth": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 20,
+        "multipleOf": 1
       }
     },
     "required": [
@@ -19126,12 +19616,18 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "sort": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewSortClause"
@@ -19149,16 +19645,21 @@
     "type": "object",
     "properties": {
       "field": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 120
       },
       "format": {
         "$ref": "#/components/schemas/ViewResultFieldFormat"
       },
       "fallback": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 240
       }
     },
     "required": [
@@ -19170,22 +19671,33 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "page_size": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 200,
+        "multipleOf": 1
       },
       "type": {
         "type": "string",
         "const": "table"
       },
       "columns": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewTableColumn"
@@ -19204,16 +19716,26 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "page_size": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 200,
+        "multipleOf": 1
       },
       "type": {
         "type": "string",
@@ -19253,13 +19775,21 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "field": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "type": {
         "$ref": "#/components/schemas/ViewSearchFieldType"
@@ -19287,10 +19817,15 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "presentation": {
         "type": "string",
@@ -19305,19 +19840,26 @@
         "type": "boolean"
       },
       "order": {
-        "type": "number"
+        "type": "number",
+        "multipleOf": 1
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "source": {
         "type": "string",
         "const": "range"
       },
       "field": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "ranges": {
+        "minItems": 1,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewRangeDefinition"
@@ -19337,10 +19879,15 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "presentation": {
         "type": "string",
@@ -19355,16 +19902,21 @@
         "type": "boolean"
       },
       "order": {
-        "type": "number"
+        "type": "number",
+        "multipleOf": 1
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "source": {
         "type": "string",
         "const": "hierarchy"
       },
       "levels": {
+        "minItems": 2,
+        "maxItems": 10,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewHierarchyLevel"
@@ -19384,21 +19936,27 @@
     "type": "object",
     "properties": {
       "type_ids": {
+        "maxItems": 100,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "locations": {
+        "maxItems": 100,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "collection_ids": {
+        "maxItems": 100,
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         }
       },
       "include_collection_descendants": {
@@ -19447,7 +20005,8 @@
     "type": "object",
     "properties": {
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 120
       },
       "mode": {
         "type": "string",
@@ -19457,15 +20016,18 @@
         ]
       },
       "placeholder": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 240
       },
       "fields": {
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewSearchFieldDefinition"
         }
       },
       "key_terms": {
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewKeyTermDefinition"
@@ -19514,23 +20076,36 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "page_size": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 200,
+        "multipleOf": 1
       },
       "type": {
         "type": "string",
         "const": "board"
       },
       "group_by": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 160,
+        "pattern": "^[A-Za-z0-9_]+(?:\\.[A-Za-z0-9_]+)*$"
       },
       "columns": {
         "type": "array",
@@ -19555,16 +20130,26 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "page_size": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 200,
+        "multipleOf": 1
       },
       "type": {
         "type": "string",
@@ -19614,16 +20199,26 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "renderer": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "page_size": {
-        "type": "number"
+        "type": "number",
+        "minimum": 1,
+        "maximum": 200,
+        "multipleOf": 1
       },
       "type": {
         "type": "string",
@@ -19740,13 +20335,21 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "label": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "handler": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "placement": {
         "$ref": "#/components/schemas/ViewActionPlacement"
@@ -19780,6 +20383,7 @@
         "description": "Include the standard content export and delete actions. Defaults to true when selection is enabled."
       },
       "exclude_defaults": {
+        "maxItems": 2,
         "type": "array",
         "items": {
           "type": "string",
@@ -19788,9 +20392,11 @@
             "delete"
           ]
         },
+        "uniqueItems": true,
         "description": "Hide individual standard actions while keeping the remaining defaults."
       },
       "items": {
+        "maxItems": 30,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewActionConfiguration"
@@ -19803,13 +20409,20 @@
     "type": "object",
     "properties": {
       "type_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
       },
       "collection_id": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
       },
       "location": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 2000,
+        "pattern": "^\\/"
       },
       "properties": {
         "$ref": "#/components/schemas/JSONObject"
@@ -19828,6 +20441,8 @@
         "const": "upload"
       },
       "accept": {
+        "minItems": 1,
+        "maxItems": 1,
         "type": "array",
         "items": {
           "type": "string",
@@ -19848,19 +20463,27 @@
     "type": "object",
     "properties": {
       "default_display": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "allow_display_switch": {
         "type": "boolean"
       },
       "displays": {
+        "minItems": 1,
+        "maxItems": 10,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewDisplayConfiguration"
         }
       },
       "default_sort": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "pattern": "^[a-z][a-z0-9_-]*$"
       },
       "sort_options": {
         "type": "array",
@@ -19902,6 +20525,7 @@
         "$ref": "#/components/schemas/ViewExperienceScope"
       },
       "navigation": {
+        "maxItems": 20,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewNavigationItem"
@@ -19950,6 +20574,7 @@
         "$ref": "#/components/schemas/ViewExperienceScope"
       },
       "navigation": {
+        "maxItems": 20,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewNavigationItem"
@@ -20017,6 +20642,7 @@
         "$ref": "#/components/schemas/ViewExperienceScope"
       },
       "navigation": {
+        "maxItems": 20,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewNavigationItem"
@@ -22214,7 +22840,8 @@
     "properties": {
       "record_id": {
         "type": "string",
-        "description": "Existing version record to update in place, used by reproducible rebuilds."
+        "pattern": "^(?:[0-9a-fA-F]{24})?$",
+        "description": "Existing version record to update in place, used by reproducible rebuilds, as 24 hexadecimal characters."
       },
       "app": {
         "type": "string"
@@ -22612,7 +23239,9 @@
         "type": "object",
         "properties": {
           "seed": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[\\sA-Za-z2-7=-]*[A-Za-z2-7][\\sA-Za-z2-7=-]*$",
+            "description": "The base32 TOTP seed (`A`-`Z`, `2`-`7`, any case). Whitespace, `=` and `-` are ignored."
           },
           "algorithm": {
             "$ref": "#/components/schemas/WebsiteCredentialTotpAlgorithm"
@@ -22675,7 +23304,8 @@
     "properties": {
       "host": {
         "type": "string",
-        "description": "Hostname this credential is allowed on. Subdomains match."
+        "pattern": "\\S",
+        "description": "Hostname this credential is allowed on, or a URL to take it from. Subdomains match. A value no hostname can be read from is refused."
       },
       "login_url": {
         "type": "string",
@@ -24568,6 +25198,47 @@
     "additionalProperties": false,
     "description": "Elasticsearch DSL supported by dashboard data sources. Queries execute through Vertesia Store, so project/security filtering remains server-side."
   },
+  "DashboardElasticsearchHitsMapping": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "hits"
+      }
+    },
+    "required": [
+      "type"
+    ],
+    "additionalProperties": false,
+    "description": "Use the search hits as the Vega rows."
+  },
+  "DashboardElasticsearchAggregationBucketsMapping": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "aggregation_buckets"
+      },
+      "path": {
+        "type": "string",
+        "description": "Dot path under `aggregations` that contains a `buckets` array."
+      },
+      "keyField": {
+        "type": "string",
+        "description": "Output field name for bucket key. Defaults to `key`."
+      },
+      "countField": {
+        "type": "string",
+        "description": "Output field name for doc count. Defaults to `doc_count`."
+      }
+    },
+    "required": [
+      "type",
+      "path"
+    ],
+    "additionalProperties": false,
+    "description": "Use the buckets of one aggregation as the Vega rows."
+  },
   "DashboardQuery": {
     "type": "object",
     "properties": {
@@ -24699,48 +25370,19 @@
   "DashboardElasticsearchResultMapping": {
     "oneOf": [
       {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "hits"
-          }
-        },
-        "required": [
-          "type"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/DashboardElasticsearchHitsMapping"
       },
       {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "aggregation_buckets"
-          },
-          "path": {
-            "type": "string",
-            "description": "Dot path under `aggregations` that contains a `buckets` array."
-          },
-          "keyField": {
-            "type": "string",
-            "description": "Output field name for bucket key. Defaults to `key`."
-          },
-          "countField": {
-            "type": "string",
-            "description": "Output field name for doc count. Defaults to `doc_count`."
-          }
-        },
-        "required": [
-          "type",
-          "path"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/DashboardElasticsearchAggregationBucketsMapping"
       }
     ],
     "type": "object",
     "discriminator": {
-      "propertyName": "type"
+      "propertyName": "type",
+      "mapping": {
+        "hits": "#/components/schemas/DashboardElasticsearchHitsMapping",
+        "aggregation_buckets": "#/components/schemas/DashboardElasticsearchAggregationBucketsMapping"
+      }
     },
     "required": [
       "type"
@@ -25060,7 +25702,9 @@
         "type": "string"
       },
       "publisher": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "description": "The publisher of the app. Must not be empty."
       },
       "icon": {
         "type": "string",
@@ -26112,10 +26756,13 @@
     "type": "object",
     "properties": {
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
       },
       "description": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 4000
       },
       "enabled": {
         "type": "boolean"
@@ -26127,6 +26774,7 @@
         "$ref": "#/components/schemas/ViewExperienceScope"
       },
       "navigation": {
+        "maxItems": 20,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ViewNavigationItem"
@@ -28217,11 +28865,13 @@
     "properties": {
       "source": {
         "type": "string",
-        "minLength": 1
+        "pattern": "^[\\u0020\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]*[^\\u0000-\\u001f\\u007f\\u0020\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff][^\\u0000-\\u001f\\u007f]*$",
+        "description": "The file to copy: a path relative to the bucket or a full URI. It must not be blank or contain control characters."
       },
       "dest": {
         "type": "string",
-        "minLength": 1
+        "pattern": "^(?:\\.\\.[^\\\\/]+|\\.(?:[^\\\\/.][^\\\\/]*)?|[^\\\\/.][^\\\\/]*)(?:[\\\\/]+(?:\\.\\.[^\\\\/]+|\\.(?:[^\\\\/.][^\\\\/]*)?|[^\\\\/.][^\\\\/]*))*[\\\\/]*$",
+        "description": "The object name to copy to, in the source file's bucket. It must not be empty, start with `/` or `\\`, or contain a `..` segment."
       }
     },
     "required": [
@@ -28355,7 +29005,8 @@
     "properties": {
       "file": {
         "type": "string",
-        "minLength": 1
+        "pattern": "^[\\u0020\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]*[^\\u0000-\\u001f\\u007f\\u0020\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff][^\\u0000-\\u001f\\u007f]*$",
+        "description": "The file path (relative to bucket) or full URI. It must not be blank or contain control characters."
       },
       "name": {
         "type": "string"
@@ -28404,13 +29055,18 @@
         "minLength": 1
       },
       "id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:\\.\\.[^\\\\/]+|\\.(?:[^\\\\/.][^\\\\/]*)?|[^\\\\/.][^\\\\/]*)(?:[\\\\/]+(?:\\.\\.[^\\\\/]+|\\.(?:[^\\\\/.][^\\\\/]*)?|[^\\\\/.][^\\\\/]*))*[\\\\/]*$",
+        "description": "The object name to upload to. A random name is chosen when omitted. It must not be empty, start with `/` or `\\`, or contain a `..` segment."
       },
       "mime_type": {
         "type": "string"
       },
       "ttl": {
-        "type": "number"
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 604800,
+        "description": "Lifetime of the signed URL in seconds, at most seven days."
       }
     },
     "required": [
@@ -28436,7 +29092,9 @@
               "type": "string"
             },
             "id": {
-              "type": "string"
+              "type": "string",
+              "pattern": "^(?:\\.\\.[^\\\\/]+|\\.(?:[^\\\\/.][^\\\\/]*)?|[^\\\\/.][^\\\\/]*)(?:[\\\\/]+(?:\\.\\.[^\\\\/]+|\\.(?:[^\\\\/.][^\\\\/]*)?|[^\\\\/.][^\\\\/]*))*[\\\\/]*$",
+              "description": "The object name to upload to. A random name is chosen when omitted. It must not be empty, start with `/` or `\\`, or contain a `..` segment."
             }
           },
           "required": [
@@ -28471,8 +29129,8 @@
     "properties": {
       "file": {
         "type": "string",
-        "minLength": 1,
-        "description": "The file path (relative to bucket) or full URI"
+        "pattern": "^[\\u0020\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]*[^\\u0000-\\u001f\\u007f\\u0020\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff][^\\u0000-\\u001f\\u007f]*$",
+        "description": "The file path (relative to bucket) or full URI. It must not be blank or contain control characters."
       },
       "metadata": {
         "$ref": "#/components/schemas/StringValueMap",
@@ -28490,7 +29148,8 @@
     "properties": {
       "file": {
         "type": "string",
-        "minLength": 1
+        "pattern": "^[\\u0020\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff]*[^\\u0000-\\u001f\\u007f\\u0020\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\ufeff][^\\u0000-\\u001f\\u007f]*$",
+        "description": "The file path (relative to bucket) or full URI. It must not be blank or contain control characters."
       }
     },
     "required": [
@@ -28776,7 +29435,9 @@
         "minLength": 1
       },
       "id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:\\.\\.[^\\\\/]+|\\.(?:[^\\\\/.][^\\\\/]*)?|[^\\\\/.][^\\\\/]*)(?:[\\\\/]+(?:\\.\\.[^\\\\/]+|\\.(?:[^\\\\/.][^\\\\/]*)?|[^\\\\/.][^\\\\/]*))*[\\\\/]*$",
+        "description": "The object name to upload to. A random name is chosen when omitted. It must not be empty, start with `/` or `\\`, or contain a `..` segment."
       },
       "mime_type": {
         "type": "string"
@@ -29091,13 +29752,123 @@
       "title",
       "source"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "properties": {
+          "fields": {
+            "items": {
+              "allOf": [
+                {
+                  "properties": {
+                    "name": {
+                      "minLength": 1
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "string",
+                          "text",
+                          "select"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "default": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "number"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "default": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "boolean"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "default": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "select"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": [
+                      "options"
+                    ],
+                    "properties": {
+                      "options": {
+                        "minItems": 1
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "description": "Each field has a non-empty `name`, and its `default` has the field type: a string for `string`, `text` and `select`, a number for `number`, a boolean for `boolean`. A `select` field needs at least one option, and its default must be one of them."
   },
   "UpdateTaskPayload": {
     "type": "object",
     "properties": {
       "title": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
@@ -29133,7 +29904,116 @@
         ]
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "allOf": [
+      {
+        "properties": {
+          "fields": {
+            "items": {
+              "allOf": [
+                {
+                  "properties": {
+                    "name": {
+                      "minLength": 1
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "string",
+                          "text",
+                          "select"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "default": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "number"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "default": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "boolean"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "properties": {
+                      "default": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "type"
+                    ],
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "select"
+                        ]
+                      }
+                    }
+                  },
+                  "then": {
+                    "required": [
+                      "options"
+                    ],
+                    "properties": {
+                      "options": {
+                        "minItems": 1
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "description": "Each field has a non-empty `name`, and its `default` has the field type: a string for `string`, `text` and `select`, a number for `number`, a boolean for `boolean`. A `select` field needs at least one option, and its default must be one of them."
   },
   "CompleteTaskPayload": {
     "type": "object",
@@ -30347,7 +31227,8 @@
       },
       "id": {
         "type": "string",
-        "description": "Legacy upsert: update this definition instead of creating a new one."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "Legacy upsert: update this definition instead of creating a new one, as 24 hexadecimal characters."
       },
       "created_at": {
         "type": "string",
@@ -30415,7 +31296,8 @@
       },
       "id": {
         "type": "string",
-        "description": "Legacy upsert: update this definition instead of creating a new one."
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "Legacy upsert: update this definition instead of creating a new one, as 24 hexadecimal characters."
       },
       "created_at": {
         "type": "string",
@@ -30921,7 +31803,7 @@
     "properties": {
       "confirmed": {
         "type": "boolean",
-        "description": "Required explicit confirmation from the caller."
+        "description": "Required explicit confirmation from the caller: only `true` is accepted."
       },
       "comment": {
         "type": "string",
@@ -30950,7 +31832,7 @@
     "properties": {
       "confirmed": {
         "type": "boolean",
-        "description": "Required explicit confirmation from the caller."
+        "description": "Required explicit confirmation from the caller: only `true` is accepted."
       },
       "tags": {
         "type": "array",
@@ -31086,16 +31968,18 @@
         "type": "string"
       },
       "status": {
+        "type": "string",
+        "const": "draft",
         "deprecated": true,
         "x-deprecated-message": "Process definitions are created as drafts. Use the publish endpoint\nto create immutable published versions.",
-        "$ref": "#/components/schemas/ProcessDefinitionStatus",
-        "description": "Deprecated: Process definitions are created as drafts. Use the publish endpoint\nto create immutable published versions."
+        "description": "Deprecated: Process definitions are created as drafts, so only `draft` is accepted. Use the publish endpoint\nto create immutable published versions."
       },
       "version": {
         "type": "number",
+        "const": 1,
         "deprecated": true,
         "x-deprecated-message": "Version is server-owned. Use the publish endpoint to create the next version.",
-        "description": "Deprecated: Version is server-owned. Use the publish endpoint to create the next version."
+        "description": "Deprecated: Version is server-owned, so only `1` is accepted. Use the publish endpoint to create the next version."
       },
       "tags": {
         "type": "array",
@@ -31202,22 +32086,11 @@
         "description": "Edit revision returned by the last read. Stale revisions are rejected with HTTP 409. Omit for legacy last-write-wins behavior."
       },
       "name": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1
       },
       "description": {
         "type": "string"
-      },
-      "status": {
-        "deprecated": true,
-        "x-deprecated-message": "Status is server-owned. Use publish/archive endpoints instead of updating it directly.",
-        "$ref": "#/components/schemas/ProcessDefinitionStatus",
-        "description": "Deprecated: Status is server-owned. Use publish/archive endpoints instead of updating it directly."
-      },
-      "version": {
-        "type": "number",
-        "deprecated": true,
-        "x-deprecated-message": "Version is server-owned. Use the publish endpoint to create the next version.",
-        "description": "Deprecated: Version is server-owned. Use the publish endpoint to create the next version."
       },
       "tags": {
         "type": "array",
@@ -31229,7 +32102,8 @@
         "$ref": "#/components/schemas/ProcessDefinitionBody"
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "description": "A draft edit. `status` and `version` are server-owned: use the publish, archive and revert endpoints."
   },
   "ListProcessDefinitionsQuery": {
     "type": "object",
@@ -31329,10 +32203,12 @@
     "properties": {
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "The property name that was inherited"
       },
       "collection": {
         "type": "string",
+        "minLength": 1,
         "description": "The collection ID that provided this property"
       }
     },
@@ -31560,7 +32436,9 @@
         "description": "Inherited properties metadata - tracks which properties were inherited from parent collections. Used to display readonly inherited properties in the UI and enable incremental sync optimization."
       },
       "parent": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "ID of the parent object (container or folder), as 24 hexadecimal characters."
       },
       "location": {
         "type": "string",
@@ -31572,7 +32450,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information, typically a link to an object store"
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -31712,9 +32590,79 @@
             }
           }
         }
+      },
+      "if": {
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "required": [
+              "source"
+            ],
+            "properties": {
+              "source": {
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "content": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "minLength": 1
+              },
+              "source": {
+                "pattern": "^(?:gs|s3|az)://[^/]+/.+"
+              }
+            }
+          }
+        }
       }
     },
-    "description": "When creating from an uploaded file the content should be an URL to the uploaded file. `name` is required unless `content.name` or `content.source` is given; it then defaults to the content file name."
+    "else": {
+      "if": {
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "required": [
+              "source"
+            ],
+            "properties": {
+              "source": {
+                "minLength": 1
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "content": {
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "minLength": 1
+              },
+              "source": {
+                "pattern": "^(?:gs|s3|az)://[^/]+/.+"
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "When creating from an uploaded file the content should be an URL to the uploaded file. `name` is required unless `content.name` or `content.source` is given; it then defaults to the content file name. `content.type`, the MIME type of the file, is required with `content.source`."
   },
   "UpdateContentObjectPayload": {
     "type": "object",
@@ -31766,7 +32714,9 @@
         "description": "Inherited properties metadata - tracks which properties were inherited from parent collections. Used to display readonly inherited properties in the UI and enable incremental sync optimization."
       },
       "parent": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^[0-9a-fA-F]{24}$",
+        "description": "ID of the parent object (container or folder), as 24 hexadecimal characters."
       },
       "location": {
         "type": "string",
@@ -31778,7 +32728,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information, typically a link to an object store"
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -31864,7 +32814,41 @@
       }
     },
     "additionalProperties": false,
-    "description": "When creating from an uploaded file the content should be an URL to the uploaded file"
+    "if": {
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "required": [
+            "source"
+          ],
+          "properties": {
+            "source": {
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "then": {
+      "properties": {
+        "content": {
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "minLength": 1
+            },
+            "source": {
+              "pattern": "^(?:gs|s3|az)://[^/]+/.+"
+            }
+          }
+        }
+      }
+    },
+    "description": "When creating from an uploaded file the content should be an URL to the uploaded file. `content.type`, the MIME type of the file, is required with a non-empty `content.source`."
   },
   "ContentObjectApiTypeRef": {
     "$ref": "#/components/schemas/ContentObjectTypeRef"
@@ -32586,8 +33570,10 @@
       "types": {
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^(?:Document|[0-9a-fA-F]{24})$|:"
+        },
+        "description": "Content types to export: `Document` for untyped objects, a stored type ID (24 hexadecimal characters), or an in-code type ID such as `sys:Document`."
       },
       "created_from": {
         "type": "string"
@@ -32603,7 +33589,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "Bounded filters supported by the bulk content object export API."
+    "description": "Bounded filters supported by the bulk content object export API. The date bounds are ISO date-times or `YYYY-MM-DD` dates."
   },
   "ContentObjectExportArtifactFile": {
     "type": "object",
@@ -33081,7 +34067,9 @@
         }
       },
       "type": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:JSON|CSV)$",
+        "description": "The export format: `JSON` or `CSV`."
       },
       "query": {
         "$ref": "#/components/schemas/ComplexSearchQuery"
@@ -33097,7 +34085,39 @@
       "objectIds",
       "type"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "table_layout"
+      ]
+    },
+    "then": {
+      "properties": {
+        "table_layout": {
+          "items": {
+            "if": {
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "const": "objectLink"
+                }
+              }
+            },
+            "then": {},
+            "else": {
+              "properties": {
+                "field": {
+                  "pattern": "^[^$.\\x00][^.\\x00]*(\\.[^$.\\x00][^.\\x00]*)*$"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "description": "Each `table_layout` column reads its `field` as a dotted path of non-empty field names, none starting with `$`, except an `objectLink` column, which exports the object title."
   },
   "CostExportCsvResponse": {
     "type": "string"
@@ -35620,16 +36640,36 @@
     "type": "object",
     "properties": {
       "id": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(app|sys):",
+        "description": "An in-code process id, `app:<app>:<process>` or `sys:<process>`. A stored process definition is tested through `POST /processes/{processId}/test-runs`."
       },
       "app_version": {
-        "type": "string"
+        "type": "string",
+        "description": "Only for an `app:` id."
       }
     },
     "required": [
       "id"
     ],
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "pattern": "^sys:"
+        }
+      }
+    },
+    "then": {
+      "not": {
+        "required": [
+          "app_version"
+        ]
+      }
+    }
   },
   "ProcessTestTargetWithDefinition": {
     "type": "object",
@@ -36669,8 +37709,10 @@
         "minItems": 1,
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "description": "IDs of the content objects to add or remove, as 24 hexadecimal characters."
       }
     },
     "required": [
@@ -36678,6 +37720,25 @@
       "members"
     ],
     "additionalProperties": false
+  },
+  "CollectionPermissionsPayload": {
+    "type": "object",
+    "propertyNames": {
+      "type": "string",
+      "enum": [
+        "content:read",
+        "content:write",
+        "content:delete"
+      ]
+    },
+    "additionalProperties": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:project:\\*|(?:[uU][sS][eE][rR]|[gG][rR][oO][uU][pP]|[rR][oO][lL][eE]):[0-9a-fA-F]{24})$"
+      }
+    },
+    "description": "The collection ACL: for each of `content:read`, `content:write` and `content:delete`, the principals granted it, each `project:*`, `user:<id>`, `group:<id>` or `role:<id>`."
   },
   "CollectionChildrenUpdateResult": {
     "type": "object",
@@ -36705,8 +37766,10 @@
         "minItems": 1,
         "type": "array",
         "items": {
-          "type": "string"
-        }
+          "type": "string",
+          "pattern": "^[0-9a-fA-F]{24}$"
+        },
+        "description": "IDs of the child collections to add or remove, as 24 hexadecimal characters."
       }
     },
     "required": [
@@ -36950,6 +38013,7 @@
       },
       "name": {
         "type": "string",
+        "minLength": 1,
         "description": "Name of the collection"
       },
       "dynamic": {
@@ -36980,7 +38044,9 @@
         "type": [
           "string",
           "null"
-        ]
+        ],
+        "pattern": "^(?:[0-9a-fA-F]{24})?$",
+        "description": "Restrict the search to the children of this collection ID (24 hexadecimal characters). Empty or null searches every collection; a child search takes the parent from its path instead."
       },
       "dynamic": {
         "type": "boolean"
@@ -37221,7 +38287,9 @@
         "type": "string"
       },
       "type": {
-        "type": "string"
+        "type": "string",
+        "pattern": "^(?:[0-9a-fA-F]{24})?$",
+        "description": "Only list members of this stored content type, by its ID (24 hexadecimal characters)."
       },
       "limit": {
         "type": "number",
@@ -37261,7 +38329,9 @@
         "type": "string"
       },
       "generation": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "description": "The blob generation the content was read at, as returned by the read."
       }
     },
     "required": [
@@ -38682,7 +39752,20 @@
       "interaction"
     ],
     "additionalProperties": false,
-    "description": "Payload to create and start a new agent run."
+    "allOf": [
+      {
+        "properties": {
+          "content_type": {
+            "properties": {
+              "name": {
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    ],
+    "description": "Payload to create and start a new agent run. A linked `content_type` needs a non-empty `name`: the run stores it."
   },
   "CreateProcessRunByIdPayload": {
     "type": "object",
@@ -39564,7 +40647,7 @@
       "offset": {
         "type": "number",
         "minimum": 0,
-        "description": "Offset for pagination"
+        "description": "Offset for pagination. `offset` plus `limit` (capped at 200, 50 when omitted) must be at most 10000."
       },
       "sort": {
         "type": "array",
@@ -41133,11 +42216,11 @@
       },
       "start": {
         "type": "string",
-        "description": "The start time for filtering workflow runs."
+        "description": "The start time for filtering workflow runs: a date such as 2026-10-01T00:00:00.000Z. An empty or blank string sets no bound; any other value that is not a date is refused."
       },
       "end": {
         "type": "string",
-        "description": "The end time for filtering workflow runs."
+        "description": "The end time for filtering workflow runs: a date such as 2026-10-01T00:00:00.000Z. An empty or blank string sets no bound; any other value that is not a date is refused."
       },
       "status": {
         "type": "string",
@@ -41546,47 +42629,55 @@
     ],
     "additionalProperties": false
   },
+  "WorkflowObjectIdsInput": {
+    "type": "object",
+    "properties": {
+      "inputType": {
+        "type": "string",
+        "const": "objectIds"
+      },
+      "objectIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "inputType",
+      "objectIds"
+    ],
+    "additionalProperties": false,
+    "description": "Run the workflow on existing documents."
+  },
+  "WorkflowFilesInput": {
+    "type": "object",
+    "properties": {
+      "inputType": {
+        "type": "string",
+        "const": "files"
+      },
+      "files": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowInputFile"
+        }
+      }
+    },
+    "required": [
+      "inputType",
+      "files"
+    ],
+    "additionalProperties": false,
+    "description": "Run the workflow on uploaded files."
+  },
   "WorkflowInput": {
     "oneOf": [
       {
-        "type": "object",
-        "properties": {
-          "inputType": {
-            "type": "string",
-            "const": "objectIds"
-          },
-          "objectIds": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "inputType",
-          "objectIds"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/WorkflowObjectIdsInput"
       },
       {
-        "type": "object",
-        "properties": {
-          "inputType": {
-            "type": "string",
-            "const": "files"
-          },
-          "files": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkflowInputFile"
-            }
-          }
-        },
-        "required": [
-          "inputType",
-          "files"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/WorkflowFilesInput"
       }
     ],
     "type": "object",
@@ -41594,7 +42685,11 @@
       "inputType"
     ],
     "discriminator": {
-      "propertyName": "inputType"
+      "propertyName": "inputType",
+      "mapping": {
+        "objectIds": "#/components/schemas/WorkflowObjectIdsInput",
+        "files": "#/components/schemas/WorkflowFilesInput"
+      }
     }
   },
   "WorkflowRunUpdatesResponse": {
@@ -41653,6 +42748,27 @@
       }
     },
     "additionalProperties": false
+  },
+  "WorkflowEventsHistory": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "events"
+      },
+      "events": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowRunEvent"
+        }
+      }
+    },
+    "required": [
+      "type",
+      "events"
+    ],
+    "additionalProperties": false,
+    "description": "Workflow history as raw workflow events."
   },
   "ActivityTask": {
     "type": "object",
@@ -41975,6 +43091,56 @@
     "type": "string",
     "const": "timer"
   },
+  "WorkflowTask": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/ActivityTask"
+      },
+      {
+        "$ref": "#/components/schemas/ChildWorkflowTask"
+      },
+      {
+        "$ref": "#/components/schemas/SignalTask"
+      },
+      {
+        "$ref": "#/components/schemas/TimerTask"
+      }
+    ],
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "activity": "#/components/schemas/ActivityTask",
+        "childWorkflow": "#/components/schemas/ChildWorkflowTask",
+        "signal": "#/components/schemas/SignalTask",
+        "timer": "#/components/schemas/TimerTask"
+      }
+    }
+  },
+  "WorkflowTasksHistory": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "tasks"
+      },
+      "tasks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/WorkflowTask"
+        }
+      }
+    },
+    "required": [
+      "type",
+      "tasks"
+    ],
+    "additionalProperties": false,
+    "description": "Workflow history as processed tasks."
+  },
   "AgentTask": {
     "type": "object",
     "properties": {
@@ -42128,19 +43294,49 @@
     "additionalProperties": false,
     "description": "Agent task information for workflow history UI representation. This is separate from the analytics AgentEvent types. Consistent with WorkflowTask naming convention.\n\nCurrently represents tool calls, but designed to be extensible for other task types (LLM calls, checkpoints, etc.)"
   },
-  "WorkflowTask": {
+  "WorkflowAgentHistory": {
+    "type": "object",
+    "properties": {
+      "type": {
+        "type": "string",
+        "const": "agent"
+      },
+      "mode": {
+        "type": "string",
+        "enum": [
+          "snapshot",
+          "delta"
+        ],
+        "description": "Snapshot replaces all history; delta replaces returned rows by history_id and retains other rows."
+      },
+      "next_from": {
+        "type": "string",
+        "description": "Pass as from on the next refresh with the same options. Absence disables incremental refresh."
+      },
+      "agentTasks": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/AgentTask"
+        }
+      }
+    },
+    "required": [
+      "type",
+      "agentTasks"
+    ],
+    "additionalProperties": false,
+    "description": "Workflow history as agent tasks."
+  },
+  "WorkflowHistory": {
     "oneOf": [
       {
-        "$ref": "#/components/schemas/ActivityTask"
+        "$ref": "#/components/schemas/WorkflowEventsHistory"
       },
       {
-        "$ref": "#/components/schemas/ChildWorkflowTask"
+        "$ref": "#/components/schemas/WorkflowTasksHistory"
       },
       {
-        "$ref": "#/components/schemas/SignalTask"
-      },
-      {
-        "$ref": "#/components/schemas/TimerTask"
+        "$ref": "#/components/schemas/WorkflowAgentHistory"
       }
     ],
     "type": "object",
@@ -42150,94 +43346,10 @@
     "discriminator": {
       "propertyName": "type",
       "mapping": {
-        "activity": "#/components/schemas/ActivityTask",
-        "childWorkflow": "#/components/schemas/ChildWorkflowTask",
-        "signal": "#/components/schemas/SignalTask",
-        "timer": "#/components/schemas/TimerTask"
+        "events": "#/components/schemas/WorkflowEventsHistory",
+        "tasks": "#/components/schemas/WorkflowTasksHistory",
+        "agent": "#/components/schemas/WorkflowAgentHistory"
       }
-    }
-  },
-  "WorkflowHistory": {
-    "oneOf": [
-      {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "events"
-          },
-          "events": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkflowRunEvent"
-            }
-          }
-        },
-        "required": [
-          "type",
-          "events"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "tasks"
-          },
-          "tasks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/WorkflowTask"
-            }
-          }
-        },
-        "required": [
-          "type",
-          "tasks"
-        ],
-        "additionalProperties": false
-      },
-      {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "const": "agent"
-          },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "snapshot",
-              "delta"
-            ],
-            "description": "Snapshot replaces all history; delta replaces returned rows by history_id and retains other rows."
-          },
-          "next_from": {
-            "type": "string",
-            "description": "Pass as from on the next refresh with the same options. Absence disables incremental refresh."
-          },
-          "agentTasks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AgentTask"
-            }
-          }
-        },
-        "required": [
-          "type",
-          "agentTasks"
-        ],
-        "additionalProperties": false
-      }
-    ],
-    "type": "object",
-    "required": [
-      "type"
-    ],
-    "discriminator": {
-      "propertyName": "type"
     }
   },
   "PendingActivity": {
@@ -42879,7 +43991,8 @@
     "type": "object",
     "properties": {
       "query": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 4000
       },
       "key_terms": {
         "$ref": "#/components/schemas/StringArrayMap"
@@ -42892,10 +44005,12 @@
         "description": "Server-side text filters for large navigation sources, keyed by navigation id."
       },
       "display": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 64
       },
       "sort": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 64
       },
       "offset": {
         "type": "number",
@@ -42910,7 +44025,46 @@
         "multipleOf": 1
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "if": {},
+    "then": {
+      "properties": {
+        "key_terms": {
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "maxProperties": 50,
+          "additionalProperties": {
+            "maxItems": 100,
+            "items": {
+              "maxLength": 1000
+            }
+          }
+        },
+        "navigation": {
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "maxProperties": 20,
+          "additionalProperties": {
+            "maxItems": 100,
+            "items": {
+              "maxLength": 1000
+            }
+          }
+        },
+        "navigation_queries": {
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "maxProperties": 20,
+          "additionalProperties": {
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "description": "The keys of `key_terms`, `navigation` and `navigation_queries` are group ids: a lowercase letter, then lowercase letters, digits, `_` or `-`. `key_terms` holds at most 50 groups and `navigation` at most 20, each of at most 100 values of at most 1,000 characters, and the two hold at most 1,000 values in total. `navigation_queries` holds at most 20 queries of at most 200 characters."
   },
   "ViewNavigationResult": {
     "type": "object",
@@ -43226,7 +44380,8 @@
     "type": "object",
     "properties": {
       "query": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 4000
       },
       "key_terms": {
         "$ref": "#/components/schemas/StringArrayMap"
@@ -43239,10 +44394,12 @@
         "description": "Server-side text filters for large navigation sources, keyed by navigation id."
       },
       "display": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 64
       },
       "sort": {
-        "type": "string"
+        "type": "string",
+        "maxLength": 64
       },
       "offset": {
         "type": "number",
@@ -43265,7 +44422,77 @@
       "configuration"
     ],
     "additionalProperties": false,
-    "description": "Execute an unsaved (draft) View configuration without persisting it. Combines the inline configuration with the same execution inputs as  {@link  ExecuteViewRequest }  so authors can validate and preview results before calling create/update."
+    "if": {},
+    "then": {
+      "properties": {
+        "key_terms": {
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "maxProperties": 50,
+          "additionalProperties": {
+            "maxItems": 100,
+            "items": {
+              "maxLength": 1000
+            }
+          }
+        },
+        "navigation": {
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "maxProperties": 20,
+          "additionalProperties": {
+            "maxItems": 100,
+            "items": {
+              "maxLength": 1000
+            }
+          }
+        },
+        "navigation_queries": {
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_-]*$"
+          },
+          "maxProperties": 20,
+          "additionalProperties": {
+            "maxLength": 200
+          }
+        }
+      }
+    },
+    "allOf": [
+      {
+        "if": {
+          "required": [
+            "configuration"
+          ],
+          "properties": {
+            "configuration": {
+              "not": {
+                "required": [
+                  "search"
+                ]
+              }
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "query": {
+              "pattern": "^\\s*$"
+            },
+            "key_terms": {
+              "additionalProperties": {
+                "items": {
+                  "maxLength": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "description": "Execute an unsaved (draft) View configuration without persisting it. Combines the inline configuration with the same execution inputs as  {@link  ExecuteViewRequest }  so authors can validate and preview results before calling create/update. The keys of `key_terms`, `navigation` and `navigation_queries` are group ids: a lowercase letter, then lowercase letters, digits, `_` or `-`. `key_terms` holds at most 50 groups and `navigation` at most 20, each of at most 100 values of at most 1,000 characters, and the two hold at most 1,000 values in total. `navigation_queries` holds at most 20 queries of at most 200 characters. Without `configuration.search`, `query` must be blank and every `key_terms` value empty."
   },
   "DashboardVersioningStatusResponse": {
     "type": "object",
@@ -44954,123 +46181,155 @@
     "additionalProperties": false,
     "description": "Column definition for a data table."
   },
+  "AlterTableAddColumnOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "add_column"
+      },
+      "column": {
+        "$ref": "#/components/schemas/DataColumn"
+      }
+    },
+    "required": [
+      "op",
+      "column"
+    ],
+    "additionalProperties": false,
+    "description": "Add a column to the table."
+  },
+  "AlterTableDropColumnOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "drop_column"
+      },
+      "column": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "op",
+      "column"
+    ],
+    "additionalProperties": false,
+    "description": "Drop a column from the table."
+  },
+  "AlterTableRenameColumnOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "rename_column"
+      },
+      "from": {
+        "type": "string"
+      },
+      "to": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "op",
+      "from",
+      "to"
+    ],
+    "additionalProperties": false,
+    "description": "Rename a column."
+  },
+  "AlterTableModifyColumnOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "modify_column"
+      },
+      "column": {
+        "type": "string"
+      },
+      "updates": {
+        "$ref": "#/components/schemas/DataColumnUpdate"
+      }
+    },
+    "required": [
+      "op",
+      "column",
+      "updates"
+    ],
+    "additionalProperties": false,
+    "description": "Change a column's definition."
+  },
+  "AlterTableAddForeignKeyOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "add_foreign_key"
+      },
+      "foreign_key": {
+        "$ref": "#/components/schemas/DataForeignKey"
+      }
+    },
+    "required": [
+      "op",
+      "foreign_key"
+    ],
+    "additionalProperties": false,
+    "description": "Add a foreign key constraint."
+  },
+  "AlterTableDropForeignKeyOperation": {
+    "type": "object",
+    "properties": {
+      "op": {
+        "type": "string",
+        "const": "drop_foreign_key"
+      },
+      "column": {
+        "type": "string",
+        "description": "Column whose foreign key is removed"
+      }
+    },
+    "required": [
+      "op",
+      "column"
+    ],
+    "additionalProperties": false,
+    "description": "Remove the foreign key on a column."
+  },
   "AlterTableOperation": {
     "oneOf": [
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "add_column"
-          },
-          "column": {
-            "$ref": "#/components/schemas/DataColumn"
-          }
-        },
-        "required": [
-          "op",
-          "column"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableAddColumnOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "drop_column"
-          },
-          "column": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "op",
-          "column"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableDropColumnOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "rename_column"
-          },
-          "from": {
-            "type": "string"
-          },
-          "to": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "op",
-          "from",
-          "to"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableRenameColumnOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "modify_column"
-          },
-          "column": {
-            "type": "string"
-          },
-          "updates": {
-            "$ref": "#/components/schemas/DataColumnUpdate"
-          }
-        },
-        "required": [
-          "op",
-          "column",
-          "updates"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableModifyColumnOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "add_foreign_key"
-          },
-          "foreign_key": {
-            "$ref": "#/components/schemas/DataForeignKey"
-          }
-        },
-        "required": [
-          "op",
-          "foreign_key"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableAddForeignKeyOperation"
       },
       {
-        "type": "object",
-        "properties": {
-          "op": {
-            "type": "string",
-            "const": "drop_foreign_key"
-          },
-          "column": {
-            "type": "string",
-            "description": "Column whose foreign key is removed"
-          }
-        },
-        "required": [
-          "op",
-          "column"
-        ],
-        "additionalProperties": false
+        "$ref": "#/components/schemas/AlterTableDropForeignKeyOperation"
       }
     ],
     "type": "object",
     "discriminator": {
-      "propertyName": "op"
+      "propertyName": "op",
+      "mapping": {
+        "add_column": "#/components/schemas/AlterTableAddColumnOperation",
+        "drop_column": "#/components/schemas/AlterTableDropColumnOperation",
+        "rename_column": "#/components/schemas/AlterTableRenameColumnOperation",
+        "modify_column": "#/components/schemas/AlterTableModifyColumnOperation",
+        "add_foreign_key": "#/components/schemas/AlterTableAddForeignKeyOperation",
+        "drop_foreign_key": "#/components/schemas/AlterTableDropForeignKeyOperation"
+      }
     },
     "required": [
       "op"
@@ -45124,7 +46383,9 @@
     "properties": {
       "name": {
         "type": "string",
-        "description": "Table name"
+        "maxLength": 64,
+        "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+        "description": "Table name: a SQL identifier of letters, digits and underscores, starting with a letter or underscore, at most 64 characters, and not a reserved SQL keyword."
       },
       "description": {
         "type": "string",
@@ -45509,7 +46770,30 @@
       "message"
     ],
     "additionalProperties": false,
-    "description": "Payload for creating multiple tables atomically."
+    "allOf": [
+      {
+        "properties": {
+          "tables": {
+            "items": {
+              "properties": {
+                "columns": {
+                  "items": {
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+                        "maxLength": 64
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "description": "Payload for creating multiple tables atomically. Each column name is a SQL identifier of letters, digits and underscores, starting with a letter or underscore, at most 64 characters, and not a reserved SQL keyword."
   },
   "DataTable": {
     "type": "object",
@@ -45617,9 +46901,10 @@
       "drop_tables": {
         "type": "array",
         "items": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
-        "description": "Tables to drop"
+        "description": "Tables to drop. A name that matches no table is ignored."
       },
       "message": {
         "type": "string",
@@ -45631,7 +46916,39 @@
       "message"
     ],
     "additionalProperties": false,
-    "description": "Payload for AI-driven bulk schema updates."
+    "allOf": [
+      {
+        "properties": {
+          "relationships": {
+            "items": {
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "from_table": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "from_column": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "to_table": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "to_column": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    ],
+    "description": "Payload for AI-driven bulk schema updates. Each relationship names its tables and columns with non-empty strings."
   },
   "BatchQueryResult": {
     "type": "object",
@@ -46066,6 +47383,8 @@
           "string",
           "number"
         ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
         "description": "Start time (ISO string or epoch ms)"
       },
       "to": {
@@ -46073,6 +47392,8 @@
           "string",
           "number"
         ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
         "description": "End time (ISO string or epoch ms)"
       },
       "group_by": {
@@ -46175,7 +47496,8 @@
         "description": "Skip cache and force fresh query"
       }
     },
-    "additionalProperties": false
+    "additionalProperties": false,
+    "description": "`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999. The window from `from` to `to` (now when absent) may span at most 366 days."
   },
   "CostRunPriceQuery": {
     "type": "object",
@@ -46201,6 +47523,8 @@
           "string",
           "number"
         ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
         "description": "Optional lower bound for audit events"
       },
       "to": {
@@ -46208,6 +47532,8 @@
           "string",
           "number"
         ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
         "description": "Optional upper bound for audit events"
       },
       "pricing_source": {
@@ -46286,7 +47612,7 @@
         }
       }
     },
-    "description": "Identifies the run to price by at least one of `run_id`, `agent_run_id`, `workflow_id` or `workflow_run_id`. An empty identifier counts as absent."
+    "description": "Identifies the run to price by at least one of `run_id`, `agent_run_id`, `workflow_id` or `workflow_run_id`. An empty identifier counts as absent. `from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999. The window from `from` to `to` (now when absent) may span at most 366 days."
   },
   "CostModelPricesQuery": {
     "type": "object",
@@ -46296,6 +47622,8 @@
           "string",
           "number"
         ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
         "description": "Start time (ISO string or epoch ms)"
       },
       "to": {
@@ -46303,9 +47631,12 @@
           "string",
           "number"
         ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
         "description": "End time (ISO string or epoch ms)"
       }
-    }
+    },
+    "description": "`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999."
   },
   "CostExportQuery": {
     "type": "object",
@@ -46315,6 +47646,8 @@
           "string",
           "number"
         ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
         "description": "Start time (ISO string or epoch ms)"
       },
       "to": {
@@ -46322,6 +47655,8 @@
           "string",
           "number"
         ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
         "description": "End time (ISO string or epoch ms)"
       },
       "scope": {
@@ -46340,7 +47675,8 @@
         "type": "string",
         "description": "Filter by workflow / agent run ID"
       }
-    }
+    },
+    "description": "`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999. The window from `from` to `to` (now when absent) may span at most 366 days."
   },
   "ModelPricing": {
     "type": "object",
@@ -47108,10 +48444,19 @@
         "items": {
           "type": "string"
         },
-        "description": "The IDs of the objects to operate on"
+        "description": "The IDs of the objects to operate on, each an object ID. `create` ignores them: it makes new objects."
       },
       "params": {
         "type": "object",
+        "properties": {
+          "objects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateContentObjectPayload"
+            },
+            "description": "The objects a `create` makes, 1 to 10000, each a single-create payload."
+          }
+        },
         "additionalProperties": true,
         "description": "The operation parameters. `create` takes the objects to create as `objects`, 1 to 10000."
       }
@@ -47144,6 +48489,16 @@
               "minItems": 1,
               "maxItems": 10000
             }
+          }
+        }
+      }
+    },
+    "else": {
+      "properties": {
+        "ids": {
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{24}$"
           }
         }
       }
@@ -48345,7 +49700,9 @@
     "type": "object",
     "properties": {
       "environment": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "description": "The environment that runs the embedding model."
       },
       "max_tokens": {
         "type": "number"

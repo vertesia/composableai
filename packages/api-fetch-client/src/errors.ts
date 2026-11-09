@@ -112,8 +112,23 @@ export class ServerError extends RequestError {
 }
 
 export class ConnectionError extends RequestError {
-    constructor(req: Request, err: Error) {
-        super(`Failed to connect to server: ${err.message}`, req, 0, err);
+    constructor(req: Request, err: Error, message = `Failed to connect to server: ${err.message}`) {
+        super(message, req, 0, err);
+    }
+}
+
+/**
+ * The server answered, but the response body could not be read, e.g. the timeout fired mid-download.
+ * It stays a ConnectionError with status 0, since the caller received no usable response; the message
+ * and `responseStatus` record that the request did reach the server.
+ */
+export class ResponseReadError extends ConnectionError {
+    constructor(
+        req: Request,
+        err: Error,
+        readonly responseStatus: number,
+    ) {
+        super(req, err, `Failed to read response body (HTTP ${responseStatus}): ${err.message}`);
     }
 }
 

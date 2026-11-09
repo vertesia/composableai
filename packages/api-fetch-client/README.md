@@ -331,11 +331,12 @@ The main client class for making HTTP requests.
 
 ### Error Classes
 
-| Class             | Description                       |
-| ----------------- | --------------------------------- |
-| `RequestError`    | Base class for all request errors |
-| `ServerError`     | HTTP error responses (4xx, 5xx)   |
-| `ConnectionError` | Network/connection failures       |
+| Class               | Description                                                           |
+| ------------------- | --------------------------------------------------------------------- |
+| `RequestError`      | Base class for all request errors                                     |
+| `ServerError`       | HTTP error responses (4xx, 5xx)                                       |
+| `ConnectionError`   | Network/connection failures                                           |
+| `ResponseReadError` | Body read failed after the server answered; extends `ConnectionError` |
 
 ## License
 

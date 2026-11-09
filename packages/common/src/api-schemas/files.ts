@@ -1,5 +1,43 @@
 import { z } from 'zod';
 
+/**
+ * The rules every store applies to an object name before using it: not empty, not absolute (no leading `/` or `\`),
+ * and no `..` segment, segments being split on runs of `/` and `\`. A segment is anything but those separators except
+ * exactly `..`, which the alternatives spell without a lookahead so a request generator can produce matching names.
+ */
+const OBJECT_NAME_SEGMENT = String.raw`(?:\.\.[^\\/]+|\.(?:[^\\/.][^\\/]*)?|[^\\/.][^\\/]*)`;
+const OBJECT_NAME_PATTERN = new RegExp(String.raw`^${OBJECT_NAME_SEGMENT}(?:[\\/]+${OBJECT_NAME_SEGMENT})*[\\/]*$`);
+
+/** An object name in the project bucket, chosen by the caller. */
+function objectName(description: string) {
+    return z
+        .string()
+        .regex(OBJECT_NAME_PATTERN)
+        .meta({
+            description: `${description} It must not be empty, start with \`/\` or \`\\\`, or contain a \`..\` segment.`,
+        });
+}
+
+/**
+ * Characters `String.prototype.trim` removes that are not control characters. A file reference made only of
+ * whitespace names the bucket itself, and one holding a control character names no object in any store, so both are
+ * refused before the lookup.
+ */
+const BLANK = String.raw`\u0020\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff`;
+const CONTROL = String.raw`\u0000-\u001f\u007f`;
+const FILE_REFERENCE_PATTERN = new RegExp(`^[${BLANK}]*[^${CONTROL}${BLANK}][^${CONTROL}]*$`);
+
+/** A file by path relative to the project bucket, or by full storage URI (`gs://`, `s3://`, `az://`). */
+function fileReference(description: string) {
+    return z
+        .string()
+        .regex(FILE_REFERENCE_PATTERN)
+        .meta({ description: `${description} It must not be blank or contain control characters.` });
+}
+
+/** The longest lifetime, in seconds, a signed URL may be given: seven days. */
+const MAX_SIGNED_URL_TTL_SECONDS = 7 * 24 * 60 * 60;
+
 export const StringValueMapSchema = z.object({}).catchall(z.string()).meta({ id: 'StringValueMap' });
 
 export const FileMetadataUpdateResultSchema = z
@@ -18,9 +56,15 @@ export const FileListResponseSchema = z
 export const GetUploadUrlPayloadSchema = z
     .strictObject({
         name: z.string().min(1),
-        id: z.string().optional(),
+        id: objectName('The object name to upload to. A random name is chosen when omitted.').optional(),
         mime_type: z.string().optional(),
-        ttl: z.number().optional(),
+        ttl: z
+            .number()
+            .int()
+            .min(1)
+            .max(MAX_SIGNED_URL_TTL_SECONDS)
+            .meta({ description: 'Lifetime of the signed URL in seconds, at most seven days.' })
+            .optional(),
     })
     .meta({ id: 'GetUploadUrlPayload' });
 
@@ -47,7 +91,7 @@ export const GetFileUrlResponseSchema = z
 
 export const GetFileUrlPayloadSchema = z
     .strictObject({
-        file: z.string().min(1),
+        file: fileReference('The file path (relative to bucket) or full URI.'),
         name: z.string().optional(),
         disposition: z.enum(['inline', 'attachment']).optional(),
     })
@@ -66,7 +110,7 @@ export const BulkUploadUrlsPayloadSchema = z
                 z.strictObject({
                     name: z.string().min(1),
                     mime_type: z.string().optional(),
-                    id: z.string().optional(),
+                    id: objectName('The object name to upload to. A random name is chosen when omitted.').optional(),
                 }),
             )
             .min(1)
@@ -100,14 +144,14 @@ export const CopyFileResponseSchema = z
 
 export const CopyFilePayloadSchema = z
     .strictObject({
-        source: z.string().min(1),
-        dest: z.string().min(1),
+        source: fileReference('The file to copy: a path relative to the bucket or a full URI.'),
+        dest: objectName("The object name to copy to, in the source file's bucket."),
     })
     .meta({ id: 'CopyFilePayload' });
 
 export const SetFileMetadataPayloadSchema = z
     .strictObject({
-        file: z.string().min(1).meta({ description: 'The file path (relative to bucket) or full URI' }),
+        file: fileReference('The file path (relative to bucket) or full URI.'),
         metadata: StringValueMapSchema.meta({ description: 'Custom metadata key-value pairs to set on the file' }),
     })
     .meta({ id: 'SetFileMetadataPayload' });
@@ -121,7 +165,7 @@ export const SetFileMetadataPayloadSchema = z
  */
 export const FileMetadataQuerySchema = z
     .strictObject({
-        file: z.string().min(1),
+        file: fileReference('The file path (relative to bucket) or full URI.'),
     })
     .meta({ id: 'FileMetadataQuery' });
 
@@ -198,7 +242,7 @@ const UploadPartNumberSchema = z.number().int().min(1).max(10000);
 export const CreateUploadSessionPayloadSchema = z
     .strictObject({
         name: z.string().min(1),
-        id: z.string().optional(),
+        id: objectName('The object name to upload to. A random name is chosen when omitted.').optional(),
         mime_type: z.string().optional(),
     })
     .meta({
