@@ -64,14 +64,24 @@ export function AppLayout({
         },
     };
 
+    const sidebarContent = (
+        <Sidebar logo={logo} className={sidebarClassName}>
+            {sidebar}
+        </Sidebar>
+    );
+
     return (
         <div className="flex flex-col h-screen overflow-y-hidden">
             <SidebarContext.Provider value={sidebarContextValue}>
                 <div className="w-full">{mainNav}</div>
 
                 <div className="flex h-full overflow-y-auto w-full">
-                    {/* Mobile sidebar */}
-                    <div className="lg:hidden">
+                    {/* Mount one sidebar: a copy hidden with CSS would still render and run its effects. */}
+                    {isLargeScreen ? (
+                        <div className={`relative transition-all duration-300 ${desktopSidebarOpen ? 'w-72' : 'w-12'}`}>
+                            {sidebarContent}
+                        </div>
+                    ) : (
                         <SidePanel
                             className="bg-sidebar"
                             isOpen={sidebarOpen}
@@ -81,21 +91,9 @@ export function AppLayout({
                             resizable={false}
                             backdrop={true}
                         >
-                            <Sidebar logo={logo} className={sidebarClassName}>
-                                {sidebar}
-                            </Sidebar>
+                            {sidebarContent}
                         </SidePanel>
-                    </div>
-
-                    {/* Static sidebar for desktop */}
-                    <div
-                        className={`hidden lg:block relative transition-all duration-300 ${desktopSidebarOpen ? 'w-72' : 'w-12'}`}
-                    >
-                        {/* Sidebar component, swap this element with another sidebar if you like */}
-                        <Sidebar logo={logo} className={sidebarClassName}>
-                            {sidebar}
-                        </Sidebar>
-                    </div>
+                    )}
 
                     <div className="w-full h-full overflow-y-hidden">
                         {navbar ? (
