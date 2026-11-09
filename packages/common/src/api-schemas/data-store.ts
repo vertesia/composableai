@@ -331,39 +331,73 @@ export const DataColumnSchema = z
     })
     .meta({ id: 'DataColumn', description: 'Column definition for a data table.' });
 
+export const AlterTableAddColumnOperationSchema = z
+    .strictObject({
+        op: z.literal('add_column'),
+        column: DataColumnSchema,
+    })
+    .meta({ id: 'AlterTableAddColumnOperation', description: 'Add a column to the table.' });
+
+export const AlterTableDropColumnOperationSchema = z
+    .strictObject({
+        op: z.literal('drop_column'),
+        column: z.string(),
+    })
+    .meta({ id: 'AlterTableDropColumnOperation', description: 'Drop a column from the table.' });
+
+export const AlterTableRenameColumnOperationSchema = z
+    .strictObject({
+        op: z.literal('rename_column'),
+        from: z.string(),
+        to: z.string(),
+    })
+    .meta({ id: 'AlterTableRenameColumnOperation', description: 'Rename a column.' });
+
+export const AlterTableModifyColumnOperationSchema = z
+    .strictObject({
+        op: z.literal('modify_column'),
+        column: z.string(),
+        updates: DataColumnUpdateSchema,
+    })
+    .meta({ id: 'AlterTableModifyColumnOperation', description: "Change a column's definition." });
+
+export const AlterTableAddForeignKeyOperationSchema = z
+    .strictObject({
+        op: z.literal('add_foreign_key'),
+        foreign_key: DataForeignKeySchema,
+    })
+    .meta({ id: 'AlterTableAddForeignKeyOperation', description: 'Add a foreign key constraint.' });
+
+export const AlterTableDropForeignKeyOperationSchema = z
+    .strictObject({
+        op: z.literal('drop_foreign_key'),
+        column: z.string().meta({ description: 'Column whose foreign key is removed' }),
+    })
+    .meta({ id: 'AlterTableDropForeignKeyOperation', description: 'Remove the foreign key on a column.' });
+
 export const AlterTableOperationSchema = z
     .discriminatedUnion('op', [
-        z.strictObject({
-            op: z.literal('add_column'),
-            column: DataColumnSchema,
-        }),
-        z.strictObject({
-            op: z.literal('drop_column'),
-            column: z.string(),
-        }),
-        z.strictObject({
-            op: z.literal('rename_column'),
-            from: z.string(),
-            to: z.string(),
-        }),
-        z.strictObject({
-            op: z.literal('modify_column'),
-            column: z.string(),
-            updates: DataColumnUpdateSchema,
-        }),
-        z.strictObject({
-            op: z.literal('add_foreign_key'),
-            foreign_key: DataForeignKeySchema,
-        }),
-        z.strictObject({
-            op: z.literal('drop_foreign_key'),
-            column: z.string().meta({ description: 'Column whose foreign key is removed' }),
-        }),
+        AlterTableAddColumnOperationSchema,
+        AlterTableDropColumnOperationSchema,
+        AlterTableRenameColumnOperationSchema,
+        AlterTableModifyColumnOperationSchema,
+        AlterTableAddForeignKeyOperationSchema,
+        AlterTableDropForeignKeyOperationSchema,
     ])
     .meta({
         id: 'AlterTableOperation',
         type: 'object',
-        discriminator: { propertyName: 'op' },
+        discriminator: {
+            propertyName: 'op',
+            mapping: {
+                add_column: '#/components/schemas/AlterTableAddColumnOperation',
+                drop_column: '#/components/schemas/AlterTableDropColumnOperation',
+                rename_column: '#/components/schemas/AlterTableRenameColumnOperation',
+                modify_column: '#/components/schemas/AlterTableModifyColumnOperation',
+                add_foreign_key: '#/components/schemas/AlterTableAddForeignKeyOperation',
+                drop_foreign_key: '#/components/schemas/AlterTableDropForeignKeyOperation',
+            },
+        },
         required: ['op'],
     });
 

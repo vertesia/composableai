@@ -3,28 +3,42 @@ import { DashboardExportStatus, DashboardStatus } from '../data-platform.js';
 import { StringValueMapSchema } from './files.js';
 import { conditional, EditRevisionSchema, ExpectedEditRevisionSchema, PageCountSchema } from './schema-primitives.js';
 
+export const DashboardElasticsearchHitsMappingSchema = z
+    .strictObject({
+        type: z.literal('hits'),
+    })
+    .meta({ id: 'DashboardElasticsearchHitsMapping', description: 'Use the search hits as the Vega rows.' });
+
+export const DashboardElasticsearchAggregationBucketsMappingSchema = z
+    .strictObject({
+        type: z.literal('aggregation_buckets'),
+        path: z.string().meta({ description: 'Dot path under `aggregations` that contains a `buckets` array.' }),
+        keyField: z.string().meta({ description: 'Output field name for bucket key. Defaults to `key`.' }).optional(),
+        countField: z
+            .string()
+            .meta({ description: 'Output field name for doc count. Defaults to `doc_count`.' })
+            .optional(),
+    })
+    .meta({
+        id: 'DashboardElasticsearchAggregationBucketsMapping',
+        description: 'Use the buckets of one aggregation as the Vega rows.',
+    });
+
 export const DashboardElasticsearchResultMappingSchema = z
     .discriminatedUnion('type', [
-        z.strictObject({
-            type: z.literal('hits'),
-        }),
-        z.strictObject({
-            type: z.literal('aggregation_buckets'),
-            path: z.string().meta({ description: 'Dot path under `aggregations` that contains a `buckets` array.' }),
-            keyField: z
-                .string()
-                .meta({ description: 'Output field name for bucket key. Defaults to `key`.' })
-                .optional(),
-            countField: z
-                .string()
-                .meta({ description: 'Output field name for doc count. Defaults to `doc_count`.' })
-                .optional(),
-        }),
+        DashboardElasticsearchHitsMappingSchema,
+        DashboardElasticsearchAggregationBucketsMappingSchema,
     ])
     .meta({
         id: 'DashboardElasticsearchResultMapping',
         type: 'object',
-        discriminator: { propertyName: 'type' },
+        discriminator: {
+            propertyName: 'type',
+            mapping: {
+                hits: '#/components/schemas/DashboardElasticsearchHitsMapping',
+                aggregation_buckets: '#/components/schemas/DashboardElasticsearchAggregationBucketsMapping',
+            },
+        },
         required: ['type'],
         description: 'How an Elasticsearch DSL result should be converted into Vega rows.',
     });
