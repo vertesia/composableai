@@ -5,6 +5,7 @@ import open from 'open';
 import { handleCors } from './cors.js';
 import {
     CALLBACK_HOST,
+    canUseLoopbackCallback,
     isPeerOwnedByCurrentUser,
     RequestBodyTooLargeError,
     readRequestBody,
@@ -15,6 +16,13 @@ const { prompt } = enquirer;
 
 /** A login result is a handful of identifiers, URLs and tokens; nothing legitimate comes close to this. */
 const MAX_CALLBACK_BODY_BYTES = 64 * 1024;
+
+/**
+ * Redirect URI handed to the browser when the result is pasted by hand. The browser page accepts it as a loopback
+ * redirect, but no socket can listen on port 0, so its POST fails and the page offers the result to copy instead.
+ * It carries no state.
+ */
+const MANUAL_PASTE_REDIRECT_URI = `http://${CALLBACK_HOST}:0/`;
 
 export interface ConfigPayload {
     profile?: string;
@@ -118,7 +126,7 @@ export async function startConfigSession(
     // The short code is only shown to the user for a visual check. The state is the capability that authorizes a
     // callback: it travels only in the redirect URI handed to the browser. That URI is an argument of the browser
     // launcher, which other local accounts can read on Linux, so a callback must also come from a socket owned by
-    // this account wherever the platform can tell (see isPeerOwnedByCurrentUser).
+    // this account. Where that cannot be verified, no callback is started at all (see canUseLoopbackCallback).
     const code = randomInt(1000, 9999);
     const state = randomBytes(32).toString('base64url');
 
@@ -179,20 +187,32 @@ export async function startConfigSession(
                 console.error('Error processing request:', error);
             }
         };
-        server = await startServer((req, res) => {
-            handleCallback(req, res).catch((error) => {
-                console.error('Error handling callback request:', error);
-            });
-        });
-
-        const address = server.address();
-        if (!address || typeof address === 'string') {
-            throw new Error('Unable to determine local callback port');
+        const useCallback = await canUseLoopbackCallback();
+        if (signal?.aborted || completed) {
+            return;
         }
-        const port = address.port;
+        let redirectUri: URL;
+        if (useCallback) {
+            server = await startServer((req, res) => {
+                handleCallback(req, res).catch((error) => {
+                    console.error('Error handling callback request:', error);
+                });
+            });
+            const address = server.address();
+            if (!address || typeof address === 'string') {
+                throw new Error('Unable to determine local callback port');
+            }
+            redirectUri = new URL(`http://${CALLBACK_HOST}:${address.port}/`);
+            redirectUri.searchParams.set('state', state);
+            console.log('Login mode: browser callback. The browser sends the result back to this terminal.');
+        } else {
+            redirectUri = new URL(MANUAL_PASTE_REDIRECT_URI);
+            console.log(
+                'Login mode: manual paste. This system cannot verify who answers a local callback, ' +
+                    'so copy the result shown in the browser and paste it here.',
+            );
+        }
         const params = new URLSearchParams();
-        const redirectUri = new URL(`http://${CALLBACK_HOST}:${port}/`);
-        redirectUri.searchParams.set('state', state);
         params.append('redirect_uri', redirectUri.toString());
         params.append('code', String(code));
         if (payload.profile) params.append('profile', payload.profile);
@@ -216,7 +236,9 @@ export async function startConfigSession(
             const answer = await prompt<{ result?: string }>({
                 name: 'result',
                 type: 'input',
-                message: 'The browser failed to send the token? Copy the token here',
+                message: useCallback
+                    ? 'The browser failed to send the token? Copy the token here'
+                    : 'Paste the result copied from the browser',
             });
 
             // Check if aborted after prompt

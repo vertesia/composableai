@@ -5,15 +5,17 @@ import type { ConfigResult } from './index.js';
 const mocks = vi.hoisted(() => ({
     open: vi.fn<(url: string) => Promise<void>>(),
     peerOwnedByCurrentUser: vi.fn<(socket: Socket) => Promise<boolean>>(),
+    canUseLoopbackCallback: vi.fn<() => Promise<boolean>>(),
+    prompt: vi.fn<(question: unknown) => Promise<{ result?: string }>>(),
 }));
 
 vi.mock('open', () => ({ default: mocks.open }));
 vi.mock('./server.js', async (importOriginal) => ({
     ...(await importOriginal<typeof import('./server.js')>()),
     isPeerOwnedByCurrentUser: mocks.peerOwnedByCurrentUser,
+    canUseLoopbackCallback: () => mocks.canUseLoopbackCallback(),
 }));
-// The manual-entry prompt never resolves: these tests drive the HTTP callback only.
-vi.mock('enquirer', () => ({ default: { prompt: () => new Promise(() => undefined) } }));
+vi.mock('enquirer', () => ({ default: { prompt: (question: unknown) => mocks.prompt(question) } }));
 
 import { startConfigSession } from './index.js';
 
@@ -58,6 +60,9 @@ function post(url: URL | string, body: string) {
 
 beforeEach(() => {
     mocks.peerOwnedByCurrentUser.mockResolvedValue(true);
+    mocks.canUseLoopbackCallback.mockResolvedValue(true);
+    // Unless a test pastes a result, the manual-entry prompt never resolves and the HTTP callback drives the login.
+    mocks.prompt.mockImplementation(() => new Promise(() => undefined));
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
@@ -68,7 +73,18 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
+function loggedLines(): string[] {
+    return vi.mocked(console.log).mock.calls.map((args) => args.map(String).join(' '));
+}
+
 describe('legacy CLI login callback', () => {
+    it('tells the user the result comes back through the browser callback', async () => {
+        await startSession();
+        expect(loggedLines().filter((line) => line.startsWith('Login mode:'))).toEqual([
+            expect.stringContaining('browser callback'),
+        ]);
+    });
+
     it('listens on the IPv4 loopback interface only', async () => {
         const { redirectUri, callback } = await startSession();
         expect(redirectUri.hostname).toBe('127.0.0.1');
@@ -139,5 +155,54 @@ describe('legacy CLI login callback', () => {
 
         expect(status).toBe(413);
         expect(callback).not.toHaveBeenCalled();
+    });
+});
+
+describe('legacy CLI login by manual paste', () => {
+    const platform = process.platform;
+
+    afterEach(() => {
+        Object.defineProperty(process, 'platform', { value: platform });
+    });
+
+    it('does not start the callback on macOS: no state reaches the browser launcher and nothing listens', async () => {
+        const actual = await vi.importActual<typeof import('./server.js')>('./server.js');
+        mocks.canUseLoopbackCallback.mockImplementation(() => actual.canUseLoopbackCallback());
+        Object.defineProperty(process, 'platform', { value: 'darwin' });
+
+        const { redirectUri, callback } = await startSession();
+
+        expect(redirectUri.searchParams.has('state')).toBe(false);
+        expect(redirectUri.toString()).toBe('http://127.0.0.1:0/');
+        // The browser page's POST cannot land anywhere, so it offers the result to copy instead.
+        await expect(post(redirectUri, JSON.stringify(result))).rejects.toThrow();
+        expect(callback).not.toHaveBeenCalled();
+        expect(loggedLines().filter((line) => line.startsWith('Login mode:'))).toEqual([
+            expect.stringContaining('manual paste'),
+        ]);
+        // The login URL is still printed for the user to open by hand.
+        expect(loggedLines()).toContain(`Opening browser to ${mocks.open.mock.calls[0][0]}`);
+    });
+
+    it('falls back to manual paste when the platform cannot verify the peer of a callback', async () => {
+        mocks.canUseLoopbackCallback.mockResolvedValue(false);
+
+        const { redirectUri } = await startSession();
+
+        expect(redirectUri.searchParams.has('state')).toBe(false);
+        expect(mocks.peerOwnedByCurrentUser).not.toHaveBeenCalled();
+        expect(mocks.prompt).toHaveBeenCalledWith(
+            expect.objectContaining({ message: expect.stringContaining('Paste the result') }),
+        );
+    });
+
+    it('completes the login with the result pasted in the terminal', async () => {
+        mocks.canUseLoopbackCallback.mockResolvedValue(false);
+        mocks.prompt.mockResolvedValue({ result: `  ${JSON.stringify(result)}\n` });
+
+        const { callback } = await startSession();
+
+        await vi.waitFor(() => expect(callback).toHaveBeenCalledTimes(1));
+        expect(callback).toHaveBeenCalledWith(result);
     });
 });

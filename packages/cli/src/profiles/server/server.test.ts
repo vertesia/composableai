@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
     readFile: vi.fn<(path: string, encoding: string) => Promise<string>>(),
     useRealProc: { value: true },
+    /** Client sockets this module's code opened with `node:net`'s `connect`, newest last. */
+    connected: [] as Socket[],
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -16,7 +18,19 @@ vi.mock('node:fs/promises', async (importOriginal) => {
     };
 });
 
-import { isPeerOwnedByCurrentUser, readSocketTable, socketKey, startServer } from './server.js';
+vi.mock('node:net', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('node:net')>();
+    return {
+        ...actual,
+        connect: (...args: Parameters<typeof actual.connect>) => {
+            const socket = actual.connect(...args);
+            mocks.connected.push(socket);
+            return socket;
+        },
+    };
+});
+
+import { canUseLoopbackCallback, isPeerOwnedByCurrentUser, readSocketTable, socketKey, startServer } from './server.js';
 
 const OWN_UID = 1000;
 const OTHER_UID = 1001;
@@ -123,9 +137,95 @@ describe('isPeerOwnedByCurrentUser on Linux', () => {
         await expect(isPeerOwnedByCurrentUser(fakeSocket())).resolves.toBe(false);
     });
 
-    it('does not judge a connection when the table does not even list the accepted socket', async () => {
+    it('refuses a connection when the table does not even list the accepted socket', async () => {
+        // The table cannot vouch for anything it does not show: the state in the launcher's argv must not be enough.
         withTable();
-        await expect(isPeerOwnedByCurrentUser(fakeSocket())).resolves.toBe(true);
+        await expect(isPeerOwnedByCurrentUser(fakeSocket())).resolves.toBe(false);
+    });
+
+    it('refuses a connection when the socket tables cannot be read', async () => {
+        mocks.readFile.mockRejectedValue(Object.assign(new Error('EACCES'), { code: 'EACCES' }));
+        await expect(isPeerOwnedByCurrentUser(fakeSocket())).resolves.toBe(false);
+    });
+});
+
+describe('canUseLoopbackCallback', () => {
+    const platform = process.platform;
+
+    beforeEach(() => {
+        mocks.useRealProc.value = false;
+        mocks.connected.length = 0;
+        mocks.readFile.mockRejectedValue(new Error('the socket table must not be read on this platform'));
+    });
+
+    afterEach(() => {
+        mocks.useRealProc.value = true;
+        Object.defineProperty(process, 'platform', { value: platform });
+        vi.restoreAllMocks();
+    });
+
+    function onPlatform(value: NodeJS.Platform) {
+        Object.defineProperty(process, 'platform', { value });
+    }
+
+    /** Lists the probe's own connection in `/proc/net/tcp`, its client end owned by `clientUid`. */
+    function listProbeConnection(clientUid: number) {
+        mocks.readFile.mockImplementation(async (path: string) => {
+            if (path !== '/proc/net/tcp') {
+                return HEADER;
+            }
+            // The kernel lists the client socket as soon as the server accepts it; its JS ports may lag a tick.
+            await Promise.all(
+                mocks.connected.map((socket) =>
+                    socket.connecting ? new Promise((resolve) => socket.once('connect', resolve)) : undefined,
+                ),
+            );
+            const rows = mocks.connected.flatMap((socket) => {
+                const client = { address: socket.localAddress ?? '', port: socket.localPort ?? 0 };
+                const server = { address: socket.remoteAddress ?? '', port: socket.remotePort ?? 0 };
+                return [row(server, client, '01', OWN_UID), row(client, server, '01', clientUid)];
+            });
+            return [HEADER, ...rows].join('\n');
+        });
+    }
+
+    it('keeps the callback on Windows, where other accounts cannot read the launcher arguments', async () => {
+        onPlatform('win32');
+        await expect(canUseLoopbackCallback()).resolves.toBe(true);
+    });
+
+    it('falls back to manual paste on macOS, where the peer of a loopback socket cannot be verified', async () => {
+        onPlatform('darwin');
+        await expect(canUseLoopbackCallback()).resolves.toBe(false);
+        expect(mocks.connected).toHaveLength(0);
+    });
+
+    it('falls back to manual paste on Linux when the socket tables cannot be read', async () => {
+        onPlatform('linux');
+        vi.spyOn(process, 'getuid').mockReturnValue(OWN_UID);
+        await expect(canUseLoopbackCallback()).resolves.toBe(false);
+        expect(mocks.connected).toHaveLength(1);
+    });
+
+    it('falls back to manual paste on Linux when the table omits the probe connection', async () => {
+        onPlatform('linux');
+        vi.spyOn(process, 'getuid').mockReturnValue(OWN_UID);
+        mocks.readFile.mockResolvedValue(HEADER);
+        await expect(canUseLoopbackCallback()).resolves.toBe(false);
+    });
+
+    it('falls back to manual paste on Linux when the table attributes the probe to another account', async () => {
+        onPlatform('linux');
+        vi.spyOn(process, 'getuid').mockReturnValue(OWN_UID);
+        listProbeConnection(OTHER_UID);
+        await expect(canUseLoopbackCallback()).resolves.toBe(false);
+    });
+
+    it('keeps the callback on Linux when the table attributes the probe connection to this account', async () => {
+        onPlatform('linux');
+        vi.spyOn(process, 'getuid').mockReturnValue(OWN_UID);
+        listProbeConnection(OWN_UID);
+        await expect(canUseLoopbackCallback()).resolves.toBe(true);
     });
 });
 
@@ -150,5 +250,9 @@ describe.runIf(process.platform === 'linux')('isPeerOwnedByCurrentUser against t
         });
 
         await expect(verdict).resolves.toBe(true);
+    });
+
+    it('keeps the callback when the kernel lists this account as the owner of a self-connection', async () => {
+        await expect(canUseLoopbackCallback()).resolves.toBe(true);
     });
 });

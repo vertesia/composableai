@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import type { Socket } from 'node:net';
+import { type AddressInfo, connect, createServer as createTcpServer, type Socket } from 'node:net';
 import { endianness } from 'node:os';
 
 /** The only interface the login callback listens on. The browser is redirected to this exact address. */
@@ -75,6 +75,63 @@ export interface SocketTableEntry {
     established: boolean;
 }
 
+/** How long the Linux self-connection probe may take before the callback is deemed unverifiable. */
+const PROBE_TIMEOUT_MS = 2_000;
+
+/**
+ * Decides, before the browser is launched, whether the login result may come back through the loopback callback.
+ * When it returns false, the caller must not start the callback and the user pastes the result in the terminal.
+ *
+ * The redirect URI carrying the callback state is an argument of the browser launcher, so the state alone only
+ * authorizes a callback where other local accounts cannot read it there, or where the callback can be refused
+ * when another account opened the connection.
+ */
+export async function canUseLoopbackCallback(): Promise<boolean> {
+    switch (process.platform) {
+        case 'win32':
+            // Another non-admin account cannot read a process's command line on Windows, so the state stays with
+            // this account and its browser: the callback keeps relying on the state alone.
+            return true;
+        case 'linux':
+            // Any local account can read the launcher's argv from procfs, so the callback is only safe where the
+            // socket table names the owner of a connection: check, with a connection of our own, that it does.
+            return await probeLoopbackPeerVerification();
+        default:
+            // macOS and the other platforms have no socket owner table to refuse another account's connection.
+            // Until the state can be kept out of the launcher's arguments and logs, the result is pasted by hand.
+            return false;
+    }
+}
+
+/** Opens a loopback connection to this process and tells whether the socket table attributes it to this account. */
+async function probeLoopbackPeerVerification(): Promise<boolean> {
+    const server = createTcpServer();
+    let client: Socket | undefined;
+    let accepted: Socket | undefined;
+    let timer: NodeJS.Timeout | undefined;
+    try {
+        const connection = new Promise<Socket>((resolve) => server.once('connection', resolve));
+        await new Promise<void>((resolve, reject) => {
+            server.once('error', reject).listen(0, CALLBACK_HOST, resolve);
+        });
+        const { port } = server.address() as AddressInfo;
+        client = connect(port, CALLBACK_HOST);
+        const failed = new Promise<undefined>((resolve) => {
+            client?.once('error', () => resolve(undefined));
+            timer = setTimeout(() => resolve(undefined), PROBE_TIMEOUT_MS);
+        });
+        accepted = await Promise.race([connection, failed]);
+        return accepted ? await isPeerOwnedByCurrentUser(accepted) : false;
+    } catch (_error: unknown) {
+        return false;
+    } finally {
+        clearTimeout(timer);
+        accepted?.destroy();
+        client?.destroy();
+        server.close();
+    }
+}
+
 /**
  * Tells whether the client end of an accepted loopback connection belongs to this account (or to root, which can
  * read everything this process holds anyway).
@@ -83,12 +140,16 @@ export interface SocketTableEntry {
  * secret from `/proc/<pid>/cmdline`. The kernel socket table names the owner of every socket, which lets a callback
  * be refused when another account opened the connection, whatever it knows.
  *
- * Returns true where no socket table is available to check (macOS, Windows, or a Linux layer whose table does not
- * list this process's own sockets); the caller then relies on the secret alone.
+ * Fails closed on Linux: a table that cannot be read, or that does not list the accepted socket, cannot vouch for
+ * the connection. Windows keeps relying on the state alone (see canUseLoopbackCallback); the other platforms never
+ * start the callback.
  */
 export async function isPeerOwnedByCurrentUser(socket: Socket): Promise<boolean> {
-    if (process.platform !== 'linux' || typeof process.getuid !== 'function') {
+    if (process.platform === 'win32') {
         return true;
+    }
+    if (process.platform !== 'linux' || typeof process.getuid !== 'function') {
+        return false;
     }
     const { localAddress, localPort, remoteAddress, remotePort } = socket;
     if (!localAddress || !localPort || !remoteAddress || !remotePort) {
@@ -101,8 +162,9 @@ export async function isPeerOwnedByCurrentUser(socket: Socket): Promise<boolean>
     const server = endpoint(localAddress, localPort);
     const client = endpoint(remoteAddress, remotePort);
     if (!sockets.has(socketKey(server, client))) {
-        // The table does not show the accepted socket itself, so it says nothing about this connection.
-        return true;
+        // The table does not even show the accepted socket (unreadable, or a layer that hides this process's own
+        // sockets), so it cannot attribute the connection: refuse it.
+        return false;
     }
     const peer = sockets.get(socketKey(client, server));
     // A client socket missing from this namespace's table cannot be attributed: refuse it. Only an established
