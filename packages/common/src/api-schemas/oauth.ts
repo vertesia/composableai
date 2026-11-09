@@ -113,8 +113,7 @@ const oauthProviderPayloadSchema = z.strictObject({
 
 /**
  * A provider is created with a kebab-case name and a display name and client id that are not empty, as the server
- * already requires. The update payload stays unbounded: it writes only the fields present, and narrowing it would
- * refuse updates the server accepts today.
+ * already requires. The update payload keeps the same bounds on the fields it carries.
  */
 export const CreateOAuthProviderPayloadSchema = oauthProviderPayloadSchema
     .extend({
@@ -130,13 +129,21 @@ export const CreateOAuthProviderPayloadSchema = oauthProviderPayloadSchema
 
 /**
  * The update contract shares the create fields but makes each optional; the handler writes only the
- * fields present in the request.
+ * fields present in the request. A field it writes keeps the create bounds: the server refuses a name
+ * that is not kebab-case, and the model an empty display name or client id, each with a 400.
  */
-export const UpdateOAuthProviderPayloadSchema = oauthProviderPayloadSchema.partial().meta({
-    id: 'UpdateOAuthProviderPayload',
-    description:
-        'Payload for updating an OAuth Provider. All fields are optional — only provided fields are updated. To clear the client_secret, set it to an empty string.',
-});
+export const UpdateOAuthProviderPayloadSchema = oauthProviderPayloadSchema
+    .extend({
+        name: CreateOAuthProviderPayloadSchema.shape.name,
+        display_name: CreateOAuthProviderPayloadSchema.shape.display_name,
+        client_id: CreateOAuthProviderPayloadSchema.shape.client_id,
+    })
+    .partial()
+    .meta({
+        id: 'UpdateOAuthProviderPayload',
+        description:
+            'Payload for updating an OAuth Provider. All fields are optional — only provided fields are updated. To clear the client_secret, set it to an empty string.',
+    });
 
 export const OAuthProviderAuthStatusSchema = z
     .strictObject({

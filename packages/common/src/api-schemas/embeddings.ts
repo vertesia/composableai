@@ -168,7 +168,7 @@ export const RecalculateEmbeddingsQuerySchema = z
 
 export const ProjectConfigurationEmbeddingEnablePayloadSchema = z
     .strictObject({
-        environment: z.string(),
+        environment: z.string().min(1).meta({ description: 'The environment that runs the embedding model.' }),
         max_tokens: z.number().optional(),
         model: z.string().optional(),
     })

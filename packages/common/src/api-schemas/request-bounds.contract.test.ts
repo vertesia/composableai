@@ -61,6 +61,53 @@ const nonBlank = (component: ApiComponentName, field: string): FieldBounds => ({
     ],
 });
 
+/**
+ * A file named by relative path or storage URI: the server trims it to refuse a blank one, and refuses any control
+ * character before the lookup, since no store names an object with one.
+ */
+const fileReference = (component: ApiComponentName, field: string): FieldBounds => ({
+    component,
+    field,
+    refused: [
+        ['an empty string', ''],
+        ['whitespace', ' \u00a0\u3000 '],
+        ['a NUL', 'cache/\u0000.png'],
+        ['a line feed', 'cache/a\nb.png'],
+        ['a DEL', 'a\u007fb'],
+    ],
+    accepted: [
+        ['a relative path', 'cache/thumb.png'],
+        ['a storage URI', 'gs://bucket/cache/thumb.png'],
+        ['a value with surrounding whitespace', ' cache/thumb.png '],
+        ['a non-ASCII name', 'caché/été.png'],
+    ],
+});
+
+/** An object name the stores accept: not empty, not absolute, and no `..` segment. */
+const objectName = (component: ApiComponentName, field: string): FieldBounds => ({
+    component,
+    field,
+    refused: [
+        ['an empty string', ''],
+        ['an absolute path', '/cache/a.png'],
+        ['a backslash-rooted path', '\\cache\\a.png'],
+        ['a parent segment', 'cache/../a.png'],
+        ['a parent segment after a backslash', 'cache\\..\\a.png'],
+        ['a trailing parent segment', 'cache/..'],
+        ['only a parent segment', '..'],
+    ],
+    accepted: [
+        ['a name', 'a.png'],
+        ['a nested name', 'cache/thumb.png'],
+        ['whitespace', '  '],
+        ['a dot segment', './a.png'],
+        ['dots inside a segment', 'cache/..a/b..'],
+        ['three dots', '.../a'],
+        ['a trailing slash', 'cache/'],
+        ['repeated separators', 'cache//a.png'],
+    ],
+});
+
 const nonEmptyList = (component: ApiComponentName, field: string, item: unknown): FieldBounds => ({
     component,
     field,
@@ -111,6 +158,8 @@ const bounds: FieldBounds[] = [
     nonEmpty('InteractionCreatePayload', 'name'),
     nonEmpty('PromptTemplateCreatePayload', 'name'),
     nonEmpty('PromptTemplateCreatePayload', 'content'),
+    nonEmpty('PromptTemplateUpdatePayload', 'name'),
+    nonEmpty('PromptTemplateUpdatePayload', 'content'),
     // OAuth
     nonEmptyList('CreateOAuthClientPayload', 'redirect_uris', 'https://app.example.com/callback'),
     nonEmptyList('UpdateOAuthClientPayload', 'redirect_uris', 'https://app.example.com/callback'),
@@ -132,14 +181,12 @@ const bounds: FieldBounds[] = [
     nonEmpty('CreateOAuthProviderPayload', 'display_name'),
     nonEmpty('CreateOAuthProviderPayload', 'client_id'),
     {
-        // An update writes only what it carries, and keeps accepting what it always did.
+        // An update writes only what it carries, but a name it carries keeps the create bounds: the stored
+        // provider requires one.
         component: 'UpdateOAuthProviderPayload',
         field: 'name',
-        refused: [],
-        accepted: [
-            ['an empty string', ''],
-            ['a kebab-case name', 'my-provider'],
-        ],
+        refused: [['an empty string', '']],
+        accepted: [['a kebab-case name', 'my-provider']],
     },
     // Website credentials
     nonBlank('WebsiteCredentialMetadata', 'name'),
@@ -206,13 +253,31 @@ const bounds: FieldBounds[] = [
         accepted: [['an empty string', '']],
     },
     // Files
-    nonEmpty('FileMetadataQuery', 'file'),
-    nonEmpty('SetFileMetadataPayload', 'file'),
-    nonEmpty('GetFileUrlPayload', 'file'),
-    nonEmpty('CopyFilePayload', 'source'),
-    nonEmpty('CopyFilePayload', 'dest'),
+    fileReference('FileMetadataQuery', 'file'),
+    fileReference('SetFileMetadataPayload', 'file'),
+    fileReference('GetFileUrlPayload', 'file'),
+    fileReference('CopyFilePayload', 'source'),
+    objectName('CopyFilePayload', 'dest'),
     nonEmpty('GetUploadUrlPayload', 'name'),
+    objectName('GetUploadUrlPayload', 'id'),
+    objectName('CreateUploadSessionPayload', 'id'),
     nonEmpty('BulkUploadUrlsPayload', 'files/0/name'),
+    objectName('BulkUploadUrlsPayload', 'files/0/id'),
+    {
+        // A signed URL lives a whole number of seconds, from one second to seven days.
+        component: 'GetUploadUrlPayload',
+        field: 'ttl',
+        refused: [
+            ['zero', 0],
+            ['a negative lifetime', -60],
+            ['a fraction of a second', 1.5],
+            ['more than seven days', 604_801],
+        ],
+        accepted: [
+            ['one second', 1],
+            ['seven days', 604_800],
+        ],
+    },
     {
         component: 'BulkUploadUrlsPayload',
         field: 'files',
@@ -221,6 +286,21 @@ const bounds: FieldBounds[] = [
             ['10,001 files', Array.from({ length: 10_001 }, () => ({ name: 'a.txt' }))],
         ],
         accepted: [['10,000 files', Array.from({ length: 10_000 }, () => ({ name: 'a.txt' }))]],
+    },
+    // Embeddings
+    nonEmpty('ProjectConfigurationEmbeddingEnablePayload', 'environment'),
+    {
+        component: 'EmbeddingTypePathParams',
+        field: 'type',
+        refused: [
+            ['a number', '0'],
+            ['an unknown type', 'vector'],
+        ],
+        accepted: [
+            ['text', 'text'],
+            ['image', 'image'],
+            ['properties', 'properties'],
+        ],
     },
     // Runs, collections, tasks and definitions
     nonEmpty('CreateAgentRunPayload', 'interaction'),
@@ -363,7 +443,6 @@ const bounds: FieldBounds[] = [
  */
 const declaredFields: Array<[ApiComponentName, string]> = [
     ['UpdateAppInstallationToolPermissionsPayload', 'tools_requiring_approval'],
-    ['UpdateOAuthProviderPayload', 'name'],
     ['ProjectTokenRequest', 'account_id'],
     ['InteractionSearchQuery', 'limit'],
     ['ComputeInteractionFacetPayload', 'query/limit'],

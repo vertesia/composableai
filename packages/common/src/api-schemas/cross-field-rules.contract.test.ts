@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { type ApiComponentName, validateApiRequest } from './registry.js';
 
 const spec = { mark: 'bar' };
+const source = { type: 'agent', run_id: 'r' };
+const scenarios = [
+    { id: 's', name: 's', initial_context: {}, actors: [], fixtures: [], human_actions: [], assertions: {} },
+];
 
 // Rules that span several fields are published as `if`/`then`, which validators enforce and SDK generators
 // ignore, so each generated model keeps its plain fields. Each table pins the accepted and refused bodies.
@@ -72,6 +76,70 @@ const rules: Array<[ApiComponentName, string, Array<[string, unknown, boolean]>]
                 { name: 'create', ids: [], params: { objects: Array.from({ length: 10_001 }, () => ({})) } },
                 false,
             ],
+        ],
+    ],
+    [
+        'CreateTaskPayload',
+        'needs named fields, each default of the field type, and options for a select',
+        [
+            ['a text default', { title: 't', source, fields: [{ name: 'f', type: 'text', default: 'x' }] }, true],
+            ['a number default', { title: 't', source, fields: [{ name: 'f', type: 'number', default: 1 }] }, true],
+            ['no default', { title: 't', source, fields: [{ name: 'f', type: 'boolean' }] }, true],
+            [
+                'a select with options',
+                { title: 't', source, fields: [{ name: 'f', type: 'select', options: ['a'], default: 'a' }] },
+                true,
+            ],
+            [
+                'an object text default',
+                { title: 't', source, fields: [{ name: 'f', type: 'text', default: {} }] },
+                false,
+            ],
+            ['a null default', { title: 't', source, fields: [{ name: 'f', type: 'string', default: null }] }, false],
+            [
+                'a list number default',
+                { title: 't', source, fields: [{ name: 'f', type: 'number', default: [] }] },
+                false,
+            ],
+            ['a select without options', { title: 't', source, fields: [{ name: 'f', type: 'select' }] }, false],
+            ['an unnamed field', { title: 't', source, fields: [{ name: '', type: 'text' }] }, false],
+        ],
+    ],
+    [
+        'UpdateTaskPayload',
+        'needs a non-empty title, named fields and typed field defaults',
+        [
+            ['a title', { title: 't' }, true],
+            ['an empty title', { title: '' }, false],
+            ['a text default on a number field', { fields: [{ name: 'f', type: 'number', default: 'x' }] }, false],
+            ['an unnamed field', { fields: [{ name: '', type: 'text' }] }, false],
+        ],
+    ],
+    [
+        'CreateAgentRunPayload',
+        'needs a content type name when one is linked',
+        [
+            [
+                'a named content type',
+                { interaction: 'i', content_type: { ref_type: 'stored', id: 'x', name: 'n' } },
+                true,
+            ],
+            [
+                'an unnamed content type',
+                { interaction: 'i', content_type: { ref_type: 'stored', id: 'x', name: '' } },
+                false,
+            ],
+        ],
+    ],
+    [
+        'SubmitProcessTestRunPayload',
+        'needs an in-code process id, and app_version only for an app id',
+        [
+            ['a sys id', { process: { id: 'sys:noop' }, scenarios }, true],
+            ['an app id with a version', { process: { id: 'app:a:p', app_version: '1' }, scenarios }, true],
+            ['a stored ObjectId', { process: { id: '000000000000000000000000' }, scenarios }, false],
+            ['an empty id', { process: { id: '' }, scenarios }, false],
+            ['a sys id with a version', { process: { id: 'sys:noop', app_version: '1' }, scenarios }, false],
         ],
     ],
     [

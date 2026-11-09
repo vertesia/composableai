@@ -30,7 +30,14 @@ export const WebsiteCredentialSecretInputSchema = z
         password: z.string().optional(),
         totp: z
             .strictObject({
-                seed: z.string(),
+                // Base32 once whitespace, `=` and `-` are dropped; the server refuses anything else with a 400.
+                seed: z
+                    .string()
+                    .regex(/^[\sA-Za-z2-7=-]*[A-Za-z2-7][\sA-Za-z2-7=-]*$/)
+                    .meta({
+                        description:
+                            'The base32 TOTP seed (`A`-`Z`, `2`-`7`, any case). Whitespace, `=` and `-` are ignored.',
+                    }),
                 algorithm: WebsiteCredentialTotpAlgorithmSchema.optional(),
                 digits: z
                     .union([z.literal(6), z.literal(8)])
@@ -60,7 +67,15 @@ export const WebsiteCredentialCapabilitySchema = z
 
 export const WebsiteCredentialWebsiteSchema = z
     .strictObject({
-        host: z.string().meta({ description: 'Hostname this credential is allowed on. Subdomains match.' }),
+        // The server refuses a blank host with a 400, and stores hosts normalized, so a read never returns one.
+        host: z
+            .string()
+            .regex(/\S/)
+            .meta({
+                description:
+                    'Hostname this credential is allowed on, or a URL to take it from. Subdomains match. A value no ' +
+                    'hostname can be read from is refused.',
+            }),
         login_url: z.string().meta({ description: 'Optional login URL used by agents as a hint.' }).optional(),
         allowed_origins: z
             .array(z.string())

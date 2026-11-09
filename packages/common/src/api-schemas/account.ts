@@ -105,7 +105,8 @@ export const AccountSchema = z
  */
 export const UpdateAccountPayloadSchema = z
     .object({
-        name: z.string().optional(),
+        // The account model requires a name, so an empty one fails the save with a 400.
+        name: z.string().min(1).optional(),
         app_access_message: z.string().max(ACCOUNT_APP_ACCESS_MESSAGE_MAX_LENGTH).optional(),
         email_domains: z.array(z.string()).optional(),
         billing: AccountBillingSchema.optional(),

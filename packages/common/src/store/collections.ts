@@ -68,6 +68,8 @@ export type CollectionChildrenUpdateResult = Wire.CollectionChildrenUpdateResult
 
 export type CollectionMembersUpdatePayload = Wire.CollectionMembersUpdatePayload;
 
+export type CollectionPermissionsPayload = Wire.CollectionPermissionsPayload;
+
 export type CollectionChildrenUpdatePayload = Wire.CollectionChildrenUpdatePayload;
 
 export type CollectionMembersQuery = Wire.CollectionMembersQuery;

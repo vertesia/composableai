@@ -158,8 +158,9 @@ describe('gate 3 — AJV validates the same canonical objects that are published
         const group = (ApiSchemaComponents.UserGroup.properties as Record<string, JsonObject>).allowed_projects;
         expect(create.description).toBe('Restrict the new group to the given projects (empty/absent = org-wide).');
         expect(create.description).not.toBe(group.description);
-        // Everything except the description still comes from the group.
-        expect({ ...create, description: undefined }).toEqual({ ...group, description: undefined });
+        // The request also states what the server checks before it stores them: each one is a project ID.
+        expect(create.items).toEqual({ type: 'string', pattern: '^[0-9a-fA-F]{24}$' });
+        expect(group.items).toEqual({ type: 'string' });
     });
 });
 

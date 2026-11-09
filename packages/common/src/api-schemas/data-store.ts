@@ -331,39 +331,73 @@ export const DataColumnSchema = z
     })
     .meta({ id: 'DataColumn', description: 'Column definition for a data table.' });
 
+export const AlterTableAddColumnOperationSchema = z
+    .strictObject({
+        op: z.literal('add_column'),
+        column: DataColumnSchema,
+    })
+    .meta({ id: 'AlterTableAddColumnOperation', description: 'Add a column to the table.' });
+
+export const AlterTableDropColumnOperationSchema = z
+    .strictObject({
+        op: z.literal('drop_column'),
+        column: z.string(),
+    })
+    .meta({ id: 'AlterTableDropColumnOperation', description: 'Drop a column from the table.' });
+
+export const AlterTableRenameColumnOperationSchema = z
+    .strictObject({
+        op: z.literal('rename_column'),
+        from: z.string(),
+        to: z.string(),
+    })
+    .meta({ id: 'AlterTableRenameColumnOperation', description: 'Rename a column.' });
+
+export const AlterTableModifyColumnOperationSchema = z
+    .strictObject({
+        op: z.literal('modify_column'),
+        column: z.string(),
+        updates: DataColumnUpdateSchema,
+    })
+    .meta({ id: 'AlterTableModifyColumnOperation', description: "Change a column's definition." });
+
+export const AlterTableAddForeignKeyOperationSchema = z
+    .strictObject({
+        op: z.literal('add_foreign_key'),
+        foreign_key: DataForeignKeySchema,
+    })
+    .meta({ id: 'AlterTableAddForeignKeyOperation', description: 'Add a foreign key constraint.' });
+
+export const AlterTableDropForeignKeyOperationSchema = z
+    .strictObject({
+        op: z.literal('drop_foreign_key'),
+        column: z.string().meta({ description: 'Column whose foreign key is removed' }),
+    })
+    .meta({ id: 'AlterTableDropForeignKeyOperation', description: 'Remove the foreign key on a column.' });
+
 export const AlterTableOperationSchema = z
     .discriminatedUnion('op', [
-        z.strictObject({
-            op: z.literal('add_column'),
-            column: DataColumnSchema,
-        }),
-        z.strictObject({
-            op: z.literal('drop_column'),
-            column: z.string(),
-        }),
-        z.strictObject({
-            op: z.literal('rename_column'),
-            from: z.string(),
-            to: z.string(),
-        }),
-        z.strictObject({
-            op: z.literal('modify_column'),
-            column: z.string(),
-            updates: DataColumnUpdateSchema,
-        }),
-        z.strictObject({
-            op: z.literal('add_foreign_key'),
-            foreign_key: DataForeignKeySchema,
-        }),
-        z.strictObject({
-            op: z.literal('drop_foreign_key'),
-            column: z.string().meta({ description: 'Column whose foreign key is removed' }),
-        }),
+        AlterTableAddColumnOperationSchema,
+        AlterTableDropColumnOperationSchema,
+        AlterTableRenameColumnOperationSchema,
+        AlterTableModifyColumnOperationSchema,
+        AlterTableAddForeignKeyOperationSchema,
+        AlterTableDropForeignKeyOperationSchema,
     ])
     .meta({
         id: 'AlterTableOperation',
         type: 'object',
-        discriminator: { propertyName: 'op' },
+        discriminator: {
+            propertyName: 'op',
+            mapping: {
+                add_column: '#/components/schemas/AlterTableAddColumnOperation',
+                drop_column: '#/components/schemas/AlterTableDropColumnOperation',
+                rename_column: '#/components/schemas/AlterTableRenameColumnOperation',
+                modify_column: '#/components/schemas/AlterTableModifyColumnOperation',
+                add_foreign_key: '#/components/schemas/AlterTableAddForeignKeyOperation',
+                drop_foreign_key: '#/components/schemas/AlterTableDropForeignKeyOperation',
+            },
+        },
         required: ['op'],
     });
 
@@ -379,9 +413,22 @@ export const DataRelationshipSchema = z
     })
     .meta({ id: 'DataRelationship', description: 'Semantic relationship between tables for AI understanding.' });
 
+/**
+ * A table name the data store accepts for a new table: a SQL identifier of at most 64 characters, starting with a
+ * letter or underscore. The server also refuses reserved SQL keywords, which this does not state.
+ */
+const DataTableNameSchema = z
+    .string()
+    .max(64)
+    .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/);
+
 export const CreateTablePayloadSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'Table name' }),
+        name: DataTableNameSchema.meta({
+            description:
+                'Table name: a SQL identifier of letters, digits and underscores, starting with a letter or ' +
+                'underscore, at most 64 characters, and not a reserved SQL keyword.',
+        }),
         description: z.string().meta({ description: 'Table description' }).optional(),
         columns: z.array(DataColumnSchema).meta({ description: 'Column definitions (at least one required)' }),
         foreign_keys: z.array(DataForeignKeySchema).meta({ description: 'Foreign key constraints' }).optional(),
@@ -478,12 +525,46 @@ export const ImportJobSchema = z
     })
     .meta({ id: 'ImportJob', description: 'Import job tracking.' });
 
+/**
+ * The column name rule of a table this request creates: the same SQL identifier as a table name. Stated here
+ * rather than on `DataColumn`, which is also the shape of the stored columns every schema response returns, and
+ * rather than on `CreateTablePayload`, whose entries in a schema update are skipped when they name an existing table.
+ */
+const NEW_TABLE_COLUMN_NAME_RULE = {
+    allOf: [
+        {
+            properties: {
+                tables: {
+                    items: {
+                        properties: {
+                            columns: {
+                                items: {
+                                    properties: {
+                                        name: { type: 'string', pattern: '^[a-zA-Z_][a-zA-Z0-9_]*$', maxLength: 64 },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    ],
+};
+
 export const CreateTablesPayloadSchema = z
     .strictObject({
         tables: z.array(CreateTablePayloadSchema).min(1).meta({ description: 'Table definitions to create' }),
         message: z.string().min(1).meta({ description: 'Commit message' }),
     })
-    .meta({ id: 'CreateTablesPayload', description: 'Payload for creating multiple tables atomically.' });
+    .meta({
+        id: 'CreateTablesPayload',
+        description:
+            'Payload for creating multiple tables atomically. Each column name is a SQL identifier of letters, ' +
+            'digits and underscores, starting with a letter or underscore, at most 64 characters, and not a ' +
+            'reserved SQL keyword.',
+        ...NEW_TABLE_COLUMN_NAME_RULE,
+    });
 
 export const DataTableSchema = z
     .strictObject({
@@ -508,15 +589,47 @@ export const AlterTablePayloadSchema = z
     })
     .meta({ id: 'AlterTablePayload', description: 'Payload for altering a table schema.' });
 
+/**
+ * The stored relationship requires each name, and an empty string does not count as one. Stated on the update
+ * rather than on `DataRelationship`, which is also the shape of the relationships schema responses return.
+ */
+const RELATIONSHIP_WRITE_RULE = {
+    allOf: [
+        {
+            properties: {
+                relationships: {
+                    items: {
+                        properties: Object.fromEntries(
+                            ['name', 'from_table', 'from_column', 'to_table', 'to_column'].map((key) => [
+                                key,
+                                { type: 'string', minLength: 1 },
+                            ]),
+                        ),
+                    },
+                },
+            },
+        },
+    ],
+};
+
 export const UpdateSchemaPayloadSchema = z
     .strictObject({
         description: z.string().meta({ description: 'Updated schema description' }).optional(),
         tables: z.array(CreateTablePayloadSchema).meta({ description: 'Tables to create or update' }).optional(),
         relationships: z.array(DataRelationshipSchema).meta({ description: 'Relationships to set' }).optional(),
-        drop_tables: z.array(z.string()).meta({ description: 'Tables to drop' }).optional(),
+        drop_tables: z
+            .array(z.string().min(1))
+            .meta({ description: 'Tables to drop. A name that matches no table is ignored.' })
+            .optional(),
         message: z.string().min(1).meta({ description: 'Commit message (required)' }),
     })
-    .meta({ id: 'UpdateSchemaPayload', description: 'Payload for AI-driven bulk schema updates.' });
+    .meta({
+        id: 'UpdateSchemaPayload',
+        description:
+            'Payload for AI-driven bulk schema updates. Each relationship names its tables and columns with ' +
+            'non-empty strings.',
+        ...RELATIONSHIP_WRITE_RULE,
+    });
 
 export const BatchQueryResultSchema = z
     .strictObject({
