@@ -1174,6 +1174,30 @@ interface Checks {
         W.BatchQueryPayload,
         z.infer<typeof import('./api-schemas/data-store.js').BatchQueryPayloadSchema>
     >;
+    AlterTableAddColumnOperation: Same<
+        W.AlterTableAddColumnOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableAddColumnOperationSchema>
+    >;
+    AlterTableDropColumnOperation: Same<
+        W.AlterTableDropColumnOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableDropColumnOperationSchema>
+    >;
+    AlterTableRenameColumnOperation: Same<
+        W.AlterTableRenameColumnOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableRenameColumnOperationSchema>
+    >;
+    AlterTableModifyColumnOperation: Same<
+        W.AlterTableModifyColumnOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableModifyColumnOperationSchema>
+    >;
+    AlterTableAddForeignKeyOperation: Same<
+        W.AlterTableAddForeignKeyOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableAddForeignKeyOperationSchema>
+    >;
+    AlterTableDropForeignKeyOperation: Same<
+        W.AlterTableDropForeignKeyOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableDropForeignKeyOperationSchema>
+    >;
     AlterTableOperation: Same<
         W.AlterTableOperation,
         z.infer<typeof import('./api-schemas/data-store.js').AlterTableOperationSchema>
@@ -1314,6 +1338,14 @@ interface Checks {
     DashboardElasticsearchDsl: Same<
         W.DashboardElasticsearchDsl,
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchDslSchema>
+    >;
+    DashboardElasticsearchHitsMapping: Same<
+        W.DashboardElasticsearchHitsMapping,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchHitsMappingSchema>
+    >;
+    DashboardElasticsearchAggregationBucketsMapping: Same<
+        W.DashboardElasticsearchAggregationBucketsMapping,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchAggregationBucketsMappingSchema>
     >;
     DashboardElasticsearchResultMapping: Same<
         W.DashboardElasticsearchResultMapping,
@@ -3078,6 +3110,14 @@ interface Checks {
         W.WorkflowInputFile,
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInputFileSchema>
     >;
+    WorkflowObjectIdsInput: Same<
+        W.WorkflowObjectIdsInput,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowObjectIdsInputSchema>
+    >;
+    WorkflowFilesInput: Same<
+        W.WorkflowFilesInput,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowFilesInputSchema>
+    >;
     WorkflowInput: Same<W.WorkflowInput, z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInputSchema>>;
     DSLActivityOptions: Same<
         W.DSLActivityOptions,
@@ -3771,6 +3811,18 @@ interface Checks {
     SignalTask: Same<W.SignalTask, z.infer<typeof import('./api-schemas/workflow-runs.js').SignalTaskSchema>>;
     TimerTask: Same<W.TimerTask, z.infer<typeof import('./api-schemas/workflow-runs.js').TimerTaskSchema>>;
     WorkflowTask: Same<W.WorkflowTask, z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowTaskSchema>>;
+    WorkflowEventsHistory: Same<
+        W.WorkflowEventsHistory,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowEventsHistorySchema>
+    >;
+    WorkflowTasksHistory: Same<
+        W.WorkflowTasksHistory,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowTasksHistorySchema>
+    >;
+    WorkflowAgentHistory: Same<
+        W.WorkflowAgentHistory,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowAgentHistorySchema>
+    >;
     WorkflowHistory: Same<
         W.WorkflowHistory,
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowHistorySchema>
@@ -6657,6 +6709,14 @@ interface Checks {
         W.ApiComponentTypes['RunMigrationResponse'],
         z.infer<typeof import('./api-schemas/commands.js').RunMigrationResponseSchema>
     >;
+    'component:DashboardElasticsearchHitsMapping': Same<
+        W.ApiComponentTypes['DashboardElasticsearchHitsMapping'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchHitsMappingSchema>
+    >;
+    'component:DashboardElasticsearchAggregationBucketsMapping': Same<
+        W.ApiComponentTypes['DashboardElasticsearchAggregationBucketsMapping'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchAggregationBucketsMappingSchema>
+    >;
     'component:DashboardElasticsearchResultMapping': Same<
         W.ApiComponentTypes['DashboardElasticsearchResultMapping'],
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchResultMappingSchema>
@@ -6936,6 +6996,30 @@ interface Checks {
     'component:DataColumn': Same<
         W.ApiComponentTypes['DataColumn'],
         z.infer<typeof import('./api-schemas/data-store.js').DataColumnSchema>
+    >;
+    'component:AlterTableAddColumnOperation': Same<
+        W.ApiComponentTypes['AlterTableAddColumnOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableAddColumnOperationSchema>
+    >;
+    'component:AlterTableDropColumnOperation': Same<
+        W.ApiComponentTypes['AlterTableDropColumnOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableDropColumnOperationSchema>
+    >;
+    'component:AlterTableRenameColumnOperation': Same<
+        W.ApiComponentTypes['AlterTableRenameColumnOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableRenameColumnOperationSchema>
+    >;
+    'component:AlterTableModifyColumnOperation': Same<
+        W.ApiComponentTypes['AlterTableModifyColumnOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableModifyColumnOperationSchema>
+    >;
+    'component:AlterTableAddForeignKeyOperation': Same<
+        W.ApiComponentTypes['AlterTableAddForeignKeyOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableAddForeignKeyOperationSchema>
+    >;
+    'component:AlterTableDropForeignKeyOperation': Same<
+        W.ApiComponentTypes['AlterTableDropForeignKeyOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableDropForeignKeyOperationSchema>
     >;
     'component:AlterTableOperation': Same<
         W.ApiComponentTypes['AlterTableOperation'],
@@ -8593,6 +8677,14 @@ interface Checks {
         W.ApiComponentTypes['WorkflowRunEvent'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowRunEventSchema>
     >;
+    'component:WorkflowObjectIdsInput': Same<
+        W.ApiComponentTypes['WorkflowObjectIdsInput'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowObjectIdsInputSchema>
+    >;
+    'component:WorkflowFilesInput': Same<
+        W.ApiComponentTypes['WorkflowFilesInput'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowFilesInputSchema>
+    >;
     'component:WorkflowInput': Same<
         W.ApiComponentTypes['WorkflowInput'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInputSchema>
@@ -8604,6 +8696,18 @@ interface Checks {
     'component:ExecuteWorkflowPayload': Same<
         W.ApiComponentTypes['ExecuteWorkflowPayload'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').ExecuteWorkflowPayloadSchema>
+    >;
+    'component:WorkflowEventsHistory': Same<
+        W.ApiComponentTypes['WorkflowEventsHistory'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowEventsHistorySchema>
+    >;
+    'component:WorkflowTasksHistory': Same<
+        W.ApiComponentTypes['WorkflowTasksHistory'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowTasksHistorySchema>
+    >;
+    'component:WorkflowAgentHistory': Same<
+        W.ApiComponentTypes['WorkflowAgentHistory'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowAgentHistorySchema>
     >;
     'component:WorkflowHistory': Same<
         W.ApiComponentTypes['WorkflowHistory'],
@@ -10574,6 +10678,12 @@ const checks: Checks = {
     CreateTablesPayload: true,
     QueryValidationPayload: true,
     BatchQueryPayload: true,
+    AlterTableAddColumnOperation: true,
+    AlterTableDropColumnOperation: true,
+    AlterTableRenameColumnOperation: true,
+    AlterTableModifyColumnOperation: true,
+    AlterTableAddForeignKeyOperation: true,
+    AlterTableDropForeignKeyOperation: true,
     AlterTableOperation: true,
     AlterTablePayload: true,
     UpdateSchemaPayload: true,
@@ -10613,6 +10723,8 @@ const checks: Checks = {
     DashboardPanel: true,
     DashboardLayout: true,
     DashboardElasticsearchDsl: true,
+    DashboardElasticsearchHitsMapping: true,
+    DashboardElasticsearchAggregationBucketsMapping: true,
     DashboardElasticsearchResultMapping: true,
     DashboardSqlDataSource: true,
     DashboardStoreElasticsearchDataSource: true,
@@ -11086,6 +11198,8 @@ const checks: Checks = {
     DocAnalyzerProgressStatus: true,
     DurationValue: true,
     WorkflowInputFile: true,
+    WorkflowObjectIdsInput: true,
+    WorkflowFilesInput: true,
     WorkflowInput: true,
     DSLActivityOptions: true,
     DSLRetryPolicy: true,
@@ -11284,6 +11398,9 @@ const checks: Checks = {
     SignalTask: true,
     TimerTask: true,
     WorkflowTask: true,
+    WorkflowEventsHistory: true,
+    WorkflowTasksHistory: true,
+    WorkflowAgentHistory: true,
     WorkflowHistory: true,
     AgentTask: true,
     WorkflowRun: true,
@@ -12040,6 +12157,8 @@ const checks: Checks = {
     'component:MigrationListResponse': true,
     'component:RunMigrationPayload': true,
     'component:RunMigrationResponse': true,
+    'component:DashboardElasticsearchHitsMapping': true,
+    'component:DashboardElasticsearchAggregationBucketsMapping': true,
     'component:DashboardElasticsearchResultMapping': true,
     'component:DashboardElasticsearchDsl': true,
     'component:DashboardSqlDataSource': true,
@@ -12110,6 +12229,12 @@ const checks: Checks = {
     'component:CreateDataStorePayload': true,
     'component:QueryValidationResult': true,
     'component:DataColumn': true,
+    'component:AlterTableAddColumnOperation': true,
+    'component:AlterTableDropColumnOperation': true,
+    'component:AlterTableRenameColumnOperation': true,
+    'component:AlterTableModifyColumnOperation': true,
+    'component:AlterTableAddForeignKeyOperation': true,
+    'component:AlterTableDropForeignKeyOperation': true,
     'component:AlterTableOperation': true,
     'component:DataRelationship': true,
     'component:CreateTablePayload': true,
@@ -12524,9 +12649,14 @@ const checks: Checks = {
     'component:WorkflowDefinitionRefArray': true,
     'component:ListWorkflowRunsResponse': true,
     'component:WorkflowRunEvent': true,
+    'component:WorkflowObjectIdsInput': true,
+    'component:WorkflowFilesInput': true,
     'component:WorkflowInput': true,
     'component:WorkflowRunUpdatesResponse': true,
     'component:ExecuteWorkflowPayload': true,
+    'component:WorkflowEventsHistory': true,
+    'component:WorkflowTasksHistory': true,
+    'component:WorkflowAgentHistory': true,
     'component:WorkflowHistory': true,
     'component:WorkflowRunWithDetails': true,
     'component:BindRunWorkflowPayload': true,
@@ -12941,6 +13071,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2691);
+        expect(Object.keys(checks)).toHaveLength(2717);
     });
 });
