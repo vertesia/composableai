@@ -183,8 +183,34 @@ export interface IRequestParams {
     dedupe?: boolean;
 }
 
-/** How long a GET can be joined after it starts, by default. Duplicate GETs from one render start within milliseconds. */
-export const DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS = 5_000;
+/**
+ * How long a GET can be joined after it starts, by default. Components that load the same resource while rendering one
+ * page start their requests within a few milliseconds of each other; a short window shares those without handing a
+ * later, deliberate refetch (after an event, or a change made elsewhere) a response that started before the change.
+ */
+export const DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS = 50;
+
+/** An identical GET that started while another was in flight, reported to `InFlightRequestsOptions.onDuplicate`. */
+export interface DuplicateRequest {
+    method: 'GET';
+    /** The request URL without its query string. */
+    path: string;
+    /** Milliseconds since the in-flight request started. */
+    delayMs: number;
+    /** Whether the duplicate joined the in-flight request (it started within the join window) or was sent. */
+    shared: boolean;
+}
+
+export interface InFlightRequestsOptions {
+    /** How long a GET can be joined after it starts. Defaults to `DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS`. */
+    joinWindowMs?: number;
+    /**
+     * Called for every GET that starts while an identical one is in flight, whether it is shared or sent. Duplicates
+     * usually mean several callers load the same resource and could share it; use this to find them. Errors it
+     * throws are ignored.
+     */
+    onDuplicate?: (duplicate: DuplicateRequest) => void;
+}
 
 /**
  * The GET requests currently in flight, keyed by write generation, URL, headers and credential. A client that has one
@@ -199,8 +225,13 @@ export const DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS = 5_000;
 export class InFlightRequests {
     private readonly requests = new Map<string, { request: Promise<unknown>; startedAt: number }>();
     private writes = 0;
+    readonly joinWindowMs: number;
+    private readonly onDuplicate?: (duplicate: DuplicateRequest) => void;
 
-    constructor(readonly joinWindowMs: number = DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS) {}
+    constructor(options: InFlightRequestsOptions = {}) {
+        this.joinWindowMs = options.joinWindowMs ?? DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS;
+        this.onDuplicate = options.onDuplicate;
+    }
 
     /**
      * Incremented by every `invalidate()`. A GET captures it when it is called (before any await) and makes it part of
@@ -217,10 +248,23 @@ export class InFlightRequests {
         return this.requests.size;
     }
 
-    /** The in-flight request for `key`, if it started less than `joinWindowMs` ago. */
-    get(key: string): Promise<unknown> | undefined {
+    /**
+     * The in-flight request for `key`, if it started less than `joinWindowMs` ago. When one with that key is in flight,
+     * the call is reported to `onDuplicate` as shared or not; `url` is reported without its query string.
+     */
+    get(key: string, url: string): Promise<unknown> | undefined {
         const entry = this.requests.get(key);
-        return entry && Date.now() - entry.startedAt < this.joinWindowMs ? entry.request : undefined;
+        if (!entry) return undefined;
+        const delayMs = Date.now() - entry.startedAt;
+        const shared = delayMs < this.joinWindowMs;
+        if (this.onDuplicate) {
+            try {
+                this.onDuplicate({ method: 'GET', path: url.split('?')[0], delayMs, shared });
+            } catch {
+                // Observability must never fail the request.
+            }
+        }
+        return shared ? entry.request : undefined;
     }
 
     set(key: string, request: Promise<unknown>): void {
@@ -466,12 +510,8 @@ export abstract class ClientBase {
     pacingRetry?: IPacingRetryPolicy | false;
     requestIdentity?: RequestIdentityProvider;
     defaultTimeoutMs?: number;
-    /**
-     * In-flight GET deduplication, on by default; see `withInFlightDeduplication`. `undefined` means the default
-     * table, created on first use (so clients that delegate to a parent, such as API topics, never allocate one);
-     * `null` means turned off.
-     */
-    inFlight?: InFlightRequests | null;
+    /** In-flight GET deduplication, off unless turned on with `withInFlightDeduplication`. */
+    inFlight?: InFlightRequests;
 
     abstract get headers(): Record<string, string>;
 
@@ -518,26 +558,29 @@ export abstract class ClientBase {
 
     /**
      * Share one request between concurrent identical GETs (same URL, headers and credential) instead of sending each.
-     * A caller that joins an in-flight GET gets its own copy of the parsed result, or the same error. On by default.
+     * A caller that joins an in-flight GET gets its own copy of the parsed result, or the same error. Off by default.
      *
      * Only plain JSON GETs are shared: not SSE or custom readers, not requests with a caller AbortSignal (one caller
      * aborting must not abort another), not requests with their own `timeoutMs`, `retryPolicy` or `pacingRetry`
      * (a joiner would inherit the first caller's), and not requests with `dedupe: false`. A request can be joined only
-     * during the table's join window (5 s by default). Any other method starts a new generation when it starts and when it
-     * settles, so reads issued after a write always reach the server.
+     * during the table's join window (50 ms by default). Any other method starts a new generation when it starts and
+     * when it settles, so reads issued after a write always reach the server.
+     *
+     * Only turn it on when every caller of this client may see every other caller's GET responses: the key covers the
+     * URL, headers and credential, but not what `createRequest()`, an `onRequest` hook or a custom `fetch` adds per
+     * call, and a joiner is not given its own `requestIdentity`. Do not use it for GETs with side effects.
      *
      * Pass an `InFlightRequests` to share one table between clients (e.g. two services behind one session), so a
      * write through either invalidates both. Pass `false` to turn it off for this client, or set `dedupe: false` on one
      * request. Clients that delegate to a parent (API topics) always use the parent's table.
      */
     withInFlightDeduplication(enabled: boolean | InFlightRequests = true): this {
-        this.inFlight = enabled instanceof InFlightRequests ? enabled : enabled ? new InFlightRequests() : null;
+        this.inFlight = enabled instanceof InFlightRequests ? enabled : enabled ? new InFlightRequests() : undefined;
         return this;
     }
 
     getInFlightRequests(): InFlightRequests | undefined {
-        if (this.inFlight === undefined) this.inFlight = new InFlightRequests();
-        return this.inFlight ?? undefined;
+        return this.inFlight;
     }
 
     /**
@@ -772,10 +815,11 @@ export abstract class ClientBase {
             url,
             Object.entries(headers).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
         ]);
-        const pending = inFlight.get(key);
+        const pending = inFlight.get(key, url);
         if (pending !== undefined) {
-            // Joiners get their own copy, so one caller mutating its result cannot change another's. A result that
-            // cannot be cloned (a custom jsonParse returning functions) is fetched again instead of failing.
+            // Joiners get their own copy, so one caller mutating its result cannot change another's. With a custom
+            // jsonParse, class instances reach joiners as plain-object copies; a result that cannot be cloned at all
+            // (one holding functions) is fetched again instead of failing.
             return pending.then((result) => {
                 try {
                     return structuredClone(result) as T;

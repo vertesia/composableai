@@ -1,5 +1,11 @@
 import assert from 'node:assert';
-import { ApiTopic, FetchClient, InFlightRequests } from '../src/index.js';
+import {
+    ApiTopic,
+    DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS,
+    type DuplicateRequest,
+    FetchClient,
+    InFlightRequests,
+} from '../src/index.js';
 
 interface PendingCall {
     method: string;
@@ -38,12 +44,27 @@ function controlledFetch() {
 /** Lets every queued microtask and macrotask (fetch dispatch, response parsing) run. */
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
-/** A client with the default settings (deduplication on), or with it turned off. */
-function newClient(enabled = true) {
+/**
+ * A client with deduplication on, or left at the default (off). The join window is long so that sharing does not depend
+ * on how fast the test runs; the window itself is tested on its own.
+ */
+function newClient(enabled = true, onDuplicate?: (duplicate: DuplicateRequest) => void) {
     const { calls, fetchImpl } = controlledFetch();
     const client = new FetchClient('http://example.test/api', fetchImpl);
-    if (!enabled) client.withInFlightDeduplication(false);
+    if (enabled) client.withInFlightDeduplication(new InFlightRequests({ joinWindowMs: 60_000, onDuplicate }));
     return { client, calls };
+}
+
+/** A small seeded PRNG (mulberry32), so a failing random interleaving can be replayed from its seed. */
+function seededRandom(seed: number) {
+    let a = seed >>> 0;
+    return () => {
+        a = (a + 0x6d2b79f5) >>> 0;
+        let t = a;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
 }
 
 class ThingsApi extends ApiTopic {
@@ -144,13 +165,21 @@ describe('In-flight GET deduplication', () => {
         assert.deepEqual(await after, { name: 'renamed' });
     });
 
-    it('is on by default', () => {
-        const { client } = newClient();
-        assert(client.getInFlightRequests() instanceof InFlightRequests);
+    it('is off by default, with a 50 ms join window once turned on', async () => {
+        const { client, calls } = newClient(false);
+        assert.equal(client.getInFlightRequests(), undefined);
+        void client.get('/run/1');
+        void client.get('/run/1');
+        await flush();
+        assert.equal(calls.length, 2);
+        for (const call of calls) call.resolve(200, {});
+        assert.equal(DEFAULT_IN_FLIGHT_JOIN_WINDOW_MS, 50);
+        assert.equal(client.withInFlightDeduplication().getInFlightRequests()?.joinWindowMs, 50);
     });
 
-    it('can be turned off for a client', async () => {
-        const { client, calls } = newClient(false);
+    it('can be turned off again for a client', async () => {
+        const { client, calls } = newClient();
+        client.withInFlightDeduplication(false);
         assert.equal(client.getInFlightRequests(), undefined);
         void client.get('/run/1');
         void client.get('/run/1');
@@ -239,28 +268,31 @@ describe('In-flight GET deduplication', () => {
         table.set('k', older);
         table.set('k', newer); // e.g. the older one fell out of the join window
         table.release('k', older);
-        assert.equal(table.get('k'), newer);
+        assert.equal(table.get('k', 'http://example.test/k'), newer);
     });
 
     it('sends exactly one GET per key between writes, for random interleavings', async () => {
+        const seed = Number(process.env.IN_FLIGHT_SEED) || Date.now();
+        const random = seededRandom(seed);
         for (let round = 0; round < 25; round++) {
             const { client, calls } = newClient();
             const expected: { key: string; epoch: number; result: Promise<unknown> }[] = [];
             let epoch = 0;
             for (let i = 0; i < 40; i++) {
-                if (Math.random() < 0.15) {
+                if (random() < 0.15) {
                     void client.post('/write', { payload: { i } });
                     epoch++;
                 } else {
-                    const key = `/item/${Math.floor(Math.random() * 4)}`;
+                    const key = `/item/${Math.floor(random() * 4)}`;
                     expected.push({ key, epoch, result: client.get(key) });
                 }
-                if (Math.random() < 0.3) await flush();
+                if (random() < 0.3) await flush();
             }
             await flush();
             const distinct = new Set(expected.map((e) => `${e.epoch} ${e.key}`)).size;
             const gets = calls.filter((c) => c.method === 'GET');
-            assert(gets.length <= distinct, `round ${round}: ${gets.length} GETs for ${distinct} key/epoch pairs`);
+            // Exactly one: every GET of a key/epoch pair shares the first one's request (the join window is long here).
+            assert.equal(gets.length, distinct, `seed ${seed} round ${round}: GETs per key/epoch pair`);
             // Each response carries its URL and the index of the request that produced it.
             for (const [id, call] of calls.entries()) call.resolve(200, { url: new URL(call.url).pathname, id });
             const epochsPerRequest = new Map<number, Set<number>>();
@@ -271,7 +303,7 @@ describe('In-flight GET deduplication', () => {
                 epochsPerRequest.get(result.id)?.add(e.epoch);
             }
             for (const [id, epochs] of epochsPerRequest) {
-                assert.equal(epochs.size, 1, `round ${round}: request ${id} was shared across a write`);
+                assert.equal(epochs.size, 1, `seed ${seed} round ${round}: request ${id} was shared across a write`);
             }
         }
     });
@@ -306,7 +338,7 @@ describe('In-flight GET deduplication', () => {
 
     it('does not let a request join one that started outside the join window', async () => {
         const { client, calls } = newClient();
-        client.withInFlightDeduplication(new InFlightRequests(20));
+        client.withInFlightDeduplication(new InFlightRequests({ joinWindowMs: 20 }));
         const stalled = client.get('/run/1'); // never answered
         await flush();
         await new Promise((r) => setTimeout(r, 30));
@@ -338,7 +370,7 @@ describe('In-flight GET deduplication', () => {
                 return { ...(JSON.parse(text) as object), describe: () => 'not cloneable' };
             }
         }
-        const client = new FunctionsClient('http://example.test/api', fetchImpl);
+        const client = new FunctionsClient('http://example.test/api', fetchImpl).withInFlightDeduplication();
         const a = client.get<{ v: number }>('/run/1');
         const b = client.get<{ v: number }>('/run/1');
         await flush();
@@ -359,5 +391,41 @@ describe('In-flight GET deduplication', () => {
         assert.equal(topic.inFlight, undefined);
         assert.equal(topic.getInFlightRequests(), client.getInFlightRequests());
         for (const call of calls) call.resolve(200, {});
+    });
+    it('reports duplicates to onDuplicate, shared or not, without the query string', async () => {
+        const reports: DuplicateRequest[] = [];
+        const { client, calls } = newClient(false);
+        client.withInFlightDeduplication(
+            new InFlightRequests({ joinWindowMs: 20, onDuplicate: (duplicate) => reports.push(duplicate) }),
+        );
+        void client.get('/run/1', { query: { q: 'secret' } });
+        void client.get('/run/1', { query: { q: 'secret' } }); // joins
+        void client.get('/run/2'); // not a duplicate
+        await flush();
+        await new Promise((r) => setTimeout(r, 30));
+        void client.get('/run/1', { query: { q: 'secret' } }); // too late to join: sent
+        await flush();
+        assert.equal(calls.length, 3);
+        assert.deepEqual(
+            reports.map(({ method, path, shared }) => ({ method, path, shared })),
+            [
+                { method: 'GET', path: 'http://example.test/api/run/1', shared: true },
+                { method: 'GET', path: 'http://example.test/api/run/1', shared: false },
+            ],
+        );
+        assert(reports[1].delayMs >= 20);
+        for (const call of calls) call.resolve(200, {});
+    });
+
+    it('ignores errors thrown by onDuplicate', async () => {
+        const { client, calls } = newClient(true, () => {
+            throw new Error('reporter failed');
+        });
+        const a = client.get('/run/1');
+        const b = client.get('/run/1');
+        await flush();
+        assert.equal(calls.length, 1);
+        calls[0].resolve(200, { ok: true });
+        assert.deepEqual(await Promise.all([a, b]), [{ ok: true }, { ok: true }]);
     });
 });

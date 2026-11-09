@@ -190,13 +190,20 @@ await client.get('/data', { signal: controller.signal, timeoutMs: 5_000 });
 
 ## Concurrent identical GETs
 
-By default, a GET that is identical to one already in flight (same URL, headers and credential) does not send a second request: it waits for the first one and gets its own copy of the result, or the same error. This removes the duplicate requests that appear when several parts of an application load the same resource at the same time.
+A client can share one request between concurrent identical GETs (same URL, headers and credential): a GET that starts while an identical one is in flight waits for it and gets its own copy of the result, or the same error object. This removes the duplicate requests that appear when several parts of an application load the same resource at the same time. It is off by default; `@vertesia/client` turns it on for browser clients.
 
-It is not a cache. Nothing is kept once the response arrives, and any other method (POST, PUT, PATCH, DELETE) invalidates in-flight GETs when it starts and when it settles, so a GET issued after a write always reaches the server. A request can only be joined during the first 5 seconds after it starts, so a stalled request does not hold back later ones.
+It is not a cache. Nothing is kept once the response arrives, and any other method (POST, PUT, PATCH, DELETE) invalidates in-flight GETs when it starts and when it settles, so a GET issued after a write always reaches the server. A request can only be joined during the first 50 ms after it starts: enough for the requests of one render, while a later, deliberate refetch still reaches the server.
 
 Never shared: SSE and custom readers, requests with a caller `signal`, requests with their own `timeoutMs`, `retryPolicy` or `pacingRetry`, and requests with a payload.
 
+Only turn it on when every caller of the client may see every other caller's GET responses. The key does not cover what `createRequest()`, an `onRequest` hook or a custom `fetch` adds to a request, and a joiner does not get its own `requestIdentity`. Do not use it for GETs with side effects. With a custom `jsonParse`, joiners get plain-object copies of class instances.
+
 ```typescript
+// Turn it on, and report every GET that starts while an identical one is in flight.
+client.withInFlightDeduplication(
+    new InFlightRequests({ onDuplicate: ({ path, delayMs, shared }) => console.warn('duplicate GET', path, delayMs, shared) }),
+);
+
 // Send one GET on its own.
 await client.get('/data', { dedupe: false });
 
@@ -208,6 +215,8 @@ const shared = new InFlightRequests();
 studioClient.withInFlightDeduplication(shared);
 storeClient.withInFlightDeduplication(shared);
 ```
+
+`onDuplicate` also reports duplicates that started too late to share, which usually means a component fetched a resource that another one was already loading.
 
 ### Custom Error Factory
 
