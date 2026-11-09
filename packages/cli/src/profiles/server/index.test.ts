@@ -1,11 +1,17 @@
+import type { Socket } from 'node:net';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ConfigResult } from './index.js';
 
 const mocks = vi.hoisted(() => ({
     open: vi.fn<(url: string) => Promise<void>>(),
+    peerOwnedByCurrentUser: vi.fn<(socket: Socket) => Promise<boolean>>(),
 }));
 
 vi.mock('open', () => ({ default: mocks.open }));
+vi.mock('./server.js', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('./server.js')>()),
+    isPeerOwnedByCurrentUser: mocks.peerOwnedByCurrentUser,
+}));
 // The manual-entry prompt never resolves: these tests drive the HTTP callback only.
 vi.mock('enquirer', () => ({ default: { prompt: () => new Promise(() => undefined) } }));
 
@@ -51,6 +57,7 @@ function post(url: URL | string, body: string) {
 }
 
 beforeEach(() => {
+    mocks.peerOwnedByCurrentUser.mockResolvedValue(true);
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });
@@ -102,6 +109,22 @@ describe('legacy CLI login callback', () => {
         expect(response.status).toBe(200);
         await vi.waitFor(() => expect(callback).toHaveBeenCalledTimes(1));
         expect(callback).toHaveBeenCalledWith(result);
+    });
+
+    it('rejects the exact redirect URI when another local account opened the connection', async () => {
+        // The browser launcher receives the full redirect URI in its argv (xdg-open, then the browser itself on
+        // Linux), so another local account can read the state from procfs. Knowing it must not be enough.
+        const { redirectUri, callback } = await startSession();
+        const launched = new URL(mocks.open.mock.calls[0][0]);
+        expect(launched.searchParams.get('redirect_uri')).toBe(redirectUri.toString());
+        mocks.peerOwnedByCurrentUser.mockResolvedValue(false);
+
+        const response = await post(redirectUri, JSON.stringify(result));
+
+        expect(response.status).toBe(403);
+        expect(callback).not.toHaveBeenCalled();
+        // The verdict was reached for the connection that carried the request.
+        expect(mocks.peerOwnedByCurrentUser).toHaveBeenCalledTimes(1);
     });
 
     it('rejects an oversized body before buffering it', async () => {

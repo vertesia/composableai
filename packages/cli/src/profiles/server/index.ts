@@ -3,7 +3,13 @@ import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import enquirer from 'enquirer';
 import open from 'open';
 import { handleCors } from './cors.js';
-import { CALLBACK_HOST, RequestBodyTooLargeError, readRequestBody, startServer } from './server.js';
+import {
+    CALLBACK_HOST,
+    isPeerOwnedByCurrentUser,
+    RequestBodyTooLargeError,
+    readRequestBody,
+    startServer,
+} from './server.js';
 
 const { prompt } = enquirer;
 
@@ -110,8 +116,9 @@ export async function startConfigSession(
     }
 
     // The short code is only shown to the user for a visual check. The state is the capability that authorizes a
-    // callback: it travels only in the redirect URI handed to the browser, so another local user who reaches the
-    // loopback port cannot complete (or stuff) this login.
+    // callback: it travels only in the redirect URI handed to the browser. That URI is an argument of the browser
+    // launcher, which other local accounts can read on Linux, so a callback must also come from a socket owned by
+    // this account wherever the platform can tell (see isPeerOwnedByCurrentUser).
     const code = randomInt(1000, 9999);
     const state = randomBytes(32).toString('base64url');
 
@@ -134,7 +141,10 @@ export async function startConfigSession(
                 return;
             }
             // Authorize before reading the body, so an unrelated peer cannot make this process buffer anything.
-            if (!isExpectedState(requestUrl.searchParams.get('state'), state)) {
+            if (
+                !isExpectedState(requestUrl.searchParams.get('state'), state) ||
+                !(await isPeerOwnedByCurrentUser(req.socket))
+            ) {
                 res.statusCode = 403;
                 res.setHeader('Connection', 'close');
                 res.end();
