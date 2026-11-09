@@ -1,5 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchSignedUrl, isAzureBlobUrl, signedUrlUploadHeaders } from './signed-url.js';
+import {
+    acceptsStreamedUpload,
+    fetchSignedUrl,
+    isAzureBlobUrl,
+    MAX_BUFFERED_STREAM_BYTES,
+    signedUrlUploadHeaders,
+} from './signed-url.js';
+
+// Node's http transport is covered by node-request.test.ts; here requests go through the stubbed `fetch` unless a
+// test opts in.
+const nodeHttp = vi.hoisted(() => ({ available: false, request: vi.fn() }));
+vi.mock('./node-request.js', () => ({
+    hasNodeHttp: () => nodeHttp.available,
+    nodeRequest: nodeHttp.request,
+}));
 
 function streamOf(chunk: Uint8Array): ReadableStream {
     return new ReadableStream({
@@ -251,5 +265,244 @@ describe('Azure Blob uploads', () => {
         } finally {
             fetch.mockRestore();
         }
+    });
+});
+
+describe('stream bodies longer than the retry buffer', () => {
+    const gcsUrl = 'https://storage.googleapis.com/bucket/large.bin?X-Goog-Signature=abc';
+    const s3Url = 'https://bucket.s3.us-east-1.amazonaws.com/large.bin?X-Amz-Signature=abc';
+    const azureUrl = 'https://account.blob.core.windows.net/container/large.bin?sig=abc';
+    const CHUNK = 1024 * 1024;
+
+    /** A stream of `chunks` 1 MiB chunks, each filled with its index, generated on demand. */
+    function generated(chunks: number): ReadableStream<Uint8Array> {
+        let i = 0;
+        return new ReadableStream<Uint8Array>(
+            {
+                pull(controller) {
+                    if (i === chunks) {
+                        controller.close();
+                        return;
+                    }
+                    controller.enqueue(new Uint8Array(CHUNK).fill(i++ % 256));
+                },
+            },
+            { highWaterMark: 0 },
+        );
+    }
+
+    async function digest(body: BodyInit): Promise<{ size: number; first: number; last: number }> {
+        const bytes = new Uint8Array(await new Response(body).arrayBuffer());
+        return { size: bytes.byteLength, first: bytes[0], last: bytes[bytes.byteLength - 1] };
+    }
+
+    afterEach(() => {
+        nodeHttp.available = false;
+        nodeHttp.request.mockReset();
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+    });
+
+    it('sends large and streamed bodies with Node http, and small ones with fetch', async () => {
+        nodeHttp.available = true;
+        nodeHttp.request.mockImplementation(async (_url: string, init: { body: BodyInit }) => {
+            await digest(init.body);
+            return new Response(null, { status: 200 });
+        });
+        const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
+        vi.stubGlobal('fetch', fetchMock);
+
+        await fetchSignedUrl(gcsUrl, { method: 'PUT', body: generated(MAX_BUFFERED_STREAM_BYTES / CHUNK + 1) });
+        await fetchSignedUrl(s3Url, { method: 'PUT', body: new Blob([new Uint8Array(MAX_BUFFERED_STREAM_BYTES + 1)]) });
+        await fetchSignedUrl(s3Url, { method: 'PUT', body: generated(1) });
+
+        expect(nodeHttp.request).toHaveBeenCalledTimes(2);
+        expect(nodeHttp.request.mock.calls[0][1].body).toBeInstanceOf(ReadableStream);
+        expect(nodeHttp.request.mock.calls[1][1].body).toBeInstanceOf(Blob);
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it('streams a longer stream with its declared length to S3 in Node, without buffering it', async () => {
+        nodeHttp.available = true;
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 4;
+        nodeHttp.request.mockImplementation(async (_url: string, init: { body: BodyInit }) => {
+            await digest(init.body);
+            return new Response(null, { status: 200 });
+        });
+        await fetchSignedUrl(s3Url, {
+            method: 'PUT',
+            body: generated(chunks),
+            headers: { 'Content-Type': 'video/mp4', 'Content-Length': String(chunks * CHUNK) },
+        });
+        expect(nodeHttp.request).toHaveBeenCalledOnce();
+        const [, init] = nodeHttp.request.mock.calls[0];
+        expect(init.body).toBeInstanceOf(ReadableStream);
+        expect(init.headers).toEqual({ 'Content-Type': 'video/mp4', 'Content-Length': String(chunks * CHUNK) });
+    });
+
+    it('buffers a stream with a declared length where it cannot be streamed, and checks the length', async () => {
+        const bodies: { body: BodyInit; headers?: HeadersInit }[] = [];
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async (_url: string, init: RequestInit) => {
+                bodies.push({ body: init.body as BodyInit, headers: init.headers });
+                return new Response(null, { status: 200 });
+            }),
+        );
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 1;
+        const length = String(chunks * CHUNK);
+        await fetchSignedUrl(s3Url, { method: 'PUT', body: generated(chunks), headers: { 'content-length': length } });
+        expect(bodies[0].body).toBeInstanceOf(Blob);
+        // the buffered Blob sets its own length
+        expect(bodies[0].headers).toEqual({});
+
+        await expect(
+            fetchSignedUrl(s3Url, { method: 'PUT', body: generated(2), headers: { 'Content-Length': String(CHUNK) } }),
+        ).rejects.toMatchObject({ name: 'ContentLengthMismatchError', declared: CHUNK, actual: 2 * CHUNK });
+        expect(bodies).toHaveLength(1);
+    });
+
+    it('recognizes the services that accept an upload of unknown length', () => {
+        expect(acceptsStreamedUpload(gcsUrl)).toBe(true);
+        expect(acceptsStreamedUpload('https://bucket.storage.googleapis.com/large.bin')).toBe(true);
+        expect(acceptsStreamedUpload(s3Url)).toBe(false);
+        expect(acceptsStreamedUpload(azureUrl)).toBe(false);
+        expect(acceptsStreamedUpload('https://storage.googleapis.com.example.com/x')).toBe(false);
+        expect(acceptsStreamedUpload('not a url')).toBe(false);
+    });
+
+    it('keeps buffering a stream that fits, so it is retried', async () => {
+        const bodies: BodyInit[] = [];
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async (_url: string, init: RequestInit) => {
+                bodies.push(init.body as BodyInit);
+                return new Response(null, { status: bodies.length === 1 ? 503 : 200 });
+            }),
+        );
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK;
+        const res = await fetchSignedUrl(gcsUrl, { method: 'PUT', body: generated(chunks), baseDelayMs: 0 });
+        expect(res.status).toBe(200);
+        expect(bodies).toHaveLength(2);
+        expect(bodies[0]).toBeInstanceOf(Blob);
+        expect(bodies[1]).toBe(bodies[0]);
+    });
+
+    it('sends a longer stream to GCS once, as a stream, with every byte in order', async () => {
+        nodeHttp.available = true;
+        const seen: { init: { body: BodyInit }; digest: Awaited<ReturnType<typeof digest>> }[] = [];
+        nodeHttp.request.mockImplementation(async (_url: string, init: { body: BodyInit }) => {
+            seen.push({ init, digest: await digest(init.body) });
+            return new Response(null, { status: 503 });
+        });
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 8;
+        const res = await fetchSignedUrl(gcsUrl, { method: 'PUT', body: generated(chunks), baseDelayMs: 0 });
+
+        // A stream cannot be replayed, so a retryable status is returned to the caller instead of retried.
+        expect(res.status).toBe(503);
+        expect(seen).toHaveLength(1);
+        expect(seen[0].init.body).toBeInstanceOf(ReadableStream);
+        expect(seen[0].digest).toEqual({ size: chunks * CHUNK, first: 0, last: (chunks - 1) % 256 });
+    });
+
+    it('does not retry a connection error on a streamed body', async () => {
+        nodeHttp.available = true;
+        nodeHttp.request.mockRejectedValue(new Error('socket hang up'));
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 1;
+        await expect(
+            fetchSignedUrl(gcsUrl, { method: 'PUT', body: generated(chunks), baseDelayMs: 0 }),
+        ).rejects.toThrow('socket hang up');
+        expect(nodeHttp.request).toHaveBeenCalledOnce();
+    });
+
+    it('buffers a longer stream to GCS outside Node.js, since most browsers cannot send one', async () => {
+        const bodies: BodyInit[] = [];
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async (_url: string, init: RequestInit) => {
+                bodies.push(init.body as BodyInit);
+                return new Response(null, { status: bodies.length === 1 ? 503 : 200 });
+            }),
+        );
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 2;
+        const res = await fetchSignedUrl(gcsUrl, { method: 'PUT', body: generated(chunks), baseDelayMs: 0 });
+        expect(res.status).toBe(200);
+        // buffered whole, so it is retried
+        expect(bodies).toHaveLength(2);
+        expect((bodies[0] as Blob).size).toBe(chunks * CHUNK);
+    });
+
+    it.each([
+        ['S3', s3Url],
+        ['Azure', azureUrl],
+    ])('buffers a longer stream to %s, which needs a Content-Length', async (_name, url) => {
+        const bodies: BodyInit[] = [];
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async (_url: string, init: RequestInit) => {
+                bodies.push(init.body as BodyInit);
+                return new Response(null, { status: 200 });
+            }),
+        );
+        const chunks = MAX_BUFFERED_STREAM_BYTES / CHUNK + 2;
+        await fetchSignedUrl(url, { method: 'PUT', body: generated(chunks) });
+        expect(bodies[0]).toBeInstanceOf(Blob);
+        expect((bodies[0] as Blob).size).toBe(chunks * CHUNK);
+    });
+
+    it('cancels the source when a chunk after the buffer cannot be sent', async () => {
+        let pulled = 0;
+        const cancel = vi.fn();
+        const body = new ReadableStream<unknown>(
+            {
+                pull(controller) {
+                    pulled++;
+                    // an object-mode chunk once the buffered prefix has been read
+                    controller.enqueue(
+                        pulled > MAX_BUFFERED_STREAM_BYTES / CHUNK + 1 ? { not: 'bytes' } : new Uint8Array(CHUNK),
+                    );
+                },
+                cancel,
+            },
+            { highWaterMark: 0 },
+        );
+        nodeHttp.available = true;
+        nodeHttp.request.mockImplementation(async (_url: string, init: { body: ReadableStream }) => {
+            await new Response(init.body).arrayBuffer();
+            return new Response(null, { status: 200 });
+        });
+        await expect(fetchSignedUrl(gcsUrl, { method: 'PUT', body: body as ReadableStream })).rejects.toThrow(
+            /Unsupported signed-URL upload chunk/,
+        );
+        expect(cancel).toHaveBeenCalledWith(expect.any(TypeError));
+    });
+
+    it('reads no more than the buffer from a long stream before sending it', async () => {
+        let pulled = 0;
+        let pulledBeforeSend = 0;
+        const body = new ReadableStream<Uint8Array>(
+            {
+                pull(controller) {
+                    if (pulled === 1024) {
+                        controller.close();
+                        return;
+                    }
+                    pulled++;
+                    controller.enqueue(new Uint8Array(CHUNK));
+                },
+            },
+            { highWaterMark: 0 },
+        );
+        nodeHttp.available = true;
+        nodeHttp.request.mockImplementation(async (_url: string, init: { body: ReadableStream }) => {
+            pulledBeforeSend = pulled;
+            await init.body.cancel();
+            return new Response(null, { status: 200 });
+        });
+        await fetchSignedUrl(gcsUrl, { method: 'PUT', body });
+        // 16 MiB buffered, plus the chunk that crossed the limit.
+        expect(pulledBeforeSend).toBe(MAX_BUFFERED_STREAM_BYTES / CHUNK + 1);
+        // Cancelling the request body cancels the source stream instead of draining 1 GiB.
+        expect(pulled).toBe(pulledBeforeSend);
     });
 });

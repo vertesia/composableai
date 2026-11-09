@@ -1609,7 +1609,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 output_format: {
                     type: 'string',
-                    enum: ['png', 'webp', 'jpeg'],
+                    enum: ['png', 'webp', 'jpeg', 'gif', 'svg'],
                 },
                 n: {
                     type: 'number',
@@ -1629,6 +1629,23 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 partial_images: {
                     type: 'number',
+                },
+                complexity: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
+                },
+                frame_count: {
+                    type: 'integer',
+                    minimum: -9007199254740991,
+                    maximum: 9007199254740991,
+                },
+                frame_duration_ms: {
+                    type: 'integer',
+                    minimum: -9007199254740991,
+                    maximum: 9007199254740991,
+                },
+                svg: {
+                    $ref: '#/$defs/OpenAiImageSvgOptions',
                 },
             },
             additionalProperties: false,
@@ -1671,7 +1688,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 output_format: {
                     type: 'string',
-                    enum: ['png', 'jpeg', 'webp'],
+                    enum: ['png', 'jpeg', 'webp', 'gif', 'svg'],
                 },
                 output_compression: {
                     type: 'integer',
@@ -1689,11 +1706,44 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 partial_images: {
                     type: 'number',
                 },
+                complexity: {
+                    type: 'string',
+                    enum: ['low', 'medium', 'high'],
+                },
+                frame_count: {
+                    type: 'integer',
+                    minimum: -9007199254740991,
+                    maximum: 9007199254740991,
+                },
+                frame_duration_ms: {
+                    type: 'integer',
+                    minimum: -9007199254740991,
+                    maximum: 9007199254740991,
+                },
                 input_image_mask: {
                     $ref: '#/$defs/OpenAiImageGenerationMask',
                 },
             },
             required: ['model'],
+            additionalProperties: false,
+        },
+        OpenAiImageSvgOptions: {
+            type: 'object',
+            properties: {
+                model: {
+                    type: 'string',
+                    minLength: 1,
+                },
+                reasoning: {
+                    type: 'object',
+                    properties: {
+                        effort: {
+                            $ref: '#/$defs/ReasoningEffort',
+                        },
+                    },
+                    additionalProperties: false,
+                },
+            },
             additionalProperties: false,
         },
         OpenAiSpeechOptions: {

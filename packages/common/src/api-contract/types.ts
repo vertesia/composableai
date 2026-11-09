@@ -89,9 +89,9 @@ interface ZenoRecursiveComponentTypes {
  *
  * `ApiComponentType<'Account'>` is the plain type `gen:schemas` writes for `AccountSchema` into
  * `ApiComponentTypes`, which `wire-types.generated.test.ts` proves identical to its `z.infer`. Indexing
- * that map rather than `z.infer<ApiSchemaMap[N]>` keeps Zod's inference out of every program that names
- * a component. A component the generator has not seen yet resolves to `never`, which
- * `registry-groups.test.ts` rejects.
+ * that map rather than inferring from the registry's Zod schemas keeps Zod's inference out of every
+ * program that names a component. A component the generator has not seen yet is not an
+ * `ApiComponentName`, so naming it fails to compile until `gen:schemas` runs.
  *
  * It is wrapped in `NoInfer` because `N` always comes from a component-name argument and can never be
  * recovered from the wire type. Without it, a call whose result has a contextual type — a destructuring

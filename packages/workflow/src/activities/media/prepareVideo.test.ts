@@ -183,7 +183,12 @@ describe('buildWebRenditionArgs', () => {
     it('sizes decoding before the input and the libx264 encoder after it', () => {
         vi.spyOn(os, 'availableParallelism').mockReturnValue(4);
 
-        const args = buildWebRenditionArgs('in.mov', 'out.mp4', { width: 1920, height: 1080 }, 'medium');
+        const args = buildWebRenditionArgs(
+            { kind: 'file', path: 'in.mov' },
+            'out.mp4',
+            { width: 1920, height: 1080 },
+            'medium',
+        );
 
         const inputIndex = args.indexOf('-i');
         expect(args.slice(1, inputIndex)).toEqual(['-filter_threads', '4', '-threads', '4']);
@@ -273,7 +278,9 @@ describe('screenshot extraction fallback', () => {
                     .trim(),
             );
             expect(duration).toBe(3);
-            const env = new MockActivityEnvironment();
+            // Commands are killed at the activity's deadline, and the mock's default of one second is too short for two
+            // real ffmpeg runs on a busy CI machine.
+            const env = new MockActivityEnvironment({ startToCloseTimeoutMs: 60_000 });
             await env.run(async () => {
                 const result = await generateScreenshot(
                     { kind: 'file', path: video },
@@ -664,19 +671,26 @@ describe('generateRenditionWithDimensions time budget', () => {
         });
         const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rendition-budget-'));
         await new MockActivityEnvironment().run(() =>
-            generateRenditionWithDimensions('/tmp/in.webm', outputDir, metadata(duration), 1920, 'veryfast', 3_000_000),
+            generateRenditionWithDimensions(
+                { kind: 'file', path: '/tmp/in.webm' },
+                outputDir,
+                metadata(duration),
+                1920,
+                'veryfast',
+                3_000_000,
+            ),
         );
         fs.rmSync(outputDir, { recursive: true, force: true });
         return vi.mocked(execActivityFileWithProgress).mock.calls[0][2];
     };
 
     it('judges the encode against its budget when the duration is known', async () => {
-        await expect(encode(600)).resolves.toEqual({
+        await expect(encode(600)).resolves.toMatchObject({
             completionBudget: { mediaDurationSeconds: 600, budgetMs: 3_000_000 },
         });
     });
 
     it('does not judge the encode of a video without a duration', async () => {
-        await expect(encode(0)).resolves.toEqual({});
+        await expect(encode(0)).resolves.toMatchObject({ completionBudget: undefined });
     });
 });

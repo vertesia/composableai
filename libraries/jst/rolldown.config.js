@@ -14,6 +14,8 @@ export default defineConfig({
         sourcemap: true,
         minify: true,
     },
+    // Browser apps load this bundle through an import map, so every external here must also be served
+    // by that map. `lru-cache` is not, so it is bundled; Node consumers still import it from `lib/index.js`.
     external: ['handlebars', 'acorn', 'acorn-walk', 'dayjs', 'papaparse'],
     resolve: {
         mainFields: ['browser', 'module', 'main'],

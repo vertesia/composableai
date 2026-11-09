@@ -2248,6 +2248,10 @@ interface Checks {
         W.PendingAskStatus,
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskStatusSchema>
     >;
+    PendingAskDelivery: Same<
+        W.PendingAskDelivery,
+        z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDeliverySchema>
+    >;
     PendingAskData: Same<
         W.PendingAskData,
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDataSchema>
@@ -3011,6 +3015,10 @@ interface Checks {
         W.CollectionMembersUpdatePayload,
         z.infer<typeof import('./api-schemas/content.js').CollectionMembersUpdatePayloadSchema>
     >;
+    CollectionPermissionsPayload: Same<
+        W.CollectionPermissionsPayload,
+        z.infer<typeof import('./api-schemas/content.js').CollectionPermissionsPayloadSchema>
+    >;
     CollectionChildrenUpdatePayload: Same<
         W.CollectionChildrenUpdatePayload,
         z.infer<typeof import('./api-schemas/content.js').CollectionChildrenUpdatePayloadSchema>
@@ -3634,6 +3642,52 @@ interface Checks {
     BulkUploadUrlsResponse: Same<
         W.BulkUploadUrlsResponse,
         z.infer<typeof import('./api-schemas/files.js').BulkUploadUrlsResponseSchema>
+    >;
+    CreateUploadSessionPayload: Same<
+        W.CreateUploadSessionPayload,
+        z.infer<typeof import('./api-schemas/files.js').CreateUploadSessionPayloadSchema>
+    >;
+    GcsResumableUploadSession: Same<
+        W.GcsResumableUploadSession,
+        z.infer<typeof import('./api-schemas/files.js').GcsResumableUploadSessionSchema>
+    >;
+    AzureBlockBlobUploadSession: Same<
+        W.AzureBlockBlobUploadSession,
+        z.infer<typeof import('./api-schemas/files.js').AzureBlockBlobUploadSessionSchema>
+    >;
+    S3MultipartUploadSession: Same<
+        W.S3MultipartUploadSession,
+        z.infer<typeof import('./api-schemas/files.js').S3MultipartUploadSessionSchema>
+    >;
+    UploadSession: Same<W.UploadSession, z.infer<typeof import('./api-schemas/files.js').UploadSessionSchema>>;
+    GetUploadPartUrlsPayload: Same<
+        W.GetUploadPartUrlsPayload,
+        z.infer<typeof import('./api-schemas/files.js').GetUploadPartUrlsPayloadSchema>
+    >;
+    UploadPartUrl: Same<W.UploadPartUrl, z.infer<typeof import('./api-schemas/files.js').UploadPartUrlSchema>>;
+    UploadPartUrlsResponse: Same<
+        W.UploadPartUrlsResponse,
+        z.infer<typeof import('./api-schemas/files.js').UploadPartUrlsResponseSchema>
+    >;
+    CompletedUploadPart: Same<
+        W.CompletedUploadPart,
+        z.infer<typeof import('./api-schemas/files.js').CompletedUploadPartSchema>
+    >;
+    CompleteUploadSessionPayload: Same<
+        W.CompleteUploadSessionPayload,
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionPayloadSchema>
+    >;
+    CompleteUploadSessionResponse: Same<
+        W.CompleteUploadSessionResponse,
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionResponseSchema>
+    >;
+    AbortUploadSessionPayload: Same<
+        W.AbortUploadSessionPayload,
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionPayloadSchema>
+    >;
+    AbortUploadSessionResponse: Same<
+        W.AbortUploadSessionResponse,
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionResponseSchema>
     >;
     FileBucketResponse: Same<
         W.FileBucketResponse,
@@ -4917,6 +4971,10 @@ interface Checks {
         W.AgentRunPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').AgentRunPathParamsSchema>
     >;
+    WorkflowRunActionPathParams: Same<
+        W.WorkflowRunActionPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').WorkflowRunActionPathParamsSchema>
+    >;
     AppVersionPathParams: Same<
         W.AppVersionPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').AppVersionPathParamsSchema>
@@ -4924,6 +4982,10 @@ interface Checks {
     AppInstallationPathParams: Same<
         W.AppInstallationPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').AppInstallationPathParamsSchema>
+    >;
+    InteractionConfigurationPathParams: Same<
+        W.InteractionConfigurationPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').InteractionConfigurationPathParamsSchema>
     >;
     DelegationGrantPathParams: Same<
         W.DelegationGrantPathParams,
@@ -4933,9 +4995,21 @@ interface Checks {
         W.OAuthProviderPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').OAuthProviderPathParamsSchema>
     >;
+    UserGroupPathParams: Same<
+        W.UserGroupPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').UserGroupPathParamsSchema>
+    >;
     ProjectAppCapabilityPathParams: Same<
         W.ProjectAppCapabilityPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
+    >;
+    EmbeddingTypePathParams: Same<
+        W.EmbeddingTypePathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').EmbeddingTypePathParamsSchema>
+    >;
+    ToolPathParams: Same<
+        W.ToolPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
     >;
     'component:CustomRoleDefinition': Same<
         W.ApiComponentTypes['CustomRoleDefinition'],
@@ -6425,6 +6499,58 @@ interface Checks {
     'component:EnsureBucketCreateAccessResponse': Same<
         W.ApiComponentTypes['EnsureBucketCreateAccessResponse'],
         z.infer<typeof import('./api-schemas/files.js').EnsureBucketCreateAccessResponseSchema>
+    >;
+    'component:AbortUploadSessionPayload': Same<
+        W.ApiComponentTypes['AbortUploadSessionPayload'],
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionPayloadSchema>
+    >;
+    'component:AbortUploadSessionResponse': Same<
+        W.ApiComponentTypes['AbortUploadSessionResponse'],
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionResponseSchema>
+    >;
+    'component:AzureBlockBlobUploadSession': Same<
+        W.ApiComponentTypes['AzureBlockBlobUploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').AzureBlockBlobUploadSessionSchema>
+    >;
+    'component:CompletedUploadPart': Same<
+        W.ApiComponentTypes['CompletedUploadPart'],
+        z.infer<typeof import('./api-schemas/files.js').CompletedUploadPartSchema>
+    >;
+    'component:CompleteUploadSessionPayload': Same<
+        W.ApiComponentTypes['CompleteUploadSessionPayload'],
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionPayloadSchema>
+    >;
+    'component:CompleteUploadSessionResponse': Same<
+        W.ApiComponentTypes['CompleteUploadSessionResponse'],
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionResponseSchema>
+    >;
+    'component:CreateUploadSessionPayload': Same<
+        W.ApiComponentTypes['CreateUploadSessionPayload'],
+        z.infer<typeof import('./api-schemas/files.js').CreateUploadSessionPayloadSchema>
+    >;
+    'component:GcsResumableUploadSession': Same<
+        W.ApiComponentTypes['GcsResumableUploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').GcsResumableUploadSessionSchema>
+    >;
+    'component:GetUploadPartUrlsPayload': Same<
+        W.ApiComponentTypes['GetUploadPartUrlsPayload'],
+        z.infer<typeof import('./api-schemas/files.js').GetUploadPartUrlsPayloadSchema>
+    >;
+    'component:S3MultipartUploadSession': Same<
+        W.ApiComponentTypes['S3MultipartUploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').S3MultipartUploadSessionSchema>
+    >;
+    'component:UploadPartUrl': Same<
+        W.ApiComponentTypes['UploadPartUrl'],
+        z.infer<typeof import('./api-schemas/files.js').UploadPartUrlSchema>
+    >;
+    'component:UploadPartUrlsResponse': Same<
+        W.ApiComponentTypes['UploadPartUrlsResponse'],
+        z.infer<typeof import('./api-schemas/files.js').UploadPartUrlsResponseSchema>
+    >;
+    'component:UploadSession': Same<
+        W.ApiComponentTypes['UploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').UploadSessionSchema>
     >;
     'component:TaskFieldType': Same<
         W.ApiComponentTypes['TaskFieldType'],
@@ -8126,6 +8252,10 @@ interface Checks {
     'component:CollectionMembersUpdatePayload': Same<
         W.ApiComponentTypes['CollectionMembersUpdatePayload'],
         z.infer<typeof import('./api-schemas/content.js').CollectionMembersUpdatePayloadSchema>
+    >;
+    'component:CollectionPermissionsPayload': Same<
+        W.ApiComponentTypes['CollectionPermissionsPayload'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionPermissionsPayloadSchema>
     >;
     'component:CollectionChildrenUpdateResult': Same<
         W.ApiComponentTypes['CollectionChildrenUpdateResult'],
@@ -9971,6 +10101,10 @@ interface Checks {
         W.ApiComponentTypes['PendingAskStatus'],
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskStatusSchema>
     >;
+    'component:PendingAskDelivery': Same<
+        W.ApiComponentTypes['PendingAskDelivery'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDeliverySchema>
+    >;
     'component:PendingAskData': Same<
         W.ApiComponentTypes['PendingAskData'],
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDataSchema>
@@ -10055,6 +10189,10 @@ interface Checks {
         W.ApiComponentTypes['AgentRunPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').AgentRunPathParamsSchema>
     >;
+    'component:WorkflowRunActionPathParams': Same<
+        W.ApiComponentTypes['WorkflowRunActionPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').WorkflowRunActionPathParamsSchema>
+    >;
     'component:AppVersionPathParams': Same<
         W.ApiComponentTypes['AppVersionPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').AppVersionPathParamsSchema>
@@ -10062,6 +10200,10 @@ interface Checks {
     'component:AppInstallationPathParams': Same<
         W.ApiComponentTypes['AppInstallationPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').AppInstallationPathParamsSchema>
+    >;
+    'component:InteractionConfigurationPathParams': Same<
+        W.ApiComponentTypes['InteractionConfigurationPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').InteractionConfigurationPathParamsSchema>
     >;
     'component:DelegationGrantPathParams': Same<
         W.ApiComponentTypes['DelegationGrantPathParams'],
@@ -10071,9 +10213,21 @@ interface Checks {
         W.ApiComponentTypes['OAuthProviderPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').OAuthProviderPathParamsSchema>
     >;
+    'component:UserGroupPathParams': Same<
+        W.ApiComponentTypes['UserGroupPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').UserGroupPathParamsSchema>
+    >;
     'component:ProjectAppCapabilityPathParams': Same<
         W.ApiComponentTypes['ProjectAppCapabilityPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
+    >;
+    'component:EmbeddingTypePathParams': Same<
+        W.ApiComponentTypes['EmbeddingTypePathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').EmbeddingTypePathParamsSchema>
+    >;
+    'component:ToolPathParams': Same<
+        W.ApiComponentTypes['ToolPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
     >;
     'component:WorkflowUsageQuery': Same<
         W.ApiComponentTypes['WorkflowUsageQuery'],
@@ -10708,6 +10862,7 @@ const checks: Checks = {
     ExportPropertiesPayload: true,
     ExportPropertiesResponse: true,
     PendingAskStatus: true,
+    PendingAskDelivery: true,
     PendingAskData: true,
     RegisterPendingAskRequest: true,
     RegisterPendingAskResponse: true,
@@ -10913,6 +11068,7 @@ const checks: Checks = {
     CollectionPropagationResponse: true,
     CollectionChildrenUpdateResult: true,
     CollectionMembersUpdatePayload: true,
+    CollectionPermissionsPayload: true,
     CollectionChildrenUpdatePayload: true,
     CollectionMembersQuery: true,
     UpdateCollectionPayload: true,
@@ -11081,6 +11237,19 @@ const checks: Checks = {
     FileMetadataUpdateResult: true,
     BulkUploadUrlsPayload: true,
     BulkUploadUrlsResponse: true,
+    CreateUploadSessionPayload: true,
+    GcsResumableUploadSession: true,
+    AzureBlockBlobUploadSession: true,
+    S3MultipartUploadSession: true,
+    UploadSession: true,
+    GetUploadPartUrlsPayload: true,
+    UploadPartUrl: true,
+    UploadPartUrlsResponse: true,
+    CompletedUploadPart: true,
+    CompleteUploadSessionPayload: true,
+    CompleteUploadSessionResponse: true,
+    AbortUploadSessionPayload: true,
+    AbortUploadSessionResponse: true,
     FileBucketResponse: true,
     FileListResponse: true,
     FileMetadataQuery: true,
@@ -11448,11 +11617,16 @@ const checks: Checks = {
     ProcessPathParams: true,
     TaskPathParams: true,
     AgentRunPathParams: true,
+    WorkflowRunActionPathParams: true,
     AppVersionPathParams: true,
     AppInstallationPathParams: true,
+    InteractionConfigurationPathParams: true,
     DelegationGrantPathParams: true,
     OAuthProviderPathParams: true,
+    UserGroupPathParams: true,
     ProjectAppCapabilityPathParams: true,
+    EmbeddingTypePathParams: true,
+    ToolPathParams: true,
     'component:CustomRoleDefinition': true,
     'component:CustomRoleDefinitionArray': true,
     'component:CreateCustomRolePayload': true,
@@ -11826,6 +12000,19 @@ const checks: Checks = {
     'component:BucketCreateAccessStatusResponse': true,
     'component:EnsureBucketCreateAccessPayload': true,
     'component:EnsureBucketCreateAccessResponse': true,
+    'component:AbortUploadSessionPayload': true,
+    'component:AbortUploadSessionResponse': true,
+    'component:AzureBlockBlobUploadSession': true,
+    'component:CompletedUploadPart': true,
+    'component:CompleteUploadSessionPayload': true,
+    'component:CompleteUploadSessionResponse': true,
+    'component:CreateUploadSessionPayload': true,
+    'component:GcsResumableUploadSession': true,
+    'component:GetUploadPartUrlsPayload': true,
+    'component:S3MultipartUploadSession': true,
+    'component:UploadPartUrl': true,
+    'component:UploadPartUrlsResponse': true,
+    'component:UploadSession': true,
     'component:TaskFieldType': true,
     'component:DurableTaskStatus': true,
     'component:TaskSource': true,
@@ -12252,6 +12439,7 @@ const checks: Checks = {
     'component:CollectionSecuritySettingsResponse': true,
     'component:CollectionMembersUpdateResult': true,
     'component:CollectionMembersUpdatePayload': true,
+    'component:CollectionPermissionsPayload': true,
     'component:CollectionChildrenUpdateResult': true,
     'component:CollectionChildrenUpdatePayload': true,
     'component:CollectionStatus': true,
@@ -12713,6 +12901,7 @@ const checks: Checks = {
     'component:ForwardEmailRequest': true,
     'component:ForwardEmailResponse': true,
     'component:PendingAskStatus': true,
+    'component:PendingAskDelivery': true,
     'component:PendingAskData': true,
     'component:RegisterPendingAskRequest': true,
     'component:RegisterPendingAskResponse': true,
@@ -12734,11 +12923,16 @@ const checks: Checks = {
     'component:ProcessPathParams': true,
     'component:TaskPathParams': true,
     'component:AgentRunPathParams': true,
+    'component:WorkflowRunActionPathParams': true,
     'component:AppVersionPathParams': true,
     'component:AppInstallationPathParams': true,
+    'component:InteractionConfigurationPathParams': true,
     'component:DelegationGrantPathParams': true,
     'component:OAuthProviderPathParams': true,
+    'component:UserGroupPathParams': true,
     'component:ProjectAppCapabilityPathParams': true,
+    'component:EmbeddingTypePathParams': true,
+    'component:ToolPathParams': true,
     'component:WorkflowUsageQuery': true,
     'component:WorkflowUsageClass': true,
     'component:WorkflowUsageStanding': true,
@@ -12747,6 +12941,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2651);
+        expect(Object.keys(checks)).toHaveLength(2691);
     });
 });

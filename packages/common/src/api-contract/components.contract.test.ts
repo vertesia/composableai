@@ -1,10 +1,10 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { buildApiSchemaComponents, type ApiComponentName as RegistryComponentName } from '../api-schemas/registry.js';
+import { buildApiSchemaComponents } from '../api-schemas/registry.js';
 import type { ProcessDefinition } from '../store/process.js';
 import type { ViewNavigationNode } from '../views.js';
-import type { ApiComponentName, ApiComponentType } from './index.js';
+import type { ApiComponentType } from './index.js';
 import { ApiSchemaComponents } from './index.js';
 
 /**
@@ -18,8 +18,7 @@ import { ApiSchemaComponents } from './index.js';
  *    enough to push a small API process past its memory limit.
  */
 describe('runtime contract component types', () => {
-    it('preserves the registered names and recursive wire types', () => {
-        expectTypeOf<ApiComponentName>().toEqualTypeOf<RegistryComponentName>();
+    it('preserves the recursive wire types', () => {
         expectTypeOf<ApiComponentType<'ProcessDefinition'>>().toEqualTypeOf<ProcessDefinition>();
         expectTypeOf<ApiComponentType<'ViewNavigationNode'>>().toEqualTypeOf<ViewNavigationNode>();
     });

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PageCountSchema } from './schema-primitives.js';
+import { conditional, PageCountSchema } from './schema-primitives.js';
 
 export const CompleteTaskPayloadSchema = z
     .strictObject({
@@ -36,6 +36,47 @@ export const TaskFieldSchema = z
     })
     .meta({ id: 'TaskField' });
 
+/** The `if` fragment for a task field of one of these types. */
+function fieldOfType(...types: string[]): Record<string, unknown> {
+    return { required: ['type'], properties: { type: { enum: types } } };
+}
+
+/**
+ * What a create or update checks of each field it writes: a non-empty name, a `default` of the field's own type,
+ * and options for a `select`. Stated on the payloads rather than on `TaskField`, which is also the shape of a process
+ * definition's human task fields, where none of these is checked. A select default must also be one of the options when there are any;
+ * that relation between two fields is the server's alone.
+ */
+const TASK_FIELD_WRITE_RULES = {
+    allOf: [
+        {
+            properties: {
+                fields: {
+                    items: {
+                        allOf: [
+                            // The stored field requires a name, and an empty string does not count as one.
+                            { properties: { name: { minLength: 1 } } },
+                            conditional(fieldOfType('string', 'text', 'select'), {
+                                properties: { default: { type: 'string' } },
+                            }),
+                            conditional(fieldOfType('number'), { properties: { default: { type: 'number' } } }),
+                            conditional(fieldOfType('boolean'), { properties: { default: { type: 'boolean' } } }),
+                            conditional(fieldOfType('select'), {
+                                required: ['options'],
+                                properties: { options: { minItems: 1 } },
+                            }),
+                        ],
+                    },
+                },
+            },
+        },
+    ],
+};
+
+const TASK_FIELD_WRITE_DESCRIPTION =
+    'Each field has a non-empty `name`, and its `default` has the field type: a string for `string`, `text` and ' +
+    '`select`, a number for `number`, a boolean for `boolean`. A `select` field needs at least one option, and its default must be one of them.';
+
 export const CreateTaskPayloadSchema = z
     .strictObject({
         title: z.string().min(1),
@@ -45,7 +86,7 @@ export const CreateTaskPayloadSchema = z
         source: TaskSourceSchema,
         due_at: z.string().meta({ format: 'date-time' }).optional(),
     })
-    .meta({ id: 'CreateTaskPayload' });
+    .meta({ id: 'CreateTaskPayload', description: TASK_FIELD_WRITE_DESCRIPTION, ...TASK_FIELD_WRITE_RULES });
 
 export const TaskSchema = z
     .strictObject({
@@ -68,14 +109,15 @@ export const TaskSchema = z
 
 export const UpdateTaskPayloadSchema = z
     .strictObject({
-        title: z.string().optional(),
+        // A task always has a title: the stored document requires a non-empty one.
+        title: z.string().min(1).optional(),
         description: z.string().optional(),
         status: DurableTaskStatusSchema.optional(),
         assignee: z.string().nullable().optional(),
         fields: z.array(TaskFieldSchema).optional(),
         due_at: z.union([z.string().meta({ format: 'date-time' }), z.null()]).optional(),
     })
-    .meta({ id: 'UpdateTaskPayload' });
+    .meta({ id: 'UpdateTaskPayload', description: TASK_FIELD_WRITE_DESCRIPTION, ...TASK_FIELD_WRITE_RULES });
 
 export const TaskArraySchema = z.array(TaskSchema).meta({ id: 'TaskArray' });
 

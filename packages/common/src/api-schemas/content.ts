@@ -10,15 +10,23 @@ import { ComputedFacetResponseSchema, FacetSpecSchema, SortOptionSchema } from '
 import {
     conditional,
     MONGO_FACETS_DESCRIPTION,
+    MONGO_FIELD_PATH,
     mongoFacetsRule,
     mongoFilterDescription,
     mongoFilterKeysRule,
     nullableStringSchema,
+    OPTIONAL_OBJECT_ID_PATTERN,
     PageCountSchema,
     SEARCH_FACETS_DESCRIPTION,
     searchFacetsRule,
 } from './schema-primitives.js';
 import { ColumnLayoutSchema, ContentObjectTypeSchema, EmbeddingTypeEnabledMapSchema } from './store.js';
+
+/**
+ * A MongoDB ObjectId: 24 hexadecimal characters. The server converts these identifiers with `new ObjectId()`, which
+ * refuses every other spelling.
+ */
+const OBJECT_ID_PATTERN = /^[0-9a-fA-F]{24}$/;
 
 export const scoreAggregationTypesSchema = z.enum(['rrf', 'rsf', 'smart']).meta({ id: 'scoreAggregationTypes' });
 
@@ -79,8 +87,8 @@ export const ContentObjectStatusSchema = z.enum(ContentObjectStatus).meta({ id: 
 
 export const InheritedPropertyMetadataSchema = z
     .strictObject({
-        name: z.string().meta({ description: 'The property name that was inherited' }),
-        collection: z.string().meta({ description: 'The collection ID that provided this property' }),
+        name: z.string().min(1).meta({ description: 'The property name that was inherited' }),
+        collection: z.string().min(1).meta({ description: 'The collection ID that provided this property' }),
     })
     .meta({ id: 'InheritedPropertyMetadata', description: 'Metadata about a single inherited property.' });
 
@@ -110,6 +118,25 @@ export const CollectionSecuritySettingsResponseSchema = z
     })
     .meta({ id: 'CollectionSecuritySettingsResponse' });
 
+/**
+ * A principal on a collection ACL: `project:*`, or a user, group or role by ObjectId. The server matches the kind
+ * without regard to case, which the pattern spells out letter by letter.
+ */
+const COLLECTION_ACL_PRINCIPAL_PATTERN =
+    /^(?:project:\*|(?:[uU][sS][eE][rR]|[gG][rR][oO][uU][pP]|[rR][oO][lL][eE]):[0-9a-fA-F]{24})$/;
+
+export const CollectionPermissionsPayloadSchema = z
+    .partialRecord(
+        z.enum(['content:read', 'content:write', 'content:delete']),
+        z.array(z.string().regex(COLLECTION_ACL_PRINCIPAL_PATTERN)),
+    )
+    .meta({
+        id: 'CollectionPermissionsPayload',
+        description:
+            'The collection ACL: for each of `content:read`, `content:write` and `content:delete`, the principals ' +
+            'granted it, each `project:*`, `user:<id>`, `group:<id>` or `role:<id>`.',
+    });
+
 export const CollectionMembersUpdateResultSchema = z
     .strictObject({
         id: z.string(),
@@ -119,7 +146,10 @@ export const CollectionMembersUpdateResultSchema = z
 export const CollectionMembersUpdatePayloadSchema = z
     .strictObject({
         action: z.enum(['add', 'delete']),
-        members: z.array(z.string()).min(1),
+        members: z
+            .array(z.string().regex(OBJECT_ID_PATTERN))
+            .min(1)
+            .meta({ description: 'IDs of the content objects to add or remove, as 24 hexadecimal characters.' }),
     })
     .meta({ id: 'CollectionMembersUpdatePayload' });
 
@@ -132,7 +162,10 @@ export const CollectionChildrenUpdateResultSchema = z
 export const CollectionChildrenUpdatePayloadSchema = z
     .strictObject({
         action: z.enum(['add', 'delete']),
-        children: z.array(z.string()).min(1),
+        children: z
+            .array(z.string().regex(OBJECT_ID_PATTERN))
+            .min(1)
+            .meta({ description: 'IDs of the child collections to add or remove, as 24 hexadecimal characters.' }),
     })
     .meta({ id: 'CollectionChildrenUpdatePayload' });
 
@@ -168,7 +201,18 @@ export const ExportContentObjectsIncludeOptionsSchema = z
 
 export const ExportContentObjectsFilterSchema = z
     .strictObject({
-        types: z.array(z.string()).optional(),
+        types: z
+            .array(
+                // `Document`, a stored type's ObjectId, or an in-code type id, which always carries a namespace
+                // prefix such as `sys:` or `app:`.
+                z.string().regex(/^(?:Document|[0-9a-fA-F]{24})$|:/),
+            )
+            .meta({
+                description:
+                    'Content types to export: `Document` for untyped objects, a stored type ID (24 hexadecimal ' +
+                    'characters), or an in-code type ID such as `sys:Document`.',
+            })
+            .optional(),
         created_from: z.string().optional(),
         created_to: z.string().optional(),
         updated_from: z.string().optional(),
@@ -176,7 +220,9 @@ export const ExportContentObjectsFilterSchema = z
     })
     .meta({
         id: 'ExportContentObjectsFilter',
-        description: 'Bounded filters supported by the bulk content object export API.',
+        description:
+            'Bounded filters supported by the bulk content object export API. The date bounds are ISO date-times or ' +
+            '`YYYY-MM-DD` dates.',
     });
 
 export const SupportedEmbeddingTypesSchema = z
@@ -395,7 +441,7 @@ export const CreateCollectionPayloadSchema = z
 export const UpdateCollectionPayloadSchema = z
     .strictObject({
         ...collectionPayloadFields,
-        name: z.string().meta({ description: 'Name of the collection' }).optional(),
+        name: z.string().min(1).meta({ description: 'Name of the collection' }).optional(),
         dynamic: z
             .boolean()
             .meta({
@@ -472,7 +518,20 @@ export const VectorSearchQuerySchema = z
 
 export const ComplexCollectionSearchQuerySchema = z
     .strictObject({
-        parent: nullableStringSchema.optional(),
+        // The server ignores an empty or null parent and converts any other value with `new ObjectId()`.
+        parent: z
+            .string()
+            .regex(OPTIONAL_OBJECT_ID_PATTERN)
+            .nullable()
+            .meta({
+                anyOf: undefined,
+                type: ['string', 'null'],
+                pattern: OPTIONAL_OBJECT_ID_PATTERN.source,
+                description:
+                    'Restrict the search to the children of this collection ID (24 hexadecimal characters). Empty ' +
+                    'or null searches every collection; a child search takes the parent from its path instead.',
+            })
+            .optional(),
         dynamic: z.boolean().optional(),
         status: CollectionStatusSchema.optional(),
         limit: PageCountSchema.optional(),
@@ -601,6 +660,44 @@ export const ContentObjectIdempotencyKeySchema = z
             'with 409. Keys are scoped to the project and stay bound to their object for as long as it exists.',
     });
 
+/**
+ * A content source the server reads from a cloud blob store: `gs://`, `s3://` or `az://`, then a bucket and a
+ * non-empty object path. The server opens the file before storing the object, and refuses any other scheme, a
+ * relative path, or a bucket with no object (`gs://bucket/`).
+ */
+const CONTENT_SOURCE_URI_PATTERN = '^(?:gs|s3|az)://[^/]+/.+';
+
+/**
+ * The server opens a non-empty `content.source` as a blob URI and stores the file with its MIME type, so the source
+ * must be a `gs://`, `s3://` or `az://` URI and `content.type` is required, and not empty, alongside it. An empty
+ * source is ignored. Spread into both branches of the name rule on {@link CreateContentObjectPayloadSchema} so the
+ * payload keeps a single `if`/`then`/`else`.
+ */
+const CONTENT_TYPE_WITH_SOURCE_RULE = conditional(
+    {
+        required: ['content'],
+        properties: { content: { required: ['source'], properties: { source: { minLength: 1 } } } },
+    },
+    {
+        properties: {
+            content: {
+                required: ['type'],
+                properties: {
+                    type: { minLength: 1 },
+                    source: { pattern: CONTENT_SOURCE_URI_PATTERN },
+                },
+            },
+        },
+    },
+);
+
+const CONTENT_SOURCE_DESCRIPTION =
+    'Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket ' +
+    'then a non-empty object path), and ' +
+    '`type`, its MIME type, is then required.';
+
+const PARENT_OBJECT_ID_DESCRIPTION = 'ID of the parent object (container or folder), as 24 hexadecimal characters.';
+
 export const CreateContentObjectPayloadSchema = z
     .strictObject({
         text: z.string().optional(),
@@ -637,14 +734,14 @@ export const CreateContentObjectPayloadSchema = z
                     'Inherited properties metadata - tracks which properties were inherited from parent collections. Used to display readonly inherited properties in the UI and enable incremental sync optimization.',
             })
             .optional(),
-        parent: z.string().optional(),
+        parent: z.string().regex(OBJECT_ID_PATTERN).meta({ description: PARENT_OBJECT_ID_DESCRIPTION }).optional(),
         location: z.string().meta({ description: 'An optional path based location for the object' }).optional(),
         status: ContentObjectStatusSchema.meta({
             description:
                 'Object status.\n- created: the object was created and is being processed\n- processing: the object is being processed\n- completed: the object was processed and is ready to use\n- failed: the object processing failed\n- archived: the object was archived and is no longer available',
         }).optional(),
         content: ContentSourceSchema.meta({
-            description: 'Content source information, typically a link to an object store',
+            description: CONTENT_SOURCE_DESCRIPTION,
         }).optional(),
         external_id: z
             .string()
@@ -701,7 +798,8 @@ export const CreateContentObjectPayloadSchema = z
         id: 'CreateContentObjectPayload',
         description:
             'When creating from an uploaded file the content should be an URL to the uploaded file. `name` is ' +
-            'required unless `content.name` or `content.source` is given; it then defaults to the content file name.',
+            'required unless `content.name` or `content.source` is given; it then defaults to the content file name. ' +
+            '`content.type`, the MIME type of the file, is required with `content.source`.',
         // The object needs a name: its own, or one derived from the content's name or source.
         ...conditional(
             {
@@ -718,7 +816,9 @@ export const CreateContentObjectPayloadSchema = z
             {
                 required: ['content'],
                 properties: { content: { required: ['source'], properties: { source: { minLength: 1 } } } },
+                ...CONTENT_TYPE_WITH_SOURCE_RULE,
             },
+            CONTENT_TYPE_WITH_SOURCE_RULE,
         ),
     });
 
@@ -765,14 +865,14 @@ export const UpdateContentObjectPayloadSchema = z
                     'Inherited properties metadata - tracks which properties were inherited from parent collections. Used to display readonly inherited properties in the UI and enable incremental sync optimization.',
             })
             .optional(),
-        parent: z.string().optional(),
+        parent: z.string().regex(OBJECT_ID_PATTERN).meta({ description: PARENT_OBJECT_ID_DESCRIPTION }).optional(),
         location: z.string().meta({ description: 'An optional path based location for the object' }).optional(),
         status: ContentObjectStatusSchema.meta({
             description:
                 'Object status.\n- created: the object was created and is being processed\n- processing: the object is being processed\n- completed: the object was processed and is ready to use\n- failed: the object processing failed\n- archived: the object was archived and is no longer available',
         }).optional(),
         content: ContentSourceSchema.meta({
-            description: 'Content source information, typically a link to an object store',
+            description: CONTENT_SOURCE_DESCRIPTION,
         }).optional(),
         external_id: z
             .string()
@@ -826,7 +926,10 @@ export const UpdateContentObjectPayloadSchema = z
     })
     .meta({
         id: 'UpdateContentObjectPayload',
-        description: 'When creating from an uploaded file the content should be an URL to the uploaded file',
+        description:
+            'When creating from an uploaded file the content should be an URL to the uploaded file. ' +
+            '`content.type`, the MIME type of the file, is required with a non-empty `content.source`.',
+        ...CONTENT_TYPE_WITH_SOURCE_RULE,
     });
 
 export const ContentObjectApiTypeRefSchema = ContentObjectTypeRefSchema.meta({ id: 'ContentObjectApiTypeRef' });
@@ -886,11 +989,36 @@ export const ListContentObjectExportsResponseSchema = z
 export const ExportPropertiesPayloadSchema = z
     .strictObject({
         objectIds: z.array(z.string()),
-        type: z.string(),
+        // A pattern rather than an enum keeps the published type a string for existing SDK callers.
+        type: z
+            .string()
+            .regex(/^(?:JSON|CSV)$/)
+            .meta({ description: 'The export format: `JSON` or `CSV`.' }),
         query: ComplexSearchQuerySchema.optional(),
         table_layout: z.array(ColumnLayoutSchema).optional(),
     })
-    .meta({ id: 'ExportPropertiesPayload' });
+    .meta({
+        id: 'ExportPropertiesPayload',
+        description:
+            'Each `table_layout` column reads its `field` as a dotted path of non-empty field names, none starting ' +
+            'with `$`, except an `objectLink` column, which exports the object title.',
+        // The export projects each column's `field` as a Mongo path. `ColumnLayout` is also the stored layout of a
+        // content type, so the rule is stated on this request rather than on the shared component.
+        ...conditional(
+            { required: ['table_layout'] },
+            {
+                properties: {
+                    table_layout: {
+                        items: conditional(
+                            { required: ['type'], properties: { type: { const: 'objectLink' } } },
+                            {},
+                            { properties: { field: { pattern: `^${MONGO_FIELD_PATH}$` } } },
+                        ),
+                    },
+                },
+            },
+        ),
+    });
 
 export const ContentObjectApiResponseSchema = z
     .strictObject({
@@ -1113,7 +1241,14 @@ export const GetObjectRenditionQuerySchema = z
 export const CollectionMembersQuerySchema = z
     .object({
         status: z.string().optional(),
-        type: z.string().optional(),
+        type: z
+            .string()
+            // Empty means no type filter.
+            .regex(/^(?:[0-9a-fA-F]{24})?$/)
+            .meta({
+                description: 'Only list members of this stored content type, by its ID (24 hexadecimal characters).',
+            })
+            .optional(),
         limit: PageCountSchema.optional(),
         offset: PageCountSchema.optional(),
     })

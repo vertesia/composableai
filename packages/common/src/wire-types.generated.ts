@@ -290,7 +290,7 @@ export type UpdateApiKeyPayloadFromSchema = {
     name?: string | undefined;
     role?: AssignableRoleName | undefined;
     enabled?: boolean | undefined;
-    scim_provisioning?: boolean | undefined | undefined;
+    scim_provisioning?: boolean | undefined;
     properties?: Record<string, unknown> | undefined | undefined;
     clearance?: number | undefined | undefined;
     compartments?: string[] | undefined | undefined;
@@ -2202,6 +2202,7 @@ export type BulkOperationPayload = {
     name: 'change_type' | 'create' | 'delete' | 'start_workflow' | 'update';
     ids: string[];
     params: {
+        objects?: CreateContentObjectPayloadWire[] | undefined;
         [k: string]: unknown;
     };
 };
@@ -3439,6 +3440,7 @@ export type SendEmailRequest = {
     route_key?: string | undefined;
     in_reply_to?: string | undefined;
     references?: string[] | undefined;
+    request_id?: string | undefined;
 };
 export type SendEmailResponse = {
     success: boolean;
@@ -3488,6 +3490,7 @@ export type ForwardEmailRequest = {
         text: string;
         html?: string | undefined;
         message_id?: string | undefined;
+        in_reply_to?: string | undefined;
     };
     context?: Record<string, unknown> | undefined;
     attachments?:
@@ -4851,7 +4854,7 @@ export type ResolvedInteractionExecutionInfo = {
 };
 export type UpdateExecutionRunPayload = {
     id?: string | undefined;
-    parent?: string | ExecutionRunWire | undefined;
+    parent?: string | undefined;
     evaluation?:
         | {
               score?: number | undefined;
@@ -4860,7 +4863,7 @@ export type UpdateExecutionRunPayload = {
           }
         | undefined;
     tags?: string[] | undefined;
-    environment?: ExecutionEnvironmentRef | undefined;
+    environment?: string | undefined;
     modelId?: string | undefined;
     result_schema?: JSONSchema | undefined;
     ttl?: number | undefined;
@@ -4882,7 +4885,7 @@ export type UpdateExecutionRunPayload = {
     created_by?: string | undefined;
     updated_by?: string | undefined;
     workflow?: ExecutionRunWorkflow | undefined;
-    interaction?: InteractionRef | undefined;
+    interaction?: string | undefined;
 };
 /**
  * Stripe billing status, derived from `StripeBillingStatusResponseSchema`.
@@ -5488,6 +5491,10 @@ export type ExportPropertiesResponse = {
  */
 export type PendingAskStatus = 'pending' | 'resolved' | 'expired';
 /**
+ * What the server does with the response when a pending ask is resolved.
+ */
+export type PendingAskDelivery = 'deliver' | 'already_delivered';
+/**
  * Data stored in Redis for pending ask_user requests.
  * Tracks which agents are waiting for user input and enables
  * both webhook notifications and portal views.
@@ -5530,6 +5537,7 @@ export type RegisterPendingAskResponse = {
 };
 export type ResolvePendingAskRequest = {
     response: string;
+    delivery?: PendingAskDelivery | undefined;
 };
 export type ResolvePendingAskResponse = {
     success: boolean;
@@ -6393,7 +6401,7 @@ export type PromptTemplateUpdatePayload = {
     name?: string | undefined;
     status?: PromptStatusWire | undefined;
     version?: number | undefined;
-    parent?: string | undefined | undefined;
+    parent?: string | undefined;
     description?: string | undefined | undefined;
     test_data?: JSONObject | undefined | undefined;
     script?: string | undefined | undefined;
@@ -7315,6 +7323,9 @@ export type CollectionMembersUpdatePayload = {
     action: 'add' | 'delete';
     members: string[];
 };
+export type CollectionPermissionsPayload = Partial<
+    Record<'content:read' | 'content:write' | 'content:delete', string[]>
+>;
 export type CollectionChildrenUpdatePayload = {
     action: 'add' | 'delete';
     children: string[];
@@ -8788,6 +8799,70 @@ export type BulkUploadUrlsPayload = {
 export type BulkUploadUrlsResponse = {
     files: GetFileUrlResponse[];
 };
+export type CreateUploadSessionPayload = {
+    name: string;
+    id?: string | undefined;
+    mime_type?: string | undefined;
+};
+export type GcsResumableUploadSession = {
+    protocol: 'gcs_resumable';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    url: string;
+};
+export type AzureBlockBlobUploadSession = {
+    protocol: 'azure_block_blob';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    url: string;
+};
+export type S3MultipartUploadSession = {
+    protocol: 's3_multipart';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    upload_id: string;
+};
+export type UploadSession = GcsResumableUploadSession | AzureBlockBlobUploadSession | S3MultipartUploadSession;
+export type GetUploadPartUrlsPayload = {
+    id: string;
+    upload_id: string;
+    part_numbers: number[];
+};
+export type UploadPartUrl = {
+    part_number: number;
+    url: string;
+};
+export type UploadPartUrlsResponse = {
+    parts: UploadPartUrl[];
+};
+export type CompletedUploadPart = {
+    part_number: number;
+    etag: string;
+};
+export type CompleteUploadSessionPayload = {
+    id: string;
+    upload_id: string;
+    parts: CompletedUploadPart[];
+};
+export type CompleteUploadSessionResponse = {
+    id: string;
+    path: string;
+    etag?: string | undefined;
+};
+export type AbortUploadSessionPayload = {
+    id: string;
+    upload_id: string;
+};
+export type AbortUploadSessionResponse = {
+    id: string;
+    aborted: boolean;
+};
 export type FileBucketResponse = {
     bucket: string;
     location?: string | undefined;
@@ -9682,9 +9757,9 @@ export type ViewHierarchyLevel = {
  * Hierarchies represent one selected path, so multi_select may only be false.
  * Selection ids are opaque runtime values and must not be constructed by clients.
  *
- * `multi_select` widens from `false` to `boolean` here, matching the published component and what
- * the endpoint has always accepted. The narrowing was an authoring hint with nothing behind it: the
- * navigation runtime takes the first selection for `source === 'hierarchy'` whatever the flag says.
+ * `multi_select` is typed `boolean` here, as the SDK has always published it, but the published
+ * component and the server accept only `false`: the navigation runtime takes the first selection for
+ * `source === 'hierarchy'` whatever the flag says.
  */
 export type ViewHierarchyNavigation = {
     id: string;
@@ -11183,6 +11258,7 @@ export type DataStoreVersionPathParams = {
 export type ContentObjectExportPathParams = {
     exportId?: string | undefined;
     role?: 'data' | 'manifest' | undefined;
+    runId?: string | undefined;
 };
 export type ProcessTestRunPathParams = {
     runId?: string | undefined;
@@ -11198,11 +11274,19 @@ export type TaskPathParams = {
 export type AgentRunPathParams = {
     agentRunId?: string | undefined;
 };
+export type WorkflowRunActionPathParams = {
+    action?: 'cancel' | 'terminate' | undefined;
+};
 export type AppVersionPathParams = {
     id?: string | undefined;
+    alias?: string | undefined;
 };
 export type AppInstallationPathParams = {
     installId?: string | undefined;
+    app_id?: string | undefined;
+};
+export type InteractionConfigurationPathParams = {
+    interactionId?: string | undefined;
 };
 export type DelegationGrantPathParams = {
     grantId?: string | undefined;
@@ -11210,11 +11294,21 @@ export type DelegationGrantPathParams = {
 export type OAuthProviderPathParams = {
     id?: string | undefined;
 };
+export type UserGroupPathParams = {
+    groupId?: string | undefined;
+    userId?: string | undefined;
+};
 export type ProjectAppCapabilityPathParams = {
     processId?: string | undefined;
     templateId?: string | undefined;
     typeId?: string | undefined;
     viewId?: string | undefined;
+};
+export type EmbeddingTypePathParams = {
+    type?: 'text' | 'image' | 'properties' | undefined;
+};
+export type ToolPathParams = {
+    toolName?: string | undefined;
 };
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
@@ -11611,6 +11705,19 @@ export interface ApiComponentTypes {
     BucketCreateAccessStatusResponse: BucketCreateAccessStatusResponse;
     EnsureBucketCreateAccessPayload: EnsureBucketCreateAccessPayload;
     EnsureBucketCreateAccessResponse: EnsureBucketCreateAccessResponse;
+    AbortUploadSessionPayload: AbortUploadSessionPayload;
+    AbortUploadSessionResponse: AbortUploadSessionResponse;
+    AzureBlockBlobUploadSession: AzureBlockBlobUploadSession;
+    CompletedUploadPart: CompletedUploadPart;
+    CompleteUploadSessionPayload: CompleteUploadSessionPayload;
+    CompleteUploadSessionResponse: CompleteUploadSessionResponse;
+    CreateUploadSessionPayload: CreateUploadSessionPayload;
+    GcsResumableUploadSession: GcsResumableUploadSession;
+    GetUploadPartUrlsPayload: GetUploadPartUrlsPayload;
+    S3MultipartUploadSession: S3MultipartUploadSession;
+    UploadPartUrl: UploadPartUrl;
+    UploadPartUrlsResponse: UploadPartUrlsResponse;
+    UploadSession: UploadSession;
     TaskFieldType: TaskFieldType;
     DurableTaskStatus: DurableTaskStatus;
     TaskSource: TaskSource;
@@ -12037,6 +12144,7 @@ export interface ApiComponentTypes {
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;
+    CollectionPermissionsPayload: CollectionPermissionsPayload;
     CollectionChildrenUpdateResult: CollectionChildrenUpdateResult;
     CollectionChildrenUpdatePayload: CollectionChildrenUpdatePayload;
     CollectionStatus: CollectionStatusWire;
@@ -12498,6 +12606,7 @@ export interface ApiComponentTypes {
     ForwardEmailRequest: ForwardEmailRequest;
     ForwardEmailResponse: ForwardEmailResponse;
     PendingAskStatus: PendingAskStatus;
+    PendingAskDelivery: PendingAskDelivery;
     PendingAskData: PendingAskData;
     RegisterPendingAskRequest: RegisterPendingAskRequest;
     RegisterPendingAskResponse: RegisterPendingAskResponse;
@@ -12519,11 +12628,16 @@ export interface ApiComponentTypes {
     ProcessPathParams: ProcessPathParams;
     TaskPathParams: TaskPathParams;
     AgentRunPathParams: AgentRunPathParams;
+    WorkflowRunActionPathParams: WorkflowRunActionPathParams;
     AppVersionPathParams: AppVersionPathParams;
     AppInstallationPathParams: AppInstallationPathParams;
+    InteractionConfigurationPathParams: InteractionConfigurationPathParams;
     DelegationGrantPathParams: DelegationGrantPathParams;
     OAuthProviderPathParams: OAuthProviderPathParams;
+    UserGroupPathParams: UserGroupPathParams;
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
+    EmbeddingTypePathParams: EmbeddingTypePathParams;
+    ToolPathParams: ToolPathParams;
     WorkflowUsageQuery: WorkflowUsageQuery;
     WorkflowUsageClass: WorkflowUsageClass;
     WorkflowUsageStanding: WorkflowUsageStanding;

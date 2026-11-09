@@ -6,6 +6,7 @@ import { CUSTOM_ROLE_NAME_MAX_LENGTH } from '../custom-role-values.js';
 import { SystemRoles } from '../project-values.js';
 import type * as Wire from '../wire-types.generated.js';
 import { ProjectSchema } from './project.js';
+import { conditional } from './schema-primitives.js';
 
 /**
  * Runtime API schemas for API key endpoints and their compact project reference.
@@ -130,6 +131,14 @@ export const ApiKeyWithValueSchema = ApiKeySchema.extend({
 }).meta({ id: 'ApiKeyWithValue' });
 
 /**
+ * The key names of a payload's `properties`: a document key cannot hold a NUL, so the server refuses one with a 400.
+ * Stated on the payload rather than on the map, for the reason `mongoFilterKeysRule` gives. Only the top-level
+ * names are stated; a nested key with a NUL is refused the same way.
+ */
+const PROPERTY_KEYS_WITHOUT_NUL = { properties: { propertyNames: { pattern: '^[^\\u0000]*$' } } };
+const PROPERTY_KEYS_DESCRIPTION = 'No key of `properties`, at any depth, may contain a NUL character.';
+
+/**
  * What `POST /apikeys` accepts.
  *
  * Create and update used to share one `CreateOrUpdateApiKeyPayload extends Partial<ApiKey>`, and
@@ -159,7 +168,19 @@ export const CreateApiKeyPayloadSchema = ApiKeySchema.pick({
     compartments: true,
 })
     .partial({ type: true, expires_at: true })
-    .meta({ id: 'CreateApiKeyPayload' });
+    .meta({
+        id: 'CreateApiKeyPayload',
+        // One `if`/`then`/`else` carries both rules, since a component holds a single conditional: the key names of
+        // `properties` hold no NUL either way, and a SCIM provisioning key also takes the `admin` role.
+        ...conditional(
+            { required: ['scim_provisioning'], properties: { scim_provisioning: { const: true } } },
+            { properties: { role: { const: SystemRoles.admin }, ...PROPERTY_KEYS_WITHOUT_NUL } },
+            { properties: PROPERTY_KEYS_WITHOUT_NUL },
+        ),
+        description:
+            'A SCIM provisioning key (`scim_provisioning: true`) takes the `admin` role. A custom `c:<name>` role ' +
+            `must be defined in the account. ${PROPERTY_KEYS_DESCRIPTION}`,
+    });
 
 /**
  * What `PUT /apikeys/:keyId` accepts: the fields the handler applies, each optional.
@@ -180,7 +201,24 @@ export const UpdateApiKeyPayloadSchema = ApiKeySchema.pick({
     compartments: true,
 })
     .partial()
-    .meta({ id: 'UpdateApiKeyPayload' });
+    .extend({
+        // Only `true` is accepted: the server refuses `false` with a 400, since a key's SCIM provisioning is revoked
+        // by disabling or deleting the key. The spec publishes a boolean, because boolean constants are not
+        // generator-friendly.
+        scim_provisioning: z
+            .boolean()
+            .optional()
+            .meta({
+                description:
+                    'Enables SCIM provisioning on an existing admin key. Only `true` is accepted: disable or delete ' +
+                    'the key to revoke it.',
+            }),
+    })
+    .meta({
+        id: 'UpdateApiKeyPayload',
+        ...conditional({ required: ['properties'] }, { properties: PROPERTY_KEYS_WITHOUT_NUL }),
+        description: PROPERTY_KEYS_DESCRIPTION,
+    });
 
 export const AuthTokenResponseSchema = z.object({ token: z.string() }).meta({ id: 'AuthTokenResponse' });
 

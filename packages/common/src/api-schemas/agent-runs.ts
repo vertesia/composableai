@@ -556,7 +556,11 @@ export const UpdateAgentArtifactContentResponseSchema = z
 export const UpdateAgentArtifactContentPayloadSchema = z
     .strictObject({
         content: z.string(),
-        generation: z.string(),
+        // The update is conditional on this token, so an empty one cannot name the generation it expects.
+        generation: z
+            .string()
+            .min(1)
+            .meta({ description: 'The blob generation the content was read at, as returned by the read.' }),
     })
     .meta({ id: 'UpdateAgentArtifactContentPayload', description: 'Conditional text update for an agent artifact.' });
 
@@ -1101,7 +1105,14 @@ export const CreateAgentRunPayloadSchema = z
             .optional(),
         idempotency_key: AgentRunIdempotencyKeySchema.optional(),
     })
-    .meta({ id: 'CreateAgentRunPayload', description: 'Payload to create and start a new agent run.' });
+    .meta({
+        id: 'CreateAgentRunPayload',
+        description:
+            'Payload to create and start a new agent run. A linked `content_type` needs a non-empty `name`: the run ' +
+            'stores it.',
+        // Stated here rather than on the shared `ContentObjectTypeRef`, whose other uses do not require a name.
+        allOf: [{ properties: { content_type: { properties: { name: { minLength: 1 } } } } }],
+    });
 
 /**
  * The other shape `POST /agents` accepts — a process run rather than an agent run.
@@ -1504,7 +1515,14 @@ export const SearchAgentRunsQuerySchema = z
             .meta({ description: 'Only return runs started at or before this date', format: 'date-time' })
             .optional(),
         limit: z.number().min(0).meta({ description: 'Maximum number of results (default: 50)' }).optional(),
-        offset: z.number().min(0).meta({ description: 'Offset for pagination' }).optional(),
+        offset: z
+            .number()
+            .min(0)
+            .meta({
+                description:
+                    'Offset for pagination. `offset` plus `limit` (capped at 200, 50 when omitted) must be at most 10000.',
+            })
+            .optional(),
         sort: z
             .array(z.string())
             .meta({
