@@ -64,6 +64,8 @@ export type OAuthLoginPayload = Wire.OAuthLoginPayload;
 export type OAuthLoginDecisionResponse = Wire.OAuthLoginDecisionResponse;
 
 export type OAuthLoginUserNotFoundResponse = Wire.OAuthLoginUserNotFoundResponse;
+export type OAuthLoginRequestNotFoundResponse = Wire.OAuthLoginRequestNotFoundResponse;
+export type OAuthLoginNotFoundResponse = Wire.OAuthLoginNotFoundResponse;
 
 export type OidcFederationConnectionPayload = Wire.OidcFederationConnectionPayload;
 

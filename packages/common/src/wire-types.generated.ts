@@ -5256,6 +5256,11 @@ export type OAuthLoginUserNotFoundResponse = {
     error: 'user_not_found';
     ensure_user_url: string;
 };
+export type OAuthLoginRequestNotFoundResponse = {
+    error: 'not_found';
+    message: string;
+};
+export type OAuthLoginNotFoundResponse = OAuthLoginUserNotFoundResponse | OAuthLoginRequestNotFoundResponse;
 export type OidcFederationConnectionPayload = {
     name: string;
     issuer: string;
@@ -11433,6 +11438,8 @@ export interface ApiComponentTypes {
     OAuthAuthorizationRequestGeneratedApp: OAuthAuthorizationRequestGeneratedApp;
     OAuthLoginPayload: OAuthLoginPayload;
     OAuthLoginUserNotFoundResponse: OAuthLoginUserNotFoundResponse;
+    OAuthLoginRequestNotFoundResponse: OAuthLoginRequestNotFoundResponse;
+    OAuthLoginNotFoundResponse: OAuthLoginNotFoundResponse;
     OAuthLoginDecisionResponse: OAuthLoginDecisionResponse;
     ApproveOAuthAuthorizationRequestPayload: ApproveOAuthAuthorizationRequestPayload;
     OAuthGrantableScopesResponse: OAuthGrantableScopesResponse;

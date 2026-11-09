@@ -2193,6 +2193,14 @@ interface Checks {
         W.OAuthLoginUserNotFoundResponse,
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginUserNotFoundResponseSchema>
     >;
+    OAuthLoginRequestNotFoundResponse: Same<
+        W.OAuthLoginRequestNotFoundResponse,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginRequestNotFoundResponseSchema>
+    >;
+    OAuthLoginNotFoundResponse: Same<
+        W.OAuthLoginNotFoundResponse,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginNotFoundResponseSchema>
+    >;
     OidcFederationConnectionPayload: Same<
         W.OidcFederationConnectionPayload,
         z.infer<typeof import('./api-schemas/oauth-server.js').OidcFederationConnectionPayloadSchema>
@@ -5511,6 +5519,14 @@ interface Checks {
     'component:OAuthLoginUserNotFoundResponse': Same<
         W.ApiComponentTypes['OAuthLoginUserNotFoundResponse'],
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginUserNotFoundResponseSchema>
+    >;
+    'component:OAuthLoginRequestNotFoundResponse': Same<
+        W.ApiComponentTypes['OAuthLoginRequestNotFoundResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginRequestNotFoundResponseSchema>
+    >;
+    'component:OAuthLoginNotFoundResponse': Same<
+        W.ApiComponentTypes['OAuthLoginNotFoundResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginNotFoundResponseSchema>
     >;
     'component:OAuthLoginDecisionResponse': Same<
         W.ApiComponentTypes['OAuthLoginDecisionResponse'],
@@ -10950,6 +10966,8 @@ const checks: Checks = {
     OAuthLoginPayload: true,
     OAuthLoginDecisionResponse: true,
     OAuthLoginUserNotFoundResponse: true,
+    OAuthLoginRequestNotFoundResponse: true,
+    OAuthLoginNotFoundResponse: true,
     OidcFederationConnectionPayload: true,
     OidcFederationConnection: true,
     OidcFederationConnectionArray: true,
@@ -11857,6 +11875,8 @@ const checks: Checks = {
     'component:OAuthAuthorizationRequestGeneratedApp': true,
     'component:OAuthLoginPayload': true,
     'component:OAuthLoginUserNotFoundResponse': true,
+    'component:OAuthLoginRequestNotFoundResponse': true,
+    'component:OAuthLoginNotFoundResponse': true,
     'component:OAuthLoginDecisionResponse': true,
     'component:ApproveOAuthAuthorizationRequestPayload': true,
     'component:OAuthGrantableScopesResponse': true,
@@ -13071,6 +13091,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2717);
+        expect(Object.keys(checks)).toHaveLength(2721);
     });
 });
