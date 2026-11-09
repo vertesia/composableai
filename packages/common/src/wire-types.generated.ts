@@ -11008,7 +11008,7 @@ export type AgentRunInternalsWire = {
     run_type?: RunType | undefined;
     interaction?: string | undefined;
     interaction_name?: string | undefined;
-    config?: InteractionExecutionConfiguration | undefined;
+    config?: InteractionExecutionConfiguration | ProcessRunConfig | undefined;
     interactive?: boolean | undefined;
     process_id?: string | undefined;
     process_definition_snapshot?: ProcessDefinitionBodyWire | undefined;

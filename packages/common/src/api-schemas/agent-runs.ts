@@ -1592,7 +1592,13 @@ export const AgentRunInternalsSchema = z
         run_type: RunTypeSchema.optional(),
         interaction: z.string().optional(),
         interaction_name: z.string().optional(),
-        config: InteractionExecutionConfigurationSchema.optional(),
+        config: z
+            .union([InteractionExecutionConfigurationSchema, ProcessRunConfigSchema])
+            .meta({
+                description:
+                    'Execution configuration of the run: an `InteractionExecutionConfiguration` for an agent run, a `ProcessRunConfig` for a process run (see `run_kind`).',
+            })
+            .optional(),
         interactive: z.boolean().optional(),
         process_id: z.string().optional(),
         process_definition_snapshot: ProcessDefinitionBodySchema.optional(),
