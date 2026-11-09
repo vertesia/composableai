@@ -71,6 +71,11 @@ describe('verifyToken issuer allowlist', () => {
         'https://sts.vertesia.io/',
         'https://evilvertesia.io',
         'https://vertesia.io.attacker.example',
+        'https://vertesia.io',
+        'https://api.us1.vertesia.io',
+        'https://docs.vertesia.io',
+        'https://stsx.vertesia.io',
+        'https://sts.a.b.c.vertesia.io',
     ])('refuses the look-alike built-in issuer %s without fetching its keys', async (issuer) => {
         const { token, jwksFetch } = await signedBy(issuer);
         const verifyToken = await loadVerifyToken();
@@ -78,11 +83,16 @@ describe('verifyToken issuer allowlist', () => {
         expect(jwksFetch).not.toHaveBeenCalled();
     });
 
-    it('accepts an HTTPS origin under a built-in domain', async () => {
-        const { token, jwksFetch } = await signedBy('https://sts.us1.vertesia.io');
+    it.each([
+        'https://sts.vertesia.io',
+        'https://sts.us1.vertesia.io',
+        'https://sts-preview.eu1.harness.vertesia.io',
+        'https://sts.becomposable.com',
+    ])('accepts the token server origin %s under a built-in domain', async (issuer) => {
+        const { token, jwksFetch } = await signedBy(issuer);
         const verifyToken = await loadVerifyToken();
         const { payload } = await verifyToken(token);
-        expect(payload.iss).toBe('https://sts.us1.vertesia.io');
-        expect(jwksFetch).toHaveBeenCalledWith('https://sts.us1.vertesia.io/.well-known/jwks');
+        expect(payload.iss).toBe(issuer);
+        expect(jwksFetch).toHaveBeenCalledWith(`${issuer}/.well-known/jwks`);
     });
 });

@@ -157,9 +157,17 @@ export class AuthSession implements ToolExecutionContext {
 const TRUSTED_ISSUER_DOMAINS = ['vertesia.io', 'becomposable.com'];
 
 /**
+ * A Vertesia token server's host: `sts` or `sts-<tier>`, then at most two region labels, then a trusted domain, such
+ * as `sts.vertesia.io`, `sts.us1.vertesia.io` or `sts-preview.eu1.harness.vertesia.io`.
+ */
+const TOKEN_SERVER_HOST = /^sts(?:-[a-z0-9]+)?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?){0,2}$/;
+
+/**
  * The issuer names the server this SDK fetches verification keys from, so a suffix match on the raw string is not
- * enough: `https://attacker.example/x.vertesia.io` ends with `.vertesia.io` too. A built-in issuer must be exactly an
- * HTTPS origin, with no path, port or credentials, whose host is a subdomain of a trusted domain.
+ * enough: `https://attacker.example/x.vertesia.io` ends with `.vertesia.io` too, and other hosts under a trusted
+ * domain serve content that is not Vertesia's token server. A built-in issuer must be exactly an HTTPS origin, with
+ * no path, port or credentials, whose host has the shape of a Vertesia token server under a trusted domain. Any other
+ * issuer must be listed in VERTESIA_TRUSTED_ISSUERS.
  */
 export function isAllowedIssuer(iss: string): boolean {
     if (getTrustedIssuers().has(iss)) return true;
@@ -170,7 +178,10 @@ export function isAllowedIssuer(iss: string): boolean {
         return false;
     }
     if (url.protocol !== 'https:' || url.port !== '' || url.origin !== iss) return false;
-    return TRUSTED_ISSUER_DOMAINS.some((domain) => url.hostname.endsWith(`.${domain}`));
+    return TRUSTED_ISSUER_DOMAINS.some((domain) => {
+        const suffix = `.${domain}`;
+        return url.hostname.endsWith(suffix) && TOKEN_SERVER_HOST.test(url.hostname.slice(0, -suffix.length));
+    });
 }
 
 /**
