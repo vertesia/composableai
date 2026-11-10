@@ -42,3 +42,13 @@ export type IntakeRunCost = Wire.IntakeRunCost;
 
 /** The LLM and embedding cost of the intake workflows that processed a content object. */
 export type ObjectIntakeCostResponse = Wire.ObjectIntakeCostResponse;
+
+export type IntakeCostSummaryQuery = Wire.IntakeCostSummaryQuery;
+export type IntakeCostTotals = Wire.IntakeCostTotals;
+export type IntakeCostTimePoint = Wire.IntakeCostTimePoint;
+export type IntakeCostByContentType = Wire.IntakeCostByContentType;
+export type IntakeCostByOutcome = Wire.IntakeCostByOutcome;
+export type IntakeCostDocument = Wire.IntakeCostDocument;
+
+/** The LLM and embedding cost of a project's intake runs over a window. */
+export type IntakeCostSummaryResponse = Wire.IntakeCostSummaryResponse;

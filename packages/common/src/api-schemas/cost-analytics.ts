@@ -393,3 +393,101 @@ export const ObjectIntakeCostResponseSchema = z
             'The LLM and embedding cost of the intake workflows that processed a content object, recorded since ' +
             'intake cost tracking was deployed.',
     });
+
+export const IntakeCostSummaryQuerySchema = z
+    .strictObject({
+        from: timeBoundarySchema
+            .meta({ description: 'Start of the window, on the start of each run. Default: 30 days before `to`.' })
+            .optional(),
+        to: timeBoundarySchema.meta({ description: 'End of the window, exclusive. Default: now.' }).optional(),
+        resolution: z
+            .enum(['day', 'week', 'month'])
+            .meta({ description: 'Period of the time series, in UTC; weeks start on Monday. Default: `day`.' })
+            .optional(),
+        content_type_id: z.string().meta({ description: 'Only the runs that ended on this content type.' }).optional(),
+    })
+    .meta({
+        id: 'IntakeCostSummaryQuery',
+        description: `${TIME_BOUND_DESCRIPTION} ${ANALYTICS_WINDOW_DESCRIPTION}`,
+    });
+
+const INTAKE_COST_USD_DESCRIPTION =
+    'What the priced calls cost: the amount the provider billed when it reported one, else the list-price estimate.';
+
+export const IntakeCostTotalsSchema = z
+    .strictObject({
+        run_count: z.number().int(),
+        document_count: z.number().int().meta({ description: 'Distinct documents the runs processed.' }),
+        cost_usd: z.number().meta({ description: INTAKE_COST_USD_DESCRIPTION }),
+        priced_calls: z.number().int(),
+        unpriced_calls: z
+            .number()
+            .int()
+            .meta({ description: 'Calls with no price, left out of `cost_usd`; their tokens are still counted.' }),
+        failed_calls: z.number().int(),
+        page_count: z.number().int().meta({ description: 'Pages of the runs that reported a page count.' }),
+        tokens: intakeCountsSchema.meta({ description: 'Tokens by meter type (`input`, `output`, ...).' }),
+    })
+    .meta({ id: 'IntakeCostTotals', description: 'Totals over the intake runs of a window.' });
+
+export const IntakeCostTimePointSchema = z
+    .strictObject({
+        timestamp: z.string().meta({ format: 'date-time', description: 'Start of the period, in UTC.' }),
+        run_count: z.number().int(),
+        cost_usd: z.number(),
+    })
+    .meta({ id: 'IntakeCostTimePoint', description: 'Intake runs that started in one period.' });
+
+export const IntakeCostByContentTypeSchema = z
+    .strictObject({
+        content_type_id: z
+            .string()
+            .meta({ description: 'Absent for runs that ended without a content type, or never reported one.' })
+            .optional(),
+        content_type_name: z.string().optional(),
+        run_count: z.number().int(),
+        document_count: z.number().int(),
+        cost_usd: z.number(),
+        page_count: z.number().int(),
+    })
+    .meta({ id: 'IntakeCostByContentType', description: 'Intake runs of one content type.' });
+
+export const IntakeCostByOutcomeSchema = z
+    .strictObject({
+        outcome: z.enum(['completed', 'skipped', 'failed', 'not_reported']).meta({
+            description: '`not_reported` covers runs still going and runs that closed without reporting.',
+        }),
+        run_count: z.number().int(),
+        cost_usd: z.number(),
+    })
+    .meta({ id: 'IntakeCostByOutcome', description: 'Intake runs that ended one way.' });
+
+export const IntakeCostDocumentSchema = z
+    .strictObject({
+        object_id: z.string(),
+        name: z.string().meta({ description: 'Absent when the caller cannot read the document.' }).optional(),
+        content_type_name: z.string().optional(),
+        run_count: z.number().int(),
+        cost_usd: z.number(),
+    })
+    .meta({ id: 'IntakeCostDocument', description: 'The intake cost of one document over a window.' });
+
+export const IntakeCostSummaryResponseSchema = z
+    .strictObject({
+        from: z.string().meta({ format: 'date-time' }),
+        to: z.string().meta({ format: 'date-time' }),
+        resolution: z.enum(['day', 'week', 'month']),
+        totals: IntakeCostTotalsSchema,
+        time_series: z.array(IntakeCostTimePointSchema).meta({ description: 'Periods that had runs, oldest first.' }),
+        by_content_type: z.array(IntakeCostByContentTypeSchema).meta({ description: 'Most expensive first.' }),
+        by_outcome: z.array(IntakeCostByOutcomeSchema).meta({ description: 'Most expensive first.' }),
+        top_documents: z
+            .array(IntakeCostDocumentSchema)
+            .meta({ description: 'The 10 most expensive documents of the window, most expensive first.' }),
+    })
+    .meta({
+        id: 'IntakeCostSummaryResponse',
+        description:
+            'The LLM and embedding cost of the intake runs of the current project that started in a window, recorded ' +
+            'since intake cost tracking was deployed.',
+    });

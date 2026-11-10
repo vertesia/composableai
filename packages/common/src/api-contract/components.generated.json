@@ -48437,6 +48437,285 @@
     ],
     "description": "The LLM and embedding cost of the intake workflows that processed a content object, recorded since intake cost tracking was deployed."
   },
+  "IntakeCostSummaryQuery": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "type": [
+          "string",
+          "number"
+        ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
+        "description": "Start of the window, on the start of each run. Default: 30 days before `to`."
+      },
+      "to": {
+        "type": [
+          "string",
+          "number"
+        ],
+        "minimum": -62135596800000,
+        "maximum": 253402300799999,
+        "description": "End of the window, exclusive. Default: now."
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week",
+          "month"
+        ],
+        "description": "Period of the time series, in UTC; weeks start on Monday. Default: `day`."
+      },
+      "content_type_id": {
+        "type": "string",
+        "description": "Only the runs that ended on this content type."
+      }
+    },
+    "description": "`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999. The window from `from` to `to` (now when absent) may span at most 366 days."
+  },
+  "IntakeCostTotals": {
+    "type": "object",
+    "properties": {
+      "run_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "document_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Distinct documents the runs processed."
+      },
+      "cost_usd": {
+        "type": "number",
+        "description": "What the priced calls cost: the amount the provider billed when it reported one, else the list-price estimate."
+      },
+      "priced_calls": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "unpriced_calls": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Calls with no price, left out of `cost_usd`; their tokens are still counted."
+      },
+      "failed_calls": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "page_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Pages of the runs that reported a page count."
+      },
+      "tokens": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        },
+        "description": "Tokens by meter type (`input`, `output`, ...)."
+      }
+    },
+    "required": [
+      "run_count",
+      "document_count",
+      "cost_usd",
+      "priced_calls",
+      "unpriced_calls",
+      "failed_calls",
+      "page_count",
+      "tokens"
+    ],
+    "description": "Totals over the intake runs of a window."
+  },
+  "IntakeCostTimePoint": {
+    "type": "object",
+    "properties": {
+      "timestamp": {
+        "type": "string",
+        "format": "date-time",
+        "description": "Start of the period, in UTC."
+      },
+      "run_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "cost_usd": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "timestamp",
+      "run_count",
+      "cost_usd"
+    ],
+    "description": "Intake runs that started in one period."
+  },
+  "IntakeCostByContentType": {
+    "type": "object",
+    "properties": {
+      "content_type_id": {
+        "type": "string",
+        "description": "Absent for runs that ended without a content type, or never reported one."
+      },
+      "content_type_name": {
+        "type": "string"
+      },
+      "run_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "document_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "cost_usd": {
+        "type": "number"
+      },
+      "page_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "run_count",
+      "document_count",
+      "cost_usd",
+      "page_count"
+    ],
+    "description": "Intake runs of one content type."
+  },
+  "IntakeCostByOutcome": {
+    "type": "object",
+    "properties": {
+      "outcome": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "skipped",
+          "failed",
+          "not_reported"
+        ],
+        "description": "`not_reported` covers runs still going and runs that closed without reporting."
+      },
+      "run_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "cost_usd": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "outcome",
+      "run_count",
+      "cost_usd"
+    ],
+    "description": "Intake runs that ended one way."
+  },
+  "IntakeCostDocument": {
+    "type": "object",
+    "properties": {
+      "object_id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string",
+        "description": "Absent when the caller cannot read the document."
+      },
+      "content_type_name": {
+        "type": "string"
+      },
+      "run_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "cost_usd": {
+        "type": "number"
+      }
+    },
+    "required": [
+      "object_id",
+      "run_count",
+      "cost_usd"
+    ],
+    "description": "The intake cost of one document over a window."
+  },
+  "IntakeCostSummaryResponse": {
+    "type": "object",
+    "properties": {
+      "from": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "to": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "resolution": {
+        "type": "string",
+        "enum": [
+          "day",
+          "week",
+          "month"
+        ]
+      },
+      "totals": {
+        "$ref": "#/components/schemas/IntakeCostTotals"
+      },
+      "time_series": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IntakeCostTimePoint"
+        },
+        "description": "Periods that had runs, oldest first."
+      },
+      "by_content_type": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IntakeCostByContentType"
+        },
+        "description": "Most expensive first."
+      },
+      "by_outcome": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IntakeCostByOutcome"
+        },
+        "description": "Most expensive first."
+      },
+      "top_documents": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IntakeCostDocument"
+        },
+        "description": "The 10 most expensive documents of the window, most expensive first."
+      }
+    },
+    "required": [
+      "from",
+      "to",
+      "resolution",
+      "totals",
+      "time_series",
+      "by_content_type",
+      "by_outcome",
+      "top_documents"
+    ],
+    "description": "The LLM and embedding cost of the intake runs of the current project that started in a window, recorded since intake cost tracking was deployed."
+  },
   "PricingSyncPayload": {
     "type": "object",
     "properties": {

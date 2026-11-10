@@ -340,8 +340,58 @@ export async function getObjectIntakeCost(program: Command, objectId: string, op
     );
     for (const run of cost.runs) {
         const type = run.content_type_name ?? run.content_type_id ?? '-';
-        const outcome = run.outcome ?? 'running';
+        const outcome = run.outcome ?? 'not reported';
         console.log(`${run.started_at}  ${outcome.padEnd(9)} ${formatUsd(run.cost_usd).padStart(11)}  ${type}`);
+    }
+}
+
+interface IntakeCostSummaryOptions extends JsonOutputOptions {
+    from?: string;
+    to?: string;
+    resolution?: string;
+    contentType?: string;
+}
+
+const INTAKE_COST_RESOLUTIONS = ['day', 'week', 'month'] as const;
+
+export async function getIntakeCostSummary(program: Command, options: IntakeCostSummaryOptions) {
+    const resolution = options.resolution;
+    if (resolution !== undefined && !INTAKE_COST_RESOLUTIONS.some((value) => value === resolution)) {
+        throw new Error(`Invalid resolution: expected one of ${INTAKE_COST_RESOLUTIONS.join(', ')}`);
+    }
+    const client = await getClient(program);
+    const summary = await client.store.cost.getIntakeCostSummary({
+        ...(options.from ? { from: options.from } : {}),
+        ...(options.to ? { to: options.to } : {}),
+        ...(resolution ? { resolution: resolution as (typeof INTAKE_COST_RESOLUTIONS)[number] } : {}),
+        ...(options.contentType ? { content_type_id: options.contentType } : {}),
+    });
+    if (options.json) {
+        printJson(summary);
+        return;
+    }
+    const { totals } = summary;
+    const unpriced = totals.unpriced_calls ? `, ${totals.unpriced_calls} unpriced` : '';
+    console.log(`Intake cost from ${summary.from} to ${summary.to}`);
+    console.log(
+        `${formatUsd(totals.cost_usd)} over ${totals.run_count} intake run(s) on ${totals.document_count} document(s), ` +
+            `${totals.priced_calls} priced call(s)${unpriced}`,
+    );
+    if (summary.by_content_type.length > 0) {
+        console.log('\nBy content type:');
+        for (const group of summary.by_content_type) {
+            const type = group.content_type_name ?? group.content_type_id ?? '(no type)';
+            console.log(
+                `  ${formatUsd(group.cost_usd).padStart(11)}  ${String(group.run_count).padStart(6)} run(s)  ${type}`,
+            );
+        }
+    }
+    if (summary.top_documents.length > 0) {
+        console.log('\nMost expensive documents:');
+        for (const document of summary.top_documents) {
+            const name = document.name ?? '(no access)';
+            console.log(`  ${formatUsd(document.cost_usd).padStart(11)}  ${document.object_id}  ${name}`);
+        }
     }
 }
 

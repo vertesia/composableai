@@ -2516,6 +2516,58 @@ export type ObjectIntakeCostResponse = {
     unpriced_calls: number;
     runs: IntakeRunCost[];
 };
+export type IntakeCostSummaryQuery = {
+    from?: string | number | undefined;
+    to?: string | number | undefined;
+    resolution?: 'day' | 'week' | 'month' | undefined;
+    content_type_id?: string | undefined;
+};
+export type IntakeCostTotals = {
+    run_count: number;
+    document_count: number;
+    cost_usd: number;
+    priced_calls: number;
+    unpriced_calls: number;
+    failed_calls: number;
+    page_count: number;
+    tokens: Record<string, number>;
+};
+export type IntakeCostTimePoint = {
+    timestamp: string;
+    run_count: number;
+    cost_usd: number;
+};
+export type IntakeCostByContentType = {
+    content_type_id?: string | undefined;
+    content_type_name?: string | undefined;
+    run_count: number;
+    document_count: number;
+    cost_usd: number;
+    page_count: number;
+};
+export type IntakeCostByOutcome = {
+    outcome: 'completed' | 'skipped' | 'failed' | 'not_reported';
+    run_count: number;
+    cost_usd: number;
+};
+export type IntakeCostDocument = {
+    object_id: string;
+    name?: string | undefined;
+    content_type_name?: string | undefined;
+    run_count: number;
+    cost_usd: number;
+};
+/** The LLM and embedding cost of a project's intake runs over a window. */
+export type IntakeCostSummaryResponse = {
+    from: string;
+    to: string;
+    resolution: 'day' | 'week' | 'month';
+    totals: IntakeCostTotals;
+    time_series: IntakeCostTimePoint[];
+    by_content_type: IntakeCostByContentType[];
+    by_outcome: IntakeCostByOutcome[];
+    top_documents: IntakeCostDocument[];
+};
 export type CustomRoleDefinition = {
     name: string;
     title: string;
@@ -11914,6 +11966,13 @@ export interface ApiComponentTypes {
     ObjectIntakeCostQuery: ObjectIntakeCostQuery;
     IntakeRunCost: IntakeRunCost;
     ObjectIntakeCostResponse: ObjectIntakeCostResponse;
+    IntakeCostSummaryQuery: IntakeCostSummaryQuery;
+    IntakeCostTotals: IntakeCostTotals;
+    IntakeCostTimePoint: IntakeCostTimePoint;
+    IntakeCostByContentType: IntakeCostByContentType;
+    IntakeCostByOutcome: IntakeCostByOutcome;
+    IntakeCostDocument: IntakeCostDocument;
+    IntakeCostSummaryResponse: IntakeCostSummaryResponse;
     PricingSyncPayload: PricingSyncPayload;
     PricingSyncDayResult: PricingSyncDayResult;
     PricingSyncResult: PricingSyncResult;

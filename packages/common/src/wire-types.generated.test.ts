@@ -1065,6 +1065,34 @@ interface Checks {
         W.ObjectIntakeCostResponse,
         z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostResponseSchema>
     >;
+    IntakeCostSummaryQuery: Same<
+        W.IntakeCostSummaryQuery,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostSummaryQuerySchema>
+    >;
+    IntakeCostTotals: Same<
+        W.IntakeCostTotals,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTotalsSchema>
+    >;
+    IntakeCostTimePoint: Same<
+        W.IntakeCostTimePoint,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTimePointSchema>
+    >;
+    IntakeCostByContentType: Same<
+        W.IntakeCostByContentType,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentTypeSchema>
+    >;
+    IntakeCostByOutcome: Same<
+        W.IntakeCostByOutcome,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByOutcomeSchema>
+    >;
+    IntakeCostDocument: Same<
+        W.IntakeCostDocument,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostDocumentSchema>
+    >;
+    IntakeCostSummaryResponse: Same<
+        W.IntakeCostSummaryResponse,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostSummaryResponseSchema>
+    >;
     CustomRoleDefinition: Same<
         W.CustomRoleDefinition,
         z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
@@ -7222,6 +7250,34 @@ interface Checks {
         W.ApiComponentTypes['ObjectIntakeCostResponse'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostResponseSchema>
     >;
+    'component:IntakeCostSummaryQuery': Same<
+        W.ApiComponentTypes['IntakeCostSummaryQuery'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostSummaryQuerySchema>
+    >;
+    'component:IntakeCostTotals': Same<
+        W.ApiComponentTypes['IntakeCostTotals'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTotalsSchema>
+    >;
+    'component:IntakeCostTimePoint': Same<
+        W.ApiComponentTypes['IntakeCostTimePoint'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTimePointSchema>
+    >;
+    'component:IntakeCostByContentType': Same<
+        W.ApiComponentTypes['IntakeCostByContentType'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentTypeSchema>
+    >;
+    'component:IntakeCostByOutcome': Same<
+        W.ApiComponentTypes['IntakeCostByOutcome'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByOutcomeSchema>
+    >;
+    'component:IntakeCostDocument': Same<
+        W.ApiComponentTypes['IntakeCostDocument'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostDocumentSchema>
+    >;
+    'component:IntakeCostSummaryResponse': Same<
+        W.ApiComponentTypes['IntakeCostSummaryResponse'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostSummaryResponseSchema>
+    >;
     'component:PricingSyncPayload': Same<
         W.ApiComponentTypes['PricingSyncPayload'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').PricingSyncPayloadSchema>
@@ -10681,6 +10737,13 @@ const checks: Checks = {
     ObjectIntakeCostQuery: true,
     IntakeRunCost: true,
     ObjectIntakeCostResponse: true,
+    IntakeCostSummaryQuery: true,
+    IntakeCostTotals: true,
+    IntakeCostTimePoint: true,
+    IntakeCostByContentType: true,
+    IntakeCostByOutcome: true,
+    IntakeCostDocument: true,
+    IntakeCostSummaryResponse: true,
     CustomRoleDefinition: true,
     CustomRoleDefinitionArray: true,
     PermissionArray: true,
@@ -12323,6 +12386,13 @@ const checks: Checks = {
     'component:ObjectIntakeCostQuery': true,
     'component:IntakeRunCost': true,
     'component:ObjectIntakeCostResponse': true,
+    'component:IntakeCostSummaryQuery': true,
+    'component:IntakeCostTotals': true,
+    'component:IntakeCostTimePoint': true,
+    'component:IntakeCostByContentType': true,
+    'component:IntakeCostByOutcome': true,
+    'component:IntakeCostDocument': true,
+    'component:IntakeCostSummaryResponse': true,
     'component:PricingSyncPayload': true,
     'component:PricingSyncDayResult': true,
     'component:PricingSyncResult': true,
@@ -13118,6 +13188,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2727);
+        expect(Object.keys(checks)).toHaveLength(2741);
     });
 });
