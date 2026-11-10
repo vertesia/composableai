@@ -29,6 +29,10 @@ export function useUXTracking() {
         if (!Env.firebase?.apiKey) {
             return;
         }
+        // A deployment can use Firebase to sign in without sending analytics to Google.
+        if (Env.firebase.analytics === false) {
+            return;
+        }
         // The first event initializes Analytics, which registers a Firebase installation. Offline,
         // that registration rejects with installations/app-offline, and the SDK caches the rejected
         // initialization: every later event in the session would log the same FirebaseError.

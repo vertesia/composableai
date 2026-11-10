@@ -11,6 +11,7 @@ export * from './EventsApi.js';
 export * from './errors.js';
 export * from './FilesApi.js';
 export * from './IndexingApi.js';
+export * from './NotificationsApi.js';
 export * from './ObjectsApi.js';
 export * from './PendingAsksApi.js';
 export * from './ProcessApi.js';

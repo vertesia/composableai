@@ -34,6 +34,60 @@ describe('data-store API contracts', () => {
         expect(validateApiRequest('ImportDataPayload', { ...input, import_id: 'invalid' }).valid).toBe(false);
     });
 
+    it('publishes the table name and drop list rules the data store enforces', () => {
+        const create = (name: string) =>
+            validateApiRequest('CreateTablesPayload', { message: 'm', tables: [{ name, columns: [] }] }).valid;
+        expect(create('orders')).toBe(true);
+        expect(create('_Orders_2')).toBe(true);
+        expect(create('a'.repeat(64))).toBe(true);
+        expect(create('')).toBe(false);
+        expect(create('2orders')).toBe(false);
+        expect(create('order-lines')).toBe(false);
+        expect(create('a'.repeat(65))).toBe(false);
+
+        const drop = (name: string) => validateApiRequest('UpdateSchemaPayload', { message: 'm', drop_tables: [name] });
+        expect(drop('anything at all').valid).toBe(true);
+        expect(drop('').valid).toBe(false);
+    });
+
+    it('publishes the column name rule of a new table', () => {
+        const create = (name: string) =>
+            validateApiRequest('CreateTablesPayload', {
+                message: 'm',
+                tables: [{ name: 't', columns: [{ name, type: 'INTEGER' }] }],
+            }).valid;
+        expect(create('id')).toBe(true);
+        expect(create('_Total_2')).toBe(true);
+        expect(create('a'.repeat(64))).toBe(true);
+        expect(create('')).toBe(false);
+        expect(create('2id')).toBe(false);
+        expect(create('unit price')).toBe(false);
+        expect(create('\u{a29d7}bì')).toBe(false);
+        expect(create('a'.repeat(65))).toBe(false);
+    });
+
+    it('publishes the named ends of every relationship a schema update sets', () => {
+        const relationship = {
+            name: 'orders_customer',
+            from_table: 'orders',
+            from_column: 'customer_id',
+            to_table: 'customers',
+            to_column: 'id',
+            relationship_type: 'many-to-many',
+        };
+        const update = (overrides: Record<string, string>) =>
+            validateApiRequest('UpdateSchemaPayload', {
+                message: 'm',
+                relationships: [{ ...relationship, ...overrides }],
+            }).valid;
+        expect(update({})).toBe(true);
+        for (const key of ['name', 'from_table', 'from_column', 'to_table', 'to_column']) {
+            expect(update({ [key]: '' }), key).toBe(false);
+        }
+        // A stored relationship in a response keeps the plain component.
+        expect(validateApiResponse('DataRelationship', { ...relationship, name: '' }).valid).toBe(true);
+    });
+
     it('rejects undeclared request fields through the published component', () => {
         expect(
             validateApiRequest('CreateDataStorePayload', {
@@ -131,6 +185,41 @@ describe('data-store API contracts', () => {
         };
         expect(validateApiResponse('ImportJob', response).valid).toBe(true);
         expect(validateApiResponse('ImportJob', { ...response, store_id: undefined }).valid).toBe(false);
+    });
+
+    it('publishes the current version on a full store but not on a list item', () => {
+        const store = {
+            id: 'store-1',
+            name: 'sales',
+            tags: [],
+            updated_by: 'user:1',
+            created_by: 'user:1',
+            created_at: '2026-08-02T00:00:00.000Z',
+            updated_at: '2026-08-02T00:00:00.000Z',
+            status: 'active',
+            schema_version: '1.0.0',
+            table_count: 0,
+            total_rows: 0,
+            storage_bytes: 0,
+            version_count: 1,
+            schema: {
+                version: '1.0.0',
+                tables: [],
+                relationships: [],
+                updated_at: '2026-08-02T00:00:00.000Z',
+            },
+            gcs_bucket: 'bucket',
+            gcs_path: 'path',
+        };
+
+        // A store not written to since immutable versions were introduced has no pointer.
+        expect(validateApiResponse('DataStore', store).valid).toBe(true);
+        expect(validateApiResponse('DataStore', { ...store, current_version: 'version-1' }).valid).toBe(true);
+        expect(validateApiResponse('DataStore', { ...store, current_version: 1 }).valid).toBe(false);
+
+        const { schema: _schema, gcs_bucket: _bucket, gcs_path: _path, ...item } = store;
+        expect(validateApiResponse('DataStoreItem', item).valid).toBe(true);
+        expect(validateApiResponse('DataStoreItem', { ...item, current_version: 'version-1' }).valid).toBe(false);
     });
 
     it('registers the entire data-store reference closure', () => {

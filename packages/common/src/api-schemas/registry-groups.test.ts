@@ -1,30 +1,20 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import type { NamedInteractionExecutionPayloadSchema } from './interaction.js';
-import { type ApiComponentName, type ApiComponentType, ApiSchemaComponents, mergeComponentGroups } from './registry.js';
-
-/**
- * `N` when `ApiComponentType` resolves it, and `never` when it does not.
- *
- * The conditional that maps a name to its inferred type tests the groups one by one and ends in
- * `never`, so a group missing from that chain — the third place a new group has to be listed, after
- * the merge array and the `ApiComponentName` union — makes every name in it resolve to `never`
- * rather than fail. Distributing this over the whole union turns that into an assignment error on
- * the list below, which `typecheck:test` reports.
- */
-type ResolvedName<N extends ApiComponentName> = [ApiComponentType<N>] extends [never] ? never : N;
+import {
+    type ApiComponentName,
+    type ApiComponentType,
+    buildApiSchemaComponents,
+    mergeComponentGroups,
+} from './registry.js';
 
 /**
  * Covers the one way the group split can corrupt the registry.
  *
- * The registry is declared in several objects because the compiler cannot serialize it as one, and
- * the two public types are assembled from those objects: `ApiComponentName` is a union of `keyof`,
- * `ApiComponentType` a conditional testing the groups IN ORDER. A plain spread merge would accept a
- * name listed twice and keep the LAST group's schema, while `ApiComponentType` would resolve to the
- * FIRST group's — validation enforcing one shape while every handler is typed against another, with
- * nothing downstream to report it. The grouping is a compiler accommodation, so this failure mode is
- * pure accident: a component moved between groups and left behind, or added to whichever group the
- * author had open.
+ * The registry is declared in several objects, one per API domain. A plain spread merge would accept
+ * a name listed twice and silently keep the LAST group's schema, so validation would enforce one
+ * shape while the author edited another. That is pure accident: a component moved between groups and
+ * left behind, or added to whichever group the author had open.
  *
  * The real groups are covered by the call itself, which runs at module load — a duplicate there
  * throws on import and takes every test in the package with it. What is tested here is that the
@@ -68,12 +58,12 @@ describe('mergeComponentGroups', () => {
         );
     });
 
-    it('emits a component from every group, and resolves its type', () => {
+    it('emits a component from every group', { timeout: 30_000 }, () => {
         // The merge takes a list, so a group can be dropped from it as easily as duplicated in it —
-        // and dropping one is silent in a different way: `ApiComponentName` still names those
-        // components, so the code compiles and only the emitted document loses them. One known name
-        // per group is what notices — the `satisfies` for the type conditional, the loop for the
-        // merge.
+        // and dropping one is silent in a different way: the generated names still list those
+        // components until the next `gen:schemas`, so the code compiles and only the emitted
+        // document loses them. A known name from each of these groups, looked up in a fresh
+        // emission rather than the committed artifact, notices.
         const perGroup = [
             'Account',
             'ProjectModelDefaults',
@@ -90,10 +80,11 @@ describe('mergeComponentGroups', () => {
             'AuditTrailResponse',
             'ViewExperience',
             'CopyFilePayload',
-        ] as const satisfies readonly ResolvedName<ApiComponentName>[];
+        ] as const satisfies readonly ApiComponentName[];
 
+        const emitted = buildApiSchemaComponents();
         for (const name of perGroup) {
-            expect(ApiSchemaComponents).toHaveProperty(name);
+            expect(emitted).toHaveProperty(name);
         }
     });
 });

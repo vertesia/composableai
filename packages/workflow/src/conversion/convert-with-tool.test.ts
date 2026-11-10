@@ -97,3 +97,32 @@ describe('conversion temporary files', () => {
         expect(fs.readdirSync(tempDir)).toEqual([]);
     });
 });
+
+describe('conversion of a file given by path', () => {
+    let tempDir: string;
+
+    beforeEach(() => {
+        toolExitCode.value = 0;
+        tempDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'conversion-test-')));
+        vi.stubEnv('TMPDIR', tempDir);
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        fs.rmSync(tempDir, { recursive: true, force: true });
+    });
+
+    it.each([
+        { name: 'mutoolPdfToText', convert: (file: string) => mutoolPdfToText(file) },
+        { name: 'markdownWithMarkitdown', convert: (file: string) => markdownWithMarkitdown(file) },
+    ])('$name hands the path to the tool and leaves the file in place', async ({ convert }) => {
+        const input = path.join(tempDir, 'input.docx');
+        fs.writeFileSync(input, 'input');
+
+        await expect(convert(input)).resolves.toBe('converted text');
+
+        const [, args] = vi.mocked(execActivityFile).mock.calls.at(-1) ?? [];
+        expect(args).toContain(input);
+        expect(fs.readdirSync(tempDir)).toEqual(['input.docx']);
+    });
+});

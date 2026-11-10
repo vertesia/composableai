@@ -13,9 +13,28 @@ describe('bulk-operation API contract', () => {
     });
 
     it('validates the exact published request component', () => {
-        const valid = { name: 'change_type', ids: ['object-1'], params: { type: 'invoice' } };
+        const valid = { name: 'change_type', ids: ['6af00dcdd56fe4b74c56e544'], params: { type: 'invoice' } };
         expect(validateApiRequest('BulkOperationPayload', valid).valid).toBe(true);
         expect(validateApiRequest('BulkOperationPayload', { ...valid, extra: true }).valid).toBe(false);
+    });
+
+    it('checks each object of a create against the single-create payload', () => {
+        const create = (objects: unknown[]) => ({ name: 'create', ids: [], params: { objects } });
+        expect(validateApiRequest('BulkOperationPayload', create([{ name: 'n' }])).valid).toBe(true);
+        expect(validateApiRequest('BulkOperationPayload', create([null])).valid).toBe(false);
+        expect(validateApiRequest('BulkOperationPayload', create([{}])).valid).toBe(false);
+    });
+
+    it('requires object IDs in ids for every operation but create', () => {
+        const op = (name: string, ids: string[]) => ({ name, ids, params: {} });
+        for (const name of ['change_type', 'delete', 'start_workflow', 'update']) {
+            expect(validateApiRequest('BulkOperationPayload', op(name, ['6af00dcdd56fe4b74c56e544'])).valid).toBe(true);
+            expect(validateApiRequest('BulkOperationPayload', op(name, [''])).valid).toBe(false);
+            expect(validateApiRequest('BulkOperationPayload', op(name, ['object-1'])).valid).toBe(false);
+        }
+        // `create` makes new objects and never reads ids, so the server accepts any string there.
+        const create = { name: 'create', ids: [''], params: { objects: [{ name: 'n' }] } };
+        expect(validateApiRequest('BulkOperationPayload', create).valid).toBe(true);
     });
 
     it('enforces the response branch selected by operation', () => {

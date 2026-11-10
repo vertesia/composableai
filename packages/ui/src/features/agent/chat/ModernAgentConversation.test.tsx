@@ -2435,8 +2435,12 @@ describe('ModernAgentConversation send handling', () => {
         }
 
         function renderWithPermissions(permissions: Permission[]) {
-            // Only `permissions` is read when the token carries them; the rest of the payload is irrelevant here.
-            const token = { permissions, account_roles: [], project_roles: [] } as unknown as AuthTokenPayload;
+            const token = {
+                permissions,
+                account_permissions: [],
+                account_roles: [],
+                project_roles: [],
+            } as unknown as AuthTokenPayload;
             return renderWithProviders(
                 <UserPermissionsContext.Provider value={new UserPermissions(token)}>
                     <ModernAgentConversation

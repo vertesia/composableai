@@ -39,7 +39,7 @@ describe('sandbox SDK', () => {
     });
     it('rejects a valid bearer without host claims while retaining Node bearer auth', async () => {
         const { privateKey, publicKey } = await generateKeyPair('RS256');
-        const issuer = 'https://sandbox-review.vertesia.io';
+        const issuer = 'https://sts.review.vertesia.io';
         const token = await new SignJWT({ ...claims })
             .setProtectedHeader({ alg: 'RS256' })
             .setIssuer(issuer)

@@ -4,6 +4,10 @@
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
+    "browser": {
+        "./lib/store/node-request.js": "./lib/store/node-request.browser.js",
+        "./lib/store/node-sessions.js": "./lib/store/node-sessions.browser.js"
+    },
     "files": [
         "lib",
         "src",
@@ -20,8 +24,11 @@
         "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit"
     },
     "devDependencies": {
+        "@azure/storage-blob": "^12.34.0",
+        "@google-cloud/storage": "^8.4.0",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
+        "google-auth-library": "^11.3.2",
         "rolldown": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"
@@ -32,6 +39,22 @@
         "@vertesia/common": "workspace:*",
         "@vertesia/studio-utils": "workspace:*",
         "eventsource": "^5.1.3"
+    },
+    "peerDependencies": {
+        "@azure/storage-blob": "^12.0.0",
+        "@google-cloud/storage": ">=8.4.0",
+        "google-auth-library": ">=11.3.2"
+    },
+    "peerDependenciesMeta": {
+        "@azure/storage-blob": {
+            "optional": true
+        },
+        "@google-cloud/storage": {
+            "optional": true
+        },
+        "google-auth-library": {
+            "optional": true
+        }
     },
     "exports": {
         ".": {

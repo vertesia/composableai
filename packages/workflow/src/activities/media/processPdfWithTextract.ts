@@ -20,10 +20,14 @@ import {
     SupportedIntegrations,
 } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
-import { DocumentNotFoundError } from '../../errors.js';
+import { DocumentNotFoundError, SourceTooLargeError } from '../../errors.js';
 import { type TextExtractionResult, TextExtractionStatus } from '../../result-types.js';
-import { fetchBlobAsBuffer, md5 } from '../../utils/blobs.js';
+import { contentHash, fetchBlobHead } from '../../utils/blobs.js';
+import { logSourceLimitExceeded } from '../../utils/source-limits.js';
 import { countTokens } from '../../utils/tokens.js';
+
+/** Largest PDF that Textract's asynchronous document analysis accepts. */
+const TEXTRACT_MAX_PDF_BYTES = 500 * 1024 * 1024;
 
 export interface ConvertPdfToStructuredTextParams {
     force?: boolean;
@@ -86,8 +90,17 @@ export async function convertPdfToStructuredText(
 
     try {
         if (!object.content.source.startsWith('s3://')) {
-            const buf = await fetchBlobAsBuffer(client, object.content.source);
-            await processor.upload(buf);
+            const head = await fetchBlobHead(client, object.content.source, TEXTRACT_MAX_PDF_BYTES);
+            if (head.truncated) {
+                logSourceLimitExceeded({
+                    source: object.content.source,
+                    limit: 'textract',
+                    max_bytes: TEXTRACT_MAX_PDF_BYTES,
+                    outcome: 'rejected',
+                });
+                throw new SourceTooLargeError(object.content.source, TEXTRACT_MAX_PDF_BYTES);
+            }
+            await processor.upload(head.data);
         }
 
         const jobId = await processor.startAnalysis(objectId);
@@ -102,7 +115,7 @@ export async function convertPdfToStructuredText(
             log.info(`Job ${jobId} succeeded, saving results`, { jobId });
             const fText = await processor.processResults(jobId);
             const tokensData = countTokens(fText);
-            const etag = object.content.etag ?? md5(fText);
+            const etag = object.content.etag ?? contentHash(fText);
             const updateData: CreateContentObjectPayload = {
                 text: fText,
                 text_etag: etag,
@@ -145,7 +158,6 @@ export async function getS3AWSCredentials(
 
     log.info('Getting AWS credentials for Textract', {
         projectId,
-        composableAuthToken,
         roleArn: awsConfig.s3_role_arn,
     });
 

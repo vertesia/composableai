@@ -10,6 +10,7 @@ import {
 } from './apps.js';
 import { EventCategorySchema } from './audit-trail.js';
 import { AgentBudgetConfigurationSchema } from './project-configuration.js';
+import { OPTIONAL_OBJECT_ID_PATTERN, PageCountSchema } from './schema-primitives.js';
 
 // The app lifecycle contracts: versions, builds, scaffolds, git repositories, development tasks,
 // installations and inspection. `./apps.js` holds the manifest itself and the tool-collection
@@ -409,6 +410,19 @@ export const AppDeleteSummarySchema = z
             'Result of `DELETE /apps/:id`. Doubles as the dry-run preview: without `?confirm=true` the same ' +
             'shape comes back with `deleted: false` describing what the cascade would remove.',
     });
+
+export const AppDeleteQuerySchema = z
+    .strictObject({
+        confirm: z
+            .boolean()
+            .meta({
+                description:
+                    'Set to true to delete the app. When omitted or false this is a dry run: nothing is removed, ' +
+                    'and the response describes what the cascade would remove.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'AppDeleteQuery' });
 
 export const CreateAppRepoBranchRequestSchema = z
     .strictObject({
@@ -1046,9 +1060,14 @@ export const AgentRunSearchHitSchema = z
 
 export const UpsertAppVersionRequestSchema = z
     .strictObject({
+        // The route casts it to an ObjectId; an empty value is no record.
         record_id: z
             .string()
-            .meta({ description: 'Existing version record to update in place, used by reproducible rebuilds.' })
+            .regex(OPTIONAL_OBJECT_ID_PATTERN)
+            .meta({
+                description:
+                    'Existing version record to update in place, used by reproducible rebuilds, as 24 hexadecimal characters.',
+            })
             .optional(),
         app: z.string().optional(),
         // Both are trimmed and refused when blank, so a whitespace-only value is refused here too.
@@ -1213,6 +1232,21 @@ export const AppRepoTreeQuerySchema = z
         ref: z.string().meta({ description: 'Branch, tag or commit. Defaults to the default branch.' }).optional(),
     })
     .meta({ id: 'AppRepoTreeQuery' });
+
+export const AppRepoCommitsQuerySchema = z
+    .strictObject({
+        path: z
+            .string()
+            .meta({ description: 'Only list commits that changed this file, relative to the repository root.' })
+            .optional(),
+        ref: z
+            .string()
+            .meta({ description: 'Branch, tag or commit to start from. Defaults to the default branch.' })
+            .optional(),
+        limit: PageCountSchema.meta({ description: 'Maximum number of commits in the page.' }).optional(),
+        cursor: z.string().meta({ description: 'The `next_cursor` of the previous page.' }).optional(),
+    })
+    .meta({ id: 'AppRepoCommitsQuery' });
 
 export const AppRepoFileQuerySchema = z
     .strictObject({

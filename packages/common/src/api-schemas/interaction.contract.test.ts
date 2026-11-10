@@ -353,3 +353,32 @@ describe('Bedrock reasoning option contracts', () => {
         ).toBe(true);
     });
 });
+
+// Each body is one the server refuses on a single field: a reference it casts to an ObjectId, or run data that is not
+// a JSON object. The published contract refuses it first.
+describe('prompt and run request references', () => {
+    const id = '0123456789abcdef01234567';
+    it.each([
+        [
+            'PromptTemplateCreatePayload',
+            { name: 'p', content: 'c', role: 'user', content_type: 'text', parent: id },
+            true,
+        ],
+        [
+            'PromptTemplateCreatePayload',
+            { name: 'p', content: 'c', role: 'user', content_type: 'text', parent: '' },
+            false,
+        ],
+        ['PromptTemplateUpdatePayload', { parent: 'not-an-id' }, false],
+        ['RunSearchPayload', { query: { parent: [id, 'false'], run_ids: [id], environment: '' } }, true],
+        ['RunSearchPayload', { query: { parent: [''] } }, false],
+        ['RunSearchPayload', { query: { run_ids: ['run'] } }, false],
+        ['RunSearchPayload', { query: { environment: 'env' } }, false],
+        ['RunCreatePayload', { interaction: 'i', data: { a: 1 } }, true],
+        ['RunCreatePayload', { interaction: 'i', data: null }, true],
+    ] as const)('%s %j: valid is %s', (component, body, valid) => {
+        const result = validateApiRequest(component, body);
+
+        expect(result.valid, JSON.stringify(result.valid ? null : result.issues)).toBe(valid);
+    });
+});

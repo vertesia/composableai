@@ -2,12 +2,78 @@
  * get a zeno client for a given token
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { createHash } from 'node:crypto';
 import { Context } from '@temporalio/activity';
-import type { FETCH_FN } from '@vertesia/api-fetch-client';
+import type { FETCH_FN, IPacingRetryPolicy } from '@vertesia/api-fetch-client';
 import { decodeEndpoints, decodeJWT, VertesiaClient, type VertesiaClientProps } from '@vertesia/client';
-import type { WorkflowExecutionBaseParams } from '@vertesia/common';
+import { PrincipalType, type WorkflowExecutionBaseParams } from '@vertesia/common';
 import type { Dispatcher } from 'undici';
 import { WorkflowParamNotFoundError } from '../errors.js';
+
+const logicalOperation = new AsyncLocalStorage<{
+    id: string;
+    createdAtMs?: number;
+    requestOccurrences: Map<string, number>;
+}>();
+const workflowHttpExecution = new AsyncLocalStorage<{
+    requestOccurrences: Map<string, number>;
+    mutationSequence: number;
+    correlationSequence: number;
+    pacingRetry: IPacingRetryPolicy | false;
+}>();
+/** Install around one activity attempt only when a durable quota retry interceptor owns its waits. */
+export function withWorkflowHttpExecution<T>(
+    action: () => T,
+    options: { pacingRetry?: IPacingRetryPolicy | false } = {},
+): T {
+    return workflowHttpExecution.run(
+        {
+            requestOccurrences: new Map<string, number>(),
+            mutationSequence: 0,
+            correlationSequence: 0,
+            pacingRetry: options.pacingRetry ?? false,
+        },
+        action,
+    );
+}
+
+// One store per process: a worker can load this module twice, bundled with its activities and unbundled with its
+// interceptors, and each copy must see what the other sets.
+const WORKFLOW_REQUEST_HEADERS = Symbol.for('@vertesia/workflow.requestHeaders');
+const processGlobals = globalThis as { [WORKFLOW_REQUEST_HEADERS]?: AsyncLocalStorage<Record<string, string>> };
+processGlobals[WORKFLOW_REQUEST_HEADERS] ??= new AsyncLocalStorage();
+const workflowRequestHeaders = processGlobals[WORKFLOW_REQUEST_HEADERS];
+
+/** Add these headers to the requests of every client `getVertesiaClient` creates inside `action`. */
+export function withWorkflowRequestHeaders<T>(headers: Record<string, string>, action: () => T): T {
+    return workflowRequestHeaders.run(headers, action);
+}
+
+/**
+ * Give a logical HTTP operation an identity stable across activity retries and continue-as-new.
+ * Choose a separate key for each intended operation; server trust and endpoint idempotency still apply.
+ * The key must be scoped to the business operation (e.g. batch id + child id + phase).
+ * Request bodies must serialize identically on every retry, including named operations. Persist timestamps
+ * and generated values in workflow state/input; changing the body intentionally creates a new identity.
+ * Named data imports also require a retained createdAtMs (or an explicit import_id) across runs.
+ */
+export function withWorkflowOperation<T>(
+    operationId: string,
+    operation: () => T,
+    options: { createdAtMs?: number } = {},
+): T {
+    if (!operationId.trim()) throw new Error('A logical workflow operation ID is required');
+    if (
+        options.createdAtMs !== undefined &&
+        (!Number.isFinite(options.createdAtMs) || options.createdAtMs < 0 || options.createdAtMs >= 0x100000000 * 1000)
+    )
+        throw new Error('Operation createdAtMs must be an ObjectId-compatible timestamp');
+    return logicalOperation.run(
+        { id: operationId, createdAtMs: options.createdAtMs, requestOccurrences: new Map() },
+        operation,
+    );
+}
 
 // Short default timeout for ordinary workflow -> server/store calls (object GETs, status updates,
 // etc.). A stale/dead pooled connection (a server pod scaled down/rolled mid-request) should fail
@@ -69,7 +135,9 @@ function createWorkflowFetch(activitySignal?: AbortSignal): FETCH_FN {
 }
 
 export function getVertesiaClient(payload: WorkflowExecutionBaseParams<unknown>) {
-    return new VertesiaClient(getVertesiaClientOptions(payload));
+    const client = new VertesiaClient(getVertesiaClientOptions(payload));
+    const headers = workflowRequestHeaders.getStore();
+    return headers ? client.withHeaders(headers) : client;
 }
 
 export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<unknown>): VertesiaClientProps {
@@ -97,21 +165,43 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
     // to `token.iss`.
     const tokenEndpoints = token.endpoints ? decodeEndpoints(token.endpoints) : {};
 
-    let requestSequence = 0;
+    const httpExecution = workflowHttpExecution.getStore();
+    const counters = httpExecution ?? {
+        requestOccurrences: new Map<string, number>(),
+        mutationSequence: 0,
+        correlationSequence: 0,
+    };
     let requestPrefix: string | undefined;
+    let logicalWorkflowId: string | undefined;
     let activitySignal: AbortSignal | undefined;
+    let originalScheduledAt = Date.now();
     try {
         const context = Context.current();
         const info = context.info;
+        originalScheduledAt = info.scheduledTimestampMs;
         activitySignal = context.cancellationSignal;
         const execution = info.workflowExecution;
         if (execution) {
+            logicalWorkflowId = execution.workflowId;
             requestPrefix = `workflow:${execution.workflowId}:${execution.runId}:${info.activityId}`;
         }
     } catch {
         // Option construction is also used outside an activity by tests and utility callers.
     }
 
+    const { account_id: accountId, project_id: projectId } = payload;
+    const mutationKey = (operationPayload?: unknown) =>
+        createHash('sha256')
+            .update(
+                JSON.stringify([
+                    accountId,
+                    projectId,
+                    logicalWorkflowId,
+                    logicalOperation.getStore()?.id ?? `${requestPrefix}:${counters.mutationSequence++}`,
+                    operationPayload,
+                ]),
+            )
+            .digest('hex');
     return {
         serverUrl: payload.config.studio_url,
         storeUrl: payload.config.store_url,
@@ -122,14 +212,72 @@ export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<un
         tokenServerUrl: tokenEndpoints.token || token.iss,
         apikey: payload.auth_token,
         timeout: parseWorkflowFetchTimeoutMs(),
-        fetch: createWorkflowFetch(activitySignal),
-        ...(requestPrefix
+        // Public workers retain SDK defaults. The activity owner opts into durable retries explicitly.
+        ...(httpExecution
             ? {
-                  onRequest: (request: Request) => {
-                      request.headers.set('x-request-id', `${requestPrefix}:${requestSequence++}`);
+                  pacingRetry: httpExecution.pacingRetry,
+                  retryPolicy: {
+                      attempts: 1,
+                      ...(requestPrefix
+                          ? {
+                                idempotencyKeys: true,
+                                idempotencyKey: mutationKey,
+                                importId: (operationPayload?: unknown) => {
+                                    const operation = logicalOperation.getStore();
+                                    if (operation && operation.createdAtMs === undefined)
+                                        throw new Error(
+                                            'Named imports require a stable createdAtMs or an explicit import_id',
+                                        );
+                                    return (
+                                        Math.floor((operation?.createdAtMs ?? originalScheduledAt) / 1000)
+                                            .toString(16)
+                                            .padStart(8, '0') + mutationKey(operationPayload).slice(0, 16)
+                                    );
+                                },
+                            }
+                          : {}),
                   },
               }
             : {}),
+        fetch: createWorkflowFetch(activitySignal),
+        ...(requestPrefix &&
+        httpExecution &&
+        token.trusted_request_identity === true &&
+        token.type === PrincipalType.ServiceAccount
+            ? {
+                  requestIdentity: ({ url, method, body }) => {
+                      const operationId = logicalOperation.getStore()?.id;
+                      // Body is already serialized by the HTTP client; never clone/buffer a Request.
+                      const bodyHash = createHash('sha256')
+                          .update(typeof body === 'string' ? body : '')
+                          .digest('hex');
+                      const fingerprint = createHash('sha256')
+                          .update(
+                              JSON.stringify([
+                                  accountId,
+                                  projectId,
+                                  operationId ? logicalWorkflowId : requestPrefix,
+                                  operationId,
+                                  method,
+                                  url,
+                                  bodyHash,
+                              ]),
+                          )
+                          .digest('hex');
+                      const occurrences =
+                          logicalOperation.getStore()?.requestOccurrences ?? counters.requestOccurrences;
+                      const occurrence = occurrences.get(fingerprint) ?? 0;
+                      occurrences.set(fingerprint, occurrence + 1);
+                      return `workflow:operation:${createHash('sha256').update(`${fingerprint}:${occurrence}`).digest('hex')}`;
+                  },
+              }
+            : requestPrefix
+              ? {
+                    // Correlation is useful for every activity, even without attested quota identity.
+                    // Only the trusted path above hashes bodies for replay identity.
+                    requestIdentity: () => `${requestPrefix}:${counters.correlationSequence++}`,
+                }
+              : {}),
     };
 }
 

@@ -7,7 +7,7 @@ import type { NodeStreamSource } from '@vertesia/client/node';
 import { ContentEventName, type DSLActivityExecutionPayload, ExecutionRunStatus } from '@vertesia/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../dsl/setup/ActivityContext.js';
-import { type ExecuteInteractionParams, executeInteraction } from './executeInteraction.js';
+import { type ExecuteInteractionParams, executeInteraction, requestInteractionSlot } from './executeInteraction.js';
 
 vi.mock('../dsl/setup/ActivityContext.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../dsl/setup/ActivityContext.js')>();
@@ -284,6 +284,31 @@ describe('executeInteraction retryability', () => {
             }),
         );
         expect(requestSlot.mock.calls[0][0].rate_limit_id).toBe(executeByName.mock.calls[0][1].workflow.rate_limit_id);
+    });
+
+    it('should execute under the slot grant the admission returned', async () => {
+        const { setupActivity } = await import('../dsl/setup/ActivityContext.js');
+        const executeByName = vi.fn().mockResolvedValue({
+            id: 'run-id',
+            status: ExecutionRunStatus.completed,
+            result: [],
+        });
+        const mockClient = {
+            interactions: {
+                requestSlot: vi.fn().mockResolvedValue({ delay_ms: 0, rate_limit_grant: 'grant-token' }),
+                executeByName,
+            },
+        } as unknown as VertesiaClient;
+        const payload = createPayload();
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: mockClient,
+            inputType: 'objectIds',
+            params: payload.params,
+        } as unknown as ActivityContext<ExecuteInteractionParams>);
+
+        await testEnv.run(executeInteraction, payload);
+
+        expect(executeByName.mock.calls[0][1].workflow.rate_limit_id).toBe('grant-token');
     });
 
     async function runWithProjection(projection: Record<string, unknown>) {
@@ -657,5 +682,52 @@ describe('executeInteraction failed run log level', () => {
         await expect(env.run(executeInteraction, createPayload())).rejects.toThrow('store failed');
         expect(messagesLoggedAt('warn')).toEqual(['Error executing interaction testInteraction']);
         expect(messagesLoggedAt('error')).toEqual([]);
+    });
+});
+
+describe('requestInteractionSlot', () => {
+    const config = { environment: 'env-1', model: 'model-1' };
+    const slotEnv = new MockActivityEnvironment(
+        { activityId: 'act-1', workflowExecution: { workflowId: 'wf-1', runId: 'run-1' } },
+        { logger: activityLogger },
+    );
+    const clientFor = (requestSlot: ReturnType<typeof vi.fn>) =>
+        ({ interactions: { requestSlot } }) as unknown as VertesiaClient;
+
+    it('requests the slot under this activity and returns the grant', async () => {
+        const requestSlot = vi.fn().mockResolvedValue({ delay_ms: 0, rate_limit_grant: 'grant-token' });
+
+        await expect(slotEnv.run(requestInteractionSlot, clientFor(requestSlot), 'sys:Page', config)).resolves.toBe(
+            'grant-token',
+        );
+        expect(requestSlot).toHaveBeenCalledWith(
+            expect.objectContaining({
+                interaction: 'sys:Page',
+                environment_id: 'env-1',
+                model_id: 'model-1',
+                rate_limit_id: 'run-1:act-1:sys:Page',
+            }),
+        );
+    });
+
+    it('returns its own id when the server returns no grant', async () => {
+        const requestSlot = vi.fn().mockResolvedValue({ delay_ms: 0 });
+
+        await expect(slotEnv.run(requestInteractionSlot, clientFor(requestSlot), 'sys:Page', config)).resolves.toBe(
+            'run-1:act-1:sys:Page',
+        );
+    });
+
+    it('defers the activity by the delay when the slot is not free', async () => {
+        const requestSlot = vi.fn().mockResolvedValue({ delay_ms: 1500 });
+
+        const error = (await slotEnv
+            .run(requestInteractionSlot, clientFor(requestSlot), 'sys:Page', config)
+            .catch((e: unknown) => e)) as ApplicationFailure;
+        expect(error).toMatchObject({
+            type: 'InteractionRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: 1500,
+        });
     });
 });

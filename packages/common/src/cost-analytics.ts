@@ -34,3 +34,24 @@ export type CostAnalyticsResponse = Wire.CostAnalyticsResponse;
 export type CostRunPriceQuery = Wire.CostRunPriceQuery;
 
 export type CostRunPriceResponse = Wire.CostRunPriceResponse;
+
+export type ObjectIntakeCostQuery = Wire.ObjectIntakeCostQuery;
+
+/** The cost of one intake run of a content object. */
+export type IntakeRunCost = Wire.IntakeRunCost;
+export type IntakeCostVersion = Wire.IntakeCostVersion;
+
+/** The LLM and embedding cost of the intake workflows that processed a content object. */
+export type ObjectIntakeCostResponse = Wire.ObjectIntakeCostResponse;
+
+export type IntakeCostSummaryQuery = Wire.IntakeCostSummaryQuery;
+export type IntakeCostTotals = Wire.IntakeCostTotals;
+export type IntakeCostTimePoint = Wire.IntakeCostTimePoint;
+export type IntakeCostPerPage = Wire.IntakeCostPerPage;
+export type IntakeCostByContentType = Wire.IntakeCostByContentType;
+export type IntakeCostByContentNature = Wire.IntakeCostByContentNature;
+export type IntakeCostByOutcome = Wire.IntakeCostByOutcome;
+export type IntakeCostDocument = Wire.IntakeCostDocument;
+
+/** The LLM and embedding cost of a project's intake runs over a window. */
+export type IntakeCostSummaryResponse = Wire.IntakeCostSummaryResponse;

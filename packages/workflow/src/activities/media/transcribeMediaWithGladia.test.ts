@@ -1,4 +1,4 @@
-import { CompleteAsyncError } from '@temporalio/activity';
+import { CompleteAsyncError, log } from '@temporalio/activity';
 import { MockActivityEnvironment } from '@temporalio/testing';
 import type { VertesiaClient } from '@vertesia/client';
 import {
@@ -7,7 +7,7 @@ import {
     ContentNature,
     type DSLActivityExecutionPayload,
 } from '@vertesia/common';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ActivityContext } from '../../dsl/setup/ActivityContext.js';
 import { TextExtractionStatus } from '../../result-types.js';
 import {
@@ -75,6 +75,55 @@ const createTestPayload = (
 };
 
 describe('TranscribeMedia', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('does not log a source that is itself a signed HTTPS URL', async () => {
+        const { setupActivity } = await import('../../dsl/setup/ActivityContext.js');
+        const { FetchClient } = await import('@vertesia/api-fetch-client');
+        const signedSource = 'https://media.example.com/clips/audio.mp3?X-Signature=secret';
+
+        vi.mocked(FetchClient).mockImplementation(function (this: unknown) {
+            return {
+                withHeaders: vi.fn().mockReturnThis(),
+                post: vi.fn().mockResolvedValue({ id: 'test-transcription-id', result_url: 'https://api.gladia.io' }),
+            } as unknown;
+        });
+        const params = {} satisfies TranscriptMediaParams;
+        vi.mocked(setupActivity).mockResolvedValue({
+            client: {
+                projects: {
+                    integrations: {
+                        retrieve: vi.fn().mockResolvedValue({ enabled: true, api_key: 'test-api-key' }),
+                    },
+                },
+                objects: {
+                    retrieve: vi.fn().mockResolvedValue({
+                        content: { source: signedSource, type: 'audio/mpeg' },
+                        text: null,
+                    }),
+                },
+                files: { getDownloadUrl: vi.fn().mockResolvedValue({ url: signedSource }) },
+                store: { baseUrl: 'http://mock-store' },
+            } as unknown as VertesiaClient,
+            objectId: 'test-object-id',
+            inputType: 'objectIds',
+            params,
+        } as unknown as ActivityContext<TranscriptMediaParams>);
+        const info = vi.spyOn(log, 'info');
+
+        await expect(testEnv.run(transcribeMedia, createTestPayload(params, 'test-object-id'))).rejects.toThrow(
+            CompleteAsyncError,
+        );
+
+        expect(info).toHaveBeenCalledWith('Transcribing media with Gladia', {
+            storageId: 'test-object-id',
+            mediaSource: 'https://media.example.com/clips/audio.mp3',
+        });
+        expect(JSON.stringify(info.mock.calls)).not.toContain('secret');
+    });
+
     it('should send transcription request in object mode', async () => {
         const { setupActivity } = await import('../../dsl/setup/ActivityContext.js');
         const { FetchClient } = await import('@vertesia/api-fetch-client');
@@ -129,8 +178,15 @@ describe('TranscribeMedia', () => {
         } as unknown as ActivityContext<TranscriptMediaParams>);
 
         const payload = createTestPayload(params, 'test-object-id');
+        const info = vi.spyOn(log, 'info');
 
         await expect(testEnv.run(transcribeMedia, payload)).rejects.toThrow(CompleteAsyncError);
+
+        // The signed media URL and the task token in the callback URL are credentials: they must not be logged.
+        expect(info).toHaveBeenCalledWith('Transcribing media with Gladia', expect.anything());
+        const logged = JSON.stringify(info.mock.calls);
+        expect(logged).not.toContain('download.example.com');
+        expect(logged).not.toContain('task_token');
 
         expect(mockFetchClient.post).toHaveBeenCalledWith('/transcription', {
             payload: {

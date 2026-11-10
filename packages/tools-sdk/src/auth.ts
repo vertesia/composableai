@@ -1,5 +1,6 @@
 import { decodeEndpoints, VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload } from '@vertesia/common';
+import { assertTokenPermissionClaims } from '@vertesia/studio-utils/token-claims';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { createLocalJWKSet, decodeJwt, type JSONWebKeySet, type JWTVerifyGetKey, jwtVerify } from 'jose';
@@ -35,7 +36,11 @@ export async function verifyToken(token: string) {
         throw new Error(`Issuer is not allowed: ${decodedJwt.iss}`);
     }
     const jwks = await getJwks(`${decodedJwt.iss}/.well-known/jwks`);
-    return await jwtVerify<AuthTokenPayload>(token, jwks);
+    const verified = await jwtVerify<AuthTokenPayload>(token, jwks, { issuer: decodedJwt.iss });
+    // This SDK has its own authentication boundary, independent of cloud's verifyAuthToken.
+    // Validate once here so tool handlers can use the final claims directly.
+    assertTokenPermissionClaims(verified.payload);
+    return verified;
 }
 
 export interface EndpointOverrides {
@@ -148,8 +153,35 @@ export class AuthSession implements ToolExecutionContext {
     }
 }
 
-function isAllowedIssuer(iss: string) {
-    return getTrustedIssuers().has(iss) || iss.endsWith('.vertesia.io') || iss.endsWith('.becomposable.com');
+/** Vertesia's token servers live under these domains. */
+const TRUSTED_ISSUER_DOMAINS = ['vertesia.io', 'becomposable.com'];
+
+/**
+ * A Vertesia token server's host: `sts` or `sts-<tier>`, then at most two region labels, then a trusted domain, such
+ * as `sts.vertesia.io`, `sts.us1.vertesia.io` or `sts-preview.eu1.harness.vertesia.io`.
+ */
+const TOKEN_SERVER_HOST = /^sts(?:-[a-z0-9]+)?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?){0,2}$/;
+
+/**
+ * The issuer names the server this SDK fetches verification keys from, so a suffix match on the raw string is not
+ * enough: `https://attacker.example/x.vertesia.io` ends with `.vertesia.io` too, and other hosts under a trusted
+ * domain serve content that is not Vertesia's token server. A built-in issuer must be exactly an HTTPS origin, with
+ * no path, port or credentials, whose host has the shape of a Vertesia token server under a trusted domain. Any other
+ * issuer must be listed in VERTESIA_TRUSTED_ISSUERS.
+ */
+export function isAllowedIssuer(iss: string): boolean {
+    if (getTrustedIssuers().has(iss)) return true;
+    let url: URL;
+    try {
+        url = new URL(iss);
+    } catch {
+        return false;
+    }
+    if (url.protocol !== 'https:' || url.port !== '' || url.origin !== iss) return false;
+    return TRUSTED_ISSUER_DOMAINS.some((domain) => {
+        const suffix = `.${domain}`;
+        return url.hostname.endsWith(suffix) && TOKEN_SERVER_HOST.test(url.hostname.slice(0, -suffix.length));
+    });
 }
 
 /**

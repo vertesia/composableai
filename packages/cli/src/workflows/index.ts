@@ -12,9 +12,11 @@ import {
     transpileWorkflow,
 } from './commands.js';
 import { streamRun } from './streams.js';
+import { registerWorkflowUsage } from './usage.js';
 
 export function registerWorkflowsCommand(program: Command) {
     const workflows = program.command('workflows');
+    registerWorkflowUsage(program, workflows);
     workflows
         .command('catalog')
         .description(
@@ -49,7 +51,7 @@ export function registerWorkflowsCommand(program: Command) {
             console.debug('Executing workflow', workflowName, 'with options', options);
             await executeWorkflowByName(program, workflowName, options);
         });
-    const definitions = workflows.command('definitions');
+    const definitions = workflows.command('definitions').description('Manage workflow definitions (deprecated).');
 
     workflows
         .command('stream <workflowId> <runId>')

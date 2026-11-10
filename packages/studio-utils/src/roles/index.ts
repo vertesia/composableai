@@ -1,4 +1,10 @@
-import type { AbacScope, RoleDomain } from '@vertesia/common';
+import {
+    type AbacScope,
+    CUSTOM_ROLE_PREFIX,
+    type CustomRoleDefinition,
+    isCustomRoleName,
+    type RoleDomain,
+} from '@vertesia/common';
 import { agentRunPartition } from './agent-runs.js';
 import { AbacRole, type Role, type RolePartition, SystemRole } from './classes.js';
 import { contentPartition } from './content.js';
@@ -7,6 +13,68 @@ import { systemPartition } from './system.js';
 export { AgentRunRoleNames } from './agent-runs.js';
 export { AbacRole, Role, type RolePartition, SystemRole } from './classes.js';
 export { ContentRoleNames } from './content.js';
+
+export type RoleResolver = (name: string) => Role;
+
+export class InvalidCustomRoleError extends Error {}
+
+/**
+ * Resolve inheritance once per account snapshot, never in the global registry. By default an
+ * invalid custom role grants nothing, including its explicit permissions. Administration and
+ * assignment validation use strict mode to reject missing bases and cycles instead.
+ */
+export function createAccountRoleResolver(
+    definitions: readonly CustomRoleDefinition[],
+    { strict = false }: { strict?: boolean } = {},
+): RoleResolver {
+    const definitionsByName = new Map(
+        definitions.map((definition) => [CUSTOM_ROLE_PREFIX + definition.name, definition]),
+    );
+    const resolved = new Map<string, SystemRole>();
+    const visiting = new Set<string>();
+    const invalid = new Map<string, InvalidCustomRoleError>();
+    const resolve = (name: string): SystemRole => {
+        const cached = resolved.get(name);
+        if (cached) return cached;
+        const error = invalid.get(name);
+        if (error) throw error;
+        if (!isCustomRoleName(name)) {
+            const role = listSystemRoles().find((role) => role.name === name);
+            if (!role)
+                throw new InvalidCustomRoleError(
+                    `Invalid base role: ${name}. Only system and custom roles are allowed.`,
+                );
+            return role;
+        }
+        const definition = definitionsByName.get(name);
+        if (!definition) throw new InvalidCustomRoleError(`Unknown role: ${name}`);
+        if (visiting.has(name))
+            throw new InvalidCustomRoleError(`Circular role inheritance: ${[...visiting, name].join(' -> ')}`);
+        visiting.add(name);
+        try {
+            const role = new SystemRole(name, definition.permissions);
+            for (const base of definition.base_roles ?? []) {
+                for (const permission of resolve(base).permissions) role.permissions.add(permission);
+            }
+            resolved.set(name, role);
+            return role;
+        } catch (error) {
+            if (error instanceof InvalidCustomRoleError) invalid.set(name, error);
+            throw error;
+        } finally {
+            visiting.delete(name);
+        }
+    };
+    return (name) => {
+        if (!isCustomRoleName(name)) return getRoleByName(name);
+        try {
+            return resolve(name);
+        } catch (error) {
+            if (strict || !(error instanceof InvalidCustomRoleError)) throw error;
+            return new SystemRole(name, []);
+        }
+    };
+}
 
 /**
  * The ordered partition registry. Partitions are queried in this order — first
@@ -97,8 +165,8 @@ export function getDelegablePermissionsForRole(roleName: string): string[] {
 export class RoleList {
     private constructor(public readonly roles: Role[]) {}
 
-    static fromRoleNames(roleNames: string[]): RoleList {
-        const roles = roleNames.map((r) => getRoleByName(r));
+    static fromRoleNames(roleNames: string[], resolve: RoleResolver = getRoleByName): RoleList {
+        const roles = roleNames.map(resolve);
         return new RoleList(roles);
     }
 

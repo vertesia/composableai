@@ -12,6 +12,7 @@ import { DocumentNotFoundError, WorkflowExecutionError, WorkflowParamNotFoundErr
 import { activityWorkflowExecution } from '../../utils/activity-info.js';
 import { getProjectFromToken } from '../../utils/auth.js';
 import { getVertesiaClient } from '../../utils/client.js';
+import { fetchCachedProject } from '../../utils/project-cache.js';
 import { Vars } from '../vars.js';
 import { getFetchProvider, registerFetchProviderFactory } from './fetch/index.js';
 import { DocumentProvider, DocumentTypeProvider, InteractionRunProvider } from './fetch/providers.js';
@@ -218,5 +219,5 @@ export async function setupActivity<ParamsT extends object>(payload: DSLActivity
 
 async function _fetchProject(client: VertesiaClient, payload: WorkflowExecutionPayload) {
     const project = await getProjectFromToken(payload.auth_token);
-    return project ? await client.projects.retrieve(project.id) : undefined;
+    return project ? await fetchCachedProject(client, project.id) : undefined;
 }

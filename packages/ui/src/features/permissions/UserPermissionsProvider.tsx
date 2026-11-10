@@ -1,4 +1,11 @@
-import { type AuthTokenPayload, type Permission, PrincipalType, type SystemRoleDefinition } from '@vertesia/common';
+import {
+    ACCOUNT_SCOPED_PERMISSIONS,
+    type AuthTokenPayload,
+    type Permission,
+    PrincipalType,
+    type SystemRoleDefinition,
+} from '@vertesia/common';
+import { readTokenPermissionClaims } from '@vertesia/studio-utils/token-claims';
 import { Button, errorMessage, Spinner } from '@vertesia/ui/core';
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
@@ -12,19 +19,39 @@ export class UserPermissions {
     system_roles: ListRolesResponse; // all roles defined in the system
     roles: Set<string>; // all roles of the current user
     permissions: Set<string>; // all permissions of the current user
+    account_permissions: Set<string>;
 
     constructor(authToken: AuthTokenPayload, roles: ListRolesResponse = []) {
         this.system_roles = roles;
         const roleNames = [...(authToken.account_roles || []), ...(authToken.project_roles || [])];
         const userRoles = new Set<string>(roleNames);
         this.roles = userRoles;
-        const rolePermissions = authToken.permissions ?? getPermissionsForRolesFromMappings(roleNames, roles);
+        const claims = readTokenPermissionClaims(authToken);
+        if (claims) {
+            this.permissions = new Set(claims.permissions);
+            this.account_permissions = new Set(claims.account_permissions);
+            return;
+        }
+
+        // TODO(2026-11-02, LEGACY_PERMISSION_CLAIMS): remove pre-normalization compatibility after
+        // all issuers are upgraded in prod and old tokens expire. See Studio docs/jwt-permission-claims-migration.md.
+        // Remove this branch and getPermissionsForRolesFromMappings together.
+        const accountPermissions = getPermissionsForRolesFromMappings(authToken.account_roles ?? [], roles);
+        const accountGranted = new Set(accountPermissions);
+        const rolePermissions = getPermissionsForRolesFromMappings(roleNames, roles).filter(
+            (permission) => !ACCOUNT_SCOPED_PERMISSIONS.includes(permission) || accountGranted.has(permission),
+        );
         // OAuth access tokens are capped to the permissions granted to the token (its scopes).
         const permissionCap =
             authToken.type === PrincipalType.OAuthAccess ? new Set<string>(authToken.permissions ?? []) : undefined;
         this.permissions = new Set(
             permissionCap ? rolePermissions.filter((permission) => permissionCap.has(permission)) : rolePermissions,
         );
+        this.account_permissions = new Set(accountPermissions.filter((permission) => this.permissions.has(permission)));
+    }
+
+    hasAccountPermission(permission: string): boolean {
+        return this.account_permissions.has(permission);
     }
 
     hasPermission(permission: string | string[]) {
@@ -91,9 +118,12 @@ export function UserPermissionProvider({ children, loadingIcon, LoadingScreen }:
 
     const perms = useMemo(() => {
         if (!authToken) return undefined;
-        if (authToken.permissions) {
+        if (authToken.account_permissions !== undefined) {
             return new UserPermissions(authToken);
         }
+        // TODO(2026-11-02, LEGACY_PERMISSION_CLAIMS): remove pre-normalization compatibility after
+        // all issuers are upgraded in prod and old tokens expire. See Studio docs/jwt-permission-claims-migration.md.
+        // Remove the role-catalog loading/recovery path; every session will have final claims.
         if (state.status === 'ready') {
             return new UserPermissions(authToken, state.roles);
         }

@@ -1,9 +1,9 @@
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-async function signedBy(issuer: string) {
+async function signedBy(issuer: string, claims: Record<string, unknown> = {}) {
     const { privateKey, publicKey } = await generateKeyPair('ES256');
-    const token = await new SignJWT({ account: { id: 'a' }, project: { id: 'p' }, endpoints: {} })
+    const token = await new SignJWT({ account: { id: 'a' }, project: { id: 'p' }, endpoints: {}, ...claims })
         .setProtectedHeader({ alg: 'ES256' })
         .setIssuer(issuer)
         .setExpirationTime('1h')
@@ -20,6 +20,16 @@ async function loadVerifyToken() {
 }
 
 describe('verifyToken issuer allowlist', () => {
+    it('rejects malformed permission claims from a trusted issuer', async () => {
+        vi.stubEnv('VERTESIA_TRUSTED_ISSUERS', 'http://localhost:8202');
+        const { token } = await signedBy('http://localhost:8202', {
+            permissions: [],
+            account_permissions: ['content:read'],
+        });
+        const verifyToken = await loadVerifyToken();
+        await expect(verifyToken(token)).rejects.toThrow('Invalid token permission claims');
+    });
+
     afterEach(() => {
         vi.unstubAllGlobals();
         vi.unstubAllEnvs();
@@ -49,5 +59,40 @@ describe('verifyToken issuer allowlist', () => {
             await expect(verifyToken(token)).rejects.toThrow(`Issuer is not allowed: ${issuer}`);
             expect(jwksFetch).not.toHaveBeenCalled();
         }
+    });
+
+    it.each([
+        'https://attacker.example/x.vertesia.io',
+        'https://attacker.example/?.vertesia.io',
+        'https://attacker.example#.becomposable.com',
+        'https://user@attacker.example/.vertesia.io',
+        'http://sts.vertesia.io',
+        'https://sts.vertesia.io:8443',
+        'https://sts.vertesia.io/',
+        'https://evilvertesia.io',
+        'https://vertesia.io.attacker.example',
+        'https://vertesia.io',
+        'https://api.us1.vertesia.io',
+        'https://docs.vertesia.io',
+        'https://stsx.vertesia.io',
+        'https://sts.a.b.c.vertesia.io',
+    ])('refuses the look-alike built-in issuer %s without fetching its keys', async (issuer) => {
+        const { token, jwksFetch } = await signedBy(issuer);
+        const verifyToken = await loadVerifyToken();
+        await expect(verifyToken(token)).rejects.toThrow('Issuer is not allowed');
+        expect(jwksFetch).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        'https://sts.vertesia.io',
+        'https://sts.us1.vertesia.io',
+        'https://sts-preview.eu1.harness.vertesia.io',
+        'https://sts.becomposable.com',
+    ])('accepts the token server origin %s under a built-in domain', async (issuer) => {
+        const { token, jwksFetch } = await signedBy(issuer);
+        const verifyToken = await loadVerifyToken();
+        const { payload } = await verifyToken(token);
+        expect(payload.iss).toBe(issuer);
+        expect(jwksFetch).toHaveBeenCalledWith(`${issuer}/.well-known/jwks`);
     });
 });

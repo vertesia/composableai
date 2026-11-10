@@ -33,6 +33,8 @@ import {
     ExpectedEditRevisionSchema,
     MONGO_FACETS_DESCRIPTION,
     mongoFacetsRule,
+    OBJECT_ID_PATTERN,
+    OPTIONAL_OBJECT_ID_PATTERN,
     PageCountSchema,
 } from './schema-primitives.js';
 import { InteractionExecutionConfigurationSchema, RunDataStorageLevelSchema } from './store.js';
@@ -359,6 +361,16 @@ export const SchemaRefSchema = z
 export const RateLimitRequestResponseSchema = z
     .strictObject({
         delay_ms: z.number(),
+        rate_limit_grant: z
+            .string()
+            .meta({
+                description:
+                    'Opaque token for the slot this request holds: admitted when `delay_ms` is 0, otherwise queued ' +
+                    'until the caller asks again after the delay. Once admitted, send it back unchanged as ' +
+                    '`workflow.rate_limit_id` when executing, so completion releases exactly this slot. Absent when ' +
+                    'the request holds no slot.',
+            })
+            .optional(),
     })
     .meta({ id: 'RateLimitRequestResponse' });
 
@@ -455,6 +467,12 @@ const SERVER_OWNED_PROMPT_FIELD_KEYS = Object.fromEntries(
     SERVER_OWNED_PROMPT_FIELDS.map((field) => [field, true as const]),
 ) as Record<(typeof SERVER_OWNED_PROMPT_FIELDS)[number], true>;
 
+// A payload's `parent` is stored as a reference to another prompt, so anything but an ObjectId fails the cast.
+const promptParentIdSchema = z
+    .string()
+    .regex(/^[a-fA-F0-9]{24}$/)
+    .meta({ description: 'The ID of the prompt this one derives from, as 24 hexadecimal characters.' });
+
 // Keep the published property order stable. OpenAPI Generator uses it for required Go constructor
 // arguments. Zod's `.pick()` builds the projected shape in mask order, whereas `.omit()` preserves
 // the full response model's order and would change this constructor when that model is reorganized.
@@ -475,13 +493,21 @@ export const PromptTemplateCreatePayloadSchema = PromptTemplateSchema.pick({
     // the Go constructor follows.
     .extend({
         name: z.string().min(1),
+        parent: promptParentIdSchema.optional(),
         content: z.string().min(1),
     })
     .meta({ id: 'PromptTemplateCreatePayload' });
 
 export const PromptTemplateUpdatePayloadSchema = PromptTemplateSchema.omit(SERVER_OWNED_PROMPT_FIELD_KEYS)
     .partial()
-    .extend({ expected_edit_revision: ExpectedEditRevisionSchema })
+    // An update writes only what it carries, but a name or content it carries keeps the create bounds: the stored
+    // prompt requires both.
+    .extend({
+        name: z.string().min(1).optional(),
+        content: z.string().min(1).optional(),
+        parent: promptParentIdSchema.optional(),
+        expected_edit_revision: ExpectedEditRevisionSchema,
+    })
     .meta({ id: 'PromptTemplateUpdatePayload' });
 
 export const CachePolicySchema = z
@@ -505,7 +531,14 @@ export const InteractionForkPayloadSchema = z
         newName: z.string().optional(),
         keepTags: z.boolean().optional(),
         forkPrompts: z.boolean().optional(),
-        targetProject: z.string().optional(),
+        targetProject: z
+            .string()
+            .regex(OBJECT_ID_PATTERN)
+            .meta({
+                description:
+                    'The project to fork into, as its 24-hexadecimal-character ID. Defaults to the current one.',
+            })
+            .optional(),
     })
     .meta({ id: 'InteractionForkPayload' });
 
@@ -578,9 +611,30 @@ export const InteractionSearchQuerySchema = z
     })
     .meta({ id: 'InteractionSearchQuery' });
 
+// The list routes split each `status` occurrence on commas, trim every item and drop the blank ones; each item left
+// must be an interaction status. The pattern states that reading of one occurrence.
+const INTERACTION_STATUS_ITEM = `\\s*(?:(?:${Object.values(InteractionStatus).join('|')})\\s*)?`;
+const INTERACTION_STATUS_FILTER_PATTERN = new RegExp(`^${INTERACTION_STATUS_ITEM}(?:,${INTERACTION_STATUS_ITEM})*$`);
+
 // The query of the interaction list routes, which refuse a page that is not a whole number or a size below one. The
-// facet payload carries InteractionSearchQuery and ignores its page, so the bounds are the list routes' alone.
+// facet payload carries InteractionSearchQuery and ignores its page and status rule, so the bounds are the list
+// routes' alone.
 export const InteractionListQuerySchema = InteractionSearchQuerySchema.extend({
+    status: z
+        .array(z.string().regex(INTERACTION_STATUS_FILTER_PATTERN))
+        .meta({
+            description:
+                `Filter by status: ${Object.values(InteractionStatus).join(', ')}. ` +
+                'Each value may list several, separated by commas.',
+        })
+        .optional(),
+    // The routes read the version with parseInt, which takes leading whitespace and a sign and ignores what follows
+    // the digits; an empty value is no filter. Anything else is refused, so the pattern states exactly that.
+    version: z
+        .string()
+        .regex(/^(?:\s*[+-]?\d[\s\S]*)?$/)
+        .meta({ description: 'Filter by version number. Must start with an integer.' })
+        .optional(),
     limit: z.number().min(1).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
     offset: z.number().min(0).max(Number.MAX_SAFE_INTEGER).multipleOf(1).optional(),
 }).meta({ id: 'InteractionListQuery' });
@@ -636,7 +690,11 @@ export const RunSearchQuerySchema = z
         limit: z.number().optional(),
         offset: z.number().optional(),
         interaction: z.string().optional(),
-        environment: z.string().optional(),
+        environment: z
+            .string()
+            .regex(/^(?:[a-fA-F0-9]{24})?$/)
+            .meta({ description: 'Environment id, as 24 hexadecimal characters. An empty string applies no filter.' })
+            .optional(),
         model: z.string().optional(),
         tags: z.array(z.string()).optional(),
         exclude_tags: z
@@ -648,7 +706,14 @@ export const RunSearchQuerySchema = z
             .optional(),
         query: z.string().optional(),
         default_query_path: z.string().optional(),
-        parent: z.array(z.string()).optional(),
+        parent: z
+            .array(z.string().regex(/^(?:[a-fA-F0-9]{24}|false)$/))
+            .meta({
+                description:
+                    'Parent run ids, as 24 hexadecimal characters. The legacy value `false` selects root runs, like ' +
+                    '`is_root`; it cannot be combined with a parent id.',
+            })
+            .optional(),
         is_root: z.boolean().optional(),
         object: z.string().optional(),
         start: z.string().optional(),
@@ -657,7 +722,10 @@ export const RunSearchQuerySchema = z
         created_by: z.string().optional(),
         workflow_run_ids: z.array(z.string()).optional(),
         workflow_ids: z.array(z.string()).optional(),
-        run_ids: z.array(z.string()).optional(),
+        run_ids: z
+            .array(z.string().regex(/^[a-fA-F0-9]{24}$/))
+            .meta({ description: 'Run ids, as 24 hexadecimal characters.' })
+            .optional(),
         is_agent: z.boolean().optional(),
     })
     .meta({ id: 'RunSearchQuery' });
@@ -681,6 +749,16 @@ export const RunSearchQuerySchema = z
  * applied them, so publishing them would restate the same kind of promise this component exists to
  * remove. They are still accepted and ignored, exactly as before.
  */
+// The list route splits each `parent` occurrence on commas, trims every item and drops the blank ones; each item left
+// is cast to an ObjectId, except the legacy `false`.
+const RUN_PARENT_FILTER_ITEM = '\\s*(?:(?:[0-9a-fA-F]{24}|false)\\s*)?';
+const RUN_PARENT_FILTER_PATTERN = new RegExp(`^${RUN_PARENT_FILTER_ITEM}(?:,${RUN_PARENT_FILTER_ITEM})*$`);
+// `environment` is split the same way, and each item left is cast to an ObjectId.
+const RUN_ENVIRONMENT_FILTER_ITEM = '\\s*(?:[0-9a-fA-F]{24}\\s*)?';
+const RUN_ENVIRONMENT_FILTER_PATTERN = new RegExp(
+    `^${RUN_ENVIRONMENT_FILTER_ITEM}(?:,${RUN_ENVIRONMENT_FILTER_ITEM})*$`,
+);
+
 export const RunListQuerySchema = z
     .strictObject({
         // Already published as `integer`, so these keep that type and only gain the lower bound a find
@@ -693,14 +771,23 @@ export const RunListQuerySchema = z
             .optional(),
         model: z.array(z.string()).meta({ description: 'Model ids to filter by.' }).optional(),
         environment: z
-            .array(z.string().regex(/^[0-9a-fA-F]{24}$/))
-            .meta({ description: 'Environment ids to filter by, as 24 hexadecimal characters.' })
+            .array(z.string().regex(RUN_ENVIRONMENT_FILTER_PATTERN))
+            .meta({
+                description:
+                    'Environment ids to filter by, as 24 hexadecimal characters; each value may list several, ' +
+                    'separated by commas.',
+            })
             .optional(),
         status: z.array(ExecutionRunStatusSchema).meta({ description: 'Run statuses to filter by.' }).optional(),
         tag: z.array(z.string()).meta({ description: 'Run tags to filter by.' }).optional(),
         parent: z
-            .array(z.string())
-            .meta({ description: 'Parent run ids to filter by. Mutually exclusive with `is_root=true`.' })
+            .array(z.string().regex(RUN_PARENT_FILTER_PATTERN))
+            .meta({
+                description:
+                    'Parent run ids to filter by, as 24 hexadecimal characters; each value may list several, ' +
+                    'separated by commas. The legacy value `false` selects root runs. Mutually exclusive with ' +
+                    '`is_root=true`.',
+            })
             .optional(),
         is_root: z
             .boolean()
@@ -978,7 +1065,16 @@ export const InteractionCreatePayloadSchema = z
         description: z.string().optional(),
         agent_runner_options: AgentRunnerOptionsSchema.optional(),
         result_schema: z.union([JSONSchemaSchema, SchemaRefSchema]).optional(),
-        environment: z.union([z.string(), ExecutionEnvironmentRefSchema]).optional(),
+        environment: z
+            .union([
+                // An empty ID is no environment: the project's default is used.
+                z
+                    .string()
+                    .regex(OPTIONAL_OBJECT_ID_PATTERN)
+                    .meta({ description: 'The environment ID, as 24 hexadecimal characters.' }),
+                ExecutionEnvironmentRefSchema,
+            ])
+            .optional(),
         model: z.string().optional(),
         model_options: ModelOptionsSchema.optional(),
         inference_profile: InferenceProfileIdSchema.nullable().optional(),
@@ -1441,6 +1537,77 @@ export const ExecutionRunSchema: z.ZodType = z
 
 export const InteractionTagsArraySchema = z.array(InteractionTagsSchema).meta({ id: 'InteractionTagsArray' });
 
+export const CatalogAgentSearchQuerySchema = InteractionSearchQuerySchema.pick({
+    name: true,
+    tags: true,
+    model: true,
+    prompt: true,
+    is_sub_agent: true,
+}).meta({
+    id: 'CatalogAgentSearchQuery',
+    description:
+        'Filters for the agent catalog. `name` is a case-insensitive substring match, `tags` requires every ' +
+        'listed tag, and `is_sub_agent` keeps only agents that can also be called as a tool. `model` and ' +
+        '`prompt` only match stored interactions, so either one excludes the system interactions.',
+});
+
+export const CatalogCallSearchQuerySchema = InteractionSearchQuerySchema.pick({
+    name: true,
+    tags: true,
+    model: true,
+    prompt: true,
+    is_basic: true,
+    is_tool: true,
+    is_skill: true,
+}).meta({
+    id: 'CatalogCallSearchQuery',
+    description:
+        'Filters for the call catalog: interactions that are not agents. `name`, `tags`, `model` and `prompt` ' +
+        'match as in `CatalogAgentSearchQuery`. `is_basic` (neither tool nor skill), `is_tool` and `is_skill` ' +
+        'each select a kind of call; several of them select any of those kinds, and none selects every call.',
+});
+
+export const CatalogSearchInteractionRefSchema = CatalogInteractionRefSchema.extend({
+    model: z.string().meta({ description: 'Only applies for stored interactions. The default model.' }).optional(),
+    prompts: z
+        .array(PromptSegmentRef_PromptTemplateRefSchema)
+        .meta({ description: 'Only applies for stored interactions. The prompt segments.' })
+        .optional(),
+    updated_at: z
+        .string()
+        .meta({ format: 'date-time', description: 'Only applies for stored interactions. The last update time.' })
+        .optional(),
+    inference_profile: InferenceProfileIdSchema.meta({
+        description:
+            'Only applies for in-code interactions. The inference profile the interaction pins; runs of one that ' +
+            'pins none use the project default.',
+    }).optional(),
+}).meta({
+    id: 'CatalogSearchInteractionRef',
+    description: 'An interaction found by a catalog search: a stored, a system or an app interaction.',
+});
+
+export const CatalogTagCountSchema = z
+    .strictObject({
+        tag: z.string(),
+        count: z.number().int().meta({ description: 'The number of matching interactions that carry the tag.' }),
+    })
+    .meta({ id: 'CatalogTagCount' });
+
+export const CatalogSearchResultSchema = z
+    .strictObject({
+        total: z.number().int().meta({ description: 'The number of matching interactions.' }),
+        tags: z.array(CatalogTagCountSchema).meta({
+            description: 'The tags of the matching interactions with their counts, most frequent first.',
+        }),
+        interactions: z.array(CatalogSearchInteractionRefSchema).meta({
+            description:
+                'The matching interactions. Stored interactions are listed most recently updated first; in-code ' +
+                'interactions in the order their source defines them.',
+        }),
+    })
+    .meta({ id: 'CatalogSearchResult' });
+
 export const InteractionExecutionResultSchema = z
     .strictObject({
         id: z.string(),
@@ -1836,16 +2003,20 @@ export const ConversationStateSchema = z
             'Conversation state passed between workflow activities: the activity-safe, per-turn dynamic subset of a multi-turn agent conversation. Rides every conversation activity payload, so it deliberately excludes anything large or fetchable — the conversation history and tool definitions live in artifact storage (referenced via `tool_reference` / the conversation storage id), and catalog/activation data lives in the workflow-memory  {@link  ConversationCatalogState }  (persisted as catalog.json).',
     });
 
+// The run stores `parent`, `environment` and `interaction` as ObjectIds, and an update casts each value to one: the
+// populated references a read returns cannot be written back, so each is published as the ID it stores.
+const runReferenceIdSchema = (description: string) =>
+    z
+        .string()
+        .regex(OBJECT_ID_PATTERN)
+        .meta({ description: `${description}, as 24 hexadecimal characters.` });
+
 export const UpdateExecutionRunPayloadSchema = z
     .strictObject({
         id: z.string().optional(),
-        parent: z
-            .union([z.string(), ExecutionRunSchema])
-            .meta({
-                description:
-                    'Only used by runs that were created by a virtual run to point toward the virtual run parent',
-            })
-            .optional(),
+        parent: runReferenceIdSchema(
+            'Only used by runs that were created by a virtual run to point toward the virtual run parent. The parent run ID',
+        ).optional(),
         evaluation: z
             .strictObject({
                 score: z.number().optional(),
@@ -1854,9 +2025,7 @@ export const UpdateExecutionRunPayloadSchema = z
             })
             .optional(),
         tags: z.array(z.string()).optional(),
-        environment: ExecutionEnvironmentRefSchema.meta({
-            description: 'Environment reference - populated with full object in API responses',
-        }).optional(),
+        environment: runReferenceIdSchema('The environment ID').optional(),
         modelId: z.string().optional(),
         result_schema: JSONSchemaSchema.optional(),
         ttl: z.number().optional(),
@@ -1885,7 +2054,7 @@ export const UpdateExecutionRunPayloadSchema = z
             description:
                 'The Vertesia Workflow related to this Interaction Run.\n\nThis is only set when the interaction is executed as part of a workflow.',
         }).optional(),
-        interaction: InteractionRefSchema.optional(),
+        interaction: runReferenceIdSchema('The interaction ID').optional(),
     })
     .meta({ id: 'UpdateExecutionRunPayload' });
 
@@ -1944,7 +2113,8 @@ export const NamedInteractionExecutionPayloadSchema = z
             .unknown()
             .meta({
                 description:
-                    'If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping.',
+                    'If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping. ' +
+                    'Must be a JSON object; null is the same as no data.',
             })
             .optional(),
         config: InteractionExecutionConfigurationSchema.optional(),
@@ -1990,7 +2160,8 @@ export const InteractionExecutionPayloadSchema = z
             .unknown()
             .meta({
                 description:
-                    'If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping.',
+                    'If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping. ' +
+                    'Must be a JSON object; null is the same as no data.',
             })
             .optional(),
         config: InteractionExecutionConfigurationSchema.optional(),
@@ -2141,7 +2312,8 @@ export const AsyncConversationExecutionPayloadSchema = z
             .unknown()
             .meta({
                 description:
-                    'If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping.',
+                    'If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping. ' +
+                    'Must be a JSON object: it is passed to the agent run as its input.',
             })
             .optional(),
         config: InteractionExecutionConfigurationSchema.optional(),
@@ -2349,7 +2521,7 @@ export const RunCreatePayloadSchema = z
             .unknown()
             .meta({
                 description:
-                    'If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping.',
+                    'The input data, which must be a JSON object. If a `@memory` property exists on the input data then the value will be used as the value of a memory pack location. and the other properties of the data will contain the memory pack mapping.',
             })
             .optional(),
         config: InteractionExecutionConfigurationSchema.optional(),
@@ -2448,6 +2620,19 @@ export const ExecuteInteractionByEndpointHeadersSchema = z
         'x-interaction-tag': z.string().optional(),
     })
     .meta({ id: 'ExecuteInteractionByEndpointHeaders' });
+
+export const DeleteInteractionQuerySchema = z
+    .strictObject({
+        cascade: z
+            .boolean()
+            .meta({
+                description:
+                    "Set to true on a draft to also delete its published versions. A cascade never deletes a version's " +
+                    'draft, sibling versions, or forks.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'DeleteInteractionQuery' });
 
 export const ResolveInteractionQuerySchema = z
     .strictObject({

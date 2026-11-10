@@ -1,4 +1,5 @@
 import { ApiTopic, type ClientBase, type IRequestParams } from '@vertesia/api-fetch-client';
+import type { WorkflowUsageQuery, WorkflowUsageStanding } from '@vertesia/common';
 import {
     type ActivityCatalog,
     type AgentEvent,
@@ -54,6 +55,10 @@ import { shouldCloseAgentRunStream, shouldCloseCompactRunStream } from './stream
 export class WorkflowsApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/workflows');
+    }
+
+    usage(query?: WorkflowUsageQuery): Promise<WorkflowUsageStanding> {
+        return this.get('/usage', { query });
     }
 
     getSubscriptionWorkflowCatalog(): Promise<SubscriptionWorkflowCatalog> {
@@ -734,39 +739,48 @@ export class WorkflowsApi extends ApiTopic {
         return this.post('/analytics/first-response-behavior', { payload: query });
     }
 
+    /** @deprecated Workflow rules are deprecated; use event subscriptions instead. */
     rules = new WorkflowsRulesApi(this);
+    /** @deprecated Workflow definitions are deprecated. */
     definitions = new WorkflowsDefinitionApi(this);
 }
 
+/** @deprecated Workflow rules are deprecated; use event subscriptions instead. */
 export class WorkflowsRulesApi extends ApiTopic {
     constructor(parent: WorkflowsApi) {
         super(parent, '/rules');
     }
 
+    /** @deprecated Workflow rules are deprecated; use event subscriptions instead. */
     list(): Promise<WorkflowRuleItem[]> {
         return this.get('/');
     }
 
+    /** @deprecated Workflow rules are deprecated; use event subscriptions instead. */
     retrieve(id: string): Promise<WorkflowRule> {
         return this.get(`/${id}`);
     }
 
+    /** @deprecated Workflow rules are deprecated; use event subscriptions instead. */
     update(id: string, payload: UpdateWorkflowRulePayload): Promise<WorkflowRule> {
         return this.put(`/${id}`, {
             payload,
         });
     }
 
+    /** @deprecated Workflow rules are deprecated; use event subscriptions instead. */
     create(payload: CreateWorkflowRulePayload): Promise<WorkflowRule> {
         return this.post('/', {
             payload,
         });
     }
 
+    /** @deprecated Workflow rules are deprecated; use event subscriptions instead. */
     delete(id: string) {
         return this.del(`/${id}`);
     }
 
+    /** @deprecated Workflow rules are deprecated; use event subscriptions instead. */
     execute(
         id: string,
         objectIds?: string[],
@@ -780,6 +794,7 @@ export class WorkflowsRulesApi extends ApiTopic {
     }
 }
 
+/** @deprecated Workflow definitions are deprecated. */
 export class WorkflowsDefinitionApi extends ApiTopic {
     //model: DSLWorkflowDefinition;
 
@@ -787,26 +802,31 @@ export class WorkflowsDefinitionApi extends ApiTopic {
         super(parent, '/definitions');
     }
 
+    /** @deprecated Workflow definitions are deprecated. */
     list(): Promise<WorkflowDefinitionRef[]> {
         return this.get('/');
     }
 
+    /** @deprecated Workflow definitions are deprecated. */
     retrieve(id: string): Promise<DSLWorkflowDefinition> {
         return this.get(`/${id}`);
     }
 
+    /** @deprecated Workflow definitions are deprecated. */
     update(id: string, payload: UpdateWorkflowDefinitionPayload): Promise<DSLWorkflowDefinition> {
         return this.put(`/${id}`, {
             payload,
         });
     }
 
+    /** @deprecated Workflow definitions are deprecated. */
     create(payload: DSLWorkflowSpec): Promise<DSLWorkflowDefinition> {
         return this.post('/', {
             payload,
         });
     }
 
+    /** @deprecated Workflow definitions are deprecated. */
     delete(id: string) {
         return this.del(`/${id}`);
     }

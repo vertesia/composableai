@@ -1,7 +1,6 @@
-import { VertesiaClient } from '@vertesia/client';
+import { decodeJWT, VertesiaClient } from '@vertesia/client';
 import type { AuthTokenPayload } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
-import { jwtDecode } from 'jwt-decode';
 import { createContext, useContext } from 'react';
 
 import { getComposableToken } from './auth/composable';
@@ -111,7 +110,7 @@ class UserSession {
      * starts over in one scope, and fail the call so nothing is sent with the other scope's token.
      */
     private adoptToken(token: string): AuthTokenPayload {
-        const next = jwtDecode<AuthTokenPayload>(token);
+        const next = decodeJWT(token);
         const current = this.authToken;
         // An account-only session gaining a project rendered no project data, so it has nothing to mix.
         const projectChanged = !!current?.project && current.project.id !== next.project?.id;
@@ -143,7 +142,7 @@ class UserSession {
             return payload;
         }
         if (this.authMethod === 'oauth') {
-            this.authToken = jwtDecode<AuthTokenPayload>(await getAppOAuthToken(true));
+            this.authToken = decodeJWT(await getAppOAuthToken(true));
             this.setSession?.(this.clone());
             return this.authToken;
         }
@@ -172,7 +171,7 @@ class UserSession {
         this.authError = undefined;
         this.isLoading = false;
         this.client.withAuthCallback(() => this.authCallback);
-        this.authToken = jwtDecode(token) as unknown as AuthTokenPayload;
+        this.authToken = decodeJWT(token);
         console.log(
             `Logging in as ${this.authToken?.name} with account ${this.authToken?.account.name} (${this.authToken?.account.id}, and project ${this.authToken?.project?.name} (${this.authToken?.project?.id})`,
         );
@@ -189,6 +188,7 @@ class UserSession {
     }
 
     async loginGatewaySession() {
+        // The gateway has already authenticated the token; the UI uses its projected claims directly.
         this.authToken = await loadGatewaySession();
         this.client.withAuthCallback(undefined);
         this.authError = undefined;

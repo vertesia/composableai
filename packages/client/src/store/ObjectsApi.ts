@@ -5,6 +5,7 @@ import {
     type BulkObjectDeleteResult,
     type BulkObjectUpdateOptions,
     type BulkObjectUpdateResult,
+    type BulkOperationPayload,
     type Collection,
     type ComplexSearchPayload,
     type ComputedFacetResponse,
@@ -34,6 +35,8 @@ import {
     type GetUploadUrlPayload,
     type ListContentObjectExportsResponse,
     type ListWorkflowRunsResponse,
+    type ObjectIntakeCostQuery,
+    type ObjectIntakeCostResponse,
     type ObjectSearchPayload,
     type ObjectSearchQuery,
     type ObjectSearchResponse,
@@ -63,7 +66,8 @@ import { StreamSource } from '../StreamSource.js';
 import { AnalyzeDocApi } from './AnalyzeDocApi.js';
 import type { ZenoClient } from './client.js';
 import { fetchSignedUrl } from './signed-url.js';
-import { getUploadMimeTypeHint, resolveUploadMimeType } from './uploadMimeType.js';
+import { uploadContent } from './upload-content.js';
+import { getUploadMimeTypeHint } from './uploadMimeType.js';
 import { zenoBulkBaseUrl } from './zeno-bulk.js';
 
 /**
@@ -280,39 +284,19 @@ export class ObjectsApi extends ApiTopic {
     }
 
     async upload(source: StreamSource | File) {
-        const isStream = source instanceof StreamSource;
-        // get a signed URL to upload the file a computed mimeType and the file object id.
-        const { url, id, mime_type } = await this.getUploadUrl({
-            id: isStream ? source.id : undefined,
+        const request = {
+            id: source instanceof StreamSource ? source.id : undefined,
             name: source.name,
             mime_type: getUploadMimeTypeHint(source.type),
-        });
-        const sourceMimeType = resolveUploadMimeType(source.type, mime_type);
-
-        // upload the file content to the signed URL
-        const res = await fetchSignedUrl(url, {
-            method: 'PUT',
-            body: isStream ? source.stream : source,
-            headers: sourceMimeType ? { 'Content-Type': sourceMimeType } : undefined,
-        }).catch((err) => {
-            console.error('Failed to upload file', err);
-            throw err;
-        });
-        if (!res.ok) {
-            console.error('Failed to upload file', { status: res.status, statusText: res.statusText, url });
-            throw new Error(`Failed to upload file: ${res.statusText}`);
-        }
-
-        //Etag need to be unquoted
-        //When a server returns an ETag header, it includes the quotes around the actual hash value.
-        //This is part of the HTTP specification (RFC 7232), which states that ETags should be
-        //enclosed in double quotes.
-        const etag = res.headers.get('etag')?.replace(/^"(.*)"$/, '$1');
-
+        };
+        // A signed URL for the object's content file, or an upload session for a long stream.
+        const { id, mime_type, etag } = await uploadContent(this.client.files, source, request, () =>
+            this.getUploadUrl(request),
+        );
         return {
             source: id,
             name: source.name,
-            type: sourceMimeType,
+            type: mime_type,
             etag,
         };
     }
@@ -505,12 +489,22 @@ export class ObjectsApi extends ApiTopic {
         return this.client.runOperation({
             name: 'create',
             ids: [],
-            params: { objects, ...options },
+            // `CreateContentObjectPayload` keeps the known metadata interfaces assignable, so it is wider than the
+            // wire type the bulk payload names; the server checks each object against the single-create contract.
+            params: { objects, ...options } as BulkOperationPayload['params'],
         }) as Promise<BulkObjectCreateResult>;
     }
 
     listWorkflowRuns(documentId: string): Promise<ListWorkflowRunsResponse> {
         return this.get(`/${documentId}/workflow-runs`);
+    }
+
+    /**
+     * The LLM and embedding cost of the intake workflows that processed a content object, per run and in total.
+     * Requires read access to the object and a billing read permission.
+     */
+    getIntakeCost(documentId: string, query?: ObjectIntakeCostQuery): Promise<ObjectIntakeCostResponse> {
+        return this.get(`/${documentId}/intake-cost`, { query });
     }
 
     listRenditions(documentId: string): Promise<ContentObjectItem[]> {

@@ -86,6 +86,8 @@ export const EXTERNALS = [
 // Only safe for packages with no cross-bundle module state — see the react-direction and
 // scroll-lock notes in EXTERNALS above. katex stays external: it is large, shared, and cacheable.
 const INLINED_DEPS = [
+    // Token-claim readers are pure functions with no cross-bundle state.
+    '@vertesia/studio-utils',
     // Browser-safe model metadata has no cross-bundle context or mutable shared state.
     '@llumiverse/common',
     'lucide-react',

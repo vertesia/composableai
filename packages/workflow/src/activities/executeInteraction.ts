@@ -417,6 +417,44 @@ function projectionReadsPrompt(projection: unknown): boolean {
     return projection !== undefined && /#(?!\.)|#\.prompt\b/.test(JSON.stringify(projection));
 }
 
+/**
+ * Takes the admission slot one interaction execution of the current activity runs under. When the
+ * slot is not free yet, throws an `InteractionRateLimitRetry` failure whose `nextRetryDelay` is the
+ * server's delay, so Temporal retries the activity then. Returns the id to send as
+ * `workflow.rate_limit_id`, which tells the server which slot to release when the run finishes.
+ */
+export async function requestInteractionSlot(
+    client: VertesiaClient,
+    interactionName: string,
+    config: Pick<
+        InteractionExecutionConfiguration,
+        'inference_profile' | 'inherit_model_config' | 'environment' | 'model'
+    >,
+): Promise<string> {
+    const info = activityInfo();
+    const rateLimitId = `${activityWorkflowExecution(info).runId}:${info.activityId}:${interactionName}`;
+    const slot = await client.interactions.requestSlot({
+        interaction: interactionName,
+        inference_profile: config.inference_profile,
+        inherit_model_config: config.inherit_model_config,
+        environment_id: config.environment,
+        model_id: config.model,
+        rate_limit_id: rateLimitId,
+    });
+    if (slot.delay_ms > 0) {
+        throw ApplicationFailure.create({
+            message: `Interaction admission delayed for ${slot.delay_ms}ms`,
+            type: 'InteractionRateLimitRetry',
+            nonRetryable: false,
+            nextRetryDelay: slot.delay_ms,
+            details: [{ interactionName, rateLimitId, delayMs: slot.delay_ms }],
+        });
+    }
+    // The grant names the slot and the scope it was admitted in, so the server releases exactly that
+    // slot however the run's model is resolved later. Older servers return none: send our own id.
+    return slot.rate_limit_grant ?? rateLimitId;
+}
+
 export async function executeInteractionFromActivity(
     client: VertesiaClient,
     interactionName: string,
@@ -490,25 +528,7 @@ export async function executeInteractionFromActivity(
 
     const result_schema = params.result_schema;
 
-    const rateLimitId = `${execution.runId}:${info.activityId}:${interactionName}`;
-    const slot = await client.interactions.requestSlot({
-        interaction: interactionName,
-        inference_profile: config.inference_profile,
-        inherit_model_config: config.inherit_model_config,
-        environment_id: config.environment,
-        model_id: config.model,
-        rate_limit_id: rateLimitId,
-    });
-    if (slot.delay_ms > 0) {
-        throw ApplicationFailure.create({
-            message: `Interaction admission delayed for ${slot.delay_ms}ms`,
-            type: 'InteractionRateLimitRetry',
-            nonRetryable: false,
-            nextRetryDelay: slot.delay_ms,
-            details: [{ interactionName, rateLimitId, delayMs: slot.delay_ms }],
-        });
-    }
-    workflow.rate_limit_id = rateLimitId;
+    workflow.rate_limit_id = await requestInteractionSlot(client, interactionName, config);
 
     log.debug(`About to execute interaction ${interactionName}`, { config, data, result_schema, tags, workflow });
 

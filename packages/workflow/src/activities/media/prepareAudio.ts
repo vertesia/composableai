@@ -10,15 +10,19 @@ import {
     ContentNature,
     type DSLActivityExecutionPayload,
     type DSLActivitySpec,
+    isVideoContentType,
     type Rendition,
 } from '@vertesia/common';
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, InvalidContentTypeError } from '../../errors.js';
 import { removeTempFiles, saveBlobToTempFile } from '../../utils/blobs.js';
+import { getSourceLimits } from '../../utils/source-limits.js';
 import { closeUploadStream, createUploadStream } from '../../utils/upload-stream.js';
 import {
     execActivityFile,
     execActivityFileWithProgress,
+    ffmpegInputThreadArgs,
+    ffmpegOutputThreadArgs,
     initializeActivityCommandDeadline,
     rethrowIfActivityStopped,
 } from './exec.js';
@@ -117,6 +121,7 @@ async function generateAudioRendition(
 
     const command = [
         '-y', // Overwrite output
+        ...ffmpegInputThreadArgs(),
         '-i',
         audioPath,
         '-c:a',
@@ -125,6 +130,7 @@ async function generateAudioRendition(
         audioBitrate, // Audio bitrate
         '-movflags',
         '+faststart', // Enable streaming
+        ...ffmpegOutputThreadArgs(),
         outputFile,
     ];
 
@@ -230,14 +236,18 @@ export async function prepareAudio(
 
     if (
         !inputObject.content.type ||
-        (!inputObject.content.type.startsWith('audio/') && !inputObject.content.type.startsWith('video/'))
+        (!inputObject.content.type.startsWith('audio/') && !isVideoContentType(inputObject.content.type))
     ) {
         log.error(`Document ${objectId} is not an audio file: ${inputObject.content.type}`);
         throw new InvalidContentTypeError(objectId, 'audio/* or video/*', inputObject.content.type || 'unknown');
     }
 
-    // Download audio to temp file
-    const audioFile = await saveBlobToTempFile(client, inputObject.content.source);
+    // Download audio to temp file. A source over the media limit fails with a non-retryable SourceTooLargeError,
+    // before any download when the store reports its size.
+    const audioFile = await saveBlobToTempFile(client, inputObject.content.source, undefined, {
+        maxBytes: getSourceLimits().mediaMaxBytes,
+        limit: 'media',
+    });
     // Created inside the try, so a failure here still removes the download in the finally.
     let tempOutputDir: string | undefined;
 

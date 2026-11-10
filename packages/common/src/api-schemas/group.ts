@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type * as Wire from '../wire-types.generated.js';
+import { OBJECT_ID_PATTERN, OPTIONAL_OBJECT_ID_PATTERN } from './schema-primitives.js';
 
 /**
  * Runtime API schemas for the IAM user-group endpoints.
@@ -76,9 +77,26 @@ export const ListUserGroupsQuerySchema = z
         tags: z.array(z.string()).optional(),
         limit: z.number().optional(),
         offset: z.number().optional(),
-        project: z.string().optional(),
+        // Cast to an ObjectId, so any other value is refused with a 400; an empty one is no filter.
+        project: z.string().regex(OPTIONAL_OBJECT_ID_PATTERN).optional(),
     })
     .meta({ id: 'ListUserGroupsQuery' });
+
+/**
+ * What both payloads write into the group, where the model stores tags as required strings and projects as ObjectIds:
+ * an empty tag or a project that is not an ObjectId is refused with a 400.
+ */
+const groupPayloadFields = {
+    tags: z.array(z.string().min(1)),
+    allowed_projects: z
+        .array(z.string().regex(OBJECT_ID_PATTERN))
+        .optional()
+        .meta({
+            description:
+                'Projects this group is allowed to be used in, as project IDs. When empty or absent the group is ' +
+                'org-wide.',
+        }),
+};
 
 /**
  * Both payloads are picked from {@link UserGroupSchema}, for the same reason `UserRef` is: they are
@@ -103,13 +121,13 @@ const UserGroupWritableSchema = UserGroupSchema.pick({
  * request semantics differ (a `null` that clears a value, a coercion, a request-only bound) has to be
  * overridden the same way instead of inherited.
  */
-export const CreateUserGroupPayloadSchema = UserGroupWritableSchema.partial({ tags: true })
+export const CreateUserGroupPayloadSchema = UserGroupWritableSchema.extend({ tags: groupPayloadFields.tags })
+    .partial({ tags: true })
     .extend({
         name: z.string().min(1),
-        allowed_projects: z
-            .array(z.string())
-            .optional()
-            .meta({ description: 'Restrict the new group to the given projects (empty/absent = org-wide).' }),
+        allowed_projects: groupPayloadFields.allowed_projects.meta({
+            description: 'Restrict the new group to the given projects (empty/absent = org-wide).',
+        }),
     })
     .meta({ id: 'CreateUserGroupPayload' });
 
@@ -131,6 +149,7 @@ export const UpdateUserGroupPayloadSchema = UserGroupSchema.pick({
     compartments: true,
     allowed_projects: true,
 })
+    .extend(groupPayloadFields)
     .partial({ tags: true })
     // Only the payloads refuse an empty name: the `UserGroup` response keeps whatever is stored.
     .extend({ name: z.string().min(1) })

@@ -57,6 +57,12 @@ const jsEntries = entries.map((name) => ({
         mainFields: ['browser', 'module', 'main'],
         conditionNames: ['browser', 'import', 'default'],
     },
+    // Inlined dependencies (Radix, framer-motion, ...) start with "use client", which bundling
+    // drops and warns about, once per file. It only means something to a React Server Components
+    // bundler, and these files are loaded in the browser through an import map.
+    checks: {
+        moduleLevelDirective: false,
+    },
 }));
 
 export default defineConfig([...jsEntries]);

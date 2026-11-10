@@ -1,6 +1,6 @@
 import type { PropertyConditions } from './access-control.js';
 import type { UserGroupRef } from './group.js';
-import type { ProjectRef, SystemRoles } from './project.js';
+import type { ProjectRef } from './project.js';
 import type { AccountRef } from './user.js';
 import type * as Wire from './wire-types.generated.js';
 
@@ -84,11 +84,13 @@ export interface AuthTokenPayload {
     type: PrincipalType;
     account: AccountRef;
 
-    account_roles: SystemRoles[];
+    /** Assigned built-in names or c:<name> references. Authorization uses account_permissions. */
+    account_roles: string[];
     accounts: AccountRef[];
 
     project?: ProjectRef;
-    project_roles?: SystemRoles[];
+    /** Assigned built-in names or c:<name> references. Authorization uses permissions. */
+    project_roles?: string[];
 
     /**
      * The app names enabled for this token. Defaults to an empty array if no apps are enabled.
@@ -160,7 +162,20 @@ export interface AuthTokenPayload {
     exp: number; //expires in (EPOC seconds)
     tags?: string[]; //tags
 
-    permissions?: string[]; //permissions
+    /**
+     * Final effective platform permissions, after role expansion and any credential/OAuth limits.
+     * New access tokens always include this together with `account_permissions`. Older OAuth
+     * tokens carry only `permissions`, where it is a scope cap rather than resolved authority.
+     */
+    permissions?: string[];
+    /**
+     * Effective permissions backed by account-level grants, always a subset of `permissions`.
+     * Its presence identifies the normalized permission contract; an empty array grants no
+     * account-level authority. Legacy access tokens (issued before permission normalization)
+     * lack this claim, so consumers must resolve their roles and apply any OAuth permission cap.
+     * Raw issuer payloads also omit it until mint-time permission resolution is complete.
+     */
+    account_permissions?: string[];
     /** Standard OAuth space-delimited scope claim. */
     scope?: string;
 
