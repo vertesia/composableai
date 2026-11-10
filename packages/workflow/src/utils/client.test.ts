@@ -5,7 +5,13 @@ import { MockActivityEnvironment } from '@temporalio/testing';
 import { VertesiaClient } from '@vertesia/client';
 import { PrincipalType, type WorkflowExecutionBaseParams } from '@vertesia/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getVertesiaClientOptions, withWorkflowHttpExecution, withWorkflowOperation } from './client.js';
+import {
+    getVertesiaClient,
+    getVertesiaClientOptions,
+    withWorkflowHttpExecution,
+    withWorkflowOperation,
+    withWorkflowRequestHeaders,
+} from './client.js';
 
 const TOKEN = tokenWithClaims({
     iss: 'http://mock-token-server',
@@ -472,3 +478,27 @@ it.each([PrincipalType.User, PrincipalType.Agent])(
         expect(firstImport).toBe(retryImport);
     },
 );
+
+describe('withWorkflowRequestHeaders', () => {
+    const payload = {
+        account_id: 'account',
+        project_id: 'project',
+        auth_token: TOKEN,
+        config: { studio_url: 'https://studio.example', store_url: 'https://store.example' },
+        vars: {},
+    } as WorkflowExecutionBaseParams;
+
+    it('adds the headers to the clients created inside it, and only those', () => {
+        const client = withWorkflowRequestHeaders({ 'x-example': 'value' }, () => getVertesiaClient(payload));
+        expect(client.headers['x-example']).toBe('value');
+        expect(getVertesiaClient(payload).headers).not.toHaveProperty(['x-example']);
+    });
+
+    it('reaches a second copy of this module, as a worker loads with its bundled activities', async () => {
+        vi.resetModules();
+        const bundled = await import('./client.js');
+        expect(bundled.getVertesiaClient).not.toBe(getVertesiaClient);
+        const client = withWorkflowRequestHeaders({ 'x-example': 'value' }, () => bundled.getVertesiaClient(payload));
+        expect(client.headers['x-example']).toBe('value');
+    });
+});
