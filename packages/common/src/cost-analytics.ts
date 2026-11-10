@@ -34,3 +34,11 @@ export type CostAnalyticsResponse = Wire.CostAnalyticsResponse;
 export type CostRunPriceQuery = Wire.CostRunPriceQuery;
 
 export type CostRunPriceResponse = Wire.CostRunPriceResponse;
+
+export type ObjectIntakeCostQuery = Wire.ObjectIntakeCostQuery;
+
+/** The cost of one intake run of a content object. */
+export type IntakeRunCost = Wire.IntakeRunCost;
+
+/** The LLM and embedding cost of the intake workflows that processed a content object. */
+export type ObjectIntakeCostResponse = Wire.ObjectIntakeCostResponse;

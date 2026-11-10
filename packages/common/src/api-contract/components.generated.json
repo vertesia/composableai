@@ -48284,6 +48284,159 @@
     ],
     "additionalProperties": false
   },
+  "ObjectIntakeCostQuery": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200,
+        "description": "Most recent intake runs to list (default 50). Totals always cover every run."
+      }
+    }
+  },
+  "IntakeRunCost": {
+    "type": "object",
+    "properties": {
+      "root_run_id": {
+        "type": "string",
+        "description": "First run ID of the intake workflow, shared by its continued runs and child workflows."
+      },
+      "workflow_id": {
+        "type": "string"
+      },
+      "workflow_type": {
+        "type": "string"
+      },
+      "outcome": {
+        "type": "string",
+        "enum": [
+          "completed",
+          "skipped",
+          "failed"
+        ],
+        "description": "How the run ended. Absent while it runs, or when it closed without reporting."
+      },
+      "content_type_id": {
+        "type": "string",
+        "description": "Content type of the document when the run ended."
+      },
+      "content_type_name": {
+        "type": "string"
+      },
+      "content_nature": {
+        "type": "string"
+      },
+      "page_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "First billable call or closing event."
+      },
+      "last_event_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "closed_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "cost_usd": {
+        "type": "number",
+        "description": "What the priced calls cost: the amount the provider billed when it reported one, else the list-price estimate recorded with the call."
+      },
+      "priced_calls": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "unpriced_calls": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Calls with no price, left out of `cost_usd`; their tokens are still counted."
+      },
+      "failed_calls": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "calls": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        },
+        "description": "Billable calls by audit action (`inference`, `embedding`)."
+      },
+      "tokens": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "number"
+        },
+        "description": "Tokens by meter type (`input`, `output`, ...)."
+      }
+    },
+    "required": [
+      "root_run_id",
+      "started_at",
+      "last_event_at",
+      "cost_usd",
+      "priced_calls",
+      "unpriced_calls",
+      "failed_calls",
+      "calls",
+      "tokens"
+    ],
+    "description": "The cost of one intake run of a content object."
+  },
+  "ObjectIntakeCostResponse": {
+    "type": "object",
+    "properties": {
+      "object_id": {
+        "type": "string"
+      },
+      "run_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Intake runs recorded for the object."
+      },
+      "cost_usd": {
+        "type": "number",
+        "description": "Sum of `cost_usd` over every recorded run."
+      },
+      "priced_calls": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "unpriced_calls": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "runs": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IntakeRunCost"
+        },
+        "description": "The most recent runs, newest first."
+      }
+    },
+    "required": [
+      "object_id",
+      "run_count",
+      "cost_usd",
+      "priced_calls",
+      "unpriced_calls",
+      "runs"
+    ],
+    "description": "The LLM and embedding cost of the intake workflows that processed a content object, recorded since intake cost tracking was deployed."
+  },
   "PricingSyncPayload": {
     "type": "object",
     "properties": {

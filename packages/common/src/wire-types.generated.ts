@@ -2484,6 +2484,38 @@ export type CostRunPriceResponse = {
     pricing_source: 'list' | 'historical';
     matched_events: number;
 };
+export type ObjectIntakeCostQuery = {
+    limit?: number | undefined;
+};
+/** The cost of one intake run of a content object. */
+export type IntakeRunCost = {
+    root_run_id: string;
+    workflow_id?: string | undefined;
+    workflow_type?: string | undefined;
+    outcome?: 'completed' | 'skipped' | 'failed' | undefined;
+    content_type_id?: string | undefined;
+    content_type_name?: string | undefined;
+    content_nature?: string | undefined;
+    page_count?: number | undefined;
+    started_at: string;
+    last_event_at: string;
+    closed_at?: string | undefined;
+    cost_usd: number;
+    priced_calls: number;
+    unpriced_calls: number;
+    failed_calls: number;
+    calls: Record<string, number>;
+    tokens: Record<string, number>;
+};
+/** The LLM and embedding cost of the intake workflows that processed a content object. */
+export type ObjectIntakeCostResponse = {
+    object_id: string;
+    run_count: number;
+    cost_usd: number;
+    priced_calls: number;
+    unpriced_calls: number;
+    runs: IntakeRunCost[];
+};
 export type CustomRoleDefinition = {
     name: string;
     title: string;
@@ -11879,6 +11911,9 @@ export interface ApiComponentTypes {
     ModelPriceComparisonResponse: ModelPriceComparisonResponse;
     CostAnalyticsResponse: CostAnalyticsResponse;
     CostRunPriceResponse: CostRunPriceResponse;
+    ObjectIntakeCostQuery: ObjectIntakeCostQuery;
+    IntakeRunCost: IntakeRunCost;
+    ObjectIntakeCostResponse: ObjectIntakeCostResponse;
     PricingSyncPayload: PricingSyncPayload;
     PricingSyncDayResult: PricingSyncDayResult;
     PricingSyncResult: PricingSyncResult;

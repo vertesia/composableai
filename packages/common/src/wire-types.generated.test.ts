@@ -1056,6 +1056,15 @@ interface Checks {
         W.CostRunPriceResponse,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostRunPriceResponseSchema>
     >;
+    ObjectIntakeCostQuery: Same<
+        W.ObjectIntakeCostQuery,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostQuerySchema>
+    >;
+    IntakeRunCost: Same<W.IntakeRunCost, z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeRunCostSchema>>;
+    ObjectIntakeCostResponse: Same<
+        W.ObjectIntakeCostResponse,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostResponseSchema>
+    >;
     CustomRoleDefinition: Same<
         W.CustomRoleDefinition,
         z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
@@ -7201,6 +7210,18 @@ interface Checks {
         W.ApiComponentTypes['CostRunPriceResponse'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostRunPriceResponseSchema>
     >;
+    'component:ObjectIntakeCostQuery': Same<
+        W.ApiComponentTypes['ObjectIntakeCostQuery'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostQuerySchema>
+    >;
+    'component:IntakeRunCost': Same<
+        W.ApiComponentTypes['IntakeRunCost'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeRunCostSchema>
+    >;
+    'component:ObjectIntakeCostResponse': Same<
+        W.ApiComponentTypes['ObjectIntakeCostResponse'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostResponseSchema>
+    >;
     'component:PricingSyncPayload': Same<
         W.ApiComponentTypes['PricingSyncPayload'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').PricingSyncPayloadSchema>
@@ -10657,6 +10678,9 @@ const checks: Checks = {
     CostAnalyticsResponse: true,
     CostRunPriceQuery: true,
     CostRunPriceResponse: true,
+    ObjectIntakeCostQuery: true,
+    IntakeRunCost: true,
+    ObjectIntakeCostResponse: true,
     CustomRoleDefinition: true,
     CustomRoleDefinitionArray: true,
     PermissionArray: true,
@@ -12296,6 +12320,9 @@ const checks: Checks = {
     'component:ModelPriceComparisonResponse': true,
     'component:CostAnalyticsResponse': true,
     'component:CostRunPriceResponse': true,
+    'component:ObjectIntakeCostQuery': true,
+    'component:IntakeRunCost': true,
+    'component:ObjectIntakeCostResponse': true,
     'component:PricingSyncPayload': true,
     'component:PricingSyncDayResult': true,
     'component:PricingSyncResult': true,
@@ -13091,6 +13118,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2721);
+        expect(Object.keys(checks)).toHaveLength(2727);
     });
 });

@@ -315,6 +315,36 @@ export async function getObjectText(program: Command, objectId: string, options:
     console.log(text.text);
 }
 
+interface IntakeCostOptions extends JsonOutputOptions {
+    limit?: string;
+}
+
+function formatUsd(amount: number): string {
+    return `$${amount.toFixed(amount < 0.01 ? 6 : 4)}`;
+}
+
+export async function getObjectIntakeCost(program: Command, objectId: string, options: IntakeCostOptions) {
+    const limit = options.limit === undefined ? undefined : Number(options.limit);
+    if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > 200)) {
+        throw new Error('Invalid limit: expected an integer from 1 to 200');
+    }
+    const client = await getClient(program);
+    const cost = await client.objects.getIntakeCost(objectId, limit === undefined ? undefined : { limit });
+    if (options.json) {
+        printJson(cost);
+        return;
+    }
+    const unpriced = cost.unpriced_calls ? `, ${cost.unpriced_calls} unpriced` : '';
+    console.log(
+        `${formatUsd(cost.cost_usd)} over ${cost.run_count} intake run(s), ${cost.priced_calls} priced call(s)${unpriced}`,
+    );
+    for (const run of cost.runs) {
+        const type = run.content_type_name ?? run.content_type_id ?? '-';
+        const outcome = run.outcome ?? 'running';
+        console.log(`${run.started_at}  ${outcome.padEnd(9)} ${formatUsd(run.cost_usd).padStart(11)}  ${type}`);
+    }
+}
+
 export async function listObjects(program: Command, folderPath: string | undefined, options: ListObjectsOptions) {
     const client = await getClient(program);
     const payload: ObjectSearchPayload = {

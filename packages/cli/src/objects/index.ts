@@ -4,6 +4,7 @@ import {
     deleteObject,
     downloadObjectContent,
     getObject,
+    getObjectIntakeCost,
     getObjectText,
     listObjects,
     queryObjects,
@@ -63,6 +64,14 @@ export function registerObjectsCommand(program: Command) {
         .option('--json', 'Print raw JSON instead of plain text')
         .action(async (objectId: string, options: Record<string, unknown>) => {
             await getObjectText(program, objectId, options);
+        });
+    store
+        .command('intake-cost <objectId>')
+        .description('Show the LLM and embedding cost of the intake runs that processed an object')
+        .option('--limit <number>', 'Most recent runs to list (1-200, default 50)')
+        .option('--json', 'Print raw JSON')
+        .action(async (objectId: string, options: Record<string, unknown>) => {
+            await getObjectIntakeCost(program, objectId, options);
         });
     store
         .command('download <objectId>')

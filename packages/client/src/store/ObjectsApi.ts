@@ -35,6 +35,8 @@ import {
     type GetUploadUrlPayload,
     type ListContentObjectExportsResponse,
     type ListWorkflowRunsResponse,
+    type ObjectIntakeCostQuery,
+    type ObjectIntakeCostResponse,
     type ObjectSearchPayload,
     type ObjectSearchQuery,
     type ObjectSearchResponse,
@@ -495,6 +497,14 @@ export class ObjectsApi extends ApiTopic {
 
     listWorkflowRuns(documentId: string): Promise<ListWorkflowRunsResponse> {
         return this.get(`/${documentId}/workflow-runs`);
+    }
+
+    /**
+     * The LLM and embedding cost of the intake workflows that processed a content object, per run and in total.
+     * Requires read access to the object and a billing read permission.
+     */
+    getIntakeCost(documentId: string, query?: ObjectIntakeCostQuery): Promise<ObjectIntakeCostResponse> {
+        return this.get(`/${documentId}/intake-cost`, { query });
     }
 
     listRenditions(documentId: string): Promise<ContentObjectItem[]> {

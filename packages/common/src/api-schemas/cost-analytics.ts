@@ -326,3 +326,70 @@ export const CostRunPriceResponseSchema = z
         matched_events: z.number(),
     })
     .meta({ id: 'CostRunPriceResponse' });
+
+export const ObjectIntakeCostQuerySchema = z
+    .strictObject({
+        limit: z
+            .number()
+            .int()
+            .min(1)
+            .max(200)
+            .meta({ description: 'Most recent intake runs to list (default 50). Totals always cover every run.' })
+            .optional(),
+    })
+    .meta({ id: 'ObjectIntakeCostQuery' });
+
+const intakeCountsSchema = z.record(z.string(), z.number());
+
+export const IntakeRunCostSchema = z
+    .strictObject({
+        root_run_id: z.string().meta({
+            description: 'First run ID of the intake workflow, shared by its continued runs and child workflows.',
+        }),
+        workflow_id: z.string().optional(),
+        workflow_type: z.string().optional(),
+        outcome: z
+            .enum(['completed', 'skipped', 'failed'])
+            .meta({ description: 'How the run ended. Absent while it runs, or when it closed without reporting.' })
+            .optional(),
+        content_type_id: z
+            .string()
+            .meta({ description: 'Content type of the document when the run ended.' })
+            .optional(),
+        content_type_name: z.string().optional(),
+        content_nature: z.string().optional(),
+        page_count: z.number().int().optional(),
+        started_at: z.string().meta({ format: 'date-time', description: 'First billable call or closing event.' }),
+        last_event_at: z.string().meta({ format: 'date-time' }),
+        closed_at: z.string().meta({ format: 'date-time' }).optional(),
+        cost_usd: z.number().meta({
+            description:
+                'What the priced calls cost: the amount the provider billed when it reported one, else the list-price ' +
+                'estimate recorded with the call.',
+        }),
+        priced_calls: z.number().int(),
+        unpriced_calls: z
+            .number()
+            .int()
+            .meta({ description: 'Calls with no price, left out of `cost_usd`; their tokens are still counted.' }),
+        failed_calls: z.number().int(),
+        calls: intakeCountsSchema.meta({ description: 'Billable calls by audit action (`inference`, `embedding`).' }),
+        tokens: intakeCountsSchema.meta({ description: 'Tokens by meter type (`input`, `output`, ...).' }),
+    })
+    .meta({ id: 'IntakeRunCost', description: 'The cost of one intake run of a content object.' });
+
+export const ObjectIntakeCostResponseSchema = z
+    .strictObject({
+        object_id: z.string(),
+        run_count: z.number().int().meta({ description: 'Intake runs recorded for the object.' }),
+        cost_usd: z.number().meta({ description: 'Sum of `cost_usd` over every recorded run.' }),
+        priced_calls: z.number().int(),
+        unpriced_calls: z.number().int(),
+        runs: z.array(IntakeRunCostSchema).meta({ description: 'The most recent runs, newest first.' }),
+    })
+    .meta({
+        id: 'ObjectIntakeCostResponse',
+        description:
+            'The LLM and embedding cost of the intake workflows that processed a content object, recorded since ' +
+            'intake cost tracking was deployed.',
+    });
