@@ -26,6 +26,7 @@ import { ProcessTestRunApi } from './ProcessTestRunApi.js';
 import { QueryApi } from './QueryApi.js';
 import { RenderingApi } from './RenderingApi.js';
 import { SchedulesApi } from './SchedulesApi.js';
+import { SharePointSourcesApi } from './SharePointSourcesApi.js';
 import { TaskApi } from './TaskApi.js';
 import { TypesApi } from './TypesApi.js';
 import { StoreViewsApi } from './ViewsApi.js';
@@ -143,6 +144,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     types = new TypesApi(this);
     workflows = new WorkflowsApi(this);
     schedules = new SchedulesApi(this);
+    sharePointSources = new SharePointSourcesApi(this);
     processes = new ProcessApi(this);
     processTestRuns = new ProcessTestRunApi(this);
     tasks = new TaskApi(this);

@@ -6879,6 +6879,39 @@ export type UpdateSecretRequest = {
 export type DeleteSecretResponse = {
     ok: boolean;
 };
+/**
+ * A SharePoint Online document library, or a folder in one, registered for import. Imported documents
+ * reference their file in SharePoint (`sharepoint://<source_id>/<item_id>`) instead of a copy.
+ */
+export type SharePointSource = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    site_url: string;
+    site_id: string;
+    drive_id: string;
+    library_name: string;
+    folder_path: string;
+    folder_item_id: string;
+    location_root: string;
+    collection_id?: string | undefined;
+    created_by?: string | undefined;
+    updated_by?: string | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+};
+/** Registers a SharePoint source. */
+export type CreateSharePointSourcePayload = {
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    site_url: string;
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
+    location_root?: string | undefined;
+    collection_id?: string | undefined;
+};
 /** Packaged workflows supported by event subscriptions. */
 export type SubscriptionWorkflowDefinition = {
     endpoint: string;
@@ -10927,6 +10960,7 @@ export type EventDeliveryTargetWire = unknown;
 export type EventDeliveryTargetInputWire = unknown;
 export type ProcessEventDeliveryTargetWire = unknown;
 export type EventIngestChannelArray = EventIngestChannel[];
+export type SharePointSourceArray = SharePointSource[];
 export type CollectionStatusWire = CollectionStatus;
 export type CollectionArray = Collection[];
 export type AgentRunArtifactPathArray = string[];
@@ -12164,6 +12198,9 @@ export interface ApiComponentTypes {
     CreateEventIngestChannelPayload: CreateEventIngestChannelPayload;
     UpdateEventIngestChannelPayload: UpdateEventIngestChannelPayload;
     EventIngestChannelArray: EventIngestChannelArray;
+    SharePointSource: SharePointSource;
+    CreateSharePointSourcePayload: CreateSharePointSourcePayload;
+    SharePointSourceArray: SharePointSourceArray;
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;

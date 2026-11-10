@@ -18,6 +18,7 @@ export * from './ProcessTestRunApi.js';
 export * from './QueryApi.js';
 export * from './RenderingApi.js';
 export * from './SchedulesApi.js';
+export * from './SharePointSourcesApi.js';
 export * from './signed-url.js';
 export * from './TaskApi.js';
 export * from './TypeCatalogApi.js';

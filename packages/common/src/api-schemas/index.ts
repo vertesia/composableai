@@ -37,6 +37,7 @@ export * from './quota.js';
 export * from './registry.js';
 export * from './run-budget.js';
 export * from './secrets.js';
+export * from './sharepoint.js';
 export { CreateContentObjectTypePayloadSchema, InteractionExecutionConfigurationSchema } from './store.js';
 export * from './view-execution.js';
 export * from './workflow-runs.js';

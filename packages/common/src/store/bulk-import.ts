@@ -57,6 +57,22 @@ export interface ImportedSourceItem<T extends BaseItem = SourceItem> {
     isUpdate: boolean;
 }
 
+/**
+ * An external system the import reads its items from, page by page, instead of a JSON manifest object.
+ * `source_id` is a source registered in the project (for SharePoint, `POST /sharepoint-sources`).
+ */
+export interface BulkImportSource {
+    type: 'sharepoint';
+    source_id: string;
+}
+
+/**
+ * How an item finds the existing object it updates. `default` tries the item's `object_id`, then its
+ * `content.source` when `updateByContentSource` is set, then its name and location. `contentSource`
+ * matches by `content.source` only, so an item never updates an unrelated object with the same name.
+ */
+export type BulkImportMatchBy = 'default' | 'contentSource';
+
 export interface BulkImportParams {
     maxConcurrentBatches?: number;
     maxConcurrentPartitions?: number;
@@ -64,6 +80,21 @@ export interface BulkImportParams {
     partitionSize?: number;
     dryRun?: boolean;
     updateByContentSource?: boolean;
+    /**
+     * Read items from an external source, page by page, instead of the manifest object in `objectIds`.
+     * Each page is imported as it is read. A source sets `matchBy`, `skipUnchangedContent` and
+     * `collectionId` itself.
+     */
+    source?: BulkImportSource;
+    /** Defaults to `default`. */
+    matchBy?: BulkImportMatchBy;
+    /** Adds every created object to this collection. */
+    collectionId?: string;
+    /**
+     * When an item matches an existing object and both carry the same `content.etag`, update only the
+     * other fields so the object is not processed again. Without both etags, the content is updated.
+     */
+    skipUnchangedContent?: boolean;
     /** @deprecated Events are now always emitted. This suppresses the Temporal-backed delivery targets (workflow, agent, and process) — webhook deliveries still fire. */
     skipWorkflows?: boolean;
     /**

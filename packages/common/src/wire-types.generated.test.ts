@@ -2834,6 +2834,14 @@ interface Checks {
         W.DeleteSecretResponse,
         z.infer<typeof import('./api-schemas/secrets.js').DeleteSecretResponseSchema>
     >;
+    SharePointSource: Same<
+        W.SharePointSource,
+        z.infer<typeof import('./api-schemas/sharepoint.js').SharePointSourceSchema>
+    >;
+    CreateSharePointSourcePayload: Same<
+        W.CreateSharePointSourcePayload,
+        z.infer<typeof import('./api-schemas/sharepoint.js').CreateSharePointSourcePayloadSchema>
+    >;
     SubscriptionWorkflowDefinition: Same<
         W.SubscriptionWorkflowDefinition,
         z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowDefinitionSchema>
@@ -4702,6 +4710,10 @@ interface Checks {
     EventIngestChannelArray: Same<
         W.EventIngestChannelArray,
         z.infer<typeof import('./api-schemas/events.js').EventIngestChannelArraySchema>
+    >;
+    SharePointSourceArray: Same<
+        W.SharePointSourceArray,
+        z.infer<typeof import('./api-schemas/sharepoint.js').SharePointSourceArraySchema>
     >;
     CollectionStatusWire: Same<
         W.CollectionStatusWire,
@@ -8341,6 +8353,18 @@ interface Checks {
         W.ApiComponentTypes['EventIngestChannelArray'],
         z.infer<typeof import('./api-schemas/events.js').EventIngestChannelArraySchema>
     >;
+    'component:SharePointSource': Same<
+        W.ApiComponentTypes['SharePointSource'],
+        z.infer<typeof import('./api-schemas/sharepoint.js').SharePointSourceSchema>
+    >;
+    'component:CreateSharePointSourcePayload': Same<
+        W.ApiComponentTypes['CreateSharePointSourcePayload'],
+        z.infer<typeof import('./api-schemas/sharepoint.js').CreateSharePointSourcePayloadSchema>
+    >;
+    'component:SharePointSourceArray': Same<
+        W.ApiComponentTypes['SharePointSourceArray'],
+        z.infer<typeof import('./api-schemas/sharepoint.js').SharePointSourceArraySchema>
+    >;
     'component:CollectionSecuritySettingsResponse': Same<
         W.ApiComponentTypes['CollectionSecuritySettingsResponse'],
         z.infer<typeof import('./api-schemas/content.js').CollectionSecuritySettingsResponseSchema>
@@ -11139,6 +11163,8 @@ const checks: Checks = {
     CreateSecretRequest: true,
     UpdateSecretRequest: true,
     DeleteSecretResponse: true,
+    SharePointSource: true,
+    CreateSharePointSourcePayload: true,
     SubscriptionWorkflowDefinition: true,
     SubscriptionWorkflowCatalog: true,
     AgentToolApprovalMode: true,
@@ -11667,6 +11693,7 @@ const checks: Checks = {
     EventDeliveryTargetInputWire: true,
     ProcessEventDeliveryTargetWire: true,
     EventIngestChannelArray: true,
+    SharePointSourceArray: true,
     CollectionStatusWire: true,
     CollectionArray: true,
     AgentRunArtifactPathArray: true,
@@ -12581,6 +12608,9 @@ const checks: Checks = {
     'component:CreateEventIngestChannelPayload': true,
     'component:UpdateEventIngestChannelPayload': true,
     'component:EventIngestChannelArray': true,
+    'component:SharePointSource': true,
+    'component:CreateSharePointSourcePayload': true,
+    'component:SharePointSourceArray': true,
     'component:CollectionSecuritySettingsResponse': true,
     'component:CollectionMembersUpdateResult': true,
     'component:CollectionMembersUpdatePayload': true,
@@ -13091,6 +13121,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2721);
+        expect(Object.keys(checks)).toHaveLength(2727);
     });
 });

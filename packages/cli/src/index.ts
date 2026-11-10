@@ -35,6 +35,7 @@ import { listProjects, useProject } from './projects/index.js';
 import { registerQuotaCommand } from './quota/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
+import { registerSharePointCommand } from './sharepoint/index.js';
 import { errorMessage, getBooleanOption, hasStatus } from './utils/options.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 
@@ -215,6 +216,7 @@ registerAgentsCommand(program);
 registerArtifactsCommand(program);
 registerDataCommand(program);
 registerEventsCommand(program);
+registerSharePointCommand(program);
 registerExportCommand(program);
 registerIamCommand(program);
 

@@ -32490,7 +32490,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), and `type`, its MIME type, is then required."
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), or a `sharepoint://<source_id>/<item_id>` URI of a file in a registered SharePoint source, and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -32659,7 +32659,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint)://[^/]+/.+"
               }
             }
           }
@@ -32695,7 +32695,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint)://[^/]+/.+"
               }
             }
           }
@@ -32768,7 +32768,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), and `type`, its MIME type, is then required."
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), or a `sharepoint://<source_id>/<item_id>` URI of a file in a registered SharePoint source, and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -32882,7 +32882,7 @@
               "minLength": 1
             },
             "source": {
-              "pattern": "^(?:gs|s3|az)://[^/]+/.+"
+              "pattern": "^(?:gs|s3|az|sharepoint)://[^/]+/.+"
             }
           }
         }
@@ -37705,6 +37705,138 @@
     "type": "array",
     "items": {
       "$ref": "#/components/schemas/EventIngestChannel"
+    }
+  },
+  "SharePointSource": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "description": "The OAuth provider (client credentials against Microsoft Entra ID) that issues Graph tokens."
+      },
+      "site_url": {
+        "type": "string",
+        "description": "The SharePoint site URL the source was created from."
+      },
+      "site_id": {
+        "type": "string",
+        "description": "The Microsoft Graph site ID."
+      },
+      "drive_id": {
+        "type": "string",
+        "description": "The Microsoft Graph drive ID of the document library."
+      },
+      "library_name": {
+        "type": "string",
+        "description": "The document library name."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder imported, relative to the library root. Empty for the whole library."
+      },
+      "folder_item_id": {
+        "type": "string",
+        "description": "The Microsoft Graph item ID of the imported folder."
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "Collection that imported documents are added to, if any."
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "oauth_provider_id",
+      "site_url",
+      "site_id",
+      "drive_id",
+      "library_name",
+      "folder_path",
+      "folder_item_id",
+      "location_root"
+    ],
+    "additionalProperties": false,
+    "description": "A SharePoint Online document library, or a folder in one, registered for import. Imported documents reference their file in SharePoint (`sharepoint://<source_id>/<item_id>`) instead of a copy."
+  },
+  "CreateSharePointSourcePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "description": "Unique within the project."
+      },
+      "description": {
+        "type": "string"
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` against Microsoft Entra ID and the scope `https://graph.microsoft.com/.default`."
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The document library name. Defaults to the site’s default library."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "A folder inside the library to import, e.g. `Contracts/2026`. Defaults to all."
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` root for imported documents. Defaults to `/sharepoint/<name>`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "A collection to add imported documents to."
+      }
+    },
+    "required": [
+      "name",
+      "oauth_provider_id",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "Registers a SharePoint source. The server checks the site, library and folder with Microsoft Graph before saving, and answers 409 when the name is already used in the project."
+  },
+  "SharePointSourceArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/SharePointSource"
     }
   },
   "CollectionSecuritySettingsResponse": {

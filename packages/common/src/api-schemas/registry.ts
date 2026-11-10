@@ -779,6 +779,7 @@ import {
 import { QuotaStandingResponseSchema, QuotaTierResponseSchema } from './quota.js';
 import * as RunBudgetSchemas from './run-budget.js';
 import * as SecretSchemas from './secrets.js';
+import * as SharePointSchemas from './sharepoint.js';
 import {
     ColumnLayoutSchema,
     ContentObjectTypeCatalogEntryArraySchema,
@@ -1950,6 +1951,12 @@ const EVENT_INGEST_SCHEMAS = {
     EventIngestChannelArray: EventSchemas.EventIngestChannelArraySchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const SHAREPOINT_SOURCE_SCHEMAS = {
+    SharePointSource: SharePointSchemas.SharePointSourceSchema,
+    CreateSharePointSourcePayload: SharePointSchemas.CreateSharePointSourcePayloadSchema,
+    SharePointSourceArray: SharePointSchemas.SharePointSourceArraySchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const COLLECTION_SCHEMAS = {
     CollectionSecuritySettingsResponse: ContentSchemas.CollectionSecuritySettingsResponseSchema,
     CollectionMembersUpdateResult: ContentSchemas.CollectionMembersUpdateResultSchema,
@@ -2613,6 +2620,7 @@ const API_SCHEMA_GROUPS = [
     PROCESS_RUNTIME_SCHEMAS,
     EVENT_DELIVERY_SCHEMAS,
     EVENT_INGEST_SCHEMAS,
+    SHAREPOINT_SOURCE_SCHEMAS,
     COLLECTION_SCHEMAS,
     AGENT_ARTIFACT_SCHEMAS,
     AGENT_RUN_SCHEMAS,
@@ -2643,6 +2651,8 @@ const API_SCHEMAS: Readonly<Record<string, z.ZodType>> = mergeComponentGroups(AP
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'SharePointSource',
+    'CreateSharePointSourcePayload',
     'CustomRoleDefinition',
     'CreateCustomRolePayload',
     'UpdateCustomRolePayload',
