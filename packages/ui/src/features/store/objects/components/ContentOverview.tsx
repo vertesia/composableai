@@ -197,6 +197,12 @@ interface ContentOverviewProps {
      * `contentProjectId` points at another project (the current-project client can't reach them).
      */
     resolveUrl?: (source: UniversalDocumentSource, disposition: 'inline' | 'attachment') => Promise<string>;
+    /**
+     * Called when the user starts or stops editing the document here (the properties editor, the
+     * text editor or the collaborative editor), so the page can hold back a reload that would discard
+     * their changes.
+     */
+    onEditingChange?: (editing: boolean) => void;
 }
 export function ContentOverview({
     object,
@@ -206,6 +212,7 @@ export function ContentOverview({
     canCollaborate = false,
     contentProjectId,
     resolveUrl,
+    onEditingChange,
 }: ContentOverviewProps) {
     const toast = useToast();
     const { t } = useUITranslation();
@@ -228,6 +235,15 @@ export function ContentOverview({
     const latestDocumentIdRef = useRef(object.id);
     const sourceObjectIdRef = useRef(object.id);
     const editingScopeKeyRef = useRef(editingScopeKey);
+    const [isEditingProperties, setIsEditingProperties] = useState(false);
+    const [isEditingText, setIsEditingText] = useState(false);
+    const isEditingDocument = isEditingProperties || isEditingText || isCollaborating;
+    const onEditingChangeRef = useRef(onEditingChange);
+    onEditingChangeRef.current = onEditingChange;
+
+    useEffect(() => {
+        onEditingChangeRef.current?.(isEditingDocument);
+    }, [isEditingDocument]);
 
     useEffect(() => {
         if (editingScopeKeyRef.current === editingScopeKey) return;
@@ -322,6 +338,7 @@ export function ContentOverview({
                         isCollaborating={isCollaborating}
                         onToggleCollaborate={toggleCollaboration}
                         access={access}
+                        onTextEditingChange={setIsEditingText}
                     />
                 </ResizablePanel>
                 <ResizableHandle withHandle />
@@ -331,6 +348,7 @@ export function ContentOverview({
                         refetch={refetch ?? (() => Promise.resolve())}
                         handleCopyContent={handleCopyContent}
                         canEditProperties={effectiveCanEditProperties}
+                        onEditingChange={setIsEditingProperties}
                     />
                 </ResizablePanel>
             </ResizablePanelGroup>
@@ -354,11 +372,13 @@ function PropertiesPanel({
     refetch,
     handleCopyContent,
     canEditProperties,
+    onEditingChange,
 }: {
     object: ContentObject;
     refetch: () => Promise<unknown>;
     handleCopyContent: (content: string, type: 'text' | 'properties') => Promise<void>;
     canEditProperties: boolean;
+    onEditingChange: (editing: boolean) => void;
 }) {
     const { t } = useUITranslation();
     const [viewCode, setViewCode] = useState(false);
@@ -366,10 +386,12 @@ function PropertiesPanel({
 
     const handleOpenPropertiesModal = () => {
         setPropertiesModalOpen(true);
+        onEditingChange(true);
     };
 
     const handleClosePropertiesModal = () => {
         setPropertiesModalOpen(false);
+        onEditingChange(false);
     };
 
     return (
@@ -453,6 +475,7 @@ interface DataPanelProps {
     isCollaborating: boolean;
     onToggleCollaborate: () => void;
     access: CrossProjectAccess;
+    onTextEditingChange: (editing: boolean) => void;
 }
 
 /**
@@ -494,6 +517,7 @@ function DataPanelContent({
     isCollaborating,
     onToggleCollaborate,
     access,
+    onTextEditingChange,
 }: DataPanelProps & { defaultView?: IntakeDefaultView }) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
@@ -566,6 +590,9 @@ function DataPanelContent({
 
     // Text editing state
     const [isEditing, setIsEditing] = useState(false);
+    useEffect(() => {
+        onTextEditingChange(isEditing);
+    }, [isEditing, onTextEditingChange]);
     const canEdit = !!(
         !crossProject &&
         object.content?.type &&

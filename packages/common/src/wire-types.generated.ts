@@ -4914,6 +4914,91 @@ export type StripeBillingDisabled = {
     billing_method: (typeof BillingMethod)[keyof typeof BillingMethod] | null;
     reason: string;
 };
+export type NotificationKind =
+    | 'agent.question'
+    | 'agent.approval'
+    | 'agent.finished'
+    | 'agent.turn_finished'
+    | 'task.assigned'
+    | 'intake.finished';
+export type NotificationCategory = 'actions' | 'failures' | 'results';
+export type NotificationChannel = 'in_app';
+/** A typed reference to the item a notification is about (`{ type: 'task', id }`, ...). */
+export type NotificationRef = {
+    type: string;
+    id: string;
+};
+/** An occurrence the client rendered, with the version it displayed for one that happens again. */
+export type NotificationOccurrenceAck = {
+    type: string;
+    id: string;
+    as_of?: string | undefined;
+};
+export type NotificationPayload = {
+    title: string;
+    body?: string | undefined;
+    status?: string | undefined;
+    agent_name?: string | undefined;
+    object_name?: string | undefined;
+};
+/** One notification in the current user's project inbox. Timestamps are ISO strings. */
+export type Notification = {
+    id: string;
+    kind: NotificationKind;
+    category: NotificationCategory;
+    occurrence: NotificationRef;
+    subject: NotificationRef;
+    parent?: NotificationRef | undefined;
+    actor?: string | undefined;
+    payload: NotificationPayload;
+    payload_version: number;
+    occurred_at: string;
+    created_at: string;
+    read_at?: string | undefined;
+    archived_at?: string | undefined;
+    resolved_at?: string | undefined;
+};
+export type ListNotificationsQuery = {
+    limit?: number | undefined;
+    cursor?: string | undefined;
+    unread?: boolean | undefined;
+    archived?: boolean | undefined;
+    category?: NotificationCategory | undefined;
+};
+export type ListNotificationsResponse = {
+    notifications: Notification[];
+    next_cursor?: string | undefined;
+    read_all_before: string;
+};
+export type NotificationCounts = {
+    unread: number;
+    needs_action: number;
+};
+export type MarkNotificationsReadPayload = {
+    ids?: string[] | undefined;
+    occurrences?: NotificationOccurrenceAck[] | undefined;
+};
+export type MarkAllNotificationsReadPayload = {
+    before: string;
+};
+export type ArchiveNotificationsPayload = {
+    ids: string[];
+};
+export type NotificationUpdateResult = {
+    updated: number;
+    held?: number | undefined;
+};
+export type NotificationChannelPreferences = {
+    in_app?: boolean | undefined;
+};
+export type NotificationPreferences = {
+    categories: Record<string, NotificationChannelPreferences>;
+    kinds: Record<string, NotificationChannelPreferences>;
+};
+export type NotificationStreamEvent = {
+    type: 'changed' | 'heartbeat';
+    emitted_at: string;
+};
 /**
  * These public OAuth wire types are inferred from `./api-schemas/oauth-server.js` — the same
  * contracts used for runtime parsing and OpenAPI components.
@@ -8974,6 +9059,9 @@ export type TaskSource = {
     run_id: string;
     node?: string | undefined;
     ask_id?: string | undefined;
+    request_key?: string | undefined;
+    request_id?: string | undefined;
+    approval_key?: string | undefined;
 };
 /**
  * The timestamps are ISO date-time STRINGS, not `Date`: this is the wire shape, and JSON has no date
@@ -8995,6 +9083,8 @@ export type Task = {
         | undefined;
     source: TaskSource;
     due_at?: string | undefined;
+    assignment_rev?: number | undefined;
+    assigned_at?: string | undefined;
     created_at: string;
     completed_at?: string | undefined;
     updated_at?: string | undefined;
@@ -9348,6 +9438,7 @@ export type WorkflowRunStreamQuery = {
 };
 export type WorkflowUpdatePublishResponse = {
     success: boolean;
+    timestamp?: number | undefined;
 };
 export type WorkflowActionResponse = {
     message: string;
@@ -11743,6 +11834,23 @@ export interface ApiComponentTypes {
     UpdateTaskPayload: UpdateTaskPayload;
     CompleteTaskPayload: CompleteTaskPayload;
     ListTasksQuery: ListTasksQuery;
+    NotificationKind: NotificationKind;
+    NotificationCategory: NotificationCategory;
+    NotificationChannel: NotificationChannel;
+    NotificationRef: NotificationRef;
+    NotificationOccurrenceAck: NotificationOccurrenceAck;
+    NotificationPayload: NotificationPayload;
+    Notification: Notification;
+    ListNotificationsQuery: ListNotificationsQuery;
+    ListNotificationsResponse: ListNotificationsResponse;
+    NotificationCounts: NotificationCounts;
+    MarkNotificationsReadPayload: MarkNotificationsReadPayload;
+    MarkAllNotificationsReadPayload: MarkAllNotificationsReadPayload;
+    ArchiveNotificationsPayload: ArchiveNotificationsPayload;
+    NotificationUpdateResult: NotificationUpdateResult;
+    NotificationChannelPreferences: NotificationChannelPreferences;
+    NotificationPreferences: NotificationPreferences;
+    NotificationStreamEvent: NotificationStreamEvent;
     ColumnLayout: ColumnLayout;
     ContentTypeEditingPolicy: ContentTypeEditingPolicy;
     ContentObjectTypeStatus: ContentObjectTypeStatus;

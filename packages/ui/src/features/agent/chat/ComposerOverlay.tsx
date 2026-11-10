@@ -1,5 +1,5 @@
 import { cn } from '@vertesia/ui/core';
-import type { HTMLAttributes } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 import { AskUserWidget, type AskUserWidgetProps } from './AskUserWidget';
 
 /** Placement shared by the prompts that take the composer's place while the run waits on the user. */
@@ -10,7 +10,7 @@ const COMPOSER_OVERLAY_CLASS = cn(
 );
 
 /** The bar that takes the composer's place while the run waits on the user. */
-export function ComposerOverlay({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+export function ComposerOverlay({ className, ...props }: ComponentPropsWithRef<'div'>) {
     return <div className={cn(COMPOSER_OVERLAY_CLASS, className)} {...props} />;
 }
 
