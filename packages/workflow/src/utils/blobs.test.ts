@@ -6,7 +6,15 @@ import type { VertesiaClient } from '@vertesia/client';
 import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SourceTooLargeError } from '../errors.js';
-import { assertBlobSizeWithin, getBlobSize, removeTempFiles, saveBlobToTempFile, withBlobTempFile } from './blobs.js';
+import {
+    assertBlobSizeWithin,
+    contentHash,
+    getBlobSize,
+    getContentHashAlgorithm,
+    removeTempFiles,
+    saveBlobToTempFile,
+    withBlobTempFile,
+} from './blobs.js';
 import { SOURCE_LIMIT_EXCEEDED_MESSAGE } from './source-limits.js';
 
 // Pass-through, so a test can make the cleanup of a failed download fail.
@@ -340,5 +348,29 @@ describe('blob size limits', () => {
         );
 
         expect(content).toBe('x'.repeat(100));
+    });
+});
+
+describe('content hash', () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+    });
+
+    it('defaults to md5', () => {
+        expect(getContentHashAlgorithm({})).toBe('md5');
+        expect(getContentHashAlgorithm({ CONTENT_HASH_ALGORITHM: ' ' })).toBe('md5');
+        expect(contentHash('hello')).toBe('5d41402abc4b2a76b9719d911017c592');
+    });
+
+    it('uses sha256 when configured', () => {
+        vi.stubEnv('CONTENT_HASH_ALGORITHM', 'sha256');
+
+        expect(contentHash('hello')).toBe('2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824');
+    });
+
+    it('rejects any other value', () => {
+        expect(() => getContentHashAlgorithm({ CONTENT_HASH_ALGORITHM: 'sha1' })).toThrow(
+            'Invalid CONTENT_HASH_ALGORITHM "sha1"',
+        );
     });
 });

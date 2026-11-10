@@ -11,7 +11,7 @@ import {
 } from '@vertesia/common';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError } from '../errors.js';
-import { fetchBlobAsBase64, md5 } from '../utils/blobs.js';
+import { contentHash, fetchBlobAsBase64 } from '../utils/blobs.js';
 import type { DocPart } from '../utils/chunks.js';
 import { countTokens } from '../utils/tokens.js';
 
@@ -230,7 +230,9 @@ async function generateTextEmbeddings({ document, client, type, config, force }:
     }
 
     const sourceEtag =
-        type === SupportedEmbeddingTypes.text ? (document.text_etag ?? md5(sourceText)) : md5(sourceText);
+        type === SupportedEmbeddingTypes.text
+            ? (document.text_etag ?? contentHash(sourceText))
+            : contentHash(sourceText);
 
     // Skip if embeddings already exist with matching etag (unless force=true)
     const existingEmbedding = document.embeddings?.[type];
