@@ -90,6 +90,25 @@
         border-color: var(--tw-prose-td-borders);
     }
 
+    /* Set on the cells so they never inherit "overflow-wrap: anywhere" or "word-break: break-word"
+       from a message container: with either, a table can squeeze a column of ordinary words down to
+       one letter per line. Long runs such as hashes and URLs get break points from
+       rehypeTableCellWrapping instead. */
+    .vprose :where(th, td):not(:where(.not-prose, .not-prose *)) {
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    /* A short value such as a time, status or name, marked by rehypeTableCellWrapping, stays on one line. */
+    .vprose :where(th, td).md-cell-nowrap:not(:where(.not-prose, .not-prose *)) {
+        white-space: nowrap;
+    }
+
+    /* rehypeTableCellWrapping leaves link and code text alone, so a long URL or identifier breaks here. */
+    .vprose :where(th, td) :where(a, code):not(:where(.not-prose, .not-prose *)) {
+        overflow-wrap: anywhere;
+    }
+
     .vprose :where(th):not(:where(.not-prose, .not-prose *)) {
         @apply border px-4 py-2 text-start font-bold;
         border-color: var(--tw-prose-th-borders);

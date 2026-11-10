@@ -42,7 +42,7 @@ describe('ViewExperienceConfiguration', () => {
                     },
                     results: {
                         default_display: 'table',
-                        displays: [{ id: 'table', label: 'Orders', type: 'table', columns: [] }],
+                        displays: [{ id: 'table', label: 'Orders', type: 'table', columns: [{ field: 'name' }] }],
                         selection: { mode: 'multiple', select_all: 'page' },
                         actions: {
                             include_defaults: true,
@@ -62,7 +62,7 @@ describe('ViewExperienceConfiguration', () => {
                     name: 'Orders',
                     results: {
                         default_display: 'table',
-                        displays: [{ id: 'table', label: 'Orders', type: 'table', columns: [] }],
+                        displays: [{ id: 'table', label: 'Orders', type: 'table', columns: [{ field: 'name' }] }],
                         drop: { handler: 'custom-drop' },
                     },
                 },
@@ -108,5 +108,48 @@ describe('ViewExperienceConfiguration', () => {
         expect(viewExperienceRoute('app:content:document-library')).toBe('/view/app%3Acontent%3Adocument-library');
         expect(viewExperienceRoute('sys:AgenticDocumentExplorer')).toBe('/view/sys%3AAgenticDocumentExplorer');
         expect(viewExperienceRoute('unsafe/id')).toBe('/view/unsafe%2Fid');
+    });
+});
+
+// The structural bounds of the server's View configuration schema, which refuses each of these before saving.
+describe('View configuration bounds', () => {
+    const display = { id: 'list', label: 'List', type: 'list', title: { field: 'name' } };
+    const view = (patch: Record<string, unknown>) => ({
+        id: 'orders',
+        name: 'Orders',
+        description: 'Open orders.',
+        results: { default_display: 'list', displays: [display] },
+        ...patch,
+    });
+    it.each([
+        ['a valid View', view({}), true],
+        ['no display', view({ results: { default_display: 'list', displays: [] } }), false],
+        ['an empty default display', view({ results: { default_display: '', displays: [display] } }), false],
+        ['an empty scope location', view({ scope: { locations: [''] } }), false],
+        ['an agentic timeout below a second', view({ search: { agentic: { timeout_ms: 0 } } }), false],
+        ['a single rerank candidate', view({ search: { agentic: { rerank: { max_candidates: 1 } } } }), false],
+        [
+            'a key term id with capitals',
+            view({ search: { key_terms: [{ id: 'A', label: 'A', type: 'text' }] } }),
+            false,
+        ],
+        [
+            'a field name with spaces',
+            view({ results: { default_display: 'list', displays: [{ ...display, title: { field: 'a b' } }] } }),
+            false,
+        ],
+        [
+            'a one-level hierarchy',
+            view({
+                navigation: [
+                    { id: 'h', label: 'H', source: 'hierarchy', levels: [{ id: 'a', label: 'A', field: 'a' }] },
+                ],
+            }),
+            false,
+        ],
+    ])('%s: valid is %s', (_case, body, valid) => {
+        const result = validateApiRequest('CreateViewExperienceRequest', body);
+
+        expect(result.valid, JSON.stringify(result.valid ? null : result.issues)).toBe(valid);
     });
 });

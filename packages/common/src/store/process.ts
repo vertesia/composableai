@@ -1,3 +1,4 @@
+import type { ModelOptions } from '@llumiverse/common';
 import type { JSONSchema } from '../json-schema.js';
 import type * as Wire from '../wire-types.generated.js';
 
@@ -50,7 +51,27 @@ export type ProcessNodeReturnsDefinition = Wire.ProcessNodeReturnsDefinition;
 
 export type ParallelCollectDefinition = Wire.ParallelCollectDefinition;
 
-export interface NodeDefinition {
+/**
+ * How a process, or one of its LLM nodes, chooses its model: an inference profile, or an environment with an
+ * optional model and model options, the same choice an interaction offers. Each level is one whole choice: a node
+ * that selects anything ignores the run config and definition selections, and a run config selection ignores the
+ * definition's. A level that selects nothing falls through to the next, then to the interaction or agent defaults.
+ */
+export interface ProcessModelSelection {
+    /** Inference profile supplying the environment, model and model options. Excludes the other fields. */
+    inference_profile?: string;
+    /** Environment id, with `model` or alone to use the environment default model. */
+    environment?: string;
+    /**
+     * Model id in `environment`. A model without an environment is accepted only in definitions saved before
+     * environments were required; saving one is rejected.
+     */
+    model?: string;
+    /** Model options for `environment` and `model`. */
+    model_options?: ModelOptions;
+}
+
+export interface NodeDefinition extends ProcessModelSelection {
     type: ProcessNodeType;
     tool?: string;
     /** Named entry in process resources.scripts for script nodes. */
@@ -99,13 +120,6 @@ export interface NodeDefinition {
     excluded_tools?: string[];
     /** Process-owned successful-tool phases and completion behavior for this agent node. */
     agent_policy?: ProcessAgentExecutionPolicy;
-    /**
-     * Model id override for this node. If unset, falls back to the process
-     * run's `config.model`, then to the project's default. Useful when a
-     * specific node needs heavier reasoning (e.g. Opus for legal flagging)
-     * while the rest of the process uses a cheaper default.
-     */
-    model?: string;
     task?: HumanTaskDefinition;
     foreach?: string;
     as?: string;
@@ -121,12 +135,11 @@ export interface NodeDefinition {
 
 export type ProcessContextDefinition = Wire.ProcessContextDefinition;
 
-export interface ProcessDefinitionBody {
+export interface ProcessDefinitionBody extends ProcessModelSelection {
     format_version: ProcessDefinitionFormatVersion;
     process: string;
     description?: string;
     initial: string;
-    model?: string;
     resources?: ProcessResourcesDefinition;
     context: ProcessContextDefinition;
     nodes: Record<string, NodeDefinition>;
@@ -190,27 +203,20 @@ export interface CreateProcessDefinitionPayload {
      * @deprecated Process definitions are created as drafts. Use the publish endpoint
      * to create immutable published versions.
      */
-    status?: ProcessDefinitionStatus;
+    status?: 'draft';
     /**
      * @deprecated Version is server-owned. Use the publish endpoint to create the next version.
      */
-    version?: number;
+    version?: 1;
     tags?: string[];
     definition: ProcessDefinitionBody;
 }
 
+/** A draft edit. `status` and `version` are server-owned: use the publish, archive and revert endpoints. */
 export interface UpdateProcessDefinitionPayload {
     expected_edit_revision?: number;
     name?: string;
     description?: string;
-    /**
-     * @deprecated Status is server-owned. Use publish/archive endpoints instead of updating it directly.
-     */
-    status?: ProcessDefinitionStatus;
-    /**
-     * @deprecated Version is server-owned. Use the publish endpoint to create the next version.
-     */
-    version?: number;
     tags?: string[];
     definition?: ProcessDefinitionBody;
 }

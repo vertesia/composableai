@@ -32,10 +32,10 @@ import {
     VideoResultSchema,
 } from '@llumiverse/common/schemas';
 import type { z } from 'zod';
-import type { ApiComponentType } from '../api-contract/types.js';
+import type { ApiComponentName, ApiComponentType } from '../api-contract/types.js';
 import * as WorkflowUsageSchemas from './workflow-usage.js';
 
-export type { ApiComponentType } from '../api-contract/types.js';
+export type { ApiComponentName, ApiComponentType } from '../api-contract/types.js';
 
 import {
     ACECreatePayloadSchema,
@@ -280,7 +280,9 @@ import {
     DashboardBulkDeleteResultSchema,
     DashboardBulkIdsPayloadSchema,
     DashboardDataSourceSchema,
+    DashboardElasticsearchAggregationBucketsMappingSchema,
     DashboardElasticsearchDslSchema,
+    DashboardElasticsearchHitsMappingSchema,
     DashboardElasticsearchResultMappingSchema,
     DashboardExportErrorSchema,
     DashboardExportSchema,
@@ -309,8 +311,14 @@ import {
     UpdateDashboardPayloadSchema,
 } from './dashboard.js';
 import {
+    AlterTableAddColumnOperationSchema,
+    AlterTableAddForeignKeyOperationSchema,
+    AlterTableDropColumnOperationSchema,
+    AlterTableDropForeignKeyOperationSchema,
+    AlterTableModifyColumnOperationSchema,
     AlterTableOperationSchema,
     AlterTablePayloadSchema,
+    AlterTableRenameColumnOperationSchema,
     BatchQueryPayloadSchema,
     BatchQueryResultItemSchema,
     BatchQueryResultSchema,
@@ -445,14 +453,21 @@ import {
 } from './environment.js';
 import * as EventSchemas from './events.js';
 import {
+    AbortUploadSessionPayloadSchema,
+    AbortUploadSessionResponseSchema,
+    AzureBlockBlobUploadSessionSchema,
     BucketCreateAccessQuerySchema,
     BucketCreateAccessStatusResponseSchema,
     BucketReadAccessQuerySchema,
     BucketReadAccessStatusResponseSchema,
     BulkUploadUrlsPayloadSchema,
     BulkUploadUrlsResponseSchema,
+    CompletedUploadPartSchema,
+    CompleteUploadSessionPayloadSchema,
+    CompleteUploadSessionResponseSchema,
     CopyFilePayloadSchema,
     CopyFileResponseSchema,
+    CreateUploadSessionPayloadSchema,
     DeleteFileResultSchema,
     EnsureBucketCreateAccessPayloadSchema,
     EnsureBucketCreateAccessResponseSchema,
@@ -465,11 +480,17 @@ import {
     FileMetadataQuerySchema,
     FileMetadataResponseSchema,
     FileMetadataUpdateResultSchema,
+    GcsResumableUploadSessionSchema,
     GetFileUrlPayloadSchema,
     GetFileUrlResponseSchema,
+    GetUploadPartUrlsPayloadSchema,
     GetUploadUrlPayloadSchema,
+    S3MultipartUploadSessionSchema,
     SetFileMetadataPayloadSchema,
     StringValueMapSchema,
+    UploadPartUrlSchema,
+    UploadPartUrlsResponseSchema,
+    UploadSessionSchema,
 } from './files.js';
 import {
     CreateUserGroupPayloadSchema,
@@ -521,8 +542,13 @@ import {
     AsyncExecutionResultSchema,
     AsyncInteractionExecutionPayloadSchema,
     CachePolicySchema,
+    CatalogAgentSearchQuerySchema,
+    CatalogCallSearchQuerySchema,
     CatalogInteractionRefArraySchema,
     CatalogInteractionRefSchema,
+    CatalogSearchInteractionRefSchema,
+    CatalogSearchResultSchema,
+    CatalogTagCountSchema,
     CatalogTagQuerySchema,
     ComputedFacetResponseSchema,
     ComputeInteractionFacetPayloadSchema,
@@ -694,7 +720,9 @@ import {
     OAuthGrantStatusSchema,
     OAuthGrantTypeSchema,
     OAuthLoginDecisionResponseSchema,
+    OAuthLoginNotFoundResponseSchema,
     OAuthLoginPayloadSchema,
+    OAuthLoginRequestNotFoundResponseSchema,
     OAuthLoginUserNotFoundResponseSchema,
     OAuthProjectBindingModeSchema,
     OAuthRegistrationSourceSchema,
@@ -870,20 +898,12 @@ import * as WorkflowRunSchemas from './workflow-runs.js';
  * The adapter hoists those references into the same canonical component graph.
  */
 /**
- * The registry, in groups, because the compiler cannot serialize it as one object.
+ * The registry, in groups that follow API domains so ownership stays visible. Adding a component
+ * means placing it in its domain group; `mergeComponentGroups` rejects a name registered twice.
  *
- * At 200 entries `tsc` began refusing the declaration emit with TS7056 — "the inferred type of this
- * node exceeds the maximum length the compiler will serialize". `ApiComponentName` and
- * `ApiComponentType` are both derived from the object, so its full inferred type has to be written
- * into `lib/*.d.ts`, and a Zod schema's type is deeply structural: two hundred of them is the limit.
- * So the object is declared in groups small enough to serialize, and `ApiSchemaMap` puts them back
- * together as an intersection — which the compiler emits as the type expression it was written as,
- * with no inferred node to serialize. A name is still one of these keys and
- * `ApiComponentType<'Account'>` is still `z.infer<typeof AccountSchema>`.
- *
- * Groups follow API domains so ownership stays visible while satisfying the compiler limit. Adding a
- * component means placing it in its domain group and adding a new, specifically named group if that
- * group approaches the proven-safe size.
+ * No exported type is derived from these objects. `ApiComponentName` and `ApiComponentType` come
+ * from the plain types `gen:schemas` writes, so the groups' inferred Zod types are never written into
+ * `lib/*.d.ts` and their size is not bounded by what the compiler can serialize (TS7056).
  */
 const IAM_AND_ACCOUNT_SCHEMAS = {
     CustomRoleDefinition: CustomRoleDefinitionSchema,
@@ -951,33 +971,7 @@ const IAM_AND_ACCOUNT_SCHEMAS = {
     RenderingTemplateDefinitionRef: RenderingTemplateDefinitionRefSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-// Preserve named schema types instead of expanding the full project/policy tree in declaration output.
-type ProjectAndAppSchemaMap = {
-    ProjectModelDefaults: typeof ProjectModelDefaultsSchema;
-    ResourceVisibility: typeof ResourceVisibilitySchema;
-    ProjectIndexingConfiguration: typeof ProjectIndexingConfigurationSchema;
-    ProjectConfigurationEmbedding: typeof ProjectConfigurationEmbeddingSchema;
-    BrowserUseProjectConfiguration: typeof BrowserUseProjectConfigurationSchema;
-    ProjectIntakeSniffConfiguration: typeof ProjectIntakeSniffConfigurationSchema;
-    JSONSchema: typeof JSONSchemaSchema;
-    ModelOptions: typeof ModelOptionsSchema;
-    HttpTimeoutOptions: typeof HttpTimeoutOptionsSchema;
-    ContentTypeIntakePolicy: typeof ContentTypeIntakePolicySchema;
-    ProjectIntakeConfiguration: typeof ProjectIntakeConfigurationSchema;
-    ProjectConfiguration: typeof ProjectConfigurationSchema;
-    Project: typeof ProjectSchema;
-    UpdateProjectPayload: typeof UpdateProjectPayloadSchema;
-    UpdateProjectConfigurationPayload: typeof UpdateProjectConfigurationPayloadSchema;
-    ToolCollectionObject: typeof ToolCollectionObjectSchema;
-    AppUIConfig: typeof AppUIConfigSchema;
-    AppCapabilities: typeof AppCapabilitiesSchema;
-    AppAccessControl: typeof AppAccessControlSchema;
-    AppSourceConfig: typeof AppSourceConfigSchema;
-    AppGitSourceProvider: typeof AppGitSourceProviderSchema;
-    AppManifestSource: typeof AppManifestSourceSchema;
-};
-
-const PROJECT_AND_APP_SCHEMAS: ProjectAndAppSchemaMap = {
+const PROJECT_AND_APP_SCHEMAS = {
     // Leaves of the ProjectConfiguration closure. Each is hoisted by `ProjectConfiguration` rather
     // than named by an endpoint, so only the roots that nothing else here references are listed;
     // `ModelDefault`, the two search enums, `ProjectSearchPropertyMapping(+Map)` and the two
@@ -1022,9 +1016,6 @@ const PROJECT_AND_APP_SCHEMAS: ProjectAndAppSchemaMap = {
 /**
  * The studio OAuth surface: providers, clients, grants.
  *
- * A group of its own because thirty-one components is near TypeScript's declaration-emit
- * serialization limit for this registry shape.
- *
  * The token server's authorize, token, device-code, and consent contracts live in its own group.
  */
 const OAUTH_SCHEMAS = {
@@ -1062,6 +1053,8 @@ const OAUTH_SCHEMAS = {
     OAuthAuthorizationRequestGeneratedApp: OAuthAuthorizationRequestGeneratedAppSchema,
     OAuthLoginPayload: OAuthLoginPayloadSchema,
     OAuthLoginUserNotFoundResponse: OAuthLoginUserNotFoundResponseSchema,
+    OAuthLoginRequestNotFoundResponse: OAuthLoginRequestNotFoundResponseSchema,
+    OAuthLoginNotFoundResponse: OAuthLoginNotFoundResponseSchema,
     OAuthLoginDecisionResponse: OAuthLoginDecisionResponseSchema,
     ApproveOAuthAuthorizationRequestPayload: ApproveOAuthAuthorizationRequestPayloadSchema,
     OAuthGrantableScopesResponse: OAuthGrantableScopesResponseSchema,
@@ -1096,9 +1089,6 @@ const OAUTH_SCHEMAS = {
 
 /**
  * The studio execution environments, and everything the twenty slots across `/environments` name.
- *
- * A fifth group, for the same reason the fourth exists: the declaration emit refuses a group much
- * past thirty entries, and this is thirty-six.
  *
  * Half of it is llumiverse's rather than Vertesia's. `AIModel` and the embedding results describe
  * what a driver produces, so their schemas live in `@llumiverse/common/schemas` and are registered
@@ -1164,9 +1154,8 @@ const ENVIRONMENT_SCHEMAS = {
  * reaches the agent plan, the channels and the tool-approval types. A canonical component may not
  * `$ref` a TypeScript-derived one, so the closure holds together or not at all.
  *
- * A hundred and twenty-nine components is far past what one group serializes, so it is five, split
- * along the lines the closure already has. The split is still only a compiler accommodation:
- * nothing reads a component's group.
+ * A hundred and twenty-nine components, so it is five groups, split along the lines the closure
+ * already has. Nothing reads a component's group.
  *
  * The completion group is llumiverse's. A prompt segment, a tool call and a completion result are
  * llumiverse types, so their schemas live in `@llumiverse/common/schemas` beside the types they
@@ -1262,6 +1251,12 @@ const INTERACTION_SCHEMAS = {
     ResolvedCatalogInteraction: ResolvedCatalogInteractionSchema,
     CatalogTagQuery: CatalogTagQuerySchema,
     StoredCatalogInteractionsQuery: StoredCatalogInteractionsQuerySchema,
+    // What `GET /interactions/catalog/agents` and `/calls` take and answer with.
+    CatalogAgentSearchQuery: CatalogAgentSearchQuerySchema,
+    CatalogCallSearchQuery: CatalogCallSearchQuerySchema,
+    CatalogSearchInteractionRef: CatalogSearchInteractionRefSchema,
+    CatalogTagCount: CatalogTagCountSchema,
+    CatalogSearchResult: CatalogSearchResultSchema,
     // What `GET /interactions/resolve/:nameOrId` answers with.
     ModelSource: ModelSourceSchema,
     ResolvedEnvironmentInfo: ResolvedEnvironmentInfoSchema,
@@ -1320,28 +1315,7 @@ const AGENT_CONVERSATION_SCHEMAS = {
     ConversationState: ConversationStateSchema,
 } as const satisfies Record<string, z.ZodType>;
 
-// Reference schema types by name to keep declaration output bounded without erasing payload types.
-type ExecutionRunSchemaMap = {
-    ExecutionRunStatus: typeof ExecutionRunStatusSchema;
-    RunSourceTypes: typeof RunSourceTypesSchema;
-    RunSource: typeof RunSourceSchema;
-    ExecutionRunDocRef: typeof ExecutionRunDocRefSchema;
-    ExecutionRunWorkflow: typeof ExecutionRunWorkflowSchema;
-    ExecutionRunInteraction: typeof ExecutionRunInteractionSchema;
-    ExecutionRun: typeof ExecutionRunSchema;
-    ExecutionRunRef: typeof ExecutionRunRefSchema;
-    ExecutionRunRefArray: typeof ExecutionRunRefArraySchema;
-    UpdateExecutionRunPayload: typeof UpdateExecutionRunPayloadSchema;
-    RunCreatePayload: typeof RunCreatePayloadSchema;
-    GetRunQuery: typeof GetRunQuerySchema;
-    SortOrder: typeof SortOrderSchema;
-    SortOption: typeof SortOptionSchema;
-    RunSearchQuery: typeof RunSearchQuerySchema;
-    RunListQuery: typeof RunListQuerySchema;
-    RunSearchPayload: typeof RunSearchPayloadSchema;
-};
-
-const EXECUTION_RUN_SCHEMAS: ExecutionRunSchemaMap = {
+const EXECUTION_RUN_SCHEMAS = {
     // A run: what was executed, by whom, and how it ended.
     ExecutionRunStatus: ExecutionRunStatusSchema,
     RunSourceTypes: RunSourceTypesSchema,
@@ -1458,6 +1432,19 @@ const FILE_STORAGE_SCHEMAS = {
     BucketCreateAccessStatusResponse: BucketCreateAccessStatusResponseSchema,
     EnsureBucketCreateAccessPayload: EnsureBucketCreateAccessPayloadSchema,
     EnsureBucketCreateAccessResponse: EnsureBucketCreateAccessResponseSchema,
+    AbortUploadSessionPayload: AbortUploadSessionPayloadSchema,
+    AbortUploadSessionResponse: AbortUploadSessionResponseSchema,
+    AzureBlockBlobUploadSession: AzureBlockBlobUploadSessionSchema,
+    CompletedUploadPart: CompletedUploadPartSchema,
+    CompleteUploadSessionPayload: CompleteUploadSessionPayloadSchema,
+    CompleteUploadSessionResponse: CompleteUploadSessionResponseSchema,
+    CreateUploadSessionPayload: CreateUploadSessionPayloadSchema,
+    GcsResumableUploadSession: GcsResumableUploadSessionSchema,
+    GetUploadPartUrlsPayload: GetUploadPartUrlsPayloadSchema,
+    S3MultipartUploadSession: S3MultipartUploadSessionSchema,
+    UploadPartUrl: UploadPartUrlSchema,
+    UploadPartUrlsResponse: UploadPartUrlsResponseSchema,
+    UploadSession: UploadSessionSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const DURABLE_TASK_SCHEMAS = {
@@ -1473,16 +1460,7 @@ const DURABLE_TASK_SCHEMAS = {
     ListTasksQuery: ListTasksQuerySchema,
 } as const satisfies Record<string, z.ZodType>;
 
-// Keep declaration emit from expanding the nested content-type schemas.
-const CONTENT_TYPE_CATALOG_SCHEMAS: {
-    readonly ColumnLayout: typeof ColumnLayoutSchema;
-    readonly ContentTypeEditingPolicy: typeof ContentTypeEditingPolicySchema;
-    readonly ContentObjectTypeStatus: typeof ContentObjectTypeStatusSchema;
-    readonly ContentObjectTypeItem: typeof ContentObjectTypeItemSchema;
-    readonly ContentObjectTypeItemArray: typeof ContentObjectTypeItemArraySchema;
-    readonly ContentObjectTypeCatalogEntry: typeof ContentObjectTypeCatalogEntrySchema;
-    readonly ContentObjectTypeCatalogEntryArray: typeof ContentObjectTypeCatalogEntryArraySchema;
-} = {
+const CONTENT_TYPE_CATALOG_SCHEMAS = {
     ColumnLayout: ColumnLayoutSchema,
     ContentTypeEditingPolicy: ContentTypeEditingPolicySchema,
     ContentObjectTypeStatus: ContentObjectTypeStatusSchema,
@@ -1509,6 +1487,8 @@ const MIGRATION_COMMAND_SCHEMAS = {
 } as const satisfies Record<string, z.ZodType>;
 
 const DASHBOARD_SCHEMAS = {
+    DashboardElasticsearchHitsMapping: DashboardElasticsearchHitsMappingSchema,
+    DashboardElasticsearchAggregationBucketsMapping: DashboardElasticsearchAggregationBucketsMappingSchema,
     DashboardElasticsearchResultMapping: DashboardElasticsearchResultMappingSchema,
     DashboardElasticsearchDsl: DashboardElasticsearchDslSchema,
     DashboardSqlDataSource: DashboardSqlDataSourceSchema,
@@ -1585,6 +1565,12 @@ const DATA_STORE_CORE_SCHEMAS = {
 const DATA_STORE_SCHEMA_SCHEMAS = {
     QueryValidationResult: QueryValidationResultSchema,
     DataColumn: DataColumnSchema,
+    AlterTableAddColumnOperation: AlterTableAddColumnOperationSchema,
+    AlterTableDropColumnOperation: AlterTableDropColumnOperationSchema,
+    AlterTableRenameColumnOperation: AlterTableRenameColumnOperationSchema,
+    AlterTableModifyColumnOperation: AlterTableModifyColumnOperationSchema,
+    AlterTableAddForeignKeyOperation: AlterTableAddForeignKeyOperationSchema,
+    AlterTableDropForeignKeyOperation: AlterTableDropForeignKeyOperationSchema,
     AlterTableOperation: AlterTableOperationSchema,
     DataRelationship: DataRelationshipSchema,
     CreateTablePayload: CreateTablePayloadSchema,
@@ -1968,6 +1954,7 @@ const COLLECTION_SCHEMAS = {
     CollectionSecuritySettingsResponse: ContentSchemas.CollectionSecuritySettingsResponseSchema,
     CollectionMembersUpdateResult: ContentSchemas.CollectionMembersUpdateResultSchema,
     CollectionMembersUpdatePayload: ContentSchemas.CollectionMembersUpdatePayloadSchema,
+    CollectionPermissionsPayload: ContentSchemas.CollectionPermissionsPayloadSchema,
     CollectionChildrenUpdateResult: ContentSchemas.CollectionChildrenUpdateResultSchema,
     CollectionChildrenUpdatePayload: ContentSchemas.CollectionChildrenUpdatePayloadSchema,
     CollectionStatus: ContentSchemas.CollectionStatusSchema,
@@ -2061,9 +2048,14 @@ const WORKFLOW_RUN_SCHEMAS = {
     WorkflowDefinitionRefArray: WorkflowRunSchemas.WorkflowDefinitionRefArraySchema,
     ListWorkflowRunsResponse: WorkflowRunSchemas.ListWorkflowRunsResponseSchema,
     WorkflowRunEvent: WorkflowRunSchemas.WorkflowRunEventSchema,
+    WorkflowObjectIdsInput: WorkflowRunSchemas.WorkflowObjectIdsInputSchema,
+    WorkflowFilesInput: WorkflowRunSchemas.WorkflowFilesInputSchema,
     WorkflowInput: WorkflowRunSchemas.WorkflowInputSchema,
     WorkflowRunUpdatesResponse: WorkflowRunSchemas.WorkflowRunUpdatesResponseSchema,
     ExecuteWorkflowPayload: WorkflowRunSchemas.ExecuteWorkflowPayloadSchema,
+    WorkflowEventsHistory: WorkflowRunSchemas.WorkflowEventsHistorySchema,
+    WorkflowTasksHistory: WorkflowRunSchemas.WorkflowTasksHistorySchema,
+    WorkflowAgentHistory: WorkflowRunSchemas.WorkflowAgentHistorySchema,
     WorkflowHistory: WorkflowRunSchemas.WorkflowHistorySchema,
     WorkflowRunWithDetails: WorkflowRunSchemas.WorkflowRunWithDetailsSchema,
     BindRunWorkflowPayload: WorkflowRunSchemas.BindRunWorkflowPayloadSchema,
@@ -2559,11 +2551,16 @@ const PATH_PARAMETER_SCHEMAS = {
     ProcessPathParams: PathParameterSchemas.ProcessPathParamsSchema,
     TaskPathParams: PathParameterSchemas.TaskPathParamsSchema,
     AgentRunPathParams: PathParameterSchemas.AgentRunPathParamsSchema,
+    WorkflowRunActionPathParams: PathParameterSchemas.WorkflowRunActionPathParamsSchema,
     AppVersionPathParams: PathParameterSchemas.AppVersionPathParamsSchema,
     AppInstallationPathParams: PathParameterSchemas.AppInstallationPathParamsSchema,
+    InteractionConfigurationPathParams: PathParameterSchemas.InteractionConfigurationPathParamsSchema,
     DelegationGrantPathParams: PathParameterSchemas.DelegationGrantPathParamsSchema,
     OAuthProviderPathParams: PathParameterSchemas.OAuthProviderPathParamsSchema,
+    UserGroupPathParams: PathParameterSchemas.UserGroupPathParamsSchema,
     ProjectAppCapabilityPathParams: PathParameterSchemas.ProjectAppCapabilityPathParamsSchema,
+    EmbeddingTypePathParams: PathParameterSchemas.EmbeddingTypePathParamsSchema,
+    ToolPathParams: PathParameterSchemas.ToolPathParamsSchema,
 };
 const WORKFLOW_USAGE_SCHEMAS = {
     WorkflowUsageQuery: WorkflowUsageSchemas.WorkflowUsageQuerySchema,
@@ -2634,77 +2631,7 @@ const API_SCHEMA_GROUPS = [
     COMMAND_SCHEMAS,
 ];
 
-/**
- * The registry as one type: the groups intersected, which is what a single object literal would
- * have inferred to. `mergeComponentGroups` rejects a name declared by two groups, so no key is ever
- * intersected with a second schema.
- */
-type ApiSchemaMap = typeof WORKFLOW_USAGE_SCHEMAS &
-    typeof RUN_BUDGET_SCHEMAS &
-    typeof PATH_PARAMETER_SCHEMAS &
-    typeof DELEGATION_SCHEMAS &
-    typeof IAM_AND_ACCOUNT_SCHEMAS &
-    typeof PROJECT_AND_APP_SCHEMAS &
-    typeof OAUTH_SCHEMAS &
-    typeof ENVIRONMENT_SCHEMAS &
-    typeof LLM_COMPLETION_SCHEMAS &
-    typeof INTERACTION_SCHEMAS &
-    typeof INTERACTION_AUTHORING_SCHEMAS &
-    typeof AGENT_CONVERSATION_SCHEMAS &
-    typeof EXECUTION_RUN_SCHEMAS &
-    typeof EXECUTION_REQUEST_SCHEMAS &
-    typeof PROMPT_AUTHORING_SCHEMAS &
-    typeof PROJECT_TOOL_SCHEMAS &
-    typeof REMOTE_MCP_SCHEMAS &
-    typeof AUDIT_TRAIL_SCHEMAS &
-    typeof VIEW_EXPERIENCE_SCHEMAS &
-    typeof APP_LIFECYCLE_SCHEMAS &
-    typeof SECRET_SCHEMAS &
-    typeof INTEGRATION_SCHEMAS &
-    typeof COMPOSITE_APP_SCHEMAS &
-    typeof APP_MANIFEST_SCHEMAS &
-    typeof APP_INSTALLATION_SCHEMAS &
-    typeof STS_SCHEMAS &
-    typeof AGENT_COMMUNICATION_SCHEMAS &
-    typeof CONTENT_QUERY_SCHEMAS &
-    typeof FILE_STORAGE_SCHEMAS &
-    typeof DURABLE_TASK_SCHEMAS &
-    typeof CONTENT_TYPE_CATALOG_SCHEMAS &
-    typeof CONTENT_TYPE_AUTHORING_SCHEMAS &
-    typeof MIGRATION_COMMAND_SCHEMAS &
-    typeof PROCESS_DSL_SCHEMAS &
-    typeof AGENT_MESSAGE_SCHEMAS &
-    typeof PROCESS_DEFINITION_SCHEMAS &
-    typeof PROCESS_SCRIPT_SCHEMAS &
-    typeof CONTENT_OBJECT_SCHEMAS &
-    typeof CONTENT_EXPORT_SCHEMAS &
-    typeof CONTENT_SEARCH_SCHEMAS &
-    typeof EVENT_SUBSCRIPTION_SCHEMAS &
-    typeof PROCESS_RUNTIME_SCHEMAS &
-    typeof EVENT_DELIVERY_SCHEMAS &
-    typeof EVENT_INGEST_SCHEMAS &
-    typeof COLLECTION_SCHEMAS &
-    typeof AGENT_ARTIFACT_SCHEMAS &
-    typeof AGENT_RUN_SCHEMAS &
-    typeof WORKFLOW_RUN_SCHEMAS &
-    typeof WORKFLOW_TASK_SCHEMAS &
-    typeof VIEW_EXECUTION_SCHEMAS &
-    typeof DASHBOARD_SCHEMAS &
-    typeof DATA_STORE_CORE_SCHEMAS &
-    typeof DATA_STORE_SCHEMA_SCHEMAS &
-    typeof COST_ANALYTICS_SCHEMAS &
-    typeof BULK_CONTENT_OPERATION_SCHEMAS &
-    typeof DOCUMENT_PROCESSING_SCHEMAS &
-    typeof INDEXING_SCHEMAS &
-    typeof EMBEDDING_ADMIN_SCHEMAS &
-    typeof COMMAND_SCHEMAS;
-
-export type ApiComponentName = keyof ApiSchemaMap;
-
-const API_SCHEMAS: Readonly<Record<ApiComponentName, z.ZodType>> = mergeComponentGroups(API_SCHEMA_GROUPS) as Record<
-    ApiComponentName,
-    z.ZodType
->;
+const API_SCHEMAS: Readonly<Record<string, z.ZodType>> = mergeComponentGroups(API_SCHEMA_GROUPS);
 
 /**
  * Components that reject undeclared properties.
@@ -2925,6 +2852,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     // Derive membership so new provider schemas inherit this enforcement check automatically.
     'OpenAiImageGenerationOptions',
     'OpenAiImageGenerationMask',
+    'OpenAiImageSvgOptions',
     ...ModelOptionsSchema.options.map((schema) => {
         const id = schema.meta()?.id;
         if (!id) throw new Error('Model option schemas must declare a component id');
@@ -2965,6 +2893,18 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'FileMetadataQuery',
     'FileListQuery',
     'FileDeleteQuery',
+    'AbortUploadSessionPayload',
+    'AbortUploadSessionResponse',
+    'AzureBlockBlobUploadSession',
+    'CompletedUploadPart',
+    'CompleteUploadSessionPayload',
+    'CompleteUploadSessionResponse',
+    'CreateUploadSessionPayload',
+    'GcsResumableUploadSession',
+    'GetUploadPartUrlsPayload',
+    'S3MultipartUploadSession',
+    'UploadPartUrl',
+    'UploadPartUrlsResponse',
     'TaskSource',
     'TaskField',
     'Task',
@@ -3264,6 +3204,19 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'SignalTask',
     'ChildWorkflowTask',
     'ActivityTask',
+    'DashboardElasticsearchHitsMapping',
+    'DashboardElasticsearchAggregationBucketsMapping',
+    'WorkflowObjectIdsInput',
+    'WorkflowFilesInput',
+    'WorkflowEventsHistory',
+    'WorkflowTasksHistory',
+    'WorkflowAgentHistory',
+    'AlterTableAddColumnOperation',
+    'AlterTableDropColumnOperation',
+    'AlterTableRenameColumnOperation',
+    'AlterTableModifyColumnOperation',
+    'AlterTableAddForeignKeyOperation',
+    'AlterTableDropForeignKeyOperation',
     'WorkflowRunEvent',
     'ViewNavigationResult',
     'ViewExecutionQueryPlan',
@@ -3359,6 +3312,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OAuthAuthorizationRequestGeneratedApp',
     'OAuthLoginPayload',
     'OAuthLoginUserNotFoundResponse',
+    'OAuthLoginRequestNotFoundResponse',
     'OAuthLoginDecisionResponse',
     'ApproveOAuthAuthorizationRequestPayload',
     'OAuthGrantableScopesResponse',
@@ -3519,6 +3473,8 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'RunListQuery',
     'CatalogTagQuery',
     'StoredCatalogInteractionsQuery',
+    'CatalogAgentSearchQuery',
+    'CatalogCallSearchQuery',
     'ResolveInteractionQuery',
     'DeleteInteractionQuery',
     'ExecuteNamedInteractionQuery',

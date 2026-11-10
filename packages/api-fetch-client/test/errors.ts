@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { ApiTopic, ConnectionError, FetchClient, RequestError, requestErrorDetail } from '../src/index.js';
+import {
+    ApiTopic,
+    ConnectionError,
+    FetchClient,
+    RequestError,
+    ResponseReadError,
+    requestErrorDetail,
+} from '../src/index.js';
 
 describe('handled transport failures', () => {
     it('throws a connection error without logging it', async () => {
@@ -24,6 +31,7 @@ describe('handled transport failures', () => {
         try {
             await assert.rejects(new ItemsApi(client).get('/'), (error: unknown) => {
                 assert.ok(error instanceof ConnectionError);
+                assert.ok(!(error instanceof ResponseReadError));
                 assert.equal(error.payload, timeout);
                 assert.equal(requestErrorDetail(error), 'Failed to connect to server: request timed out');
                 return true;
@@ -97,12 +105,55 @@ describe('handled transport failures', () => {
                 return wrapped;
             });
             await assert.rejects(topic.get('/'), (error: unknown) => error === wrapped);
+            assert.ok(received instanceof ResponseReadError);
             assert.ok(received instanceof ConnectionError);
+            assert.equal(received.status, 0);
+            assert.equal(received.responseStatus, 200);
+            assert.equal(requestErrorDetail(received), 'Failed to read response body (HTTP 200): body interrupted');
             assert.equal(received.payload, failure);
             assert.equal(attempts, 1);
             assert.deepEqual(reported, name === 'AbortError' ? [] : [received]);
         });
     }
+
+    it('logs what failed by default, for a failed connection and a failed body read', async () => {
+        const logged: unknown[][] = [];
+        const previous = console.error;
+        console.error = (...args: unknown[]) => {
+            logged.push(args);
+        };
+        try {
+            const timeout = new DOMException('timed out', 'TimeoutError');
+            await assert.rejects(
+                new FetchClient('https://api.example.test', async () => {
+                    throw timeout;
+                }).get('/items'),
+                ConnectionError,
+            );
+            await assert.rejects(
+                new FetchClient(
+                    'https://api.example.test',
+                    async () =>
+                        new Response(
+                            new ReadableStream({
+                                start(controller) {
+                                    controller.error(timeout);
+                                },
+                            }),
+                            { status: 200 },
+                        ),
+                ).get('/items'),
+                ResponseReadError,
+            );
+        } finally {
+            console.error = previous;
+        }
+        assert.equal(logged.length, 2);
+        assert.match(String(logged[0]?.[0]), /^Failed to connect to server: timed out/);
+        assert.match(String(logged[1]?.[0]), /^Failed to read response body \(HTTP 200\): timed out/);
+        assert.match(String(logged[1]?.[0]), /https:\/\/api\.example\.test\/items/);
+        assert.doesNotMatch(String(logged[1]?.[0]), /Failed to connect/);
+    });
 
     it('does not wrap application or custom-reader errors a second time', async () => {
         const client = new FetchClient('https://api.example.test', async () =>

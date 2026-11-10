@@ -6,6 +6,7 @@ import {
 } from '@vertesia/common';
 import { useUserSession } from '@vertesia/ui/session';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isOAuthStatusUnknownError } from './oauthStatusError.js';
 
 /** A visible MCP collection row. OAuth authentication may be shared with sibling rows. */
 export interface McpConnectionGroup {
@@ -23,6 +24,8 @@ export interface McpConnectionGroup {
     authType: 'none' | 'oauth' | 'api_key';
     oauthGrantType?: 'authorization_code' | 'client_credentials';
     authStatus?: OAuthAuthStatus;
+    /** The status lookup got no answer, so a missing `authStatus` does not mean disconnected. */
+    statusUnavailable?: boolean;
 }
 
 /**
@@ -186,8 +189,8 @@ export function useMcpConnections() {
                         const statuses = await statusRequest;
                         const status = statuses.find((s) => s.collection_id === group.representativeId);
                         return { ...group, authStatus: status };
-                    } catch {
-                        return group;
+                    } catch (error) {
+                        return isOAuthStatusUnknownError(error) ? { ...group, statusUnavailable: true } : group;
                     }
                 }),
             );

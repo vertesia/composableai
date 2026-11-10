@@ -290,7 +290,7 @@ export type UpdateApiKeyPayloadFromSchema = {
     name?: string | undefined;
     role?: AssignableRoleName | undefined;
     enabled?: boolean | undefined;
-    scim_provisioning?: boolean | undefined | undefined;
+    scim_provisioning?: boolean | undefined;
     properties?: Record<string, unknown> | undefined | undefined;
     clearance?: number | undefined | undefined;
     compartments?: string[] | undefined | undefined;
@@ -2202,6 +2202,7 @@ export type BulkOperationPayload = {
     name: 'change_type' | 'create' | 'delete' | 'start_workflow' | 'update';
     ids: string[];
     params: {
+        objects?: CreateContentObjectPayloadWire[] | undefined;
         [k: string]: unknown;
     };
 };
@@ -2749,36 +2750,42 @@ export type BatchQueryPayload = {
         limit?: number | undefined;
     }[];
 };
+export type AlterTableAddColumnOperation = {
+    op: 'add_column';
+    column: DataColumn;
+};
+export type AlterTableDropColumnOperation = {
+    op: 'drop_column';
+    column: string;
+};
+export type AlterTableRenameColumnOperation = {
+    op: 'rename_column';
+    from: string;
+    to: string;
+};
+export type AlterTableModifyColumnOperation = {
+    op: 'modify_column';
+    column: string;
+    updates: DataColumnUpdate;
+};
+export type AlterTableAddForeignKeyOperation = {
+    op: 'add_foreign_key';
+    foreign_key: DataForeignKey;
+};
+export type AlterTableDropForeignKeyOperation = {
+    op: 'drop_foreign_key';
+    column: string;
+};
 /**
  * @discriminator op
  */
 export type AlterTableOperation =
-    | {
-          op: 'add_column';
-          column: DataColumn;
-      }
-    | {
-          op: 'drop_column';
-          column: string;
-      }
-    | {
-          op: 'rename_column';
-          from: string;
-          to: string;
-      }
-    | {
-          op: 'modify_column';
-          column: string;
-          updates: DataColumnUpdate;
-      }
-    | {
-          op: 'add_foreign_key';
-          foreign_key: DataForeignKey;
-      }
-    | {
-          op: 'drop_foreign_key';
-          column: string;
-      };
+    | AlterTableAddColumnOperation
+    | AlterTableDropColumnOperation
+    | AlterTableRenameColumnOperation
+    | AlterTableModifyColumnOperation
+    | AlterTableAddForeignKeyOperation
+    | AlterTableDropForeignKeyOperation;
 /**
  * Payload for altering a table schema.
  */
@@ -3090,19 +3097,21 @@ export type DashboardElasticsearchDsl = {
           }[]
         | undefined;
 };
+export type DashboardElasticsearchHitsMapping = {
+    type: 'hits';
+};
+export type DashboardElasticsearchAggregationBucketsMapping = {
+    type: 'aggregation_buckets';
+    path: string;
+    keyField?: string | undefined;
+    countField?: string | undefined;
+};
 /**
  * How an Elasticsearch DSL result should be converted into Vega rows.
  */
 export type DashboardElasticsearchResultMapping =
-    | {
-          type: 'hits';
-      }
-    | {
-          type: 'aggregation_buckets';
-          path: string;
-          keyField?: string | undefined;
-          countField?: string | undefined;
-      };
+    | DashboardElasticsearchHitsMapping
+    | DashboardElasticsearchAggregationBucketsMapping;
 /**
  * Dashboard data source backed by a Data Platform SQL query.
  */
@@ -4129,6 +4138,48 @@ export type CatalogInteractionRef = {
     title: string;
     description?: string | undefined;
 };
+export type CatalogAgentSearchQuery = {
+    name?: string | undefined;
+    tags?: string[] | undefined;
+    model?: string | undefined;
+    prompt?: string | undefined;
+    is_sub_agent?: boolean | undefined;
+};
+export type CatalogCallSearchQuery = {
+    name?: string | undefined;
+    tags?: string[] | undefined;
+    model?: string | undefined;
+    prompt?: string | undefined;
+    is_basic?: boolean | undefined;
+    is_tool?: boolean | undefined;
+    is_skill?: boolean | undefined;
+};
+/** An interaction found by a catalog search: a system or app interaction, or a stored one with its model, prompts and update time. */
+export type CatalogSearchInteractionRef = {
+    type: 'sys' | 'app' | 'stored' | 'draft';
+    id: string;
+    name: string;
+    version?: number | undefined;
+    published?: boolean | undefined;
+    tags: string[];
+    agent_runner_options?: AgentRunnerOptions | undefined;
+    title: string;
+    description?: string | undefined;
+    model?: string | undefined;
+    prompts?: PromptSegmentRef_PromptTemplateRef[] | undefined;
+    updated_at?: string | undefined;
+    inference_profile?: InferenceProfileId | undefined;
+};
+export type CatalogTagCount = {
+    tag: string;
+    count: number;
+};
+/** A catalog search result: the matching interactions, their tag counts and the total. */
+export type CatalogSearchResult = {
+    total: number;
+    tags: CatalogTagCount[];
+    interactions: CatalogSearchInteractionRef[];
+};
 export type ExecuteNamedInteractionQuery = {
     include_prompt?: boolean | undefined;
 };
@@ -4811,7 +4862,7 @@ export type ResolvedInteractionExecutionInfo = {
 };
 export type UpdateExecutionRunPayload = {
     id?: string | undefined;
-    parent?: string | ExecutionRunWire | undefined;
+    parent?: string | undefined;
     evaluation?:
         | {
               score?: number | undefined;
@@ -4820,7 +4871,7 @@ export type UpdateExecutionRunPayload = {
           }
         | undefined;
     tags?: string[] | undefined;
-    environment?: ExecutionEnvironmentRef | undefined;
+    environment?: string | undefined;
     modelId?: string | undefined;
     result_schema?: JSONSchema | undefined;
     ttl?: number | undefined;
@@ -4842,7 +4893,7 @@ export type UpdateExecutionRunPayload = {
     created_by?: string | undefined;
     updated_by?: string | undefined;
     workflow?: ExecutionRunWorkflow | undefined;
-    interaction?: InteractionRef | undefined;
+    interaction?: string | undefined;
 };
 /**
  * Stripe billing status, derived from `StripeBillingStatusResponseSchema`.
@@ -5205,6 +5256,11 @@ export type OAuthLoginUserNotFoundResponse = {
     error: 'user_not_found';
     ensure_user_url: string;
 };
+export type OAuthLoginRequestNotFoundResponse = {
+    error: 'not_found';
+    message: string;
+};
+export type OAuthLoginNotFoundResponse = OAuthLoginUserNotFoundResponse | OAuthLoginRequestNotFoundResponse;
 export type OidcFederationConnectionPayload = {
     name: string;
     issuer: string;
@@ -6358,7 +6414,7 @@ export type PromptTemplateUpdatePayload = {
     name?: string | undefined;
     status?: PromptStatusWire | undefined;
     version?: number | undefined;
-    parent?: string | undefined | undefined;
+    parent?: string | undefined;
     description?: string | undefined | undefined;
     test_data?: JSONObject | undefined | undefined;
     script?: string | undefined | undefined;
@@ -7280,6 +7336,9 @@ export type CollectionMembersUpdatePayload = {
     action: 'add' | 'delete';
     members: string[];
 };
+export type CollectionPermissionsPayload = Partial<
+    Record<'content:read' | 'content:write' | 'content:delete', string[]>
+>;
 export type CollectionChildrenUpdatePayload = {
     action: 'add' | 'delete';
     children: string[];
@@ -7409,15 +7468,15 @@ export type WorkflowInputFile = {
     url: string;
     mimetype: string;
 };
-export type WorkflowInput =
-    | {
-          inputType: 'objectIds';
-          objectIds: string[];
-      }
-    | {
-          inputType: 'files';
-          files: WorkflowInputFile[];
-      };
+export type WorkflowObjectIdsInput = {
+    inputType: 'objectIds';
+    objectIds: string[];
+};
+export type WorkflowFilesInput = {
+    inputType: 'files';
+    files: WorkflowInputFile[];
+};
+export type WorkflowInput = WorkflowObjectIdsInput | WorkflowFilesInput;
 export type DSLActivityOptions = {
     startToCloseTimeout?: DurationValue | undefined;
     heartbeatTimeout?: DurationValue | undefined;
@@ -8753,6 +8812,70 @@ export type BulkUploadUrlsPayload = {
 export type BulkUploadUrlsResponse = {
     files: GetFileUrlResponse[];
 };
+export type CreateUploadSessionPayload = {
+    name: string;
+    id?: string | undefined;
+    mime_type?: string | undefined;
+};
+export type GcsResumableUploadSession = {
+    protocol: 'gcs_resumable';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    url: string;
+};
+export type AzureBlockBlobUploadSession = {
+    protocol: 'azure_block_blob';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    url: string;
+};
+export type S3MultipartUploadSession = {
+    protocol: 's3_multipart';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    upload_id: string;
+};
+export type UploadSession = GcsResumableUploadSession | AzureBlockBlobUploadSession | S3MultipartUploadSession;
+export type GetUploadPartUrlsPayload = {
+    id: string;
+    upload_id: string;
+    part_numbers: number[];
+};
+export type UploadPartUrl = {
+    part_number: number;
+    url: string;
+};
+export type UploadPartUrlsResponse = {
+    parts: UploadPartUrl[];
+};
+export type CompletedUploadPart = {
+    part_number: number;
+    etag: string;
+};
+export type CompleteUploadSessionPayload = {
+    id: string;
+    upload_id: string;
+    parts: CompletedUploadPart[];
+};
+export type CompleteUploadSessionResponse = {
+    id: string;
+    path: string;
+    etag?: string | undefined;
+};
+export type AbortUploadSessionPayload = {
+    id: string;
+    upload_id: string;
+};
+export type AbortUploadSessionResponse = {
+    id: string;
+    aborted: boolean;
+};
 export type FileBucketResponse = {
     bucket: string;
     location?: string | undefined;
@@ -9078,21 +9201,21 @@ export type TimerTask = {
     duration?: string | undefined;
 };
 export type WorkflowTask = ActivityTask | ChildWorkflowTask | SignalTask | TimerTask;
-export type WorkflowHistory =
-    | {
-          type: 'events';
-          events: WorkflowRunEvent[];
-      }
-    | {
-          type: 'tasks';
-          tasks: WorkflowTask[];
-      }
-    | {
-          type: 'agent';
-          mode?: 'snapshot' | 'delta' | undefined;
-          next_from?: string | undefined;
-          agentTasks: AgentTask[];
-      };
+export type WorkflowEventsHistory = {
+    type: 'events';
+    events: WorkflowRunEvent[];
+};
+export type WorkflowTasksHistory = {
+    type: 'tasks';
+    tasks: WorkflowTask[];
+};
+export type WorkflowAgentHistory = {
+    type: 'agent';
+    mode?: 'snapshot' | 'delta' | undefined;
+    next_from?: string | undefined;
+    agentTasks: AgentTask[];
+};
+export type WorkflowHistory = WorkflowEventsHistory | WorkflowTasksHistory | WorkflowAgentHistory;
 export type AgentTask = {
     history_id?: string | undefined;
     taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing' | 'signal';
@@ -9647,9 +9770,9 @@ export type ViewHierarchyLevel = {
  * Hierarchies represent one selected path, so multi_select may only be false.
  * Selection ids are opaque runtime values and must not be constructed by clients.
  *
- * `multi_select` widens from `false` to `boolean` here, matching the published component and what
- * the endpoint has always accepted. The narrowing was an authoring hint with nothing behind it: the
- * navigation runtime takes the first selection for `source === 'hierarchy'` whatever the flag says.
+ * `multi_select` is typed `boolean` here, as the SDK has always published it, but the published
+ * component and the server accept only `false`: the navigation runtime takes the first selection for
+ * `source === 'hierarchy'` whatever the flag says.
  */
 export type ViewHierarchyNavigation = {
     id: string;
@@ -10890,7 +11013,7 @@ export type AgentRunInternalsWire = {
     run_type?: RunType | undefined;
     interaction?: string | undefined;
     interaction_name?: string | undefined;
-    config?: InteractionExecutionConfiguration | undefined;
+    config?: InteractionExecutionConfiguration | ProcessRunConfig | undefined;
     interactive?: boolean | undefined;
     process_id?: string | undefined;
     process_definition_snapshot?: ProcessDefinitionBodyWire | undefined;
@@ -11148,6 +11271,7 @@ export type DataStoreVersionPathParams = {
 export type ContentObjectExportPathParams = {
     exportId?: string | undefined;
     role?: 'data' | 'manifest' | undefined;
+    runId?: string | undefined;
 };
 export type ProcessTestRunPathParams = {
     runId?: string | undefined;
@@ -11163,11 +11287,19 @@ export type TaskPathParams = {
 export type AgentRunPathParams = {
     agentRunId?: string | undefined;
 };
+export type WorkflowRunActionPathParams = {
+    action?: 'cancel' | 'terminate' | undefined;
+};
 export type AppVersionPathParams = {
     id?: string | undefined;
+    alias?: string | undefined;
 };
 export type AppInstallationPathParams = {
     installId?: string | undefined;
+    app_id?: string | undefined;
+};
+export type InteractionConfigurationPathParams = {
+    interactionId?: string | undefined;
 };
 export type DelegationGrantPathParams = {
     grantId?: string | undefined;
@@ -11175,11 +11307,21 @@ export type DelegationGrantPathParams = {
 export type OAuthProviderPathParams = {
     id?: string | undefined;
 };
+export type UserGroupPathParams = {
+    groupId?: string | undefined;
+    userId?: string | undefined;
+};
 export type ProjectAppCapabilityPathParams = {
     processId?: string | undefined;
     templateId?: string | undefined;
     typeId?: string | undefined;
     viewId?: string | undefined;
+};
+export type EmbeddingTypePathParams = {
+    type?: 'text' | 'image' | 'properties' | undefined;
+};
+export type ToolPathParams = {
+    toolName?: string | undefined;
 };
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
@@ -11296,6 +11438,8 @@ export interface ApiComponentTypes {
     OAuthAuthorizationRequestGeneratedApp: OAuthAuthorizationRequestGeneratedApp;
     OAuthLoginPayload: OAuthLoginPayload;
     OAuthLoginUserNotFoundResponse: OAuthLoginUserNotFoundResponse;
+    OAuthLoginRequestNotFoundResponse: OAuthLoginRequestNotFoundResponse;
+    OAuthLoginNotFoundResponse: OAuthLoginNotFoundResponse;
     OAuthLoginDecisionResponse: OAuthLoginDecisionResponse;
     ApproveOAuthAuthorizationRequestPayload: ApproveOAuthAuthorizationRequestPayload;
     OAuthGrantableScopesResponse: OAuthGrantableScopesResponse;
@@ -11457,6 +11601,11 @@ export interface ApiComponentTypes {
     ResolvedCatalogInteraction: ResolvedCatalogInteraction;
     CatalogTagQuery: CatalogTagQueryWire;
     StoredCatalogInteractionsQuery: StoredCatalogInteractionsQueryWire;
+    CatalogAgentSearchQuery: CatalogAgentSearchQuery;
+    CatalogCallSearchQuery: CatalogCallSearchQuery;
+    CatalogSearchInteractionRef: CatalogSearchInteractionRef;
+    CatalogTagCount: CatalogTagCount;
+    CatalogSearchResult: CatalogSearchResult;
     ModelSource: ModelSourceWire;
     ResolvedEnvironmentInfo: ResolvedEnvironmentInfo;
     ResolvedInteractionExecutionInfo: ResolvedInteractionExecutionInfo;
@@ -11571,6 +11720,19 @@ export interface ApiComponentTypes {
     BucketCreateAccessStatusResponse: BucketCreateAccessStatusResponse;
     EnsureBucketCreateAccessPayload: EnsureBucketCreateAccessPayload;
     EnsureBucketCreateAccessResponse: EnsureBucketCreateAccessResponse;
+    AbortUploadSessionPayload: AbortUploadSessionPayload;
+    AbortUploadSessionResponse: AbortUploadSessionResponse;
+    AzureBlockBlobUploadSession: AzureBlockBlobUploadSession;
+    CompletedUploadPart: CompletedUploadPart;
+    CompleteUploadSessionPayload: CompleteUploadSessionPayload;
+    CompleteUploadSessionResponse: CompleteUploadSessionResponse;
+    CreateUploadSessionPayload: CreateUploadSessionPayload;
+    GcsResumableUploadSession: GcsResumableUploadSession;
+    GetUploadPartUrlsPayload: GetUploadPartUrlsPayload;
+    S3MultipartUploadSession: S3MultipartUploadSession;
+    UploadPartUrl: UploadPartUrl;
+    UploadPartUrlsResponse: UploadPartUrlsResponse;
+    UploadSession: UploadSession;
     TaskFieldType: TaskFieldType;
     DurableTaskStatus: DurableTaskStatus;
     TaskSource: TaskSource;
@@ -11598,6 +11760,8 @@ export interface ApiComponentTypes {
     MigrationListResponse: MigrationListResponse;
     RunMigrationPayload: RunMigrationPayload;
     RunMigrationResponse: RunMigrationResponse;
+    DashboardElasticsearchHitsMapping: DashboardElasticsearchHitsMapping;
+    DashboardElasticsearchAggregationBucketsMapping: DashboardElasticsearchAggregationBucketsMapping;
     DashboardElasticsearchResultMapping: DashboardElasticsearchResultMapping;
     DashboardElasticsearchDsl: DashboardElasticsearchDsl;
     DashboardSqlDataSource: DashboardSqlDataSource;
@@ -11668,6 +11832,12 @@ export interface ApiComponentTypes {
     CreateDataStorePayload: CreateDataStorePayload;
     QueryValidationResult: QueryValidationResult;
     DataColumn: DataColumn;
+    AlterTableAddColumnOperation: AlterTableAddColumnOperation;
+    AlterTableDropColumnOperation: AlterTableDropColumnOperation;
+    AlterTableRenameColumnOperation: AlterTableRenameColumnOperation;
+    AlterTableModifyColumnOperation: AlterTableModifyColumnOperation;
+    AlterTableAddForeignKeyOperation: AlterTableAddForeignKeyOperation;
+    AlterTableDropForeignKeyOperation: AlterTableDropForeignKeyOperation;
     AlterTableOperation: AlterTableOperation;
     DataRelationship: DataRelationship;
     CreateTablePayload: CreateTablePayload;
@@ -11997,6 +12167,7 @@ export interface ApiComponentTypes {
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;
+    CollectionPermissionsPayload: CollectionPermissionsPayload;
     CollectionChildrenUpdateResult: CollectionChildrenUpdateResult;
     CollectionChildrenUpdatePayload: CollectionChildrenUpdatePayload;
     CollectionStatus: CollectionStatusWire;
@@ -12081,9 +12252,14 @@ export interface ApiComponentTypes {
     WorkflowDefinitionRefArray: WorkflowDefinitionRefArray;
     ListWorkflowRunsResponse: ListWorkflowRunsResponse;
     WorkflowRunEvent: WorkflowRunEvent;
+    WorkflowObjectIdsInput: WorkflowObjectIdsInput;
+    WorkflowFilesInput: WorkflowFilesInput;
     WorkflowInput: WorkflowInput;
     WorkflowRunUpdatesResponse: WorkflowRunUpdatesResponse;
     ExecuteWorkflowPayload: ExecuteWorkflowPayload;
+    WorkflowEventsHistory: WorkflowEventsHistory;
+    WorkflowTasksHistory: WorkflowTasksHistory;
+    WorkflowAgentHistory: WorkflowAgentHistory;
     WorkflowHistory: WorkflowHistory;
     WorkflowRunWithDetails: WorkflowRunWithDetails;
     BindRunWorkflowPayload: BindRunWorkflowPayload;
@@ -12480,11 +12656,16 @@ export interface ApiComponentTypes {
     ProcessPathParams: ProcessPathParams;
     TaskPathParams: TaskPathParams;
     AgentRunPathParams: AgentRunPathParams;
+    WorkflowRunActionPathParams: WorkflowRunActionPathParams;
     AppVersionPathParams: AppVersionPathParams;
     AppInstallationPathParams: AppInstallationPathParams;
+    InteractionConfigurationPathParams: InteractionConfigurationPathParams;
     DelegationGrantPathParams: DelegationGrantPathParams;
     OAuthProviderPathParams: OAuthProviderPathParams;
+    UserGroupPathParams: UserGroupPathParams;
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
+    EmbeddingTypePathParams: EmbeddingTypePathParams;
+    ToolPathParams: ToolPathParams;
     WorkflowUsageQuery: WorkflowUsageQuery;
     WorkflowUsageClass: WorkflowUsageClass;
     WorkflowUsageStanding: WorkflowUsageStanding;

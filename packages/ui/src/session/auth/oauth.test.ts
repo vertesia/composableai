@@ -141,6 +141,57 @@ it('uses CIMD and PKCE, exchanges the callback once and restores the app deep li
     expect(await callback.getAppOAuthToken()).toBe(token);
     expect(requests.filter((request) => request.url.endsWith('/oauth/token'))).toHaveLength(1);
 });
+it('requests discovery and the client document together when a login starts', async () => {
+    const stubbedFetch = vi.mocked(fetch).getMockImplementation();
+    if (!stubbedFetch) throw new Error('Expected a fetch stub');
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+        release = resolve;
+    });
+    // Hold every response until both requests have been sent: sequential requests would wait forever.
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+        const response = stubbedFetch(input, init);
+        await released;
+        return response;
+    });
+    const oauth = await setup();
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() =>
+        expect(requests.map((request) => request.url)).toEqual(
+            expect.arrayContaining([`${issuer}/.well-known/oauth-authorization-server`, clientId]),
+        ),
+    );
+    release();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    // Never from the browser cache: a deploy that changes callbacks or scopes must apply at the next sign-in.
+    expect(requests.find((request) => request.url === clientId)?.init?.cache).toBe('no-store');
+});
+it('exchanges the callback code without discovering the issuer again', async () => {
+    const oauth = await setup();
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    browser.location.href = `${origin}/app?code=one-time-code&state=${authorize.searchParams.get('state')}`;
+    const callback = await setup();
+    expect(await callback.getAppOAuthToken()).toBeTruthy();
+    const urls = requests.map((request) => request.url);
+    expect(urls.filter((url) => url.endsWith('/.well-known/oauth-authorization-server'))).toHaveLength(1);
+    expect(urls.filter((url) => url === clientId)).toHaveLength(1);
+    expect(urls.at(-1)).toBe(tokenEndpoint);
+});
+it('discovers again for a callback whose login predates saved endpoints', async () => {
+    const oauth = await setup();
+    void oauth.getAppOAuthToken();
+    await vi.waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    const authorize = new URL(replace.mock.calls[0][0]);
+    const { discovered: _discovered, ...older } = JSON.parse(storage.get('vertesia.oauth.transaction') ?? '{}');
+    storage.set('vertesia.oauth.transaction', JSON.stringify(older));
+    browser.location.href = `${origin}/app?code=one-time-code&state=${authorize.searchParams.get('state')}`;
+    const callback = await setup();
+    expect(await callback.getAppOAuthToken()).toBeTruthy();
+    const discoveries = requests.filter((request) => request.url.endsWith('/.well-known/oauth-authorization-server'));
+    expect(discoveries).toHaveLength(2);
+});
 it.each([
     { query: '', tab: false, defaults: false, account: 'saved-account', project: 'saved-project' },
     { query: '', tab: true, defaults: false, account: 'tab-account', project: 'tab-project' },
@@ -497,6 +548,8 @@ it('keeps refresh credentials only in memory and revokes the latest one on logou
     if (!(exchange?.init?.body instanceof URLSearchParams)) throw new Error('Missing refresh grant');
     expect(exchange.init.body.get('grant_type')).toBe('refresh_token');
     expect(exchange.init.body.get('refresh_token')).toBe('refresh-credential');
+    // A refresh does not redirect, so it must not fetch the client document a new login prefetches.
+    expect(requests.some((request) => request.url === clientId)).toBe(false);
     vi.stubGlobal(
         'fetch',
         vi.fn(async () => new Response(null, { status: 200 })),

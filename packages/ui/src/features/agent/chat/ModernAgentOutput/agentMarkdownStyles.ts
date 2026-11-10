@@ -125,7 +125,14 @@ export const agentMarkdownStyles = `
 .agent-markdown ol:not(:where(.not-prose, .not-prose *)) {
     margin-top: 0.55rem;
     margin-bottom: 0.55rem;
+}
+.agent-markdown ul:not(:where(.not-prose, .not-prose *)) {
     padding-left: 1.25rem;
+}
+/* Sized from the widest marker like the .vprose rule in typography.css, which this one overrides:
+   a fixed indent cut the leading digit off "10." and beyond. */
+.agent-markdown ol:not(:where(.not-prose, .not-prose *)) {
+    padding-inline-start: calc((var(--ol-marker-digits, 2) + 1) * 1ch + 0.5em);
 }
 .agent-markdown li:not(:where(.not-prose, .not-prose *)) {
     margin-top: 0.2rem;
@@ -194,7 +201,9 @@ export const agentMarkdownStyles = `
     border-collapse: collapse;
     border-spacing: 0;
     font-size: 0.8125rem;
-    table-layout: fixed;
+    /* Automatic layout keeps every column at least as wide as its longest word and gives the rest
+       to the columns with the most text. The wrapper scrolls when those words cannot all fit. */
+    table-layout: auto;
     background: transparent;
 }
 .agent-markdown thead:not(:where(.not-prose, .not-prose *)) {
@@ -208,9 +217,18 @@ export const agentMarkdownStyles = `
     padding: 0.55rem 0.75rem;
     text-align: left;
     vertical-align: top;
-    overflow-wrap: anywhere;
+    /* Not "anywhere": that drops a column's minimum width to one letter. Long runs get break points
+       from rehypeTableCellWrapping, which leaves link and code text alone, so those break anywhere. */
+    overflow-wrap: break-word;
     word-break: normal;
     white-space: normal;
+}
+.agent-markdown :is(th, td) :is(a, code):not(:where(.not-prose, .not-prose *)) {
+    overflow-wrap: anywhere;
+}
+/* A short value such as a time, status or name, marked by rehypeTableCellWrapping, stays on one line. */
+.agent-markdown :is(th, td).md-cell-nowrap:not(:where(.not-prose, .not-prose *)) {
+    white-space: nowrap;
 }
 .agent-markdown th:not(:where(.not-prose, .not-prose *)) {
     color: var(--muted);
@@ -218,7 +236,6 @@ export const agentMarkdownStyles = `
     font-weight: 600;
     letter-spacing: 0;
     text-transform: none;
-    white-space: nowrap;
 }
 .agent-markdown td:not(:where(.not-prose, .not-prose *)) {
     color: inherit;
@@ -226,15 +243,6 @@ export const agentMarkdownStyles = `
 .agent-markdown th + th:not(:where(.not-prose, .not-prose *)),
 .agent-markdown td + td:not(:where(.not-prose, .not-prose *)) {
     padding-inline-start: 1.75rem;
-}
-.agent-markdown th:first-child:not(:where(.not-prose, .not-prose *)),
-.agent-markdown td:first-child:not(:where(.not-prose, .not-prose *)) {
-    min-width: 0;
-    width: auto;
-    white-space: normal;
-}
-.agent-markdown col:not(:where(.not-prose, .not-prose *)) {
-    width: var(--agent-markdown-table-column-width);
 }
 .agent-markdown tr:last-child td:not(:where(.not-prose, .not-prose *)) {
     border-bottom: 0;

@@ -18,6 +18,29 @@ import { InteractionExecutionConfigurationSchema } from './store.js';
 // is picked up by the OpenAPI scanner and published as that component's `description`, which would
 // double up with the `description` stated in `.meta()`.
 
+// The structural bounds below restate the server's View configuration JSON Schema, which validates every create,
+// update and inline View before its cross-reference rules run, so a request the document accepts is not refused for
+// its shape. Whole numbers are `multipleOf: 1` rather than `type: integer`, so the generated clients keep the number
+// types they already expose.
+// A configuration id: starts with a lowercase letter, then lowercase letters, digits, underscores or hyphens.
+const viewConfigurationId = z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[a-z][a-z0-9_-]*$/);
+// A dot-separated Elasticsearch field name.
+const viewFieldName = z
+    .string()
+    .min(1)
+    .max(160)
+    .regex(/^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$/);
+const viewLabel = z.string().min(1).max(120);
+const viewRenderer = z.string().min(1).max(120);
+const viewOrder = z.number().multipleOf(1);
+const viewPageSize = z.number().multipleOf(1).min(1).max(200);
+const viewIdList = z.array(z.string().min(1)).max(100);
+const viewTimeoutMs = z.number().multipleOf(1).min(1000).max(60000);
+
 // The version literal and the two field vocabularies read their members off the declarations in
 // `../views.js` rather than restating them: those are what the View runtime and its validator
 // iterate, so a format added there reaches the document with nothing here changing.
@@ -27,7 +50,7 @@ export const ViewExperienceSchemaVersionSchema = z
 
 export const ViewSortClauseSchema = z
     .strictObject({
-        field: z.string(),
+        field: viewFieldName,
         order: z.enum(['asc', 'desc']),
     })
     .meta({ id: 'ViewSortClause' });
@@ -35,7 +58,7 @@ export const ViewSortClauseSchema = z
 export const ViewResultMediaSchema = z
     .strictObject({
         source: z.enum(['content_thumbnail', 'property', 'type_icon']),
-        field: z.string().optional(),
+        field: viewFieldName.optional(),
         fit: z.enum(['cover', 'contain']).optional(),
         fallback: z.enum(['type_icon', 'placeholder', 'none']).optional(),
     })
@@ -45,21 +68,21 @@ export const ViewResultFieldFormatSchema = z.enum(VIEW_RESULT_FIELD_FORMATS).met
 
 export const ViewBoardColumnSchema = z
     .strictObject({
-        value: z.string(),
-        label: z.string(),
-        order: z.number().optional(),
+        value: z.string().min(1),
+        label: viewLabel,
+        order: viewOrder.optional(),
     })
     .meta({ id: 'ViewBoardColumn' });
 
 export const ViewTableColumnSchema = z
     .strictObject({
-        field: z.string(),
-        label: z.string().optional(),
+        field: viewFieldName,
+        label: z.string().max(120).optional(),
         format: ViewResultFieldFormatSchema.optional(),
-        fallback: z.string().optional(),
-        width: z.number().optional(),
+        fallback: z.string().max(240).optional(),
+        width: z.number().multipleOf(1).min(40).max(2000).optional(),
         sortable: z.boolean().optional(),
-        sort_option: z.string().optional(),
+        sort_option: viewConfigurationId.optional(),
     })
     .meta({ id: 'ViewTableColumn' });
 
@@ -69,19 +92,23 @@ export const AgenticViewRerankConfigurationSchema = z
     .strictObject({
         interaction: z
             .string()
+            .max(200)
             .meta({
                 description: 'Interaction used only for candidate reranking. Defaults to sys:ContentSearchReranker.',
             })
             .optional(),
         max_candidates: z
             .number()
+            .multipleOf(1)
+            .min(2)
+            .max(50)
             .meta({ description: 'Maximum candidates from the current result page sent to the model.' })
             .optional(),
         include_why_match: z
             .boolean()
             .meta({ description: 'Ask the model for a short per-result explanation. Defaults to true.' })
             .optional(),
-        timeout_ms: z.number().meta({ description: 'Reranking-stage timeout.' }).optional(),
+        timeout_ms: viewTimeoutMs.meta({ description: 'Reranking-stage timeout.' }).optional(),
     })
     .meta({ id: 'AgenticViewRerankConfiguration' });
 
@@ -110,17 +137,18 @@ export const ViewAgenticExecutionConfigurationSchema = InteractionExecutionConfi
 
 export const AgenticViewSearchConfigurationSchema = z
     .strictObject({
-        interaction: z.string().optional(),
+        interaction: z.string().max(200).optional(),
         config: ViewAgenticExecutionConfigurationSchema.optional(),
         instructions: z
             .string()
+            .max(4000)
             .meta({ description: 'View-specific guidance for Elasticsearch query planning.' })
             .optional(),
         mode: ViewAgenticSearchModeSchema.meta({
             description: 'Generate only Elasticsearch DSL, or generate DSL plus a safe ephemeral result presentation.',
         }).optional(),
-        timeout_ms: z.number().optional(),
-        minimum_confidence: z.number().optional(),
+        timeout_ms: viewTimeoutMs.optional(),
+        minimum_confidence: z.number().min(0).max(1).optional(),
         rerank: AgenticViewRerankConfigurationSchema.meta({
             description:
                 'Optional second stage that reorders an authorized candidate page using the same model configuration.',
@@ -132,9 +160,11 @@ export const ViewSearchFieldTypeSchema = z.enum(VIEW_SEARCH_FIELD_TYPES).meta({ 
 
 export const ViewSearchFieldDefinitionSchema = z
     .strictObject({
-        field: z.string(),
+        field: viewFieldName,
         description: z
             .string()
+            .min(1)
+            .max(500)
             .meta({ description: 'Meaning of the field for query planners, for example "Full OCR text".' })
             .optional(),
         type: ViewSearchFieldTypeSchema.meta({
@@ -149,6 +179,8 @@ export const ViewSearchFieldDefinitionSchema = z
             .optional(),
         boost: z
             .number()
+            .min(0.1)
+            .max(20)
             .meta({ description: 'Relative boost when this field participates in multi-field text search.' })
             .optional(),
     })
@@ -160,8 +192,8 @@ export const ViewSearchFieldDefinitionSchema = z
 
 export const ViewRangeDefinitionSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
+        id: viewConfigurationId,
+        label: viewLabel,
         from: z.number().optional(),
         to: z.number().optional(),
     })
@@ -169,54 +201,58 @@ export const ViewRangeDefinitionSchema = z
 
 export const ViewHierarchyLevelSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
-        field: z.string(),
-        size: z.number().optional(),
+        id: viewConfigurationId,
+        label: viewLabel,
+        field: viewFieldName,
+        size: z.number().multipleOf(1).min(1).max(500).optional(),
         sort: z.enum(['count', 'label']).optional(),
     })
     .meta({ id: 'ViewHierarchyLevel' });
 
 export const ViewTermsNavigationSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
+        id: viewConfigurationId,
+        label: viewLabel,
         presentation: z.enum(['tree', 'list', 'select', 'chips']).optional(),
         multi_select: z.boolean().optional(),
-        order: z.number().optional(),
-        renderer: z.string().optional(),
+        order: viewOrder.optional(),
+        renderer: viewRenderer.optional(),
         source: z.literal('terms'),
-        field: z.string(),
-        size: z.number().optional(),
+        field: viewFieldName,
+        size: z.number().multipleOf(1).min(1).max(500).optional(),
         sort: z.enum(['count', 'label']).optional(),
     })
     .meta({ id: 'ViewTermsNavigation' });
 
 export const ViewCollectionNavigationSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
+        id: viewConfigurationId,
+        label: viewLabel,
         presentation: z.enum(['tree', 'list', 'select', 'chips']).optional(),
         multi_select: z.boolean().optional(),
-        order: z.number().optional(),
-        renderer: z.string().optional(),
+        order: viewOrder.optional(),
+        renderer: viewRenderer.optional(),
         source: z.literal('collection'),
-        roots: z.array(z.string()).optional(),
+        roots: z.array(z.string().min(1)).max(50).optional(),
         include_descendants: z.boolean().optional(),
     })
     .meta({ id: 'ViewCollectionNavigation' });
 
 export const ViewLocationNavigationSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
+        id: viewConfigurationId,
+        label: viewLabel,
         presentation: z.enum(['tree', 'list', 'select', 'chips']).optional(),
         multi_select: z.boolean().optional(),
-        order: z.number().optional(),
-        renderer: z.string().optional(),
+        order: viewOrder.optional(),
+        renderer: viewRenderer.optional(),
         source: z.literal('location'),
-        roots: z.array(z.string()).optional(),
-        depth: z.number().optional(),
+        roots: z
+            .array(z.string().regex(/^\//))
+            .max(50)
+            .meta({ description: 'Absolute location roots shown by the hierarchy.' })
+            .optional(),
+        depth: z.number().multipleOf(1).min(1).max(20).optional(),
     })
     .meta({ id: 'ViewLocationNavigation' });
 
@@ -234,38 +270,38 @@ export const ViewExperienceLayoutSchema = z
 
 export const ViewSortOptionSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
-        sort: z.array(ViewSortClauseSchema),
+        id: viewConfigurationId,
+        label: viewLabel,
+        sort: z.array(ViewSortClauseSchema).min(1),
     })
     .meta({ id: 'ViewSortOption' });
 
 export const ViewResultFieldSchema = z
     .strictObject({
-        field: z.string(),
-        label: z.string().optional(),
+        field: viewFieldName,
+        label: z.string().max(120).optional(),
         format: ViewResultFieldFormatSchema.optional(),
-        fallback: z.string().optional(),
+        fallback: z.string().max(240).optional(),
     })
     .meta({ id: 'ViewResultField' });
 
 export const ViewTableDisplaySchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
-        renderer: z.string().optional(),
-        page_size: z.number().optional(),
+        id: viewConfigurationId,
+        label: viewLabel,
+        renderer: viewRenderer.optional(),
+        page_size: viewPageSize.optional(),
         type: z.literal('table'),
-        columns: z.array(ViewTableColumnSchema),
+        columns: z.array(ViewTableColumnSchema).min(1),
     })
     .meta({ id: 'ViewTableDisplay' });
 
 export const ViewListDisplaySchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
-        renderer: z.string().optional(),
-        page_size: z.number().optional(),
+        id: viewConfigurationId,
+        label: viewLabel,
+        renderer: viewRenderer.optional(),
+        page_size: viewPageSize.optional(),
         type: z.literal('list'),
         title: ViewResultFieldSchema,
         subtitle: z.array(ViewResultFieldSchema).optional(),
@@ -277,9 +313,9 @@ export const ViewListDisplaySchema = z
 
 export const ViewKeyTermDefinitionSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
-        field: z.string().optional(),
+        id: viewConfigurationId,
+        label: viewLabel,
+        field: viewFieldName.optional(),
         type: ViewSearchFieldTypeSchema,
         multiple: z.boolean().optional(),
         operator: z.enum(['match', 'term', 'range']).optional(),
@@ -288,28 +324,30 @@ export const ViewKeyTermDefinitionSchema = z
 
 export const ViewRangeNavigationSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
+        id: viewConfigurationId,
+        label: viewLabel,
         presentation: z.enum(['tree', 'list', 'select', 'chips']).optional(),
         multi_select: z.boolean().optional(),
-        order: z.number().optional(),
-        renderer: z.string().optional(),
+        order: viewOrder.optional(),
+        renderer: viewRenderer.optional(),
         source: z.literal('range'),
-        field: z.string(),
-        ranges: z.array(ViewRangeDefinitionSchema),
+        field: viewFieldName,
+        ranges: z.array(ViewRangeDefinitionSchema).min(1),
     })
     .meta({ id: 'ViewRangeNavigation' });
 
 export const ViewHierarchyNavigationSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
+        id: viewConfigurationId,
+        label: viewLabel,
         presentation: z.enum(['tree', 'list', 'select', 'chips']).optional(),
+        // The server accepts only false. The spec publishes a boolean, since boolean constants are not
+        // generator-friendly; the component description states the rule.
         multi_select: z.boolean().optional(),
-        order: z.number().optional(),
-        renderer: z.string().optional(),
+        order: viewOrder.optional(),
+        renderer: viewRenderer.optional(),
         source: z.literal('hierarchy'),
-        levels: z.array(ViewHierarchyLevelSchema),
+        levels: z.array(ViewHierarchyLevelSchema).min(2).max(10),
     })
     .meta({
         id: 'ViewHierarchyNavigation',
@@ -319,9 +357,9 @@ export const ViewHierarchyNavigationSchema = z
 
 export const ViewExperienceScopeSchema = z
     .strictObject({
-        type_ids: z.array(z.string()).optional(),
-        locations: z.array(z.string()).optional(),
-        collection_ids: z.array(z.string()).optional(),
+        type_ids: viewIdList.optional(),
+        locations: viewIdList.optional(),
+        collection_ids: viewIdList.optional(),
         include_collection_descendants: z.boolean().optional(),
         fixed_filter: ViewElasticsearchQuerySchema.optional(),
         head_only: z.boolean().optional(),
@@ -340,11 +378,11 @@ export const ViewBoardCardConfigurationSchema = z
 
 export const ViewSearchConfigurationSchema = z
     .strictObject({
-        renderer: z.string().optional(),
+        renderer: z.string().max(120).optional(),
         mode: z.enum(['deterministic', 'agentic']).optional(),
-        placeholder: z.string().optional(),
-        fields: z.array(ViewSearchFieldDefinitionSchema).optional(),
-        key_terms: z.array(ViewKeyTermDefinitionSchema).optional(),
+        placeholder: z.string().max(240).optional(),
+        fields: z.array(ViewSearchFieldDefinitionSchema).max(50).optional(),
+        key_terms: z.array(ViewKeyTermDefinitionSchema).max(50).optional(),
         agentic: AgenticViewSearchConfigurationSchema.optional(),
     })
     .meta({ id: 'ViewSearchConfiguration' });
@@ -361,12 +399,12 @@ export const ViewNavigationItemSchema = z
 
 export const ViewBoardDisplaySchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
-        renderer: z.string().optional(),
-        page_size: z.number().optional(),
+        id: viewConfigurationId,
+        label: viewLabel,
+        renderer: viewRenderer.optional(),
+        page_size: viewPageSize.optional(),
         type: z.literal('board'),
-        group_by: z.string(),
+        group_by: viewFieldName,
         columns: z.array(ViewBoardColumnSchema).optional(),
         card: ViewBoardCardConfigurationSchema,
     })
@@ -379,10 +417,10 @@ const VIEW_DISPLAY_COLUMNS = z.literal([2, 3, 4, 5, 6]).optional();
 
 export const ViewCardsDisplaySchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
-        renderer: z.string().optional(),
-        page_size: z.number().optional(),
+        id: viewConfigurationId,
+        label: viewLabel,
+        renderer: viewRenderer.optional(),
+        page_size: viewPageSize.optional(),
         type: z.literal('cards'),
         title: ViewResultFieldSchema,
         description: ViewResultFieldSchema.optional(),
@@ -395,10 +433,10 @@ export const ViewCardsDisplaySchema = z
 
 export const ViewGalleryDisplaySchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
-        renderer: z.string().optional(),
-        page_size: z.number().optional(),
+        id: viewConfigurationId,
+        label: viewLabel,
+        renderer: viewRenderer.optional(),
+        page_size: viewPageSize.optional(),
         type: z.literal('gallery'),
         media: ViewResultMediaSchema,
         title: ViewResultFieldSchema,
@@ -440,9 +478,9 @@ export const ViewActionSelectionRequirementSchema = z
 
 export const ViewActionConfigurationSchema = z
     .strictObject({
-        id: z.string(),
-        label: z.string(),
-        handler: z.string(),
+        id: viewConfigurationId,
+        label: viewLabel,
+        handler: viewConfigurationId,
         placement: ViewActionPlacementSchema.optional(),
         requires_selection: ViewActionSelectionRequirementSchema.optional(),
         destructive: z.boolean().optional(),
@@ -466,17 +504,21 @@ export const ViewActionsConfigurationSchema = z
             .optional(),
         exclude_defaults: z
             .array(z.enum(['export', 'delete']))
-            .meta({ description: 'Hide individual standard actions while keeping the remaining defaults.' })
+            .max(2)
+            .meta({
+                uniqueItems: true,
+                description: 'Hide individual standard actions while keeping the remaining defaults.',
+            })
             .optional(),
-        items: z.array(ViewActionConfigurationSchema).optional(),
+        items: z.array(ViewActionConfigurationSchema).max(30).optional(),
     })
     .meta({ id: 'ViewActionsConfiguration' });
 
 export const ViewUploadDropParametersSchema = z
     .strictObject({
-        type_id: z.string().optional(),
-        collection_id: z.string().optional(),
-        location: z.string().optional(),
+        type_id: z.string().min(1).max(200).optional(),
+        collection_id: z.string().min(1).max(200).optional(),
+        location: z.string().min(1).max(2000).regex(/^\//).optional(),
         properties: JSONObjectSchema.optional(),
         allow_folders: z.boolean().optional(),
     })
@@ -485,7 +527,7 @@ export const ViewUploadDropParametersSchema = z
 export const ViewDropConfigurationSchema = z
     .strictObject({
         handler: z.literal('upload'),
-        accept: z.array(z.literal('files')).optional(),
+        accept: z.array(z.literal('files')).min(1).max(1).optional(),
         params: ViewUploadDropParametersSchema.optional(),
     })
     .meta({
@@ -495,10 +537,10 @@ export const ViewDropConfigurationSchema = z
 
 export const ViewResultsConfigurationSchema = z
     .strictObject({
-        default_display: z.string(),
+        default_display: viewConfigurationId,
         allow_display_switch: z.boolean().optional(),
-        displays: z.array(ViewDisplayConfigurationSchema),
-        default_sort: z.string().optional(),
+        displays: z.array(ViewDisplayConfigurationSchema).min(1).max(10),
+        default_sort: viewConfigurationId.optional(),
         sort_options: z.array(ViewSortOptionSchema).optional(),
         selection: ViewSelectionConfigurationSchema.optional(),
         actions: ViewActionsConfigurationSchema.optional(),
@@ -516,7 +558,7 @@ export const CreateViewExperienceRequestSchema = z
         enabled: z.boolean().optional(),
         layout: ViewExperienceLayoutSchema.optional(),
         scope: ViewExperienceScopeSchema.optional(),
-        navigation: z.array(ViewNavigationItemSchema).optional(),
+        navigation: z.array(ViewNavigationItemSchema).max(20).optional(),
         search: ViewSearchConfigurationSchema.optional(),
         results: ViewResultsConfigurationSchema.optional(),
         description: viewExperienceDescription,
@@ -534,7 +576,7 @@ export const ViewExperienceSchema = z
         enabled: z.boolean().optional(),
         layout: ViewExperienceLayoutSchema.optional(),
         scope: ViewExperienceScopeSchema.optional(),
-        navigation: z.array(ViewNavigationItemSchema).optional(),
+        navigation: z.array(ViewNavigationItemSchema).max(20).optional(),
         search: ViewSearchConfigurationSchema.optional(),
         results: ViewResultsConfigurationSchema.optional(),
         description: z.string(),
@@ -554,7 +596,7 @@ export const UpdateViewExperienceRequestSchema = z
         enabled: z.boolean().optional(),
         layout: ViewExperienceLayoutSchema.optional(),
         scope: ViewExperienceScopeSchema.optional(),
-        navigation: z.array(ViewNavigationItemSchema).optional(),
+        navigation: z.array(ViewNavigationItemSchema).max(20).optional(),
         search: ViewSearchConfigurationSchema.optional(),
         results: ViewResultsConfigurationSchema.optional(),
         description: viewExperienceDescription,
