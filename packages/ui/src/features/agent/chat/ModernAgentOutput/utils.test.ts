@@ -2008,6 +2008,19 @@ describe('ModernAgentOutput summary - completion result without an answer', () =
         );
     });
 
+    it('shows a result the agent also wrote alongside its end_conversation call', () => {
+        const preamble = makeMessage({
+            timestamp: 2500,
+            type: AgentMessageType.THOUGHT,
+            message: complete.message,
+            details: { display_role: 'tool_preamble', tools: ['end_conversation'], streamed: true },
+        });
+
+        const items = buildSummaryConversationItems([question, tool, preamble, ending, complete], true);
+
+        expect(items[items.length - 1]).toEqual({ type: 'message', message: complete });
+    });
+
     it('does not show a status completion as a result', () => {
         const processComplete = makeMessage({
             timestamp: 4000,

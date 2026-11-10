@@ -293,6 +293,11 @@ function isToolPreambleProse(message: AgentMessage): boolean {
 // Tools a model tends to call last, with its answer written as that call's preamble.
 const ANSWER_CARRYING_TOOLS = new Set(['update_plan']);
 
+function getPreambleToolNames(message: AgentMessage): string[] {
+    const details = message.details;
+    return details?.tools?.length ? details.tools : details?.tool ? [details.tool] : [];
+}
+
 function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
     // Check the latest preamble before filtering its text, so an empty or low-signal
     // final preamble cannot make us fall back to prose from an earlier call.
@@ -300,7 +305,7 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
     if (index < 0 || !isToolPreambleProse(messages[index])) return -1;
 
     const details = messages[index].details;
-    const tools = details?.tools?.length ? details.tools : details?.tool ? [details.tool] : [];
+    const tools = getPreambleToolNames(messages[index]);
     if (tools.length === 0 || !tools.every((tool) => ANSWER_CARRYING_TOOLS.has(tool))) return -1;
 
     let iteration = details?.tool_iteration;
@@ -332,10 +337,13 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
 /**
  * Whether a COMPLETE message carries a conversation result the turn has not shown yet. A
  * conversation's completion is the only COMPLETE marked `user_content`; status COMPLETEs, such as
- * a process run's "Process completed at …", are not. The text usually repeats something already
- * shown: the turn's ANSWER, the ERROR a stopped run posts with its summary, or the last tool
- * preamble when a run ends mid-task. It is new only when the agent ended the run through
- * end_conversation, whose `result` is posted in the COMPLETE alone.
+ * a process run's "Process completed at …", are not.
+ *
+ * The text usually repeats a message the turn shows: its ANSWER, or the ERROR a stopped run posts
+ * with its summary. A run that ends mid-task repeats its last tool preamble instead, which is
+ * progress, not a result. Work rows render collapsed, so a preamble counts only for that reason:
+ * the text an agent writes with its end_conversation call is its answer, and it is shown here even
+ * when `result` repeats it.
  */
 function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConversationItem[]): boolean {
     if (message.type !== AgentMessageType.COMPLETE || message.details?.event_class !== 'user_content') return false;
@@ -347,7 +355,10 @@ function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConve
     for (let index = items.length - 1; index >= 0; index--) {
         const item = items[index];
         if (item.type === 'work') {
-            if (item.messages.some((shown) => getMessageText(shown) === text)) return false;
+            const repeatsProgress = item.messages.some(
+                (work) => getMessageText(work) === text && !getPreambleToolNames(work).includes('end_conversation'),
+            );
+            if (repeatsProgress) return false;
             continue;
         }
         if (item.message.type === AgentMessageType.QUESTION) return true;
