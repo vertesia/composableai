@@ -23,6 +23,7 @@ export * from './separator';
 export * from './slider';
 export * from './switch';
 export * from './tabs';
+export * from './tabsRoute';
 export * from './text';
 export * from './textarea';
 export * from './theme/ThemeProvider';

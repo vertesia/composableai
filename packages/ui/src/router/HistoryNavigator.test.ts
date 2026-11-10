@@ -46,3 +46,28 @@ describe('HistoryNavigator link interception', () => {
         navigator.stop();
     });
 });
+
+describe('HistoryNavigator breadcrumb chain', () => {
+    const chain = [{ title: 'Agents', href: '/store/agents' }];
+    afterEach(() => {
+        window.history.replaceState(null, '', '/');
+    });
+
+    function chainAfter(options: Parameters<HistoryNavigator['navigate']>[1]) {
+        window.history.replaceState({ historyChain: chain }, '', '/page');
+        new HistoryNavigator().navigate('/page/next', options);
+        return window.history.state.historyChain;
+    }
+
+    it('adds a breadcrumb on a push and clears them on a replace', () => {
+        expect(chainAfter({})).toHaveLength(2);
+        expect(chainAfter({ replace: true })).toEqual([]);
+    });
+
+    it('leaves the breadcrumbs as they are with keepHistoryChain', () => {
+        const length = window.history.length;
+        expect(chainAfter({ replace: true, keepHistoryChain: true })).toEqual(chain);
+        expect(window.history.length).toBe(length);
+        expect(window.location.pathname).toBe('/page/next');
+    });
+});
