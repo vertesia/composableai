@@ -24,6 +24,7 @@ async function command(...args: string[]) {
 
 const COST = {
     object_id: 'obj',
+    versions: [{ object_id: 'obj', created_at: '2026-11-01T00:00:00.000Z', head: true }],
     run_count: 2,
     cost_usd: 0.0123,
     priced_calls: 5,
@@ -31,6 +32,7 @@ const COST = {
     runs: [
         {
             root_run_id: 'run-2',
+            object_id: 'obj',
             outcome: 'completed',
             content_type_name: 'Invoice',
             started_at: '2026-11-10T12:00:00.000Z',
@@ -54,6 +56,29 @@ describe('content intake-cost CLI', () => {
         expect(lines[0]).toBe('$0.0123 over 2 intake run(s), 5 priced call(s), 1 unpriced');
         expect(lines[1]).toContain('completed');
         expect(lines[1]).toContain('Invoice');
+    });
+
+    it('names the version of each run when the cost covers several, and says when it covers one earlier version', async () => {
+        mocks.getIntakeCost.mockResolvedValue({
+            ...COST,
+            versions: [
+                { object_id: 'obj', created_at: '2026-11-02T00:00:00.000Z', head: true },
+                { object_id: 'obj-v1', created_at: '2026-11-01T00:00:00.000Z', head: false },
+            ],
+        });
+        await command('intake-cost', 'obj');
+        let lines = vi.mocked(console.log).mock.calls.map((call) => String(call[0]));
+        expect(lines[0]).toContain('over 2 intake run(s) across 2 versions');
+        expect(lines[1]).toMatch(/Invoice {2}obj$/);
+
+        vi.mocked(console.log).mockClear();
+        mocks.getIntakeCost.mockResolvedValue({
+            ...COST,
+            versions: [{ object_id: 'obj', created_at: '2026-11-01T00:00:00.000Z', head: false }],
+        });
+        await command('intake-cost', 'obj');
+        lines = vi.mocked(console.log).mock.calls.map((call) => String(call[0]));
+        expect(lines[1]).toContain('An earlier version');
     });
 
     it('forwards the limit and prints raw JSON on request', async () => {

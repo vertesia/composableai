@@ -335,13 +335,22 @@ export async function getObjectIntakeCost(program: Command, objectId: string, op
         return;
     }
     const unpriced = cost.unpriced_calls ? `, ${cost.unpriced_calls} unpriced` : '';
+    const acrossVersions = cost.versions.length > 1;
+    const versions = acrossVersions ? ` across ${cost.versions.length} versions` : '';
     console.log(
-        `${formatUsd(cost.cost_usd)} over ${cost.run_count} intake run(s), ${cost.priced_calls} priced call(s)${unpriced}`,
+        `${formatUsd(cost.cost_usd)} over ${cost.run_count} intake run(s)${versions}, ` +
+            `${cost.priced_calls} priced call(s)${unpriced}`,
     );
+    if (cost.versions.length === 1 && !cost.versions[0].head) {
+        console.log('An earlier version: only its own runs. The latest version covers all of them.');
+    }
     for (const run of cost.runs) {
         const type = run.content_type_name ?? run.content_type_id ?? '-';
         const outcome = run.outcome ?? 'not reported';
-        console.log(`${run.started_at}  ${outcome.padEnd(9)} ${formatUsd(run.cost_usd).padStart(11)}  ${type}`);
+        const version = acrossVersions ? `  ${run.object_id}` : '';
+        console.log(
+            `${run.started_at}  ${outcome.padEnd(12)} ${formatUsd(run.cost_usd).padStart(11)}  ${type}${version}`,
+        );
     }
 }
 

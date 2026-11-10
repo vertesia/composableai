@@ -48703,6 +48703,10 @@
         "type": "string",
         "description": "First run ID of the intake workflow, shared by its continued runs and child workflows."
       },
+      "object_id": {
+        "type": "string",
+        "description": "The version of the document the run processed."
+      },
       "workflow_id": {
         "type": "string"
       },
@@ -48783,6 +48787,7 @@
     },
     "required": [
       "root_run_id",
+      "object_id",
       "started_at",
       "last_event_at",
       "cost_usd",
@@ -48794,21 +48799,54 @@
     ],
     "description": "The cost of one intake run of a content object."
   },
+  "IntakeCostVersion": {
+    "type": "object",
+    "properties": {
+      "object_id": {
+        "type": "string"
+      },
+      "label": {
+        "type": "string",
+        "description": "The label given to the version, if any."
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "head": {
+        "type": "boolean",
+        "description": "Whether this is the latest version of the document."
+      }
+    },
+    "required": [
+      "object_id",
+      "created_at",
+      "head"
+    ],
+    "description": "A version of a document whose intake runs a cost covers."
+  },
   "ObjectIntakeCostResponse": {
     "type": "object",
     "properties": {
       "object_id": {
         "type": "string"
       },
+      "versions": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IntakeCostVersion"
+        },
+        "description": "The versions the cost covers, newest first. For the latest version of a document: every version the caller can read. For an earlier version: that version alone."
+      },
       "run_count": {
         "type": "integer",
         "minimum": -9007199254740991,
         "maximum": 9007199254740991,
-        "description": "Intake runs recorded for the object."
+        "description": "Intake runs recorded for the versions covered."
       },
       "cost_usd": {
         "type": "number",
-        "description": "Sum of `cost_usd` over every recorded run."
+        "description": "Sum of `cost_usd` over every run of the versions covered."
       },
       "priced_calls": {
         "type": "integer",
@@ -48830,13 +48868,14 @@
     },
     "required": [
       "object_id",
+      "versions",
       "run_count",
       "cost_usd",
       "priced_calls",
       "unpriced_calls",
       "runs"
     ],
-    "description": "The LLM and embedding cost of the intake workflows that processed a content object, recorded since intake cost tracking was deployed."
+    "description": "The LLM and embedding cost of the intake workflows that processed a content object, recorded since intake cost tracking was deployed. The latest version of a document covers all its versions."
   },
   "IntakeCostSummaryQuery": {
     "type": "object",
@@ -48887,7 +48926,7 @@
         "type": "integer",
         "minimum": -9007199254740991,
         "maximum": 9007199254740991,
-        "description": "Distinct documents the runs processed."
+        "description": "Distinct documents the runs processed; the versions of a document count once."
       },
       "cost_usd": {
         "type": "number",
@@ -49029,7 +49068,8 @@
     "type": "object",
     "properties": {
       "object_id": {
-        "type": "string"
+        "type": "string",
+        "description": "The latest version of the document the caller can read, else the first version of the document."
       },
       "name": {
         "type": "string",
@@ -49052,7 +49092,7 @@
       "run_count",
       "cost_usd"
     ],
-    "description": "The intake cost of one document over a window."
+    "description": "The intake cost of one document over a window, all its versions included."
   },
   "IntakeCostSummaryResponse": {
     "type": "object",

@@ -2490,6 +2490,7 @@ export type ObjectIntakeCostQuery = {
 /** The cost of one intake run of a content object. */
 export type IntakeRunCost = {
     root_run_id: string;
+    object_id: string;
     workflow_id?: string | undefined;
     workflow_type?: string | undefined;
     outcome?: 'completed' | 'skipped' | 'failed' | undefined;
@@ -2507,9 +2508,16 @@ export type IntakeRunCost = {
     calls: Record<string, number>;
     tokens: Record<string, number>;
 };
+export type IntakeCostVersion = {
+    object_id: string;
+    label?: string | undefined;
+    created_at: string;
+    head: boolean;
+};
 /** The LLM and embedding cost of the intake workflows that processed a content object. */
 export type ObjectIntakeCostResponse = {
     object_id: string;
+    versions: IntakeCostVersion[];
     run_count: number;
     cost_usd: number;
     priced_calls: number;
@@ -12073,6 +12081,7 @@ export interface ApiComponentTypes {
     CostRunPriceResponse: CostRunPriceResponse;
     ObjectIntakeCostQuery: ObjectIntakeCostQuery;
     IntakeRunCost: IntakeRunCost;
+    IntakeCostVersion: IntakeCostVersion;
     ObjectIntakeCostResponse: ObjectIntakeCostResponse;
     IntakeCostSummaryQuery: IntakeCostSummaryQuery;
     IntakeCostTotals: IntakeCostTotals;

@@ -1061,6 +1061,10 @@ interface Checks {
         z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostQuerySchema>
     >;
     IntakeRunCost: Same<W.IntakeRunCost, z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeRunCostSchema>>;
+    IntakeCostVersion: Same<
+        W.IntakeCostVersion,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostVersionSchema>
+    >;
     ObjectIntakeCostResponse: Same<
         W.ObjectIntakeCostResponse,
         z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostResponseSchema>
@@ -7379,6 +7383,10 @@ interface Checks {
         W.ApiComponentTypes['IntakeRunCost'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeRunCostSchema>
     >;
+    'component:IntakeCostVersion': Same<
+        W.ApiComponentTypes['IntakeCostVersion'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostVersionSchema>
+    >;
     'component:ObjectIntakeCostResponse': Same<
         W.ApiComponentTypes['ObjectIntakeCostResponse'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostResponseSchema>
@@ -10869,6 +10877,7 @@ const checks: Checks = {
     CostRunPriceResponse: true,
     ObjectIntakeCostQuery: true,
     IntakeRunCost: true,
+    IntakeCostVersion: true,
     ObjectIntakeCostResponse: true,
     IntakeCostSummaryQuery: true,
     IntakeCostTotals: true,
@@ -12552,6 +12561,7 @@ const checks: Checks = {
     'component:CostRunPriceResponse': true,
     'component:ObjectIntakeCostQuery': true,
     'component:IntakeRunCost': true,
+    'component:IntakeCostVersion': true,
     'component:ObjectIntakeCostResponse': true,
     'component:IntakeCostSummaryQuery': true,
     'component:IntakeCostTotals': true,
@@ -13355,6 +13365,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2775);
+        expect(Object.keys(checks)).toHaveLength(2777);
     });
 });

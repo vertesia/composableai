@@ -346,6 +346,7 @@ export const IntakeRunCostSchema = z
         root_run_id: z.string().meta({
             description: 'First run ID of the intake workflow, shared by its continued runs and child workflows.',
         }),
+        object_id: z.string().meta({ description: 'The version of the document the run processed.' }),
         workflow_id: z.string().optional(),
         workflow_type: z.string().optional(),
         outcome: z
@@ -378,11 +379,25 @@ export const IntakeRunCostSchema = z
     })
     .meta({ id: 'IntakeRunCost', description: 'The cost of one intake run of a content object.' });
 
+export const IntakeCostVersionSchema = z
+    .strictObject({
+        object_id: z.string(),
+        label: z.string().meta({ description: 'The label given to the version, if any.' }).optional(),
+        created_at: z.string().meta({ format: 'date-time' }),
+        head: z.boolean().meta({ description: 'Whether this is the latest version of the document.' }),
+    })
+    .meta({ id: 'IntakeCostVersion', description: 'A version of a document whose intake runs a cost covers.' });
+
 export const ObjectIntakeCostResponseSchema = z
     .strictObject({
         object_id: z.string(),
-        run_count: z.number().int().meta({ description: 'Intake runs recorded for the object.' }),
-        cost_usd: z.number().meta({ description: 'Sum of `cost_usd` over every recorded run.' }),
+        versions: z.array(IntakeCostVersionSchema).meta({
+            description:
+                'The versions the cost covers, newest first. For the latest version of a document: every version the ' +
+                'caller can read. For an earlier version: that version alone.',
+        }),
+        run_count: z.number().int().meta({ description: 'Intake runs recorded for the versions covered.' }),
+        cost_usd: z.number().meta({ description: 'Sum of `cost_usd` over every run of the versions covered.' }),
         priced_calls: z.number().int(),
         unpriced_calls: z.number().int(),
         runs: z.array(IntakeRunCostSchema).meta({ description: 'The most recent runs, newest first.' }),
@@ -391,7 +406,7 @@ export const ObjectIntakeCostResponseSchema = z
         id: 'ObjectIntakeCostResponse',
         description:
             'The LLM and embedding cost of the intake workflows that processed a content object, recorded since ' +
-            'intake cost tracking was deployed.',
+            'intake cost tracking was deployed. The latest version of a document covers all its versions.',
     });
 
 export const IntakeCostSummaryQuerySchema = z
@@ -417,7 +432,10 @@ const INTAKE_COST_USD_DESCRIPTION =
 export const IntakeCostTotalsSchema = z
     .strictObject({
         run_count: z.number().int(),
-        document_count: z.number().int().meta({ description: 'Distinct documents the runs processed.' }),
+        document_count: z
+            .number()
+            .int()
+            .meta({ description: 'Distinct documents the runs processed; the versions of a document count once.' }),
         cost_usd: z.number().meta({ description: INTAKE_COST_USD_DESCRIPTION }),
         priced_calls: z.number().int(),
         unpriced_calls: z
@@ -464,13 +482,19 @@ export const IntakeCostByOutcomeSchema = z
 
 export const IntakeCostDocumentSchema = z
     .strictObject({
-        object_id: z.string(),
+        object_id: z.string().meta({
+            description:
+                'The latest version of the document the caller can read, else the first version of the document.',
+        }),
         name: z.string().meta({ description: 'Absent when the caller cannot read the document.' }).optional(),
         content_type_name: z.string().optional(),
         run_count: z.number().int(),
         cost_usd: z.number(),
     })
-    .meta({ id: 'IntakeCostDocument', description: 'The intake cost of one document over a window.' });
+    .meta({
+        id: 'IntakeCostDocument',
+        description: 'The intake cost of one document over a window, all its versions included.',
+    });
 
 export const IntakeCostSummaryResponseSchema = z
     .strictObject({
