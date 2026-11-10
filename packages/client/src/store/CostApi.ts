@@ -6,6 +6,8 @@ import type {
     CostModelPricesQuery,
     CostRunPriceQuery,
     CostRunPriceResponse,
+    IntakeCostSummaryQuery,
+    IntakeCostSummaryResponse,
     ModelPriceComparisonResponse,
 } from '@vertesia/common';
 
@@ -28,6 +30,14 @@ export class CostApi extends ApiTopic {
      */
     getModelPrices(query: CostModelPricesQuery = {}): Promise<ModelPriceComparisonResponse> {
         return this.get('/model-prices', { query: { ...query } });
+    }
+
+    /**
+     * The LLM and embedding cost of the current project's intake runs over a window: totals, a time series, and
+     * breakdowns by content type, outcome and document. Requires a billing read permission.
+     */
+    getIntakeCostSummary(query: IntakeCostSummaryQuery = {}): Promise<IntakeCostSummaryResponse> {
+        return this.get('/intake', { query: { ...query } });
     }
 
     /**

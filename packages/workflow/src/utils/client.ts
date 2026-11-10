@@ -38,6 +38,18 @@ export function withWorkflowHttpExecution<T>(
     );
 }
 
+// One store per process: a worker can load this module twice, bundled with its activities and unbundled with its
+// interceptors, and each copy must see what the other sets.
+const WORKFLOW_REQUEST_HEADERS = Symbol.for('@vertesia/workflow.requestHeaders');
+const processGlobals = globalThis as { [WORKFLOW_REQUEST_HEADERS]?: AsyncLocalStorage<Record<string, string>> };
+processGlobals[WORKFLOW_REQUEST_HEADERS] ??= new AsyncLocalStorage();
+const workflowRequestHeaders = processGlobals[WORKFLOW_REQUEST_HEADERS];
+
+/** Add these headers to the requests of every client `getVertesiaClient` creates inside `action`. */
+export function withWorkflowRequestHeaders<T>(headers: Record<string, string>, action: () => T): T {
+    return workflowRequestHeaders.run(headers, action);
+}
+
 /**
  * Give a logical HTTP operation an identity stable across activity retries and continue-as-new.
  * Choose a separate key for each intended operation; server trust and endpoint idempotency still apply.
@@ -123,7 +135,9 @@ function createWorkflowFetch(activitySignal?: AbortSignal): FETCH_FN {
 }
 
 export function getVertesiaClient(payload: WorkflowExecutionBaseParams<unknown>) {
-    return new VertesiaClient(getVertesiaClientOptions(payload));
+    const client = new VertesiaClient(getVertesiaClientOptions(payload));
+    const headers = workflowRequestHeaders.getStore();
+    return headers ? client.withHeaders(headers) : client;
 }
 
 export function getVertesiaClientOptions(payload: WorkflowExecutionBaseParams<unknown>): VertesiaClientProps {

@@ -1056,6 +1056,55 @@ interface Checks {
         W.CostRunPriceResponse,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostRunPriceResponseSchema>
     >;
+    ObjectIntakeCostQuery: Same<
+        W.ObjectIntakeCostQuery,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostQuerySchema>
+    >;
+    IntakeRunCost: Same<W.IntakeRunCost, z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeRunCostSchema>>;
+    IntakeCostVersion: Same<
+        W.IntakeCostVersion,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostVersionSchema>
+    >;
+    ObjectIntakeCostResponse: Same<
+        W.ObjectIntakeCostResponse,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostResponseSchema>
+    >;
+    IntakeCostSummaryQuery: Same<
+        W.IntakeCostSummaryQuery,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostSummaryQuerySchema>
+    >;
+    IntakeCostTotals: Same<
+        W.IntakeCostTotals,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTotalsSchema>
+    >;
+    IntakeCostTimePoint: Same<
+        W.IntakeCostTimePoint,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTimePointSchema>
+    >;
+    IntakeCostPerPage: Same<
+        W.IntakeCostPerPage,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostPerPageSchema>
+    >;
+    IntakeCostByContentType: Same<
+        W.IntakeCostByContentType,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentTypeSchema>
+    >;
+    IntakeCostByContentNature: Same<
+        W.IntakeCostByContentNature,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentNatureSchema>
+    >;
+    IntakeCostByOutcome: Same<
+        W.IntakeCostByOutcome,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByOutcomeSchema>
+    >;
+    IntakeCostDocument: Same<
+        W.IntakeCostDocument,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostDocumentSchema>
+    >;
+    IntakeCostSummaryResponse: Same<
+        W.IntakeCostSummaryResponse,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostSummaryResponseSchema>
+    >;
     CustomRoleDefinition: Same<
         W.CustomRoleDefinition,
         z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
@@ -7334,6 +7383,58 @@ interface Checks {
         W.ApiComponentTypes['CostRunPriceResponse'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostRunPriceResponseSchema>
     >;
+    'component:ObjectIntakeCostQuery': Same<
+        W.ApiComponentTypes['ObjectIntakeCostQuery'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostQuerySchema>
+    >;
+    'component:IntakeRunCost': Same<
+        W.ApiComponentTypes['IntakeRunCost'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeRunCostSchema>
+    >;
+    'component:IntakeCostVersion': Same<
+        W.ApiComponentTypes['IntakeCostVersion'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostVersionSchema>
+    >;
+    'component:ObjectIntakeCostResponse': Same<
+        W.ApiComponentTypes['ObjectIntakeCostResponse'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').ObjectIntakeCostResponseSchema>
+    >;
+    'component:IntakeCostSummaryQuery': Same<
+        W.ApiComponentTypes['IntakeCostSummaryQuery'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostSummaryQuerySchema>
+    >;
+    'component:IntakeCostTotals': Same<
+        W.ApiComponentTypes['IntakeCostTotals'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTotalsSchema>
+    >;
+    'component:IntakeCostTimePoint': Same<
+        W.ApiComponentTypes['IntakeCostTimePoint'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTimePointSchema>
+    >;
+    'component:IntakeCostPerPage': Same<
+        W.ApiComponentTypes['IntakeCostPerPage'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostPerPageSchema>
+    >;
+    'component:IntakeCostByContentType': Same<
+        W.ApiComponentTypes['IntakeCostByContentType'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentTypeSchema>
+    >;
+    'component:IntakeCostByContentNature': Same<
+        W.ApiComponentTypes['IntakeCostByContentNature'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentNatureSchema>
+    >;
+    'component:IntakeCostByOutcome': Same<
+        W.ApiComponentTypes['IntakeCostByOutcome'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByOutcomeSchema>
+    >;
+    'component:IntakeCostDocument': Same<
+        W.ApiComponentTypes['IntakeCostDocument'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostDocumentSchema>
+    >;
+    'component:IntakeCostSummaryResponse': Same<
+        W.ApiComponentTypes['IntakeCostSummaryResponse'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostSummaryResponseSchema>
+    >;
     'component:PricingSyncPayload': Same<
         W.ApiComponentTypes['PricingSyncPayload'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').PricingSyncPayloadSchema>
@@ -10790,6 +10891,19 @@ const checks: Checks = {
     CostAnalyticsResponse: true,
     CostRunPriceQuery: true,
     CostRunPriceResponse: true,
+    ObjectIntakeCostQuery: true,
+    IntakeRunCost: true,
+    IntakeCostVersion: true,
+    ObjectIntakeCostResponse: true,
+    IntakeCostSummaryQuery: true,
+    IntakeCostTotals: true,
+    IntakeCostTimePoint: true,
+    IntakeCostPerPage: true,
+    IntakeCostByContentType: true,
+    IntakeCostByContentNature: true,
+    IntakeCostByOutcome: true,
+    IntakeCostDocument: true,
+    IntakeCostSummaryResponse: true,
     CustomRoleDefinition: true,
     CustomRoleDefinitionArray: true,
     PermissionArray: true,
@@ -12463,6 +12577,19 @@ const checks: Checks = {
     'component:ModelPriceComparisonResponse': true,
     'component:CostAnalyticsResponse': true,
     'component:CostRunPriceResponse': true,
+    'component:ObjectIntakeCostQuery': true,
+    'component:IntakeRunCost': true,
+    'component:IntakeCostVersion': true,
+    'component:ObjectIntakeCostResponse': true,
+    'component:IntakeCostSummaryQuery': true,
+    'component:IntakeCostTotals': true,
+    'component:IntakeCostTimePoint': true,
+    'component:IntakeCostPerPage': true,
+    'component:IntakeCostByContentType': true,
+    'component:IntakeCostByContentNature': true,
+    'component:IntakeCostByOutcome': true,
+    'component:IntakeCostDocument': true,
+    'component:IntakeCostSummaryResponse': true,
     'component:PricingSyncPayload': true,
     'component:PricingSyncDayResult': true,
     'component:PricingSyncResult': true,
@@ -13258,6 +13385,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2755);
+        expect(Object.keys(checks)).toHaveLength(2781);
     });
 });

@@ -2308,6 +2308,7 @@ export type CostAnalyticsQuery = {
         | 'workflow'
         | 'agent_run'
         | 'workflow_run'
+        | 'source'
         | undefined;
     resolution?: 'hour' | 'day' | 'week' | 'month' | undefined;
     model?: string | undefined;
@@ -2483,6 +2484,117 @@ export type CostRunPriceResponse = {
         | undefined;
     pricing_source: 'list' | 'historical';
     matched_events: number;
+};
+export type ObjectIntakeCostQuery = {
+    limit?: number | undefined;
+};
+/** The cost of one intake run of a content object. */
+export type IntakeRunCost = {
+    root_run_id: string;
+    object_id: string;
+    workflow_id?: string | undefined;
+    workflow_type?: string | undefined;
+    outcome?: 'completed' | 'skipped' | 'failed' | undefined;
+    content_type_id?: string | undefined;
+    content_type_name?: string | undefined;
+    content_nature?: string | undefined;
+    page_count?: number | undefined;
+    started_at: string;
+    last_event_at: string;
+    closed_at?: string | undefined;
+    cost_usd: number;
+    priced_calls: number;
+    unpriced_calls: number;
+    failed_calls: number;
+    calls: Record<string, number>;
+    tokens: Record<string, number>;
+};
+export type IntakeCostVersion = {
+    object_id: string;
+    label?: string | undefined;
+    created_at: string;
+    head: boolean;
+};
+/** The LLM and embedding cost of the intake workflows that processed a content object. */
+export type ObjectIntakeCostResponse = {
+    object_id: string;
+    versions: IntakeCostVersion[];
+    run_count: number;
+    cost_usd: number;
+    priced_calls: number;
+    unpriced_calls: number;
+    runs: IntakeRunCost[];
+};
+export type IntakeCostSummaryQuery = {
+    from?: string | number | undefined;
+    to?: string | number | undefined;
+    resolution?: 'hour' | 'day' | 'week' | 'month' | undefined;
+    content_type_id?: string | undefined;
+};
+export type IntakeCostTotals = {
+    run_count: number;
+    document_count: number;
+    cost_usd: number;
+    priced_calls: number;
+    unpriced_calls: number;
+    failed_calls: number;
+    page_count: number;
+    tokens: Record<string, number>;
+};
+export type IntakeCostTimePoint = {
+    timestamp: string;
+    run_count: number;
+    cost_usd: number;
+};
+export type IntakeCostPerPage = {
+    run_count: number;
+    page_count: number;
+    cost_usd: number;
+    average_usd: number;
+    median_usd: number;
+    p95_usd: number;
+};
+export type IntakeCostByContentType = {
+    content_type_id?: string | undefined;
+    content_type_name?: string | undefined;
+    run_count: number;
+    document_count: number;
+    cost_usd: number;
+    page_count: number;
+};
+export type IntakeCostByContentNature = {
+    content_nature?: string | undefined;
+    run_count: number;
+    document_count: number;
+    cost_usd: number;
+    page_count: number;
+    duration_seconds: number;
+    cost_per_minute_usd?: number | undefined;
+};
+export type IntakeCostByOutcome = {
+    outcome: 'completed' | 'skipped' | 'failed' | 'not_reported';
+    run_count: number;
+    cost_usd: number;
+};
+export type IntakeCostDocument = {
+    object_id: string;
+    name?: string | undefined;
+    content_type_name?: string | undefined;
+    run_count: number;
+    cost_usd: number;
+};
+/** The LLM and embedding cost of a project's intake runs over a window. */
+export type IntakeCostSummaryResponse = {
+    from: string;
+    to: string;
+    resolution: 'hour' | 'day' | 'week' | 'month';
+    totals: IntakeCostTotals;
+    time_series: IntakeCostTimePoint[];
+    per_page?: IntakeCostPerPage | undefined;
+    by_content_type: IntakeCostByContentType[];
+    by_content_nature: IntakeCostByContentNature[];
+    by_outcome: IntakeCostByOutcome[];
+    top_documents: IntakeCostDocument[];
 };
 export type CustomRoleDefinition = {
     name: string;
@@ -11987,6 +12099,19 @@ export interface ApiComponentTypes {
     ModelPriceComparisonResponse: ModelPriceComparisonResponse;
     CostAnalyticsResponse: CostAnalyticsResponse;
     CostRunPriceResponse: CostRunPriceResponse;
+    ObjectIntakeCostQuery: ObjectIntakeCostQuery;
+    IntakeRunCost: IntakeRunCost;
+    IntakeCostVersion: IntakeCostVersion;
+    ObjectIntakeCostResponse: ObjectIntakeCostResponse;
+    IntakeCostSummaryQuery: IntakeCostSummaryQuery;
+    IntakeCostTotals: IntakeCostTotals;
+    IntakeCostTimePoint: IntakeCostTimePoint;
+    IntakeCostPerPage: IntakeCostPerPage;
+    IntakeCostByContentType: IntakeCostByContentType;
+    IntakeCostByContentNature: IntakeCostByContentNature;
+    IntakeCostByOutcome: IntakeCostByOutcome;
+    IntakeCostDocument: IntakeCostDocument;
+    IntakeCostSummaryResponse: IntakeCostSummaryResponse;
     PricingSyncPayload: PricingSyncPayload;
     PricingSyncDayResult: PricingSyncDayResult;
     PricingSyncResult: PricingSyncResult;

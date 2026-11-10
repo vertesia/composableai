@@ -315,6 +315,114 @@ export async function getObjectText(program: Command, objectId: string, options:
     console.log(text.text);
 }
 
+interface IntakeCostOptions extends JsonOutputOptions {
+    limit?: string;
+}
+
+function formatUsd(amount: number): string {
+    return `$${amount.toFixed(amount < 0.01 ? 6 : 4)}`;
+}
+
+export async function getObjectIntakeCost(program: Command, objectId: string, options: IntakeCostOptions) {
+    const limit = options.limit === undefined ? undefined : Number(options.limit);
+    if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > 200)) {
+        throw new Error('Invalid limit: expected an integer from 1 to 200');
+    }
+    const client = await getClient(program);
+    const cost = await client.objects.getIntakeCost(objectId, limit === undefined ? undefined : { limit });
+    if (options.json) {
+        printJson(cost);
+        return;
+    }
+    const unpriced = cost.unpriced_calls ? `, ${cost.unpriced_calls} unpriced` : '';
+    const acrossVersions = cost.versions.length > 1;
+    const versions = acrossVersions ? ` across ${cost.versions.length} versions` : '';
+    console.log(
+        `${formatUsd(cost.cost_usd)} over ${cost.run_count} intake run(s)${versions}, ` +
+            `${cost.priced_calls} priced call(s)${unpriced}`,
+    );
+    if (cost.versions.length === 1 && !cost.versions[0].head) {
+        console.log('An earlier version: only its own runs. The latest version covers all of them.');
+    }
+    for (const run of cost.runs) {
+        const type = run.content_type_name ?? run.content_type_id ?? '-';
+        const outcome = run.outcome ?? 'not reported';
+        const version = acrossVersions ? `  ${run.object_id}` : '';
+        console.log(
+            `${run.started_at}  ${outcome.padEnd(12)} ${formatUsd(run.cost_usd).padStart(11)}  ${type}${version}`,
+        );
+    }
+}
+
+interface IntakeCostSummaryOptions extends JsonOutputOptions {
+    from?: string;
+    to?: string;
+    resolution?: string;
+    contentType?: string;
+}
+
+const INTAKE_COST_RESOLUTIONS = ['hour', 'day', 'week', 'month'] as const;
+
+export async function getIntakeCostSummary(program: Command, options: IntakeCostSummaryOptions) {
+    const resolution = options.resolution;
+    if (resolution !== undefined && !INTAKE_COST_RESOLUTIONS.some((value) => value === resolution)) {
+        throw new Error(`Invalid resolution: expected one of ${INTAKE_COST_RESOLUTIONS.join(', ')}`);
+    }
+    const client = await getClient(program);
+    const summary = await client.store.cost.getIntakeCostSummary({
+        ...(options.from ? { from: options.from } : {}),
+        ...(options.to ? { to: options.to } : {}),
+        ...(resolution ? { resolution: resolution as (typeof INTAKE_COST_RESOLUTIONS)[number] } : {}),
+        ...(options.contentType ? { content_type_id: options.contentType } : {}),
+    });
+    if (options.json) {
+        printJson(summary);
+        return;
+    }
+    const { totals } = summary;
+    const unpriced = totals.unpriced_calls ? `, ${totals.unpriced_calls} unpriced` : '';
+    console.log(`Intake cost from ${summary.from} to ${summary.to}`);
+    console.log(
+        `${formatUsd(totals.cost_usd)} over ${totals.run_count} intake run(s) on ${totals.document_count} document(s), ` +
+            `${totals.priced_calls} priced call(s)${unpriced}`,
+    );
+    if (summary.per_page) {
+        const page = summary.per_page;
+        console.log(
+            `Per page: ${formatUsd(page.average_usd)} on average, median ${formatUsd(page.median_usd)}, ` +
+                `p95 ${formatUsd(page.p95_usd)} (${page.page_count} page(s) over ${page.run_count} run(s))`,
+        );
+    }
+    if (summary.by_content_nature.length > 0) {
+        console.log('\nBy kind of content:');
+        for (const group of summary.by_content_nature) {
+            const perDocument = formatUsd(group.cost_usd / group.document_count);
+            const perMinute =
+                group.cost_per_minute_usd === undefined ? '' : `, ${formatUsd(group.cost_per_minute_usd)} per minute`;
+            console.log(
+                `  ${formatUsd(group.cost_usd).padStart(11)}  ${group.content_nature ?? '(unknown)'}: ` +
+                    `${group.document_count} document(s), ${perDocument} each${perMinute}`,
+            );
+        }
+    }
+    if (summary.by_content_type.length > 0) {
+        console.log('\nBy content type:');
+        for (const group of summary.by_content_type) {
+            const type = group.content_type_name ?? group.content_type_id ?? '(no type)';
+            console.log(
+                `  ${formatUsd(group.cost_usd).padStart(11)}  ${String(group.run_count).padStart(6)} run(s)  ${type}`,
+            );
+        }
+    }
+    if (summary.top_documents.length > 0) {
+        console.log('\nMost expensive documents:');
+        for (const document of summary.top_documents) {
+            const name = document.name ?? '(no access)';
+            console.log(`  ${formatUsd(document.cost_usd).padStart(11)}  ${document.object_id}  ${name}`);
+        }
+    }
+}
+
 export async function listObjects(program: Command, folderPath: string | undefined, options: ListObjectsOptions) {
     const client = await getClient(program);
     const payload: ObjectSearchPayload = {
