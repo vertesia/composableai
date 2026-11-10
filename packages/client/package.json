@@ -28,7 +28,7 @@
         "@google-cloud/storage": "^8.4.0",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "google-auth-library": "^11.3.1",
+        "google-auth-library": "^11.3.2",
         "rolldown": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"
@@ -42,8 +42,8 @@
     },
     "peerDependencies": {
         "@azure/storage-blob": "^12.0.0",
-        "@google-cloud/storage": ">=7.0.0",
-        "google-auth-library": ">=9.2.0"
+        "@google-cloud/storage": ">=7.22.0",
+        "google-auth-library": ">=9.15.1"
     },
     "peerDependenciesMeta": {
         "@azure/storage-blob": {
