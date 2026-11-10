@@ -291,6 +291,14 @@ function isToolPreambleProse(message: AgentMessage): boolean {
 // Tools a model tends to call last, with its answer written as that call's preamble.
 const ANSWER_CARRYING_TOOLS = new Set(['update_plan']);
 
+// Tools whose call ends the conversation; the text written with them is the agent's answer.
+const CLOSING_TOOLS = new Set(['end_conversation', 'browser_finish']);
+
+function getPreambleToolNames(message: AgentMessage): string[] {
+    const details = message.details;
+    return details?.tools?.length ? details.tools : details?.tool ? [details.tool] : [];
+}
+
 function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
     // Check the latest preamble before filtering its text, so an empty or low-signal
     // final preamble cannot make us fall back to prose from an earlier call.
@@ -298,7 +306,7 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
     if (index < 0 || !isToolPreambleProse(messages[index])) return -1;
 
     const details = messages[index].details;
-    const tools = details?.tools?.length ? details.tools : details?.tool ? [details.tool] : [];
+    const tools = getPreambleToolNames(messages[index]);
     if (tools.length === 0 || !tools.every((tool) => ANSWER_CARRYING_TOOLS.has(tool))) return -1;
 
     let iteration = details?.tool_iteration;
@@ -325,6 +333,50 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
     }
 
     return hasMatchingTool ? index : -1;
+}
+
+/**
+ * Whether a COMPLETE message carries a conversation result the turn has not shown yet. Only a
+ * conversation that was ended, by end_conversation, a closing tool, or a limit, can post new text in
+ * its COMPLETE, and that COMPLETE carries `end_conversation_status`. Every COMPLETE is marked
+ * `user_content`, so that marker does not tell a result from a status line such as a process
+ * run's "Process completed at …".
+ *
+ * The text usually repeats a message the turn shows: the final ANSWER, or the ERROR a stopped run
+ * posts with its summary. Only an ANSWER with no work after it is final: a run nudged to finish its
+ * plan answers, keeps working, and may then end through end_conversation with a new result.
+ *
+ * A run that ends mid-task repeats its last tool preamble instead, which is progress, not a result.
+ * Work rows render collapsed, so a preamble counts only for that reason: the text an agent writes
+ * with a closing call (CLOSING_TOOLS) is its answer, and it is shown here even when the result
+ * repeats it.
+ */
+function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConversationItem[]): boolean {
+    if (message.type !== AgentMessageType.COMPLETE) return false;
+    if (typeof message.details?.end_conversation_status !== 'string') return false;
+    if (isWorkstreamInternalResultMessage(message)) return false;
+
+    const text = getMessageText(message);
+    if (!text || isLowSignalSummaryText(text)) return false;
+
+    let workedSince = false;
+    for (let index = items.length - 1; index >= 0; index--) {
+        const item = items[index];
+        if (item.type === 'work') {
+            const repeatsProgress = item.messages.some(
+                (work) =>
+                    getMessageText(work) === text &&
+                    !getPreambleToolNames(work).some((tool) => CLOSING_TOOLS.has(tool)),
+            );
+            if (repeatsProgress) return false;
+            workedSince = true;
+            continue;
+        }
+        if (item.message.type === AgentMessageType.QUESTION) return true;
+        if (getMessageText(item.message) === text) return false;
+        if (item.message.type === AgentMessageType.ANSWER && !workedSince) return false;
+    }
+    return true;
 }
 
 export function buildSummaryConversationItems(
@@ -407,6 +459,9 @@ export function buildSummaryConversationItems(
                 continue;
             }
             flushWork(false, message);
+            if (isUnansweredCompletionResult(message, items)) {
+                items.push({ type: 'message', message });
+            }
             continue;
         }
 
