@@ -686,7 +686,7 @@ importers:
         specifier: workspace:*
         version: link:../../libraries/tsconfig
       google-auth-library:
-        specifier: ^11.3.1
+        specifier: ^11.3.2
         version: 11.3.2(supports-color@10.2.2)
       rolldown:
         specifier: 'catalog:'
@@ -1347,7 +1347,7 @@ importers:
         specifier: ^3.1.3
         version: 3.1.3
       google-auth-library:
-        specifier: ^11.3.1
+        specifier: ^11.3.2
         version: 11.3.2(supports-color@10.2.2)
       jsonwebtoken:
         specifier: ^9.0.3
