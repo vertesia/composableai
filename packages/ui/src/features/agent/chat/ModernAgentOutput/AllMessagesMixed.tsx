@@ -28,6 +28,7 @@ import {
     Wrench,
 } from 'lucide-react';
 import React, { Component, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AcknowledgeOnRender } from '../../../notifications/NotificationAcknowledgement.js';
 import { AgentRunFeedback, agentMessageFeedbackId, isAgentMessageRatable } from '../AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from '../AnimatedThinkingDots';
 import { AskUserWidget, isAskUserOptions } from '../AskUserWidget';
@@ -52,6 +53,12 @@ import {
 } from './CollapsibleAgentMarkdown.js';
 import { getMessageDeliveryStatus, MessageDeliveryStatus } from './MessageDeliveryStatus';
 import MessageItem, { type MessageItemClassNames, type MessageItemProps } from './MessageItem';
+import {
+    findLatestAnswerMessage,
+    getAgentMessageAcknowledgement,
+    hasAgentRunEnded,
+    isAcknowledgeableAgentMessage,
+} from './notificationAcknowledgement.js';
 import { ResourceChangeSummary } from './ResourceChangeSummary';
 import { ResourceActivityLinkList } from './ResourceChip';
 import {
@@ -2189,6 +2196,20 @@ function SummaryActivityRow({
     );
 }
 
+/** Observes requests and answers for notification acknowledgement; other messages render unwrapped. */
+function MaybeAcknowledge({
+    message,
+    getAcknowledgement,
+    children,
+}: {
+    message: AgentMessage;
+    getAcknowledgement: (message: AgentMessage) => ReturnType<typeof getAgentMessageAcknowledgement>;
+    children: ReactNode;
+}) {
+    if (!isAcknowledgeableAgentMessage(message)) return <>{children}</>;
+    return <AcknowledgeOnRender occurrence={getAcknowledgement(message)}>{children}</AcknowledgeOnRender>;
+}
+
 function TimelineEntry({ children, status }: { children: React.ReactNode; status?: ToolExecutionStatus | 'message' }) {
     const dotClass =
         status === 'error'
@@ -2831,6 +2852,24 @@ function AllMessagesMixedComponent({
         return !isDisplayCompleted || hasOpenUserTurn(completionDisplayMessages);
     }, [completionDisplayMessages, isDisplayCompleted]);
 
+    // Notification acknowledgement: a rendered request acknowledges its question or approval, and the
+    // latest answer of a run that is no longer working acknowledges its end or its turn.
+    const latestAnswerMessage = useMemo(
+        () => findLatestAnswerMessage(completionDisplayMessages),
+        [completionDisplayMessages],
+    );
+    const hasRunEnded = useMemo(() => hasAgentRunEnded(completionDisplayMessages), [completionDisplayMessages]);
+    const getAcknowledgement = useCallback(
+        (message: AgentMessage) =>
+            getAgentMessageAcknowledgement(message, {
+                agentRunId,
+                latestAnswer: latestAnswerMessage,
+                isRunCompleted: hasRunEnded,
+                isAgentWorking,
+            }),
+        [agentRunId, hasRunEnded, isAgentWorking, latestAnswerMessage],
+    );
+
     const showPostToolThinking = useMemo(() => {
         if (!isAgentWorking || incompleteStreaming.length > 0) return false;
 
@@ -3148,33 +3187,38 @@ function AllMessagesMixedComponent({
                                     return (
                                         <TimelineEntry key={getAgentMessageRenderKey(message)} status="message">
                                             <MessageErrorBoundary>
-                                                <MessageItem
-                                                    {...messageItemClassNames}
+                                                <MaybeAcknowledge
                                                     message={message}
-                                                    showPulsatingCircle={isLatestMessage}
-                                                    onSendMessage={onSendMessage}
-                                                    onOpenArtifact={onOpenArtifact}
-                                                    requestInputAnswered={isRequestInputAnswered(
-                                                        message,
-                                                        answeredRequestInputKeys,
-                                                    )}
-                                                    cardClassName={cn(
-                                                        'rounded-lg border border-border bg-background/60 shadow-none',
-                                                        messageItemClassNames?.cardClassName,
-                                                    )}
-                                                    headerClassName={cn(
-                                                        'px-3 py-2',
-                                                        messageItemClassNames?.headerClassName,
-                                                    )}
-                                                    contentClassName={cn(
-                                                        'bg-transparent',
-                                                        messageItemClassNames?.contentClassName,
-                                                    )}
-                                                    messageStyleOverrides={messageStyleOverrides}
-                                                    StoreLinkComponent={StoreLinkComponent}
-                                                    CollectionLinkComponent={CollectionLinkComponent}
-                                                    feedbackAgentRunId={agentRunId}
-                                                />
+                                                    getAcknowledgement={getAcknowledgement}
+                                                >
+                                                    <MessageItem
+                                                        {...messageItemClassNames}
+                                                        message={message}
+                                                        showPulsatingCircle={isLatestMessage}
+                                                        onSendMessage={onSendMessage}
+                                                        onOpenArtifact={onOpenArtifact}
+                                                        requestInputAnswered={isRequestInputAnswered(
+                                                            message,
+                                                            answeredRequestInputKeys,
+                                                        )}
+                                                        cardClassName={cn(
+                                                            'rounded-lg border border-border bg-background/60 shadow-none',
+                                                            messageItemClassNames?.cardClassName,
+                                                        )}
+                                                        headerClassName={cn(
+                                                            'px-3 py-2',
+                                                            messageItemClassNames?.headerClassName,
+                                                        )}
+                                                        contentClassName={cn(
+                                                            'bg-transparent',
+                                                            messageItemClassNames?.contentClassName,
+                                                        )}
+                                                        messageStyleOverrides={messageStyleOverrides}
+                                                        StoreLinkComponent={StoreLinkComponent}
+                                                        CollectionLinkComponent={CollectionLinkComponent}
+                                                        feedbackAgentRunId={agentRunId}
+                                                    />
+                                                </MaybeAcknowledge>
                                             </MessageErrorBoundary>
                                         </TimelineEntry>
                                     );
@@ -3283,19 +3327,21 @@ function AllMessagesMixedComponent({
 
                                 return (
                                     <MessageErrorBoundary key={getAgentMessageRenderKey(message, 'summary')}>
-                                        <SummaryMessage
-                                            message={message}
-                                            onSendMessage={onSendMessage}
-                                            onOpenArtifact={onOpenArtifact}
-                                            onSelectWorkstream={handleSelectWorkstream}
-                                            requestInputAnswered={isRequestInputAnswered(
-                                                message,
-                                                answeredRequestInputKeys,
-                                            )}
-                                            StoreLinkComponent={StoreLinkComponent}
-                                            CollectionLinkComponent={CollectionLinkComponent}
-                                            feedbackAgentRunId={agentRunId}
-                                        />
+                                        <MaybeAcknowledge message={message} getAcknowledgement={getAcknowledgement}>
+                                            <SummaryMessage
+                                                message={message}
+                                                onSendMessage={onSendMessage}
+                                                onOpenArtifact={onOpenArtifact}
+                                                onSelectWorkstream={handleSelectWorkstream}
+                                                requestInputAnswered={isRequestInputAnswered(
+                                                    message,
+                                                    answeredRequestInputKeys,
+                                                )}
+                                                StoreLinkComponent={StoreLinkComponent}
+                                                CollectionLinkComponent={CollectionLinkComponent}
+                                                feedbackAgentRunId={agentRunId}
+                                            />
+                                        </MaybeAcknowledge>
                                     </MessageErrorBoundary>
                                 );
                             })}
