@@ -456,6 +456,25 @@ export const OAuthLoginUserNotFoundResponseSchema = z
     })
     .meta({ id: 'OAuthLoginUserNotFoundResponse' });
 
+export const OAuthLoginRequestNotFoundResponseSchema = z
+    .strictObject({
+        error: z.literal('not_found'),
+        message: z.string(),
+    })
+    .meta({
+        id: 'OAuthLoginRequestNotFoundResponse',
+        description:
+            'The authorization request, or the client it was issued for, does not exist or is no longer available.',
+    });
+
+export const OAuthLoginNotFoundResponseSchema = z
+    .discriminatedUnion('error', [OAuthLoginUserNotFoundResponseSchema, OAuthLoginRequestNotFoundResponseSchema])
+    .meta({
+        id: 'OAuthLoginNotFoundResponse',
+        description:
+            'Why a login could not complete: `user_not_found` when the user must be provisioned before retrying, `not_found` when the authorization request cannot be completed.',
+    });
+
 const federationId = z.string().regex(/^[a-fA-F0-9]{24}$/);
 export const OidcFederationConnectionPayloadSchema = z
     .strictObject({

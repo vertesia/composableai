@@ -2750,36 +2750,42 @@ export type BatchQueryPayload = {
         limit?: number | undefined;
     }[];
 };
+export type AlterTableAddColumnOperation = {
+    op: 'add_column';
+    column: DataColumn;
+};
+export type AlterTableDropColumnOperation = {
+    op: 'drop_column';
+    column: string;
+};
+export type AlterTableRenameColumnOperation = {
+    op: 'rename_column';
+    from: string;
+    to: string;
+};
+export type AlterTableModifyColumnOperation = {
+    op: 'modify_column';
+    column: string;
+    updates: DataColumnUpdate;
+};
+export type AlterTableAddForeignKeyOperation = {
+    op: 'add_foreign_key';
+    foreign_key: DataForeignKey;
+};
+export type AlterTableDropForeignKeyOperation = {
+    op: 'drop_foreign_key';
+    column: string;
+};
 /**
  * @discriminator op
  */
 export type AlterTableOperation =
-    | {
-          op: 'add_column';
-          column: DataColumn;
-      }
-    | {
-          op: 'drop_column';
-          column: string;
-      }
-    | {
-          op: 'rename_column';
-          from: string;
-          to: string;
-      }
-    | {
-          op: 'modify_column';
-          column: string;
-          updates: DataColumnUpdate;
-      }
-    | {
-          op: 'add_foreign_key';
-          foreign_key: DataForeignKey;
-      }
-    | {
-          op: 'drop_foreign_key';
-          column: string;
-      };
+    | AlterTableAddColumnOperation
+    | AlterTableDropColumnOperation
+    | AlterTableRenameColumnOperation
+    | AlterTableModifyColumnOperation
+    | AlterTableAddForeignKeyOperation
+    | AlterTableDropForeignKeyOperation;
 /**
  * Payload for altering a table schema.
  */
@@ -3091,19 +3097,21 @@ export type DashboardElasticsearchDsl = {
           }[]
         | undefined;
 };
+export type DashboardElasticsearchHitsMapping = {
+    type: 'hits';
+};
+export type DashboardElasticsearchAggregationBucketsMapping = {
+    type: 'aggregation_buckets';
+    path: string;
+    keyField?: string | undefined;
+    countField?: string | undefined;
+};
 /**
  * How an Elasticsearch DSL result should be converted into Vega rows.
  */
 export type DashboardElasticsearchResultMapping =
-    | {
-          type: 'hits';
-      }
-    | {
-          type: 'aggregation_buckets';
-          path: string;
-          keyField?: string | undefined;
-          countField?: string | undefined;
-      };
+    | DashboardElasticsearchHitsMapping
+    | DashboardElasticsearchAggregationBucketsMapping;
 /**
  * Dashboard data source backed by a Data Platform SQL query.
  */
@@ -5248,6 +5256,11 @@ export type OAuthLoginUserNotFoundResponse = {
     error: 'user_not_found';
     ensure_user_url: string;
 };
+export type OAuthLoginRequestNotFoundResponse = {
+    error: 'not_found';
+    message: string;
+};
+export type OAuthLoginNotFoundResponse = OAuthLoginUserNotFoundResponse | OAuthLoginRequestNotFoundResponse;
 export type OidcFederationConnectionPayload = {
     name: string;
     issuer: string;
@@ -7455,15 +7468,15 @@ export type WorkflowInputFile = {
     url: string;
     mimetype: string;
 };
-export type WorkflowInput =
-    | {
-          inputType: 'objectIds';
-          objectIds: string[];
-      }
-    | {
-          inputType: 'files';
-          files: WorkflowInputFile[];
-      };
+export type WorkflowObjectIdsInput = {
+    inputType: 'objectIds';
+    objectIds: string[];
+};
+export type WorkflowFilesInput = {
+    inputType: 'files';
+    files: WorkflowInputFile[];
+};
+export type WorkflowInput = WorkflowObjectIdsInput | WorkflowFilesInput;
 export type DSLActivityOptions = {
     startToCloseTimeout?: DurationValue | undefined;
     heartbeatTimeout?: DurationValue | undefined;
@@ -9188,21 +9201,21 @@ export type TimerTask = {
     duration?: string | undefined;
 };
 export type WorkflowTask = ActivityTask | ChildWorkflowTask | SignalTask | TimerTask;
-export type WorkflowHistory =
-    | {
-          type: 'events';
-          events: WorkflowRunEvent[];
-      }
-    | {
-          type: 'tasks';
-          tasks: WorkflowTask[];
-      }
-    | {
-          type: 'agent';
-          mode?: 'snapshot' | 'delta' | undefined;
-          next_from?: string | undefined;
-          agentTasks: AgentTask[];
-      };
+export type WorkflowEventsHistory = {
+    type: 'events';
+    events: WorkflowRunEvent[];
+};
+export type WorkflowTasksHistory = {
+    type: 'tasks';
+    tasks: WorkflowTask[];
+};
+export type WorkflowAgentHistory = {
+    type: 'agent';
+    mode?: 'snapshot' | 'delta' | undefined;
+    next_from?: string | undefined;
+    agentTasks: AgentTask[];
+};
+export type WorkflowHistory = WorkflowEventsHistory | WorkflowTasksHistory | WorkflowAgentHistory;
 export type AgentTask = {
     history_id?: string | undefined;
     taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing' | 'signal';
@@ -11000,7 +11013,7 @@ export type AgentRunInternalsWire = {
     run_type?: RunType | undefined;
     interaction?: string | undefined;
     interaction_name?: string | undefined;
-    config?: InteractionExecutionConfiguration | undefined;
+    config?: InteractionExecutionConfiguration | ProcessRunConfig | undefined;
     interactive?: boolean | undefined;
     process_id?: string | undefined;
     process_definition_snapshot?: ProcessDefinitionBodyWire | undefined;
@@ -11425,6 +11438,8 @@ export interface ApiComponentTypes {
     OAuthAuthorizationRequestGeneratedApp: OAuthAuthorizationRequestGeneratedApp;
     OAuthLoginPayload: OAuthLoginPayload;
     OAuthLoginUserNotFoundResponse: OAuthLoginUserNotFoundResponse;
+    OAuthLoginRequestNotFoundResponse: OAuthLoginRequestNotFoundResponse;
+    OAuthLoginNotFoundResponse: OAuthLoginNotFoundResponse;
     OAuthLoginDecisionResponse: OAuthLoginDecisionResponse;
     ApproveOAuthAuthorizationRequestPayload: ApproveOAuthAuthorizationRequestPayload;
     OAuthGrantableScopesResponse: OAuthGrantableScopesResponse;
@@ -11745,6 +11760,8 @@ export interface ApiComponentTypes {
     MigrationListResponse: MigrationListResponse;
     RunMigrationPayload: RunMigrationPayload;
     RunMigrationResponse: RunMigrationResponse;
+    DashboardElasticsearchHitsMapping: DashboardElasticsearchHitsMapping;
+    DashboardElasticsearchAggregationBucketsMapping: DashboardElasticsearchAggregationBucketsMapping;
     DashboardElasticsearchResultMapping: DashboardElasticsearchResultMapping;
     DashboardElasticsearchDsl: DashboardElasticsearchDsl;
     DashboardSqlDataSource: DashboardSqlDataSource;
@@ -11815,6 +11832,12 @@ export interface ApiComponentTypes {
     CreateDataStorePayload: CreateDataStorePayload;
     QueryValidationResult: QueryValidationResult;
     DataColumn: DataColumn;
+    AlterTableAddColumnOperation: AlterTableAddColumnOperation;
+    AlterTableDropColumnOperation: AlterTableDropColumnOperation;
+    AlterTableRenameColumnOperation: AlterTableRenameColumnOperation;
+    AlterTableModifyColumnOperation: AlterTableModifyColumnOperation;
+    AlterTableAddForeignKeyOperation: AlterTableAddForeignKeyOperation;
+    AlterTableDropForeignKeyOperation: AlterTableDropForeignKeyOperation;
     AlterTableOperation: AlterTableOperation;
     DataRelationship: DataRelationship;
     CreateTablePayload: CreateTablePayload;
@@ -12229,9 +12252,14 @@ export interface ApiComponentTypes {
     WorkflowDefinitionRefArray: WorkflowDefinitionRefArray;
     ListWorkflowRunsResponse: ListWorkflowRunsResponse;
     WorkflowRunEvent: WorkflowRunEvent;
+    WorkflowObjectIdsInput: WorkflowObjectIdsInput;
+    WorkflowFilesInput: WorkflowFilesInput;
     WorkflowInput: WorkflowInput;
     WorkflowRunUpdatesResponse: WorkflowRunUpdatesResponse;
     ExecuteWorkflowPayload: ExecuteWorkflowPayload;
+    WorkflowEventsHistory: WorkflowEventsHistory;
+    WorkflowTasksHistory: WorkflowTasksHistory;
+    WorkflowAgentHistory: WorkflowAgentHistory;
     WorkflowHistory: WorkflowHistory;
     WorkflowRunWithDetails: WorkflowRunWithDetails;
     BindRunWorkflowPayload: BindRunWorkflowPayload;

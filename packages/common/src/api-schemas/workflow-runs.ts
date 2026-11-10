@@ -540,22 +540,33 @@ export const WorkflowRunEventSchema = z
     })
     .meta({ id: 'WorkflowRunEvent' });
 
+export const WorkflowObjectIdsInputSchema = z
+    .strictObject({
+        inputType: z.literal('objectIds'),
+        objectIds: z.array(z.string()),
+    })
+    .meta({ id: 'WorkflowObjectIdsInput', description: 'Run the workflow on existing documents.' });
+
+export const WorkflowFilesInputSchema = z
+    .strictObject({
+        inputType: z.literal('files'),
+        files: z.array(WorkflowInputFileSchema),
+    })
+    .meta({ id: 'WorkflowFilesInput', description: 'Run the workflow on uploaded files.' });
+
 export const WorkflowInputSchema = z
-    .discriminatedUnion('inputType', [
-        z.strictObject({
-            inputType: z.literal('objectIds'),
-            objectIds: z.array(z.string()),
-        }),
-        z.strictObject({
-            inputType: z.literal('files'),
-            files: z.array(WorkflowInputFileSchema),
-        }),
-    ])
+    .discriminatedUnion('inputType', [WorkflowObjectIdsInputSchema, WorkflowFilesInputSchema])
     .meta({
         id: 'WorkflowInput',
         type: 'object',
         required: ['inputType'],
-        discriminator: { propertyName: 'inputType' },
+        discriminator: {
+            propertyName: 'inputType',
+            mapping: {
+                objectIds: '#/components/schemas/WorkflowObjectIdsInput',
+                files: '#/components/schemas/WorkflowFilesInput',
+            },
+        },
     });
 
 export const WorkflowRunUpdatesResponseSchema = z
@@ -623,36 +634,56 @@ export const ExecuteWorkflowPayloadSchema = z
     })
     .meta({ id: 'ExecuteWorkflowPayload' });
 
+export const WorkflowEventsHistorySchema = z
+    .strictObject({
+        type: z.literal('events'),
+        events: z.array(WorkflowRunEventSchema),
+    })
+    .meta({ id: 'WorkflowEventsHistory', description: 'Workflow history as raw workflow events.' });
+
+export const WorkflowTasksHistorySchema = z
+    .strictObject({
+        type: z.literal('tasks'),
+        tasks: z.array(WorkflowTaskSchema),
+    })
+    .meta({ id: 'WorkflowTasksHistory', description: 'Workflow history as processed tasks.' });
+
+export const WorkflowAgentHistorySchema = z
+    .strictObject({
+        type: z.literal('agent'),
+        mode: z
+            .enum(['snapshot', 'delta'])
+            .meta({
+                description:
+                    'Snapshot replaces all history; delta replaces returned rows by history_id and retains other rows.',
+            })
+            .optional(),
+        next_from: z
+            .string()
+            .meta({
+                description:
+                    'Pass as from on the next refresh with the same options. Absence disables incremental refresh.',
+            })
+            .optional(),
+        agentTasks: z.array(AgentTaskSchema),
+    })
+    .meta({ id: 'WorkflowAgentHistory', description: 'Workflow history as agent tasks.' });
+
 export const WorkflowHistorySchema = z
-    .discriminatedUnion('type', [
-        z.strictObject({
-            type: z.literal('events'),
-            events: z.array(WorkflowRunEventSchema),
-        }),
-        z.strictObject({
-            type: z.literal('tasks'),
-            tasks: z.array(WorkflowTaskSchema),
-        }),
-        z.strictObject({
-            type: z.literal('agent'),
-            mode: z
-                .enum(['snapshot', 'delta'])
-                .meta({
-                    description:
-                        'Snapshot replaces all history; delta replaces returned rows by history_id and retains other rows.',
-                })
-                .optional(),
-            next_from: z
-                .string()
-                .meta({
-                    description:
-                        'Pass as from on the next refresh with the same options. Absence disables incremental refresh.',
-                })
-                .optional(),
-            agentTasks: z.array(AgentTaskSchema),
-        }),
-    ])
-    .meta({ id: 'WorkflowHistory', type: 'object', required: ['type'], discriminator: { propertyName: 'type' } });
+    .discriminatedUnion('type', [WorkflowEventsHistorySchema, WorkflowTasksHistorySchema, WorkflowAgentHistorySchema])
+    .meta({
+        id: 'WorkflowHistory',
+        type: 'object',
+        required: ['type'],
+        discriminator: {
+            propertyName: 'type',
+            mapping: {
+                events: '#/components/schemas/WorkflowEventsHistory',
+                tasks: '#/components/schemas/WorkflowTasksHistory',
+                agent: '#/components/schemas/WorkflowAgentHistory',
+            },
+        },
+    });
 
 export const WorkflowRunWithDetailsSchema = z
     .strictObject({

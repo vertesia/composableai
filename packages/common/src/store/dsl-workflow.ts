@@ -19,6 +19,10 @@ export type WorkflowInputType = 'objectIds' | 'files';
 
 export type WorkflowInputFile = Wire.WorkflowInputFile;
 
+export type WorkflowObjectIdsInput = Wire.WorkflowObjectIdsInput;
+
+export type WorkflowFilesInput = Wire.WorkflowFilesInput;
+
 export type WorkflowInput = Wire.WorkflowInput;
 
 /**

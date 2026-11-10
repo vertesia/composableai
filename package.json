@@ -9,7 +9,7 @@
         "check": "pnpm exec biome check .",
         "check:write": "pnpm exec biome check --write .",
         "ci:local": "pnpm run ci:renovate && pnpm run check && pnpm run build && pnpm run ci:test",
-        "ci:renovate": "npx --yes --package renovate@44.199.2 -- renovate-config-validator --strict",
+        "ci:renovate": "npx --yes --package renovate@44.201.1 -- renovate-config-validator --strict",
         "ci:test": "pnpm exec turbo run typecheck:test test --filter='./packages/*' --filter='./llumiverse/*' --filter='./templates/*' ${TURBO_CACHE_OPTS:---cache=local:rw,remote:r}",
         "ci:typecheck:test": "pnpm exec turbo run typecheck:test --filter='./packages/*' --filter='./llumiverse/*' --filter='./templates/*' ${TURBO_CACHE_OPTS:---cache=local:rw,remote:r}",
         "clean": "rimraf ./node_modules && pnpm -r clean",
@@ -32,7 +32,7 @@
         "typescript": "catalog:",
         "vite": "catalog:"
     },
-    "packageManager": "pnpm@12.16.0",
+    "packageManager": "pnpm@12.17.0",
     "gitHead": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
     "releaseIdentity": {
         "source_sha": "bcaa7879b601ce9ccc394bcd3257822da13869cd",
