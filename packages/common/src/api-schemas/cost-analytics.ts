@@ -59,11 +59,16 @@ export const CostAnalyticsQuerySchema = z
                 'workflow',
                 'agent_run',
                 'workflow_run',
+                'source',
             ])
             .meta({
                 description:
                     'Group results by this dimension. `agent_run` groups by root agent run, including the calls of ' +
-                    'its sub-agents; `workflow_run` groups by Temporal workflow run, which separates each sub-agent.',
+                    'its sub-agents; `workflow_run` groups by Temporal workflow run, which separates each sub-agent. ' +
+                    '`source` groups by what the calls were spent on: `agent`, `process` (with its agents), ' +
+                    '`intake`, `workflow` (any other workflow), `search` (query embeddings) or `interaction` (calls ' +
+                    'outside a workflow). Calls recorded before source tracking can also read `agent_or_process` ' +
+                    'or `embedding` (an embedding of unknown purpose).',
             })
             .optional(),
         resolution: z.enum(['hour', 'day', 'week', 'month']).meta({ description: 'Time series resolution' }).optional(),

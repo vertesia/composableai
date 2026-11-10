@@ -2308,6 +2308,7 @@ export type CostAnalyticsQuery = {
         | 'workflow'
         | 'agent_run'
         | 'workflow_run'
+        | 'source'
         | undefined;
     resolution?: 'hour' | 'day' | 'week' | 'month' | undefined;
     model?: string | undefined;
