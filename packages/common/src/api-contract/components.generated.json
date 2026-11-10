@@ -35831,18 +35831,19 @@
             "type": "null"
           }
         ],
-        "description": "Run-level inference profile ID for process LLM nodes and the supervisor. Explicit model settings retain precedence."
+        "description": "Run-level inference profile ID for process LLM nodes and the supervisor. Do not combine with `environment`, `model` or `model_options`. A node selection takes precedence; this run selection takes precedence over the process definition."
       },
       "environment": {
         "type": "string",
-        "description": "Execution environment id used by Process LLM nodes and the supervisor."
+        "description": "Run-level environment id for process LLM nodes and the supervisor, set with `model` or alone. A node selection takes precedence; this run selection takes precedence over the process definition."
       },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Run-level model id, in `environment`."
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions",
-        "description": "Validated model options applied to Process LLM nodes and the supervisor."
+        "description": "Run-level model options for `environment` and `model`."
       },
       "user_message": {
         "type": "string",

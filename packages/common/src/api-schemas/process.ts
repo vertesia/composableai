@@ -199,15 +199,18 @@ export const ProcessRunConfigSchema = z
     .strictObject({
         inference_profile: InferenceProfileIdSchema.nullable().optional().meta({
             description:
-                'Run-level inference profile ID for process LLM nodes and the supervisor. Explicit model settings retain precedence.',
+                'Run-level inference profile ID for process LLM nodes and the supervisor. Do not combine with `environment`, `model` or `model_options`. A node selection takes precedence; this run selection takes precedence over the process definition.',
         }),
         environment: z
             .string()
-            .meta({ description: 'Execution environment id used by Process LLM nodes and the supervisor.' })
+            .meta({
+                description:
+                    'Run-level environment id for process LLM nodes and the supervisor, set with `model` or alone. A node selection takes precedence; this run selection takes precedence over the process definition.',
+            })
             .optional(),
-        model: z.string().optional(),
+        model: z.string().meta({ description: 'Run-level model id, in `environment`.' }).optional(),
         model_options: ModelOptionsSchema.meta({
-            description: 'Validated model options applied to Process LLM nodes and the supervisor.',
+            description: 'Run-level model options for `environment` and `model`.',
         }).optional(),
         user_message: z
             .string()
