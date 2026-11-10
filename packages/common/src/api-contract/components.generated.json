@@ -4585,6 +4585,15 @@
         "minLength": 1,
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
       },
+      "cache_ttl": {
+        "type": "string",
+        "enum": [
+          "30m",
+          "12h",
+          "in_memory",
+          "24h"
+        ]
+      },
       "extra_body": {
         "type": "object",
         "additionalProperties": true,
@@ -4775,6 +4784,15 @@
         "type": "string",
         "minLength": 1,
         "description": "Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility."
+      },
+      "cache_ttl": {
+        "type": "string",
+        "enum": [
+          "30m",
+          "12h",
+          "in_memory",
+          "24h"
+        ]
       },
       "extra_body": {
         "type": "object",
@@ -26226,8 +26244,21 @@
       "initial": {
         "type": "string"
       },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileId",
+        "description": "Default inference profile for the LLM nodes and supervisor of this process. Do not combine with `environment`, `model` or `model_options`. A process run config selection and a node selection take precedence."
+      },
+      "environment": {
+        "type": "string",
+        "description": "Default environment id for the LLM nodes and supervisor of this process, set with `model` or alone."
+      },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Default model id, in `environment`. A model without an environment is accepted only in definitions saved before environments were required; saving one is rejected."
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions",
+        "description": "Default model options for `environment` and `model`."
       },
       "resources": {
         "$ref": "#/components/schemas/ProcessResourcesDefinition"
@@ -26454,9 +26485,21 @@
         "$ref": "#/components/schemas/ProcessAgentExecutionPolicy",
         "description": "Declarative successful-tool phases and completion behavior for this agent node. The Process owns this policy; the child conversation enforces it generically."
       },
+      "inference_profile": {
+        "$ref": "#/components/schemas/InferenceProfileId",
+        "description": "Inference profile for this node, which supplies its environment, model and model options. Do not combine with `environment`, `model` or `model_options`. A node that selects nothing uses the process run config, then the process definition, then the interaction or agent defaults."
+      },
+      "environment": {
+        "type": "string",
+        "description": "Environment id for this node. Set it together with `model`, or alone to use the environment default model. Useful when one node needs heavier reasoning (e.g. Opus for legal flagging) while the rest of the process uses a cheaper default."
+      },
       "model": {
         "type": "string",
-        "description": "Model id override for this node. If unset, falls back to the process run's `config.model`, then to the project's default. Useful when a specific node needs heavier reasoning (e.g. Opus for legal flagging) while the rest of the process uses a cheaper default."
+        "description": "Model id for this node, in `environment`. A model without an environment is accepted only in definitions saved before environments were required; saving one is rejected."
+      },
+      "model_options": {
+        "$ref": "#/components/schemas/ModelOptions",
+        "description": "Model options for this node's `environment` and `model`."
       },
       "task": {
         "$ref": "#/components/schemas/HumanTaskDefinition"
@@ -35806,18 +35849,19 @@
             "type": "null"
           }
         ],
-        "description": "Run-level inference profile ID for process LLM nodes and the supervisor. Explicit model settings retain precedence."
+        "description": "Run-level inference profile ID for process LLM nodes and the supervisor. Do not combine with `environment`, `model` or `model_options`. A node selection takes precedence; this run selection takes precedence over the process definition."
       },
       "environment": {
         "type": "string",
-        "description": "Execution environment id used by Process LLM nodes and the supervisor."
+        "description": "Run-level environment id for process LLM nodes and the supervisor, set with `model` or alone. A node selection takes precedence; this run selection takes precedence over the process definition."
       },
       "model": {
-        "type": "string"
+        "type": "string",
+        "description": "Run-level model id, in `environment`."
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions",
-        "description": "Validated model options applied to Process LLM nodes and the supervisor."
+        "description": "Run-level model options for `environment` and `model`."
       },
       "user_message": {
         "type": "string",

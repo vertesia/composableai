@@ -1833,6 +1833,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     description:
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
                 },
+                cache_ttl: {
+                    type: 'string',
+                    enum: ['30m', '12h', 'in_memory', '24h'],
+                },
                 extra_body: {
                     type: 'object',
                     additionalProperties: true,
@@ -1890,6 +1894,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     minLength: 1,
                     description:
                         'Provider-defined processing tier. Unknown non-empty values are preserved for forward compatibility.',
+                },
+                cache_ttl: {
+                    type: 'string',
+                    enum: ['30m', '12h', 'in_memory', '24h'],
                 },
                 extra_body: {
                     type: 'object',
