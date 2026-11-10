@@ -28,7 +28,7 @@
         "@google-cloud/storage": "^8.4.0",
         "@types/node": "catalog:",
         "@vertesia/tsconfig": "workspace:*",
-        "google-auth-library": "^11.3.1",
+        "google-auth-library": "^11.3.2",
         "rolldown": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"

@@ -24,7 +24,7 @@ catalog:
   # Keep this synchronized with Studio and Llumiverse: each repository generates schemas from
   # its own local workspace and lockfile, so an override in another repository cannot control it.
   zod: "4.6.7"
-  vitest: "5.0.5"
+  vitest: "5.1.0"
   typescript: "7.0.2"
   typescript-legacy: "npm:typescript@6.0.3"
   react: "19.3.1"
