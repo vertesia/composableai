@@ -1868,3 +1868,186 @@ describe('ModernAgentOutput utils - adjacent rendered deduplication', () => {
         expect(shouldCollapseAdjacentRenderedMessage(previous, current)).toBe(false);
     });
 });
+
+describe('ModernAgentOutput summary - completion result without an answer', () => {
+    const question = makeMessage({ timestamp: 1000, type: AgentMessageType.QUESTION, message: 'How many clients?' });
+    const tool = makeMessage({
+        timestamp: 2000,
+        type: AgentMessageType.THOUGHT,
+        message: 'Counting clients...',
+        details: { tool: 'search_documents', tool_status: 'completed', tool_run_id: 'call-1' },
+    });
+    const ending = makeMessage({
+        timestamp: 3000,
+        type: AgentMessageType.UPDATE,
+        message: 'Ending conversation successfully.',
+        details: { tool: 'end_conversation', tool_run_id: 'call-2' },
+    });
+    const complete = makeMessage({
+        timestamp: 4000,
+        type: AgentMessageType.COMPLETE,
+        message: 'There are 42 clients with compliance checks.',
+        details: { event_class: 'user_content', streamed: true, end_conversation_status: 'success' },
+    });
+    const messageTexts = (items: ReturnType<typeof buildSummaryConversationItems>) =>
+        items.flatMap((item) => (item.type === 'message' ? [item.message.message] : []));
+
+    it('shows the result of a run that ended through end_conversation', () => {
+        const items = buildSummaryConversationItems([question, tool, ending, complete], true);
+
+        expect(items[items.length - 1]).toEqual({ type: 'message', message: complete });
+    });
+
+    it('does not repeat a result the turn already answered', () => {
+        const answer = makeMessage({ timestamp: 3500, type: AgentMessageType.ANSWER, message: complete.message });
+
+        const items = buildSummaryConversationItems([question, tool, answer, complete], true);
+
+        expect(messageTexts(items)).toEqual([question.message, answer.message]);
+    });
+
+    it('treats an answer with no work after it as final even when the completion differs', () => {
+        const answer = makeMessage({ timestamp: 3500, type: AgentMessageType.ANSWER, message: '42 clients.' });
+
+        const items = buildSummaryConversationItems([question, tool, answer, complete], true);
+
+        expect(messageTexts(items)).toEqual([question.message, answer.message]);
+    });
+
+    it('shows the result of a run that kept working after an interim answer', () => {
+        const interim = makeMessage({ timestamp: 2200, type: AgentMessageType.ANSWER, message: 'Step 1 done.' });
+
+        const items = buildSummaryConversationItems([question, interim, tool, ending, complete], true);
+
+        expect(messageTexts(items)).toEqual([question.message, interim.message, complete.message]);
+    });
+
+    it('shows a streamed result once', () => {
+        const streamed = buildSummaryDisplayMessages(
+            [question, tool, complete],
+            new Map([
+                [
+                    'stream-1',
+                    {
+                        text: complete.message as string,
+                        workstreamId: 'main',
+                        isComplete: true,
+                        startTimestamp: 3500,
+                    },
+                ],
+            ]),
+        );
+
+        const items = buildSummaryConversationItems(streamed, true);
+
+        expect(messageTexts(items)).toEqual([question.message, complete.message]);
+    });
+
+    it('shows the result when only an earlier turn was answered', () => {
+        const firstAnswer = makeMessage({ timestamp: 500, type: AgentMessageType.ANSWER, message: 'Hello.' });
+        const firstQuestion = makeMessage({ timestamp: 100, type: AgentMessageType.QUESTION, message: 'Hi' });
+
+        const items = buildSummaryConversationItems([firstQuestion, firstAnswer, question, tool, complete], true);
+
+        expect(messageTexts(items)).toEqual([
+            firstQuestion.message,
+            firstAnswer.message,
+            question.message,
+            complete.message,
+        ]);
+    });
+
+    it('shows the result of a run with no user question', () => {
+        expect(messageTexts(buildSummaryConversationItems([tool, complete], true))).toEqual([complete.message]);
+    });
+
+    it('ignores empty and placeholder completion text', () => {
+        const empty = makeMessage({ ...complete, message: '  ' });
+        const placeholder = makeMessage({ ...complete, message: 'Working...' });
+
+        expect(messageTexts(buildSummaryConversationItems([question, tool, empty], true))).toEqual([question.message]);
+        expect(messageTexts(buildSummaryConversationItems([question, tool, placeholder], true))).toEqual([
+            question.message,
+        ]);
+    });
+
+    it('still hides the idle status text', () => {
+        const idle = makeMessage({
+            timestamp: 4000,
+            type: AgentMessageType.IDLE,
+            message: 'Waiting for your command...',
+        });
+
+        expect(messageTexts(buildSummaryConversationItems([question, tool, idle], true))).toEqual([question.message]);
+    });
+
+    it('does not repeat the summary of a run the stall breaker stopped', () => {
+        const summary = 'Stopped: the agent called search_documents with the same input 4 times in a row.';
+        const error = makeMessage({
+            timestamp: 3000,
+            type: AgentMessageType.ERROR,
+            message: summary,
+            details: { event_class: 'user_content', status_reason: 'tool_loop_circuit_breaker' },
+        });
+
+        const stopped = makeMessage({
+            ...complete,
+            message: summary,
+            details: {
+                ...complete.details,
+                end_conversation_status: 'failure',
+                end_conversation_reason: 'tool_loop_circuit_breaker',
+            },
+        });
+
+        const items = buildSummaryConversationItems([tool, error, stopped], true);
+
+        expect(messageTexts(items)).toEqual([summary]);
+    });
+
+    it('does not repeat the last tool preamble of a run stopped mid-task', () => {
+        const preamble = makeMessage({
+            timestamp: 1500,
+            type: AgentMessageType.THOUGHT,
+            message: 'Now I will fetch the next page.',
+            details: { display_role: 'tool_preamble', tool: 'search_documents', streamed: true },
+        });
+
+        const items = buildSummaryConversationItems([preamble, tool, { ...complete, message: preamble.message }], true);
+
+        expect(items.some((item) => item.type === 'message' && item.message.type === AgentMessageType.COMPLETE)).toBe(
+            false,
+        );
+    });
+
+    it.each(['end_conversation', 'browser_finish'])('shows a result the agent also wrote alongside %s', (closer) => {
+        const preamble = makeMessage({
+            timestamp: 2500,
+            type: AgentMessageType.THOUGHT,
+            message: complete.message,
+            details: { display_role: 'tool_preamble', tools: [closer], streamed: true },
+        });
+
+        const items = buildSummaryConversationItems([question, tool, preamble, ending, complete], true);
+
+        expect(items[items.length - 1]).toEqual({ type: 'message', message: complete });
+    });
+
+    it('does not show a status completion as a result', () => {
+        const processComplete = makeMessage({
+            timestamp: 4000,
+            type: AgentMessageType.COMPLETE,
+            message: 'Process completed at Final (final)',
+            // Every posted COMPLETE carries user_content, status lines included.
+            details: { event_class: 'user_content', process_event: 'completed', process_run_id: 'process-1' },
+        });
+
+        expect(messageTexts(buildSummaryConversationItems([tool, processComplete], true))).toEqual([]);
+    });
+
+    it('does not show a workstream result meant for the parent agent', () => {
+        const childComplete = { ...complete, workstream_id: 'child-1', message: '{"clients": 42}' };
+
+        expect(messageTexts(buildSummaryConversationItems([tool, childComplete], true))).toEqual([]);
+    });
+});
