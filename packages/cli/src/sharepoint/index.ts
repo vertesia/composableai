@@ -126,9 +126,13 @@ export function registerSharePointCommand(program: Command) {
                 ...(batchSize ? { batchSize } : {}),
                 ...(options.dryRun ? { dryRun: true } : {}),
             };
+            // Each import is its own run: without `unique`, every import of the project gets the same
+            // workflow ID, so a second one returns the running import, or reuses the first one's batch
+            // idempotency keys and fails on changed input.
             const started = await client.workflows.execute(BULK_IMPORT_WORKFLOW, {
                 vars: { ...vars },
                 ...(options.queue ? { task_queue: options.queue } : {}),
+                unique: true,
             });
             const run = started[0];
             if (!run) {

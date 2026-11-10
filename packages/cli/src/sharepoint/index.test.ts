@@ -74,6 +74,7 @@ describe('sharepoint CLI', () => {
         expect(mocks.execute).toHaveBeenCalledWith('bulkImportWorkflow', {
             vars: { source: { type: 'sharepoint', source_id: 'src-1' }, batchSize: 100, dryRun: true },
             task_queue: 'zeno-content/dev/bulk',
+            unique: true,
         });
     });
 
