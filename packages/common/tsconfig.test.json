@@ -9,6 +9,8 @@
   },
   "include": [
     "src",
+    // Test-only helpers, kept out of `src` so the build never emits them.
+    "test",
     // The wire-types generator and its fixture test.
     "scripts/gen-wire-types*.ts",
     // tsc's default `include` globs only match .ts — the generated components artifact

@@ -2,7 +2,9 @@ import { useUITranslation } from '@vertesia/ui/i18n';
 import { useUserSession } from '@vertesia/ui/session';
 import { CheckCircle2, Link2, ShieldAlertIcon, Unlink2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Spinner } from '../../core/index.js';
+import { Button, Spinner, useToast } from '../../core/index.js';
+import { OAuthStatusUnknown } from './OAuthStatusUnknown.js';
+import { isOAuthStatusUnknownError, oauthErrorDetail } from './oauthStatusError.js';
 import { useOAuthPopup } from './useOAuthPopup.js';
 
 interface RemoteMcpConnectionButtonProps {
@@ -11,7 +13,10 @@ interface RemoteMcpConnectionButtonProps {
     collectionName?: string;
     /** Pre-fetched authentication status. If not provided, will fetch automatically. */
     authenticated?: boolean;
+    /** The parent's status lookup got no answer, so a missing `authenticated` does not mean disconnected. */
+    statusUnavailable?: boolean;
     onAuthChange?: () => void;
+    /** Receives connect and disconnect failures. Without it they are shown as a toast. */
     onError?: (error: string | null) => void;
     variant?: 'default' | 'compact' | 'full';
     /** Show collection name label */
@@ -41,6 +46,7 @@ export function RemoteMcpConnectionButton({
     collectionId,
     collectionName,
     authenticated: providedAuthenticated,
+    statusUnavailable = false,
     onAuthChange,
     onError,
     variant = 'default',
@@ -50,31 +56,38 @@ export function RemoteMcpConnectionButton({
 }: RemoteMcpConnectionButtonProps) {
     const { client } = useUserSession();
     const { t } = useUITranslation();
+    const toast = useToast();
     const [status, setStatus] = useState<OAuthStatus | null>(null);
+    const [statusError, setStatusError] = useState(false);
     const [loading, setLoading] = useState(providedAuthenticated === undefined && !readOnly);
     const [authenticating, setAuthenticating] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
 
     const authenticated = providedAuthenticated ?? status?.authenticated ?? false;
+    const statusUnknown = providedAuthenticated === undefined && (statusError || (statusUnavailable && !status));
     const displayName = collectionName ?? collectionId;
     const compactActionClassName = 'h-6 w-32 justify-center px-2 text-xs';
 
-    const loadStatus = useCallback(async () => {
+    const loadStatus = useCallback(async (): Promise<boolean> => {
         if (providedAuthenticated !== undefined) {
             setLoading(false);
-            return;
+            return true;
         }
         if (readOnly) {
             setLoading(false);
-            return;
+            return true;
         }
 
         try {
             setLoading(true);
             const data = await client.remoteMcpConnections.getCollectionStatus(appId, collectionId);
             setStatus(data);
+            setStatusError(false);
+            return true;
         } catch (error) {
             console.error('[RemoteMcpConnectionButton] Failed to load OAuth status:', error);
+            setStatusError(isOAuthStatusUnknownError(error));
+            return false;
         } finally {
             setLoading(false);
         }
@@ -83,6 +96,22 @@ export function RemoteMcpConnectionButton({
     useEffect(() => {
         void loadStatus();
     }, [loadStatus]);
+
+    const reportFailure = (title: string, detail: string) => {
+        const message = `${displayName}: ${detail}`;
+        if (onError) {
+            onError(message);
+        } else {
+            toast({ status: 'error', title, description: message });
+        }
+    };
+
+    // A parent may be waiting on this answer: the agent overlay resumes once the connection is authenticated.
+    const handleRetryStatus = async () => {
+        if (await loadStatus()) {
+            onAuthChange?.();
+        }
+    };
 
     const { openOAuthPopup } = useOAuthPopup({
         onComplete: () => {
@@ -93,6 +122,7 @@ export function RemoteMcpConnectionButton({
         onError: (error) => {
             console.error('OAuth failed:', error);
             setAuthenticating(false);
+            reportFailure(t('oauthStatus.connectFailed'), error);
         },
     });
 
@@ -108,17 +138,12 @@ export function RemoteMcpConnectionButton({
             } else if (response.authorization_url) {
                 openOAuthPopup(response.authorization_url);
             } else {
-                onError?.(`${displayName}: Authorization URL not provided by server`);
+                reportFailure(t('oauthStatus.connectFailed'), 'Authorization URL not provided by server');
                 setAuthenticating(false);
             }
         } catch (error) {
             console.error('Failed to authorize:', error);
-            const raw =
-                error instanceof Error
-                    ? ((error as { original_message?: string }).original_message ?? error.message)
-                    : 'Failed to connect';
-            const detail = raw.replace(/^[A-Za-z\s]+:\s/, '');
-            onError?.(`${displayName}: ${detail}`);
+            reportFailure(t('oauthStatus.connectFailed'), oauthErrorDetail(error) ?? t('oauthStatus.connectFailed'));
             setAuthenticating(false);
         }
     };
@@ -131,6 +156,10 @@ export function RemoteMcpConnectionButton({
             onAuthChange?.();
         } catch (error) {
             console.error('Failed to disconnect:', error);
+            reportFailure(
+                t('oauthStatus.disconnectFailed'),
+                oauthErrorDetail(error) ?? t('oauthStatus.disconnectFailed'),
+            );
         } finally {
             setDisconnecting(false);
         }
@@ -154,6 +183,24 @@ export function RemoteMcpConnectionButton({
         return (
             <div className="flex items-center gap-2 text-sm">
                 <Spinner className="size-4" />
+            </div>
+        );
+    }
+
+    if (statusUnknown) {
+        const compact = variant === 'compact';
+        return (
+            <div className="flex items-center gap-2">
+                {showLabel && (
+                    <span className={`font-medium text-foreground ${compact ? 'text-xs' : 'text-sm'}`}>
+                        {displayName}:
+                    </span>
+                )}
+                <OAuthStatusUnknown
+                    onRetry={readOnly ? undefined : () => void handleRetryStatus()}
+                    compact={compact}
+                    className={compact ? compactActionClassName : undefined}
+                />
             </div>
         );
     }

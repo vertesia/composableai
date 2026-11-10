@@ -1,30 +1,44 @@
 import { z } from 'zod';
 import { DashboardExportStatus, DashboardStatus } from '../data-platform.js';
 import { StringValueMapSchema } from './files.js';
-import { conditional, EditRevisionSchema, ExpectedEditRevisionSchema } from './schema-primitives.js';
+import { conditional, EditRevisionSchema, ExpectedEditRevisionSchema, PageCountSchema } from './schema-primitives.js';
+
+export const DashboardElasticsearchHitsMappingSchema = z
+    .strictObject({
+        type: z.literal('hits'),
+    })
+    .meta({ id: 'DashboardElasticsearchHitsMapping', description: 'Use the search hits as the Vega rows.' });
+
+export const DashboardElasticsearchAggregationBucketsMappingSchema = z
+    .strictObject({
+        type: z.literal('aggregation_buckets'),
+        path: z.string().meta({ description: 'Dot path under `aggregations` that contains a `buckets` array.' }),
+        keyField: z.string().meta({ description: 'Output field name for bucket key. Defaults to `key`.' }).optional(),
+        countField: z
+            .string()
+            .meta({ description: 'Output field name for doc count. Defaults to `doc_count`.' })
+            .optional(),
+    })
+    .meta({
+        id: 'DashboardElasticsearchAggregationBucketsMapping',
+        description: 'Use the buckets of one aggregation as the Vega rows.',
+    });
 
 export const DashboardElasticsearchResultMappingSchema = z
     .discriminatedUnion('type', [
-        z.strictObject({
-            type: z.literal('hits'),
-        }),
-        z.strictObject({
-            type: z.literal('aggregation_buckets'),
-            path: z.string().meta({ description: 'Dot path under `aggregations` that contains a `buckets` array.' }),
-            keyField: z
-                .string()
-                .meta({ description: 'Output field name for bucket key. Defaults to `key`.' })
-                .optional(),
-            countField: z
-                .string()
-                .meta({ description: 'Output field name for doc count. Defaults to `doc_count`.' })
-                .optional(),
-        }),
+        DashboardElasticsearchHitsMappingSchema,
+        DashboardElasticsearchAggregationBucketsMappingSchema,
     ])
     .meta({
         id: 'DashboardElasticsearchResultMapping',
         type: 'object',
-        discriminator: { propertyName: 'type' },
+        discriminator: {
+            propertyName: 'type',
+            mapping: {
+                hits: '#/components/schemas/DashboardElasticsearchHitsMapping',
+                aggregation_buckets: '#/components/schemas/DashboardElasticsearchAggregationBucketsMapping',
+            },
+        },
         required: ['type'],
         description: 'How an Elasticsearch DSL result should be converted into Vega rows.',
     });
@@ -91,6 +105,23 @@ export const DashboardVersionItemSchema = z
 export const DashboardStatusSchema = z
     .enum(DashboardStatus)
     .meta({ id: 'DashboardStatus', description: 'Dashboard lifecycle status.' });
+
+export const ListDashboardsQuerySchema = z
+    .strictObject({
+        status: DashboardStatusSchema.meta({
+            description: 'Only list dashboards with this status. Defaults to `active`.',
+        }).optional(),
+    })
+    .meta({ id: 'ListDashboardsQuery' });
+
+export const ListDashboardVersionsQuerySchema = z
+    .strictObject({
+        limit: PageCountSchema.meta({
+            description: 'Maximum number of versions to return. Defaults to 50.',
+        }).optional(),
+        snapshots_only: z.boolean().meta({ description: 'Only list named snapshots.' }).optional(),
+    })
+    .meta({ id: 'ListDashboardVersionsQuery' });
 
 export const DashboardLayoutSchema = z
     .strictObject({

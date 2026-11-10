@@ -1,4 +1,5 @@
 import Handlebars from 'handlebars';
+import { LRUCache } from 'lru-cache';
 import { TEMPLATE_SYSTEM_VARIABLE_NAMES } from '../system.js';
 
 /**
@@ -63,7 +64,31 @@ export function isHandlebarsHelper(name: string): boolean {
 /** Built-in block helpers that render their block with a new context (`this` is the item). */
 export const HANDLEBARS_CONTEXT_HELPERS: readonly string[] = ['each', 'with'];
 
+/**
+ * Compiled prompt templates keyed by their full source. Compiling a long template takes tens of
+ * milliseconds and used to happen on every render, blocking the event loop. Templates compile with
+ * the default options of the single `promptHandlebars` environment, so the source alone decides the
+ * compiled result. Helpers and partials are looked up in that environment when a template renders,
+ * not when it compiles, so a cached template always sees the environment's current helpers.
+ *
+ * Bounded at 1,000,000 characters of template source (about 25 MB of compiled templates) and 1,000
+ * templates. The least recently used templates are evicted first. A larger template counts as the
+ * whole budget: it evicts every other template and is cached on its own, since the longest templates
+ * are the slowest to compile. Exported for tests; not part of the package API.
+ */
+const MAX_CACHED_TEMPLATE_CHARS = 1_000_000;
+export const compiledTemplates = new LRUCache<string, Handlebars.TemplateDelegate>({
+    max: 1000,
+    maxSize: MAX_CACHED_TEMPLATE_CHARS,
+    // An empty template still takes one unit: lru-cache requires a positive size.
+    sizeCalculation: (_compiled, template) => Math.max(1, Math.min(template.length, MAX_CACHED_TEMPLATE_CHARS)),
+});
+
 export function renderHandlebarsTemplate(template: string, input: unknown): string {
-    const compiled = promptHandlebars.compile(template);
+    let compiled = compiledTemplates.get(template);
+    if (!compiled) {
+        compiled = promptHandlebars.compile(template);
+        compiledTemplates.set(template, compiled);
+    }
     return compiled(input);
 }

@@ -26,6 +26,10 @@ export const SendEmailRequestSchema = z
         route_key: z.string().optional(),
         in_reply_to: z.string().optional(),
         references: z.array(z.string()).optional(),
+        request_id: z.string().optional().meta({
+            description:
+                'The agent prompt this email asks. A reply to the email then answers only that prompt, not a newer one.',
+        }),
     })
     .meta({ id: 'SendEmailRequest' });
 
@@ -84,6 +88,10 @@ export const ForwardEmailRequestSchema = z
             text: z.string(),
             html: z.string().optional(),
             message_id: z.string().optional(),
+            in_reply_to: z.string().optional().meta({
+                description:
+                    "The email's In-Reply-To header. When it names an email that asked an agent prompt, the reply answers only that prompt.",
+            }),
         }),
         context: z.record(z.string(), z.unknown()).optional(),
         attachments: z
@@ -161,8 +169,17 @@ export const RegisterPendingAskResponseSchema = z
     })
     .meta({ id: 'RegisterPendingAskResponse' });
 
+export const PendingAskDeliverySchema = z.enum(['deliver', 'already_delivered']).meta({
+    id: 'PendingAskDelivery',
+    description:
+        'What the server does with the response. `deliver` sends it to the waiting agent, which then records the resolution itself. `already_delivered` states that the agent has the response, so the server records the resolution and closes the task that backs the question. When omitted, the server only records the resolution: the agent keeps waiting and the task stays open.',
+});
+
 export const ResolvePendingAskRequestSchema = z
-    .strictObject({ response: z.string() })
+    .strictObject({
+        response: z.string(),
+        delivery: PendingAskDeliverySchema.optional(),
+    })
     .meta({ id: 'ResolvePendingAskRequest' });
 
 export const ResolvePendingAskResponseSchema = z

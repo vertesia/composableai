@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
     AuditAdoptionQuerySchema,
     AuditAdoptionResponseSchema,
+    AuditTrailQuerySchema,
     AuditUsageCountsSchema,
     AuditUsageQuerySchema,
 } from './audit-trail.js';
-import { ApiSchemaComponents } from './registry.js';
+import { ApiSchemaComponents, validateApiRequest } from './registry.js';
 
 describe('audit adoption contracts', () => {
     it('registers usage trends with no activity filters or caller-selected account', () => {
@@ -54,5 +55,51 @@ describe('audit adoption contracts', () => {
         expect(AuditAdoptionResponseSchema.safeParse({ ...response, observed_retention: 1.5 }).success).toBe(false);
         expect(AuditAdoptionResponseSchema.safeParse({ ...response, principal_id: 'user:a' }).success).toBe(false);
         expect(AuditAdoptionResponseSchema.safeParse({ ...response, active_users: undefined }).success).toBe(false);
+    });
+});
+
+describe('audit aggregation query contract', () => {
+    const metric = { id: 'events', operation: 'count' };
+    // Each body is one the aggregation validator accepts or refuses on a single field, so the published schema
+    // refuses it first.
+    it.each([
+        ['one metric', { metrics: [metric] }, true],
+        ['no metric', { metrics: [] }, false],
+        ['thirteen metrics', { metrics: Array.from({ length: 13 }, (_, i) => ({ ...metric, id: `m${i}` })) }, false],
+        ['an empty metric id', { metrics: [{ ...metric, id: '' }] }, false],
+        ['a metric id with punctuation', { metrics: [{ ...metric, id: 'a.b' }] }, false],
+        ['a 65-character metric id', { metrics: [{ ...metric, id: 'a'.repeat(65) }] }, false],
+        [
+            'three dimensions',
+            { metrics: [metric], groupBy: [{ dimension: 'time' }, { dimension: 'action' }, { dimension: 'model' }] },
+            false,
+        ],
+        ['a limit of zero', { metrics: [metric], limit: 0 }, false],
+        ['a fractional limit', { metrics: [metric], limit: 1.5 }, false],
+        ['a limit above the cap', { metrics: [metric], limit: 500 }, true],
+        ['an empty resource type', { metrics: [metric], filter: { resourceTypes: [''] } }, false],
+        [
+            'a detail filter with no value',
+            { metrics: [metric], filter: { details: [{ field: 'pipeline', values: [] }] } },
+            false,
+        ],
+    ])('%s: valid is %s', (_case, body, valid) => {
+        const result = validateApiRequest('AuditAggregationQuery', body);
+
+        expect(result.valid, JSON.stringify(result.valid ? null : result.issues)).toBe(valid);
+    });
+});
+
+describe('audit trail time bounds', () => {
+    it.each([
+        ['', true],
+        ['2026-01-31', true],
+        ['2026-01-31T12:00:00Z', true],
+        ['2026-01-31T12:00:00.123456789+02:00', true],
+        ['2026-13-01', false],
+        ['0050-01-01', false],
+        ['yesterday', false],
+    ])('%j: valid is %s', (to, valid) => {
+        expect(AuditTrailQuerySchema.safeParse({ to }).success).toBe(valid);
     });
 });

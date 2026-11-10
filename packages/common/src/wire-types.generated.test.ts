@@ -300,6 +300,14 @@ interface Checks {
     >;
     AppListScope: Same<W.AppListScope, z.infer<typeof import('./api-schemas/app-lifecycle.js').AppListScopeSchema>>;
     AppsQuery: Same<W.AppsQuery, z.infer<typeof import('./api-schemas/app-lifecycle.js').AppsQuerySchema>>;
+    AppDeleteQuery: Same<
+        W.AppDeleteQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeleteQuerySchema>
+    >;
+    AppRepoCommitsQuery: Same<
+        W.AppRepoCommitsQuery,
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoCommitsQuerySchema>
+    >;
     ToolCollectionAuthType: Same<
         W.ToolCollectionAuthType,
         z.infer<typeof import('./api-schemas/apps.js').ToolCollectionAuthTypeSchema>
@@ -1048,6 +1056,30 @@ interface Checks {
         W.CostRunPriceResponse,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostRunPriceResponseSchema>
     >;
+    CustomRoleDefinition: Same<
+        W.CustomRoleDefinition,
+        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
+    >;
+    CustomRoleDefinitionArray: Same<
+        W.CustomRoleDefinitionArray,
+        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionArraySchema>
+    >;
+    PermissionArray: Same<
+        W.PermissionArray,
+        z.infer<typeof import('./api-schemas/custom-roles.js').PermissionArraySchema>
+    >;
+    CreateCustomRolePayload: Same<
+        W.CreateCustomRolePayload,
+        z.infer<typeof import('./api-schemas/custom-roles.js').CreateCustomRolePayloadSchema>
+    >;
+    UpdateCustomRolePayload: Same<
+        W.UpdateCustomRolePayload,
+        z.infer<typeof import('./api-schemas/custom-roles.js').UpdateCustomRolePayloadSchema>
+    >;
+    AssignableRoleName: Same<
+        W.AssignableRoleName,
+        z.infer<typeof import('./api-schemas/apikey.js').AssignableRoleNameSchema>
+    >;
     DataColumnType: Same<W.DataColumnType, z.infer<typeof import('./api-schemas/data-store.js').DataColumnTypeSchema>>;
     SemanticColumnType: Same<
         W.SemanticColumnType,
@@ -1100,6 +1132,26 @@ interface Checks {
         W.GetDataStoreTableQuery,
         z.infer<typeof import('./api-schemas/data-store.js').GetDataStoreTableQuerySchema>
     >;
+    GetDataStoreSchemaQuery: Same<
+        W.GetDataStoreSchemaQuery,
+        z.infer<typeof import('./api-schemas/data-store.js').GetDataStoreSchemaQuerySchema>
+    >;
+    ListDataStoreSchemaHistoryQuery: Same<
+        W.ListDataStoreSchemaHistoryQuery,
+        z.infer<typeof import('./api-schemas/data-store.js').ListDataStoreSchemaHistoryQuerySchema>
+    >;
+    CreateDataStoreDownloadUrlQuery: Same<
+        W.CreateDataStoreDownloadUrlQuery,
+        z.infer<typeof import('./api-schemas/data-store.js').CreateDataStoreDownloadUrlQuerySchema>
+    >;
+    ListDashboardsQuery: Same<
+        W.ListDashboardsQuery,
+        z.infer<typeof import('./api-schemas/dashboard.js').ListDashboardsQuerySchema>
+    >;
+    ListDashboardVersionsQuery: Same<
+        W.ListDashboardVersionsQuery,
+        z.infer<typeof import('./api-schemas/dashboard.js').ListDashboardVersionsQuerySchema>
+    >;
     ImportStatus: Same<W.ImportStatus, z.infer<typeof import('./api-schemas/data-store.js').ImportStatusSchema>>;
     ImportJob: Same<W.ImportJob, z.infer<typeof import('./api-schemas/data-store.js').ImportJobSchema>>;
     CreateDataStorePayload: Same<
@@ -1121,6 +1173,30 @@ interface Checks {
     BatchQueryPayload: Same<
         W.BatchQueryPayload,
         z.infer<typeof import('./api-schemas/data-store.js').BatchQueryPayloadSchema>
+    >;
+    AlterTableAddColumnOperation: Same<
+        W.AlterTableAddColumnOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableAddColumnOperationSchema>
+    >;
+    AlterTableDropColumnOperation: Same<
+        W.AlterTableDropColumnOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableDropColumnOperationSchema>
+    >;
+    AlterTableRenameColumnOperation: Same<
+        W.AlterTableRenameColumnOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableRenameColumnOperationSchema>
+    >;
+    AlterTableModifyColumnOperation: Same<
+        W.AlterTableModifyColumnOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableModifyColumnOperationSchema>
+    >;
+    AlterTableAddForeignKeyOperation: Same<
+        W.AlterTableAddForeignKeyOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableAddForeignKeyOperationSchema>
+    >;
+    AlterTableDropForeignKeyOperation: Same<
+        W.AlterTableDropForeignKeyOperation,
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableDropForeignKeyOperationSchema>
     >;
     AlterTableOperation: Same<
         W.AlterTableOperation,
@@ -1262,6 +1338,14 @@ interface Checks {
     DashboardElasticsearchDsl: Same<
         W.DashboardElasticsearchDsl,
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchDslSchema>
+    >;
+    DashboardElasticsearchHitsMapping: Same<
+        W.DashboardElasticsearchHitsMapping,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchHitsMappingSchema>
+    >;
+    DashboardElasticsearchAggregationBucketsMapping: Same<
+        W.DashboardElasticsearchAggregationBucketsMapping,
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchAggregationBucketsMappingSchema>
     >;
     DashboardElasticsearchResultMapping: Same<
         W.DashboardElasticsearchResultMapping,
@@ -1714,6 +1798,26 @@ interface Checks {
         W.CatalogInteractionRef,
         z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefSchema>
     >;
+    CatalogAgentSearchQuery: Same<
+        W.CatalogAgentSearchQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogAgentSearchQuerySchema>
+    >;
+    CatalogCallSearchQuery: Same<
+        W.CatalogCallSearchQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogCallSearchQuerySchema>
+    >;
+    CatalogSearchInteractionRef: Same<
+        W.CatalogSearchInteractionRef,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchInteractionRefSchema>
+    >;
+    CatalogTagCount: Same<
+        W.CatalogTagCount,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogTagCountSchema>
+    >;
+    CatalogSearchResult: Same<
+        W.CatalogSearchResult,
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchResultSchema>
+    >;
     ExecuteNamedInteractionQuery: Same<
         W.ExecuteNamedInteractionQuery,
         z.infer<typeof import('./api-schemas/interaction.js').ExecuteNamedInteractionQuerySchema>
@@ -1726,6 +1830,10 @@ interface Checks {
     ResolveInteractionQuery: Same<
         W.ResolveInteractionQuery,
         z.infer<typeof import('./api-schemas/interaction.js').ResolveInteractionQuerySchema>
+    >;
+    DeleteInteractionQuery: Same<
+        W.DeleteInteractionQuery,
+        z.infer<typeof import('./api-schemas/interaction.js').DeleteInteractionQuerySchema>
     >;
     InCodePrompt: Same<W.InCodePrompt, z.infer<typeof import('./api-schemas/interaction.js').InCodePromptSchema>>;
     InCodeInteraction: Same<
@@ -2150,6 +2258,14 @@ interface Checks {
         W.OAuthLoginUserNotFoundResponse,
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginUserNotFoundResponseSchema>
     >;
+    OAuthLoginRequestNotFoundResponse: Same<
+        W.OAuthLoginRequestNotFoundResponse,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginRequestNotFoundResponseSchema>
+    >;
+    OAuthLoginNotFoundResponse: Same<
+        W.OAuthLoginNotFoundResponse,
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginNotFoundResponseSchema>
+    >;
     OidcFederationConnectionPayload: Same<
         W.OidcFederationConnectionPayload,
         z.infer<typeof import('./api-schemas/oauth-server.js').OidcFederationConnectionPayloadSchema>
@@ -2236,6 +2352,10 @@ interface Checks {
     PendingAskStatus: Same<
         W.PendingAskStatus,
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskStatusSchema>
+    >;
+    PendingAskDelivery: Same<
+        W.PendingAskDelivery,
+        z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDeliverySchema>
     >;
     PendingAskData: Same<
         W.PendingAskData,
@@ -2819,6 +2939,10 @@ interface Checks {
         W.BindRunWorkflowPayload,
         z.infer<typeof import('./api-schemas/workflow-runs.js').BindRunWorkflowPayloadSchema>
     >;
+    TerminateAgentRunQuery: Same<
+        W.TerminateAgentRunQuery,
+        z.infer<typeof import('./api-schemas/agent-runs.js').TerminateAgentRunQuerySchema>
+    >;
     TerminateAgentRunResponse: Same<
         W.TerminateAgentRunResponse,
         z.infer<typeof import('./api-schemas/agent-runs.js').TerminateAgentRunResponseSchema>
@@ -2996,6 +3120,10 @@ interface Checks {
         W.CollectionMembersUpdatePayload,
         z.infer<typeof import('./api-schemas/content.js').CollectionMembersUpdatePayloadSchema>
     >;
+    CollectionPermissionsPayload: Same<
+        W.CollectionPermissionsPayload,
+        z.infer<typeof import('./api-schemas/content.js').CollectionPermissionsPayloadSchema>
+    >;
     CollectionChildrenUpdatePayload: Same<
         W.CollectionChildrenUpdatePayload,
         z.infer<typeof import('./api-schemas/content.js').CollectionChildrenUpdatePayloadSchema>
@@ -3054,6 +3182,14 @@ interface Checks {
     WorkflowInputFile: Same<
         W.WorkflowInputFile,
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInputFileSchema>
+    >;
+    WorkflowObjectIdsInput: Same<
+        W.WorkflowObjectIdsInput,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowObjectIdsInputSchema>
+    >;
+    WorkflowFilesInput: Same<
+        W.WorkflowFilesInput,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowFilesInputSchema>
     >;
     WorkflowInput: Same<W.WorkflowInput, z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInputSchema>>;
     DSLActivityOptions: Same<
@@ -3620,6 +3756,52 @@ interface Checks {
         W.BulkUploadUrlsResponse,
         z.infer<typeof import('./api-schemas/files.js').BulkUploadUrlsResponseSchema>
     >;
+    CreateUploadSessionPayload: Same<
+        W.CreateUploadSessionPayload,
+        z.infer<typeof import('./api-schemas/files.js').CreateUploadSessionPayloadSchema>
+    >;
+    GcsResumableUploadSession: Same<
+        W.GcsResumableUploadSession,
+        z.infer<typeof import('./api-schemas/files.js').GcsResumableUploadSessionSchema>
+    >;
+    AzureBlockBlobUploadSession: Same<
+        W.AzureBlockBlobUploadSession,
+        z.infer<typeof import('./api-schemas/files.js').AzureBlockBlobUploadSessionSchema>
+    >;
+    S3MultipartUploadSession: Same<
+        W.S3MultipartUploadSession,
+        z.infer<typeof import('./api-schemas/files.js').S3MultipartUploadSessionSchema>
+    >;
+    UploadSession: Same<W.UploadSession, z.infer<typeof import('./api-schemas/files.js').UploadSessionSchema>>;
+    GetUploadPartUrlsPayload: Same<
+        W.GetUploadPartUrlsPayload,
+        z.infer<typeof import('./api-schemas/files.js').GetUploadPartUrlsPayloadSchema>
+    >;
+    UploadPartUrl: Same<W.UploadPartUrl, z.infer<typeof import('./api-schemas/files.js').UploadPartUrlSchema>>;
+    UploadPartUrlsResponse: Same<
+        W.UploadPartUrlsResponse,
+        z.infer<typeof import('./api-schemas/files.js').UploadPartUrlsResponseSchema>
+    >;
+    CompletedUploadPart: Same<
+        W.CompletedUploadPart,
+        z.infer<typeof import('./api-schemas/files.js').CompletedUploadPartSchema>
+    >;
+    CompleteUploadSessionPayload: Same<
+        W.CompleteUploadSessionPayload,
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionPayloadSchema>
+    >;
+    CompleteUploadSessionResponse: Same<
+        W.CompleteUploadSessionResponse,
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionResponseSchema>
+    >;
+    AbortUploadSessionPayload: Same<
+        W.AbortUploadSessionPayload,
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionPayloadSchema>
+    >;
+    AbortUploadSessionResponse: Same<
+        W.AbortUploadSessionResponse,
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionResponseSchema>
+    >;
     FileBucketResponse: Same<
         W.FileBucketResponse,
         z.infer<typeof import('./api-schemas/files.js').FileBucketResponseSchema>
@@ -3702,6 +3884,18 @@ interface Checks {
     SignalTask: Same<W.SignalTask, z.infer<typeof import('./api-schemas/workflow-runs.js').SignalTaskSchema>>;
     TimerTask: Same<W.TimerTask, z.infer<typeof import('./api-schemas/workflow-runs.js').TimerTaskSchema>>;
     WorkflowTask: Same<W.WorkflowTask, z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowTaskSchema>>;
+    WorkflowEventsHistory: Same<
+        W.WorkflowEventsHistory,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowEventsHistorySchema>
+    >;
+    WorkflowTasksHistory: Same<
+        W.WorkflowTasksHistory,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowTasksHistorySchema>
+    >;
+    WorkflowAgentHistory: Same<
+        W.WorkflowAgentHistory,
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowAgentHistorySchema>
+    >;
     WorkflowHistory: Same<
         W.WorkflowHistory,
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowHistorySchema>
@@ -4106,6 +4300,18 @@ interface Checks {
     ViewExecutionResult: Same<
         W.ViewExecutionResult,
         z.infer<typeof import('./api-schemas/view-execution.js').ViewExecutionResultSchema>
+    >;
+    WorkflowUsageQuery: Same<
+        W.WorkflowUsageQuery,
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
+    >;
+    WorkflowUsageClass: Same<
+        W.WorkflowUsageClass,
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageClassSchema>
+    >;
+    WorkflowUsageStanding: Same<
+        W.WorkflowUsageStanding,
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageStandingSchema>
     >;
     AgentRunWire: Same<W.AgentRunWire, z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunSchema>>;
     CreateAgentRunPayloadWire: Same<
@@ -4890,6 +5096,10 @@ interface Checks {
         W.AgentRunPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').AgentRunPathParamsSchema>
     >;
+    WorkflowRunActionPathParams: Same<
+        W.WorkflowRunActionPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').WorkflowRunActionPathParamsSchema>
+    >;
     AppVersionPathParams: Same<
         W.AppVersionPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').AppVersionPathParamsSchema>
@@ -4897,6 +5107,10 @@ interface Checks {
     AppInstallationPathParams: Same<
         W.AppInstallationPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').AppInstallationPathParamsSchema>
+    >;
+    InteractionConfigurationPathParams: Same<
+        W.InteractionConfigurationPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').InteractionConfigurationPathParamsSchema>
     >;
     DelegationGrantPathParams: Same<
         W.DelegationGrantPathParams,
@@ -4906,9 +5120,41 @@ interface Checks {
         W.OAuthProviderPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').OAuthProviderPathParamsSchema>
     >;
+    UserGroupPathParams: Same<
+        W.UserGroupPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').UserGroupPathParamsSchema>
+    >;
     ProjectAppCapabilityPathParams: Same<
         W.ProjectAppCapabilityPathParams,
         z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
+    >;
+    EmbeddingTypePathParams: Same<
+        W.EmbeddingTypePathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').EmbeddingTypePathParamsSchema>
+    >;
+    ToolPathParams: Same<
+        W.ToolPathParams,
+        z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
+    >;
+    'component:CustomRoleDefinition': Same<
+        W.ApiComponentTypes['CustomRoleDefinition'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionSchema>
+    >;
+    'component:CustomRoleDefinitionArray': Same<
+        W.ApiComponentTypes['CustomRoleDefinitionArray'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').CustomRoleDefinitionArraySchema>
+    >;
+    'component:CreateCustomRolePayload': Same<
+        W.ApiComponentTypes['CreateCustomRolePayload'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').CreateCustomRolePayloadSchema>
+    >;
+    'component:UpdateCustomRolePayload': Same<
+        W.ApiComponentTypes['UpdateCustomRolePayload'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').UpdateCustomRolePayloadSchema>
+    >;
+    'component:PermissionArray': Same<
+        W.ApiComponentTypes['PermissionArray'],
+        z.infer<typeof import('./api-schemas/custom-roles.js').PermissionArraySchema>
     >;
     'component:Account': Same<
         W.ApiComponentTypes['Account'],
@@ -5338,6 +5584,14 @@ interface Checks {
     'component:OAuthLoginUserNotFoundResponse': Same<
         W.ApiComponentTypes['OAuthLoginUserNotFoundResponse'],
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginUserNotFoundResponseSchema>
+    >;
+    'component:OAuthLoginRequestNotFoundResponse': Same<
+        W.ApiComponentTypes['OAuthLoginRequestNotFoundResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginRequestNotFoundResponseSchema>
+    >;
+    'component:OAuthLoginNotFoundResponse': Same<
+        W.ApiComponentTypes['OAuthLoginNotFoundResponse'],
+        z.infer<typeof import('./api-schemas/oauth-server.js').OAuthLoginNotFoundResponseSchema>
     >;
     'component:OAuthLoginDecisionResponse': Same<
         W.ApiComponentTypes['OAuthLoginDecisionResponse'],
@@ -5875,6 +6129,10 @@ interface Checks {
         W.ApiComponentTypes['ResolveInteractionQuery'],
         z.infer<typeof import('./api-schemas/interaction.js').ResolveInteractionQuerySchema>
     >;
+    'component:DeleteInteractionQuery': Same<
+        W.ApiComponentTypes['DeleteInteractionQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').DeleteInteractionQuerySchema>
+    >;
     'component:CatalogInteractionRef': Same<
         W.ApiComponentTypes['CatalogInteractionRef'],
         z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefSchema>
@@ -5898,6 +6156,26 @@ interface Checks {
     'component:StoredCatalogInteractionsQuery': Same<
         W.ApiComponentTypes['StoredCatalogInteractionsQuery'],
         z.infer<typeof import('./api-schemas/interaction.js').StoredCatalogInteractionsQuerySchema>
+    >;
+    'component:CatalogAgentSearchQuery': Same<
+        W.ApiComponentTypes['CatalogAgentSearchQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogAgentSearchQuerySchema>
+    >;
+    'component:CatalogCallSearchQuery': Same<
+        W.ApiComponentTypes['CatalogCallSearchQuery'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogCallSearchQuerySchema>
+    >;
+    'component:CatalogSearchInteractionRef': Same<
+        W.ApiComponentTypes['CatalogSearchInteractionRef'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchInteractionRefSchema>
+    >;
+    'component:CatalogTagCount': Same<
+        W.ApiComponentTypes['CatalogTagCount'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogTagCountSchema>
+    >;
+    'component:CatalogSearchResult': Same<
+        W.ApiComponentTypes['CatalogSearchResult'],
+        z.infer<typeof import('./api-schemas/interaction.js').CatalogSearchResultSchema>
     >;
     'component:ModelSource': Same<
         W.ApiComponentTypes['ModelSource'],
@@ -6355,6 +6633,58 @@ interface Checks {
         W.ApiComponentTypes['EnsureBucketCreateAccessResponse'],
         z.infer<typeof import('./api-schemas/files.js').EnsureBucketCreateAccessResponseSchema>
     >;
+    'component:AbortUploadSessionPayload': Same<
+        W.ApiComponentTypes['AbortUploadSessionPayload'],
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionPayloadSchema>
+    >;
+    'component:AbortUploadSessionResponse': Same<
+        W.ApiComponentTypes['AbortUploadSessionResponse'],
+        z.infer<typeof import('./api-schemas/files.js').AbortUploadSessionResponseSchema>
+    >;
+    'component:AzureBlockBlobUploadSession': Same<
+        W.ApiComponentTypes['AzureBlockBlobUploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').AzureBlockBlobUploadSessionSchema>
+    >;
+    'component:CompletedUploadPart': Same<
+        W.ApiComponentTypes['CompletedUploadPart'],
+        z.infer<typeof import('./api-schemas/files.js').CompletedUploadPartSchema>
+    >;
+    'component:CompleteUploadSessionPayload': Same<
+        W.ApiComponentTypes['CompleteUploadSessionPayload'],
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionPayloadSchema>
+    >;
+    'component:CompleteUploadSessionResponse': Same<
+        W.ApiComponentTypes['CompleteUploadSessionResponse'],
+        z.infer<typeof import('./api-schemas/files.js').CompleteUploadSessionResponseSchema>
+    >;
+    'component:CreateUploadSessionPayload': Same<
+        W.ApiComponentTypes['CreateUploadSessionPayload'],
+        z.infer<typeof import('./api-schemas/files.js').CreateUploadSessionPayloadSchema>
+    >;
+    'component:GcsResumableUploadSession': Same<
+        W.ApiComponentTypes['GcsResumableUploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').GcsResumableUploadSessionSchema>
+    >;
+    'component:GetUploadPartUrlsPayload': Same<
+        W.ApiComponentTypes['GetUploadPartUrlsPayload'],
+        z.infer<typeof import('./api-schemas/files.js').GetUploadPartUrlsPayloadSchema>
+    >;
+    'component:S3MultipartUploadSession': Same<
+        W.ApiComponentTypes['S3MultipartUploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').S3MultipartUploadSessionSchema>
+    >;
+    'component:UploadPartUrl': Same<
+        W.ApiComponentTypes['UploadPartUrl'],
+        z.infer<typeof import('./api-schemas/files.js').UploadPartUrlSchema>
+    >;
+    'component:UploadPartUrlsResponse': Same<
+        W.ApiComponentTypes['UploadPartUrlsResponse'],
+        z.infer<typeof import('./api-schemas/files.js').UploadPartUrlsResponseSchema>
+    >;
+    'component:UploadSession': Same<
+        W.ApiComponentTypes['UploadSession'],
+        z.infer<typeof import('./api-schemas/files.js').UploadSessionSchema>
+    >;
     'component:TaskFieldType': Same<
         W.ApiComponentTypes['TaskFieldType'],
         z.infer<typeof import('./api-schemas/task.js').TaskFieldTypeSchema>
@@ -6528,6 +6858,14 @@ interface Checks {
         W.ApiComponentTypes['RunMigrationResponse'],
         z.infer<typeof import('./api-schemas/commands.js').RunMigrationResponseSchema>
     >;
+    'component:DashboardElasticsearchHitsMapping': Same<
+        W.ApiComponentTypes['DashboardElasticsearchHitsMapping'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchHitsMappingSchema>
+    >;
+    'component:DashboardElasticsearchAggregationBucketsMapping': Same<
+        W.ApiComponentTypes['DashboardElasticsearchAggregationBucketsMapping'],
+        z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchAggregationBucketsMappingSchema>
+    >;
     'component:DashboardElasticsearchResultMapping': Same<
         W.ApiComponentTypes['DashboardElasticsearchResultMapping'],
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardElasticsearchResultMappingSchema>
@@ -6604,6 +6942,14 @@ interface Checks {
         W.ApiComponentTypes['DashboardVersionItemArray'],
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardVersionItemArraySchema>
     >;
+    'component:ListDashboardsQuery': Same<
+        W.ApiComponentTypes['ListDashboardsQuery'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ListDashboardsQuerySchema>
+    >;
+    'component:ListDashboardVersionsQuery': Same<
+        W.ApiComponentTypes['ListDashboardVersionsQuery'],
+        z.infer<typeof import('./api-schemas/dashboard.js').ListDashboardVersionsQuerySchema>
+    >;
     'component:DashboardItem': Same<
         W.ApiComponentTypes['DashboardItem'],
         z.infer<typeof import('./api-schemas/dashboard.js').DashboardItemSchema>
@@ -6671,6 +7017,18 @@ interface Checks {
     'component:GetDataStoreTableQuery': Same<
         W.ApiComponentTypes['GetDataStoreTableQuery'],
         z.infer<typeof import('./api-schemas/data-store.js').GetDataStoreTableQuerySchema>
+    >;
+    'component:GetDataStoreSchemaQuery': Same<
+        W.ApiComponentTypes['GetDataStoreSchemaQuery'],
+        z.infer<typeof import('./api-schemas/data-store.js').GetDataStoreSchemaQuerySchema>
+    >;
+    'component:ListDataStoreSchemaHistoryQuery': Same<
+        W.ApiComponentTypes['ListDataStoreSchemaHistoryQuery'],
+        z.infer<typeof import('./api-schemas/data-store.js').ListDataStoreSchemaHistoryQuerySchema>
+    >;
+    'component:CreateDataStoreDownloadUrlQuery': Same<
+        W.ApiComponentTypes['CreateDataStoreDownloadUrlQuery'],
+        z.infer<typeof import('./api-schemas/data-store.js').CreateDataStoreDownloadUrlQuerySchema>
     >;
     'component:DataTableSemanticType': Same<
         W.ApiComponentTypes['DataTableSemanticType'],
@@ -6787,6 +7145,30 @@ interface Checks {
     'component:DataColumn': Same<
         W.ApiComponentTypes['DataColumn'],
         z.infer<typeof import('./api-schemas/data-store.js').DataColumnSchema>
+    >;
+    'component:AlterTableAddColumnOperation': Same<
+        W.ApiComponentTypes['AlterTableAddColumnOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableAddColumnOperationSchema>
+    >;
+    'component:AlterTableDropColumnOperation': Same<
+        W.ApiComponentTypes['AlterTableDropColumnOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableDropColumnOperationSchema>
+    >;
+    'component:AlterTableRenameColumnOperation': Same<
+        W.ApiComponentTypes['AlterTableRenameColumnOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableRenameColumnOperationSchema>
+    >;
+    'component:AlterTableModifyColumnOperation': Same<
+        W.ApiComponentTypes['AlterTableModifyColumnOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableModifyColumnOperationSchema>
+    >;
+    'component:AlterTableAddForeignKeyOperation': Same<
+        W.ApiComponentTypes['AlterTableAddForeignKeyOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableAddForeignKeyOperationSchema>
+    >;
+    'component:AlterTableDropForeignKeyOperation': Same<
+        W.ApiComponentTypes['AlterTableDropForeignKeyOperation'],
+        z.infer<typeof import('./api-schemas/data-store.js').AlterTableDropForeignKeyOperationSchema>
     >;
     'component:AlterTableOperation': Same<
         W.ApiComponentTypes['AlterTableOperation'],
@@ -8104,6 +8486,10 @@ interface Checks {
         W.ApiComponentTypes['CollectionMembersUpdatePayload'],
         z.infer<typeof import('./api-schemas/content.js').CollectionMembersUpdatePayloadSchema>
     >;
+    'component:CollectionPermissionsPayload': Same<
+        W.ApiComponentTypes['CollectionPermissionsPayload'],
+        z.infer<typeof import('./api-schemas/content.js').CollectionPermissionsPayloadSchema>
+    >;
     'component:CollectionChildrenUpdateResult': Same<
         W.ApiComponentTypes['CollectionChildrenUpdateResult'],
         z.infer<typeof import('./api-schemas/content.js').CollectionChildrenUpdateResultSchema>
@@ -8179,6 +8565,10 @@ interface Checks {
     'component:AgentRunArtifactsQuery': Same<
         W.ApiComponentTypes['AgentRunArtifactsQuery'],
         z.infer<typeof import('./api-schemas/agent-runs.js').AgentRunArtifactsQuerySchema>
+    >;
+    'component:TerminateAgentRunQuery': Same<
+        W.ApiComponentTypes['TerminateAgentRunQuery'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').TerminateAgentRunQuerySchema>
     >;
     'component:TerminateAgentRunResponse': Same<
         W.ApiComponentTypes['TerminateAgentRunResponse'],
@@ -8436,6 +8826,14 @@ interface Checks {
         W.ApiComponentTypes['WorkflowRunEvent'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowRunEventSchema>
     >;
+    'component:WorkflowObjectIdsInput': Same<
+        W.ApiComponentTypes['WorkflowObjectIdsInput'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowObjectIdsInputSchema>
+    >;
+    'component:WorkflowFilesInput': Same<
+        W.ApiComponentTypes['WorkflowFilesInput'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowFilesInputSchema>
+    >;
     'component:WorkflowInput': Same<
         W.ApiComponentTypes['WorkflowInput'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowInputSchema>
@@ -8447,6 +8845,18 @@ interface Checks {
     'component:ExecuteWorkflowPayload': Same<
         W.ApiComponentTypes['ExecuteWorkflowPayload'],
         z.infer<typeof import('./api-schemas/workflow-runs.js').ExecuteWorkflowPayloadSchema>
+    >;
+    'component:WorkflowEventsHistory': Same<
+        W.ApiComponentTypes['WorkflowEventsHistory'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowEventsHistorySchema>
+    >;
+    'component:WorkflowTasksHistory': Same<
+        W.ApiComponentTypes['WorkflowTasksHistory'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowTasksHistorySchema>
+    >;
+    'component:WorkflowAgentHistory': Same<
+        W.ApiComponentTypes['WorkflowAgentHistory'],
+        z.infer<typeof import('./api-schemas/workflow-runs.js').WorkflowAgentHistorySchema>
     >;
     'component:WorkflowHistory': Same<
         W.ApiComponentTypes['WorkflowHistory'],
@@ -9232,6 +9642,10 @@ interface Checks {
         W.ApiComponentTypes['DeleteAppVersionResponse'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').DeleteAppVersionResponseSchema>
     >;
+    'component:AppDeleteQuery': Same<
+        W.ApiComponentTypes['AppDeleteQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeleteQuerySchema>
+    >;
     'component:AppDeleteSummary': Same<
         W.ApiComponentTypes['AppDeleteSummary'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppDeleteSummarySchema>
@@ -9371,6 +9785,10 @@ interface Checks {
     'component:AppRepoCommits': Same<
         W.ApiComponentTypes['AppRepoCommits'],
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoCommitsSchema>
+    >;
+    'component:AppRepoCommitsQuery': Same<
+        W.ApiComponentTypes['AppRepoCommitsQuery'],
+        z.infer<typeof import('./api-schemas/app-lifecycle.js').AppRepoCommitsQuerySchema>
     >;
     'component:ContentObjectTypeRef': Same<
         W.ApiComponentTypes['ContentObjectTypeRef'],
@@ -9936,6 +10354,10 @@ interface Checks {
         W.ApiComponentTypes['PendingAskStatus'],
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskStatusSchema>
     >;
+    'component:PendingAskDelivery': Same<
+        W.ApiComponentTypes['PendingAskDelivery'],
+        z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDeliverySchema>
+    >;
     'component:PendingAskData': Same<
         W.ApiComponentTypes['PendingAskData'],
         z.infer<typeof import('./api-schemas/agent-communication.js').PendingAskDataSchema>
@@ -10020,6 +10442,10 @@ interface Checks {
         W.ApiComponentTypes['AgentRunPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').AgentRunPathParamsSchema>
     >;
+    'component:WorkflowRunActionPathParams': Same<
+        W.ApiComponentTypes['WorkflowRunActionPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').WorkflowRunActionPathParamsSchema>
+    >;
     'component:AppVersionPathParams': Same<
         W.ApiComponentTypes['AppVersionPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').AppVersionPathParamsSchema>
@@ -10027,6 +10453,10 @@ interface Checks {
     'component:AppInstallationPathParams': Same<
         W.ApiComponentTypes['AppInstallationPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').AppInstallationPathParamsSchema>
+    >;
+    'component:InteractionConfigurationPathParams': Same<
+        W.ApiComponentTypes['InteractionConfigurationPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').InteractionConfigurationPathParamsSchema>
     >;
     'component:DelegationGrantPathParams': Same<
         W.ApiComponentTypes['DelegationGrantPathParams'],
@@ -10036,9 +10466,33 @@ interface Checks {
         W.ApiComponentTypes['OAuthProviderPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').OAuthProviderPathParamsSchema>
     >;
+    'component:UserGroupPathParams': Same<
+        W.ApiComponentTypes['UserGroupPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').UserGroupPathParamsSchema>
+    >;
     'component:ProjectAppCapabilityPathParams': Same<
         W.ApiComponentTypes['ProjectAppCapabilityPathParams'],
         z.infer<typeof import('./api-schemas/path-parameters.js').ProjectAppCapabilityPathParamsSchema>
+    >;
+    'component:EmbeddingTypePathParams': Same<
+        W.ApiComponentTypes['EmbeddingTypePathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').EmbeddingTypePathParamsSchema>
+    >;
+    'component:ToolPathParams': Same<
+        W.ApiComponentTypes['ToolPathParams'],
+        z.infer<typeof import('./api-schemas/path-parameters.js').ToolPathParamsSchema>
+    >;
+    'component:WorkflowUsageQuery': Same<
+        W.ApiComponentTypes['WorkflowUsageQuery'],
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageQuerySchema>
+    >;
+    'component:WorkflowUsageClass': Same<
+        W.ApiComponentTypes['WorkflowUsageClass'],
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageClassSchema>
+    >;
+    'component:WorkflowUsageStanding': Same<
+        W.ApiComponentTypes['WorkflowUsageStanding'],
+        z.infer<typeof import('./api-schemas/workflow-usage.js').WorkflowUsageStandingSchema>
     >;
     // A group the registry parse missed would leave its components out of `ApiComponentTypes`.
     'component-names': Same<keyof W.ApiComponentTypes, ApiComponentName>;
@@ -10129,6 +10583,8 @@ const checks: Checks = {
     AppInstallationsQuery: true,
     AppListScope: true,
     AppsQuery: true,
+    AppDeleteQuery: true,
+    AppRepoCommitsQuery: true,
     ToolCollectionAuthType: true,
     MCPOAuthConfig: true,
     MCPApiKeyConfig: true,
@@ -10334,6 +10790,12 @@ const checks: Checks = {
     CostAnalyticsResponse: true,
     CostRunPriceQuery: true,
     CostRunPriceResponse: true,
+    CustomRoleDefinition: true,
+    CustomRoleDefinitionArray: true,
+    PermissionArray: true,
+    CreateCustomRolePayload: true,
+    UpdateCustomRolePayload: true,
+    AssignableRoleName: true,
     DataColumnType: true,
     SemanticColumnType: true,
     DataColumn: true,
@@ -10353,6 +10815,11 @@ const checks: Checks = {
     DataStoreVersion: true,
     ListDataStoreVersionsQuery: true,
     GetDataStoreTableQuery: true,
+    GetDataStoreSchemaQuery: true,
+    ListDataStoreSchemaHistoryQuery: true,
+    CreateDataStoreDownloadUrlQuery: true,
+    ListDashboardsQuery: true,
+    ListDashboardVersionsQuery: true,
     ImportStatus: true,
     ImportJob: true,
     CreateDataStorePayload: true,
@@ -10360,6 +10827,12 @@ const checks: Checks = {
     CreateTablesPayload: true,
     QueryValidationPayload: true,
     BatchQueryPayload: true,
+    AlterTableAddColumnOperation: true,
+    AlterTableDropColumnOperation: true,
+    AlterTableRenameColumnOperation: true,
+    AlterTableModifyColumnOperation: true,
+    AlterTableAddForeignKeyOperation: true,
+    AlterTableDropForeignKeyOperation: true,
     AlterTableOperation: true,
     AlterTablePayload: true,
     UpdateSchemaPayload: true,
@@ -10399,6 +10872,8 @@ const checks: Checks = {
     DashboardPanel: true,
     DashboardLayout: true,
     DashboardElasticsearchDsl: true,
+    DashboardElasticsearchHitsMapping: true,
+    DashboardElasticsearchAggregationBucketsMapping: true,
     DashboardElasticsearchResultMapping: true,
     DashboardSqlDataSource: true,
     DashboardStoreElasticsearchDataSource: true,
@@ -10517,10 +10992,16 @@ const checks: Checks = {
     InteractionExecutionError: true,
     ConversationStripOptions: true,
     CatalogInteractionRef: true,
+    CatalogAgentSearchQuery: true,
+    CatalogCallSearchQuery: true,
+    CatalogSearchInteractionRef: true,
+    CatalogTagCount: true,
+    CatalogSearchResult: true,
     ExecuteNamedInteractionQuery: true,
     GetRunQuery: true,
     ExecuteInteractionByEndpointQuery: true,
     ResolveInteractionQuery: true,
+    DeleteInteractionQuery: true,
     InCodePrompt: true,
     InCodeInteraction: true,
     ResolvedCatalogInteraction: true,
@@ -10635,6 +11116,8 @@ const checks: Checks = {
     OAuthLoginPayload: true,
     OAuthLoginDecisionResponse: true,
     OAuthLoginUserNotFoundResponse: true,
+    OAuthLoginRequestNotFoundResponse: true,
+    OAuthLoginNotFoundResponse: true,
     OidcFederationConnectionPayload: true,
     OidcFederationConnection: true,
     OidcFederationConnectionArray: true,
@@ -10659,6 +11142,7 @@ const checks: Checks = {
     ExportPropertiesPayload: true,
     ExportPropertiesResponse: true,
     PendingAskStatus: true,
+    PendingAskDelivery: true,
     PendingAskData: true,
     RegisterPendingAskRequest: true,
     RegisterPendingAskResponse: true,
@@ -10818,6 +11302,7 @@ const checks: Checks = {
     ProcessRunType: true,
     ProcessRunConfig: true,
     BindRunWorkflowPayload: true,
+    TerminateAgentRunQuery: true,
     TerminateAgentRunResponse: true,
     AgentRunFeedbackRating: true,
     AgentRunFeedbackReasonCode: true,
@@ -10863,6 +11348,7 @@ const checks: Checks = {
     CollectionPropagationResponse: true,
     CollectionChildrenUpdateResult: true,
     CollectionMembersUpdatePayload: true,
+    CollectionPermissionsPayload: true,
     CollectionChildrenUpdatePayload: true,
     CollectionMembersQuery: true,
     UpdateCollectionPayload: true,
@@ -10880,6 +11366,8 @@ const checks: Checks = {
     DocAnalyzerProgressStatus: true,
     DurationValue: true,
     WorkflowInputFile: true,
+    WorkflowObjectIdsInput: true,
+    WorkflowFilesInput: true,
     WorkflowInput: true,
     DSLActivityOptions: true,
     DSLRetryPolicy: true,
@@ -11031,6 +11519,19 @@ const checks: Checks = {
     FileMetadataUpdateResult: true,
     BulkUploadUrlsPayload: true,
     BulkUploadUrlsResponse: true,
+    CreateUploadSessionPayload: true,
+    GcsResumableUploadSession: true,
+    AzureBlockBlobUploadSession: true,
+    S3MultipartUploadSession: true,
+    UploadSession: true,
+    GetUploadPartUrlsPayload: true,
+    UploadPartUrl: true,
+    UploadPartUrlsResponse: true,
+    CompletedUploadPart: true,
+    CompleteUploadSessionPayload: true,
+    CompleteUploadSessionResponse: true,
+    AbortUploadSessionPayload: true,
+    AbortUploadSessionResponse: true,
     FileBucketResponse: true,
     FileListResponse: true,
     FileMetadataQuery: true,
@@ -11065,6 +11566,9 @@ const checks: Checks = {
     SignalTask: true,
     TimerTask: true,
     WorkflowTask: true,
+    WorkflowEventsHistory: true,
+    WorkflowTasksHistory: true,
+    WorkflowAgentHistory: true,
     WorkflowHistory: true,
     AgentTask: true,
     WorkflowRun: true,
@@ -11188,6 +11692,9 @@ const checks: Checks = {
     ViewExecutionSearchConfiguration: true,
     ViewExecutionDefinition: true,
     ViewExecutionResult: true,
+    WorkflowUsageQuery: true,
+    WorkflowUsageClass: true,
+    WorkflowUsageStanding: true,
     AgentRunWire: true,
     CreateAgentRunPayloadWire: true,
     DSLActivitySpecWire: true,
@@ -11395,11 +11902,21 @@ const checks: Checks = {
     ProcessPathParams: true,
     TaskPathParams: true,
     AgentRunPathParams: true,
+    WorkflowRunActionPathParams: true,
     AppVersionPathParams: true,
     AppInstallationPathParams: true,
+    InteractionConfigurationPathParams: true,
     DelegationGrantPathParams: true,
     OAuthProviderPathParams: true,
+    UserGroupPathParams: true,
     ProjectAppCapabilityPathParams: true,
+    EmbeddingTypePathParams: true,
+    ToolPathParams: true,
+    'component:CustomRoleDefinition': true,
+    'component:CustomRoleDefinitionArray': true,
+    'component:CreateCustomRolePayload': true,
+    'component:UpdateCustomRolePayload': true,
+    'component:PermissionArray': true,
     'component:Account': true,
     'component:UpdateAccountPayload': true,
     'component:StripeBillingStatusResponse': true,
@@ -11508,6 +12025,8 @@ const checks: Checks = {
     'component:OAuthAuthorizationRequestGeneratedApp': true,
     'component:OAuthLoginPayload': true,
     'component:OAuthLoginUserNotFoundResponse': true,
+    'component:OAuthLoginRequestNotFoundResponse': true,
+    'component:OAuthLoginNotFoundResponse': true,
     'component:OAuthLoginDecisionResponse': true,
     'component:ApproveOAuthAuthorizationRequestPayload': true,
     'component:OAuthGrantableScopesResponse': true,
@@ -11642,12 +12161,18 @@ const checks: Checks = {
     'component:InteractionSearchQuery': true,
     'component:InteractionListQuery': true,
     'component:ResolveInteractionQuery': true,
+    'component:DeleteInteractionQuery': true,
     'component:CatalogInteractionRef': true,
     'component:CatalogInteractionRefArray': true,
     'component:InCodeInteraction': true,
     'component:ResolvedCatalogInteraction': true,
     'component:CatalogTagQuery': true,
     'component:StoredCatalogInteractionsQuery': true,
+    'component:CatalogAgentSearchQuery': true,
+    'component:CatalogCallSearchQuery': true,
+    'component:CatalogSearchInteractionRef': true,
+    'component:CatalogTagCount': true,
+    'component:CatalogSearchResult': true,
     'component:ModelSource': true,
     'component:ResolvedEnvironmentInfo': true,
     'component:ResolvedInteractionExecutionInfo': true,
@@ -11762,6 +12287,19 @@ const checks: Checks = {
     'component:BucketCreateAccessStatusResponse': true,
     'component:EnsureBucketCreateAccessPayload': true,
     'component:EnsureBucketCreateAccessResponse': true,
+    'component:AbortUploadSessionPayload': true,
+    'component:AbortUploadSessionResponse': true,
+    'component:AzureBlockBlobUploadSession': true,
+    'component:CompletedUploadPart': true,
+    'component:CompleteUploadSessionPayload': true,
+    'component:CompleteUploadSessionResponse': true,
+    'component:CreateUploadSessionPayload': true,
+    'component:GcsResumableUploadSession': true,
+    'component:GetUploadPartUrlsPayload': true,
+    'component:S3MultipartUploadSession': true,
+    'component:UploadPartUrl': true,
+    'component:UploadPartUrlsResponse': true,
+    'component:UploadSession': true,
     'component:TaskFieldType': true,
     'component:DurableTaskStatus': true,
     'component:TaskSource': true,
@@ -11806,6 +12344,8 @@ const checks: Checks = {
     'component:MigrationListResponse': true,
     'component:RunMigrationPayload': true,
     'component:RunMigrationResponse': true,
+    'component:DashboardElasticsearchHitsMapping': true,
+    'component:DashboardElasticsearchAggregationBucketsMapping': true,
     'component:DashboardElasticsearchResultMapping': true,
     'component:DashboardElasticsearchDsl': true,
     'component:DashboardSqlDataSource': true,
@@ -11825,6 +12365,8 @@ const checks: Checks = {
     'component:DashboardBulkIdsPayload': true,
     'component:DashboardStoreElasticsearchDataSource': true,
     'component:DashboardVersionItemArray': true,
+    'component:ListDashboardsQuery': true,
+    'component:ListDashboardVersionsQuery': true,
     'component:DashboardItem': true,
     'component:DashboardPanel': true,
     'component:DashboardDataSource': true,
@@ -11842,6 +12384,9 @@ const checks: Checks = {
     'component:QueryValidationPayload': true,
     'component:ListDataStoreVersionsQuery': true,
     'component:GetDataStoreTableQuery': true,
+    'component:GetDataStoreSchemaQuery': true,
+    'component:ListDataStoreSchemaHistoryQuery': true,
+    'component:CreateDataStoreDownloadUrlQuery': true,
     'component:DataTableSemanticType': true,
     'component:DataIndex': true,
     'component:DataForeignKey': true,
@@ -11871,6 +12416,12 @@ const checks: Checks = {
     'component:CreateDataStorePayload': true,
     'component:QueryValidationResult': true,
     'component:DataColumn': true,
+    'component:AlterTableAddColumnOperation': true,
+    'component:AlterTableDropColumnOperation': true,
+    'component:AlterTableRenameColumnOperation': true,
+    'component:AlterTableModifyColumnOperation': true,
+    'component:AlterTableAddForeignKeyOperation': true,
+    'component:AlterTableDropForeignKeyOperation': true,
     'component:AlterTableOperation': true,
     'component:DataRelationship': true,
     'component:CreateTablePayload': true,
@@ -12200,6 +12751,7 @@ const checks: Checks = {
     'component:CollectionSecuritySettingsResponse': true,
     'component:CollectionMembersUpdateResult': true,
     'component:CollectionMembersUpdatePayload': true,
+    'component:CollectionPermissionsPayload': true,
     'component:CollectionChildrenUpdateResult': true,
     'component:CollectionChildrenUpdatePayload': true,
     'component:CollectionStatus': true,
@@ -12219,6 +12771,7 @@ const checks: Checks = {
     'component:AgentRunArtifactUploadHeaders': true,
     'component:AgentRunArtifactQuery': true,
     'component:AgentRunArtifactsQuery': true,
+    'component:TerminateAgentRunQuery': true,
     'component:TerminateAgentRunResponse': true,
     'component:SignalAgentPayload': true,
     'component:PostAgentRunUpdateResponse': true,
@@ -12283,9 +12836,14 @@ const checks: Checks = {
     'component:WorkflowDefinitionRefArray': true,
     'component:ListWorkflowRunsResponse': true,
     'component:WorkflowRunEvent': true,
+    'component:WorkflowObjectIdsInput': true,
+    'component:WorkflowFilesInput': true,
     'component:WorkflowInput': true,
     'component:WorkflowRunUpdatesResponse': true,
     'component:ExecuteWorkflowPayload': true,
+    'component:WorkflowEventsHistory': true,
+    'component:WorkflowTasksHistory': true,
+    'component:WorkflowAgentHistory': true,
     'component:WorkflowHistory': true,
     'component:WorkflowRunWithDetails': true,
     'component:BindRunWorkflowPayload': true,
@@ -12482,6 +13040,7 @@ const checks: Checks = {
     'component:RunType': true,
     'component:AppBuildProgressStatus': true,
     'component:DeleteAppVersionResponse': true,
+    'component:AppDeleteQuery': true,
     'component:AppDeleteSummary': true,
     'component:AppRepoBranch': true,
     'component:CreateAppRepoBranchRequest': true,
@@ -12517,6 +13076,7 @@ const checks: Checks = {
     'component:AppRepoTree': true,
     'component:AppRepoRefs': true,
     'component:AppRepoCommits': true,
+    'component:AppRepoCommitsQuery': true,
     'component:ContentObjectTypeRef': true,
     'component:AppVersionLaunchTarget': true,
     'component:AppVersionLaunchTargetArray': true,
@@ -12658,6 +13218,7 @@ const checks: Checks = {
     'component:ForwardEmailRequest': true,
     'component:ForwardEmailResponse': true,
     'component:PendingAskStatus': true,
+    'component:PendingAskDelivery': true,
     'component:PendingAskData': true,
     'component:RegisterPendingAskRequest': true,
     'component:RegisterPendingAskResponse': true,
@@ -12679,16 +13240,24 @@ const checks: Checks = {
     'component:ProcessPathParams': true,
     'component:TaskPathParams': true,
     'component:AgentRunPathParams': true,
+    'component:WorkflowRunActionPathParams': true,
     'component:AppVersionPathParams': true,
     'component:AppInstallationPathParams': true,
+    'component:InteractionConfigurationPathParams': true,
     'component:DelegationGrantPathParams': true,
     'component:OAuthProviderPathParams': true,
+    'component:UserGroupPathParams': true,
     'component:ProjectAppCapabilityPathParams': true,
+    'component:EmbeddingTypePathParams': true,
+    'component:ToolPathParams': true,
+    'component:WorkflowUsageQuery': true,
+    'component:WorkflowUsageClass': true,
+    'component:WorkflowUsageStanding': true,
     'component-names': true,
 };
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2640);
+        expect(Object.keys(checks)).toHaveLength(2755);
     });
 });

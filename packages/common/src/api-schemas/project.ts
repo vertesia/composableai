@@ -26,8 +26,18 @@ export const ProjectTagQuerySchema = z
 
 export const CreateProjectPayloadSchema = z
     .object({
-        name: z.string(),
-        namespace: z.string(),
+        // The project model requires a name, so an empty one fails the save with a 400.
+        name: z.string().min(1),
+        // The server refuses any other character with a 400. Whether the namespace is free is checked against the
+        // stored projects, which no schema states.
+        namespace: z
+            .string()
+            .regex(/^[a-zA-Z0-9_[\]-]+$/)
+            .meta({
+                description:
+                    'Letters, digits, `-`, `_`, `[` and `]`. Must not be the namespace of another project, which ' +
+                    'the server answers with a 409.',
+            }),
         description: z.string().optional(),
         auto_config: z.boolean().optional(),
     })

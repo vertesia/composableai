@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type * as Wire from '../wire-types.generated.js';
+import { WorkflowUsageStandingSchema } from './workflow-usage.js';
 
 /**
  * Runtime API schemas for quota standing and tier endpoints.
@@ -57,6 +58,7 @@ export const QuotaStandingAdmissionClassSchema = z
 
 export const QuotaStandingResponseSchema = z
     .object({
+        workflow_usage: WorkflowUsageStandingSchema.optional(),
         tenant_id: z.string(),
         available: z.boolean().meta({
             description:

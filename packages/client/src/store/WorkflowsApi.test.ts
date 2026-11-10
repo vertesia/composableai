@@ -28,3 +28,17 @@ describe('subscription workflow catalog SDK', () => {
         expect(requests[0].url).toBe('https://store.example.test/api/v1/workflows/subscription-catalog');
     });
 });
+
+it('keeps async request-observation hooks detached from request dispatch', async () => {
+    const fetch = vi.fn(async () => Response.json({ classes: [] }));
+    const client = new VertesiaClient({
+        serverUrl: 'https://api.example.test',
+        storeUrl: 'https://store.example.test',
+        fetch,
+        onRequest: async () => {
+            throw new Error('logger unavailable');
+        },
+    });
+    await expect(client.store.workflows.usage()).resolves.toEqual({ classes: [] });
+    expect(fetch).toHaveBeenCalledTimes(1);
+});

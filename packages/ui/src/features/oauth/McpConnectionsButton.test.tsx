@@ -40,6 +40,30 @@ describe('MCP connection controls', () => {
         vi.clearAllMocks();
     });
 
+    it('shows MCP rows as unknown, not as not connected, when the status lookup gets no answer', async () => {
+        const outage = Object.assign(new Error('Service Unavailable'), { status: 503 });
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        mocks.getInstalledApps.mockResolvedValue([
+            {
+                id: 'app-1',
+                manifest: {
+                    title: 'Atlassian',
+                    tool_collections: [
+                        { id: 'jira', type: 'mcp', name: 'Jira', namespace: 'jira', url: 'https://jira.example.com' },
+                    ],
+                },
+                oauth_collection_ids: ['jira'],
+            },
+        ]);
+        mocks.getStatus.mockRejectedValue(outage);
+
+        renderWithProviders(<McpConnectionsInlineList readOnly />);
+
+        expect(await screen.findByText('Status unknown')).not.toBeNull();
+        expect(screen.queryByText('Not connected')).toBeNull();
+        vi.mocked(console.error).mockRestore();
+    });
+
     it('shows available MCP servers and their connection and availability state inline', async () => {
         mocks.getInstalledApps.mockResolvedValue([
             {

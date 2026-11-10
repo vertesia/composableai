@@ -1,8 +1,10 @@
 import {
     AbstractFetchClient,
     type FETCH_FN,
+    type IPacingRetryPolicy,
     type IRequestRetryPolicy,
     type RequestError,
+    type RequestIdentityProvider,
 } from '@vertesia/api-fetch-client';
 import { APP_VERSION_HEADER, type BulkOperationPayload, type BulkOperationResponse } from '@vertesia/common';
 import { warnUnknownOptions } from '../unknown-options.js';
@@ -35,9 +37,13 @@ export interface ZenoClientProps {
     serverUrl?: string;
     tokenServerUrl?: string;
     apikey?: string;
+    /** Supplies the complete Authorization header; takes precedence over apikey. */
+    authCallback?: () => Promise<string>;
+    requestIdentity?: RequestIdentityProvider;
     onRequest?: (request: Request) => void;
     onResponse?: (response: Response) => void;
     retryPolicy?: IRequestRetryPolicy;
+    pacingRetry?: IPacingRetryPolicy | false;
     timeout?: number | false | null;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
 }
@@ -47,9 +53,12 @@ const KNOWN_STORE_OPTIONS: Record<keyof Required<ZenoClientProps>, true> = {
     serverUrl: true,
     tokenServerUrl: true,
     apikey: true,
+    authCallback: true,
+    requestIdentity: true,
     onRequest: true,
     onResponse: true,
     retryPolicy: true,
+    pacingRetry: true,
     timeout: true,
     fetch: true,
 };
@@ -65,15 +74,22 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     constructor(opts: ZenoClientProps = {}) {
         warnUnknownOptions('ZenoClient', opts, KNOWN_STORE_OPTIONS);
         super(ensureDefined(opts.serverUrl), opts.fetch);
-        if (opts.apikey) {
+        if (opts.authCallback) {
+            this.withAuthCallback(opts.authCallback);
+        } else if (opts.apikey) {
             this.withApiKey(opts.apikey);
         }
         if (opts.retryPolicy) {
             this.withRetryPolicy(opts.retryPolicy);
         }
+        if (opts.pacingRetry !== undefined) {
+            this.withPacingRetry(opts.pacingRetry);
+        }
+
         if (opts.timeout !== undefined) {
             this.withTimeout(opts.timeout);
         }
+        this.requestIdentity = opts.requestIdentity;
         this.onRequest = opts.onRequest;
         this.onResponse = opts.onResponse;
         this.errorFactory = (err: RequestError) => {

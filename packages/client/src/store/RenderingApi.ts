@@ -80,6 +80,7 @@ export class RenderingApi extends ApiTopic {
                     format: payload.format,
                     download_url: status.download_url,
                     file_uri: status.file_uri,
+                    warnings: status.warnings,
                 };
             }
 

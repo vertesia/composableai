@@ -238,7 +238,7 @@ export type ApiKeyFromSchema = {
     id: string;
     name: string;
     type: (typeof ApiKeyTypes)['secret'];
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     maskedValue?: string | undefined;
     can_retrieve_value?: boolean | undefined;
     account: string;
@@ -259,7 +259,7 @@ export type ApiKeyWithValueFromSchema = {
     id: string;
     name: string;
     type: (typeof ApiKeyTypes)['secret'];
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     maskedValue?: string | undefined;
     can_retrieve_value?: boolean | undefined;
     account: string;
@@ -278,7 +278,7 @@ export type ApiKeyWithValueFromSchema = {
 };
 export type CreateApiKeyPayloadFromSchema = {
     name: string;
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     type?: (typeof ApiKeyTypes)['secret'] | undefined;
     expires_at?: string | undefined | undefined;
     scim_provisioning?: boolean | undefined;
@@ -288,9 +288,9 @@ export type CreateApiKeyPayloadFromSchema = {
 };
 export type UpdateApiKeyPayloadFromSchema = {
     name?: string | undefined;
-    role?: (typeof SystemRoles)[keyof typeof SystemRoles] | undefined;
+    role?: AssignableRoleName | undefined;
     enabled?: boolean | undefined;
-    scim_provisioning?: boolean | undefined | undefined;
+    scim_provisioning?: boolean | undefined;
     properties?: Record<string, unknown> | undefined | undefined;
     clearance?: number | undefined | undefined;
     compartments?: string[] | undefined | undefined;
@@ -305,7 +305,7 @@ export type AuthTokenResponseFromSchema = {
 export type UserGroupArrayFromSchema = UserGroup[];
 export type UserInviteTokenDataFromSchema = {
     email: string;
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
     account: AccountRef;
     project?: ProjectRef | undefined;
     invited_by: UserRefFromSchema;
@@ -322,7 +322,7 @@ export type UserInviteTokenFromSchema = {
 export type UserInviteTokenArrayFromSchema = UserInviteTokenFromSchema[];
 export type InviteUserRequestPayloadFromSchema = {
     email: string;
-    role: (typeof SystemRoles)[keyof typeof SystemRoles];
+    role: AssignableRoleName;
 };
 export type InviteUserResponsePayloadFromSchema = {
     action: 'invited' | 'added';
@@ -401,6 +401,7 @@ export type QuotaStandingAdmissionClassFromSchema = {
     tenant_active: number;
 };
 export type QuotaStandingResponseFromSchema = {
+    workflow_usage?: WorkflowUsageStanding | undefined;
     tenant_id: string;
     available: boolean;
     base_tier: string;
@@ -566,6 +567,15 @@ export type AppInstallationsQuery = {
 export type AppListScope = 'account' | 'project';
 export type AppsQuery = {
     scope?: AppListScope | undefined;
+};
+export type AppDeleteQuery = {
+    confirm?: boolean | undefined;
+};
+export type AppRepoCommitsQuery = {
+    path?: string | undefined;
+    ref?: string | undefined;
+    limit?: number | undefined;
+    cursor?: string | undefined;
 };
 export type ToolCollectionAuthType = 'none' | 'oauth' | 'api_key' | 'other';
 export type MCPOAuthConfig = {
@@ -2192,6 +2202,7 @@ export type BulkOperationPayload = {
     name: 'change_type' | 'create' | 'delete' | 'start_workflow' | 'update';
     ids: string[];
     params: {
+        objects?: CreateContentObjectPayloadWire[] | undefined;
         [k: string]: unknown;
     };
 };
@@ -2473,6 +2484,23 @@ export type CostRunPriceResponse = {
     pricing_source: 'list' | 'historical';
     matched_events: number;
 };
+export type CustomRoleDefinition = {
+    name: string;
+    title: string;
+    description?: string | undefined;
+    base_roles?: AssignableRoleName[] | undefined;
+    permissions: (typeof Permission)[keyof typeof Permission][];
+};
+export type CustomRoleDefinitionArray = CustomRoleDefinition[];
+export type PermissionArray = (typeof Permission)[keyof typeof Permission][];
+export type CreateCustomRolePayload = CustomRoleDefinition;
+export type UpdateCustomRolePayload = {
+    title?: string | undefined;
+    description?: string | undefined | undefined;
+    base_roles?: AssignableRoleName[] | undefined | undefined;
+    permissions?: (typeof Permission)[keyof typeof Permission][] | undefined;
+};
+export type AssignableRoleName = (typeof SystemRoles)[keyof typeof SystemRoles] | string;
 export type DataColumnType = (typeof DataColumnTypeValues)[keyof typeof DataColumnTypeValues];
 export type SemanticColumnType = (typeof SemanticColumnTypeValues)[keyof typeof SemanticColumnTypeValues];
 /**
@@ -2613,6 +2641,7 @@ export type DataStore = {
     storage_bytes: number;
     last_import_at?: string | undefined;
     version_count: number;
+    current_version?: string | undefined;
     schema: DataSchema;
     gcs_bucket: string;
     gcs_path: string;
@@ -2646,6 +2675,22 @@ export type ListDataStoreVersionsQuery = {
 };
 export type GetDataStoreTableQuery = {
     sample?: boolean | undefined;
+};
+export type GetDataStoreSchemaQuery = {
+    format?: 'full' | 'ai' | undefined;
+};
+export type ListDataStoreSchemaHistoryQuery = {
+    limit?: number | undefined;
+};
+export type CreateDataStoreDownloadUrlQuery = {
+    version_id?: string | undefined;
+};
+export type ListDashboardsQuery = {
+    status?: DashboardStatus | undefined;
+};
+export type ListDashboardVersionsQuery = {
+    limit?: number | undefined;
+    snapshots_only?: boolean | undefined;
 };
 export type ImportStatus = (typeof ImportStatusValues)[keyof typeof ImportStatusValues];
 /**
@@ -2705,36 +2750,42 @@ export type BatchQueryPayload = {
         limit?: number | undefined;
     }[];
 };
+export type AlterTableAddColumnOperation = {
+    op: 'add_column';
+    column: DataColumn;
+};
+export type AlterTableDropColumnOperation = {
+    op: 'drop_column';
+    column: string;
+};
+export type AlterTableRenameColumnOperation = {
+    op: 'rename_column';
+    from: string;
+    to: string;
+};
+export type AlterTableModifyColumnOperation = {
+    op: 'modify_column';
+    column: string;
+    updates: DataColumnUpdate;
+};
+export type AlterTableAddForeignKeyOperation = {
+    op: 'add_foreign_key';
+    foreign_key: DataForeignKey;
+};
+export type AlterTableDropForeignKeyOperation = {
+    op: 'drop_foreign_key';
+    column: string;
+};
 /**
  * @discriminator op
  */
 export type AlterTableOperation =
-    | {
-          op: 'add_column';
-          column: DataColumn;
-      }
-    | {
-          op: 'drop_column';
-          column: string;
-      }
-    | {
-          op: 'rename_column';
-          from: string;
-          to: string;
-      }
-    | {
-          op: 'modify_column';
-          column: string;
-          updates: DataColumnUpdate;
-      }
-    | {
-          op: 'add_foreign_key';
-          foreign_key: DataForeignKey;
-      }
-    | {
-          op: 'drop_foreign_key';
-          column: string;
-      };
+    | AlterTableAddColumnOperation
+    | AlterTableDropColumnOperation
+    | AlterTableRenameColumnOperation
+    | AlterTableModifyColumnOperation
+    | AlterTableAddForeignKeyOperation
+    | AlterTableDropForeignKeyOperation;
 /**
  * Payload for altering a table schema.
  */
@@ -3046,19 +3097,21 @@ export type DashboardElasticsearchDsl = {
           }[]
         | undefined;
 };
+export type DashboardElasticsearchHitsMapping = {
+    type: 'hits';
+};
+export type DashboardElasticsearchAggregationBucketsMapping = {
+    type: 'aggregation_buckets';
+    path: string;
+    keyField?: string | undefined;
+    countField?: string | undefined;
+};
 /**
  * How an Elasticsearch DSL result should be converted into Vega rows.
  */
 export type DashboardElasticsearchResultMapping =
-    | {
-          type: 'hits';
-      }
-    | {
-          type: 'aggregation_buckets';
-          path: string;
-          keyField?: string | undefined;
-          countField?: string | undefined;
-      };
+    | DashboardElasticsearchHitsMapping
+    | DashboardElasticsearchAggregationBucketsMapping;
 /**
  * Dashboard data source backed by a Data Platform SQL query.
  */
@@ -3395,6 +3448,7 @@ export type SendEmailRequest = {
     route_key?: string | undefined;
     in_reply_to?: string | undefined;
     references?: string[] | undefined;
+    request_id?: string | undefined;
 };
 export type SendEmailResponse = {
     success: boolean;
@@ -3444,6 +3498,7 @@ export type ForwardEmailRequest = {
         text: string;
         html?: string | undefined;
         message_id?: string | undefined;
+        in_reply_to?: string | undefined;
     };
     context?: Record<string, unknown> | undefined;
     attachments?:
@@ -4083,6 +4138,48 @@ export type CatalogInteractionRef = {
     title: string;
     description?: string | undefined;
 };
+export type CatalogAgentSearchQuery = {
+    name?: string | undefined;
+    tags?: string[] | undefined;
+    model?: string | undefined;
+    prompt?: string | undefined;
+    is_sub_agent?: boolean | undefined;
+};
+export type CatalogCallSearchQuery = {
+    name?: string | undefined;
+    tags?: string[] | undefined;
+    model?: string | undefined;
+    prompt?: string | undefined;
+    is_basic?: boolean | undefined;
+    is_tool?: boolean | undefined;
+    is_skill?: boolean | undefined;
+};
+/** An interaction found by a catalog search: a system or app interaction, or a stored one with its model, prompts and update time. */
+export type CatalogSearchInteractionRef = {
+    type: 'sys' | 'app' | 'stored' | 'draft';
+    id: string;
+    name: string;
+    version?: number | undefined;
+    published?: boolean | undefined;
+    tags: string[];
+    agent_runner_options?: AgentRunnerOptions | undefined;
+    title: string;
+    description?: string | undefined;
+    model?: string | undefined;
+    prompts?: PromptSegmentRef_PromptTemplateRef[] | undefined;
+    updated_at?: string | undefined;
+    inference_profile?: InferenceProfileId | undefined;
+};
+export type CatalogTagCount = {
+    tag: string;
+    count: number;
+};
+/** A catalog search result: the matching interactions, their tag counts and the total. */
+export type CatalogSearchResult = {
+    total: number;
+    tags: CatalogTagCount[];
+    interactions: CatalogSearchInteractionRef[];
+};
 export type ExecuteNamedInteractionQuery = {
     include_prompt?: boolean | undefined;
 };
@@ -4100,6 +4197,9 @@ export type ResolveInteractionQuery = {
     inherit_model_config?: boolean | undefined;
     hasImage?: boolean | undefined;
     hasVideo?: boolean | undefined;
+};
+export type DeleteInteractionQuery = {
+    cascade?: boolean | undefined;
 };
 export type InCodePrompt = {
     role: (typeof PromptRole)[keyof typeof PromptRole];
@@ -4762,7 +4862,7 @@ export type ResolvedInteractionExecutionInfo = {
 };
 export type UpdateExecutionRunPayload = {
     id?: string | undefined;
-    parent?: string | ExecutionRunWire | undefined;
+    parent?: string | undefined;
     evaluation?:
         | {
               score?: number | undefined;
@@ -4771,7 +4871,7 @@ export type UpdateExecutionRunPayload = {
           }
         | undefined;
     tags?: string[] | undefined;
-    environment?: ExecutionEnvironmentRef | undefined;
+    environment?: string | undefined;
     modelId?: string | undefined;
     result_schema?: JSONSchema | undefined;
     ttl?: number | undefined;
@@ -4793,7 +4893,7 @@ export type UpdateExecutionRunPayload = {
     created_by?: string | undefined;
     updated_by?: string | undefined;
     workflow?: ExecutionRunWorkflow | undefined;
-    interaction?: InteractionRef | undefined;
+    interaction?: string | undefined;
 };
 /**
  * Stripe billing status, derived from `StripeBillingStatusResponseSchema`.
@@ -5241,6 +5341,11 @@ export type OAuthLoginUserNotFoundResponse = {
     error: 'user_not_found';
     ensure_user_url: string;
 };
+export type OAuthLoginRequestNotFoundResponse = {
+    error: 'not_found';
+    message: string;
+};
+export type OAuthLoginNotFoundResponse = OAuthLoginUserNotFoundResponse | OAuthLoginRequestNotFoundResponse;
 export type OidcFederationConnectionPayload = {
     name: string;
     issuer: string;
@@ -5484,6 +5589,10 @@ export type ExportPropertiesResponse = {
  */
 export type PendingAskStatus = 'pending' | 'resolved' | 'expired';
 /**
+ * What the server does with the response when a pending ask is resolved.
+ */
+export type PendingAskDelivery = 'deliver' | 'already_delivered';
+/**
  * Data stored in Redis for pending ask_user requests.
  * Tracks which agents are waiting for user input and enables
  * both webhook notifications and portal views.
@@ -5526,6 +5635,7 @@ export type RegisterPendingAskResponse = {
 };
 export type ResolvePendingAskRequest = {
     response: string;
+    delivery?: PendingAskDelivery | undefined;
 };
 export type ResolvePendingAskResponse = {
     success: boolean;
@@ -6389,7 +6499,7 @@ export type PromptTemplateUpdatePayload = {
     name?: string | undefined;
     status?: PromptStatusWire | undefined;
     version?: number | undefined;
-    parent?: string | undefined | undefined;
+    parent?: string | undefined;
     description?: string | undefined | undefined;
     test_data?: JSONObject | undefined | undefined;
     script?: string | undefined | undefined;
@@ -6929,6 +7039,9 @@ export type BindRunWorkflowPayload = {
     status?: AgentRunStatus | undefined;
     activity_state?: ConversationActivityState | undefined;
 };
+export type TerminateAgentRunQuery = {
+    reason?: string | undefined;
+};
 export type TerminateAgentRunResponse = {
     message: string;
     reason?: string | undefined;
@@ -7308,6 +7421,9 @@ export type CollectionMembersUpdatePayload = {
     action: 'add' | 'delete';
     members: string[];
 };
+export type CollectionPermissionsPayload = Partial<
+    Record<'content:read' | 'content:write' | 'content:delete', string[]>
+>;
 export type CollectionChildrenUpdatePayload = {
     action: 'add' | 'delete';
     children: string[];
@@ -7437,15 +7553,15 @@ export type WorkflowInputFile = {
     url: string;
     mimetype: string;
 };
-export type WorkflowInput =
-    | {
-          inputType: 'objectIds';
-          objectIds: string[];
-      }
-    | {
-          inputType: 'files';
-          files: WorkflowInputFile[];
-      };
+export type WorkflowObjectIdsInput = {
+    inputType: 'objectIds';
+    objectIds: string[];
+};
+export type WorkflowFilesInput = {
+    inputType: 'files';
+    files: WorkflowInputFile[];
+};
+export type WorkflowInput = WorkflowObjectIdsInput | WorkflowFilesInput;
 export type DSLActivityOptions = {
     startToCloseTimeout?: DurationValue | undefined;
     heartbeatTimeout?: DurationValue | undefined;
@@ -8012,6 +8128,7 @@ export type RenderMarkdownStatusResponse = {
     download_url?: string | undefined;
     file_uri?: string | undefined;
     error?: string | undefined;
+    warnings?: string[] | undefined;
 };
 export type RenderMarkdownStatusQuery = {
     workflow_id: string;
@@ -8780,6 +8897,70 @@ export type BulkUploadUrlsPayload = {
 export type BulkUploadUrlsResponse = {
     files: GetFileUrlResponse[];
 };
+export type CreateUploadSessionPayload = {
+    name: string;
+    id?: string | undefined;
+    mime_type?: string | undefined;
+};
+export type GcsResumableUploadSession = {
+    protocol: 'gcs_resumable';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    url: string;
+};
+export type AzureBlockBlobUploadSession = {
+    protocol: 'azure_block_blob';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    url: string;
+};
+export type S3MultipartUploadSession = {
+    protocol: 's3_multipart';
+    id: string;
+    path: string;
+    mime_type?: string | undefined;
+    part_size: number;
+    upload_id: string;
+};
+export type UploadSession = GcsResumableUploadSession | AzureBlockBlobUploadSession | S3MultipartUploadSession;
+export type GetUploadPartUrlsPayload = {
+    id: string;
+    upload_id: string;
+    part_numbers: number[];
+};
+export type UploadPartUrl = {
+    part_number: number;
+    url: string;
+};
+export type UploadPartUrlsResponse = {
+    parts: UploadPartUrl[];
+};
+export type CompletedUploadPart = {
+    part_number: number;
+    etag: string;
+};
+export type CompleteUploadSessionPayload = {
+    id: string;
+    upload_id: string;
+    parts: CompletedUploadPart[];
+};
+export type CompleteUploadSessionResponse = {
+    id: string;
+    path: string;
+    etag?: string | undefined;
+};
+export type AbortUploadSessionPayload = {
+    id: string;
+    upload_id: string;
+};
+export type AbortUploadSessionResponse = {
+    id: string;
+    aborted: boolean;
+};
 export type FileBucketResponse = {
     bucket: string;
     location?: string | undefined;
@@ -9110,21 +9291,21 @@ export type TimerTask = {
     duration?: string | undefined;
 };
 export type WorkflowTask = ActivityTask | ChildWorkflowTask | SignalTask | TimerTask;
-export type WorkflowHistory =
-    | {
-          type: 'events';
-          events: WorkflowRunEvent[];
-      }
-    | {
-          type: 'tasks';
-          tasks: WorkflowTask[];
-      }
-    | {
-          type: 'agent';
-          mode?: 'snapshot' | 'delta' | undefined;
-          next_from?: string | undefined;
-          agentTasks: AgentTask[];
-      };
+export type WorkflowEventsHistory = {
+    type: 'events';
+    events: WorkflowRunEvent[];
+};
+export type WorkflowTasksHistory = {
+    type: 'tasks';
+    tasks: WorkflowTask[];
+};
+export type WorkflowAgentHistory = {
+    type: 'agent';
+    mode?: 'snapshot' | 'delta' | undefined;
+    next_from?: string | undefined;
+    agentTasks: AgentTask[];
+};
+export type WorkflowHistory = WorkflowEventsHistory | WorkflowTasksHistory | WorkflowAgentHistory;
 export type AgentTask = {
     history_id?: string | undefined;
     taskType: 'tool_call' | 'llm_call' | 'input' | 'timer' | 'subagent' | 'processing' | 'signal';
@@ -9680,9 +9861,9 @@ export type ViewHierarchyLevel = {
  * Hierarchies represent one selected path, so multi_select may only be false.
  * Selection ids are opaque runtime values and must not be constructed by clients.
  *
- * `multi_select` widens from `false` to `boolean` here, matching the published component and what
- * the endpoint has always accepted. The narrowing was an authoring hint with nothing behind it: the
- * navigation runtime takes the first selection for `source === 'hierarchy'` whatever the flag says.
+ * `multi_select` is typed `boolean` here, as the SDK has always published it, but the published
+ * component and the server accept only `false`: the navigation runtime takes the first selection for
+ * `source === 'hierarchy'` whatever the flag says.
  */
 export type ViewHierarchyNavigation = {
     id: string;
@@ -10089,6 +10270,44 @@ export type ViewExecutionResult = {
     total: number;
     navigation: ViewNavigationResultMap;
     took: number;
+};
+export type WorkflowUsageQuery = {
+    workflow_class?: string | undefined;
+};
+export type WorkflowUsageClass = {
+    workflow_class: string;
+    strategy: 'rate' | 'concurrency';
+    mode: 'active' | 'dry-run' | 'disabled';
+    available: boolean;
+    observed_at: string | null;
+    freshness: 'fresh' | 'stale' | 'unavailable';
+    start_window: {
+        limit: number;
+        window_ms: number;
+        used: number | null;
+    } | null;
+    occupancy: {
+        limit: number | null;
+        tenant_limit: number;
+        active: number | null;
+        tenant_active: number | null;
+    } | null;
+    backlog: {
+        pending: number | null;
+        deferred: number | null;
+        oldest_deferred_at: string | null;
+    };
+    actual_starts: {
+        count: number | null;
+        window_ms: number;
+    };
+};
+export type WorkflowUsageStanding = {
+    tenant_id: string;
+    available: boolean;
+    start_governance_enabled: boolean;
+    truncated: boolean;
+    classes: WorkflowUsageClass[];
 };
 export type AgentRunWire = {
     interaction: string;
@@ -10885,7 +11104,7 @@ export type AgentRunInternalsWire = {
     run_type?: RunType | undefined;
     interaction?: string | undefined;
     interaction_name?: string | undefined;
-    config?: InteractionExecutionConfiguration | undefined;
+    config?: InteractionExecutionConfiguration | ProcessRunConfig | undefined;
     interactive?: boolean | undefined;
     process_id?: string | undefined;
     process_definition_snapshot?: ProcessDefinitionBodyWire | undefined;
@@ -11143,6 +11362,7 @@ export type DataStoreVersionPathParams = {
 export type ContentObjectExportPathParams = {
     exportId?: string | undefined;
     role?: 'data' | 'manifest' | undefined;
+    runId?: string | undefined;
 };
 export type ProcessTestRunPathParams = {
     runId?: string | undefined;
@@ -11158,11 +11378,19 @@ export type TaskPathParams = {
 export type AgentRunPathParams = {
     agentRunId?: string | undefined;
 };
+export type WorkflowRunActionPathParams = {
+    action?: 'cancel' | 'terminate' | undefined;
+};
 export type AppVersionPathParams = {
     id?: string | undefined;
+    alias?: string | undefined;
 };
 export type AppInstallationPathParams = {
     installId?: string | undefined;
+    app_id?: string | undefined;
+};
+export type InteractionConfigurationPathParams = {
+    interactionId?: string | undefined;
 };
 export type DelegationGrantPathParams = {
     grantId?: string | undefined;
@@ -11170,14 +11398,29 @@ export type DelegationGrantPathParams = {
 export type OAuthProviderPathParams = {
     id?: string | undefined;
 };
+export type UserGroupPathParams = {
+    groupId?: string | undefined;
+    userId?: string | undefined;
+};
 export type ProjectAppCapabilityPathParams = {
     processId?: string | undefined;
     templateId?: string | undefined;
     typeId?: string | undefined;
     viewId?: string | undefined;
 };
+export type EmbeddingTypePathParams = {
+    type?: 'text' | 'image' | 'properties' | undefined;
+};
+export type ToolPathParams = {
+    toolName?: string | undefined;
+};
 /** The wire type of every registry component, by component name: what `ApiComponentType<N>` resolves. */
 export interface ApiComponentTypes {
+    CustomRoleDefinition: CustomRoleDefinition;
+    CustomRoleDefinitionArray: CustomRoleDefinitionArray;
+    CreateCustomRolePayload: CustomRoleDefinition;
+    UpdateCustomRolePayload: UpdateCustomRolePayload;
+    PermissionArray: PermissionArray;
     Account: AccountFromSchema;
     UpdateAccountPayload: UpdateAccountPayloadFromSchema;
     StripeBillingStatusResponse: StripeBillingStatusResponseFromSchema;
@@ -11286,6 +11529,8 @@ export interface ApiComponentTypes {
     OAuthAuthorizationRequestGeneratedApp: OAuthAuthorizationRequestGeneratedApp;
     OAuthLoginPayload: OAuthLoginPayload;
     OAuthLoginUserNotFoundResponse: OAuthLoginUserNotFoundResponse;
+    OAuthLoginRequestNotFoundResponse: OAuthLoginRequestNotFoundResponse;
+    OAuthLoginNotFoundResponse: OAuthLoginNotFoundResponse;
     OAuthLoginDecisionResponse: OAuthLoginDecisionResponse;
     ApproveOAuthAuthorizationRequestPayload: ApproveOAuthAuthorizationRequestPayload;
     OAuthGrantableScopesResponse: OAuthGrantableScopesResponse;
@@ -11440,12 +11685,18 @@ export interface ApiComponentTypes {
     InteractionSearchQuery: InteractionSearchQuery;
     InteractionListQuery: InteractionListQuery;
     ResolveInteractionQuery: ResolveInteractionQuery;
+    DeleteInteractionQuery: DeleteInteractionQuery;
     CatalogInteractionRef: CatalogInteractionRef;
     CatalogInteractionRefArray: CatalogInteractionRefArray;
     InCodeInteraction: InCodeInteraction;
     ResolvedCatalogInteraction: ResolvedCatalogInteraction;
     CatalogTagQuery: CatalogTagQueryWire;
     StoredCatalogInteractionsQuery: StoredCatalogInteractionsQueryWire;
+    CatalogAgentSearchQuery: CatalogAgentSearchQuery;
+    CatalogCallSearchQuery: CatalogCallSearchQuery;
+    CatalogSearchInteractionRef: CatalogSearchInteractionRef;
+    CatalogTagCount: CatalogTagCount;
+    CatalogSearchResult: CatalogSearchResult;
     ModelSource: ModelSourceWire;
     ResolvedEnvironmentInfo: ResolvedEnvironmentInfo;
     ResolvedInteractionExecutionInfo: ResolvedInteractionExecutionInfo;
@@ -11560,6 +11811,19 @@ export interface ApiComponentTypes {
     BucketCreateAccessStatusResponse: BucketCreateAccessStatusResponse;
     EnsureBucketCreateAccessPayload: EnsureBucketCreateAccessPayload;
     EnsureBucketCreateAccessResponse: EnsureBucketCreateAccessResponse;
+    AbortUploadSessionPayload: AbortUploadSessionPayload;
+    AbortUploadSessionResponse: AbortUploadSessionResponse;
+    AzureBlockBlobUploadSession: AzureBlockBlobUploadSession;
+    CompletedUploadPart: CompletedUploadPart;
+    CompleteUploadSessionPayload: CompleteUploadSessionPayload;
+    CompleteUploadSessionResponse: CompleteUploadSessionResponse;
+    CreateUploadSessionPayload: CreateUploadSessionPayload;
+    GcsResumableUploadSession: GcsResumableUploadSession;
+    GetUploadPartUrlsPayload: GetUploadPartUrlsPayload;
+    S3MultipartUploadSession: S3MultipartUploadSession;
+    UploadPartUrl: UploadPartUrl;
+    UploadPartUrlsResponse: UploadPartUrlsResponse;
+    UploadSession: UploadSession;
     TaskFieldType: TaskFieldType;
     DurableTaskStatus: DurableTaskStatus;
     TaskSource: TaskSource;
@@ -11604,6 +11868,8 @@ export interface ApiComponentTypes {
     MigrationListResponse: MigrationListResponse;
     RunMigrationPayload: RunMigrationPayload;
     RunMigrationResponse: RunMigrationResponse;
+    DashboardElasticsearchHitsMapping: DashboardElasticsearchHitsMapping;
+    DashboardElasticsearchAggregationBucketsMapping: DashboardElasticsearchAggregationBucketsMapping;
     DashboardElasticsearchResultMapping: DashboardElasticsearchResultMapping;
     DashboardElasticsearchDsl: DashboardElasticsearchDsl;
     DashboardSqlDataSource: DashboardSqlDataSource;
@@ -11623,6 +11889,8 @@ export interface ApiComponentTypes {
     DashboardBulkIdsPayload: DashboardBulkIdsPayload;
     DashboardStoreElasticsearchDataSource: DashboardStoreElasticsearchDataSource;
     DashboardVersionItemArray: DashboardVersionItemArray;
+    ListDashboardsQuery: ListDashboardsQuery;
+    ListDashboardVersionsQuery: ListDashboardVersionsQuery;
     DashboardItem: DashboardItem;
     DashboardPanel: DashboardPanel;
     DashboardDataSource: DashboardDataSource;
@@ -11640,6 +11908,9 @@ export interface ApiComponentTypes {
     QueryValidationPayload: QueryValidationPayload;
     ListDataStoreVersionsQuery: ListDataStoreVersionsQuery;
     GetDataStoreTableQuery: GetDataStoreTableQuery;
+    GetDataStoreSchemaQuery: GetDataStoreSchemaQuery;
+    ListDataStoreSchemaHistoryQuery: ListDataStoreSchemaHistoryQuery;
+    CreateDataStoreDownloadUrlQuery: CreateDataStoreDownloadUrlQuery;
     DataTableSemanticType: DataTableSemanticType;
     DataIndex: DataIndex;
     DataForeignKey: DataForeignKey;
@@ -11669,6 +11940,12 @@ export interface ApiComponentTypes {
     CreateDataStorePayload: CreateDataStorePayload;
     QueryValidationResult: QueryValidationResult;
     DataColumn: DataColumn;
+    AlterTableAddColumnOperation: AlterTableAddColumnOperation;
+    AlterTableDropColumnOperation: AlterTableDropColumnOperation;
+    AlterTableRenameColumnOperation: AlterTableRenameColumnOperation;
+    AlterTableModifyColumnOperation: AlterTableModifyColumnOperation;
+    AlterTableAddForeignKeyOperation: AlterTableAddForeignKeyOperation;
+    AlterTableDropForeignKeyOperation: AlterTableDropForeignKeyOperation;
     AlterTableOperation: AlterTableOperation;
     DataRelationship: DataRelationship;
     CreateTablePayload: CreateTablePayload;
@@ -11998,6 +12275,7 @@ export interface ApiComponentTypes {
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;
+    CollectionPermissionsPayload: CollectionPermissionsPayload;
     CollectionChildrenUpdateResult: CollectionChildrenUpdateResult;
     CollectionChildrenUpdatePayload: CollectionChildrenUpdatePayload;
     CollectionStatus: CollectionStatusWire;
@@ -12017,6 +12295,7 @@ export interface ApiComponentTypes {
     AgentRunArtifactUploadHeaders: AgentRunArtifactUploadHeaders;
     AgentRunArtifactQuery: AgentRunArtifactQuery;
     AgentRunArtifactsQuery: AgentRunArtifactsQuery;
+    TerminateAgentRunQuery: TerminateAgentRunQuery;
     TerminateAgentRunResponse: TerminateAgentRunResponse;
     SignalAgentPayload: SignalAgentPayloadWire;
     PostAgentRunUpdateResponse: PostAgentRunUpdateResponse;
@@ -12081,9 +12360,14 @@ export interface ApiComponentTypes {
     WorkflowDefinitionRefArray: WorkflowDefinitionRefArray;
     ListWorkflowRunsResponse: ListWorkflowRunsResponse;
     WorkflowRunEvent: WorkflowRunEvent;
+    WorkflowObjectIdsInput: WorkflowObjectIdsInput;
+    WorkflowFilesInput: WorkflowFilesInput;
     WorkflowInput: WorkflowInput;
     WorkflowRunUpdatesResponse: WorkflowRunUpdatesResponse;
     ExecuteWorkflowPayload: ExecuteWorkflowPayload;
+    WorkflowEventsHistory: WorkflowEventsHistory;
+    WorkflowTasksHistory: WorkflowTasksHistory;
+    WorkflowAgentHistory: WorkflowAgentHistory;
     WorkflowHistory: WorkflowHistory;
     WorkflowRunWithDetails: WorkflowRunWithDetails;
     BindRunWorkflowPayload: BindRunWorkflowPayload;
@@ -12280,6 +12564,7 @@ export interface ApiComponentTypes {
     RunType: RunType;
     AppBuildProgressStatus: AppBuildProgressStatus;
     DeleteAppVersionResponse: DeleteAppVersionResponse;
+    AppDeleteQuery: AppDeleteQuery;
     AppDeleteSummary: AppDeleteSummary;
     AppRepoBranch: AppRepoBranch;
     CreateAppRepoBranchRequest: CreateAppRepoBranchRequest;
@@ -12315,6 +12600,7 @@ export interface ApiComponentTypes {
     AppRepoTree: AppRepoTree;
     AppRepoRefs: AppRepoRefs;
     AppRepoCommits: AppRepoCommits;
+    AppRepoCommitsQuery: AppRepoCommitsQuery;
     ContentObjectTypeRef: ContentObjectApiTypeRef;
     AppVersionLaunchTarget: AppVersionLaunchTarget;
     AppVersionLaunchTargetArray: AppVersionLaunchTargetArray;
@@ -12456,6 +12742,7 @@ export interface ApiComponentTypes {
     ForwardEmailRequest: ForwardEmailRequest;
     ForwardEmailResponse: ForwardEmailResponse;
     PendingAskStatus: PendingAskStatus;
+    PendingAskDelivery: PendingAskDelivery;
     PendingAskData: PendingAskData;
     RegisterPendingAskRequest: RegisterPendingAskRequest;
     RegisterPendingAskResponse: RegisterPendingAskResponse;
@@ -12477,9 +12764,17 @@ export interface ApiComponentTypes {
     ProcessPathParams: ProcessPathParams;
     TaskPathParams: TaskPathParams;
     AgentRunPathParams: AgentRunPathParams;
+    WorkflowRunActionPathParams: WorkflowRunActionPathParams;
     AppVersionPathParams: AppVersionPathParams;
     AppInstallationPathParams: AppInstallationPathParams;
+    InteractionConfigurationPathParams: InteractionConfigurationPathParams;
     DelegationGrantPathParams: DelegationGrantPathParams;
     OAuthProviderPathParams: OAuthProviderPathParams;
+    UserGroupPathParams: UserGroupPathParams;
     ProjectAppCapabilityPathParams: ProjectAppCapabilityPathParams;
+    EmbeddingTypePathParams: EmbeddingTypePathParams;
+    ToolPathParams: ToolPathParams;
+    WorkflowUsageQuery: WorkflowUsageQuery;
+    WorkflowUsageClass: WorkflowUsageClass;
+    WorkflowUsageStanding: WorkflowUsageStanding;
 }

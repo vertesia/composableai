@@ -16,13 +16,17 @@
  * Region is preferred over parsing the current hostname because it is well-defined for every serving
  * pattern (including the direct-routing `*.ui.{region}.vertesia.io` hosts, which carry no
  * `preview.`/`preprod.` prefix to strip). Callers pass `Env.region` from `@vertesia/ui/env`.
+ *
+ * A deployment on its own domain has no such site, so it states its URL: callers pass `Env.publicUrl`,
+ * which wins over the region.
  */
 const DEV_REGION_TO_PRODUCTION_REGION: Record<string, string> = {
     // dev1 (us-central1) is a dev mirror of the us1 production region.
     dev1: 'us1',
 };
 
-export function getProductionAppUrl(region?: string): string {
+export function getProductionAppUrl(region?: string, publicUrl?: string): string {
+    if (publicUrl) return `${publicUrl.replace(/\/+$/, '')}/`;
     const prodRegion = (region && DEV_REGION_TO_PRODUCTION_REGION[region]) || region;
     return prodRegion ? `https://cloud.${prodRegion}.vertesia.io/` : 'https://cloud.vertesia.io/';
 }

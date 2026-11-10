@@ -92,7 +92,9 @@ export async function transcribeMedia(
             const audioRendition = videoMetadata.renditions?.find((r) => r.name === AUDIO_RENDITION_NAME);
             if (audioRendition?.content?.source) {
                 mediaSource = audioRendition.content.source;
-                log.info(`Found audio rendition for video object ${objectId}`, { mediaSource });
+                log.info(`Found audio rendition for video object ${objectId}`, {
+                    mediaSource: loggableSource(mediaSource),
+                });
             }
         }
 
@@ -112,15 +114,14 @@ export async function transcribeMedia(
     const { url: mediaUrl } = await client.files.getDownloadUrl(mediaSource);
 
     if (!mediaUrl) {
-        throw new DocumentNotFoundError(`Error fetching media URL for ${mediaSource}`);
+        throw new DocumentNotFoundError(`Error fetching media URL for ${loggableSource(mediaSource)}`);
     }
-
-    log.info(`Using media URL for transcription`, { storageId, mediaUrl: mediaSource });
 
     const taskToken = Buffer.from(activityInfo().taskToken).toString('base64url');
     const callbackUrl = generateCallbackUrlForGladia(client.store.baseUrl, taskToken);
 
-    log.info(`Transcribing media ${mediaUrl} with Gladia`, { storageId, callbackUrl });
+    // The signed media URL and the callback URL (which carries the activity task token) grant access: never log them.
+    log.info('Transcribing media with Gladia', { storageId, mediaSource: loggableSource(mediaSource) });
 
     try {
         const res = (await gladiaClient.post('/transcription', {
@@ -150,6 +151,22 @@ export async function transcribeMedia(
     }
 
     throw new CompleteAsyncError();
+}
+
+/**
+ * A media source safe to log. An HTTPS source is used as is, as an already signed URL whose query string grants
+ * access, so only its origin and path are kept.
+ */
+function loggableSource(source: string): string {
+    if (!source.startsWith('https:')) {
+        return source;
+    }
+    try {
+        const { origin, pathname } = new URL(source);
+        return `${origin}${pathname}`;
+    } catch {
+        return '<HTTPS URL>';
+    }
 }
 
 function generateCallbackUrlForGladia(baseUrl: string, taskToken: string) {

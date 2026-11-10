@@ -1,5 +1,5 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { Link2, Link2Off } from 'lucide-react';
+import { CircleHelp, Link2, Link2Off } from 'lucide-react';
 import { useState } from 'react';
 import { Badge, Button, Dropdown, MenuItem, Spinner, Switch, VTooltip } from '../../core/index.js';
 import { McpConnectionsDialog } from './McpConnectionsDialog.js';
@@ -130,12 +130,13 @@ export function McpConnectionsInlineList({
                 const active = !isGroupDisabled(group, disabledCollections);
                 const connected = isGroupConnected(group);
                 const interactiveOAuth = group.authType === 'oauth' && group.oauthGrantType !== 'client_credentials';
-                const StatusIcon = connected ? Link2 : Link2Off;
+                const statusUnknown = !connected && group.statusUnavailable === true;
+                const StatusIcon = connected ? Link2 : statusUnknown ? CircleHelp : Link2Off;
                 return (
                     <div key={group.key} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2 text-sm">
                         <div className="flex min-w-36 flex-1 items-center gap-2">
                             <StatusIcon
-                                className={`size-4 shrink-0 ${connected ? 'text-success' : 'text-muted'}`}
+                                className={`size-4 shrink-0 ${connected ? 'text-success' : statusUnknown ? 'text-attention' : 'text-muted'}`}
                                 aria-hidden="true"
                             />
                             <VTooltip
@@ -173,6 +174,7 @@ export function McpConnectionsInlineList({
                                 collectionId={group.representativeId}
                                 collectionName={group.label}
                                 authenticated={group.authStatus?.authenticated}
+                                statusUnavailable={group.statusUnavailable}
                                 onAuthChange={handleAuthChange}
                                 variant="compact"
                                 showDisconnect

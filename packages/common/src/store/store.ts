@@ -243,6 +243,16 @@ export const PDF_RENDITION_NAME = 'PDF';
  */
 export const RENDITION_WAIT_HEADER = 'x-vertesia-rendition-wait';
 
+/**
+ * Renditions that intake has started but not stored yet. `etag` is the key the renditions are stored under (the
+ * content etag, or the object id when the content has none), so a marker left from earlier content does not apply to
+ * the current content.
+ */
+export interface PendingRenditionNames {
+    etag: string;
+    names: string[];
+}
+
 /** A media input whose rendition is still being generated. */
 export interface PendingRendition {
     object_id: string;
@@ -260,6 +270,8 @@ export interface ContentMetadata {
     /** ETag of text materialized from object properties by intake rendering. */
     rendered_text_etag?: string;
     renditions?: Rendition[];
+    /** Renditions still being generated for the current content. Each name is removed once it is stored or abandoned. */
+    pending_renditions?: PendingRenditionNames;
     /**
      * Embedded/technical metadata harvested from the source file by intake
      * (office docProps, PDF docinfo). Free-form, nature-appropriate keys.
@@ -695,6 +707,32 @@ export type FileMetadataUpdateResult = Wire.FileMetadataUpdateResult;
 export type BulkUploadUrlsPayload = Wire.BulkUploadUrlsPayload;
 
 export type BulkUploadUrlsResponse = Wire.BulkUploadUrlsResponse;
+
+export type CreateUploadSessionPayload = Wire.CreateUploadSessionPayload;
+
+export type GcsResumableUploadSession = Wire.GcsResumableUploadSession;
+
+export type AzureBlockBlobUploadSession = Wire.AzureBlockBlobUploadSession;
+
+export type S3MultipartUploadSession = Wire.S3MultipartUploadSession;
+
+export type UploadSession = Wire.UploadSession;
+
+export type GetUploadPartUrlsPayload = Wire.GetUploadPartUrlsPayload;
+
+export type UploadPartUrl = Wire.UploadPartUrl;
+
+export type UploadPartUrlsResponse = Wire.UploadPartUrlsResponse;
+
+export type CompletedUploadPart = Wire.CompletedUploadPart;
+
+export type CompleteUploadSessionPayload = Wire.CompleteUploadSessionPayload;
+
+export type CompleteUploadSessionResponse = Wire.CompleteUploadSessionResponse;
+
+export type AbortUploadSessionPayload = Wire.AbortUploadSessionPayload;
+
+export type AbortUploadSessionResponse = Wire.AbortUploadSessionResponse;
 
 export type FileBucketResponse = Wire.FileBucketResponse;
 

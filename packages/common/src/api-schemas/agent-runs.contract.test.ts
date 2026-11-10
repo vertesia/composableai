@@ -391,3 +391,40 @@ describe('agent run start idempotency_key', () => {
         }
     });
 });
+
+describe('agent run internals config', () => {
+    const internals = {
+        id: '6a0000000000000000000001',
+        status: 'running',
+        started_at: '2026-11-01T00:00:00.000Z',
+        started_by: 'user:1',
+        created_at: '2026-11-01T00:00:00.000Z',
+        updated_at: '2026-11-01T00:00:00.000Z',
+    };
+
+    it('accepts the process run config a process run stores', () => {
+        const result = validateApiResponse('AgentRunInternals', {
+            ...internals,
+            run_kind: 'process',
+            run_type: 'supervised',
+            config: { environment: 'env-1', model: 'model-1', user_message: 'Review the contract' },
+        });
+        expect(result.valid ? [] : result.errors).toEqual([]);
+    });
+
+    it('accepts the execution config an agent run stores', () => {
+        const result = validateApiResponse('AgentRunInternals', {
+            ...internals,
+            run_kind: 'agent',
+            run_type: 'autonomous',
+            config: { environment: 'env-1', model: 'model-1' },
+        });
+        expect(result.valid ? [] : result.errors).toEqual([]);
+    });
+
+    it('still rejects a config key that neither shape declares', () => {
+        expect(validateApiResponse('AgentRunInternals', { ...internals, config: { not_a_field: true } }).valid).toBe(
+            false,
+        );
+    });
+});

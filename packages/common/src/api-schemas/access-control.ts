@@ -9,6 +9,7 @@ import {
     RoleDomains,
 } from '../access-control-values.js';
 import type * as Wire from '../wire-types.generated.js';
+import { conditional, OBJECT_ID_PATTERN } from './schema-primitives.js';
 
 /**
  * Runtime API schemas for IAM roles and access-control entries.
@@ -106,9 +107,9 @@ export const AccessControlEntrySchema = z
         role: z.string().meta({
             description:
                 'Role name. Typed as `string` because role names now span multiple partitions: `SystemRoles` ' +
-                'enum values for system-domain roles, and bare strings for ABAC-domain roles (e.g. ' +
+                'enum values for system-domain roles, c:<name> for account-defined custom roles, and bare strings for ABAC-domain roles (e.g. ' +
                 "`'content:reader'`, `'content:writer'`, `'content:manager'`, `'agent_runs:reader'`). Mongoose " +
-                'schema validates the value against the registered role catalog via `getAllRoleNames()`.',
+                'schema validates syntax; assignment checks resolve custom names in the current account. Custom roles cannot be used in ResourceSets.',
         }),
         resource_type: AccessControlResourceTypeSchema,
         resource: z.string(),
@@ -147,7 +148,17 @@ export const ACECreatePayloadSchema = AccessControlEntrySchema.omit({
     created_at: true,
     updated_at: true,
     id: true,
-}).meta({ id: 'ACECreatePayload' });
+}).meta({
+    id: 'ACECreatePayload',
+    // A project entry looks its project up by `resource`, so anything but an ObjectId is refused with a 400.
+    ...conditional(
+        { required: ['resource_type'], properties: { resource_type: { const: AccessControlResourceType.project } } },
+        { properties: { resource: { pattern: OBJECT_ID_PATTERN.source } } },
+    ),
+    description:
+        'On a `project` entry, `resource` is the project ID, as 24 hexadecimal characters. `role` is a built-in ' +
+        'role name or the `c:<name>` reference of a custom role defined in the account.',
+});
 
 export const ACEUpdatePayloadSchema = ACECreatePayloadSchema.partial().meta({ id: 'ACEUpdatePayload' });
 
