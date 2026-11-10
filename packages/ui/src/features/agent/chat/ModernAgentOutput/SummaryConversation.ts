@@ -335,9 +335,11 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
 }
 
 /**
- * Whether a COMPLETE message carries a conversation result the turn has not shown yet. A
- * conversation's completion is the only COMPLETE marked `user_content`; status COMPLETEs, such as
- * a process run's "Process completed at …", are not.
+ * Whether a COMPLETE message carries a conversation result the turn has not shown yet. Only a
+ * conversation that was ended, by end_conversation, a closing tool, or a limit, can post new text in
+ * its COMPLETE, and that COMPLETE carries `end_conversation_status`. Every COMPLETE is marked
+ * `user_content`, so that marker does not tell a result from a status line such as a process
+ * run's "Process completed at …".
  *
  * The text usually repeats a message the turn shows: the final ANSWER, or the ERROR a stopped run
  * posts with its summary. Only an ANSWER with no work after it is final: a run nudged to finish its
@@ -348,7 +350,8 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
  * with its end_conversation call is its answer, and it is shown here even when `result` repeats it.
  */
 function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConversationItem[]): boolean {
-    if (message.type !== AgentMessageType.COMPLETE || message.details?.event_class !== 'user_content') return false;
+    if (message.type !== AgentMessageType.COMPLETE) return false;
+    if (typeof message.details?.end_conversation_status !== 'string') return false;
     if (isWorkstreamInternalResultMessage(message)) return false;
 
     const text = getMessageText(message);

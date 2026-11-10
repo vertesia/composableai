@@ -2042,7 +2042,8 @@ describe('ModernAgentOutput summary - completion result without an answer', () =
             timestamp: 4000,
             type: AgentMessageType.COMPLETE,
             message: 'Process completed at Final (final)',
-            details: { process_event: 'completed', process_run_id: 'process-1' },
+            // Every posted COMPLETE carries user_content, status lines included.
+            details: { event_class: 'user_content', process_event: 'completed', process_run_id: 'process-1' },
         });
 
         expect(messageTexts(buildSummaryConversationItems([tool, processComplete], true))).toEqual([]);
