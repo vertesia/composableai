@@ -329,6 +329,33 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
     return hasMatchingTool ? index : -1;
 }
 
+/**
+ * Whether a COMPLETE message carries a conversation result the turn has not shown yet. A
+ * conversation's completion is the only COMPLETE marked `user_content`; status COMPLETEs, such as
+ * a process run's "Process completed at …", are not. The text usually repeats something already
+ * shown: the turn's ANSWER, the ERROR a stopped run posts with its summary, or the last tool
+ * preamble when a run ends mid-task. It is new only when the agent ended the run through
+ * end_conversation, whose `result` is posted in the COMPLETE alone.
+ */
+function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConversationItem[]): boolean {
+    if (message.type !== AgentMessageType.COMPLETE || message.details?.event_class !== 'user_content') return false;
+    if (isWorkstreamInternalResultMessage(message)) return false;
+
+    const text = getMessageText(message);
+    if (!text || isLowSignalSummaryText(text)) return false;
+
+    for (let index = items.length - 1; index >= 0; index--) {
+        const item = items[index];
+        if (item.type === 'work') {
+            if (item.messages.some((shown) => getMessageText(shown) === text)) return false;
+            continue;
+        }
+        if (item.message.type === AgentMessageType.QUESTION) return true;
+        if (item.message.type === AgentMessageType.ANSWER || getMessageText(item.message) === text) return false;
+    }
+    return true;
+}
+
 export function buildSummaryConversationItems(
     messages: AgentMessage[],
     isCompleted: boolean,
@@ -409,6 +436,9 @@ export function buildSummaryConversationItems(
                 continue;
             }
             flushWork(false, message);
+            if (isUnansweredCompletionResult(message, items)) {
+                items.push({ type: 'message', message });
+            }
             continue;
         }
 
