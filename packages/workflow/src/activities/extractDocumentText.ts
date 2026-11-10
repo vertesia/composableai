@@ -8,7 +8,7 @@ import { markdownWithPandoc } from '../conversion/pandoc.js';
 import { setupActivity } from '../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, SourceTooLargeError } from '../errors.js';
 import { type TextExtractionResult, TextExtractionStatus } from '../result-types.js';
-import { fetchBlobHead, md5, withBlobTempFile } from '../utils/blobs.js';
+import { contentHash, fetchBlobHead, withBlobTempFile } from '../utils/blobs.js';
 import { getSourceLimits, logSourceLimitExceeded } from '../utils/source-limits.js';
 import { createFileSourceResult, uploadTextPreviewToStorage } from '../utils/text-preview-utils.js';
 import { countTokens } from '../utils/tokens.js';
@@ -124,7 +124,7 @@ async function extractFromObject(
     }
 
     const tokensData = countTokens(txt);
-    const etag = doc.content.etag ?? md5(txt);
+    const etag = doc.content.etag ?? contentHash(txt);
 
     // Persist the extracted text through the dedicated text endpoint which stores it as a text
     // artifact (dual-writing the inline text during the rollout window). Passing the content etag

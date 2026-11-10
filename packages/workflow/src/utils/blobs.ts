@@ -256,6 +256,32 @@ function toPostfix(ext: string | undefined): string {
     return ext ? `.${ext.replace(/^\./, '')}` : '';
 }
 
+export type ContentHashAlgorithm = 'md5' | 'sha256';
+
+/**
+ * The algorithm for content hashes, from CONTENT_HASH_ALGORITHM. Defaults to md5. Set sha256 on a FIPS deployment,
+ * whose validated module has no md5. Throws on any other value, so a typo cannot silently pick the wrong algorithm.
+ *
+ * Stored hashes do not name their algorithm and are compared with new ones, so changing this on a deployment that
+ * already holds data makes every stored hash look stale, and the work they guard runs again.
+ */
+export function getContentHashAlgorithm(env: NodeJS.ProcessEnv = process.env): ContentHashAlgorithm {
+    const value = env.CONTENT_HASH_ALGORITHM?.trim();
+    if (!value || value === 'md5') {
+        return 'md5';
+    }
+    if (value === 'sha256') {
+        return value;
+    }
+    throw new Error(`Invalid CONTENT_HASH_ALGORITHM "${value}": expected "md5" or "sha256"`);
+}
+
+/** Hex digest used to tell whether stored content changed, with the configured algorithm. */
+export function contentHash(contents: string): string {
+    return crypto.createHash(getContentHashAlgorithm()).update(contents).digest('hex');
+}
+
+/** @deprecated Use {@link contentHash}. This always computes MD5, which a FIPS deployment rejects. */
 export function md5(contents: string) {
     return crypto.createHash('md5').update(contents).digest('hex');
 }

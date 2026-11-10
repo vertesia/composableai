@@ -22,7 +22,7 @@ import {
 import { setupActivity } from '../../dsl/setup/ActivityContext.js';
 import { DocumentNotFoundError, SourceTooLargeError } from '../../errors.js';
 import { type TextExtractionResult, TextExtractionStatus } from '../../result-types.js';
-import { fetchBlobHead, md5 } from '../../utils/blobs.js';
+import { contentHash, fetchBlobHead } from '../../utils/blobs.js';
 import { logSourceLimitExceeded } from '../../utils/source-limits.js';
 import { countTokens } from '../../utils/tokens.js';
 
@@ -115,7 +115,7 @@ export async function convertPdfToStructuredText(
             log.info(`Job ${jobId} succeeded, saving results`, { jobId });
             const fText = await processor.processResults(jobId);
             const tokensData = countTokens(fText);
-            const etag = object.content.etag ?? md5(fText);
+            const etag = object.content.etag ?? contentHash(fText);
             const updateData: CreateContentObjectPayload = {
                 text: fText,
                 text_etag: etag,
