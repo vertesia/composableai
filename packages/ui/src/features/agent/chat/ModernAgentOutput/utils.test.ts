@@ -1920,6 +1920,22 @@ describe('ModernAgentOutput summary - completion result without an answer', () =
         expect(messageTexts(items)).toEqual([question.message, answer.message]);
     });
 
+    it('treats an answer with no work after it as final even when the completion differs', () => {
+        const answer = makeMessage({ timestamp: 3500, type: AgentMessageType.ANSWER, message: '42 clients.' });
+
+        const items = buildSummaryConversationItems([question, tool, answer, complete], true);
+
+        expect(messageTexts(items)).toEqual([question.message, answer.message]);
+    });
+
+    it('shows the result of a run that kept working after an interim answer', () => {
+        const interim = makeMessage({ timestamp: 2200, type: AgentMessageType.ANSWER, message: 'Step 1 done.' });
+
+        const items = buildSummaryConversationItems([question, interim, tool, ending, complete], true);
+
+        expect(messageTexts(items)).toEqual([question.message, interim.message, complete.message]);
+    });
+
     it('shows a streamed result once', () => {
         const streamed = buildSummaryDisplayMessages(
             [question, tool, complete],

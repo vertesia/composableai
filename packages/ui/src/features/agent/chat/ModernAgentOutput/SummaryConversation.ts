@@ -339,11 +339,13 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
  * conversation's completion is the only COMPLETE marked `user_content`; status COMPLETEs, such as
  * a process run's "Process completed at …", are not.
  *
- * The text usually repeats a message the turn shows: its ANSWER, or the ERROR a stopped run posts
- * with its summary. A run that ends mid-task repeats its last tool preamble instead, which is
- * progress, not a result. Work rows render collapsed, so a preamble counts only for that reason:
- * the text an agent writes with its end_conversation call is its answer, and it is shown here even
- * when `result` repeats it.
+ * The text usually repeats a message the turn shows: the final ANSWER, or the ERROR a stopped run
+ * posts with its summary. Only an ANSWER with no work after it is final: a run nudged to finish its
+ * plan answers, keeps working, and may then end through end_conversation with a new result.
+ *
+ * A run that ends mid-task repeats its last tool preamble instead, which is progress, not a result.
+ * Work rows render collapsed, so a preamble counts only for that reason: the text an agent writes
+ * with its end_conversation call is its answer, and it is shown here even when `result` repeats it.
  */
 function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConversationItem[]): boolean {
     if (message.type !== AgentMessageType.COMPLETE || message.details?.event_class !== 'user_content') return false;
@@ -352,6 +354,7 @@ function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConve
     const text = getMessageText(message);
     if (!text || isLowSignalSummaryText(text)) return false;
 
+    let workedSince = false;
     for (let index = items.length - 1; index >= 0; index--) {
         const item = items[index];
         if (item.type === 'work') {
@@ -359,10 +362,12 @@ function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConve
                 (work) => getMessageText(work) === text && !getPreambleToolNames(work).includes('end_conversation'),
             );
             if (repeatsProgress) return false;
+            workedSince = true;
             continue;
         }
         if (item.message.type === AgentMessageType.QUESTION) return true;
-        if (item.message.type === AgentMessageType.ANSWER || getMessageText(item.message) === text) return false;
+        if (getMessageText(item.message) === text) return false;
+        if (item.message.type === AgentMessageType.ANSWER && !workedSince) return false;
     }
     return true;
 }
