@@ -2004,7 +2004,17 @@ describe('ModernAgentOutput summary - completion result without an answer', () =
             details: { event_class: 'user_content', status_reason: 'tool_loop_circuit_breaker' },
         });
 
-        const items = buildSummaryConversationItems([tool, error, { ...complete, message: summary }], true);
+        const stopped = makeMessage({
+            ...complete,
+            message: summary,
+            details: {
+                ...complete.details,
+                end_conversation_status: 'failure',
+                end_conversation_reason: 'tool_loop_circuit_breaker',
+            },
+        });
+
+        const items = buildSummaryConversationItems([tool, error, stopped], true);
 
         expect(messageTexts(items)).toEqual([summary]);
     });
@@ -2024,12 +2034,12 @@ describe('ModernAgentOutput summary - completion result without an answer', () =
         );
     });
 
-    it('shows a result the agent also wrote alongside its end_conversation call', () => {
+    it.each(['end_conversation', 'browser_finish'])('shows a result the agent also wrote alongside %s', (closer) => {
         const preamble = makeMessage({
             timestamp: 2500,
             type: AgentMessageType.THOUGHT,
             message: complete.message,
-            details: { display_role: 'tool_preamble', tools: ['end_conversation'], streamed: true },
+            details: { display_role: 'tool_preamble', tools: [closer], streamed: true },
         });
 
         const items = buildSummaryConversationItems([question, tool, preamble, ending, complete], true);

@@ -293,6 +293,9 @@ function isToolPreambleProse(message: AgentMessage): boolean {
 // Tools a model tends to call last, with its answer written as that call's preamble.
 const ANSWER_CARRYING_TOOLS = new Set(['update_plan']);
 
+// Tools whose call ends the conversation; the text written with them is the agent's answer.
+const CLOSING_TOOLS = new Set(['end_conversation', 'browser_finish']);
+
 function getPreambleToolNames(message: AgentMessage): string[] {
     const details = message.details;
     return details?.tools?.length ? details.tools : details?.tool ? [details.tool] : [];
@@ -347,7 +350,8 @@ function getFinalToolPreambleProseIndex(messages: AgentMessage[]): number {
  *
  * A run that ends mid-task repeats its last tool preamble instead, which is progress, not a result.
  * Work rows render collapsed, so a preamble counts only for that reason: the text an agent writes
- * with its end_conversation call is its answer, and it is shown here even when `result` repeats it.
+ * with a closing call (CLOSING_TOOLS) is its answer, and it is shown here even when the result
+ * repeats it.
  */
 function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConversationItem[]): boolean {
     if (message.type !== AgentMessageType.COMPLETE) return false;
@@ -362,7 +366,9 @@ function isUnansweredCompletionResult(message: AgentMessage, items: SummaryConve
         const item = items[index];
         if (item.type === 'work') {
             const repeatsProgress = item.messages.some(
-                (work) => getMessageText(work) === text && !getPreambleToolNames(work).includes('end_conversation'),
+                (work) =>
+                    getMessageText(work) === text &&
+                    !getPreambleToolNames(work).some((tool) => CLOSING_TOOLS.has(tool)),
             );
             if (repeatsProgress) return false;
             workedSince = true;
