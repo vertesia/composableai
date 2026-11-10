@@ -416,7 +416,7 @@ export const IntakeCostSummaryQuerySchema = z
             .optional(),
         to: timeBoundarySchema.meta({ description: 'End of the window, exclusive. Default: now.' }).optional(),
         resolution: z
-            .enum(['day', 'week', 'month'])
+            .enum(['hour', 'day', 'week', 'month'])
             .meta({ description: 'Period of the time series, in UTC; weeks start on Monday. Default: `day`.' })
             .optional(),
         content_type_id: z.string().meta({ description: 'Only the runs that ended on this content type.' }).optional(),
@@ -500,7 +500,7 @@ export const IntakeCostSummaryResponseSchema = z
     .strictObject({
         from: z.string().meta({ format: 'date-time' }),
         to: z.string().meta({ format: 'date-time' }),
-        resolution: z.enum(['day', 'week', 'month']),
+        resolution: z.enum(['hour', 'day', 'week', 'month']),
         totals: IntakeCostTotalsSchema,
         time_series: z.array(IntakeCostTimePointSchema).meta({ description: 'Periods that had runs, oldest first.' }),
         by_content_type: z.array(IntakeCostByContentTypeSchema).meta({ description: 'Most expensive first.' }),

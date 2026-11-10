@@ -2527,7 +2527,7 @@ export type ObjectIntakeCostResponse = {
 export type IntakeCostSummaryQuery = {
     from?: string | number | undefined;
     to?: string | number | undefined;
-    resolution?: 'day' | 'week' | 'month' | undefined;
+    resolution?: 'hour' | 'day' | 'week' | 'month' | undefined;
     content_type_id?: string | undefined;
 };
 export type IntakeCostTotals = {
@@ -2569,7 +2569,7 @@ export type IntakeCostDocument = {
 export type IntakeCostSummaryResponse = {
     from: string;
     to: string;
-    resolution: 'day' | 'week' | 'month';
+    resolution: 'hour' | 'day' | 'week' | 'month';
     totals: IntakeCostTotals;
     time_series: IntakeCostTimePoint[];
     by_content_type: IntakeCostByContentType[];

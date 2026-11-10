@@ -48901,6 +48901,7 @@
       "resolution": {
         "type": "string",
         "enum": [
+          "hour",
           "day",
           "week",
           "month"
@@ -49108,6 +49109,7 @@
       "resolution": {
         "type": "string",
         "enum": [
+          "hour",
           "day",
           "week",
           "month"
