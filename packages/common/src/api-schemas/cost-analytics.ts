@@ -470,6 +470,44 @@ export const IntakeCostByContentTypeSchema = z
     })
     .meta({ id: 'IntakeCostByContentType', description: 'Intake runs of one content type.' });
 
+export const IntakeCostPerPageSchema = z
+    .strictObject({
+        run_count: z.number().int().meta({ description: 'Runs that reported a page count.' }),
+        page_count: z.number().int(),
+        cost_usd: z.number().meta({ description: 'What these runs cost.' }),
+        average_usd: z.number().meta({ description: 'Their cost over their pages.' }),
+        median_usd: z.number().meta({ description: 'The median of the cost per page of each run.' }),
+        p95_usd: z.number().meta({ description: 'The 95th percentile of the cost per page of each run.' }),
+    })
+    .meta({ id: 'IntakeCostPerPage', description: 'The cost per page of the intake runs that reported a page count.' });
+
+export const IntakeCostByContentNatureSchema = z
+    .strictObject({
+        content_nature: z
+            .string()
+            .meta({
+                description:
+                    'The kind of content: `document`, `image`, `audio`, `video`, `code` or `other`. Absent for runs ' +
+                    'that never reported one.',
+            })
+            .optional(),
+        run_count: z.number().int(),
+        document_count: z.number().int(),
+        cost_usd: z.number(),
+        page_count: z.number().int().meta({ description: 'Pages of the runs that reported a page count.' }),
+        duration_seconds: z
+            .number()
+            .meta({ description: 'Length of the audio and video of the runs that reported one, in seconds.' }),
+        cost_per_minute_usd: z
+            .number()
+            .meta({
+                description:
+                    'The cost of the runs that reported a length over their minutes. Absent when none reported one.',
+            })
+            .optional(),
+    })
+    .meta({ id: 'IntakeCostByContentNature', description: 'Intake runs of one kind of content.' });
+
 export const IntakeCostByOutcomeSchema = z
     .strictObject({
         outcome: z.enum(['completed', 'skipped', 'failed', 'not_reported']).meta({
@@ -503,7 +541,9 @@ export const IntakeCostSummaryResponseSchema = z
         resolution: z.enum(['hour', 'day', 'week', 'month']),
         totals: IntakeCostTotalsSchema,
         time_series: z.array(IntakeCostTimePointSchema).meta({ description: 'Periods that had runs, oldest first.' }),
+        per_page: IntakeCostPerPageSchema.meta({ description: 'Absent when no run reported a page count.' }).optional(),
         by_content_type: z.array(IntakeCostByContentTypeSchema).meta({ description: 'Most expensive first.' }),
+        by_content_nature: z.array(IntakeCostByContentNatureSchema).meta({ description: 'Most expensive first.' }),
         by_outcome: z.array(IntakeCostByOutcomeSchema).meta({ description: 'Most expensive first.' }),
         top_documents: z
             .array(IntakeCostDocumentSchema)

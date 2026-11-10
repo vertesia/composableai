@@ -2545,6 +2545,14 @@ export type IntakeCostTimePoint = {
     run_count: number;
     cost_usd: number;
 };
+export type IntakeCostPerPage = {
+    run_count: number;
+    page_count: number;
+    cost_usd: number;
+    average_usd: number;
+    median_usd: number;
+    p95_usd: number;
+};
 export type IntakeCostByContentType = {
     content_type_id?: string | undefined;
     content_type_name?: string | undefined;
@@ -2552,6 +2560,15 @@ export type IntakeCostByContentType = {
     document_count: number;
     cost_usd: number;
     page_count: number;
+};
+export type IntakeCostByContentNature = {
+    content_nature?: string | undefined;
+    run_count: number;
+    document_count: number;
+    cost_usd: number;
+    page_count: number;
+    duration_seconds: number;
+    cost_per_minute_usd?: number | undefined;
 };
 export type IntakeCostByOutcome = {
     outcome: 'completed' | 'skipped' | 'failed' | 'not_reported';
@@ -2572,7 +2589,9 @@ export type IntakeCostSummaryResponse = {
     resolution: 'hour' | 'day' | 'week' | 'month';
     totals: IntakeCostTotals;
     time_series: IntakeCostTimePoint[];
+    per_page?: IntakeCostPerPage | undefined;
     by_content_type: IntakeCostByContentType[];
+    by_content_nature: IntakeCostByContentNature[];
     by_outcome: IntakeCostByOutcome[];
     top_documents: IntakeCostDocument[];
 };
@@ -12086,7 +12105,9 @@ export interface ApiComponentTypes {
     IntakeCostSummaryQuery: IntakeCostSummaryQuery;
     IntakeCostTotals: IntakeCostTotals;
     IntakeCostTimePoint: IntakeCostTimePoint;
+    IntakeCostPerPage: IntakeCostPerPage;
     IntakeCostByContentType: IntakeCostByContentType;
+    IntakeCostByContentNature: IntakeCostByContentNature;
     IntakeCostByOutcome: IntakeCostByOutcome;
     IntakeCostDocument: IntakeCostDocument;
     IntakeCostSummaryResponse: IntakeCostSummaryResponse;

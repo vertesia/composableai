@@ -1081,9 +1081,17 @@ interface Checks {
         W.IntakeCostTimePoint,
         z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTimePointSchema>
     >;
+    IntakeCostPerPage: Same<
+        W.IntakeCostPerPage,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostPerPageSchema>
+    >;
     IntakeCostByContentType: Same<
         W.IntakeCostByContentType,
         z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentTypeSchema>
+    >;
+    IntakeCostByContentNature: Same<
+        W.IntakeCostByContentNature,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentNatureSchema>
     >;
     IntakeCostByOutcome: Same<
         W.IntakeCostByOutcome,
@@ -7403,9 +7411,17 @@ interface Checks {
         W.ApiComponentTypes['IntakeCostTimePoint'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostTimePointSchema>
     >;
+    'component:IntakeCostPerPage': Same<
+        W.ApiComponentTypes['IntakeCostPerPage'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostPerPageSchema>
+    >;
     'component:IntakeCostByContentType': Same<
         W.ApiComponentTypes['IntakeCostByContentType'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentTypeSchema>
+    >;
+    'component:IntakeCostByContentNature': Same<
+        W.ApiComponentTypes['IntakeCostByContentNature'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').IntakeCostByContentNatureSchema>
     >;
     'component:IntakeCostByOutcome': Same<
         W.ApiComponentTypes['IntakeCostByOutcome'],
@@ -10882,7 +10898,9 @@ const checks: Checks = {
     IntakeCostSummaryQuery: true,
     IntakeCostTotals: true,
     IntakeCostTimePoint: true,
+    IntakeCostPerPage: true,
     IntakeCostByContentType: true,
+    IntakeCostByContentNature: true,
     IntakeCostByOutcome: true,
     IntakeCostDocument: true,
     IntakeCostSummaryResponse: true,
@@ -12566,7 +12584,9 @@ const checks: Checks = {
     'component:IntakeCostSummaryQuery': true,
     'component:IntakeCostTotals': true,
     'component:IntakeCostTimePoint': true,
+    'component:IntakeCostPerPage': true,
     'component:IntakeCostByContentType': true,
+    'component:IntakeCostByContentNature': true,
     'component:IntakeCostByOutcome': true,
     'component:IntakeCostDocument': true,
     'component:IntakeCostSummaryResponse': true,
@@ -13365,6 +13385,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2777);
+        expect(Object.keys(checks)).toHaveLength(2781);
     });
 });

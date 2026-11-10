@@ -47,7 +47,9 @@ export type ObjectIntakeCostResponse = Wire.ObjectIntakeCostResponse;
 export type IntakeCostSummaryQuery = Wire.IntakeCostSummaryQuery;
 export type IntakeCostTotals = Wire.IntakeCostTotals;
 export type IntakeCostTimePoint = Wire.IntakeCostTimePoint;
+export type IntakeCostPerPage = Wire.IntakeCostPerPage;
 export type IntakeCostByContentType = Wire.IntakeCostByContentType;
+export type IntakeCostByContentNature = Wire.IntakeCostByContentNature;
 export type IntakeCostByOutcome = Wire.IntakeCostByOutcome;
 export type IntakeCostDocument = Wire.IntakeCostDocument;
 

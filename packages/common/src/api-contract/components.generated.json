@@ -48999,6 +48999,47 @@
     ],
     "description": "Intake runs that started in one period."
   },
+  "IntakeCostPerPage": {
+    "type": "object",
+    "properties": {
+      "run_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Runs that reported a page count."
+      },
+      "page_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "cost_usd": {
+        "type": "number",
+        "description": "What these runs cost."
+      },
+      "average_usd": {
+        "type": "number",
+        "description": "Their cost over their pages."
+      },
+      "median_usd": {
+        "type": "number",
+        "description": "The median of the cost per page of each run."
+      },
+      "p95_usd": {
+        "type": "number",
+        "description": "The 95th percentile of the cost per page of each run."
+      }
+    },
+    "required": [
+      "run_count",
+      "page_count",
+      "cost_usd",
+      "average_usd",
+      "median_usd",
+      "p95_usd"
+    ],
+    "description": "The cost per page of the intake runs that reported a page count."
+  },
   "IntakeCostByContentType": {
     "type": "object",
     "properties": {
@@ -49035,6 +49076,50 @@
       "page_count"
     ],
     "description": "Intake runs of one content type."
+  },
+  "IntakeCostByContentNature": {
+    "type": "object",
+    "properties": {
+      "content_nature": {
+        "type": "string",
+        "description": "The kind of content: `document`, `image`, `audio`, `video`, `code` or `other`. Absent for runs that never reported one."
+      },
+      "run_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "document_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "cost_usd": {
+        "type": "number"
+      },
+      "page_count": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Pages of the runs that reported a page count."
+      },
+      "duration_seconds": {
+        "type": "number",
+        "description": "Length of the audio and video of the runs that reported one, in seconds."
+      },
+      "cost_per_minute_usd": {
+        "type": "number",
+        "description": "The cost of the runs that reported a length over their minutes. Absent when none reported one."
+      }
+    },
+    "required": [
+      "run_count",
+      "document_count",
+      "cost_usd",
+      "page_count",
+      "duration_seconds"
+    ],
+    "description": "Intake runs of one kind of content."
   },
   "IntakeCostByOutcome": {
     "type": "object",
@@ -49125,10 +49210,21 @@
         },
         "description": "Periods that had runs, oldest first."
       },
+      "per_page": {
+        "$ref": "#/components/schemas/IntakeCostPerPage",
+        "description": "Absent when no run reported a page count."
+      },
       "by_content_type": {
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/IntakeCostByContentType"
+        },
+        "description": "Most expensive first."
+      },
+      "by_content_nature": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IntakeCostByContentNature"
         },
         "description": "Most expensive first."
       },
@@ -49154,6 +49250,7 @@
       "totals",
       "time_series",
       "by_content_type",
+      "by_content_nature",
       "by_outcome",
       "top_documents"
     ],

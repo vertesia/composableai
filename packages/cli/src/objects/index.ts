@@ -79,7 +79,7 @@ export function registerObjectsCommand(program: Command) {
         .description("Summarize the intake cost of the project's documents over a time window")
         .option('--from <date>', 'Start of the window (ISO 8601 or epoch ms); defaults to 30 days before --to')
         .option('--to <date>', 'End of the window (ISO 8601 or epoch ms); defaults to now')
-        .option('--resolution <resolution>', 'Time series bucket: day, week or month (default day)')
+        .option('--resolution <resolution>', 'Time series bucket: hour, day, week or month (default day)')
         .option('--content-type <id>', 'Only the documents of this content type')
         .option('--json', 'Print raw JSON')
         .action(async (options: Record<string, unknown>) => {

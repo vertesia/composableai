@@ -109,7 +109,27 @@ const SUMMARY = {
         tokens: {},
     },
     time_series: [],
+    per_page: { run_count: 2, page_count: 6, cost_usd: 0.012, average_usd: 0.002, median_usd: 0.0015, p95_usd: 0.004 },
     by_content_type: [{ content_type_name: 'Invoice', run_count: 3, document_count: 2, cost_usd: 0.02, page_count: 6 }],
+    by_content_nature: [
+        {
+            content_nature: 'document',
+            run_count: 2,
+            document_count: 1,
+            cost_usd: 0.012,
+            page_count: 6,
+            duration_seconds: 0,
+        },
+        {
+            content_nature: 'video',
+            run_count: 1,
+            document_count: 1,
+            cost_usd: 0.008,
+            page_count: 0,
+            duration_seconds: 240,
+            cost_per_minute_usd: 0.002,
+        },
+    ],
     by_outcome: [],
     top_documents: [
         { object_id: 'obj-1', name: 'invoice.pdf', run_count: 2, cost_usd: 0.015 },
@@ -127,6 +147,8 @@ describe('content intake-cost-summary CLI', () => {
             .mock.calls.map((call) => String(call[0]))
             .join('\n');
         expect(output).toContain('$0.0200 over 3 intake run(s) on 2 document(s), 9 priced call(s)');
+        expect(output).toContain('Per page: $0.002000 on average, median $0.001500, p95 $0.004000');
+        expect(output).toContain('video: 1 document(s), $0.008000 each, $0.002000 per minute');
         expect(output).toContain('Invoice');
         expect(output).toContain('obj-1  invoice.pdf');
         expect(output).toContain('obj-2  (no access)');
@@ -156,7 +178,7 @@ describe('content intake-cost-summary CLI', () => {
     });
 
     it('rejects an unknown resolution before calling the API', async () => {
-        await expect(command('intake-cost-summary', '--resolution', 'hour')).rejects.toThrow('Invalid resolution');
+        await expect(command('intake-cost-summary', '--resolution', 'minute')).rejects.toThrow('Invalid resolution');
         expect(mocks.getIntakeCostSummary).not.toHaveBeenCalled();
     });
 });

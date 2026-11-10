@@ -361,7 +361,7 @@ interface IntakeCostSummaryOptions extends JsonOutputOptions {
     contentType?: string;
 }
 
-const INTAKE_COST_RESOLUTIONS = ['day', 'week', 'month'] as const;
+const INTAKE_COST_RESOLUTIONS = ['hour', 'day', 'week', 'month'] as const;
 
 export async function getIntakeCostSummary(program: Command, options: IntakeCostSummaryOptions) {
     const resolution = options.resolution;
@@ -386,6 +386,25 @@ export async function getIntakeCostSummary(program: Command, options: IntakeCost
         `${formatUsd(totals.cost_usd)} over ${totals.run_count} intake run(s) on ${totals.document_count} document(s), ` +
             `${totals.priced_calls} priced call(s)${unpriced}`,
     );
+    if (summary.per_page) {
+        const page = summary.per_page;
+        console.log(
+            `Per page: ${formatUsd(page.average_usd)} on average, median ${formatUsd(page.median_usd)}, ` +
+                `p95 ${formatUsd(page.p95_usd)} (${page.page_count} page(s) over ${page.run_count} run(s))`,
+        );
+    }
+    if (summary.by_content_nature.length > 0) {
+        console.log('\nBy kind of content:');
+        for (const group of summary.by_content_nature) {
+            const perDocument = formatUsd(group.cost_usd / group.document_count);
+            const perMinute =
+                group.cost_per_minute_usd === undefined ? '' : `, ${formatUsd(group.cost_per_minute_usd)} per minute`;
+            console.log(
+                `  ${formatUsd(group.cost_usd).padStart(11)}  ${group.content_nature ?? '(unknown)'}: ` +
+                    `${group.document_count} document(s), ${perDocument} each${perMinute}`,
+            );
+        }
+    }
     if (summary.by_content_type.length > 0) {
         console.log('\nBy content type:');
         for (const group of summary.by_content_type) {
