@@ -985,13 +985,27 @@ export const NodeDefinitionSchema: z.ZodType = z
             description:
                 'Declarative successful-tool phases and completion behavior for this agent node. The Process owns this policy; the child conversation enforces it generically.',
         }).optional(),
+        inference_profile: InferenceProfileIdSchema.meta({
+            description:
+                'Inference profile for this node, which supplies its environment, model and model options. Do not combine with `environment`, `model` or `model_options`. A node that selects nothing uses the process run config, then the process definition, then the interaction or agent defaults.',
+        }).optional(),
+        environment: z
+            .string()
+            .meta({
+                description:
+                    'Environment id for this node. Set it together with `model`, or alone to use the environment default model. Useful when one node needs heavier reasoning (e.g. Opus for legal flagging) while the rest of the process uses a cheaper default.',
+            })
+            .optional(),
         model: z
             .string()
             .meta({
                 description:
-                    "Model id override for this node. If unset, falls back to the process run's `config.model`, then to the project's default. Useful when a specific node needs heavier reasoning (e.g. Opus for legal flagging) while the rest of the process uses a cheaper default.",
+                    'Model id for this node, in `environment`. A model without an environment is accepted only in definitions saved before environments were required; saving one is rejected.',
             })
             .optional(),
+        model_options: ModelOptionsSchema.meta({
+            description: "Model options for this node's `environment` and `model`.",
+        }).optional(),
         task: HumanTaskDefinitionSchema.optional(),
         foreach: z.string().optional(),
         as: z.string().optional(),
@@ -1051,7 +1065,27 @@ export const ProcessDefinitionBodySchema: z.ZodType = z
         process: z.string(),
         description: z.string().optional(),
         initial: z.string(),
-        model: z.string().optional(),
+        inference_profile: InferenceProfileIdSchema.meta({
+            description:
+                'Default inference profile for the LLM nodes and supervisor of this process. Do not combine with `environment`, `model` or `model_options`. A process run config selection and a node selection take precedence.',
+        }).optional(),
+        environment: z
+            .string()
+            .meta({
+                description:
+                    'Default environment id for the LLM nodes and supervisor of this process, set with `model` or alone.',
+            })
+            .optional(),
+        model: z
+            .string()
+            .meta({
+                description:
+                    'Default model id, in `environment`. A model without an environment is accepted only in definitions saved before environments were required; saving one is rejected.',
+            })
+            .optional(),
+        model_options: ModelOptionsSchema.meta({
+            description: 'Default model options for `environment` and `model`.',
+        }).optional(),
         resources: ProcessResourcesDefinitionSchema.optional(),
         context: ProcessContextDefinitionSchema,
         nodes: z.lazy(() => NodeDefinitionMapSchema),
