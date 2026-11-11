@@ -45,7 +45,7 @@
         "prompts": "^2.4.2"
     },
     "devDependencies": {
-        "@types/degit": "^2.8.6",
+        "@types/degit": "^3.10.0",
         "@types/node": "catalog:",
         "@types/prompts": "^2.4.9",
         "@vercel/node": "29.0.1",

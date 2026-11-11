@@ -40,6 +40,7 @@ MCP providers are derived from the server info (`endpoints.mcp`).
 | `/templates/:collection/:name`    | Template detail        | Instructions, assets, type                           |
 
 The home page has two modes:
+
 - **Browse** (no search) — shows collection cards grouped by resource type
 - **Search** — filters across all individual resources and shows matching cards
 
@@ -83,6 +84,7 @@ pnpm build
 ```
 
 This runs two steps:
+
 1. `tsc --build` — emits type declarations to `lib/`
 2. `vite build --mode lib` — bundles the React components into `lib/tools-admin-ui.js`
 

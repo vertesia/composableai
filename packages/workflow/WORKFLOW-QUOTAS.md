@@ -50,7 +50,6 @@ correlation header. Correlation alone does not attest a quota replay identity.
 Request-observation hooks remain synchronous/fire-and-forget; async logging is not awaited.
 Cancellation and activity/request deadlines still stop HTTP work through the workflow fetch wrapper.
 
-
 For imports spanning continue-as-new or newly scheduled activities, persist either the explicit
 `import_id` or the original operation timestamp in workflow state:
 

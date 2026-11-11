@@ -136,6 +136,7 @@ tokens, tables/queues/detail pages, restrained typography, and small brand accen
 hero, or presentation-style layouts unless the user explicitly asks for them.
 
 Key entry points:
+
 - `src/ui/plugin.tsx` — Library entry for Vertesia host (exports default component receiving `{ slot }`)
 - `src/ui/main.tsx` — Standalone dev entry (VertesiaShell + AdminApp at `/`, plugin at `/app/`)
 - `src/ui/shell/App.tsx` — Shared shell runtime wrapping module providers and routes

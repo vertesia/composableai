@@ -206,6 +206,7 @@ const result = await client.interactions.executeAsync({
 ### Interaction naming convention
 
 Interactions registered by plugins follow this pattern:
+
 ```text
 app:<plugin-name>:<collection-name>:<interaction-name>
 ```
