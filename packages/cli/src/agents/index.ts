@@ -413,7 +413,11 @@ async function inspectAgentRun(program: Command, runId: string, options: Inspect
 
     const result: Record<string, unknown> = { run };
     if (options.details || options.from !== undefined) {
-        result.details = await client.agents.getRunDetails(runId, { includeHistory: true, from: options.from });
+        result.details = await client.agents.getRunDetails(runId, {
+            includeHistory: true,
+            hydratePayloads: true,
+            from: options.from,
+        });
     }
     if (includeHistory && isProcessRun(run)) {
         result.history = await client.agents.getHistory(runId);

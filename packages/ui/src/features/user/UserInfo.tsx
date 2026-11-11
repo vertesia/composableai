@@ -191,14 +191,15 @@ function AgentAvatar({
     isScheduleAgent = false,
 }: AgentAvatarProps) {
     const { t } = useUITranslation();
-    // Fetch user info - must call hooks unconditionally per React rules
-    const shouldFetchUser = onBehalfOfType === 'user' && onBehalfOfId;
-    const shouldFetchApiKey = onBehalfOfType === 'apikey' && onBehalfOfId;
+    // Hooks run unconditionally per React rules; an empty id skips the fetch, so only the principal's own
+    // endpoint is called (a user id never reaches /apikeys, nor a key id /users).
+    const shouldFetchUser = onBehalfOfType === 'user' && !!onBehalfOfId;
+    const shouldFetchApiKey = onBehalfOfType === 'apikey' && !!onBehalfOfId;
 
-    const userResult = useFetchUserInfo(onBehalfOfId || '');
-    const apiKeyResult = useFetchApiKeyInfo(onBehalfOfId || '');
+    const userResult = useFetchUserInfo(shouldFetchUser ? onBehalfOfId : '');
+    const apiKeyResult = useFetchApiKeyInfo(shouldFetchApiKey ? onBehalfOfId : '');
 
-    // Only use the data if we should fetch it
+    // useFetch keeps its last data when its id becomes empty, so drop a result fetched for an earlier principal.
     const user = shouldFetchUser ? userResult.data : undefined;
     const apiKey = shouldFetchApiKey ? apiKeyResult.data : undefined;
 

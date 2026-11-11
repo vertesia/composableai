@@ -30,7 +30,11 @@ describe('agents inspect history cursors', () => {
         const snapshot = details('snapshot');
         mocks.getRunDetails.mockResolvedValue(snapshot);
         await inspect('--details', '--json');
-        expect(mocks.getRunDetails).toHaveBeenCalledWith('run-1', { includeHistory: true, from: undefined });
+        expect(mocks.getRunDetails).toHaveBeenCalledWith('run-1', {
+            includeHistory: true,
+            hydratePayloads: true,
+            from: undefined,
+        });
         expect(JSON.parse(vi.mocked(console.log).mock.calls[0][0])).toEqual({
             run: { id: 'run-1', run_kind: 'agent' },
             details: snapshot,
@@ -43,6 +47,7 @@ describe('agents inspect history cursors', () => {
         await inspect('--from', 'opaque/+==');
         expect(mocks.getRunDetails).toHaveBeenCalledExactlyOnceWith('run-1', {
             includeHistory: true,
+            hydratePayloads: true,
             from: 'opaque/+==',
         });
         expect(JSON.parse(vi.mocked(console.log).mock.calls[0][0]).details).toEqual(delta);
@@ -61,7 +66,10 @@ describe('agents inspect history cursors', () => {
         mocks.getRunDetails.mockResolvedValueOnce(details('delta')).mockResolvedValueOnce(details('snapshot'));
         await inspect('--from', 'previous');
         await inspect('--details', '--json');
-        expect(mocks.getRunDetails.mock.calls[1]).toEqual(['run-1', { includeHistory: true, from: undefined }]);
+        expect(mocks.getRunDetails.mock.calls[1]).toEqual([
+            'run-1',
+            { includeHistory: true, hydratePayloads: true, from: undefined },
+        ]);
         expect(JSON.parse(vi.mocked(console.log).mock.calls[1][0]).details).toEqual(details('snapshot'));
     });
 });
