@@ -44,7 +44,7 @@ describe('Handlebars compiled template cache', () => {
             for (let render = 0; render < 3; render++) {
                 const input = inputs(next(50));
                 // The global instance carries the same custom helpers and is compiled fresh each time.
-                const expected = Handlebars.compile(template)(input);
+                const expected = Handlebars.compile(template, { noEscape: true })(input);
                 expect(renderHandlebarsTemplate(template, input)).toBe(expected);
             }
         }

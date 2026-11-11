@@ -39,6 +39,14 @@ const CUSTOM_HELPERS: Record<string, Handlebars.HelperDelegate> = {
  * knowing about them.
  */
 const promptHandlebars = Handlebars.create();
+
+/**
+ * Prompts are plain text sent to a model, not HTML, so `{{value}}` inserts the value as it is. With
+ * Handlebars' default HTML escaping, every quote, apostrophe, `&`, `<`, `>`, `=` and backtick in an input
+ * reached the model as an entity (`&quot;`, `&#x27;`, ...): it changed what users wrote, garbled JSON
+ * inputs, and multiplied their token count. `{{{value}}}` renders the same as `{{value}}`.
+ */
+const PROMPT_COMPILE_OPTIONS = { noEscape: true } as const;
 for (const [name, helper] of Object.entries(CUSTOM_HELPERS)) {
     promptHandlebars.registerHelper(name, helper);
     // Kept on the global instance for code that compiled templates with the global Handlebars
@@ -67,7 +75,7 @@ export const HANDLEBARS_CONTEXT_HELPERS: readonly string[] = ['each', 'with'];
 /**
  * Compiled prompt templates keyed by their full source. Compiling a long template takes tens of
  * milliseconds and used to happen on every render, blocking the event loop. Templates compile with
- * the default options of the single `promptHandlebars` environment, so the source alone decides the
+ * the same options in the single `promptHandlebars` environment, so the source alone decides the
  * compiled result. Helpers and partials are looked up in that environment when a template renders,
  * not when it compiles, so a cached template always sees the environment's current helpers.
  *
@@ -87,7 +95,7 @@ export const compiledTemplates = new LRUCache<string, Handlebars.TemplateDelegat
 export function renderHandlebarsTemplate(template: string, input: unknown): string {
     let compiled = compiledTemplates.get(template);
     if (!compiled) {
-        compiled = promptHandlebars.compile(template);
+        compiled = promptHandlebars.compile(template, PROMPT_COMPILE_OPTIONS);
         compiledTemplates.set(template, compiled);
     }
     return compiled(input);
