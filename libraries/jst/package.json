@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/jst",
-    "version": "1.6.0-dev.20261022.120426Z",
+    "version": "1.7.0-dev",
     "type": "module",
     "description": "Javascript text template",
     "license": "Apache-2.0",

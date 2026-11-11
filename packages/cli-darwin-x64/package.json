@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/cli-darwin-x64",
-    "version": "1.6.0-dev.20261022.120426Z",
+    "version": "1.7.0-dev",
     "description": "The macOS x64 native executable for the Vertesia CLI.",
     "license": "Apache-2.0",
     "preferUnplugged": true,
