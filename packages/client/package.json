@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/client",
-    "version": "1.6.0-dev.20261022.120426Z",
+    "version": "1.6.0-dev",
     "type": "module",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",

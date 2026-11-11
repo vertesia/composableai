@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/common",
-    "version": "1.6.0-dev.20261022.120426Z",
+    "version": "1.6.0-dev",
     "license": "Apache-2.0",
     "type": "module",
     "main": "./lib/index.js",
