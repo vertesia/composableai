@@ -87,10 +87,10 @@ interface TabsProps {
      * declare one literal route per tab instead (`/store/agents/configuration`): without a `pathParam` in the
      * route, the tab is the last path segment when it names a tab.
      *
-     * Switching replaces that path segment, keeps the query string and clears the hash, without a history entry
-     * or a breadcrumb (Back leaves the page, as the breadcrumbs do). A missing, unknown or
-     * not-allowed tab is replaced, without a new history entry, by the tab an old `#tab` link names, else the
-     * default one. Tabs directly inside keep their tab in the hash, and tabs deeper than that keep it in
+     * Switching replaces that path segment, keeps the query string and clears the hash. It adds a history entry
+     * (Back returns to the previous tab) but no breadcrumb (the breadcrumbs lead to other pages). A missing,
+     * unknown or not-allowed tab is replaced, without a new history entry, by the tab an old `#tab` link names, else
+     * the default one. Tabs directly inside keep their tab in the hash, and tabs deeper than that keep it in
      * component state.
      *
      * Needs a router; without one it falls back to the hash.
@@ -257,9 +257,8 @@ const Tabs = ({
             if (!current) {
                 if (mode === 'path' && route) {
                     // Dropping the hash resets the tabs nested in the new tab to their default. A tab switch is not
-                    // a navigation: it replaces the entry and leaves the breadcrumbs as they are.
+                    // a page change: Back returns to the previous tab, and the breadcrumbs stay as they are.
                     route.navigate(`${buildTabPath(route, pathParam, newValue, tabNames)}${window.location.search}`, {
-                        replace: true,
                         keepHistoryChain: true,
                     });
                 } else if (mode === 'hash' || mode === 'hash-replace') {

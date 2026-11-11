@@ -123,14 +123,14 @@ describe('Tabs updatePath', () => {
         expect(window.history.length).toBe(length);
     });
 
-    it('switches by replacing the path, keeping the query and clearing the hash', async () => {
+    it('switches by pushing the new path, keeping the query and clearing the hash', async () => {
         renderAt('/settings/apps?p=1#i2');
         const length = window.history.length;
 
         fireEvent.click(screen.getByRole('tab', { name: 'General' }));
 
         await waitFor(() => expect(currentUrl()).toBe('/settings/general?p=1'));
-        expect(window.history.length).toBe(length);
+        expect(window.history.length).toBe(length + 1);
         expect(screen.getByText('General panel')).toBeDefined();
     });
 

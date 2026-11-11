@@ -73,8 +73,7 @@ export interface NavigateOptions {
     /**
      * Leave the breadcrumb chain (`history.state.historyChain`) exactly as it is: the new URL neither adds a
      * breadcrumb nor, with `replace`, clears the existing ones. For changes within a page, such as switching
-     * tabs. Pair it with `replace`: each breadcrumb steps back one browser entry, so a pushed entry without a
-     * breadcrumb would make them land on the wrong page.
+     * tabs. Works with a pushed entry too: a breadcrumb navigates to its own `href`, not a number of entries back.
      */
     keepHistoryChain?: boolean;
     /**

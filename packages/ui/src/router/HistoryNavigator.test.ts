@@ -71,6 +71,12 @@ describe('HistoryNavigator breadcrumb chain', () => {
         expect(window.location.pathname).toBe('/page/next');
     });
 
+    it('pushes an entry without a breadcrumb with keepHistoryChain alone', () => {
+        const length = window.history.length;
+        expect(chainAfter({ keepHistoryChain: true })).toEqual(chain);
+        expect(window.history.length).toBe(length + 1);
+    });
+
     it('starts new breadcrumbs on a pushed entry with clearHistoryChain', () => {
         window.history.replaceState({ historyChain: chain }, '', '/page');
         const length = window.history.length;
