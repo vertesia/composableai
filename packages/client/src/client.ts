@@ -434,8 +434,8 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
         return this.store.files;
     }
 
-    get sharePointSources() {
-        return this.store.sharePointSources;
+    get contentSources() {
+        return this.store.contentSources;
     }
 
     get processes() {

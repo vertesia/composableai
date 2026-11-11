@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { registerAgentsCommand } from './agents/index.js';
 import { registerAppsCommand } from './apps/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
+import { registerContentSourcesCommand } from './content-sources/index.js';
 import { registerDataCommand } from './data/index.js';
 import { registerEnvsCommand } from './envs/index.js';
 import { registerEventsCommand } from './events/index.js';
@@ -36,7 +37,6 @@ import { listProjects, useProject } from './projects/index.js';
 import { registerQuotaCommand } from './quota/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
-import { registerSharePointCommand } from './sharepoint/index.js';
 import { errorMessage, getBooleanOption, hasStatus } from './utils/options.js';
 import { registerWorkflowsCommand } from './workflows/index.js';
 
@@ -217,7 +217,7 @@ registerAgentsCommand(program);
 registerArtifactsCommand(program);
 registerDataCommand(program);
 registerEventsCommand(program);
-registerSharePointCommand(program);
+registerContentSourcesCommand(program);
 registerExportCommand(program);
 registerIamCommand(program);
 

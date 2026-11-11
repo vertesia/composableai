@@ -7211,6 +7211,13 @@
         "type": "string",
         "description": "Optional OAuth 2.0 revocation endpoint URL."
       },
+      "token_params": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
+      },
       "created_at": {
         "type": "string"
       },
@@ -7283,6 +7290,13 @@
       },
       "revocation_endpoint": {
         "type": "string"
+      },
+      "token_params": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
       }
     },
     "required": [
@@ -7336,6 +7350,13 @@
       },
       "revocation_endpoint": {
         "type": "string"
+      },
+      "token_params": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
       }
     },
     "additionalProperties": false,
@@ -32928,7 +32949,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), or a `sharepoint://<source_id>/<item_id>` URI of a file in a registered SharePoint source, and `type`, its MIME type, is then required."
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), or a `sharepoint://` or `box://` `<source_id>/<item_id>` URI of a file in a registered content source, and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -33097,7 +33118,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az|sharepoint)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
               }
             }
           }
@@ -33133,7 +33154,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az|sharepoint)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
               }
             }
           }
@@ -33206,7 +33227,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), or a `sharepoint://<source_id>/<item_id>` URI of a file in a registered SharePoint source, and `type`, its MIME type, is then required."
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), or a `sharepoint://` or `box://` `<source_id>/<item_id>` URI of a file in a registered content source, and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -33320,7 +33341,7 @@
               "minLength": 1
             },
             "source": {
-              "pattern": "^(?:gs|s3|az|sharepoint)://[^/]+/.+"
+              "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
             }
           }
         }
@@ -38146,7 +38167,28 @@
       "$ref": "#/components/schemas/EventIngestChannel"
     }
   },
-  "SharePointSource": {
+  "ContentSourceSyncSettings": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the source syncs on its own every `interval_minutes`."
+      },
+      "interval_minutes": {
+        "type": "integer",
+        "minimum": 15,
+        "maximum": 10080,
+        "description": "Minutes between the end of one sync and the start of the next."
+      }
+    },
+    "required": [
+      "enabled",
+      "interval_minutes"
+    ],
+    "additionalProperties": false,
+    "description": "When the source syncs. A source with scheduled sync disabled still syncs on `POST /content-sources/{id}/sync`."
+  },
+  "SharePointContentSource": {
     "type": "object",
     "properties": {
       "id": {
@@ -38160,7 +38202,36 @@
       },
       "oauth_provider_id": {
         "type": "string",
-        "description": "The OAuth provider (client credentials against Microsoft Entra ID) that issues Graph tokens."
+        "description": "The project's OAuth provider (grant type `client_credentials`) that issues the system's tokens."
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "Collection that synced documents are added to, if any."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "type": {
+        "type": "string",
+        "const": "sharepoint"
       },
       "site_url": {
         "type": "string",
@@ -38180,19 +38251,56 @@
       },
       "folder_path": {
         "type": "string",
-        "description": "The folder imported, relative to the library root. Empty for the whole library."
+        "description": "The folder synced, relative to the library root. Empty for the whole library."
       },
       "folder_item_id": {
         "type": "string",
-        "description": "The Microsoft Graph item ID of the imported folder."
+        "description": "The Microsoft Graph item ID of the synced folder."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "oauth_provider_id",
+      "location_root",
+      "sync",
+      "type",
+      "site_url",
+      "site_id",
+      "drive_id",
+      "library_name",
+      "folder_path",
+      "folder_item_id"
+    ],
+    "additionalProperties": false,
+    "description": "A SharePoint Online document library, or a folder in one. Synced documents reference their file in SharePoint (`sharepoint://<source_id>/<item_id>`) instead of a copy."
+  },
+  "BoxContentSource": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "description": "The project's OAuth provider (grant type `client_credentials`) that issues the system's tokens."
       },
       "location_root": {
         "type": "string",
-        "description": "The `location` under which the folder's tree is reproduced, e.g. `/sharepoint/legal`."
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
       },
       "collection_id": {
         "type": "string",
-        "description": "Collection that imported documents are added to, if any."
+        "description": "Collection that synced documents are added to, if any."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
       },
       "created_by": {
         "type": "string"
@@ -38207,24 +38315,67 @@
       "updated_at": {
         "type": "string",
         "format": "date-time"
+      },
+      "type": {
+        "type": "string",
+        "const": "box"
+      },
+      "folder_id": {
+        "type": "string",
+        "description": "The Box folder ID."
+      },
+      "folder_name": {
+        "type": "string",
+        "description": "The Box folder name when the source was created."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The Box folder path when the source was created."
       }
     },
     "required": [
       "id",
       "name",
       "oauth_provider_id",
-      "site_url",
-      "site_id",
-      "drive_id",
-      "library_name",
-      "folder_path",
-      "folder_item_id",
-      "location_root"
+      "location_root",
+      "sync",
+      "type",
+      "folder_id",
+      "folder_name",
+      "folder_path"
     ],
     "additionalProperties": false,
-    "description": "A SharePoint Online document library, or a folder in one, registered for import. Imported documents reference their file in SharePoint (`sharepoint://<source_id>/<item_id>`) instead of a copy."
+    "description": "A Box folder. Synced documents reference their file in Box (`box://<source_id>/<file_id>`) instead of a copy."
   },
-  "CreateSharePointSourcePayload": {
+  "ExternalContentSource": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/SharePointContentSource"
+      },
+      {
+        "$ref": "#/components/schemas/BoxContentSource"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "sharepoint": "#/components/schemas/SharePointContentSource",
+        "box": "#/components/schemas/BoxContentSource"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "description": "A folder of an external content system whose files are synced into the project without copies."
+  },
+  "ExternalContentSourceArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ExternalContentSource"
+    }
+  },
+  "CreateSharePointContentSourcePayload": {
     "type": "object",
     "properties": {
       "name": {
@@ -38239,7 +38390,23 @@
       "oauth_provider_id": {
         "type": "string",
         "minLength": 1,
-        "description": "An OAuth provider of this project with grant type `client_credentials` against Microsoft Entra ID and the scope `https://graph.microsoft.com/.default`."
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` root for synced documents. Defaults to `/<type>/<name>`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "A collection to add synced documents to."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings",
+        "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
+      },
+      "type": {
+        "type": "string",
+        "const": "sharepoint"
       },
       "site_url": {
         "type": "string",
@@ -38253,30 +38420,243 @@
       },
       "folder_path": {
         "type": "string",
-        "description": "A folder inside the library to import, e.g. `Contracts/2026`. Defaults to all."
-      },
-      "location_root": {
-        "type": "string",
-        "description": "The `location` root for imported documents. Defaults to `/sharepoint/<name>`."
-      },
-      "collection_id": {
-        "type": "string",
-        "description": "A collection to add imported documents to."
+        "description": "A folder inside the library, e.g. `Contracts/2026`. Defaults to the whole library."
       }
     },
     "required": [
       "name",
       "oauth_provider_id",
+      "type",
       "site_url"
     ],
     "additionalProperties": false,
-    "description": "Registers a SharePoint source. The server checks the site, library and folder with Microsoft Graph before saving, and answers 409 when the name is already used in the project."
+    "description": "Registers a SharePoint source. The OAuth provider authenticates against Microsoft Entra ID with the scope `https://graph.microsoft.com/.default`."
   },
-  "SharePointSourceArray": {
-    "type": "array",
-    "items": {
-      "$ref": "#/components/schemas/SharePointSource"
-    }
+  "CreateBoxContentSourcePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "description": "Unique within the project."
+      },
+      "description": {
+        "type": "string"
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` root for synced documents. Defaults to `/<type>/<name>`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "A collection to add synced documents to."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings",
+        "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
+      },
+      "type": {
+        "type": "string",
+        "const": "box"
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The Box folder ID, shared with the Box app's service account."
+      }
+    },
+    "required": [
+      "name",
+      "oauth_provider_id",
+      "type",
+      "folder_id"
+    ],
+    "additionalProperties": false,
+    "description": "Registers a Box source. The OAuth provider uses Box's client credentials grant, with the token parameters `box_subject_type` and `box_subject_id`."
+  },
+  "CreateContentSourcePayload": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/CreateSharePointContentSourcePayload"
+      },
+      {
+        "$ref": "#/components/schemas/CreateBoxContentSourcePayload"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "sharepoint": "#/components/schemas/CreateSharePointContentSourcePayload",
+        "box": "#/components/schemas/CreateBoxContentSourcePayload"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "description": "Registers a content source. The server checks the folder with the system before saving, answers 409 when the name is already used in the project, then starts the first sync."
+  },
+  "UpdateContentSourcePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "description": {
+        "type": "string"
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Changes the name, description or sync settings. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
+  },
+  "SyncContentSourcePayload": {
+    "type": "object",
+    "properties": {
+      "full": {
+        "type": "boolean",
+        "description": "List the whole folder again and delete the documents of files that no longer exist, instead of reading only the changes."
+      }
+    },
+    "additionalProperties": false
+  },
+  "ContentSourceSyncCounts": {
+    "type": "object",
+    "properties": {
+      "listed": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Files listed or reported as changed."
+      },
+      "created": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "updated": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "unchanged": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "deleted": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "skipped": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Files that are not synced (unsupported types, packages)."
+      },
+      "failed": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "listed",
+      "created",
+      "updated",
+      "unchanged",
+      "deleted",
+      "skipped",
+      "failed"
+    ],
+    "additionalProperties": false
+  },
+  "ContentSourceSyncRound": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "enum": [
+          "import",
+          "update"
+        ],
+        "description": "`import` lists the whole folder; `update` reads the changes since the previous sync."
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "finished_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "counts": {
+        "$ref": "#/components/schemas/ContentSourceSyncCounts"
+      },
+      "swept": {
+        "type": "boolean",
+        "description": "Whether an import ended by deleting the documents of files no longer listed."
+      },
+      "error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "started_at",
+      "counts"
+    ],
+    "additionalProperties": false
+  },
+  "ContentSourceStatus": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "running",
+          "waiting",
+          "stopped"
+        ],
+        "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
+      },
+      "current_round": {
+        "$ref": "#/components/schemas/ContentSourceSyncRound"
+      },
+      "last_round": {
+        "$ref": "#/components/schemas/ContentSourceSyncRound"
+      },
+      "cursor_taken_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the change cursor in use was taken."
+      },
+      "next_sync_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "error": {
+        "type": "string",
+        "description": "Why the sync is stopped."
+      }
+    },
+    "required": [
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "A content source's sync state."
   },
   "CollectionSecuritySettingsResponse": {
     "type": "object",

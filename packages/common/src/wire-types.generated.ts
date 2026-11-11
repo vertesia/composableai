@@ -2293,6 +2293,107 @@ export type ContentQueryResult = {
     cursor?: string | undefined;
     took?: number | undefined;
 };
+/** A folder of an external content system whose files are synced into the project without copies. */
+export type ExternalContentSource = SharePointContentSource | BoxContentSource;
+export type SharePointContentSource = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    location_root: string;
+    collection_id?: string | undefined;
+    sync: ContentSourceSyncSettings;
+    created_by?: string | undefined;
+    updated_by?: string | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    type: 'sharepoint';
+    site_url: string;
+    site_id: string;
+    drive_id: string;
+    library_name: string;
+    folder_path: string;
+    folder_item_id: string;
+};
+export type BoxContentSource = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    location_root: string;
+    collection_id?: string | undefined;
+    sync: ContentSourceSyncSettings;
+    created_by?: string | undefined;
+    updated_by?: string | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    type: 'box';
+    folder_id: string;
+    folder_name: string;
+    folder_path: string;
+};
+export type ContentSourceSyncSettings = {
+    enabled: boolean;
+    interval_minutes: number;
+};
+/** Registers a content source. */
+export type CreateContentSourcePayload = CreateSharePointContentSourcePayload | CreateBoxContentSourcePayload;
+export type CreateSharePointContentSourcePayload = {
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    location_root?: string | undefined;
+    collection_id?: string | undefined;
+    sync?: ContentSourceSyncSettings | undefined;
+    type: 'sharepoint';
+    site_url: string;
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
+};
+export type CreateBoxContentSourcePayload = {
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    location_root?: string | undefined;
+    collection_id?: string | undefined;
+    sync?: ContentSourceSyncSettings | undefined;
+    type: 'box';
+    folder_id: string;
+};
+export type UpdateContentSourcePayload = {
+    name?: string | undefined;
+    description?: string | undefined;
+    sync?: ContentSourceSyncSettings | undefined;
+};
+export type SyncContentSourcePayload = {
+    full?: boolean | undefined;
+};
+/** A content source's sync state. */
+export type ContentSourceStatus = {
+    state: 'not_started' | 'running' | 'waiting' | 'stopped';
+    current_round?: ContentSourceSyncRound | undefined;
+    last_round?: ContentSourceSyncRound | undefined;
+    cursor_taken_at?: string | undefined;
+    next_sync_at?: string | undefined;
+    error?: string | undefined;
+};
+export type ContentSourceSyncRound = {
+    kind: 'import' | 'update';
+    started_at: string;
+    finished_at?: string | undefined;
+    counts: ContentSourceSyncCounts;
+    swept?: boolean | undefined;
+    error?: string | undefined;
+};
+export type ContentSourceSyncCounts = {
+    listed: number;
+    created: number;
+    updated: number;
+    unchanged: number;
+    deleted: number;
+    skipped: number;
+    failed: number;
+};
 export type CostAnalyticsQuery = {
     from?: string | number | undefined;
     to?: string | number | undefined;
@@ -5541,6 +5642,7 @@ export type OAuthProviderData = {
     default_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
+    token_params?: Record<string, string> | undefined;
     created_at: string;
     updated_at: string;
 };
@@ -5559,6 +5661,7 @@ export type OAuthProvider = {
     default_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
+    token_params?: Record<string, string> | undefined;
     created_at: string;
     updated_at: string;
     id: string;
@@ -5578,6 +5681,7 @@ export type CreateOAuthProviderPayload = {
     default_scopes?: string[] | undefined;
     use_pkce?: boolean | undefined;
     revocation_endpoint?: string | undefined;
+    token_params?: Record<string, string> | undefined;
 };
 /**
  * Payload for updating an OAuth Provider.
@@ -5595,6 +5699,7 @@ export type UpdateOAuthProviderPayload = {
     default_scopes?: string[] | undefined | undefined;
     use_pkce?: boolean | undefined | undefined;
     revocation_endpoint?: string | undefined | undefined;
+    token_params?: Record<string, string> | undefined | undefined;
 };
 /**
  * OAuth authentication status for a user against an OAuth Provider.
@@ -7075,39 +7180,6 @@ export type UpdateSecretRequest = {
 };
 export type DeleteSecretResponse = {
     ok: boolean;
-};
-/**
- * A SharePoint Online document library, or a folder in one, registered for import. Imported documents
- * reference their file in SharePoint (`sharepoint://<source_id>/<item_id>`) instead of a copy.
- */
-export type SharePointSource = {
-    id: string;
-    name: string;
-    description?: string | undefined;
-    oauth_provider_id: string;
-    site_url: string;
-    site_id: string;
-    drive_id: string;
-    library_name: string;
-    folder_path: string;
-    folder_item_id: string;
-    location_root: string;
-    collection_id?: string | undefined;
-    created_by?: string | undefined;
-    updated_by?: string | undefined;
-    created_at?: string | undefined;
-    updated_at?: string | undefined;
-};
-/** Registers a SharePoint source. */
-export type CreateSharePointSourcePayload = {
-    name: string;
-    description?: string | undefined;
-    oauth_provider_id: string;
-    site_url: string;
-    library_name?: string | undefined;
-    folder_path?: string | undefined;
-    location_root?: string | undefined;
-    collection_id?: string | undefined;
 };
 /** Packaged workflows supported by event subscriptions. */
 export type SubscriptionWorkflowDefinition = {
@@ -11163,7 +11235,7 @@ export type EventDeliveryTargetWire = unknown;
 export type EventDeliveryTargetInputWire = unknown;
 export type ProcessEventDeliveryTargetWire = unknown;
 export type EventIngestChannelArray = EventIngestChannel[];
-export type SharePointSourceArray = SharePointSource[];
+export type ExternalContentSourceArray = ExternalContentSource[];
 export type CollectionStatusWire = CollectionStatus;
 export type CollectionArray = Collection[];
 export type AgentRunArtifactPathArray = string[];
@@ -12431,9 +12503,19 @@ export interface ApiComponentTypes {
     CreateEventIngestChannelPayload: CreateEventIngestChannelPayload;
     UpdateEventIngestChannelPayload: UpdateEventIngestChannelPayload;
     EventIngestChannelArray: EventIngestChannelArray;
-    SharePointSource: SharePointSource;
-    CreateSharePointSourcePayload: CreateSharePointSourcePayload;
-    SharePointSourceArray: SharePointSourceArray;
+    ContentSourceSyncSettings: ContentSourceSyncSettings;
+    SharePointContentSource: SharePointContentSource;
+    BoxContentSource: BoxContentSource;
+    ExternalContentSource: ExternalContentSource;
+    ExternalContentSourceArray: ExternalContentSourceArray;
+    CreateSharePointContentSourcePayload: CreateSharePointContentSourcePayload;
+    CreateBoxContentSourcePayload: CreateBoxContentSourcePayload;
+    CreateContentSourcePayload: CreateContentSourcePayload;
+    UpdateContentSourcePayload: UpdateContentSourcePayload;
+    SyncContentSourcePayload: SyncContentSourcePayload;
+    ContentSourceSyncCounts: ContentSourceSyncCounts;
+    ContentSourceSyncRound: ContentSourceSyncRound;
+    ContentSourceStatus: ContentSourceStatus;
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;

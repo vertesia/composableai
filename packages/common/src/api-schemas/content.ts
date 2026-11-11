@@ -662,15 +662,15 @@ export const ContentObjectIdempotencyKeySchema = z
 
 /**
  * A content source the server reads from a cloud blob store (`gs://`, `s3://` or `az://`, then a bucket and a
- * non-empty object path) or from a registered SharePoint source (`sharepoint://<source_id>/<item_id>`). The server
+ * non-empty object path) or from a registered content source (`sharepoint://` or `box://<source_id>/<item_id>`). The server
  * opens the file before storing the object, and refuses any other scheme, a relative path, or a bucket with no
  * object (`gs://bucket/`).
  */
-const CONTENT_SOURCE_URI_PATTERN = '^(?:gs|s3|az|sharepoint)://[^/]+/.+';
+const CONTENT_SOURCE_URI_PATTERN = '^(?:gs|s3|az|sharepoint|box)://[^/]+/.+';
 
 /**
  * The server opens a non-empty `content.source` as a blob URI and stores the file with its MIME type, so the source
- * must be a `gs://`, `s3://`, `az://` or `sharepoint://` URI and `content.type` is required, and not empty, alongside it. An empty
+ * must be a `gs://`, `s3://`, `az://`, `sharepoint://` or `box://` URI and `content.type` is required, and not empty, alongside it. An empty
  * source is ignored. Spread into both branches of the name rule on {@link CreateContentObjectPayloadSchema} so the
  * payload keeps a single `if`/`then`/`else`.
  */
@@ -694,8 +694,8 @@ const CONTENT_TYPE_WITH_SOURCE_RULE = conditional(
 
 const CONTENT_SOURCE_DESCRIPTION =
     'Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket ' +
-    'then a non-empty object path), or a `sharepoint://<source_id>/<item_id>` URI of a file in a registered ' +
-    'SharePoint source, and ' +
+    'then a non-empty object path), or a `sharepoint://` or `box://` `<source_id>/<item_id>` URI of a file in a ' +
+    'registered content source, and ' +
     '`type`, its MIME type, is then required.';
 
 const PARENT_OBJECT_ID_DESCRIPTION = 'ID of the parent object (container or folder), as 24 hexadecimal characters.';

@@ -30,6 +30,7 @@ export * from './audit-trail.js';
 export * from './browser-credentials.js';
 export * from './common.js';
 export * from './content-query.js';
+export * from './content-sources.js';
 export * from './cost-analytics.js';
 export * from './custom-roles.js';
 export * from './data-platform.js';
@@ -88,7 +89,6 @@ export type {
 export * from './runs.js';
 export * from './schema-for-extraction.js';
 export * from './secrets.js';
-export * from './sharepoint.js';
 export * from './skill.js';
 export * from './store/index.js';
 export * from './store/rendering.js';

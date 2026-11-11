@@ -1014,6 +1014,54 @@ interface Checks {
         W.ContentQueryResult,
         z.infer<typeof import('./api-schemas/content-query.js').ContentQueryResultSchema>
     >;
+    ExternalContentSource: Same<
+        W.ExternalContentSource,
+        z.infer<typeof import('./api-schemas/content-sources.js').ExternalContentSourceSchema>
+    >;
+    SharePointContentSource: Same<
+        W.SharePointContentSource,
+        z.infer<typeof import('./api-schemas/content-sources.js').SharePointContentSourceSchema>
+    >;
+    BoxContentSource: Same<
+        W.BoxContentSource,
+        z.infer<typeof import('./api-schemas/content-sources.js').BoxContentSourceSchema>
+    >;
+    ContentSourceSyncSettings: Same<
+        W.ContentSourceSyncSettings,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncSettingsSchema>
+    >;
+    CreateContentSourcePayload: Same<
+        W.CreateContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateContentSourcePayloadSchema>
+    >;
+    CreateSharePointContentSourcePayload: Same<
+        W.CreateSharePointContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateSharePointContentSourcePayloadSchema>
+    >;
+    CreateBoxContentSourcePayload: Same<
+        W.CreateBoxContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateBoxContentSourcePayloadSchema>
+    >;
+    UpdateContentSourcePayload: Same<
+        W.UpdateContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').UpdateContentSourcePayloadSchema>
+    >;
+    SyncContentSourcePayload: Same<
+        W.SyncContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').SyncContentSourcePayloadSchema>
+    >;
+    ContentSourceStatus: Same<
+        W.ContentSourceStatus,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceStatusSchema>
+    >;
+    ContentSourceSyncRound: Same<
+        W.ContentSourceSyncRound,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncRoundSchema>
+    >;
+    ContentSourceSyncCounts: Same<
+        W.ContentSourceSyncCounts,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncCountsSchema>
+    >;
     CostAnalyticsQuery: Same<
         W.CostAnalyticsQuery,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
@@ -2948,14 +2996,6 @@ interface Checks {
         W.DeleteSecretResponse,
         z.infer<typeof import('./api-schemas/secrets.js').DeleteSecretResponseSchema>
     >;
-    SharePointSource: Same<
-        W.SharePointSource,
-        z.infer<typeof import('./api-schemas/sharepoint.js').SharePointSourceSchema>
-    >;
-    CreateSharePointSourcePayload: Same<
-        W.CreateSharePointSourcePayload,
-        z.infer<typeof import('./api-schemas/sharepoint.js').CreateSharePointSourcePayloadSchema>
-    >;
     SubscriptionWorkflowDefinition: Same<
         W.SubscriptionWorkflowDefinition,
         z.infer<typeof import('./api-schemas/workflow-runs.js').SubscriptionWorkflowDefinitionSchema>
@@ -4825,9 +4865,9 @@ interface Checks {
         W.EventIngestChannelArray,
         z.infer<typeof import('./api-schemas/events.js').EventIngestChannelArraySchema>
     >;
-    SharePointSourceArray: Same<
-        W.SharePointSourceArray,
-        z.infer<typeof import('./api-schemas/sharepoint.js').SharePointSourceArraySchema>
+    ExternalContentSourceArray: Same<
+        W.ExternalContentSourceArray,
+        z.infer<typeof import('./api-schemas/content-sources.js').ExternalContentSourceArraySchema>
     >;
     CollectionStatusWire: Same<
         W.CollectionStatusWire,
@@ -8587,17 +8627,57 @@ interface Checks {
         W.ApiComponentTypes['EventIngestChannelArray'],
         z.infer<typeof import('./api-schemas/events.js').EventIngestChannelArraySchema>
     >;
-    'component:SharePointSource': Same<
-        W.ApiComponentTypes['SharePointSource'],
-        z.infer<typeof import('./api-schemas/sharepoint.js').SharePointSourceSchema>
+    'component:ContentSourceSyncSettings': Same<
+        W.ApiComponentTypes['ContentSourceSyncSettings'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncSettingsSchema>
     >;
-    'component:CreateSharePointSourcePayload': Same<
-        W.ApiComponentTypes['CreateSharePointSourcePayload'],
-        z.infer<typeof import('./api-schemas/sharepoint.js').CreateSharePointSourcePayloadSchema>
+    'component:SharePointContentSource': Same<
+        W.ApiComponentTypes['SharePointContentSource'],
+        z.infer<typeof import('./api-schemas/content-sources.js').SharePointContentSourceSchema>
     >;
-    'component:SharePointSourceArray': Same<
-        W.ApiComponentTypes['SharePointSourceArray'],
-        z.infer<typeof import('./api-schemas/sharepoint.js').SharePointSourceArraySchema>
+    'component:BoxContentSource': Same<
+        W.ApiComponentTypes['BoxContentSource'],
+        z.infer<typeof import('./api-schemas/content-sources.js').BoxContentSourceSchema>
+    >;
+    'component:ExternalContentSource': Same<
+        W.ApiComponentTypes['ExternalContentSource'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ExternalContentSourceSchema>
+    >;
+    'component:ExternalContentSourceArray': Same<
+        W.ApiComponentTypes['ExternalContentSourceArray'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ExternalContentSourceArraySchema>
+    >;
+    'component:CreateSharePointContentSourcePayload': Same<
+        W.ApiComponentTypes['CreateSharePointContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateSharePointContentSourcePayloadSchema>
+    >;
+    'component:CreateBoxContentSourcePayload': Same<
+        W.ApiComponentTypes['CreateBoxContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateBoxContentSourcePayloadSchema>
+    >;
+    'component:CreateContentSourcePayload': Same<
+        W.ApiComponentTypes['CreateContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateContentSourcePayloadSchema>
+    >;
+    'component:UpdateContentSourcePayload': Same<
+        W.ApiComponentTypes['UpdateContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').UpdateContentSourcePayloadSchema>
+    >;
+    'component:SyncContentSourcePayload': Same<
+        W.ApiComponentTypes['SyncContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').SyncContentSourcePayloadSchema>
+    >;
+    'component:ContentSourceSyncCounts': Same<
+        W.ApiComponentTypes['ContentSourceSyncCounts'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncCountsSchema>
+    >;
+    'component:ContentSourceSyncRound': Same<
+        W.ApiComponentTypes['ContentSourceSyncRound'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncRoundSchema>
+    >;
+    'component:ContentSourceStatus': Same<
+        W.ApiComponentTypes['ContentSourceStatus'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceStatusSchema>
     >;
     'component:CollectionSecuritySettingsResponse': Same<
         W.ApiComponentTypes['CollectionSecuritySettingsResponse'],
@@ -10903,6 +10983,18 @@ const checks: Checks = {
     MigrationListResponse: true,
     ContentQueryPayload: true,
     ContentQueryResult: true,
+    ExternalContentSource: true,
+    SharePointContentSource: true,
+    BoxContentSource: true,
+    ContentSourceSyncSettings: true,
+    CreateContentSourcePayload: true,
+    CreateSharePointContentSourcePayload: true,
+    CreateBoxContentSourcePayload: true,
+    UpdateContentSourcePayload: true,
+    SyncContentSourcePayload: true,
+    ContentSourceStatus: true,
+    ContentSourceSyncRound: true,
+    ContentSourceSyncCounts: true,
     CostAnalyticsQuery: true,
     CostModelPricesQuery: true,
     CostExportQuery: true,
@@ -11427,8 +11519,6 @@ const checks: Checks = {
     CreateSecretRequest: true,
     UpdateSecretRequest: true,
     DeleteSecretResponse: true,
-    SharePointSource: true,
-    CreateSharePointSourcePayload: true,
     SubscriptionWorkflowDefinition: true,
     SubscriptionWorkflowCatalog: true,
     AgentToolApprovalMode: true,
@@ -11957,7 +12047,7 @@ const checks: Checks = {
     EventDeliveryTargetInputWire: true,
     ProcessEventDeliveryTargetWire: true,
     EventIngestChannelArray: true,
-    SharePointSourceArray: true,
+    ExternalContentSourceArray: true,
     CollectionStatusWire: true,
     CollectionArray: true,
     AgentRunArtifactPathArray: true,
@@ -12902,9 +12992,19 @@ const checks: Checks = {
     'component:CreateEventIngestChannelPayload': true,
     'component:UpdateEventIngestChannelPayload': true,
     'component:EventIngestChannelArray': true,
-    'component:SharePointSource': true,
-    'component:CreateSharePointSourcePayload': true,
-    'component:SharePointSourceArray': true,
+    'component:ContentSourceSyncSettings': true,
+    'component:SharePointContentSource': true,
+    'component:BoxContentSource': true,
+    'component:ExternalContentSource': true,
+    'component:ExternalContentSourceArray': true,
+    'component:CreateSharePointContentSourcePayload': true,
+    'component:CreateBoxContentSourcePayload': true,
+    'component:CreateContentSourcePayload': true,
+    'component:UpdateContentSourcePayload': true,
+    'component:SyncContentSourcePayload': true,
+    'component:ContentSourceSyncCounts': true,
+    'component:ContentSourceSyncRound': true,
+    'component:ContentSourceStatus': true,
     'component:CollectionSecuritySettingsResponse': true,
     'component:CollectionMembersUpdateResult': true,
     'component:CollectionMembersUpdatePayload': true,
@@ -13415,6 +13515,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2787);
+        expect(Object.keys(checks)).toHaveLength(2807);
     });
 });
