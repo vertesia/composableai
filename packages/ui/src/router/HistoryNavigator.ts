@@ -77,6 +77,11 @@ export interface NavigateOptions {
      * breadcrumb would make them land on the wrong page.
      */
     keepHistoryChain?: boolean;
+    /**
+     * Start a new breadcrumb chain while still pushing a browser entry, so Back returns to the previous page. For
+     * top-level navigation, such as a sidebar item, where the previous breadcrumbs no longer apply.
+     */
+    clearHistoryChain?: boolean;
 }
 
 function getClosestAnchor(target: EventTarget | null): HTMLAnchorElement | null {
@@ -202,12 +207,13 @@ export class HistoryNavigator {
 
         // Build the history chain - clear if using replace, unless the caller keeps it as it is
         let historyChain: Array<{ title: string; href: string }> = [];
-        if ((!options.replace || options.keepHistoryChain) && currentState?.historyChain) {
+        const extendsChain = !options.replace && !options.clearHistoryChain;
+        if ((extendsChain || options.keepHistoryChain) && currentState?.historyChain) {
             historyChain = [...currentState.historyChain];
         }
 
         // Only add to chain if not replacing
-        if (!options.replace && !options.keepHistoryChain) {
+        if (extendsChain && !options.keepHistoryChain) {
             historyChain.push(newChainEntry);
 
             // Limit chain length to prevent memory issues (keep last 10 entries)

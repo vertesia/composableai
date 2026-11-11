@@ -70,4 +70,12 @@ describe('HistoryNavigator breadcrumb chain', () => {
         expect(window.history.length).toBe(length);
         expect(window.location.pathname).toBe('/page/next');
     });
+
+    it('starts new breadcrumbs on a pushed entry with clearHistoryChain', () => {
+        window.history.replaceState({ historyChain: chain }, '', '/page');
+        const length = window.history.length;
+        new HistoryNavigator().navigate('/page/next', { clearHistoryChain: true });
+        expect(window.history.state.historyChain).toEqual([]);
+        expect(window.history.length).toBe(length + 1);
+    });
 });
