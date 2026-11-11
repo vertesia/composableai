@@ -78,6 +78,38 @@ describe('UserInfo', () => {
         expect(await screen.findByText(/~dc1335/)).toBeDefined();
     });
 
+    it('fetches only the user for an agent acting on behalf of a user', async () => {
+        retrieveUser.mockResolvedValueOnce({ id: 'agent-user-for-test', name: 'Ada Lovelace' });
+
+        render(
+            <I18nProvider lng="en">
+                <UserInfo userRef="agent:acct:proj:1700000000:user:agent-user-for-test" showTitle />
+            </I18nProvider>,
+        );
+
+        await waitFor(() => {
+            expect(retrieveUser).toHaveBeenCalledWith('agent-user-for-test');
+        });
+        expect(retrieveUser).toHaveBeenCalledTimes(1);
+        expect(retrieveApiKey).not.toHaveBeenCalled();
+    });
+
+    it('fetches only the API key for an agent acting on behalf of an API key', async () => {
+        retrieveApiKey.mockResolvedValueOnce({ id: 'agent-key-for-test', name: 'CI key' });
+
+        render(
+            <I18nProvider lng="en">
+                <UserInfo userRef="agent:acct:proj:1700000000:apikey:agent-key-for-test" showTitle />
+            </I18nProvider>,
+        );
+
+        await waitFor(() => {
+            expect(retrieveApiKey).toHaveBeenCalledWith('agent-key-for-test');
+        });
+        expect(retrieveApiKey).toHaveBeenCalledTimes(1);
+        expect(retrieveUser).not.toHaveBeenCalled();
+    });
+
     it('renders a missing group as an unknown principal and caches the 404', async () => {
         const error = Object.assign(new Error('Not Found'), { status: 404 });
         retrieveGroup.mockRejectedValueOnce(error);
