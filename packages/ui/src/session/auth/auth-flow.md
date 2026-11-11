@@ -5,6 +5,7 @@ This document describes the authentication flow for the Vertesia user-facing app
 ## Overview
 
 The authentication system uses:
+
 - **Firebase** for identity management and OAuth provider integration
 - **Central Auth** (auth.vertesia.io) for centralized authentication flow
 - **STS (Security Token Service)** (sts.vertesia.io) to validate Firebase tokens and generate Vertesia JWT tokens
@@ -1085,8 +1086,6 @@ flowchart TB
     style Start fill:#fff4e1
     style Converge fill:#d4edda
 ```
-
-
 
     subgraph LogoutFlow[LOGOUT FLOW]
         LO1([User Logout])

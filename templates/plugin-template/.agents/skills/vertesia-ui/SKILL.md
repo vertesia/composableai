@@ -394,6 +394,7 @@ toast({ title: 'Error', description: err.message, variant: 'destructive' });
 Use `ModernAgentConversation` from `@vertesia/ui/features` for agent chat interfaces.
 
 **Props:**
+
 - `run` — `{ runId, workflowId } | undefined` — active conversation (undefined = start view)
 - `startWorkflow` — `(initialMessage?) => Promise<{ run_id, workflow_id } | undefined>`
 - `resetWorkflow` — `() => void` — new conversation callback
@@ -403,12 +404,14 @@ Use `ModernAgentConversation` from `@vertesia/ui/features` for agent chat interf
 - `fullWidth` — disable max-width constraint
 
 **URL persistence pattern:**
+
 - Route: `/chat/:runId/:workflowId`
 - Derive `run` from `useParams()` instead of React state
 - After `startWorkflow`, `navigate('/chat/${result.runId}/${result.workflowId}')`
 - `resetWorkflow` calls `navigate('/chat')`
 
 **Listing past conversations (sidebar):**
+
 - `client.store.workflows.listConversations({ interaction, page_size })` — returns `{ runs: WorkflowRun[] }`
 - Each run has `run_id`, `workflow_id`, `started_at`, `status`, `topic`
 - `listConversations` does NOT return `input` — only `topic` is available for labels

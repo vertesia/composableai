@@ -61,10 +61,10 @@ Built-in renderers with parameters:
 4. **objectId**
    - `slice`: Take substring from index
 
-
 ### Parameter Syntax
 
 Parameters are added using URL query string syntax:
+
 ```typescript
 "type": "string?max_length=50&ellipsis"
 "type": "number?currency=USD&decimals=2"

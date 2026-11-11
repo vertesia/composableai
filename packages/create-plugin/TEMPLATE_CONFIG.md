@@ -53,6 +53,7 @@ interface PromptConfig {
 **Description:** Specifies the configuration format version. Currently only `"1.0"` is supported.
 
 **Example:**
+
 ```json
 {
   "version": "1.0"
@@ -68,6 +69,7 @@ interface PromptConfig {
 **Description:** A human-readable description of the template. Currently not displayed but reserved for future use.
 
 **Example:**
+
 ```json
 {
   "description": "A template for building custom tool servers with tools, skills, and interactions"
@@ -83,6 +85,7 @@ interface PromptConfig {
 **Description:** Array of prompts to ask the user during installation. Each prompt collects a value that can be used to replace placeholders in template files.
 
 **Prompt Types:**
+
 - `text` - Single-line text input
 - `number` - Numeric input
 - `confirm` - Yes/no question (boolean)
@@ -90,9 +93,11 @@ interface PromptConfig {
 - `multiselect` - Multiple choices from list
 
 **Available Variables in `initial` values:**
+
 - `${PROJECT_NAME}` - Replaced with the project name specified by the user
 
 **Example:**
+
 ```json
 {
   "prompts": [
@@ -158,6 +163,7 @@ Default value. Can include `${PROJECT_NAME}` which will be replaced with the use
 JavaScript expression (as string) to validate input. Return `true` if valid, or error message string if invalid.
 
 **Example:**
+
 ```json
 {
   "validate": "(value) => value.length > 0 || 'Required field'"
@@ -169,6 +175,7 @@ JavaScript expression (as string) to validate input. Return `true` if valid, or 
 JavaScript expression (as string) to format the value before saving.
 
 **Example:**
+
 ```json
 {
   "format": "(value) => value.toLowerCase()"
@@ -180,6 +187,7 @@ JavaScript expression (as string) to format the value before saving.
 JavaScript expression (as string) that returns `true` to skip this prompt based on previous answers.
 
 **Example:**
+
 ```json
 {
   "skip": "(prev) => !prev.USE_TYPESCRIPT"
@@ -195,6 +203,7 @@ JavaScript expression (as string) that returns `true` to skip this prompt based 
 **Description:** Array of file paths (relative to template root) where variable replacement should occur. The installer will search for `{{VARIABLE_NAME}}` placeholders and replace them with user-provided values.
 
 **Example:**
+
 ```json
 {
   "files": [
@@ -209,6 +218,7 @@ JavaScript expression (as string) that returns `true` to skip this prompt based 
 **Usage in template files:**
 
 `package.json`:
+
 ```json
 {
   "name": "{{PROJECT_NAME}}",
@@ -218,11 +228,13 @@ JavaScript expression (as string) that returns `true` to skip this prompt based 
 ```
 
 After installation with values:
+
 - `PROJECT_NAME` = "my-tool-server"
 - `PROJECT_DESCRIPTION` = "My custom tool server"
 - `AUTHOR_NAME` = "John Doe"
 
 Becomes:
+
 ```json
 {
   "name": "my-tool-server",
@@ -240,6 +252,7 @@ For **code files** (TypeScript, JavaScript, etc.), you cannot use `{{VARIABLE}}`
 Use `CONFIG__` prefix for configuration values (booleans, numbers, strings):
 
 **Template file (vite.config.ts):**
+
 ```typescript
 // Define CONFIG__ constants at the top of your file
 const CONFIG__inlineCss = false;
@@ -258,6 +271,7 @@ export default defineConfig({
 ```
 
 **After installation** (with `inlineCss=true`, `serverPort=8080`, `pluginTitle="Analytics"`):
+
 ```typescript
 const CONFIG__inlineCss = true;
 const CONFIG__serverPort = 8080;
@@ -272,6 +286,7 @@ const inlineCss = CONFIG__inlineCss;
 Use `TEMPLATE__` prefix for identifier names (functions, classes, variables):
 
 **Template file (src/plugin.tsx):**
+
 ```typescript
 export default function TEMPLATE__PluginComponentName({ slot }: { slot: string }) {
   return <div>Hello from TEMPLATE__PluginComponentName</div>;
@@ -283,6 +298,7 @@ class TEMPLATE__ServiceClass {
 ```
 
 **template.config.json with derived variable:**
+
 ```json
 {
   "prompts": [
@@ -304,6 +320,7 @@ class TEMPLATE__ServiceClass {
 ```
 
 **After installation** (user enters "analytics-dashboard"):
+
 ```typescript
 export default function AnalyticsDashboard({ slot }: { slot: string }) {
   return <div>Hello from AnalyticsDashboard</div>;
@@ -311,12 +328,14 @@ export default function AnalyticsDashboard({ slot }: { slot: string }) {
 ```
 
 **How it works:**
+
 1. **CONFIG__** - Only the **value** is replaced, constant declaration remains
 2. **TEMPLATE__** - The entire **identifier** is replaced with the user's value
 3. Your template stays compilable and testable with default values
 4. Both patterns work anywhere in code files (.js, .jsx, .mjs, .ts, .tsx)
 
 **Benefits:**
+
 - ✅ Template compiles and runs normally during development
 - ✅ Type-safe (preserves boolean, number, string types)
 - ✅ Clear visual markers for template variables
@@ -333,11 +352,13 @@ export default function AnalyticsDashboard({ slot }: { slot: string }) {
 **Description:** Array of file paths to remove after installation completes. Use this to clean up template-specific files that users don't need.
 
 **Common files to remove:**
+
 - `template.config.json` - The configuration file itself
 - `TEMPLATE_README.md` - Template development docs
 - `.github/workflows/template-*.yml` - Template CI workflows
 
 **Example:**
+
 ```json
 {
   "removeAfterInstall": [
@@ -355,6 +376,7 @@ export default function AnalyticsDashboard({ slot }: { slot: string }) {
 **Type:** `Record<string, Record<string, string[]>>`
 
 **Description:** Conditionally remove files based on user answers. The structure is:
+
 ```json
 {
   "VARIABLE_NAME": {
@@ -367,6 +389,7 @@ export default function AnalyticsDashboard({ slot }: { slot: string }) {
 When the user's answer for `VARIABLE_NAME` equals `value1`, the specified files are removed.
 
 **Example:**
+
 ```json
 {
   "conditionalRemove": {
@@ -398,6 +421,7 @@ When the user's answer for `VARIABLE_NAME` equals `value1`, the specified files 
 ```
 
 **Use cases:**
+
 - Remove TypeScript files if user chooses JavaScript
 - Remove package manager lock files
 - Remove example code if user wants a minimal setup
@@ -412,6 +436,7 @@ When the user's answer for `VARIABLE_NAME` equals `value1`, the specified files 
 **Description:** Automatically generate additional variables by transforming user input. Useful for creating consistent naming across different contexts (e.g., component names from project names).
 
 **DerivedVariable structure:**
+
 ```typescript
 {
   "from": "SOURCE_VARIABLE",    // Variable to derive from
@@ -420,6 +445,7 @@ When the user's answer for `VARIABLE_NAME` equals `value1`, the specified files 
 ```
 
 **Supported transforms:**
+
 - `pascalCase` - MyPlugin, HelloWorld
 - `camelCase` - myPlugin, helloWorld
 - `kebabCase` - my-plugin, hello-world
@@ -429,6 +455,7 @@ When the user's answer for `VARIABLE_NAME` equals `value1`, the specified files 
 - `lowerCase` - my-plugin, hello world
 
 **Example:**
+
 ```json
 {
   "prompts": [
@@ -457,12 +484,14 @@ When the user's answer for `VARIABLE_NAME` equals `value1`, the specified files 
 ```
 
 **After user enters "my cool plugin":**
+
 - `PROJECT_NAME` = "my cool plugin"
 - `ComponentName` = "MyCoolPlugin" (derived, pascalCase)
 - `packageName` = "my-cool-plugin" (derived, kebabCase)
 - `constantName` = "my_cool_plugin" (derived, snakeCase)
 
 **Usage in template files:**
+
 ```typescript
 // src/plugin.tsx
 export default function {{ComponentName}}() {
@@ -485,6 +514,7 @@ export const PLUGIN_ID = "{{constantName}}";
 ```
 
 **Benefits:**
+
 - ✅ Ensures consistent naming conventions across files
 - ✅ No need to ask users multiple questions for the same concept
 - ✅ Reduces user error in naming
@@ -662,6 +692,7 @@ const server = createToolServer({
 ### 5. Test Your Template Config
 
 Create test installations to verify:
+
 - All prompts work correctly
 - Variable replacement works in all files
 - Conditional removal works as expected
@@ -718,6 +749,7 @@ Only remove files that truly aren't needed. Don't be too aggressive - users can 
 **Problem:** `{{VARIABLE}}` still appears in files after installation.
 
 **Solutions:**
+
 1. Ensure the file is listed in `files` array
 2. Check that the variable name matches exactly (case-sensitive)
 3. Verify the file exists in the template
@@ -727,6 +759,7 @@ Only remove files that truly aren't needed. Don't be too aggressive - users can 
 **Problem:** Files aren't being removed based on user choice.
 
 **Solutions:**
+
 1. Check that the variable name matches a prompt name
 2. Verify the value matches exactly (case-sensitive)
 3. Ensure file paths are correct relative to project root
@@ -736,6 +769,7 @@ Only remove files that truly aren't needed. Don't be too aggressive - users can 
 **Problem:** Installer says "Template configuration file not found".
 
 **Solutions:**
+
 1. Ensure `template.config.json` is in the repository root
 2. Check file name spelling (case-sensitive)
 3. Verify the file is committed to the repository

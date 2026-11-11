@@ -634,7 +634,6 @@ layouts. Configuration changes assets, theme values, and copy while preserving s
 The `loadingIcon` light/dark assets are separate from the sign-in `logo`. Omitted color and font
 settings retain the existing theme. Different layouts require explicit screen or boot HTML overrides.
 
-
 ```ts
 import { defineAppBranding } from '@vertesia/ui/boot';
 
@@ -765,7 +764,6 @@ Explicit `?a=...&p=...` URL selections take precedence over this entire configur
 Without a URL selection, configured IDs take precedence over the last workspace stored in the browser.
 A project-only default does not inherit an unrelated stored account. An account-only default can
 restore the last project for that account. These settings select a workspace; they do not grant access.
-
 
 ### Standalone authentication
 
