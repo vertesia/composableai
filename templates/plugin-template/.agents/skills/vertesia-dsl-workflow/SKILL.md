@@ -98,6 +98,7 @@ The `import` field tells the DSL engine to copy the listed variables from the wo
 ### How `objectId` is Initialized
 
 At `dsl-workflow.ts:133`, the DSL engine initializes workflow vars with:
+
 - `objectId` = first object ID from the trigger event (`objectIds[0]`)
 - Plus any vars defined in the workflow definition's `vars` field
 

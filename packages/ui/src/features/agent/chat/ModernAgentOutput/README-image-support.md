@@ -24,6 +24,7 @@ The ModernAgentOutput component now supports displaying images that are sent fro
 ## Example Usage
 
 When the analyze_image tool sends:
+
 ```typescript
 await vertesia.workflows.postMessage(updateChannelId, {
     message: `New image generated ![processed-image](image:agents/conversation-123/processed-1.jpg)`,
@@ -32,6 +33,7 @@ await vertesia.workflows.postMessage(updateChannelId, {
 ```
 
 The component will:
+
 1. Show "Loading images..." while resolving the URL
 2. Replace `image:agents/conversation-123/processed-1.jpg` with a signed URL
 3. Display the image inline in the conversation
