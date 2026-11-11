@@ -4524,15 +4524,11 @@ export type InteractionCreatePayload = {
 };
 export type InteractionUpdatePayload = {
     expected_edit_revision?: number | undefined;
-    status?: InteractionStatusWire | undefined;
-    parent?: string | undefined;
     visibility?: InteractionVisibility | undefined;
-    version?: number | undefined;
     test_data?: JSONObject | undefined;
     interaction_schema?: JSONSchema | SchemaRef | undefined;
     cache_policy?: CachePolicy | undefined;
     prompts?: InteractionPromptSegmentInput[] | undefined;
-    last_published_at?: string | undefined;
     name?: string | undefined;
     endpoint?: string | undefined;
     description?: string | undefined;
