@@ -19,7 +19,7 @@ overrides:
   yaml@>=2.0.0 <2.8.3: ^2.9.1
   picomatch@<2.3.2: ^4.0.7
   picomatch@>=4.0.0 <4.0.4: ^4.0.7
-  fast-xml-parser@<5.7.0: ^5.11.2
+  fast-xml-parser@<5.7.0: ^5.12.0
   fast-xml-builder@<=1.1.6: ^1.3.1
   fast-uri@<4.2.3: 4.2.3
   zod@>=4.0.0 <4.6.6: 4.6.7
@@ -60,8 +60,8 @@ importers:
         specifier: ^24.19.2
         version: 24.19.2
       globals:
-        specifier: ^17.13.0
-        version: 17.13.0
+        specifier: ^17.14.0
+        version: 17.14.0
       typescript:
         specifier: 'catalog:'
         version: 7.0.2
@@ -372,6 +372,11 @@ packages:
 
   ajv-formats@3.0.1:
     resolution: {integrity: sha512-8iUql50EUR+uUcdRQ3HDqa6EVyo3docL8g5WJ3FNcWmu62IbkGUue/pEyLBW8VGKKucTPgqeks4fIU1DA4yowQ==}
+    peerDependencies:
+      ajv: ^8.20.0
+    peerDependenciesMeta:
+      ajv:
+        optional: true
 
   ajv@8.20.0:
     resolution: {integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==}
@@ -449,8 +454,8 @@ packages:
     resolution: {integrity: sha512-d2OI/dJJ3IIaeOz3c9jvr5j5G5beI5fQzbgilNiWhDKGwvJN9o10Qub70NkbF6PNJSUoNKZ77JKYGz0Fs4+9Lg==}
     engines: {node: '>=22'}
 
-  globals@17.13.0:
-    resolution: {integrity: sha512-RwMTC61u7hrG3ZJMkZQOK4JLJrKS8QtoTii63EmWvFXHqycY9FObBJQCbsLxSO8kjKhWE5kV1GC+Vb1g3RI0Zg==}
+  globals@17.14.0:
+    resolution: {integrity: sha512-UtdkTVyAJePQv0J2M9Xe4L0ruNSDV314XiIJsADI2Zf40bcdAonE/D/OhAU8AT99oij9mhLByb+NvA3QWZYgCg==}
     engines: {node: '>=18'}
 
   google-auth-library@11.3.3:
@@ -906,7 +911,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  globals@17.13.0: {}
+  globals@17.14.0: {}
 
   google-auth-library@11.3.3:
     dependencies:
