@@ -27,7 +27,6 @@ See `templates/plugin-template/src/modules/app/ui/auth/` for editable applicatio
 options customize app-owned pages; they neither enable Firebase mode nor theme external provider
 or central-auth pages.
 
-
 `@vertesia/ui/boot` supports the pre-React stage separately: pass app-authored `html` and `styles`
 to `createBootScreenVitePlugin()` or `injectBootScreenHtml()`. HTML replaces the default inner loader;
 CSS is inlined after the default boot styles. The outer `#loading-indicator` owns the handoff and
@@ -56,7 +55,6 @@ layouts. Configuration changes assets, theme values, and copy while preserving s
 The `loadingIcon` light/dark assets are separate from the sign-in `logo`. Omitted color and font
 settings retain the existing theme. Different layouts require explicit screen or boot HTML overrides.
 
-
 The Node-only `createAppBrandingPlugin(config, configModuleUrl)` from `@vertesia/ui/boot/vite` resolves
 relative image/font paths, exposes `virtual:vertesia-branding`, and generates the boot HTML/CSS, title,
 and favicon. Local assets are embedded for base-path independence; import this adapter only in Vite config.
@@ -65,7 +63,6 @@ The `@vertesia/ui/boot` entry remains free of React, Node, and Vite dependencies
 The plugin template README contains the full configuration example and custom HTML/CSS escape hatch.
 Copy overrides are scoped to the shell and preserve shared translation resources. Colors are scoped to
 each screen; decorative accent and button foreground/background are separate settings.
-
 
 Applications using Vite can pass `import.meta.env` as the second argument to `Env.init(props, import.meta.env)`
 to enable `VITE_AUTH_MODE` (`firebase` or `central`) and the `VITE_FIREBASE_API_KEY`,
