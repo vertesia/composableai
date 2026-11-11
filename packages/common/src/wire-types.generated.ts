@@ -5534,6 +5534,10 @@ export type OAuthProviderData = {
     token_endpoint?: string | undefined;
     client_id: string;
     has_client_secret?: boolean | undefined;
+    token_endpoint_auth_method?: 'client_secret_post' | 'private_key_jwt' | undefined;
+    token_endpoint_auth_signing_alg?: 'RS256' | 'PS256' | 'ES256' | undefined;
+    has_private_key?: boolean | undefined;
+    certificate?: string | undefined;
     default_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
@@ -5552,6 +5556,10 @@ export type OAuthProvider = {
     token_endpoint?: string | undefined;
     client_id: string;
     has_client_secret?: boolean | undefined;
+    token_endpoint_auth_method?: 'client_secret_post' | 'private_key_jwt' | undefined;
+    token_endpoint_auth_signing_alg?: 'RS256' | 'PS256' | 'ES256' | undefined;
+    has_private_key?: boolean | undefined;
+    certificate?: string | undefined;
     default_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
@@ -5571,6 +5579,10 @@ export type CreateOAuthProviderPayload = {
     token_endpoint?: string | undefined;
     client_id: string;
     client_secret?: string | undefined;
+    token_endpoint_auth_method?: 'client_secret_post' | 'private_key_jwt' | undefined;
+    token_endpoint_auth_signing_alg?: 'RS256' | 'PS256' | 'ES256' | undefined;
+    private_key?: string | undefined;
+    certificate?: string | undefined;
     default_scopes?: string[] | undefined;
     use_pkce?: boolean | undefined;
     revocation_endpoint?: string | undefined;
@@ -5588,6 +5600,10 @@ export type UpdateOAuthProviderPayload = {
     token_endpoint?: string | undefined | undefined;
     client_id?: string | undefined;
     client_secret?: string | undefined | undefined;
+    token_endpoint_auth_method?: 'client_secret_post' | 'private_key_jwt' | undefined | undefined;
+    token_endpoint_auth_signing_alg?: 'RS256' | 'PS256' | 'ES256' | undefined | undefined;
+    private_key?: string | undefined | undefined;
+    certificate?: string | undefined | undefined;
     default_scopes?: string[] | undefined | undefined;
     use_pkce?: boolean | undefined | undefined;
     revocation_endpoint?: string | undefined | undefined;
