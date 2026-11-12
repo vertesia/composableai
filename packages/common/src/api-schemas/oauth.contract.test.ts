@@ -71,6 +71,47 @@ describe('the OAuth provider secret boundary', () => {
         expect(validateApiResponse('OAuthProvider', { ...response, client_secret: 'shhh' }).valid).toBe(false);
     });
 
+    it('accepts a private key on create and publishes only that one is configured', () => {
+        // private_key_jwt follows the client secret's split: the key goes in, `has_private_key` comes
+        // out. The certificate is public and is returned as is.
+        expect(
+            validateApiRequest('CreateOAuthProviderPayload', {
+                name: 'sharepoint',
+                display_name: 'SharePoint',
+                grant_type: 'client_credentials',
+                client_id: 'client-123',
+                token_endpoint_auth_method: 'private_key_jwt',
+                token_endpoint_auth_signing_alg: 'PS256',
+                private_key: '-----BEGIN PRIVATE KEY-----',
+                certificate: '-----BEGIN CERTIFICATE-----',
+            }),
+        ).toMatchObject({ valid: true });
+
+        const response = {
+            id: '68b1779130afe5403a1589ba',
+            name: 'sharepoint',
+            display_name: 'SharePoint',
+            project: '69d4762f24d3048c99149d0b',
+            grant_type: 'client_credentials',
+            client_id: 'client-123',
+            token_endpoint_auth_method: 'private_key_jwt',
+            has_private_key: true,
+            certificate: '-----BEGIN CERTIFICATE-----',
+            use_pkce: true,
+            created_at: '2026-01-01T00:00:00.000Z',
+            updated_at: '2026-01-01T00:00:00.000Z',
+        };
+        expect(validateApiResponse('OAuthProvider', response)).toMatchObject({ valid: true });
+        expect(validateApiResponse('OAuthProvider', { ...response, private_key: 'pem' }).valid).toBe(false);
+    });
+
+    it('refuses an authentication method outside the ones implemented', () => {
+        expect(
+            validateApiRequest('UpdateOAuthProviderPayload', { token_endpoint_auth_method: 'client_secret_basic' })
+                .valid,
+        ).toBe(false);
+    });
+
     it('publishes the client secret on the create response only', () => {
         // The one call that generates it returns it once; every later read of the same client gets
         // `client_secret_configured`. Two components rather than one optional field is what keeps
