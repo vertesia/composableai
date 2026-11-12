@@ -202,6 +202,8 @@
     "agent.resourceShowLess": "Daha az göster",
     "agent.resourceViewAll": "{{total}} değişikliğin tümünü görüntüle",
     "agent.resourcesChanged": "Değiştirilen kaynaklar",
+    "agent.restartFailed": "Çalıştırma yeniden başlatılamadı",
+    "agent.restartRun": "Yeniden başlat",
     "agent.retry": "Tekrar dene",
     "agent.rewind.exportFixture": "Yeniden oynatma fikstürünü dışa aktar",
     "agent.rewind.fixtureExported": "Yeniden oynatma fikstürü dışa aktarıldı",

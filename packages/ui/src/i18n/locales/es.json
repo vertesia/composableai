@@ -203,6 +203,8 @@
     "agent.resourceShowLess": "Mostrar menos",
     "agent.resourceViewAll": "Ver los {{total}} cambios",
     "agent.resourcesChanged": "Recursos modificados",
+    "agent.restartFailed": "No se pudo reiniciar la ejecución",
+    "agent.restartRun": "Reiniciar",
     "agent.retry": "Reintentar",
     "agent.rewind.exportFixture": "Exportar fixture de reproducción",
     "agent.rewind.fixtureExported": "Fixture de reproducción exportada",

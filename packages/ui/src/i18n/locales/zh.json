@@ -202,6 +202,8 @@
     "agent.resourceShowLess": "收起",
     "agent.resourceViewAll": "查看全部 {{total}} 项更改",
     "agent.resourcesChanged": "已更改的资源",
+    "agent.restartFailed": "无法重新启动运行",
+    "agent.restartRun": "重新启动",
     "agent.retry": "重试",
     "agent.rewind.exportFixture": "导出回放夹具",
     "agent.rewind.fixtureExported": "回放夹具已导出",

@@ -206,6 +206,8 @@
     "agent.resourceShowLess": "Свернуть",
     "agent.resourceViewAll": "Показать все изменения ({{total}})",
     "agent.resourcesChanged": "Изменённые ресурсы",
+    "agent.restartFailed": "Не удалось перезапустить выполнение",
+    "agent.restartRun": "Перезапустить",
     "agent.retry": "Повторить",
     "agent.rewind.exportFixture": "Экспортировать фикстуру повтора",
     "agent.rewind.fixtureExported": "Фикстура повтора экспортирована",
