@@ -1062,6 +1062,22 @@ interface Checks {
         W.ContentSourceSyncCounts,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncCountsSchema>
     >;
+    ContentSourceReport: Same<
+        W.ContentSourceReport,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportSchema>
+    >;
+    ContentSourceReportEntry: Same<
+        W.ContentSourceReportEntry,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportEntrySchema>
+    >;
+    ContentSourceReportAction: Same<
+        W.ContentSourceReportAction,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportActionSchema>
+    >;
+    ContentSourceReportQuery: Same<
+        W.ContentSourceReportQuery,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportQuerySchema>
+    >;
     CostAnalyticsQuery: Same<
         W.CostAnalyticsQuery,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
@@ -8679,6 +8695,22 @@ interface Checks {
         W.ApiComponentTypes['ContentSourceStatus'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceStatusSchema>
     >;
+    'component:ContentSourceReportAction': Same<
+        W.ApiComponentTypes['ContentSourceReportAction'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportActionSchema>
+    >;
+    'component:ContentSourceReportEntry': Same<
+        W.ApiComponentTypes['ContentSourceReportEntry'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportEntrySchema>
+    >;
+    'component:ContentSourceReportQuery': Same<
+        W.ApiComponentTypes['ContentSourceReportQuery'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportQuerySchema>
+    >;
+    'component:ContentSourceReport': Same<
+        W.ApiComponentTypes['ContentSourceReport'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportSchema>
+    >;
     'component:CollectionSecuritySettingsResponse': Same<
         W.ApiComponentTypes['CollectionSecuritySettingsResponse'],
         z.infer<typeof import('./api-schemas/content.js').CollectionSecuritySettingsResponseSchema>
@@ -10995,6 +11027,10 @@ const checks: Checks = {
     ContentSourceStatus: true,
     ContentSourceSyncRound: true,
     ContentSourceSyncCounts: true,
+    ContentSourceReport: true,
+    ContentSourceReportEntry: true,
+    ContentSourceReportAction: true,
+    ContentSourceReportQuery: true,
     CostAnalyticsQuery: true,
     CostModelPricesQuery: true,
     CostExportQuery: true,
@@ -13005,6 +13041,10 @@ const checks: Checks = {
     'component:ContentSourceSyncCounts': true,
     'component:ContentSourceSyncRound': true,
     'component:ContentSourceStatus': true,
+    'component:ContentSourceReportAction': true,
+    'component:ContentSourceReportEntry': true,
+    'component:ContentSourceReportQuery': true,
+    'component:ContentSourceReport': true,
     'component:CollectionSecuritySettingsResponse': true,
     'component:CollectionMembersUpdateResult': true,
     'component:CollectionMembersUpdatePayload': true,
@@ -13515,6 +13555,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2807);
+        expect(Object.keys(checks)).toHaveLength(2815);
     });
 });

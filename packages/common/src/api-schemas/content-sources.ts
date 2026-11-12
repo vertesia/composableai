@@ -2,6 +2,8 @@ import { z } from 'zod';
 import {
     CONTENT_SOURCE_MAX_SYNC_INTERVAL_MINUTES,
     CONTENT_SOURCE_MIN_SYNC_INTERVAL_MINUTES,
+    CONTENT_SOURCE_REPORT_MAX_LIMIT,
+    CONTENT_SOURCE_REPORT_ROUNDS,
 } from '../content-sources.js';
 
 const CONTENT_SOURCE_NAME_MAX_LENGTH = 128;
@@ -193,12 +195,28 @@ export const ContentSourceSyncCountsSchema = z
 
 export const ContentSourceSyncRoundSchema = z
     .strictObject({
+        id: z
+            .string()
+            .meta({
+                description:
+                    "Identifies the round's report, read with `GET /content-sources/{id}/rounds/{roundId}/report`. " +
+                    'Absent on rounds that started before reports existed.',
+            })
+            .optional(),
         kind: z.enum(['import', 'update']).meta({
             description: '`import` lists the whole folder; `update` reads the changes since the previous sync.',
         }),
         started_at: z.string().meta({ format: 'date-time' }),
         finished_at: z.string().meta({ format: 'date-time' }).optional(),
         counts: ContentSourceSyncCountsSchema,
+        skipped_by_reason: z
+            .record(z.string(), z.number().int())
+            .meta({
+                description:
+                    'The skipped files by reason: `package`, `not_a_file`, `too_large`, `unsupported_type`, or ' +
+                    'another reason a system reports.',
+            })
+            .optional(),
         swept: z
             .boolean()
             .meta({ description: 'Whether an import ended by deleting the documents of files no longer listed.' })
@@ -216,6 +234,12 @@ export const ContentSourceStatusSchema = z
         }),
         current_round: ContentSourceSyncRoundSchema.optional(),
         last_round: ContentSourceSyncRoundSchema.optional(),
+        recent_rounds: z
+            .array(ContentSourceSyncRoundSchema)
+            .meta({
+                description: `The last ${CONTENT_SOURCE_REPORT_ROUNDS} finished rounds, newest first. Their reports are kept; older ones are deleted.`,
+            })
+            .optional(),
         cursor_taken_at: z
             .string()
             .meta({ format: 'date-time', description: 'When the change cursor in use was taken.' })
@@ -224,3 +248,66 @@ export const ContentSourceStatusSchema = z
         error: z.string().meta({ description: 'Why the sync is stopped.' }).optional(),
     })
     .meta({ id: 'ContentSourceStatus', description: "A content source's sync state." });
+
+export const ContentSourceReportActionSchema = z
+    .enum(['created', 'updated', 'deleted', 'skipped', 'failed'])
+    .meta({ id: 'ContentSourceReportAction', description: 'What a sync round did with a file.' });
+
+export const ContentSourceReportEntrySchema = z
+    .strictObject({
+        action: ContentSourceReportActionSchema,
+        kind: z
+            .enum(['file', 'folder'])
+            .meta({ description: '`folder` only for a folder that could not be listed, with its `error`.' }),
+        item_id: z.string().meta({ description: "The file's or folder's ID in the external system." }),
+        name: z.string(),
+        path: z
+            .string()
+            .meta({ description: "The folder's path below the source's folder; empty for the source's folder itself." })
+            .optional(),
+        object_id: z.string().meta({ description: 'The document of the file.' }).optional(),
+        changes: z
+            .array(z.enum(['name', 'location', 'content']))
+            .meta({ description: '`updated`: what changed. `content` means the file is processed again.' })
+            .optional(),
+        reason: z
+            .string()
+            .meta({
+                description:
+                    '`skipped`: why the file is not synced (`package`, `not_a_file`, `too_large`, `unsupported_type`). ' +
+                    '`deleted`: `file_deleted` (deleted, moved out or no longer synced) or `duplicate`.',
+            })
+            .optional(),
+        error: z.string().meta({ description: '`failed`: why.' }).optional(),
+    })
+    .meta({
+        id: 'ContentSourceReportEntry',
+        description: 'A file a sync round created, updated, deleted, skipped or failed.',
+    });
+
+export const ContentSourceReportQuerySchema = z
+    .strictObject({
+        action: ContentSourceReportActionSchema.meta({ description: 'Only the entries of this action.' }).optional(),
+        cursor: z.string().meta({ description: 'The `next_cursor` of the previous page.' }).optional(),
+        limit: z
+            .number()
+            .int()
+            .min(1)
+            .max(CONTENT_SOURCE_REPORT_MAX_LIMIT)
+            .meta({ description: 'Entries per page; 200 when absent.' })
+            .optional(),
+    })
+    .meta({ id: 'ContentSourceReportQuery' });
+
+export const ContentSourceReportSchema = z
+    .strictObject({
+        round_id: z.string(),
+        entries: z.array(ContentSourceReportEntrySchema),
+        next_cursor: z.string().meta({ description: 'Present when more entries follow.' }).optional(),
+    })
+    .meta({
+        id: 'ContentSourceReport',
+        description:
+            'A page of the files a sync round created, updated, deleted, skipped or failed. Unchanged files are only ' +
+            "counted, in the round's `counts`. A round still running has a partial report.",
+    });

@@ -2012,6 +2012,10 @@ const CONTENT_SOURCE_SCHEMAS = {
     ContentSourceSyncCounts: ContentSourceSchemas.ContentSourceSyncCountsSchema,
     ContentSourceSyncRound: ContentSourceSchemas.ContentSourceSyncRoundSchema,
     ContentSourceStatus: ContentSourceSchemas.ContentSourceStatusSchema,
+    ContentSourceReportAction: ContentSourceSchemas.ContentSourceReportActionSchema,
+    ContentSourceReportEntry: ContentSourceSchemas.ContentSourceReportEntrySchema,
+    ContentSourceReportQuery: ContentSourceSchemas.ContentSourceReportQuerySchema,
+    ContentSourceReport: ContentSourceSchemas.ContentSourceReportSchema,
 } as const satisfies Record<string, z.ZodType>;
 
 const COLLECTION_SCHEMAS = {
@@ -2719,6 +2723,9 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'ContentSourceSyncCounts',
     'ContentSourceSyncRound',
     'ContentSourceStatus',
+    'ContentSourceReportEntry',
+    'ContentSourceReportQuery',
+    'ContentSourceReport',
     'CustomRoleDefinition',
     'CreateCustomRolePayload',
     'UpdateCustomRolePayload',

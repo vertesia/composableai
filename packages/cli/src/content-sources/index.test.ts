@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
     delete: vi.fn(),
     sync: vi.fn(),
     status: vi.fn(),
+    report: vi.fn(),
 }));
 
 vi.mock('../client.js', () => ({
@@ -174,5 +175,78 @@ describe('content-sources CLI', () => {
         mocks.delete.mockResolvedValue({ count: 1 });
         await run('delete', 'src-1');
         expect(mocks.delete).toHaveBeenCalledWith('src-1');
+    });
+
+    it('prints the skipped reasons and the earlier rounds in the status', async () => {
+        mocks.status.mockResolvedValue({
+            ...STATUS,
+            last_round: { ...STATUS.last_round, id: 'round-2', skipped_by_reason: { package: 1 } },
+            recent_rounds: [
+                { ...STATUS.last_round, id: 'round-2' },
+                { ...STATUS.last_round, id: 'round-1', kind: 'update' },
+            ],
+        });
+        const output = await run('status', 'src-1');
+        expect(output).toContain('(round round-2)');
+        expect(output).toContain('skipped: package 1');
+        expect(output).toContain('round-1');
+    });
+});
+
+describe('content-sources report', () => {
+    const FAILED = { action: 'failed', kind: 'file', item_id: 'f1', name: 'a.pdf', path: 'Docs', error: 'bad name' };
+    const CREATED = { action: 'created', kind: 'file', item_id: 'f2', name: 'b.pdf', object_id: 'obj-2' };
+    const FOLDER = { action: 'failed', kind: 'folder', item_id: 'd1', name: 'Docs', path: '', error: 'Listing failed' };
+
+    it("reads every page of the last round's report", async () => {
+        mocks.status.mockResolvedValue({ ...STATUS, last_round: { ...STATUS.last_round, id: 'round-1' } });
+        mocks.report
+            .mockResolvedValueOnce({ round_id: 'round-1', entries: [FAILED], next_cursor: 'c1' })
+            .mockResolvedValueOnce({ round_id: 'round-1', entries: [CREATED, FOLDER] });
+
+        const output = await run('report', 'src-1');
+
+        expect(mocks.report).toHaveBeenNthCalledWith(1, 'src-1', 'round-1', { limit: 1000 });
+        expect(mocks.report).toHaveBeenNthCalledWith(2, 'src-1', 'round-1', { cursor: 'c1', limit: 1000 });
+        expect(output.split('\n')).toEqual([
+            'round round-1: 3 entries',
+            'failed   Docs/a.pdf  (error: bad name)',
+            'created  b.pdf  (document obj-2)',
+            'failed   folder /  (error: Listing failed)',
+        ]);
+    });
+
+    it('prefers the round in progress', async () => {
+        mocks.status.mockResolvedValue({
+            ...STATUS,
+            state: 'running',
+            current_round: { ...STATUS.last_round, id: 'round-2' },
+            last_round: { ...STATUS.last_round, id: 'round-1' },
+        });
+        mocks.report.mockResolvedValue({ round_id: 'round-2', entries: [] });
+        await run('report', 'src-1');
+        expect(mocks.report).toHaveBeenCalledWith('src-1', 'round-2', { limit: 1000 });
+    });
+
+    it('reads a given round, filtered and limited, as JSON', async () => {
+        mocks.report.mockResolvedValue({ round_id: 'round-1', entries: [FAILED, FAILED], next_cursor: 'c1' });
+
+        const output = await run('report', 'src-1', 'round-1', '--action', 'failed', '--limit', '2', '--json');
+
+        expect(mocks.status).not.toHaveBeenCalled();
+        expect(mocks.report).toHaveBeenCalledOnce();
+        expect(mocks.report).toHaveBeenCalledWith('src-1', 'round-1', { action: 'failed', limit: 2 });
+        expect(JSON.parse(output)).toEqual({ round_id: 'round-1', entries: [FAILED, FAILED], truncated: true });
+    });
+
+    it('refuses an unknown action or limit before calling the server', async () => {
+        await expect(run('report', 'src-1', 'round-1', '--action', 'renamed')).rejects.toThrow('Invalid action');
+        await expect(run('report', 'src-1', 'round-1', '--limit', '0')).rejects.toThrow('Invalid limit');
+        expect(mocks.report).not.toHaveBeenCalled();
+    });
+
+    it('explains that a source without a round has no report', async () => {
+        mocks.status.mockResolvedValue({ state: 'not_started' });
+        await expect(run('report', 'src-1')).rejects.toThrow('no round with a report');
     });
 });

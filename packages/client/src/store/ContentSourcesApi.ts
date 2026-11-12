@@ -1,5 +1,7 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    ContentSourceReport,
+    ContentSourceReportQuery,
     ContentSourceStatus,
     CreateContentSourcePayload,
     DeleteCountResult,
@@ -48,5 +50,13 @@ export class ContentSourcesApi extends ApiTopic {
     /** The sync's state: the current and last rounds, and when the next one starts. */
     status(id: string): Promise<ContentSourceStatus> {
         return this.get(`/${id}/status`);
+    }
+
+    /**
+     * A page of what a sync round did with each file: created, updated, deleted, skipped or failed. Round IDs are in
+     * the status's `recent_rounds`. Pass the `next_cursor` of a page to read the next one.
+     */
+    report(id: string, roundId: string, query: ContentSourceReportQuery = {}): Promise<ContentSourceReport> {
+        return this.get(`/${id}/rounds/${encodeURIComponent(roundId)}/report`, { query: { ...query } });
     }
 }

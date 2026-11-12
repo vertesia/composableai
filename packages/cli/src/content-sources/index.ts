@@ -1,4 +1,6 @@
 import type {
+    ContentSourceReportAction,
+    ContentSourceReportEntry,
     ContentSourceStatus,
     ContentSourceSyncRound,
     ContentSourceSyncSettings,
@@ -11,6 +13,9 @@ import { getClient } from '../client.js';
 
 const SOURCE_TYPES = ['sharepoint', 'box'] as const;
 type SourceType = (typeof SOURCE_TYPES)[number];
+const REPORT_ACTIONS: readonly ContentSourceReportAction[] = ['created', 'updated', 'deleted', 'skipped', 'failed'];
+/** The largest page the report endpoint returns. */
+const REPORT_PAGE_SIZE = 1000;
 
 interface CreateOptions {
     type: string;
@@ -66,8 +71,51 @@ function describeRound(label: string, round: ContentSourceSyncRound): string {
         `failed ${counts.failed}`,
     ];
     const swept = round.swept === undefined ? '' : round.swept ? ', swept' : ', not swept';
+    const reasons = Object.entries(round.skipped_by_reason ?? {})
+        .map(([reason, count]) => `${reason} ${count}`)
+        .join(', ');
+    const skipped = reasons ? `\n    skipped: ${reasons}` : '';
     const error = round.error ? `\n    error: ${round.error}` : '';
-    return `${label}: ${round.kind} ${round.started_at}${end}\n    ${parts.join(', ')}${swept}${error}`;
+    const id = round.id ? ` (round ${round.id})` : '';
+    return `${label}: ${round.kind} ${round.started_at}${end}${id}\n    ${parts.join(', ')}${swept}${skipped}${error}`;
+}
+
+function describeEntry(entry: ContentSourceReportEntry): string {
+    const where =
+        entry.kind === 'folder'
+            ? `folder ${entry.path || '/'}`
+            : entry.path
+              ? `${entry.path}/${entry.name}`
+              : entry.name;
+    const details = [
+        entry.changes?.length ? `changed: ${entry.changes.join(', ')}` : '',
+        entry.reason ? `reason: ${entry.reason}` : '',
+        entry.error ? `error: ${entry.error}` : '',
+        entry.object_id ? `document ${entry.object_id}` : '',
+    ].filter(Boolean);
+    return `${entry.action.padEnd(7)}  ${where}${details.length ? `  (${details.join('; ')})` : ''}`;
+}
+
+function parseAction(value: string | undefined): ContentSourceReportAction | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+    const action = REPORT_ACTIONS.find((candidate) => candidate === value);
+    if (!action) {
+        throw new Error(`Invalid action "${value}": expected ${REPORT_ACTIONS.join(', ')}`);
+    }
+    return action;
+}
+
+function parseLimit(value: string | undefined): number | undefined {
+    if (value === undefined) {
+        return undefined;
+    }
+    const limit = Number(value);
+    if (!Number.isInteger(limit) || limit < 1) {
+        throw new Error('Invalid limit: expected a positive whole number');
+    }
+    return limit;
 }
 
 function describeStatus(status: ContentSourceStatus): string {
@@ -80,6 +128,17 @@ function describeStatus(status: ContentSourceStatus): string {
     }
     if (status.last_round) {
         lines.push(describeRound('last', status.last_round));
+    }
+    const earlier = (status.recent_rounds ?? []).filter((round) => round.id !== status.last_round?.id);
+    if (earlier.length > 0) {
+        lines.push('earlier rounds:');
+        for (const round of earlier) {
+            lines.push(
+                `    ${round.id}  ${round.kind} ${round.started_at}  created ${round.counts.created}, ` +
+                    `updated ${round.counts.updated}, deleted ${round.counts.deleted}, ` +
+                    `skipped ${round.counts.skipped}, failed ${round.counts.failed}`,
+            );
+        }
     }
     if (status.cursor_taken_at) {
         lines.push(`changes read since: ${status.cursor_taken_at}`);
@@ -258,4 +317,54 @@ export function registerContentSourcesCommand(program: Command) {
             const status = await (await getClient(program)).contentSources.status(id);
             console.log(options.json ? JSON.stringify(status, null, 2) : describeStatus(status));
         });
+
+    command
+        .command('report <id> [round]')
+        .description(
+            'List what a sync round did with each file: created, updated, deleted, skipped or failed. ' +
+                'Defaults to the current round, or the last one; round IDs are in the status.',
+        )
+        .option('--action <action>', `Only one action: ${REPORT_ACTIONS.join(', ')}`)
+        .option('--limit <count>', 'Stop after this many entries')
+        .option('--json', 'Print the entries as JSON')
+        .action(
+            async (
+                id: string,
+                round: string | undefined,
+                options: { action?: string; limit?: string; json?: boolean },
+            ) => {
+                const action = parseAction(options.action);
+                const limit = parseLimit(options.limit);
+                const client = await getClient(program);
+                let roundId = round;
+                if (!roundId) {
+                    const status = await client.contentSources.status(id);
+                    roundId = status.current_round?.id ?? status.last_round?.id;
+                    if (!roundId) {
+                        throw new Error('This source has no round with a report yet');
+                    }
+                }
+                const entries: ContentSourceReportEntry[] = [];
+                let cursor: string | undefined;
+                do {
+                    const remaining = limit === undefined ? REPORT_PAGE_SIZE : limit - entries.length;
+                    const page = await client.contentSources.report(id, roundId, {
+                        ...(action ? { action } : {}),
+                        ...(cursor ? { cursor } : {}),
+                        limit: Math.min(REPORT_PAGE_SIZE, remaining),
+                    });
+                    entries.push(...page.entries);
+                    cursor = page.next_cursor;
+                } while (cursor && (limit === undefined || entries.length < limit));
+
+                if (options.json) {
+                    print({ round_id: roundId, entries, ...(cursor ? { truncated: true } : {}) });
+                    return;
+                }
+                console.log(`round ${roundId}: ${entries.length} entries${cursor ? ' (more not shown)' : ''}`);
+                for (const entry of entries) {
+                    console.log(describeEntry(entry));
+                }
+            },
+        );
 }

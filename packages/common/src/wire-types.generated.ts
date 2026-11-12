@@ -2373,15 +2373,18 @@ export type ContentSourceStatus = {
     state: 'not_started' | 'running' | 'waiting' | 'stopped';
     current_round?: ContentSourceSyncRound | undefined;
     last_round?: ContentSourceSyncRound | undefined;
+    recent_rounds?: ContentSourceSyncRound[] | undefined;
     cursor_taken_at?: string | undefined;
     next_sync_at?: string | undefined;
     error?: string | undefined;
 };
 export type ContentSourceSyncRound = {
+    id?: string | undefined;
     kind: 'import' | 'update';
     started_at: string;
     finished_at?: string | undefined;
     counts: ContentSourceSyncCounts;
+    skipped_by_reason?: Record<string, number> | undefined;
     swept?: boolean | undefined;
     error?: string | undefined;
 };
@@ -2393,6 +2396,29 @@ export type ContentSourceSyncCounts = {
     deleted: number;
     skipped: number;
     failed: number;
+};
+/** A page of the files a sync round created, updated, deleted, skipped or failed. */
+export type ContentSourceReport = {
+    round_id: string;
+    entries: ContentSourceReportEntry[];
+    next_cursor?: string | undefined;
+};
+export type ContentSourceReportEntry = {
+    action: ContentSourceReportAction;
+    kind: 'file' | 'folder';
+    item_id: string;
+    name: string;
+    path?: string | undefined;
+    object_id?: string | undefined;
+    changes?: ('name' | 'location' | 'content')[] | undefined;
+    reason?: string | undefined;
+    error?: string | undefined;
+};
+export type ContentSourceReportAction = 'created' | 'updated' | 'deleted' | 'skipped' | 'failed';
+export type ContentSourceReportQuery = {
+    action?: ContentSourceReportAction | undefined;
+    cursor?: string | undefined;
+    limit?: number | undefined;
 };
 export type CostAnalyticsQuery = {
     from?: string | number | undefined;
@@ -12512,6 +12538,10 @@ export interface ApiComponentTypes {
     ContentSourceSyncCounts: ContentSourceSyncCounts;
     ContentSourceSyncRound: ContentSourceSyncRound;
     ContentSourceStatus: ContentSourceStatus;
+    ContentSourceReportAction: ContentSourceReportAction;
+    ContentSourceReportEntry: ContentSourceReportEntry;
+    ContentSourceReportQuery: ContentSourceReportQuery;
+    ContentSourceReport: ContentSourceReport;
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;

@@ -38572,6 +38572,10 @@
   "ContentSourceSyncRound": {
     "type": "object",
     "properties": {
+      "id": {
+        "type": "string",
+        "description": "Identifies the round's report, read with `GET /content-sources/{id}/rounds/{roundId}/report`. Absent on rounds that started before reports existed."
+      },
       "kind": {
         "type": "string",
         "enum": [
@@ -38590,6 +38594,15 @@
       },
       "counts": {
         "$ref": "#/components/schemas/ContentSourceSyncCounts"
+      },
+      "skipped_by_reason": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "description": "The skipped files by reason: `package`, `not_a_file`, `too_large`, `unsupported_type`, or another reason a system reports."
       },
       "swept": {
         "type": "boolean",
@@ -38625,6 +38638,13 @@
       "last_round": {
         "$ref": "#/components/schemas/ContentSourceSyncRound"
       },
+      "recent_rounds": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceSyncRound"
+        },
+        "description": "The last 10 finished rounds, newest first. Their reports are kept; older ones are deleted."
+      },
       "cursor_taken_at": {
         "type": "string",
         "format": "date-time",
@@ -38644,6 +38664,120 @@
     ],
     "additionalProperties": false,
     "description": "A content source's sync state."
+  },
+  "ContentSourceReportAction": {
+    "type": "string",
+    "enum": [
+      "created",
+      "updated",
+      "deleted",
+      "skipped",
+      "failed"
+    ],
+    "description": "What a sync round did with a file."
+  },
+  "ContentSourceReportEntry": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "$ref": "#/components/schemas/ContentSourceReportAction"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "file",
+          "folder"
+        ],
+        "description": "`folder` only for a folder that could not be listed, with its `error`."
+      },
+      "item_id": {
+        "type": "string",
+        "description": "The file's or folder's ID in the external system."
+      },
+      "name": {
+        "type": "string"
+      },
+      "path": {
+        "type": "string",
+        "description": "The folder's path below the source's folder; empty for the source's folder itself."
+      },
+      "object_id": {
+        "type": "string",
+        "description": "The document of the file."
+      },
+      "changes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "name",
+            "location",
+            "content"
+          ]
+        },
+        "description": "`updated`: what changed. `content` means the file is processed again."
+      },
+      "reason": {
+        "type": "string",
+        "description": "`skipped`: why the file is not synced (`package`, `not_a_file`, `too_large`, `unsupported_type`). `deleted`: `file_deleted` (deleted, moved out or no longer synced) or `duplicate`."
+      },
+      "error": {
+        "type": "string",
+        "description": "`failed`: why."
+      }
+    },
+    "required": [
+      "action",
+      "kind",
+      "item_id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "A file a sync round created, updated, deleted, skipped or failed."
+  },
+  "ContentSourceReportQuery": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "$ref": "#/components/schemas/ContentSourceReportAction",
+        "description": "Only the entries of this action."
+      },
+      "cursor": {
+        "type": "string",
+        "description": "The `next_cursor` of the previous page."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1000,
+        "description": "Entries per page; 200 when absent."
+      }
+    },
+    "additionalProperties": false
+  },
+  "ContentSourceReport": {
+    "type": "object",
+    "properties": {
+      "round_id": {
+        "type": "string"
+      },
+      "entries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceReportEntry"
+        }
+      },
+      "next_cursor": {
+        "type": "string",
+        "description": "Present when more entries follow."
+      }
+    },
+    "required": [
+      "round_id",
+      "entries"
+    ],
+    "additionalProperties": false,
+    "description": "A page of the files a sync round created, updated, deleted, skipped or failed. Unchanged files are only counted, in the round's `counts`. A round still running has a partial report."
   },
   "CollectionSecuritySettingsResponse": {
     "type": "object",
