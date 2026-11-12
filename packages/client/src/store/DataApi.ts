@@ -28,6 +28,7 @@ import {
 } from '@vertesia/common';
 import { withImportId } from '../idempotency-key.js';
 import { DashboardApi } from './DashboardApi.js';
+import { dataApiBaseUrl } from './data-server.js';
 
 /**
  * Client API for managing versioned analytical data stores.
@@ -37,10 +38,13 @@ import { DashboardApi } from './DashboardApi.js';
  * - Multi-table atomic imports
  * - Version history and rollback
  * - Named snapshots
+ *
+ * Every call goes to the data server (see `dataServerBaseUrl`), which answers the query calls and forwards the
+ * rest to zeno-server.
  */
 export class DataApi extends ApiTopic {
     constructor(parent: ClientBase) {
-        super(parent, '/api/v1/data');
+        super(parent, dataApiBaseUrl(parent.baseUrl));
     }
 
     /**

@@ -19,6 +19,7 @@ import {
     type PromoteDashboardVersionPayload,
     type UpdateDashboardPayload,
 } from '@vertesia/common';
+import { dataApiBaseUrl } from './data-server.js';
 
 /**
  * Client API for managing Vega-based dashboards linked to data stores.
@@ -35,7 +36,7 @@ export class DashboardApi extends ApiTopic {
     private readonly storeId: string;
 
     constructor(parent: ClientBase, storeId: string) {
-        super(parent, `/api/v1/data/${storeId}/dashboards`);
+        super(parent, `${dataApiBaseUrl(parent.baseUrl)}/${storeId}/dashboards`);
         this.storeId = storeId;
     }
 
