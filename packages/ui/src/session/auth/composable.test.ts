@@ -367,6 +367,23 @@ describe('getComposableToken', () => {
         expect(error).toMatchObject({ email: 'jane@agency.gov', idToken: identityToken, displayName: 'Jane Doe' });
     });
 
+    it('preserves the invited account and project through ensure-user and the token retry', async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValueOnce(new Response('User not found', { status: 404 }))
+            .mockResolvedValueOnce(Response.json({ action: 'created' }, { status: 201 }))
+            .mockResolvedValueOnce(Response.json({ token: 'scoped-token' }));
+        vi.stubGlobal('fetch', fetchMock);
+        const { fetchComposableToken } = await importComposableAuth();
+        const scope = { account_id: 'account-id', project_id: 'project-id' };
+        await expect(
+            fetchComposableToken(async () => 'provider-token', scope.account_id, scope.project_id),
+        ).resolves.toBe('scoped-token');
+        expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual(scope);
+        expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toMatchObject(scope);
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
     it('reports an invite-required refusal with the address from the token', async () => {
         const identityToken = makeJwt({ email: 'sam@example.gov', name: 'Sam' });
         vi.stubGlobal(
