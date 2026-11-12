@@ -30,6 +30,7 @@ export * from './audit-trail.js';
 export * from './browser-credentials.js';
 export * from './common.js';
 export * from './content-query.js';
+export * from './content-sources.js';
 export * from './cost-analytics.js';
 export * from './custom-roles.js';
 export * from './data-platform.js';

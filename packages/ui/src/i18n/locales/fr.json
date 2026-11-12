@@ -754,6 +754,8 @@
     "store.successfullyExportedTo": "Exporté avec succès au format {{format}}",
     "store.syncMemberHeads": "Synchroniser les versions membres",
     "store.syncMemberHeadsDescription": "Lorsqu'une nouvelle version HEAD d'un membre est créée, la collection sera mise à jour pour pointer vers la nouvelle version HEAD.",
+    "store.syncedFromBox": "Synchronisé depuis Box",
+    "store.syncedFromSharePoint": "Synchronisé depuis SharePoint",
     "store.tableLayout": "Disposition du tableau",
     "store.tableLayoutDescription": "Définissez une disposition personnalisée pour l'affichage de la collection dans les tableaux.",
     "store.tableLayoutUpdated": "Disposition du tableau mise à jour",

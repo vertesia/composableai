@@ -749,6 +749,8 @@
     "store.successfullyExportedTo": "{{format}}(으)로 성공적으로 내보냈습니다",
     "store.syncMemberHeads": "멤버 HEAD 동기화",
     "store.syncMemberHeadsDescription": "멤버의 새 HEAD 버전이 생성되면 컬렉션이 새 HEAD를 가리키도록 업데이트됩니다.",
+    "store.syncedFromBox": "Box에서 동기화됨",
+    "store.syncedFromSharePoint": "SharePoint에서 동기화됨",
     "store.tableLayout": "테이블 레이아웃",
     "store.tableLayoutDescription": "테이블에서 컬렉션을 표시하기 위한 사용자 정의 레이아웃을 정의합니다.",
     "store.tableLayoutUpdated": "테이블 레이아웃이 업데이트되었습니다",
