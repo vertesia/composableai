@@ -248,6 +248,7 @@ import {
 } from './commands.js';
 import * as ContentSchemas from './content.js';
 import * as ContentQuerySchemas from './content-query.js';
+import * as ContentSourceSchemas from './content-sources.js';
 import {
     CostAnalyticsQuerySchema,
     CostAnalyticsResponseSchema,
@@ -1997,6 +1998,26 @@ const EVENT_INGEST_SCHEMAS = {
     EventIngestChannelArray: EventSchemas.EventIngestChannelArraySchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const CONTENT_SOURCE_SCHEMAS = {
+    ContentSourceSyncSettings: ContentSourceSchemas.ContentSourceSyncSettingsSchema,
+    SharePointContentSource: ContentSourceSchemas.SharePointContentSourceSchema,
+    BoxContentSource: ContentSourceSchemas.BoxContentSourceSchema,
+    ExternalContentSource: ContentSourceSchemas.ExternalContentSourceSchema,
+    ExternalContentSourceArray: ContentSourceSchemas.ExternalContentSourceArraySchema,
+    CreateSharePointContentSourcePayload: ContentSourceSchemas.CreateSharePointContentSourcePayloadSchema,
+    CreateBoxContentSourcePayload: ContentSourceSchemas.CreateBoxContentSourcePayloadSchema,
+    CreateContentSourcePayload: ContentSourceSchemas.CreateContentSourcePayloadSchema,
+    UpdateContentSourcePayload: ContentSourceSchemas.UpdateContentSourcePayloadSchema,
+    SyncContentSourcePayload: ContentSourceSchemas.SyncContentSourcePayloadSchema,
+    ContentSourceSyncCounts: ContentSourceSchemas.ContentSourceSyncCountsSchema,
+    ContentSourceSyncRound: ContentSourceSchemas.ContentSourceSyncRoundSchema,
+    ContentSourceStatus: ContentSourceSchemas.ContentSourceStatusSchema,
+    ContentSourceReportAction: ContentSourceSchemas.ContentSourceReportActionSchema,
+    ContentSourceReportEntry: ContentSourceSchemas.ContentSourceReportEntrySchema,
+    ContentSourceReportQuery: ContentSourceSchemas.ContentSourceReportQuerySchema,
+    ContentSourceReport: ContentSourceSchemas.ContentSourceReportSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const COLLECTION_SCHEMAS = {
     CollectionSecuritySettingsResponse: ContentSchemas.CollectionSecuritySettingsResponseSchema,
     CollectionMembersUpdateResult: ContentSchemas.CollectionMembersUpdateResultSchema,
@@ -2661,6 +2682,7 @@ const API_SCHEMA_GROUPS = [
     PROCESS_RUNTIME_SCHEMAS,
     EVENT_DELIVERY_SCHEMAS,
     EVENT_INGEST_SCHEMAS,
+    CONTENT_SOURCE_SCHEMAS,
     COLLECTION_SCHEMAS,
     AGENT_ARTIFACT_SCHEMAS,
     AGENT_RUN_SCHEMAS,
@@ -2691,6 +2713,19 @@ const API_SCHEMAS: Readonly<Record<string, z.ZodType>> = mergeComponentGroups(AP
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'ContentSourceSyncSettings',
+    'SharePointContentSource',
+    'BoxContentSource',
+    'CreateSharePointContentSourcePayload',
+    'CreateBoxContentSourcePayload',
+    'UpdateContentSourcePayload',
+    'SyncContentSourcePayload',
+    'ContentSourceSyncCounts',
+    'ContentSourceSyncRound',
+    'ContentSourceStatus',
+    'ContentSourceReportEntry',
+    'ContentSourceReportQuery',
+    'ContentSourceReport',
     'CustomRoleDefinition',
     'CreateCustomRolePayload',
     'UpdateCustomRolePayload',

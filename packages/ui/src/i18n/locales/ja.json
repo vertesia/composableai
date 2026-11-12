@@ -749,6 +749,8 @@
     "store.successfullyExportedTo": "{{format}}に正常にエクスポートしました",
     "store.syncMemberHeads": "メンバーHEADを同期",
     "store.syncMemberHeadsDescription": "メンバーの新しいHEADバージョンが作成されると、コレクションは新しいHEADを指すように更新されます。",
+    "store.syncedFromBox": "Box から同期",
+    "store.syncedFromSharePoint": "SharePoint から同期",
     "store.tableLayout": "テーブルレイアウト",
     "store.tableLayoutDescription": "テーブルでのコレクション表示用のカスタムレイアウトを定義します。",
     "store.tableLayoutUpdated": "テーブルレイアウトが更新されました",

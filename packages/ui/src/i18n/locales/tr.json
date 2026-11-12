@@ -749,6 +749,8 @@
     "store.successfullyExportedTo": "{{format}} olarak başarıyla dışa aktarıldı",
     "store.syncMemberHeads": "Üye Başlıklarını Senkronize Et",
     "store.syncMemberHeadsDescription": "Bir üyenin yeni HEAD sürümü oluşturulduğunda koleksiyon yeni HEAD'i gösterecek şekilde güncellenir.",
+    "store.syncedFromBox": "Box'tan eşitlendi",
+    "store.syncedFromSharePoint": "SharePoint'ten eşitlendi",
     "store.tableLayout": "Tablo Düzeni",
     "store.tableLayoutDescription": "Koleksiyonun tablolarda görüntülenmesi için özel bir düzen tanımlayın.",
     "store.tableLayoutUpdated": "Tablo Düzeni güncellendi",

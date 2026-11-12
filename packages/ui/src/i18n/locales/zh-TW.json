@@ -749,6 +749,8 @@
     "store.successfullyExportedTo": "已成功匯出為{{format}}",
     "store.syncMemberHeads": "同步成員HEAD",
     "store.syncMemberHeadsDescription": "當成員的新HEAD版本被建立時，集合將更新為指向新的HEAD。",
+    "store.syncedFromBox": "從 Box 同步",
+    "store.syncedFromSharePoint": "從 SharePoint 同步",
     "store.tableLayout": "表格佈局",
     "store.tableLayoutDescription": "定義用於在表格中顯示集合的自訂佈局。",
     "store.tableLayoutUpdated": "表格佈局已更新",
