@@ -28,6 +28,16 @@ export const SuccessResponseSchema = z
     .meta({ id: 'SuccessResponse' });
 
 /**
+ * Extra parameters for the client_credentials token request, such as Box's `box_subject_type` and
+ * `box_subject_id`. One schema for the read and the write shapes: they are not secret, so they come back
+ * as they were sent. The limits in the description are enforced by the server, which answers a 400.
+ */
+const oauthProviderTokenParamsSchema = z.record(z.string(), z.string()).meta({
+    description:
+        "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them.",
+});
+
+/**
  * How Vertesia authenticates to the provider's token endpoint, named as in RFC 7591 §2.
  *
  * - `client_secret_post`: `client_secret` in the request body (the default).
@@ -105,6 +115,7 @@ export const OAuthProviderDataSchema = z.strictObject({
             'Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow. Only applies to authorization_code flow. Defaults to true.',
     }),
     revocation_endpoint: z.string().meta({ description: 'Optional OAuth 2.0 revocation endpoint URL.' }).optional(),
+    token_params: oauthProviderTokenParamsSchema.optional(),
     created_at: z.string(),
     updated_at: z.string(),
 });
@@ -156,6 +167,7 @@ const oauthProviderPayloadSchema = z.strictObject({
     default_scopes: z.array(z.string()).optional(),
     use_pkce: z.boolean().optional(),
     revocation_endpoint: z.string().optional(),
+    token_params: oauthProviderTokenParamsSchema.optional(),
 });
 
 /**

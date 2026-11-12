@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { registerAgentsCommand } from './agents/index.js';
 import { registerAppsCommand } from './apps/index.js';
 import { registerArtifactsCommand } from './artifacts/index.js';
+import { registerContentSourcesCommand } from './content-sources/index.js';
 import { registerDataCommand } from './data/index.js';
 import { registerEnvsCommand } from './envs/index.js';
 import { registerEventsCommand } from './events/index.js';
@@ -216,6 +217,7 @@ registerAgentsCommand(program);
 registerArtifactsCommand(program);
 registerDataCommand(program);
 registerEventsCommand(program);
+registerContentSourcesCommand(program);
 registerExportCommand(program);
 registerIamCommand(program);
 
