@@ -27,7 +27,7 @@ function getRuntimeDataServerUrl() {
 export function dataServerBaseUrl(storeBaseUrl: string): string {
     const override = getRuntimeDataServerUrl();
     if (override) {
-        return override.replace(/\/+$/, '');
+        return trimTrailingSlashes(override);
     }
     if (isDataServerBranchStore(storeBaseUrl)) {
         return storeBaseUrl.replace(/zeno-server/, 'data-server');
@@ -54,5 +54,14 @@ const DATA_SERVER_BRANCH_DOMAIN = '.api.dev1.vertesia.io';
 
 /** The absolute base URL of the data store API for a store base URL: the data server's {@link DATA_API_PATH}. */
 export function dataApiBaseUrl(storeBaseUrl: string): string {
-    return `${dataServerBaseUrl(storeBaseUrl).replace(/\/+$/, '')}${DATA_API_PATH}`;
+    return `${trimTrailingSlashes(dataServerBaseUrl(storeBaseUrl))}${DATA_API_PATH}`;
+}
+
+/** A URL without its trailing slashes. A loop, not a regular expression: `/\/+$/` backtracks on a long run of slashes. */
+function trimTrailingSlashes(url: string): string {
+    let end = url.length;
+    while (end > 0 && url.charCodeAt(end - 1) === 47) {
+        end--;
+    }
+    return url.slice(0, end);
 }

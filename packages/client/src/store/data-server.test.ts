@@ -57,6 +57,12 @@ describe('dataServerBaseUrl', () => {
         expect(dataServerBaseUrl('https://api.vertesia.io')).toBe('http://127.0.0.1:8209');
     });
 
+    it('drops every trailing slash of DATA_SERVER_URL, however many', () => {
+        vi.stubEnv('DATA_SERVER_URL', `http://127.0.0.1:8209${'/'.repeat(50_000)}`);
+        expect(dataServerBaseUrl('http://localhost:8092')).toBe('http://127.0.0.1:8209');
+        expect(dataApiBaseUrl('http://localhost:8092')).toBe('http://127.0.0.1:8209/api/v1/data');
+    });
+
     it('switches the derivation off when DATA_SERVER_URL points back at the store', () => {
         vi.stubEnv('DATA_SERVER_URL', BRANCH_STORE);
         expect(dataServerBaseUrl(BRANCH_STORE)).toBe(BRANCH_STORE);
