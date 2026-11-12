@@ -16,7 +16,7 @@ export const ContentSourceSyncSettingsSchema = z
             .int()
             .min(CONTENT_SOURCE_MIN_SYNC_INTERVAL_MINUTES)
             .max(CONTENT_SOURCE_MAX_SYNC_INTERVAL_MINUTES)
-            .meta({ description: 'Minutes between the end of one sync and the start of the next.' }),
+            .meta({ description: 'Minutes between two scheduled syncs, from one scheduled time to the next.' }),
     })
     .meta({
         id: 'ContentSourceSyncSettings',

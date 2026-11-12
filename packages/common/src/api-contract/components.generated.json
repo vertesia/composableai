@@ -38240,7 +38240,7 @@
         "type": "integer",
         "minimum": 15,
         "maximum": 10080,
-        "description": "Minutes between the end of one sync and the start of the next."
+        "description": "Minutes between two scheduled syncs, from one scheduled time to the next."
       }
     },
     "required": [
