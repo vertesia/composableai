@@ -38,6 +38,24 @@ const oauthProviderTokenParamsSchema = z.record(z.string(), z.string()).meta({
 });
 
 /**
+ * How Vertesia authenticates to the provider's token endpoint, named as in RFC 7591 §2.
+ *
+ * - `client_secret_post`: `client_secret` in the request body (the default).
+ * - `private_key_jwt`: a JWT signed with the provider's private key, sent as `client_assertion` (RFC 7523 §2.2,
+ *   OpenID Connect Core §9). Supported for the client_credentials grant.
+ */
+const tokenEndpointAuthMethodSchema = z.enum(['client_secret_post', 'private_key_jwt']).meta({
+    description:
+        "How Vertesia authenticates to the token endpoint (RFC 7591 names).\n- 'client_secret_post': the client_secret in the request body (default).\n- 'private_key_jwt': a JWT client assertion signed with the private key (RFC 7523). client_credentials grant only.",
+});
+
+/** The JWS algorithm of the client assertion. RS256 and PS256 need an RSA key, ES256 a P-256 key. */
+const tokenEndpointAuthSigningAlgSchema = z.enum(['RS256', 'PS256', 'ES256']).meta({
+    description:
+        'The JWS algorithm that signs the client assertion of private_key_jwt. Defaults to RS256 for an RSA key and ES256 for a P-256 key. Microsoft Entra ID recommends PS256.',
+});
+
+/**
  * A provider's stored configuration, without its id.
  *
  * Split from {@link OAuthProviderSchema} because `OAuthProvider extends OAuthProviderData` in the
@@ -74,6 +92,19 @@ export const OAuthProviderDataSchema = z.strictObject({
     has_client_secret: z
         .boolean()
         .meta({ description: 'Whether a client_secret is configured (never exposes the actual secret).' })
+        .optional(),
+    token_endpoint_auth_method: tokenEndpointAuthMethodSchema.optional(),
+    token_endpoint_auth_signing_alg: tokenEndpointAuthSigningAlgSchema.optional(),
+    has_private_key: z
+        .boolean()
+        .meta({ description: 'Whether a private key for private_key_jwt is configured (never exposes the key).' })
+        .optional(),
+    certificate: z
+        .string()
+        .meta({
+            description:
+                'The PEM X.509 certificate of the private key. Public. When set, the client assertion names it with an x5t#S256 header (RFC 7515 §4.1.8).',
+        })
         .optional(),
     default_scopes: z
         .array(z.string())
@@ -117,6 +148,22 @@ const oauthProviderPayloadSchema = z.strictObject({
                 'Optional client secret for confidential clients. Will be encrypted at rest and never returned in API responses.',
         })
         .optional(),
+    token_endpoint_auth_method: tokenEndpointAuthMethodSchema.optional(),
+    token_endpoint_auth_signing_alg: tokenEndpointAuthSigningAlgSchema.optional(),
+    private_key: z
+        .string()
+        .meta({
+            description:
+                'PEM private key (PKCS#8 or PKCS#1) that signs the client assertion of private_key_jwt: RSA of 2048 bits or more, or EC P-256. Encrypted at rest and never returned in API responses.',
+        })
+        .optional(),
+    certificate: z
+        .string()
+        .meta({
+            description:
+                'PEM X.509 certificate of the private key, as uploaded to the provider (for example a Microsoft Entra app registration). Its public key must match the private key.',
+        })
+        .optional(),
     default_scopes: z.array(z.string()).optional(),
     use_pkce: z.boolean().optional(),
     revocation_endpoint: z.string().optional(),
@@ -154,7 +201,7 @@ export const UpdateOAuthProviderPayloadSchema = oauthProviderPayloadSchema
     .meta({
         id: 'UpdateOAuthProviderPayload',
         description:
-            'Payload for updating an OAuth Provider. All fields are optional — only provided fields are updated. To clear the client_secret, set it to an empty string.',
+            'Payload for updating an OAuth Provider. All fields are optional — only provided fields are updated. To clear the client_secret, private_key or certificate, set it to an empty string.',
     });
 
 export const OAuthProviderAuthStatusSchema = z
