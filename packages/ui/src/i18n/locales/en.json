@@ -1111,6 +1111,8 @@
     "store.successfullyExportedTo": "Successfully exported to {{format}}",
     "store.syncMemberHeads": "Synchronize Member Heads",
     "store.syncMemberHeadsDescription": "When a new HEAD version of a member is created the collection will be updated to point to the new HEAD.",
+    "store.syncedFromBox": "Synced from Box",
+    "store.syncedFromSharePoint": "Synced from SharePoint",
     "store.tableLayout": "Table Layout",
     "store.tableLayoutDescription": "Define a custom layout for displaying the collection in tables.",
     "store.tableLayoutUpdated": "Table Layout updated",
