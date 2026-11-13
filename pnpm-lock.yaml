@@ -36,7 +36,7 @@ overrides:
   '@types/koa@<3.0.3': ^3.0.3
   vite: 8.1.6
   '@ungap/structured-clone@<=1.3.0': ^1.3.1
-  '@hono/node-server@<2.1.3': 2.1.5
+  '@hono/node-server@<2.1.6': 2.1.6
   re2js@>=2.2.0 <2.8.7: 2.9.0
   browserslist@<4.28.7: 4.28.8
   hono@<4.13.13: 4.13.13
@@ -364,8 +364,8 @@ importers:
         version: 4.6.7
     devDependencies:
       '@hono/node-server':
-        specifier: ^2.1.5
-        version: 2.1.5(hono@4.13.13)
+        specifier: ^2.1.6
+        version: 2.1.6(hono@4.13.13)
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -1225,8 +1225,8 @@ importers:
   templates/plugin-template:
     dependencies:
       '@hono/node-server':
-        specifier: ^2.1.5
-        version: 2.1.5(hono@4.13.13)
+        specifier: ^2.1.6
+        version: 2.1.6(hono@4.13.13)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -2006,8 +2006,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  '@hono/node-server@2.1.5':
-    resolution: {integrity: sha512-MgP/I06GdvsilDspMk/qmRzpk8LOUStP6jFAbSRi40W09DhoyUn+Mj7eyKICPqeYKybOjVFLVIAQzvu1bfIa7Q==}
+  '@hono/node-server@2.1.6':
+    resolution: {integrity: sha512-p/KH9MnfNcsm3sR6x4lNgm5j+QN4Et8srKredl9DZfXiyZ1UQ3aQ2YVpFLbqktYN5JI+DB+VZFKM2PqE5hLKjQ==}
     engines: {node: '>=20'}
     peerDependencies:
       hono: 4.13.13
@@ -8147,13 +8147,13 @@ snapshots:
       protobufjs: 7.6.5
       yargs: 17.7.2
 
-  '@hono/node-server@2.1.5(hono@4.13.13)':
+  '@hono/node-server@2.1.6(hono@4.13.13)':
     dependencies:
       hono: 4.13.13
 
   '@hono/vite-dev-server@0.26.1(hono@4.13.13)':
     dependencies:
-      '@hono/node-server': 2.1.5(hono@4.13.13)
+      '@hono/node-server': 2.1.6(hono@4.13.13)
       hono: 4.13.13
       minimatch: 11.0.3
 

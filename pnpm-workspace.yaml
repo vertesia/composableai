@@ -90,7 +90,9 @@ overrides:
   "@ungap/structured-clone@<=1.3.0": ^1.3.1 #CWE-502 and package deprecation, won't show as CVE.
   # GHSA-rmxm-3fg6-px4f: serveStatic decoded the request path twice, bypassing middleware on static paths.
   # No 1.x release is patched; the previous floor already moved 1.x consumers to 2.x.
-  "@hono/node-server@<2.1.3": 2.1.5
+  # GHSA-qv5m-9pm6-hqp3 (WebSocket-upgrade ECONNRESET crash) and GHSA-jpvv-r467-5p4w (backslash path
+  # separator bypassing proxy path rules) are fixed in 2.1.6.
+  "@hono/node-server@<2.1.6": 2.1.6
   # GHSA-gg6h-894w-4m9c: quadratic-time lookbehind matching (reached through firebase > @firebase/firestore).
   "re2js@>=2.2.0 <2.8.7": 2.9.0
   # GHSA-c83g-rgw3-j3cx + GHSA-73wf-gq98-2v4g (unbounded query cache and unsafe custom stats).
