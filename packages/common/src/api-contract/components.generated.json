@@ -3399,7 +3399,8 @@
           "type": "string"
         }
       }
-    }
+    },
+    "additionalProperties": true
   },
   "TextFallbackOptions": {
     "type": "object",
@@ -9308,7 +9309,8 @@
         "$ref": "#/components/schemas/StringValueMap",
         "description": "Custom HTTP headers sent by OpenAI-compatible environments."
       }
-    }
+    },
+    "additionalProperties": true
   },
   "ExecutionEnvironment": {
     "type": "object",
@@ -13467,6 +13469,7 @@
         "description": "Resources this tool created/updated/deleted, surfaced as deep links in the UI."
       }
     },
+    "additionalProperties": true,
     "description": "Metadata a tool executor may attach to its result. Kept as an open record for forward compatibility while typing the fields the runtime interprets."
   },
   "ToolResult": {
@@ -32300,7 +32303,8 @@
           "failed"
         ]
       }
-    }
+    },
+    "additionalProperties": true
   },
   "CompactMessage": {
     "type": "object",
@@ -50518,7 +50522,8 @@
       "output_format": {
         "$ref": "#/components/schemas/DocProcessorOutputFormat"
       }
-    }
+    },
+    "additionalProperties": true
   },
   "MarkdownRenditionFormat": {
     "type": "string",

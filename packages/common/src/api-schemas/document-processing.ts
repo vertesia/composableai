@@ -341,8 +341,9 @@ export const RenderMarkdownStatusResponseSchema = z
         description: 'Polled status response for markdown rendering workflow.',
     });
 
-/** Query components validate declared fields without rejecting unrelated query parameters. */
-export const RenderMarkdownStatusQuerySchema = z.looseObject({
+// A plain `object`, like every other query component: a query that is not listed as strict already
+// accepts unrelated parameters, so `looseObject` would only publish an openness nobody chose.
+export const RenderMarkdownStatusQuerySchema = z.object({
     workflow_id: z.string(),
     workflow_run_id: z.string(),
 });
