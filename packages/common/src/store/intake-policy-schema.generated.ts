@@ -352,6 +352,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['5m', '1h'],
                 },
+                native_compaction: {
+                    type: 'boolean',
+                },
                 speed: {
                     type: 'string',
                     enum: ['standard', 'fast'],
@@ -487,6 +490,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 cache_ttl: {
                     type: 'string',
                     enum: ['5m', '1h'],
+                },
+                native_compaction: {
+                    type: 'boolean',
                 },
                 service_tier: {
                     type: 'string',
@@ -708,6 +714,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 cache_ttl: {
                     type: 'string',
                     enum: ['5m', '1h'],
+                },
+                native_compaction: {
+                    type: 'boolean',
                 },
             },
             additionalProperties: false,
@@ -1837,6 +1846,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['30m', '12h', 'in_memory', '24h'],
                 },
+                native_compaction: {
+                    type: 'boolean',
+                },
                 extra_body: {
                     type: 'object',
                     additionalProperties: true,
@@ -1898,6 +1910,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 cache_ttl: {
                     type: 'string',
                     enum: ['30m', '12h', 'in_memory', '24h'],
+                },
+                native_compaction: {
+                    type: 'boolean',
                 },
                 extra_body: {
                     type: 'object',
@@ -2162,6 +2177,9 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 cache_ttl: {
                     type: 'string',
                     enum: ['5m', '1h'],
+                },
+                native_compaction: {
+                    type: 'boolean',
                 },
             },
             additionalProperties: false,
