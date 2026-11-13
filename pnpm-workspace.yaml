@@ -97,8 +97,9 @@ overrides:
   "re2js@>=2.2.0 <2.8.7": 2.9.0
   # GHSA-c83g-rgw3-j3cx + GHSA-73wf-gq98-2v4g (unbounded query cache and unsafe custom stats).
   "browserslist@<4.28.7": 4.28.8
-  # GHSA-gqvv-2mrq-wpjv, GHSA-g6gw-c38x-mqfc, and GHSA-crvj-82cr-hjcx.
-  "hono@<4.13.13": 4.13.13
+  # GHSA-gqvv-2mrq-wpjv, GHSA-g6gw-c38x-mqfc, and GHSA-crvj-82cr-hjcx; 4.13.16 also fixes
+  # GHSA-3gg2-335m-rxc6, GHSA-46wx-v44x-9hh2, GHSA-4h7h-rv7c-7m2v, GHSA-4m76-xfj5-7975 and GHSA-h7mg-cq63-vhpq.
+  "hono@<4.13.16": 4.13.16
   # Brace-expansion denial-of-service advisories. Keep each consumer on its existing major line.
   "brace-expansion@>=2.0.0 <2.1.7": 2.1.7
   "brace-expansion@>=3.0.0 <5.0.12": 5.0.12
