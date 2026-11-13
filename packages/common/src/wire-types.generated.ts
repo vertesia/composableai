@@ -4360,6 +4360,10 @@ export type ConversationStripOptions = {
     text_max_tokens?: number | undefined;
     heartbeats_after_turns?: number | undefined;
 };
+/** On-demand compaction of a resumed conversation (`UserMessagePayload.compact_conversation`). */
+export type CompactConversationOptions = {
+    instructions?: string | undefined;
+};
 /**
  * Reference to an interaction in the catalog.
  * Used in catalog listing. The id is composed of the namespace and the interaction name.
@@ -4966,6 +4970,7 @@ export type UserMessagePayload = {
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
     message: string;
+    compact_conversation?: CompactConversationOptions | undefined;
     results?: ToolResult[] | undefined;
 };
 export type RunSource = {
@@ -5666,6 +5671,7 @@ export type OAuthProviderData = {
     has_private_key?: boolean | undefined;
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5689,6 +5695,7 @@ export type OAuthProvider = {
     has_private_key?: boolean | undefined;
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5713,6 +5720,7 @@ export type CreateOAuthProviderPayload = {
     private_key?: string | undefined;
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
     use_pkce?: boolean | undefined;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5735,6 +5743,7 @@ export type UpdateOAuthProviderPayload = {
     private_key?: string | undefined | undefined;
     certificate?: string | undefined | undefined;
     default_scopes?: string[] | undefined | undefined;
+    allowed_scopes?: string[] | undefined | undefined;
     use_pkce?: boolean | undefined | undefined;
     revocation_endpoint?: string | undefined | undefined;
     token_params?: Record<string, string> | undefined | undefined;
@@ -5765,6 +5774,10 @@ export type OAuthProviderAccessTokenResponse = {
 export type OAuthProviderExchangePayload = {
     code: string;
     state: string;
+};
+/** Optional body of the provider token request: a `scope` other than the provider's default scopes. */
+export type OAuthProviderTokenRequest = {
+    scope?: string | undefined;
 };
 export type SortOrder = 'asc' | 'desc';
 export type SortOption = {
@@ -11764,6 +11777,7 @@ export interface ApiComponentTypes {
     OAuthProviderAuthorizeResponse: OAuthProviderAuthorizeResponse;
     OAuthProviderAccessTokenResponse: OAuthProviderAccessTokenResponse;
     OAuthProviderExchangePayload: OAuthProviderExchangePayload;
+    OAuthProviderTokenRequest: OAuthProviderTokenRequest;
     OAuthClientType: OAuthClientType;
     OAuthClientStatus: OAuthClientStatus;
     OAuthRegistrationSource: OAuthRegistrationSource;
@@ -11969,6 +11983,7 @@ export interface ApiComponentTypes {
     InitialToolCall: InitialToolCall;
     ConversationVisibility: ConversationVisibility;
     ConversationStripOptions: ConversationStripOptions;
+    CompactConversationOptions: CompactConversationOptions;
     StreamingOptions: StreamingOptions;
     StreamingTelemetryContext: StreamingTelemetryContext;
     ResolvedRuntimeConfig: ResolvedRuntimeConfig;

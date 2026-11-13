@@ -3675,6 +3675,9 @@
           "5m",
           "1h"
         ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       }
     },
     "additionalProperties": false
@@ -4239,6 +4242,9 @@
           "1h"
         ]
       },
+      "native_compaction": {
+        "type": "boolean"
+      },
       "service_tier": {
         "type": "string",
         "minLength": 1,
@@ -4516,6 +4522,9 @@
           "5m",
           "1h"
         ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       }
     },
     "additionalProperties": false
@@ -4594,6 +4603,9 @@
           "in_memory",
           "24h"
         ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       },
       "extra_body": {
         "type": "object",
@@ -4794,6 +4806,9 @@
           "in_memory",
           "24h"
         ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       },
       "extra_body": {
         "type": "object",
@@ -5382,6 +5397,9 @@
           "5m",
           "1h"
         ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       },
       "speed": {
         "type": "string",
@@ -7229,6 +7247,14 @@
         },
         "description": "Default scopes to request during authorization."
       },
+      "allowed_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
+      },
       "use_pkce": {
         "type": "boolean",
         "description": "Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow. Only applies to authorization_code flow. Defaults to true."
@@ -7336,6 +7362,14 @@
           "type": "string"
         }
       },
+      "allowed_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
+      },
       "use_pkce": {
         "type": "boolean"
       },
@@ -7420,6 +7454,14 @@
         "items": {
           "type": "string"
         }
+      },
+      "allowed_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
       },
       "use_pkce": {
         "type": "boolean"
@@ -7508,6 +7550,18 @@
       "state"
     ],
     "additionalProperties": false
+  },
+  "OAuthProviderTokenRequest": {
+    "type": "object",
+    "properties": {
+      "scope": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "Space-separated scopes to request instead of default_scopes (RFC 6749 §3.3), for example a second resource of the same client. Each scope must be in the provider's default_scopes or allowed_scopes, otherwise the request fails with 400. client_credentials providers only. Omit it for the default scopes."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Optional body of the provider token request."
   },
   "OAuthClientType": {
     "type": "string",
@@ -13222,6 +13276,17 @@
     "additionalProperties": false,
     "description": "Configuration for stripping large data from conversation history to prevent JSON serialization issues and reduce storage bloat."
   },
+  "CompactConversationOptions": {
+    "type": "object",
+    "properties": {
+      "instructions": {
+        "type": "string",
+        "description": "Summarization prompt that replaces the provider's own. Claude only: OpenAI's compaction has no prompt, so it is left out there."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Compact the conversation with the provider's server-side compaction instead of answering it. The run continues from the compacted conversation: Claude's compaction block, or OpenAI's compacted items. The response reports `finish_reason: compaction`; its result is the summary text on Claude and empty on OpenAI, whose summary is encrypted."
+  },
   "StreamingOptions": {
     "type": "object",
     "properties": {
@@ -17001,7 +17066,11 @@
         "$ref": "#/components/schemas/AsyncCompletionOptions"
       },
       "message": {
-        "type": "string"
+        "type": "string",
+        "description": "The user message. It may be empty when `compact_conversation` is set: a non-empty message is added to the conversation before it is compacted."
+      },
+      "compact_conversation": {
+        "$ref": "#/components/schemas/CompactConversationOptions"
       },
       "results": {
         "type": "array",

@@ -5,6 +5,7 @@ import type {
     OAuthProviderAccessTokenResponse,
     OAuthProviderAuthorizeResponse,
     OAuthProviderAuthStatus,
+    OAuthProviderTokenRequest,
     SuccessResponse,
     UpdateOAuthProviderPayload,
 } from '@vertesia/common';
@@ -55,8 +56,12 @@ export default class OAuthProvidersApi extends ApiTopic {
         return this.post(`/${id}/connect`, { payload: {} });
     }
 
-    getToken(id: string): Promise<OAuthProviderAccessTokenResponse> {
-        return this.post(`/${id}/token`, { payload: {} });
+    /**
+     * Get an access token from the provider. With `scope`, asks for those scopes instead of the provider's default
+     * scopes; each must be in the provider's `default_scopes` or `allowed_scopes` (client_credentials providers only).
+     */
+    getToken(id: string, request: OAuthProviderTokenRequest = {}): Promise<OAuthProviderAccessTokenResponse> {
+        return this.post(`/${id}/token`, { payload: request });
     }
 
     disconnect(id: string): Promise<SuccessResponse> {
