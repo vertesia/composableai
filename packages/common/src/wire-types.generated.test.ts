@@ -1907,6 +1907,10 @@ interface Checks {
         W.ConversationStripOptions,
         z.infer<typeof import('./api-schemas/interaction.js').ConversationStripOptionsSchema>
     >;
+    CompactConversationOptions: Same<
+        W.CompactConversationOptions,
+        z.infer<typeof import('./api-schemas/interaction.js').CompactConversationOptionsSchema>
+    >;
     CatalogInteractionRef: Same<
         W.CatalogInteractionRef,
         z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefSchema>
@@ -6369,6 +6373,10 @@ interface Checks {
     'component:ConversationStripOptions': Same<
         W.ApiComponentTypes['ConversationStripOptions'],
         z.infer<typeof import('./api-schemas/interaction.js').ConversationStripOptionsSchema>
+    >;
+    'component:CompactConversationOptions': Same<
+        W.ApiComponentTypes['CompactConversationOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').CompactConversationOptionsSchema>
     >;
     'component:StreamingOptions': Same<
         W.ApiComponentTypes['StreamingOptions'],
@@ -11265,6 +11273,7 @@ const checks: Checks = {
     ProjectIntegrationConfigResponse: true,
     InteractionExecutionError: true,
     ConversationStripOptions: true,
+    CompactConversationOptions: true,
     CatalogInteractionRef: true,
     CatalogAgentSearchQuery: true,
     CatalogCallSearchQuery: true,
@@ -12467,6 +12476,7 @@ const checks: Checks = {
     'component:InitialToolCall': true,
     'component:ConversationVisibility': true,
     'component:ConversationStripOptions': true,
+    'component:CompactConversationOptions': true,
     'component:StreamingOptions': true,
     'component:StreamingTelemetryContext': true,
     'component:ResolvedRuntimeConfig': true,
