@@ -1907,6 +1907,10 @@ interface Checks {
         W.ConversationStripOptions,
         z.infer<typeof import('./api-schemas/interaction.js').ConversationStripOptionsSchema>
     >;
+    CompactConversationOptions: Same<
+        W.CompactConversationOptions,
+        z.infer<typeof import('./api-schemas/interaction.js').CompactConversationOptionsSchema>
+    >;
     CatalogInteractionRef: Same<
         W.CatalogInteractionRef,
         z.infer<typeof import('./api-schemas/interaction.js').CatalogInteractionRefSchema>
@@ -2427,6 +2431,10 @@ interface Checks {
     OAuthProviderExchangePayload: Same<
         W.OAuthProviderExchangePayload,
         z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderExchangePayloadSchema>
+    >;
+    OAuthProviderTokenRequest: Same<
+        W.OAuthProviderTokenRequest,
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderTokenRequestSchema>
     >;
     SortOrder: Same<W.SortOrder, z.infer<typeof import('./api-schemas/interaction.js').SortOrderSchema>>;
     SortOption: Same<W.SortOption, z.infer<typeof import('./api-schemas/interaction.js').SortOptionSchema>>;
@@ -5634,6 +5642,10 @@ interface Checks {
         W.ApiComponentTypes['OAuthProviderExchangePayload'],
         z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderExchangePayloadSchema>
     >;
+    'component:OAuthProviderTokenRequest': Same<
+        W.ApiComponentTypes['OAuthProviderTokenRequest'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderTokenRequestSchema>
+    >;
     'component:OAuthClientType': Same<
         W.ApiComponentTypes['OAuthClientType'],
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientTypeSchema>
@@ -6373,6 +6385,10 @@ interface Checks {
     'component:ConversationStripOptions': Same<
         W.ApiComponentTypes['ConversationStripOptions'],
         z.infer<typeof import('./api-schemas/interaction.js').ConversationStripOptionsSchema>
+    >;
+    'component:CompactConversationOptions': Same<
+        W.ApiComponentTypes['CompactConversationOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').CompactConversationOptionsSchema>
     >;
     'component:StreamingOptions': Same<
         W.ApiComponentTypes['StreamingOptions'],
@@ -11281,6 +11297,7 @@ const checks: Checks = {
     ProjectIntegrationConfigResponse: true,
     InteractionExecutionError: true,
     ConversationStripOptions: true,
+    CompactConversationOptions: true,
     CatalogInteractionRef: true,
     CatalogAgentSearchQuery: true,
     CatalogCallSearchQuery: true,
@@ -11421,6 +11438,7 @@ const checks: Checks = {
     OAuthProviderAuthorizeResponse: true,
     OAuthProviderAccessTokenResponse: true,
     OAuthProviderExchangePayload: true,
+    OAuthProviderTokenRequest: true,
     SortOrder: true,
     SortOption: true,
     RunSearchPayload: true,
@@ -12299,6 +12317,7 @@ const checks: Checks = {
     'component:OAuthProviderAuthorizeResponse': true,
     'component:OAuthProviderAccessTokenResponse': true,
     'component:OAuthProviderExchangePayload': true,
+    'component:OAuthProviderTokenRequest': true,
     'component:OAuthClientType': true,
     'component:OAuthClientStatus': true,
     'component:OAuthRegistrationSource': true,
@@ -12484,6 +12503,7 @@ const checks: Checks = {
     'component:InitialToolCall': true,
     'component:ConversationVisibility': true,
     'component:ConversationStripOptions': true,
+    'component:CompactConversationOptions': true,
     'component:StreamingOptions': true,
     'component:StreamingTelemetryContext': true,
     'component:ResolvedRuntimeConfig': true,
@@ -13585,6 +13605,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2821);
+        expect(Object.keys(checks)).toHaveLength(2825);
     });
 });
