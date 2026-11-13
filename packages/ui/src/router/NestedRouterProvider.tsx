@@ -4,7 +4,8 @@ import { FixLinks } from './FixLinks';
 import type { NavigateOptions } from './HistoryNavigator';
 import { createRoute404 } from './Route404';
 import { RouteComponent } from './RouteComponent';
-import { NestedRouter, ReactRouterContext, type Route, useRouterContext } from './Router';
+import { NestedRouter, ReactRouterContext, type Route, type RouterContext, useRouterContext } from './Router';
+import { TabsRouteBridge } from './TabsRouteBridge';
 
 interface RouterProviderProps {
     routes: Route[];
@@ -45,27 +46,30 @@ export function NestedRouterProvider({ routes, index, children, fixLinks = false
         ? (elem: React.ReactNode) => <FixLinks basePath={ctx.matchedRoutePath}>{elem}</FixLinks>
         : (elem: React.ReactNode) => elem;
 
+    const value = useMemo<RouterContext | undefined>(
+        () =>
+            nestedRouter && nestedRouteMatch
+                ? {
+                      ...ctx,
+                      router: nestedRouter,
+                      route: nestedRouteMatch.value,
+                      params: nestedRouteMatch.params,
+                      matchedRoutePath: `/${nestedRouteMatch.matchedSegments.join('/')}`,
+                      remainingPath: nestedRouteMatch.remainingSegments
+                          ? `/${nestedRouteMatch.remainingSegments.join('/')}`
+                          : undefined,
+                      navigate: (to: string, options?: NavigateOptions) => nestedRouter.navigate(to, options),
+                  }
+                : undefined,
+        [ctx, nestedRouter, nestedRouteMatch],
+    );
+
     return (
-        nestedRouter &&
-        nestedRouteMatch && (
-            <ReactRouterContext.Provider
-                value={{
-                    ...ctx,
-                    router: nestedRouter,
-                    route: nestedRouteMatch.value,
-                    params: nestedRouteMatch.params,
-                    matchedRoutePath: `/${nestedRouteMatch.matchedSegments.join('/')}`,
-                    remainingPath: nestedRouteMatch.remainingSegments
-                        ? `/${nestedRouteMatch.remainingSegments.join('/')}`
-                        : undefined,
-                    navigate: (to: string, options?: NavigateOptions) => {
-                        if (nestedRouter) {
-                            return nestedRouter.navigate(to, options);
-                        }
-                    },
-                }}
-            >
-                {wrapWithFixLinks(children ? children : <RouteComponent />)}
+        value && (
+            <ReactRouterContext.Provider value={value}>
+                <TabsRouteBridge ctx={value}>
+                    {wrapWithFixLinks(children ? children : <RouteComponent />)}
+                </TabsRouteBridge>
             </ReactRouterContext.Provider>
         )
     );

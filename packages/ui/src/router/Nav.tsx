@@ -27,12 +27,13 @@ interface NavProps {
      */
     onClick?: (ev: SyntheticEvent) => void;
     /**
-     * If true, use replaceState instead of pushState (no new browser history entry).
-     * Defaults to true for backward compatibility.
+     * If true, use replaceState instead of pushState (no new browser history entry). Either way the breadcrumbs
+     * start over: `Nav` is top-level navigation (the sidebar), so Back returns to the previous page while the
+     * breadcrumbs of that page no longer apply.
      */
     replace?: boolean;
 }
-export function Nav({ children, to, onClick, replace = true }: NavProps) {
+export function Nav({ children, to, onClick, replace = false }: NavProps) {
     const navigate = useNavigate();
     const _onClick = (ev: SyntheticEvent) => {
         const link = (ev.target as HTMLElement).closest('a');
@@ -41,7 +42,7 @@ export function Nav({ children, to, onClick, replace = true }: NavProps) {
         if (link && target) {
             ev.stopPropagation();
             ev.preventDefault();
-            navigate(target, { replace });
+            navigate(target, { replace, clearHistoryChain: true });
             onClick?.(ev);
         }
     };
