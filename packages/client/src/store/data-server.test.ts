@@ -173,7 +173,15 @@ describe('a branch environment without a data server', () => {
         const results = await Promise.all([client.data.list(), client.data.getSchema('store-1')]);
 
         expect(results).toEqual([{ served: true }, { served: true }]);
-        expect(requests.filter((request) => request.includes(BRANCH_STORE))).toHaveLength(2);
+        // Each call asked the data server once, then the store once.
+        expect([...requests].sort()).toEqual(
+            [
+                `GET ${BRANCH_DATA_SERVER}/api/v1/data`,
+                `GET ${BRANCH_DATA_SERVER}/api/v1/data/store-1/schema`,
+                `GET ${BRANCH_STORE}/api/v1/data`,
+                `GET ${BRANCH_STORE}/api/v1/data/store-1/schema`,
+            ].sort(),
+        );
         expect(warn).toHaveBeenCalledTimes(1);
     });
 
