@@ -7,6 +7,7 @@ import * as React from 'react';
 import { cn } from '../libs/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './dropdown';
 import { SelectBox } from './selectBox';
+import { buildTabPath, readTabFromRoute, TabsRouteContext } from './tabsRoute';
 
 export interface Tab {
     name: string;
@@ -29,6 +30,15 @@ export interface Tab {
  */
 export type CanChangeTab = (nextTab: string, currentTab?: string) => boolean;
 
+/**
+ * Where a `Tabs` keeps its selected tab:
+ * - `path`: the route parameter (`updatePath`);
+ * - `hash`: the URL hash, one history entry per switch (the historical default);
+ * - `hash-replace`: the URL hash without a history entry (tabs directly inside an `updatePath` tab);
+ * - `none`: component state only (`updateHash={false}`, or tabs two levels below an `updatePath` tab).
+ */
+type TabsUrlMode = 'path' | 'hash' | 'hash-replace' | 'none';
+
 const TabsContext = React.createContext<{
     orientation?: 'horizontal' | 'vertical';
     size?: number;
@@ -37,8 +47,13 @@ const TabsContext = React.createContext<{
     setTab?: (name: string) => void;
     responsive?: boolean;
     variant?: 'tabs' | 'pills';
-    updateHash?: boolean;
+    /** Whether `TabsBar` pushes a tab's legacy `href` (plain hash mode, tab not controlled by the page). */
+    writeHref?: boolean;
     canChangeTab?: CanChangeTab;
+    /** URL slot of this `Tabs` by position, which decides the slot of the `Tabs` nested inside it. */
+    urlLevel?: 'path' | 'hash' | 'none';
+    /** Whether an ancestor `Tabs` (or this one) uses `updatePath`. */
+    underPath?: boolean;
 }>({
     size: undefined,
     tabs: undefined,
@@ -46,7 +61,7 @@ const TabsContext = React.createContext<{
     setTab: undefined,
     responsive: false,
     variant: 'tabs',
-    updateHash: true,
+    writeHref: false,
 });
 
 interface TabsProps {
@@ -61,9 +76,38 @@ interface TabsProps {
     onTabChange?: (tabName: string) => void;
     responsive?: boolean;
     variant?: 'tabs' | 'pills';
+    /**
+     * `false` keeps the selected tab out of the URL. Not needed inside an `updatePath` tab: nested tabs
+     * already pick the hash (directly inside) or no URL (deeper) by themselves.
+     */
     updateHash?: boolean;
+    /**
+     * Keep the selected tab in the route parameter `pathParam` (route `/settings/projects/:tab` →
+     * `/settings/projects/keys`). When the level already holds an id parameter (`/store/agents/:agentRunnerId`),
+     * declare one literal route per tab instead (`/store/agents/configuration`): without a `pathParam` in the
+     * route, the tab is the last path segment when it names a tab.
+     *
+     * Switching replaces that path segment, keeps the query string and clears the hash. It adds a history entry
+     * (Back returns to the previous tab) but no breadcrumb (the breadcrumbs lead to other pages). A missing,
+     * unknown or not-allowed tab is replaced, without a new history entry, by the tab an old `#tab` link names, else
+     * the default one. Tabs directly inside keep their tab in the hash, and tabs deeper than that keep it in
+     * component state.
+     *
+     * Needs a router; without one it falls back to the hash.
+     */
+    updatePath?: boolean;
+    /** Route parameter read and written by `updatePath`. Defaults to `tab`. */
+    pathParam?: string;
     canChangeTab?: CanChangeTab;
 }
+
+function readHashTab(visibleTabs: Tab[]) {
+    const hash = window.location.hash;
+    const hashTab = hash ? hash.substring(1) : undefined;
+    return hashTab && visibleTabs.some((tab) => tab.name === hashTab) ? hashTab : undefined;
+}
+
+let warnedMissingRouter = false;
 
 const Tabs = ({
     orientation = 'horizontal',
@@ -77,14 +121,58 @@ const Tabs = ({
     onTabChange,
     responsive = false,
     variant = 'tabs',
-    updateHash = true,
+    updateHash,
+    updatePath = false,
+    pathParam = 'tab',
     canChangeTab,
 }: TabsProps) => {
+    const parent = React.useContext(TabsContext);
+    const route = React.useContext(TabsRouteContext);
+
     // Filter tabs based on is_allowed (undefined or true means visible)
     const visibleTabs = React.useMemo(
         () => tabs.filter((tab) => tab.is_allowed === undefined || tab.is_allowed === true),
         [tabs],
     );
+    const fallbackTab =
+        defaultValue && visibleTabs.some((tab) => tab.name === defaultValue) ? defaultValue : visibleTabs[0]?.name;
+
+    // The slot this Tabs takes by position. Counting only starts below an `updatePath` Tabs, so pages that
+    // don't use it keep the historical "every level writes the hash" behaviour.
+    const urlLevel: 'path' | 'hash' | 'none' = updatePath
+        ? 'path'
+        : parent.underPath
+          ? parent.urlLevel === 'path'
+              ? 'hash'
+              : 'none'
+          : 'hash';
+    const underPath = updatePath || !!parent.underPath;
+
+    if (updatePath && !route && !warnedMissingRouter) {
+        warnedMissingRouter = true;
+        console.warn('Tabs: updatePath needs a RouterProvider; falling back to the URL hash');
+    }
+
+    let mode: TabsUrlMode;
+    if (updateHash === false) {
+        mode = 'none';
+    } else if (urlLevel === 'path') {
+        mode = route ? 'path' : 'hash';
+    } else if (urlLevel === 'hash') {
+        mode = parent.underPath ? 'hash-replace' : 'hash';
+    } else {
+        mode = 'none';
+    }
+    // `updateHash={false}` has always still read the hash on load; only positional `none` ignores it, so a
+    // deep tab never picks up the hash that belongs to the level above it.
+    const readsHash = mode === 'hash' || mode === 'hash-replace' || updateHash === false;
+
+    const tabNames = React.useMemo(() => tabs.map((tab) => tab.name), [tabs]);
+    const pathTab = mode === 'path' && route ? readTabFromRoute(route, pathParam, tabNames) : undefined;
+    const pathTabIsValid = !!pathTab && visibleTabs.some((tab) => tab.name === pathTab);
+    // A path that names no tab, but a hash that does, is an old `#tab` link: it opens that tab.
+    const legacyHashTab = mode === 'path' && !pathTab ? readHashTab(visibleTabs) : undefined;
+    const landingTab = legacyHashTab ?? fallbackTab;
 
     // Initialize value
     const [value, setValue] = React.useState(() => {
@@ -93,19 +181,16 @@ const Tabs = ({
         if (currentValue) {
             return currentValue;
         }
-
-        // Then check hash
-        const hash = window.location.hash;
-        const currentTab = hash ? hash.substring(1) : undefined;
-
-        // Check if the tab from hash exists in visible tabs
-        if (currentTab && visibleTabs.some((tab) => tab.name === currentTab)) {
-            return currentTab;
+        if (mode === 'path') {
+            return pathTabIsValid ? pathTab : landingTab;
         }
-
         // Fall back to default or first visible tab
-        return defaultValue || visibleTabs[0]?.name;
+        return (readsHash ? readHashTab(visibleTabs) : undefined) || defaultValue || visibleTabs[0]?.name;
     });
+    // Read synchronously by the change handler: a single click can reach it twice (Radix root and trigger)
+    // before React re-renders, and the second call must not navigate again.
+    const valueRef = React.useRef(value);
+    valueRef.current = value;
 
     // Update when current prop changes (but don't create a loop)
     React.useEffect(() => {
@@ -115,9 +200,25 @@ const Tabs = ({
         }
     }, [current, value]);
 
+    // Path mode: follow the route parameter (Back/Forward, links), and replace a missing, unknown or
+    // not-allowed tab with the default one (or the tab an old `#tab` link names) without adding a history
+    // entry. The hash is dropped: it named the tab, not a nested one.
+    React.useEffect(() => {
+        if (current || mode !== 'path' || !route) return;
+        if (pathTabIsValid) {
+            setValue(pathTab);
+        } else if (landingTab) {
+            setValue(landingTab);
+            route.navigate(`${buildTabPath(route, pathParam, landingTab, tabNames)}${window.location.search}`, {
+                replace: true,
+                keepHistoryChain: true,
+            });
+        }
+    }, [current, mode, route, pathTab, pathTabIsValid, landingTab, pathParam, tabNames]);
+
     // Listen to hash changes only when there's no current prop being controlled externally
     React.useEffect(() => {
-        if (current) return; // Skip hash handling if controlled by parent
+        if (current || !readsHash) return; // Skip hash handling if controlled by parent
 
         const handleHashChange = () => {
             const hash = window.location.hash;
@@ -137,28 +238,46 @@ const Tabs = ({
 
         window.addEventListener('hashchange', handleHashChange);
         return () => window.removeEventListener('hashchange', handleHashChange);
-    }, [current, visibleTabs, defaultValue]);
+    }, [current, readsHash, visibleTabs, defaultValue]);
 
     const handleValueChange = React.useCallback(
         (newValue: string) => {
+            const previous = valueRef.current;
             // Bail before touching the value or the history so a cancelled switch is a no-op.
-            if (newValue !== value && canChangeTab && !canChangeTab(newValue, value)) return;
+            if (newValue !== previous && canChangeTab && !canChangeTab(newValue, previous)) return;
 
+            // A path or hash-replace switch to the tab already shown would add a duplicate entry or rewrite
+            // the URL for nothing; plain hash mode keeps its historical push.
+            if (newValue === previous && (mode === 'path' || mode === 'hash-replace')) return;
+
+            valueRef.current = newValue;
             setValue(newValue);
 
-            // Update the URL hash when tab changes (only if updateHash is true and not controlled by parent)
-            if (updateHash && !current) {
-                // Preserve existing history state when changing hash
-                const currentState = window.history.state;
-                const newUrl = `${window.location.pathname + window.location.search}#${newValue}`;
-                window.history.pushState(currentState, '', newUrl);
+            // Write the URL unless the parent controls the tab.
+            if (!current) {
+                if (mode === 'path' && route) {
+                    // Dropping the hash resets the tabs nested in the new tab to their default. A tab switch is not
+                    // a page change: Back returns to the previous tab, and the breadcrumbs stay as they are.
+                    route.navigate(`${buildTabPath(route, pathParam, newValue, tabNames)}${window.location.search}`, {
+                        keepHistoryChain: true,
+                    });
+                } else if (mode === 'hash' || mode === 'hash-replace') {
+                    // Preserve existing history state when changing hash
+                    const currentState = window.history.state;
+                    const newUrl = `${window.location.pathname + window.location.search}#${newValue}`;
+                    if (mode === 'hash') {
+                        window.history.pushState(currentState, '', newUrl);
+                    } else {
+                        window.history.replaceState(currentState, '', newUrl);
+                    }
+                }
             }
 
             if (onTabChange) {
                 onTabChange(newValue);
             }
         },
-        [current, onTabChange, updateHash, canChangeTab, value],
+        [current, onTabChange, mode, route, pathParam, canChangeTab, tabNames],
     );
 
     const setTab = React.useCallback(
@@ -178,8 +297,10 @@ const Tabs = ({
                 setTab,
                 responsive: responsive,
                 variant,
-                updateHash,
+                writeHref: mode === 'hash' && !current,
                 canChangeTab,
+                urlLevel,
+                underPath,
             }}
         >
             <TabsPrimitive.Root
@@ -208,7 +329,7 @@ interface TabsBarProps {
 }
 
 const TabsBar = ({ className, sticky, direction, overflow }: TabsBarProps) => {
-    const { tabs, size, current, setTab, responsive, variant, updateHash, canChangeTab, orientation } =
+    const { tabs, size, current, setTab, responsive, variant, writeHref, canChangeTab, orientation } =
         React.useContext(TabsContext);
     const barDirection = direction ?? orientation ?? 'horizontal';
 
@@ -223,7 +344,9 @@ const TabsBar = ({ className, sticky, direction, overflow }: TabsBarProps) => {
 
             const tab = tabs.find((t) => t.name === tabName);
 
-            if (tab?.href && updateHash) {
+            // Only the plain hash mode honours the legacy `href`: the other modes derive the URL themselves,
+            // and a page that controls the tab or opted out of the URL must not have it rewritten.
+            if (tab?.href && writeHref) {
                 // Preserve existing history state when changing tabs
                 const currentState = window.history.state;
                 window.history.pushState(currentState, '', tab.href);
@@ -231,7 +354,7 @@ const TabsBar = ({ className, sticky, direction, overflow }: TabsBarProps) => {
 
             setTab(tabName);
         },
-        [tabs, setTab, updateHash, canChangeTab, current],
+        [tabs, setTab, writeHref, canChangeTab, current],
     );
 
     if (!tabs || !setTab) {
