@@ -38,6 +38,19 @@ This Git repository is a mono-repository built on top of pnpm.
 - Error handling: use proper error types and propagation, especially with async code
 - Formatting: follows `biome.json` in this repository
 
+# Compatibility
+
+Packages published from this repository run next to versions that are not their own:
+
+- Applications bundle a fixed version of `@vertesia/client`, `@vertesia/common` and `@vertesia/ui`, and
+  are not always rebuilt when a new version is published.
+- A published client can talk to a server one release older or newer than itself.
+
+So keep wire changes additive: add optional fields, accept unknown fields and enum values in
+responses, and keep exported types and fields until a release has deprecated them. A feature that
+needs a newer server must fail clearly, or degrade, against an older one. When a change cannot meet
+this, say so in the pull request, including the order in which packages and servers must be released.
+
 <!-- BEGIN:turborepo-agent-rules -->
 
 # This is NOT the Turborepo you know
