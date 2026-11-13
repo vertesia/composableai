@@ -51,6 +51,7 @@ export type {
     AgentConversationViewMode,
     AgentInitialRequestTemplate,
     AgentInitialRequestTemplateContext,
+    AgentWorkingDisplay,
 } from './ModernAgentOutput/AllMessagesMixed';
 // BatchProgressPanel types for external use
 export type { BatchProgressPanelClassNames } from './ModernAgentOutput/BatchProgressPanel';
