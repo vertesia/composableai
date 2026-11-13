@@ -123,3 +123,97 @@ describe('the data store API base URL', () => {
         ]);
     });
 });
+
+describe('a branch environment without a data server', () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.restoreAllMocks();
+    });
+
+    /** A client whose derived data server host has no service: the platform's front end answers 404 without a body. */
+    function clientWithoutDataServer(serverUrl: string, notFound = () => new Response(null, { status: 404 })) {
+        const requests: string[] = [];
+        const client = new ZenoClient({
+            serverUrl,
+            apikey: 'token',
+            fetch: vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                requests.push(`${request.method} ${url.origin}${url.pathname}`);
+                return url.hostname.startsWith('data-server-') ? notFound() : Response.json({ served: true });
+            }),
+        });
+        return { client, requests };
+    }
+
+    it('sends the call again to the store, then every later call straight there', async () => {
+        vi.stubEnv('DATA_SERVER_URL', '');
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const { client, requests } = clientWithoutDataServer(BRANCH_STORE);
+
+        await expect(client.data.query('store-1', { sql: 'SELECT 1' })).resolves.toEqual({ served: true });
+        await client.data.getSchema('store-1');
+        await client.data.dashboards('store-1').list();
+
+        expect(requests).toEqual([
+            `POST ${BRANCH_DATA_SERVER}/api/v1/data/store-1/query`,
+            `POST ${BRANCH_STORE}/api/v1/data/store-1/query`,
+            `GET ${BRANCH_STORE}/api/v1/data/store-1/schema`,
+            `GET ${BRANCH_STORE}/api/v1/data/store-1/dashboards`,
+        ]);
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn.mock.calls[0][0]).toContain(new URL(BRANCH_DATA_SERVER).host);
+    });
+
+    it('switches once when several calls find no data server at the same time', async () => {
+        vi.stubEnv('DATA_SERVER_URL', '');
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const { client, requests } = clientWithoutDataServer(BRANCH_STORE);
+
+        const results = await Promise.all([client.data.list(), client.data.getSchema('store-1')]);
+
+        expect(results).toEqual([{ served: true }, { served: true }]);
+        expect(requests.filter((request) => request.includes(BRANCH_STORE))).toHaveLength(2);
+        expect(warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('asks the data server again from a new client', async () => {
+        vi.stubEnv('DATA_SERVER_URL', '');
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        await clientWithoutDataServer(BRANCH_STORE).client.data.list();
+        const { client, requests } = recordingClient(BRANCH_STORE);
+
+        await client.data.list();
+
+        expect(requests.map((request) => request.url)).toEqual([`${BRANCH_DATA_SERVER}/api/v1/data`]);
+    });
+
+    it('keeps a 404 that a deployed data server or zeno-server answered', async () => {
+        vi.stubEnv('DATA_SERVER_URL', '');
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        const body = { error: 'Not Found', status: 404, message: 'Not Found: Data store not found' };
+        const answers: Record<string, string>[] = [
+            { 'x-service-name': 'data-server' },
+            { via: '1.1 google, 2 data-server' },
+        ];
+        for (const headers of answers) {
+            const { client, requests } = clientWithoutDataServer(BRANCH_STORE, () =>
+                Response.json(body, { status: 404, headers }),
+            );
+
+            await expect(client.data.getSchema('missing')).rejects.toMatchObject({ status: 404 });
+
+            expect(requests).toEqual([`GET ${BRANCH_DATA_SERVER}/api/v1/data/missing/schema`]);
+        }
+        expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('does not fall back from an explicit DATA_SERVER_URL', async () => {
+        vi.stubEnv('DATA_SERVER_URL', 'https://data-server-elsewhere.example.com');
+        const { client, requests } = clientWithoutDataServer(BRANCH_STORE);
+
+        await expect(client.data.list()).rejects.toMatchObject({ status: 404 });
+
+        expect(requests).toEqual(['GET https://data-server-elsewhere.example.com/api/v1/data']);
+    });
+});
