@@ -701,6 +701,7 @@ import {
     OAuthProviderAuthStatusSchema,
     OAuthProviderExchangePayloadSchema,
     OAuthProviderSchema,
+    OAuthProviderTokenRequestSchema,
     SuccessResponseSchema,
     UpdateOAuthProviderPayloadSchema,
 } from './oauth.js';
@@ -1044,6 +1045,7 @@ const OAUTH_SCHEMAS = {
     OAuthProviderAuthorizeResponse: OAuthProviderAuthorizeResponseSchema,
     OAuthProviderAccessTokenResponse: OAuthProviderAccessTokenResponseSchema,
     OAuthProviderExchangePayload: OAuthProviderExchangePayloadSchema,
+    OAuthProviderTokenRequest: OAuthProviderTokenRequestSchema,
     // The client and grant enums. Each is published as a component today because it has a
     // TypeScript name, so each is registered rather than inlined — dropping one would rewrite every
     // `$ref` that points at it into an inline enum.
@@ -3402,6 +3404,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OAuthProviderAuthorizeResponse',
     'OAuthProviderAccessTokenResponse',
     'OAuthProviderExchangePayload',
+    'OAuthProviderTokenRequest',
     'OAuthClientDisplayMetadata',
     'OAuthAuthorizeQuery',
     'CreateOAuthAuthorizationRequestPayload',

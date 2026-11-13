@@ -56,6 +56,17 @@ const tokenEndpointAuthSigningAlgSchema = z.enum(['RS256', 'PS256', 'ES256']).me
 });
 
 /**
+ * The scopes a token request may name besides `default_scopes`, set by the admin who configures the provider. One
+ * provider (one client, one key) can then serve several resources: Entra ID issues each token for one resource, so a
+ * caller asks for, say, `https://contoso.sharepoint.com/.default` instead of the Graph default. The list plays the
+ * part of the registered `scope` of RFC 7591 §2: the caller chooses within it, never beyond it.
+ */
+const oauthProviderAllowedScopesSchema = z.array(z.string().min(1)).meta({
+    description:
+        'Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it.',
+});
+
+/**
  * A provider's stored configuration, without its id.
  *
  * Split from {@link OAuthProviderSchema} because `OAuthProvider extends OAuthProviderData` in the
@@ -110,6 +121,7 @@ export const OAuthProviderDataSchema = z.strictObject({
         .array(z.string())
         .meta({ description: 'Default scopes to request during authorization.' })
         .optional(),
+    allowed_scopes: oauthProviderAllowedScopesSchema.optional(),
     use_pkce: z.boolean().meta({
         description:
             'Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow. Only applies to authorization_code flow. Defaults to true.',
@@ -165,6 +177,7 @@ const oauthProviderPayloadSchema = z.strictObject({
         })
         .optional(),
     default_scopes: z.array(z.string()).optional(),
+    allowed_scopes: oauthProviderAllowedScopesSchema.optional(),
     use_pkce: z.boolean().optional(),
     revocation_endpoint: z.string().optional(),
     token_params: oauthProviderTokenParamsSchema.optional(),
@@ -227,6 +240,22 @@ export const OAuthProviderAuthorizeResponseSchema = z
         id: 'OAuthProviderAuthorizeResponse',
         description:
             'Response from the OAuth authorize endpoint. For authorization_code flow: contains authorization_url and state for browser redirect. For client_credentials flow: contains connected=true (token was fetched server-side, no redirect needed).',
+    });
+
+export const OAuthProviderTokenRequestSchema = z
+    .strictObject({
+        scope: z
+            .string()
+            .regex(/\S/)
+            .meta({
+                description:
+                    "Space-separated scopes to request instead of default_scopes (RFC 6749 §3.3), for example a second resource of the same client. Each scope must be in the provider's default_scopes or allowed_scopes, otherwise the request fails with 400. client_credentials providers only. Omit it for the default scopes.",
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'OAuthProviderTokenRequest',
+        description: 'Optional body of the provider token request.',
     });
 
 export const OAuthProviderAccessTokenResponseSchema = z
