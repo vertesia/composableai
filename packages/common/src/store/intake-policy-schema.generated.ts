@@ -2106,7 +2106,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
         },
         ThinkingLevel: {
             type: 'string',
-            enum: ['HIGH', 'MEDIUM', 'LOW', 'MINIMAL', 'THINKING_LEVEL_UNSPECIFIED'],
+            enum: ['HIGH', 'MEDIUM', 'LOW', 'MINIMAL', 'XHIGH', 'THINKING_LEVEL_UNSPECIFIED'],
         },
         TwelvelabsPegasusOptions: {
             type: 'object',
@@ -2178,6 +2178,10 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                     type: 'string',
                     enum: ['5m', '1h'],
                 },
+                speed: {
+                    type: 'string',
+                    enum: ['standard', 'fast'],
+                },
                 native_compaction: {
                     type: 'boolean',
                 },
@@ -2193,7 +2197,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 task: {
                     type: 'string',
-                    enum: ['text_to_video', 'image_to_video', 'reference_to_video', 'edit', 'extend'],
+                    enum: ['text_to_video', 'image_to_video', 'reference_to_video', 'edit', 'extend', 'upscale'],
                 },
                 aspect_ratio: {
                     type: 'string',
@@ -2202,11 +2206,16 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 duration_seconds: {
                     type: 'integer',
                     minimum: 3,
-                    maximum: 10,
+                    maximum: 15,
                 },
                 resolution: {
                     type: 'string',
                     enum: ['360p', '720p', '1080p', '4k'],
+                },
+                seed: {
+                    type: 'integer',
+                    minimum: -9007199254740991,
+                    maximum: 9007199254740991,
                 },
             },
             additionalProperties: false,
@@ -2247,7 +2256,7 @@ export const ContentTypeIntakePolicySchema: JSONObject = {
                 },
                 effort: {
                     type: 'string',
-                    enum: ['minimal', 'low', 'medium', 'high'],
+                    enum: ['minimal', 'low', 'medium', 'high', 'xhigh'],
                 },
                 include_thoughts: {
                     type: 'boolean',
