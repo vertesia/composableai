@@ -27,6 +27,8 @@ export enum AgentEventType {
     TurnLlmEvaluation = 'turn_llm_evaluation',
     /** The stall circuit breaker acted: a corrective was injected, or the loop was stopped */
     StallBreaker = 'stall_breaker',
+    /** The last runs of one schedule or process all failed; emitted by the server when a run fails */
+    RunFailureStreak = 'run_failure_streak',
 }
 
 /**
@@ -86,13 +88,45 @@ export type TurnEvaluationFlag =
     | 'approval_denied'
     | 'circuit_breaker'
     | 'no_visible_answer'
-    | 'answer_in_tool_preamble';
+    | 'answer_in_tool_preamble'
+    | 'response_cut_off'
+    | 'llm_retried'
+    | 'unknown_tool'
+    | 'invalid_tool_arguments'
+    | 'context_near_full'
+    | 'checkpoint_forced';
+
+/** Outcome of one detector on one turn. */
+export type TurnCheckState = 'fired' | 'fine' | 'not_checked';
 
 /**
- * Coarse class of a tool error, derived from the error text. `unknown_outcome` is a side-effecting call
- * whose request was sent but whose reply was lost, so the action may or may not have taken effect.
+ * One detector's outcome on a turn. Every detector reports, so a reader can tell a check that passed
+ * (`fine`) from one that had nothing to look at (`not_checked`).
  */
-export type ToolErrorClass = 'schema' | 'platform' | 'config' | 'environment' | 'unknown_outcome' | 'other';
+export interface TurnCheck {
+    /** Detector name; the same vocabulary as the flags */
+    name: TurnEvaluationFlag;
+    state: TurnCheckState;
+    /** The tool call that made the check fire, when one did */
+    toolUseId?: string;
+    /** The measures the check compared, with the threshold it used */
+    facts?: Record<string, number | string | boolean>;
+}
+
+/**
+ * Coarse class of a tool error, derived from the error text. `unknown_tool` is a call to a tool that does
+ * not exist; `schema` is a call to a real tool with arguments that failed validation. `unknown_outcome` is a
+ * side-effecting call whose request was sent but whose reply was lost, so the action may or may not have
+ * taken effect.
+ */
+export type ToolErrorClass =
+    | 'schema'
+    | 'unknown_tool'
+    | 'platform'
+    | 'config'
+    | 'environment'
+    | 'unknown_outcome'
+    | 'other';
 
 /**
  * How a tool call came to run, or not to run, under the tool approval policy.
@@ -131,6 +165,8 @@ export type ToolApprovalRiskLevel = 'low' | 'medium' | 'high';
 /** Number of tool errors per class in a turn. */
 export interface ToolErrorClassCounts {
     schema: number;
+    /** Absent on events from producers that predate the class; such calls were counted under another class */
+    unknown_tool?: number;
     platform: number;
     config: number;
     environment: number;
@@ -249,6 +285,8 @@ export interface AgentRunCompletedEvent extends BaseAgentEvent {
         /** Reason provided by the agent (especially for failures) */
         reason?: string;
     };
+    /** Fingerprint of the agent's configuration (see `TurnEvaluationEvent.agentConfigHash`) */
+    agentConfigHash?: string;
 }
 
 // ============================================================================
@@ -341,6 +379,8 @@ export interface ToolCallEvent extends BaseAgentEvent {
     signatureHash?: string;
     /** Workstream the call belongs to (`main` for the primary conversation) */
     workstreamId?: string;
+    /** On a skill load: digest of the instructions the skill returned, to tell skill versions apart */
+    skillDigest?: string;
     /** How the call was approved or refused; undefined when no approval decision was recorded */
     approvalOrigin?: ToolApprovalOrigin;
     /**
@@ -490,10 +530,31 @@ export interface TurnEvaluationEvent extends BaseAgentEvent {
      * calls is shown as working prose, not as the answer. Same caveat.
      */
     finalToolCallTextChars?: number;
+    /** LLM calls that stopped on the output limit (`finishReason: 'length'`). Absent from older producers. */
+    cutOffResponses?: number;
+    /** LLM calls that took more than one activity attempt. Absent from older producers. */
+    retriedLlmCalls?: number;
+    /**
+     * Highest context use seen in the turn, as a share of the checkpoint threshold (1 means the threshold
+     * was reached). Absent when the turn measured none, and from older producers.
+     */
+    peakContextRatio?: number;
+    /** Checkpoints forced by context pressure in the turn. Absent from older producers. */
+    forcedCheckpoints?: number;
     /** An unprompted user message after an answer was followed by substantive tool work */
     followupAfterAnswer: boolean;
     severity: EvaluationSeverity;
     flags: TurnEvaluationFlag[];
+    /**
+     * Every detector's outcome, in rule order: fired, fine or not checked. Absent from producers that
+     * predate schema version 2; `flags` lists the fired ones either way.
+     */
+    checks?: TurnCheck[];
+    /**
+     * Fingerprint of the agent's configuration when the turn ran: interaction, version, prompt and the
+     * initial active tools with their schemas. Equal hashes mean the same configuration.
+     */
+    agentConfigHash?: string;
     /** Class of the error that ended the run, on `failed` turns */
     terminalErrorClass?: string;
     /** Bounded list of tool observations in call order */
@@ -554,6 +615,32 @@ export interface TurnLlmEvaluationEvent extends BaseAgentEvent {
     detectorVersion?: number;
 }
 
+/** What started the runs of a failure streak. */
+export type RunFailureStreakSource = 'schedule' | 'process';
+
+/**
+ * Emitted by the server when a run started by a schedule or a process fails and the last
+ * `streakLength` runs of that same schedule or process all failed. The run that just failed is the
+ * newest of them; `agentRunId` names it.
+ */
+export interface RunFailureStreakEvent extends BaseAgentEvent {
+    eventType: AgentEventType.RunFailureStreak;
+    source: RunFailureStreakSource;
+    /** Schedule ID or process ID */
+    sourceId: string;
+    /** Consecutive failed runs, newest first, counting the run that just failed */
+    streakLength: number;
+    /** The streak length at which the event is emitted */
+    threshold: number;
+    /** Agent run IDs of the failed runs, newest first */
+    failedRunIds: string[];
+    /**
+     * Whether the failed run's notification, which states the streak, was addressed to the run's owner.
+     * Their notification preferences may still mute it.
+     */
+    ownerNotified: boolean;
+}
+
 // ============================================================================
 // Nested Interaction Execution Events
 // ============================================================================
@@ -587,7 +674,8 @@ export type AgentEvent =
     | TurnEvaluationEvent
     | FeedbackEvent
     | TurnLlmEvaluationEvent
-    | StallBreakerEvent;
+    | StallBreakerEvent
+    | RunFailureStreakEvent;
 
 /**
  * Workflow Analytics Types
