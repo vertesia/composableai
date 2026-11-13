@@ -39,7 +39,7 @@ overrides:
   '@hono/node-server@<2.1.6': 2.1.6
   re2js@>=2.2.0 <2.8.7: 2.9.0
   browserslist@<4.28.7: 4.28.8
-  hono@<4.13.13: 4.13.13
+  hono@<4.13.16: 4.13.16
   brace-expansion@>=2.0.0 <2.1.7: 2.1.7
   brace-expansion@>=3.0.0 <5.0.12: 5.0.12
   diff@>=6.0.0 <8.0.3: ^8.0.3
@@ -365,7 +365,7 @@ importers:
     devDependencies:
       '@hono/node-server':
         specifier: ^2.1.6
-        version: 2.1.6(hono@4.13.13)
+        version: 2.1.6(hono@4.13.16)
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -817,8 +817,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       hono:
-        specifier: 4.13.13
-        version: 4.13.13
+        specifier: 4.13.16
+        version: 4.13.16
       jose:
         specifier: ^6.2.8
         version: 6.2.8
@@ -1226,7 +1226,7 @@ importers:
     dependencies:
       '@hono/node-server':
         specifier: ^2.1.6
-        version: 2.1.6(hono@4.13.13)
+        version: 2.1.6(hono@4.13.16)
       '@llumiverse/common':
         specifier: workspace:*
         version: link:../../llumiverse/common
@@ -1249,8 +1249,8 @@ importers:
         specifier: ^17.4.2
         version: 17.4.2
       hono:
-        specifier: 4.13.13
-        version: 4.13.13
+        specifier: 4.13.16
+        version: 4.13.16
       html-parse-stringify:
         specifier: ^4.0.1
         version: 4.0.1
@@ -1278,7 +1278,7 @@ importers:
         version: 2.5.6
       '@hono/vite-dev-server':
         specifier: ^0.26.1
-        version: 0.26.1(hono@4.13.13)
+        version: 0.26.1(hono@4.13.16)
       '@playwright/test':
         specifier: ^1.62.1
         version: 1.62.1
@@ -2010,13 +2010,13 @@ packages:
     resolution: {integrity: sha512-p/KH9MnfNcsm3sR6x4lNgm5j+QN4Et8srKredl9DZfXiyZ1UQ3aQ2YVpFLbqktYN5JI+DB+VZFKM2PqE5hLKjQ==}
     engines: {node: '>=20'}
     peerDependencies:
-      hono: 4.13.13
+      hono: 4.13.16
 
   '@hono/vite-dev-server@0.26.1':
     resolution: {integrity: sha512-OlcWoXjNogKiJhVwV/ftMK87UcsJmIBfmImSdI4e8to/ZdwNHrW9ddKw2OGHjXI5/uS2RaZr+2y+l8T9VFbCmw==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
-      hono: 4.13.13
+      hono: 4.13.16
       miniflare: '*'
       wrangler: '*'
     peerDependenciesMeta:
@@ -5295,8 +5295,8 @@ packages:
     resolution: {integrity: sha512-EQfezRg0NCZGNlhlDR3Evrw1FVL2G3LhU7EgPoxufQKruNBSYA8MiRPHeWbU+36o+Fhel0wMwM+sLEiBAlNLJA==}
     engines: {node: '>=10.0.0'}
 
-  hono@4.13.13:
-    resolution: {integrity: sha512-CQ46U0ZkAGmbT/4UxdzzGJpacP2IeKgY4a5/tOI9AABbpOMfK739wfDXmv1usCk+3RkKj1hQy4/fjhiwa2xlrA==}
+  hono@4.13.16:
+    resolution: {integrity: sha512-AOLOEhvrV+iH92xXCnFr/5+3KjPKcI3xP63XJtX5spAnkznPdHijlIsUTpi7/9EhWqrTCekw5c5zh1K+YsVw7A==}
     engines: {node: '>=16.9.0'}
 
   html-encoding-sniffer@6.0.0:
@@ -8147,14 +8147,14 @@ snapshots:
       protobufjs: 7.6.5
       yargs: 17.7.2
 
-  '@hono/node-server@2.1.6(hono@4.13.13)':
+  '@hono/node-server@2.1.6(hono@4.13.16)':
     dependencies:
-      hono: 4.13.13
+      hono: 4.13.16
 
-  '@hono/vite-dev-server@0.26.1(hono@4.13.13)':
+  '@hono/vite-dev-server@0.26.1(hono@4.13.16)':
     dependencies:
-      '@hono/node-server': 2.1.6(hono@4.13.13)
-      hono: 4.13.13
+      '@hono/node-server': 2.1.6(hono@4.13.16)
+      hono: 4.13.16
       minimatch: 11.0.3
 
   '@iconify/types@2.0.0': {}
@@ -11331,7 +11331,7 @@ snapshots:
 
   heap-js@2.7.1: {}
 
-  hono@4.13.13: {}
+  hono@4.13.16: {}
 
   html-encoding-sniffer@6.0.0(@noble/hashes@1.8.0):
     dependencies:
