@@ -88,8 +88,11 @@ export type TurnEvaluationFlag =
     | 'no_visible_answer'
     | 'answer_in_tool_preamble';
 
-/** Coarse class of a tool error, derived from the error text. */
-export type ToolErrorClass = 'schema' | 'platform' | 'config' | 'environment' | 'other';
+/**
+ * Coarse class of a tool error, derived from the error text. `unknown_outcome` is a side-effecting call
+ * whose request was sent but whose reply was lost, so the action may or may not have taken effect.
+ */
+export type ToolErrorClass = 'schema' | 'platform' | 'config' | 'environment' | 'unknown_outcome' | 'other';
 
 /**
  * How a tool call came to run, or not to run, under the tool approval policy.
@@ -131,6 +134,8 @@ export interface ToolErrorClassCounts {
     platform: number;
     config: number;
     environment: number;
+    /** Absent from events sent before the class existed, and while it is zero. */
+    unknown_outcome?: number;
     other: number;
 }
 

@@ -11447,7 +11447,7 @@ export type TurnEvaluationFlagWire =
     | 'circuit_breaker'
     | 'no_visible_answer'
     | 'answer_in_tool_preamble';
-export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'other';
+export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'unknown_outcome' | 'other';
 export type ToolApprovalOriginWire =
     | 'not_required'
     | 'unattended'
