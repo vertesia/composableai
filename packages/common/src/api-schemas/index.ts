@@ -30,6 +30,13 @@ export * from './environment.js';
 export * from './events.js';
 export * from './indexing.js';
 export * from './integrations.js';
+// Published components that contracts outside this package embed.
+export {
+    AsyncCompletionOptionsSchema,
+    ConversationStripOptionsSchema,
+    ExecutionRunDocRefSchema,
+    ToolResultSchema,
+} from './interaction.js';
 export * from './oauth-server.js';
 export * from './parameters.js';
 export * from './process.js';
