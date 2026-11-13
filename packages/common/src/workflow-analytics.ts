@@ -347,7 +347,10 @@ export interface ToolCallEvent extends BaseAgentEvent {
     approvalReviewerRiskLevel?: ToolApprovalRiskLevel;
     /** The approval reviewer's reason (truncated) */
     approvalReviewerRationale?: string;
-    /** Whether the reviewer verdict comes from shadow mode, where the user decided */
+    /**
+     * The reviewer ran in shadow mode, beside a prompt the user decided. Without `approvalReviewerOutcome`, it had
+     * not answered by the time the user did: shadow mode never makes the user's decision wait.
+     */
     approvalReviewerShadow?: boolean;
 }
 
