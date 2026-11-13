@@ -11435,7 +11435,7 @@ export type TurnEvaluationFlagWire =
     | 'circuit_breaker'
     | 'no_visible_answer'
     | 'answer_in_tool_preamble';
-export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'other';
+export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'unknown_outcome' | 'other';
 export type EvaluationGateReasonWire = 'signal' | 'sample' | 'opt_in' | 'always_on';
 export type EvaluationOutcomeWire = 'evaluated' | 'skipped_unarchived' | 'failed';
 export type EvaluationVerdictWire = 'success' | 'partial' | 'failure';
