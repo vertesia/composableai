@@ -69,15 +69,28 @@ export const TurnEvaluationFlagSchema = z
         'circuit_breaker',
         'no_visible_answer',
         'answer_in_tool_preamble',
+        'response_cut_off',
+        'llm_retried',
+        'unknown_tool',
+        'invalid_tool_arguments',
+        'context_near_full',
+        'checkpoint_forced',
     ])
     .meta({ id: 'TurnEvaluationFlag', description: 'Reason behind an evaluation severity.' });
 
 export const ToolErrorClassSchema = z
-    .enum(['schema', 'platform', 'config', 'environment', 'other'])
-    .meta({ id: 'ToolErrorClass', description: 'Coarse class of a tool error, derived from the error text.' });
+    .enum(['schema', 'unknown_tool', 'platform', 'config', 'environment', 'other'])
+    .meta({
+        id: 'ToolErrorClass',
+        description:
+            'Coarse class of a tool error, derived from the error text. `unknown_tool` is a call to a tool that ' +
+            'does not exist; `schema` is a call to a real tool with arguments that failed validation.',
+    });
 
 const ToolErrorClassCountsSchema = z.strictObject({
     schema: z.number().int().min(0),
+    /** Absent on events from producers that predate the class. */
+    unknown_tool: z.number().int().min(0).optional(),
     platform: z.number().int().min(0),
     config: z.number().int().min(0),
     environment: z.number().int().min(0),
@@ -337,6 +350,7 @@ const AgentRunCompletedEventSchema = z.strictObject({
             reason: z.string().optional(),
         })
         .optional(),
+    agentConfigHash: z.string().optional(),
 });
 
 const LlmCallEventSchema = z.strictObject({
@@ -385,6 +399,7 @@ const ToolCallEventSchema = z.strictObject({
     errorClass: ToolErrorClassSchema.optional(),
     signatureHash: z.string().optional(),
     workstreamId: z.string().optional(),
+    skillDigest: z.string().optional(),
 });
 
 const TurnToolObservationSchema = z.strictObject({
@@ -396,6 +411,13 @@ const TurnToolObservationSchema = z.strictObject({
     errorClass: ToolErrorClassSchema.optional(),
     sig: z.string(),
     durationMs: z.number(),
+});
+
+const TurnCheckSchema = z.strictObject({
+    name: TurnEvaluationFlagSchema,
+    state: z.enum(['fired', 'fine', 'not_checked']),
+    toolUseId: z.string().optional(),
+    facts: z.record(z.string(), z.union([z.number(), z.string(), z.boolean()])).optional(),
 });
 
 const TurnEvaluationEventSchema = z.strictObject({
@@ -442,9 +464,16 @@ const TurnEvaluationEventSchema = z.strictObject({
     /** Absent on events from producers that predate the answer counters. */
     answerChars: z.number().int().optional(),
     finalToolCallTextChars: z.number().int().optional(),
+    /** Absent on events from producers that predate schema version 2. */
+    cutOffResponses: z.number().int().optional(),
+    retriedLlmCalls: z.number().int().optional(),
+    peakContextRatio: z.number().optional(),
+    forcedCheckpoints: z.number().int().optional(),
     followupAfterAnswer: z.boolean(),
     severity: EvaluationSeveritySchema,
     flags: z.array(TurnEvaluationFlagSchema),
+    checks: z.array(TurnCheckSchema).optional(),
+    agentConfigHash: z.string().optional(),
     terminalErrorClass: z.string().optional(),
     tools: z.array(TurnToolObservationSchema),
     toolsTruncated: z.number().int(),
@@ -492,6 +521,17 @@ const StallBreakerEventSchema = z.strictObject({
     workstreamId: z.string(),
 });
 
+const RunFailureStreakEventSchema = z.strictObject({
+    ...agentEventBase,
+    eventType: z.literal(AgentEventType.RunFailureStreak),
+    source: z.enum(['schedule', 'process']),
+    sourceId: z.string(),
+    streakLength: z.number().int().min(1),
+    threshold: z.number().int().min(1),
+    failedRunIds: z.array(z.string()),
+    ownerNotified: z.boolean(),
+});
+
 export const AgentEventSchema: z.ZodType<AgentEvent> = z
     .discriminatedUnion('eventType', [
         AgentRunStartedEventSchema,
@@ -502,6 +542,7 @@ export const AgentEventSchema: z.ZodType<AgentEvent> = z
         FeedbackEventSchema,
         TurnLlmEvaluationEventSchema,
         StallBreakerEventSchema,
+        RunFailureStreakEventSchema,
     ])
     .meta({ id: 'AgentEvent' });
 

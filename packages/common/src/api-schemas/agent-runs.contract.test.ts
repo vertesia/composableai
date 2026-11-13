@@ -130,6 +130,59 @@ describe('agent run evaluation API contracts', () => {
         expect(validateApiRequest('IngestAgentEventsPayload', { events: [legacy] }).valid).toBe(true);
     });
 
+    it('accepts a version 2 turn_evaluation event with per-check outcomes and the configuration hash', () => {
+        const v2: TurnEvaluationEvent = {
+            ...turnEvaluation,
+            schemaVersion: 2,
+            detectorVersion: 4,
+            errorClasses: { unknown_tool: 1, schema: 0, platform: 0, config: 0, environment: 0, other: 0 },
+            cutOffResponses: 1,
+            retriedLlmCalls: 0,
+            peakContextRatio: 0.91,
+            forcedCheckpoints: 0,
+            agentConfigHash: '0123456789abcdef',
+            severity: 'medium',
+            flags: ['response_cut_off', 'unknown_tool', 'context_near_full'],
+            checks: [
+                { name: 'response_cut_off', state: 'fired', facts: { cut_off: 1 } },
+                { name: 'unknown_tool', state: 'fired', toolUseId: 'tu-1', facts: { calls: 1 } },
+                { name: 'checkpoint_forced', state: 'fine', facts: { checkpoints: 0 } },
+                { name: 'llm_retried', state: 'not_checked' },
+            ],
+            tools: [{ ...turnEvaluation.tools[0], errorClass: 'unknown_tool' }],
+        };
+        expect(validateApiRequest('IngestAgentEventsPayload', { events: [v2] }).valid).toBe(true);
+    });
+
+    it('rejects a turn check in an unknown state', () => {
+        const events = [{ ...turnEvaluation, checks: [{ name: 'unknown_tool', state: 'maybe' }] }];
+        expect(validateApiRequest('IngestAgentEventsPayload', { events }).valid).toBe(false);
+    });
+
+    it('accepts a run_failure_streak event', () => {
+        const event = {
+            eventType: AgentEventType.RunFailureStreak,
+            eventId: 'run-3:run_failure_streak',
+            timestamp: turnEvaluation.timestamp,
+            runId: 'wf-run-3',
+            agentRunId: 'run-3',
+            model: '',
+            environmentId: '',
+            environmentType: '',
+            interactionId: 'Agent',
+            source: 'schedule',
+            sourceId: 'schedule-1',
+            streakLength: 3,
+            threshold: 3,
+            failedRunIds: ['run-3', 'run-2', 'run-1'],
+            ownerNotified: true,
+        };
+        expect(validateApiRequest('IngestAgentEventsPayload', { events: [event] }).valid).toBe(true);
+        expect(
+            validateApiRequest('IngestAgentEventsPayload', { events: [{ ...event, source: 'webhook' }] }).valid,
+        ).toBe(false);
+    });
+
     it('rejects a turn_evaluation event with an undeclared field', () => {
         const events = [{ ...turnEvaluation, verdict: 'success' }];
         expect(validateApiRequest('IngestAgentEventsPayload', { events }).valid).toBe(false);
