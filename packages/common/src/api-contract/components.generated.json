@@ -42166,9 +42166,47 @@
       "platform",
       "config",
       "environment",
+      "unknown_outcome",
       "other"
     ],
-    "description": "Coarse class of a tool error, derived from the error text. `unknown_tool` is a call to a tool that does not exist; `schema` is a call to a real tool with arguments that failed validation."
+    "description": "Coarse class of a tool error, derived from the error text. `unknown_tool` is a call to a tool that does not exist; `schema` is a call to a real tool with arguments that failed validation. `unknown_outcome` is a side-effecting call whose request was sent but whose reply was lost, so the action may or may not have taken effect."
+  },
+  "ToolApprovalOrigin": {
+    "type": "string",
+    "enum": [
+      "not_required",
+      "unattended",
+      "run_grant",
+      "reviewer_allowed",
+      "reviewer_denied",
+      "user_allowed",
+      "user_allowed_for_run",
+      "user_denied",
+      "user_denied_with_feedback",
+      "user_interrupted",
+      "mode_change",
+      "timeout",
+      "unattended_denied"
+    ],
+    "description": "How a tool call came to run, or not to run, under the tool approval policy."
+  },
+  "ToolApprovalReviewerOutcome": {
+    "type": "string",
+    "enum": [
+      "allow",
+      "ask_user",
+      "deny"
+    ],
+    "description": "The approval reviewer's verdict on a tool call."
+  },
+  "ToolApprovalRiskLevel": {
+    "type": "string",
+    "enum": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "description": "The risk level the approval reviewer gave a tool call."
   },
   "AgentEvent": {
     "oneOf": [
@@ -42720,6 +42758,21 @@
           },
           "skillDigest": {
             "type": "string"
+          },
+          "approvalOrigin": {
+            "$ref": "#/components/schemas/ToolApprovalOrigin"
+          },
+          "approvalReviewerOutcome": {
+            "$ref": "#/components/schemas/ToolApprovalReviewerOutcome"
+          },
+          "approvalReviewerRiskLevel": {
+            "$ref": "#/components/schemas/ToolApprovalRiskLevel"
+          },
+          "approvalReviewerRationale": {
+            "type": "string"
+          },
+          "approvalReviewerShadow": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -42909,6 +42962,11 @@
                 "maximum": 9007199254740991
               },
               "environment": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "unknown_outcome": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 9007199254740991

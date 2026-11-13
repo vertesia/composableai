@@ -115,9 +115,52 @@ export interface TurnCheck {
 
 /**
  * Coarse class of a tool error, derived from the error text. `unknown_tool` is a call to a tool that does
- * not exist; `schema` is a call to a real tool with arguments that failed validation.
+ * not exist; `schema` is a call to a real tool with arguments that failed validation. `unknown_outcome` is a
+ * side-effecting call whose request was sent but whose reply was lost, so the action may or may not have
+ * taken effect.
  */
-export type ToolErrorClass = 'schema' | 'unknown_tool' | 'platform' | 'config' | 'environment' | 'other';
+export type ToolErrorClass =
+    | 'schema'
+    | 'unknown_tool'
+    | 'platform'
+    | 'config'
+    | 'environment'
+    | 'unknown_outcome'
+    | 'other';
+
+/**
+ * How a tool call came to run, or not to run, under the tool approval policy.
+ *
+ * - `not_required`: the approval mode did not ask for approval of this call.
+ * - `unattended`: the run has no user to ask (non-interactive), so no approval applied.
+ * - `run_grant`: an earlier "Allow this action for this run" covered the call.
+ * - `reviewer_allowed` / `reviewer_denied`: the approval reviewer decided (auto_review mode).
+ * - `user_allowed` / `user_allowed_for_run` / `user_denied` / `user_denied_with_feedback`: the user answered the prompt.
+ * - `user_interrupted`: a user message arrived instead of an answer.
+ * - `mode_change`: the user switched to a mode that no longer asks while the prompt was up.
+ * - `timeout`: nobody answered the prompt in time.
+ * - `unattended_denied`: an admin-enforced approval tool in a run with no user to ask.
+ */
+export type ToolApprovalOrigin =
+    | 'not_required'
+    | 'unattended'
+    | 'run_grant'
+    | 'reviewer_allowed'
+    | 'reviewer_denied'
+    | 'user_allowed'
+    | 'user_allowed_for_run'
+    | 'user_denied'
+    | 'user_denied_with_feedback'
+    | 'user_interrupted'
+    | 'mode_change'
+    | 'timeout'
+    | 'unattended_denied';
+
+/** The approval reviewer's verdict on a tool call. */
+export type ToolApprovalReviewerOutcome = 'allow' | 'ask_user' | 'deny';
+
+/** The risk level the approval reviewer gave a tool call. */
+export type ToolApprovalRiskLevel = 'low' | 'medium' | 'high';
 
 /** Number of tool errors per class in a turn. */
 export interface ToolErrorClassCounts {
@@ -127,6 +170,8 @@ export interface ToolErrorClassCounts {
     platform: number;
     config: number;
     environment: number;
+    /** Absent from events sent before the class existed, and while it is zero. */
+    unknown_outcome?: number;
     other: number;
 }
 
@@ -336,6 +381,22 @@ export interface ToolCallEvent extends BaseAgentEvent {
     workstreamId?: string;
     /** On a skill load: digest of the instructions the skill returned, to tell skill versions apart */
     skillDigest?: string;
+    /** How the call was approved or refused; undefined when no approval decision was recorded */
+    approvalOrigin?: ToolApprovalOrigin;
+    /**
+     * The approval reviewer's verdict, when it was consulted. With `approvalReviewerShadow`, the
+     * reviewer ran beside a user prompt and its verdict changed nothing: compare it with `approvalOrigin`.
+     */
+    approvalReviewerOutcome?: ToolApprovalReviewerOutcome;
+    /** The risk level the approval reviewer gave the call */
+    approvalReviewerRiskLevel?: ToolApprovalRiskLevel;
+    /** The approval reviewer's reason (truncated) */
+    approvalReviewerRationale?: string;
+    /**
+     * The reviewer ran in shadow mode, beside a prompt the user decided. Without `approvalReviewerOutcome`, it had
+     * not answered by the time the user did: shadow mode never makes the user's decision wait.
+     */
+    approvalReviewerShadow?: boolean;
 }
 
 // ============================================================================

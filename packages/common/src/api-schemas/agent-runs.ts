@@ -79,13 +79,44 @@ export const TurnEvaluationFlagSchema = z
     .meta({ id: 'TurnEvaluationFlag', description: 'Reason behind an evaluation severity.' });
 
 export const ToolErrorClassSchema = z
-    .enum(['schema', 'unknown_tool', 'platform', 'config', 'environment', 'other'])
+    .enum(['schema', 'unknown_tool', 'platform', 'config', 'environment', 'unknown_outcome', 'other'])
     .meta({
         id: 'ToolErrorClass',
         description:
             'Coarse class of a tool error, derived from the error text. `unknown_tool` is a call to a tool that ' +
-            'does not exist; `schema` is a call to a real tool with arguments that failed validation.',
+            'does not exist; `schema` is a call to a real tool with arguments that failed validation. ' +
+            '`unknown_outcome` is a side-effecting call whose request was sent but whose reply was lost, so the ' +
+            'action may or may not have taken effect.',
     });
+
+export const ToolApprovalOriginSchema = z
+    .enum([
+        'not_required',
+        'unattended',
+        'run_grant',
+        'reviewer_allowed',
+        'reviewer_denied',
+        'user_allowed',
+        'user_allowed_for_run',
+        'user_denied',
+        'user_denied_with_feedback',
+        'user_interrupted',
+        'mode_change',
+        'timeout',
+        'unattended_denied',
+    ])
+    .meta({
+        id: 'ToolApprovalOrigin',
+        description: 'How a tool call came to run, or not to run, under the tool approval policy.',
+    });
+
+export const ToolApprovalReviewerOutcomeSchema = z
+    .enum(['allow', 'ask_user', 'deny'])
+    .meta({ id: 'ToolApprovalReviewerOutcome', description: "The approval reviewer's verdict on a tool call." });
+
+export const ToolApprovalRiskLevelSchema = z
+    .enum(['low', 'medium', 'high'])
+    .meta({ id: 'ToolApprovalRiskLevel', description: 'The risk level the approval reviewer gave a tool call.' });
 
 const ToolErrorClassCountsSchema = z.strictObject({
     schema: z.number().int().min(0),
@@ -94,6 +125,8 @@ const ToolErrorClassCountsSchema = z.strictObject({
     platform: z.number().int().min(0),
     config: z.number().int().min(0),
     environment: z.number().int().min(0),
+    // Optional: producers released before this class omit it, and the recorder only sends it once non-zero.
+    unknown_outcome: z.number().int().min(0).optional(),
     other: z.number().int().min(0),
 });
 
@@ -400,6 +433,11 @@ const ToolCallEventSchema = z.strictObject({
     signatureHash: z.string().optional(),
     workstreamId: z.string().optional(),
     skillDigest: z.string().optional(),
+    approvalOrigin: ToolApprovalOriginSchema.optional(),
+    approvalReviewerOutcome: ToolApprovalReviewerOutcomeSchema.optional(),
+    approvalReviewerRiskLevel: ToolApprovalRiskLevelSchema.optional(),
+    approvalReviewerRationale: z.string().optional(),
+    approvalReviewerShadow: z.boolean().optional(),
 });
 
 const TurnToolObservationSchema = z.strictObject({
