@@ -2428,6 +2428,10 @@ interface Checks {
         W.OAuthProviderExchangePayload,
         z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderExchangePayloadSchema>
     >;
+    OAuthProviderTokenRequest: Same<
+        W.OAuthProviderTokenRequest,
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderTokenRequestSchema>
+    >;
     SortOrder: Same<W.SortOrder, z.infer<typeof import('./api-schemas/interaction.js').SortOrderSchema>>;
     SortOption: Same<W.SortOption, z.infer<typeof import('./api-schemas/interaction.js').SortOptionSchema>>;
     RunSearchPayload: Same<
@@ -5621,6 +5625,10 @@ interface Checks {
     'component:OAuthProviderExchangePayload': Same<
         W.ApiComponentTypes['OAuthProviderExchangePayload'],
         z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderExchangePayloadSchema>
+    >;
+    'component:OAuthProviderTokenRequest': Same<
+        W.ApiComponentTypes['OAuthProviderTokenRequest'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderTokenRequestSchema>
     >;
     'component:OAuthClientType': Same<
         W.ApiComponentTypes['OAuthClientType'],
@@ -11397,6 +11405,7 @@ const checks: Checks = {
     OAuthProviderAuthorizeResponse: true,
     OAuthProviderAccessTokenResponse: true,
     OAuthProviderExchangePayload: true,
+    OAuthProviderTokenRequest: true,
     SortOrder: true,
     SortOption: true,
     RunSearchPayload: true,
@@ -12272,6 +12281,7 @@ const checks: Checks = {
     'component:OAuthProviderAuthorizeResponse': true,
     'component:OAuthProviderAccessTokenResponse': true,
     'component:OAuthProviderExchangePayload': true,
+    'component:OAuthProviderTokenRequest': true,
     'component:OAuthClientType': true,
     'component:OAuthClientStatus': true,
     'component:OAuthRegistrationSource': true,
@@ -13555,6 +13565,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2815);
+        expect(Object.keys(checks)).toHaveLength(2817);
     });
 });
