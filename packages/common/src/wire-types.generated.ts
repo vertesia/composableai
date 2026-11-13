@@ -8403,7 +8403,6 @@ export type RenderMarkdownStatusResponse = {
 export type RenderMarkdownStatusQuery = {
     workflow_id: string;
     workflow_run_id: string;
-    [k: string]: unknown;
 };
 export type CreateContentObjectQuery = {
     collection_id?: string | undefined;

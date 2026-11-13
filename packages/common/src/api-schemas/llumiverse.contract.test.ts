@@ -157,13 +157,20 @@ describe('the JSONSchema closure is published open, because a JSON Schema is ope
     it('accepts keywords the type never enumerated', () => {
         // The opposite decision from ModelOptions, for the opposite reason. `JSONSchema` names nine
         // fields and real schemas carry `enum`, `oneOf`, `minimum`, `$ref` and the rest. Closing it
-        // would 400 nearly every schema a caller sends, so it must publish no `additionalProperties`
-        // and AJV must let those keywords through.
-        expect((ApiSchemaComponents.JSONSchema as JsonObject).additionalProperties).toBeUndefined();
+        // would 400 nearly every schema a caller sends, so AJV must let those keywords through. It
+        // publishes `additionalProperties: true` rather than omitting the keyword: a code generator run
+        // with its defaults reads an absent one as closed, and its model then drops `enum`, `oneOf`
+        // and `minimum` when it re-encodes a caller's schema.
+        expect((ApiSchemaComponents.JSONSchema as JsonObject).additionalProperties).toBe(true);
         const schema: JSONSchema = {
             type: 'object',
-            properties: { status: { type: 'string', enum: ['draft', 'live'] } },
+            properties: {
+                status: { type: 'string', enum: ['draft', 'live'] },
+                score: { type: 'number', minimum: 0, maximum: 1 },
+                choice: { oneOf: [{ type: 'string' }, { $ref: '#/$defs/Thing' }] },
+            },
             required: ['status'],
+            $defs: { Thing: { type: 'object', properties: { x: { type: 'integer' } } } },
             $comment: 'not a declared field',
         };
         const result = validateApiRequest('JSONSchema', schema);
