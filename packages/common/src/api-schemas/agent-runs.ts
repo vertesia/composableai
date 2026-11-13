@@ -73,14 +73,21 @@ export const TurnEvaluationFlagSchema = z
     .meta({ id: 'TurnEvaluationFlag', description: 'Reason behind an evaluation severity.' });
 
 export const ToolErrorClassSchema = z
-    .enum(['schema', 'platform', 'config', 'environment', 'other'])
-    .meta({ id: 'ToolErrorClass', description: 'Coarse class of a tool error, derived from the error text.' });
+    .enum(['schema', 'platform', 'config', 'environment', 'unknown_outcome', 'other'])
+    .meta({
+        id: 'ToolErrorClass',
+        description:
+            'Coarse class of a tool error, derived from the error text. `unknown_outcome` is a side-effecting call ' +
+            'whose request was sent but whose reply was lost, so the action may or may not have taken effect.',
+    });
 
 const ToolErrorClassCountsSchema = z.strictObject({
     schema: z.number().int().min(0),
     platform: z.number().int().min(0),
     config: z.number().int().min(0),
     environment: z.number().int().min(0),
+    // Optional: producers released before this class omit it, and the recorder only sends it once non-zero.
+    unknown_outcome: z.number().int().min(0).optional(),
     other: z.number().int().min(0),
 });
 
