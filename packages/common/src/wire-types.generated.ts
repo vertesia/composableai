@@ -5099,6 +5099,7 @@ export type ResolvedInteractionExecutionInfo = {
     tags: string[];
     agent_runner_options?: AgentRunnerOptions | undefined;
     resolved: ResolvedRuntimeConfig;
+    prompt_hash?: string | undefined;
 };
 export type UpdateExecutionRunPayload = {
     id?: string | undefined;
@@ -7777,6 +7778,7 @@ export type UsedSkill = {
     language?: string | undefined;
     packages?: string[] | undefined;
     system_packages?: string[] | undefined;
+    content_digest?: string | undefined;
 };
 export type DocumentPrepOptions = {
     features?: string[] | undefined;
@@ -10978,6 +10980,7 @@ export type ConversationStateWire = {
     pending_mcp_connections?: PendingMcpConnection[] | undefined;
     active_activity_group_id?: string | undefined;
     finish_reason?: string | undefined;
+    llm_attempt?: number | undefined;
     agent_run_id?: string | undefined;
     launch_id?: string | undefined;
     app_version?: string | undefined;
@@ -11446,8 +11449,21 @@ export type TurnEvaluationFlagWire =
     | 'approval_denied'
     | 'circuit_breaker'
     | 'no_visible_answer'
-    | 'answer_in_tool_preamble';
-export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'unknown_outcome' | 'other';
+    | 'answer_in_tool_preamble'
+    | 'response_cut_off'
+    | 'llm_retried'
+    | 'unknown_tool'
+    | 'invalid_tool_arguments'
+    | 'context_near_full'
+    | 'checkpoint_forced';
+export type ToolErrorClassWire =
+    | 'schema'
+    | 'unknown_tool'
+    | 'platform'
+    | 'config'
+    | 'environment'
+    | 'unknown_outcome'
+    | 'other';
 export type ToolApprovalOriginWire =
     | 'not_required'
     | 'unattended'
