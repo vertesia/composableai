@@ -31,6 +31,9 @@ export type InteractionExecutionError = Wire.InteractionExecutionError;
  */
 export type ConversationStripOptions = Wire.ConversationStripOptions;
 
+/** On-demand compaction of a resumed conversation (`UserMessagePayload.compact_conversation`). */
+export type CompactConversationOptions = Wire.CompactConversationOptions;
+
 // ------------------ in code interactions -----------------
 /**
  * Reference to an interaction in the catalog.

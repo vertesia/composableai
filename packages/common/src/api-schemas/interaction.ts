@@ -2706,6 +2706,26 @@ const resumeConversationFields = {
     asyncCompletion: AsyncCompletionOptionsSchema.optional(),
 };
 
+export const CompactConversationOptionsSchema = z
+    .strictObject({
+        instructions: z
+            .string()
+            .meta({
+                description:
+                    "Summarization prompt that replaces the provider's own. Claude only: OpenAI's compaction has no " +
+                    'prompt, so it is left out there.',
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'CompactConversationOptions',
+        description:
+            "Compact the conversation with the provider's server-side compaction instead of answering it. The run " +
+            "continues from the compacted conversation: Claude's compaction block, or OpenAI's compacted items. " +
+            'The response reports `finish_reason: compaction`; its result is the summary text on Claude and empty ' +
+            'on OpenAI, whose summary is encrypted.',
+    });
+
 export const ToolResultsPayloadSchema = z
     .strictObject({ ...resumeConversationFields, results: z.array(ToolResultSchema) })
     .meta({ id: 'ToolResultsPayload' });
@@ -2713,7 +2733,12 @@ export const ToolResultsPayloadSchema = z
 export const UserMessagePayloadSchema = z
     .strictObject({
         ...resumeConversationFields,
-        message: z.string(),
+        message: z.string().meta({
+            description:
+                'The user message. It may be empty when `compact_conversation` is set: a non-empty message is ' +
+                'added to the conversation before it is compacted.',
+        }),
+        compact_conversation: CompactConversationOptionsSchema.optional(),
         /**
          * Tool results still owed to the model when the user message is sent.
          *

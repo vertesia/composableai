@@ -4360,6 +4360,10 @@ export type ConversationStripOptions = {
     text_max_tokens?: number | undefined;
     heartbeats_after_turns?: number | undefined;
 };
+/** On-demand compaction of a resumed conversation (`UserMessagePayload.compact_conversation`). */
+export type CompactConversationOptions = {
+    instructions?: string | undefined;
+};
 /**
  * Reference to an interaction in the catalog.
  * Used in catalog listing. The id is composed of the namespace and the interaction name.
@@ -4966,6 +4970,7 @@ export type UserMessagePayload = {
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
     message: string;
+    compact_conversation?: CompactConversationOptions | undefined;
     results?: ToolResult[] | undefined;
 };
 export type RunSource = {
@@ -11988,6 +11993,7 @@ export interface ApiComponentTypes {
     InitialToolCall: InitialToolCall;
     ConversationVisibility: ConversationVisibility;
     ConversationStripOptions: ConversationStripOptions;
+    CompactConversationOptions: CompactConversationOptions;
     StreamingOptions: StreamingOptions;
     StreamingTelemetryContext: StreamingTelemetryContext;
     ResolvedRuntimeConfig: ResolvedRuntimeConfig;
