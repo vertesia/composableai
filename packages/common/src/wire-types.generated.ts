@@ -11436,6 +11436,22 @@ export type TurnEvaluationFlagWire =
     | 'no_visible_answer'
     | 'answer_in_tool_preamble';
 export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'other';
+export type ToolApprovalOriginWire =
+    | 'not_required'
+    | 'unattended'
+    | 'run_grant'
+    | 'reviewer_allowed'
+    | 'reviewer_denied'
+    | 'user_allowed'
+    | 'user_allowed_for_run'
+    | 'user_denied'
+    | 'user_denied_with_feedback'
+    | 'user_interrupted'
+    | 'mode_change'
+    | 'timeout'
+    | 'unattended_denied';
+export type ToolApprovalReviewerOutcomeWire = 'allow' | 'ask_user' | 'deny';
+export type ToolApprovalRiskLevelWire = 'low' | 'medium' | 'high';
 export type EvaluationGateReasonWire = 'signal' | 'sample' | 'opt_in' | 'always_on';
 export type EvaluationOutcomeWire = 'evaluated' | 'skipped_unarchived' | 'failed';
 export type EvaluationVerdictWire = 'success' | 'partial' | 'failure';
@@ -12627,6 +12643,9 @@ export interface ApiComponentTypes {
     EvaluationSeverity: EvaluationSeverityWire;
     TurnEvaluationFlag: TurnEvaluationFlagWire;
     ToolErrorClass: ToolErrorClassWire;
+    ToolApprovalOrigin: ToolApprovalOriginWire;
+    ToolApprovalReviewerOutcome: ToolApprovalReviewerOutcomeWire;
+    ToolApprovalRiskLevel: ToolApprovalRiskLevelWire;
     EvaluationGateReason: EvaluationGateReasonWire;
     EvaluationOutcome: EvaluationOutcomeWire;
     EvaluationVerdict: EvaluationVerdictWire;

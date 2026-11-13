@@ -76,6 +76,35 @@ export const ToolErrorClassSchema = z
     .enum(['schema', 'platform', 'config', 'environment', 'other'])
     .meta({ id: 'ToolErrorClass', description: 'Coarse class of a tool error, derived from the error text.' });
 
+export const ToolApprovalOriginSchema = z
+    .enum([
+        'not_required',
+        'unattended',
+        'run_grant',
+        'reviewer_allowed',
+        'reviewer_denied',
+        'user_allowed',
+        'user_allowed_for_run',
+        'user_denied',
+        'user_denied_with_feedback',
+        'user_interrupted',
+        'mode_change',
+        'timeout',
+        'unattended_denied',
+    ])
+    .meta({
+        id: 'ToolApprovalOrigin',
+        description: 'How a tool call came to run, or not to run, under the tool approval policy.',
+    });
+
+export const ToolApprovalReviewerOutcomeSchema = z
+    .enum(['allow', 'ask_user', 'deny'])
+    .meta({ id: 'ToolApprovalReviewerOutcome', description: "The approval reviewer's verdict on a tool call." });
+
+export const ToolApprovalRiskLevelSchema = z
+    .enum(['low', 'medium', 'high'])
+    .meta({ id: 'ToolApprovalRiskLevel', description: 'The risk level the approval reviewer gave a tool call.' });
+
 const ToolErrorClassCountsSchema = z.strictObject({
     schema: z.number().int().min(0),
     platform: z.number().int().min(0),
@@ -385,6 +414,11 @@ const ToolCallEventSchema = z.strictObject({
     errorClass: ToolErrorClassSchema.optional(),
     signatureHash: z.string().optional(),
     workstreamId: z.string().optional(),
+    approvalOrigin: ToolApprovalOriginSchema.optional(),
+    approvalReviewerOutcome: ToolApprovalReviewerOutcomeSchema.optional(),
+    approvalReviewerRiskLevel: ToolApprovalRiskLevelSchema.optional(),
+    approvalReviewerRationale: z.string().optional(),
+    approvalReviewerShadow: z.boolean().optional(),
 });
 
 const TurnToolObservationSchema = z.strictObject({
