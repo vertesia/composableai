@@ -42145,9 +42145,10 @@
       "platform",
       "config",
       "environment",
+      "unknown_outcome",
       "other"
     ],
-    "description": "Coarse class of a tool error, derived from the error text."
+    "description": "Coarse class of a tool error, derived from the error text. `unknown_outcome` is a side-effecting call whose request was sent but whose reply was lost, so the action may or may not have taken effect."
   },
   "AgentEvent": {
     "oneOf": [
@@ -42877,6 +42878,11 @@
                 "maximum": 9007199254740991
               },
               "environment": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "unknown_outcome": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 9007199254740991
