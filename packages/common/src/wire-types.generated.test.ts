@@ -4962,6 +4962,18 @@ interface Checks {
         W.ToolErrorClassWire,
         z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
     >;
+    ToolApprovalOriginWire: Same<
+        W.ToolApprovalOriginWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalOriginSchema>
+    >;
+    ToolApprovalReviewerOutcomeWire: Same<
+        W.ToolApprovalReviewerOutcomeWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalReviewerOutcomeSchema>
+    >;
+    ToolApprovalRiskLevelWire: Same<
+        W.ToolApprovalRiskLevelWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalRiskLevelSchema>
+    >;
     EvaluationGateReasonWire: Same<
         W.EvaluationGateReasonWire,
         z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationGateReasonSchema>
@@ -9003,6 +9015,18 @@ interface Checks {
         W.ApiComponentTypes['ToolErrorClass'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
     >;
+    'component:ToolApprovalOrigin': Same<
+        W.ApiComponentTypes['ToolApprovalOrigin'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalOriginSchema>
+    >;
+    'component:ToolApprovalReviewerOutcome': Same<
+        W.ApiComponentTypes['ToolApprovalReviewerOutcome'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalReviewerOutcomeSchema>
+    >;
+    'component:ToolApprovalRiskLevel': Same<
+        W.ApiComponentTypes['ToolApprovalRiskLevel'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalRiskLevelSchema>
+    >;
     'component:EvaluationGateReason': Same<
         W.ApiComponentTypes['EvaluationGateReason'],
         z.infer<typeof import('./api-schemas/agent-runs.js').EvaluationGateReasonSchema>
@@ -12120,6 +12144,9 @@ const checks: Checks = {
     EvaluationSeverityWire: true,
     TurnEvaluationFlagWire: true,
     ToolErrorClassWire: true,
+    ToolApprovalOriginWire: true,
+    ToolApprovalReviewerOutcomeWire: true,
+    ToolApprovalRiskLevelWire: true,
     EvaluationGateReasonWire: true,
     EvaluationOutcomeWire: true,
     EvaluationVerdictWire: true,
@@ -13134,6 +13161,9 @@ const checks: Checks = {
     'component:EvaluationSeverity': true,
     'component:TurnEvaluationFlag': true,
     'component:ToolErrorClass': true,
+    'component:ToolApprovalOrigin': true,
+    'component:ToolApprovalReviewerOutcome': true,
+    'component:ToolApprovalRiskLevel': true,
     'component:EvaluationGateReason': true,
     'component:EvaluationOutcome': true,
     'component:EvaluationVerdict': true,
@@ -13575,6 +13605,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2819);
+        expect(Object.keys(checks)).toHaveLength(2825);
     });
 });

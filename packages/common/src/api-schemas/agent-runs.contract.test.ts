@@ -6,7 +6,12 @@ import type {
     AgentRunFeedbackPayload,
     AgentRunFeedbackResponse,
 } from '../store/agent-run.js';
-import { AgentEventType, type TurnEvaluationEvent } from '../workflow-analytics.js';
+import {
+    AgentEventType,
+    TelemetryToolType,
+    type ToolCallEvent,
+    type TurnEvaluationEvent,
+} from '../workflow-analytics.js';
 import type {
     AgentRunEvaluationRollupSchema,
     AgentRunEvaluationSchema,
@@ -128,6 +133,36 @@ describe('agent run evaluation API contracts', () => {
     it('accepts a turn_evaluation event from a producer that predates the stall counters', () => {
         const { stallCorrectives: _c, stallTrips: _t, ...legacy } = turnEvaluation;
         expect(validateApiRequest('IngestAgentEventsPayload', { events: [legacy] }).valid).toBe(true);
+    });
+
+    it('accepts the approval provenance of a tool_call event', () => {
+        const toolCall = {
+            eventType: AgentEventType.ToolCall,
+            timestamp: turnEvaluation.timestamp,
+            runId: 'wf-run-1',
+            agentRunId: 'run-1',
+            model: 'claude',
+            environmentId: 'env-1',
+            environmentType: 'vertexai',
+            interactionId: 'sys:StudioAssistant',
+            toolName: 'send_email',
+            toolUseId: 'toolu-1',
+            toolType: TelemetryToolType.Builtin,
+            iteration: 1,
+            success: false,
+            durationMs: 0,
+            errorType: 'ToolApprovalDenied',
+            approvalOrigin: 'user_denied',
+            approvalReviewerOutcome: 'allow',
+            approvalReviewerRiskLevel: 'low',
+            approvalReviewerRationale: 'The user asked for it.',
+            approvalReviewerShadow: true,
+        } satisfies ToolCallEvent;
+        expect(validateApiRequest('IngestAgentEventsPayload', { events: [toolCall] }).valid).toBe(true);
+        expect(
+            validateApiRequest('IngestAgentEventsPayload', { events: [{ ...toolCall, approvalOrigin: 'magic' }] })
+                .valid,
+        ).toBe(false);
     });
 
     it('rejects a turn_evaluation event with an undeclared field', () => {
