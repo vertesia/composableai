@@ -209,7 +209,8 @@ export async function generateOrAssignContentType(
     }));
 
     // Closed-world output: constrain the result to the eligible type names + 'other', which
-    // removes the exact-string-match fragility on the model's answer.
+    // removes the exact-string-match fragility on the model's answer. `additionalProperties: false`
+    // lets drivers that support it enforce the schema natively instead of only describing it in the prompt.
     const selectionResultSchema: JSONSchema = {
         type: 'object',
         properties: {
@@ -220,6 +221,7 @@ export async function generateOrAssignContentType(
             },
         },
         required: ['document_type'],
+        additionalProperties: false,
     };
 
     log.debug('Selecting document type from catalog', { objectId, candidateCount: existing_types.length });

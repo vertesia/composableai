@@ -134,6 +134,7 @@ describe('generateOrAssignContentType', () => {
                     properties: {
                         document_type: expect.objectContaining({ enum: ['Invoice', 'other'] }),
                     },
+                    additionalProperties: false,
                 }),
             }),
             expect.anything(),
