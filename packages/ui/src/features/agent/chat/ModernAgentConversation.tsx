@@ -58,6 +58,7 @@ import { AgentRunFeedbackProvider } from './AgentRunFeedback';
 import { AnimatedThinkingDots, PulsatingCircle } from './AnimatedThinkingDots';
 import { findBudgetPause, findRunBudgetRemaining } from './budgetPause';
 import { extractFilesFromClipboard } from './clipboardFiles.js';
+import { conversationFileArtifactPath, conversationFileName } from './conversationFileName';
 import { useAgentPlans } from './hooks/useAgentPlans.js';
 import { useAgentStream } from './hooks/useAgentStream.js';
 import { useDocumentPanel } from './hooks/useDocumentPanel.js';
@@ -1099,12 +1100,12 @@ function StartWorkflowView({
                 const failedUploads: { name: string; error?: string }[] = [];
                 for (const file of stagedFiles) {
                     try {
-                        const artifactPath = `files/${file.name}`;
+                        const artifactPath = conversationFileArtifactPath(file.name);
                         await client.agents.uploadArtifact(agentId, artifactPath, file);
                         const fileId = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                         await client.agents.sendSignal(agentId, 'FileUploaded', {
                             id: fileId,
-                            name: file.name,
+                            name: conversationFileName(file.name),
                             content_type: file.type || 'application/octet-stream',
                             reference: `artifact:${artifactPath}`,
                             artifact_path: artifactPath,
