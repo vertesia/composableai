@@ -1,5 +1,7 @@
 import type { AsyncExecutionResult } from '@vertesia/common';
 
+// The types of the `inFlightDeduplication` client option.
+export type { DuplicateRequest, InFlightRequestsOptions } from '@vertesia/api-fetch-client';
 export type { EnableEnvironmentModelPayload, OrphanedAppInstallation } from '@vertesia/common';
 export { getOAuthPermissionScopes, Permission } from '@vertesia/common';
 export * from './client.js';

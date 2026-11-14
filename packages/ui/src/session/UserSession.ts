@@ -18,6 +18,7 @@ import { clearOidcSession, usesOidcSignIn } from './auth/oidc';
 import { recordOidcSignOut } from './auth/oidcAutoStart';
 
 import { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY } from './constants';
+import { reportDuplicateRequest } from './duplicateRequests';
 import { forgetTabScopeSelection, rememberScopeSelection } from './scopeSelection';
 
 export { LastSelectedAccountId_KEY, LastSelectedProjectId_KEY };
@@ -52,6 +53,9 @@ class UserSession {
                     : Env.endpoints.zeno,
                 tokenServerUrl: Env.endpoints.sts,
                 fetch: usesGatewaySession() ? gatewayFetch : undefined,
+                // One signed-in user per browser session: share identical in-flight GETs, and report duplicates so
+                // the components that load the same resource separately can be fixed.
+                inFlightDeduplication: { onDuplicate: reportDuplicateRequest },
             });
         }
 

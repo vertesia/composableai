@@ -1,6 +1,8 @@
 import {
     AbstractFetchClient,
     type FETCH_FN,
+    InFlightRequests,
+    type InFlightRequestsOptions,
     type IPacingRetryPolicy,
     type IRequestRetryPolicy,
     type RequestIdentityProvider,
@@ -94,6 +96,17 @@ export type VertesiaClientProps = {
      * (connection + headers + body) via AbortSignal — browser + Node safe.
      */
     timeout?: number | false | null;
+    /**
+     * Share one request between concurrent identical GETs (studio + store, one shared table), so components
+     * that load the same resource at the same time send it once. Not a cache: nothing is kept after the
+     * response, and any write invalidates in-flight GETs. See `ClientBase.withInFlightDeduplication`.
+     *
+     * Pass `true` or `false`, or options (which turn it on) to set the join window or get an `onDuplicate`
+     * report of each duplicate GET. When left out, it is on in a browser and off elsewhere, and off whenever
+     * `onRequest`, `requestIdentity` or a custom `fetch` is given, since those can make two calls with the
+     * same URL and headers differ: a server client serving several users must opt in explicitly.
+     */
+    inFlightDeduplication?: boolean | InFlightRequestsOptions;
     fetch?: FETCH_FN | Promise<FETCH_FN>;
 };
 
@@ -102,6 +115,15 @@ export type VertesiaClientProps = {
  * keeps it exhaustive in both directions: a new prop that is missing here fails to compile, and a key
  * here that is not a prop fails too. Without that, the table would silently rot into false warnings.
  */
+/**
+ * In-flight sharing is on by default only where one client serves one user and nothing changes a request per call:
+ * in a browser, without `onRequest`, `requestIdentity` or a custom `fetch`.
+ */
+function defaultInFlightDeduplication(opts: VertesiaClientProps): boolean {
+    const inBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+    return inBrowser && !opts.onRequest && !opts.requestIdentity && !opts.fetch;
+}
+
 const KNOWN_CLIENT_OPTIONS: Record<keyof Required<VertesiaClientProps>, true> = {
     site: true,
     serverUrl: true,
@@ -116,6 +138,7 @@ const KNOWN_CLIENT_OPTIONS: Record<keyof Required<VertesiaClientProps>, true> = 
     retryPolicy: true,
     pacingRetry: true,
     timeout: true,
+    inFlightDeduplication: true,
     fetch: true,
 };
 
@@ -273,6 +296,10 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
             this.withTimeout(opts.timeout);
         }
 
+        // One table shared by the studio and store clients.
+        const dedupe = opts.inFlightDeduplication ?? defaultInFlightDeduplication(opts);
+        this.withInFlightDeduplication(typeof dedupe === 'object' ? new InFlightRequests(dedupe) : dedupe);
+
         if (opts.authCallback) {
             this.withAuthCallback(opts.authCallback);
         } else if (opts.apikey) {
@@ -334,6 +361,16 @@ export class VertesiaClient extends AbstractFetchClient<VertesiaClient> {
     withTimeout(timeoutMs?: number | false | null) {
         this.store.withTimeout(timeoutMs);
         return super.withTimeout(timeoutMs);
+    }
+
+    /**
+     * Overwrite to give the studio and store clients one shared table, so a write through either one invalidates
+     * the in-flight GETs of both.
+     */
+    withInFlightDeduplication(enabled: boolean | InFlightRequests = true) {
+        const shared = enabled instanceof InFlightRequests ? enabled : enabled ? new InFlightRequests() : false;
+        this.store.withInFlightDeduplication(shared);
+        return super.withInFlightDeduplication(shared);
     }
 
     async withApiKey(apiKey: string | null) {
