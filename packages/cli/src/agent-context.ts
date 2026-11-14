@@ -16,13 +16,20 @@ export function getAgentRunId(options: RunContextOptions = {}): string {
     return runId;
 }
 
-export function getArtifactStorageId(options: RunContextOptions = {}): string {
-    const storageId =
+/** The artifact storage of the agent run this command runs for, or undefined outside one. */
+export function findArtifactStorageId(options: RunContextOptions = {}): string | undefined {
+    return (
         getStringOption(options.runId) ||
         getStringOption(options.storageId) ||
         process.env.VERTESIA_ARTIFACT_STORAGE_ID ||
         process.env.VERTESIA_AGENTRUN_ID ||
-        process.env.VERTESIA_RUN_ID;
+        process.env.VERTESIA_RUN_ID ||
+        undefined
+    );
+}
+
+export function getArtifactStorageId(options: RunContextOptions = {}): string {
+    const storageId = findArtifactStorageId(options);
 
     if (!storageId) {
         console.error('Error: Artifact storage ID not specified. Use --run-id or set VERTESIA_ARTIFACT_STORAGE_ID');

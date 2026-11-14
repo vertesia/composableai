@@ -5,14 +5,14 @@ import { NodeStreamSource } from '@vertesia/client/node';
 import type { DataStoreItem, ImportDataFormat, ImportDataPayload, ImportTableData } from '@vertesia/common';
 import type { Command } from 'commander';
 import mime from 'mime';
-import { getArtifactStorageId } from '../agent-context.js';
+import { findArtifactStorageId } from '../agent-context.js';
 import { getClient } from '../client.js';
 import { type CliOptions, getStringOption } from '../utils/options.js';
 
 const IMPORT_MODES = new Set(['append', 'replace']);
 const IMPORT_FORMATS = new Set<ImportDataFormat>(['csv', 'json', 'parquet']);
 
-type ImportDataOptions = CliOptions<{
+export type ImportDataOptions = CliOptions<{
     json?: boolean;
     mode?: string;
     format?: string;
@@ -48,7 +48,7 @@ export async function importData(
 ) {
     const client = await getClient(program);
     const mode = normalizeMode(options.mode);
-    const source = await resolveImportSource(client, input, options);
+    const source = await resolveImportSource(client, storeId, input, options);
     const message = buildImportMessage(tableName, source.original, options.message);
     const payload: ImportDataPayload = {
         mode,
@@ -117,6 +117,7 @@ function inferFormatFromName(name?: string): ImportDataFormat | undefined {
 
 async function resolveImportSource(
     client: Awaited<ReturnType<typeof getClient>>,
+    storeId: string,
     input: string | undefined,
     options: ImportDataOptions,
 ): Promise<{ tableData: ImportTableData; original: string; uploadedUri?: string }> {
@@ -147,7 +148,7 @@ async function resolveImportSource(
 
     const uploadName = resolveUploadName(normalizedInput, options.name);
     const format = normalizeFormat(options.format, uploadName);
-    const uploadPath = buildImportUploadPath(uploadName, options);
+    const uploadPath = buildImportUploadPath(uploadName, storeId, options);
     const mimeType = getStringOption(options.mime) || mime.getType(uploadName) || 'application/octet-stream';
     const source =
         normalizedInput === '-'
@@ -179,9 +180,15 @@ function resolveUploadName(input: string, explicitName: unknown): string {
     return basename(input);
 }
 
-function buildImportUploadPath(name: string, options: ImportDataOptions): string {
+/**
+ * Where an uploaded local file is staged in project storage. Inside an agent run it goes under the run's artifact
+ * storage; from a workstation there is no run, so it goes under the target store.
+ */
+export function buildImportUploadPath(name: string, storeId: string, options: ImportDataOptions): string {
     const optionPrefix = getStringOption(options.prefix);
-    const prefix = optionPrefix ? optionPrefix.replace(/^\/+|\/+$/g, '') : `imports/${getArtifactStorageId(options)}`;
+    const prefix = optionPrefix
+        ? optionPrefix.replace(/^\/+|\/+$/g, '')
+        : `imports/${findArtifactStorageId(options) ?? `data-stores/${storeId}`}`;
     return `${prefix}/${Date.now()}-${randomUUID()}-${name}`;
 }
 

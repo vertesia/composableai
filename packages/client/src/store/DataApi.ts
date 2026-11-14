@@ -1,4 +1,4 @@
-import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
+import type { ClientBase } from '@vertesia/api-fetch-client';
 import {
     type AlterTablePayload,
     type BatchQueryResult,
@@ -28,6 +28,7 @@ import {
 } from '@vertesia/common';
 import { withImportId } from '../idempotency-key.js';
 import { DashboardApi } from './DashboardApi.js';
+import { DataServerTopic } from './DataServerTopic.js';
 
 /**
  * Client API for managing versioned analytical data stores.
@@ -37,10 +38,15 @@ import { DashboardApi } from './DashboardApi.js';
  * - Multi-table atomic imports
  * - Version history and rollback
  * - Named snapshots
+ *
+ * Every call goes to the data server (see `dataServerBaseUrl`), which answers the query calls and forwards the
+ * rest to zeno-server.
+ * A development environment older than the data server answers them from zeno-server
+ * (see `DataServerTopic`).
  */
-export class DataApi extends ApiTopic {
+export class DataApi extends DataServerTopic {
     constructor(parent: ClientBase) {
-        super(parent, '/api/v1/data');
+        super(parent);
     }
 
     /**
