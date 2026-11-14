@@ -15,7 +15,7 @@
         "typecheck": "node scripts/typecheck.mjs",
         "lint": "biome lint src",
         "check": "pnpm run lint && pnpm run typecheck",
-        "prebuild": "biome lint src && tsc --build --noEmit",
+        "typecheck:test": "node scripts/typecheck.mjs",
         "clean:lib": "rimraf ./lib ./tsconfig.tool-server.tsbuildinfo",
         "build:server": "npm run clean:lib && tsc -p tsconfig.tool-server.json && node ./node_modules/@vertesia/build-tools/lib/bin/build.js",
         "build:ui:app": "vite build --mode app",

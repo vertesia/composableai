@@ -103,6 +103,8 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(packageJson.scripts['codegen:dev'], undefined);
         assert.equal(packageJson.scripts.pretest, undefined);
         assert.equal(packageJson.scripts['test:codegen'], undefined);
+        assert.equal(packageJson.scripts['typecheck:test'], undefined);
+        assert.equal(packageJson.scripts.prebuild, 'biome lint src && tsc --build --noEmit');
         assert.equal(packageJson.scripts.test, undefined);
         assert.equal(packageJson.scripts['test:unit'], undefined);
         assert.equal(packageJson.scripts['test:e2e'], undefined);
