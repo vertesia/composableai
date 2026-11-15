@@ -997,7 +997,6 @@ export type AppMcpProfile = {
 export type AppMcpProfileLimits = {
     tool_timeout_ms?: number | undefined;
     max_result_chars?: number | undefined;
-    max_concurrent_calls?: number | undefined;
 };
 export type AppManifestData = {
     parameters?: Record<string, McpConnectionParameter> | undefined;

@@ -244,12 +244,6 @@ export const AppMcpProfileLimitsSchema = z
             .min(1)
             .meta({ description: 'A text result longer than this is refused, with a hint to narrow the request.' })
             .optional(),
-        max_concurrent_calls: z
-            .number()
-            .int()
-            .min(1)
-            .meta({ description: 'Tool calls of the profile one server process runs at once.' })
-            .optional(),
     })
     .meta({
         id: 'AppMcpProfileLimits',

@@ -25810,12 +25810,6 @@
         "minimum": 1,
         "maximum": 9007199254740991,
         "description": "A text result longer than this is refused, with a hint to narrow the request."
-      },
-      "max_concurrent_calls": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 9007199254740991,
-        "description": "Tool calls of the profile one server process runs at once."
       }
     },
     "additionalProperties": false,
