@@ -230,27 +230,6 @@ export const CompositeAppCardOverridesSchema = z
             'Card display overrides for the CompositeApp in the App Portal. Similar to AppManifest display properties, but specific to the CompositeApp card. Allows customers to customize the app portal card (not otherwise possible if using a shared, Vertesia-managed manifest across accounts).',
     });
 
-export const AppMcpProfileLimitsSchema = z
-    .strictObject({
-        tool_timeout_ms: z
-            .number()
-            .int()
-            .min(1000)
-            .meta({ description: 'A tool call that runs longer fails with a clear error.' })
-            .optional(),
-        max_result_chars: z
-            .number()
-            .int()
-            .min(1)
-            .meta({ description: 'A text result longer than this is refused, with a hint to narrow the request.' })
-            .optional(),
-    })
-    .meta({
-        id: 'AppMcpProfileLimits',
-        description:
-            'Limits on the tool calls of an app MCP profile. Each is capped by the platform: a value above the cap, or a missing value, gets the platform default.',
-    });
-
 export const AppMcpProfileSchema = z
     .strictObject({
         builtin_tools: z.array(z.string().min(1)).min(1).max(50).meta({
@@ -264,7 +243,6 @@ export const AppMcpProfileSchema = z
                     'The permission scopes the listed tools need. Register the integration\u2019s OAuth client with these scopes and no more: they, not the tool list, limit what its tokens can do.',
             })
             .optional(),
-        limits: AppMcpProfileLimitsSchema.optional(),
     })
     .meta({
         id: 'AppMcpProfile',

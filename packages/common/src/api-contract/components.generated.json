@@ -25796,25 +25796,6 @@
     "additionalProperties": false,
     "description": "Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs."
   },
-  "AppMcpProfileLimits": {
-    "type": "object",
-    "properties": {
-      "tool_timeout_ms": {
-        "type": "integer",
-        "minimum": 1000,
-        "maximum": 9007199254740991,
-        "description": "A tool call that runs longer fails with a clear error."
-      },
-      "max_result_chars": {
-        "type": "integer",
-        "minimum": 1,
-        "maximum": 9007199254740991,
-        "description": "A text result longer than this is refused, with a hint to narrow the request."
-      }
-    },
-    "additionalProperties": false,
-    "description": "Limits on the tool calls of an app MCP profile. Each is capped by the platform: a value above the cap, or a missing value, gets the platform default."
-  },
   "AppMcpProfile": {
     "type": "object",
     "properties": {
@@ -25834,9 +25815,6 @@
           "type": "string"
         },
         "description": "The permission scopes the listed tools need. Register the integration’s OAuth client with these scopes and no more: they, not the tool list, limit what its tokens can do."
-      },
-      "limits": {
-        "$ref": "#/components/schemas/AppMcpProfileLimits"
       }
     },
     "required": [

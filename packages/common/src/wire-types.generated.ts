@@ -992,11 +992,6 @@ export type AppAccessControl = 'all' | 'ui' | 'none';
 export type AppMcpProfile = {
     builtin_tools: string[];
     scopes?: string[] | undefined;
-    limits?: AppMcpProfileLimits | undefined;
-};
-export type AppMcpProfileLimits = {
-    tool_timeout_ms?: number | undefined;
-    max_result_chars?: number | undefined;
 };
 export type AppManifestData = {
     parameters?: Record<string, McpConnectionParameter> | undefined;
@@ -13044,7 +13039,6 @@ export interface ApiComponentTypes {
     AppWidgetInfo: AppWidgetInfo;
     AppDashboardDefinition: AppDashboardDefinition;
     AppOAuthClientConfig: AppOAuthClientConfig;
-    AppMcpProfileLimits: AppMcpProfileLimits;
     AppMcpProfile: AppMcpProfile;
     AppManifestData: AppManifestData;
     UpdateAppPayload: UpdateAppPayload;
