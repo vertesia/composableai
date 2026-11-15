@@ -4,6 +4,7 @@ import {
     CONTENT_SOURCE_MIN_SYNC_INTERVAL_MINUTES,
     CONTENT_SOURCE_REPORT_MAX_LIMIT,
     CONTENT_SOURCE_REPORT_ROUNDS,
+    CONTENT_SOURCE_SAMPLE_MAX_LIMIT,
 } from '../content-sources.js';
 
 const CONTENT_SOURCE_NAME_MAX_LENGTH = 128;
@@ -310,4 +311,194 @@ export const ContentSourceReportSchema = z
         description:
             'A page of the files a sync round created, updated, deleted, skipped or failed. Unchanged files are only ' +
             "counted, in the round's `counts`. A round still running has a partial report.",
+    });
+
+const discoverConnectionFields = {
+    type: z.literal('sharepoint').meta({ description: 'The system to inspect. Only SharePoint can be inspected.' }),
+    oauth_provider_id: commonCreateFields.oauth_provider_id,
+    site_url: z.string().min(1).meta({
+        description: 'The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`.',
+    }),
+};
+
+const discoverLibraryField = {
+    library_name: z
+        .string()
+        .min(1)
+        .meta({ description: 'The document library name. Defaults to the site’s default library.' })
+        .optional(),
+};
+
+export const DiscoverContentSourceSitePayloadSchema = z.strictObject(discoverConnectionFields).meta({
+    id: 'DiscoverContentSourceSitePayload',
+    description: 'The connection to inspect: an OAuth provider and a site. No content source needs to exist.',
+});
+
+export const DiscoverContentSourceSchemaPayloadSchema = z
+    .strictObject({ ...discoverConnectionFields, ...discoverLibraryField })
+    .meta({ id: 'DiscoverContentSourceSchemaPayload', description: 'The document library to read the schema of.' });
+
+export const DiscoverContentSourceSamplePayloadSchema = z
+    .strictObject({
+        ...discoverConnectionFields,
+        ...discoverLibraryField,
+        folder_path: z
+            .string()
+            .meta({ description: 'A folder inside the library, e.g. `Contracts/2026`. Defaults to the whole library.' })
+            .optional(),
+        limit: z
+            .number()
+            .int()
+            .min(1)
+            .max(CONTENT_SOURCE_SAMPLE_MAX_LIMIT)
+            .meta({ description: 'The most files to return. Defaults to 100.' })
+            .optional(),
+    })
+    .meta({ id: 'DiscoverContentSourceSamplePayload', description: 'The folder to read a sample of files from.' });
+
+export const DiscoverContentSourceFoldersPayloadSchema = z
+    .strictObject({
+        ...discoverConnectionFields,
+        ...discoverLibraryField,
+        folder_path: z
+            .string()
+            .meta({ description: 'The folder to list, e.g. `Contracts/2026`. Defaults to the library’s root.' })
+            .optional(),
+    })
+    .meta({ id: 'DiscoverContentSourceFoldersPayload', description: 'The folder to list the subfolders of.' });
+
+export const ContentSourceLibrarySchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'The identifier of the library in its system.' }),
+        name: z.string().meta({ description: 'The name to pass as `library_name`.' }),
+        web_url: z.string().optional(),
+    })
+    .meta({ id: 'ContentSourceLibrary', description: 'A document library of a site.' });
+
+export const ContentSourceSiteDiscoverySchema = z
+    .strictObject({
+        site_id: z.string(),
+        name: z.string(),
+        web_url: z.string().optional(),
+        libraries: z.array(ContentSourceLibrarySchema),
+    })
+    .meta({ id: 'ContentSourceSiteDiscovery', description: 'A site and its document libraries.' });
+
+export const ContentSourceFolderSchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'The identifier of the folder in its system.' }),
+        name: z.string(),
+        path: z.string().meta({ description: 'The path inside the library, to pass as `folder_path`.' }),
+        child_count: z.number().int().meta({ description: 'How many files and folders it holds directly.' }).optional(),
+    })
+    .meta({ id: 'ContentSourceFolder', description: 'A folder of a document library.' });
+
+export const ContentSourceFoldersDiscoverySchema = z
+    .strictObject({
+        library_name: z.string(),
+        folder_path: z.string().meta({ description: 'The folder listed. Empty for the library’s root.' }),
+        folders: z.array(ContentSourceFolderSchema).meta({ description: 'Its direct subfolders, by name.' }),
+        truncated: z.boolean().meta({ description: 'True when the folder holds more subfolders than were read.' }),
+    })
+    .meta({ id: 'ContentSourceFoldersDiscovery', description: 'The direct subfolders of a folder of a library.' });
+
+export const ContentSourceColumnTypeSchema = z
+    .enum([
+        'text',
+        'number',
+        'boolean',
+        'currency',
+        'date',
+        'date_time',
+        'choice',
+        'lookup',
+        'person',
+        'managed_metadata',
+        'url',
+        'calculated',
+        'location',
+        'image',
+        'approval_status',
+        'unknown',
+    ])
+    .meta({ id: 'ContentSourceColumnType', description: 'The kind of value a library column holds.' });
+
+export const ContentSourceColumnSchema = z
+    .strictObject({
+        name: z.string().meta({ description: 'The internal name: the key of the column in a file’s `fields`.' }),
+        display_name: z.string(),
+        description: z.string().optional(),
+        type: ContentSourceColumnTypeSchema,
+        required: z.boolean(),
+        read_only: z.boolean(),
+        multiple: z.boolean().meta({ description: 'Whether a file can hold several values.' }),
+        choices: z.array(z.string()).meta({ description: 'The allowed values of a `choice` column.' }).optional(),
+    })
+    .meta({ id: 'ContentSourceColumn', description: 'A metadata column of a document library.' });
+
+export const ContentSourceContentTypeSchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        group: z.string().optional(),
+        columns: z.array(ContentSourceColumnSchema),
+    })
+    .meta({
+        id: 'ContentSourceContentType',
+        description: 'A kind of document a library defines, with the columns its documents carry.',
+    });
+
+export const ContentSourceSchemaDiscoverySchema = z
+    .strictObject({
+        library_name: z.string(),
+        content_types: z.array(ContentSourceContentTypeSchema).meta({
+            description: 'The document content types of the library. Folder and hidden content types are left out.',
+        }),
+        columns: z.array(ContentSourceColumnSchema).meta({
+            description: 'Every visible column of the library, whichever content type uses it.',
+        }),
+        content_types_truncated: z.boolean().meta({
+            description: 'True when the library has more content types than were read.',
+        }),
+    })
+    .meta({ id: 'ContentSourceSchemaDiscovery', description: 'The content types and columns of a document library.' });
+
+export const ContentSourceSampleFileSchema = z
+    .strictObject({
+        id: z.string(),
+        name: z.string(),
+        folder_path: z.string().meta({
+            description: 'The folder of the file inside the library. Empty at the library’s root.',
+        }),
+        size: z.number().int().optional(),
+        mime_type: z.string().optional(),
+        web_url: z.string().optional(),
+        modified_at: z.string().meta({ format: 'date-time' }).optional(),
+        content_type: z.string().meta({ description: 'The name of the file’s content type.' }).optional(),
+        fields: z.record(z.string(), z.unknown()).meta({
+            description: 'The values of the file’s own columns, keyed by internal name. System fields are left out.',
+        }),
+    })
+    .meta({ id: 'ContentSourceSampleFile', description: 'A file of a sample, with its metadata.' });
+
+export const ContentSourceContentTypeCountSchema = z
+    .strictObject({ name: z.string(), count: z.number().int() })
+    .meta({ id: 'ContentSourceContentTypeCount' });
+
+export const ContentSourceSampleDiscoverySchema = z
+    .strictObject({
+        library_name: z.string(),
+        files: z.array(ContentSourceSampleFileSchema),
+        content_type_counts: z.array(ContentSourceContentTypeCountSchema).meta({
+            description: 'How many sampled files have each content type, most frequent first.',
+        }),
+        folders_read: z.number().int(),
+        truncated: z.boolean().meta({
+            description: 'True when the folder holds more than was read: the counts describe a sample, not the whole.',
+        }),
+    })
+    .meta({
+        id: 'ContentSourceSampleDiscovery',
+        description: 'A bounded sample of the files under a folder, spread over its subfolders.',
     });

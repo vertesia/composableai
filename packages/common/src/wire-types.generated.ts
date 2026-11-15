@@ -2428,6 +2428,122 @@ export type ContentSourceReportQuery = {
     cursor?: string | undefined;
     limit?: number | undefined;
 };
+/** The connection an inspection reads through. No content source needs to exist. */
+export type DiscoverContentSourceSitePayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+};
+export type DiscoverContentSourceSchemaPayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+    library_name?: string | undefined;
+};
+export type DiscoverContentSourceSamplePayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
+    limit?: number | undefined;
+};
+export type DiscoverContentSourceFoldersPayload = {
+    type: 'sharepoint';
+    oauth_provider_id: string;
+    site_url: string;
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
+};
+/** A site and its document libraries. */
+export type ContentSourceSiteDiscovery = {
+    site_id: string;
+    name: string;
+    web_url?: string | undefined;
+    libraries: ContentSourceLibrary[];
+};
+export type ContentSourceLibrary = {
+    id: string;
+    name: string;
+    web_url?: string | undefined;
+};
+/** The direct subfolders of a folder of a library. */
+export type ContentSourceFoldersDiscovery = {
+    library_name: string;
+    folder_path: string;
+    folders: ContentSourceFolder[];
+    truncated: boolean;
+};
+export type ContentSourceFolder = {
+    id: string;
+    name: string;
+    path: string;
+    child_count?: number | undefined;
+};
+/** The content types and columns of a document library. */
+export type ContentSourceSchemaDiscovery = {
+    library_name: string;
+    content_types: ContentSourceContentType[];
+    columns: ContentSourceColumn[];
+    content_types_truncated: boolean;
+};
+export type ContentSourceContentType = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    group?: string | undefined;
+    columns: ContentSourceColumn[];
+};
+export type ContentSourceColumn = {
+    name: string;
+    display_name: string;
+    description?: string | undefined;
+    type: ContentSourceColumnType;
+    required: boolean;
+    read_only: boolean;
+    multiple: boolean;
+    choices?: string[] | undefined;
+};
+export type ContentSourceColumnType =
+    | 'text'
+    | 'number'
+    | 'boolean'
+    | 'currency'
+    | 'date'
+    | 'date_time'
+    | 'choice'
+    | 'lookup'
+    | 'person'
+    | 'managed_metadata'
+    | 'url'
+    | 'calculated'
+    | 'location'
+    | 'image'
+    | 'approval_status'
+    | 'unknown';
+/** A bounded sample of the files under a folder. */
+export type ContentSourceSampleDiscovery = {
+    library_name: string;
+    files: ContentSourceSampleFile[];
+    content_type_counts: ContentSourceContentTypeCount[];
+    folders_read: number;
+    truncated: boolean;
+};
+export type ContentSourceSampleFile = {
+    id: string;
+    name: string;
+    folder_path: string;
+    size?: number | undefined;
+    mime_type?: string | undefined;
+    web_url?: string | undefined;
+    modified_at?: string | undefined;
+    content_type?: string | undefined;
+    fields: Record<string, unknown>;
+};
+export type ContentSourceContentTypeCount = {
+    name: string;
+    count: number;
+};
 export type CostAnalyticsQuery = {
     from?: string | number | undefined;
     to?: string | number | undefined;
@@ -12612,6 +12728,21 @@ export interface ApiComponentTypes {
     ContentSourceReportEntry: ContentSourceReportEntry;
     ContentSourceReportQuery: ContentSourceReportQuery;
     ContentSourceReport: ContentSourceReport;
+    DiscoverContentSourceSitePayload: DiscoverContentSourceSitePayload;
+    DiscoverContentSourceSchemaPayload: DiscoverContentSourceSchemaPayload;
+    DiscoverContentSourceSamplePayload: DiscoverContentSourceSamplePayload;
+    DiscoverContentSourceFoldersPayload: DiscoverContentSourceFoldersPayload;
+    ContentSourceFolder: ContentSourceFolder;
+    ContentSourceFoldersDiscovery: ContentSourceFoldersDiscovery;
+    ContentSourceLibrary: ContentSourceLibrary;
+    ContentSourceSiteDiscovery: ContentSourceSiteDiscovery;
+    ContentSourceColumnType: ContentSourceColumnType;
+    ContentSourceColumn: ContentSourceColumn;
+    ContentSourceContentType: ContentSourceContentType;
+    ContentSourceSchemaDiscovery: ContentSourceSchemaDiscovery;
+    ContentSourceSampleFile: ContentSourceSampleFile;
+    ContentSourceContentTypeCount: ContentSourceContentTypeCount;
+    ContentSourceSampleDiscovery: ContentSourceSampleDiscovery;
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;

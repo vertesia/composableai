@@ -1079,6 +1079,66 @@ interface Checks {
         W.ContentSourceReportQuery,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportQuerySchema>
     >;
+    DiscoverContentSourceSitePayload: Same<
+        W.DiscoverContentSourceSitePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceSitePayloadSchema>
+    >;
+    DiscoverContentSourceSchemaPayload: Same<
+        W.DiscoverContentSourceSchemaPayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceSchemaPayloadSchema>
+    >;
+    DiscoverContentSourceSamplePayload: Same<
+        W.DiscoverContentSourceSamplePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceSamplePayloadSchema>
+    >;
+    DiscoverContentSourceFoldersPayload: Same<
+        W.DiscoverContentSourceFoldersPayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceFoldersPayloadSchema>
+    >;
+    ContentSourceSiteDiscovery: Same<
+        W.ContentSourceSiteDiscovery,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSiteDiscoverySchema>
+    >;
+    ContentSourceLibrary: Same<
+        W.ContentSourceLibrary,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceLibrarySchema>
+    >;
+    ContentSourceFoldersDiscovery: Same<
+        W.ContentSourceFoldersDiscovery,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceFoldersDiscoverySchema>
+    >;
+    ContentSourceFolder: Same<
+        W.ContentSourceFolder,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceFolderSchema>
+    >;
+    ContentSourceSchemaDiscovery: Same<
+        W.ContentSourceSchemaDiscovery,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSchemaDiscoverySchema>
+    >;
+    ContentSourceContentType: Same<
+        W.ContentSourceContentType,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceContentTypeSchema>
+    >;
+    ContentSourceColumn: Same<
+        W.ContentSourceColumn,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceColumnSchema>
+    >;
+    ContentSourceColumnType: Same<
+        W.ContentSourceColumnType,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceColumnTypeSchema>
+    >;
+    ContentSourceSampleDiscovery: Same<
+        W.ContentSourceSampleDiscovery,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSampleDiscoverySchema>
+    >;
+    ContentSourceSampleFile: Same<
+        W.ContentSourceSampleFile,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSampleFileSchema>
+    >;
+    ContentSourceContentTypeCount: Same<
+        W.ContentSourceContentTypeCount,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceContentTypeCountSchema>
+    >;
     CostAnalyticsQuery: Same<
         W.CostAnalyticsQuery,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
@@ -8740,6 +8800,66 @@ interface Checks {
         W.ApiComponentTypes['ContentSourceReport'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportSchema>
     >;
+    'component:DiscoverContentSourceSitePayload': Same<
+        W.ApiComponentTypes['DiscoverContentSourceSitePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceSitePayloadSchema>
+    >;
+    'component:DiscoverContentSourceSchemaPayload': Same<
+        W.ApiComponentTypes['DiscoverContentSourceSchemaPayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceSchemaPayloadSchema>
+    >;
+    'component:DiscoverContentSourceSamplePayload': Same<
+        W.ApiComponentTypes['DiscoverContentSourceSamplePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceSamplePayloadSchema>
+    >;
+    'component:DiscoverContentSourceFoldersPayload': Same<
+        W.ApiComponentTypes['DiscoverContentSourceFoldersPayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').DiscoverContentSourceFoldersPayloadSchema>
+    >;
+    'component:ContentSourceFolder': Same<
+        W.ApiComponentTypes['ContentSourceFolder'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceFolderSchema>
+    >;
+    'component:ContentSourceFoldersDiscovery': Same<
+        W.ApiComponentTypes['ContentSourceFoldersDiscovery'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceFoldersDiscoverySchema>
+    >;
+    'component:ContentSourceLibrary': Same<
+        W.ApiComponentTypes['ContentSourceLibrary'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceLibrarySchema>
+    >;
+    'component:ContentSourceSiteDiscovery': Same<
+        W.ApiComponentTypes['ContentSourceSiteDiscovery'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSiteDiscoverySchema>
+    >;
+    'component:ContentSourceColumnType': Same<
+        W.ApiComponentTypes['ContentSourceColumnType'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceColumnTypeSchema>
+    >;
+    'component:ContentSourceColumn': Same<
+        W.ApiComponentTypes['ContentSourceColumn'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceColumnSchema>
+    >;
+    'component:ContentSourceContentType': Same<
+        W.ApiComponentTypes['ContentSourceContentType'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceContentTypeSchema>
+    >;
+    'component:ContentSourceSchemaDiscovery': Same<
+        W.ApiComponentTypes['ContentSourceSchemaDiscovery'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSchemaDiscoverySchema>
+    >;
+    'component:ContentSourceSampleFile': Same<
+        W.ApiComponentTypes['ContentSourceSampleFile'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSampleFileSchema>
+    >;
+    'component:ContentSourceContentTypeCount': Same<
+        W.ApiComponentTypes['ContentSourceContentTypeCount'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceContentTypeCountSchema>
+    >;
+    'component:ContentSourceSampleDiscovery': Same<
+        W.ApiComponentTypes['ContentSourceSampleDiscovery'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSampleDiscoverySchema>
+    >;
     'component:CollectionSecuritySettingsResponse': Same<
         W.ApiComponentTypes['CollectionSecuritySettingsResponse'],
         z.infer<typeof import('./api-schemas/content.js').CollectionSecuritySettingsResponseSchema>
@@ -11077,6 +11197,21 @@ const checks: Checks = {
     ContentSourceReportEntry: true,
     ContentSourceReportAction: true,
     ContentSourceReportQuery: true,
+    DiscoverContentSourceSitePayload: true,
+    DiscoverContentSourceSchemaPayload: true,
+    DiscoverContentSourceSamplePayload: true,
+    DiscoverContentSourceFoldersPayload: true,
+    ContentSourceSiteDiscovery: true,
+    ContentSourceLibrary: true,
+    ContentSourceFoldersDiscovery: true,
+    ContentSourceFolder: true,
+    ContentSourceSchemaDiscovery: true,
+    ContentSourceContentType: true,
+    ContentSourceColumn: true,
+    ContentSourceColumnType: true,
+    ContentSourceSampleDiscovery: true,
+    ContentSourceSampleFile: true,
+    ContentSourceContentTypeCount: true,
     CostAnalyticsQuery: true,
     CostModelPricesQuery: true,
     CostExportQuery: true,
@@ -13098,6 +13233,21 @@ const checks: Checks = {
     'component:ContentSourceReportEntry': true,
     'component:ContentSourceReportQuery': true,
     'component:ContentSourceReport': true,
+    'component:DiscoverContentSourceSitePayload': true,
+    'component:DiscoverContentSourceSchemaPayload': true,
+    'component:DiscoverContentSourceSamplePayload': true,
+    'component:DiscoverContentSourceFoldersPayload': true,
+    'component:ContentSourceFolder': true,
+    'component:ContentSourceFoldersDiscovery': true,
+    'component:ContentSourceLibrary': true,
+    'component:ContentSourceSiteDiscovery': true,
+    'component:ContentSourceColumnType': true,
+    'component:ContentSourceColumn': true,
+    'component:ContentSourceContentType': true,
+    'component:ContentSourceSchemaDiscovery': true,
+    'component:ContentSourceSampleFile': true,
+    'component:ContentSourceContentTypeCount': true,
+    'component:ContentSourceSampleDiscovery': true,
     'component:CollectionSecuritySettingsResponse': true,
     'component:CollectionMembersUpdateResult': true,
     'component:CollectionMembersUpdatePayload': true,
@@ -13612,6 +13762,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2827);
+        expect(Object.keys(checks)).toHaveLength(2857);
     });
 });

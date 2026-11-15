@@ -1,10 +1,18 @@
 import { ApiTopic, type ClientBase } from '@vertesia/api-fetch-client';
 import type {
+    ContentSourceFoldersDiscovery,
     ContentSourceReport,
     ContentSourceReportQuery,
+    ContentSourceSampleDiscovery,
+    ContentSourceSchemaDiscovery,
+    ContentSourceSiteDiscovery,
     ContentSourceStatus,
     CreateContentSourcePayload,
     DeleteCountResult,
+    DiscoverContentSourceFoldersPayload,
+    DiscoverContentSourceSamplePayload,
+    DiscoverContentSourceSchemaPayload,
+    DiscoverContentSourceSitePayload,
     ExternalContentSource,
     SyncContentSourcePayload,
     UpdateContentSourcePayload,
@@ -58,5 +66,31 @@ export class ContentSourcesApi extends ApiTopic {
      */
     report(id: string, roundId: string, query: ContentSourceReportQuery = {}): Promise<ContentSourceReport> {
         return this.get(`/${id}/rounds/${encodeURIComponent(roundId)}/report`, { query: { ...query } });
+    }
+
+    /**
+     * Resolves a site through an OAuth provider and lists its document libraries. Works before a source exists,
+     * so it also tells whether the connection is set up correctly.
+     */
+    discoverSite(payload: DiscoverContentSourceSitePayload): Promise<ContentSourceSiteDiscovery> {
+        return this.post('/discover/site', { payload });
+    }
+
+    /** The direct subfolders of a folder of a document library, to browse to the folder to sync. */
+    discoverFolders(payload: DiscoverContentSourceFoldersPayload): Promise<ContentSourceFoldersDiscovery> {
+        return this.post('/discover/folders', { payload });
+    }
+
+    /** The content types of a document library with their columns, and the library's own columns. */
+    discoverSchema(payload: DiscoverContentSourceSchemaPayload): Promise<ContentSourceSchemaDiscovery> {
+        return this.post('/discover/schema', { payload });
+    }
+
+    /**
+     * A bounded sample of the files under a folder, with each file's content type and column values. The sample is
+     * spread over subfolders; `truncated` says whether the folder holds more than was read.
+     */
+    discoverSample(payload: DiscoverContentSourceSamplePayload): Promise<ContentSourceSampleDiscovery> {
+        return this.post('/discover/sample', { payload });
     }
 }
