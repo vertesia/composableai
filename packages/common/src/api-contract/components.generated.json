@@ -25796,6 +25796,61 @@
     "additionalProperties": false,
     "description": "Standalone public PKCE OAuth. The publisher manifest provisions one app-managed registration with these exact callback URLs."
   },
+  "AppMcpProfileLimits": {
+    "type": "object",
+    "properties": {
+      "tool_timeout_ms": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 9007199254740991,
+        "description": "A tool call that runs longer fails with a clear error."
+      },
+      "max_result_chars": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "A text result longer than this is refused, with a hint to narrow the request."
+      },
+      "max_concurrent_calls": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 9007199254740991,
+        "description": "Tool calls of the profile one server process runs at once."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Limits on the tool calls of an app MCP profile. Each is capped by the platform: a value above the cap, or a missing value, gets the platform default."
+  },
+  "AppMcpProfile": {
+    "type": "object",
+    "properties": {
+      "builtin_tools": {
+        "minItems": 1,
+        "maxItems": 50,
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Names of the platform MCP server tools the profile lists, e.g. `search_documents`. A name the server does not know is ignored."
+      },
+      "scopes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "The permission scopes the listed tools need. Register the integration’s OAuth client with these scopes and no more: they, not the tool list, limit what its tokens can do."
+      },
+      "limits": {
+        "$ref": "#/components/schemas/AppMcpProfileLimits"
+      }
+    },
+    "required": [
+      "builtin_tools"
+    ],
+    "additionalProperties": false,
+    "description": "An MCP profile: the set of tools the app exposes to an external integration, such as an assistant in another product. The platform MCP server serves it at `/apps/<app name>` for the projects where the app is installed, and lists only the tools declared here."
+  },
   "AppManifestData": {
     "type": "object",
     "properties": {
@@ -25881,6 +25936,9 @@
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "mcp_profile": {
+        "$ref": "#/components/schemas/AppMcpProfile"
       },
       "tool_collections": {
         "type": "array",
@@ -26035,6 +26093,9 @@
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "mcp_profile": {
+        "$ref": "#/components/schemas/AppMcpProfile"
       },
       "tool_collections": {
         "type": "array",
@@ -26198,6 +26259,9 @@
       "ui": {
         "$ref": "#/components/schemas/AppUIConfig",
         "description": "The UI configuration of the app. If not specified and the app \"ui\" is in the app capabilities then the ui configuration will be fetched from the endpoint property."
+      },
+      "mcp_profile": {
+        "$ref": "#/components/schemas/AppMcpProfile"
       },
       "tool_collections": {
         "type": "array",

@@ -354,6 +354,9 @@ export type AppAccessControl = Wire.AppAccessControl;
 // in `@llumiverse/common`, not one to work around here.
 //
 // Everything this interface REFERENCES converted: the fields below now carry canonical components.
+/** The set of tools an app exposes to an external integration through the platform MCP server. */
+export type AppMcpProfile = Wire.AppMcpProfile;
+export type AppMcpProfileLimits = Wire.AppMcpProfileLimits;
 export type AppManifestData = Wire.AppManifestData;
 export type UpdateAppPayload = Wire.UpdateAppPayload;
 

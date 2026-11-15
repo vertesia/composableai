@@ -988,6 +988,17 @@ export type AppScaffoldProgress = {
  * Declared on the manifest as the app's default. May be overridden per-installation.
  */
 export type AppAccessControl = 'all' | 'ui' | 'none';
+/** The set of tools an app exposes to an external integration through the platform MCP server. */
+export type AppMcpProfile = {
+    builtin_tools: string[];
+    scopes?: string[] | undefined;
+    limits?: AppMcpProfileLimits | undefined;
+};
+export type AppMcpProfileLimits = {
+    tool_timeout_ms?: number | undefined;
+    max_result_chars?: number | undefined;
+    max_concurrent_calls?: number | undefined;
+};
 export type AppManifestData = {
     parameters?: Record<string, McpConnectionParameter> | undefined;
     oauth_scopes?: string[] | undefined;
@@ -1007,6 +1018,7 @@ export type AppManifestData = {
         | undefined;
     status: 'beta' | 'stable' | 'deprecated';
     ui?: AppUIConfig | undefined;
+    mcp_profile?: AppMcpProfile | undefined;
     tool_collections?: ToolCollectionObject[] | undefined;
     oauth_providers?: MCPOAuthConfigMap | undefined;
     interactions?: string | undefined;
@@ -1038,6 +1050,7 @@ export type UpdateAppPayload = {
         | undefined;
     status: 'beta' | 'stable' | 'deprecated';
     ui?: AppUIConfig | undefined;
+    mcp_profile?: AppMcpProfile | undefined;
     tool_collections?: ToolCollectionObject[] | undefined;
     oauth_providers?: MCPOAuthConfigMap | undefined;
     interactions?: string | undefined;
@@ -1306,6 +1319,7 @@ export type AppManifest = {
         | undefined;
     status: 'beta' | 'stable' | 'deprecated';
     ui?: AppUIConfig | undefined;
+    mcp_profile?: AppMcpProfile | undefined;
     tool_collections?: ToolCollectionObject[] | undefined;
     oauth_providers?: MCPOAuthConfigMap | undefined;
     interactions?: string | undefined;
@@ -13031,6 +13045,8 @@ export interface ApiComponentTypes {
     AppWidgetInfo: AppWidgetInfo;
     AppDashboardDefinition: AppDashboardDefinition;
     AppOAuthClientConfig: AppOAuthClientConfig;
+    AppMcpProfileLimits: AppMcpProfileLimits;
+    AppMcpProfile: AppMcpProfile;
     AppManifestData: AppManifestData;
     UpdateAppPayload: UpdateAppPayload;
     AppManifest: AppManifest;

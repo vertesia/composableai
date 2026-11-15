@@ -509,6 +509,11 @@ interface Checks {
         z.infer<typeof import('./api-schemas/app-lifecycle.js').AppScaffoldProgressSchema>
     >;
     AppAccessControl: Same<W.AppAccessControl, z.infer<typeof import('./api-schemas/apps.js').AppAccessControlSchema>>;
+    AppMcpProfile: Same<W.AppMcpProfile, z.infer<typeof import('./api-schemas/app-runtime.js').AppMcpProfileSchema>>;
+    AppMcpProfileLimits: Same<
+        W.AppMcpProfileLimits,
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppMcpProfileLimitsSchema>
+    >;
     AppManifestData: Same<
         W.AppManifestData,
         z.infer<typeof import('./api-schemas/app-runtime.js').AppManifestDataSchema>
@@ -10447,6 +10452,14 @@ interface Checks {
         W.ApiComponentTypes['AppOAuthClientConfig'],
         z.infer<typeof import('./api-schemas/app-runtime.js').AppOAuthClientConfigSchema>
     >;
+    'component:AppMcpProfileLimits': Same<
+        W.ApiComponentTypes['AppMcpProfileLimits'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppMcpProfileLimitsSchema>
+    >;
+    'component:AppMcpProfile': Same<
+        W.ApiComponentTypes['AppMcpProfile'],
+        z.infer<typeof import('./api-schemas/app-runtime.js').AppMcpProfileSchema>
+    >;
     'component:AppManifestData': Same<
         W.ApiComponentTypes['AppManifestData'],
         z.infer<typeof import('./api-schemas/app-runtime.js').AppManifestDataSchema>
@@ -10916,6 +10929,8 @@ const checks: Checks = {
     AppScaffoldProgressStatus: true,
     AppScaffoldProgress: true,
     AppAccessControl: true,
+    AppMcpProfile: true,
+    AppMcpProfileLimits: true,
     AppManifestData: true,
     UpdateAppPayload: true,
     AppGitSourceConfig: true,
@@ -13519,6 +13534,8 @@ const checks: Checks = {
     'component:AppWidgetInfo': true,
     'component:AppDashboardDefinition': true,
     'component:AppOAuthClientConfig': true,
+    'component:AppMcpProfileLimits': true,
+    'component:AppMcpProfile': true,
     'component:AppManifestData': true,
     'component:UpdateAppPayload': true,
     'component:AppManifest': true,
@@ -13605,6 +13622,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2825);
+        expect(Object.keys(checks)).toHaveLength(2829);
     });
 });
