@@ -1,13 +1,13 @@
 import type { AgentRunSearchHit } from '@vertesia/common';
 import { Badge } from '@vertesia/ui/core';
-import { useLocaleFormat } from '@vertesia/ui/i18n';
+import { useLocaleFormat, type useUITranslation } from '@vertesia/ui/i18n';
 import { InlineFilterButton } from '../../../../../../ui/shell/components/InlineFilterButton';
 import type { FilterableField } from '../types';
 import { statusVariant } from '../utils';
 
 interface ConversationRowProps {
     hit: AgentRunSearchHit;
-    t: (key: string, opts?: Record<string, unknown>) => string;
+    t: ReturnType<typeof useUITranslation>['t'];
     onAddFilter: (name: FilterableField, value: string, label: string) => void;
     onOpen: (id: string) => void;
 }
