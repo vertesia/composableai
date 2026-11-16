@@ -1107,6 +1107,14 @@ interface Checks {
         W.InspectContentSourceSamplePayload,
         z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceSamplePayloadSchema>
     >;
+    ContentSourceRoot: Same<
+        W.ContentSourceRoot,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceRootSchema>
+    >;
+    ContentSourceRootsDiscovery: Same<
+        W.ContentSourceRootsDiscovery,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceRootsDiscoverySchema>
+    >;
     ContentSourceSiteDiscovery: Same<
         W.ContentSourceSiteDiscovery,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSiteDiscoverySchema>
@@ -8840,6 +8848,14 @@ interface Checks {
         W.ApiComponentTypes['InspectContentSourceSamplePayload'],
         z.infer<typeof import('./api-schemas/content-sources.js').InspectContentSourceSamplePayloadSchema>
     >;
+    'component:ContentSourceRoot': Same<
+        W.ApiComponentTypes['ContentSourceRoot'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceRootSchema>
+    >;
+    'component:ContentSourceRootsDiscovery': Same<
+        W.ApiComponentTypes['ContentSourceRootsDiscovery'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceRootsDiscoverySchema>
+    >;
     'component:ContentSourceFolder': Same<
         W.ApiComponentTypes['ContentSourceFolder'],
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceFolderSchema>
@@ -11228,6 +11244,8 @@ const checks: Checks = {
     InspectContentSourceFoldersPayload: true,
     InspectContentSourceSchemaPayload: true,
     InspectContentSourceSamplePayload: true,
+    ContentSourceRoot: true,
+    ContentSourceRootsDiscovery: true,
     ContentSourceSiteDiscovery: true,
     ContentSourceLibrary: true,
     ContentSourceFoldersDiscovery: true,
@@ -13267,6 +13285,8 @@ const checks: Checks = {
     'component:InspectContentSourceFoldersPayload': true,
     'component:InspectContentSourceSchemaPayload': true,
     'component:InspectContentSourceSamplePayload': true,
+    'component:ContentSourceRoot': true,
+    'component:ContentSourceRootsDiscovery': true,
     'component:ContentSourceFolder': true,
     'component:ContentSourceFoldersDiscovery': true,
     'component:ContentSourceLibrary': true,
@@ -13792,6 +13812,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2863);
+        expect(Object.keys(checks)).toHaveLength(2867);
     });
 });

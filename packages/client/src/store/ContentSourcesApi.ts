@@ -3,6 +3,7 @@ import type {
     ContentSourceFoldersDiscovery,
     ContentSourceReport,
     ContentSourceReportQuery,
+    ContentSourceRootsDiscovery,
     ContentSourceSampleDiscovery,
     ContentSourceSchemaDiscovery,
     ContentSourceSiteDiscovery,
@@ -43,7 +44,7 @@ export class ContentSourcesApi extends ApiTopic {
         return this.post('/', { payload });
     }
 
-    /** Changes the name, description or sync settings, and, before the first sync, the library and folder. */
+    /** Changes the name, description or sync settings, and, before the first sync, the root and folder. */
     update(id: string, payload: UpdateContentSourcePayload): Promise<ExternalContentSource> {
         return this.put(`/${id}`, { payload });
     }
@@ -98,14 +99,14 @@ export class ContentSourcesApi extends ApiTopic {
     }
 
     /**
-     * The site of a source and its document libraries, read through the source's own connection. Unlike
-     * `discoverSite`, the caller names no OAuth provider or address: the source holds them.
+     * What a source's connection reaches: the document libraries of its SharePoint site, or the Box folders shared
+     * with its app. The caller names no OAuth provider or address: the source holds them.
      */
-    inspectSite(id: string): Promise<ContentSourceSiteDiscovery> {
-        return this.post(`/${id}/discover/site`);
+    inspectRoots(id: string): Promise<ContentSourceRootsDiscovery> {
+        return this.post(`/${id}/discover/roots`);
     }
 
-    /** The direct subfolders of a folder, in the source's library or another library of its site. */
+    /** The direct subfolders of a folder the source reaches, at the top of its root by default. */
     inspectFolders(
         id: string,
         payload: InspectContentSourceFoldersPayload = {},
@@ -113,12 +114,12 @@ export class ContentSourcesApi extends ApiTopic {
         return this.post(`/${id}/discover/folders`, { payload });
     }
 
-    /** The content types and columns of the source's library, or of another library of its site. */
+    /** The content types (SharePoint) or metadata templates (Box) and their columns. */
     inspectSchema(id: string, payload: InspectContentSourceSchemaPayload = {}): Promise<ContentSourceSchemaDiscovery> {
         return this.post(`/${id}/discover/schema`, { payload });
     }
 
-    /** A bounded sample of the files under the source's folder, or under another folder of its site. */
+    /** A bounded sample of the files under a folder the source reaches, its own folder by default. */
     inspectSample(id: string, payload: InspectContentSourceSamplePayload = {}): Promise<ContentSourceSampleDiscovery> {
         return this.post(`/${id}/discover/sample`, { payload });
     }

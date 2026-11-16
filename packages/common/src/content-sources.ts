@@ -46,6 +46,8 @@ export type DiscoverContentSourceFoldersPayload = Wire.DiscoverContentSourceFold
 export type InspectContentSourceFoldersPayload = Wire.InspectContentSourceFoldersPayload;
 export type InspectContentSourceSchemaPayload = Wire.InspectContentSourceSchemaPayload;
 export type InspectContentSourceSamplePayload = Wire.InspectContentSourceSamplePayload;
+export type ContentSourceRoot = Wire.ContentSourceRoot;
+export type ContentSourceRootsDiscovery = Wire.ContentSourceRootsDiscovery;
 
 /** A site and its document libraries. */
 export type ContentSourceSiteDiscovery = Wire.ContentSourceSiteDiscovery;

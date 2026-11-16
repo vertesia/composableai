@@ -2366,13 +2366,14 @@ export type CreateBoxContentSourcePayload = {
     collection_id?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
     type: 'box';
-    folder_id: string;
+    folder_id?: string | undefined;
 };
 export type UpdateContentSourcePayload = {
     name?: string | undefined;
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
-    library_name?: string | undefined;
+    root_id?: string | undefined;
+    folder_id?: string | undefined;
     folder_path?: string | undefined;
 };
 export type SyncContentSourcePayload = {
@@ -2458,16 +2459,28 @@ export type DiscoverContentSourceFoldersPayload = {
     folder_path?: string | undefined;
 };
 export type InspectContentSourceFoldersPayload = {
-    library_name?: string | undefined;
+    root_id?: string | undefined;
+    folder_id?: string | undefined;
     folder_path?: string | undefined;
 };
 export type InspectContentSourceSchemaPayload = {
-    library_name?: string | undefined;
+    root_id?: string | undefined;
 };
 export type InspectContentSourceSamplePayload = {
-    library_name?: string | undefined;
+    root_id?: string | undefined;
+    folder_id?: string | undefined;
     folder_path?: string | undefined;
     limit?: number | undefined;
+};
+export type ContentSourceRoot = {
+    id: string;
+    name: string;
+    web_url?: string | undefined;
+};
+export type ContentSourceRootsDiscovery = {
+    roots: ContentSourceRoot[];
+    current_root_id?: string | undefined;
+    truncated: boolean;
 };
 /** A site and its document libraries. */
 export type ContentSourceSiteDiscovery = {
@@ -2483,7 +2496,9 @@ export type ContentSourceLibrary = {
 };
 /** The direct subfolders of a folder of a library. */
 export type ContentSourceFoldersDiscovery = {
-    library_name: string;
+    root_id?: string | undefined;
+    root_name?: string | undefined;
+    folder_id: string;
     folder_path: string;
     folders: ContentSourceFolder[];
     truncated: boolean;
@@ -2496,7 +2511,8 @@ export type ContentSourceFolder = {
 };
 /** The content types and columns of a document library. */
 export type ContentSourceSchemaDiscovery = {
-    library_name: string;
+    root_id?: string | undefined;
+    root_name?: string | undefined;
     content_types: ContentSourceContentType[];
     columns: ContentSourceColumn[];
     content_types_truncated: boolean;
@@ -2537,7 +2553,8 @@ export type ContentSourceColumnType =
     | 'unknown';
 /** A bounded sample of the files under a folder. */
 export type ContentSourceSampleDiscovery = {
-    library_name: string;
+    root_id?: string | undefined;
+    root_name?: string | undefined;
     files: ContentSourceSampleFile[];
     content_type_counts: ContentSourceContentTypeCount[];
     folders_read: number;
@@ -12749,6 +12766,8 @@ export interface ApiComponentTypes {
     InspectContentSourceFoldersPayload: InspectContentSourceFoldersPayload;
     InspectContentSourceSchemaPayload: InspectContentSourceSchemaPayload;
     InspectContentSourceSamplePayload: InspectContentSourceSamplePayload;
+    ContentSourceRoot: ContentSourceRoot;
+    ContentSourceRootsDiscovery: ContentSourceRootsDiscovery;
     ContentSourceFolder: ContentSourceFolder;
     ContentSourceFoldersDiscovery: ContentSourceFoldersDiscovery;
     ContentSourceLibrary: ContentSourceLibrary;

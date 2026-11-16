@@ -38724,14 +38724,13 @@
       "folder_id": {
         "type": "string",
         "minLength": 1,
-        "description": "The Box folder ID, shared with the Box app's service account."
+        "description": "The Box folder ID, shared with the Box app's service account. Defaults to `0`, every folder shared with the app, to narrow before the first sync with an update."
       }
     },
     "required": [
       "name",
       "oauth_provider_id",
-      "type",
-      "folder_id"
+      "type"
     ],
     "additionalProperties": false,
     "description": "Registers a Box source. The OAuth provider uses Box's client credentials grant, with the token parameters `box_subject_type` and `box_subject_id`."
@@ -38772,10 +38771,15 @@
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings"
       },
-      "library_name": {
+      "root_id": {
         "type": "string",
         "minLength": 1,
-        "description": "SharePoint only, and only before the first sync: the document library to sync. Answers 409 once the source has synced."
+        "description": "Only before the first sync: the root to sync, as `discover/roots` returned it (a SharePoint document library; for Box, a folder shared with the app). Answers 409 once the source has synced."
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Only before the first sync: the folder to sync, as a folder listing returned its `id`. Answers 409 once the source has synced."
       },
       "folder_path": {
         "type": "string",
@@ -38783,7 +38787,7 @@
       }
     },
     "additionalProperties": false,
-    "description": "Changes the name, description or sync settings, and, before the first sync, the library and folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
+    "description": "Changes the name, description or sync settings, and, before the first sync, the root and folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
   },
   "SyncContentSourcePayload": {
     "type": "object",
@@ -39197,42 +39201,52 @@
   "InspectContentSourceFoldersPayload": {
     "type": "object",
     "properties": {
-      "library_name": {
+      "root_id": {
         "type": "string",
         "minLength": 1,
-        "description": "Another document library of the source’s site. Defaults to the source’s library."
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A folder, as a listing returned its `id`. Takes precedence over `folder_path`."
       },
       "folder_path": {
         "type": "string",
-        "description": "The folder to list, e.g. `Contracts/2026`. Defaults to the library’s root."
+        "description": "SharePoint only: a folder inside the library, e.g. `Contracts/2026`; empty for the library’s root."
       }
     },
     "additionalProperties": false,
-    "description": "The folder to list the subfolders of, read through a content source’s connection."
+    "description": "The folder to list the subfolders of, through a content source’s connection. Defaults to the top of the root."
   },
   "InspectContentSourceSchemaPayload": {
     "type": "object",
     "properties": {
-      "library_name": {
+      "root_id": {
         "type": "string",
         "minLength": 1,
-        "description": "Another document library of the source’s site. Defaults to the source’s library."
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
       }
     },
     "additionalProperties": false,
-    "description": "The document library to read the schema of, read through a content source’s connection."
+    "description": "The root to read the schema of, through a content source’s connection."
   },
   "InspectContentSourceSamplePayload": {
     "type": "object",
     "properties": {
-      "library_name": {
+      "root_id": {
         "type": "string",
         "minLength": 1,
-        "description": "Another document library of the source’s site. Defaults to the source’s library."
+        "description": "Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the source’s own root."
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "A folder, as a listing returned its `id`. Takes precedence over `folder_path`."
       },
       "folder_path": {
         "type": "string",
-        "description": "A folder inside the library. Defaults to the source’s folder in the source’s library, and to the whole library in another one."
+        "description": "SharePoint only: a folder inside the library, e.g. `Contracts/2026`; empty for the library’s root."
       },
       "limit": {
         "type": "integer",
@@ -39242,7 +39256,53 @@
       }
     },
     "additionalProperties": false,
-    "description": "The folder to read a sample of files from, read through a content source’s connection."
+    "description": "The folder to read a sample of files from, through a content source’s connection. Defaults to what the source syncs in its own root, and to the top of another root."
+  },
+  "ContentSourceRoot": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "The identifier to pass as `root_id`."
+      },
+      "name": {
+        "type": "string"
+      },
+      "web_url": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "What a source can sync from: a SharePoint document library, or a Box folder shared with the app."
+  },
+  "ContentSourceRootsDiscovery": {
+    "type": "object",
+    "properties": {
+      "roots": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceRoot"
+        }
+      },
+      "current_root_id": {
+        "type": "string",
+        "description": "The root the source syncs from now."
+      },
+      "truncated": {
+        "type": "boolean",
+        "description": "True when there are more roots than were read."
+      }
+    },
+    "required": [
+      "roots",
+      "truncated"
+    ],
+    "additionalProperties": false,
+    "description": "The roots a content source’s connection reaches."
   },
   "ContentSourceFolder": {
     "type": "object",
@@ -39256,7 +39316,7 @@
       },
       "path": {
         "type": "string",
-        "description": "The path inside the library, to pass as `folder_path`."
+        "description": "The path inside the library (SharePoint), or below All Files (Box). Pass `id` to go deeper."
       },
       "child_count": {
         "type": "integer",
@@ -39271,17 +39331,25 @@
       "path"
     ],
     "additionalProperties": false,
-    "description": "A folder of a document library."
+    "description": "A folder a content source can reach."
   },
   "ContentSourceFoldersDiscovery": {
     "type": "object",
     "properties": {
-      "library_name": {
+      "root_id": {
+        "type": "string",
+        "description": "The root read: a SharePoint library. Absent for Box, whose paths start at All Files."
+      },
+      "root_name": {
         "type": "string"
+      },
+      "folder_id": {
+        "type": "string",
+        "description": "The folder listed."
       },
       "folder_path": {
         "type": "string",
-        "description": "The folder listed. Empty for the library’s root."
+        "description": "The folder listed. Empty for the top of the root."
       },
       "folders": {
         "type": "array",
@@ -39296,13 +39364,13 @@
       }
     },
     "required": [
-      "library_name",
+      "folder_id",
       "folder_path",
       "folders",
       "truncated"
     ],
     "additionalProperties": false,
-    "description": "The direct subfolders of a folder of a library."
+    "description": "The direct subfolders of a folder."
   },
   "ContentSourceLibrary": {
     "type": "object",
@@ -39453,7 +39521,11 @@
   "ContentSourceSchemaDiscovery": {
     "type": "object",
     "properties": {
-      "library_name": {
+      "root_id": {
+        "type": "string",
+        "description": "The root read: a SharePoint library. Absent for Box, whose paths start at All Files."
+      },
+      "root_name": {
         "type": "string"
       },
       "content_types": {
@@ -39461,28 +39533,27 @@
         "items": {
           "$ref": "#/components/schemas/ContentSourceContentType"
         },
-        "description": "The document content types of the library. Folder and hidden content types are left out."
+        "description": "The kinds of document the system defines, each with its columns: the document content types of a SharePoint library (folder and hidden ones left out), or the metadata templates of a Box enterprise."
       },
       "columns": {
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ContentSourceColumn"
         },
-        "description": "Every visible column of the library, whichever content type uses it."
+        "description": "Every visible column of a SharePoint library, whichever content type uses it. Empty for Box, whose fields are on its templates."
       },
       "content_types_truncated": {
         "type": "boolean",
-        "description": "True when the library has more content types than were read."
+        "description": "True when there are more content types than were read."
       }
     },
     "required": [
-      "library_name",
       "content_types",
       "columns",
       "content_types_truncated"
     ],
     "additionalProperties": false,
-    "description": "The content types and columns of a document library."
+    "description": "How a system describes its documents: content types or metadata templates, and their columns."
   },
   "ContentSourceSampleFile": {
     "type": "object",
@@ -39495,7 +39566,7 @@
       },
       "folder_path": {
         "type": "string",
-        "description": "The folder of the file inside the library. Empty at the library’s root."
+        "description": "The folder of the file, inside the library (SharePoint) or below All Files (Box)."
       },
       "size": {
         "type": "integer",
@@ -39552,7 +39623,11 @@
   "ContentSourceSampleDiscovery": {
     "type": "object",
     "properties": {
-      "library_name": {
+      "root_id": {
+        "type": "string",
+        "description": "The root read: a SharePoint library. Absent for Box, whose paths start at All Files."
+      },
+      "root_name": {
         "type": "string"
       },
       "files": {
@@ -39579,7 +39654,6 @@
       }
     },
     "required": [
-      "library_name",
       "files",
       "content_type_counts",
       "folders_read",

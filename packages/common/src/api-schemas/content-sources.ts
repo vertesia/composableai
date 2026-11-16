@@ -136,9 +136,15 @@ export const CreateBoxContentSourcePayloadSchema = z
     .strictObject({
         ...commonCreateFields,
         type: z.literal('box'),
-        folder_id: z.string().min(1).meta({
-            description: "The Box folder ID, shared with the Box app's service account.",
-        }),
+        folder_id: z
+            .string()
+            .min(1)
+            .meta({
+                description:
+                    "The Box folder ID, shared with the Box app's service account. Defaults to `0`, every folder " +
+                    'shared with the app, to narrow before the first sync with an update.',
+            })
+            .optional(),
     })
     .meta({
         id: 'CreateBoxContentSourcePayload',
@@ -161,13 +167,22 @@ export const UpdateContentSourcePayloadSchema = z
         name: z.string().min(1).max(CONTENT_SOURCE_NAME_MAX_LENGTH).optional(),
         description: z.string().optional(),
         sync: ContentSourceSyncSettingsSchema.optional(),
-        library_name: z
+        root_id: z
             .string()
             .min(1)
             .meta({
                 description:
-                    'SharePoint only, and only before the first sync: the document library to sync. Answers 409 ' +
-                    'once the source has synced.',
+                    'Only before the first sync: the root to sync, as `discover/roots` returned it (a SharePoint ' +
+                    'document library; for Box, a folder shared with the app). Answers 409 once the source has synced.',
+            })
+            .optional(),
+        folder_id: z
+            .string()
+            .min(1)
+            .meta({
+                description:
+                    'Only before the first sync: the folder to sync, as a folder listing returned its `id`. Answers ' +
+                    '409 once the source has synced.',
             })
             .optional(),
         folder_path: z
@@ -182,7 +197,7 @@ export const UpdateContentSourcePayloadSchema = z
     .meta({
         id: 'UpdateContentSourcePayload',
         description:
-            'Changes the name, description or sync settings, and, before the first sync, the library and folder ' +
+            'Changes the name, description or sync settings, and, before the first sync, the root and folder ' +
             'to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped ' +
             'because its previous credentials were refused.',
     });
@@ -385,43 +400,51 @@ export const DiscoverContentSourceFoldersPayloadSchema = z
     })
     .meta({ id: 'DiscoverContentSourceFoldersPayload', description: 'The folder to list the subfolders of.' });
 
-const inspectLibraryField = {
-    library_name: z
+const inspectRootField = {
+    root_id: z
         .string()
         .min(1)
-        .meta({ description: 'Another document library of the source’s site. Defaults to the source’s library.' })
+        .meta({
+            description:
+                'Another root the source’s connection reaches, as `discover/roots` returned it. Defaults to the ' +
+                'source’s own root.',
+        })
+        .optional(),
+};
+
+const inspectFolderFields = {
+    folder_id: z
+        .string()
+        .min(1)
+        .meta({ description: 'A folder, as a listing returned its `id`. Takes precedence over `folder_path`.' })
+        .optional(),
+    folder_path: z
+        .string()
+        .meta({
+            description:
+                'SharePoint only: a folder inside the library, e.g. `Contracts/2026`; empty for the library’s root.',
+        })
         .optional(),
 };
 
 export const InspectContentSourceFoldersPayloadSchema = z
-    .strictObject({
-        ...inspectLibraryField,
-        folder_path: z
-            .string()
-            .meta({ description: 'The folder to list, e.g. `Contracts/2026`. Defaults to the library’s root.' })
-            .optional(),
-    })
+    .strictObject({ ...inspectRootField, ...inspectFolderFields })
     .meta({
         id: 'InspectContentSourceFoldersPayload',
-        description: 'The folder to list the subfolders of, read through a content source’s connection.',
+        description:
+            'The folder to list the subfolders of, through a content source’s connection. Defaults to the top of ' +
+            'the root.',
     });
 
-export const InspectContentSourceSchemaPayloadSchema = z.strictObject(inspectLibraryField).meta({
+export const InspectContentSourceSchemaPayloadSchema = z.strictObject(inspectRootField).meta({
     id: 'InspectContentSourceSchemaPayload',
-    description: 'The document library to read the schema of, read through a content source’s connection.',
+    description: 'The root to read the schema of, through a content source’s connection.',
 });
 
 export const InspectContentSourceSamplePayloadSchema = z
     .strictObject({
-        ...inspectLibraryField,
-        folder_path: z
-            .string()
-            .meta({
-                description:
-                    'A folder inside the library. Defaults to the source’s folder in the source’s library, and to ' +
-                    'the whole library in another one.',
-            })
-            .optional(),
+        ...inspectRootField,
+        ...inspectFolderFields,
         limit: z
             .number()
             .int()
@@ -432,8 +455,29 @@ export const InspectContentSourceSamplePayloadSchema = z
     })
     .meta({
         id: 'InspectContentSourceSamplePayload',
-        description: 'The folder to read a sample of files from, read through a content source’s connection.',
+        description:
+            'The folder to read a sample of files from, through a content source’s connection. Defaults to what ' +
+            'the source syncs in its own root, and to the top of another root.',
     });
+
+export const ContentSourceRootSchema = z
+    .strictObject({
+        id: z.string().meta({ description: 'The identifier to pass as `root_id`.' }),
+        name: z.string(),
+        web_url: z.string().optional(),
+    })
+    .meta({
+        id: 'ContentSourceRoot',
+        description: 'What a source can sync from: a SharePoint document library, or a Box folder shared with the app.',
+    });
+
+export const ContentSourceRootsDiscoverySchema = z
+    .strictObject({
+        roots: z.array(ContentSourceRootSchema),
+        current_root_id: z.string().meta({ description: 'The root the source syncs from now.' }).optional(),
+        truncated: z.boolean().meta({ description: 'True when there are more roots than were read.' }),
+    })
+    .meta({ id: 'ContentSourceRootsDiscovery', description: 'The roots a content source’s connection reaches.' });
 
 export const ContentSourceLibrarySchema = z
     .strictObject({
@@ -456,19 +500,28 @@ export const ContentSourceFolderSchema = z
     .strictObject({
         id: z.string().meta({ description: 'The identifier of the folder in its system.' }),
         name: z.string(),
-        path: z.string().meta({ description: 'The path inside the library, to pass as `folder_path`.' }),
+        path: z.string().meta({
+            description: 'The path inside the library (SharePoint), or below All Files (Box). Pass `id` to go deeper.',
+        }),
         child_count: z.number().int().meta({ description: 'How many files and folders it holds directly.' }).optional(),
     })
-    .meta({ id: 'ContentSourceFolder', description: 'A folder of a document library.' });
+    .meta({ id: 'ContentSourceFolder', description: 'A folder a content source can reach.' });
 
 export const ContentSourceFoldersDiscoverySchema = z
     .strictObject({
-        library_name: z.string(),
-        folder_path: z.string().meta({ description: 'The folder listed. Empty for the library’s root.' }),
+        root_id: z
+            .string()
+            .meta({
+                description: 'The root read: a SharePoint library. Absent for Box, whose paths start at All Files.',
+            })
+            .optional(),
+        root_name: z.string().optional(),
+        folder_id: z.string().meta({ description: 'The folder listed.' }),
+        folder_path: z.string().meta({ description: 'The folder listed. Empty for the top of the root.' }),
         folders: z.array(ContentSourceFolderSchema).meta({ description: 'Its direct subfolders, by name.' }),
         truncated: z.boolean().meta({ description: 'True when the folder holds more subfolders than were read.' }),
     })
-    .meta({ id: 'ContentSourceFoldersDiscovery', description: 'The direct subfolders of a folder of a library.' });
+    .meta({ id: 'ContentSourceFoldersDiscovery', description: 'The direct subfolders of a folder.' });
 
 export const ContentSourceColumnTypeSchema = z
     .enum([
@@ -519,25 +572,38 @@ export const ContentSourceContentTypeSchema = z
 
 export const ContentSourceSchemaDiscoverySchema = z
     .strictObject({
-        library_name: z.string(),
+        root_id: z
+            .string()
+            .meta({
+                description: 'The root read: a SharePoint library. Absent for Box, whose paths start at All Files.',
+            })
+            .optional(),
+        root_name: z.string().optional(),
         content_types: z.array(ContentSourceContentTypeSchema).meta({
-            description: 'The document content types of the library. Folder and hidden content types are left out.',
+            description:
+                'The kinds of document the system defines, each with its columns: the document content types of a ' +
+                'SharePoint library (folder and hidden ones left out), or the metadata templates of a Box enterprise.',
         }),
         columns: z.array(ContentSourceColumnSchema).meta({
-            description: 'Every visible column of the library, whichever content type uses it.',
+            description:
+                'Every visible column of a SharePoint library, whichever content type uses it. Empty for Box, whose ' +
+                'fields are on its templates.',
         }),
         content_types_truncated: z.boolean().meta({
-            description: 'True when the library has more content types than were read.',
+            description: 'True when there are more content types than were read.',
         }),
     })
-    .meta({ id: 'ContentSourceSchemaDiscovery', description: 'The content types and columns of a document library.' });
+    .meta({
+        id: 'ContentSourceSchemaDiscovery',
+        description: 'How a system describes its documents: content types or metadata templates, and their columns.',
+    });
 
 export const ContentSourceSampleFileSchema = z
     .strictObject({
         id: z.string(),
         name: z.string(),
         folder_path: z.string().meta({
-            description: 'The folder of the file inside the library. Empty at the library’s root.',
+            description: 'The folder of the file, inside the library (SharePoint) or below All Files (Box).',
         }),
         size: z.number().int().optional(),
         mime_type: z.string().optional(),
@@ -556,7 +622,14 @@ export const ContentSourceContentTypeCountSchema = z
 
 export const ContentSourceSampleDiscoverySchema = z
     .strictObject({
-        library_name: z.string(),
+        root_id: z
+            .string()
+            .meta({
+                description: 'The root read: a SharePoint library. Absent for Box, whose paths start at All Files.',
+            })
+            .optional(),
+        root_name: z.string().optional(),
+
         files: z.array(ContentSourceSampleFileSchema),
         content_type_counts: z.array(ContentSourceContentTypeCountSchema).meta({
             description: 'How many sampled files have each content type, most frequent first.',
