@@ -110,7 +110,7 @@ export function AuthScreenPreview({
         content = (
             <SignInRecoveryStep
                 kind={recovery}
-                identity={identity}
+                identity={recovery === 'credential' || recovery === 'service' ? undefined : identity}
                 details={{ message: 'Preview error details', status: 403 }}
                 onContinue={
                     recovery === 'scopeProject' || recovery === 'scopeAccount' || recovery === 'service'

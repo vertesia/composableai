@@ -46,7 +46,9 @@ describe('SignInRecoveryStep', () => {
         render(<SignInRecoveryStep kind="scopeProject" onContinue={onContinue} onUseDifferentAccount={vi.fn()} />);
 
         const heading = screen.getByRole('heading', { name: 'Project not available' });
-        expect(screen.getByRole('alert').contains(heading)).toBe(true);
+        const alert = screen.getByRole('alert');
+        expect(alert.contains(heading)).toBe(true);
+        expect(alert.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
         expect(screen.getByText(/project in this link isn’t available/)).toBeTruthy();
         const continueButton = screen.getByRole('button', { name: 'Continue to Vertesia' });
         expect(document.activeElement).toBe(continueButton);
@@ -94,7 +96,7 @@ describe('SignInRecoveryStep', () => {
         expect(screen.getByText('The requested account or project is not available.')).toBeTruthy();
     });
 
-    it('reuses the returning-user identity row for the authenticated credential', () => {
+    it('puts the warning icon in the identity row and preserves its account action', () => {
         const onUseDifferentAccount = vi.fn();
         render(
             <SignInRecoveryStep
@@ -107,7 +109,10 @@ describe('SignInRecoveryStep', () => {
 
         expect(screen.getByText('Leon Ruggiero')).toBeTruthy();
         expect(screen.getByText('leon@example.com')).toBeTruthy();
-        fireEvent.click(screen.getByRole('button', { name: 'Not you?' }));
+        const changeAccount = screen.getByRole('button', { name: 'Not you?' });
+        expect(changeAccount.parentElement?.querySelector('svg[aria-hidden="true"]')).toBeTruthy();
+        expect(screen.getByRole('alert').querySelector('svg')).toBeNull();
+        fireEvent.click(changeAccount);
         expect(onUseDifferentAccount).toHaveBeenCalledOnce();
     });
 });

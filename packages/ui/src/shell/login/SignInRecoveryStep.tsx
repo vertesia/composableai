@@ -1,13 +1,8 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
+import { AlertTriangle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import {
-    SignInAccountRow,
-    SignInInitialsBadge,
-    SignInStepButton,
-    SignInStepHeader,
-    SignInStepLayout,
-} from './SignInPrimitives';
-import { emailInitial, firstNameFromEmail } from './signInUtils';
+import { SignInAccountRow, SignInStepButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
+import { firstNameFromEmail } from './signInUtils';
 
 export type SignInRecoveryKind = 'scopeProject' | 'scopeAccount' | 'noAccessibleAccount' | 'credential' | 'service';
 
@@ -87,15 +82,34 @@ export default function SignInRecoveryStep({
         action();
     };
 
+    const warningIcon = <AlertTriangle className="size-4 shrink-0 text-attention" aria-hidden="true" />;
+
     return (
         <SignInStepLayout>
             <div role="alert" aria-live="assertive">
-                <SignInStepHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
+                <SignInStepHeader
+                    eyebrow={
+                        identity ? (
+                            copy.eyebrow
+                        ) : (
+                            <span className="inline-flex items-center gap-1.5">
+                                {warningIcon}
+                                {copy.eyebrow}
+                            </span>
+                        )
+                    }
+                    title={copy.title}
+                    body={copy.body}
+                />
             </div>
 
             {identity && (
                 <SignInAccountRow
-                    badge={<SignInInitialsBadge initials={emailInitial(identity.email)} />}
+                    badge={
+                        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-attention">
+                            {warningIcon}
+                        </span>
+                    }
                     title={identity.name || firstNameFromEmail(identity.email)}
                     subtitle={identity.email}
                     actionLabel={t('auth.returning.notYou')}
