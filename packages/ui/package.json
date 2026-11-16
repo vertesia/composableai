@@ -92,7 +92,7 @@
         "react-date-picker": "^12.1.0",
         "react-dom": "catalog:",
         "react-error-boundary": "^6.1.6",
-        "react-i18next": "^17.1.13",
+        "react-i18next": "^18.0.1",
         "react-markdown": "^10.1.0",
         "react-pdf": "^11.0.0",
         "react-remove-scroll": "^2.7.2",
