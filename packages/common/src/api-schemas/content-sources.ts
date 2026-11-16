@@ -153,7 +153,7 @@ export const CreateContentSourcePayloadSchema = z
         id: 'CreateContentSourcePayload',
         description:
             'Registers a content source. The server checks the folder with the system before saving, answers 409 ' +
-            'when the name is already used in the project, then starts the first sync.',
+            'when the name is already used in the project. Nothing is imported until a sync is requested.',
     });
 
 export const UpdateContentSourcePayloadSchema = z
