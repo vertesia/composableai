@@ -14,6 +14,9 @@ import type {
     DiscoverContentSourceSchemaPayload,
     DiscoverContentSourceSitePayload,
     ExternalContentSource,
+    InspectContentSourceFoldersPayload,
+    InspectContentSourceSamplePayload,
+    InspectContentSourceSchemaPayload,
     SyncContentSourcePayload,
     UpdateContentSourcePayload,
 } from '@vertesia/common';
@@ -35,12 +38,12 @@ export class ContentSourcesApi extends ApiTopic {
         return this.get(`/${id}`);
     }
 
-    /** Checks the folder with the system, registers the source and starts its first sync. */
+    /** Checks the folder with the system and registers the source. Nothing is imported until `sync` is called. */
     create(payload: CreateContentSourcePayload): Promise<ExternalContentSource> {
         return this.post('/', { payload });
     }
 
-    /** Changes the name, description or sync settings. */
+    /** Changes the name, description or sync settings, and, before the first sync, the library and folder. */
     update(id: string, payload: UpdateContentSourcePayload): Promise<ExternalContentSource> {
         return this.put(`/${id}`, { payload });
     }
@@ -92,5 +95,31 @@ export class ContentSourcesApi extends ApiTopic {
      */
     discoverSample(payload: DiscoverContentSourceSamplePayload): Promise<ContentSourceSampleDiscovery> {
         return this.post('/discover/sample', { payload });
+    }
+
+    /**
+     * The site of a source and its document libraries, read through the source's own connection. Unlike
+     * `discoverSite`, the caller names no OAuth provider or address: the source holds them.
+     */
+    inspectSite(id: string): Promise<ContentSourceSiteDiscovery> {
+        return this.post(`/${id}/discover/site`);
+    }
+
+    /** The direct subfolders of a folder, in the source's library or another library of its site. */
+    inspectFolders(
+        id: string,
+        payload: InspectContentSourceFoldersPayload = {},
+    ): Promise<ContentSourceFoldersDiscovery> {
+        return this.post(`/${id}/discover/folders`, { payload });
+    }
+
+    /** The content types and columns of the source's library, or of another library of its site. */
+    inspectSchema(id: string, payload: InspectContentSourceSchemaPayload = {}): Promise<ContentSourceSchemaDiscovery> {
+        return this.post(`/${id}/discover/schema`, { payload });
+    }
+
+    /** A bounded sample of the files under the source's folder, or under another folder of its site. */
+    inspectSample(id: string, payload: InspectContentSourceSamplePayload = {}): Promise<ContentSourceSampleDiscovery> {
+        return this.post(`/${id}/discover/sample`, { payload });
     }
 }

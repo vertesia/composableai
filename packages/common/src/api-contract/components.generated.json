@@ -748,6 +748,7 @@
       "content:delete",
       "content:admin",
       "content:superadmin",
+      "content_source:manage",
       "workflow:read",
       "workflow:run",
       "workflow:admin",
@@ -798,7 +799,7 @@
         "description": "Roles whose permissions are inherited, in addition to permissions below. Use built-in system role names or c:<name> references in this account. Cycles and ABAC roles are not allowed. Changes to a base role apply to newly minted tokens."
       },
       "permissions": {
-        "maxItems": 49,
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/Permission"
@@ -841,7 +842,7 @@
         "description": "Roles whose permissions are inherited, in addition to permissions below. Use built-in system role names or c:<name> references in this account. Cycles and ABAC roles are not allowed. Changes to a base role apply to newly minted tokens."
       },
       "permissions": {
-        "maxItems": 49,
+        "maxItems": 50,
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/Permission"
@@ -38770,10 +38771,19 @@
       },
       "sync": {
         "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "SharePoint only, and only before the first sync: the document library to sync. Answers 409 once the source has synced."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "SharePoint only, and only before the first sync: the folder to sync inside the library, e.g. `Contracts/2026`; empty for the whole library. Answers 409 once the source has synced."
       }
     },
     "additionalProperties": false,
-    "description": "Changes the name, description or sync settings. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
+    "description": "Changes the name, description or sync settings, and, before the first sync, the library and folder to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
   },
   "SyncContentSourcePayload": {
     "type": "object",
@@ -39183,6 +39193,56 @@
     ],
     "additionalProperties": false,
     "description": "The folder to list the subfolders of."
+  },
+  "InspectContentSourceFoldersPayload": {
+    "type": "object",
+    "properties": {
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another document library of the source’s site. Defaults to the source’s library."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder to list, e.g. `Contracts/2026`. Defaults to the library’s root."
+      }
+    },
+    "additionalProperties": false,
+    "description": "The folder to list the subfolders of, read through a content source’s connection."
+  },
+  "InspectContentSourceSchemaPayload": {
+    "type": "object",
+    "properties": {
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another document library of the source’s site. Defaults to the source’s library."
+      }
+    },
+    "additionalProperties": false,
+    "description": "The document library to read the schema of, read through a content source’s connection."
+  },
+  "InspectContentSourceSamplePayload": {
+    "type": "object",
+    "properties": {
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "Another document library of the source’s site. Defaults to the source’s library."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "A folder inside the library. Defaults to the source’s folder in the source’s library, and to the whole library in another one."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "The most files to return. Defaults to 100."
+      }
+    },
+    "additionalProperties": false,
+    "description": "The folder to read a sample of files from, read through a content source’s connection."
   },
   "ContentSourceFolder": {
     "type": "object",

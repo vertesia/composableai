@@ -161,12 +161,30 @@ export const UpdateContentSourcePayloadSchema = z
         name: z.string().min(1).max(CONTENT_SOURCE_NAME_MAX_LENGTH).optional(),
         description: z.string().optional(),
         sync: ContentSourceSyncSettingsSchema.optional(),
+        library_name: z
+            .string()
+            .min(1)
+            .meta({
+                description:
+                    'SharePoint only, and only before the first sync: the document library to sync. Answers 409 ' +
+                    'once the source has synced.',
+            })
+            .optional(),
+        folder_path: z
+            .string()
+            .meta({
+                description:
+                    'SharePoint only, and only before the first sync: the folder to sync inside the library, e.g. ' +
+                    '`Contracts/2026`; empty for the whole library. Answers 409 once the source has synced.',
+            })
+            .optional(),
     })
     .meta({
         id: 'UpdateContentSourcePayload',
         description:
-            'Changes the name, description or sync settings. Saving sync settings also hands the sync your ' +
-            'credentials, which restarts a sync stopped because its previous credentials were refused.',
+            'Changes the name, description or sync settings, and, before the first sync, the library and folder ' +
+            'to sync. Saving sync settings also hands the sync your credentials, which restarts a sync stopped ' +
+            'because its previous credentials were refused.',
     });
 
 export const SyncContentSourcePayloadSchema = z
@@ -366,6 +384,56 @@ export const DiscoverContentSourceFoldersPayloadSchema = z
             .optional(),
     })
     .meta({ id: 'DiscoverContentSourceFoldersPayload', description: 'The folder to list the subfolders of.' });
+
+const inspectLibraryField = {
+    library_name: z
+        .string()
+        .min(1)
+        .meta({ description: 'Another document library of the source’s site. Defaults to the source’s library.' })
+        .optional(),
+};
+
+export const InspectContentSourceFoldersPayloadSchema = z
+    .strictObject({
+        ...inspectLibraryField,
+        folder_path: z
+            .string()
+            .meta({ description: 'The folder to list, e.g. `Contracts/2026`. Defaults to the library’s root.' })
+            .optional(),
+    })
+    .meta({
+        id: 'InspectContentSourceFoldersPayload',
+        description: 'The folder to list the subfolders of, read through a content source’s connection.',
+    });
+
+export const InspectContentSourceSchemaPayloadSchema = z.strictObject(inspectLibraryField).meta({
+    id: 'InspectContentSourceSchemaPayload',
+    description: 'The document library to read the schema of, read through a content source’s connection.',
+});
+
+export const InspectContentSourceSamplePayloadSchema = z
+    .strictObject({
+        ...inspectLibraryField,
+        folder_path: z
+            .string()
+            .meta({
+                description:
+                    'A folder inside the library. Defaults to the source’s folder in the source’s library, and to ' +
+                    'the whole library in another one.',
+            })
+            .optional(),
+        limit: z
+            .number()
+            .int()
+            .min(1)
+            .max(CONTENT_SOURCE_SAMPLE_MAX_LIMIT)
+            .meta({ description: 'The most files to return. Defaults to 100.' })
+            .optional(),
+    })
+    .meta({
+        id: 'InspectContentSourceSamplePayload',
+        description: 'The folder to read a sample of files from, read through a content source’s connection.',
+    });
 
 export const ContentSourceLibrarySchema = z
     .strictObject({

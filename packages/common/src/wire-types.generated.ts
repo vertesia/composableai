@@ -2372,6 +2372,8 @@ export type UpdateContentSourcePayload = {
     name?: string | undefined;
     description?: string | undefined;
     sync?: ContentSourceSyncSettings | undefined;
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
 };
 export type SyncContentSourcePayload = {
     full?: boolean | undefined;
@@ -2454,6 +2456,18 @@ export type DiscoverContentSourceFoldersPayload = {
     site_url: string;
     library_name?: string | undefined;
     folder_path?: string | undefined;
+};
+export type InspectContentSourceFoldersPayload = {
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
+};
+export type InspectContentSourceSchemaPayload = {
+    library_name?: string | undefined;
+};
+export type InspectContentSourceSamplePayload = {
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
+    limit?: number | undefined;
 };
 /** A site and its document libraries. */
 export type ContentSourceSiteDiscovery = {
@@ -12732,6 +12746,9 @@ export interface ApiComponentTypes {
     DiscoverContentSourceSchemaPayload: DiscoverContentSourceSchemaPayload;
     DiscoverContentSourceSamplePayload: DiscoverContentSourceSamplePayload;
     DiscoverContentSourceFoldersPayload: DiscoverContentSourceFoldersPayload;
+    InspectContentSourceFoldersPayload: InspectContentSourceFoldersPayload;
+    InspectContentSourceSchemaPayload: InspectContentSourceSchemaPayload;
+    InspectContentSourceSamplePayload: InspectContentSourceSamplePayload;
     ContentSourceFolder: ContentSourceFolder;
     ContentSourceFoldersDiscovery: ContentSourceFoldersDiscovery;
     ContentSourceLibrary: ContentSourceLibrary;
