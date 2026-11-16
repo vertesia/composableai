@@ -1,9 +1,7 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
-import { AlertTriangle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
     SignInAccountRow,
-    SignInIconBadge,
     SignInInitialsBadge,
     SignInStepButton,
     SignInStepHeader,
@@ -92,9 +90,6 @@ export default function SignInRecoveryStep({
     return (
         <SignInStepLayout>
             <div role="alert" aria-live="assertive">
-                <SignInIconBadge>
-                    <AlertTriangle className="size-7 text-attention" aria-hidden="true" />
-                </SignInIconBadge>
                 <SignInStepHeader eyebrow={copy.eyebrow} title={copy.title} body={copy.body} />
             </div>
 

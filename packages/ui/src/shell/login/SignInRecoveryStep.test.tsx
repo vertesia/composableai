@@ -45,7 +45,8 @@ describe('SignInRecoveryStep', () => {
         const onContinue = vi.fn();
         render(<SignInRecoveryStep kind="scopeProject" onContinue={onContinue} onUseDifferentAccount={vi.fn()} />);
 
-        expect(screen.getByText('Project not available')).toBeTruthy();
+        const heading = screen.getByRole('heading', { name: 'Project not available' });
+        expect(screen.getByRole('alert').contains(heading)).toBe(true);
         expect(screen.getByText(/project in this link isn’t available/)).toBeTruthy();
         const continueButton = screen.getByRole('button', { name: 'Continue to Vertesia' });
         expect(document.activeElement).toBe(continueButton);
