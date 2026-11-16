@@ -1,8 +1,14 @@
 import { useUITranslation } from '@vertesia/ui/i18n';
 import { AlertTriangle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { SignInAccountRow, SignInStepButton, SignInStepHeader, SignInStepLayout } from './SignInPrimitives';
-import { firstNameFromEmail } from './signInUtils';
+import {
+    SignInAccountRow,
+    SignInInitialsBadge,
+    SignInStepButton,
+    SignInStepHeader,
+    SignInStepLayout,
+} from './SignInPrimitives';
+import { emailInitial, firstNameFromEmail } from './signInUtils';
 
 export type SignInRecoveryKind = 'scopeProject' | 'scopeAccount' | 'noAccessibleAccount' | 'credential' | 'service';
 
@@ -82,34 +88,24 @@ export default function SignInRecoveryStep({
         action();
     };
 
-    const warningIcon = <AlertTriangle className="size-4 shrink-0 text-attention" aria-hidden="true" />;
-
     return (
         <SignInStepLayout>
             <div role="alert" aria-live="assertive">
                 <SignInStepHeader
-                    eyebrow={
-                        identity ? (
-                            copy.eyebrow
-                        ) : (
-                            <span className="flex items-center gap-1.5 [&>svg]:-translate-y-px">
-                                {warningIcon}
-                                {copy.eyebrow}
-                            </span>
-                        )
+                    eyebrow={copy.eyebrow}
+                    title={
+                        <span className="flex items-start gap-2">
+                            <AlertTriangle className="mt-0.5 size-[1em] shrink-0 text-attention" aria-hidden="true" />
+                            <span>{copy.title}</span>
+                        </span>
                     }
-                    title={copy.title}
                     body={copy.body}
                 />
             </div>
 
             {identity && (
                 <SignInAccountRow
-                    badge={
-                        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-attention">
-                            {warningIcon}
-                        </span>
-                    }
+                    badge={<SignInInitialsBadge initials={emailInitial(identity.email)} />}
                     title={identity.name || firstNameFromEmail(identity.email)}
                     subtitle={identity.email}
                     actionLabel={t('auth.returning.notYou')}
