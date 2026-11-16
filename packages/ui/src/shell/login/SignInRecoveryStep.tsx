@@ -92,7 +92,7 @@ export default function SignInRecoveryStep({
                         identity ? (
                             copy.eyebrow
                         ) : (
-                            <span className="inline-flex items-center gap-1.5">
+                            <span className="flex items-center gap-1.5 [&>svg]:-translate-y-px">
                                 {warningIcon}
                                 {copy.eyebrow}
                             </span>
