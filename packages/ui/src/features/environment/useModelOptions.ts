@@ -43,7 +43,12 @@ export function useModelOptions(
             ? profile.baseModelId
             : undefined;
     return useMemo(
-        () => getOptions(model ?? '', provider, options, baseModelId),
+        () =>
+            getOptions(
+                baseModelId && model ? { id: model, base_model_id: baseModelId } : (model ?? ''),
+                provider,
+                options,
+            ),
         [model, provider, options, baseModelId],
     );
 }
