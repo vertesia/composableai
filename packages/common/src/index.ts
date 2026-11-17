@@ -49,6 +49,7 @@ export type {
     CreateInferenceProfilePayload,
     InferenceProfile,
     InferenceProfileId,
+    InferenceProfileInvocation,
     InferenceProfileName,
     InferenceProfileRecord,
     InferenceProfileRecordArray,
