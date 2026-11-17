@@ -30496,7 +30496,8 @@
       "agent.finished",
       "agent.turn_finished",
       "task.assigned",
-      "intake.finished"
+      "intake.finished",
+      "inference_budget.exceeded"
     ],
     "description": "What a notification is about. Each kind belongs to one category."
   },
@@ -30505,9 +30506,10 @@
     "enum": [
       "actions",
       "failures",
-      "results"
+      "results",
+      "billing"
     ],
-    "description": "Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` report failed runs or intakes, `results` report successful ones."
+    "description": "Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` report failed runs or intakes, `results` report successful ones, and `billing` reports budget alerts."
   },
   "NotificationChannel": {
     "type": "string",
@@ -30819,7 +30821,7 @@
         "additionalProperties": {
           "$ref": "#/components/schemas/NotificationChannelPreferences"
         },
-        "description": "Per category (`actions`, `failures`, `results`), the channels it is delivered to."
+        "description": "Per-category inbox preferences for `actions`, `failures`, `results`, and `billing`."
       },
       "kinds": {
         "type": "object",
@@ -30827,6 +30829,10 @@
           "$ref": "#/components/schemas/NotificationChannelPreferences"
         },
         "description": "Per kind, an override of its category. Today only `agent.turn_finished` is offered."
+      },
+      "budget_alerts_enabled": {
+        "type": "boolean",
+        "description": "Master switch for inference budget alerts in the inbox and by email. Omit when updating to keep the saved choice."
       }
     },
     "required": [
@@ -49188,6 +49194,48 @@
     },
     "additionalProperties": false,
     "description": "`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999. The window from `from` to `to` (now when absent) may span at most 366 days."
+  },
+  "InferenceBudgetSettings": {
+    "type": "object",
+    "properties": {
+      "daily_limit_usd": {
+        "anyOf": [
+          {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 1000000
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "The daily project inference alert threshold in USD. Null means the alert is disabled."
+      },
+      "available": {
+        "type": "boolean",
+        "description": "Whether inference budget alerts are available for the project."
+      }
+    },
+    "required": [
+      "daily_limit_usd",
+      "available"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateInferenceBudget": {
+    "type": "object",
+    "properties": {
+      "daily_limit_usd": {
+        "type": "number",
+        "minimum": 0.01,
+        "maximum": 1000000,
+        "description": "The daily project inference alert threshold in USD."
+      }
+    },
+    "required": [
+      "daily_limit_usd"
+    ],
+    "additionalProperties": false
   },
   "CostRunPriceQuery": {
     "type": "object",
