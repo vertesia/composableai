@@ -92,6 +92,10 @@ export const compiledTemplates = new LRUCache<string, Handlebars.TemplateDelegat
     sizeCalculation: (_compiled, template) => Math.max(1, Math.min(template.length, MAX_CACHED_TEMPLATE_CHARS)),
 });
 
+/**
+ * Renders a Handlebars prompt template to plain text. Values are inserted as they are: nothing is
+ * HTML-escaped, so the result must not be inserted into HTML as markup.
+ */
 export function renderHandlebarsTemplate(template: string, input: unknown): string {
     let compiled = compiledTemplates.get(template);
     if (!compiled) {
