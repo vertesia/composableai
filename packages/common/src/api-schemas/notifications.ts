@@ -170,10 +170,14 @@ export const NotificationChannelPreferencesSchema = z
 export const NotificationPreferencesSchema = z
     .strictObject({
         categories: z.record(z.string(), NotificationChannelPreferencesSchema).meta({
-            description: 'Per category (`actions`, `failures`, `results`), the channels it is delivered to.',
+            description: 'Per-category inbox preferences for `actions`, `failures`, `results`, and `billing`.',
         }),
         kinds: z.record(z.string(), NotificationChannelPreferencesSchema).meta({
             description: 'Per kind, an override of its category. Today only `agent.turn_finished` is offered.',
+        }),
+        budget_alerts_enabled: z.boolean().optional().meta({
+            description:
+                'Master switch for inference budget alerts in the inbox and by email. Omit when updating to keep the saved choice.',
         }),
     })
     .meta({

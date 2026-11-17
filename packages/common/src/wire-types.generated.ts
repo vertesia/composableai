@@ -5243,6 +5243,7 @@ export type NotificationChannelPreferences = {
 export type NotificationPreferences = {
     categories: Record<string, NotificationChannelPreferences>;
     kinds: Record<string, NotificationChannelPreferences>;
+    budget_alerts_enabled?: boolean | undefined;
 };
 export type NotificationStreamEvent = {
     type: 'changed' | 'heartbeat';
