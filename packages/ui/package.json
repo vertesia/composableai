@@ -28,12 +28,13 @@
     "scripts": {
         "clean:lib": "rimraf ./lib ./tsconfig.tsbuildinfo",
         "clean": "rimraf ./node_modules ./lib ./tsconfig.tsbuildinfo",
-        "build": "pnpm run check:locales && pnpm run check:rtl-classes && pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
-        "lint": "biome lint src && pnpm run check:rtl-classes",
+        "build": "pnpm run clean:lib && tsc --checkers 1 -p tsconfig.json && pnpm exec rolldown -c rolldown.config.js",
+        "lint": "biome lint src && pnpm run check",
         "lint:fix": "biome lint --write src",
+        "check": "pnpm run check:locales && pnpm run check:rtl-classes",
         "check:locales": "node scripts/check-locales.mjs",
         "check:rtl-classes": "node scripts/check-rtl-classes.mjs --mode=strict",
-        "test": "vitest run",
+        "test": "pnpm run check && vitest run",
         "test:watch": "vitest",
         "typecheck:test": "tsc --checkers 1 -p tsconfig.test.json --noEmit"
     },
