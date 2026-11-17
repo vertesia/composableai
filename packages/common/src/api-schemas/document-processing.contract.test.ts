@@ -66,6 +66,12 @@ describe('rendering and document-processing API contracts', () => {
         );
     });
 
+    it('accepts unrelated query parameters on the render status query without publishing it as open', () => {
+        const query = { workflow_id: 'wf', workflow_run_id: 'run', cache_bust: '1' };
+        expect(validateApiRequest('RenderMarkdownStatusQuery', query).valid).toBe(true);
+        expect(validateApiRequest('RenderMarkdownStatusQuery', { workflow_id: 'wf' }).valid).toBe(false);
+    });
+
     it('enforces the published rendering metadata author array', () => {
         const base = { format: MarkdownRenditionFormat.pdf, content: '# Report' };
         expect(validateApiRequest('RenderMarkdownPayload', { ...base, metadata: { author: ['Ada'] } }).valid).toBe(

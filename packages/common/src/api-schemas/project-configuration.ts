@@ -182,13 +182,14 @@ export const ProjectIndexingConfigurationSchema = z
             }),
         search_tier: ProjectSearchTierSchema.optional().meta({
             description:
-                'Search tier for this project. standard uses the regional hosted Elasticsearch deployment. ' +
+                "Search tier for this project. standard uses the region's default Elasticsearch backend. " +
                 'performance uses the regional serverless Elasticsearch project. Defaults to standard when omitted.',
         }),
         backend: ElasticsearchBackendSchema.optional().meta({
             description:
-                'Elasticsearch backend override for this project. Prefer search_tier for project configuration ' +
-                'unless an explicit backend override is needed.',
+                'Elasticsearch backend override for this project. serverless moves the project to the regional ' +
+                "serverless Elasticsearch project; hosted is ignored and the project keeps the region's default " +
+                'backend. Prefer search_tier for project configuration unless an explicit backend override is needed.',
         }),
         property_mappings: ProjectSearchPropertyMappingMapSchema.optional().meta({
             description:

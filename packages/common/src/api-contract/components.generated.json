@@ -3241,11 +3241,11 @@
       },
       "search_tier": {
         "$ref": "#/components/schemas/ProjectSearchTier",
-        "description": "Search tier for this project. standard uses the regional hosted Elasticsearch deployment. performance uses the regional serverless Elasticsearch project. Defaults to standard when omitted."
+        "description": "Search tier for this project. standard uses the region's default Elasticsearch backend. performance uses the regional serverless Elasticsearch project. Defaults to standard when omitted."
       },
       "backend": {
         "$ref": "#/components/schemas/ElasticsearchBackend",
-        "description": "Elasticsearch backend override for this project. Prefer search_tier for project configuration unless an explicit backend override is needed."
+        "description": "Elasticsearch backend override for this project. serverless moves the project to the regional serverless Elasticsearch project; hosted is ignored and the project keeps the region's default backend. Prefer search_tier for project configuration unless an explicit backend override is needed."
       },
       "property_mappings": {
         "$ref": "#/components/schemas/ProjectSearchPropertyMappingMap",
@@ -3399,7 +3399,8 @@
           "type": "string"
         }
       }
-    }
+    },
+    "additionalProperties": true
   },
   "TextFallbackOptions": {
     "type": "object",
@@ -3674,6 +3675,16 @@
           "5m",
           "1h"
         ]
+      },
+      "speed": {
+        "type": "string",
+        "enum": [
+          "standard",
+          "fast"
+        ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       }
     },
     "additionalProperties": false
@@ -3718,7 +3729,8 @@
           "minimal",
           "low",
           "medium",
-          "high"
+          "high",
+          "xhigh"
         ]
       },
       "include_thoughts": {
@@ -3822,6 +3834,7 @@
       "MEDIUM",
       "LOW",
       "MINIMAL",
+      "XHIGH",
       "THINKING_LEVEL_UNSPECIFIED"
     ]
   },
@@ -3839,7 +3852,8 @@
           "image_to_video",
           "reference_to_video",
           "edit",
-          "extend"
+          "extend",
+          "upscale"
         ]
       },
       "aspect_ratio": {
@@ -3852,7 +3866,7 @@
       "duration_seconds": {
         "type": "integer",
         "minimum": 3,
-        "maximum": 10
+        "maximum": 15
       },
       "resolution": {
         "type": "string",
@@ -3862,6 +3876,11 @@
           "1080p",
           "4k"
         ]
+      },
+      "seed": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
       }
     },
     "additionalProperties": false
@@ -4238,6 +4257,9 @@
           "1h"
         ]
       },
+      "native_compaction": {
+        "type": "boolean"
+      },
       "service_tier": {
         "type": "string",
         "minLength": 1,
@@ -4515,6 +4537,9 @@
           "5m",
           "1h"
         ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       }
     },
     "additionalProperties": false
@@ -4593,6 +4618,9 @@
           "in_memory",
           "24h"
         ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       },
       "extra_body": {
         "type": "object",
@@ -4793,6 +4821,9 @@
           "in_memory",
           "24h"
         ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       },
       "extra_body": {
         "type": "object",
@@ -5381,6 +5412,9 @@
           "5m",
           "1h"
         ]
+      },
+      "native_compaction": {
+        "type": "boolean"
       },
       "speed": {
         "type": "string",
@@ -7196,12 +7230,45 @@
         "type": "boolean",
         "description": "Whether a client_secret is configured (never exposes the actual secret)."
       },
+      "token_endpoint_auth_method": {
+        "type": "string",
+        "enum": [
+          "client_secret_post",
+          "private_key_jwt"
+        ],
+        "description": "How Vertesia authenticates to the token endpoint (RFC 7591 names).\n- 'client_secret_post': the client_secret in the request body (default).\n- 'private_key_jwt': a JWT client assertion signed with the private key (RFC 7523). client_credentials grant only."
+      },
+      "token_endpoint_auth_signing_alg": {
+        "type": "string",
+        "enum": [
+          "RS256",
+          "PS256",
+          "ES256"
+        ],
+        "description": "The JWS algorithm that signs the client assertion of private_key_jwt. Defaults to RS256 for an RSA key and ES256 for a P-256 key. Microsoft Entra ID recommends PS256."
+      },
+      "has_private_key": {
+        "type": "boolean",
+        "description": "Whether a private key for private_key_jwt is configured (never exposes the key)."
+      },
+      "certificate": {
+        "type": "string",
+        "description": "The PEM X.509 certificate of the private key. Public. When set, the client assertion names it with an x5t#S256 header (RFC 7515 §4.1.8)."
+      },
       "default_scopes": {
         "type": "array",
         "items": {
           "type": "string"
         },
         "description": "Default scopes to request during authorization."
+      },
+      "allowed_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
       },
       "use_pkce": {
         "type": "boolean",
@@ -7210,6 +7277,13 @@
       "revocation_endpoint": {
         "type": "string",
         "description": "Optional OAuth 2.0 revocation endpoint URL."
+      },
+      "token_params": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
       },
       "created_at": {
         "type": "string"
@@ -7272,17 +7346,57 @@
         "type": "string",
         "description": "Optional client secret for confidential clients. Will be encrypted at rest and never returned in API responses."
       },
+      "token_endpoint_auth_method": {
+        "type": "string",
+        "enum": [
+          "client_secret_post",
+          "private_key_jwt"
+        ],
+        "description": "How Vertesia authenticates to the token endpoint (RFC 7591 names).\n- 'client_secret_post': the client_secret in the request body (default).\n- 'private_key_jwt': a JWT client assertion signed with the private key (RFC 7523). client_credentials grant only."
+      },
+      "token_endpoint_auth_signing_alg": {
+        "type": "string",
+        "enum": [
+          "RS256",
+          "PS256",
+          "ES256"
+        ],
+        "description": "The JWS algorithm that signs the client assertion of private_key_jwt. Defaults to RS256 for an RSA key and ES256 for a P-256 key. Microsoft Entra ID recommends PS256."
+      },
+      "private_key": {
+        "type": "string",
+        "description": "PEM private key (PKCS#8 or PKCS#1) that signs the client assertion of private_key_jwt: RSA of 2048 bits or more, or EC P-256. Encrypted at rest and never returned in API responses."
+      },
+      "certificate": {
+        "type": "string",
+        "description": "PEM X.509 certificate of the private key, as uploaded to the provider (for example a Microsoft Entra app registration). Its public key must match the private key."
+      },
       "default_scopes": {
         "type": "array",
         "items": {
           "type": "string"
         }
       },
+      "allowed_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
+      },
       "use_pkce": {
         "type": "boolean"
       },
       "revocation_endpoint": {
         "type": "string"
+      },
+      "token_params": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
       }
     },
     "required": [
@@ -7325,21 +7439,61 @@
         "type": "string",
         "description": "Optional client secret for confidential clients. Will be encrypted at rest and never returned in API responses."
       },
+      "token_endpoint_auth_method": {
+        "type": "string",
+        "enum": [
+          "client_secret_post",
+          "private_key_jwt"
+        ],
+        "description": "How Vertesia authenticates to the token endpoint (RFC 7591 names).\n- 'client_secret_post': the client_secret in the request body (default).\n- 'private_key_jwt': a JWT client assertion signed with the private key (RFC 7523). client_credentials grant only."
+      },
+      "token_endpoint_auth_signing_alg": {
+        "type": "string",
+        "enum": [
+          "RS256",
+          "PS256",
+          "ES256"
+        ],
+        "description": "The JWS algorithm that signs the client assertion of private_key_jwt. Defaults to RS256 for an RSA key and ES256 for a P-256 key. Microsoft Entra ID recommends PS256."
+      },
+      "private_key": {
+        "type": "string",
+        "description": "PEM private key (PKCS#8 or PKCS#1) that signs the client assertion of private_key_jwt: RSA of 2048 bits or more, or EC P-256. Encrypted at rest and never returned in API responses."
+      },
+      "certificate": {
+        "type": "string",
+        "description": "PEM X.509 certificate of the private key, as uploaded to the provider (for example a Microsoft Entra app registration). Its public key must match the private key."
+      },
       "default_scopes": {
         "type": "array",
         "items": {
           "type": "string"
         }
       },
+      "allowed_scopes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": "Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it."
+      },
       "use_pkce": {
         "type": "boolean"
       },
       "revocation_endpoint": {
         "type": "string"
+      },
+      "token_params": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them."
       }
     },
     "additionalProperties": false,
-    "description": "Payload for updating an OAuth Provider. All fields are optional — only provided fields are updated. To clear the client_secret, set it to an empty string."
+    "description": "Payload for updating an OAuth Provider. All fields are optional — only provided fields are updated. To clear the client_secret, private_key or certificate, set it to an empty string."
   },
   "OAuthProviderAuthStatus": {
     "type": "object",
@@ -7411,6 +7565,18 @@
       "state"
     ],
     "additionalProperties": false
+  },
+  "OAuthProviderTokenRequest": {
+    "type": "object",
+    "properties": {
+      "scope": {
+        "type": "string",
+        "pattern": "\\S",
+        "description": "Space-separated scopes to request instead of default_scopes (RFC 6749 §3.3), for example a second resource of the same client. Each scope must be in the provider's default_scopes or allowed_scopes, otherwise the request fails with 400. client_credentials providers only. Omit it for the default scopes."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Optional body of the provider token request."
   },
   "OAuthClientType": {
     "type": "string",
@@ -9093,6 +9259,12 @@
       "tool_support": {
         "type": "boolean"
       },
+      "deprecation_date": {
+        "type": "string"
+      },
+      "retirement_date": {
+        "type": "string"
+      },
       "environment": {
         "type": "string"
       }
@@ -9212,7 +9384,8 @@
         "$ref": "#/components/schemas/StringValueMap",
         "description": "Custom HTTP headers sent by OpenAI-compatible environments."
       }
-    }
+    },
+    "additionalProperties": true
   },
   "ExecutionEnvironment": {
     "type": "object",
@@ -10308,6 +10481,48 @@
       "type"
     ]
   },
+  "ToolUsage": {
+    "type": "object",
+    "properties": {
+      "image_generation": {
+        "$ref": "#/components/schemas/ToolTokenUsage",
+        "description": "Tokens of the hosted image generation tool (OpenAI Responses `tool_usage.image_gen`)."
+      },
+      "web_search_requests": {
+        "type": "number",
+        "description": "Billable web search requests (OpenAI Responses `tool_usage.web_search`)."
+      },
+      "svg": {
+        "$ref": "#/components/schemas/ToolTokenUsage",
+        "description": "Tokens of the model that authored SVG output (OpenAI Images API `svg_usage`)."
+      }
+    },
+    "description": "Usage billed apart from the main model: hosted tools and auxiliary models. Not included in `prompt`, `result` or `total`. A tool with no reported usage is absent."
+  },
+  "ToolTokenUsage": {
+    "type": "object",
+    "properties": {
+      "model": {
+        "type": "string"
+      },
+      "prompt": {
+        "type": "number"
+      },
+      "prompt_cached": {
+        "type": "number"
+      },
+      "result": {
+        "type": "number"
+      },
+      "result_image": {
+        "type": "number",
+        "description": "Of `result`, the tokens of generated images, when the provider reports them."
+      },
+      "total": {
+        "type": "number"
+      }
+    }
+  },
   "ExecutionTokenUsage": {
     "type": "object",
     "properties": {
@@ -10332,6 +10547,10 @@
         "type": "number",
         "description": "Of `prompt_cache_write`, the tokens written with a one-hour cache lifetime, when the provider reports it. The remainder used the default (five-minute) lifetime."
       },
+      "prompt_cache_write_12h": {
+        "type": "number",
+        "description": "Of `prompt_cache_write`, the tokens written with a 12-hour cache retention, when the provider reports it (OpenAI). The remainder used the default (30-minute) retention."
+      },
       "prompt_new": {
         "type": "number"
       },
@@ -10342,6 +10561,9 @@
       "provider_cost_usd": {
         "type": "number",
         "description": "Amount the provider reported charging for this request, in USD, when the provider returns it (e.g. OpenRouter). Absent for bring-your-own-key requests."
+      },
+      "tool_usage": {
+        "$ref": "#/components/schemas/ToolUsage"
       }
     },
     "additionalProperties": false
@@ -10507,6 +10729,15 @@
     "pattern": "\\S",
     "description": "Editable display name, independent of the stable profile ID."
   },
+  "InferenceProfileInvocation": {
+    "type": "string",
+    "enum": [
+      "execute",
+      "decide",
+      "shadow"
+    ],
+    "description": "How runs that select this profile call its model. `execute` (the default) runs regular inference. `decide` answers interactions that declare a decision with the model's decisions endpoint, and uses regular inference below the confidence threshold or when the run cannot use a decision. `shadow` answers with regular inference and calls the decisions endpoint alongside, for comparison only. With `decide` or `shadow`, regular inference uses the environment and model the run would select without this profile."
+  },
   "CreateInferenceProfilePayload": {
     "type": "object",
     "properties": {
@@ -10527,6 +10758,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       }
     },
     "required": [
@@ -10556,6 +10802,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       }
     },
     "required": [
@@ -10585,6 +10846,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       },
       "id": {
         "type": "string",
@@ -10728,6 +11004,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       }
     },
     "required": [
@@ -12941,6 +13232,10 @@
       "resolved": {
         "$ref": "#/components/schemas/ResolvedRuntimeConfig",
         "description": "The resolved runtime configuration"
+      },
+      "prompt_hash": {
+        "type": "string",
+        "description": "Digest of the interaction's prompt segments and their template content. It changes whenever what the model is told changes, including on a draft whose version number stays the same."
       }
     },
     "required": [
@@ -13123,6 +13418,17 @@
     },
     "additionalProperties": false,
     "description": "Configuration for stripping large data from conversation history to prevent JSON serialization issues and reduce storage bloat."
+  },
+  "CompactConversationOptions": {
+    "type": "object",
+    "properties": {
+      "instructions": {
+        "type": "string",
+        "description": "Summarization prompt that replaces the provider's own. Claude only: OpenAI's compaction has no prompt, so it is left out there."
+      }
+    },
+    "additionalProperties": false,
+    "description": "Compact the conversation with the provider's server-side compaction instead of answering it. The run continues from the compacted conversation: Claude's compaction block, or OpenAI's compacted items. The response reports `finish_reason: compaction`; its result is the summary text on Claude and empty on OpenAI, whose summary is encrypted."
   },
   "StreamingOptions": {
     "type": "object",
@@ -13371,6 +13677,7 @@
         "description": "Resources this tool created/updated/deleted, surfaced as deep links in the UI."
       }
     },
+    "additionalProperties": true,
     "description": "Metadata a tool executor may attach to its result. Kept as an open record for forward compatibility while typing the fields the runtime interprets."
   },
   "ToolResult": {
@@ -13583,6 +13890,10 @@
           "type": "string"
         },
         "description": "System-level packages to install via sudo apt-get (e.g., [\"poppler-utils\"])"
+      },
+      "content_digest": {
+        "type": "string",
+        "description": "Digest of the instructions the skill returned when it was first loaded in the run, to tell skill versions apart. Absent on skills tracked before the digest existed."
       }
     },
     "required": [
@@ -13896,6 +14207,12 @@
       "finish_reason": {
         "type": "string",
         "description": "LLM stop reason from the latest call (e.g., \"stop\", \"length\", \"tool_use\")"
+      },
+      "llm_attempt": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Attempt number of the activity that made the latest LLM call. Above 1, the call was retried after a failed attempt."
       },
       "agent_run_id": {
         "type": "string",
@@ -16902,7 +17219,11 @@
         "$ref": "#/components/schemas/AsyncCompletionOptions"
       },
       "message": {
-        "type": "string"
+        "type": "string",
+        "description": "The user message. It may be empty when `compact_conversation` is set: a non-empty message is added to the conversation before it is compacted."
+      },
+      "compact_conversation": {
+        "$ref": "#/components/schemas/CompactConversationOptions"
       },
       "results": {
         "type": "array",
@@ -30175,7 +30496,8 @@
       "agent.finished",
       "agent.turn_finished",
       "task.assigned",
-      "intake.finished"
+      "intake.finished",
+      "inference_budget.exceeded"
     ],
     "description": "What a notification is about. Each kind belongs to one category."
   },
@@ -30184,9 +30506,10 @@
     "enum": [
       "actions",
       "failures",
-      "results"
+      "results",
+      "billing"
     ],
-    "description": "Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` report failed runs or intakes, `results` report successful ones."
+    "description": "Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` report failed runs or intakes, `results` report successful ones, and `billing` reports budget alerts."
   },
   "NotificationChannel": {
     "type": "string",
@@ -30498,7 +30821,7 @@
         "additionalProperties": {
           "$ref": "#/components/schemas/NotificationChannelPreferences"
         },
-        "description": "Per category (`actions`, `failures`, `results`), the channels it is delivered to."
+        "description": "Per-category inbox preferences for `actions`, `failures`, `results`, and `billing`."
       },
       "kinds": {
         "type": "object",
@@ -30506,6 +30829,10 @@
           "$ref": "#/components/schemas/NotificationChannelPreferences"
         },
         "description": "Per kind, an override of its category. Today only `agent.turn_finished` is offered."
+      },
+      "budget_alerts_enabled": {
+        "type": "boolean",
+        "description": "Master switch for inference budget alerts in the inbox and by email. Omit when updating to keep the saved choice."
       }
     },
     "required": [
@@ -32204,7 +32531,8 @@
           "failed"
         ]
       }
-    }
+    },
+    "additionalProperties": true
   },
   "CompactMessage": {
     "type": "object",
@@ -32915,7 +33243,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), and `type`, its MIME type, is then required."
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), or a `sharepoint://` or `box://` `<source_id>/<item_id>` URI of a file in a registered content source, and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -33084,7 +33412,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
               }
             }
           }
@@ -33120,7 +33448,7 @@
                 "minLength": 1
               },
               "source": {
-                "pattern": "^(?:gs|s3|az)://[^/]+/.+"
+                "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
               }
             }
           }
@@ -33193,7 +33521,7 @@
       },
       "content": {
         "$ref": "#/components/schemas/ContentSource",
-        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), and `type`, its MIME type, is then required."
+        "description": "Content source information. A non-empty `source` is a `gs://`, `s3://` or `az://` URI of the file (a bucket then a non-empty object path), or a `sharepoint://` or `box://` `<source_id>/<item_id>` URI of a file in a registered content source, and `type`, its MIME type, is then required."
       },
       "external_id": {
         "type": "string",
@@ -33307,7 +33635,7 @@
               "minLength": 1
             },
             "source": {
-              "pattern": "^(?:gs|s3|az)://[^/]+/.+"
+              "pattern": "^(?:gs|s3|az|sharepoint|box)://[^/]+/.+"
             }
           }
         }
@@ -38133,6 +38461,631 @@
       "$ref": "#/components/schemas/EventIngestChannel"
     }
   },
+  "ContentSourceSyncSettings": {
+    "type": "object",
+    "properties": {
+      "enabled": {
+        "type": "boolean",
+        "description": "Whether the source syncs on its own every `interval_minutes`."
+      },
+      "interval_minutes": {
+        "type": "integer",
+        "minimum": 15,
+        "maximum": 10080,
+        "description": "Minutes between two scheduled syncs, from one scheduled time to the next."
+      }
+    },
+    "required": [
+      "enabled",
+      "interval_minutes"
+    ],
+    "additionalProperties": false,
+    "description": "When the source syncs. A source with scheduled sync disabled still syncs on `POST /content-sources/{id}/sync`."
+  },
+  "SharePointContentSource": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "description": "The project's OAuth provider (grant type `client_credentials`) that issues the system's tokens."
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "Collection that synced documents are added to, if any."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "type": {
+        "type": "string",
+        "const": "sharepoint"
+      },
+      "site_url": {
+        "type": "string",
+        "description": "The SharePoint site URL the source was created from."
+      },
+      "site_id": {
+        "type": "string",
+        "description": "The Microsoft Graph site ID."
+      },
+      "drive_id": {
+        "type": "string",
+        "description": "The Microsoft Graph drive ID of the document library."
+      },
+      "library_name": {
+        "type": "string",
+        "description": "The document library name."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The folder synced, relative to the library root. Empty for the whole library."
+      },
+      "folder_item_id": {
+        "type": "string",
+        "description": "The Microsoft Graph item ID of the synced folder."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "oauth_provider_id",
+      "location_root",
+      "sync",
+      "type",
+      "site_url",
+      "site_id",
+      "drive_id",
+      "library_name",
+      "folder_path",
+      "folder_item_id"
+    ],
+    "additionalProperties": false,
+    "description": "A SharePoint Online document library, or a folder in one. Synced documents reference their file in SharePoint (`sharepoint://<source_id>/<item_id>`) instead of a copy."
+  },
+  "BoxContentSource": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "description": "The project's OAuth provider (grant type `client_credentials`) that issues the system's tokens."
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` under which the source folder's tree is reproduced, e.g. `/sharepoint/legal`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "Collection that synced documents are added to, if any."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      },
+      "created_by": {
+        "type": "string"
+      },
+      "updated_by": {
+        "type": "string"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "type": {
+        "type": "string",
+        "const": "box"
+      },
+      "folder_id": {
+        "type": "string",
+        "description": "The Box folder ID."
+      },
+      "folder_name": {
+        "type": "string",
+        "description": "The Box folder name when the source was created."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "The Box folder path when the source was created."
+      }
+    },
+    "required": [
+      "id",
+      "name",
+      "oauth_provider_id",
+      "location_root",
+      "sync",
+      "type",
+      "folder_id",
+      "folder_name",
+      "folder_path"
+    ],
+    "additionalProperties": false,
+    "description": "A Box folder. Synced documents reference their file in Box (`box://<source_id>/<file_id>`) instead of a copy."
+  },
+  "ExternalContentSource": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/SharePointContentSource"
+      },
+      {
+        "$ref": "#/components/schemas/BoxContentSource"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "sharepoint": "#/components/schemas/SharePointContentSource",
+        "box": "#/components/schemas/BoxContentSource"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "description": "A folder of an external content system whose files are synced into the project without copies."
+  },
+  "ExternalContentSourceArray": {
+    "type": "array",
+    "items": {
+      "$ref": "#/components/schemas/ExternalContentSource"
+    }
+  },
+  "CreateSharePointContentSourcePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "description": "Unique within the project."
+      },
+      "description": {
+        "type": "string"
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` root for synced documents. Defaults to `/<type>/<name>`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "A collection to add synced documents to."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings",
+        "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
+      },
+      "type": {
+        "type": "string",
+        "const": "sharepoint"
+      },
+      "site_url": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The SharePoint site URL, e.g. `https://contoso.sharepoint.com/sites/legal`."
+      },
+      "library_name": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The document library name. Defaults to the site’s default library."
+      },
+      "folder_path": {
+        "type": "string",
+        "description": "A folder inside the library, e.g. `Contracts/2026`. Defaults to the whole library."
+      }
+    },
+    "required": [
+      "name",
+      "oauth_provider_id",
+      "type",
+      "site_url"
+    ],
+    "additionalProperties": false,
+    "description": "Registers a SharePoint source. The OAuth provider authenticates against Microsoft Entra ID with the scope `https://graph.microsoft.com/.default`."
+  },
+  "CreateBoxContentSourcePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128,
+        "description": "Unique within the project."
+      },
+      "description": {
+        "type": "string"
+      },
+      "oauth_provider_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "An OAuth provider of this project with grant type `client_credentials` for the system."
+      },
+      "location_root": {
+        "type": "string",
+        "description": "The `location` root for synced documents. Defaults to `/<type>/<name>`."
+      },
+      "collection_id": {
+        "type": "string",
+        "description": "A collection to add synced documents to."
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings",
+        "description": "Defaults to scheduled sync disabled, every 60 minutes once enabled."
+      },
+      "type": {
+        "type": "string",
+        "const": "box"
+      },
+      "folder_id": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The Box folder ID, shared with the Box app's service account."
+      }
+    },
+    "required": [
+      "name",
+      "oauth_provider_id",
+      "type",
+      "folder_id"
+    ],
+    "additionalProperties": false,
+    "description": "Registers a Box source. The OAuth provider uses Box's client credentials grant, with the token parameters `box_subject_type` and `box_subject_id`."
+  },
+  "CreateContentSourcePayload": {
+    "oneOf": [
+      {
+        "$ref": "#/components/schemas/CreateSharePointContentSourcePayload"
+      },
+      {
+        "$ref": "#/components/schemas/CreateBoxContentSourcePayload"
+      }
+    ],
+    "discriminator": {
+      "propertyName": "type",
+      "mapping": {
+        "sharepoint": "#/components/schemas/CreateSharePointContentSourcePayload",
+        "box": "#/components/schemas/CreateBoxContentSourcePayload"
+      }
+    },
+    "type": "object",
+    "required": [
+      "type"
+    ],
+    "description": "Registers a content source. The server checks the folder with the system before saving, answers 409 when the name is already used in the project, then starts the first sync."
+  },
+  "UpdateContentSourcePayload": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "description": {
+        "type": "string"
+      },
+      "sync": {
+        "$ref": "#/components/schemas/ContentSourceSyncSettings"
+      }
+    },
+    "additionalProperties": false,
+    "description": "Changes the name, description or sync settings. Saving sync settings also hands the sync your credentials, which restarts a sync stopped because its previous credentials were refused."
+  },
+  "SyncContentSourcePayload": {
+    "type": "object",
+    "properties": {
+      "full": {
+        "type": "boolean",
+        "description": "List the whole folder again and delete the documents of files that no longer exist, instead of reading only the changes."
+      }
+    },
+    "additionalProperties": false
+  },
+  "ContentSourceSyncCounts": {
+    "type": "object",
+    "properties": {
+      "listed": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Files listed or reported as changed."
+      },
+      "created": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "updated": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "unchanged": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "deleted": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      },
+      "skipped": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991,
+        "description": "Files that are not synced (unsupported types, packages)."
+      },
+      "failed": {
+        "type": "integer",
+        "minimum": -9007199254740991,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "listed",
+      "created",
+      "updated",
+      "unchanged",
+      "deleted",
+      "skipped",
+      "failed"
+    ],
+    "additionalProperties": false
+  },
+  "ContentSourceSyncRound": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Identifies the round's report, read with `GET /content-sources/{id}/rounds/{roundId}/report`. Absent on rounds that started before reports existed."
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "import",
+          "update"
+        ],
+        "description": "`import` lists the whole folder; `update` reads the changes since the previous sync."
+      },
+      "started_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "finished_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "counts": {
+        "$ref": "#/components/schemas/ContentSourceSyncCounts"
+      },
+      "skipped_by_reason": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": -9007199254740991,
+          "maximum": 9007199254740991
+        },
+        "description": "The skipped files by reason: `package`, `not_a_file`, `too_large`, `unsupported_type`, or another reason a system reports."
+      },
+      "swept": {
+        "type": "boolean",
+        "description": "Whether an import ended by deleting the documents of files no longer listed."
+      },
+      "error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "kind",
+      "started_at",
+      "counts"
+    ],
+    "additionalProperties": false
+  },
+  "ContentSourceStatus": {
+    "type": "object",
+    "properties": {
+      "state": {
+        "type": "string",
+        "enum": [
+          "not_started",
+          "running",
+          "waiting",
+          "stopped"
+        ],
+        "description": "`waiting` between syncs, `running` during one, `stopped` when its credentials were refused or the source is being deleted."
+      },
+      "current_round": {
+        "$ref": "#/components/schemas/ContentSourceSyncRound"
+      },
+      "last_round": {
+        "$ref": "#/components/schemas/ContentSourceSyncRound"
+      },
+      "recent_rounds": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceSyncRound"
+        },
+        "description": "The last 10 finished rounds, newest first. Their reports are kept; older ones are deleted."
+      },
+      "cursor_taken_at": {
+        "type": "string",
+        "format": "date-time",
+        "description": "When the change cursor in use was taken."
+      },
+      "next_sync_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "error": {
+        "type": "string",
+        "description": "Why the sync is stopped."
+      }
+    },
+    "required": [
+      "state"
+    ],
+    "additionalProperties": false,
+    "description": "A content source's sync state."
+  },
+  "ContentSourceReportAction": {
+    "type": "string",
+    "enum": [
+      "created",
+      "updated",
+      "deleted",
+      "skipped",
+      "failed"
+    ],
+    "description": "What a sync round did with a file."
+  },
+  "ContentSourceReportEntry": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "$ref": "#/components/schemas/ContentSourceReportAction"
+      },
+      "kind": {
+        "type": "string",
+        "enum": [
+          "file",
+          "folder"
+        ],
+        "description": "`folder` only for a folder that could not be listed, with its `error`."
+      },
+      "item_id": {
+        "type": "string",
+        "description": "The file's or folder's ID in the external system."
+      },
+      "name": {
+        "type": "string"
+      },
+      "path": {
+        "type": "string",
+        "description": "The folder's path below the source's folder; empty for the source's folder itself."
+      },
+      "object_id": {
+        "type": "string",
+        "description": "The document of the file."
+      },
+      "changes": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "name",
+            "location",
+            "content"
+          ]
+        },
+        "description": "`updated`: what changed. `content` means the file is processed again."
+      },
+      "reason": {
+        "type": "string",
+        "description": "`skipped`: why the file is not synced (`package`, `not_a_file`, `too_large`, `unsupported_type`). `deleted`: `file_deleted` (deleted, moved out or no longer synced) or `duplicate`."
+      },
+      "error": {
+        "type": "string",
+        "description": "`failed`: why."
+      }
+    },
+    "required": [
+      "action",
+      "kind",
+      "item_id",
+      "name"
+    ],
+    "additionalProperties": false,
+    "description": "A file a sync round created, updated, deleted, skipped or failed."
+  },
+  "ContentSourceReportQuery": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "$ref": "#/components/schemas/ContentSourceReportAction",
+        "description": "Only the entries of this action."
+      },
+      "cursor": {
+        "type": "string",
+        "description": "The `next_cursor` of the previous page."
+      },
+      "limit": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 1000,
+        "description": "Entries per page; 200 when absent."
+      }
+    },
+    "additionalProperties": false
+  },
+  "ContentSourceReport": {
+    "type": "object",
+    "properties": {
+      "round_id": {
+        "type": "string"
+      },
+      "entries": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ContentSourceReportEntry"
+        }
+      },
+      "next_cursor": {
+        "type": "string",
+        "description": "Present when more entries follow."
+      }
+    },
+    "required": [
+      "round_id",
+      "entries"
+    ],
+    "additionalProperties": false,
+    "description": "A page of the files a sync round created, updated, deleted, skipped or failed. Unchanged files are only counted, in the round's `counts`. A round still running has a partial report."
+  },
   "CollectionSecuritySettingsResponse": {
     "type": "object",
     "properties": {
@@ -39213,7 +40166,13 @@
       "approval_denied",
       "circuit_breaker",
       "no_visible_answer",
-      "answer_in_tool_preamble"
+      "answer_in_tool_preamble",
+      "response_cut_off",
+      "llm_retried",
+      "unknown_tool",
+      "invalid_tool_arguments",
+      "context_near_full",
+      "checkpoint_forced"
     ],
     "description": "Reason behind an evaluation severity."
   },
@@ -41284,12 +42243,51 @@
     "type": "string",
     "enum": [
       "schema",
+      "unknown_tool",
       "platform",
       "config",
       "environment",
+      "unknown_outcome",
       "other"
     ],
-    "description": "Coarse class of a tool error, derived from the error text."
+    "description": "Coarse class of a tool error, derived from the error text. `unknown_tool` is a call to a tool that does not exist; `schema` is a call to a real tool with arguments that failed validation. `unknown_outcome` is a side-effecting call whose request was sent but whose reply was lost, so the action may or may not have taken effect."
+  },
+  "ToolApprovalOrigin": {
+    "type": "string",
+    "enum": [
+      "not_required",
+      "unattended",
+      "run_grant",
+      "reviewer_allowed",
+      "reviewer_denied",
+      "user_allowed",
+      "user_allowed_for_run",
+      "user_denied",
+      "user_denied_with_feedback",
+      "user_interrupted",
+      "mode_change",
+      "timeout",
+      "unattended_denied"
+    ],
+    "description": "How a tool call came to run, or not to run, under the tool approval policy."
+  },
+  "ToolApprovalReviewerOutcome": {
+    "type": "string",
+    "enum": [
+      "allow",
+      "ask_user",
+      "deny"
+    ],
+    "description": "The approval reviewer's verdict on a tool call."
+  },
+  "ToolApprovalRiskLevel": {
+    "type": "string",
+    "enum": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "description": "The risk level the approval reviewer gave a tool call."
   },
   "AgentEvent": {
     "oneOf": [
@@ -41523,6 +42521,9 @@
               "status"
             ],
             "additionalProperties": false
+          },
+          "agentConfigHash": {
+            "type": "string"
           }
         },
         "required": [
@@ -41835,6 +42836,24 @@
           },
           "workstreamId": {
             "type": "string"
+          },
+          "skillDigest": {
+            "type": "string"
+          },
+          "approvalOrigin": {
+            "$ref": "#/components/schemas/ToolApprovalOrigin"
+          },
+          "approvalReviewerOutcome": {
+            "$ref": "#/components/schemas/ToolApprovalReviewerOutcome"
+          },
+          "approvalReviewerRiskLevel": {
+            "$ref": "#/components/schemas/ToolApprovalRiskLevel"
+          },
+          "approvalReviewerRationale": {
+            "type": "string"
+          },
+          "approvalReviewerShadow": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -42008,6 +43027,11 @@
                 "minimum": 0,
                 "maximum": 9007199254740991
               },
+              "unknown_tool": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
               "platform": {
                 "type": "integer",
                 "minimum": 0,
@@ -42019,6 +43043,11 @@
                 "maximum": 9007199254740991
               },
               "environment": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "unknown_outcome": {
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 9007199254740991
@@ -42124,6 +43153,24 @@
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
+          "cutOffResponses": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "retriedLlmCalls": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "peakContextRatio": {
+            "type": "number"
+          },
+          "forcedCheckpoints": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
           "followupAfterAnswer": {
             "type": "boolean"
           },
@@ -42135,6 +43182,52 @@
             "items": {
               "$ref": "#/components/schemas/TurnEvaluationFlag"
             }
+          },
+          "checks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "$ref": "#/components/schemas/TurnEvaluationFlag"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "fired",
+                    "fine",
+                    "not_checked"
+                  ]
+                },
+                "toolUseId": {
+                  "type": "string"
+                },
+                "facts": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "state"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "agentConfigHash": {
+            "type": "string"
           },
           "terminalErrorClass": {
             "type": "string"
@@ -42620,6 +43713,128 @@
           "iteration",
           "interactive",
           "workstreamId"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string"
+          },
+          "runId": {
+            "type": "string"
+          },
+          "agentRunId": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "environmentId": {
+            "type": "string"
+          },
+          "environmentType": {
+            "type": "string"
+          },
+          "interactionId": {
+            "type": "string"
+          },
+          "parentRunId": {
+            "type": "string"
+          },
+          "ancestorRunIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "deployment": {
+            "type": "object",
+            "properties": {
+              "env": {
+                "type": "string"
+              },
+              "group": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "region": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "env",
+              "group",
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "producer": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "version"
+            ],
+            "additionalProperties": false
+          },
+          "eventType": {
+            "type": "string",
+            "const": "run_failure_streak"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "schedule",
+              "process"
+            ]
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "streakLength": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "threshold": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "failedRunIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ownerNotified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "timestamp",
+          "runId",
+          "model",
+          "environmentId",
+          "environmentType",
+          "interactionId",
+          "eventType",
+          "source",
+          "sourceId",
+          "streakLength",
+          "threshold",
+          "failedRunIds",
+          "ownerNotified"
         ],
         "additionalProperties": false
       }
@@ -47980,6 +49195,48 @@
     "additionalProperties": false,
     "description": "`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999. The window from `from` to `to` (now when absent) may span at most 366 days."
   },
+  "InferenceBudgetSettings": {
+    "type": "object",
+    "properties": {
+      "daily_limit_usd": {
+        "anyOf": [
+          {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 1000000
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "The daily project inference alert threshold in USD. Null means the alert is disabled."
+      },
+      "available": {
+        "type": "boolean",
+        "description": "Whether inference budget alerts are available for the project."
+      }
+    },
+    "required": [
+      "daily_limit_usd",
+      "available"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateInferenceBudget": {
+    "type": "object",
+    "properties": {
+      "daily_limit_usd": {
+        "type": "number",
+        "minimum": 0.01,
+        "maximum": 1000000,
+        "description": "The daily project inference alert threshold in USD."
+      }
+    },
+    "required": [
+      "daily_limit_usd"
+    ],
+    "additionalProperties": false
+  },
   "CostRunPriceQuery": {
     "type": "object",
     "properties": {
@@ -49797,7 +51054,8 @@
       "output_format": {
         "$ref": "#/components/schemas/DocProcessorOutputFormat"
       }
-    }
+    },
+    "additionalProperties": true
   },
   "MarkdownRenditionFormat": {
     "type": "string",

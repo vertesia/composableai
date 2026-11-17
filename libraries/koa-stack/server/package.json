@@ -29,7 +29,7 @@
     "dependencies": {
         "@koa-stack/body": "workspace:*",
         "@koa-stack/router": "workspace:*",
-        "koa": "^3.2.1"
+        "koa": "^3.3.0"
     },
     "devDependencies": {
         "@types/koa": "^3.0.3",

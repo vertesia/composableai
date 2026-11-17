@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/create-plugin",
-    "version": "1.6.0-dev.20261022.120426Z",
+    "version": "1.7.0-dev",
     "description": "CLI to create Vertesia plugins: UI plugins or tool servers",
     "type": "module",
     "bin": {
@@ -48,7 +48,7 @@
         "@types/degit": "^3.10.0",
         "@types/node": "catalog:",
         "@types/prompts": "^2.4.9",
-        "@vercel/node": "29.0.1",
+        "@vercel/node": "30.0.0",
         "typescript": "^7.0.2"
     },
     "gitHead": "bcaa7879b601ce9ccc394bcd3257822da13869cd",

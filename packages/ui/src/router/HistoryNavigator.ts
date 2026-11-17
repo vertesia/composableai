@@ -70,6 +70,17 @@ export interface NavigateOptions {
     stepsBack?: number;
     // the title to set for the new history entry
     title?: string;
+    /**
+     * Leave the breadcrumb chain (`history.state.historyChain`) exactly as it is: the new URL neither adds a
+     * breadcrumb nor, with `replace`, clears the existing ones. For changes within a page, such as switching
+     * tabs. Works with a pushed entry too: a breadcrumb navigates to its own `href`, not a number of entries back.
+     */
+    keepHistoryChain?: boolean;
+    /**
+     * Start a new breadcrumb chain while still pushing a browser entry, so Back returns to the previous page. For
+     * top-level navigation, such as a sidebar item, where the previous breadcrumbs no longer apply.
+     */
+    clearHistoryChain?: boolean;
 }
 
 function getClosestAnchor(target: EventTarget | null): HTMLAnchorElement | null {
@@ -193,14 +204,15 @@ export class HistoryNavigator {
             href: window.location.pathname + window.location.search + window.location.hash,
         };
 
-        // Build the history chain - clear if using replace
+        // Build the history chain - clear if using replace, unless the caller keeps it as it is
         let historyChain: Array<{ title: string; href: string }> = [];
-        if (!options.replace && currentState?.historyChain) {
+        const extendsChain = !options.replace && !options.clearHistoryChain;
+        if ((extendsChain || options.keepHistoryChain) && currentState?.historyChain) {
             historyChain = [...currentState.historyChain];
         }
 
         // Only add to chain if not replacing
-        if (!options.replace) {
+        if (extendsChain && !options.keepHistoryChain) {
             historyChain.push(newChainEntry);
 
             // Limit chain length to prevent memory issues (keep last 10 entries)

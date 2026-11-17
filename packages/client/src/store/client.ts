@@ -11,6 +11,7 @@ import { warnUnknownOptions } from '../unknown-options.js';
 import { AgentsApi } from './AgentsApi.js';
 import { CollectionsApi } from './CollectionsApi.js';
 import { ContentApi } from './ContentApi.js';
+import { ContentSourcesApi } from './ContentSourcesApi.js';
 import { CostApi } from './CostApi.js';
 import { DataApi } from './DataApi.js';
 import { EmailApi } from './EmailApi.js';
@@ -144,6 +145,7 @@ export class ZenoClient extends AbstractFetchClient<ZenoClient> {
     types = new TypesApi(this);
     workflows = new WorkflowsApi(this);
     schedules = new SchedulesApi(this);
+    contentSources = new ContentSourcesApi(this);
     processes = new ProcessApi(this);
     processTestRuns = new ProcessTestRunApi(this);
     tasks = new TaskApi(this);

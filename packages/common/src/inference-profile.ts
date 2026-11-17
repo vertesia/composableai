@@ -3,6 +3,7 @@ import type * as Wire from './wire-types.generated.js';
 export type InferenceProfileId = Wire.InferenceProfileId;
 export type InferenceProfileName = Wire.InferenceProfileName;
 export type InferenceProfile = Wire.InferenceProfile;
+export type InferenceProfileInvocation = Wire.InferenceProfileInvocation;
 export type InferenceProfileSnapshot = Wire.InferenceProfileSnapshot;
 export type ProjectInferenceProfiles = Wire.ProjectInferenceProfiles;
 

@@ -1,5 +1,6 @@
 export * from './AgentsApi.js';
 export * from './ContentApi.js';
+export * from './ContentSourcesApi.js';
 export * from './client.js';
 export * from './DashboardApi.js';
 export * from './DataApi.js';

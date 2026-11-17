@@ -179,6 +179,14 @@ export const UsedSkillSchema = z
             .array(z.string())
             .meta({ description: 'System-level packages to install via sudo apt-get (e.g., ["poppler-utils"])' })
             .optional(),
+        content_digest: z
+            .string()
+            .meta({
+                description:
+                    'Digest of the instructions the skill returned when it was first loaded in the run, to tell ' +
+                    'skill versions apart. Absent on skills tracked before the digest existed.',
+            })
+            .optional(),
     })
     .meta({ id: 'UsedSkill', description: 'Skill metadata tracked when a skill is used' });
 
@@ -1255,6 +1263,14 @@ export const ResolvedInteractionExecutionInfoSchema = z
                 "Agent runner configuration (tool_names opt-ins, is_agent, is_tool, etc.). Included on resolve so non-UI callers (worker activities) can pick up the interaction's defaults without a second retrieve round-trip — and so in-code interactions (sys:, app:) which have no Mongo document work the same as stored ones.",
         }).optional(),
         resolved: ResolvedRuntimeConfigSchema.meta({ description: 'The resolved runtime configuration' }),
+        prompt_hash: z
+            .string()
+            .meta({
+                description:
+                    "Digest of the interaction's prompt segments and their template content. It changes whenever " +
+                    'what the model is told changes, including on a draft whose version number stays the same.',
+            })
+            .optional(),
     })
     .meta({
         id: 'ResolvedInteractionExecutionInfo',
@@ -1975,6 +1991,15 @@ export const ConversationStateSchema = z
             .string()
             .meta({ description: 'LLM stop reason from the latest call (e.g., "stop", "length", "tool_use")' })
             .optional(),
+        llm_attempt: z
+            .number()
+            .int()
+            .meta({
+                description:
+                    'Attempt number of the activity that made the latest LLM call. Above 1, the call was retried ' +
+                    'after a failed attempt.',
+            })
+            .optional(),
         agent_run_id: z
             .string()
             .meta({
@@ -2681,6 +2706,26 @@ const resumeConversationFields = {
     asyncCompletion: AsyncCompletionOptionsSchema.optional(),
 };
 
+export const CompactConversationOptionsSchema = z
+    .strictObject({
+        instructions: z
+            .string()
+            .meta({
+                description:
+                    "Summarization prompt that replaces the provider's own. Claude only: OpenAI's compaction has no " +
+                    'prompt, so it is left out there.',
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'CompactConversationOptions',
+        description:
+            "Compact the conversation with the provider's server-side compaction instead of answering it. The run " +
+            "continues from the compacted conversation: Claude's compaction block, or OpenAI's compacted items. " +
+            'The response reports `finish_reason: compaction`; its result is the summary text on Claude and empty ' +
+            'on OpenAI, whose summary is encrypted.',
+    });
+
 export const ToolResultsPayloadSchema = z
     .strictObject({ ...resumeConversationFields, results: z.array(ToolResultSchema) })
     .meta({ id: 'ToolResultsPayload' });
@@ -2688,7 +2733,12 @@ export const ToolResultsPayloadSchema = z
 export const UserMessagePayloadSchema = z
     .strictObject({
         ...resumeConversationFields,
-        message: z.string(),
+        message: z.string().meta({
+            description:
+                'The user message. It may be empty when `compact_conversation` is set: a non-empty message is ' +
+                'added to the conversation before it is compacted.',
+        }),
+        compact_conversation: CompactConversationOptionsSchema.optional(),
         /**
          * Tool results still owed to the model when the user message is sent.
          *

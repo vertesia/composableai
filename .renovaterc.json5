@@ -13,7 +13,7 @@
   "baseBranchPatterns": [
     "main",
     // release-cut:renovate-base-branches:start
-    "release/1.5",
+    "release/1.6",
     // release-cut:renovate-base-branches:end
   ],
   "automerge": false,

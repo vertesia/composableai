@@ -1,6 +1,6 @@
 {
     "name": "@vertesia/studio-utils",
-    "version": "1.6.0-dev.20261022.120426Z",
+    "version": "1.7.0-dev",
     "type": "module",
     "description": "Shared utilities for Vertesia studio: prompt template rendering, schema-based mock data generation, prompt and interaction validation helpers.",
     "main": "./lib/index.js",
@@ -21,6 +21,10 @@
         "./oauth": {
             "types": "./lib/oauth/index.d.ts",
             "default": "./lib/oauth/index.js"
+        },
+        "./roles": {
+            "types": "./lib/roles/index.d.ts",
+            "default": "./lib/roles/index.js"
         },
         "./token-claims": {
             "types": "./lib/token-claims/index.d.ts",

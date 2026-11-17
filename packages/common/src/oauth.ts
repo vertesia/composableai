@@ -48,3 +48,6 @@ export type OAuthProviderAuthorizeResponse = Wire.OAuthProviderAuthorizeResponse
 export type OAuthProviderAccessTokenResponse = Wire.OAuthProviderAccessTokenResponse;
 
 export type OAuthProviderExchangePayload = Wire.OAuthProviderExchangePayload;
+
+/** Optional body of the provider token request: a `scope` other than the provider's default scopes. */
+export type OAuthProviderTokenRequest = Wire.OAuthProviderTokenRequest;

@@ -6,14 +6,28 @@ import type {
     CostModelPricesQuery,
     CostRunPriceQuery,
     CostRunPriceResponse,
+    InferenceBudgetSettings,
     IntakeCostSummaryQuery,
     IntakeCostSummaryResponse,
     ModelPriceComparisonResponse,
+    UpdateInferenceBudget,
 } from '@vertesia/common';
 
 export class CostApi extends ApiTopic {
     constructor(parent: ClientBase) {
         super(parent, '/api/v1/cost');
+    }
+
+    getInferenceBudget(): Promise<InferenceBudgetSettings> {
+        return this.get('/budget');
+    }
+
+    updateInferenceBudget(payload: UpdateInferenceBudget): Promise<InferenceBudgetSettings> {
+        return this.put('/budget', { payload });
+    }
+
+    disableInferenceBudget(): Promise<InferenceBudgetSettings> {
+        return this.del('/budget');
     }
 
     /**

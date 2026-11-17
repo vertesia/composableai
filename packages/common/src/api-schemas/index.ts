@@ -20,6 +20,7 @@ export { EventCategorySchema } from './audit-trail.js';
 export * from './bulk-operation.js';
 export * from './content.js';
 export * from './content-query.js';
+export * from './content-sources.js';
 export * from './cost-analytics.js';
 export * from './dashboard.js';
 export * from './data-store.js';

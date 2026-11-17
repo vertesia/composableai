@@ -773,6 +773,8 @@
     "store.successfullyExportedTo": "تم التصدير بنجاح إلى {{format}}",
     "store.syncMemberHeads": "مزامنة رؤوس الأعضاء",
     "store.syncMemberHeadsDescription": "عند إنشاء إصدار HEAD جديد لعضو، سيتم تحديث المجموعة للإشارة إلى HEAD الجديد.",
+    "store.syncedFromBox": "تمت المزامنة من Box",
+    "store.syncedFromSharePoint": "تمت المزامنة من SharePoint",
     "store.tableLayout": "تخطيط الجدول",
     "store.tableLayoutDescription": "حدد تخطيطاً مخصصاً لعرض المجموعة في الجداول.",
     "store.tableLayoutUpdated": "تم تحديث تخطيط الجدول",

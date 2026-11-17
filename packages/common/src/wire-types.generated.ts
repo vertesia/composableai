@@ -2293,6 +2293,140 @@ export type ContentQueryResult = {
     cursor?: string | undefined;
     took?: number | undefined;
 };
+/** A folder of an external content system whose files are synced into the project without copies. */
+export type ExternalContentSource = SharePointContentSource | BoxContentSource;
+export type SharePointContentSource = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    location_root: string;
+    collection_id?: string | undefined;
+    sync: ContentSourceSyncSettings;
+    created_by?: string | undefined;
+    updated_by?: string | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    type: 'sharepoint';
+    site_url: string;
+    site_id: string;
+    drive_id: string;
+    library_name: string;
+    folder_path: string;
+    folder_item_id: string;
+};
+export type BoxContentSource = {
+    id: string;
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    location_root: string;
+    collection_id?: string | undefined;
+    sync: ContentSourceSyncSettings;
+    created_by?: string | undefined;
+    updated_by?: string | undefined;
+    created_at?: string | undefined;
+    updated_at?: string | undefined;
+    type: 'box';
+    folder_id: string;
+    folder_name: string;
+    folder_path: string;
+};
+export type ContentSourceSyncSettings = {
+    enabled: boolean;
+    interval_minutes: number;
+};
+/** Registers a content source. */
+export type CreateContentSourcePayload = CreateSharePointContentSourcePayload | CreateBoxContentSourcePayload;
+export type CreateSharePointContentSourcePayload = {
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    location_root?: string | undefined;
+    collection_id?: string | undefined;
+    sync?: ContentSourceSyncSettings | undefined;
+    type: 'sharepoint';
+    site_url: string;
+    library_name?: string | undefined;
+    folder_path?: string | undefined;
+};
+export type CreateBoxContentSourcePayload = {
+    name: string;
+    description?: string | undefined;
+    oauth_provider_id: string;
+    location_root?: string | undefined;
+    collection_id?: string | undefined;
+    sync?: ContentSourceSyncSettings | undefined;
+    type: 'box';
+    folder_id: string;
+};
+export type UpdateContentSourcePayload = {
+    name?: string | undefined;
+    description?: string | undefined;
+    sync?: ContentSourceSyncSettings | undefined;
+};
+export type SyncContentSourcePayload = {
+    full?: boolean | undefined;
+};
+/** A content source's sync state. */
+export type ContentSourceStatus = {
+    state: 'not_started' | 'running' | 'waiting' | 'stopped';
+    current_round?: ContentSourceSyncRound | undefined;
+    last_round?: ContentSourceSyncRound | undefined;
+    recent_rounds?: ContentSourceSyncRound[] | undefined;
+    cursor_taken_at?: string | undefined;
+    next_sync_at?: string | undefined;
+    error?: string | undefined;
+};
+export type ContentSourceSyncRound = {
+    id?: string | undefined;
+    kind: 'import' | 'update';
+    started_at: string;
+    finished_at?: string | undefined;
+    counts: ContentSourceSyncCounts;
+    skipped_by_reason?: Record<string, number> | undefined;
+    swept?: boolean | undefined;
+    error?: string | undefined;
+};
+export type ContentSourceSyncCounts = {
+    listed: number;
+    created: number;
+    updated: number;
+    unchanged: number;
+    deleted: number;
+    skipped: number;
+    failed: number;
+};
+/** A page of the files a sync round created, updated, deleted, skipped or failed. */
+export type ContentSourceReport = {
+    round_id: string;
+    entries: ContentSourceReportEntry[];
+    next_cursor?: string | undefined;
+};
+export type ContentSourceReportEntry = {
+    action: ContentSourceReportAction;
+    kind: 'file' | 'folder';
+    item_id: string;
+    name: string;
+    path?: string | undefined;
+    object_id?: string | undefined;
+    changes?: ('name' | 'location' | 'content')[] | undefined;
+    reason?: string | undefined;
+    error?: string | undefined;
+};
+export type ContentSourceReportAction = 'created' | 'updated' | 'deleted' | 'skipped' | 'failed';
+export type ContentSourceReportQuery = {
+    action?: ContentSourceReportAction | undefined;
+    cursor?: string | undefined;
+    limit?: number | undefined;
+};
+export type InferenceBudgetSettings = {
+    daily_limit_usd: number | null;
+    available: boolean;
+};
+export type UpdateInferenceBudget = {
+    daily_limit_usd: number;
+};
 export type CostAnalyticsQuery = {
     from?: string | number | undefined;
     to?: string | number | undefined;
@@ -3976,7 +4110,11 @@ export type InferenceProfile = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
+export type InferenceProfileInvocation = 'execute' | 'decide' | 'shadow';
 export type InferenceProfileSnapshot = {
     id?: InferenceProfileId | undefined;
     name: InferenceProfileName;
@@ -4008,6 +4146,9 @@ export type CreateInferenceProfilePayload = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
 export type UpdateInferenceProfilePayload = {
     name: InferenceProfileName;
@@ -4015,6 +4156,9 @@ export type UpdateInferenceProfilePayload = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
 export type InferenceProfileRecord = {
     name: InferenceProfileName;
@@ -4022,6 +4166,9 @@ export type InferenceProfileRecord = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
     id: string;
     project: string;
     created_at: string;
@@ -4232,6 +4379,10 @@ export type ConversationStripOptions = {
     images_after_turns?: number | undefined;
     text_max_tokens?: number | undefined;
     heartbeats_after_turns?: number | undefined;
+};
+/** On-demand compaction of a resumed conversation (`UserMessagePayload.compact_conversation`). */
+export type CompactConversationOptions = {
+    instructions?: string | undefined;
 };
 /**
  * Reference to an interaction in the catalog.
@@ -4839,6 +4990,7 @@ export type UserMessagePayload = {
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
     message: string;
+    compact_conversation?: CompactConversationOptions | undefined;
     results?: ToolResult[] | undefined;
 };
 export type RunSource = {
@@ -4967,6 +5119,7 @@ export type ResolvedInteractionExecutionInfo = {
     tags: string[];
     agent_runner_options?: AgentRunnerOptions | undefined;
     resolved: ResolvedRuntimeConfig;
+    prompt_hash?: string | undefined;
 };
 export type UpdateExecutionRunPayload = {
     id?: string | undefined;
@@ -5028,8 +5181,9 @@ export type NotificationKind =
     | 'agent.finished'
     | 'agent.turn_finished'
     | 'task.assigned'
-    | 'intake.finished';
-export type NotificationCategory = 'actions' | 'failures' | 'results';
+    | 'intake.finished'
+    | 'inference_budget.exceeded';
+export type NotificationCategory = 'actions' | 'failures' | 'results' | 'billing';
 export type NotificationChannel = 'in_app';
 /** A typed reference to the item a notification is about (`{ type: 'task', id }`, ...). */
 export type NotificationRef = {
@@ -5102,6 +5256,7 @@ export type NotificationChannelPreferences = {
 export type NotificationPreferences = {
     categories: Record<string, NotificationChannelPreferences>;
     kinds: Record<string, NotificationChannelPreferences>;
+    budget_alerts_enabled?: boolean | undefined;
 };
 export type NotificationStreamEvent = {
     type: 'changed' | 'heartbeat';
@@ -5534,9 +5689,15 @@ export type OAuthProviderData = {
     token_endpoint?: string | undefined;
     client_id: string;
     has_client_secret?: boolean | undefined;
+    token_endpoint_auth_method?: 'client_secret_post' | 'private_key_jwt' | undefined;
+    token_endpoint_auth_signing_alg?: 'RS256' | 'PS256' | 'ES256' | undefined;
+    has_private_key?: boolean | undefined;
+    certificate?: string | undefined;
     default_scopes?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
+    token_params?: Record<string, string> | undefined;
     created_at: string;
     updated_at: string;
 };
@@ -5552,9 +5713,15 @@ export type OAuthProvider = {
     token_endpoint?: string | undefined;
     client_id: string;
     has_client_secret?: boolean | undefined;
+    token_endpoint_auth_method?: 'client_secret_post' | 'private_key_jwt' | undefined;
+    token_endpoint_auth_signing_alg?: 'RS256' | 'PS256' | 'ES256' | undefined;
+    has_private_key?: boolean | undefined;
+    certificate?: string | undefined;
     default_scopes?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
+    token_params?: Record<string, string> | undefined;
     created_at: string;
     updated_at: string;
     id: string;
@@ -5571,9 +5738,15 @@ export type CreateOAuthProviderPayload = {
     token_endpoint?: string | undefined;
     client_id: string;
     client_secret?: string | undefined;
+    token_endpoint_auth_method?: 'client_secret_post' | 'private_key_jwt' | undefined;
+    token_endpoint_auth_signing_alg?: 'RS256' | 'PS256' | 'ES256' | undefined;
+    private_key?: string | undefined;
+    certificate?: string | undefined;
     default_scopes?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
     use_pkce?: boolean | undefined;
     revocation_endpoint?: string | undefined;
+    token_params?: Record<string, string> | undefined;
 };
 /**
  * Payload for updating an OAuth Provider.
@@ -5588,9 +5761,15 @@ export type UpdateOAuthProviderPayload = {
     token_endpoint?: string | undefined | undefined;
     client_id?: string | undefined;
     client_secret?: string | undefined | undefined;
+    token_endpoint_auth_method?: 'client_secret_post' | 'private_key_jwt' | undefined | undefined;
+    token_endpoint_auth_signing_alg?: 'RS256' | 'PS256' | 'ES256' | undefined | undefined;
+    private_key?: string | undefined | undefined;
+    certificate?: string | undefined | undefined;
     default_scopes?: string[] | undefined | undefined;
+    allowed_scopes?: string[] | undefined | undefined;
     use_pkce?: boolean | undefined | undefined;
     revocation_endpoint?: string | undefined | undefined;
+    token_params?: Record<string, string> | undefined | undefined;
 };
 /**
  * OAuth authentication status for a user against an OAuth Provider.
@@ -5618,6 +5797,10 @@ export type OAuthProviderAccessTokenResponse = {
 export type OAuthProviderExchangePayload = {
     code: string;
     state: string;
+};
+/** Optional body of the provider token request: a `scope` other than the provider's default scopes. */
+export type OAuthProviderTokenRequest = {
+    scope?: string | undefined;
 };
 export type SortOrder = 'asc' | 'desc';
 export type SortOption = {
@@ -7617,6 +7800,7 @@ export type UsedSkill = {
     language?: string | undefined;
     packages?: string[] | undefined;
     system_packages?: string[] | undefined;
+    content_digest?: string | undefined;
 };
 export type DocumentPrepOptions = {
     features?: string[] | undefined;
@@ -8241,7 +8425,6 @@ export type RenderMarkdownStatusResponse = {
 export type RenderMarkdownStatusQuery = {
     workflow_id: string;
     workflow_run_id: string;
-    [k: string]: unknown;
 };
 export type CreateContentObjectQuery = {
     collection_id?: string | undefined;
@@ -10819,6 +11002,7 @@ export type ConversationStateWire = {
     pending_mcp_connections?: PendingMcpConnection[] | undefined;
     active_activity_group_id?: string | undefined;
     finish_reason?: string | undefined;
+    llm_attempt?: number | undefined;
     agent_run_id?: string | undefined;
     launch_id?: string | undefined;
     app_version?: string | undefined;
@@ -11126,6 +11310,7 @@ export type EventDeliveryTargetWire = unknown;
 export type EventDeliveryTargetInputWire = unknown;
 export type ProcessEventDeliveryTargetWire = unknown;
 export type EventIngestChannelArray = EventIngestChannel[];
+export type ExternalContentSourceArray = ExternalContentSource[];
 export type CollectionStatusWire = CollectionStatus;
 export type CollectionArray = Collection[];
 export type AgentRunArtifactPathArray = string[];
@@ -11286,8 +11471,37 @@ export type TurnEvaluationFlagWire =
     | 'approval_denied'
     | 'circuit_breaker'
     | 'no_visible_answer'
-    | 'answer_in_tool_preamble';
-export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'other';
+    | 'answer_in_tool_preamble'
+    | 'response_cut_off'
+    | 'llm_retried'
+    | 'unknown_tool'
+    | 'invalid_tool_arguments'
+    | 'context_near_full'
+    | 'checkpoint_forced';
+export type ToolErrorClassWire =
+    | 'schema'
+    | 'unknown_tool'
+    | 'platform'
+    | 'config'
+    | 'environment'
+    | 'unknown_outcome'
+    | 'other';
+export type ToolApprovalOriginWire =
+    | 'not_required'
+    | 'unattended'
+    | 'run_grant'
+    | 'reviewer_allowed'
+    | 'reviewer_denied'
+    | 'user_allowed'
+    | 'user_allowed_for_run'
+    | 'user_denied'
+    | 'user_denied_with_feedback'
+    | 'user_interrupted'
+    | 'mode_change'
+    | 'timeout'
+    | 'unattended_denied';
+export type ToolApprovalReviewerOutcomeWire = 'allow' | 'ask_user' | 'deny';
+export type ToolApprovalRiskLevelWire = 'low' | 'medium' | 'high';
 export type EvaluationGateReasonWire = 'signal' | 'sample' | 'opt_in' | 'always_on';
 export type EvaluationOutcomeWire = 'evaluated' | 'skipped_unarchived' | 'failed';
 export type EvaluationVerdictWire = 'success' | 'partial' | 'failure';
@@ -11617,6 +11831,7 @@ export interface ApiComponentTypes {
     OAuthProviderAuthorizeResponse: OAuthProviderAuthorizeResponse;
     OAuthProviderAccessTokenResponse: OAuthProviderAccessTokenResponse;
     OAuthProviderExchangePayload: OAuthProviderExchangePayload;
+    OAuthProviderTokenRequest: OAuthProviderTokenRequest;
     OAuthClientType: OAuthClientType;
     OAuthClientStatus: OAuthClientStatus;
     OAuthRegistrationSource: OAuthRegistrationSource;
@@ -11751,6 +11966,7 @@ export interface ApiComponentTypes {
     InferenceProfileId: InferenceProfileId;
     InferenceProfileName: InferenceProfileName;
     InferenceProfile: InferenceProfile;
+    InferenceProfileInvocation: InferenceProfileInvocation;
     InferenceProfileSnapshot: InferenceProfileSnapshot;
     ProjectInferenceProfiles: ProjectInferenceProfiles;
     InteractionStatus: InteractionStatusWire;
@@ -11822,6 +12038,7 @@ export interface ApiComponentTypes {
     InitialToolCall: InitialToolCall;
     ConversationVisibility: ConversationVisibility;
     ConversationStripOptions: ConversationStripOptions;
+    CompactConversationOptions: CompactConversationOptions;
     StreamingOptions: StreamingOptions;
     StreamingTelemetryContext: StreamingTelemetryContext;
     ResolvedRuntimeConfig: ResolvedRuntimeConfig;
@@ -12084,6 +12301,8 @@ export interface ApiComponentTypes {
     DataSchemaForAI: DataSchemaForAI;
     DataStoreSchemaResponse: DataStoreSchemaResponse;
     CostAnalyticsQuery: CostAnalyticsQuery;
+    InferenceBudgetSettings: InferenceBudgetSettings;
+    UpdateInferenceBudget: UpdateInferenceBudget;
     CostRunPriceQuery: CostRunPriceQuery;
     CostModelPricesQuery: CostModelPricesQuery;
     CostExportQuery: CostExportQuery;
@@ -12393,6 +12612,23 @@ export interface ApiComponentTypes {
     CreateEventIngestChannelPayload: CreateEventIngestChannelPayload;
     UpdateEventIngestChannelPayload: UpdateEventIngestChannelPayload;
     EventIngestChannelArray: EventIngestChannelArray;
+    ContentSourceSyncSettings: ContentSourceSyncSettings;
+    SharePointContentSource: SharePointContentSource;
+    BoxContentSource: BoxContentSource;
+    ExternalContentSource: ExternalContentSource;
+    ExternalContentSourceArray: ExternalContentSourceArray;
+    CreateSharePointContentSourcePayload: CreateSharePointContentSourcePayload;
+    CreateBoxContentSourcePayload: CreateBoxContentSourcePayload;
+    CreateContentSourcePayload: CreateContentSourcePayload;
+    UpdateContentSourcePayload: UpdateContentSourcePayload;
+    SyncContentSourcePayload: SyncContentSourcePayload;
+    ContentSourceSyncCounts: ContentSourceSyncCounts;
+    ContentSourceSyncRound: ContentSourceSyncRound;
+    ContentSourceStatus: ContentSourceStatus;
+    ContentSourceReportAction: ContentSourceReportAction;
+    ContentSourceReportEntry: ContentSourceReportEntry;
+    ContentSourceReportQuery: ContentSourceReportQuery;
+    ContentSourceReport: ContentSourceReport;
     CollectionSecuritySettingsResponse: CollectionSecuritySettingsResponse;
     CollectionMembersUpdateResult: CollectionMembersUpdateResult;
     CollectionMembersUpdatePayload: CollectionMembersUpdatePayload;
@@ -12462,6 +12698,9 @@ export interface ApiComponentTypes {
     EvaluationSeverity: EvaluationSeverityWire;
     TurnEvaluationFlag: TurnEvaluationFlagWire;
     ToolErrorClass: ToolErrorClassWire;
+    ToolApprovalOrigin: ToolApprovalOriginWire;
+    ToolApprovalReviewerOutcome: ToolApprovalReviewerOutcomeWire;
+    ToolApprovalRiskLevel: ToolApprovalRiskLevelWire;
     EvaluationGateReason: EvaluationGateReasonWire;
     EvaluationOutcome: EvaluationOutcomeWire;
     EvaluationVerdict: EvaluationVerdictWire;
