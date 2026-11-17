@@ -10,6 +10,8 @@ export const CONTENT_SOURCE_DEFAULT_SYNC_INTERVAL_MINUTES = 60;
 export const CONTENT_SOURCE_REPORT_ROUNDS = 10;
 /** The most entries one page of a round's report returns. */
 export const CONTENT_SOURCE_REPORT_MAX_LIMIT = 1000;
+/** The most files a sample of a source's folder returns. */
+export const CONTENT_SOURCE_SAMPLE_MAX_LIMIT = 500;
 
 /** A folder of an external content system whose files are synced into the project without copies. */
 export type ExternalContentSource = Wire.ExternalContentSource;
@@ -35,3 +37,33 @@ export type ContentSourceReport = Wire.ContentSourceReport;
 export type ContentSourceReportEntry = Wire.ContentSourceReportEntry;
 export type ContentSourceReportAction = Wire.ContentSourceReportAction;
 export type ContentSourceReportQuery = Wire.ContentSourceReportQuery;
+
+/** The connection an inspection reads through. No content source needs to exist. */
+export type DiscoverContentSourceSitePayload = Wire.DiscoverContentSourceSitePayload;
+export type DiscoverContentSourceSchemaPayload = Wire.DiscoverContentSourceSchemaPayload;
+export type DiscoverContentSourceSamplePayload = Wire.DiscoverContentSourceSamplePayload;
+export type DiscoverContentSourceFoldersPayload = Wire.DiscoverContentSourceFoldersPayload;
+export type InspectContentSourceFoldersPayload = Wire.InspectContentSourceFoldersPayload;
+export type InspectContentSourceSchemaPayload = Wire.InspectContentSourceSchemaPayload;
+export type InspectContentSourceSamplePayload = Wire.InspectContentSourceSamplePayload;
+export type ContentSourceRoot = Wire.ContentSourceRoot;
+export type ContentSourceRootsDiscovery = Wire.ContentSourceRootsDiscovery;
+
+/** A site and its document libraries. */
+export type ContentSourceSiteDiscovery = Wire.ContentSourceSiteDiscovery;
+export type ContentSourceLibrary = Wire.ContentSourceLibrary;
+
+/** The direct subfolders of a folder of a library. */
+export type ContentSourceFoldersDiscovery = Wire.ContentSourceFoldersDiscovery;
+export type ContentSourceFolder = Wire.ContentSourceFolder;
+
+/** The content types and columns of a document library. */
+export type ContentSourceSchemaDiscovery = Wire.ContentSourceSchemaDiscovery;
+export type ContentSourceContentType = Wire.ContentSourceContentType;
+export type ContentSourceColumn = Wire.ContentSourceColumn;
+export type ContentSourceColumnType = Wire.ContentSourceColumnType;
+
+/** A bounded sample of the files under a folder. */
+export type ContentSourceSampleDiscovery = Wire.ContentSourceSampleDiscovery;
+export type ContentSourceSampleFile = Wire.ContentSourceSampleFile;
+export type ContentSourceContentTypeCount = Wire.ContentSourceContentTypeCount;
