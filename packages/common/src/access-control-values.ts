@@ -61,6 +61,8 @@ export enum Permission {
     content_delete = 'content:delete',
     content_admin = 'content:admin', //manage schemas
     content_superadmin = 'content:superadmin', // list all objects and collections
+    /** Connect external content systems (SharePoint, Box) to a project, and run and monitor their sync. */
+    content_source_manage = 'content_source:manage',
 
     workflow_read = 'workflow:read',
     workflow_run = 'workflow:run',
