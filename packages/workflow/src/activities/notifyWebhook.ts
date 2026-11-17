@@ -98,15 +98,17 @@ function validationStatusCode(error: unknown): number | undefined {
 /** 4xx answers that mean "try again later": 408 Request Timeout, 425 Too Early, 429 Too Many Requests. */
 const RETRYABLE_CLIENT_ERROR_STATUSES: ReadonlySet<number> = new Set([408, 425, 429]);
 
-/** Whether a status rejects the request itself, so sending it again would get the same answer. */
-function isPermanentHttpStatus(status: number): boolean {
-    return status >= 400 && status < 500 && !RETRYABLE_CLIENT_ERROR_STATUSES.has(status);
-}
+/**
+ * Receiver answers that a retry won't change: 404 Not Found and 410 Gone (no endpoint) and 409 Conflict.
+ * Other 4xx answers, such as 401 and 403, often succeed on a later attempt, so they are retried.
+ */
+const PERMANENT_RECEIVER_STATUSES: ReadonlySet<number> = new Set([404, 409, 410]);
 
 function isNonRetryableUrlValidationError(error: unknown): boolean {
     const status = validationStatusCode(error);
     if (status !== undefined) {
-        return isPermanentHttpStatus(status);
+        // A 4xx from validation rejects the URL itself, unless it asks to try again later.
+        return status >= 400 && status < 500 && !RETRYABLE_CLIENT_ERROR_STATUSES.has(status);
     }
     const message = error instanceof Error ? error.message : String(error);
     return /blocked|not allowed|forbidden|invalid url|internal hosts|private network|metadata/i.test(message);
@@ -242,11 +244,10 @@ export async function notifyWebhook(
             log.debug('Could not read response body for error', { readError });
         }
 
-        // A request the receiver rejected outright fails at once; RETRYABLE_CLIENT_ERROR_STATUSES lists the exceptions.
         throw ApplicationFailure.create({
             message: errorMessage,
             type: WEBHOOK_ENDPOINT_ERROR,
-            nonRetryable: isPermanentHttpStatus(res.status),
+            nonRetryable: PERMANENT_RECEIVER_STATUSES.has(res.status),
         });
     }
 

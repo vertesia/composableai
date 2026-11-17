@@ -219,7 +219,7 @@ describe('Webhook should be notified', () => {
         });
     });
 
-    it.each([400, 401, 403, 404, 409, 410, 422])('does not retry a %i answer', async (status) => {
+    it.each([404, 409, 410])('does not retry a %i answer', async (status) => {
         mockFetch.mockResolvedValueOnce(new Response('rejected', { status }));
 
         await expect(testEnv.run(notifyWebhook, createTestPayload())).rejects.toMatchObject({
@@ -228,7 +228,7 @@ describe('Webhook should be notified', () => {
         });
     });
 
-    it.each([408, 425, 429, 503])('retries a %i answer', async (status) => {
+    it.each([400, 401, 403, 408, 422, 425, 429, 503])('retries a %i answer', async (status) => {
         mockFetch.mockResolvedValueOnce(new Response(null, { status }));
 
         await expect(testEnv.run(notifyWebhook, createTestPayload())).rejects.toMatchObject({
