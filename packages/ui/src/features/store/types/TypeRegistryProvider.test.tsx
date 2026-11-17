@@ -1,13 +1,16 @@
 // @vitest-environment jsdom
 import { act, cleanup, render } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TypeRegistryProvider, typeCatalogRetryDelayMs, useTypeRegistry } from './TypeRegistryProvider.js';
+import { TypeRegistryProvider, useTypeRegistry } from './TypeRegistryProvider.js';
 
 const catalogList = vi.fn();
 
+const session = vi.hoisted(() => ({ projectId: 'project-1' }));
+
 vi.mock('@vertesia/ui/session', () => ({
     useUserSession: () => ({
-        project: { id: 'project-1' },
+        project: { id: session.projectId },
         store: { types: { catalog: { list: catalogList } } },
     }),
 }));
@@ -24,22 +27,9 @@ function rateLimited(retryAfterMs?: number) {
     return Object.assign(new Error('429 Too Many Requests'), { status: 429, retryAfterMs });
 }
 
-describe('typeCatalogRetryDelayMs', () => {
-    it('backs off exponentially, capped at one minute', () => {
-        expect(typeCatalogRetryDelayMs(1)).toBe(2_000);
-        expect(typeCatalogRetryDelayMs(2)).toBe(4_000);
-        expect(typeCatalogRetryDelayMs(3)).toBe(8_000);
-        expect(typeCatalogRetryDelayMs(10)).toBe(60_000);
-    });
-
-    it('never retries sooner than the server asks', () => {
-        expect(typeCatalogRetryDelayMs(1, 5_000)).toBe(5_000);
-        expect(typeCatalogRetryDelayMs(1, 90_000)).toBe(90_000);
-    });
-});
-
 describe('TypeRegistryProvider', () => {
     afterEach(() => {
+        session.projectId = 'project-1';
         cleanup();
         vi.useRealTimers();
         catalogList.mockReset();
@@ -223,6 +213,135 @@ describe('TypeRegistryProvider', () => {
                 <Consumer />
             </TypeRegistryProvider>,
         );
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(catalogList).toHaveBeenCalledTimes(1);
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(2_000);
+        });
+        expect(catalogList).toHaveBeenCalledTimes(2);
+        expect(latestCtx?.registry).toBeDefined();
+    });
+
+    it('issues one catalog request when mounted under StrictMode', async () => {
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        catalogList.mockResolvedValue([]);
+
+        render(
+            <StrictMode>
+                <TypeRegistryProvider>
+                    <Consumer />
+                </TypeRegistryProvider>
+            </StrictMode>,
+        );
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 20));
+        });
+
+        expect(catalogList).toHaveBeenCalledTimes(1);
+        expect(latestCtx?.registry).toBeDefined();
+    });
+
+    it('does not retry before the server asks when Retry-After exceeds the timer range', async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        catalogList.mockRejectedValueOnce(rateLimited(3_000_000_000));
+        catalogList.mockResolvedValueOnce([]);
+
+        render(
+            <TypeRegistryProvider>
+                <Consumer />
+            </TypeRegistryProvider>,
+        );
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(1_000);
+        });
+        expect(catalogList).toHaveBeenCalledTimes(1);
+    });
+
+    it('discards a scheduled retry when the project changes', async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        catalogList.mockRejectedValueOnce(rateLimited(60_000));
+        catalogList.mockResolvedValue([]);
+
+        const { rerender } = render(
+            <TypeRegistryProvider>
+                <Consumer />
+            </TypeRegistryProvider>,
+        );
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(catalogList).toHaveBeenCalledTimes(1);
+
+        session.projectId = 'project-2';
+        rerender(
+            <TypeRegistryProvider>
+                <Consumer />
+            </TypeRegistryProvider>,
+        );
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(0);
+        });
+        expect(catalogList).toHaveBeenCalledTimes(2);
+
+        // The retry scheduled for the previous project must not fire.
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(120_000);
+        });
+        expect(catalogList).toHaveBeenCalledTimes(2);
+        expect(latestCtx?.registry).toBeDefined();
+    });
+
+    it('caps the retry delay at one minute', async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        for (let i = 0; i < 6; i++) catalogList.mockRejectedValueOnce(rateLimited());
+        catalogList.mockResolvedValueOnce([]);
+
+        render(
+            <TypeRegistryProvider>
+                <Consumer />
+            </TypeRegistryProvider>,
+        );
+
+        // Delays after the six failures: 2 s, 4 s, 8 s, 16 s, 32 s, then 60 s rather than 64 s.
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(2_000 + 4_000 + 8_000 + 16_000 + 32_000);
+        });
+        expect(catalogList).toHaveBeenCalledTimes(6);
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(59_999);
+        });
+        expect(catalogList).toHaveBeenCalledTimes(6);
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(1);
+        });
+        expect(catalogList).toHaveBeenCalledTimes(7);
+        expect(latestCtx?.registry).toBeDefined();
+    });
+
+    it('still retries a failure of the request started under StrictMode', async () => {
+        vi.useFakeTimers();
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        catalogList.mockRejectedValueOnce(rateLimited());
+        catalogList.mockResolvedValueOnce([]);
+
+        render(
+            <StrictMode>
+                <TypeRegistryProvider>
+                    <Consumer />
+                </TypeRegistryProvider>
+            </StrictMode>,
+        );
+
         await act(async () => {
             await vi.advanceTimersByTimeAsync(0);
         });
