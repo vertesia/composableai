@@ -123,10 +123,46 @@ describe('Bedrock profile tier choices', () => {
         expect(session.client.environments.listModels).toHaveBeenCalledTimes(2);
     });
 
+    it('reports a cold lookup as pending and answers a warm one on the first render', async () => {
+        session.client.environments.listModels.mockResolvedValue(CATALOG);
+        const cold = renderHook(() => useModelOptions(NOVA_PROFILE, Providers.bedrock, undefined, 'environment-id'));
+        expect(cold.result.current.pending).toBe(true);
+        await waitFor(() => expect(cold.result.current.pending).toBe(false));
+
+        // Switching profiles in a loaded environment must never show the interim schema with every tier.
+        const renders: string[][] = [];
+        renderHook(() => {
+            const choices = useTierChoices(HAIKU_PROFILE);
+            renders.push(choices);
+            return choices;
+        });
+        expect(renders[0]).toEqual(['default']);
+        expect(session.client.environments.listModels).toHaveBeenCalledTimes(1);
+    });
+
+    it('fetches a loaded catalog again when it lacks the selected profile', async () => {
+        session.client.environments.listModels.mockResolvedValueOnce(CATALOG.slice(0, 1));
+        session.client.environments.listModels.mockResolvedValue(CATALOG);
+        const first = renderHook(() => useTierChoices(NOVA_PROFILE));
+        await waitFor(() => expect(first.result.current).toEqual(['default', 'flex', 'priority']));
+
+        // Enabled after the catalog loaded: the first lookup misses, then the refreshed catalog answers.
+        const added = renderHook(() => useModelOptions(HAIKU_PROFILE, Providers.bedrock, undefined, 'environment-id'));
+        expect(added.result.current.pending).toBe(true);
+        await waitFor(() => expect(added.result.current.pending).toBe(false));
+        const tier = added.result.current.options.find((option) => option.name === 'service_tier');
+        expect(tier?.type === OptionType.enum && Object.values(tier.enum)).toEqual(['default']);
+        expect(session.client.environments.listModels).toHaveBeenCalledTimes(2);
+    });
+
     it('uses the model ID directly for a system inference profile', () => {
         const { result } = renderHook(() => useTierChoices('us.amazon.nova-pro-v1:0'));
 
         expect(result.current).toEqual(['default', 'flex', 'priority']);
         expect(session.client.environments.listModels).not.toHaveBeenCalled();
+        const { result: options } = renderHook(() =>
+            useModelOptions('us.amazon.nova-pro-v1:0', Providers.bedrock, undefined, 'environment-id'),
+        );
+        expect(options.current.pending).toBe(false);
     });
 });
