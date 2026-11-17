@@ -230,6 +230,26 @@ export const CompositeAppCardOverridesSchema = z
             'Card display overrides for the CompositeApp in the App Portal. Similar to AppManifest display properties, but specific to the CompositeApp card. Allows customers to customize the app portal card (not otherwise possible if using a shared, Vertesia-managed manifest across accounts).',
     });
 
+export const AppMcpProfileSchema = z
+    .strictObject({
+        builtin_tools: z.array(z.string().min(1)).min(1).max(50).meta({
+            description:
+                'Names of the platform MCP server tools the profile lists, e.g. `search_documents`. A name the server does not know is ignored.',
+        }),
+        scopes: z
+            .array(z.string())
+            .meta({
+                description:
+                    'The permission scopes the listed tools need. Register the integration\u2019s OAuth client with these scopes and no more: they, not the tool list, limit what its tokens can do.',
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'AppMcpProfile',
+        description:
+            'An MCP profile: the set of tools the app exposes to an external integration, such as an assistant in another product. The platform MCP server serves it at `/apps/<app name>` for the projects where the app is installed, and lists only the tools declared here.',
+    });
+
 export const MCPOAuthConfigMapSchema = z.object({}).catchall(MCPOAuthConfigSchema).meta({ id: 'MCPOAuthConfigMap' });
 
 export const InCodeViewDefinitionSchema = z
@@ -443,6 +463,7 @@ export const AppManifestDataSchema = z
             description:
                 'The UI configuration of the app. If not specified and the app "ui" is in the app capabilities then the ui configuration will be fetched from the endpoint property.',
         }).optional(),
+        mcp_profile: AppMcpProfileSchema.optional(),
         tool_collections: z
             .array(ToolCollectionObjectSchema)
             .meta({
@@ -636,6 +657,7 @@ export const AppManifestSchema = z
             description:
                 'The UI configuration of the app. If not specified and the app "ui" is in the app capabilities then the ui configuration will be fetched from the endpoint property.',
         }).optional(),
+        mcp_profile: AppMcpProfileSchema.optional(),
         tool_collections: z
             .array(ToolCollectionObjectSchema)
             .meta({

@@ -202,6 +202,8 @@
     "agent.resourceShowLess": "Weniger anzeigen",
     "agent.resourceViewAll": "Alle {{total}} Änderungen anzeigen",
     "agent.resourcesChanged": "Geänderte Ressourcen",
+    "agent.restartFailed": "Der Lauf konnte nicht neu gestartet werden",
+    "agent.restartRun": "Neu starten",
     "agent.retry": "Erneut versuchen",
     "agent.rewind.exportFixture": "Replay-Fixture exportieren",
     "agent.rewind.fixtureExported": "Replay-Fixture exportiert",
