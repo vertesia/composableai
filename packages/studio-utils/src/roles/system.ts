@@ -56,6 +56,8 @@ class DeveloperRole extends OrgMemberRole {
         this.permissions.delete(Permission.account_admin);
         this.permissions.delete(Permission.project_admin);
         this.permissions.delete(Permission.project_settings_write);
+        // A content source reads an external system through a project OAuth provider, as an app.
+        this.permissions.delete(Permission.content_source_manage);
         this.permissions.delete(Permission.env_admin);
         this.permissions.delete(Permission.manage_billing);
         this.permissions.delete(Permission.audit_read);
@@ -81,6 +83,7 @@ class ApplicationRole extends OrgMemberRole {
             Permission.project_admin,
             Permission.workflow_run,
             Permission.project_settings_write,
+            Permission.content_source_manage,
             Permission.account_write,
         ]);
     }
