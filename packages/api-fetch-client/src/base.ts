@@ -618,13 +618,24 @@ export abstract class ClientBase {
             }
         } else {
             return this.readJSONPayload(res).then((payload) => {
-                // A non-JSON success body (e.g. an HTML page from a proxy) is not a result: reject it
-                // like an error response. Endpoints that return text should pass a `reader`.
-                if (res.ok && !isInvalidJsonPayload(payload)) {
-                    return payload as T;
-                } else {
+                if (!res.ok) {
                     this.throwError(this.createServerError(req, res, payload));
                 }
+                // A non-JSON success body (e.g. an HTML page from a proxy) is not a result. Like an
+                // unreadable body, it fails with status 0 so it is never relayed or read as a 2xx answer;
+                // the 2xx is kept on `responseStatus` and the text on `payload.text`. Endpoints that
+                // return text should pass a `reader`.
+                if (isInvalidJsonPayload(payload)) {
+                    const contentType = res.headers.get('content-type') || 'no content-type';
+                    const error = new ResponseReadError(
+                        req,
+                        new Error(`response is not JSON (${contentType})`),
+                        res.status,
+                    );
+                    error.payload = payload;
+                    this.throwError(error);
+                }
+                return payload as T;
             });
         }
     }

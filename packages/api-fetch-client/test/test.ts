@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { mock } from 'node:test';
 import { KoaServer } from '@koa-stack/server';
-import { FetchClient, generateIdempotencyKey, RequestError, ServerError } from '../src/index.js';
+import { FetchClient, generateIdempotencyKey, RequestError, ResponseReadError, ServerError } from '../src/index.js';
 import Endpoints from './endpoints.js';
 
 const HOST = '127.0.0.1';
@@ -64,13 +64,27 @@ describe('Test requests', () => {
             })
             .catch(done);
     });
-    it('rejects a successful non-JSON response, keeping its text on the error', async () => {
+    it('rejects a successful non-JSON response, keeping its status and text on the error', async () => {
         await assert.rejects(client.get('/html'), (err: unknown) => {
-            if (!(err instanceof ServerError)) return false;
-            assert.equal(err.status, 200);
+            if (!(err instanceof ResponseReadError)) return false;
+            assert.equal(err.status, 0);
+            assert.equal(err.responseStatus, 200);
             assert.equal((err.payload as { text?: string }).text, '<html><body>Hello!</body></html>');
             return true;
         });
+    });
+    it('does not relay a non-JSON success from upstream as a 2xx answer', async () => {
+        const original = console.error;
+        console.error = () => {};
+        try {
+            await assert.rejects(client.get('/relay-html'), (err: unknown) => {
+                if (!(err instanceof ServerError)) return false;
+                assert.equal(err.status, 500);
+                return true;
+            });
+        } finally {
+            console.error = original;
+        }
     });
     it('handles errors in incorrect content type', (done) => {
         type FetchErr = {
@@ -711,15 +725,20 @@ describe('Test requests', () => {
         const htmlClient = new FetchClient('http://example.test', async () => {
             attempts++;
             return new Response(html, { status: 200, statusText: 'OK', headers: { 'content-type': 'text/html' } });
-        }).withRetryPolicy({ attempts: 3, baseDelayMs: 0, jitter: false });
+        }).withRetryPolicy({ attempts: 3, baseDelayMs: 0, jitter: false, retryOnConnectionError: true });
 
         await assert.rejects(htmlClient.get('/x'), (err: unknown) => {
-            if (!(err instanceof ServerError)) return false;
-            assert.equal(err.status, 200);
-            assert.equal(err.original_message, 'Server Error: 200 OK: non-JSON response');
+            if (!(err instanceof ResponseReadError)) return false;
+            assert.equal(err.status, 0);
+            assert.equal(err.responseStatus, 200);
+            assert.equal(
+                err.original_message,
+                'Failed to read response body (HTTP 200): response is not JSON (text/html)',
+            );
             assert.equal((err.payload as { text?: string }).text, html);
             return true;
         });
+        // It is a ConnectionError, but the request was answered: it must not be replayed like a failed connection.
         assert.equal(attempts, 1, 'a non-JSON success body must not be retried');
     });
     it('still resolves an empty successful body to undefined', async () => {
