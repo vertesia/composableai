@@ -47486,6 +47486,14 @@
     ],
     "description": "Data store lifecycle status."
   },
+  "DataStoreStorageFormat": {
+    "type": "string",
+    "enum": [
+      "duckdb",
+      "ducklake"
+    ],
+    "description": "How a data store keeps its data. `duckdb`: one DuckDB database file per version. `ducklake`: a DuckLake catalog per version over Parquet files the versions share, for stores too large to rewrite on every change."
+  },
   "ImportDataFormat": {
     "type": "string",
     "enum": [
@@ -47720,6 +47728,10 @@
           "type": "string"
         },
         "description": "Tags for organization"
+      },
+      "storage_format": {
+        "$ref": "#/components/schemas/DataStoreStorageFormat",
+        "description": "Storage format of the new store. Defaults to `duckdb`. It cannot be changed afterwards, and `ducklake` is refused where the environment does not offer it."
       }
     },
     "required": [
@@ -48163,6 +48175,10 @@
       "storage_bytes": {
         "type": "number",
         "description": "Storage size in bytes"
+      },
+      "storage_format": {
+        "$ref": "#/components/schemas/DataStoreStorageFormat",
+        "description": "How the store keeps its data. A server that does not report it keeps stores in `duckdb` format."
       },
       "last_import_at": {
         "type": "string",
@@ -48886,6 +48902,10 @@
       "storage_bytes": {
         "type": "number",
         "description": "Storage size in bytes"
+      },
+      "storage_format": {
+        "$ref": "#/components/schemas/DataStoreStorageFormat",
+        "description": "How the store keeps its data. A server that does not report it keeps stores in `duckdb` format."
       },
       "last_import_at": {
         "type": "string",

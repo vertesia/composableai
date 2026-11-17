@@ -1227,6 +1227,10 @@ interface Checks {
         W.DataStoreStatus,
         z.infer<typeof import('./api-schemas/data-store.js').DataStoreStatusSchema>
     >;
+    DataStoreStorageFormat: Same<
+        W.DataStoreStorageFormat,
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreStorageFormatSchema>
+    >;
     DataStoreItem: Same<W.DataStoreItem, z.infer<typeof import('./api-schemas/data-store.js').DataStoreItemSchema>>;
     DataStore: Same<W.DataStore, z.infer<typeof import('./api-schemas/data-store.js').DataStoreSchema>>;
     DataStoreVersionTableState: Same<
@@ -7239,6 +7243,10 @@ interface Checks {
         W.ApiComponentTypes['DataStoreStatus'],
         z.infer<typeof import('./api-schemas/data-store.js').DataStoreStatusSchema>
     >;
+    'component:DataStoreStorageFormat': Same<
+        W.ApiComponentTypes['DataStoreStorageFormat'],
+        z.infer<typeof import('./api-schemas/data-store.js').DataStoreStorageFormatSchema>
+    >;
     'component:ImportDataFormat': Same<
         W.ApiComponentTypes['ImportDataFormat'],
         z.infer<typeof import('./api-schemas/data-store.js').ImportDataFormatSchema>
@@ -11115,6 +11123,7 @@ const checks: Checks = {
     DataSchema: true,
     DataStoreFullSchemaResponse: true,
     DataStoreStatus: true,
+    DataStoreStorageFormat: true,
     DataStoreItem: true,
     DataStore: true,
     DataStoreVersionTableState: true,
@@ -12717,6 +12726,7 @@ const checks: Checks = {
     'component:DataTableSummary': true,
     'component:DataStoreVersionTableState': true,
     'component:DataStoreStatus': true,
+    'component:DataStoreStorageFormat': true,
     'component:ImportDataFormat': true,
     'component:ImportDataSource': true,
     'component:DataRelationshipForAI': true,
@@ -13605,6 +13615,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2825);
+        expect(Object.keys(checks)).toHaveLength(2827);
     });
 });

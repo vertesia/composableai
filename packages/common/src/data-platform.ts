@@ -124,6 +124,18 @@ export const DataStoreStatus = {
 export type DataStoreStatus = Wire.DataStoreStatus;
 
 /**
+ * How a data store keeps its data. Chosen when the store is created; a store keeps its format.
+ */
+export const DataStoreStorageFormat = {
+    /** One DuckDB database file per version. The default. */
+    DUCKDB: 'duckdb',
+    /** A DuckLake catalog per version over Parquet files the versions share, for large stores. */
+    DUCKLAKE: 'ducklake',
+} as const;
+
+export type DataStoreStorageFormat = Wire.DataStoreStorageFormat;
+
+/**
  * Summary view of a data store (for listings).
  */
 export type DataStoreItem = Wire.DataStoreItem;

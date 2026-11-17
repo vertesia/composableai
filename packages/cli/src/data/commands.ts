@@ -2,7 +2,14 @@ import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { basename, resolve } from 'node:path';
 import { NodeStreamSource } from '@vertesia/client/node';
-import type { DataStoreItem, ImportDataFormat, ImportDataPayload, ImportTableData } from '@vertesia/common';
+import {
+    type CreateDataStorePayload,
+    type DataStoreItem,
+    DataStoreStorageFormat,
+    type ImportDataFormat,
+    type ImportDataPayload,
+    type ImportTableData,
+} from '@vertesia/common';
 import type { Command } from 'commander';
 import mime from 'mime';
 import { findArtifactStorageId } from '../agent-context.js';
@@ -22,6 +29,46 @@ export type ImportDataOptions = CliOptions<{
     message?: string;
 }>;
 
+const STORAGE_FORMATS = new Set<string>(Object.values(DataStoreStorageFormat));
+
+export type CreateDataStoreOptions = CliOptions<{
+    description?: string;
+    tag?: string[];
+    storageFormat?: string;
+    json?: boolean;
+}>;
+
+/** The payload of `vertesia data create`: the format is sent only when the caller names one. */
+export function buildCreateDataStorePayload(name: string, options: CreateDataStoreOptions): CreateDataStorePayload {
+    const payload: CreateDataStorePayload = { name };
+    const description = getStringOption(options.description);
+    if (description) payload.description = description;
+    const tags = Array.isArray(options.tag) ? options.tag.filter((tag) => typeof tag === 'string' && tag) : [];
+    if (tags.length > 0) payload.tags = tags;
+    const format = getStringOption(options.storageFormat);
+    if (format !== undefined) {
+        if (!STORAGE_FORMATS.has(format)) {
+            throw new Error(`Invalid --storage-format '${format}': use ${[...STORAGE_FORMATS].join(' or ')}`);
+        }
+        payload.storage_format = format as CreateDataStorePayload['storage_format'];
+    }
+    return payload;
+}
+
+export async function createDataStore(program: Command, name: string, options: CreateDataStoreOptions) {
+    const payload = buildCreateDataStorePayload(name, options);
+    const client = await getClient(program);
+    const store = await client.data.create(payload);
+    if (options.json) {
+        console.log(JSON.stringify(store, null, 2));
+        return;
+    }
+    // A server older than the field keeps every store in duckdb format.
+    console.log(
+        `Created data store ${store.id} (${store.name}, ${store.storage_format ?? DataStoreStorageFormat.DUCKDB})`,
+    );
+}
+
 export async function listDataStores(program: Command, options: CliOptions<{ json?: boolean }>) {
     const client = await getClient(program);
     const stores = await client.data.list();
@@ -31,10 +78,18 @@ export async function listDataStores(program: Command, options: CliOptions<{ jso
         return;
     }
 
-    console.log('id\tname\tstatus\ttables\trows\tbytes');
+    console.log('id\tname\tstatus\ttables\trows\tbytes\tformat');
     stores.forEach((store: DataStoreItem) => {
         console.log(
-            [store.id, store.name, store.status, store.table_count, store.total_rows, store.storage_bytes].join('\t'),
+            [
+                store.id,
+                store.name,
+                store.status,
+                store.table_count,
+                store.total_rows,
+                store.storage_bytes,
+                store.storage_format ?? DataStoreStorageFormat.DUCKDB,
+            ].join('\t'),
         );
     });
 }

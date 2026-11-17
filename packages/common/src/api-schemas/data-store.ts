@@ -1,5 +1,11 @@
 import { z } from 'zod';
-import { DataColumnType, DataStoreStatus, ImportStatus, SemanticColumnType } from '../data-platform.js';
+import {
+    DataColumnType,
+    DataStoreStatus,
+    DataStoreStorageFormat,
+    ImportStatus,
+    SemanticColumnType,
+} from '../data-platform.js';
 import { NumberValueMapSchema } from './interaction.js';
 import { PageCountSchema } from './schema-primitives.js';
 
@@ -207,6 +213,13 @@ export const DataStoreStatusSchema = z
     .enum(DataStoreStatus)
     .meta({ id: 'DataStoreStatus', description: 'Data store lifecycle status.' });
 
+export const DataStoreStorageFormatSchema = z.enum(DataStoreStorageFormat).meta({
+    id: 'DataStoreStorageFormat',
+    description:
+        'How a data store keeps its data. `duckdb`: one DuckDB database file per version. `ducklake`: a DuckLake ' +
+        'catalog per version over Parquet files the versions share, for stores too large to rewrite on every change.',
+});
+
 export const ImportDataFormatSchema = z
     .enum(['json', 'csv', 'parquet'])
     .meta({ id: 'ImportDataFormat', description: 'Data format for external sources.' });
@@ -303,6 +316,11 @@ export const CreateDataStorePayloadSchema = z
             }),
         description: z.string().meta({ description: 'Store description' }).optional(),
         tags: z.array(z.string()).meta({ description: 'Tags for organization' }).optional(),
+        storage_format: DataStoreStorageFormatSchema.meta({
+            description:
+                'Storage format of the new store. Defaults to `duckdb`. It cannot be changed afterwards, and ' +
+                '`ducklake` is refused where the environment does not offer it.',
+        }).optional(),
     })
     .meta({ id: 'CreateDataStorePayload', description: 'Payload for creating a new data store.' });
 
@@ -471,6 +489,10 @@ export const DataStoreItemSchema = z
         table_count: z.number().meta({ description: 'Number of tables' }),
         total_rows: z.number().meta({ description: 'Total rows across all tables' }),
         storage_bytes: z.number().meta({ description: 'Storage size in bytes' }),
+        storage_format: DataStoreStorageFormatSchema.meta({
+            description:
+                'How the store keeps its data. A server that does not report it keeps stores in `duckdb` format.',
+        }).optional(),
         last_import_at: z.string().meta({ description: 'Last import timestamp' }).optional(),
         version_count: z.number().meta({ description: 'Number of versions stored' }),
     })
@@ -726,6 +748,10 @@ export const DataStoreSchema = z
         table_count: z.number().meta({ description: 'Number of tables' }),
         total_rows: z.number().meta({ description: 'Total rows across all tables' }),
         storage_bytes: z.number().meta({ description: 'Storage size in bytes' }),
+        storage_format: DataStoreStorageFormatSchema.meta({
+            description:
+                'How the store keeps its data. A server that does not report it keeps stores in `duckdb` format.',
+        }).optional(),
         last_import_at: z.string().meta({ description: 'Last import timestamp' }).optional(),
         version_count: z.number().meta({ description: 'Number of versions stored' }),
         current_version: z

@@ -41,6 +41,7 @@ import type {
     DashboardStatus as DashboardStatusValues,
     DataColumnType as DataColumnTypeValues,
     DataStoreStatus as DataStoreStatusValues,
+    DataStoreStorageFormat as DataStoreStorageFormatValues,
     ImportStatus as ImportStatusValues,
     SemanticColumnType as SemanticColumnTypeValues,
 } from './data-platform.js';
@@ -2841,6 +2842,7 @@ export type DataStoreFullSchemaResponse = {
     schema_format: 'full';
 };
 export type DataStoreStatus = (typeof DataStoreStatusValues)[keyof typeof DataStoreStatusValues];
+export type DataStoreStorageFormat = (typeof DataStoreStorageFormatValues)[keyof typeof DataStoreStorageFormatValues];
 /**
  * Summary view of a data store (for listings).
  */
@@ -2858,6 +2860,7 @@ export type DataStoreItem = {
     table_count: number;
     total_rows: number;
     storage_bytes: number;
+    storage_format?: DataStoreStorageFormat | undefined;
     last_import_at?: string | undefined;
     version_count: number;
 };
@@ -2878,6 +2881,7 @@ export type DataStore = {
     table_count: number;
     total_rows: number;
     storage_bytes: number;
+    storage_format?: DataStoreStorageFormat | undefined;
     last_import_at?: string | undefined;
     version_count: number;
     current_version?: string | undefined;
@@ -2956,6 +2960,7 @@ export type CreateDataStorePayload = {
     name: string;
     description?: string | undefined;
     tags?: string[] | undefined;
+    storage_format?: DataStoreStorageFormat | undefined;
 };
 /**
  * Payload for creating a new table.
@@ -12229,6 +12234,7 @@ export interface ApiComponentTypes {
     DataTableSummary: DataTableSummary;
     DataStoreVersionTableState: DataStoreVersionTableState;
     DataStoreStatus: DataStoreStatus;
+    DataStoreStorageFormat: DataStoreStorageFormat;
     ImportDataFormat: ImportDataFormat;
     ImportDataSource: ImportDataSource;
     DataRelationshipForAI: DataRelationshipForAI;

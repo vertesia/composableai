@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { importData, listDataStores } from './commands.js';
+import { createDataStore, importData, listDataStores } from './commands.js';
 import { collectParam, exportDashboard, exportDashboardPreview, listDashboards } from './dashboards.js';
 
 export function registerDataCommand(program: Command) {
@@ -10,6 +10,22 @@ export function registerDataCommand(program: Command) {
         .option('--json', 'Output full JSON instead of tab-separated text')
         .action(async (options: Record<string, unknown>) => {
             await listDataStores(program, options);
+        });
+
+    data.command('create <name>')
+        .description('Create a data store in the current project')
+        .option('--description [description]', 'Store description')
+        .option('--tag <tag>', 'A tag for the store; repeat for several', (tag: string, tags: string[] = []) => [
+            ...tags,
+            tag,
+        ])
+        .option(
+            '--storage-format <format>',
+            'How the store keeps its data: duckdb (default), or ducklake for stores too large to rewrite on every change',
+        )
+        .option('--json', 'Output full JSON instead of a short summary')
+        .action(async (name: string, options: Record<string, unknown>) => {
+            await createDataStore(program, name, options);
         });
 
     data.command('import <storeId> <tableName> [input]')
