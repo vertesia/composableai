@@ -9,17 +9,18 @@ export const NotificationKindSchema = z
         'agent.turn_finished',
         'task.assigned',
         'intake.finished',
+        'inference_budget.exceeded',
     ])
     .meta({
         id: 'NotificationKind',
         description: 'What a notification is about. Each kind belongs to one category.',
     });
 
-export const NotificationCategorySchema = z.enum(['actions', 'failures', 'results']).meta({
+export const NotificationCategorySchema = z.enum(['actions', 'failures', 'results', 'billing']).meta({
     id: 'NotificationCategory',
     description:
         'Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` ' +
-        'report failed runs or intakes, `results` report successful ones.',
+        'report failed runs or intakes, `results` report successful ones, and `billing` reports budget alerts.',
 });
 
 export const NotificationChannelSchema = z.enum(['in_app']).meta({

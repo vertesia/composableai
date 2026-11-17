@@ -259,6 +259,7 @@ import {
     CostRunPriceResponseSchema,
     CostSummarySchema,
     CostTimeSeriesPointSchema,
+    InferenceBudgetSettingsSchema,
     IntakeCostByContentNatureSchema,
     IntakeCostByContentTypeSchema,
     IntakeCostByOutcomeSchema,
@@ -278,6 +279,7 @@ import {
     PricingSyncDayResultSchema,
     PricingSyncPayloadSchema,
     PricingSyncResultSchema,
+    UpdateInferenceBudgetSchema,
 } from './cost-analytics.js';
 import {
     CreateCustomRolePayloadSchema,
@@ -1643,6 +1645,8 @@ const DATA_STORE_SCHEMA_SCHEMAS = {
 
 const COST_ANALYTICS_SCHEMAS = {
     CostAnalyticsQuery: CostAnalyticsQuerySchema,
+    InferenceBudgetSettings: InferenceBudgetSettingsSchema,
+    UpdateInferenceBudget: UpdateInferenceBudgetSchema,
     CostRunPriceQuery: CostRunPriceQuerySchema,
     CostModelPricesQuery: CostModelPricesQuerySchema,
     CostExportQuery: CostExportQuerySchema,
@@ -2720,6 +2724,8 @@ const API_SCHEMAS: Readonly<Record<string, z.ZodType>> = mergeComponentGroups(AP
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'InferenceBudgetSettings',
+    'UpdateInferenceBudget',
     'ContentSourceSyncSettings',
     'SharePointContentSource',
     'BoxContentSource',

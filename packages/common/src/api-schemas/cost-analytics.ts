@@ -16,6 +16,21 @@ const timeBoundarySchema: z.ZodType<string | number> = z
 const TIME_BOUND_DESCRIPTION = '`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999.';
 const ANALYTICS_WINDOW_DESCRIPTION = 'The window from `from` to `to` (now when absent) may span at most 366 days.';
 
+const dailyInferenceBudgetLimit = z
+    .number()
+    .min(0.01)
+    .max(1_000_000)
+    .meta({ description: 'The daily project inference alert threshold in USD. Null disables alerts.' })
+    .nullable();
+
+export const UpdateInferenceBudgetSchema = z
+    .strictObject({ daily_limit_usd: dailyInferenceBudgetLimit })
+    .meta({ id: 'UpdateInferenceBudget' });
+
+export const InferenceBudgetSettingsSchema = UpdateInferenceBudgetSchema.extend({
+    available: z.boolean().meta({ description: 'Whether inference budget alerts are enabled for the project.' }),
+}).meta({ id: 'InferenceBudgetSettings' });
+
 export const PricingSyncPayloadSchema = z
     .strictObject({
         date: z.string().optional(),

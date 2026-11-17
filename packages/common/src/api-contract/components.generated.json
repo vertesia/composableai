@@ -30427,7 +30427,8 @@
       "agent.finished",
       "agent.turn_finished",
       "task.assigned",
-      "intake.finished"
+      "intake.finished",
+      "inference_budget.exceeded"
     ],
     "description": "What a notification is about. Each kind belongs to one category."
   },
@@ -30436,9 +30437,10 @@
     "enum": [
       "actions",
       "failures",
-      "results"
+      "results",
+      "billing"
     ],
-    "description": "Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` report failed runs or intakes, `results` report successful ones."
+    "description": "Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` report failed runs or intakes, `results` report successful ones, and `billing` reports budget alerts."
   },
   "NotificationChannel": {
     "type": "string",
@@ -49119,6 +49121,55 @@
     },
     "additionalProperties": false,
     "description": "`from` and `to` are ISO 8601 date-times or epoch milliseconds, within years 1 to 9999. The window from `from` to `to` (now when absent) may span at most 366 days."
+  },
+  "InferenceBudgetSettings": {
+    "type": "object",
+    "properties": {
+      "daily_limit_usd": {
+        "anyOf": [
+          {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 1000000,
+            "description": "The daily project inference alert threshold in USD. Null disables alerts."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "available": {
+        "type": "boolean",
+        "description": "Whether inference budget alerts are enabled for the project."
+      }
+    },
+    "required": [
+      "daily_limit_usd",
+      "available"
+    ],
+    "additionalProperties": false
+  },
+  "UpdateInferenceBudget": {
+    "type": "object",
+    "properties": {
+      "daily_limit_usd": {
+        "anyOf": [
+          {
+            "type": "number",
+            "minimum": 0.01,
+            "maximum": 1000000,
+            "description": "The daily project inference alert threshold in USD. Null disables alerts."
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "required": [
+      "daily_limit_usd"
+    ],
+    "additionalProperties": false
   },
   "CostRunPriceQuery": {
     "type": "object",
