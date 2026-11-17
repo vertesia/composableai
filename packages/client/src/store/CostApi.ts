@@ -26,6 +26,10 @@ export class CostApi extends ApiTopic {
         return this.put('/budget', { payload });
     }
 
+    disableInferenceBudget(): Promise<InferenceBudgetSettings> {
+        return this.del('/budget');
+    }
+
     /**
      * Get cost analytics for the current project.
      * Returns cost breakdown by model/environment with pricing from billing export.

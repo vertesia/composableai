@@ -49130,17 +49130,17 @@
           {
             "type": "number",
             "minimum": 0.01,
-            "maximum": 1000000,
-            "description": "The daily project inference alert threshold in USD. Null disables alerts."
+            "maximum": 1000000
           },
           {
             "type": "null"
           }
-        ]
+        ],
+        "description": "The daily project inference alert threshold in USD. Null means the alert is disabled."
       },
       "available": {
         "type": "boolean",
-        "description": "Whether inference budget alerts are enabled for the project."
+        "description": "Whether inference budget alerts are available for the project."
       }
     },
     "required": [
@@ -49153,17 +49153,10 @@
     "type": "object",
     "properties": {
       "daily_limit_usd": {
-        "anyOf": [
-          {
-            "type": "number",
-            "minimum": 0.01,
-            "maximum": 1000000,
-            "description": "The daily project inference alert threshold in USD. Null disables alerts."
-          },
-          {
-            "type": "null"
-          }
-        ]
+        "type": "number",
+        "minimum": 0.01,
+        "maximum": 1000000,
+        "description": "The daily project inference alert threshold in USD."
       }
     },
     "required": [

@@ -2425,7 +2425,7 @@ export type InferenceBudgetSettings = {
     available: boolean;
 };
 export type UpdateInferenceBudget = {
-    daily_limit_usd: number | null;
+    daily_limit_usd: number;
 };
 export type CostAnalyticsQuery = {
     from?: string | number | undefined;
