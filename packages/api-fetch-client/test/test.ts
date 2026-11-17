@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { mock } from 'node:test';
 import { KoaServer } from '@koa-stack/server';
-import { FetchClient, generateIdempotencyKey, RequestError } from '../src/index.js';
+import { FetchClient, generateIdempotencyKey, RequestError, ServerError } from '../src/index.js';
 import Endpoints from './endpoints.js';
 
 const HOST = '127.0.0.1';
@@ -64,14 +64,13 @@ describe('Test requests', () => {
             })
             .catch(done);
     });
-    it('handles incorrect content type', (done) => {
-        client
-            .get('/html')
-            .then((payload) => {
-                assert((payload as { text: string }).text === '<html><body>Hello!</body></html>');
-                done();
-            })
-            .catch(done);
+    it('rejects a successful non-JSON response, keeping its text on the error', async () => {
+        await assert.rejects(client.get('/html'), (err: unknown) => {
+            if (!(err instanceof ServerError)) return false;
+            assert.equal(err.status, 200);
+            assert.equal((err.payload as { text?: string }).text, '<html><body>Hello!</body></html>');
+            return true;
+        });
     });
     it('handles errors in incorrect content type', (done) => {
         type FetchErr = {
@@ -705,6 +704,40 @@ describe('Test requests', () => {
         } finally {
             console.error = original;
         }
+    });
+    it('rejects a successful response whose body is not JSON instead of returning an error payload', async () => {
+        const html = '<html><body>App shell</body></html>';
+        let attempts = 0;
+        const htmlClient = new FetchClient('http://example.test', async () => {
+            attempts++;
+            return new Response(html, { status: 200, statusText: 'OK', headers: { 'content-type': 'text/html' } });
+        }).withRetryPolicy({ attempts: 3, baseDelayMs: 0, jitter: false });
+
+        await assert.rejects(htmlClient.get('/x'), (err: unknown) => {
+            if (!(err instanceof ServerError)) return false;
+            assert.equal(err.status, 200);
+            assert.equal(err.original_message, 'Server Error: 200 OK: non-JSON response');
+            assert.equal((err.payload as { text?: string }).text, html);
+            return true;
+        });
+        assert.equal(attempts, 1, 'a non-JSON success body must not be retried');
+    });
+    it('still resolves an empty successful body to undefined', async () => {
+        const emptyClient = new FetchClient('http://example.test', async (req) =>
+            new URL(req.url).pathname === '/no-content'
+                ? new Response(null, { status: 204 })
+                : new Response('', { status: 200 }),
+        );
+
+        assert.equal(await emptyClient.get('/no-content'), undefined);
+        assert.equal(await emptyClient.get('/empty'), undefined);
+    });
+    it('leaves a non-JSON successful body to a custom reader', async () => {
+        const textClient = new FetchClient('http://example.test', async () => {
+            return new Response('plain text', { status: 200, headers: { 'content-type': 'text/plain' } });
+        });
+
+        assert.equal(await textClient.get('/x', { reader: (res) => res.text() }), 'plain text');
     });
     it('does not spend retry attempts on an aborted request', async () => {
         let attempts = 0;

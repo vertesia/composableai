@@ -618,7 +618,9 @@ export abstract class ClientBase {
             }
         } else {
             return this.readJSONPayload(res).then((payload) => {
-                if (res.ok) {
+                // A non-JSON success body (e.g. an HTML page from a proxy) is not a result: reject it
+                // like an error response. Endpoints that return text should pass a `reader`.
+                if (res.ok && !isInvalidJsonPayload(payload)) {
                     return payload as T;
                 } else {
                     this.throwError(this.createServerError(req, res, payload));
