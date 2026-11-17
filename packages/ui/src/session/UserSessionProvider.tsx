@@ -2,6 +2,7 @@ import { REQUESTED_SCOPE_UNAVAILABLE_ERROR_CODE } from '@vertesia/common';
 import { Env } from '@vertesia/ui/env';
 import { onAuthStateChanged } from 'firebase/auth';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { takeAuthReturnHash } from './auth/authState';
 import {
     AuthenticationServiceError,
     CredentialError,
@@ -21,10 +22,14 @@ import { completeOidcSignIn, getOidcIdToken, usesOidcSignIn } from './auth/oidc'
 import { useAuthState } from './auth/useAuthState';
 import { UserSession, UserSessionContext } from './UserSession';
 
+/** Removes the `#token=…&state=…` handoff, putting back the hash of the page that started the round-trip. */
 function clearAuthHash() {
     const url = new URL(window.location.href);
-    url.hash = '';
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}`);
+    const returnHash = takeAuthReturnHash();
+    url.hash = returnHash ? `#${returnHash}` : '';
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    // Tabs that already read the (handoff) hash pick their tab up from this.
+    if (returnHash) window.dispatchEvent(new HashChangeEvent('hashchange'));
 }
 
 // Re-exported from its new home in ./auth/domainRouting, which the token layer can import without

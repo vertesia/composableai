@@ -2420,6 +2420,13 @@ export type ContentSourceReportQuery = {
     cursor?: string | undefined;
     limit?: number | undefined;
 };
+export type InferenceBudgetSettings = {
+    daily_limit_usd: number | null;
+    available: boolean;
+};
+export type UpdateInferenceBudget = {
+    daily_limit_usd: number;
+};
 export type CostAnalyticsQuery = {
     from?: string | number | undefined;
     to?: string | number | undefined;
@@ -4103,7 +4110,11 @@ export type InferenceProfile = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
+export type InferenceProfileInvocation = 'execute' | 'decide' | 'shadow';
 export type InferenceProfileSnapshot = {
     id?: InferenceProfileId | undefined;
     name: InferenceProfileName;
@@ -4135,6 +4146,9 @@ export type CreateInferenceProfilePayload = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
 export type UpdateInferenceProfilePayload = {
     name: InferenceProfileName;
@@ -4142,6 +4156,9 @@ export type UpdateInferenceProfilePayload = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
 };
 export type InferenceProfileRecord = {
     name: InferenceProfileName;
@@ -4149,6 +4166,9 @@ export type InferenceProfileRecord = {
     environment: string;
     model?: string | undefined;
     model_options?: ModelOptions | undefined;
+    invocation?: InferenceProfileInvocation | undefined;
+    decision_threshold?: number | undefined;
+    audit_sample_rate?: number | undefined;
     id: string;
     project: string;
     created_at: string;
@@ -4359,6 +4379,10 @@ export type ConversationStripOptions = {
     images_after_turns?: number | undefined;
     text_max_tokens?: number | undefined;
     heartbeats_after_turns?: number | undefined;
+};
+/** On-demand compaction of a resumed conversation (`UserMessagePayload.compact_conversation`). */
+export type CompactConversationOptions = {
+    instructions?: string | undefined;
 };
 /**
  * Reference to an interaction in the catalog.
@@ -4966,6 +4990,7 @@ export type UserMessagePayload = {
     strip_options?: ConversationStripOptions | undefined;
     asyncCompletion?: AsyncCompletionOptions | undefined;
     message: string;
+    compact_conversation?: CompactConversationOptions | undefined;
     results?: ToolResult[] | undefined;
 };
 export type RunSource = {
@@ -5094,6 +5119,7 @@ export type ResolvedInteractionExecutionInfo = {
     tags: string[];
     agent_runner_options?: AgentRunnerOptions | undefined;
     resolved: ResolvedRuntimeConfig;
+    prompt_hash?: string | undefined;
 };
 export type UpdateExecutionRunPayload = {
     id?: string | undefined;
@@ -5155,8 +5181,9 @@ export type NotificationKind =
     | 'agent.finished'
     | 'agent.turn_finished'
     | 'task.assigned'
-    | 'intake.finished';
-export type NotificationCategory = 'actions' | 'failures' | 'results';
+    | 'intake.finished'
+    | 'inference_budget.exceeded';
+export type NotificationCategory = 'actions' | 'failures' | 'results' | 'billing';
 export type NotificationChannel = 'in_app';
 /** A typed reference to the item a notification is about (`{ type: 'task', id }`, ...). */
 export type NotificationRef = {
@@ -5229,6 +5256,7 @@ export type NotificationChannelPreferences = {
 export type NotificationPreferences = {
     categories: Record<string, NotificationChannelPreferences>;
     kinds: Record<string, NotificationChannelPreferences>;
+    budget_alerts_enabled?: boolean | undefined;
 };
 export type NotificationStreamEvent = {
     type: 'changed' | 'heartbeat';
@@ -5666,6 +5694,7 @@ export type OAuthProviderData = {
     has_private_key?: boolean | undefined;
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5689,6 +5718,7 @@ export type OAuthProvider = {
     has_private_key?: boolean | undefined;
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
     use_pkce: boolean;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5713,6 +5743,7 @@ export type CreateOAuthProviderPayload = {
     private_key?: string | undefined;
     certificate?: string | undefined;
     default_scopes?: string[] | undefined;
+    allowed_scopes?: string[] | undefined;
     use_pkce?: boolean | undefined;
     revocation_endpoint?: string | undefined;
     token_params?: Record<string, string> | undefined;
@@ -5735,6 +5766,7 @@ export type UpdateOAuthProviderPayload = {
     private_key?: string | undefined | undefined;
     certificate?: string | undefined | undefined;
     default_scopes?: string[] | undefined | undefined;
+    allowed_scopes?: string[] | undefined | undefined;
     use_pkce?: boolean | undefined | undefined;
     revocation_endpoint?: string | undefined | undefined;
     token_params?: Record<string, string> | undefined | undefined;
@@ -5765,6 +5797,10 @@ export type OAuthProviderAccessTokenResponse = {
 export type OAuthProviderExchangePayload = {
     code: string;
     state: string;
+};
+/** Optional body of the provider token request: a `scope` other than the provider's default scopes. */
+export type OAuthProviderTokenRequest = {
+    scope?: string | undefined;
 };
 export type SortOrder = 'asc' | 'desc';
 export type SortOption = {
@@ -7764,6 +7800,7 @@ export type UsedSkill = {
     language?: string | undefined;
     packages?: string[] | undefined;
     system_packages?: string[] | undefined;
+    content_digest?: string | undefined;
 };
 export type DocumentPrepOptions = {
     features?: string[] | undefined;
@@ -8388,7 +8425,6 @@ export type RenderMarkdownStatusResponse = {
 export type RenderMarkdownStatusQuery = {
     workflow_id: string;
     workflow_run_id: string;
-    [k: string]: unknown;
 };
 export type CreateContentObjectQuery = {
     collection_id?: string | undefined;
@@ -10966,6 +11002,7 @@ export type ConversationStateWire = {
     pending_mcp_connections?: PendingMcpConnection[] | undefined;
     active_activity_group_id?: string | undefined;
     finish_reason?: string | undefined;
+    llm_attempt?: number | undefined;
     agent_run_id?: string | undefined;
     launch_id?: string | undefined;
     app_version?: string | undefined;
@@ -11434,8 +11471,37 @@ export type TurnEvaluationFlagWire =
     | 'approval_denied'
     | 'circuit_breaker'
     | 'no_visible_answer'
-    | 'answer_in_tool_preamble';
-export type ToolErrorClassWire = 'schema' | 'platform' | 'config' | 'environment' | 'other';
+    | 'answer_in_tool_preamble'
+    | 'response_cut_off'
+    | 'llm_retried'
+    | 'unknown_tool'
+    | 'invalid_tool_arguments'
+    | 'context_near_full'
+    | 'checkpoint_forced';
+export type ToolErrorClassWire =
+    | 'schema'
+    | 'unknown_tool'
+    | 'platform'
+    | 'config'
+    | 'environment'
+    | 'unknown_outcome'
+    | 'other';
+export type ToolApprovalOriginWire =
+    | 'not_required'
+    | 'unattended'
+    | 'run_grant'
+    | 'reviewer_allowed'
+    | 'reviewer_denied'
+    | 'user_allowed'
+    | 'user_allowed_for_run'
+    | 'user_denied'
+    | 'user_denied_with_feedback'
+    | 'user_interrupted'
+    | 'mode_change'
+    | 'timeout'
+    | 'unattended_denied';
+export type ToolApprovalReviewerOutcomeWire = 'allow' | 'ask_user' | 'deny';
+export type ToolApprovalRiskLevelWire = 'low' | 'medium' | 'high';
 export type EvaluationGateReasonWire = 'signal' | 'sample' | 'opt_in' | 'always_on';
 export type EvaluationOutcomeWire = 'evaluated' | 'skipped_unarchived' | 'failed';
 export type EvaluationVerdictWire = 'success' | 'partial' | 'failure';
@@ -11765,6 +11831,7 @@ export interface ApiComponentTypes {
     OAuthProviderAuthorizeResponse: OAuthProviderAuthorizeResponse;
     OAuthProviderAccessTokenResponse: OAuthProviderAccessTokenResponse;
     OAuthProviderExchangePayload: OAuthProviderExchangePayload;
+    OAuthProviderTokenRequest: OAuthProviderTokenRequest;
     OAuthClientType: OAuthClientType;
     OAuthClientStatus: OAuthClientStatus;
     OAuthRegistrationSource: OAuthRegistrationSource;
@@ -11899,6 +11966,7 @@ export interface ApiComponentTypes {
     InferenceProfileId: InferenceProfileId;
     InferenceProfileName: InferenceProfileName;
     InferenceProfile: InferenceProfile;
+    InferenceProfileInvocation: InferenceProfileInvocation;
     InferenceProfileSnapshot: InferenceProfileSnapshot;
     ProjectInferenceProfiles: ProjectInferenceProfiles;
     InteractionStatus: InteractionStatusWire;
@@ -11970,6 +12038,7 @@ export interface ApiComponentTypes {
     InitialToolCall: InitialToolCall;
     ConversationVisibility: ConversationVisibility;
     ConversationStripOptions: ConversationStripOptions;
+    CompactConversationOptions: CompactConversationOptions;
     StreamingOptions: StreamingOptions;
     StreamingTelemetryContext: StreamingTelemetryContext;
     ResolvedRuntimeConfig: ResolvedRuntimeConfig;
@@ -12232,6 +12301,8 @@ export interface ApiComponentTypes {
     DataSchemaForAI: DataSchemaForAI;
     DataStoreSchemaResponse: DataStoreSchemaResponse;
     CostAnalyticsQuery: CostAnalyticsQuery;
+    InferenceBudgetSettings: InferenceBudgetSettings;
+    UpdateInferenceBudget: UpdateInferenceBudget;
     CostRunPriceQuery: CostRunPriceQuery;
     CostModelPricesQuery: CostModelPricesQuery;
     CostExportQuery: CostExportQuery;
@@ -12627,6 +12698,9 @@ export interface ApiComponentTypes {
     EvaluationSeverity: EvaluationSeverityWire;
     TurnEvaluationFlag: TurnEvaluationFlagWire;
     ToolErrorClass: ToolErrorClassWire;
+    ToolApprovalOrigin: ToolApprovalOriginWire;
+    ToolApprovalReviewerOutcome: ToolApprovalReviewerOutcomeWire;
+    ToolApprovalRiskLevel: ToolApprovalRiskLevelWire;
     EvaluationGateReason: EvaluationGateReasonWire;
     EvaluationOutcome: EvaluationOutcomeWire;
     EvaluationVerdict: EvaluationVerdictWire;

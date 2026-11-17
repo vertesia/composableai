@@ -3,6 +3,9 @@ import type * as Wire from './wire-types.generated.js';
 
 export { BILLABLE_AUDIT_ACTIONS };
 
+export type InferenceBudgetSettings = Wire.InferenceBudgetSettings;
+export type UpdateInferenceBudget = Wire.UpdateInferenceBudget;
+
 // ============================================================================
 // Query
 // ============================================================================
