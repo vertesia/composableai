@@ -210,6 +210,8 @@
     "agent.resourceShowLess": "عرض أقل",
     "agent.resourceViewAll": "عرض كل التغييرات ({{total}})",
     "agent.resourcesChanged": "الموارد المتغيّرة",
+    "agent.restartFailed": "تعذّرت إعادة تشغيل التنفيذ",
+    "agent.restartRun": "إعادة التشغيل",
     "agent.retry": "إعادة المحاولة",
     "agent.rewind.exportFixture": "تصدير نموذج إعادة التشغيل",
     "agent.rewind.fixtureExported": "تم تصدير نموذج إعادة التشغيل",
