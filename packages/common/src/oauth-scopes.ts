@@ -22,10 +22,6 @@ const NON_OAUTH_PERMISSION_SCOPES = new Set<Permission>([
     Permission.billing_read,
     Permission.iam_impersonate,
     Permission.studio_access,
-    // Not an OAuth scope yet: an MCP server that advertises it and a token server that predates it would refuse
-    // every client that requests all the advertised scopes. An OAuth client with `project:settings_write` already
-    // manages content sources.
-    Permission.content_source_manage,
 ]);
 
 const OAUTH_PERMISSION_SCOPES = Object.values(Permission).filter((scope) => !NON_OAUTH_PERMISSION_SCOPES.has(scope));
