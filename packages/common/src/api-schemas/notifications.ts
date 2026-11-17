@@ -9,17 +9,18 @@ export const NotificationKindSchema = z
         'agent.turn_finished',
         'task.assigned',
         'intake.finished',
+        'inference_budget.exceeded',
     ])
     .meta({
         id: 'NotificationKind',
         description: 'What a notification is about. Each kind belongs to one category.',
     });
 
-export const NotificationCategorySchema = z.enum(['actions', 'failures', 'results']).meta({
+export const NotificationCategorySchema = z.enum(['actions', 'failures', 'results', 'billing']).meta({
     id: 'NotificationCategory',
     description:
         'Preference group of a notification: `actions` need the user (questions, approvals, tasks), `failures` ' +
-        'report failed runs or intakes, `results` report successful ones.',
+        'report failed runs or intakes, `results` report successful ones, and `billing` reports budget alerts.',
 });
 
 export const NotificationChannelSchema = z.enum(['in_app']).meta({
@@ -169,10 +170,14 @@ export const NotificationChannelPreferencesSchema = z
 export const NotificationPreferencesSchema = z
     .strictObject({
         categories: z.record(z.string(), NotificationChannelPreferencesSchema).meta({
-            description: 'Per category (`actions`, `failures`, `results`), the channels it is delivered to.',
+            description: 'Per-category inbox preferences for `actions`, `failures`, `results`, and `billing`.',
         }),
         kinds: z.record(z.string(), NotificationChannelPreferencesSchema).meta({
             description: 'Per kind, an override of its category. Today only `agent.turn_finished` is offered.',
+        }),
+        budget_alerts_enabled: z.boolean().optional().meta({
+            description:
+                'Master switch for inference budget alerts in the inbox and by email. Omit when updating to keep the saved choice.',
         }),
     })
     .meta({

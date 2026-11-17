@@ -1014,6 +1014,78 @@ interface Checks {
         W.ContentQueryResult,
         z.infer<typeof import('./api-schemas/content-query.js').ContentQueryResultSchema>
     >;
+    ExternalContentSource: Same<
+        W.ExternalContentSource,
+        z.infer<typeof import('./api-schemas/content-sources.js').ExternalContentSourceSchema>
+    >;
+    SharePointContentSource: Same<
+        W.SharePointContentSource,
+        z.infer<typeof import('./api-schemas/content-sources.js').SharePointContentSourceSchema>
+    >;
+    BoxContentSource: Same<
+        W.BoxContentSource,
+        z.infer<typeof import('./api-schemas/content-sources.js').BoxContentSourceSchema>
+    >;
+    ContentSourceSyncSettings: Same<
+        W.ContentSourceSyncSettings,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncSettingsSchema>
+    >;
+    CreateContentSourcePayload: Same<
+        W.CreateContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateContentSourcePayloadSchema>
+    >;
+    CreateSharePointContentSourcePayload: Same<
+        W.CreateSharePointContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateSharePointContentSourcePayloadSchema>
+    >;
+    CreateBoxContentSourcePayload: Same<
+        W.CreateBoxContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateBoxContentSourcePayloadSchema>
+    >;
+    UpdateContentSourcePayload: Same<
+        W.UpdateContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').UpdateContentSourcePayloadSchema>
+    >;
+    SyncContentSourcePayload: Same<
+        W.SyncContentSourcePayload,
+        z.infer<typeof import('./api-schemas/content-sources.js').SyncContentSourcePayloadSchema>
+    >;
+    ContentSourceStatus: Same<
+        W.ContentSourceStatus,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceStatusSchema>
+    >;
+    ContentSourceSyncRound: Same<
+        W.ContentSourceSyncRound,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncRoundSchema>
+    >;
+    ContentSourceSyncCounts: Same<
+        W.ContentSourceSyncCounts,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncCountsSchema>
+    >;
+    ContentSourceReport: Same<
+        W.ContentSourceReport,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportSchema>
+    >;
+    ContentSourceReportEntry: Same<
+        W.ContentSourceReportEntry,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportEntrySchema>
+    >;
+    ContentSourceReportAction: Same<
+        W.ContentSourceReportAction,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportActionSchema>
+    >;
+    ContentSourceReportQuery: Same<
+        W.ContentSourceReportQuery,
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportQuerySchema>
+    >;
+    InferenceBudgetSettings: Same<
+        W.InferenceBudgetSettings,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').InferenceBudgetSettingsSchema>
+    >;
+    UpdateInferenceBudget: Same<
+        W.UpdateInferenceBudget,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').UpdateInferenceBudgetSchema>
+    >;
     CostAnalyticsQuery: Same<
         W.CostAnalyticsQuery,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
@@ -1715,6 +1787,10 @@ interface Checks {
         W.InferenceProfile,
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSchema>
     >;
+    InferenceProfileInvocation: Same<
+        W.InferenceProfileInvocation,
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileInvocationSchema>
+    >;
     InferenceProfileSnapshot: Same<
         W.InferenceProfileSnapshot,
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSnapshotSchema>
@@ -1842,6 +1918,10 @@ interface Checks {
     ConversationStripOptions: Same<
         W.ConversationStripOptions,
         z.infer<typeof import('./api-schemas/interaction.js').ConversationStripOptionsSchema>
+    >;
+    CompactConversationOptions: Same<
+        W.CompactConversationOptions,
+        z.infer<typeof import('./api-schemas/interaction.js').CompactConversationOptionsSchema>
     >;
     CatalogInteractionRef: Same<
         W.CatalogInteractionRef,
@@ -2363,6 +2443,10 @@ interface Checks {
     OAuthProviderExchangePayload: Same<
         W.OAuthProviderExchangePayload,
         z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderExchangePayloadSchema>
+    >;
+    OAuthProviderTokenRequest: Same<
+        W.OAuthProviderTokenRequest,
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderTokenRequestSchema>
     >;
     SortOrder: Same<W.SortOrder, z.infer<typeof import('./api-schemas/interaction.js').SortOrderSchema>>;
     SortOption: Same<W.SortOption, z.infer<typeof import('./api-schemas/interaction.js').SortOptionSchema>>;
@@ -4817,6 +4901,10 @@ interface Checks {
         W.EventIngestChannelArray,
         z.infer<typeof import('./api-schemas/events.js').EventIngestChannelArraySchema>
     >;
+    ExternalContentSourceArray: Same<
+        W.ExternalContentSourceArray,
+        z.infer<typeof import('./api-schemas/content-sources.js').ExternalContentSourceArraySchema>
+    >;
     CollectionStatusWire: Same<
         W.CollectionStatusWire,
         z.infer<typeof import('./api-schemas/content.js').CollectionStatusSchema>
@@ -4885,6 +4973,18 @@ interface Checks {
     ToolErrorClassWire: Same<
         W.ToolErrorClassWire,
         z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
+    >;
+    ToolApprovalOriginWire: Same<
+        W.ToolApprovalOriginWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalOriginSchema>
+    >;
+    ToolApprovalReviewerOutcomeWire: Same<
+        W.ToolApprovalReviewerOutcomeWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalReviewerOutcomeSchema>
+    >;
+    ToolApprovalRiskLevelWire: Same<
+        W.ToolApprovalRiskLevelWire,
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalRiskLevelSchema>
     >;
     EvaluationGateReasonWire: Same<
         W.EvaluationGateReasonWire,
@@ -5554,6 +5654,10 @@ interface Checks {
         W.ApiComponentTypes['OAuthProviderExchangePayload'],
         z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderExchangePayloadSchema>
     >;
+    'component:OAuthProviderTokenRequest': Same<
+        W.ApiComponentTypes['OAuthProviderTokenRequest'],
+        z.infer<typeof import('./api-schemas/oauth.js').OAuthProviderTokenRequestSchema>
+    >;
     'component:OAuthClientType': Same<
         W.ApiComponentTypes['OAuthClientType'],
         z.infer<typeof import('./api-schemas/oauth-server.js').OAuthClientTypeSchema>
@@ -6010,6 +6114,10 @@ interface Checks {
         W.ApiComponentTypes['InferenceProfile'],
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSchema>
     >;
+    'component:InferenceProfileInvocation': Same<
+        W.ApiComponentTypes['InferenceProfileInvocation'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileInvocationSchema>
+    >;
     'component:InferenceProfileSnapshot': Same<
         W.ApiComponentTypes['InferenceProfileSnapshot'],
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSnapshotSchema>
@@ -6293,6 +6401,10 @@ interface Checks {
     'component:ConversationStripOptions': Same<
         W.ApiComponentTypes['ConversationStripOptions'],
         z.infer<typeof import('./api-schemas/interaction.js').ConversationStripOptionsSchema>
+    >;
+    'component:CompactConversationOptions': Same<
+        W.ApiComponentTypes['CompactConversationOptions'],
+        z.infer<typeof import('./api-schemas/interaction.js').CompactConversationOptionsSchema>
     >;
     'component:StreamingOptions': Same<
         W.ApiComponentTypes['StreamingOptions'],
@@ -7338,6 +7450,14 @@ interface Checks {
     'component:CostAnalyticsQuery': Same<
         W.ApiComponentTypes['CostAnalyticsQuery'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
+    >;
+    'component:InferenceBudgetSettings': Same<
+        W.ApiComponentTypes['InferenceBudgetSettings'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').InferenceBudgetSettingsSchema>
+    >;
+    'component:UpdateInferenceBudget': Same<
+        W.ApiComponentTypes['UpdateInferenceBudget'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').UpdateInferenceBudgetSchema>
     >;
     'component:CostRunPriceQuery': Same<
         W.ApiComponentTypes['CostRunPriceQuery'],
@@ -8575,6 +8695,74 @@ interface Checks {
         W.ApiComponentTypes['EventIngestChannelArray'],
         z.infer<typeof import('./api-schemas/events.js').EventIngestChannelArraySchema>
     >;
+    'component:ContentSourceSyncSettings': Same<
+        W.ApiComponentTypes['ContentSourceSyncSettings'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncSettingsSchema>
+    >;
+    'component:SharePointContentSource': Same<
+        W.ApiComponentTypes['SharePointContentSource'],
+        z.infer<typeof import('./api-schemas/content-sources.js').SharePointContentSourceSchema>
+    >;
+    'component:BoxContentSource': Same<
+        W.ApiComponentTypes['BoxContentSource'],
+        z.infer<typeof import('./api-schemas/content-sources.js').BoxContentSourceSchema>
+    >;
+    'component:ExternalContentSource': Same<
+        W.ApiComponentTypes['ExternalContentSource'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ExternalContentSourceSchema>
+    >;
+    'component:ExternalContentSourceArray': Same<
+        W.ApiComponentTypes['ExternalContentSourceArray'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ExternalContentSourceArraySchema>
+    >;
+    'component:CreateSharePointContentSourcePayload': Same<
+        W.ApiComponentTypes['CreateSharePointContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateSharePointContentSourcePayloadSchema>
+    >;
+    'component:CreateBoxContentSourcePayload': Same<
+        W.ApiComponentTypes['CreateBoxContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateBoxContentSourcePayloadSchema>
+    >;
+    'component:CreateContentSourcePayload': Same<
+        W.ApiComponentTypes['CreateContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').CreateContentSourcePayloadSchema>
+    >;
+    'component:UpdateContentSourcePayload': Same<
+        W.ApiComponentTypes['UpdateContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').UpdateContentSourcePayloadSchema>
+    >;
+    'component:SyncContentSourcePayload': Same<
+        W.ApiComponentTypes['SyncContentSourcePayload'],
+        z.infer<typeof import('./api-schemas/content-sources.js').SyncContentSourcePayloadSchema>
+    >;
+    'component:ContentSourceSyncCounts': Same<
+        W.ApiComponentTypes['ContentSourceSyncCounts'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncCountsSchema>
+    >;
+    'component:ContentSourceSyncRound': Same<
+        W.ApiComponentTypes['ContentSourceSyncRound'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceSyncRoundSchema>
+    >;
+    'component:ContentSourceStatus': Same<
+        W.ApiComponentTypes['ContentSourceStatus'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceStatusSchema>
+    >;
+    'component:ContentSourceReportAction': Same<
+        W.ApiComponentTypes['ContentSourceReportAction'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportActionSchema>
+    >;
+    'component:ContentSourceReportEntry': Same<
+        W.ApiComponentTypes['ContentSourceReportEntry'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportEntrySchema>
+    >;
+    'component:ContentSourceReportQuery': Same<
+        W.ApiComponentTypes['ContentSourceReportQuery'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportQuerySchema>
+    >;
+    'component:ContentSourceReport': Same<
+        W.ApiComponentTypes['ContentSourceReport'],
+        z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceReportSchema>
+    >;
     'component:CollectionSecuritySettingsResponse': Same<
         W.ApiComponentTypes['CollectionSecuritySettingsResponse'],
         z.infer<typeof import('./api-schemas/content.js').CollectionSecuritySettingsResponseSchema>
@@ -8850,6 +9038,18 @@ interface Checks {
     'component:ToolErrorClass': Same<
         W.ApiComponentTypes['ToolErrorClass'],
         z.infer<typeof import('./api-schemas/agent-runs.js').ToolErrorClassSchema>
+    >;
+    'component:ToolApprovalOrigin': Same<
+        W.ApiComponentTypes['ToolApprovalOrigin'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalOriginSchema>
+    >;
+    'component:ToolApprovalReviewerOutcome': Same<
+        W.ApiComponentTypes['ToolApprovalReviewerOutcome'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalReviewerOutcomeSchema>
+    >;
+    'component:ToolApprovalRiskLevel': Same<
+        W.ApiComponentTypes['ToolApprovalRiskLevel'],
+        z.infer<typeof import('./api-schemas/agent-runs.js').ToolApprovalRiskLevelSchema>
     >;
     'component:EvaluationGateReason': Same<
         W.ApiComponentTypes['EvaluationGateReason'],
@@ -10879,6 +11079,24 @@ const checks: Checks = {
     MigrationListResponse: true,
     ContentQueryPayload: true,
     ContentQueryResult: true,
+    ExternalContentSource: true,
+    SharePointContentSource: true,
+    BoxContentSource: true,
+    ContentSourceSyncSettings: true,
+    CreateContentSourcePayload: true,
+    CreateSharePointContentSourcePayload: true,
+    CreateBoxContentSourcePayload: true,
+    UpdateContentSourcePayload: true,
+    SyncContentSourcePayload: true,
+    ContentSourceStatus: true,
+    ContentSourceSyncRound: true,
+    ContentSourceSyncCounts: true,
+    ContentSourceReport: true,
+    ContentSourceReportEntry: true,
+    ContentSourceReportAction: true,
+    ContentSourceReportQuery: true,
+    InferenceBudgetSettings: true,
+    UpdateInferenceBudget: true,
     CostAnalyticsQuery: true,
     CostModelPricesQuery: true,
     CostExportQuery: true,
@@ -11073,6 +11291,7 @@ const checks: Checks = {
     InferenceProfileId: true,
     InferenceProfileName: true,
     InferenceProfile: true,
+    InferenceProfileInvocation: true,
     InferenceProfileSnapshot: true,
     ProjectInferenceProfiles: true,
     CreateInferenceProfilePayload: true,
@@ -11105,6 +11324,7 @@ const checks: Checks = {
     ProjectIntegrationConfigResponse: true,
     InteractionExecutionError: true,
     ConversationStripOptions: true,
+    CompactConversationOptions: true,
     CatalogInteractionRef: true,
     CatalogAgentSearchQuery: true,
     CatalogCallSearchQuery: true,
@@ -11245,6 +11465,7 @@ const checks: Checks = {
     OAuthProviderAuthorizeResponse: true,
     OAuthProviderAccessTokenResponse: true,
     OAuthProviderExchangePayload: true,
+    OAuthProviderTokenRequest: true,
     SortOrder: true,
     SortOption: true,
     RunSearchPayload: true,
@@ -11931,6 +12152,7 @@ const checks: Checks = {
     EventDeliveryTargetInputWire: true,
     ProcessEventDeliveryTargetWire: true,
     EventIngestChannelArray: true,
+    ExternalContentSourceArray: true,
     CollectionStatusWire: true,
     CollectionArray: true,
     AgentRunArtifactPathArray: true,
@@ -11949,6 +12171,9 @@ const checks: Checks = {
     EvaluationSeverityWire: true,
     TurnEvaluationFlagWire: true,
     ToolErrorClassWire: true,
+    ToolApprovalOriginWire: true,
+    ToolApprovalReviewerOutcomeWire: true,
+    ToolApprovalRiskLevelWire: true,
     EvaluationGateReasonWire: true,
     EvaluationOutcomeWire: true,
     EvaluationVerdictWire: true,
@@ -12119,6 +12344,7 @@ const checks: Checks = {
     'component:OAuthProviderAuthorizeResponse': true,
     'component:OAuthProviderAccessTokenResponse': true,
     'component:OAuthProviderExchangePayload': true,
+    'component:OAuthProviderTokenRequest': true,
     'component:OAuthClientType': true,
     'component:OAuthClientStatus': true,
     'component:OAuthRegistrationSource': true,
@@ -12233,6 +12459,7 @@ const checks: Checks = {
     'component:InferenceProfileId': true,
     'component:InferenceProfileName': true,
     'component:InferenceProfile': true,
+    'component:InferenceProfileInvocation': true,
     'component:InferenceProfileSnapshot': true,
     'component:ProjectInferenceProfiles': true,
     'component:InteractionStatus': true,
@@ -12304,6 +12531,7 @@ const checks: Checks = {
     'component:InitialToolCall': true,
     'component:ConversationVisibility': true,
     'component:ConversationStripOptions': true,
+    'component:CompactConversationOptions': true,
     'component:StreamingOptions': true,
     'component:StreamingTelemetryContext': true,
     'component:ResolvedRuntimeConfig': true,
@@ -12566,6 +12794,8 @@ const checks: Checks = {
     'component:DataSchemaForAI': true,
     'component:DataStoreSchemaResponse': true,
     'component:CostAnalyticsQuery': true,
+    'component:InferenceBudgetSettings': true,
+    'component:UpdateInferenceBudget': true,
     'component:CostRunPriceQuery': true,
     'component:CostModelPricesQuery': true,
     'component:CostExportQuery': true,
@@ -12875,6 +13105,23 @@ const checks: Checks = {
     'component:CreateEventIngestChannelPayload': true,
     'component:UpdateEventIngestChannelPayload': true,
     'component:EventIngestChannelArray': true,
+    'component:ContentSourceSyncSettings': true,
+    'component:SharePointContentSource': true,
+    'component:BoxContentSource': true,
+    'component:ExternalContentSource': true,
+    'component:ExternalContentSourceArray': true,
+    'component:CreateSharePointContentSourcePayload': true,
+    'component:CreateBoxContentSourcePayload': true,
+    'component:CreateContentSourcePayload': true,
+    'component:UpdateContentSourcePayload': true,
+    'component:SyncContentSourcePayload': true,
+    'component:ContentSourceSyncCounts': true,
+    'component:ContentSourceSyncRound': true,
+    'component:ContentSourceStatus': true,
+    'component:ContentSourceReportAction': true,
+    'component:ContentSourceReportEntry': true,
+    'component:ContentSourceReportQuery': true,
+    'component:ContentSourceReport': true,
     'component:CollectionSecuritySettingsResponse': true,
     'component:CollectionMembersUpdateResult': true,
     'component:CollectionMembersUpdatePayload': true,
@@ -12944,6 +13191,9 @@ const checks: Checks = {
     'component:EvaluationSeverity': true,
     'component:TurnEvaluationFlag': true,
     'component:ToolErrorClass': true,
+    'component:ToolApprovalOrigin': true,
+    'component:ToolApprovalReviewerOutcome': true,
+    'component:ToolApprovalRiskLevel': true,
     'component:EvaluationGateReason': true,
     'component:EvaluationOutcome': true,
     'component:EvaluationVerdict': true,
@@ -13385,6 +13635,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2781);
+        expect(Object.keys(checks)).toHaveLength(2831);
     });
 });

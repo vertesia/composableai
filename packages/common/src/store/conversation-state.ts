@@ -234,6 +234,9 @@ export interface ConversationState {
     /** LLM stop reason from the latest call (e.g., "stop", "length", "tool_use") */
     finish_reason?: string;
 
+    /** Attempt number of the activity that made the latest LLM call. Above 1, the call was retried. */
+    llm_attempt?: number;
+
     /**
      * The AgentRun ID (MongoDB _id) that owns this conversation.
      * Used for artifact storage paths: agents/{agent_run_id}/

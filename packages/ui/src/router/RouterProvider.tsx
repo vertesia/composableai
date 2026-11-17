@@ -6,6 +6,7 @@ import type { LocationChangeEvent, NavigateOptions } from './HistoryNavigator';
 import { createRoute404 } from './Route404';
 import { RouteComponent } from './RouteComponent';
 import { ReactRouterContext, type Route, Router, type RouterContext } from './Router';
+import { TabsRouteBridge } from './TabsRouteBridge';
 
 interface RouterProviderProps {
     routes: Route[];
@@ -50,7 +51,7 @@ export function RouterProvider({ routes, index, onChange, children }: RouterProv
     return (
         state && (
             <ReactRouterContext.Provider value={state}>
-                {children ? children : <RouteComponent />}
+                <TabsRouteBridge ctx={state}>{children ? children : <RouteComponent />}</TabsRouteBridge>
             </ReactRouterContext.Provider>
         )
     );

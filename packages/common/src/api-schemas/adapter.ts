@@ -342,12 +342,24 @@ export function toOpenApiComponents(
         // deliberate constraint on the extras (e.g. a Record<string, string> value type) and must
         // survive — deleting it would silently widen the contract to accept anything.
         if (schema.additionalProperties === false) delete schema.additionalProperties;
-        // The one subschema that is NOT a constraint: `{}` accepts every extra, which is exactly what
-        // an absent `additionalProperties` means. Zod emits it for `looseObject`, and the
-        // TypeScript-derived generator emits nothing for the index signature that models the same
-        // thing, so dropping it is what lets an intentionally-open component be byte-identical to its
-        // derived counterpart. Unlike the `false` above, this changes no meaning at all.
-        if (isPlainObject(schema.additionalProperties) && Object.keys(schema.additionalProperties).length === 0) {
+        // An empty `{}` is what Zod emits for `looseObject` and an unconstrained catchall: the extras
+        // are the payload (a caller's JSON Schema, a settings bag), not fields a newer server may add.
+        // On a component that declares properties it is kept, and `normalizeOpenMaps` below publishes
+        // it as `true`. A validator reads an absent keyword as open too, but a code generator may not:
+        // openapi-generator makes such a model closed unless the client sets
+        // `disallowAdditionalPropertiesIfNotPresent: false`, and a closed `JSONSchema` drops `enum`,
+        // `oneOf` and `minimum` on re-encode. The contract states the openness instead of relying on
+        // that client flag.
+        //
+        // A bare `{type: 'object'}` with no properties is already free-form to every generator, so
+        // there is nothing to lose and the keyword stays omitted. Publishing `true` there would only
+        // retype it: Java turns the `Object` into a `Map<String, Object>` that starts as an empty map
+        // and is sent as `{}` when the caller never set it.
+        if (
+            !isPlainObject(schema.properties) &&
+            isPlainObject(schema.additionalProperties) &&
+            Object.keys(schema.additionalProperties).length === 0
+        ) {
             delete schema.additionalProperties;
         }
     }
@@ -410,8 +422,9 @@ function eachSubschema(node: JsonObject, visit: (child: JsonObject) => void): vo
  * client's map element type at 109 sites. That is a source break for SDK consumers bought for
  * nothing, which is why the published form is normalized rather than left as emitted.
  *
- * Runs after the component-root pass above, which DELETES a root's empty `additionalProperties`
- * outright. Roots therefore never reach here still carrying one, and the two rules do not fight.
+ * Applies at component roots too: an intentionally-open component (`looseObject`) that declares
+ * properties is published with `additionalProperties: true`, the same spelling as a nested open map.
+ * The component-root pass above has already removed it from a root without properties.
  */
 function normalizeOpenMaps(node: JsonObject): void {
     if (isPlainObject(node.additionalProperties) && Object.keys(node.additionalProperties).length === 0) {

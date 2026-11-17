@@ -28,6 +28,16 @@ export const SuccessResponseSchema = z
     .meta({ id: 'SuccessResponse' });
 
 /**
+ * Extra parameters for the client_credentials token request, such as Box's `box_subject_type` and
+ * `box_subject_id`. One schema for the read and the write shapes: they are not secret, so they come back
+ * as they were sent. The limits in the description are enforced by the server, which answers a 400.
+ */
+const oauthProviderTokenParamsSchema = z.record(z.string(), z.string()).meta({
+    description:
+        "Extra parameters added to the URL-encoded body of every client_credentials token request for this provider, after the standard ones (e.g. Box's box_subject_type and box_subject_id). Only used for the client_credentials grant. At most 10 entries; keys match ^[A-Za-z][A-Za-z0-9_.-]{0,63}$; values are at most 512 characters; grant_type, client_id, client_secret, scope, client_assertion and client_assertion_type are reserved. Not secret: returned as stored. On update, an empty object clears them.",
+});
+
+/**
  * How Vertesia authenticates to the provider's token endpoint, named as in RFC 7591 §2.
  *
  * - `client_secret_post`: `client_secret` in the request body (the default).
@@ -43,6 +53,17 @@ const tokenEndpointAuthMethodSchema = z.enum(['client_secret_post', 'private_key
 const tokenEndpointAuthSigningAlgSchema = z.enum(['RS256', 'PS256', 'ES256']).meta({
     description:
         'The JWS algorithm that signs the client assertion of private_key_jwt. Defaults to RS256 for an RSA key and ES256 for a P-256 key. Microsoft Entra ID recommends PS256.',
+});
+
+/**
+ * The scopes a token request may name besides `default_scopes`, set by the admin who configures the provider. One
+ * provider (one client, one key) can then serve several resources: Entra ID issues each token for one resource, so a
+ * caller asks for, say, `https://contoso.sharepoint.com/.default` instead of the Graph default. The list plays the
+ * part of the registered `scope` of RFC 7591 §2: the caller chooses within it, never beyond it.
+ */
+const oauthProviderAllowedScopesSchema = z.array(z.string().min(1)).meta({
+    description:
+        'Scopes a token request may ask for instead of default_scopes (POST /oauth-providers/{id}/token with a scope), in addition to default_scopes, which are always allowed. Only used for the client_credentials grant. Set by the provider admin: a caller cannot request a scope outside this list and default_scopes. On update, an empty array clears it.',
 });
 
 /**
@@ -100,11 +121,13 @@ export const OAuthProviderDataSchema = z.strictObject({
         .array(z.string())
         .meta({ description: 'Default scopes to request during authorization.' })
         .optional(),
+    allowed_scopes: oauthProviderAllowedScopesSchema.optional(),
     use_pkce: z.boolean().meta({
         description:
             'Whether to use PKCE (Proof Key for Code Exchange) in the authorization flow. Only applies to authorization_code flow. Defaults to true.',
     }),
     revocation_endpoint: z.string().meta({ description: 'Optional OAuth 2.0 revocation endpoint URL.' }).optional(),
+    token_params: oauthProviderTokenParamsSchema.optional(),
     created_at: z.string(),
     updated_at: z.string(),
 });
@@ -154,8 +177,10 @@ const oauthProviderPayloadSchema = z.strictObject({
         })
         .optional(),
     default_scopes: z.array(z.string()).optional(),
+    allowed_scopes: oauthProviderAllowedScopesSchema.optional(),
     use_pkce: z.boolean().optional(),
     revocation_endpoint: z.string().optional(),
+    token_params: oauthProviderTokenParamsSchema.optional(),
 });
 
 /**
@@ -215,6 +240,22 @@ export const OAuthProviderAuthorizeResponseSchema = z
         id: 'OAuthProviderAuthorizeResponse',
         description:
             'Response from the OAuth authorize endpoint. For authorization_code flow: contains authorization_url and state for browser redirect. For client_credentials flow: contains connected=true (token was fetched server-side, no redirect needed).',
+    });
+
+export const OAuthProviderTokenRequestSchema = z
+    .strictObject({
+        scope: z
+            .string()
+            .regex(/\S/)
+            .meta({
+                description:
+                    "Space-separated scopes to request instead of default_scopes (RFC 6749 §3.3), for example a second resource of the same client. Each scope must be in the provider's default_scopes or allowed_scopes, otherwise the request fails with 400. client_credentials providers only. Omit it for the default scopes.",
+            })
+            .optional(),
+    })
+    .meta({
+        id: 'OAuthProviderTokenRequest',
+        description: 'Optional body of the provider token request.',
     });
 
 export const OAuthProviderAccessTokenResponseSchema = z

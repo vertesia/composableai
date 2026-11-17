@@ -753,6 +753,8 @@
     "store.successfullyExportedTo": "Esportato con successo in {{format}}",
     "store.syncMemberHeads": "Sincronizza head dei membri",
     "store.syncMemberHeadsDescription": "Quando viene creata una nuova versione HEAD di un membro, la collezione verrà aggiornata per puntare al nuovo HEAD.",
+    "store.syncedFromBox": "Sincronizzato da Box",
+    "store.syncedFromSharePoint": "Sincronizzato da SharePoint",
     "store.tableLayout": "Layout tabella",
     "store.tableLayoutDescription": "Definisci un layout personalizzato per la visualizzazione della collezione nelle tabelle.",
     "store.tableLayoutUpdated": "Layout tabella aggiornato",

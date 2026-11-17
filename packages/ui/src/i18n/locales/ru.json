@@ -761,6 +761,8 @@
     "store.successfullyExportedTo": "Успешно экспортировано в {{format}}",
     "store.syncMemberHeads": "Синхронизировать заголовки участников",
     "store.syncMemberHeadsDescription": "При создании новой HEAD-версии участника коллекция будет обновлена для указания на новый HEAD.",
+    "store.syncedFromBox": "Синхронизировано из Box",
+    "store.syncedFromSharePoint": "Синхронизировано из SharePoint",
     "store.tableLayout": "Макет таблицы",
     "store.tableLayoutDescription": "Определите пользовательский макет для отображения коллекции в таблицах.",
     "store.tableLayoutUpdated": "Макет таблицы обновлён",

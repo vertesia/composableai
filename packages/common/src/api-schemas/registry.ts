@@ -248,6 +248,7 @@ import {
 } from './commands.js';
 import * as ContentSchemas from './content.js';
 import * as ContentQuerySchemas from './content-query.js';
+import * as ContentSourceSchemas from './content-sources.js';
 import {
     CostAnalyticsQuerySchema,
     CostAnalyticsResponseSchema,
@@ -258,6 +259,7 @@ import {
     CostRunPriceResponseSchema,
     CostSummarySchema,
     CostTimeSeriesPointSchema,
+    InferenceBudgetSettingsSchema,
     IntakeCostByContentNatureSchema,
     IntakeCostByContentTypeSchema,
     IntakeCostByOutcomeSchema,
@@ -277,6 +279,7 @@ import {
     PricingSyncDayResultSchema,
     PricingSyncPayloadSchema,
     PricingSyncResultSchema,
+    UpdateInferenceBudgetSchema,
 } from './cost-analytics.js';
 import {
     CreateCustomRolePayloadSchema,
@@ -525,6 +528,7 @@ import {
 import {
     CreateInferenceProfilePayloadSchema,
     InferenceProfileIdSchema,
+    InferenceProfileInvocationSchema,
     InferenceProfileNameSchema,
     InferenceProfileRecordArraySchema,
     InferenceProfileRecordSchema,
@@ -563,6 +567,7 @@ import {
     CatalogSearchResultSchema,
     CatalogTagCountSchema,
     CatalogTagQuerySchema,
+    CompactConversationOptionsSchema,
     ComputedFacetResponseSchema,
     ComputeInteractionFacetPayloadSchema,
     ComputeRunFacetPayloadSchema,
@@ -700,6 +705,7 @@ import {
     OAuthProviderAuthStatusSchema,
     OAuthProviderExchangePayloadSchema,
     OAuthProviderSchema,
+    OAuthProviderTokenRequestSchema,
     SuccessResponseSchema,
     UpdateOAuthProviderPayloadSchema,
 } from './oauth.js';
@@ -1043,6 +1049,7 @@ const OAUTH_SCHEMAS = {
     OAuthProviderAuthorizeResponse: OAuthProviderAuthorizeResponseSchema,
     OAuthProviderAccessTokenResponse: OAuthProviderAccessTokenResponseSchema,
     OAuthProviderExchangePayload: OAuthProviderExchangePayloadSchema,
+    OAuthProviderTokenRequest: OAuthProviderTokenRequestSchema,
     // The client and grant enums. Each is published as a component today because it has a
     // TypeScript name, so each is registered rather than inlined — dropping one would rewrite every
     // `$ref` that points at it into an inline enum.
@@ -1211,6 +1218,7 @@ const INTERACTION_SCHEMAS = {
     InferenceProfileId: InferenceProfileIdSchema,
     InferenceProfileName: InferenceProfileNameSchema,
     InferenceProfile: InferenceProfileSchema,
+    InferenceProfileInvocation: InferenceProfileInvocationSchema,
     InferenceProfileSnapshot: InferenceProfileSnapshotSchema,
     ProjectInferenceProfiles: ProjectInferenceProfilesSchema,
     // The interaction definition and the prompt tree under it.
@@ -1298,6 +1306,7 @@ const AGENT_CONVERSATION_SCHEMAS = {
     InitialToolCall: InitialToolCallSchema,
     ConversationVisibility: ConversationVisibilitySchema,
     ConversationStripOptions: ConversationStripOptionsSchema,
+    CompactConversationOptions: CompactConversationOptionsSchema,
     StreamingOptions: StreamingOptionsSchema,
     StreamingTelemetryContext: StreamingTelemetryContextSchema,
     ResolvedRuntimeConfig: ResolvedRuntimeConfigSchema,
@@ -1638,6 +1647,8 @@ const DATA_STORE_SCHEMA_SCHEMAS = {
 
 const COST_ANALYTICS_SCHEMAS = {
     CostAnalyticsQuery: CostAnalyticsQuerySchema,
+    InferenceBudgetSettings: InferenceBudgetSettingsSchema,
+    UpdateInferenceBudget: UpdateInferenceBudgetSchema,
     CostRunPriceQuery: CostRunPriceQuerySchema,
     CostModelPricesQuery: CostModelPricesQuerySchema,
     CostExportQuery: CostExportQuerySchema,
@@ -1997,6 +2008,26 @@ const EVENT_INGEST_SCHEMAS = {
     EventIngestChannelArray: EventSchemas.EventIngestChannelArraySchema,
 } as const satisfies Record<string, z.ZodType>;
 
+const CONTENT_SOURCE_SCHEMAS = {
+    ContentSourceSyncSettings: ContentSourceSchemas.ContentSourceSyncSettingsSchema,
+    SharePointContentSource: ContentSourceSchemas.SharePointContentSourceSchema,
+    BoxContentSource: ContentSourceSchemas.BoxContentSourceSchema,
+    ExternalContentSource: ContentSourceSchemas.ExternalContentSourceSchema,
+    ExternalContentSourceArray: ContentSourceSchemas.ExternalContentSourceArraySchema,
+    CreateSharePointContentSourcePayload: ContentSourceSchemas.CreateSharePointContentSourcePayloadSchema,
+    CreateBoxContentSourcePayload: ContentSourceSchemas.CreateBoxContentSourcePayloadSchema,
+    CreateContentSourcePayload: ContentSourceSchemas.CreateContentSourcePayloadSchema,
+    UpdateContentSourcePayload: ContentSourceSchemas.UpdateContentSourcePayloadSchema,
+    SyncContentSourcePayload: ContentSourceSchemas.SyncContentSourcePayloadSchema,
+    ContentSourceSyncCounts: ContentSourceSchemas.ContentSourceSyncCountsSchema,
+    ContentSourceSyncRound: ContentSourceSchemas.ContentSourceSyncRoundSchema,
+    ContentSourceStatus: ContentSourceSchemas.ContentSourceStatusSchema,
+    ContentSourceReportAction: ContentSourceSchemas.ContentSourceReportActionSchema,
+    ContentSourceReportEntry: ContentSourceSchemas.ContentSourceReportEntrySchema,
+    ContentSourceReportQuery: ContentSourceSchemas.ContentSourceReportQuerySchema,
+    ContentSourceReport: ContentSourceSchemas.ContentSourceReportSchema,
+} as const satisfies Record<string, z.ZodType>;
+
 const COLLECTION_SCHEMAS = {
     CollectionSecuritySettingsResponse: ContentSchemas.CollectionSecuritySettingsResponseSchema,
     CollectionMembersUpdateResult: ContentSchemas.CollectionMembersUpdateResultSchema,
@@ -2073,6 +2104,9 @@ const AGENT_RUN_SCHEMAS = {
     EvaluationSeverity: AgentRunSchemas.EvaluationSeveritySchema,
     TurnEvaluationFlag: AgentRunSchemas.TurnEvaluationFlagSchema,
     ToolErrorClass: AgentRunSchemas.ToolErrorClassSchema,
+    ToolApprovalOrigin: AgentRunSchemas.ToolApprovalOriginSchema,
+    ToolApprovalReviewerOutcome: AgentRunSchemas.ToolApprovalReviewerOutcomeSchema,
+    ToolApprovalRiskLevel: AgentRunSchemas.ToolApprovalRiskLevelSchema,
     EvaluationGateReason: AgentRunSchemas.EvaluationGateReasonSchema,
     EvaluationOutcome: AgentRunSchemas.EvaluationOutcomeSchema,
     EvaluationVerdict: AgentRunSchemas.EvaluationVerdictSchema,
@@ -2661,6 +2695,7 @@ const API_SCHEMA_GROUPS = [
     PROCESS_RUNTIME_SCHEMAS,
     EVENT_DELIVERY_SCHEMAS,
     EVENT_INGEST_SCHEMAS,
+    CONTENT_SOURCE_SCHEMAS,
     COLLECTION_SCHEMAS,
     AGENT_ARTIFACT_SCHEMAS,
     AGENT_RUN_SCHEMAS,
@@ -2691,6 +2726,21 @@ const API_SCHEMAS: Readonly<Record<string, z.ZodType>> = mergeComponentGroups(AP
  * objects, so a body carrying an undeclared property is rejected rather than quietly accepted.
  */
 const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
+    'InferenceBudgetSettings',
+    'UpdateInferenceBudget',
+    'ContentSourceSyncSettings',
+    'SharePointContentSource',
+    'BoxContentSource',
+    'CreateSharePointContentSourcePayload',
+    'CreateBoxContentSourcePayload',
+    'UpdateContentSourcePayload',
+    'SyncContentSourcePayload',
+    'ContentSourceSyncCounts',
+    'ContentSourceSyncRound',
+    'ContentSourceStatus',
+    'ContentSourceReportEntry',
+    'ContentSourceReportQuery',
+    'ContentSourceReport',
     'CustomRoleDefinition',
     'CreateCustomRolePayload',
     'UpdateCustomRolePayload',
@@ -3367,6 +3417,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'OAuthProviderAuthorizeResponse',
     'OAuthProviderAccessTokenResponse',
     'OAuthProviderExchangePayload',
+    'OAuthProviderTokenRequest',
     'OAuthClientDisplayMetadata',
     'OAuthAuthorizeQuery',
     'CreateOAuthAuthorizationRequestPayload',
@@ -3488,6 +3539,7 @@ const STRICT_COMPONENTS: ReadonlySet<string> = new Set<string>([
     'SkillContextTriggers',
     'InitialToolCall',
     'ConversationStripOptions',
+    'CompactConversationOptions',
     'StreamingOptions',
     'StreamingTelemetryContext',
     'ResolvedRuntimeConfig',

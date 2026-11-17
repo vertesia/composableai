@@ -101,3 +101,53 @@ it.each(
     if (method === 'oauth') expect(getComposableToken).not.toHaveBeenCalled();
     expect(sessionStorage.getItem('vertesia.oauth.transaction')).toBeNull();
 });
+
+it('puts back the hash of the page that started the round-trip after the handoff', async () => {
+    const issuer = 'https://sts.dev1.vertesia.io';
+    const claims: AuthTokenPayload = {
+        sub: 'user',
+        user_id: 'user',
+        name: 'Test User',
+        type: PrincipalType.User,
+        iss: issuer,
+        apps: [],
+        accounts: [],
+        account_roles: [],
+        aud: issuer,
+        account: { id: 'a', name: 'Account' },
+        project: { id: 'p', name: 'Project', account: 'a' },
+        exp: Math.floor(Date.now() / 1000) + 3600,
+    };
+    const token = `e30.${btoa(JSON.stringify(claims))}.signature`;
+    Env.init({
+        name: 'test',
+        version: '1',
+        type: 'production',
+        isLocalDev: false,
+        isDocker: false,
+        endpoints: { studio: 'https://api.dev1.vertesia.io', zeno: 'https://api.dev1.vertesia.io', sts: issuer },
+    });
+    // The page the user opened, before the redirect to Central Auth.
+    window.history.replaceState(null, '', '/settings/projects/applications?a=a&p=p#mcp');
+    const state = generateAuthState();
+    // Central Auth sends the user back with the handoff in place of the hash.
+    window.history.replaceState(null, '', `/settings/projects/applications?a=a&p=p#token=${token}&state=${state}`);
+    vi.mocked(getComposableToken).mockResolvedValue({ rawToken: token, token: claims, error: false });
+    const hashChanges = vi.fn();
+    window.addEventListener('hashchange', hashChanges);
+    function Probe() {
+        const session = useUserSession();
+        return <span>{session.user?.name}</span>;
+    }
+    const view = render(
+        <UserSessionProvider>
+            <Probe />
+        </UserSessionProvider>,
+    );
+
+    await view.findByText('Test User');
+    await waitFor(() => expect(window.location.hash).toBe('#mcp'));
+    expect(window.location.pathname + window.location.search).toBe('/settings/projects/applications?a=a&p=p');
+    expect(hashChanges).toHaveBeenCalled();
+    window.removeEventListener('hashchange', hashChanges);
+});

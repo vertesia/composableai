@@ -3,6 +3,7 @@ import { ExternalLink, Eye } from 'lucide-react';
 import type { ReactNode } from 'react';
 import dayjs from '../../../../core/utils/dayjs.js';
 import { shortId } from '../../../utils';
+import { ContentSourceIcon, externalSourceSystem } from '../components/ContentSourceIcon';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
@@ -178,10 +179,13 @@ const renderers: Record<
             const name = getStringProperty(value, 'name');
             const id = getStringProperty(value, 'id');
             const content = titleText || name || (id ? shortId(id) : '');
+            const source = isRecord(value) ? getStringProperty(value.content, 'source') : undefined;
+            const hasSourceIcon = !!externalSourceSystem(source);
             return (
                 <td key={index} className="group/field">
-                    {actions ? (
+                    {actions || hasSourceIcon ? (
                         <div className="flex items-center gap-2 min-w-0">
+                            {hasSourceIcon && <ContentSourceIcon source={source} />}
                             <span className="truncate">{content}</span>
                             {actions}
                         </div>
