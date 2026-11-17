@@ -2421,6 +2421,13 @@ export type ContentSourceReportQuery = {
     cursor?: string | undefined;
     limit?: number | undefined;
 };
+export type InferenceBudgetSettings = {
+    daily_limit_usd: number | null;
+    available: boolean;
+};
+export type UpdateInferenceBudget = {
+    daily_limit_usd: number;
+};
 export type CostAnalyticsQuery = {
     from?: string | number | undefined;
     to?: string | number | undefined;
@@ -5179,8 +5186,9 @@ export type NotificationKind =
     | 'agent.finished'
     | 'agent.turn_finished'
     | 'task.assigned'
-    | 'intake.finished';
-export type NotificationCategory = 'actions' | 'failures' | 'results';
+    | 'intake.finished'
+    | 'inference_budget.exceeded';
+export type NotificationCategory = 'actions' | 'failures' | 'results' | 'billing';
 export type NotificationChannel = 'in_app';
 /** A typed reference to the item a notification is about (`{ type: 'task', id }`, ...). */
 export type NotificationRef = {
@@ -5253,6 +5261,7 @@ export type NotificationChannelPreferences = {
 export type NotificationPreferences = {
     categories: Record<string, NotificationChannelPreferences>;
     kinds: Record<string, NotificationChannelPreferences>;
+    budget_alerts_enabled?: boolean | undefined;
 };
 export type NotificationStreamEvent = {
     type: 'changed' | 'heartbeat';
@@ -12298,6 +12307,8 @@ export interface ApiComponentTypes {
     DataSchemaForAI: DataSchemaForAI;
     DataStoreSchemaResponse: DataStoreSchemaResponse;
     CostAnalyticsQuery: CostAnalyticsQuery;
+    InferenceBudgetSettings: InferenceBudgetSettings;
+    UpdateInferenceBudget: UpdateInferenceBudget;
     CostRunPriceQuery: CostRunPriceQuery;
     CostModelPricesQuery: CostModelPricesQuery;
     CostExportQuery: CostExportQuery;

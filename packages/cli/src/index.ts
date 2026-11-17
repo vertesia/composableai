@@ -33,7 +33,7 @@ import {
 } from './profiles/commands.js';
 import { configureGitAuth, serveGitCredential } from './profiles/git.js';
 import { AVAILABLE_REGIONS, config, DEFAULT_REGION, getConfigFile } from './profiles/index.js';
-import { listProjects, useProject } from './projects/index.js';
+import { listProjects, projectInferenceBudget, useProject } from './projects/index.js';
 import { registerQuotaCommand } from './quota/index.js';
 import runInteraction from './run/index.js';
 import { runHistory } from './runs/index.js';
@@ -72,6 +72,14 @@ projectsRoot
     .option('-p, --project <project>', 'The project ID to use')
     .action((project: string | undefined, options: { project?: string }) =>
         useProject(program, options.project || project),
+    );
+
+projectsRoot
+    .command('inference-budget [usd]')
+    .description('Read or set the current project’s daily inference budget in USD')
+    .option('--disable', 'Disable the alert')
+    .action((amount: string | undefined, options: { disable?: boolean }) =>
+        projectInferenceBudget(program, amount, options.disable),
     );
 
 const authRoot = program.command('auth').description('Manage authentication');
