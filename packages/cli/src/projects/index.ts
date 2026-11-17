@@ -7,6 +7,24 @@ import { config } from '../profiles/index.js';
 
 const { prompt } = enquirer;
 
+export async function projectInferenceBudget(program: Command, amount?: string, disable = false) {
+    if (amount !== undefined && disable) throw new Error('Specify a USD amount or --disable');
+    const client = await getClient(program);
+    if (disable) {
+        console.log(JSON.stringify(await client.store.cost.disableInferenceBudget(), null, 2));
+        return;
+    }
+    if (amount === undefined) {
+        console.log(JSON.stringify(await client.store.cost.getInferenceBudget(), null, 2));
+        return;
+    }
+    const limit = Number(amount);
+    if (!Number.isFinite(limit) || limit < 0.01 || limit > 1_000_000) {
+        throw new Error('The daily inference budget must be between $0.01 and $1,000,000 USD');
+    }
+    console.log(JSON.stringify(await client.store.cost.updateInferenceBudget({ daily_limit_usd: limit }), null, 2));
+}
+
 interface ProjectChoice {
     id: string;
     name: string;
