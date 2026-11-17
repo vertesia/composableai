@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Writable } from 'node:stream';
+import { IdempotencyStrategy } from '@google-cloud/storage';
 import type { UploadSession } from '@vertesia/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StreamSource } from '../StreamSource.js';
@@ -19,12 +20,15 @@ const gcs = vi.hoisted(() => ({
     destroyed: undefined as Error | null | undefined,
     files: [] as { bucket: string; key: string }[],
     authClients: [] as unknown[],
+    retryOptions: [] as unknown[],
 }));
 
-vi.mock('@google-cloud/storage', () => ({
+vi.mock('@google-cloud/storage', async (importOriginal) => ({
+    IdempotencyStrategy: (await importOriginal<typeof import('@google-cloud/storage')>()).IdempotencyStrategy,
     Storage: class {
-        constructor(options: { authClient: unknown }) {
+        constructor(options: { authClient: unknown; retryOptions?: unknown }) {
             gcs.authClients.push(options.authClient);
+            gcs.retryOptions.push(options.retryOptions);
         }
         bucket(bucket: string) {
             return {
@@ -419,6 +423,7 @@ describe('uploadInParts on Google Cloud Storage', () => {
         gcs.destroyed = undefined;
         gcs.files = [];
         gcs.authClients = [];
+        gcs.retryOptions = [];
     });
 
     const session: UploadSession = {
@@ -434,6 +439,12 @@ describe('uploadInParts on Google Cloud Storage', () => {
 
         expect(gcs.files).toEqual([{ bucket: 'bucket', key: 'dir/big.bin' }]);
         expect(gcs.authClients[0]?.constructor.name).toBe('PassThroughClient');
+        const retryOptions = gcs.retryOptions[0] as Record<string, unknown>;
+        // The default strategy would give a session upload, which has no precondition, no retries.
+        expect(retryOptions.idempotencyStrategy).toBe(IdempotencyStrategy.RetryAlways);
+        // The SDK counts both from the start of the upload, so its defaults (3 retries, 600 s) cannot last a long one.
+        expect(retryOptions.maxRetries).toBeGreaterThan(3);
+        expect(retryOptions.totalTimeout).toBeGreaterThan(600);
         expect(gcs.writeOptions[0]).toMatchObject({ uri: session.url, resumable: true, chunkSize: 5 });
         expect(Buffer.concat(gcs.received).toString()).toBe('hello world');
         expect(gcs.finished).toBe(true);
