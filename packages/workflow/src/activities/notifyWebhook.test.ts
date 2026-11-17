@@ -380,8 +380,9 @@ describe('Webhook should be notified', () => {
         expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it.each([408, 425, 429])('should retry a %i from central URL validation', async (statusCode) => {
-        const throttled = Object.assign(new Error('try again later'), { statusCode });
+    it.each([408, 425, 429])('should retry a %i from central URL validation', async (status) => {
+        // The client's RequestError carries the HTTP status as `status`.
+        const throttled = Object.assign(new Error('try again later'), { status });
         mockValidateUrl.mockRejectedValueOnce(throttled);
 
         await expect(testEnv.run(notifyWebhook, createTestPayload())).rejects.toBe(throttled);
