@@ -66,6 +66,29 @@ test('Playwright client fixture uses the required non-empty destructured fixture
     assert.doesNotMatch(fixture, /vertesiaClient:\s*async \(_fixtures, use\) =>/);
 });
 
+test('in-repo template typechecks through typecheck:test, not a prebuild hook', () => {
+    // The workspace build no longer lints or typechecks the template; CI's `typecheck:test` run is the only gate.
+    const { scripts } = JSON.parse(fs.readFileSync(path.join(templateRoot, 'package.json'), 'utf8'));
+    assert.equal(scripts.prebuild, undefined);
+    assert.equal(scripts['typecheck:test'], 'pnpm run typecheck');
+});
+
+test('dev codegen without cleanup keeps the in-repo template free of the generated prebuild', () => {
+    const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
+    try {
+        copyTemplateInputs(tmpRoot);
+        const contextPath = path.join(tmpRoot, '.create-plugin-context.json');
+        fs.writeFileSync(contextPath, `${JSON.stringify({ modules: ['dev'], cleanup: false }, null, 2)}\n`);
+        execFileSync(process.execPath, [codegenScript, '--context', contextPath], { cwd: tmpRoot, stdio: 'pipe' });
+
+        const { scripts } = JSON.parse(fs.readFileSync(path.join(tmpRoot, 'package.json'), 'utf8'));
+        assert.equal(scripts.prebuild, undefined);
+        assert.equal(scripts['typecheck:test'], 'pnpm run typecheck');
+    } finally {
+        fs.rmSync(tmpRoot, { recursive: true, force: true });
+    }
+});
+
 test('dev module codegen matches checked-in generated files', () => {
     const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'plugin-template-codegen-'));
     try {
@@ -103,6 +126,8 @@ test('default module codegen keeps only the app module', () => {
         assert.equal(packageJson.scripts['codegen:dev'], undefined);
         assert.equal(packageJson.scripts.pretest, undefined);
         assert.equal(packageJson.scripts['test:codegen'], undefined);
+        assert.equal(packageJson.scripts['typecheck:test'], undefined);
+        assert.equal(packageJson.scripts.prebuild, 'biome lint src && tsc --build --noEmit');
         assert.equal(packageJson.scripts.test, undefined);
         assert.equal(packageJson.scripts['test:unit'], undefined);
         assert.equal(packageJson.scripts['test:e2e'], undefined);

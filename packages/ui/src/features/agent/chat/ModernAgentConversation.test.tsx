@@ -600,6 +600,180 @@ describe('ModernAgentConversation send handling', () => {
         expect(screen.queryByText('This Workflow is FAILED')).toBeNull();
     });
 
+    describe('restarting a failed run', () => {
+        function mockFailedRun() {
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.ERROR, 'Workflow failed: provider request timed out')],
+                agentRunStatus: 'FAILED',
+            });
+        }
+
+        it.each([true, false])(
+            'offers Restart in the failed box and restarts in place (hideMessageInput=%s)',
+            async (hideMessageInput) => {
+                mockFailedRun();
+                let resolveRestart: (value: { id: string }) => void = () => {};
+                mocks.restart.mockReturnValueOnce(
+                    new Promise((resolve) => {
+                        resolveRestart = resolve;
+                    }),
+                );
+                const onRestart = vi.fn();
+
+                renderConversation({ hideMessageInput, onRestart });
+
+                expect(screen.getByText('Workflow failed: provider request timed out')).not.toBeNull();
+                expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+
+                const restartButton = screen.getByRole('button', { name: 'Restart' });
+                fireEvent.click(restartButton);
+
+                expect(mocks.restart).toHaveBeenCalledWith('agent-run-1');
+                await waitFor(() => expect(restartButton.hasAttribute('disabled')).toBe(true));
+
+                await act(async () => resolveRestart({ id: 'agent-run-1' }));
+
+                expect(mocks.restart).toHaveBeenCalledTimes(1);
+                expect(mocks.reconnect).toHaveBeenCalledTimes(1);
+                // Restarted in place: the host's remounting handler is not used.
+                expect(onRestart).not.toHaveBeenCalled();
+                // Still failed until the reconnected stream reports the run running.
+                expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+            },
+        );
+
+        it('leaves the failed state once the reconnected stream reports the run running', async () => {
+            mockFailedRun();
+            const onRestart = vi.fn();
+            const view = renderConversation({ hideMessageInput: false, onRestart });
+
+            fireEvent.click(screen.getByRole('button', { name: 'Restart' }));
+            await waitFor(() => expect(mocks.reconnect).toHaveBeenCalledTimes(1));
+
+            mockStreamState({
+                messages: [createMessage(AgentMessageType.ERROR, 'Workflow failed: provider request timed out')],
+                agentRunStatus: 'RUNNING',
+                isCompleted: false,
+            });
+            view.rerender(
+                <ModernAgentConversation
+                    agentRunId="agent-run-1"
+                    title="Agent"
+                    hideHeader
+                    showRightPanel={false}
+                    hideMessageInput={false}
+                    onRestart={onRestart}
+                />,
+            );
+
+            expect(screen.queryByText('Failed')).toBeNull();
+            expect(screen.queryByRole('button', { name: 'Restart' })).toBeNull();
+            expect(screen.getByRole('button', { name: 'composer send' })).not.toBeNull();
+        });
+
+        it('reports a failed restart and lets the user try again', async () => {
+            mockFailedRun();
+            mocks.restart.mockRejectedValueOnce(new Error('The previous execution has not closed yet'));
+            const toast = vi.fn();
+
+            renderWithProviders(
+                <ToastContext.Provider value={toast}>
+                    <ModernAgentConversation
+                        agentRunId="agent-run-1"
+                        title="Agent"
+                        hideHeader
+                        hideMessageInput
+                        showRightPanel={false}
+                        onRestart={vi.fn()}
+                    />
+                </ToastContext.Provider>,
+            );
+
+            const restartButton = screen.getByRole('button', { name: 'Restart' });
+            fireEvent.click(restartButton);
+
+            await waitFor(() =>
+                expect(toast).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        status: 'error',
+                        title: 'Could not restart the run',
+                        description: 'The previous execution has not closed yet',
+                    }),
+                ),
+            );
+            expect(mocks.reconnect).not.toHaveBeenCalled();
+            await waitFor(() => expect(restartButton.hasAttribute('disabled')).toBe(false));
+
+            fireEvent.click(restartButton);
+            await waitFor(() => expect(mocks.reconnect).toHaveBeenCalledTimes(1));
+            expect(mocks.restart).toHaveBeenCalledTimes(2);
+        });
+
+        it.each([true, false])(
+            'offers no Restart without a host restart handler (hideMessageInput=%s)',
+            (hideMessageInput) => {
+                mockFailedRun();
+
+                renderConversation({ hideMessageInput });
+
+                expect(screen.queryByRole('button', { name: 'Restart' })).toBeNull();
+                expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+            },
+        );
+
+        it.each([
+            [[Permission.workflow_run], true],
+            [[], false],
+        ] as const)('with permissions %j, offers Restart: %s', (permissions, offered) => {
+            mockFailedRun();
+            const token = {
+                permissions,
+                account_permissions: [],
+                account_roles: [],
+                project_roles: [],
+            } as unknown as AuthTokenPayload;
+
+            renderWithProviders(
+                <UserPermissionsContext.Provider value={new UserPermissions(token)}>
+                    <ModernAgentConversation
+                        agentRunId="agent-run-1"
+                        title="Agent"
+                        hideHeader
+                        hideMessageInput={false}
+                        showRightPanel={false}
+                        onRestart={vi.fn()}
+                    />
+                </UserPermissionsContext.Provider>,
+            );
+
+            expect(screen.getByText('Workflow failed: provider request timed out')).not.toBeNull();
+            expect(screen.queryByRole('button', { name: 'Restart' }) !== null).toBe(offered);
+        });
+
+        it('treats a null failedAction like an omitted one', () => {
+            mockFailedRun();
+
+            renderConversation({ onRestart: vi.fn(), failedAction: null });
+
+            expect(screen.getByRole('button', { name: 'Restart' })).not.toBeNull();
+        });
+
+        it('shows the host failedAction instead of the default Restart', () => {
+            mockFailedRun();
+
+            renderConversation({
+                hideMessageInput: false,
+                onRestart: vi.fn(),
+                failedAction: <div>Start a new session</div>,
+            });
+
+            expect(screen.getByText('Start a new session')).not.toBeNull();
+            expect(screen.queryByRole('button', { name: 'Restart' })).toBeNull();
+            expect(screen.queryByRole('button', { name: 'composer send' })).toBeNull();
+            expect(mocks.restart).not.toHaveBeenCalled();
+        });
+    });
+
     it('provides its resourceResolver prop to conversation content', () => {
         mockStreamState({ messages: [createMessage(AgentMessageType.COMPLETE, 'done')] });
 

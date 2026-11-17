@@ -11,19 +11,49 @@ function isCommandExitError(error: unknown): error is Error & { code: number } {
     return error instanceof Error && 'code' in error && typeof error.code === 'number';
 }
 
+interface FirstFrameGeometry {
+    /** Stored width and height, before any EXIF orientation is applied. */
+    width: number;
+    height: number;
+    /** Whether the frame is smaller than, or offset on, its page canvas (an optimized GIF or WebP subframe). */
+    needsCanvas: boolean;
+}
+
 /**
- * Whether the first frame is smaller than, or offset on, its page canvas (an optimized GIF or WebP subframe).
- * `identify -ping` reads the geometry from the header without decoding pixels.
+ * Reads the geometry of the first frame. `identify -ping` reads it from the header without decoding pixels.
  */
-async function firstFrameNeedsCanvas(inputPath: string): Promise<boolean> {
+async function readFirstFrameGeometry(inputPath: string): Promise<FirstFrameGeometry> {
     const { stdout } = await execFile('identify', ['-ping', '-format', '%W %H %w %h %X %Y', `${inputPath}[0]`]);
     const [pageWidth, pageHeight, width, height, offsetX, offsetY] = stdout.trim().split(/\s+/);
-    return (
-        pageWidth !== width ||
-        pageHeight !== height ||
-        Number.parseInt(offsetX, 10) !== 0 ||
-        Number.parseInt(offsetY, 10) !== 0
-    );
+    return {
+        width: Number.parseInt(width, 10),
+        height: Number.parseInt(height, 10),
+        needsCanvas:
+            pageWidth !== width ||
+            pageHeight !== height ||
+            Number.parseInt(offsetX, 10) !== 0 ||
+            Number.parseInt(offsetY, 10) !== 0,
+    };
+}
+
+/**
+ * The `jpeg:size` shrink-on-load hint, or undefined when the image is already small enough. Only the JPEG decoder
+ * reads it; other formats ignore it.
+ *
+ * ImageMagick derives the decode scale from the smaller of the two ratios between the stored size and the hint, so
+ * a hint with another aspect ratio than the image is limited by its short side: a square hint on a wide image
+ * enlarges the decode instead of shrinking it. ImageMagick has no aspect-preserving form of this define, so scale
+ * the stored size until its long side is 3 * max_hw. Rounding the short side down keeps the long side's ratio the
+ * smaller one.
+ */
+function jpegSizeHint({ width, height }: FirstFrameGeometry, max_hw: number): string | undefined {
+    const target = max_hw * 3;
+    const longSide = Math.max(width, height);
+    if (!(longSide > target)) {
+        return undefined;
+    }
+    const scaled = (side: number) => Math.max(1, Math.floor((side * target) / longSide));
+    return `${scaled(width)}x${scaled(height)}`;
 }
 
 /**
@@ -99,7 +129,12 @@ export async function imageResizer(
         log.debug(`Resizing image using ImageMagick: ${inputPath} -> ${outputPath}`);
 
         const command = 'convert';
-        const args = ['-define', `jpeg:size=${max_hw * 3}x${max_hw * 3}`];
+        const geometry = await readFirstFrameGeometry(inputPath);
+        const args: string[] = [];
+        const sizeHint = jpegSizeHint(geometry, max_hw);
+        if (sizeHint) {
+            args.push('-define', `jpeg:size=${sizeHint}`);
+        }
 
         // Renditions are single images. Explicitly select the first frame so animated GIF/WebP inputs do not
         // expand into numbered sibling files while leaving the requested output path empty.
@@ -108,7 +143,7 @@ export async function imageResizer(
 
         // Place an optimized animation subframe on its logical canvas before resizing. Only when needed: -coalesce
         // copies the decoded frame, which can exhaust the pixel cache on a large image that already fills its canvas.
-        if (await firstFrameNeedsCanvas(inputPath)) {
+        if (geometry.needsCanvas) {
             args.push('-coalesce');
         }
 

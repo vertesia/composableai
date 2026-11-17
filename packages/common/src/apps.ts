@@ -354,6 +354,8 @@ export type AppAccessControl = Wire.AppAccessControl;
 // in `@llumiverse/common`, not one to work around here.
 //
 // Everything this interface REFERENCES converted: the fields below now carry canonical components.
+/** The set of tools an app exposes to an external integration through the platform MCP server. */
+export type AppMcpProfile = Wire.AppMcpProfile;
 export type AppManifestData = Wire.AppManifestData;
 export type UpdateAppPayload = Wire.UpdateAppPayload;
 
@@ -694,6 +696,12 @@ export interface CompositeAppMenuNavItem {
     description?: string | null;
     /** When true, this item is excluded from the Composite App dashboard cards */
     hideFromDashboard?: boolean;
+    /**
+     * When true, this item navigates to the App Portal form of the URL
+     * (`/apps/<appName><route>`) instead of the Composite App form (`/app/<appName><route>`),
+     * so the app is opened standalone rather than inside the Composite App shell.
+     */
+    openInAppPortal?: boolean;
     /** Optional access control settings for this nav item */
     permissions?: CompositeAppNavItemPermissions;
     /** Ordered child nav-items */
