@@ -259,6 +259,44 @@ export interface PendingRendition {
     kind: 'video' | 'image';
 }
 
+/** A user of the external system a content source reads, as that system reports them. */
+export interface ContentSourcePerson {
+    /** The system's own ID for the user. */
+    id?: string;
+    name?: string;
+    email?: string;
+}
+
+/**
+ * The widest audience a file's sharing links reach: anyone with the link, everyone in the organization, or specific
+ * people. `none` when the file has no sharing link. Permissions granted without a link are not reflected.
+ */
+export type ContentSourceSharing = 'none' | 'anonymous' | 'organization' | 'users';
+
+/** What the external system reports about a synced file, kept at `metadata.source`. */
+export interface ContentSourceItemMetadata {
+    /** The system the file is in, such as `sharepoint` or `box`. */
+    provider: string;
+    /** The file's ID in that system, stable across renames and moves. */
+    item_id: string;
+    /** The ID of the folder that holds the file. */
+    folder_id?: string;
+    /** Opens the file in the system. */
+    web_url?: string;
+    /** Bytes, as the system reports them. */
+    size?: number;
+    /** ISO 8601. */
+    created_at?: string;
+    /** ISO 8601: the last change the system recorded, to the bytes or to the file's metadata. */
+    modified_at?: string;
+    created_by?: ContentSourcePerson;
+    modified_by?: ContentSourcePerson;
+    /** Absent when the system did not report it. */
+    sharing?: ContentSourceSharing;
+    /** Changes whenever another field changes: the sync rewrites the block only then. */
+    digest: string;
+}
+
 export interface ContentMetadata {
     // Common fields for all media types
     type?: ContentNature;
@@ -277,6 +315,11 @@ export interface ContentMetadata {
      * (office docProps, PDF docinfo). Free-form, nature-appropriate keys.
      */
     embedded?: Record<string, unknown>;
+    /**
+     * What the external system a content source synced the object from reports about the file. Written only by the
+     * sync; an update through the objects API keeps the stored value.
+     */
+    source?: ContentSourceItemMetadata;
     /** Type-detection provenance recorded by the intake sniff pipeline. */
     type_detection?: TypeDetectionMetadata;
     /** Locate-pass provenance: which pages the document map found relevant. */
