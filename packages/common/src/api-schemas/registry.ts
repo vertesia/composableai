@@ -526,6 +526,7 @@ import {
 import {
     CreateInferenceProfilePayloadSchema,
     InferenceProfileIdSchema,
+    InferenceProfileInvocationSchema,
     InferenceProfileNameSchema,
     InferenceProfileRecordArraySchema,
     InferenceProfileRecordSchema,
@@ -1215,6 +1216,7 @@ const INTERACTION_SCHEMAS = {
     InferenceProfileId: InferenceProfileIdSchema,
     InferenceProfileName: InferenceProfileNameSchema,
     InferenceProfile: InferenceProfileSchema,
+    InferenceProfileInvocation: InferenceProfileInvocationSchema,
     InferenceProfileSnapshot: InferenceProfileSnapshotSchema,
     ProjectInferenceProfiles: ProjectInferenceProfilesSchema,
     // The interaction definition and the prompt tree under it.
