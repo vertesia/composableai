@@ -1,6 +1,37 @@
 import { useUserSession } from '@vertesia/ui/session';
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import {
+    createContext,
+    type ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from 'react';
 import { TypeRegistry } from './TypeRegistry.js';
+
+/** Delay before the first automatic retry after a failed load. It doubles after each further failure. */
+const RETRY_BASE_MS = 2_000;
+/** Upper bound for the backoff. A server Retry-After hint can still lengthen the wait beyond it. */
+const RETRY_MAX_MS = 60_000;
+/** Largest delay `setTimeout` honours. A longer one fires at once, which would turn into a request loop. */
+const MAX_TIMER_MS = 2_147_483_647;
+
+/**
+ * Milliseconds to wait before the next automatic retry, after `failures` consecutive failed loads.
+ * A `retryAfterMs` hint from the request error (the server's Retry-After) is a floor, never shortened.
+ */
+function retryDelayMs(failures: number, retryAfterMs?: number): number {
+    const backoff = Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** Math.max(0, failures - 1));
+    return Math.min(MAX_TIMER_MS, Math.max(backoff, retryAfterMs ?? 0));
+}
+
+/** Reads the `retryAfterMs` hint that the API client attaches to its request errors. */
+function retryAfterHintMs(err: unknown): number | undefined {
+    const hint = (err as { retryAfterMs?: unknown } | null)?.retryAfterMs;
+    return typeof hint === 'number' && Number.isFinite(hint) && hint >= 0 ? hint : undefined;
+}
 
 interface TypeRegistryContextValue {
     registry: TypeRegistry | undefined;
@@ -25,34 +56,84 @@ export function TypeRegistryProvider({ children }: TypeRegistryProviderProps) {
     const [registry, setRegistry] = useState<TypeRegistry | undefined>();
     const [isLoading, setIsLoading] = useState(false);
     const fetchRef = useRef(false);
+    const failuresRef = useRef(0);
+    const retryTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    // Bumped whenever in-flight work must be discarded: reload and project change.
+    const generationRef = useRef(0);
+    const mountedRef = useRef(false);
+    const loadRef = useRef<() => Promise<void>>(() => Promise.resolve());
     const projectIdRef = useRef(project?.id);
 
+    const clearRetryTimer = useCallback(() => {
+        if (retryTimerRef.current !== undefined) clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = undefined;
+    }, []);
+
+    /** Discards in-flight and scheduled work so that its results cannot land in the new state. */
+    const invalidate = useCallback(() => {
+        generationRef.current += 1;
+        clearRetryTimer();
+        failuresRef.current = 0;
+        fetchRef.current = false;
+        setIsLoading(false);
+    }, [clearRetryTimer]);
+
     const load = useCallback(async () => {
-        if (!project || fetchRef.current) return;
+        // While a retry is scheduled, the timer owns the next request. Consumers that mount or re-render
+        // in the meantime must not start one, or every failure would turn into an immediate request.
+        if (!project || fetchRef.current || retryTimerRef.current) return;
+        const generation = generationRef.current;
         fetchRef.current = true;
         setIsLoading(true);
         try {
             const types = await store.types.catalog.list({ layout: true });
+            if (generation !== generationRef.current) return;
+            failuresRef.current = 0;
             setRegistry(new TypeRegistry(types));
         } catch (err) {
+            if (generation !== generationRef.current) return;
+            failuresRef.current += 1;
             console.error('Failed to fetch types', err);
+            // A request that fails after unmount must not schedule a retry. Strict Mode unmounts and
+            // remounts synchronously, so the flag is set again by the time a real rejection arrives.
+            if (!mountedRef.current) return;
+            const delay = retryDelayMs(failuresRef.current, retryAfterHintMs(err));
+            retryTimerRef.current = setTimeout(() => {
+                retryTimerRef.current = undefined;
+                void loadRef.current();
+            }, delay);
         } finally {
-            setIsLoading(false);
-            fetchRef.current = false;
+            if (generation === generationRef.current) {
+                fetchRef.current = false;
+                setIsLoading(false);
+            }
         }
     }, [store, project]);
 
-    const reload = useCallback(async () => {
-        fetchRef.current = false;
-        return load();
+    useEffect(() => {
+        loadRef.current = load;
     }, [load]);
 
-    // Reset when project changes
+    const reload = useCallback(async () => {
+        invalidate();
+        return load();
+    }, [invalidate, load]);
+
     useEffect(() => {
+        mountedRef.current = true;
+        return () => {
+            mountedRef.current = false;
+            clearRetryTimer();
+        };
+    }, [clearRetryTimer]);
+
+    // Reset when project changes. A layout effect runs before the consumers' effects, so a retry still
+    // pending for the previous project is cleared before a consumer asks for the new project.
+    useLayoutEffect(() => {
         if (projectIdRef.current !== project?.id) {
             projectIdRef.current = project?.id;
+            invalidate();
             setRegistry(undefined);
-            fetchRef.current = false;
         }
     });
 
