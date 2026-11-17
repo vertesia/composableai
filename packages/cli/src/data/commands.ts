@@ -104,7 +104,7 @@ export async function importData(
     const client = await getClient(program);
     const mode = normalizeMode(options.mode);
     const source = await resolveImportSource(client, storeId, input, options);
-    const message = buildImportMessage(tableName, source.original, options.message);
+    const message = buildImportMessage(tableName, source.label, options.message);
     const payload: ImportDataPayload = {
         mode,
         message,
@@ -175,13 +175,13 @@ async function resolveImportSource(
     storeId: string,
     input: string | undefined,
     options: ImportDataOptions,
-): Promise<{ tableData: ImportTableData; original: string; uploadedUri?: string }> {
+): Promise<{ tableData: ImportTableData; label: string; uploadedUri?: string }> {
     const normalizedInput = typeof input === 'string' && input.trim() !== '' ? input.trim() : '-';
 
     // Cloud blob URIs (GCS, S3, Azure Blob) are read server-side; `gcs` is the source kind for all of them.
     if (/^(gs|s3|az):\/\//.test(normalizedInput)) {
         return {
-            original: normalizedInput,
+            label: normalizedInput,
             tableData: {
                 source: 'gcs',
                 uri: normalizedInput,
@@ -192,7 +192,7 @@ async function resolveImportSource(
 
     if (normalizedInput.startsWith('http://') || normalizedInput.startsWith('https://')) {
         return {
-            original: normalizedInput,
+            label: withoutUrlSecrets(normalizedInput),
             tableData: {
                 source: 'url',
                 uri: normalizedInput,
@@ -212,7 +212,7 @@ async function resolveImportSource(
     const uploadedUri = await client.files.uploadFile(source);
 
     return {
-        original: normalizedInput,
+        label: uploadName,
         uploadedUri,
         tableData: {
             source: 'gcs',
@@ -247,9 +247,29 @@ export function buildImportUploadPath(name: string, storeId: string, options: Im
     return `${prefix}/${Date.now()}-${randomUUID()}-${name}`;
 }
 
-function buildImportMessage(tableName: string, original: string, explicitMessage: unknown): string {
+/**
+ * The version message of an import, unless the caller wrote one. It names the source by a label: everyone who can see
+ * the store reads the version history, so a local file appears by its file name rather than its path, which would
+ * show the importer's home folder, and a web URL without the parts that can carry a credential.
+ */
+export function buildImportMessage(tableName: string, sourceLabel: string, explicitMessage: unknown): string {
     if (typeof explicitMessage === 'string' && explicitMessage.trim() !== '') {
         return explicitMessage.trim();
     }
-    return `Import ${original} into ${tableName} via vertesia CLI`;
+    return `Import ${sourceLabel} into ${tableName} via vertesia CLI`;
+}
+
+/** A web URL without its user information, query and fragment: a signed URL carries its token in the query. */
+export function withoutUrlSecrets(url: string): string {
+    try {
+        const parsed = new URL(url);
+        parsed.username = '';
+        parsed.password = '';
+        parsed.search = '';
+        parsed.hash = '';
+        return parsed.toString();
+    } catch {
+        // Not a URL the runtime can parse: drop the same parts by hand.
+        return url.split(/[?#]/)[0].replace(/^(https?:\/\/)[^/]*@/, '$1');
+    }
 }

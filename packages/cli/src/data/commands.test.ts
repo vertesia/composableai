@@ -1,5 +1,52 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildCreateDataStorePayload, buildImportUploadPath } from './commands.js';
+import {
+    buildCreateDataStorePayload,
+    buildImportMessage,
+    buildImportUploadPath,
+    withoutUrlSecrets,
+} from './commands.js';
+
+describe('buildImportMessage', () => {
+    it('names the source by the label it is given', () => {
+        expect(buildImportMessage('events', 'events-06.parquet', undefined)).toBe(
+            'Import events-06.parquet into events via vertesia CLI',
+        );
+    });
+
+    it('keeps the message the caller wrote, trimmed', () => {
+        expect(buildImportMessage('events', 'events-06.parquet', '  nightly load ')).toBe('nightly load');
+    });
+
+    it('ignores a blank message', () => {
+        expect(buildImportMessage('events', 'events-06.parquet', '   ')).toBe(
+            'Import events-06.parquet into events via vertesia CLI',
+        );
+    });
+});
+
+describe('withoutUrlSecrets', () => {
+    it('drops the query and fragment, where a signed URL carries its token', () => {
+        expect(
+            withoutUrlSecrets('https://bucket.example.com/data/orders.csv?X-Goog-Signature=abc&expires=1#part'),
+        ).toBe('https://bucket.example.com/data/orders.csv');
+    });
+
+    it('drops user information', () => {
+        expect(withoutUrlSecrets('https://user:secret@files.example.com/orders.csv')).toBe(
+            'https://files.example.com/orders.csv',
+        );
+    });
+
+    it('keeps a URL that carries none of them', () => {
+        expect(withoutUrlSecrets('http://files.example.com/orders.csv')).toBe('http://files.example.com/orders.csv');
+    });
+
+    it('drops the same parts from a URL the runtime cannot parse', () => {
+        expect(withoutUrlSecrets('https://user:secret@bad host/orders.csv?token=abc')).toBe(
+            'https://bad host/orders.csv',
+        );
+    });
+});
 
 const RUN_VARIABLES = ['VERTESIA_ARTIFACT_STORAGE_ID', 'VERTESIA_AGENTRUN_ID', 'VERTESIA_RUN_ID'];
 
