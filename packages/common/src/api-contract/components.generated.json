@@ -10729,6 +10729,15 @@
     "pattern": "\\S",
     "description": "Editable display name, independent of the stable profile ID."
   },
+  "InferenceProfileInvocation": {
+    "type": "string",
+    "enum": [
+      "execute",
+      "decide",
+      "shadow"
+    ],
+    "description": "How runs that select this profile call its model. `execute` (the default) runs regular inference. `decide` answers interactions that declare a decision with the model's decisions endpoint, and uses regular inference below the confidence threshold or when the run cannot use a decision. `shadow` answers with regular inference and calls the decisions endpoint alongside, for comparison only. With `decide` or `shadow`, regular inference uses the environment and model the run would select without this profile."
+  },
   "CreateInferenceProfilePayload": {
     "type": "object",
     "properties": {
@@ -10749,6 +10758,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       }
     },
     "required": [
@@ -10778,6 +10802,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       }
     },
     "required": [
@@ -10807,6 +10846,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       },
       "id": {
         "type": "string",
@@ -10950,6 +11004,21 @@
       },
       "model_options": {
         "$ref": "#/components/schemas/ModelOptions"
+      },
+      "invocation": {
+        "$ref": "#/components/schemas/InferenceProfileInvocation"
+      },
+      "decision_threshold": {
+        "type": "number",
+        "exclusiveMinimum": 0,
+        "exclusiveMaximum": 1,
+        "description": "Minimum confidence a decision answer needs to be used, overriding the interaction's own threshold. Confidence means different things per provider, so set it per profile."
+      },
+      "audit_sample_rate": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "With invocation `decide`: the share of runs that also run regular inference, to compare the two after the switch. Absent means none."
       }
     },
     "required": [
