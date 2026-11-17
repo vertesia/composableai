@@ -1779,6 +1779,10 @@ interface Checks {
         W.InferenceProfile,
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSchema>
     >;
+    InferenceProfileInvocation: Same<
+        W.InferenceProfileInvocation,
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileInvocationSchema>
+    >;
     InferenceProfileSnapshot: Same<
         W.InferenceProfileSnapshot,
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSnapshotSchema>
@@ -6101,6 +6105,10 @@ interface Checks {
     'component:InferenceProfile': Same<
         W.ApiComponentTypes['InferenceProfile'],
         z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileSchema>
+    >;
+    'component:InferenceProfileInvocation': Same<
+        W.ApiComponentTypes['InferenceProfileInvocation'],
+        z.infer<typeof import('./api-schemas/inference-profile.js').InferenceProfileInvocationSchema>
     >;
     'component:InferenceProfileSnapshot': Same<
         W.ApiComponentTypes['InferenceProfileSnapshot'],
@@ -11265,6 +11273,7 @@ const checks: Checks = {
     InferenceProfileId: true,
     InferenceProfileName: true,
     InferenceProfile: true,
+    InferenceProfileInvocation: true,
     InferenceProfileSnapshot: true,
     ProjectInferenceProfiles: true,
     CreateInferenceProfilePayload: true,
@@ -12432,6 +12441,7 @@ const checks: Checks = {
     'component:InferenceProfileId': true,
     'component:InferenceProfileName': true,
     'component:InferenceProfile': true,
+    'component:InferenceProfileInvocation': true,
     'component:InferenceProfileSnapshot': true,
     'component:ProjectInferenceProfiles': true,
     'component:InteractionStatus': true,
@@ -13605,6 +13615,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2825);
+        expect(Object.keys(checks)).toHaveLength(2827);
     });
 });

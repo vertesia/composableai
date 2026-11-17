@@ -17,6 +17,16 @@ export const InferenceProfileNameSchema = z
     .regex(/\S/)
     .meta({ id: 'InferenceProfileName', description: 'Editable display name, independent of the stable profile ID.' });
 
+export const InferenceProfileInvocationSchema = z.enum(['execute', 'decide', 'shadow']).meta({
+    id: 'InferenceProfileInvocation',
+    description:
+        'How runs that select this profile call its model. `execute` (the default) runs regular inference. ' +
+        "`decide` answers interactions that declare a decision with the model's decisions endpoint, and uses " +
+        'regular inference below the confidence threshold or when the run cannot use a decision. `shadow` answers ' +
+        'with regular inference and calls the decisions endpoint alongside, for comparison only. With `decide` ' +
+        'or `shadow`, regular inference uses the environment and model the run would select without this profile.',
+});
+
 export const InferenceProfileSchema = z
     .strictObject({
         name: InferenceProfileNameSchema.optional().meta({
@@ -26,6 +36,27 @@ export const InferenceProfileSchema = z
         environment: z.string().regex(/^[a-fA-F0-9]{24}$/),
         model: z.string().min(1).optional(),
         model_options: ModelOptionsSchema.optional(),
+        invocation: InferenceProfileInvocationSchema.optional(),
+        decision_threshold: z
+            .number()
+            .gt(0)
+            .lt(1)
+            .meta({
+                description:
+                    "Minimum confidence a decision answer needs to be used, overriding the interaction's own " +
+                    'threshold. Confidence means different things per provider, so set it per profile.',
+            })
+            .optional(),
+        audit_sample_rate: z
+            .number()
+            .min(0)
+            .max(1)
+            .meta({
+                description:
+                    'With invocation `decide`: the share of runs that also run regular inference, to compare the ' +
+                    'two after the switch. Absent means none.',
+            })
+            .optional(),
     })
     .meta({
         id: 'InferenceProfile',
