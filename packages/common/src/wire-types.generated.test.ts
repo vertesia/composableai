@@ -1159,6 +1159,14 @@ interface Checks {
         W.ContentSourceContentTypeCount,
         z.infer<typeof import('./api-schemas/content-sources.js').ContentSourceContentTypeCountSchema>
     >;
+    InferenceBudgetSettings: Same<
+        W.InferenceBudgetSettings,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').InferenceBudgetSettingsSchema>
+    >;
+    UpdateInferenceBudget: Same<
+        W.UpdateInferenceBudget,
+        z.infer<typeof import('./api-schemas/cost-analytics.js').UpdateInferenceBudgetSchema>
+    >;
     CostAnalyticsQuery: Same<
         W.CostAnalyticsQuery,
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
@@ -7524,6 +7532,14 @@ interface Checks {
         W.ApiComponentTypes['CostAnalyticsQuery'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostAnalyticsQuerySchema>
     >;
+    'component:InferenceBudgetSettings': Same<
+        W.ApiComponentTypes['InferenceBudgetSettings'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').InferenceBudgetSettingsSchema>
+    >;
+    'component:UpdateInferenceBudget': Same<
+        W.ApiComponentTypes['UpdateInferenceBudget'],
+        z.infer<typeof import('./api-schemas/cost-analytics.js').UpdateInferenceBudgetSchema>
+    >;
     'component:CostRunPriceQuery': Same<
         W.ApiComponentTypes['CostRunPriceQuery'],
         z.infer<typeof import('./api-schemas/cost-analytics.js').CostRunPriceQuerySchema>
@@ -11265,6 +11281,8 @@ const checks: Checks = {
     ContentSourceSampleDiscovery: true,
     ContentSourceSampleFile: true,
     ContentSourceContentTypeCount: true,
+    InferenceBudgetSettings: true,
+    UpdateInferenceBudget: true,
     CostAnalyticsQuery: true,
     CostModelPricesQuery: true,
     CostExportQuery: true,
@@ -12962,6 +12980,8 @@ const checks: Checks = {
     'component:DataSchemaForAI': true,
     'component:DataStoreSchemaResponse': true,
     'component:CostAnalyticsQuery': true,
+    'component:InferenceBudgetSettings': true,
+    'component:UpdateInferenceBudget': true,
     'component:CostRunPriceQuery': true,
     'component:CostModelPricesQuery': true,
     'component:CostExportQuery': true,
@@ -13822,6 +13842,6 @@ const checks: Checks = {
 
 describe('wire-types.generated', () => {
     it('asserts every generated type against its schema', () => {
-        expect(Object.keys(checks)).toHaveLength(2869);
+        expect(Object.keys(checks)).toHaveLength(2873);
     });
 });
